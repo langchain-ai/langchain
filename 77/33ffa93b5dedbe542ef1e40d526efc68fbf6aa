@@ -1,0 +1,21 @@
+libs/partners/groq/tests/integration_tests/test_chat_models.py
+  s_68bd688e9a6e3e::t_636966c38abc36 577-581
+libs/partners/groq/langchain_groq/chat_models.py
+  s_68bd688e9a6e3e::t_bf561a3cc8c93c 433-435,445-446
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "7733ffa93b5dedbe542ef1e40d526efc68fbf6aa",
+  "prompts": {},
+  "sessions": {
+    "s_68bd688e9a6e3e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9c7a53b6-8b56-4643-83a3-1e855d567199",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
