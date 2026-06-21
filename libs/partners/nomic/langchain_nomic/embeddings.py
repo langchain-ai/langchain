@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import os
-from typing import Literal, overload
+from typing import Literal, Union, overload
 
 import nomic  # type: ignore[import]
 from langchain_core.embeddings import Embeddings
 from nomic import embed
+from pydantic import SecretStr
 
 
 class NomicEmbeddings(Embeddings):
@@ -26,7 +27,7 @@ class NomicEmbeddings(Embeddings):
         self,
         *,
         model: str,
-        nomic_api_key: str | None = ...,
+        nomic_api_key: Union[str, SecretStr, None] = ...,
         dimensionality: int | None = ...,
         inference_mode: Literal["remote"] = ...,
     ) -> None: ...
@@ -36,7 +37,7 @@ class NomicEmbeddings(Embeddings):
         self,
         *,
         model: str,
-        nomic_api_key: str | None = ...,
+        nomic_api_key: Union[str, SecretStr, None] = ...,
         dimensionality: int | None = ...,
         inference_mode: Literal["local", "dynamic"],
         device: str | None = ...,
@@ -47,7 +48,7 @@ class NomicEmbeddings(Embeddings):
         self,
         *,
         model: str,
-        nomic_api_key: str | None = ...,
+        nomic_api_key: Union[str, SecretStr, None] = ...,
         dimensionality: int | None = ...,
         inference_mode: str,
         device: str | None = ...,
@@ -57,7 +58,7 @@ class NomicEmbeddings(Embeddings):
         self,
         *,
         model: str,
-        nomic_api_key: str | None = None,
+        nomic_api_key: Union[str, SecretStr, None] = None,
         dimensionality: int | None = None,
         inference_mode: str = "remote",
         device: str | None = None,
@@ -85,7 +86,10 @@ class NomicEmbeddings(Embeddings):
             vision_model: The vision model to use for image embeddings.
 
         """
-        _api_key = nomic_api_key or os.environ.get("NOMIC_API_KEY")
+        _raw_key = nomic_api_key or os.environ.get("NOMIC_API_KEY")
+        _api_key = (
+            _raw_key.get_secret_value() if isinstance(_raw_key, SecretStr) else _raw_key
+        )
         if _api_key:
             nomic.login(_api_key)
         self.model = model

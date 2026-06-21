@@ -103,26 +103,31 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
 
     Example:
     ```python
-    from langchain_classic.agents import AgentType, initialize_agent
+    from langchain_classic.agents import AgentExecutor, create_openai_tools_agent
+    from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+    from langchain_core.tools import tool
     from langchain_openai import ChatOpenAI
     from langchain_classic.evaluation import TrajectoryEvalChain
-    from langchain_classic.tools import tool
 
     @tool
     def geography_answers(country: str, question: str) -> str:
         \"\"\"Very helpful answers to geography questions.\"\"\"
         return f"{country}? IDK - We may never know {question}."
 
-    model = ChatOpenAI(model="gpt-5.5", temperature=0)
-    agent = initialize_agent(
-        tools=[geography_answers],
-        llm=model,
-        agent=AgentType.OPENAI_FUNCTIONS,
-        return_intermediate_steps=True,
+    model = ChatOpenAI(model="gpt-4o", temperature=0)
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are a helpful assistant."),
+        MessagesPlaceholder("chat_history", optional=True),
+        ("human", "{input}"),
+        MessagesPlaceholder("agent_scratchpad"),
+    ])
+    agent = create_openai_tools_agent(model, tools=[geography_answers], prompt=prompt)
+    agent_executor = AgentExecutor(
+        agent=agent, tools=[geography_answers], return_intermediate_steps=True
     )
 
     question = "How many dwell in the largest minor region in Argentina?"
-    response = agent(question)
+    response = agent_executor.invoke({"input": question})
 
     eval_chain = TrajectoryEvalChain.from_llm(
         llm=model, agent_tools=[geography_answers], return_reasoning=True

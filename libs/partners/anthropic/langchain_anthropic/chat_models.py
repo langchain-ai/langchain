@@ -673,22 +673,27 @@ def _format_messages(
                         "web_search_tool_result",
                         "web_fetch_tool_result",
                     ):
+                        # Normalize string content to structured text blocks to
+                        # prevent TypeErrors when downstream parsers expect dicts.
+                        block_content = block.get("content")
+                        if isinstance(block_content, str):
+                            block_content = [{"type": "text", "text": block_content}]
+                        normalized_block = {
+                            k: v
+                            for k, v in block.items()
+                            if k
+                            in (
+                                "type",
+                                "tool_use_id",
+                                "is_error",  # for mcp_tool_result
+                                "cache_control",
+                                "retrieved_at",  # for web_fetch_tool_result
+                            )
+                        }
+                        if block_content is not None:
+                            normalized_block["content"] = block_content
                         content.append(
-                            _normalize_block_tool_use_id(
-                                {
-                                    k: v
-                                    for k, v in block.items()
-                                    if k
-                                    in (
-                                        "type",
-                                        "content",
-                                        "tool_use_id",
-                                        "is_error",  # for mcp_tool_result
-                                        "cache_control",
-                                        "retrieved_at",  # for web_fetch_tool_result
-                                    )
-                                },
-                            ),
+                            _normalize_block_tool_use_id(normalized_block),
                         )
                     else:
                         content.append(block)

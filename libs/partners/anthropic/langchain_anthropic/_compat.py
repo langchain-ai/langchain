@@ -178,7 +178,12 @@ def _convert_from_v1_to_anthropic(
         elif block["type"] == "server_tool_result" and model_provider == "anthropic":
             new_block = {}
             if "output" in block:
-                new_block["content"] = block["output"]
+                output = block["output"]
+                new_block["content"] = (
+                    [{"type": "text", "text": output}]
+                    if isinstance(output, str)
+                    else output
+                )
             server_tool_result_type = block.get("extras", {}).get("block_type", "")
             if server_tool_result_type == "mcp_tool_result":
                 new_block["is_error"] = block.get("status") == "error"

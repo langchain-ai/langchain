@@ -1,4 +1,48 @@
-"""Run managers."""
+"""Callback managers for LangChain Runnable methods.
+
+Callbacks can be injected at three levels when using LCEL Runnable methods:
+
+1. **Constructor-level** – passed once when the object is created; apply to all runs:
+
+   ```python
+   from langchain_core.callbacks import BaseCallbackHandler
+
+   class MyHandler(BaseCallbackHandler):
+       def on_llm_new_token(self, token: str, **kwargs) -> None:
+           print(token, end="", flush=True)
+
+   llm = ChatOpenAI(callbacks=[MyHandler()])
+   llm.invoke("Hello")
+   ```
+
+2. **Invocation-level** – passed per call via the ``config`` argument; override or
+   extend constructor callbacks for that single call only:
+
+   ```python
+   from langchain_core.runnables import RunnableConfig
+
+   llm.invoke("Hello", config=RunnableConfig(callbacks=[MyHandler()]))
+   llm.stream("Hello", config={"callbacks": [MyHandler()]})
+   llm.batch(["Hello", "World"], config={"callbacks": [MyHandler()]})
+   ```
+
+3. **Context-level** – via ``get_callback_manager_for_config`` when building
+   custom runnables that need to propagate callbacks down to child runs:
+
+   ```python
+   from langchain_core.callbacks.manager import CallbackManager
+
+   manager = CallbackManager.configure(
+       inheritable_callbacks=[MyHandler()],
+       local_callbacks=None,
+   )
+   ```
+
+Callbacks propagate automatically through nested chains built with LCEL (``|``).
+When a parent ``CallbackManagerForChainRun`` spawns a child via
+``run_manager.get_child()``, all inherited handlers are forwarded to the child run
+so you never need to re-pass them manually.
+"""
 
 from __future__ import annotations
 
