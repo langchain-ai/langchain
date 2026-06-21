@@ -574,6 +574,9 @@ def test_setting_service_tier_class() -> None:
     response = chat.invoke([message])
     assert response.response_metadata.get("service_tier") == "on_demand"
 
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, service_tier="performance")
+    assert chat.service_tier == "performance"
+
     chat = ChatGroq(model=DEFAULT_MODEL_NAME)
     assert chat.service_tier == "on_demand"
     response = chat.invoke([message])

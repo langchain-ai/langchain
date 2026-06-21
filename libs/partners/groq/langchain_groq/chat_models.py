@@ -430,7 +430,9 @@ class ChatGroq(BaseChatModel):
     max_tokens: int | None = None
     """Maximum number of tokens to generate."""
 
-    service_tier: Literal["on_demand", "flex", "auto"] = Field(default="on_demand")
+    service_tier: Literal["on_demand", "flex", "auto", "performance"] = Field(
+        default="on_demand"
+    )
     """Optional parameter that you can include to specify the service tier you'd like to
     use for requests.
 
@@ -440,6 +442,8 @@ class ChatGroq(BaseChatModel):
         reliability for workloads that don't require guaranteed processing.
     - `'auto'`: Uses on-demand rate limits, then falls back to `'flex'` if those
         limits are exceeded
+    - `'performance'`: Highest tier, providing reliable low latency for the most
+        critical production applications.
 
     See the [Groq documentation](https://console.groq.com/docs/flex-processing) for more
     details and a list of service tiers and descriptions.
