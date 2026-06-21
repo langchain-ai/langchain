@@ -3104,3 +3104,46 @@ def test_convert_to_messages_lc_envelope_partial_shape_not_matched() -> None:
     # and dict `kwargs` too. Without all four, we fall through.
     with pytest.raises(ValueError, match="MESSAGE_COERCION_FAILURE"):
         convert_to_messages([{"lc": 1, "content": "missing other fields"}])
+
+
+def test_count_tokens_approximately_audio_video_file_use_fixed_penalty() -> None:
+    """audio/video/file blocks must not be char-counted as base64; fixed penalty applies."""
+    # A realistic base64 audio payload is thousands of chars; char-counting it would
+    # return a token estimate far larger than a fixed-penalty image block.
+    large_b64 = base64.b64encode(b"\x00" * 10_000).decode()
+
+    audio_msg = HumanMessage(
+        content=[{"type": "audio", "data": large_b64, "mime_type": "audio/wav"}]
+    )
+    video_msg = HumanMessage(
+        content=[{"type": "video", "data": large_b64, "mime_type": "video/mp4"}]
+    )
+    file_msg = HumanMessage(
+        content=[{"type": "file", "data": large_b64, "mime_type": "application/pdf"}]
+    )
+    image_msg = HumanMessage(
+        content=[{"type": "image", "source": {"type": "base64", "data": large_b64}}]
+    )
+    text_only_msg = HumanMessage(content="hello")
+
+    audio_count = count_tokens_approximately([audio_msg])
+    video_count = count_tokens_approximately([video_msg])
+    file_count = count_tokens_approximately([file_msg])
+    image_count = count_tokens_approximately([image_msg])
+    text_count = count_tokens_approximately([text_only_msg])
+
+    # All data-block types should be in the same ballpark as an image block.
+    assert abs(audio_count - image_count) <= 2, (
+        f"audio={audio_count} should match image={image_count}"
+    )
+    assert abs(video_count - image_count) <= 2, (
+        f"video={video_count} should match image={image_count}"
+    )
+    assert abs(file_count - image_count) <= 2, (
+        f"file={file_count} should match image={image_count}"
+    )
+    # All should be far less than what a char-count of the base64 payload would give.
+    char_count_estimate = math.ceil(len(large_b64) / 4)
+    assert audio_count < char_count_estimate, (
+        "audio block token count must not reflect base64 payload length"
+    )
