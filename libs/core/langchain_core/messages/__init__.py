@@ -62,10 +62,12 @@ if TYPE_CHECKING:
         convert_to_messages,
         convert_to_openai_messages,
         filter_messages,
+        find_safe_message_cutoff,
         get_buffer_string,
         merge_message_runs,
         message_chunk_to_message,
         messages_from_dict,
+        partition_messages,
         trim_messages,
     )
 
@@ -118,6 +120,7 @@ __all__ = (
     "convert_to_openai_messages",
     "ensure_id",
     "filter_messages",
+    "find_safe_message_cutoff",
     "get_buffer_string",
     "is_data_content_block",
     "merge_content",
@@ -126,6 +129,7 @@ __all__ = (
     "message_to_dict",
     "messages_from_dict",
     "messages_to_dict",
+    "partition_messages",
     "trim_messages",
 )
 
@@ -178,11 +182,13 @@ _dynamic_imports = {
     "convert_to_openai_image_block": "block_translators.openai",
     "convert_to_openai_messages": "utils",
     "filter_messages": "utils",
+    "find_safe_message_cutoff": "utils",
     "get_buffer_string": "utils",
     "is_data_content_block": "content",
     "merge_message_runs": "utils",
     "message_chunk_to_message": "utils",
     "messages_from_dict": "utils",
+    "partition_messages": "utils",
     "trim_messages": "utils",
 }
 

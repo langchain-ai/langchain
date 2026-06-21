@@ -1520,6 +1520,271 @@ def trim_messages(
     raise ValueError(msg)
 
 
+def _resolve_token_counter(
+    token_counter: Callable[[list[BaseMessage]], int]
+    | Callable[[BaseMessage], int]
+    | BaseLanguageModel[Any]
+    | Literal["approximate"],
+) -> Callable[[Sequence[BaseMessage]], int]:
+    """Resolve token counter argument to a callable that accepts a sequence of messages."""
+    if isinstance(token_counter, str):
+        if token_counter in _TOKEN_COUNTER_SHORTCUTS:
+            actual_token_counter = _TOKEN_COUNTER_SHORTCUTS[token_counter]
+        else:
+            available_shortcuts = ", ".join(
+                f"'{key}'" for key in _TOKEN_COUNTER_SHORTCUTS
+            )
+            msg = (
+                f"Invalid token_counter shortcut '{token_counter}'. "
+                f"Available shortcuts: {available_shortcuts}."
+            )
+            raise ValueError(msg)
+    else:
+        actual_token_counter = token_counter
+
+    if hasattr(actual_token_counter, "get_num_tokens_from_messages"):
+        return actual_token_counter.get_num_tokens_from_messages
+    elif callable(actual_token_counter):
+        # Check if the callable expects a single message (first arg is annotated as BaseMessage)
+        params = list(inspect.signature(actual_token_counter).parameters.values())
+        if params and params[0].annotation is BaseMessage:
+
+            def list_token_counter(messages: Sequence[BaseMessage]) -> int:
+                return sum(actual_token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
+
+            return list_token_counter
+        else:
+            return actual_token_counter  # type: ignore[return-value]
+    else:
+        msg = (
+            f"'token_counter' expected to be a model that implements "
+            f"get_num_tokens_from_messages, or a callable, or a string shortcut. "
+            f"Received {type(actual_token_counter)}."
+        )
+        raise ValueError(msg)
+
+
+@_runnable_support
+def find_safe_message_cutoff(
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
+    *,
+    max_tokens: int,
+    token_counter: Callable[[list[BaseMessage]], int]
+    | Callable[[BaseMessage], int]
+    | BaseLanguageModel[Any]
+    | Literal["approximate"] = "approximate",
+    retain: Literal["start", "end"] = "end",
+) -> int:
+    """Compute a split index for message pruning that respects tool boundaries.
+
+    Ensures that an ``AIMessage`` containing ``tool_calls`` is never separated
+    from its corresponding ``ToolMessage`` responses. This is useful when
+    building custom memory or summarization pipelines where you need to know
+    *where* to cut conversation history while keeping it valid for downstream
+    chat-model consumption.
+
+    Args:
+        messages: Sequence of messages to compute the cutoff for.
+        max_tokens: Maximum token budget for the retained subset.
+        token_counter: Function for counting tokens in a list of ``BaseMessage``.
+            Accepts a ``Callable[[list[BaseMessage]], int]`` or the string
+            shortcut ``"approximate"`` which uses
+            ``count_tokens_approximately``. Defaults to ``"approximate"``.
+        retain: Which portion of the conversation to keep:
+
+            - ``"end"`` *(default)* -- keep the most recent messages.
+            - ``"start"`` -- keep the oldest messages.
+
+    Returns:
+        The cutoff index into the converted list of messages.
+
+        * When ``retain="end"``, messages ``[cutoff:]`` are retained and
+          ``[:cutoff]`` can be removed.
+        * When ``retain="start"``, messages ``[:cutoff]`` are retained and
+          ``[cutoff:]`` can be removed.
+
+    Raises:
+        ValueError: If *retain* is not ``"start"`` or ``"end"``.
+
+    Example:
+        Compute a safe cutoff index for a conversation with tool calls:
+
+        .. code-block:: python
+
+            from langchain_core.messages import (
+                AIMessage,
+                HumanMessage,
+                ToolMessage,
+                find_safe_message_cutoff,
+            )
+
+            messages = [
+                HumanMessage(content="What's the weather?"),
+                AIMessage(
+                    content="",
+                    tool_calls=[
+                        {"name": "get_weather", "args": {"city": "SF"}, "id": "c1"}
+                    ],
+                ),
+                ToolMessage(content="72F and sunny", tool_call_id="c1"),
+                HumanMessage(content="Thanks!"),
+            ]
+
+            # The AIMessage + ToolMessage are kept together as a block
+            idx = find_safe_message_cutoff(
+                messages,
+                max_tokens=30,
+                token_counter="approximate",
+                retain="end",
+            )
+
+    .. versionadded:: 0.4.0
+    """
+    if retain not in {"start", "end"}:
+        msg = f"Invalid retain={retain!r}. Expected 'start' or 'end'."
+        raise ValueError(msg)
+
+    # Convert the messages input to list[BaseMessage] just like other langchain utils do
+    converted_messages = convert_to_messages(messages)
+    if not converted_messages:
+        return 0
+
+    # Resolve token counter using the helper
+    _token_counter = _resolve_token_counter(token_counter)
+
+    # Group messages into unbreakable blocks.
+    # Each block is a tuple: (list_of_messages, start_index_in_original_list)
+    blocks: list[tuple[list[BaseMessage], int]] = []
+    i = 0
+    n = len(converted_messages)
+    while i < n:
+        current_msg = converted_messages[i]
+        if isinstance(current_msg, AIMessage) and current_msg.tool_calls:
+            block_msgs: list[BaseMessage] = [current_msg]
+            start_idx = i
+            i += 1
+            # Gather all subsequent ToolMessages
+            while i < n and isinstance(converted_messages[i], ToolMessage):
+                block_msgs.append(converted_messages[i])
+                i += 1
+            blocks.append((block_msgs, start_idx))
+        else:
+            blocks.append(([current_msg], i))
+            i += 1
+
+    if retain == "end":
+        # Suffix pruning: keep the newest blocks from the end
+        accumulated_tokens = 0
+        earliest_start_idx = len(converted_messages)
+
+        for block_msgs, start_idx in reversed(blocks):
+            block_tokens = _token_counter(block_msgs)
+            if accumulated_tokens + block_tokens <= max_tokens:
+                accumulated_tokens += block_tokens
+                earliest_start_idx = start_idx
+            else:
+                break
+
+        return earliest_start_idx
+
+    else:  # retain == "start"
+        # Prefix pruning: keep the oldest blocks from the start
+        accumulated_tokens = 0
+        end_idx = 0
+
+        for block_msgs, start_idx in blocks:
+            block_tokens = _token_counter(block_msgs)
+            if accumulated_tokens + block_tokens <= max_tokens:
+                accumulated_tokens += block_tokens
+                end_idx = start_idx + len(block_msgs)
+            else:
+                break
+
+        return end_idx
+
+
+@_runnable_support
+def partition_messages(
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
+    *,
+    max_tokens: int,
+    token_counter: Callable[[list[BaseMessage]], int]
+    | Callable[[BaseMessage], int]
+    | BaseLanguageModel[Any]
+    | Literal["approximate"] = "approximate",
+    retain: Literal["start", "end"] = "end",
+) -> tuple[list[BaseMessage], list[BaseMessage]]:
+    """Partition messages into removable and retained subsets.
+
+    A higher-level wrapper around :func:`find_safe_message_cutoff` that
+    returns the actual message lists instead of just an index. Tool-call
+    boundaries are always respected -- an ``AIMessage`` with ``tool_calls``
+    and its subsequent ``ToolMessage`` responses are treated as an atomic
+    block.
+
+    Args:
+        messages: Sequence of messages to partition.
+        max_tokens: Maximum token budget for the *retained* subset.
+        token_counter: Function for counting tokens in a list of ``BaseMessage``.
+            Accepts a ``Callable[[list[BaseMessage]], int]`` or the string
+            shortcut ``"approximate"`` which uses
+            ``count_tokens_approximately``. Defaults to ``"approximate"``.
+        retain: Which portion of the conversation to keep:
+
+            - ``"end"`` *(default)* -- keep the most recent messages.
+            - ``"start"`` -- keep the oldest messages.
+
+    Returns:
+        A ``(removable, retained)`` tuple of lists.
+
+    Raises:
+        ValueError: If *retain* is not ``"start"`` or ``"end"``.
+
+    Example:
+        Split a conversation for summarisation:
+
+        .. code-block:: python
+
+            from langchain_core.messages import (
+                HumanMessage,
+                AIMessage,
+                partition_messages,
+            )
+
+            messages = [
+                HumanMessage(content="Hello"),
+                AIMessage(content="Hi there!"),
+                HumanMessage(content="Tell me a joke"),
+                AIMessage(content="Why did the chicken cross the road?"),
+            ]
+
+            removable, retained = partition_messages(
+                messages,
+                max_tokens=20,
+                retain="end",
+            )
+            # removable contains older messages to summarise
+            # retained contains recent messages to keep verbatim
+
+    .. versionadded:: 0.4.0
+    """
+    if retain not in {"start", "end"}:
+        msg = f"Invalid retain={retain!r}. Expected 'start' or 'end'."
+        raise ValueError(msg)
+
+    converted_messages = convert_to_messages(messages)
+    cutoff_idx = find_safe_message_cutoff(
+        converted_messages,
+        max_tokens=max_tokens,
+        token_counter=token_counter,
+        retain=retain,
+    )
+    if retain == "end":
+        return converted_messages[:cutoff_idx], converted_messages[cutoff_idx:]
+    else:
+        return converted_messages[cutoff_idx:], converted_messages[:cutoff_idx]
+
+
 _SingleMessage = BaseMessage | str | dict[str, Any]
 _T = TypeVar("_T", bound=_SingleMessage)
 # A sequence of _SingleMessage that is NOT a bare str
