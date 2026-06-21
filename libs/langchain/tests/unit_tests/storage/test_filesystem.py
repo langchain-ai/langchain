@@ -1,3 +1,4 @@
+import sys
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
@@ -6,6 +7,27 @@ import pytest
 from langchain_core.stores import InvalidKeyException
 
 from langchain_classic.storage.file_system import LocalFileStore
+
+
+def _is_chmod_fully_supported() -> bool:
+    """Check if os.chmod supports full Unix-style permission bits.
+
+    On Windows, os.chmod only has full effect for the owner bits (0o700).
+    Group and other permission bits are silently ignored, so chmod(0o770)
+    actually sets permissions equivalent to 0o777 on disk.
+    """
+    import os
+    with tempfile.TemporaryDirectory() as tmp:
+        test_path = Path(tmp) / ".chmod_test"
+        test_path.touch()
+        try:
+            os.chmod(test_path, 0o770)  # group-write should be cleared
+            actual = test_path.stat().st_mode & 0o777
+            return actual != 0o777  # if Windows squashed it to 777, chmod is limited
+        except OSError:
+            return False
+        finally:
+            test_path.unlink(missing_ok=True)
 
 
 @pytest.fixture
@@ -55,8 +77,16 @@ def test_mset_chmod(chmod_dir_s: str, chmod_file_s: str) -> None:
         # (test only the standard user/group/other bits)
         dir_path = file_store.root_path
         file_path = file_store.root_path / "key1"
-        assert (dir_path.stat().st_mode & 0o777) == chmod_dir
-        assert (file_path.stat().st_mode & 0o777) == chmod_file
+
+        if _is_chmod_fully_supported():
+            assert (dir_path.stat().st_mode & 0o777) == chmod_dir
+            assert (file_path.stat().st_mode & 0o777) == chmod_file
+        else:
+            # On platforms with limited chmod (e.g. Windows), only the owner
+            # bits (read/write) are reliable. Assert that the owner bits match.
+            owner_mask = 0o700
+            assert (dir_path.stat().st_mode & owner_mask) == (chmod_dir & owner_mask)
+            assert (file_path.stat().st_mode & owner_mask) == (chmod_file & owner_mask)
 
 
 def test_mget_update_atime() -> None:
