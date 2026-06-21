@@ -453,6 +453,7 @@ version = "0.2.3"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
+    { name = "langchain-tests" },
     { name = "openrouter" },
 ]
 
@@ -476,6 +477,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "../../core" },
+    { name = "langchain-tests", editable = "../../standard-tests" },
     { name = "openrouter", specifier = ">=0.7.11,<1.0.0" },
 ]
 
