@@ -551,6 +551,7 @@ class ChatOpenRouter(BaseChatModel):
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+        finish_reason_seen = False
         for chunk in self.client.chat.send(messages=sdk_messages, **params):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
@@ -575,11 +576,27 @@ class ChatOpenRouter(BaseChatModel):
                     yield generation_chunk
                 continue
             choice = chunk_dict["choices"][0]
+            # Skip duplicate finish_reason chunks (e.g. from OpenRouter's usage-bearing
+            # stop chunk) to prevent string fields in generation_info being concatenated twice.
+            if finish_reason_seen and choice.get("finish_reason"):
+                if usage := chunk_dict.get("usage"):
+                    usage_metadata = _create_usage_metadata(usage)
+                    usage_chunk = AIMessageChunk(
+                        content="", usage_metadata=usage_metadata
+                    )
+                    generation_chunk = ChatGenerationChunk(message=usage_chunk)
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            generation_chunk.text, chunk=generation_chunk
+                        )
+                    yield generation_chunk
+                continue
             message_chunk = _convert_chunk_to_message_chunk(
                 chunk_dict, default_chunk_class
             )
             generation_info: dict[str, Any] = {}
             if finish_reason := choice.get("finish_reason"):
+                finish_reason_seen = True
                 generation_info["finish_reason"] = finish_reason
                 # Include response-level metadata on the final chunk
                 response_model = chunk_dict.get("model")
@@ -637,6 +654,7 @@ class ChatOpenRouter(BaseChatModel):
         sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+        finish_reason_seen = False
         async for chunk in await self.client.chat.send_async(
             messages=sdk_messages, **params
         ):
@@ -663,11 +681,27 @@ class ChatOpenRouter(BaseChatModel):
                     yield generation_chunk
                 continue
             choice = chunk_dict["choices"][0]
+            # Skip duplicate finish_reason chunks (e.g. from OpenRouter's usage-bearing
+            # stop chunk) to prevent string fields in generation_info being concatenated twice.
+            if finish_reason_seen and choice.get("finish_reason"):
+                if usage := chunk_dict.get("usage"):
+                    usage_metadata = _create_usage_metadata(usage)
+                    usage_chunk = AIMessageChunk(
+                        content="", usage_metadata=usage_metadata
+                    )
+                    generation_chunk = ChatGenerationChunk(message=usage_chunk)
+                    if run_manager:
+                        await run_manager.on_llm_new_token(
+                            generation_chunk.text, chunk=generation_chunk
+                        )
+                    yield generation_chunk
+                continue
             message_chunk = _convert_chunk_to_message_chunk(
                 chunk_dict, default_chunk_class
             )
             generation_info: dict[str, Any] = {}
             if finish_reason := choice.get("finish_reason"):
+                finish_reason_seen = True
                 generation_info["finish_reason"] = finish_reason
                 # Include response-level metadata on the final chunk
                 response_model = chunk_dict.get("model")
