@@ -66,6 +66,32 @@ def test_check_package_version(
         ({"a": True}, {"a": True}, {"a": True}),
         ({"a": False}, {"a": False}, {"a": False}),
         ({"a": "txt"}, {"a": "txt"}, {"a": "txttxt"}),
+        (
+            {
+                "model_name": "gpt-test",
+                "finish_reason": "stop",
+                "native_finish_reason": "stop",
+                "object": "chat.completion.chunk",
+                "system_fingerprint": "fp_123",
+                "reasoning": {"format": "text"},
+            },
+            {
+                "model_name": "gpt-test",
+                "finish_reason": "stop",
+                "native_finish_reason": "stop",
+                "object": "chat.completion.chunk",
+                "system_fingerprint": "fp_123",
+                "reasoning": {"format": "text"},
+            },
+            {
+                "model_name": "gpt-test",
+                "finish_reason": "stop",
+                "native_finish_reason": "stop",
+                "object": "chat.completion.chunk",
+                "system_fingerprint": "fp_123",
+                "reasoning": {"format": "text"},
+            },
+        ),
         ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2, 1, 2]}),
         ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txttxt"}}),
         # Merge strings.
