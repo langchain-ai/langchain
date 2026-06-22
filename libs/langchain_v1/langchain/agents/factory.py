@@ -1359,7 +1359,9 @@ def create_agent(
             # versions of langchain-openai do not auto-set it in bind_tools.
             kwargs = effective_response_format.to_model_kwargs()
             bind_kwargs: dict[str, Any] = {**kwargs, **request.model_settings}
-            if _is_openai_compatible_model(request.model):
+            if _is_openai_compatible_model(request.model) and not getattr(
+                request.model, "use_responses_api", False
+            ):
                 bind_kwargs["strict"] = True
             return (
                 request.model.bind_tools(final_tools, **bind_kwargs),
