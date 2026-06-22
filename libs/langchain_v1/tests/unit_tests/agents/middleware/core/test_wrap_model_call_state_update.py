@@ -9,7 +9,8 @@ from collections.abc import Awaitable, Callable
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.tools import tool
 from langgraph.errors import InvalidUpdateError
 from langgraph.types import Command
 from typing_extensions import override
@@ -22,6 +23,13 @@ from langchain.agents.middleware.types import (
     ModelResponse,
     wrap_model_call,
 )
+from tests.unit_tests.agents.model import FakeToolCallingModel
+
+
+@tool
+def _synthetic_tool(x: int) -> int:
+    """Return an incremented integer for synthetic tool-message routing tests."""
+    return x + 1
 
 
 class TestBasicCommand:
@@ -54,6 +62,54 @@ class TestBasicCommand:
         assert messages[0].content == "Hi"
         assert messages[1].content == "Hello!"
         assert messages[2].content == "Custom message"
+
+    def test_command_with_synthetic_tool_message_routes_back_to_model(self) -> None:
+        """Command-added tool messages can satisfy tool calls before the tools node."""
+
+        class InjectToolMessageMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ExtendedModelResponse:
+                response = handler(request)
+                ai_message = response.result[0]
+                if isinstance(ai_message, AIMessage) and ai_message.tool_calls:
+                    synthetic_messages = [
+                        ToolMessage(
+                            content="cached",
+                            tool_call_id=tool_call["id"],
+                            name=tool_call["name"],
+                        )
+                        for tool_call in ai_message.tool_calls
+                    ]
+                    return ExtendedModelResponse(
+                        model_response=response,
+                        command=Command(update={"messages": synthetic_messages}),
+                    )
+                return ExtendedModelResponse(model_response=response)
+
+        model = FakeToolCallingModel(
+            tool_calls=[
+                [{"name": "_synthetic_tool", "args": {"x": 1}, "id": "call_1"}],
+                [],
+            ]
+        )
+        agent = create_agent(
+            model=model,
+            tools=[_synthetic_tool],
+            middleware=[InjectToolMessageMiddleware()],
+        )
+
+        result = agent.invoke({"messages": [HumanMessage(content="Hi")]})
+
+        assert [type(message) for message in result["messages"]] == [
+            HumanMessage,
+            AIMessage,
+            ToolMessage,
+            AIMessage,
+        ]
+        assert result["messages"][2].content == "cached"
 
     def test_command_with_extra_messages_and_model_response(self) -> None:
         """Middleware can add extra messages via command alongside model messages."""
