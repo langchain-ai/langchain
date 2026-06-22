@@ -21,7 +21,7 @@ class TestGroq(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "llama-3.3-70b-versatile", "rate_limiter": rate_limiter}
+        return {"model": "openai/gpt-oss-120b", "rate_limiter": rate_limiter}
 
     @pytest.mark.xfail(
         reason="Groq models have inconsistent tool calling performance. See: "

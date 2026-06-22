@@ -379,7 +379,7 @@ def test_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     chat = ChatGroq(
-        model="llama-3.1-8b-instant",  # Use a model that properly streams content
+        model="openai/gpt-oss-20b",  # Use a model that properly streams content
         max_tokens=2,
         temperature=0,
         callbacks=[callback],
