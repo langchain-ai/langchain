@@ -17,7 +17,21 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
+from langchain_openai.chat_models._client_utils import (
+    _build_proxied_async_httpx_client,
+    _build_proxied_sync_httpx_client,
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+    _log_proxy_env_bypass_once,
+    _resolve_socket_options,
+    _should_bypass_socket_options_for_proxy_env,
+    _warn_if_proxy_env_shadowed,
+)
+from langchain_openai.chat_models.base import (
+    BaseChatOpenAI,
+    _get_default_model_profile,
+    global_ssl_context,
+)
 
 if TYPE_CHECKING:
     from langchain_core.language_models import ModelProfile
@@ -686,12 +700,52 @@ class AzureChatOpenAI(BaseChatOpenAI):
         if self.max_retries is not None:
             client_params["max_retries"] = self.max_retries
 
+        if _should_bypass_socket_options_for_proxy_env(
+            http_socket_options=self.http_socket_options,
+            http_client=self.http_client,
+            http_async_client=self.http_async_client,
+            openai_proxy=self.openai_proxy,
+        ):
+            resolved_socket_options: tuple[tuple[int, int, int], ...] = ()
+            _log_proxy_env_bypass_once()
+        else:
+            resolved_socket_options = _resolve_socket_options(self.http_socket_options)
+            _warn_if_proxy_env_shadowed(
+                resolved_socket_options, openai_proxy=self.openai_proxy
+            )
+
         if not self.client:
-            sync_specific = {"http_client": self.http_client}
+            if self.openai_proxy and not self.http_client:
+                self.http_client = _build_proxied_sync_httpx_client(
+                    proxy=self.openai_proxy,
+                    verify=global_ssl_context,
+                    socket_options=resolved_socket_options,
+                )
+            sync_specific = {
+                "http_client": self.http_client
+                or _get_default_httpx_client(
+                    self.openai_api_base,
+                    self.request_timeout,
+                    resolved_socket_options,
+                )
+            }
             self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
         if not self.async_client:
-            async_specific = {"http_client": self.http_async_client}
+            if self.openai_proxy and not self.http_async_client:
+                self.http_async_client = _build_proxied_async_httpx_client(
+                    proxy=self.openai_proxy,
+                    verify=global_ssl_context,
+                    socket_options=resolved_socket_options,
+                )
+            async_specific = {
+                "http_client": self.http_async_client
+                or _get_default_async_httpx_client(
+                    self.openai_api_base,
+                    self.request_timeout,
+                    resolved_socket_options,
+                )
+            }
 
             if self.azure_ad_async_token_provider:
                 client_params["azure_ad_token_provider"] = (
