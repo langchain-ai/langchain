@@ -9,6 +9,7 @@ from langchain_core.tools import InjectedToolCallId, tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.runtime import Runtime
+from langgraph.types import Command
 from pydantic import BaseModel, Field
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
@@ -17,6 +18,7 @@ from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ExtendedModelResponse,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
@@ -138,6 +140,54 @@ def test_create_agent_invoke(
         "NoopEight.after_model",
         "NoopSeven.after_model",
     ]
+
+
+def test_create_agent_synthetic_tool_messages_reroute_to_model() -> None:
+    class SyntheticToolMessageMiddleware(AgentMiddleware):
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
+            response = handler(request)
+            message = response.result[0]
+            if isinstance(message, AIMessage) and message.tool_calls:
+                synthetic_messages = [
+                    ToolMessage(
+                        content="synthetic result",
+                        name=tool_call["name"],
+                        tool_call_id=tool_call["id"],
+                    )
+                    for tool_call in message.tool_calls
+                ]
+                return ExtendedModelResponse(
+                    model_response=response,
+                    command=Command(update={"messages": synthetic_messages}),
+                )
+            return response
+
+    @tool
+    def my_tool(value: str) -> str:
+        """A great tool."""
+        return value.upper()
+
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                [ToolCall(id="1", name="my_tool", args={"value": "yo"})],
+                [],
+            ],
+        ),
+        tools=[my_tool],
+        middleware=[SyntheticToolMessageMiddleware()],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage(content="hello")]})
+
+    assert any(
+        isinstance(message, ToolMessage) and message.tool_call_id == "1"
+        for message in result["messages"]
+    )
 
 
 def test_create_agent_jump(
