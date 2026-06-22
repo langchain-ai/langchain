@@ -29,6 +29,8 @@ class MarkdownHeaderTextSplitter:
         return_each_line: bool = False,  # noqa: FBT001,FBT002
         strip_headers: bool = True,  # noqa: FBT001,FBT002
         custom_header_patterns: dict[str, int] | None = None,
+        *,
+        include_line_numbers: bool = False,
     ) -> None:
         """Create a new `MarkdownHeaderTextSplitter`.
 
@@ -41,6 +43,8 @@ class MarkdownHeaderTextSplitter:
 
                 For example: `{"**": 1, "***": 2}` to treat `**Header**` as level 1 and
                 `***Header***` as level 2 headers.
+            include_line_numbers: If `True`, include `start_line` and `end_line`
+                (1-indexed) in each chunk's metadata for source traceability.
         """
         # Output line-by-line or aggregated into chunks w/ common headers
         self.return_each_line = return_each_line
@@ -53,6 +57,7 @@ class MarkdownHeaderTextSplitter:
         self.strip_headers = strip_headers
         # Custom header patterns with their levels
         self.custom_header_patterns = custom_header_patterns or {}
+        self.include_line_numbers = include_line_numbers
 
     def _is_custom_header(self, line: str, sep: str) -> bool:
         """Check if line matches a custom header pattern.
@@ -160,7 +165,10 @@ class MarkdownHeaderTextSplitter:
 
         opening_fence = ""
 
-        for line in lines:
+        # Line number tracking (1-indexed)
+        current_start_line: int = 1
+
+        for line_idx, line in enumerate(lines):
             stripped_line = line.strip()
             # Remove all non-printable characters from the string, keeping only visible
             # text.
@@ -236,13 +244,19 @@ class MarkdownHeaderTextSplitter:
                     # Add the previous line to the lines_with_metadata
                     # only if current_content is not empty
                     if current_content:
+                        metadata = current_metadata.copy()
+                        if self.include_line_numbers:
+                            metadata["start_line"] = str(current_start_line)
+                            metadata["end_line"] = str(line_idx)
                         lines_with_metadata.append(
                             {
                                 "content": "\n".join(current_content),
-                                "metadata": current_metadata.copy(),
+                                "metadata": metadata,
                             }
                         )
                         current_content.clear()
+
+                    current_start_line = line_idx + 1
 
                     if not self.strip_headers:
                         current_content.append(stripped_line)
@@ -252,21 +266,30 @@ class MarkdownHeaderTextSplitter:
                 if stripped_line:
                     current_content.append(stripped_line)
                 elif current_content:
+                    metadata = current_metadata.copy()
+                    if self.include_line_numbers:
+                        metadata["start_line"] = str(current_start_line)
+                        metadata["end_line"] = str(line_idx + 1)
                     lines_with_metadata.append(
                         {
                             "content": "\n".join(current_content),
-                            "metadata": current_metadata.copy(),
+                            "metadata": metadata,
                         }
                     )
                     current_content.clear()
+                    current_start_line = line_idx + 2
 
             current_metadata = initial_metadata.copy()
 
         if current_content:
+            metadata = current_metadata.copy()
+            if self.include_line_numbers:
+                metadata["start_line"] = str(current_start_line)
+                metadata["end_line"] = str(len(lines))
             lines_with_metadata.append(
                 {
                     "content": "\n".join(current_content),
-                    "metadata": current_metadata,
+                    "metadata": metadata,
                 }
             )
 

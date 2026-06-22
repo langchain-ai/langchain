@@ -1720,6 +1720,73 @@ Content under custom header 2.
     assert output == expected_output
 
 
+def test_md_header_text_splitter_line_numbers() -> None:
+    """Test markdown splitter with include_line_numbers=True."""
+    markdown_document = (
+        "# Foo\n\nHi this is Jim\n\nHi this is Joe\n\n## Bar\n\nHi this is Molly"
+    )
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        include_line_numbers=True,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    assert len(output) == 2
+    assert output[0].metadata["Header 1"] == "Foo"
+    assert "start_line" in output[0].metadata
+    assert "end_line" in output[0].metadata
+    assert output[1].metadata["Header 2"] == "Bar"
+    assert "start_line" in output[1].metadata
+    assert "end_line" in output[1].metadata
+
+
+def test_md_header_text_splitter_line_numbers_disabled() -> None:
+    """Test that line numbers are not included by default."""
+    markdown_document = "# Foo\n\nContent here\n\n## Bar\n\nMore content"
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    for doc in output:
+        assert "start_line" not in doc.metadata
+        assert "end_line" not in doc.metadata
+
+
+def test_md_header_text_splitter_line_numbers_values() -> None:
+    """Test that line numbers are correct and 1-indexed."""
+    markdown_document = (
+        "# Title\n\nLine 3 content\nLine 4 content\n\n## Section\n\nLine 8 content"
+    )
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        include_line_numbers=True,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    assert len(output) == 2
+    # First chunk starts after the "# Title" header
+    assert int(output[0].metadata["start_line"]) >= 1
+    # Second chunk has line info
+    assert int(output[1].metadata["start_line"]) >= 1
+    assert int(output[1].metadata["end_line"]) >= int(output[1].metadata["start_line"])
+
+
 EXPERIMENTAL_MARKDOWN_DOCUMENT = (
     "# My Header 1\n"
     "Content for header 1\n"
