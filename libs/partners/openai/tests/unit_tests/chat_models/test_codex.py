@@ -330,6 +330,48 @@ def test_request_payload_with_store_false_drops_reasoning_item_references() -> N
     assert "id" not in payload["input"][2]
 
 
+def test_request_payload_with_store_false_drops_image_call_references() -> None:
+    model = _build_model()
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Draw a word."),
+            AIMessage(
+                content=[
+                    {"type": "image_generation_call", "id": "ig_reference_only"},
+                    {
+                        "type": "image_generation_call",
+                        "id": "ig_with_result",
+                        "result": "base64-image",
+                        "status": "completed",
+                        "index": 0,
+                    },
+                    {"type": "text", "text": "Done.", "id": "msg_123"},
+                ],
+                response_metadata={"id": "resp_123"},
+            ),
+            HumanMessage("Change the color."),
+        ]
+    )
+
+    assert payload["store"] is False
+    assert [item.get("type") for item in payload["input"]] == [
+        "message",
+        "image_generation_call",
+        "message",
+        "message",
+    ]
+    assert payload["input"][1] == {
+        "type": "image_generation_call",
+        "id": "ig_with_result",
+        "result": "base64-image",
+        "status": "completed",
+    }
+    assert payload["input"][2]["content"] == [
+        {"type": "output_text", "text": "Done.", "annotations": []}
+    ]
+    assert "id" not in payload["input"][2]
+
+
 def test_request_payload_sets_default_instructions() -> None:
     """The Codex backend 400s without `instructions`; default must be injected."""
     model = _build_model()

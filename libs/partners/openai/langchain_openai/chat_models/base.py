@@ -4531,9 +4531,17 @@ def _construct_responses_api_input(
                             input_.append(_pop_index_and_sub_index(block))
                         elif block_type == "image_generation_call":
                             # A previous image generation call can be referenced by ID
-                            input_.append(
-                                {"type": "image_generation_call", "id": block["id"]}
-                            )
+                            if store is not False:
+                                input_.append(
+                                    {"type": "image_generation_call", "id": block["id"]}
+                                )
+                            else:
+                                # ID-only references require stored server state. For
+                                # stateless requests, replay full items and drop bare
+                                # references that the backend cannot resolve.
+                                image_generation_call = _pop_index_and_sub_index(block)
+                                if set(image_generation_call) - {"type", "id"}:
+                                    input_.append(image_generation_call)
                         else:
                             pass
             elif isinstance(msg.get("content"), str):
