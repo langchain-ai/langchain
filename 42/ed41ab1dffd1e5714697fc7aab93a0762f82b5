@@ -1,0 +1,22 @@
+libs/partners/openai/langchain_openai/chat_models/base.py
+  s_c5ef0fb359e2a6::t_6606b3c630b710 4534-4538,4542-4544
+  s_c5ef0fb359e2a6::t_99ed5374acbdb5 4539-4541
+libs/partners/openai/tests/unit_tests/chat_models/test_codex.py
+  s_c5ef0fb359e2a6::t_f8869c07fb03c0 333-374
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "42ed41ab1dffd1e5714697fc7aab93a0762f82b5",
+  "prompts": {},
+  "sessions": {
+    "s_c5ef0fb359e2a6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ef142-23e6-7e50-abce-283c8878ad42",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
