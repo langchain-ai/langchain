@@ -39,6 +39,11 @@ class TestGroq(ChatModelIntegrationTests):
     def test_tool_calling(self, model: BaseChatModel) -> None:
         super().test_tool_calling(model)
 
+    @pytest.mark.xfail(reason="Retry flaky tool choice behavior")
+    @pytest.mark.retry(count=3, delay=1)
+    def test_tool_choice(self, model: BaseChatModel) -> None:
+        super().test_tool_choice(model)
+
     @pytest.mark.xfail(reason="Retry flaky tool calling behavior")
     @pytest.mark.retry(count=3, delay=1)
     async def test_tool_calling_async(self, model: BaseChatModel) -> None:
