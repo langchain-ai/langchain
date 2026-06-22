@@ -1971,7 +1971,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.3.10"
+version = "1.3.11"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -2119,7 +2119,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.4.6"
+version = "1.4.7"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2444,7 +2444,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.3.2"
+version = "1.3.3"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
