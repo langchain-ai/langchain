@@ -1,0 +1,25 @@
+libs/partners/openai/langchain_openai/chat_models/base.py
+  s_c603897dbb1a12::t_e3770deec64a9b 4417-4422,4424-4428,4433-4436
+  h_9f69767fa5fabf 4423,4429-4432
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "d41f6dd5c53cb70d6117c9cf0b6ed344230a137b",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  },
+  "sessions": {
+    "s_c603897dbb1a12": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "09b72beb-e885-492a-876b-b820e38c04c6",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
