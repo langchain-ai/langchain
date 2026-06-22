@@ -792,7 +792,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         if self._preserve_videos:
             for video_tag in _find_all_tags(soup, name="video"):
-                video_src = video_tag.get("src", "")
+                video_src = self._get_media_src(video_tag)
                 markdown_video = f"![video:{video_src}]({video_src})"
                 wrapper = soup.new_tag("media-wrapper")
                 wrapper.string = markdown_video
@@ -800,11 +800,25 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         if self._preserve_audio:
             for audio_tag in _find_all_tags(soup, name="audio"):
-                audio_src = audio_tag.get("src", "")
+                audio_src = self._get_media_src(audio_tag)
                 markdown_audio = f"![audio:{audio_src}]({audio_src})"
                 wrapper = soup.new_tag("media-wrapper")
                 wrapper.string = markdown_audio
                 audio_tag.replace_with(wrapper)
+
+    @staticmethod
+    def _get_media_src(media_tag: Tag) -> str:
+        """Get media source from a media tag or its first nested source tag."""
+        media_src = media_tag.get("src", "")
+        if media_src:
+            return str(media_src)
+
+        for source_tag in _find_all_tags(media_tag, name="source"):
+            source_src = source_tag.get("src", "")
+            if source_src:
+                return str(source_src)
+
+        return ""
 
     @staticmethod
     def _process_links(soup: BeautifulSoup) -> None:
