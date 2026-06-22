@@ -2771,6 +2771,103 @@ def test__construct_responses_api_input_human_message_with_image_url_conversion(
     assert result[0]["content"][1]["detail"] == "high"
 
 
+def test__construct_responses_api_input_store_false_replays_stateless_history() -> None:
+    ai_message = AIMessage(
+        content=[
+            {"type": "reasoning", "id": "rs_123", "summary": []},
+            {
+                "type": "reasoning",
+                "id": "rs_456",
+                "summary": [],
+                "encrypted_content": "",
+            },
+            {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+        ],
+        response_metadata={"id": "resp_123"},
+    )
+
+    result = _construct_responses_api_input([ai_message], store=False)
+
+    assert result == [
+        {
+            "type": "reasoning",
+            "id": "rs_456",
+            "summary": [],
+            "encrypted_content": "",
+        },
+        {
+            "type": "message",
+            "content": [
+                {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+            ],
+            "role": "assistant",
+        },
+    ]
+
+
+@pytest.mark.parametrize("store", [None, True])
+def test__construct_responses_api_input_store_enabled_keeps_item_ids(
+    store: bool | None,
+) -> None:
+    ai_message = AIMessage(
+        content=[
+            {"type": "reasoning", "id": "rs_123", "summary": []},
+            {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+        ],
+        response_metadata={"id": "resp_123"},
+    )
+
+    result = _construct_responses_api_input([ai_message], store=store)
+
+    assert result == [
+        {"type": "reasoning", "id": "rs_123", "summary": []},
+        {
+            "type": "message",
+            "content": [
+                {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+            ],
+            "role": "assistant",
+            "id": "msg_123",
+        },
+    ]
+
+
+def test__construct_responses_api_input_store_false_keeps_full_tool_call_items() -> (
+    None
+):
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "function_call",
+                "name": "get_weather",
+                "arguments": '{"location": "San Francisco"}',
+                "call_id": "call_123",
+                "id": "fc_456",
+            }
+        ],
+        tool_calls=[
+            {
+                "id": "call_123",
+                "name": "get_weather",
+                "args": {"location": "San Francisco"},
+                "type": "tool_call",
+            }
+        ],
+    )
+
+    result = _construct_responses_api_input([ai_message], store=False)
+
+    assert result == [
+        {
+            "type": "function_call",
+            "name": "get_weather",
+            "arguments": '{"location": "San Francisco"}',
+            "call_id": "call_123",
+            "id": "fc_456",
+        }
+    ]
+
+
 def test__construct_responses_api_input_ai_message_with_tool_calls() -> None:
     """Test that AI messages with tool calls are properly converted."""
     tool_calls = [
