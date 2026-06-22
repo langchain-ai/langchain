@@ -297,6 +297,12 @@ def test_request_payload_with_store_false_drops_reasoning_item_references() -> N
             AIMessage(
                 content=[
                     {"type": "reasoning", "id": "rs_123", "summary": []},
+                    {
+                        "type": "reasoning",
+                        "id": "rs_456",
+                        "summary": [],
+                        "encrypted_content": "encrypted-context",
+                    },
                     {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
                 ],
                 response_metadata={"id": "resp_123"},
@@ -306,15 +312,22 @@ def test_request_payload_with_store_false_drops_reasoning_item_references() -> N
     )
 
     assert payload["store"] is False
-    assert {item.get("id") for item in payload["input"]} == {None}
     assert [item.get("type") for item in payload["input"]] == [
         "message",
+        "reasoning",
         "message",
         "message",
     ]
-    assert payload["input"][1]["content"] == [
+    assert payload["input"][1] == {
+        "type": "reasoning",
+        "id": "rs_456",
+        "summary": [],
+        "encrypted_content": "encrypted-context",
+    }
+    assert payload["input"][2]["content"] == [
         {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
     ]
+    assert "id" not in payload["input"][2]
 
 
 def test_request_payload_sets_default_instructions() -> None:

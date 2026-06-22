@@ -4510,7 +4510,7 @@ def _construct_responses_api_input(
                                     new_item["phase"] = phase
                                 input_.append(new_item)
                         elif block_type == "reasoning":
-                            if store is not False:
+                            if store is not False or block.get("encrypted_content"):
                                 input_.append(_pop_index_and_sub_index(block))
                         elif block_type in (
                             "compaction",
