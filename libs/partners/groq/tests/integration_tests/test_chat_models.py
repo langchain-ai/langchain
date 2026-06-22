@@ -379,7 +379,9 @@ def test_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     chat = ChatGroq(
-        model="llama-3.1-8b-instant",  # Use a model that properly streams content
+        # Non-reasoning model so the first tokens are plain content
+        model="qwen/qwen3.6-27b",
+        reasoning_effort="none",
         max_tokens=2,
         temperature=0,
         callbacks=[callback],
