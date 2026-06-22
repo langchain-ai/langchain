@@ -943,6 +943,37 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
     )
 
 
+def test_bind_tools_response_format_defaults_strict() -> None:
+    """Test that strict defaults to True when response_format is provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(
+        tools=[GenerateUsername],
+        response_format=MakeASandwich,
+    )
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert tools[0]["function"]["strict"] is True
+
+
+def test_bind_tools_response_format_respects_strict_false() -> None:
+    """Test that strict=False is respected even when response_format is provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(
+        tools=[GenerateUsername],
+        response_format=MakeASandwich,
+        strict=False,
+    )
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert tools[0]["function"]["strict"] is False
+
+
+def test_bind_tools_no_response_format_keeps_strict_none() -> None:
+    """Test that strict stays None when response_format is not provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(tools=[GenerateUsername])
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert "strict" not in tools[0]["function"]
+
+
 @pytest.mark.parametrize(
     "schema", [GenerateUsername, GenerateUsername.model_json_schema()]
 )

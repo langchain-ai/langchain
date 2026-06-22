@@ -2193,6 +2193,12 @@ class BaseChatOpenAI(BaseChatModel):
         """  # noqa: E501
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
+        # When response_format is provided via the Chat Completions API, OpenAI
+        # requires all function tools to be strict. Default strict=True unless
+        # the caller explicitly passed strict=False. The Responses API does not
+        # require this.
+        if response_format and strict is not False and not self.use_responses_api:
+            strict = True
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import functools
+import importlib
 import itertools
 import re
 from dataclasses import dataclass, field, fields
@@ -570,6 +571,26 @@ def _supports_provider_strategy(
         if model_name
         else False
     )
+
+
+def _is_openai_compatible_model(model: BaseChatModel) -> bool:
+    """Check if a model inherits from `BaseChatOpenAI`.
+
+    Used to redundantly set `strict=True` on tools when `response_format` is
+    provided, as older versions of `langchain-openai` do not auto-set it.
+    Covers `ChatOpenAI`, `ChatDeepSeek`, `ChatXAI`, etc.
+
+    Args:
+        model: The chat model to check.
+
+    Returns:
+        `True` if the model inherits from `BaseChatOpenAI`, `False` otherwise.
+    """
+    try:
+        base_chat_openai = importlib.import_module("langchain_openai.chat_models.base")
+    except ImportError:
+        return False
+    return isinstance(model, base_chat_openai.BaseChatOpenAI)
 
 
 def _handle_structured_output_error(
@@ -1334,11 +1355,16 @@ def create_agent(
         # Bind model based on effective response format
         if isinstance(effective_response_format, ProviderStrategy):
             # (Backward compatibility) Use OpenAI format structured output
+            # Redundantly set strict=True on tools for OpenAI-compatible models, as older
+            # versions of langchain-openai do not auto-set it in bind_tools.
             kwargs = effective_response_format.to_model_kwargs()
+            bind_kwargs: dict[str, Any] = {**kwargs, **request.model_settings}
+            if _is_openai_compatible_model(request.model) and not getattr(
+                request.model, "use_responses_api", False
+            ):
+                bind_kwargs["strict"] = True
             return (
-                request.model.bind_tools(
-                    final_tools, strict=True, **kwargs, **request.model_settings
-                ),
+                request.model.bind_tools(final_tools, **bind_kwargs),
                 effective_response_format,
             )
 
