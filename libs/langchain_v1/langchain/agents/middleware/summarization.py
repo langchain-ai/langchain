@@ -769,31 +769,64 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         Falls back to advancing forward past `ToolMessage` objects only if no matching
         `AIMessage` is found (edge case).
+
+        Also checks for orphan `ToolMessage`s after the cutoff whose matching
+        `AIMessage` was cut, and advances the cutoff past them.
         """
-        if cutoff_index >= len(messages) or not isinstance(messages[cutoff_index], ToolMessage):
+        if cutoff_index >= len(messages):
             return cutoff_index
 
-        # Collect tool_call_ids from consecutive ToolMessages at/after cutoff
-        tool_call_ids: set[str] = set()
-        idx = cutoff_index
-        while idx < len(messages) and isinstance(messages[idx], ToolMessage):
-            tool_msg = cast("ToolMessage", messages[idx])
-            if tool_msg.tool_call_id:
-                tool_call_ids.add(tool_msg.tool_call_id)
-            idx += 1
+        if isinstance(messages[cutoff_index], ToolMessage):
+            # Collect tool_call_ids from consecutive ToolMessages at/after cutoff
+            tool_call_ids: set[str] = set()
+            idx = cutoff_index
+            while idx < len(messages) and isinstance(messages[idx], ToolMessage):
+                tool_msg = cast("ToolMessage", messages[idx])
+                if tool_msg.tool_call_id:
+                    tool_call_ids.add(tool_msg.tool_call_id)
+                idx += 1
 
-        # Search backward for AIMessage with matching tool_calls
-        for i in range(cutoff_index - 1, -1, -1):
-            msg = messages[i]
+            # Search backward for AIMessage with matching tool_calls
+            for i in range(cutoff_index - 1, -1, -1):
+                msg = messages[i]
+                if isinstance(msg, AIMessage) and msg.tool_calls:
+                    ai_tool_call_ids = {tc.get("id") for tc in msg.tool_calls if tc.get("id")}
+                    if tool_call_ids & ai_tool_call_ids:
+                        # Found the AIMessage - move cutoff to include it
+                        cutoff_index = i
+                        break
+            else:
+                # Fallback: no matching AIMessage found, advance past ToolMessages
+                # to avoid orphaned tool responses
+                cutoff_index = idx
+
+        # Ensure no orphan ToolMessages remain after the cutoff. If a ToolMessage
+        # after the cutoff references a tool_call_id from an AIMessage before the
+        # cutoff, advance past it so the pair stays together (both summarized).
+        ai_ids_before: set[str] = set()
+        for msg in messages[:cutoff_index]:
             if isinstance(msg, AIMessage) and msg.tool_calls:
-                ai_tool_call_ids = {tc.get("id") for tc in msg.tool_calls if tc.get("id")}
-                if tool_call_ids & ai_tool_call_ids:
-                    # Found the AIMessage - move cutoff to include it
-                    return i
+                for tc in msg.tool_calls:
+                    if tc.get("id"):
+                        ai_ids_before.add(tc["id"])
 
-        # Fallback: no matching AIMessage found, advance past ToolMessages to avoid
-        # orphaned tool responses
-        return idx
+        if ai_ids_before:
+            idx = cutoff_index
+            while idx < len(messages):
+                if isinstance(messages[idx], ToolMessage):
+                    tool_msg = cast("ToolMessage", messages[idx])
+                    if tool_msg.tool_call_id in ai_ids_before:
+                        # Orphan ToolMessage found - advance past it and any
+                        # remaining consecutive ToolMessages
+                        while idx < len(messages) and isinstance(messages[idx], ToolMessage):
+                            idx += 1
+                        cutoff_index = idx
+                    else:
+                        idx += 1
+                else:
+                    idx += 1
+
+        return cutoff_index
 
     def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages.
