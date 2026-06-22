@@ -1,0 +1,23 @@
+.github/workflows/pr_labeler.yml
+  s_b920bad249ce17::t_8231b9d8ac6cb5 20
+.github/workflows/refresh_model_profiles.yml
+  s_b920bad249ce17::t_487bfc2ce1f0f5 45
+.github/workflows/tag-external-issues.yml
+  s_b920bad249ce17::t_dbcb771e850b9a 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "83e46a4d5b99b0705d5e81e34d81ce5d4f9fceed",
+  "prompts": {},
+  "sessions": {
+    "s_b920bad249ce17": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "06d8262a-5815-449c-9845-0d7bf3d84272",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
