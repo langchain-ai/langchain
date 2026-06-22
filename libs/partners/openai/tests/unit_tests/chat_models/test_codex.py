@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pytest
-from langchain_core.messages import ChatMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, ChatMessage, HumanMessage, SystemMessage
 
 import langchain_openai.chat_models.codex as codex_module
 from langchain_openai.chat_models.base import ChatOpenAI
@@ -287,6 +287,34 @@ def test_request_payload_sends_store_false_and_stream_true() -> None:
     payload = model._get_request_payload([HumanMessage("hi")])
     assert payload["store"] is False
     assert payload["stream"] is True
+
+
+def test_request_payload_with_store_false_drops_reasoning_item_references() -> None:
+    model = _build_model()
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Explain recursive file search."),
+            AIMessage(
+                content=[
+                    {"type": "reasoning", "id": "rs_123", "summary": []},
+                    {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+                ],
+                response_metadata={"id": "resp_123"},
+            ),
+            HumanMessage("Make it shorter."),
+        ]
+    )
+
+    assert payload["store"] is False
+    assert {item.get("id") for item in payload["input"]} == {None}
+    assert [item.get("type") for item in payload["input"]] == [
+        "message",
+        "message",
+        "message",
+    ]
+    assert payload["input"][1]["content"] == [
+        {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+    ]
 
 
 def test_request_payload_sets_default_instructions() -> None:

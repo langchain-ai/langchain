@@ -4177,7 +4177,9 @@ def _construct_responses_api_payload(
     ):
         payload.pop("temperature", None)
 
-    payload["input"] = _construct_responses_api_input(messages)
+    payload["input"] = _construct_responses_api_input(
+        messages, store=payload.get("store")
+    )
     if tools := payload.pop("tools", None):
         new_tools: list = []
         for tool in tools:
@@ -4409,7 +4411,9 @@ def _pop_index_and_sub_index(block: dict) -> dict:
     return new_block
 
 
-def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
+def _construct_responses_api_input(
+    messages: Sequence[BaseMessage], *, store: bool | None = None
+) -> list:
     """Construct the input for the OpenAI Responses API."""
     input_ = []
     for lc_msg in messages:
@@ -4499,13 +4503,16 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                     "type": "message",
                                     "content": [new_block],
                                     "role": "assistant",
-                                    "id": msg_id,
                                 }
+                                if store is not False:
+                                    new_item["id"] = msg_id
                                 if phase is not None:
                                     new_item["phase"] = phase
                                 input_.append(new_item)
+                        elif block_type == "reasoning":
+                            if store is not False:
+                                input_.append(_pop_index_and_sub_index(block))
                         elif block_type in (
-                            "reasoning",
                             "compaction",
                             "web_search_call",
                             "file_search_call",
