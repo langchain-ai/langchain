@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import functools
+import inspect
 import textwrap
 from collections.abc import Awaitable, Callable
 from inspect import signature
@@ -11,6 +12,7 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    cast,
 )
 
 from pydantic import Field, SkipValidation
@@ -31,7 +33,10 @@ from langchain_core.tools.base import (
     _is_injected_arg_type,
     create_schema_from_function,
 )
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.pydantic import (
+    get_basemodel_own_docstring,
+    is_basemodel_subclass,
+)
 
 if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
@@ -214,14 +219,23 @@ class StructuredTool(BaseTool):
             description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
             if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
-                description_ = args_schema.__doc__
-                if (
-                    description_
-                    and "A base class for creating Pydantic models" in description_
+                if inspect.isclass(source_function) and is_basemodel_subclass(
+                    cast("type", source_function)
                 ):
-                    description_ = ""
-                elif not description_:
-                    description_ = None
+                    if "__doc__" in args_schema.__dict__:
+                        # Generated schemas may explicitly set an empty docstring.
+                        description_ = args_schema.__dict__["__doc__"] or ""
+                    else:
+                        description_ = get_basemodel_own_docstring(args_schema)
+                else:
+                    description_ = args_schema.__doc__
+                    if (
+                        description_
+                        and "A base class for creating Pydantic models" in description_
+                    ):
+                        description_ = ""
+                    elif not description_:
+                        description_ = None
             elif isinstance(args_schema, dict):
                 description_ = args_schema.get("description")
             else:

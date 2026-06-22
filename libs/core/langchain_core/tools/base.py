@@ -62,6 +62,7 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
+    get_basemodel_own_docstring,
     get_fields,
     is_basemodel_subclass,
     is_pydantic_v1_subclass,
@@ -189,6 +190,9 @@ def _infer_arg_descriptions(
         description, arg_descriptions = _parse_python_function_docstring(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
         )
+    elif inspect.isclass(fn) and is_basemodel_subclass(fn):
+        description = get_basemodel_own_docstring(fn) or ""
+        arg_descriptions = {}
     else:
         description = inspect.getdoc(fn) or ""
         arg_descriptions = {}

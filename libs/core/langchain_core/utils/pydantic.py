@@ -111,6 +111,24 @@ def is_basemodel_subclass(cls: type) -> bool:
     return issubclass(cls, (BaseModel, BaseModelV1))
 
 
+def get_basemodel_own_docstring(cls: type) -> str | None:
+    """Return the docstring defined on a `BaseModel` class, not inherited from parents.
+
+    Pydantic model subclasses do not define their own docstring in the class body
+    inherit descriptions from parent classes via attribute lookup. Tool schemas should
+    only use descriptions explicitly declared on the class itself.
+
+    Args:
+        cls: The Pydantic `BaseModel` subclass to inspect.
+
+    Returns:
+        The docstring if defined on `cls`, otherwise `None`.
+    """
+    if not is_basemodel_subclass(cls):
+        return None
+    return cls.__dict__.get("__doc__")
+
+
 def is_basemodel_instance(obj: Any) -> bool:
     """Check if the given class is an instance of Pydantic `BaseModel`.
 
@@ -226,7 +244,12 @@ def _create_subset_model_v1(
         fields[field_name] = (t, field.field_info)
 
     rtn = cast("type[BaseModelV1]", create_model_v1(name, **fields))  # type: ignore[call-overload]
-    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
+    model_doc = (
+        get_basemodel_own_docstring(model)
+        if is_basemodel_subclass(model)
+        else model.__doc__
+    )
+    rtn.__doc__ = textwrap.dedent(fn_description or model_doc or "")
     return rtn
 
 
@@ -272,7 +295,12 @@ def _create_subset_model_v2(
     ]
 
     rtn.__annotations__ = dict(selected_annotations)
-    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
+    model_doc = (
+        get_basemodel_own_docstring(model)
+        if is_basemodel_subclass(model)
+        else model.__doc__
+    )
+    rtn.__doc__ = textwrap.dedent(fn_description or model_doc or "")
     return rtn
 
 
