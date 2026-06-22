@@ -4414,7 +4414,26 @@ def _pop_index_and_sub_index(block: dict) -> dict:
 def _construct_responses_api_input(
     messages: Sequence[BaseMessage], *, store: bool | None = None
 ) -> list:
-    """Construct the input for the OpenAI Responses API."""
+    """Construct the input for the OpenAI Responses API.
+
+    Args:
+        messages: Conversation history to serialize into Responses API input items.
+        store: Mirrors the request's `store` flag, controlling stateless-replay
+            behavior.
+
+            When `False`, the server does not persist response items, so
+            previously returned item IDs cannot be resolved on the next turn.
+            Assistant message IDs (`msg_*`) are therefore omitted and reasoning
+            blocks are dropped unless they carry `encrypted_content` (which can be
+            replayed without server-side storage).
+
+            When `True` or `None` (the default, matching the server's
+            stored-by-default behavior), item IDs and reasoning blocks
+            are preserved.
+
+    Returns:
+        A list of Responses API input items derived from `messages`.
+    """
     input_ = []
     for lc_msg in messages:
         if isinstance(lc_msg, AIMessage):
