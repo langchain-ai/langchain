@@ -764,8 +764,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         resources: _SessionResources,
         payload: dict[str, Any],
         *,
-        tool_call_id: None,
-    ) -> str: ...
+        tool_call_id: str,
+    ) -> ToolMessage: ...
 
     @overload
     def _run_shell_tool(
@@ -773,8 +773,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         resources: _SessionResources,
         payload: dict[str, Any],
         *,
-        tool_call_id: str,
-    ) -> ToolMessage: ...
+        tool_call_id: None,
+    ) -> str: ...
 
     def _run_shell_tool(
         self,

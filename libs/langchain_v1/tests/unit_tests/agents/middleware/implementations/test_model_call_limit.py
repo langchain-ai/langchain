@@ -222,9 +222,9 @@ def test_run_limit_resets_between_invocations() -> None:
     agent = create_agent(model=model, middleware=[middleware], checkpointer=InMemorySaver())
 
     thread_config: RunnableConfig = {"configurable": {"thread_id": "test_thread"}}
-    agent.invoke({"messages": [HumanMessage("Hello")]}, thread_config)
-    agent.invoke({"messages": [HumanMessage("Hello again")]}, thread_config)
-    agent.invoke({"messages": [HumanMessage("Hello third")]}, thread_config)
+    agent.invoke(InputAgentState(messages=[HumanMessage("Hello")]), thread_config)
+    agent.invoke(InputAgentState(messages=[HumanMessage("Hello again")]), thread_config)
+    agent.invoke(InputAgentState(messages=[HumanMessage("Hello third")]), thread_config)
 
     # Fourth run: should raise, thread_model_call_count == 3 (limit)
     with pytest.raises(ModelCallLimitExceededError) as exc_info:
