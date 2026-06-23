@@ -1,0 +1,21 @@
+libs/model-profiles/langchain_model_profiles/cli.py
+  s_2341b8584dc71d::t_18d9f9bc8a9286 432
+libs/model-profiles/tests/unit_tests/test_summary.py
+  s_2341b8584dc71d::t_0638808c947603 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.10",
+  "base_commit_sha": "3acb532819b85886d0fa6081783ae1541a546dda",
+  "prompts": {},
+  "sessions": {
+    "s_2341b8584dc71d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecec068-f2ab-4a6c-850d-62ea56d1233b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
