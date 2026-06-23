@@ -2,6 +2,18 @@ from __future__ import annotations
 
 from typing import Any
 
+_DEDUPLICATE_IF_SAME_STRING_KEYS = {
+    "finish_reason",
+    "format",
+    "id",
+    "model_name",
+    "model_provider",
+    "native_finish_reason",
+    "object",
+    "output_version",
+    "system_fingerprint",
+}
+
 
 def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]:
     r"""Merge dictionaries.
@@ -57,7 +69,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 #             "all dicts."
                 #         )
                 if (right_k == "index" and merged[right_k].startswith("lc_")) or (
-                    right_k in {"id", "output_version", "model_provider"}
+                    right_k in _DEDUPLICATE_IF_SAME_STRING_KEYS
                     and merged[right_k] == right_v
                 ):
                     continue

@@ -81,6 +81,39 @@ def test_check_package_version(
         ({"a": [1, 2]}, {"a": [3]}, {"a": [1, 2, 3]}),
         ({"a": 1, "b": 2}, {"a": 1}, {"a": 1, "b": 2}),
         ({"a": 1, "b": 2}, {"c": None}, {"a": 1, "b": 2, "c": None}),
+        # Stable stream metadata may be repeated verbatim across terminal chunks.
+        (
+            {"model_name": "deepseek/deepseek-v4-pro-20260423"},
+            {"model_name": "deepseek/deepseek-v4-pro-20260423"},
+            {"model_name": "deepseek/deepseek-v4-pro-20260423"},
+        ),
+        (
+            {"finish_reason": "stop"},
+            {"finish_reason": "stop"},
+            {"finish_reason": "stop"},
+        ),
+        (
+            {"object": "chat.completion.chunk"},
+            {"object": "chat.completion.chunk"},
+            {"object": "chat.completion.chunk"},
+        ),
+        (
+            {"system_fingerprint": "fp_123"},
+            {"system_fingerprint": "fp_123"},
+            {"system_fingerprint": "fp_123"},
+        ),
+        (
+            {"format": "input_json_delta"},
+            {"format": "input_json_delta"},
+            {"format": "input_json_delta"},
+        ),
+        # Different values and non-metadata strings still concatenate.
+        (
+            {"model_name": "first"},
+            {"model_name": "second"},
+            {"model_name": "firstsecond"},
+        ),
+        ({"content": "hel"}, {"content": "lo"}, {"content": "hello"}),
         #
         # Invalid inputs.
         #
