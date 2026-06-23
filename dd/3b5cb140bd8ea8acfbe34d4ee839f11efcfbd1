@@ -1,0 +1,19 @@
+libs/core/tests/unit_tests/utils/test_function_calling.py
+  s_c48bcb4eb3483d::t_783b3a732b109a 1309-1310
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.10",
+  "base_commit_sha": "dd3b5cb140bd8ea8acfbe34d4ee839f11efcfbd1",
+  "prompts": {},
+  "sessions": {
+    "s_c48bcb4eb3483d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "277c6d1d-38a1-417d-9c38-33e813e9c9ea",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
