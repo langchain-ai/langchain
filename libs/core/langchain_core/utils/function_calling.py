@@ -781,11 +781,27 @@ def _parse_google_docstring(
             raise ValueError(msg)
         description = ""
         args_block = None
-    arg_descriptions = {}
+    arg_descriptions: dict[str, str] = {}
     if args_block:
-        arg = None
+        arg: str | None = None
+        # Base indentation, latched once from the first argument line, lets us
+        # distinguish new argument definitions from continuation lines. This
+        # assumes Google-style uniform indentation of argument names: a line
+        # indented deeper than the first argument is treated as a continuation
+        # (even if it contains a colon), so a more-indented later `name:` line
+        # in a malformed, non-uniformly-indented block folds into the previous
+        # argument rather than starting a new one.
+        arg_indent: int | None = None
         for line in args_block.split("\n")[1:]:
-            if ":" in line:
+            if not line.strip():
+                continue
+            current_indent = len(line) - len(line.lstrip())
+            if arg_indent is None and ":" in line:
+                arg_indent = current_indent
+            is_continuation = arg_indent is not None and current_indent > arg_indent
+            if arg is not None and is_continuation:
+                arg_descriptions[arg] += " " + line.strip()
+            elif ":" in line:
                 arg, desc = line.split(":", maxsplit=1)
                 arg = arg.strip()
                 arg_name, _, annotations_ = arg.partition(" ")
