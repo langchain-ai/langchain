@@ -1201,9 +1201,11 @@ def test_chat_prompt_w_msgs_placeholder_ser_des(snapshot: SnapshotAssertion) -> 
         ]
     )
     assert dumpd(MessagesPlaceholder("bar")) == snapshot(name="placeholder")
-    assert load(dumpd(MessagesPlaceholder("bar"))) == MessagesPlaceholder("bar")
+    assert load(
+        dumpd(MessagesPlaceholder("bar")), allowed_objects="core"
+    ) == MessagesPlaceholder("bar")
     assert dumpd(prompt) == snapshot(name="chat_prompt")
-    assert load(dumpd(prompt)) == prompt
+    assert load(dumpd(prompt), allowed_objects="core") == prompt
 
 
 def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
@@ -1256,7 +1258,7 @@ def test_chat_tmpl_serdes(snapshot: SnapshotAssertion) -> None:
         ]
     )
     assert dumpd(template) == snapshot()
-    assert load(dumpd(template)) == template
+    assert load(dumpd(template), allowed_objects="core") == template
 
 
 @pytest.mark.xfail(
@@ -1400,6 +1402,7 @@ def test_data_prompt_template_deserializable() -> None:
                 ]
             )
         ),
+        allowed_objects="core",
     )
 
 
@@ -1868,7 +1871,7 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
     }
 
     # Load the ChatPromptTemplate from the manifest
-    template = load(manifest)
+    template = load(manifest, allowed_objects="core")
 
     # Format with conditional data - rules is empty, so mustache conditionals
     # should not render
@@ -1949,6 +1952,24 @@ def test_fstring_rejects_invalid_identifier_variable_names() -> None:
         )
         result = template.invoke(kwargs)
         assert result.messages[0].content == expected  # type: ignore[attr-defined]
+
+
+def test_fstring_rejects_nested_replacement_field_in_image_url() -> None:
+    with pytest.raises(ValueError, match="Nested replacement fields are not allowed"):
+        ChatPromptTemplate.from_messages(
+            [
+                (
+                    "human",
+                    [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "{img:{img.__class__.__name__}}"},
+                        }
+                    ],
+                )
+            ],
+            template_format="f-string",
+        )
 
 
 def test_mustache_template_attribute_access_vulnerability() -> None:

@@ -14,6 +14,8 @@ from langchain_core.utils.pydantic import (
     get_fields,
     is_basemodel_instance,
     is_basemodel_subclass,
+    model_json_schema,
+    model_validate,
     pre_init,
 )
 
@@ -151,6 +153,56 @@ def test_fields_pydantic_v1_from_2() -> None:
 
     fields = get_fields(Foo)
     assert fields == {"x": Foo.__fields__["x"]}
+
+
+def test_model_json_schema_v2() -> None:
+    class Foo(BaseModel):
+        x: int
+
+    assert model_json_schema(Foo) == Foo.model_json_schema()
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+def test_model_json_schema_v1() -> None:
+    class Foo(BaseModelV1):
+        x: int
+
+    assert model_json_schema(Foo) == Foo.schema()
+
+
+def test_model_json_schema_non_model() -> None:
+    with pytest.raises(TypeError, match="Expected a Pydantic model"):
+        model_json_schema(dict)  # type: ignore[arg-type]
+
+
+def test_model_validate_v2() -> None:
+    class Foo(BaseModel):
+        x: int
+
+    result = model_validate(Foo, {"x": 1})
+    assert isinstance(result, Foo)
+    assert result.x == 1
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+def test_model_validate_v1() -> None:
+    class Foo(BaseModelV1):
+        x: int
+
+    result = model_validate(Foo, {"x": 1})
+    assert isinstance(result, Foo)
+    assert result.x == 1
+
+
+def test_model_validate_non_model() -> None:
+    with pytest.raises(TypeError, match="Expected a Pydantic model"):
+        model_validate(dict, {"x": 1})  # type: ignore[arg-type]
 
 
 def test_create_model_v2() -> None:

@@ -18,13 +18,8 @@ from langchain_classic.chains.natbot.prompt import PROMPT
 
 @deprecated(
     since="0.2.13",
-    message=(
-        "Importing NatBotChain from langchain is deprecated and will be removed in "
-        "langchain 1.0. Please import from langchain_community instead: "
-        "from langchain_community.chains.natbot import NatBotChain. "
-        "You may need to pip install -U langchain-community."
-    ),
-    removal="1.0",
+    removal="2.0.0",
+    alternative_import="langchain_community.chains.natbot.NatBotChain",
 )
 class NatBotChain(Chain):
     """Implement an LLM driven browser.

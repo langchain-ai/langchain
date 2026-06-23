@@ -15,14 +15,20 @@ jobs:
 
     steps:
       - name: Sync package labels
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const body = context.payload.issue.body || "";
 
-            // Extract text under "### Package" (handles " (Required)" suffix and being last section)
-            const match = body.match(/### Package[^\n]*\n([\s\S]*?)(?:\n###|$)/i);
-            if (!match) return;
+            // Extract text under "## Package" or "### Package" (handles " (Required)" suffix and being last section)
+            const match = body.match(/#{2,3} Package[^\n]*\n([\s\S]*?)(?:\n#{2,3} |$)/i);
+            if (!match) {
+              core.setFailed(
+                `Could not find "## Package" section in issue #${context.issue.number} body. ` +
+                `The issue template may have changed — update the regex in this workflow.`
+              );
+              return;
+            }
 
             const packageSection = match[1].trim();
 

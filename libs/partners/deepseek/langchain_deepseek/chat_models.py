@@ -27,6 +27,7 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_deepseek._version import __version__
 from langchain_deepseek.data._profiles import _PROFILES
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
@@ -189,9 +190,13 @@ class ChatDeepSeek(BaseChatOpenAI):
     )
     """DeepSeek API key"""
     api_base: str = Field(
+        alias="base_url",
         default_factory=from_env("DEEPSEEK_API_BASE", default=DEFAULT_API_BASE),
     )
-    """DeepSeek API base URL"""
+    """DeepSeek API base URL.
+
+    Automatically read from env variable `DEEPSEEK_API_BASE` if not provided.
+    """
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -219,6 +224,16 @@ class ChatDeepSeek(BaseChatOpenAI):
         ls_params = super()._get_ls_params(stop=stop, **kwargs)
         ls_params["ls_provider"] = "deepseek"
         return ls_params
+
+    @model_validator(mode="after")
+    def _set_deepseek_version(self) -> Self:
+        """Set package version in metadata.
+
+        Named uniquely to avoid shadowing `BaseChatOpenAI._set_openai_chat_version`;
+        Pydantic replaces same-named validators rather than chaining them.
+        """
+        self._add_version("langchain-deepseek", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
@@ -254,12 +269,8 @@ class ChatDeepSeek(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
 
     def _get_request_payload(
         self,

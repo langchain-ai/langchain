@@ -29,20 +29,20 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
     Example:
         ```python
-        from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
+        from langchain.agents.middleware import ModelFallbackMiddleware
         from langchain.agents import create_agent
 
         fallback = ModelFallbackMiddleware(
-            "openai:gpt-4o-mini",  # Try first on error
+            "openai:gpt-5.5",  # Try first on error
             "anthropic:claude-sonnet-4-5-20250929",  # Then this
         )
 
         agent = create_agent(
-            model="openai:gpt-4o",  # Primary model
+            model="openai:gpt-5.5",  # Primary model
             middleware=[fallback],
         )
 
-        # If primary fails: tries gpt-4o-mini, then claude-sonnet-4-5-20250929
+        # If primary fails: tries gpt-5.5, then claude-sonnet-4-5-20250929
         result = await agent.invoke({"messages": [HumanMessage("Hello")]})
         ```
     """

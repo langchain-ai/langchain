@@ -15,7 +15,7 @@ import uuid
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, overload
 
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import run_in_executor
@@ -758,13 +758,31 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
                 matches_by_type.setdefault(rule.pii_type, []).extend(matches)
         return updated, matches_by_type
 
+    @overload
+    def _run_shell_tool(
+        self,
+        resources: _SessionResources,
+        payload: dict[str, Any],
+        *,
+        tool_call_id: str,
+    ) -> ToolMessage: ...
+
+    @overload
+    def _run_shell_tool(
+        self,
+        resources: _SessionResources,
+        payload: dict[str, Any],
+        *,
+        tool_call_id: None,
+    ) -> str: ...
+
     def _run_shell_tool(
         self,
         resources: _SessionResources,
         payload: dict[str, Any],
         *,
         tool_call_id: str | None,
-    ) -> Any:
+    ) -> ToolMessage | str:
         session = resources.session
 
         if payload.get("restart"):
@@ -852,6 +870,26 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
             status=final_status,
             artifact=artifact,
         )
+
+    @overload
+    def _format_tool_message(
+        self,
+        content: str,
+        tool_call_id: str,
+        *,
+        status: Literal["success", "error"],
+        artifact: dict[str, Any] | None = None,
+    ) -> ToolMessage: ...
+
+    @overload
+    def _format_tool_message(
+        self,
+        content: str,
+        tool_call_id: None,
+        *,
+        status: Literal["success", "error"],
+        artifact: dict[str, Any] | None = None,
+    ) -> str: ...
 
     def _format_tool_message(
         self,

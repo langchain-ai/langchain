@@ -214,7 +214,11 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             raise ValueError(msg)
 
         if not isinstance(tokenizer, PreTrainedTokenizerBase):
-            msg = "Tokenizer received was not an instance of PreTrainedTokenizerBase"  # type: ignore[unreachable]
+            # unreachable: transformers absent -> PreTrainedTokenizerBase is Any
+            # unused-ignore: transformers present -> branch is reachable
+            msg = (  # type: ignore[unreachable, unused-ignore]
+                "Tokenizer received was not an instance of PreTrainedTokenizerBase"
+            )
             raise ValueError(msg)  # noqa: TRY004
 
         def _huggingface_tokenizer_length(text: str) -> int:
@@ -227,7 +231,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         cls,
         encoding_name: str = "gpt2",
         model_name: str | None = None,
-        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
         disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> Self:
@@ -247,6 +251,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         Raises:
             ImportError: If the tiktoken package is not installed.
         """
+        if allowed_special is None:
+            allowed_special = set()
         if not _HAS_TIKTOKEN:
             msg = (
                 "Could not import tiktoken python package. "
@@ -302,7 +308,7 @@ class TokenTextSplitter(TextSplitter):
         self,
         encoding_name: str = "gpt2",
         model_name: str | None = None,
-        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
         disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> None:
@@ -319,6 +325,8 @@ class TokenTextSplitter(TextSplitter):
         Raises:
             ImportError: If the tiktoken package is not installed.
         """
+        if allowed_special is None:
+            allowed_special = set()
         super().__init__(**kwargs)
         if not _HAS_TIKTOKEN:
             msg = (
