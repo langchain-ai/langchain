@@ -178,12 +178,18 @@ jobs:
           cli_dir="${GITHUB_WORKSPACE}/${{ steps.cli.outputs.dir }}"
           body_file="${RUNNER_TEMP}/pr_body.md"
           printf '%s\n\n' "${PR_BODY}" > "${body_file}"
+          # `summarize` builds the whole summary in memory and prints it once,
+          # so a failure exits non-zero before any stdout reaches the append —
+          # the body keeps only the static note, never a half-written summary.
           if ! uv run --frozen --project "${cli_dir}" \
             langchain-profiles summarize \
             --providers "${PROVIDERS_JSON}" \
             --base-ref HEAD \
             --repo-root "${GITHUB_WORKSPACE}" >> "${body_file}"; then
-            echo "::warning::Could not generate change summary; PR body will contain the static note only."
+            echo "::warning::Could not generate change summary; see job log."
+            # Surface the degradation in the PR body too: the warning above only
+            # lands in the Actions log, which a PR reviewer won't see.
+            printf '\n> [!NOTE]\n> Automated change summary unavailable — see the workflow run log.\n' >> "${body_file}"
           fi
           echo "path=${body_file}" >> "$GITHUB_OUTPUT"
 

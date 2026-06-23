@@ -443,7 +443,7 @@ def main() -> None:
             output = summarize(
                 providers, base_ref=args.base_ref, repo_root=args.repo_root
             )
-        except (RuntimeError, ValueError) as e:
+        except (RuntimeError, ValueError, TypeError) as e:
             parser.error(str(e))
         print(output)
 

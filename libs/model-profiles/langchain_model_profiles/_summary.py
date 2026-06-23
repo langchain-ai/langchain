@@ -62,6 +62,15 @@ _FIELD_LABELS: dict[str, str] = {
 _TOKEN_FIELDS = frozenset({"max_input_tokens", "max_output_tokens"})
 
 
+class ProfileParseError(ValueError):
+    """A `_profiles.py` source exists but its `_PROFILES` data is unparseable.
+
+    Distinguished from a genuinely absent file (which yields an empty mapping)
+    so that corrupt working-tree or committed data surfaces as an error rather
+    than being silently diffed as a mass addition or removal of models.
+    """
+
+
 class FieldChange(NamedTuple):
     """Old and new values for a single changed profile field.
 
@@ -72,10 +81,10 @@ class FieldChange(NamedTuple):
     """
 
     old: Any
-    """Value before the refresh, or `None` if the field was unset."""
+    """Value before the refresh, or `None` if absent/unset."""
 
     new: Any
-    """Value after the refresh, or `None` if the field is now unset."""
+    """Value after the refresh, or `None` if absent/unset."""
 
 
 class ProviderEntry(TypedDict):
@@ -117,15 +126,24 @@ def extract_profiles(source: str) -> ModelProfileRegistry:
     generated data file is never run as code.
 
     Args:
-        source: Contents of a `_profiles.py` module.
+        source: Contents of a `_profiles.py` module. An empty string (e.g. a
+            file absent at a git ref) yields an empty mapping.
 
     Returns:
-        The `_PROFILES` mapping, or an empty dict if it cannot be found.
+        The `_PROFILES` mapping, or an empty dict when the source contains no
+        `_PROFILES` assignment.
+
+    Raises:
+        ProfileParseError: If the source is present but cannot be parsed, or its
+            `_PROFILES` value is not a dict literal. Surfacing this rather than
+            returning `{}` prevents a corrupt file from being misreported as
+            every model added or removed.
     """
     try:
         tree = ast.parse(source)
-    except SyntaxError:
-        return {}
+    except SyntaxError as e:
+        msg = f"Could not parse profile source as Python: {e}"
+        raise ProfileParseError(msg) from e
 
     for node in tree.body:
         if isinstance(node, ast.AnnAssign):
@@ -140,9 +158,13 @@ def extract_profiles(source: str) -> ModelProfileRegistry:
         if is_profiles and node.value is not None:
             try:
                 value = ast.literal_eval(node.value)
-            except (ValueError, SyntaxError):
-                return {}
-            return value if isinstance(value, dict) else {}
+            except (ValueError, SyntaxError) as e:
+                msg = f"`_PROFILES` is not a literal expression: {e}"
+                raise ProfileParseError(msg) from e
+            if not isinstance(value, dict):
+                msg = f"`_PROFILES` is not a dict (got {type(value).__name__})"
+                raise ProfileParseError(msg)
+            return value
     return {}
 
 
@@ -392,24 +414,35 @@ def summarize(
         Markdown summary suitable for a PR body.
 
     Raises:
-        RuntimeError: If `base_ref` cannot be resolved or a profiles file exists
-            but cannot be read.
+        RuntimeError: If `base_ref` cannot be resolved, or a profiles file
+            exists but cannot be read or parsed.
         ValueError: If a `providers` entry is missing a required key.
+        TypeError: If a `providers` entry's `provider`/`data_dir` is not a
+            string.
     """
     root = (repo_root or Path.cwd()).resolve()
     _verify_ref(root, base_ref)
     provider_diffs: dict[str, ProfileDiff] = {}
 
     for entry in providers:
+        # View the entry as an untrusted mapping: at the CLI boundary it is
+        # arbitrary parsed JSON, not a guaranteed `ProviderEntry`.
+        entry_map: Mapping[str, Any] = entry
         try:
-            provider = entry["provider"]
-            data_dir = entry["data_dir"]
+            provider = entry_map["provider"]
+            data_dir = entry_map["data_dir"]
         except (KeyError, TypeError) as e:
             msg = (
                 f"Invalid provider entry {entry!r}: expected 'provider' and "
                 f"'data_dir' keys ({e})"
             )
             raise ValueError(msg) from e
+        if not isinstance(provider, str) or not isinstance(data_dir, str):
+            msg = (
+                f"Invalid provider entry {entry!r}: 'provider' and 'data_dir' "
+                "must be strings"
+            )
+            raise TypeError(msg)
         rel_path = f"{data_dir.rstrip('/')}/_profiles.py"
 
         old_source = _git_show(root, base_ref, rel_path) or ""
@@ -423,8 +456,20 @@ def summarize(
         else:
             new_source = ""
 
-        provider_diffs[provider] = diff_profiles(
-            extract_profiles(old_source), extract_profiles(new_source)
-        )
+        # A corrupt-but-readable file must surface as an error: extracting `{}`
+        # from it would otherwise be diffed as every model added (old side) or
+        # removed (new side), yielding a confident but wrong summary.
+        try:
+            old_profiles = extract_profiles(old_source)
+        except ProfileParseError as e:
+            msg = f"Profile data for {provider!r} at {base_ref!r} is unparseable: {e}"
+            raise RuntimeError(msg) from e
+        try:
+            new_profiles = extract_profiles(new_source)
+        except ProfileParseError as e:
+            msg = f"Profile data for {provider!r} at {new_path} is unparseable: {e}"
+            raise RuntimeError(msg) from e
+
+        provider_diffs[provider] = diff_profiles(old_profiles, new_profiles)
 
     return build_summary(provider_diffs)

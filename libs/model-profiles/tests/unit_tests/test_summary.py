@@ -1,8 +1,10 @@
 """Tests for the profile change summary generator."""
 
+import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -11,6 +13,7 @@ from langchain_model_profiles._summary import (
     _MAX_ROWS,
     FieldChange,
     ProfileDiff,
+    ProfileParseError,
     _describe_new_model,
     _format_value,
     _truncate,
@@ -20,6 +23,12 @@ from langchain_model_profiles._summary import (
     render_provider_section,
     summarize,
 )
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.model_profile import (
+        ModelProfile,
+        ModelProfileRegistry,
+    )
 
 _OLD_SOURCE = '''"""Auto-generated."""
 
@@ -95,9 +104,18 @@ def test_extract_profiles() -> None:
 
 
 def test_extract_profiles_handles_missing_or_invalid() -> None:
-    """Missing or unparseable sources yield an empty mapping."""
+    """Absent `_PROFILES` yields `{}`; present-but-unparseable sources raise."""
+    # No `_PROFILES` assignment, and an empty file, are both legitimately empty.
     assert extract_profiles("x = 1") == {}
-    assert extract_profiles("def (:") == {}
+    assert extract_profiles("") == {}
+    # A syntactically broken file is corrupt, not empty.
+    with pytest.raises(ProfileParseError):
+        extract_profiles("def (:")
+    # A non-literal or non-dict `_PROFILES` is corrupt too.
+    with pytest.raises(ProfileParseError):
+        extract_profiles("_PROFILES = some_function()")
+    with pytest.raises(ProfileParseError):
+        extract_profiles("_PROFILES = [1, 2, 3]")
 
 
 def test_diff_profiles() -> None:
@@ -157,7 +175,7 @@ def test_build_summary_no_changes() -> None:
 
 def test_truncation() -> None:
     """Long lists are truncated with a trailing count of hidden rows."""
-    new = {f"model-{i}": {"name": f"m{i}"} for i in range(40)}
+    new: ModelProfileRegistry = {f"model-{i}": {"name": f"m{i}"} for i in range(40)}
     diff = diff_profiles({}, new)
     section = render_provider_section("openai", diff)
     assert section is not None
@@ -182,6 +200,8 @@ def test_summarize_against_git(tmp_path: Path) -> None:
     assert "## Summary of changes" in summary
     assert "`gpt-5`" in summary
     assert "`old-model`" in summary
+    # The changed-field path is exercised end-to-end, not just at the unit layer.
+    assert "max output tokens 4,096 → 16,384" in summary
 
 
 def test_summarize_new_provider_file(tmp_path: Path) -> None:
@@ -202,9 +222,11 @@ def test_summarize_new_provider_file(tmp_path: Path) -> None:
 def test_field_change_is_tuple() -> None:
     """`FieldChange` unpacks and compares like a plain (old, new) tuple."""
     change = FieldChange(1, 2)
-    assert change == (1, 2)
+    # Access the named fields before the tuple comparison: `== (1, 2)` would
+    # otherwise narrow `change` to a plain `tuple` for the rest of the scope.
     assert change.old == 1
     assert change.new == 2
+    assert change == (1, 2)
 
 
 def test_format_value_variants() -> None:
@@ -222,17 +244,26 @@ def test_format_value_variants() -> None:
 
 def test_render_non_bool_field_change() -> None:
     """Non-boolean field changes render an `old → new` phrase."""
-    old = {"m": {"status": "active", "name": "M"}}
-    new = {"m": {"status": "deprecated", "name": "M2"}}
+    old: ModelProfileRegistry = {"m": {"status": "active", "name": "M"}}
+    new: ModelProfileRegistry = {"m": {"status": "deprecated", "name": "M2"}}
     section = render_provider_section("openai", diff_profiles(old, new))
     assert section is not None
     assert "status `active` → `deprecated`" in section
     assert "display name `M` → `M2`" in section
 
 
+def test_render_removed_bool_field_change() -> None:
+    """A boolean field flipped off renders a `removed <label>` phrase."""
+    old: ModelProfileRegistry = {"m": {"image_inputs": True}}
+    new: ModelProfileRegistry = {"m": {"image_inputs": False}}
+    section = render_provider_section("openai", diff_profiles(old, new))
+    assert section is not None
+    assert "removed image input" in section
+
+
 def test_describe_new_model_modalities() -> None:
     """A new model descriptor lists context, output, modalities, and tools."""
-    profile = {
+    profile: ModelProfile = {
         "max_input_tokens": 200000,
         "max_output_tokens": 64000,
         "image_inputs": True,
@@ -324,7 +355,101 @@ def test_summarize_malformed_entry(tmp_path: Path) -> None:
     _git(repo, "commit", "-q", "-m", "init")
 
     with pytest.raises(ValueError, match="Invalid provider entry"):
-        summarize([{"provider": "openai"}], repo_root=repo)  # type: ignore[list-item]
+        summarize([{"provider": "openai"}], repo_root=repo)  # type: ignore[typeddict-item]
+
+
+def test_summarize_non_string_entry(tmp_path: Path) -> None:
+    """Non-string `provider`/`data_dir` raises `TypeError`, not `AttributeError`.
+
+    A non-string value would otherwise reach `data_dir.rstrip(...)` and raise an
+    `AttributeError` that escapes the CLI's `except (RuntimeError, ValueError,
+    TypeError)`, surfacing a raw traceback instead of a clean error.
+    """
+    repo = tmp_path
+    _init_repo(repo)
+    (repo / "README.md").write_text("x")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+
+    with pytest.raises(TypeError, match="must be strings"):
+        summarize(
+            [{"provider": 5, "data_dir": 7}],  # type: ignore[typeddict-item]
+            repo_root=repo,
+        )
+
+
+def test_summarize_corrupt_working_tree_file(tmp_path: Path) -> None:
+    """A present-but-unparseable working-tree file raises, not a mass removal.
+
+    Mirrors the `_verify_ref` guard on the base-ref side: a corrupt new file
+    must surface as an error rather than be diffed as every model removed.
+    """
+    repo = tmp_path
+    _init_repo(repo)
+    data_dir = "libs/partners/openai/data"
+    profiles_path = repo / data_dir / "_profiles.py"
+    _write_profiles(profiles_path, _OLD_SOURCE)
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+
+    # Simulate a refresh that left the file truncated / syntactically broken.
+    profiles_path.write_text("_PROFILES = {")
+
+    with pytest.raises(RuntimeError, match="unparseable"):
+        summarize([{"provider": "openai", "data_dir": data_dir}], repo_root=repo)
+
+
+def test_summarize_corrupt_base_ref_file(tmp_path: Path) -> None:
+    """An unparseable file at the base ref raises, not an all-added diff."""
+    repo = tmp_path
+    _init_repo(repo)
+    data_dir = "libs/partners/openai/data"
+    profiles_path = repo / data_dir / "_profiles.py"
+    _write_profiles(profiles_path, "_PROFILES = {")  # committed broken
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+
+    profiles_path.write_text(_NEW_SOURCE)  # working tree now valid
+
+    with pytest.raises(RuntimeError, match="unparseable"):
+        summarize([{"provider": "openai", "data_dir": data_dir}], repo_root=repo)
+
+
+def test_cli_summarize_success(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A valid `--providers` array prints the Markdown summary to stdout."""
+    repo = tmp_path
+    _init_repo(repo)
+    data_dir = "libs/partners/openai/data"
+    profiles_path = repo / data_dir / "_profiles.py"
+    _write_profiles(profiles_path, _OLD_SOURCE)
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+    profiles_path.write_text(_NEW_SOURCE)
+
+    providers = json.dumps([{"provider": "openai", "data_dir": data_dir}])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "langchain-profiles",
+            "summarize",
+            "--providers",
+            providers,
+            "--repo-root",
+            str(repo),
+        ],
+    )
+
+    cli.main()
+
+    out = capsys.readouterr().out
+    assert "## Summary of changes" in out
+    assert "`gpt-5`" in out
+    assert "max output tokens 4,096 → 16,384" in out
 
 
 def test_cli_summarize_invalid_json(monkeypatch: pytest.MonkeyPatch) -> None:
