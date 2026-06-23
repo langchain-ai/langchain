@@ -1125,6 +1125,19 @@ def _merge_reasoning_run(run: list[dict[str, Any]]) -> dict[str, Any]:
     return merged_entry
 
 
+def _strip_ephemeral_reasoning_ids(value: Any) -> Any:
+    """Remove OpenAI Responses reasoning item IDs from outbound payloads."""
+    if isinstance(value, list):
+        return [_strip_ephemeral_reasoning_ids(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: _strip_ephemeral_reasoning_ids(item)
+            for key, item in value.items()
+            if not (key == "id" and isinstance(item, str) and item.startswith("rs_"))
+        }
+    return value
+
+
 def _merge_reasoning_details(
     details: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -1244,8 +1257,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C
         if "reasoning_content" in message.additional_kwargs:
             message_dict["reasoning"] = message.additional_kwargs["reasoning_content"]
         if "reasoning_details" in message.additional_kwargs:
-            message_dict["reasoning_details"] = _merge_reasoning_details(
-                message.additional_kwargs["reasoning_details"]
+            message_dict["reasoning_details"] = _strip_ephemeral_reasoning_ids(
+                _merge_reasoning_details(message.additional_kwargs["reasoning_details"])
             )
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
