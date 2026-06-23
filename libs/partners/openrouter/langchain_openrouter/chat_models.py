@@ -513,8 +513,7 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
-        response = self.client.chat.send(messages=sdk_messages, **params)
+        response = self.client.chat.send(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
     async def _agenerate(
@@ -532,8 +531,7 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
-        response = await self.client.chat.send_async(messages=sdk_messages, **params)
+        response = await self.client.chat.send_async(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
     def _stream(  # noqa: C901, PLR0912
@@ -548,10 +546,9 @@ class ChatOpenRouter(BaseChatModel):
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        for chunk in self.client.chat.send(messages=sdk_messages, **params):
+        for chunk in self.client.chat.send(messages=message_dicts, **params):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
                 if error := chunk_dict.get("error"):
@@ -634,11 +631,10 @@ class ChatOpenRouter(BaseChatModel):
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         async for chunk in await self.client.chat.send_async(
-            messages=sdk_messages, **params
+            messages=message_dicts, **params
         ):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
@@ -837,6 +833,7 @@ class ChatOpenRouter(BaseChatModel):
         *,
         tool_choice: dict | str | bool | None = None,
         strict: bool | None = None,
+        parallel_tool_calls: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -852,8 +849,13 @@ class ChatOpenRouter(BaseChatModel):
 
                 If `None`, the `strict` argument will not be passed to
                 the model.
+            parallel_tool_calls: Set to `False` to disable parallel tool use.
+                Defaults to `None` (no specification, which allows parallel
+                tool use).
             **kwargs: Any additional parameters.
         """
+        if parallel_tool_calls is not None:
+            kwargs["parallel_tool_calls"] = parallel_tool_calls
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
@@ -1002,74 +1004,6 @@ def _strip_internal_kwargs(params: dict[str, Any]) -> None:
     """Remove LangChain-internal keys that the SDK does not accept."""
     for key in _INTERNAL_KWARGS:
         params.pop(key, None)
-
-
-def _has_file_content_blocks(message_dicts: list[dict[str, Any]]) -> bool:
-    """Return `True` if any message dict contains a `file` content block."""
-    for msg in message_dicts:
-        content = msg.get("content")
-        if isinstance(content, list):
-            for block in content:
-                if isinstance(block, dict) and block.get("type") == "file":
-                    return True
-    return False
-
-
-def _wrap_messages_for_sdk(
-    message_dicts: list[dict[str, Any]],
-) -> list[dict[str, Any]] | list[Any]:
-    """Wrap message dicts as SDK Pydantic models when file blocks are present.
-
-    The OpenRouter Python SDK does not include `file` in its
-    `ChatMessageContentItem` discriminated union, so Pydantic validation
-    rejects file content blocks even though the OpenRouter **API** supports
-    them. Using `model_construct` on the SDK's message classes bypasses
-    validation while still producing the correct JSON payload.
-
-    When no file blocks are detected the original dicts are returned unchanged
-    so the normal (validated) code path is preserved.
-
-    Args:
-        message_dicts: Message dicts produced by `_convert_message_to_dict`.
-
-    Returns:
-        The original list when no file blocks are present, or a list of SDK
-        Pydantic model instances otherwise.
-    """
-    if not _has_file_content_blocks(message_dicts):
-        return message_dicts
-
-    try:
-        from openrouter import components  # noqa: PLC0415
-    except ImportError:
-        warnings.warn(
-            "Could not import openrouter.components; file content blocks "
-            "will be sent as raw dicts which may cause validation errors.",
-            stacklevel=2,
-        )
-        return message_dicts
-
-    role_to_model: dict[str, type[BaseModel]] = {
-        "user": components.ChatUserMessage,
-        "system": components.ChatSystemMessage,
-        "assistant": components.ChatAssistantMessage,
-        "tool": components.ChatToolMessage,
-        "developer": components.ChatDeveloperMessage,
-    }
-
-    wrapped: list[Any] = []
-    for msg in message_dicts:
-        model_cls = role_to_model.get(msg.get("role", ""))
-        if model_cls is None:
-            warnings.warn(
-                f"Unknown message role {msg.get('role')!r} encountered during "
-                f"SDK wrapping; passing raw dict to the API.",
-                stacklevel=2,
-            )
-            wrapped.append(msg)
-            continue
-        wrapped.append(model_cls.model_construct(**msg))
-    return wrapped
 
 
 #
