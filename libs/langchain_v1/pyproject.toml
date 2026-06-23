@@ -110,10 +110,6 @@ strict = true
 enable_error_code = "deprecated"
 warn_unreachable = true
 
-exclude = [
-    "tests/unit_tests/agents/middleware/",
-]
-
 [[tool.mypy.overrides]]
 module = ["pytest_socket.*", "vcr.*"]
 ignore_missing_imports = true
