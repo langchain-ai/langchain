@@ -1,0 +1,20 @@
+.github/workflows/_refresh_model_profiles.yml
+  s_2341b8584dc71d::t_49d38cd37393ba 170-189
+  s_2341b8584dc71d::t_53448d987c82ad 205
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.10",
+  "base_commit_sha": "68a4c488ae9dcf01d3e380c7ba4e6d564ded1580",
+  "prompts": {},
+  "sessions": {
+    "s_2341b8584dc71d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecec068-f2ab-4a6c-850d-62ea56d1233b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
