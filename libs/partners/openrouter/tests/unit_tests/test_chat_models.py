@@ -824,6 +824,28 @@ class TestRequestPayload:
         assert tools[0]["function"]["name"] == "GetWeather"
         assert "parameters" in tools[0]["function"]
 
+    def test_tool_cache_control_preserved_in_payload(self) -> None:
+        """Test that top-level `cache_control` on a tool dict is preserved."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_TOOL_RESPONSE_DICT)
+
+        tool = {
+            "type": "function",
+            "function": {
+                "name": "GetWeather",
+                "description": "Get the weather.",
+                "parameters": {"type": "object", "properties": {}},
+            },
+            "cache_control": {"type": "ephemeral"},
+        }
+        bound = model.bind_tools([tool])
+        bound.invoke("What's the weather?")
+        call_kwargs = model.client.chat.send.call_args[1]
+        tools = call_kwargs["tools"]
+        assert len(tools) == 1
+        assert tools[0]["cache_control"] == {"type": "ephemeral"}
+
     def test_openrouter_params_in_payload(self) -> None:
         """Test that OpenRouter-specific params appear in the SDK call."""
         model = _make_model(
@@ -1087,6 +1109,20 @@ class TestBindTools:
         model = _make_model()
         with pytest.raises(ValueError, match="cannot target an OpenRouter server tool"):
             model.bind_tools([{"type": "openrouter:fusion"}], tool_choice=True)
+
+    def test_bind_tools_parallel_tool_calls_forwarded(self) -> None:
+        """Test that parallel_tool_calls is forwarded to the request kwargs."""
+        model = _make_model()
+        bound = model.bind_tools([GetWeather], parallel_tool_calls=False)
+        assert isinstance(bound, RunnableBinding)
+        assert bound.kwargs["parallel_tool_calls"] is False
+
+    def test_bind_tools_parallel_tool_calls_none_omits_key(self) -> None:
+        """Test that parallel_tool_calls=None does not set the key in kwargs."""
+        model = _make_model()
+        bound = model.bind_tools([GetWeather])
+        assert isinstance(bound, RunnableBinding)
+        assert "parallel_tool_calls" not in bound.kwargs
 
 
 # ===========================================================================
