@@ -439,7 +439,13 @@ def main() -> None:
         if not isinstance(providers, list):
             parser.error("--providers must be a JSON array")
 
-        print(summarize(providers, base_ref=args.base_ref, repo_root=args.repo_root))
+        try:
+            output = summarize(
+                providers, base_ref=args.base_ref, repo_root=args.repo_root
+            )
+        except (RuntimeError, ValueError) as e:
+            parser.error(str(e))
+        print(output)
 
 
 if __name__ == "__main__":

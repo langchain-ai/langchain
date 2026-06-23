@@ -1,10 +1,19 @@
 """Tests for the profile change summary generator."""
 
 import subprocess
+import sys
 from pathlib import Path
 
+import pytest
+
+from langchain_model_profiles import cli
 from langchain_model_profiles.summary import (
+    _MAX_ROWS,
+    FieldChange,
     ProfileDiff,
+    _describe_new_model,
+    _format_value,
+    _truncate,
     build_summary,
     diff_profiles,
     extract_profiles,
@@ -188,3 +197,149 @@ def test_summarize_new_provider_file(tmp_path: Path) -> None:
 
     summary = summarize([{"provider": "new", "data_dir": data_dir}], repo_root=repo)
     assert "2 added" in summary
+
+
+def test_field_change_is_tuple() -> None:
+    """`FieldChange` unpacks and compares like a plain (old, new) tuple."""
+    change = FieldChange(1, 2)
+    assert change == (1, 2)
+    assert change.old == 1
+    assert change.new == 2
+
+
+def test_format_value_variants() -> None:
+    """Each `_format_value` branch renders the expected string."""
+    assert _format_value("x", None) == "unset"
+    assert _format_value("tool_calling", True) == "yes"  # noqa: FBT003
+    assert _format_value("tool_calling", False) == "no"  # noqa: FBT003
+    assert _format_value("max_input_tokens", 200000) == "200,000"
+    # Plain int outside the token fields is rendered without separators.
+    assert _format_value("foo", 42) == "42"
+    # Floats fall through to str().
+    assert _format_value("temperature", 1.5) == "1.5"
+    assert _format_value("name", "GPT") == "`GPT`"
+
+
+def test_render_non_bool_field_change() -> None:
+    """Non-boolean field changes render an `old → new` phrase."""
+    old = {"m": {"status": "active", "name": "M"}}
+    new = {"m": {"status": "deprecated", "name": "M2"}}
+    section = render_provider_section("openai", diff_profiles(old, new))
+    assert section is not None
+    assert "status `active` → `deprecated`" in section
+    assert "display name `M` → `M2`" in section
+
+
+def test_describe_new_model_modalities() -> None:
+    """A new model descriptor lists context, output, modalities, and tools."""
+    profile = {
+        "max_input_tokens": 200000,
+        "max_output_tokens": 64000,
+        "image_inputs": True,
+        "audio_inputs": True,
+        "video_inputs": True,
+        "pdf_inputs": True,
+        "tool_calling": True,
+    }
+    descriptor = _describe_new_model(profile)
+    assert "200,000 ctx" in descriptor
+    assert "64,000 out" in descriptor
+    assert "text+image+audio+video+pdf in" in descriptor
+    assert "tools" in descriptor
+
+
+def test_describe_new_model_empty() -> None:
+    """A profile with no notable fields yields an empty descriptor."""
+    assert _describe_new_model({"name": "x"}) == ""
+
+
+def test_render_added_model_without_descriptor() -> None:
+    """An added model with no descriptor renders no ` — ` suffix."""
+    section = render_provider_section("p", diff_profiles({}, {"bare": {"name": "B"}}))
+    assert section is not None
+    assert "- `bare`" in section
+    assert "- `bare` —" not in section
+
+
+def test_truncate_boundary() -> None:
+    """`_truncate` keeps exactly `_MAX_ROWS` rows but caps one more."""
+    exactly = [f"- r{i}" for i in range(_MAX_ROWS)]
+    assert _truncate(exactly) == exactly
+
+    over = [f"- r{i}" for i in range(_MAX_ROWS + 1)]
+    result = _truncate(over)
+    assert len(result) == _MAX_ROWS + 1
+    assert result[-1] == "- …and 1 more"
+
+
+def test_build_summary_multi_provider_sorted() -> None:
+    """Providers are rendered in sorted order regardless of input order."""
+    diff_a = diff_profiles({}, {"a": {"name": "A"}})
+    diff_z = diff_profiles({}, {"z": {"name": "Z"}})
+    summary = build_summary({"zzz": diff_z, "aaa": diff_a})
+    assert summary.index("### aaa") < summary.index("### zzz")
+
+
+def test_summarize_removed_when_file_deleted(tmp_path: Path) -> None:
+    """Deleting the working-tree file reports every model as removed."""
+    repo = tmp_path
+    _init_repo(repo)
+    data_dir = "libs/partners/openai/data"
+    profiles_path = repo / data_dir / "_profiles.py"
+    _write_profiles(profiles_path, _OLD_SOURCE)
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+
+    profiles_path.unlink()
+
+    summary = summarize([{"provider": "openai", "data_dir": data_dir}], repo_root=repo)
+    assert "2 removed" in summary
+
+
+def test_summarize_bad_base_ref(tmp_path: Path) -> None:
+    """An unresolvable base ref raises rather than fabricating an all-added diff."""
+    repo = tmp_path
+    _init_repo(repo)
+    (repo / "README.md").write_text("x")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+
+    data_dir = "libs/partners/openai/data"
+    _write_profiles(repo / data_dir / "_profiles.py", _NEW_SOURCE)
+
+    with pytest.raises(RuntimeError, match="Could not resolve base ref"):
+        summarize(
+            [{"provider": "openai", "data_dir": data_dir}],
+            base_ref="no-such-ref",
+            repo_root=repo,
+        )
+
+
+def test_summarize_malformed_entry(tmp_path: Path) -> None:
+    """A provider entry missing a required key raises a clear error."""
+    repo = tmp_path
+    _init_repo(repo)
+    (repo / "README.md").write_text("x")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+
+    with pytest.raises(ValueError, match="Invalid provider entry"):
+        summarize([{"provider": "openai"}], repo_root=repo)  # type: ignore[list-item]
+
+
+def test_cli_summarize_invalid_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The CLI rejects a `--providers` value that is not valid JSON."""
+    monkeypatch.setattr(
+        sys, "argv", ["langchain-profiles", "summarize", "--providers", "not json"]
+    )
+    with pytest.raises(SystemExit):
+        cli.main()
+
+
+def test_cli_summarize_non_list(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The CLI rejects a `--providers` value that is not a JSON array."""
+    monkeypatch.setattr(
+        sys, "argv", ["langchain-profiles", "summarize", "--providers", '{"a": 1}']
+    )
+    with pytest.raises(SystemExit):
+        cli.main()

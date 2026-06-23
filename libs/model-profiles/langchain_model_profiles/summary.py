@@ -1,11 +1,11 @@
 """Generate a plain-English summary of model profile changes.
 
-The ``refresh_model_profiles`` workflow opens an automated PR whenever the data
-behind ``_profiles.py`` files changes. Those diffs are large blocks of generated
+The `refresh_model_profiles` workflow opens an automated PR whenever the data
+behind `_profiles.py` files changes. Those diffs are large blocks of generated
 data, so a reviewer otherwise has to open *Files changed* and eyeball raw values
 to learn what actually moved. This module turns the structured before/after data
 into a skimmable Markdown summary (new models, removed models, and per-field
-capability/pricing changes) for the PR body. The summary is generated
+capability/metadata changes) for the PR body. The summary is generated
 deterministically from the data, so there is no risk of an LLM misdescribing it.
 """
 
@@ -15,7 +15,15 @@ import ast
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from langchain_core.language_models.model_profile import (
+        ModelProfile,
+        ModelProfileRegistry,
+    )
 
 # Maximum number of bullet rows rendered per section before truncating.
 _MAX_ROWS = 25
@@ -54,14 +62,47 @@ _FIELD_LABELS: dict[str, str] = {
 _TOKEN_FIELDS = frozenset({"max_input_tokens", "max_output_tokens"})
 
 
+class FieldChange(NamedTuple):
+    """Old and new values for a single changed profile field.
+
+    Named rather than a bare `tuple` so the old → new ordering the renderer
+    relies on is part of the type instead of a positional convention. Values are
+    heterogeneous profile data (bool, int, str, or unset), so `Any` is the
+    honest element type here.
+    """
+
+    old: Any
+    """Value before the refresh, or `None` if the field was unset."""
+
+    new: Any
+    """Value after the refresh, or `None` if the field is now unset."""
+
+
+class ProviderEntry(TypedDict):
+    """One provider's identity and the data dir holding its `_profiles.py`."""
+
+    provider: str
+    """Provider identifier (e.g. `'openai'`)."""
+
+    data_dir: str
+    """Path to the provider's data directory, relative to the repo root."""
+
+
 @dataclass
 class ProfileDiff:
     """Structured difference between two sets of model profiles."""
 
     added: list[str] = field(default_factory=list)
+    """Model IDs present after the refresh but not before, sorted."""
+
     removed: list[str] = field(default_factory=list)
-    changed: dict[str, dict[str, tuple[Any, Any]]] = field(default_factory=dict)
-    added_profiles: dict[str, dict[str, Any]] = field(default_factory=dict)
+    """Model IDs present before the refresh but not after, sorted."""
+
+    changed: dict[str, dict[str, FieldChange]] = field(default_factory=dict)
+    """Per-model field changes, keyed by model ID then field name."""
+
+    added_profiles: ModelProfileRegistry = field(default_factory=dict)
+    """Full profiles for each added model, keyed by model ID."""
 
     @property
     def is_empty(self) -> bool:
@@ -69,17 +110,17 @@ class ProfileDiff:
         return not (self.added or self.removed or self.changed)
 
 
-def extract_profiles(source: str) -> dict[str, dict[str, Any]]:
-    """Extract the ``_PROFILES`` mapping from ``_profiles.py`` source.
+def extract_profiles(source: str) -> ModelProfileRegistry:
+    """Extract the `_PROFILES` mapping from `_profiles.py` source.
 
-    Uses ``ast.literal_eval`` rather than importing/executing the module so the
+    Uses `ast.literal_eval` rather than importing/executing the module so the
     generated data file is never run as code.
 
     Args:
-        source: Contents of a ``_profiles.py`` module.
+        source: Contents of a `_profiles.py` module.
 
     Returns:
-        The ``_PROFILES`` mapping, or an empty dict if it cannot be found.
+        The `_PROFILES` mapping, or an empty dict if it cannot be found.
     """
     try:
         tree = ast.parse(source)
@@ -105,10 +146,8 @@ def extract_profiles(source: str) -> dict[str, dict[str, Any]]:
     return {}
 
 
-def diff_profiles(
-    old: dict[str, dict[str, Any]], new: dict[str, dict[str, Any]]
-) -> ProfileDiff:
-    """Compute the difference between two ``_PROFILES`` mappings.
+def diff_profiles(old: ModelProfileRegistry, new: ModelProfileRegistry) -> ProfileDiff:
+    """Compute the difference between two `_PROFILES` mappings.
 
     Args:
         old: Profiles before the refresh.
@@ -120,16 +159,18 @@ def diff_profiles(
     added = sorted(set(new) - set(old))
     removed = sorted(set(old) - set(new))
 
-    changed: dict[str, dict[str, tuple[Any, Any]]] = {}
+    changed: dict[str, dict[str, FieldChange]] = {}
     for model_id in sorted(set(old) & set(new)):
-        old_profile = old[model_id]
-        new_profile = new[model_id]
-        fields: dict[str, tuple[Any, Any]] = {}
+        # View profiles as plain mappings so we can iterate dynamic keys (the
+        # `ModelProfile` TypedDict only permits literal-key access).
+        old_profile: Mapping[str, Any] = old[model_id]
+        new_profile: Mapping[str, Any] = new[model_id]
+        fields: dict[str, FieldChange] = {}
         for key in sorted(set(old_profile) | set(new_profile)):
             old_val = old_profile.get(key)
             new_val = new_profile.get(key)
             if old_val != new_val:
-                fields[key] = (old_val, new_val)
+                fields[key] = FieldChange(old_val, new_val)
         if fields:
             changed[model_id] = fields
 
@@ -170,7 +211,7 @@ def _describe_field_change(
     return f"{label} {old_str} → {new_str}"
 
 
-def _describe_new_model(profile: dict[str, Any]) -> str:
+def _describe_new_model(profile: ModelProfile) -> str:
     """Produce a short descriptor for a newly added model."""
     parts: list[str] = []
     context = profile.get("max_input_tokens")
@@ -210,11 +251,11 @@ def render_provider_section(provider: str, diff: ProfileDiff) -> str | None:
     """Render the Markdown section for a single provider, or None if unchanged.
 
     Args:
-        provider: Provider identifier (e.g. ``'openai'``).
+        provider: Provider identifier (e.g. `'openai'`).
         diff: The computed `ProfileDiff` for the provider.
 
     Returns:
-        Markdown for the provider's changes, or ``None`` when there are none.
+        Markdown for the provider's changes, or `None` when there are none.
     """
     if diff.is_empty:
         return None
@@ -225,7 +266,7 @@ def render_provider_section(provider: str, diff: ProfileDiff) -> str | None:
         lines.append(f"\n**➕ {len(diff.added)} added**")  # noqa: RUF001
         rows = []
         for model_id in diff.added:
-            descriptor = _describe_new_model(diff.added_profiles.get(model_id, {}))
+            descriptor = _describe_new_model(diff.added_profiles[model_id])
             suffix = f" — {descriptor}" if descriptor else ""
             rows.append(f"- `{model_id}`{suffix}")
         lines.extend(_truncate(rows))
@@ -239,8 +280,8 @@ def render_provider_section(provider: str, diff: ProfileDiff) -> str | None:
         rows = []
         for model_id, fields in diff.changed.items():
             phrases = [
-                _describe_field_change(name, old, new)
-                for name, (old, new) in fields.items()
+                _describe_field_change(name, change.old, change.new)
+                for name, change in fields.items()
             ]
             rows.append(f"- `{model_id}`: " + "; ".join(phrases))
         lines.extend(_truncate(rows))
@@ -276,8 +317,50 @@ def build_summary(provider_diffs: dict[str, ProfileDiff]) -> str:
     return "\n\n".join(["## Summary of changes", headline, *sections])
 
 
+def _verify_ref(repo_root: Path, ref: str) -> None:
+    """Confirm `ref` resolves to a commit in `repo_root`.
+
+    Validating once up front lets `_git_show` treat a non-zero exit
+    unambiguously as "path absent at this ref", rather than conflating a typo'd
+    ref, an unfetched ref, or a non-repository root with a genuinely new file —
+    which would otherwise render every existing model as newly added.
+
+    Raises:
+        RuntimeError: If git is unavailable, `repo_root` is not a repository, or
+            `ref` cannot be resolved.
+    """
+    try:
+        result = subprocess.run(  # noqa: S603
+            [  # noqa: S607
+                "git",
+                "-C",
+                str(repo_root),
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                f"{ref}^{{commit}}",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as e:
+        msg = f"Could not run git (is it installed and on PATH?): {e}"
+        raise RuntimeError(msg) from e
+    if result.returncode != 0:
+        msg = (
+            f"Could not resolve base ref {ref!r} in {repo_root}; "
+            "is it a valid git ref in this repository?"
+        )
+        raise RuntimeError(msg)
+
+
 def _git_show(repo_root: Path, ref: str, rel_path: str) -> str | None:
-    """Return file contents at ``ref``, or None if the file did not exist."""
+    """Return file contents at `ref`, or None if the file does not exist there.
+
+    Assumes `ref` has already been validated by `_verify_ref`, so a non-zero
+    exit here means the path is absent at `ref` rather than a bad ref.
+    """
     try:
         result = subprocess.run(  # noqa: S603
             ["git", "-C", str(repo_root), "show", f"{ref}:{rel_path}"],  # noqa: S607
@@ -291,34 +374,54 @@ def _git_show(repo_root: Path, ref: str, rel_path: str) -> str | None:
 
 
 def summarize(
-    providers: list[dict[str, str]],
+    providers: list[ProviderEntry],
     *,
     base_ref: str = "HEAD",
     repo_root: Path | None = None,
 ) -> str:
-    """Build a Markdown summary of profile changes vs ``base_ref``.
+    """Build a Markdown summary of profile changes vs `base_ref`.
 
     Args:
-        providers: List of ``{'provider': ..., 'data_dir': ...}`` entries,
-            matching the workflow input. ``data_dir`` is relative to the repo
-            root and contains ``_profiles.py``.
+        providers: List of `{'provider': ..., 'data_dir': ...}` entries,
+            matching the workflow input. `data_dir` is relative to the repo
+            root and contains `_profiles.py`.
         base_ref: Git ref to compare the working tree against.
         repo_root: Repository root. Defaults to the current directory.
 
     Returns:
         Markdown summary suitable for a PR body.
+
+    Raises:
+        RuntimeError: If `base_ref` cannot be resolved or a profiles file exists
+            but cannot be read.
+        ValueError: If a `providers` entry is missing a required key.
     """
     root = (repo_root or Path.cwd()).resolve()
+    _verify_ref(root, base_ref)
     provider_diffs: dict[str, ProfileDiff] = {}
 
     for entry in providers:
-        provider = entry["provider"]
-        data_dir = entry["data_dir"]
+        try:
+            provider = entry["provider"]
+            data_dir = entry["data_dir"]
+        except (KeyError, TypeError) as e:
+            msg = (
+                f"Invalid provider entry {entry!r}: expected 'provider' and "
+                f"'data_dir' keys ({e})"
+            )
+            raise ValueError(msg) from e
         rel_path = f"{data_dir.rstrip('/')}/_profiles.py"
 
         old_source = _git_show(root, base_ref, rel_path) or ""
         new_path = root / rel_path
-        new_source = new_path.read_text() if new_path.exists() else ""
+        if new_path.exists():
+            try:
+                new_source = new_path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError) as e:
+                msg = f"Could not read {new_path}: {e}"
+                raise RuntimeError(msg) from e
+        else:
+            new_source = ""
 
         provider_diffs[provider] = diff_profiles(
             extract_profiles(old_source), extract_profiles(new_source)
