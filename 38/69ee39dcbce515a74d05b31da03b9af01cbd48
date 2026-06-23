@@ -1,0 +1,44 @@
+libs/model-profiles/tests/unit_tests/test_summary.py
+  s_16e397f18989ef::t_3aa4cfa1b8cf1d 203-204
+  s_16e397f18989ef::t_be574f7e70a60c 266
+  s_16e397f18989ef::t_206dc2c2698e8f 361-375,377-452
+  s_16e397f18989ef::t_b4827f1c8dd632 376
+  s_16e397f18989ef::t_1a0e8277aa744a 107-108,110-118
+  s_16e397f18989ef::t_9c664411b3ec13 3,16
+  s_16e397f18989ef::t_a56de14195e62f 178
+  s_16e397f18989ef::t_703868969b74c6 358
+  s_16e397f18989ef::t_6515363efd993b 255-256,259-263
+  s_16e397f18989ef::t_b5e8f0db449c10 225-226,229
+  s_16e397f18989ef::t_799cac38f7c436 247-248
+  s_16e397f18989ef::t_d392d37025a176 7,27-31
+  s_16e397f18989ef::t_b31987788e9706 257-258
+.github/workflows/_refresh_model_profiles.yml
+  s_16e397f18989ef::t_68940277620bda 181-183,189-192
+libs/model-profiles/langchain_model_profiles/cli.py
+  s_16e397f18989ef::t_93e0f010ee850c 446
+libs/model-profiles/langchain_model_profiles/_summary.py
+  s_16e397f18989ef::t_5fcac0f626366b 84,87
+  s_16e397f18989ef::t_94487124b40437 428-430,432-433,445
+  s_16e397f18989ef::t_b017de68c5c590 65-73
+  s_16e397f18989ef::t_766948bf2ef604 440-444,459-464,466-473
+  s_16e397f18989ef::t_035ac5a3a80175 417-418
+  s_16e397f18989ef::t_4029233cd9f2a5 129-130,133-140,144-146,161-167
+  s_16e397f18989ef::t_5f972d25367551 420-421
+  s_16e397f18989ef::t_e5b51509e8eed5 465
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.10",
+  "base_commit_sha": "3869ee39dcbce515a74d05b31da03b9af01cbd48",
+  "prompts": {},
+  "sessions": {
+    "s_16e397f18989ef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e3946d61-d410-4027-b0b8-0e4783ffef6c",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
