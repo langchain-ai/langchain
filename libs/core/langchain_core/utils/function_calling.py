@@ -57,10 +57,8 @@ _ORIGIN_MAP: dict[type, Any] = {
     collections.abc.Mapping: typing.Mapping,
     collections.abc.Sequence: typing.Sequence,
     collections.abc.MutableMapping: typing.MutableMapping,
+    types.UnionType: Union,
 }
-# Add UnionType mapping for Python 3.10+
-if hasattr(types, "UnionType"):
-    _ORIGIN_MAP[types.UnionType] = Union
 
 
 class FunctionDescription(TypedDict):
