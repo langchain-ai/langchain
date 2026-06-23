@@ -99,7 +99,7 @@ def test_create_agent_invoke(
         checkpointer=sync_checkpointer,
     )
 
-    thread1 = {"configurable": {"thread_id": "1"}}
+    thread1: RunnableConfig = {"configurable": {"thread_id": "1"}}
     assert agent_one.invoke({"messages": [HumanMessage("hello")]}, thread1) == {
         "messages": [
             _AnyIdHumanMessage(content="hello"),
