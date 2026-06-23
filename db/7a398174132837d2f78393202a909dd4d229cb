@@ -1,0 +1,23 @@
+libs/core/langchain_core/utils/function_calling.py
+  s_e05b6074bdf013::t_29ea4d6240383c 787-793,801-802
+libs/core/tests/unit_tests/utils/test_function_calling.py
+  s_e05b6074bdf013::t_6a680704940029 1344,1355,1368
+  s_e05b6074bdf013::t_f7121d8428daa5 1281-1286
+  s_e05b6074bdf013::t_c3da69cf2db1a6 1315-1343,1345-1354,1356-1367,1369-1372
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.10",
+  "base_commit_sha": "db7a398174132837d2f78393202a909dd4d229cb",
+  "prompts": {},
+  "sessions": {
+    "s_e05b6074bdf013": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6ca5e1f-103e-447c-a92f-00936408aef0",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
