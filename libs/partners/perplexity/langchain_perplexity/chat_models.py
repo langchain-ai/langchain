@@ -1528,7 +1528,7 @@ class ChatPerplexity(BaseChatModel):
 
         Client-side function tools require the Perplexity Responses (Agent) API:
         construct the model with `use_responses_api=True` and a tool-capable
-        model such as `openai/gpt-5.5`. The `sonar` family does not support
+        model such as `openai/gpt-5`. The `sonar` family does not support
         client-side function tools.
 
         Args:

@@ -1765,6 +1765,78 @@ def test_create_summary_uses_get_buffer_string_format() -> None:
     )
 
 
+class PromptCapturingModel(BaseChatModel):
+    """Mock model that captures the prompt input passed to invoke/ainvoke."""
+
+    captured_inputs: list[LanguageModelInput] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_inputs.append(input)
+        return AIMessage(content="Summary")
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_inputs.append(input)
+        return AIMessage(content="Summary")
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "prompt-capturing"
+
+
+@pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
+async def test_create_summary_preserves_image_urls(use_async: bool) -> None:  # noqa: FBT001
+    """Test that URL-backed image content is serialized into the summary prompt."""
+    model = PromptCapturingModel()
+    middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
+    image_url = "https://example.com/shared-image.png"
+    messages: list[AnyMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What is in this image?"},
+                {"type": "image_url", "image_url": {"url": image_url}},
+            ]
+        ),
+        AIMessage(content="The image shows a cat."),
+    ]
+
+    if use_async:
+        summary = await middleware._acreate_summary(messages)
+    else:
+        summary = middleware._create_summary(messages)
+
+    assert summary == "Summary"
+    prompt = model.captured_inputs[0]
+    assert isinstance(prompt, str)
+    # Preserve the URL in the serialized history passed to the summarizer.
+    assert image_url in prompt
+
+
 @pytest.mark.requires("langchain_anthropic")
 def test_usage_metadata_trigger() -> None:
     model = init_chat_model("anthropic:claude-sonnet-4-5")

@@ -289,7 +289,7 @@ def test_with_structured_output_json_schema_strict_ignored_on_unsupported_model(
 
         foo: str
 
-    structured_model = ChatGroq(model="llama-3.1-8b-instant").with_structured_output(
+    structured_model = ChatGroq(model="qwen/qwen3.6-27b").with_structured_output(
         Response, method="json_schema", strict=True
     )
 
