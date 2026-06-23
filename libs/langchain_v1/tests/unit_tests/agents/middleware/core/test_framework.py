@@ -100,7 +100,7 @@ def test_create_agent_invoke(
     )
 
     thread1 = {"configurable": {"thread_id": "1"}}
-    assert agent_one.invoke({"messages": ["hello"]}, thread1) == {  # type: ignore[call-overload]
+    assert agent_one.invoke({"messages": [HumanMessage("hello")]}, thread1) == {
         "messages": [
             _AnyIdHumanMessage(content="hello"),
             AIMessage(
