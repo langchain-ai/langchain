@@ -532,7 +532,7 @@ def test_translate_responses_input_keeps_assistant_text_with_tool_calls() -> Non
 
 def test_to_responses_payload_flattens_tools_and_translates_messages() -> None:
     """End-to-end: `_to_responses_payload` flattens tools and translates tool turns."""
-    llm = ChatPerplexity(model="openai/gpt-5.5", api_key="test", use_responses_api=True)
+    llm = ChatPerplexity(model="openai/gpt-5", api_key="test", use_responses_api=True)
     message_dicts: list[dict[str, Any]] = [
         {"role": "user", "content": "weather in Paris?"},
         {

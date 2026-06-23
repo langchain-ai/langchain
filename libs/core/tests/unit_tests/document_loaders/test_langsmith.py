@@ -2,6 +2,7 @@ import datetime
 import uuid
 from unittest.mock import MagicMock, patch
 
+import pytest
 from langsmith.schemas import Example
 
 from langchain_core.document_loaders import LangSmithLoader
@@ -11,6 +12,12 @@ from langchain_core.tracers._compat import pydantic_to_dict
 
 def test_init() -> None:
     LangSmithLoader(api_key="secret")
+
+
+def test_init_client_and_client_kwargs_conflict() -> None:
+    """Passing both `client` and `client_kwargs` should raise."""
+    with pytest.raises(ValueError, match="Only one of 'client' and 'client_kwargs'"):
+        LangSmithLoader(client=MagicMock(), api_key="secret")
 
 
 EXAMPLES = [

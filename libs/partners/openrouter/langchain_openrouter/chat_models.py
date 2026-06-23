@@ -833,6 +833,7 @@ class ChatOpenRouter(BaseChatModel):
         *,
         tool_choice: dict | str | bool | None = None,
         strict: bool | None = None,
+        parallel_tool_calls: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -848,8 +849,13 @@ class ChatOpenRouter(BaseChatModel):
 
                 If `None`, the `strict` argument will not be passed to
                 the model.
+            parallel_tool_calls: Set to `False` to disable parallel tool use.
+                Defaults to `None` (no specification, which allows parallel
+                tool use).
             **kwargs: Any additional parameters.
         """
+        if parallel_tool_calls is not None:
+            kwargs["parallel_tool_calls"] = parallel_tool_calls
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]

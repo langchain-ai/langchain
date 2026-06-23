@@ -285,8 +285,8 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "mistral-large-2411": {
         "name": "Mistral Large 2.1",
-        "release_date": "2024-11-01",
-        "last_updated": "2024-11-04",
+        "release_date": "2024-11-18",
+        "last_updated": "2024-11-18",
         "open_weights": True,
         "max_input_tokens": 131072,
         "max_output_tokens": 16384,
