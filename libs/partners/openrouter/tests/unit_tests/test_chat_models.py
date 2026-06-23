@@ -825,7 +825,7 @@ class TestRequestPayload:
         assert "parameters" in tools[0]["function"]
 
     def test_tool_cache_control_preserved_in_payload(self) -> None:
-        """Test that top-level ``cache_control`` on a tool dict is preserved."""
+        """Test that top-level `cache_control` on a tool dict is preserved."""
         model = _make_model()
         model.client = MagicMock()
         model.client.chat.send.return_value = _make_sdk_response(_TOOL_RESPONSE_DICT)
