@@ -824,6 +824,28 @@ class TestRequestPayload:
         assert tools[0]["function"]["name"] == "GetWeather"
         assert "parameters" in tools[0]["function"]
 
+    def test_tool_cache_control_preserved_in_payload(self) -> None:
+        """Test that top-level `cache_control` on a tool dict is preserved."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_TOOL_RESPONSE_DICT)
+
+        tool = {
+            "type": "function",
+            "function": {
+                "name": "GetWeather",
+                "description": "Get the weather.",
+                "parameters": {"type": "object", "properties": {}},
+            },
+            "cache_control": {"type": "ephemeral"},
+        }
+        bound = model.bind_tools([tool])
+        bound.invoke("What's the weather?")
+        call_kwargs = model.client.chat.send.call_args[1]
+        tools = call_kwargs["tools"]
+        assert len(tools) == 1
+        assert tools[0]["cache_control"] == {"type": "ephemeral"}
+
     def test_openrouter_params_in_payload(self) -> None:
         """Test that OpenRouter-specific params appear in the SDK call."""
         model = _make_model(
