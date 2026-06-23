@@ -377,6 +377,15 @@ wheels = [
 ]
 
 [[package]]
+name = "jsonpath-python"
+version = "1.1.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/18/4ca8742534a5993ff383f7602e325ce2d5d7cc93d72ac5e1cdedbea8a458/jsonpath_python-1.1.6.tar.gz", hash = "sha256:dded9932b4ec41fb8726e09c83afa4e6be618f938c2db287cc2a81723c639671", size = 88178, upload-time = "2026-05-07T01:26:34.482Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/55/8a/1270a6803bd821cbfcdda387eaa13cb41a7b1f7b9bd145979b3bfb9d6cb7/jsonpath_python-1.1.6-py3-none-any.whl", hash = "sha256:a1c50afd8d3fbbaf47a4873bc890dcb3c15da96f5c020327977d844d8731a2d4", size = 14453, upload-time = "2026-05-07T01:26:33.306Z" },
+]
+
+[[package]]
 name = "jsonpointer"
 version = "3.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -476,7 +485,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "openrouter", specifier = ">=0.7.11,<1.0.0" },
+    { name = "openrouter", specifier = ">=0.9.2,<1.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -896,16 +905,17 @@ wheels = [
 
 [[package]]
 name = "openrouter"
-version = "0.8.0"
+version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpcore" },
     { name = "httpx" },
+    { name = "jsonpath-python" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4f/c1/44c5c17fdcaf36e8af25eda268d097e40799583ced48ca94adc5015576c3/openrouter-0.8.0.tar.gz", hash = "sha256:28efd76f89bcd13e195fd2729e9ed356a71d9ad88c78ded4ce073f6935381886", size = 207489, upload-time = "2026-03-27T19:20:13.601Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/04/35/9d368e4f4780658556b21b7d911215822bfe3cc0da930d84505b7361c9b7/openrouter-0.10.0.tar.gz", hash = "sha256:04567dfc39f11f8e4ff693c966f338610bd3032ee7abceb4b71c99409b8a92e4", size = 317872, upload-time = "2026-06-17T13:50:30.628Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b3/d1/413bbdd98aac44bf094055cb282b3edaa61a1e1b7e54ebdbf9afebfd5178/openrouter-0.8.0-py3-none-any.whl", hash = "sha256:77cf76f14f2090747ff2c153734a9112dfb27faccb5f90d760efbb94ea7e0838", size = 442960, upload-time = "2026-03-27T19:20:12.135Z" },
+    { url = "https://files.pythonhosted.org/packages/89/64/4166b81b5c8a899a80f457b7d340fa202df3083eac13cbe1cb6bede772a4/openrouter-0.10.0-py3-none-any.whl", hash = "sha256:0e318c1ea61fe1c78633dcef97440f43fca7322989d52e5bcea780fabd9150d6", size = 704688, upload-time = "2026-06-17T13:50:31.982Z" },
 ]
 
 [[package]]
