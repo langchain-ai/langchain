@@ -429,7 +429,7 @@ def main() -> None:
     if args.command == "refresh":
         refresh(args.provider, args.data_dir)
     elif args.command == "summarize":
-        from langchain_model_profiles.summary import summarize
+        from langchain_model_profiles._summary import summarize
 
         try:
             providers = json.loads(args.providers)

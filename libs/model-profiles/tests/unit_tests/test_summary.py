@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from langchain_model_profiles import cli
-from langchain_model_profiles.summary import (
+from langchain_model_profiles._summary import (
     _MAX_ROWS,
     FieldChange,
     ProfileDiff,
