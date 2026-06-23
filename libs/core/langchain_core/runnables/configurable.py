@@ -620,7 +620,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                 {
                     **config,
                     "configurable": {
-                        _strremoveprefix(k, f"{self.which.id}=={which}/"): v
+                        k.removeprefix(f"{self.which.id}=={which}/"): v
                         for k, v in config.get("configurable", {}).items()
                     },
                 },
@@ -635,11 +635,6 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             return (alt(), config)
         msg = f"Unknown alternative: {which}"
         raise ValueError(msg)
-
-
-def _strremoveprefix(s: str, prefix: str) -> str:
-    """`str.removeprefix()` is only available in Python 3.9+."""
-    return s.replace(prefix, "", 1) if s.startswith(prefix) else s
 
 
 def prefix_config_spec(

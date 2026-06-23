@@ -76,6 +76,17 @@ Respond ONLY with the extracted context. Do not include any additional informati
 Messages to summarize:
 {messages}
 </messages>"""  # noqa: E501
+"""Default prompt used to summarize conversation history.
+
+The `<messages>` marker (on its own line) and the `{messages}` placeholder are
+part of this constant's public contract, not just cosmetic formatting.
+Downstream consumers depend on them: for example, deep agents'
+`SummarizationMiddleware` splices an extra instruction block in immediately
+before the `<messages>` marker via `str.replace`. Removing, renaming, or
+reformatting the marker (or the `{messages}` placeholder) is a breaking change
+for those consumers even though it does not alter any function signature, so
+treat edits to it accordingly.
+"""
 
 _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
@@ -797,9 +808,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
-        # Format messages to avoid token inflation from metadata when str() is called on
-        # message objects
-        formatted_messages = get_buffer_string(trimmed_messages)
+        # Serialize as XML so URL-based multimodal blocks remain visible in the summary
+        # prompt while excluding raw message metadata from the token budget.
+        formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         try:
             response = self.model.invoke(
@@ -823,9 +834,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
-        # Format messages to avoid token inflation from metadata when str() is called on
-        # message objects
-        formatted_messages = get_buffer_string(trimmed_messages)
+        # Serialize as XML so URL-based multimodal blocks remain visible in the summary
+        # prompt while excluding raw message metadata from the token budget.
+        formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         try:
             response = await self.model.ainvoke(
