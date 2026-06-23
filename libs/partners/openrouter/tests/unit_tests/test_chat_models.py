@@ -1295,6 +1295,44 @@ class TestMessageConversion:
         result = _convert_message_to_dict(msg)
         assert result["reasoning_details"] == details
 
+    def test_ai_message_reasoning_details_strips_responses_ids(self) -> None:
+        """OpenAI Responses `rs_*` item IDs are stripped before replay."""
+        response_id = "rs_053a05e24b0da75e0169fa358ea9fc81908b18aff8157798c1"
+        details = [
+            {
+                "type": "reasoning.text",
+                "id": response_id,
+                "text": "step-by-step",
+                "index": 0,
+            }
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == [
+            {"type": "reasoning.text", "text": "step-by-step", "index": 0}
+        ]
+        assert response_id.startswith("rs_")
+        assert details[0]["id"] == response_id
+
+    def test_ai_message_reasoning_details_preserves_non_responses_ids(self) -> None:
+        """Non-Responses IDs are preserved in reasoning details."""
+        details = [
+            {
+                "type": "reasoning.text",
+                "id": "reasoning_abc123",
+                "text": "step-by-step",
+            }
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == details
+
     def test_ai_message_unindexed_reasoning_details_not_merged(self) -> None:
         """Entries without an `index` are passed through unchanged."""
         details = [
