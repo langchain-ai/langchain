@@ -46,6 +46,7 @@ from langchain_core.messages import (
     ToolMessage,
     is_data_content_block,
 )
+from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.messages.block_translators.openai import (
     convert_to_openai_data_block,
 )
@@ -180,6 +181,24 @@ def _convert_mistral_chat_message_to_message(
     )
 
 
+def _create_usage_metadata(token_usage: dict[str, Any]) -> UsageMetadata:
+    usage_metadata: UsageMetadata = {
+        "input_tokens": token_usage.get("prompt_tokens", 0),
+        "output_tokens": token_usage.get("completion_tokens", 0),
+        "total_tokens": token_usage.get("total_tokens", 0),
+    }
+    input_details_dict = (
+        token_usage.get("prompt_tokens_details")
+        or token_usage.get("input_tokens_details")
+        or {}
+    )
+    if (cached_tokens := input_details_dict.get("cached_tokens")) is not None:
+        usage_metadata["input_token_details"] = InputTokenDetails(
+            cache_read=int(cached_tokens)
+        )
+    return usage_metadata
+
+
 def _raise_on_error(response: httpx.Response) -> None:
     """Raise an error if the response is an error."""
     if httpx.codes.is_error(response.status_code):
@@ -301,11 +320,7 @@ def _convert_chunk_to_message_chunk(
         else:
             tool_call_chunks = []
         if token_usage := chunk.get("usage"):
-            usage_metadata = {
-                "input_tokens": token_usage.get("prompt_tokens", 0),
-                "output_tokens": token_usage.get("completion_tokens", 0),
-                "total_tokens": token_usage.get("total_tokens", 0),
-            }
+            usage_metadata = _create_usage_metadata(token_usage)
         else:
             usage_metadata = None
         if _choice.get("finish_reason") is not None and isinstance(
@@ -742,11 +757,7 @@ class ChatMistralAI(BaseChatModel):
             finish_reason = res.get("finish_reason")
             message = _convert_mistral_chat_message_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
-                message.usage_metadata = {
-                    "input_tokens": token_usage.get("prompt_tokens", 0),
-                    "output_tokens": token_usage.get("completion_tokens", 0),
-                    "total_tokens": token_usage.get("total_tokens", 0),
-                }
+                message.usage_metadata = _create_usage_metadata(token_usage)
             gen = ChatGeneration(
                 message=message,
                 generation_info={"finish_reason": finish_reason},

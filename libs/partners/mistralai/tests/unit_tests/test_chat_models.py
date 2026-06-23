@@ -10,6 +10,7 @@ import pytest
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     ChatMessage,
     HumanMessage,
@@ -22,6 +23,7 @@ from pydantic import SecretStr
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
+    _convert_chunk_to_message_chunk,
     _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
     _convert_tool_call_id_to_mistral_compatible,
@@ -363,6 +365,60 @@ async def test_astream_with_callback() -> None:
     chat = ChatMistralAI(callbacks=[callback])
     async for token in chat.astream("Hello"):
         assert callback.last_token == token.content
+
+
+def test_create_chat_result_maps_cached_tokens_to_cache_read() -> None:
+    chat = ChatMistralAI(model="mistral-small")  # type: ignore[call-arg]
+    response = {
+        "choices": [
+            {
+                "message": {"role": "assistant", "content": "Hello!"},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 5,
+            "total_tokens": 15,
+            "prompt_tokens_details": {"cached_tokens": 3},
+        },
+    }
+
+    result = chat._create_chat_result(response)
+    message = cast("AIMessage", result.generations[0].message)
+    assert message.usage_metadata is not None
+    assert message.usage_metadata["input_tokens"] == 10
+    assert message.usage_metadata["output_tokens"] == 5
+    assert message.usage_metadata["total_tokens"] == 15
+    assert message.usage_metadata["input_token_details"]["cache_read"] == 3
+
+
+def test_convert_chunk_maps_cached_tokens_to_cache_read() -> None:
+    chunk = {
+        "model": "mistral-small",
+        "choices": [
+            {
+                "delta": {"role": "assistant", "content": "Hello"},
+                "finish_reason": None,
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 7,
+            "completion_tokens": 4,
+            "total_tokens": 11,
+            "prompt_tokens_details": {"cached_tokens": 2},
+        },
+    }
+
+    message_chunk, _, _ = _convert_chunk_to_message_chunk(
+        chunk, AIMessageChunk, -1, "", None
+    )
+    usage_metadata = cast("AIMessageChunk", message_chunk).usage_metadata
+    assert usage_metadata is not None
+    assert usage_metadata["input_tokens"] == 7
+    assert usage_metadata["output_tokens"] == 4
+    assert usage_metadata["total_tokens"] == 11
+    assert usage_metadata["input_token_details"]["cache_read"] == 2
 
 
 def test__convert_dict_to_message_tool_call() -> None:
