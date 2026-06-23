@@ -1278,7 +1278,12 @@ class TestParseGoogleDocstring:
         assert args == {"x": "The x value", "y": "The y value"}
 
     def test_continuation_line_without_colon(self) -> None:
-        """Continuation lines without colons should be appended to current arg."""
+        """Colon-free continuation lines append to the current arg.
+
+        Documents preserved behavior: this case parsed correctly before the
+        continuation-detection fix (via the colon-free fallback branch) and
+        must continue to.
+        """
         docstring = (
             "Do something.\n"
             "\n"
@@ -1306,6 +1311,64 @@ class TestParseGoogleDocstring:
         assert "key1: value1" in args["config"]
         assert "key2: value2" in args["config"]
         assert args["verbose"] == "Enable verbose output"
+
+    def test_annotated_arg_with_colon_continuation(self) -> None:
+        """A `(type)` annotation strips correctly alongside a colon continuation.
+
+        Exercises both code paths the fix touches at once: the parenthesized
+        type annotation is stripped from the arg name, and the colon-bearing
+        continuation line folds into that arg rather than creating a phantom
+        key (the original bug).
+        """
+        docstring = (
+            "Run a query.\n"
+            "\n"
+            "Args:\n"
+            "    query (str): The query to run\n"
+            "        details: extra info\n"
+            "    k (int): Number of results"
+        )
+        _desc, args = _parse_google_docstring(docstring, ["query", "k"])
+        assert set(args) == {"query", "k"}
+        assert "details: extra info" in args["query"]
+        assert args["k"] == "Number of results"
+
+    def test_returns_section_after_args_excluded(self) -> None:
+        """A well-formed Returns: block after Args: must not leak in as an arg.
+
+        The blank line separating the sections terminates the Args block, so
+        `Returns`/`Raises` and their indented bodies stay out of
+        `arg_descriptions`.
+        """
+        docstring = (
+            "Do work.\n\nArgs:\n    x: The x value\n\nReturns:\n    result: yes\n"
+        )
+        _desc, args = _parse_google_docstring(docstring, ["x"])
+        assert args == {"x": "The x value"}
+
+    def test_same_indent_colon_line_is_new_arg(self) -> None:
+        """A colon line at the base arg indent starts a new arg, not a continuation.
+
+        Pins the `current_indent > arg_indent` boundary: only deeper-indented
+        lines are continuations.
+        """
+        docstring = "Do work.\n\nArgs:\n    a: first\n    b: second"
+        _desc, args = _parse_google_docstring(docstring, ["a", "b"])
+        assert args == {"a": "first", "b": "second"}
+
+    def test_more_indented_second_arg_folds_into_previous(self) -> None:
+        """Non-uniform indentation: a deeper second arg folds into the previous one.
+
+        Documents the intentional trade-off of indentation-based detection.
+        Google style requires uniform argument indentation; when a later arg is
+        indented deeper than the first, it is indistinguishable from a
+        colon-bearing continuation and is merged into the prior arg. This pins
+        that behavior so it stays intentional rather than incidental.
+        """
+        docstring = "Do work.\n\nArgs:\n    x: the x value\n        y: the y value"
+        _desc, args = _parse_google_docstring(docstring, ["x", "y"])
+        assert set(args) == {"x"}
+        assert "y: the y value" in args["x"]
 
 
 def test_convert_to_openai_tool_apply_patch_passthrough() -> None:
