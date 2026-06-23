@@ -6,6 +6,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from functools import cache
+from importlib import import_module
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -38,12 +39,20 @@ from langchain_core.runnables import Runnable, RunnableSerializable
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
 
-try:
-    from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
+_HAS_TRANSFORMERS: bool | None = None
 
+
+@cache
+def _get_gpt2_tokenizer_fast() -> Any | None:
+    """Lazily import `GPT2TokenizerFast` to avoid heavy import-time overhead."""
+    global _HAS_TRANSFORMERS  # noqa: PLW0603
+    try:
+        transformers_module = import_module("transformers")
+    except ImportError:
+        _HAS_TRANSFORMERS = False
+        return None
     _HAS_TRANSFORMERS = True
-except ImportError:
-    _HAS_TRANSFORMERS = False
+    return transformers_module.GPT2TokenizerFast
 
 
 class LangSmithParams(TypedDict, total=False):
@@ -86,7 +95,8 @@ def get_tokenizer() -> Any:
         The GPT-2 tokenizer instance.
 
     """
-    if not _HAS_TRANSFORMERS:
+    tokenizer_cls = _get_gpt2_tokenizer_fast()
+    if tokenizer_cls is None:
         msg = (
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
@@ -94,7 +104,7 @@ def get_tokenizer() -> Any:
         )
         raise ImportError(msg)
     # create a GPT-2 tokenizer instance
-    return GPT2TokenizerFast.from_pretrained("gpt2")
+    return tokenizer_cls.from_pretrained("gpt2")
 
 
 _GPT2_TOKENIZER_WARNED = False
