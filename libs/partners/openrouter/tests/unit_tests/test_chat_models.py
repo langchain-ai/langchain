@@ -1066,6 +1066,20 @@ class TestBindTools:
         tools = bound.kwargs["tools"]
         assert "strict" not in tools[0]["function"]
 
+    def test_bind_tools_parallel_tool_calls_forwarded(self) -> None:
+        """Test that parallel_tool_calls is forwarded to the request kwargs."""
+        model = _make_model()
+        bound = model.bind_tools([GetWeather], parallel_tool_calls=False)
+        assert isinstance(bound, RunnableBinding)
+        assert bound.kwargs["parallel_tool_calls"] is False
+
+    def test_bind_tools_parallel_tool_calls_none_omits_key(self) -> None:
+        """Test that parallel_tool_calls=None does not set the key in kwargs."""
+        model = _make_model()
+        bound = model.bind_tools([GetWeather])
+        assert isinstance(bound, RunnableBinding)
+        assert "parallel_tool_calls" not in bound.kwargs
+
 
 # ===========================================================================
 # with_structured_output tests
