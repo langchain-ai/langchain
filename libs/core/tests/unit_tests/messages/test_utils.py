@@ -765,7 +765,7 @@ class FakeTokenCountingModel(FakeChatModel):
 
 
 def test_convert_to_messages() -> None:
-    message_like: list = [
+    message_like: list[MessageLikeRepresentation] = [
         # BaseMessage
         SystemMessage("1"),
         SystemMessage("1.1", additional_kwargs={"__openai_role__": "developer"}),

@@ -389,7 +389,9 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         ```
     """
 
-    mapper: RunnableParallel
+    # Ideally we would type mapper as RunnableParallel[dict[str, Any]]
+    # but this fails validation for Pydantic <2.10
+    mapper: RunnableParallel  # type: ignore[type-arg]
 
     def __init__(self, mapper: RunnableParallel[dict[str, Any]], **kwargs: Any) -> None:
         """Create a `RunnableAssign`.

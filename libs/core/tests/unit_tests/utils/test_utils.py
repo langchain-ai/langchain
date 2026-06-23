@@ -440,7 +440,7 @@ def test_generation_chunk_addition_type_error() -> None:
     ],
 )
 def test_merge_lists(
-    left: list | None, right: list | None, expected: list | None
+    left: list[Any] | None, right: list[Any] | None, expected: list[Any] | None
 ) -> None:
     left_copy = deepcopy(left)
     right_copy = deepcopy(right)

@@ -118,7 +118,7 @@ def test_responses_integration_matrix(case: TestCase) -> None:
     # Unwrap nested schema objects
     response_format_spec = [item.get("schema", item) for item in response_format_spec]
     if len(response_format_spec) == 1:
-        tool_output = ToolStrategy(response_format_spec[0])
+        tool_output = ToolStrategy[Any](response_format_spec[0])
     else:
         tool_output = ToolStrategy({"oneOf": response_format_spec})
 

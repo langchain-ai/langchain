@@ -111,8 +111,10 @@ async def test_callable_api_key_async(monkeypatch: pytest.MonkeyPatch) -> None:
     assert isinstance(async_response, AIMessage)
     assert calls["async"] == 1
 
-    with pytest.raises(ValueError):
-        # We do not create a sync callable from an async one
+    with pytest.raises(ValueError, match="Sync client is not available"):
+        # This intentionally records a failed ChatOpenAI run in scheduled LangSmith
+        # traces: async API-key callables are valid for async methods, but sync
+        # invocation must fail.
         _ = model.invoke("hello")
 
 

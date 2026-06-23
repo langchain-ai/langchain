@@ -309,7 +309,7 @@ class TestRunnableSequenceParallelTraceNesting:
         other_thing: Callable[
             [int], Generator[int, None, None] | AsyncGenerator[int, None]
         ],
-    ) -> RunnableLambda:
+    ) -> RunnableLambda[int, int]:
         @RunnableLambda
         def my_child_function(a: int) -> int:
             return a + 2
@@ -611,7 +611,7 @@ def test_traceable_parent_run_map_cleanup_with_sibling_children() -> None:
     with tracing_context(client=tracer.client, enabled=True):
 
         @traceable
-        def parent(x: dict) -> Any:
+        def parent(x: dict[str, Any]) -> Any:
             return chain.invoke(x, config={"callbacks": [tracer]})
 
         result = parent({"input": "hello"})
