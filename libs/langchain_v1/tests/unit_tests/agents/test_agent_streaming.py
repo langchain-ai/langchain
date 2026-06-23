@@ -113,7 +113,7 @@ class TestAgentStreamV3Sync:
         # by `BaseRunStream.__init__` whenever `MessagesTransformer` is
         # registered. Content population is covered by langgraph tests —
         # here we only assert the agent streamer inherits the built-in.
-        assert "messages" in run._mux.extensions  # type: ignore[attr-defined]
+        assert "messages" in run._mux.extensions
         assert hasattr(run, "messages")
         # Drain so the run closes cleanly.
         for tc in run.tool_calls:
@@ -145,14 +145,14 @@ class TestAgentStreamV3Sync:
             transformers=[_Marker],
         )
         # Both the agent default and the user transformer are registered.
-        assert "tool_calls" in run._mux.extensions  # type: ignore[attr-defined]
-        assert "marker" in run._mux.extensions  # type: ignore[attr-defined]
+        assert "tool_calls" in run._mux.extensions
+        assert "marker" in run._mux.extensions
 
         # `ToolCallTransformer` must come BEFORE the user's transformer in
         # the registration order so it processes `tools` events first. The
         # docstring on `create_agent` promises caller transformers are
         # appended after the built-in.
-        transformers = run._mux._transformers  # type: ignore[attr-defined]
+        transformers = run._mux._transformers
         tool_call_idx = next(
             i for i, t in enumerate(transformers) if isinstance(t, ToolCallTransformer)
         )

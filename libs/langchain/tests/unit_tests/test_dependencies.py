@@ -75,8 +75,6 @@ def test_test_group_dependencies(uv_conf: Mapping[str, Any]) -> None:
             "syrupy",
             "toml",
             "requests-mock",
-            # TODO: temporary hack since cffi 1.17.1 doesn't work with py 3.9.
-            "cffi",
             "numpy",
         ],
     )

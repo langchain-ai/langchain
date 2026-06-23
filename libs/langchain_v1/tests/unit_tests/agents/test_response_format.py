@@ -905,7 +905,7 @@ class TestSupportsProviderStrategy:
     """Unit tests for `_supports_provider_strategy`."""
 
     @staticmethod
-    def _make_structured_model(model_name: str):
+    def _make_structured_model(model_name: str) -> GenericFakeChatModel:
         class GeminiTestChatModel(GenericFakeChatModel):
             model_name: str
 
@@ -953,11 +953,13 @@ class TestSupportsProviderStrategy:
             "gpt-5.1",
             "gpt-5.1-codex",
             "gpt-5.2",
+            "gpt-5.2-2025-12-01",
             "gpt-5.2-chat-latest",
             "gpt-5.2-codex",
             "gpt-5.3",
             "gpt-5.3-codex-spark",
             "gpt-5.4",
+            "gpt-5.4-2026-03-05",
             "gpt-5.4-mini",
             "gpt-5.4-nano",
             "gpt-5.5-pro",
