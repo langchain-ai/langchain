@@ -3,6 +3,7 @@
 import inspect
 import json
 import logging
+import pickle
 import sys
 import textwrap
 import threading
@@ -3919,7 +3920,7 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
     """End-to-end: a tool returning a list of ToolOutputMixin via invoke."""
 
     @tool
-    def multi(x: int) -> list:
+    def multi(x: int) -> list[ToolMessage]:
         """Return multiple outputs."""
         return [
             ToolMessage(f"result-{i}", tool_call_id=f"sub-{i}", name="multi")
@@ -3932,3 +3933,103 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
     assert isinstance(result, list)
     assert len(result) == 3
     assert all(isinstance(m, ToolMessage) for m in result)
+
+
+class _MemoSchemaInput(BaseModel):
+    query: str = Field(description="Query to run.")
+
+
+class _MemoSchemaTool(BaseTool):
+    """Module-level tool so pickling by class reference works."""
+
+    name: str = "memo_schema_tool"
+    description: str = "Tool for tool_call_schema memoization tests."
+    args_schema: type[BaseModel] = _MemoSchemaInput
+
+    def _run(self, query: str) -> str:
+        return query
+
+
+def test_tool_call_schema_memoized_across_accesses() -> None:
+    tool = _MemoSchemaTool()
+    first = tool.tool_call_schema
+    assert tool.tool_call_schema is first
+
+
+def test_tool_call_schema_memo_invalidated_on_reassignment() -> None:
+    tool = _MemoSchemaTool()
+    first = tool.tool_call_schema
+
+    tool.description = "Updated description."
+    second = tool.tool_call_schema
+    assert second is not first
+    assert (
+        cast("type[BaseModel]", second).model_json_schema()["description"]
+        == "Updated description."
+    )
+
+    class OtherInput(BaseModel):
+        other_field: str = Field(description="A different field.")
+
+    tool.args_schema = OtherInput
+    third = tool.tool_call_schema
+    assert third is not second
+    assert (
+        "other_field"
+        in cast("type[BaseModel]", third).model_json_schema()["properties"]
+    )
+
+
+def test_tool_picklable_after_tool_call_schema_access() -> None:
+    """The memoized schema is a dynamic class and must not leak into pickles."""
+    tool = _MemoSchemaTool()
+    pickle.loads(pickle.dumps(tool))
+
+    schema = tool.tool_call_schema
+    restored = pickle.loads(pickle.dumps(tool))
+    restored_schema = cast("type[BaseModel]", restored.tool_call_schema)
+    assert restored_schema.model_json_schema()["title"] == "memo_schema_tool"
+    # Pickling must not clear the live instance's memo.
+    assert tool.tool_call_schema is schema
+
+
+def test_tool_call_schema_memo_not_stale_after_model_copy() -> None:
+    """`model_copy(update=...)` bypasses `__setattr__`; the memo must still clear."""
+    tool = _MemoSchemaTool()
+    original_schema = tool.tool_call_schema
+
+    copied = tool.model_copy(update={"description": "Copied description."})
+    copied_schema = cast("type[BaseModel]", copied.tool_call_schema)
+    assert copied_schema.model_json_schema()["description"] == "Copied description."
+
+    # The original keeps its memo and is unaffected by the copy.
+    assert tool.tool_call_schema is original_schema
+
+
+def test_tool_call_schema_json_schema_cached() -> None:
+    """`model_json_schema()` is cached on the memoized subset model class."""
+    tool = _MemoSchemaTool()
+    schema_cls = cast("type[BaseModel]", tool.tool_call_schema)
+
+    first = schema_cls.model_json_schema()
+    second = schema_cls.model_json_schema()
+    assert first is second  # same dict object, not a regenerate
+
+    # Non-default arguments bypass the cache and delegate to pydantic.
+    by_alias_off = schema_cls.model_json_schema(by_alias=False)
+    assert by_alias_off is not first
+
+
+def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> None:
+    """Reassigning an input field creates a fresh class with a fresh cache."""
+    tool = _MemoSchemaTool()
+    old_cls = cast("type[BaseModel]", tool.tool_call_schema)
+    old_schema = old_cls.model_json_schema()
+
+    tool.description = "New description for cache test."
+    new_cls = cast("type[BaseModel]", tool.tool_call_schema)
+    assert new_cls is not old_cls
+
+    new_schema = new_cls.model_json_schema()
+    assert new_schema is not old_schema
+    assert new_schema["description"] == "New description for cache test."

@@ -460,7 +460,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "CommaSeparatedListOutputParserOutput",
     }
 
-    router: Runnable = RouterRunnable({})
+    router = RouterRunnable[Any]({})
 
     assert _schema(router.input_schema) == {
         "$ref": "#/definitions/RouterInput",
@@ -709,7 +709,7 @@ def test_schema_complex_seq() -> None:
 
     model = FakeListChatModel(responses=[""])
 
-    chain1: Runnable = RunnableSequence(
+    chain1 = RunnableSequence[dict[str, Any], str](
         prompt1, model, StrOutputParser(), name="city_chain"
     )
 
@@ -3024,7 +3024,7 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
         input={"question": lambda x: x["question"]},
     )
 
-    def router(value: dict[str, Any]) -> Runnable:
+    def router(value: dict[str, Any]) -> Runnable[dict[str, Any], str]:
         if value["key"] == "math":
             return itemgetter("input") | math_chain
         if value["key"] == "english":
@@ -3046,7 +3046,7 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
     assert result2 == ["4", "2"]
 
     # Test ainvoke
-    async def arouter(params: dict[str, Any]) -> Runnable:
+    async def arouter(params: dict[str, Any]) -> Runnable[dict[str, Any], str]:
         if params["key"] == "math":
             return itemgetter("input") | math_chain
         if params["key"] == "english":
@@ -3925,10 +3925,10 @@ def test_each(snapshot: SnapshotAssertion) -> None:
 
 
 def test_recursive_lambda() -> None:
-    def _simple_recursion(x: int) -> int | Runnable:
+    def _simple_recursion(x: int) -> Runnable[Any, int]:
         if x < 10:
             return RunnableLambda(lambda *_: _simple_recursion(x + 1))
-        return x
+        return RunnableLambda(lambda *_: x)
 
     runnable = RunnableLambda(_simple_recursion)
     assert runnable.invoke(5) == 10

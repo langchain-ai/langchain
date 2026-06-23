@@ -7,6 +7,7 @@ import httpx
 
 from langchain_core._security._exceptions import SSRFBlockedError
 from langchain_core._security._policy import (
+    DEFAULT_SSRF_POLICY,
     SSRFPolicy,
     _effective_allowed_hosts,
     validate_resolved_ip,
@@ -44,7 +45,7 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
 
     def __init__(
         self,
-        policy: SSRFPolicy = SSRFPolicy(),
+        policy: SSRFPolicy = DEFAULT_SSRF_POLICY,
         **transport_kwargs: object,
     ) -> None:
         self._policy = policy
@@ -62,10 +63,7 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
         scheme = request.url.scheme.lower()
 
         # 1-3. Scheme, hostname, and pattern checks (reuse sync validator).
-        try:
-            validate_url_sync(str(request.url), self._policy)
-        except SSRFBlockedError:
-            raise
+        validate_url_sync(str(request.url), self._policy)
 
         # Allowed-hosts bypass - skip DNS/IP validation entirely.
         allowed = {h.lower() for h in _effective_allowed_hosts(self._policy)}
@@ -82,10 +80,12 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
                 type=socket.SOCK_STREAM,
             )
         except socket.gaierror as exc:
-            raise SSRFBlockedError("DNS resolution failed") from exc
+            msg = "DNS resolution failed"
+            raise SSRFBlockedError(msg) from exc
 
         if not addrinfo:
-            raise SSRFBlockedError("DNS resolution returned no results")
+            msg = "DNS resolution returned no results"
+            raise SSRFBlockedError(msg)
 
         # 5. Validate ALL resolved IPs - any blocked means reject.
         for _family, _type, _proto, _canonname, sockaddr in addrinfo:
@@ -135,7 +135,7 @@ class SSRFSafeSyncTransport(httpx.BaseTransport):
 
     def __init__(
         self,
-        policy: SSRFPolicy = SSRFPolicy(),
+        policy: SSRFPolicy = DEFAULT_SSRF_POLICY,
         **transport_kwargs: object,
     ) -> None:
         self._policy = policy
@@ -162,10 +162,12 @@ class SSRFSafeSyncTransport(httpx.BaseTransport):
                 type=socket.SOCK_STREAM,
             )
         except socket.gaierror as exc:
-            raise SSRFBlockedError("DNS resolution failed") from exc
+            msg = "DNS resolution failed"
+            raise SSRFBlockedError(msg) from exc
 
         if not addrinfo:
-            raise SSRFBlockedError("DNS resolution returned no results")
+            msg = "DNS resolution returned no results"
+            raise SSRFBlockedError(msg)
 
         for _family, _type, _proto, _canonname, sockaddr in addrinfo:
             ip_str: str = sockaddr[0]  # type: ignore[assignment]
@@ -198,7 +200,7 @@ class SSRFSafeSyncTransport(httpx.BaseTransport):
 
 
 def ssrf_safe_client(
-    policy: SSRFPolicy = SSRFPolicy(),
+    policy: SSRFPolicy = DEFAULT_SSRF_POLICY,
     **kwargs: object,
 ) -> httpx.Client:
     """Create an `httpx.Client` with SSRF protection."""
@@ -222,7 +224,7 @@ def ssrf_safe_client(
 
 
 def ssrf_safe_async_client(
-    policy: SSRFPolicy = SSRFPolicy(),
+    policy: SSRFPolicy = DEFAULT_SSRF_POLICY,
     **kwargs: object,
 ) -> httpx.AsyncClient:
     """Create an `httpx.AsyncClient` with SSRF protection.

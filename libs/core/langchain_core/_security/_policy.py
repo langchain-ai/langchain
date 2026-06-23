@@ -114,6 +114,9 @@ class SSRFPolicy:
     ] = ()
 
 
+DEFAULT_SSRF_POLICY = SSRFPolicy()
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -196,7 +199,8 @@ def validate_resolved_ip(ip_str: str, policy: SSRFPolicy) -> None:
     try:
         addr = ipaddress.ip_address(ip_str)
     except ValueError as exc:
-        raise SSRFBlockedError("invalid IP address") from exc
+        msg = "invalid IP address"
+        raise SSRFBlockedError(msg) from exc
 
     if isinstance(addr, ipaddress.IPv6Address):
         inner = _extract_embedded_ipv4(addr)
@@ -216,13 +220,16 @@ def validate_hostname(hostname: str, policy: SSRFPolicy) -> None:
     lower = hostname.lower()
 
     if policy.block_localhost and lower in _LOCALHOST_NAMES:
-        raise SSRFBlockedError("localhost address")
+        msg = "localhost address"
+        raise SSRFBlockedError(msg)
 
     if policy.block_cloud_metadata and lower in _CLOUD_METADATA_HOSTNAMES:
-        raise SSRFBlockedError("cloud metadata endpoint")
+        msg = "cloud metadata endpoint"
+        raise SSRFBlockedError(msg)
 
     if policy.block_k8s_internal and lower.endswith(_K8S_SUFFIX):
-        raise SSRFBlockedError("Kubernetes internal DNS")
+        msg = "Kubernetes internal DNS"
+        raise SSRFBlockedError(msg)
 
 
 def _effective_allowed_hosts(policy: SSRFPolicy) -> frozenset[str]:
@@ -235,7 +242,7 @@ def _effective_allowed_hosts(policy: SSRFPolicy) -> frozenset[str]:
     return policy.allowed_hosts
 
 
-async def validate_url(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
+async def validate_url(url: str, policy: SSRFPolicy = DEFAULT_SSRF_POLICY) -> None:
     """Validate a URL against the SSRF policy, including DNS resolution.
 
     This is the primary entry-point for async code paths. It delegates
@@ -268,7 +275,7 @@ async def validate_url(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
         validate_resolved_ip(str(sockaddr[0]), policy)
 
 
-def validate_url_sync(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
+def validate_url_sync(url: str, policy: SSRFPolicy = DEFAULT_SSRF_POLICY) -> None:
     """Synchronous URL validation (no DNS resolution).
 
     Suitable for Pydantic validators and other sync contexts. Checks scheme
