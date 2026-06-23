@@ -10,6 +10,7 @@ import pytest
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     ChatMessage,
     HumanMessage,
@@ -22,6 +23,7 @@ from pydantic import SecretStr
 
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
+    _convert_chunk_to_message_chunk,
     _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
     _convert_tool_call_id_to_mistral_compatible,
@@ -662,3 +664,74 @@ def test_metadata_versions() -> None:
     versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-mistralai" in versions
+
+
+_USAGE_WITH_CACHE = {
+    "prompt_tokens": 1013,
+    "completion_tokens": 30,
+    "total_tokens": 1043,
+    "prompt_tokens_details": {"cached_tokens": 1008},
+}
+
+
+def test_create_chat_result_surfaces_cached_tokens() -> None:
+    """Non-streaming `usage_metadata` should report Mistral's cached prompt tokens."""
+    llm = ChatMistralAI(model="mistral-small-latest")  # type: ignore[call-arg]
+    response = {
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": "hi"},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": _USAGE_WITH_CACHE,
+        "model": "mistral-small-latest",
+    }
+    result = llm._create_chat_result(response)
+    usage_metadata = cast("AIMessage", result.generations[0].message).usage_metadata
+    assert usage_metadata is not None
+    assert usage_metadata["input_tokens"] == 1013
+    assert usage_metadata["input_token_details"]["cache_read"] == 1008
+
+
+def test_convert_chunk_surfaces_cached_tokens() -> None:
+    """Streaming `usage_metadata` should report Mistral's cached prompt tokens."""
+    chunk = {
+        "choices": [
+            {
+                "index": 0,
+                "delta": {"role": "assistant", "content": "hi"},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": _USAGE_WITH_CACHE,
+        "model": "mistral-small-latest",
+    }
+    message, _, _ = _convert_chunk_to_message_chunk(
+        chunk, AIMessageChunk, 0, "text", None
+    )
+    usage_metadata = cast("AIMessageChunk", message).usage_metadata
+    assert usage_metadata is not None
+    assert usage_metadata["input_tokens"] == 1013
+    assert usage_metadata["input_token_details"]["cache_read"] == 1008
+
+
+def test_usage_metadata_without_cached_tokens_unchanged() -> None:
+    """When no cached-token detail is present, `usage_metadata` stays unchanged."""
+    llm = ChatMistralAI(model="mistral-small-latest")  # type: ignore[call-arg]
+    response = {
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": "hi"},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        "model": "mistral-small-latest",
+    }
+    result = llm._create_chat_result(response)
+    usage_metadata = cast("AIMessage", result.generations[0].message).usage_metadata
+    assert usage_metadata is not None
+    assert "input_token_details" not in usage_metadata

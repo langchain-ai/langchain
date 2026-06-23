@@ -306,6 +306,11 @@ def _convert_chunk_to_message_chunk(
                 "output_tokens": token_usage.get("completion_tokens", 0),
                 "total_tokens": token_usage.get("total_tokens", 0),
             }
+            cached_tokens = (token_usage.get("prompt_tokens_details") or {}).get(
+                "cached_tokens"
+            )
+            if cached_tokens is not None:
+                usage_metadata["input_token_details"] = {"cache_read": cached_tokens}
         else:
             usage_metadata = None
         if _choice.get("finish_reason") is not None and isinstance(
@@ -747,6 +752,13 @@ class ChatMistralAI(BaseChatModel):
                     "output_tokens": token_usage.get("completion_tokens", 0),
                     "total_tokens": token_usage.get("total_tokens", 0),
                 }
+                cached_tokens = (token_usage.get("prompt_tokens_details") or {}).get(
+                    "cached_tokens"
+                )
+                if cached_tokens is not None:
+                    message.usage_metadata["input_token_details"] = {
+                        "cache_read": cached_tokens
+                    }
             gen = ChatGeneration(
                 message=message,
                 generation_info={"finish_reason": finish_reason},
