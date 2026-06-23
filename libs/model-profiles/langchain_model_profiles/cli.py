@@ -399,10 +399,53 @@ def main() -> None:
         help="Data directory containing profile_augmentations.toml",
     )
 
+    # summarize command
+    summarize_parser = subparsers.add_parser(
+        "summarize",
+        help="Summarize profile changes vs a git ref as Markdown (for PR bodies)",
+    )
+    summarize_parser.add_argument(
+        "--providers",
+        required=True,
+        help=(
+            "JSON array of objects with 'provider' and 'data_dir' keys "
+            "(data_dir relative to the repo root)."
+        ),
+    )
+    summarize_parser.add_argument(
+        "--base-ref",
+        default="HEAD",
+        help="Git ref to compare the working tree against (default: HEAD).",
+    )
+    summarize_parser.add_argument(
+        "--repo-root",
+        type=Path,
+        default=None,
+        help="Repository root (default: current directory).",
+    )
+
     args = parser.parse_args()
 
     if args.command == "refresh":
         refresh(args.provider, args.data_dir)
+    elif args.command == "summarize":
+        from langchain_model_profiles._summary import summarize
+
+        try:
+            providers = json.loads(args.providers)
+        except json.JSONDecodeError as e:
+            parser.error(f"--providers is not valid JSON: {e}")
+
+        if not isinstance(providers, list):
+            parser.error("--providers must be a JSON array")
+
+        try:
+            output = summarize(
+                providers, base_ref=args.base_ref, repo_root=args.repo_root
+            )
+        except (RuntimeError, ValueError, TypeError) as e:
+            parser.error(str(e))
+        print(output)
 
 
 if __name__ == "__main__":
