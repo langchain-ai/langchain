@@ -734,3 +734,12 @@ def test_prompt_template_add(
         variable="template",
         another_variable="other_template",
     )
+
+
+def test_pretty_repr_preserves_partial_variable_placeholders() -> None:
+    prompt = PromptTemplate(
+        template="Hello {user}, how is {input}?",
+        input_variables=["input"],
+        partial_variables={"user": "Lucy"},
+    )
+    assert prompt.pretty_repr() == "Hello {user}, how is {input}?"
