@@ -94,6 +94,12 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
+            elif "config" in signature(self.func).parameters and "config" not in kwargs:
+                # The function declares a parameter literally named "config"
+                # (a normal tool arg, not a RunnableConfig). _run captured the
+                # model-supplied value in its own keyword-only `config`; forward
+                # it so the function actually receives it (#34029).
+                kwargs["config"] = config
             return self.func(*args, **kwargs)
         msg = "StructuredTool does not support sync invocation."
         raise NotImplementedError(msg)
@@ -121,6 +127,13 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config
+            elif (
+                "config" in signature(self.coroutine).parameters
+                and "config" not in kwargs
+            ):
+                # See _run: forward a model-supplied arg literally named
+                # "config" to the coroutine instead of swallowing it (#34029).
+                kwargs["config"] = config
             return await self.coroutine(*args, **kwargs)
 
         # If self.coroutine is None, then this will delegate to the default

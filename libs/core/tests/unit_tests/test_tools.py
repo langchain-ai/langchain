@@ -4069,6 +4069,7 @@ def test_tool_runnable_config_still_injected() -> None:
 
         Args:
             x: a number.
+            my_config: injected runnable config.
         """
         seen["config"] = my_config
         return x * 2
