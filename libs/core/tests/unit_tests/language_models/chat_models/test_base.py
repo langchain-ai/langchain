@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 from langsmith.env import get_langchain_env_var_metadata
-from pydantic import model_validator
+from pydantic import BaseModel, model_validator
 from typing_extensions import Self, override
 
 from langchain_core._api import LangChainDeprecationWarning
@@ -31,6 +31,7 @@ from langchain_core.language_models._utils import (
 from langchain_core.language_models.base import _get_langchain_version
 from langchain_core.language_models.chat_models import (
     SimpleChatModel,
+    _ChatModelBinding,
     _generate_response_from_error,
 )
 from langchain_core.language_models.fake_chat_models import (
@@ -1838,3 +1839,23 @@ async def test_astream_events_v3_invocation_params_passed_to_tracer_metadata() -
     assert metadata["_type"] == "fake-chat-model-with-invocation-params"
     assert metadata["stop"] == ["done"]
     assert metadata["temperature"] == 0.7
+
+
+class DummySchema(BaseModel):
+    """A dummy schema for testing structured output."""
+    name: str
+    age: int
+
+def test_with_structured_output_on_bound_tools_raises_error() -> None:
+    """Test that calling with_structured_output on a model with bound tools fails fast."""
+    model = FakeListChatModel(responses=["dummy response"])
+    
+    # Manually create the binding wrapper to simulate model.bind_tools()
+    # This completely isolates our test from needing a specific LLM provider implementation
+    model_with_tools = _ChatModelBinding(bound=model, kwargs={"tools": ["dummy_tool"]})
+    
+    # Trying to force structured output on the wrapper should trigger our ValueError
+    with pytest.raises(ValueError) as excinfo:
+        model_with_tools.with_structured_output(DummySchema)
+        
+    assert "silently overrides your existing tools" in str(excinfo.value)

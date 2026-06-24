@@ -2562,6 +2562,41 @@ class _ChatModelBinding(RunnableBinding[LanguageModelInput, AIMessage]):  # type
         """
         return [*cls.get_lc_namespace(), "RunnableBinding"]
 
+    def with_structured_output(
+        self,
+        schema: builtins.dict[str, Any] | type,
+        *,
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, builtins.dict[str, Any] | BaseModel]:
+        """Intercept `with_structured_output` to prevent silent dropping of bound tools.
+
+        By default, `RunnableBinding` delegates unknown methods to the underlying
+        bound model via `__getattr__`. If a user chains `.with_structured_output()`
+        after `.bind_tools()`, the call is delegated to the base model, completely
+        bypassing the tools stored in this binding's `kwargs`.
+
+        Furthermore, because `with_structured_output` forces a single-shot extraction
+        (e.g., via `tool_choice="any"`), it is natively incompatible with retaining a
+        multi-turn agentic toolspace.
+
+        This override catches the method call at the wrapper level and fails fast
+        with a clear `ValueError` if tools are already bound, preventing silent
+        failures in Agentic and LangGraph workflows.
+        """
+        # 1. The Fail-Fast Check
+        if "tools" in self.kwargs:
+            raise ValueError(
+                "Cannot call `with_structured_output` on a model that already has tools bound via `bind_tools`. "
+                "This method forces the LLM to output the structured schema immediately, which silently overrides your existing tools. "
+                "To build an agent that uses tools and returns structured data, bind your schema as a standard tool and handle the parsing in your agent execution loop."
+            )
+
+        # 2. If no tools were bound, pass it down to the base model normally
+        return self.bound.with_structured_output(
+            schema, include_raw=include_raw, **kwargs
+        )
+
     @overload  # type: ignore[override]
     def stream_events(
         self,
