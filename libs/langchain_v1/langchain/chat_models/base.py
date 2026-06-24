@@ -536,6 +536,7 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
             "gpt-",
             "o1",
             "o3",
+            "o4",
             "chatgpt",
             "text-davinci",
         )
