@@ -975,6 +975,34 @@ def test__format_tool_use_block() -> None:
     assert result == (None, [expected])
 
 
+def test__format_tool_use_block_preserves_cache_control() -> None:
+    message = AIMessage(
+        [
+            {
+                "type": "tool_use",
+                "name": "foo_1",
+                "id": "1",
+                "input": {"bar_1": "baz_1"},
+                "cache_control": {"type": "ephemeral"},
+            },
+        ]
+    )
+    result = _format_messages([message])
+    expected = {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "tool_use",
+                "name": "foo_1",
+                "id": "1",
+                "input": {"bar_1": "baz_1"},
+                "cache_control": {"type": "ephemeral"},
+            },
+        ],
+    }
+    assert result == (None, [expected])
+
+
 def test__format_messages_with_str_content_and_tool_calls() -> None:
     system = SystemMessage("fuzz")  # type: ignore[misc]
     human = HumanMessage("foo")  # type: ignore[misc]
@@ -1114,6 +1142,40 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
     )
     actual = _format_messages(messages)
     assert expected == actual
+
+
+def test__format_messages_with_tool_use_blocks_and_tool_calls_preserves_cache_control(
+) -> None:
+    ai = AIMessage(  # type: ignore[misc]
+        [
+            {"type": "text", "text": "thought"},
+            {
+                "type": "tool_use",
+                "name": "bar",
+                "id": "1",
+                "input": {"baz": "NOT_BUZZ"},
+                "cache_control": {"type": "ephemeral"},
+            },
+        ],
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "BUZZ"}}],
+    )
+    _, formatted = _format_messages([HumanMessage("foo"), ai])
+    assert formatted == [
+        {"role": "user", "content": "foo"},
+        {
+            "role": "assistant",
+            "content": [
+                {"type": "text", "text": "thought"},
+                {
+                    "type": "tool_use",
+                    "name": "bar",
+                    "id": "1",
+                    "input": {"baz": "BUZZ"},
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        },
+    ]
 
 
 def test__format_messages_with_cache_control() -> None:
