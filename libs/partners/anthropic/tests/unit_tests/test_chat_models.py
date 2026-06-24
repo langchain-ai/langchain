@@ -1116,6 +1116,46 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
     assert expected == actual
 
 
+def test__format_messages_preserves_tool_use_cache_control_with_tool_calls() -> None:
+    system = SystemMessage("fuzz")  # type: ignore[misc]
+    human = HumanMessage("foo")  # type: ignore[misc]
+    ai = AIMessage(  # type: ignore[misc]
+        [
+            {"type": "text", "text": "thought"},
+            {
+                "type": "tool_use",
+                "name": "bar",
+                "id": "1",
+                "input": {"baz": "NOT_BUZZ"},
+                "cache_control": {"type": "ephemeral"},
+            },
+        ],
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "BUZZ"}}],
+    )
+    messages = [system, human, ai]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "thought"},
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": "1",
+                        "input": {"baz": "BUZZ"},
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
+
+
 def test__format_messages_with_cache_control() -> None:
     messages = [
         SystemMessage(

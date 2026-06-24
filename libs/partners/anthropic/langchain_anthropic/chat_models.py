@@ -543,11 +543,15 @@ def _format_messages(
                                 for tc in message.tool_calls
                                 if tc["id"] == block["id"]
                             ]
-                            content.extend(
-                                _lc_tool_calls_to_anthropic_tool_use_blocks(
-                                    overlapping,
-                                ),
+                            tool_use_blocks = (
+                                _lc_tool_calls_to_anthropic_tool_use_blocks(overlapping)
                             )
+                            if "cache_control" in block:
+                                for tool_use_block in tool_use_blocks:
+                                    tool_use_block["cache_control"] = block[
+                                        "cache_control"
+                                    ]
+                            content.extend(tool_use_blocks)
                         else:
                             if tool_input := block.get("input"):
                                 args = tool_input
@@ -2279,6 +2283,7 @@ class _AnthropicToolUse(TypedDict):
     input: dict
     id: str
     caller: NotRequired[dict[str, Any]]
+    cache_control: NotRequired[dict[str, str]]
 
 
 def _lc_tool_calls_to_anthropic_tool_use_blocks(
