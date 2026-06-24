@@ -14,7 +14,13 @@ import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
 from langchain_core.exceptions import ContextOverflowError
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
@@ -2041,6 +2047,104 @@ def test_streaming_cache_token_reporting() -> None:
     assert delta_chunk.usage_metadata["input_tokens"] == 135
     assert delta_chunk.usage_metadata["output_tokens"] == 50
     assert delta_chunk.usage_metadata["total_tokens"] == 185
+
+
+def _aggregate_anthropic_events(
+    llm: ChatAnthropic,
+    events: list[Any],
+    *,
+    coerce_content_to_string: bool,
+) -> AIMessageChunk | None:
+    """Drive the handler over ``events`` and sum chunks like ``_stream`` does."""
+    block_start_event = None
+    aggregate: AIMessageChunk | None = None
+    for event in events:
+        chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+            event,
+            stream_usage=True,
+            coerce_content_to_string=coerce_content_to_string,
+            block_start_event=block_start_event,
+        )
+        if chunk is not None:
+            aggregate = chunk if aggregate is None else aggregate + chunk
+    return aggregate
+
+
+def test_text_content_block_start_carries_initial_text() -> None:
+    """Regression test: text on ``content_block_start`` must not be dropped.
+
+    Anthropic sometimes places the opening text of a text block directly on the
+    ``content_block_start`` event (rather than in a following ``text_delta``),
+    most often on the assistant turn that follows a tool result. The handler
+    previously only built a chunk on ``content_block_start`` for tool / document
+    / redacted_thinking blocks, so the leading text was silently dropped from the
+    aggregated message that gets persisted.
+    """
+    from anthropic.types import (
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageStartEvent,
+        TextDelta,
+    )
+
+    msg = Message(
+        id="msg_repro",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+    events = [
+        RawMessageStartEvent(message=msg, type="message_start"),
+        # The first text rides the START event; the rest arrives as a delta.
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="Here", type="text"),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="'s the answer.", type="text_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+    ]
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    # String content path (no tools / thinking).
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=True)
+    assert aggregate is not None
+    assert aggregate.text == "Here's the answer."
+
+    # Structured content path (e.g. tools / thinking enabled elsewhere).
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=False)
+    assert aggregate is not None
+    assert aggregate.text == "Here's the answer."
+
+
+def test_empty_text_content_block_start_emits_no_chunk() -> None:
+    """An empty ``TextBlock`` start must not change behaviour (no spurious chunk)."""
+    from anthropic.types import RawContentBlockStartEvent
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="", type="text"),
+            index=0,
+            type="content_block_start",
+        ),
+        stream_usage=True,
+        coerce_content_to_string=True,
+        block_start_event=None,
+    )
+    assert chunk is None
+    # The block is still tracked so subsequent deltas resolve against it.
+    assert block_start_event is not None
 
 
 def test_strict_tool_use() -> None:
