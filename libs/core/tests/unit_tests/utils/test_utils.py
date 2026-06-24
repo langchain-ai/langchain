@@ -66,6 +66,16 @@ def test_check_package_version(
         ({"a": True}, {"a": True}, {"a": True}),
         ({"a": False}, {"a": False}, {"a": False}),
         ({"a": "txt"}, {"a": "txt"}, {"a": "txttxt"}),
+        (
+            {"model_name": "gpt-4"},
+            {"model_name": "gpt-4"},
+            {"model_name": "gpt-4"},
+        ),
+        (
+            {"finish_reason": "stop"},
+            {"finish_reason": "stop"},
+            {"finish_reason": "stop"},
+        ),
         ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2, 1, 2]}),
         ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txttxt"}}),
         # Merge strings.
