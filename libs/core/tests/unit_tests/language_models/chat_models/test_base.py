@@ -1362,6 +1362,18 @@ async def test_user_lc_versions_metadata_survives_merge_async() -> None:
         assert "langchain-core" in run_metadata["lc_versions"]
 
 
+def test_caller_ls_integration_survives_merge() -> None:
+    """A caller-supplied `ls_integration` is not overridden by the model default."""
+    llm = FakeListChatModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"ls_integration": "my-integration"}}
+
+    with collect_runs() as cb:
+        llm.invoke([HumanMessage(content="hi")], config=user_config)
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert run_metadata["ls_integration"] == "my-integration"
+
+
 def test_user_lc_versions_metadata_survives_merge_stream() -> None:
     """Stream variant: user-provided `lc_versions` metadata merges with model's."""
     llm = _VersionedFakeModel(responses=["hello"])

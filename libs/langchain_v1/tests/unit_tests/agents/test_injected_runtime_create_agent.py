@@ -279,7 +279,8 @@ def test_tool_runtime_config_access() -> None:
     assert config_data["config_exists"] is True
     assert "config_keys" in config_data
     assert config_data["recursion_limit"] == 9999
-    assert config_data["metadata"]["ls_integration"] == "langchain_create_agent"
+    # create_agent no longer bakes ls_integration; it defers to the caller.
+    assert "ls_integration" not in (config_data["metadata"] or {})
 
     tool_message = result["messages"][2]
     assert isinstance(tool_message, ToolMessage)

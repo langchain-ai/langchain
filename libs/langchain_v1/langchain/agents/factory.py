@@ -1778,9 +1778,10 @@ def create_agent(
     # Set recursion limit to 9_999
     # https://github.com/langchain-ai/langgraph/issues/7313
     config: RunnableConfig = {"recursion_limit": 9_999}
-    config["metadata"] = {"ls_integration": "langchain_create_agent"}
+    # Don't bake ls_integration here: it would override an outer integration's
+    # value inherited ambiently through the parent run tree.
     if name:
-        config["metadata"]["lc_agent_name"] = name
+        config["metadata"] = {"lc_agent_name": name}
 
     middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
 

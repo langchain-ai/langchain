@@ -738,10 +738,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
-            inheritable_metadata = {
-                **(config.get("metadata") or {}),
-                **self._get_ls_params_with_defaults(stop=stop, **kwargs),
-            }
+            inheritable_metadata = self._merge_inheritable_metadata(
+                config.get("metadata") or {},
+                self._get_ls_params_with_defaults(stop=stop, **kwargs),
+            )
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
                 self.callbacks,
@@ -867,10 +867,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
-        inheritable_metadata = {
-            **(config.get("metadata") or {}),
-            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
-        }
+        inheritable_metadata = self._merge_inheritable_metadata(
+            config.get("metadata") or {},
+            self._get_ls_params_with_defaults(stop=stop, **kwargs),
+        )
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
             self.callbacks,
@@ -1002,10 +1002,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
-        inheritable_metadata = {
-            **(config.get("metadata") or {}),
-            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
-        }
+        inheritable_metadata = self._merge_inheritable_metadata(
+            config.get("metadata") or {},
+            self._get_ls_params_with_defaults(stop=stop, **kwargs),
+        )
         callback_manager = CallbackManager.configure(
             config.get("callbacks"),
             self.callbacks,
@@ -1136,10 +1136,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
-        inheritable_metadata = {
-            **(config.get("metadata") or {}),
-            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
-        }
+        inheritable_metadata = self._merge_inheritable_metadata(
+            config.get("metadata") or {},
+            self._get_ls_params_with_defaults(stop=stop, **kwargs),
+        )
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
             self.callbacks,
@@ -1547,6 +1547,30 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         ls_params["ls_integration"] = "langchain_chat_model"
         return ls_params
 
+    @staticmethod
+    def _merge_inheritable_metadata(
+        inherited: dict[str, Any], ls_params: LangSmithParams
+    ) -> dict[str, Any]:
+        """Merge model `ls_params` into inherited run metadata.
+
+        Replacing "last-writer-wins" policy for `ls_integration`.
+        If a caller already set one on the run metadata, keep it instead of
+        overriding with the chat model default.
+        Mirrors langgraph, which sets `ls_integration` only when it is absent.
+
+        Args:
+            inherited: Run metadata inherited from the invocation config.
+            ls_params: LangSmith params for this chat model, including the
+                default `ls_integration`.
+
+        Returns:
+            The merged metadata, preserving any inherited `ls_integration`.
+        """
+        merged: dict[str, Any] = {**inherited, **ls_params}
+        if inherited.get("ls_integration"):
+            merged["ls_integration"] = inherited["ls_integration"]
+        return merged
+
     def _get_llm_string(self, stop: list[str] | None = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
             params = {**kwargs, "stop": stop}
@@ -1617,10 +1641,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **ls_structured_output_format_dict}
-        inheritable_metadata = {
-            **(metadata or {}),
-            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
-        }
+        inheritable_metadata = self._merge_inheritable_metadata(
+            metadata or {},
+            self._get_ls_params_with_defaults(stop=stop, **kwargs),
+        )
 
         callback_manager = CallbackManager.configure(
             callbacks,
@@ -1743,10 +1767,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **ls_structured_output_format_dict}
-        inheritable_metadata = {
-            **(metadata or {}),
-            **self._get_ls_params_with_defaults(stop=stop, **kwargs),
-        }
+        inheritable_metadata = self._merge_inheritable_metadata(
+            metadata or {},
+            self._get_ls_params_with_defaults(stop=stop, **kwargs),
+        )
 
         callback_manager = AsyncCallbackManager.configure(
             callbacks,
