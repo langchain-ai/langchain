@@ -782,14 +782,19 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 tool_call_ids.add(tool_msg.tool_call_id)
             idx += 1
 
-        # Search backward for AIMessage with matching tool_calls
+        # Search backward until every tool_call_id in the cutoff run is covered
+        remaining_ids = set(tool_call_ids)
+        earliest_match = cutoff_index
         for i in range(cutoff_index - 1, -1, -1):
             msg = messages[i]
             if isinstance(msg, AIMessage) and msg.tool_calls:
                 ai_tool_call_ids = {tc.get("id") for tc in msg.tool_calls if tc.get("id")}
-                if tool_call_ids & ai_tool_call_ids:
-                    # Found the AIMessage - move cutoff to include it
-                    return i
+                matched = remaining_ids & ai_tool_call_ids
+                if matched:
+                    remaining_ids -= matched
+                    earliest_match = i
+                    if not remaining_ids:
+                        return earliest_match
 
         # Fallback: no matching AIMessage found, advance past ToolMessages to avoid
         # orphaned tool responses

@@ -807,9 +807,10 @@ def test_summarization_middleware_find_safe_cutoff_point() -> None:
     assert middleware._find_safe_cutoff_point(messages, 0) == 0
     assert middleware._find_safe_cutoff_point(messages, 1) == 1
 
-    # Starting at ToolMessage with matching AIMessage moves back to include it
-    # ToolMessage at index 2 has tool_call_id="call1" which matches AIMessage at index 1
-    assert middleware._find_safe_cutoff_point(messages, 2) == 1
+    # Starting at ToolMessage with matching AIMessage moves back only when every
+    # consecutive tool_call_id at/after the cutoff is covered by preserved AI turns.
+    # Here call2 is orphan, so the cutoff advances past the whole tool run.
+    assert middleware._find_safe_cutoff_point(messages, 2) == 4
 
     # Starting at orphan ToolMessage (no matching AIMessage) falls back to advancing
     # ToolMessage at index 3 has tool_call_id="call2" with no matching AIMessage
@@ -845,6 +846,36 @@ def test_summarization_middleware_find_safe_cutoff_point_orphan_tool() -> None:
 
     # Starting at orphan ToolMessage falls back to advancing forward
     assert middleware._find_safe_cutoff_point(messages, 2) == 3
+
+
+def test_summarization_cutoff_advances_when_only_partial_tool_ids_match() -> None:
+    """Cutoff must cover every tool_call_id in the preserved run, not just one match."""
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 10), keep=("messages", 3)
+    )
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(
+            content="",
+            tool_calls=[{"name": "old_tool", "args": {}, "id": "X", "type": "tool_call"}],
+            id="a_old",
+        ),
+        ToolMessage(content="old result for X", tool_call_id="X", id="t_old_x"),
+        AIMessage(
+            content="",
+            tool_calls=[{"name": "new_tool", "args": {}, "id": "Y", "type": "tool_call"}],
+            id="a_new",
+        ),
+        ToolMessage(content="duplicated X reply", tool_call_id="X", id="t_orphan_x"),
+        ToolMessage(content="result for Y", tool_call_id="Y", id="t_y"),
+        HumanMessage(content="next", id="h_next"),
+    ]
+
+    # Cutoff at orphan X should move back to the AIMessage that covers every id in
+    # the tool run, keeping paired tool results with their originating AI turn.
+    assert middleware._find_safe_cutoff_point(messages, 4) == 1
 
 
 def test_summarization_cutoff_moves_backward_to_include_ai_message() -> None:
