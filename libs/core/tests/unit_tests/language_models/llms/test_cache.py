@@ -60,6 +60,49 @@ def test_local_cache_generate_sync() -> None:
         set_llm_cache(None)
 
 
+class SizedInMemoryCache(InMemoryCache):
+    """In-memory cache that reports its size via ``__len__``.
+
+    Many real cache implementations expose their entry count this way, which makes
+    an empty cache falsy. Used to guard against truthiness checks being used where
+    an identity check is intended.
+    """
+
+    def __len__(self) -> int:
+        return len(self._cache)
+
+
+async def test_local_cache_generate_async_sized_cache() -> None:
+    """A cache that defines ``__len__`` must work with ``agenerate``.
+
+    Regression test: ``aget_prompts``/``aupdate_cache`` previously used a
+    truthiness check, so an empty cache reporting ``len() == 0`` was treated as
+    absent. The prompt was added to neither the existing nor the missing set,
+    which raised ``KeyError`` when building the result.
+    """
+    local_cache = SizedInMemoryCache()
+    assert len(local_cache) == 0  # empty -> falsy
+    llm = FakeListLLM(cache=local_cache, responses=["foo", "bar"])
+    output = await llm.agenerate(["foo"])
+    assert output.generations[0][0].text == "foo"
+    # Second call must be served from the cache, not generate "bar".
+    output = await llm.agenerate(["foo"])
+    assert output.generations[0][0].text == "foo"
+    assert len(local_cache._cache) == 1
+
+
+def test_local_cache_generate_sync_sized_cache() -> None:
+    """Sync counterpart of `test_local_cache_generate_async_sized_cache`."""
+    local_cache = SizedInMemoryCache()
+    assert len(local_cache) == 0  # empty -> falsy
+    llm = FakeListLLM(cache=local_cache, responses=["foo", "bar"])
+    output = llm.generate(["foo"])
+    assert output.generations[0][0].text == "foo"
+    output = llm.generate(["foo"])
+    assert output.generations[0][0].text == "foo"
+    assert len(local_cache._cache) == 1
+
+
 class InMemoryCacheBad(BaseCache):
     """In-memory cache used for testing purposes."""
 
