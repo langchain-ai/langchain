@@ -3770,6 +3770,34 @@ def test_html_splitter_with_small_chunk_size() -> None:
 
 
 @pytest.mark.requires("bs4")
+def test_html_splitter_preserves_inline_tag_text_order() -> None:
+    """Inline formatting tags should not reorder surrounding text."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some long text that <strong>should</strong> be split into multiple chunks due to the
+    small chunk size.</p>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")], max_chunk_size=50, chunk_overlap=5
+        )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some long text that should be split into",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content="into multiple chunks due to the small chunk size.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
 def test_html_splitter_with_denylist_tags() -> None:
     """Test HTML splitting with denylist tag filtering."""
     html_content = """
