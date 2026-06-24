@@ -935,8 +935,20 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                     # Recursively process children to find nested headers or
                     # preserved elements.
                     children = _find_all_tags(elem, recursive=False)
-                    if children:
-                        # Element has children - recursively process them.
+                    structural_child_names = {
+                        header[0] for header in self._headers_to_split_on
+                    } | set(self._elements_to_preserve)
+                    has_structural_children = any(
+                        child.name in structural_child_names for child in children
+                    )
+                    if children and not has_structural_children:
+                        # Inline tags such as <strong> or <a> should keep their
+                        # surrounding text in document order.
+                        content = _get_element_text(elem)
+                        if content:
+                            current_content.append(content)
+                    elif children:
+                        # Element has structural children - recursively process them.
                         (
                             documents,
                             current_headers,
@@ -951,8 +963,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                             preserved_elements,
                             placeholder_count,
                         )
-                        # After processing children, extract only text
-                        # strings from this element (not its children). Used
+                        # After processing children, extract only direct text
+                        # nodes from this element (not its children). Used
                         # recursive=False to avoid double-counting.
                         content = " ".join(_find_all_strings(elem, recursive=False))
                         if content:
