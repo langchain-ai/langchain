@@ -936,6 +936,13 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                     # preserved elements.
                     children = _find_all_tags(elem, recursive=False)
                     if children:
+                        # Extract direct text of the parent element first
+                        # (before recursing into children) so that inline
+                        # tags like <strong>, <em>, <a> don't reorder text.
+                        content = " ".join(_find_all_strings(elem, recursive=False))
+                        if content:
+                            content = self._normalize_and_clean_text(content)
+                            current_content.append(content)
                         # Element has children - recursively process them.
                         (
                             documents,
@@ -951,13 +958,6 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                             preserved_elements,
                             placeholder_count,
                         )
-                        # After processing children, extract only text
-                        # strings from this element (not its children). Used
-                        # recursive=False to avoid double-counting.
-                        content = " ".join(_find_all_strings(elem, recursive=False))
-                        if content:
-                            content = self._normalize_and_clean_text(content)
-                            current_content.append(content)
                     else:
                         # Leaf element with no children, so we extract its
                         # text and add to current content. Handles
