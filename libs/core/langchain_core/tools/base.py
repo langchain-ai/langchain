@@ -1062,7 +1062,11 @@ class ChildTool(BaseTool):
                 if signature(self._run).parameters.get("run_manager"):
                     tool_kwargs |= {"run_manager": run_manager}
                 if config_param := _get_runnable_config_param(self._run):
-                    tool_kwargs |= {config_param: config}
+                    # Only inject the RunnableConfig if the parameter is not already
+                    # populated by a user-supplied tool argument of the same name. This
+                    # avoids clobbering a real tool field named e.g. "config" (#34029).
+                    if config_param not in tool_kwargs:
+                        tool_kwargs |= {config_param: config}
                 response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 msg = (
@@ -1190,7 +1194,10 @@ class ChildTool(BaseTool):
                 if signature(func_to_check).parameters.get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager
                 if config_param := _get_runnable_config_param(func_to_check):
-                    tool_kwargs[config_param] = config
+                    # See sync path above: don't overwrite a user-supplied arg
+                    # that happens to be named like the config param (#34029).
+                    if config_param not in tool_kwargs:
+                        tool_kwargs[config_param] = config
 
                 coro = self._arun(*tool_args, **tool_kwargs)
                 response = await coro_with_context(coro, context)
