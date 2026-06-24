@@ -1122,6 +1122,38 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
     assert expected == actual
 
 
+def test__format_messages_preserves_tool_use_cache_control() -> None:
+    """`cache_control` on a `tool_use` block survives tool_calls deduplication."""
+    ai = AIMessage(  # type: ignore[misc]
+        [
+            {"type": "text", "text": "Let me check."},
+            {
+                "type": "tool_use",
+                "id": "toolu_1",
+                "name": "get_weather",
+                "input": {"city": "Paris"},
+                "cache_control": {"type": "ephemeral"},
+            },
+        ],
+        tool_calls=[{"name": "get_weather", "args": {"city": "Paris"}, "id": "toolu_1"}],
+    )
+
+    _, formatted = _format_messages([HumanMessage("weather?"), ai])  # type: ignore[misc]
+    tool_use_blocks = [
+        block for block in formatted[-1]["content"] if block["type"] == "tool_use"
+    ]
+
+    assert tool_use_blocks == [
+        {
+            "type": "tool_use",
+            "name": "get_weather",
+            "input": {"city": "Paris"},
+            "id": "toolu_1",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+
+
 def test__format_messages_with_cache_control() -> None:
     messages = [
         SystemMessage(

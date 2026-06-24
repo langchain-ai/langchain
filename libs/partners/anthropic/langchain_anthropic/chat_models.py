@@ -543,11 +543,15 @@ def _format_messages(
                                 for tc in message.tool_calls
                                 if tc["id"] == block["id"]
                             ]
-                            content.extend(
-                                _lc_tool_calls_to_anthropic_tool_use_blocks(
-                                    overlapping,
-                                ),
+                            tool_use_blocks = _lc_tool_calls_to_anthropic_tool_use_blocks(
+                                overlapping,
                             )
+                            if cache_control := block.get("cache_control"):
+                                block_id = _normalize_tool_call_id(block["id"])
+                                for tool_use_block in tool_use_blocks:
+                                    if tool_use_block["id"] == block_id:
+                                        tool_use_block["cache_control"] = cache_control
+                            content.extend(tool_use_blocks)
                         else:
                             if tool_input := block.get("input"):
                                 args = tool_input
@@ -566,6 +570,8 @@ def _format_messages(
                             )
                             if caller := block.get("caller"):
                                 tool_use_block["caller"] = caller
+                            if cache_control := block.get("cache_control"):
+                                tool_use_block["cache_control"] = cache_control
                             content.append(tool_use_block)
                     elif block["type"] in ("server_tool_use", "mcp_tool_use"):
                         formatted_block = {
