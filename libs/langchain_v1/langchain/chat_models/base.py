@@ -251,7 +251,7 @@ def init_chat_model(
 
             Inferred providers by prefix (case-insensitive):
 
-            - `gpt-...` | `o1...` | `o3...`               -> `openai`
+            - `gpt-...` | `o1...` | `o3...` | `o4...`        -> `openai`
             - `claude...`                                 -> `anthropic`
             - `amazon....` | `anthropic....` | `meta....` -> `bedrock`
             - `gemini...`                                 -> `google_vertexai` (default changes in next major; pass `model_provider` to lock in)
@@ -536,6 +536,7 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
             "gpt-",
             "o1",
             "o3",
+            "o4",
             "chatgpt",
             "text-davinci",
         )
