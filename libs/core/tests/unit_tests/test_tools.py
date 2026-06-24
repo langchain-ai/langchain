@@ -4033,3 +4033,65 @@ def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> Non
     new_schema = new_cls.model_json_schema()
     assert new_schema is not old_schema
     assert new_schema["description"] == "New description for cache test."
+
+
+def test_tool_arg_named_config_not_clobbered() -> None:
+    """A tool field literally named ``config`` must reach the function (#34029).
+
+    The reserved ``RunnableConfig`` injection must not overwrite a user-supplied
+    tool argument that happens to be named ``config``.
+    """
+    received: dict[str, Any] = {}
+
+    @tool
+    def add_config(config: str) -> str:
+        """Add a configuration file name.
+
+        Args:
+            config: The file name.
+        """
+        received["config"] = config
+        return f"added {config}"
+
+    result = add_config.invoke({"config": "config.0"})
+
+    assert result == "added config.0"
+    assert received["config"] == "config.0"
+
+
+def test_tool_runnable_config_still_injected() -> None:
+    """Regression guard: genuine RunnableConfig params are still injected (#34029)."""
+    seen: dict[str, Any] = {}
+
+    @tool
+    def needs_config(x: int, my_config: RunnableConfig) -> int:
+        """Double x.
+
+        Args:
+            x: a number.
+        """
+        seen["config"] = my_config
+        return x * 2
+
+    assert needs_config.invoke({"x": 3}) == 6
+    assert isinstance(seen["config"], dict)
+
+
+async def test_tool_arg_named_config_not_clobbered_async() -> None:
+    """Async path mirror of #34029: a ``config`` arg must reach the function."""
+    received: dict[str, Any] = {}
+
+    @tool
+    def add_config(config: str) -> str:
+        """Add a configuration file name.
+
+        Args:
+            config: The file name.
+        """
+        received["config"] = config
+        return f"added {config}"
+
+    result = await add_config.ainvoke({"config": "config.0"})
+
+    assert result == "added config.0"
+    assert received["config"] == "config.0"
