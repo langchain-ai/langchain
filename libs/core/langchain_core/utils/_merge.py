@@ -56,10 +56,14 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 #             "should either occur once or have the same value across "
                 #             "all dicts."
                 #         )
-                if (right_k == "index" and merged[right_k].startswith("lc_")) or (
-                    right_k in {"id", "output_version", "model_provider"}
-                    and merged[right_k] == right_v
-                ):
+                if right_k == "index" and merged[right_k].startswith("lc_"):
+                    continue
+                # Deduplicate: identical string values should not be concatenated.
+                # Streaming content chunks are always distinct substrings; repeated
+                # equal strings indicate metadata fields (model_name, finish_reason,
+                # etc.) that appear across multiple terminal chunks and should not
+                # be doubled.
+                if merged[right_k] == right_v:
                     continue
                 merged[right_k] += right_v
             elif isinstance(merged[right_k], dict):
@@ -84,7 +88,6 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 )
                 raise TypeError(msg)
     return merged
-
 
 def merge_lists(left: list[Any] | None, *others: list[Any] | None) -> list[Any] | None:
     """Add many lists, handling `None`.
