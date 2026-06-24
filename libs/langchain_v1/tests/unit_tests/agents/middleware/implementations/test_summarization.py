@@ -828,6 +828,38 @@ def test_summarization_middleware_find_safe_cutoff_point() -> None:
     assert middleware._find_safe_cutoff_point(messages, len(messages) + 5) == len(messages) + 5
 
 
+def test_summarization_middleware_find_safe_cutoff_point_mixed_orphan_tool() -> None:
+    """Cutoff must advance when only some ToolMessage ids match a prior AIMessage."""
+    middleware = SummarizationMiddleware(
+        model=FakeToolCallingModel(), trigger=("messages", 10), keep=("messages", 2)
+    )
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(
+            content="",
+            tool_calls=[
+                {"name": "old_tool", "args": {}, "id": "X", "type": "tool_call"},
+            ],
+            id="a_old",
+        ),
+        ToolMessage(content="old result for X", tool_call_id="X", id="t_old_x"),
+        AIMessage(
+            content="",
+            tool_calls=[
+                {"name": "new_tool", "args": {}, "id": "Y", "type": "tool_call"},
+            ],
+            id="a_new",
+        ),
+        ToolMessage(content="duplicated X reply", tool_call_id="X", id="t_orphan_x"),
+        ToolMessage(content="result for Y", tool_call_id="Y", id="t_y"),
+        HumanMessage(content="next", id="h_next"),
+    ]
+
+    # Cutoff at the orphan ToolMessage must skip the whole consecutive run.
+    assert middleware._find_safe_cutoff_point(messages, 4) == 6
+
+
 def test_summarization_middleware_find_safe_cutoff_point_orphan_tool() -> None:
     """Test `_find_safe_cutoff_point` with truly orphan `ToolMessage` (no matching `AIMessage`)."""
     model = FakeToolCallingModel()
