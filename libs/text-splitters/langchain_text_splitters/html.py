@@ -932,32 +932,36 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                     current_content.append(placeholder)
                     placeholder_count += 1
                 else:
-                    # Recursively process children to find nested headers or
-                    # preserved elements.
-                    children = _find_all_tags(elem, recursive=False)
-                    if children:
-                        # Element has children - recursively process them.
-                        (
-                            documents,
-                            current_headers,
-                            current_content,
-                            preserved_elements,
-                            placeholder_count,
-                        ) = _process_element(
-                            children,
-                            documents,
-                            current_headers,
-                            current_content,
-                            preserved_elements,
-                            placeholder_count,
-                        )
-                        # After processing children, extract only text
-                        # strings from this element (not its children). Used
-                        # recursive=False to avoid double-counting.
-                        content = " ".join(_find_all_strings(elem, recursive=False))
-                        if content:
-                            content = self._normalize_and_clean_text(content)
-                            current_content.append(content)
+                    child_tags = _find_all_tags(elem, recursive=False)
+                    has_direct_strings = any(
+                        isinstance(child, NavigableString) for child in elem.children
+                    )
+                    if child_tags or has_direct_strings:
+                        # Process children in document order so inline tags keep
+                        # surrounding text in the correct sequence.
+                        for child in elem.children:
+                            child_elem = cast("Tag | NavigableString", child)
+                            if isinstance(child_elem, NavigableString):
+                                content = self._normalize_and_clean_text(
+                                    str(child_elem)
+                                )
+                                if content:
+                                    current_content.append(content)
+                            elif child_elem.name:
+                                (
+                                    documents,
+                                    current_headers,
+                                    current_content,
+                                    preserved_elements,
+                                    placeholder_count,
+                                ) = _process_element(
+                                    [child_elem],
+                                    documents,
+                                    current_headers,
+                                    current_content,
+                                    preserved_elements,
+                                    placeholder_count,
+                                )
                     else:
                         # Leaf element with no children, so we extract its
                         # text and add to current content. Handles
