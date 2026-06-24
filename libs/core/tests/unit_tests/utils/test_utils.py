@@ -129,6 +129,9 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        # String deduplication for specific keys
+        ({"model_name": "deepseek"}, {"model_name": "deepseek"}, {"model_name": "deepseek"}),
+        ({"finish_reason": "stop"}, {"finish_reason": "stop"}, {"finish_reason": "stop"}),
     ],
 )
 def test_merge_dicts(
