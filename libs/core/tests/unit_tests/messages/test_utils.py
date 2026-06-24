@@ -2797,6 +2797,19 @@ def test_count_tokens_approximately_with_multiple_images() -> None:
     assert 170 < token_count < 190
 
 
+def test_count_tokens_approximately_with_audio_video_and_file_blocks() -> None:
+    """Non-image data blocks should not char-count large base64 payloads."""
+    payload = "A" * 10_000
+    blocks = [
+        {"type": "audio", "base64": payload, "mime_type": "audio/wav"},
+        {"type": "video", "base64": payload, "mime_type": "video/mp4"},
+        {"type": "file", "base64": payload, "mime_type": "application/pdf"},
+    ]
+    for block in blocks:
+        token_count = count_tokens_approximately([HumanMessage(content=[block])])
+        assert token_count < 200, f"Expected fixed penalty for {block['type']}, got {token_count}"
+
+
 def test_count_tokens_approximately_text_only_backward_compatible() -> None:
     """Test that text-only messages still work correctly."""
     messages = [

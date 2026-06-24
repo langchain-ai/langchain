@@ -2325,6 +2325,8 @@ def count_tokens_approximately(
                     # Apply fixed penalty for image blocks
                     if block_type in {"image", "image_url"}:
                         token_count += tokens_per_image
+                    elif block_type in {"audio", "video", "file", "input_audio"}:
+                        token_count += tokens_per_image
                     # Count text blocks normally
                     elif block_type == "text":
                         text = block.get("text", "")
