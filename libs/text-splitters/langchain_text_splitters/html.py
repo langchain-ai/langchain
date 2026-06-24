@@ -936,28 +936,31 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                     # preserved elements.
                     children = _find_all_tags(elem, recursive=False)
                     if children:
-                        # Element has children - recursively process them.
-                        (
-                            documents,
-                            current_headers,
-                            current_content,
-                            preserved_elements,
-                            placeholder_count,
-                        ) = _process_element(
-                            children,
-                            documents,
-                            current_headers,
-                            current_content,
-                            preserved_elements,
-                            placeholder_count,
+                        header_tags = {h[0] for h in self._headers_to_split_on}
+                        has_special_children = any(
+                            child.name in header_tags
+                            or child.name in self._elements_to_preserve
+                            for child in children
                         )
-                        # After processing children, extract only text
-                        # strings from this element (not its children). Used
-                        # recursive=False to avoid double-counting.
-                        content = " ".join(_find_all_strings(elem, recursive=False))
-                        if content:
-                            content = self._normalize_and_clean_text(content)
-                            current_content.append(content)
+                        if has_special_children:
+                            (
+                                documents,
+                                current_headers,
+                                current_content,
+                                preserved_elements,
+                                placeholder_count,
+                            ) = _process_element(
+                                children,
+                                documents,
+                                current_headers,
+                                current_content,
+                                preserved_elements,
+                                placeholder_count,
+                            )
+                        else:
+                            content = _get_element_text(elem)
+                            if content:
+                                current_content.append(content)
                     else:
                         # Leaf element with no children, so we extract its
                         # text and add to current content. Handles
