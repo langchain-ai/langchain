@@ -14,7 +14,13 @@ import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
 from langchain_core.exceptions import ContextOverflowError
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolCall,
+    ToolMessage,
+)
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
@@ -1114,6 +1120,26 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
     )
     actual = _format_messages(messages)
     assert expected == actual
+
+
+def test__format_messages_preserves_tool_use_cache_control() -> None:
+    """`cache_control` on a tool_use block survives tool_call deduplication."""
+    ai = AIMessage(  # type: ignore[misc]
+        [
+            {"type": "text", "text": "Let me check."},
+            {
+                "type": "tool_use",
+                "id": "toolu_1",
+                "name": "get_weather",
+                "input": {"city": "Paris"},
+                "cache_control": {"type": "ephemeral"},
+            },
+        ],
+        tool_calls=[ToolCall(name="get_weather", args={"city": "Paris"}, id="toolu_1")],
+    )
+    _, formatted = _format_messages([HumanMessage(content="weather?"), ai])
+    tool_use_block = formatted[-1]["content"][-1]
+    assert tool_use_block["cache_control"] == {"type": "ephemeral"}
 
 
 def test__format_messages_with_cache_control() -> None:
