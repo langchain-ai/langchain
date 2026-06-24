@@ -932,32 +932,28 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                     current_content.append(placeholder)
                     placeholder_count += 1
                 else:
-                    # Recursively process children to find nested headers or
-                    # preserved elements.
-                    children = _find_all_tags(elem, recursive=False)
-                    if children:
-                        # Element has children - recursively process them.
-                        (
-                            documents,
-                            current_headers,
-                            current_content,
-                            preserved_elements,
-                            placeholder_count,
-                        ) = _process_element(
-                            children,
-                            documents,
-                            current_headers,
-                            current_content,
-                            preserved_elements,
-                            placeholder_count,
-                        )
-                        # After processing children, extract only text
-                        # strings from this element (not its children). Used
-                        # recursive=False to avoid double-counting.
-                        content = " ".join(_find_all_strings(elem, recursive=False))
-                        if content:
-                            content = self._normalize_and_clean_text(content)
-                            current_content.append(content)
+                    child_tags = _find_all_tags(elem, recursive=False)
+                    if child_tags:
+                        for child in elem.children:
+                            if isinstance(child, NavigableString):
+                                text = self._normalize_and_clean_text(str(child))
+                                if text:
+                                    current_content.append(text)
+                            elif isinstance(child, Tag):
+                                (
+                                    documents,
+                                    current_headers,
+                                    current_content,
+                                    preserved_elements,
+                                    placeholder_count,
+                                ) = _process_element(
+                                    cast("ResultSet[Tag]", [child]),
+                                    documents,
+                                    current_headers,
+                                    current_content,
+                                    preserved_elements,
+                                    placeholder_count,
+                                )
                     else:
                         # Leaf element with no children, so we extract its
                         # text and add to current content. Handles

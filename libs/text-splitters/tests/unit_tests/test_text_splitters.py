@@ -4035,6 +4035,29 @@ def test_html_splitter_keep_separator_false() -> None:
 
 
 @pytest.mark.requires("bs4")
+def test_html_semantic_preserving_splitter_inline_tag_text_order() -> None:
+    """Inline tags must not reorder surrounding text when chunking."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some long text that <strong>should</strong> be split into multiple chunks due to the
+    small chunk size.</p>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            max_chunk_size=50,
+            chunk_overlap=5,
+        )
+    documents = splitter.split_text(html_content)
+
+    assert len(documents) >= 2
+    combined = " ".join(doc.page_content for doc in documents)
+    assert "should" in combined
+    assert combined.index("should") > combined.index("long text that")
+    assert documents[0].page_content.startswith("This is some long text that")
+
+
+@pytest.mark.requires("bs4")
 def test_html_splitter_keep_separator_start() -> None:
     """Test HTML splitting with keep_separator="start"."""
     html_content = """
