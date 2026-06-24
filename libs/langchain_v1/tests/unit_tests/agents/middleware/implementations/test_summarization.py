@@ -847,6 +847,34 @@ def test_summarization_middleware_find_safe_cutoff_point_orphan_tool() -> None:
     assert middleware._find_safe_cutoff_point(messages, 2) == 3
 
 
+def test_summarization_middleware_find_safe_cutoff_point_partial_ai_match() -> None:
+    """Cutoff must cover every tool_call_id, not just the first partial match."""
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 10), keep=("messages", 2)
+    )
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(
+            content="",
+            tool_calls=[{"name": "old_tool", "args": {}, "id": "X", "type": "tool_call"}],
+            id="a_old",
+        ),
+        ToolMessage(content="old result for X", tool_call_id="X", id="t_old_x"),
+        AIMessage(
+            content="",
+            tool_calls=[{"name": "new_tool", "args": {}, "id": "Y", "type": "tool_call"}],
+            id="a_new",
+        ),
+        ToolMessage(content="duplicated X reply", tool_call_id="X", id="t_orphan_x"),
+        ToolMessage(content="result for Y", tool_call_id="Y", id="t_y"),
+        HumanMessage(content="next", id="h_next"),
+    ]
+
+    assert middleware._find_safe_cutoff_point(messages, 4) == 1
+
+
 def test_summarization_cutoff_moves_backward_to_include_ai_message() -> None:
     """Test that cutoff moves backward to include `AIMessage` with its `ToolMessage`s.
 

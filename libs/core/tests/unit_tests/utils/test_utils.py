@@ -129,6 +129,11 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        (
+            {"model_name": "gpt-4o", "finish_reason": "stop"},
+            {"model_name": "gpt-4o", "finish_reason": "stop"},
+            {"model_name": "gpt-4o", "finish_reason": "stop"},
+        ),
     ],
 )
 def test_merge_dicts(
