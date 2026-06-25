@@ -129,6 +129,67 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        # Identical metadata strings should be preserved, not concatenated
+        # (model_name, finish_reason, etc. from streaming chunks)
+        (
+            {"model_name": "gpt-4"},
+            {"model_name": "gpt-4"},
+            {"model_name": "gpt-4"},
+        ),
+        (
+            {"finish_reason": "stop"},
+            {"finish_reason": "stop"},
+            {"finish_reason": "stop"},
+        ),
+        (
+            {"native_finish_reason": "stop"},
+            {"native_finish_reason": "stop"},
+            {"native_finish_reason": "stop"},
+        ),
+        (
+            {"object": "chat.completion.chunk"},
+            {"object": "chat.completion.chunk"},
+            {"object": "chat.completion.chunk"},
+        ),
+        (
+            {"system_fingerprint": "fp_123"},
+            {"system_fingerprint": "fp_123"},
+            {"system_fingerprint": "fp_123"},
+        ),
+        (
+            {"format": "json"},
+            {"format": "json"},
+            {"format": "json"},
+        ),
+        # Different strings for these keys should still be concatenated
+        (
+            {"model_name": "gpt-4"},
+            {"model_name": "-turbo"},
+            {"model_name": "gpt-4-turbo"},
+        ),
+        (
+            {"finish_reason": "sto"},
+            {"finish_reason": "p"},
+            {"finish_reason": "stop"},
+        ),
+        # Multiple metadata fields in a single merge
+        (
+            {
+                "model_name": "deepseek/deepseek-v4-pro",
+                "finish_reason": "stop",
+                "object": "chat.completion.chunk",
+            },
+            {
+                "model_name": "deepseek/deepseek-v4-pro",
+                "finish_reason": "stop",
+                "object": "chat.completion.chunk",
+            },
+            {
+                "model_name": "deepseek/deepseek-v4-pro",
+                "finish_reason": "stop",
+                "object": "chat.completion.chunk",
+            },
+        ),
     ],
 )
 def test_merge_dicts(
