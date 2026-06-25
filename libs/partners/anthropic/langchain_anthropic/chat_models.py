@@ -546,6 +546,7 @@ def _format_messages(
                             content.extend(
                                 _lc_tool_calls_to_anthropic_tool_use_blocks(
                                     overlapping,
+                                    cache_control=block.get("cache_control"),
                                 ),
                             )
                         else:
@@ -2279,12 +2280,14 @@ class _AnthropicToolUse(TypedDict):
     input: dict
     id: str
     caller: NotRequired[dict[str, Any]]
+    cache_control: NotRequired[dict[str, Any]]
 
 
 def _lc_tool_calls_to_anthropic_tool_use_blocks(
     tool_calls: list[ToolCall],
+    cache_control: dict[str, Any] | None = None,
 ) -> list[_AnthropicToolUse]:
-    return [
+    blocks = [
         _AnthropicToolUse(
             type="tool_use",
             name=tool_call["name"],
@@ -2293,6 +2296,10 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
         )
         for tool_call in tool_calls
     ]
+    if cache_control is not None:
+        for block in blocks:
+            block["cache_control"] = cache_control
+    return blocks
 
 
 def _convert_to_anthropic_output_config_format(schema: dict | type) -> dict[str, Any]:

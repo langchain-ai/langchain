@@ -1116,6 +1116,68 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
     assert expected == actual
 
 
+def test__format_messages_tool_use_cache_control_preserved_with_tool_calls() -> None:
+    """Test that cache_control on a tool_use block is preserved when a matching
+    tool_calls item exists.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38398
+    """
+    ai = AIMessage(
+        content=[
+            {"type": "text", "text": "Let me check."},
+            {
+                "type": "tool_use",
+                "id": "toolu_1",
+                "name": "get_weather",
+                "input": {"city": "Paris"},
+                "cache_control": {"type": "ephemeral"},
+            },
+        ],
+        tool_calls=[{"name": "get_weather", "args": {"city": "Paris"}, "id": "toolu_1"}],
+    )
+    messages = [HumanMessage("weather?"), ai]
+    _, formatted = _format_messages(messages)
+    assistant_content = formatted[-1]["content"]
+
+    # cache_control must survive the tool_calls → tool_use rebuild
+    assert any(
+        isinstance(b, dict) and b.get("cache_control") == {"type": "ephemeral"}
+        for b in assistant_content
+    ), "cache_control was silently dropped from tool_use block"
+
+    # The tool_use block should use args from tool_calls (preferred) but keep cache_control
+    tool_use_blocks = [
+        b for b in assistant_content if isinstance(b, dict) and b.get("type") == "tool_use"
+    ]
+    assert len(tool_use_blocks) == 1
+    assert tool_use_blocks[0]["input"] == {"city": "Paris"}
+    assert tool_use_blocks[0]["cache_control"] == {"type": "ephemeral"}
+
+
+def test__format_messages_tool_use_no_cache_control_without_it() -> None:
+    """Test that tool_use blocks without cache_control don't get one added."""
+    ai = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": "toolu_2",
+                "name": "get_weather",
+                "input": {"city": "London"},
+            },
+        ],
+        tool_calls=[{"name": "get_weather", "args": {"city": "London"}, "id": "toolu_2"}],
+    )
+    messages = [HumanMessage("weather?"), ai]
+    _, formatted = _format_messages(messages)
+    assistant_content = formatted[-1]["content"]
+
+    tool_use_blocks = [
+        b for b in assistant_content if isinstance(b, dict) and b.get("type") == "tool_use"
+    ]
+    assert len(tool_use_blocks) == 1
+    assert "cache_control" not in tool_use_blocks[0]
+
+
 def test__format_messages_with_cache_control() -> None:
     messages = [
         SystemMessage(
