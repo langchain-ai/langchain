@@ -39,6 +39,14 @@ class InMemoryCache(BaseCache):
         self._cache = {}
 
 
+class SizedInMemoryCache(InMemoryCache):
+    """In-memory cache that exposes its size."""
+
+    def __len__(self) -> int:
+        """Return the number of cached entries."""
+        return len(self._cache)
+
+
 def test_local_cache_sync() -> None:
     """Test that the local cache is being populated but not the global one."""
     global_cache = InMemoryCache()
@@ -99,6 +107,26 @@ async def test_local_cache_async() -> None:
         assert len(local_cache._cache) == 2
     finally:
         set_llm_cache(None)
+
+
+def test_sized_local_cache_sync() -> None:
+    """Test that an empty cache with __len__ is still used."""
+    local_cache = SizedInMemoryCache()
+    chat_model = FakeListChatModel(cache=local_cache, responses=["hello", "goodbye"])
+
+    assert chat_model.invoke("How are you?").content == "hello"
+    assert chat_model.invoke("How are you?").content == "hello"
+    assert len(local_cache) == 1
+
+
+async def test_sized_local_cache_async() -> None:
+    """Test that an empty cache with __len__ is still used asynchronously."""
+    local_cache = SizedInMemoryCache()
+    chat_model = FakeListChatModel(cache=local_cache, responses=["hello", "goodbye"])
+
+    assert (await chat_model.ainvoke("How are you?")).content == "hello"
+    assert (await chat_model.ainvoke("How are you?")).content == "hello"
+    assert len(local_cache) == 1
 
 
 def test_global_cache_sync() -> None:

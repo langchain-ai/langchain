@@ -28,6 +28,14 @@ class InMemoryCache(BaseCache):
         self._cache = {}
 
 
+class SizedInMemoryCache(InMemoryCache):
+    """In-memory cache that exposes its size."""
+
+    def __len__(self) -> int:
+        """Return the number of cached entries."""
+        return len(self._cache)
+
+
 async def test_local_cache_generate_async() -> None:
     global_cache = InMemoryCache()
     local_cache = InMemoryCache()
@@ -58,6 +66,28 @@ def test_local_cache_generate_sync() -> None:
         assert len(local_cache._cache) == 1
     finally:
         set_llm_cache(None)
+
+
+def test_sized_local_cache_generate_sync() -> None:
+    local_cache = SizedInMemoryCache()
+    llm = FakeListLLM(cache=local_cache, responses=["foo", "bar"])
+
+    output = llm.generate(["foo"])
+    assert output.generations[0][0].text == "foo"
+    output = llm.generate(["foo"])
+    assert output.generations[0][0].text == "foo"
+    assert len(local_cache) == 1
+
+
+async def test_sized_local_cache_generate_async() -> None:
+    local_cache = SizedInMemoryCache()
+    llm = FakeListLLM(cache=local_cache, responses=["foo", "bar"])
+
+    output = await llm.agenerate(["foo"])
+    assert output.generations[0][0].text == "foo"
+    output = await llm.agenerate(["foo"])
+    assert output.generations[0][0].text == "foo"
+    assert len(local_cache) == 1
 
 
 class InMemoryCacheBad(BaseCache):
