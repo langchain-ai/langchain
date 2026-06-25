@@ -117,6 +117,10 @@ def test_check_package_version(
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
+        # Boolean metadata should not be coerced into integer sums
+        ({"cached": False}, {"cached": True}, {"cached": True}),
+        ({"cached": True}, {"cached": False}, {"cached": False}),
+        ({"cached": True}, {"cached": True}, {"cached": True}),
         # Integer 'index' should be preserved, not summed (tool call identification)
         ({"index": 1}, {"index": 1}, {"index": 1}),
         ({"index": 0}, {"index": 1}, {"index": 1}),
