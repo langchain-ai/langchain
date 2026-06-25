@@ -124,6 +124,19 @@ def _get_annotation_description(arg_type: type) -> str | None:
     return None
 
 
+def _get_docstring(obj: Callable[..., Any]) -> str | None:
+    """Get an object's docstring without inheriting it from parent classes.
+
+    `inspect.getdoc` walks the MRO for classes, which means a tool created from a
+    subclass would inherit its parent's docstring. We don't want that for tool
+    descriptions, so for classes we only consider the class's own ``__doc__``.
+    """
+    if isinstance(obj, type):
+        doc = obj.__dict__.get("__doc__")
+        return inspect.cleandoc(doc) if isinstance(doc, str) else None
+    return inspect.getdoc(obj)
+
+
 def _parse_python_function_docstring(
     function: Callable[..., Any],
     annotations: dict[str, Any],
@@ -142,7 +155,7 @@ def _parse_python_function_docstring(
     Returns:
         A tuple containing the function description and argument descriptions.
     """
-    docstring = inspect.getdoc(function)
+    docstring = _get_docstring(function)
     return _parse_google_docstring(
         docstring,
         list(annotations),
@@ -190,7 +203,7 @@ def _infer_arg_descriptions(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
         )
     else:
-        description = inspect.getdoc(fn) or ""
+        description = _get_docstring(fn) or ""
         arg_descriptions = {}
     if parse_docstring:
         _validate_docstring_args_against_annotations(arg_descriptions, annotations)

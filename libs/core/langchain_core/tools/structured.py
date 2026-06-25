@@ -230,6 +230,11 @@ class StructuredTool(BaseTool):
                     f"got {args_schema}"
                 )
                 raise TypeError(msg)
+        if description_ is None and isinstance(source_function, type):
+            # Tools created from a class may omit a docstring. Unlike functions,
+            # they default to an empty description instead of raising, and they do
+            # not inherit a description from parent classes.
+            description_ = ""
         if description_ is None:
             msg = "Function must have a docstring if description not provided."
             raise ValueError(msg)
