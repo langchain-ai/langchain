@@ -1,3 +1,4 @@
+import sys
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
@@ -29,6 +30,7 @@ def test_mset_and_mget(file_store: LocalFileStore) -> None:
     assert values == [b"value1", b"value2"]
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="chmod group/other bits are not enforced on Windows")
 @pytest.mark.parametrize(
     ("chmod_dir_s", "chmod_file_s"),
     [("777", "666"), ("770", "660"), ("700", "600")],
