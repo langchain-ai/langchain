@@ -16,6 +16,7 @@
   	model -.-> tools;
   	tools -.-> __end__;
   	tools -.-> model;
+  	model -.-> model;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -39,6 +40,7 @@
   	model -.-> tools;
   	tools -.-> __end__;
   	tools -.-> model;
+  	model -.-> model;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -61,6 +63,7 @@
   	model -.-> __end__;
   	model -.-> tools;
   	tools -.-> model;
+  	model -.-> model;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc

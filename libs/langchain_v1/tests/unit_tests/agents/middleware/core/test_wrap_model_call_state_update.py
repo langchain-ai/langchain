@@ -6,10 +6,12 @@ updates through graph reducers (e.g. add_messages for messages).
 """
 
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.tools import tool
 from langgraph.errors import InvalidUpdateError
 from langgraph.types import Command
 from typing_extensions import override
@@ -917,3 +919,88 @@ class TestCommandGraphDisallowed:
 
         with pytest.raises(NotImplementedError, match="Command graph is not yet supported"):
             await agent.ainvoke({"messages": [HumanMessage(content="Hi")]})
+
+
+class TestSyntheticToolMessageInjection:
+    """Test wrap_model_call middleware that injects synthetic ToolMessages.
+
+    This reproduces the bug from langchain-ai/langchain#38351 where a
+    wrap_model_call middleware injecting synthetic ToolMessages causes
+    KeyError('model') because the path_map omits the model destination.
+    """
+
+    def test_synthetic_tool_messages_route_back_to_model(self) -> None:
+        """Middleware injecting synthetic ToolMessages should allow routing back to model.
+
+        When a wrap_model_call middleware injects synthetic ToolMessages for every
+        tool_call (e.g., for caching, HITL pre-approval, or replay), the agent should
+        route back to the model node instead of raising KeyError('model').
+        """
+
+        class ToolBindFakeModel(GenericFakeChatModel):
+            def bind_tools(self, tools: Any, **kw: Any) -> Any:  # noqa: ANN001
+                return self
+
+        @tool
+        def foo(x: int) -> int:
+            """A trivial tool the agent can call."""
+            return x + 1
+
+        class InjectToolMessageMiddleware(AgentMiddleware):
+            """Middleware that injects synthetic ToolMessages for every tool_call."""
+
+            name = "inject_tool_msg"
+
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ExtendedModelResponse:
+                response = handler(request)
+                ai = response.result[0]
+                if isinstance(ai, AIMessage) and ai.tool_calls:
+                    synthetic = [
+                        ToolMessage(
+                            content="cached",
+                            tool_call_id=tc["id"],
+                            name=tc["name"],
+                        )
+                        for tc in ai.tool_calls
+                    ]
+                    return ExtendedModelResponse(
+                        model_response=response,
+                        command=Command(update={"messages": synthetic}),
+                    )
+                return response
+
+        fake = ToolBindFakeModel(
+            messages=iter(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "foo",
+                                "args": {"x": 1},
+                                "id": "call_xyz",
+                                "type": "tool_call",
+                            },
+                        ],
+                    ),
+                    AIMessage(content="done"),
+                ]
+            )
+        )
+        agent = create_agent(
+            model=fake,
+            tools=[foo],
+            middleware=[InjectToolMessageMiddleware()],
+        )
+
+        # Should not raise KeyError('model')
+        result = agent.invoke({"messages": [HumanMessage(content="hi")]})
+
+        # Verify the agent completed successfully
+        assert "messages" in result
+        # The final message should be the "done" response
+        assert result["messages"][-1].content == "done"

@@ -1643,15 +1643,13 @@ def create_agent(
             tools_to_model_destinations,
         )
 
-        # base destinations are tools and exit_node
-        # we add the loop_entry node to edge destinations if:
-        # - there is an after model hook(s) -- allows jump_to to model
-        #   potentially artificially injected tool messages, ex HITL
-        # - there is a response format -- to allow for jumping to model to handle
-        #   regenerating structured output tool calls
-        model_to_tools_destinations = ["tools", exit_node]
-        if response_format or loop_exit_node != "model":
-            model_to_tools_destinations.append(loop_entry_node)
+        # The router (_make_model_to_tools_edge) can return model_destination
+        # (loop_entry_node) on the "artificial tool messages" branch in EVERY
+        # config, not just when response_format or after_model are present.
+        # A wrap_model_call middleware that injects synthetic ToolMessages
+        # produces this scenario (documented pattern for caching, HITL
+        # pre-approval, and replay).
+        model_to_tools_destinations = ["tools", exit_node, loop_entry_node]
 
         graph.add_conditional_edges(
             loop_exit_node,
