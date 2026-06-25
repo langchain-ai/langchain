@@ -392,6 +392,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             return None
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
+        preserved_messages = self._filter_orphan_tool_messages(preserved_messages)
 
         summary = self._create_summary(messages_to_summarize)
         new_messages = self._build_new_messages(summary)
@@ -430,6 +431,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             return None
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
+        preserved_messages = self._filter_orphan_tool_messages(preserved_messages)
 
         summary = await self._acreate_summary(messages_to_summarize)
         new_messages = self._build_new_messages(summary)
@@ -743,6 +745,29 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         preserved_messages = conversation_messages[cutoff_index:]
 
         return messages_to_summarize, preserved_messages
+
+    @staticmethod
+    def _filter_orphan_tool_messages(messages: list[AnyMessage]) -> list[AnyMessage]:
+        """Remove ToolMessages whose tool_call_id has no preceding AIMessage.
+
+        After summarization, the preserved section may contain ToolMessages whose
+        corresponding AIMessage was moved into the summarization bucket, or orphan
+        ToolMessages that were interspersed with valid ones in a consecutive group.
+        Sending these orphans to the provider causes a 400 error because no prior
+        AIMessage requested that tool call.
+        """
+        valid_tool_call_ids: set[str] = set()
+        for msg in messages:
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                for tc in msg.tool_calls:
+                    if tc.get("id"):
+                        valid_tool_call_ids.add(tc["id"])
+        return [
+            msg
+            for msg in messages
+            if not isinstance(msg, ToolMessage)
+            or msg.tool_call_id in valid_tool_call_ids
+        ]
 
     def _find_safe_cutoff(self, messages: list[AnyMessage], messages_to_keep: int) -> int:
         """Find safe cutoff point that preserves AI/Tool message pairs.

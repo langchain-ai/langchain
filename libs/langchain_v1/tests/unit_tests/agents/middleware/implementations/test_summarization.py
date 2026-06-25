@@ -2084,3 +2084,206 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     assert config is not None
     assert "metadata" in config
     assert config["metadata"]["lc_source"] == "summarization"
+
+
+# ---------------------------------------------------------------------------
+# Orphan ToolMessage tests — issue #38352
+# ---------------------------------------------------------------------------
+
+
+def test_filter_orphan_tool_messages_removes_unmatched() -> None:
+    """Test `_filter_orphan_tool_messages` removes ToolMessages without a preceding AIMessage."""
+    messages: list[AnyMessage] = [
+        AIMessage(content="ai", tool_calls=[{"name": "t", "args": {}, "id": "call1"}]),
+        ToolMessage(content="ok", tool_call_id="call1"),
+        ToolMessage(content="orphan", tool_call_id="no_such_call"),
+        HumanMessage(content="hi"),
+    ]
+
+    result = SummarizationMiddleware._filter_orphan_tool_messages(messages)
+
+    assert len(result) == 3
+    assert isinstance(result[0], AIMessage)
+    assert isinstance(result[1], ToolMessage) and result[1].tool_call_id == "call1"
+    assert isinstance(result[2], HumanMessage)
+
+
+def test_filter_orphan_tool_messages_keeps_all_when_no_orphans() -> None:
+    """Test `_filter_orphan_tool_messages` is a no-op when all ToolMessages are valid."""
+    messages: list[AnyMessage] = [
+        AIMessage(
+            content="ai",
+            tool_calls=[
+                {"name": "t", "args": {}, "id": "c1"},
+                {"name": "t", "args": {}, "id": "c2"},
+            ],
+        ),
+        ToolMessage(content="r1", tool_call_id="c1"),
+        ToolMessage(content="r2", tool_call_id="c2"),
+        HumanMessage(content="hi"),
+    ]
+
+    result = SummarizationMiddleware._filter_orphan_tool_messages(messages)
+    assert result == messages
+
+
+def test_filter_orphan_tool_messages_empty_list() -> None:
+    """Test `_filter_orphan_tool_messages` handles empty input."""
+    assert SummarizationMiddleware._filter_orphan_tool_messages([]) == []
+
+
+def test_filter_orphan_tool_messages_no_tool_messages() -> None:
+    """Test `_filter_orphan_tool_messages` passes through when no ToolMessages exist."""
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi"),
+        AIMessage(content="ai"),
+    ]
+    result = SummarizationMiddleware._filter_orphan_tool_messages(messages)
+    assert result == messages
+
+
+def test_find_safe_cutoff_point_preserves_orphan_in_consecutive_group() -> None:
+    """Reproduce the bug: orphan ToolMessage preserved when mixed with valid ones.
+
+    When the cutoff lands on a valid ToolMessage followed by an orphan ToolMessage,
+    `_find_safe_cutoff_point` moves backward to the AIMessage — but the orphan
+    ToolMessage also ends up in the preserved section. The `_filter_orphan_tool_messages`
+    method must remove it.
+    """
+    messages: list[AnyMessage] = [
+        HumanMessage(content="q1"),
+        AIMessage(content="ai", tool_calls=[{"name": "t", "args": {}, "id": "call1"}]),
+        ToolMessage(content="result1", tool_call_id="call1"),
+        ToolMessage(content="orphan_result", tool_call_id="no_matching_call"),
+        HumanMessage(content="q2"),
+        AIMessage(content="response"),
+    ]
+
+    # cutoff at index 2 (ToolMessage call1). Consecutive group: {call1, no_matching_call}.
+    # Backward search finds AIMessage at 1 for call1 → returns 1.
+    # But the orphan at index 3 is also preserved!
+    cutoff = SummarizationMiddleware._find_safe_cutoff_point(messages, 2)
+    assert cutoff == 1  # AIMessage is included
+
+    preserved = messages[cutoff:]
+    # The preserved section contains the orphan
+    assert any(isinstance(m, ToolMessage) and m.tool_call_id == "no_matching_call" for m in preserved)
+
+    # After filtering, the orphan is removed
+    filtered = SummarizationMiddleware._filter_orphan_tool_messages(preserved)
+    assert not any(isinstance(m, ToolMessage) and m.tool_call_id == "no_matching_call" for m in filtered)
+    assert len(filtered) == len(preserved) - 1
+
+
+def test_before_model_removes_orphan_tool_messages() -> None:
+    """Test `before_model` removes orphan ToolMessages from the preserved section."""
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 6), keep=("messages", 4)
+    )
+
+    # Build messages where the preserved section will contain an orphan ToolMessage
+    messages: list[AnyMessage] = [
+        HumanMessage(content="q1"),
+        AIMessage(content="ai", tool_calls=[{"name": "t", "args": {}, "id": "call1"}]),
+        ToolMessage(content="result1", tool_call_id="call1"),
+        ToolMessage(content="orphan", tool_call_id="ghost_call"),
+        HumanMessage(content="q2"),
+        AIMessage(content="response"),
+    ]
+
+    for msg in messages:
+        if msg.id is None:
+            msg.id = "test-id"
+
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
+
+    assert result is not None
+    # Get the non-RemoveMessage entries
+    new_msgs = [m for m in result["messages"] if not isinstance(m, RemoveMessage)]
+
+    # The orphan ToolMessage should NOT be in the result
+    orphan_msgs = [
+        m for m in new_msgs
+        if isinstance(m, ToolMessage) and m.tool_call_id == "ghost_call"
+    ]
+    assert orphan_msgs == [], (
+        f"Orphan ToolMessage(tool_call_id='ghost_call') should have been removed, "
+        f"but found: {orphan_msgs}"
+    )
+
+
+def test_before_model_preserves_valid_tool_messages() -> None:
+    """Test `before_model` preserves ToolMessages that DO have matching AIMessages."""
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 6), keep=("messages", 4)
+    )
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="q1"),
+        AIMessage(
+            content="ai",
+            tool_calls=[
+                {"name": "t1", "args": {}, "id": "call1"},
+                {"name": "t2", "args": {}, "id": "call2"},
+            ],
+        ),
+        ToolMessage(content="r1", tool_call_id="call1"),
+        ToolMessage(content="r2", tool_call_id="call2"),
+        HumanMessage(content="q2"),
+        AIMessage(content="response"),
+    ]
+
+    for msg in messages:
+        if msg.id is None:
+            msg.id = "test-id"
+
+    state = AgentState[Any](messages=messages)
+    result = middleware.before_model(state, Runtime())
+
+    assert result is not None
+    new_msgs = [m for m in result["messages"] if not isinstance(m, RemoveMessage)]
+
+    # Both valid ToolMessages should be preserved
+    tool_msgs = [m for m in new_msgs if isinstance(m, ToolMessage)]
+    tool_ids = {m.tool_call_id for m in tool_msgs}
+    assert "call1" in tool_ids
+    assert "call2" in tool_ids
+
+
+def test_filter_orphan_tool_messages_multiple_aimessages() -> None:
+    """Test filtering works across multiple AIMessages with different tool_calls."""
+    messages: list[AnyMessage] = [
+        AIMessage(content="a1", tool_calls=[{"name": "t", "args": {}, "id": "c1"}]),
+        ToolMessage(content="r1", tool_call_id="c1"),
+        AIMessage(content="a2", tool_calls=[{"name": "t", "args": {}, "id": "c2"}]),
+        ToolMessage(content="r2", tool_call_id="c2"),
+        ToolMessage(content="orphan", tool_call_id="c3"),
+    ]
+
+    result = SummarizationMiddleware._filter_orphan_tool_messages(messages)
+
+    assert len(result) == 4
+    tool_msgs = [m for m in result if isinstance(m, ToolMessage)]
+    assert len(tool_msgs) == 2
+    assert {m.tool_call_id for m in tool_msgs} == {"c1", "c2"}
+
+
+def test_filter_orphan_tool_messages_tool_message_before_its_ai() -> None:
+    """Test a ToolMessage before its AIMessage is kept (AIMessage exists in section).
+
+    The method only removes ToolMessages with NO matching AIMessage in the section.
+    Ordering is not checked — that's a separate concern.
+    """
+    messages: list[AnyMessage] = [
+        ToolMessage(content="r1", tool_call_id="c1"),
+        AIMessage(content="ai", tool_calls=[{"name": "t", "args": {}, "id": "c1"}]),
+        ToolMessage(content="r2", tool_call_id="c1"),
+    ]
+
+    result = SummarizationMiddleware._filter_orphan_tool_messages(messages)
+
+    # Both ToolMessages are kept because the AIMessage with c1 exists in the section
+    assert len(result) == 3
