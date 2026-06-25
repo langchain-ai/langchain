@@ -56,10 +56,11 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 #             "should either occur once or have the same value across "
                 #             "all dicts."
                 #         )
-                if (right_k == "index" and merged[right_k].startswith("lc_")) or (
-                    right_k in {"id", "output_version", "model_provider"}
-                    and merged[right_k] == right_v
-                ):
+                if right_k == "index" and merged[right_k].startswith("lc_"):
+                    continue
+                # Identical string values (e.g. model_name, finish_reason repeated
+                # across streaming chunks) should not be concatenated.
+                if merged[right_k] == right_v:
                     continue
                 merged[right_k] += right_v
             elif isinstance(merged[right_k], dict):

@@ -65,9 +65,12 @@ def test_check_package_version(
         ({"a": 1.5}, {"a": 1.5}, {"a": 1.5}),
         ({"a": True}, {"a": True}, {"a": True}),
         ({"a": False}, {"a": False}, {"a": False}),
-        ({"a": "txt"}, {"a": "txt"}, {"a": "txttxt"}),
+        # Identical string values are deduplicated (not concatenated). In streaming,
+        # metadata fields like model_name/finish_reason repeat across chunks unchanged,
+        # whereas content substrings are always distinct fragments.
+        ({"a": "txt"}, {"a": "txt"}, {"a": "txt"}),
         ({"a": [1, 2]}, {"a": [1, 2]}, {"a": [1, 2, 1, 2]}),
-        ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txttxt"}}),
+        ({"a": {"b": "txt"}}, {"a": {"b": "txt"}}, {"a": {"b": "txt"}}),
         # Merge strings.
         ({"a": "one"}, {"a": "two"}, {"a": "onetwo"}),
         # Merge dicts.
@@ -129,6 +132,16 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        # Metadata string fields that repeat with the same value across streaming
+        # chunks (e.g. model_name, finish_reason) must not be concatenated.
+        # Regression for: https://github.com/langchain-ai/langchain/issues/38366
+        (
+            {"model_name": "gpt-4", "content": "He"},
+            {"model_name": "gpt-4", "finish_reason": "stop"},
+            {"model_name": "gpt-4", "content": "He", "finish_reason": "stop"},
+        ),
+        # Different string values are still concatenated (streaming content fragments).
+        ({"content": "He"}, {"content": "llo"}, {"content": "Hello"}),
     ],
 )
 def test_merge_dicts(
