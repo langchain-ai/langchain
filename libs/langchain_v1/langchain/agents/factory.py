@@ -1643,15 +1643,14 @@ def create_agent(
             tools_to_model_destinations,
         )
 
-        # base destinations are tools and exit_node
-        # we add the loop_entry node to edge destinations if:
-        # - there is an after model hook(s) -- allows jump_to to model
-        #   potentially artificially injected tool messages, ex HITL
-        # - there is a response format -- to allow for jumping to model to handle
-        #   regenerating structured output tool calls
-        model_to_tools_destinations = ["tools", exit_node]
-        if response_format or loop_exit_node != "model":
-            model_to_tools_destinations.append(loop_entry_node)
+        # The router (_make_model_to_tools_edge) returns model_destination on
+        # the "all tool calls already answered" branch regardless of whether
+        # response_format or after_model middleware are present. This happens
+        # whenever wrap_model_call middleware injects synthetic ToolMessages
+        # (e.g., HITL pre-approval, caching, replay). Always include
+        # loop_entry_node so LangGraph's branch dispatcher never raises
+        # KeyError when the router selects that destination.
+        model_to_tools_destinations = ["tools", exit_node, loop_entry_node]
 
         graph.add_conditional_edges(
             loop_exit_node,
