@@ -817,16 +817,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             except BaseException as e:
                 generations_with_error_metadata = _generate_response_from_error(e)
                 chat_generation_chunk = merge_chat_generation_chunks(chunks)
+                # LLMResult.generations outer dimension is per-prompt (batch size).
+                # A single-prompt stream must produce exactly one outer row, so
+                # merge partial chunk and error metadata into a single inner list.
                 if chat_generation_chunk:
-                    generations = [
-                        [chat_generation_chunk],
-                        generations_with_error_metadata,
-                    ]
+                    single_row = [chat_generation_chunk, *generations_with_error_metadata]
                 else:
-                    generations = [generations_with_error_metadata]
+                    single_row = list(generations_with_error_metadata)
                 run_manager.on_llm_error(
                     e,
-                    response=LLMResult(generations=generations),
+                    response=LLMResult(generations=[single_row] if single_row else []),
                 )
                 raise
 
@@ -949,13 +949,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         except BaseException as e:
             generations_with_error_metadata = _generate_response_from_error(e)
             chat_generation_chunk = merge_chat_generation_chunks(chunks)
+            # LLMResult.generations outer dimension is per-prompt (batch size).
+            # A single-prompt stream must produce exactly one outer row, so
+            # merge partial chunk and error metadata into a single inner list.
             if chat_generation_chunk:
-                generations = [[chat_generation_chunk], generations_with_error_metadata]
+                single_row = [chat_generation_chunk, *generations_with_error_metadata]
             else:
-                generations = [generations_with_error_metadata]
+                single_row = list(generations_with_error_metadata)
             await run_manager.on_llm_error(
                 e,
-                response=LLMResult(generations=generations),
+                response=LLMResult(generations=[single_row] if single_row else []),
             )
             raise
 
