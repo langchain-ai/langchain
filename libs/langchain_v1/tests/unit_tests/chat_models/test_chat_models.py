@@ -80,6 +80,7 @@ def test_supported_providers_is_sorted() -> None:
     ("model_name", "expected_provider"),
     [
         (OPENAI_TEST_MODEL, "openai"),
+        ("o4-mini", "openai"),
         ("o3", "openai"),
         ("text-davinci-003", "openai"),
         ("claude-3-haiku-20240307", "anthropic"),
