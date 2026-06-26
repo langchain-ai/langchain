@@ -1605,11 +1605,12 @@ class ChatAnthropic(BaseChatModel):
             and event.content_block.type in ("text", "thinking")
         ):
             # Anthropic can place the opening content of a text or thinking block
-            # directly on the ``content_block_start`` event instead of in a
+            # directly on the `content_block_start` event instead of in a
             # following delta. This is common for the assistant turn that follows
             # a tool result. Emit that initial content here so it is not dropped
-            # from the aggregated message; the deltas that follow are merged into
-            # the same block by ``content_block_delta`` below.
+            # from the aggregated message. The deltas that follow are emitted as
+            # separate chunks sharing this block's `index`; chunk addition
+            # (`AIMessageChunk.__add__`) later coalesces them into one block.
             block_start_event = event
             if event.content_block.type == "text":
                 text = getattr(event.content_block, "text", "") or ""

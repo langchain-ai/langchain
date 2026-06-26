@@ -2224,7 +2224,7 @@ def _aggregate_anthropic_events(
     *,
     coerce_content_to_string: bool,
 ) -> AIMessageChunk | None:
-    """Drive the handler over ``events`` and sum chunks like ``_stream`` does."""
+    """Drive the handler over `events` and sum chunks like `_stream` does."""
     block_start_event = None
     aggregate: AIMessageChunk | None = None
     for event in events:
@@ -2240,12 +2240,12 @@ def _aggregate_anthropic_events(
 
 
 def test_text_content_block_start_carries_initial_text() -> None:
-    """Regression test: text on ``content_block_start`` must not be dropped.
+    """Regression test: text on `content_block_start` must not be dropped.
 
     Anthropic sometimes places the opening text of a text block directly on the
-    ``content_block_start`` event (rather than in a following ``text_delta``),
+    `content_block_start` event (rather than in a following `text_delta`),
     most often on the assistant turn that follows a tool result. The handler
-    previously only built a chunk on ``content_block_start`` for tool / document
+    previously only built a chunk on `content_block_start` for tool / document
     / redacted_thinking blocks, so the leading text was silently dropped from the
     aggregated message that gets persisted.
     """
@@ -2294,10 +2294,21 @@ def test_text_content_block_start_carries_initial_text() -> None:
     aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=False)
     assert aggregate is not None
     assert aggregate.text == "Here's the answer."
+    # The start-event block and the following delta must coalesce into a single
+    # text block that carries the block `index` and no spurious `citations`.
+    assert isinstance(aggregate.content, list)
+    text_blocks = [
+        block
+        for block in aggregate.content
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    assert len(text_blocks) == 1
+    assert text_blocks[0]["index"] == 0
+    assert "citations" not in text_blocks[0]
 
 
 def test_empty_text_content_block_start_emits_no_chunk() -> None:
-    """An empty ``TextBlock`` start must not change behaviour (no spurious chunk)."""
+    """An empty `TextBlock` start must not change behavior (no spurious chunk)."""
     from anthropic.types import RawContentBlockStartEvent
 
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
@@ -2309,6 +2320,91 @@ def test_empty_text_content_block_start_emits_no_chunk() -> None:
         ),
         stream_usage=True,
         coerce_content_to_string=True,
+        block_start_event=None,
+    )
+    assert chunk is None
+    # The block is still tracked so subsequent deltas resolve against it.
+    assert block_start_event is not None
+
+
+def test_thinking_content_block_start_carries_initial_thinking() -> None:
+    """Regression test: thinking/signature on `content_block_start` must survive.
+
+    As with text blocks, Anthropic can place a thinking block's opening
+    `thinking` content (and its `signature`) directly on the
+    `content_block_start` event rather than in a following `thinking_delta` /
+    `signature_delta`. The handler previously only built a chunk on
+    `content_block_start` for tool / document / redacted_thinking blocks, so the
+    leading thinking content was silently dropped from the aggregated message.
+    """
+    from anthropic.types import (
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageStartEvent,
+        ThinkingBlock,
+        ThinkingDelta,
+    )
+
+    msg = Message(
+        id="msg_repro",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+    events = [
+        RawMessageStartEvent(message=msg, type="message_start"),
+        # The opening thinking + signature ride the START event.
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(
+                thinking="Let me ", signature="sig123", type="thinking"
+            ),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="think about it.", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+    ]
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    # Thinking is only represented in the structured-content path.
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=False)
+    assert aggregate is not None
+    assert isinstance(aggregate.content, list)
+    thinking_blocks = [
+        block
+        for block in aggregate.content
+        if isinstance(block, dict) and block.get("type") == "thinking"
+    ]
+    assert len(thinking_blocks) == 1
+    # The leading thinking from the start event merges with the following delta,
+    # and the signature carried on the start event is preserved.
+    assert thinking_blocks[0]["thinking"] == "Let me think about it."
+    assert thinking_blocks[0]["signature"] == "sig123"
+
+
+def test_empty_thinking_content_block_start_emits_no_chunk() -> None:
+    """An empty `ThinkingBlock` start must not emit a spurious chunk."""
+    from anthropic.types import RawContentBlockStartEvent, ThinkingBlock
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(thinking="", signature="", type="thinking"),
+            index=0,
+            type="content_block_start",
+        ),
+        stream_usage=True,
+        coerce_content_to_string=False,
         block_start_event=None,
     )
     assert chunk is None
