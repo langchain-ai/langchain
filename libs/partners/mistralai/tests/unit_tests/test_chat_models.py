@@ -662,3 +662,86 @@ def test_metadata_versions() -> None:
     versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-mistralai" in versions
+
+
+def test_combine_llm_outputs_flat_int_fields() -> None:
+    """Flat integer token usage fields are summed across outputs."""
+    llm = ChatMistralAI(model="foo")  # type: ignore[call-arg]
+    result = llm._combine_llm_outputs(
+        [
+            {"token_usage": {"prompt_tokens": 10, "completion_tokens": 5}},
+            {"token_usage": {"prompt_tokens": 20, "completion_tokens": 15}},
+        ]
+    )
+    assert result["token_usage"] == {"prompt_tokens": 30, "completion_tokens": 20}
+    assert result["model_name"] == "foo"
+
+
+def test_combine_llm_outputs_nested_dicts() -> None:
+    """Nested dict token usage fields are merged recursively.
+
+    Regression test for
+    https://github.com/langchain-ai/langchain/issues/38482
+    """
+    llm = ChatMistralAI(model="foo")  # type: ignore[call-arg]
+    result = llm._combine_llm_outputs(
+        [
+            {
+                "token_usage": {
+                    "prompt_tokens": 10,
+                    "prompt_tokens_details": {"cached_tokens": 5},
+                }
+            },
+            {
+                "token_usage": {
+                    "prompt_tokens": 20,
+                    "prompt_tokens_details": {"cached_tokens": 3},
+                }
+            },
+        ]
+    )
+    assert result["token_usage"]["prompt_tokens"] == 30
+    assert result["token_usage"]["prompt_tokens_details"] == {"cached_tokens": 8}
+
+
+def test_combine_llm_outputs_none_entries() -> None:
+    """None outputs (e.g. from streaming) are skipped."""
+    llm = ChatMistralAI(model="foo")  # type: ignore[call-arg]
+    result = llm._combine_llm_outputs(
+        [
+            None,
+            {"token_usage": {"prompt_tokens": 10}},
+            None,
+        ]
+    )
+    assert result["token_usage"] == {"prompt_tokens": 10}
+
+
+def test_combine_llm_outputs_nested_key_only_in_one_output() -> None:
+    """A nested key present in only one output is preserved."""
+    llm = ChatMistralAI(model="foo")  # type: ignore[call-arg]
+    result = llm._combine_llm_outputs(
+        [
+            {
+                "token_usage": {
+                    "prompt_tokens": 10,
+                    "prompt_tokens_details": {"cached_tokens": 5},
+                }
+            },
+            {"token_usage": {"prompt_tokens": 20}},
+        ]
+    )
+    assert result["token_usage"]["prompt_tokens"] == 30
+    assert result["token_usage"]["prompt_tokens_details"] == {"cached_tokens": 5}
+
+
+def test_combine_llm_outputs_none_token_usage() -> None:
+    """None token_usage is skipped gracefully."""
+    llm = ChatMistralAI(model="foo")  # type: ignore[call-arg]
+    result = llm._combine_llm_outputs(
+        [
+            {"token_usage": None},
+            {"token_usage": {"prompt_tokens": 10}},
+        ]
+    )
+    assert result["token_usage"] == {"prompt_tokens": 10}

@@ -99,6 +99,28 @@ global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 
 
+def _merge_token_usage_value(old: Any, new: Any) -> Any:
+    """Merge two token usage values, summing numbers and recursing into dicts.
+
+    Mistral's API can return nested dicts for some token usage fields (e.g.
+    ``prompt_tokens_details: {"cached_tokens": 10}``). A plain ``+=`` raises
+    ``TypeError`` when both values are dicts, so this helper recursively merges
+    them key-by-key and falls back to ``+`` for numeric types.
+    """
+    if isinstance(old, dict) and isinstance(new, dict):
+        result = dict(old)
+        for k, v in new.items():
+            if k in result:
+                result[k] = _merge_token_usage_value(result[k], v)
+            else:
+                result[k] = v
+        return result
+    if isinstance(old, (int, float)) and isinstance(new, (int, float)):
+        return old + new
+    # Fall back to the new value for mismatched or non-numeric types.
+    return new
+
+
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
@@ -657,7 +679,9 @@ class ChatMistralAI(BaseChatModel):
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _merge_token_usage_value(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
         return {"token_usage": overall_token_usage, "model_name": self.model}
