@@ -11,10 +11,15 @@ from typing import Any, get_type_hints
 
 import httpx
 
-try:
-    import tomllib  # type: ignore[import-not-found]  # Python 3.11+
-except ImportError:
-    import tomli as tomllib  # type: ignore[import-not-found,no-redef]
+# Use a `sys.version_info` guard rather than try/except: under strict mypy,
+# `warn_unused_ignores` cannot be satisfied across versions with try/except
+# (3.10 needs an `import-not-found` ignore on `tomllib`; 3.11+ flags it unused).
+# mypy resolves this guard per target version and exempts it from
+# `warn_unreachable`, so it type-checks cleanly with no ignores.
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 
 def _validate_data_dir(data_dir: Path) -> Path:
@@ -126,6 +131,7 @@ def _model_data_to_profile(model_data: dict[str, Any]) -> dict[str, Any]:
         "reasoning_output": model_data.get("reasoning"),
         "tool_calling": model_data.get("tool_call"),
         "tool_choice": model_data.get("tool_choice"),
+        "tool_call_streaming": model_data.get("tool_call_streaming"),
         "structured_output": model_data.get("structured_output"),
         "attachment": model_data.get("attachment"),
         "temperature": model_data.get("temperature"),
@@ -393,10 +399,53 @@ def main() -> None:
         help="Data directory containing profile_augmentations.toml",
     )
 
+    # summarize command
+    summarize_parser = subparsers.add_parser(
+        "summarize",
+        help="Summarize profile changes vs a git ref as Markdown (for PR bodies)",
+    )
+    summarize_parser.add_argument(
+        "--providers",
+        required=True,
+        help=(
+            "JSON array of objects with 'provider' and 'data_dir' keys "
+            "(data_dir relative to the repo root)."
+        ),
+    )
+    summarize_parser.add_argument(
+        "--base-ref",
+        default="HEAD",
+        help="Git ref to compare the working tree against (default: HEAD).",
+    )
+    summarize_parser.add_argument(
+        "--repo-root",
+        type=Path,
+        default=None,
+        help="Repository root (default: current directory).",
+    )
+
     args = parser.parse_args()
 
     if args.command == "refresh":
         refresh(args.provider, args.data_dir)
+    elif args.command == "summarize":
+        from langchain_model_profiles._summary import summarize
+
+        try:
+            providers = json.loads(args.providers)
+        except json.JSONDecodeError as e:
+            parser.error(f"--providers is not valid JSON: {e}")
+
+        if not isinstance(providers, list):
+            parser.error("--providers must be a JSON array")
+
+        try:
+            output = summarize(
+                providers, base_ref=args.base_ref, repo_root=args.repo_root
+            )
+        except (RuntimeError, ValueError, TypeError) as e:
+            parser.error(str(e))
+        print(output)
 
 
 if __name__ == "__main__":

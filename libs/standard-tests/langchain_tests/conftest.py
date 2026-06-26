@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gzip
+import io
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -15,6 +16,32 @@ from vcr.request import Request
 
 if TYPE_CHECKING:
     from os import PathLike
+
+
+def _coerce_bytesio(value: Any) -> Any:
+    """Recursively replace `io.BytesIO` values with their raw bytes.
+
+    `yaml.safe_dump` cannot serialize stream objects, so any `io.BytesIO`
+    (e.g. a multipart/file-upload request body) is converted to its
+    underlying bytes via `getvalue()`, which is non-destructive and
+    independent of the stream position.
+
+    Args:
+        value: An arbitrary cassette value, possibly nested in dicts,
+            lists, or tuples.
+
+    Returns:
+        The value with every `io.BytesIO` replaced by its bytes content.
+    """
+    if isinstance(value, io.BytesIO):
+        return value.getvalue()
+    if isinstance(value, dict):
+        return {key: _coerce_bytesio(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_coerce_bytesio(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_coerce_bytesio(item) for item in value)
+    return value
 
 
 class CustomSerializer:
@@ -40,6 +67,9 @@ class CustomSerializer:
             }
             for request in cassette_dict["requests"]
         ]
+        # Sweep the whole dict (not just request bodies) so a `BytesIO`
+        # hiding in an untransformed response body is also coerced.
+        cassette_dict = _coerce_bytesio(cassette_dict)
         yml = yaml.safe_dump(cassette_dict)
         return gzip.compress(yml.encode("utf-8"))
 

@@ -48,7 +48,7 @@ def test_token_text_splitter_overlap() -> None:
 
 
 def test_token_text_splitter_from_tiktoken() -> None:
-    splitter = TokenTextSplitter.from_tiktoken_encoder(model_name="gpt-3.5-turbo")
+    splitter = TokenTextSplitter.from_tiktoken_encoder(model_name="gpt-4.1-mini")
     expected_tokenizer = "cl100k_base"
     actual_tokenizer = splitter._tokenizer.name
     assert expected_tokenizer == actual_tokenizer

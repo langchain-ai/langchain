@@ -22,7 +22,7 @@ Thank you for contributing to LangChain! Follow these steps to have your pull re
 
 2. PR description:
 
-  - Write 1-2 sentences summarizing the change.
+  - Write 1-2 sentences that make the change easy to understand: who benefits, what problem they had, and how this solves it. Prefer a simple user story over a long summary.
   - The `Fixes #xx` line at the top is **required** for external contributions — update the issue number and keep the keyword. This links your PR to the approved issue and auto-closes it on merge.
   - If there are any breaking changes, please clearly describe them.
   - If this PR depends on another PR being merged first, please include "Depends on #PR_NUMBER" in the description.

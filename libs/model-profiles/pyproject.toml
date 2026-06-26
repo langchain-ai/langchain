@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "0.0.5"
+version = "0.0.6"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "httpx>=0.23.0,<1",
@@ -55,17 +55,17 @@ test = [
     "syrupy>=5.0.0,<6.0.0",
     "toml>=0.10.2,<1.0.0",
     "langchain[openai]>=1.0.2,<2.0.0",
-    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-core>=1.4.7,<2.0.0",
 ]
 
-test_integration = ["langchain-core>=1.4.0,<2.0.0"]
+test_integration = ["langchain-core>=1.4.7,<2.0.0"]
 
 lint = [
     "ruff>=0.15.0,<0.16.0",
     "langchain>=1.0.0,<2.0.0",
 ]
 typing = [
-    "mypy>=1.18.1,<1.20.0",
+    "mypy>=2.1.0,<2.2.0",
     "types-toml>=0.10.8.20240310,<1.0.0.0",
 ]
 
@@ -75,6 +75,12 @@ constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
 langchain = { path = "../langchain_v1", editable = true }
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+strict = true
+enable_error_code = "deprecated"
+warn_unreachable = true
 
 [tool.ruff.format]
 docstring-code-format = true

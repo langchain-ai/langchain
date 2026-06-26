@@ -31,11 +31,9 @@ from langchain_openrouter.chat_models import (
     _convert_video_block_to_openrouter,
     _create_usage_metadata,
     _format_message_content,
-    _has_file_content_blocks,
-    _wrap_messages_for_sdk,
 )
 
-MODEL_NAME = "openai/gpt-4o-mini"
+MODEL_NAME = "openai/gpt-5.5"
 
 
 def _make_model(**kwargs: Any) -> ChatOpenRouter:
@@ -274,6 +272,14 @@ class TestChatOpenRouterInstantiation:
         ls_params = model._get_ls_params()
         assert ls_params["ls_stop"] == ["END", "STOP"]
 
+    def test_metadata_versions(self) -> None:
+        """Test that metadata reports the correct version info."""
+        model = _make_model()
+        assert model.metadata is not None
+        versions = model.metadata["lc_versions"]
+        assert "langchain-core" in versions
+        assert "langchain-openrouter" in versions
+
     def test_client_created(self) -> None:
         """Test that OpenRouter SDK client is created."""
         model = _make_model()
@@ -492,6 +498,7 @@ class TestSerialization:
         """Test that ChatOpenRouter declares itself as serializable."""
         assert ChatOpenRouter.is_lc_serializable() is True
 
+    @pytest.mark.filterwarnings("ignore:The function `load` is in beta")
     def test_dumpd_load_roundtrip(self) -> None:
         """Test that dumpd/load round-trip preserves model config."""
         model = _make_model(temperature=0.7, max_tokens=100)
@@ -815,6 +822,28 @@ class TestRequestPayload:
         assert tools[0]["function"]["name"] == "GetWeather"
         assert "parameters" in tools[0]["function"]
 
+    def test_tool_cache_control_preserved_in_payload(self) -> None:
+        """Test that top-level `cache_control` on a tool dict is preserved."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_TOOL_RESPONSE_DICT)
+
+        tool = {
+            "type": "function",
+            "function": {
+                "name": "GetWeather",
+                "description": "Get the weather.",
+                "parameters": {"type": "object", "properties": {}},
+            },
+            "cache_control": {"type": "ephemeral"},
+        }
+        bound = model.bind_tools([tool])
+        bound.invoke("What's the weather?")
+        call_kwargs = model.client.chat.send.call_args[1]
+        tools = call_kwargs["tools"]
+        assert len(tools) == 1
+        assert tools[0]["cache_control"] == {"type": "ephemeral"}
+
     def test_openrouter_params_in_payload(self) -> None:
         """Test that OpenRouter-specific params appear in the SDK call."""
         model = _make_model(
@@ -1035,6 +1064,20 @@ class TestBindTools:
         tools = bound.kwargs["tools"]
         assert "strict" not in tools[0]["function"]
 
+    def test_bind_tools_parallel_tool_calls_forwarded(self) -> None:
+        """Test that parallel_tool_calls is forwarded to the request kwargs."""
+        model = _make_model()
+        bound = model.bind_tools([GetWeather], parallel_tool_calls=False)
+        assert isinstance(bound, RunnableBinding)
+        assert bound.kwargs["parallel_tool_calls"] is False
+
+    def test_bind_tools_parallel_tool_calls_none_omits_key(self) -> None:
+        """Test that parallel_tool_calls=None does not set the key in kwargs."""
+        model = _make_model()
+        bound = model.bind_tools([GetWeather])
+        assert isinstance(bound, RunnableBinding)
+        assert "parallel_tool_calls" not in bound.kwargs
+
 
 # ===========================================================================
 # with_structured_output tests
@@ -1244,6 +1287,44 @@ class TestMessageConversion:
         details = [
             {"type": "reasoning.text", "text": "First thought", "index": 0},
             {"type": "reasoning.text", "text": "Second thought", "index": 1},
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == details
+
+    def test_ai_message_reasoning_details_strips_responses_ids(self) -> None:
+        """OpenAI Responses `rs_*` item IDs are stripped before replay."""
+        response_id = "rs_053a05e24b0da75e0169fa358ea9fc81908b18aff8157798c1"
+        details = [
+            {
+                "type": "reasoning.text",
+                "id": response_id,
+                "text": "step-by-step",
+                "index": 0,
+            }
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == [
+            {"type": "reasoning.text", "text": "step-by-step", "index": 0}
+        ]
+        assert response_id.startswith("rs_")
+        assert details[0]["id"] == response_id
+
+    def test_ai_message_reasoning_details_preserves_non_responses_ids(self) -> None:
+        """Non-Responses IDs are preserved in reasoning details."""
+        details = [
+            {
+                "type": "reasoning.text",
+                "id": "reasoning_abc123",
+                "text": "step-by-step",
+            }
         ]
         msg = AIMessage(
             content="Answer",
@@ -1625,11 +1706,11 @@ class TestCreateChatResult:
         model = _make_model()
         response = {
             **_SIMPLE_RESPONSE_DICT,
-            "model": "openai/gpt-4o",
+            "model": MODEL_NAME,
         }
         result = model._create_chat_result(response)
         assert result.llm_output is not None
-        assert result.llm_output["model_name"] == "openai/gpt-4o"
+        assert result.llm_output["model_name"] == MODEL_NAME
 
     def test_system_fingerprint_in_metadata(self) -> None:
         """Test that system_fingerprint is included in response_metadata."""
@@ -2629,7 +2710,7 @@ class TestFormatMessageContent:
         assert result[0]["video_url"]["url"].startswith("data:video/mp4;base64,")
 
     def test_video_base64_source_type_format(self) -> None:
-        """Test video block using ``source_type`` + ``data`` keys."""
+        """Test video block using `source_type` + `data` keys."""
         block: dict[str, Any] = {
             "type": "video",
             "source_type": "base64",
@@ -2704,7 +2785,7 @@ class TestFormatMessageContent:
         }
 
     def test_file_base64_source_type_format(self) -> None:
-        """Test file block using ``source_type`` + ``data`` keys."""
+        """Test file block using `source_type` + `data` keys."""
         block: dict[str, Any] = {
             "type": "file",
             "source_type": "base64",
@@ -2772,51 +2853,19 @@ class TestFormatMessageContent:
         }
 
 
-class TestWrapMessagesForSdk:
-    """Tests for ``_wrap_messages_for_sdk`` SDK validation bypass."""
+class TestSdkFileContentValidation:
+    """Verify the OpenRouter SDK natively validates `file` content parts.
 
-    def test_no_file_blocks_returns_dicts(self) -> None:
-        """Messages without file blocks should be returned as plain dicts."""
-        msgs: list[dict[str, Any]] = [
-            {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there"},
-        ]
-        result = _wrap_messages_for_sdk(msgs)
-        # Should be the exact same list object (no wrapping needed)
-        assert result is msgs
+    The minimum `openrouter` floor is `>=0.9.2`, where `file` was added to the
+    `ChatContentItems` discriminated union. These tests guard against
+    regressions if the floor is ever lowered below that fix.
+    """
 
-    def test_has_file_content_blocks_detection(self) -> None:
-        """Test ``_has_file_content_blocks`` detects file blocks correctly."""
-        assert not _has_file_content_blocks([{"role": "user", "content": "plain text"}])
-        assert not _has_file_content_blocks(
-            [
-                {
-                    "role": "user",
-                    "content": [{"type": "text", "text": "hi"}],
-                }
-            ]
-        )
-        assert _has_file_content_blocks(
-            [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "hi"},
-                        {
-                            "type": "file",
-                            "file": {"file_data": "https://example.com/a.pdf"},
-                        },
-                    ],
-                }
-            ]
-        )
-
-    def test_wraps_as_pydantic_models(self) -> None:
-        """File-containing messages should be wrapped as SDK Pydantic models."""
+    def test_file_content_part_validates(self) -> None:
+        """A `file` content part validates and serializes to the right payload."""
         from openrouter import components  # noqa: PLC0415
 
-        msgs: list[dict[str, Any]] = [
-            {"role": "system", "content": "You are helpful."},
+        msg = components.ChatUserMessage.model_validate(
             {
                 "role": "user",
                 "content": [
@@ -2824,77 +2873,22 @@ class TestWrapMessagesForSdk:
                     {
                         "type": "file",
                         "file": {
-                            "file_data": "https://example.com/doc.pdf",
+                            "file_data": "data:application/pdf;base64,abc",
                             "filename": "doc.pdf",
                         },
                     },
                 ],
-            },
-        ]
-        result = _wrap_messages_for_sdk(msgs)
-        assert len(result) == 2
-        assert isinstance(result[0], components.ChatSystemMessage)
-        assert isinstance(result[1], components.ChatUserMessage)
-
-    def test_wrapped_serializes_correctly(self) -> None:
-        """Wrapped models should serialize to the correct JSON payload."""
-        import warnings  # noqa: PLC0415
-
-        msgs: list[dict[str, Any]] = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "Read this."},
-                    {
-                        "type": "file",
-                        "file": {"file_data": "data:application/pdf;base64,abc"},
-                    },
-                ],
-            },
-        ]
-        result = _wrap_messages_for_sdk(msgs)
-        wrapped_msg = result[0]
-        assert hasattr(wrapped_msg, "model_dump")
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            dumped = wrapped_msg.model_dump(by_alias=True, exclude_none=True)
-        assert dumped["role"] == "user"
-        assert dumped["content"][0] == {"type": "text", "text": "Read this."}
+            }
+        )
+        dumped = msg.model_dump(by_alias=True, exclude_none=True)
+        assert dumped["content"][0] == {"type": "text", "text": "Summarize this."}
         assert dumped["content"][1] == {
             "type": "file",
-            "file": {"file_data": "data:application/pdf;base64,abc"},
+            "file": {
+                "file_data": "data:application/pdf;base64,abc",
+                "filename": "doc.pdf",
+            },
         }
-
-    def test_all_roles_wrapped(self) -> None:
-        """All standard roles should be wrapped correctly."""
-        from openrouter import components  # noqa: PLC0415
-
-        msgs: list[dict[str, Any]] = [
-            {"role": "system", "content": "System prompt."},
-            {
-                "role": "user",
-                "content": [
-                    {"type": "file", "file": {"file_data": "https://x.com/f.pdf"}},
-                ],
-            },
-            {
-                "role": "assistant",
-                "content": "Summary here.",
-                "tool_calls": [
-                    {
-                        "id": "c1",
-                        "type": "function",
-                        "function": {"name": "fn", "arguments": "{}"},
-                    }
-                ],
-            },
-            {"role": "tool", "content": "result", "tool_call_id": "c1"},
-        ]
-        result = _wrap_messages_for_sdk(msgs)
-        assert isinstance(result[0], components.ChatSystemMessage)
-        assert isinstance(result[1], components.ChatUserMessage)
-        assert isinstance(result[2], components.ChatAssistantMessage)
-        assert isinstance(result[3], components.ChatToolMessage)
 
 
 # ===========================================================================
