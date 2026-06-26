@@ -1,0 +1,19 @@
+libs/core/langchain_core/language_models/base.py
+  s_46f1b7465a77de::t_0c7fdd104a222e 195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "be13680a943128931b4db2a8a0eadeb56e406022",
+  "prompts": {},
+  "sessions": {
+    "s_46f1b7465a77de": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cb87c019-db91-44a8-9ce8-74c24a4be0c2",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
