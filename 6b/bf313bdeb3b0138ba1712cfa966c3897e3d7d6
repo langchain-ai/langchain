@@ -1,0 +1,29 @@
+libs/partners/anthropic/tests/unit_tests/test_chat_models.py
+  s_a2af39207532c7::t_782a852f96eb26 2311
+  s_a2af39207532c7::t_9b9d03d306e243 2297,2299-2307,2330,2332-2333,2338-2395,2397-2407
+  s_a2af39207532c7::t_fd6b3ff81be497 2408-2414
+  s_a2af39207532c7::t_ed8cdfbc62e11b 2243,2246,2248
+  s_a2af39207532c7::t_8f513e8f48e961 2227
+  s_a2af39207532c7::t_91ffc0727be8c8 2298
+  s_a2af39207532c7::t_6a0aedd6b45d6c 2396
+  s_a2af39207532c7::t_bf8e349efab614 2331,2334-2337
+libs/partners/anthropic/langchain_anthropic/chat_models.py
+  s_a2af39207532c7::t_3a51b7f220498c 1608,1612-1613
+  s_a2af39207532c7::t_9b9d03d306e243 1611
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "6bbf313bdeb3b0138ba1712cfa966c3897e3d7d6",
+  "prompts": {},
+  "sessions": {
+    "s_a2af39207532c7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e8914d51-9c9b-4306-bf01-3f4855540322",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
