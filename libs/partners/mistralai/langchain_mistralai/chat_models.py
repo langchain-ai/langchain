@@ -514,6 +514,26 @@ def _convert_message_to_mistral_chat_message(
     raise ValueError(msg)
 
 
+def _merge_token_usage_value(
+    existing: float | dict, incoming: float | dict
+) -> float | dict:
+    """Merge two token usage values, handling nested dicts recursively.
+
+    Mistral may return nested dicts for some token usage fields (e.g.
+    `prompt_tokens_details`). A plain `+=` raises `TypeError` when both sides
+    are dicts, so nested dicts are merged key-by-key instead.
+    """
+    if isinstance(existing, dict) and isinstance(incoming, dict):
+        merged = dict(existing)
+        for k, v in incoming.items():
+            if k in merged:
+                merged[k] = _merge_token_usage_value(merged[k], v)
+            else:
+                merged[k] = v
+        return merged
+    return existing + incoming  # type: ignore[operator]
+
+
 class ChatMistralAI(BaseChatModel):
     """A chat model that uses the Mistral AI API."""
 
@@ -657,7 +677,9 @@ class ChatMistralAI(BaseChatModel):
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _merge_token_usage_value(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
         return {"token_usage": overall_token_usage, "model_name": self.model}

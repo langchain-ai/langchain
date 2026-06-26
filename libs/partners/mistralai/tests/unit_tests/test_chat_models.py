@@ -650,6 +650,90 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     assert len(set(ids)) == 2, f"Duplicate tool call IDs found: {ids}"
 
 
+class TestCombineLlmOutputs:
+    """Tests for ChatMistralAI._combine_llm_outputs."""
+
+    def _make_llm(self) -> ChatMistralAI:
+        return ChatMistralAI(model="mistral-small-latest")  # type: ignore[call-arg]
+
+    def test_flat_integer_fields_are_summed(self) -> None:
+        """Flat int token usage fields from multiple calls are summed correctly."""
+        llm = self._make_llm()
+        outputs = [
+            {"token_usage": {"prompt_tokens": 10, "completion_tokens": 5}},
+            {"token_usage": {"prompt_tokens": 20, "completion_tokens": 8}},
+        ]
+        result = llm._combine_llm_outputs(outputs)
+        usage = result["token_usage"]
+        assert usage["prompt_tokens"] == 30
+        assert usage["completion_tokens"] == 13
+
+    def test_nested_dict_fields_are_merged(self) -> None:
+        """Nested dict fields (e.g. prompt_tokens_details) are merged recursively."""
+        llm = self._make_llm()
+        outputs = [
+            {
+                "token_usage": {
+                    "prompt_tokens": 100,
+                    "prompt_tokens_details": {
+                        "cached_tokens": 10,
+                        "reasoning_tokens": 0,
+                    },
+                }
+            },
+            {
+                "token_usage": {
+                    "prompt_tokens": 200,
+                    "prompt_tokens_details": {
+                        "cached_tokens": 30,
+                        "reasoning_tokens": 5,
+                    },
+                }
+            },
+        ]
+        result = llm._combine_llm_outputs(outputs)
+        usage = result["token_usage"]
+        assert usage["prompt_tokens"] == 300
+        assert usage["prompt_tokens_details"] == {
+            "cached_tokens": 40,
+            "reasoning_tokens": 5,
+        }
+
+    def test_none_outputs_are_skipped(self) -> None:
+        """None entries (from streaming) are silently skipped."""
+        llm = self._make_llm()
+        outputs = [
+            None,
+            {"token_usage": {"prompt_tokens": 10, "completion_tokens": 5}},
+            None,
+        ]
+        result = llm._combine_llm_outputs(outputs)
+        assert result["token_usage"]["prompt_tokens"] == 10
+
+    def test_nested_key_present_only_in_one_output(self) -> None:
+        """A nested key absent from the first output is still captured."""
+        llm = self._make_llm()
+        outputs = [
+            {"token_usage": {"prompt_tokens": 50}},
+            {
+                "token_usage": {
+                    "prompt_tokens": 50,
+                    "prompt_tokens_details": {"cached_tokens": 20},
+                }
+            },
+        ]
+        result = llm._combine_llm_outputs(outputs)
+        usage = result["token_usage"]
+        assert usage["prompt_tokens"] == 100
+        assert usage["prompt_tokens_details"] == {"cached_tokens": 20}
+
+    def test_model_name_in_result(self) -> None:
+        """The result always includes the model name."""
+        llm = self._make_llm()
+        result = llm._combine_llm_outputs([{"token_usage": {"prompt_tokens": 1}}])
+        assert result["model_name"] == "mistral-small-latest"
+
+
 def test_profile() -> None:
     model = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
     assert model.profile
