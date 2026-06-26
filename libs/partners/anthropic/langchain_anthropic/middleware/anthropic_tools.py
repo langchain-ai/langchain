@@ -251,6 +251,8 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
                 args["insert_line"] = insert_line
             if new_path is not None:
                 args["new_path"] = new_path
+            if command == "rename":
+                args["old_path"] = path
             if view_range is not None:
                 args["view_range"] = view_range
 
@@ -753,6 +755,8 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
                 args["insert_line"] = insert_line
             if new_path is not None:
                 args["new_path"] = new_path
+            if command == "rename":
+                args["old_path"] = path
             if view_range is not None:
                 args["view_range"] = view_range
 

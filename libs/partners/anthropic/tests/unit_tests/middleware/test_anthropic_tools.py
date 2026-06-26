@@ -1,13 +1,17 @@
 """Unit tests for Anthropic text editor and memory tool middleware."""
 
+import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from langchain.tools import ToolRuntime
 from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.types import Command
 
 from langchain_anthropic.middleware.anthropic_tools import (
     AnthropicToolsState,
+    FilesystemClaudeMemoryMiddleware,
     StateClaudeMemoryMiddleware,
     StateClaudeTextEditorMiddleware,
     _validate_path,
@@ -308,6 +312,79 @@ class TestFileOperations:
         # New path has the file data
         assert files.get("/memories/new.txt") is not None
         assert files["/memories/new.txt"]["content"] == ["line1"]
+
+    def test_rename_via_file_tool_callback(self) -> None:
+        """Test rename through file_tool callback uses path as old_path."""
+        middleware = StateClaudeMemoryMiddleware()
+        file_tool = middleware.tools[0]
+
+        state: AnthropicToolsState = {
+            "messages": [],
+            "memory_files": {
+                "/memories/old.txt": {
+                    "content": ["line1"],
+                    "created_at": "2025-01-01T00:00:00",
+                    "modified_at": "2025-01-01T00:00:00",
+                }
+            },
+        }
+
+        runtime = ToolRuntime(
+            state=state,
+            tool_call_id="test_id",
+            config={},
+            context=None,
+            store=None,
+            stream_writer=lambda _: None,
+        )
+
+        result = file_tool.invoke(
+            {
+                "runtime": runtime,
+                "command": "rename",
+                "path": "/memories/old.txt",
+                "new_path": "/memories/new.txt",
+            }
+        )
+
+        assert isinstance(result, Command)
+        assert result.update is not None
+        files = result.update.get("memory_files", {})
+        assert files.get("/memories/old.txt") is None
+        assert files.get("/memories/new.txt") is not None
+        assert files["/memories/new.txt"]["content"] == ["line1"]
+
+    def test_rename_via_file_tool_callback_filesystem(self) -> None:
+        """Test filesystem rename through file_tool callback uses path as old_path."""
+        with tempfile.TemporaryDirectory() as root:
+            memories = Path(root) / "memories"
+            memories.mkdir()
+            (memories / "old.txt").write_text("line1\n")
+
+            middleware = FilesystemClaudeMemoryMiddleware(root_path=root)
+            file_tool = middleware.tools[0]
+
+            runtime = ToolRuntime(
+                state={"messages": []},
+                tool_call_id="test_id",
+                config={},
+                context=None,
+                store=None,
+                stream_writer=lambda _: None,
+            )
+
+            result = file_tool.invoke(
+                {
+                    "runtime": runtime,
+                    "command": "rename",
+                    "path": "/memories/old.txt",
+                    "new_path": "/memories/new.txt",
+                }
+            )
+
+            assert isinstance(result, Command)
+            assert not (memories / "old.txt").exists()
+            assert (memories / "new.txt").read_text() == "line1\n"
 
 
 class TestSystemMessageHandling:
