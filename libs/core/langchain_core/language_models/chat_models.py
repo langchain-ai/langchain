@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-import builtins  # noqa: TC003
+import builtins  # noqa: TC003  # runtime-evaluated; subclass `dict()` shadows the builtin
 import contextlib
 import inspect
 import json
