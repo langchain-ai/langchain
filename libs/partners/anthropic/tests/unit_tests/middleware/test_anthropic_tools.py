@@ -1,5 +1,6 @@
 """Unit tests for Anthropic text editor and memory tool middleware."""
 
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -8,6 +9,7 @@ from langgraph.types import Command
 
 from langchain_anthropic.middleware.anthropic_tools import (
     AnthropicToolsState,
+    FilesystemClaudeTextEditorMiddleware,
     StateClaudeMemoryMiddleware,
     StateClaudeTextEditorMiddleware,
     _validate_path,
@@ -279,7 +281,14 @@ class TestFileOperations:
         assert files.get("/memories/test.txt") is None
 
     def test_rename_operation(self) -> None:
-        """Test rename command execution (memory only)."""
+        """Test rename command execution (memory only).
+
+        Regression test for a `KeyError` on `rename`: the tool builds the
+        handler `args` with the source under the `path` key (and the
+        destination under `new_path`), never under `old_path`. The handler
+        must therefore read the source from `args["path"]`, mirroring every
+        sibling handler.
+        """
         middleware = StateClaudeMemoryMiddleware()
 
         state: AnthropicToolsState = {
@@ -293,9 +302,11 @@ class TestFileOperations:
             },
         }
 
+        # Mirror exactly what the tool produces: source path under "path",
+        # destination under "new_path". No "old_path" key is ever populated.
         args = {
             "command": "rename",
-            "old_path": "/memories/old.txt",
+            "path": "/memories/old.txt",
             "new_path": "/memories/new.txt",
         }
         result = middleware._handle_rename(args, state, "test_id")
@@ -308,6 +319,36 @@ class TestFileOperations:
         # New path has the file data
         assert files.get("/memories/new.txt") is not None
         assert files["/memories/new.txt"]["content"] == ["line1"]
+
+    def test_filesystem_rename_operation(self, tmp_path: Path) -> None:
+        """Test rename command execution for the filesystem middleware.
+
+        Regression test mirroring `test_rename_operation` for the
+        filesystem-backed middleware: the source path arrives under the
+        `path` key, so the handler must read it from `args["path"]`.
+        """
+        middleware = FilesystemClaudeTextEditorMiddleware(root_path=str(tmp_path))
+
+        # Create a file to rename, mirroring what the tool produces.
+        create_args = {
+            "command": "create",
+            "path": "/old.txt",
+            "file_text": "line1\n",
+        }
+        middleware._handle_create(create_args, "test_id")
+
+        # Source path under "path", destination under "new_path".
+        rename_args = {
+            "command": "rename",
+            "path": "/old.txt",
+            "new_path": "/new.txt",
+        }
+        result = middleware._handle_rename(rename_args, "test_id")
+
+        assert isinstance(result, Command)
+        assert not (tmp_path / "old.txt").exists()
+        assert (tmp_path / "new.txt").exists()
+        assert "line1" in (tmp_path / "new.txt").read_text()
 
 
 class TestSystemMessageHandling:
