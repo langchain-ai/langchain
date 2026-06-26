@@ -41,7 +41,6 @@ from collections.abc import (
     Iterator,  # noqa: TC003  # runtime import: pydantic resolves the field annotation
 )
 from typing import Any
-from unittest import mock
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
@@ -235,15 +234,16 @@ class SandboxIntegrationTests(BaseStandardTests):
     def test_execute_capture_at_source_offload(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
     ) -> None:
-        """A large `execute` result is offloaded to a file in the sandbox.
+        """A large `execute` result is offloaded to a file and read back.
 
-        Drives a deep agent (fake model -> `execute` tool call) end-to-end: the
-        FilesystemMiddleware wraps the command, captures its output to a file on
-        the sandbox, and returns a head/tail preview plus a `read_file` pointer
-        rather than the full payload. Exercises the capture wrapper -- heredoc,
-        subshell + `eval`, the `head -c` capture pipe with sidecar exit-code
-        recovery -- on the real image. `artifacts_root` is pinned under the
-        writable test root so the offload file does not land at filesystem root.
+        Drives a deep agent (fake model -> `execute` tool call) end-to-end and
+        checks that an over-budget result is not returned inline: the agent gets
+        a head/tail preview plus a `read_file` pointer, and the full output is
+        retrievable from the sandbox. The offload happens via capture-at-source
+        when the sandbox supports it, or the middleware's generic eviction
+        otherwise -- this asserts the outcome, not the mechanism. `artifacts_root`
+        is pinned under the writable test root so the offload file does not land
+        at the sandbox filesystem root.
         """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
@@ -276,16 +276,7 @@ class SandboxIntegrationTests(BaseStandardTests):
         )
         agent = create_deep_agent(model=model, backend=backend)
 
-        with mock.patch.object(
-            sandbox_backend, "execute", wraps=sandbox_backend.execute
-        ) as execute_spy:
-            result = agent.invoke({"messages": [HumanMessage(content="run it")]})
-
-        # Capture-at-source runs the command exactly once, via the wrapper, and
-        # never ships the payload back for re-upload -- so a single execute call,
-        # and it is the capture wrapper (not the bare command followed by a write).
-        assert execute_spy.call_count == 1
-        assert "__da_f=" in execute_spy.call_args_list[0].args[0]
+        result = agent.invoke({"messages": [HumanMessage(content="run it")]})
 
         tool_messages = [
             m
