@@ -1812,7 +1812,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                             )
                         )
                         for run_manager, res in zip(run_managers, results, strict=False)
-                        if not isinstance(res, Exception)
+                        if not isinstance(res, BaseException)
                     ]
                 )
             raise exceptions[0]

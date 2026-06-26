@@ -235,6 +235,38 @@ async def test_stream_error_callback() -> None:
         eval_response(cb_sync, i)
 
 
+async def test_agenerate_reraises_base_exception() -> None:
+    """A `BaseException` (not just `Exception`) must surface from `agenerate`.
+
+    The `on_llm_end` filter must skip failed results, else it reads `.generations`
+    off the raised exception and masks it with `AttributeError`.
+    """
+
+    class _CustomBaseException(BaseException):
+        """A `BaseException` that is deliberately not an `Exception`."""
+
+    class _RaisingChatModel(BaseChatModel):
+        @property
+        def _llm_type(self) -> str:
+            return "raising-chat-model"
+
+        def _generate(self, *_args: Any, **_kwargs: Any) -> ChatResult:
+            raise _CustomBaseException
+
+        async def _agenerate(self, *_args: Any, **_kwargs: Any) -> ChatResult:
+            raise _CustomBaseException
+
+    model = _RaisingChatModel()
+    callback = FakeAsyncCallbackHandler()
+
+    # The original `BaseException` must surface, not an `AttributeError` from the
+    # `on_llm_end` cleanup path (which runs because a callback is attached).
+    with pytest.raises(_CustomBaseException):
+        await model.agenerate([[HumanMessage(content="hello")]], callbacks=[callback])
+
+    assert callback.errors == 1
+
+
 async def test_astream_fallback_to_ainvoke() -> None:
     """Test `astream()` uses appropriate implementation."""
 
