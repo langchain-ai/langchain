@@ -1599,6 +1599,39 @@ class ChatAnthropic(BaseChatModel):
             )
             block_start_event = event
 
+        elif (
+            event.type == "content_block_start"
+            and event.content_block is not None
+            and event.content_block.type in ("text", "thinking")
+        ):
+            # Anthropic can place the opening content of a text or thinking block
+            # directly on the `content_block_start` event instead of in a
+            # following delta. This is common for the assistant turn that follows
+            # a tool result. Emit that initial content here so it is not dropped
+            # from the aggregated message. The deltas that follow are emitted as
+            # separate chunks sharing this block's `index`; chunk addition
+            # (`AIMessageChunk.__add__`) later coalesces them into one block.
+            block_start_event = event
+            if event.content_block.type == "text":
+                text = getattr(event.content_block, "text", "") or ""
+                if text:
+                    if coerce_content_to_string:
+                        message_chunk = AIMessageChunk(content=text)
+                    else:
+                        content_block = event.content_block.model_dump()
+                        content_block["index"] = event.index
+                        if content_block.get("citations") is None:
+                            content_block.pop("citations", None)
+                        message_chunk = AIMessageChunk(content=[content_block])
+            else:  # thinking
+                thinking = getattr(event.content_block, "thinking", "") or ""
+                signature = getattr(event.content_block, "signature", "") or ""
+                if thinking or signature:
+                    content_block = event.content_block.model_dump()
+                    content_block["index"] = event.index
+                    content_block["type"] = "thinking"
+                    message_chunk = AIMessageChunk(content=[content_block])
+
         # Process incremental content updates
         elif event.type == "content_block_delta":
             # Text and citation deltas (incremental text content)
