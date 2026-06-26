@@ -212,6 +212,19 @@ class TestFilesystemGlobSearch:
 
         assert result == "No files found"
 
+    def test_glob_allows_double_dots_inside_path_segment(self, tmp_path: Path) -> None:
+        """Directory names containing `..` should not be treated as traversal."""
+        (tmp_path / "src..old").mkdir()
+        (tmp_path / "src..old" / "file.py").write_text("content", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.py", path="/src..old")
+
+        assert result == "/src..old/file.py"
+
     def test_glob_results_sorted_by_mtime_desc(self, tmp_path: Path) -> None:
         """Results must be ordered newest-first, as documented."""
         # Create files in alphabetical order opposite to mtime order so the
