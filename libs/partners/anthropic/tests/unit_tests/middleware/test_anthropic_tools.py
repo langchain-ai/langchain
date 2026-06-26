@@ -8,6 +8,7 @@ from langgraph.types import Command
 
 from langchain_anthropic.middleware.anthropic_tools import (
     AnthropicToolsState,
+    FilesystemClaudeTextEditorMiddleware,
     StateClaudeMemoryMiddleware,
     StateClaudeTextEditorMiddleware,
     _validate_path,
@@ -295,7 +296,7 @@ class TestFileOperations:
 
         args = {
             "command": "rename",
-            "old_path": "/memories/old.txt",
+            "path": "/memories/old.txt",
             "new_path": "/memories/new.txt",
         }
         result = middleware._handle_rename(args, state, "test_id")
@@ -476,3 +477,68 @@ class TestSystemMessageHandling:
         assert captured_request.system_message is not None
         assert "Existing instructions." in captured_request.system_message.text
         assert custom_prompt in captured_request.system_message.text
+
+
+class TestRenameOperation:
+    """Regression tests for _handle_rename KeyError bug (#38465).
+
+    file_tool stores the current path as args["path"], but _handle_rename was
+    reading args["old_path"], causing a KeyError on every rename command.
+    """
+
+    def test_state_rename_succeeds(self) -> None:
+        """State-based rename moves the file and emits a ToolMessage."""
+        middleware = StateClaudeTextEditorMiddleware()
+        state: AnthropicToolsState = {
+            "messages": [],
+            "text_editor_files": {
+                "/old.txt": {
+                    "content": ["hello"],
+                    "created_at": "2026-01-01T00:00:00+00:00",
+                    "modified_at": "2026-01-01T00:00:00+00:00",
+                }
+            },
+        }
+
+        args = {"path": "/old.txt", "new_path": "/new.txt"}
+        result = middleware._handle_rename(args, state, "tc-1")
+
+        assert isinstance(result, Command)
+        assert result.update is not None
+        files = result.update.get("text_editor_files", {})
+        assert files["/old.txt"] is None, "old path should be cleared"
+        assert "/new.txt" in files, "new path should be present"
+        messages = result.update.get("messages", [])
+        assert len(messages) == 1
+        assert "old.txt" in messages[0].content
+        assert "new.txt" in messages[0].content
+
+    def test_state_rename_file_not_found_raises(self) -> None:
+        """Renaming a nonexistent file raises ValueError."""
+        middleware = StateClaudeTextEditorMiddleware()
+        state: AnthropicToolsState = {"messages": [], "text_editor_files": {}}
+
+        args = {"path": "/missing.txt", "new_path": "/other.txt"}
+        with pytest.raises(ValueError, match="File not found"):
+            middleware._handle_rename(args, state, "tc-1")
+
+    def test_filesystem_rename_succeeds(self, tmp_path: pytest.TempPathFactory) -> None:
+        """Filesystem-based rename moves the file and emits a ToolMessage."""
+        middleware = FilesystemClaudeTextEditorMiddleware(
+            root_path=str(tmp_path),
+            allowed_prefixes=["/"],
+        )
+        # Write file at the virtual path /old.txt (resolved to tmp_path/old.txt)
+        (tmp_path / "old.txt").write_text("content")
+
+        # Use virtual paths as file_tool would pass them
+        args = {"path": "/old.txt", "new_path": "/new.txt"}
+        result = middleware._handle_rename(args, "tc-2")
+
+        assert isinstance(result, Command)
+        assert not (tmp_path / "old.txt").exists()
+        assert (tmp_path / "new.txt").exists()
+        messages = result.update.get("messages", [])
+        assert len(messages) == 1
+        assert "old.txt" in messages[0].content
+        assert "new.txt" in messages[0].content
