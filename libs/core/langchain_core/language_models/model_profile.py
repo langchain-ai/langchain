@@ -55,8 +55,7 @@ class ModelProfile(TypedDict, total=False):
     """Whether text inputs are supported."""
 
     image_inputs: bool
-    """Whether image inputs are supported."""
-    # TODO: add more detail about formats?
+    """Whether image inputs are supported (e.g., as base64 strings or raw bytes)."""
 
     image_url_inputs: bool
     """Whether [image URL inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
@@ -64,18 +63,15 @@ class ModelProfile(TypedDict, total=False):
 
     pdf_inputs: bool
     """Whether [PDF inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
-    are supported."""
-    # TODO: add more detail about formats? e.g. bytes or base64
+    are supported (e.g., as base64 strings or raw bytes)."""
 
     audio_inputs: bool
     """Whether [audio inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
-    are supported."""
-    # TODO: add more detail about formats? e.g. bytes or base64
+    are supported (e.g., as base64 strings or raw bytes)."""
 
     video_inputs: bool
     """Whether [video inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
-    are supported."""
-    # TODO: add more detail about formats? e.g. bytes or base64
+    are supported (e.g., as base64 strings or raw bytes)."""
 
     image_tool_message: bool
     """Whether images can be included in `ToolMessage` content."""
