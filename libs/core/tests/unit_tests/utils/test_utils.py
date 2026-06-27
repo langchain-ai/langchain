@@ -149,6 +149,44 @@ def test_merge_dicts(
 
 
 @pytest.mark.parametrize(
+    "key",
+    [
+        "model_name",
+        "finish_reason",
+        "native_finish_reason",
+        "object",
+        "system_fingerprint",
+        "format",
+    ],
+)
+def test_merge_dicts_dedupes_repeated_stable_string_metadata(key: str) -> None:
+    actual = merge_dicts({key: "same"}, {key: "same"})
+
+    assert actual == {key: "same"}
+
+
+def test_merge_dicts_dedupes_repeated_nested_stable_string_metadata() -> None:
+    actual = merge_dicts(
+        {"reasoning_details": {"format": "unknown"}},
+        {"reasoning_details": {"format": "unknown"}},
+    )
+
+    assert actual == {"reasoning_details": {"format": "unknown"}}
+
+
+def test_merge_dicts_concatenates_different_stable_string_metadata() -> None:
+    actual = merge_dicts({"model_name": "first"}, {"model_name": "second"})
+
+    assert actual == {"model_name": "firstsecond"}
+
+
+def test_merge_dicts_concatenates_unrecognized_equal_strings() -> None:
+    actual = merge_dicts({"content": "same"}, {"content": "same"})
+
+    assert actual == {"content": "samesame"}
+
+
+@pytest.mark.parametrize(
     ("left", "right", "expected"),
     [
         # 'type' special key handling
