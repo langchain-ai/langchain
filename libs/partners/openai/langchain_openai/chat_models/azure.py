@@ -771,7 +771,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
         chat_result = super()._create_chat_result(response, generation_info)
 
         if not isinstance(response, dict):
-            response = response.model_dump()
+            response = response.model_dump(
+                exclude={"choices": {"__all__": {"message": {"parsed"}}}}
+            )
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 msg = (
