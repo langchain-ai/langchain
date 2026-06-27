@@ -4196,6 +4196,29 @@ def test_html_splitter_replacement_order() -> None:
     assert content == " ".join([f"Hello{i}" for i in range(1, 15)])
 
 
+def test_html_semantic_preserving_splitter_preserves_inline_tag_text_order() -> None:
+    """Inline formatting tags should not reorder surrounding text."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some long text that <strong>should</strong> be split into multiple chunks due to the
+    small chunk size.</p>
+    """
+
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            max_chunk_size=50,
+            chunk_overlap=5,
+        )
+
+    documents = splitter.split_text(html_content)
+
+    assert documents[0].page_content.startswith(
+        "This is some long text that should be split into"
+    )
+    assert "should This is" not in documents[0].page_content
+
+
 def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
     """Test that regex lookahead separator is not re-inserted when merging."""
     text = "SCE191 First chunk. SCE103 Second chunk."
