@@ -253,6 +253,8 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
                 args["new_path"] = new_path
             if view_range is not None:
                 args["view_range"] = view_range
+            if command == "rename":
+                args["old_path"] = path
 
             # Route to appropriate handler based on command
             try:
@@ -755,6 +757,8 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
                 args["new_path"] = new_path
             if view_range is not None:
                 args["view_range"] = view_range
+            if command == "rename":
+                args["old_path"] = path
 
             # Route to appropriate handler based on command
             try:
