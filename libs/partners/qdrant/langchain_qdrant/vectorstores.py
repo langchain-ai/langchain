@@ -1967,55 +1967,6 @@ class Qdrant(VectorStore):
         )
         raise ValueError(msg)
 
-    def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> list[tuple[Document, float]]:
-        """Return docs and relevance scores in the range `[0, 1]`.
-
-        `0` is dissimilar, `1` is most similar.
-
-        Args:
-            query: input text
-            k: Number of Documents to return.
-            **kwargs: Kwargs to be passed to similarity search.
-
-                Should include `score_threshold`, an optional floating point value
-                between `0` to `1` to filter the resulting set of retrieved docs.
-
-        Returns:
-            List of tuples of `(doc, similarity_score)`
-
-        """
-        return self.similarity_search_with_score(query, k, **kwargs)
-
-    @sync_call_fallback
-    async def _asimilarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
-    ) -> list[tuple[Document, float]]:
-        """Return docs and relevance scores in the range `[0, 1]`.
-
-        `0` is dissimilar, `1` is most similar.
-
-        Args:
-            query: input text
-            k: Number of Documents to return.
-            **kwargs: Kwargs to be passed to similarity search.
-
-                Should include `score_threshold`, an optional floating point value
-                between `0` to `1` to filter the resulting set of retrieved docs.
-
-        Returns:
-            List of tuples of `(doc, similarity_score)`
-
-        """
-        return await self.asimilarity_search_with_score(query, k, **kwargs)
-
     @classmethod
     def _build_payloads(
         cls,

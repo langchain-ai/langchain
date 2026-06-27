@@ -303,3 +303,31 @@ async def test_qdrant_similarity_search_with_relevance_scores(
     assert all(
         (score <= 1 or np.isclose(score, 1)) and score >= 0 for _, score in output
     )
+
+
+async def test_qdrant_asimilarity_search_with_relevance_scores_normalization() -> None:
+    """Test that async similarity search relevance scores are normalized."""
+    import math
+
+    texts = ["foo", "bar", "baz"]
+    docsearch = Qdrant.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        location=":memory:",
+        distance_func="Euclid",
+    )
+
+    # 1. Get raw distance
+    docs_and_distances = await docsearch.asimilarity_search_with_score("foo", k=3)
+
+    # 2. Get normalized relevance score
+    docs_and_relevance = await docsearch.asimilarity_search_with_relevance_scores(
+        "foo", k=3
+    )
+
+    assert len(docs_and_distances) == len(docs_and_relevance)
+    zipped = zip(docs_and_distances, docs_and_relevance, strict=False)
+    for (doc_dist, dist), (doc_rel, rel) in zipped:
+        assert doc_dist.page_content == doc_rel.page_content
+        expected_rel = 1.0 - dist / math.sqrt(2)
+        assert np.isclose(rel, expected_rel)
