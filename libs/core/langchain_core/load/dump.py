@@ -43,27 +43,31 @@ def default(obj: Any) -> Any:
 def _dump_pydantic_models(obj: Any) -> Any:
     """Convert nested Pydantic models to dicts for JSON serialization.
 
-    Handles the special case where a `ChatGeneration` contains an `AIMessage`
-    with a parsed Pydantic model in `additional_kwargs["parsed"]`. Since
-    Pydantic models aren't directly JSON serializable, this converts them to
-    dicts.
+    Recursively replaces any Pydantic `BaseModel` instance with its dict
+    representation so that the object can be serialized using `json.dumps`.
+    This handles models appearing in arbitrary positions (e.g., inside
+    `additional_kwargs`, tool calls, or custom Serializable subclasses).
 
     Args:
         obj: The object to process.
 
     Returns:
-        A copy of the object with nested Pydantic models converted to dicts, or
-            the original object unchanged if no conversion was needed.
+        A copy of the object with all nested Pydantic models converted to
+        dicts, or the original object unchanged if no conversion was needed.
     """
-    if (
-        isinstance(obj, ChatGeneration)
-        and isinstance(obj.message, AIMessage)
-        and (parsed := obj.message.additional_kwargs.get("parsed"))
-        and isinstance(parsed, BaseModel)
-    ):
-        obj_copy = obj.model_copy(deep=True)
-        obj_copy.message.additional_kwargs["parsed"] = parsed.model_dump()
-        return obj_copy
+    if isinstance(obj, BaseModel):
+        return obj.model_dump()
+    if isinstance(obj, dict):
+        return {k: _dump_pydantic_models(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_dump_pydantic_models(v) for v in obj]
+    if hasattr(obj, 'model_fields'):
+        # LangChain Serializable, pydantic.v1, etc.
+        try:
+            if hasattr(obj, 'model_dump'):
+                return _dump_pydantic_models(obj.model_dump())
+        except Exception:
+            pass
     return obj
 
 
