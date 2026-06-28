@@ -803,7 +803,7 @@ class Chroma(VectorStore):
 
         Returns:
             List of documents most similar to the query text and relevance score
-            in float for each. Lower score represents more similarity.
+            in float for each. Higher score represents more similarity.
         """
         results = self.__query_collection(
             query_embeddings=[embedding],
@@ -812,7 +812,9 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
-        return _results_to_docs_and_scores(results)
+        docs_and_scores = _results_to_docs_and_scores(results)
+        relevance_score_fn = self._select_relevance_score_fn()
+        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
 
     def similarity_search_with_score(
         self,
@@ -932,7 +934,7 @@ class Chroma(VectorStore):
         if distance == "l2":
             return self._euclidean_relevance_score_fn
         if distance == "ip":
-            return self._max_inner_product_relevance_score_fn
+            return self._chroma_max_inner_product_relevance_score_fn
         msg = (
             "No supported normalization function"
             f" for distance metric of type: {distance}."
@@ -941,6 +943,16 @@ class Chroma(VectorStore):
         raise ValueError(
             msg,
         )
+
+    @staticmethod
+    def _chroma_max_inner_product_relevance_score_fn(distance: float) -> float:
+        """Normalize the distance to a score on a scale [0, 1].
+
+        Chroma defines IP distance as 1.0 - inner_product, unlike the base class
+        which assumes -inner_product. When distance is 0.0 (perfect match),
+        the score should be 1.0.
+        """
+        return 1.0 - distance
 
     def similarity_search_by_image(
         self,
