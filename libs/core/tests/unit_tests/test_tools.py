@@ -2329,8 +2329,8 @@ def test__is_message_content_block(obj: Any, *, expected: bool) -> None:
         ("foo", True),
         (valid_tool_result_blocks, True),
         (tuple(valid_tool_result_blocks), True),
-        ([], True),  # empty sequences are vacuously valid content
-        ((), True),
+        ([], False),  # empty sequences are vacuously valid content
+        ((), False),
         (invalid_tool_result_blocks, False),
         (tuple(invalid_tool_result_blocks), False),
         (({"type": "text", "text": "ok"}, {"text": "bad"}), False),  # mixed
@@ -3912,7 +3912,7 @@ def test_format_output_empty_list() -> None:
         [], artifact=None, tool_call_id="0", name="t", status="success"
     )
     assert isinstance(result, ToolMessage)
-    assert result.content == []
+    assert result.content == "[]"
     assert result.tool_call_id == "0"
 
 
