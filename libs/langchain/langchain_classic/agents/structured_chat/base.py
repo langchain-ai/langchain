@@ -160,7 +160,7 @@ class StructuredChatAgent(Agent):
 
     @property
     def _agent_type(self) -> str:
-        raise ValueError
+        raise NotImplementedError
 
 
 def create_structured_chat_agent(

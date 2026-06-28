@@ -175,4 +175,4 @@ class ChatAgent(Agent):
 
     @property
     def _agent_type(self) -> str:
-        raise ValueError
+        raise NotImplementedError

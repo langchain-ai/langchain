@@ -1,8 +1,10 @@
 """Unittests for langchain.agents.chat package."""
 
+from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
+import pytest
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
@@ -15,6 +17,7 @@ from langchain_classic.agents.structured_chat.base import StructuredChatAgent
 from langchain_classic.agents.structured_chat.output_parser import (
     StructuredChatOutputParser,
 )
+from tests.unit_tests.llms.fake_llm import FakeLLM
 
 output_parser = StructuredChatOutputParser()
 
@@ -115,6 +118,16 @@ def test_parse_case_matched_and_final_answer() -> None:
     output, log = get_action_and_input(llm_output)
     assert output == "This is the final answer"
     assert log == llm_output
+
+
+def test_structured_chat_agent_save_reports_unsupported(tmp_path: Path) -> None:
+    agent = StructuredChatAgent.from_llm_and_tools(
+        FakeLLM(),
+        [Tool(name="foo", description="Test tool FOO", func=lambda x: x)],
+    )
+
+    with pytest.raises(NotImplementedError, match="does not support saving"):
+        agent.save(tmp_path / "agent.yaml")
 
 
 # TODO: add more tests.
