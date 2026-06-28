@@ -44,7 +44,7 @@ def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
         multiline_string = multiline_string.decode()
 
     return re.sub(
-        r'("action_input"\:\s*")(.*?)(")',
+        r'("[^"]+"\s*:\s*")(.*?)(")',
         _replace_new_line,
         multiline_string,
         flags=re.DOTALL,
