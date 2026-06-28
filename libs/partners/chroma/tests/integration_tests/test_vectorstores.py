@@ -221,7 +221,7 @@ def test_chroma_with_metadatas_with_scores_using_vector() -> None:
     )
     docsearch.delete_collection()
     assert output == [
-        (Document(page_content="foo", metadata={"page": "0"}, id="id_0"), 0.0),
+        (Document(page_content="foo", metadata={"page": "0"}, id="id_0"), 1.0),
     ]
 
 

@@ -803,7 +803,7 @@ class Chroma(VectorStore):
 
         Returns:
             List of documents most similar to the query text and relevance score
-            in float for each. Lower score represents more similarity.
+            in float for each. Higher score represents more similarity.
         """
         results = self.__query_collection(
             query_embeddings=[embedding],
@@ -812,7 +812,9 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
-        return _results_to_docs_and_scores(results)
+        relevance_score_fn = self._select_relevance_score_fn()
+        docs_and_scores = _results_to_docs_and_scores(results)
+        return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
 
     def similarity_search_with_score(
         self,
