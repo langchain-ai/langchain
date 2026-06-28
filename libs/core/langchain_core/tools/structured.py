@@ -221,7 +221,7 @@ class StructuredTool(BaseTool):
                 ):
                     description_ = ""
                 elif not description_:
-                    description_ = None
+                    description_ = "" if isinstance(source_function, type) else None
             elif isinstance(args_schema, dict):
                 description_ = args_schema.get("description")
             else:

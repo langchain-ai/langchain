@@ -190,7 +190,7 @@ def _infer_arg_descriptions(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
         )
     else:
-        description = inspect.getdoc(fn) or ""
+        description = _get_own_docstring(fn) or "" # inspect.getdoc(fn) or ""
         arg_descriptions = {}
     if parse_docstring:
         _validate_docstring_args_against_annotations(arg_descriptions, annotations)
@@ -1709,3 +1709,17 @@ class BaseToolkit(BaseModel, ABC):
         Returns:
             List of tools contained in this toolkit.
         """
+def _get_own_docstring(obj: Any) -> str | None:
+    """Return obj's own docstring, not one inherited from a base class.
+    Args:
+        obj: A class or function to read the docstring from.
+    Returns:
+        The object's own cleaned docstring, or ``None`` if it doesn't define
+    
+    """
+    if isinstance(obj, type):
+        # classes store __doc__ in their own __dict__ (set to None if absent)
+        own = obj.__dict__.get("__doc__")
+    else:
+        own = getattr(obj, "__doc__", None)
+    return inspect.getdoc(obj) if own else None

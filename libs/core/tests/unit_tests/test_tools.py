@@ -4033,3 +4033,30 @@ def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> Non
     new_schema = new_cls.model_json_schema()
     assert new_schema is not old_schema
     assert new_schema["description"] == "New description for cache test."
+
+
+def test_tool_class_does_not_inherit_parent_docstring() -> None:
+    """A @tool class should not inherit its parent BaseModel's docstring."""
+    class ParentTool(BaseModel):
+        """Parent Tool."""
+        foo: str
+
+    @tool
+    class ChildTool(ParentTool):
+        bar: str
+
+    assert ChildTool.description == ""  # type: ignore[attr-defined]
+
+
+def test_tool_class_keeps_own_docstring() -> None:
+    """A `@tool` class with its own docstring keeps it (not the parent's)."""
+    class ParentTool(BaseModel):
+        """Parent Tool."""
+        foo: str
+
+    @tool
+    class ChildTool(ParentTool):
+        """Child Tool."""
+        bar: str
+
+    assert ChildTool.description == "Child Tool."  # type: ignore[attr-defined]
