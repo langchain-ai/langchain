@@ -10,6 +10,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.tools import BaseTool, tool
 from typing_extensions import override
 
 from langchain.agents.factory import create_agent
@@ -40,6 +41,177 @@ def _make_request() -> ModelRequest:
         runtime=_fake_runtime(),
         model_settings={},
     )
+
+
+def _make_request_with_cache_markers(primary_model: BaseChatModel) -> ModelRequest:
+    """Create a request with Anthropic-style cache markers in all relevant fields."""
+
+    @tool(extras={"cache_control": {"type": "ephemeral"}, "defer_loading": True})
+    def cached_tool(query: str) -> str:
+        """Tool used for cache marker sanitization tests."""
+        return query
+
+    return _make_request().override(
+        model=primary_model,
+        model_settings={
+            "temperature": 0.3,
+            "top_p": 0.8,
+            "cache_control": {"type": "ephemeral"},
+        },
+        system_message=SystemMessage(
+            content=[
+                {"type": "text", "text": "policy", "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": "extra"},
+            ]
+        ),
+        messages=[
+            HumanMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": "question",
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                    {"type": "text", "text": "details"},
+                ]
+            ),
+            AIMessage(
+                content=[
+                    {"type": "text", "text": "previous", "cache_control": {"type": "ephemeral"}},
+                ]
+            ),
+        ],
+        tools=[
+            cached_tool,
+            {
+                "name": "dict_tool",
+                "description": "dict-style tool payload",
+                "input_schema": {"type": "object", "properties": {}},
+                "cache_control": {"type": "ephemeral"},
+                "extras": {
+                    "defer_loading": True,
+                    "cache_control": {"type": "ephemeral"},
+                },
+            },
+        ],
+    )
+
+
+def _assert_request_has_cache_markers(request: ModelRequest) -> None:
+    """Assert request still contains Anthropic-style cache markers."""
+    assert "cache_control" in request.model_settings
+    assert request.system_message is not None
+    system_content = request.system_message.content
+    assert isinstance(system_content, list)
+    assert isinstance(system_content[0], dict)
+    assert "cache_control" in system_content[0]
+
+    first_message_content = request.messages[0].content
+    assert isinstance(first_message_content, list)
+    assert isinstance(first_message_content[0], dict)
+    assert "cache_control" in first_message_content[0]
+
+    second_message_content = request.messages[1].content
+    assert isinstance(second_message_content, list)
+    assert isinstance(second_message_content[0], dict)
+    assert "cache_control" in second_message_content[0]
+
+    base_tool = request.tools[0]
+    assert isinstance(base_tool, BaseTool)
+    assert base_tool.extras is not None
+    assert "cache_control" in base_tool.extras
+
+    dict_tool = request.tools[1]
+    assert isinstance(dict_tool, dict)
+    assert "cache_control" in dict_tool
+    dict_tool_extras = dict_tool.get("extras")
+    assert isinstance(dict_tool_extras, dict)
+    assert "cache_control" in dict_tool_extras
+
+
+def _assert_request_is_sanitized(request: ModelRequest) -> None:
+    """Assert request has cache markers removed while preserving unrelated data."""
+    assert request.model_settings == {"temperature": 0.3, "top_p": 0.8}
+
+    assert request.system_message is not None
+    system_content = request.system_message.content
+    assert isinstance(system_content, list)
+    assert all(
+        not (isinstance(block, dict) and "cache_control" in block) for block in system_content
+    )
+
+    for message in request.messages:
+        message_content = message.content
+        if isinstance(message_content, list):
+            assert all(
+                not (isinstance(block, dict) and "cache_control" in block)
+                for block in message_content
+            )
+
+    base_tool = request.tools[0]
+    assert isinstance(base_tool, BaseTool)
+    assert base_tool.extras is not None
+    assert base_tool.extras == {"defer_loading": True}
+
+    dict_tool = request.tools[1]
+    assert isinstance(dict_tool, dict)
+    assert "cache_control" not in dict_tool
+    dict_tool_extras = dict_tool.get("extras")
+    assert dict_tool_extras == {"defer_loading": True}
+
+
+def test_fallback_sanitizes_cache_markers_sync() -> None:
+    """Fallback attempts should strip Anthropic cache markers in sync path."""
+    primary_model = GenericFakeChatModel(messages=iter([AIMessage(content="primary response")]))
+    fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback response")]))
+    middleware = ModelFallbackMiddleware(fallback_model)
+    request = _make_request_with_cache_markers(primary_model)
+    attempts: list[ModelRequest] = []
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            _assert_request_has_cache_markers(req)
+            msg = "Primary model failed"
+            raise ValueError(msg)
+
+        assert req.model is fallback_model
+        _assert_request_is_sanitized(req)
+        return ModelResponse(result=[AIMessage(content="fallback response")])
+
+    response = middleware.wrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ModelResponse)
+    assert response.result[0].content == "fallback response"
+    assert len(attempts) == 2
+    _assert_request_has_cache_markers(request)
+
+
+async def test_fallback_sanitizes_cache_markers_async() -> None:
+    """Fallback attempts should strip Anthropic cache markers in async path."""
+    primary_model = GenericFakeChatModel(messages=iter([AIMessage(content="primary response")]))
+    fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback response")]))
+    middleware = ModelFallbackMiddleware(fallback_model)
+    request = _make_request_with_cache_markers(primary_model)
+    attempts: list[ModelRequest] = []
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            _assert_request_has_cache_markers(req)
+            msg = "Primary model failed"
+            raise ValueError(msg)
+
+        assert req.model is fallback_model
+        _assert_request_is_sanitized(req)
+        return ModelResponse(result=[AIMessage(content="fallback response")])
+
+    response = await middleware.awrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ModelResponse)
+    assert response.result[0].content == "fallback response"
+    assert len(attempts) == 2
+    _assert_request_has_cache_markers(request)
 
 
 def test_primary_model_succeeds() -> None:
