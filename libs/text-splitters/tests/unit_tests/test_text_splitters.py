@@ -4243,3 +4243,12 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+def test_indic_text_splitter() -> None:
+    """Test Indic text splitter."""
+    from langchain_text_splitters.indic import IndicTextSplitter
+    text = "यह एक वाक्य है। यह दूसरा वाक्य है॥ यह तीसरा है।"
+    splitter = IndicTextSplitter(chunk_size=16, chunk_overlap=0)
+    output = splitter.split_text(text)
+    expected_output = ["यह एक वाक्य है।", "यह दूसरा वाक्य", "है॥", "यह तीसरा है।"]
+    assert output == expected_output
