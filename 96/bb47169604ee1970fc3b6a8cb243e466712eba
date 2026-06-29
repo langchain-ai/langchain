@@ -1,0 +1,32 @@
+libs/partners/openrouter/tests/unit_tests/test_chat_models.py
+  s_78dd27a1ebe69c::t_ca74d671f81c33 3406,3415-3462,3465-3466
+  s_78dd27a1ebe69c::t_3d7530e9f0611e 203-205
+  s_78dd27a1ebe69c::t_80d4d85b154b2c 3400-3405
+  s_78dd27a1ebe69c::t_2cc8d70245734d 200-202
+  s_78dd27a1ebe69c::t_2862523977623f 206-208
+  s_78dd27a1ebe69c::t_1b91250c2ac1b0 3397-3399
+  s_78dd27a1ebe69c::t_72e3678ac1d1f6 3407-3409,3412-3414
+  s_78dd27a1ebe69c::t_7b1f4ede68e2fd 3463-3464
+  s_78dd27a1ebe69c::t_017285fba214e4 3467-3469
+libs/partners/openrouter/langchain_openrouter/chat_models.py
+  s_78dd27a1ebe69c::t_d553af23914101 569
+  s_78dd27a1ebe69c::t_395b1b38bdf2e4 602
+  s_78dd27a1ebe69c::t_83c97c7077b66d 599-601
+  s_78dd27a1ebe69c::t_9a9c656cfcefbf 603-605
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "96bb47169604ee1970fc3b6a8cb243e466712eba",
+  "prompts": {},
+  "sessions": {
+    "s_78dd27a1ebe69c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7bed1c51-7933-491e-a8ad-d0c5392ebbc1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
