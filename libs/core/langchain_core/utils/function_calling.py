@@ -384,6 +384,24 @@ def convert_to_openai_function(
             If a dictionary is passed in, it is assumed to already be a valid OpenAI
             function, a JSON schema with top-level `title` key specified, an Anthropic
             format tool, or an Amazon Bedrock Converse format tool.
+
+            When passing a raw JSON schema dict, a top-level `title` key is **required**
+            and will be used as the function name. Schemas without `title` raise a
+            `ValueError`. Example of a valid JSON schema dict:
+
+            .. code-block:: python
+
+                {
+                    "title": "ContactInfo",          # required — becomes function name
+                    "description": "Contact details",  # optional
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "email": {"type": "string"},
+                    },
+                    "required": ["name", "email"],
+                }
+
         strict: If `True`, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition.
 
@@ -394,7 +412,8 @@ def convert_to_openai_function(
             function-calling API.
 
     Raises:
-        ValueError: If function is not in a supported format.
+        ValueError: If function is not in a supported format, or if a JSON schema dict
+            is passed without a top-level `title` key.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.16"
 
@@ -530,6 +549,24 @@ def convert_to_openai_tool(
             If a dictionary is passed in, it is assumed to already be a valid OpenAI
             function, a JSON schema with top-level `title` key specified, an Anthropic
             format tool, or an Amazon Bedrock Converse format tool.
+
+            When passing a raw JSON schema dict, a top-level `title` key is **required**
+            and will be used as the tool name. Schemas without `title` raise a
+            `ValueError`. Example of a valid JSON schema dict:
+
+            .. code-block:: python
+
+                {
+                    "title": "ContactInfo",          # required — becomes tool name
+                    "description": "Contact details",  # optional
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "email": {"type": "string"},
+                    },
+                    "required": ["name", "email"],
+                }
+
         strict: If `True`, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition.
 
