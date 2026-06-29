@@ -1,3 +1,5 @@
+"""Unit tests for Anthropic text editor and memory tool middleware."""
+
 from typing import Any
 from unittest.mock import MagicMock
 
