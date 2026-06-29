@@ -408,6 +408,13 @@ def get_lambda_source(func: Callable[..., Any]) -> str | None:
 
 
 @lru_cache(maxsize=256)
+def _get_function_nonlocal_names(source: str) -> tuple[str, ...]:
+    tree = ast.parse(source)
+    visitor = FunctionNonLocals()
+    visitor.visit(tree)
+    return tuple(sorted(visitor.nonlocals))
+
+
 def get_function_nonlocals(func: Callable[..., Any]) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
@@ -419,9 +426,7 @@ def get_function_nonlocals(func: Callable[..., Any]) -> list[Any]:
     """
     try:
         code = inspect.getsource(func)
-        tree = ast.parse(textwrap.dedent(code))
-        visitor = FunctionNonLocals()
-        visitor.visit(tree)
+        nonlocals = _get_function_nonlocal_names(textwrap.dedent(code))
         values: list[Any] = []
         closure = (
             inspect.getclosurevars(func.__wrapped__)
@@ -430,9 +435,9 @@ def get_function_nonlocals(func: Callable[..., Any]) -> list[Any]:
         )
         candidates = {**closure.globals, **closure.nonlocals}
         for k, v in candidates.items():
-            if k in visitor.nonlocals:
+            if k in nonlocals:
                 values.append(v)
-            for kk in visitor.nonlocals:
+            for kk in nonlocals:
                 if "." in kk and kk.startswith(k):
                     vv = v
                     for part in kk.split(".")[1:]:

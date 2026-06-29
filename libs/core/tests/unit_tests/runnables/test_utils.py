@@ -1,9 +1,12 @@
+import gc
+import weakref
 from collections.abc import Callable
 from typing import Any
 
 import pytest
 
 from langchain_core.runnables.base import RunnableLambda
+from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
     get_function_nonlocals,
     get_lambda_source,
@@ -73,3 +76,24 @@ def test_nonlocals() -> None:
     assert RunnableLambda(my_func3).deps == [agent]
     assert RunnableLambda(my_func4).deps == [global_agent]
     assert RunnableLambda(func).deps == [nl]
+
+
+def test_bound_method_nonlocals_do_not_keep_instance_alive() -> None:
+    """Regression test for bound methods in RunnableSequence leaking instances."""
+
+    class ThingWithRunnable:
+        def __init__(self) -> None:
+            self.runnable = RunnableLambda(lambda _: {"result": "ok"})
+            self.expensive = {i: [i] for i in range(10)}
+
+        def call(self, inputs: dict[str, Any]) -> dict[str, str]:
+            return self.runnable.invoke(inputs)
+
+    thing = ThingWithRunnable()
+    ref = weakref.ref(thing)
+
+    (thing.call | RunnablePassthrough()).invoke({})
+    del thing
+    gc.collect()
+
+    assert ref() is None
