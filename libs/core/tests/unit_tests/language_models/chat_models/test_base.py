@@ -1838,3 +1838,37 @@ async def test_astream_events_v3_invocation_params_passed_to_tracer_metadata() -
     assert metadata["_type"] == "fake-chat-model-with-invocation-params"
     assert metadata["stop"] == ["done"]
     assert metadata["temperature"] == 0.7
+
+
+class CustomBaseException(BaseException):
+    pass
+
+
+class RaisingBaseExceptionChatModel(BaseChatModel):
+    @property
+    def _llm_type(self) -> str:
+        return "raising_base_exception"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> ChatResult:
+        raise CustomBaseException
+
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> ChatResult:
+        raise CustomBaseException
+
+
+async def test_agenerate_does_not_mask_base_exception() -> None:
+    model = RaisingBaseExceptionChatModel()
+    with pytest.raises(CustomBaseException):
+        await model.agenerate([[HumanMessage("hi")]], callbacks=[BaseCallbackHandler()])
