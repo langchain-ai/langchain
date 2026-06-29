@@ -1,0 +1,35 @@
+libs/partners/fireworks/tests/unit_tests/test_chat_models.py
+  s_a9f0d75b36a76a::t_ea0071fea990e9 1131-1133
+  s_a9f0d75b36a76a::t_8384a33e119ca8 1116-1117,1121-1125,1129-1130,1136,1138-1141,1154,1156-1171
+  s_a9f0d75b36a76a::t_e35eac1e9513a9 1113-1115
+  s_a9f0d75b36a76a::t_30f0f7baf75a9f 1118-1120
+  s_a9f0d75b36a76a::t_ab33b2c0cd8c75 1126-1128
+  s_a9f0d75b36a76a::t_9b1d585092ac3b 1134-1135
+  s_a9f0d75b36a76a::t_d726947447b823 1137
+  s_a9f0d75b36a76a::t_24935cc57baeb1 1142-1144,1151-1153
+  s_a9f0d75b36a76a::t_b27487abb794bf 1155
+  s_a9f0d75b36a76a::t_9ace0430405987 1172
+  s_a9f0d75b36a76a::t_a115168429207b 1112,1145-1150
+libs/partners/fireworks/langchain_fireworks/chat_models.py
+  s_a9f0d75b36a76a::t_203817e4e38a55 690
+  s_a9f0d75b36a76a::t_164573c58149f8 667
+  s_a9f0d75b36a76a::t_f66ceb10ac3874 676
+  s_a9f0d75b36a76a::t_8a3b9fb714840b 671-675,677-689,691
+  s_a9f0d75b36a76a::t_168972e1aed91b 669-670
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "286d106a160e7eb0d356f5f662597bd3138163a5",
+  "prompts": {},
+  "sessions": {
+    "s_a9f0d75b36a76a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a83a649f-e7f1-4d7f-99e4-9d1ab60507dd",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
