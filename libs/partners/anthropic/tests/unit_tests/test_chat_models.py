@@ -981,6 +981,49 @@ def test__format_tool_use_block() -> None:
     assert result == (None, [expected])
 
 
+def test__format_tool_use_block_preserves_cache_control() -> None:
+    """Regression: cache_control on a tool_use content block must survive formatting."""
+    msg = AIMessage(
+        [
+            {
+                "type": "tool_use",
+                "name": "get_weather",
+                "id": "toolu_1",
+                "input": {"city": "Paris"},
+                "cache_control": {"type": "ephemeral"},
+            }
+        ]
+    )
+    _, formatted = _format_messages([msg])
+    assert len(formatted) == 1
+    tool_use_blocks = [b for b in formatted[0]["content"] if b["type"] == "tool_use"]
+    assert len(tool_use_blocks) == 1
+    assert tool_use_blocks[0].get("cache_control") == {"type": "ephemeral"}
+
+
+def test__format_tool_use_block_preserves_cache_control_with_tool_calls() -> None:
+    """cache_control on a tool_use block survives when tool_calls also present."""
+    msg = AIMessage(
+        [
+            {
+                "type": "tool_use",
+                "name": "get_weather",
+                "id": "toolu_1",
+                "input": {"city": "Paris"},
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
+        tool_calls=[
+            {"name": "get_weather", "id": "toolu_1", "args": {"city": "Paris"}}
+        ],
+    )
+    _, formatted = _format_messages([msg])
+    assert len(formatted) == 1
+    tool_use_blocks = [b for b in formatted[0]["content"] if b["type"] == "tool_use"]
+    assert len(tool_use_blocks) == 1
+    assert tool_use_blocks[0].get("cache_control") == {"type": "ephemeral"}
+
+
 def test__format_messages_with_str_content_and_tool_calls() -> None:
     system = SystemMessage("fuzz")  # type: ignore[misc]
     human = HumanMessage("foo")  # type: ignore[misc]
