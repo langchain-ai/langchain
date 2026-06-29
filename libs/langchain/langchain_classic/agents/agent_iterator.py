@@ -172,7 +172,7 @@ class AgentExecutorIterator:
 
     def __iter__(self: AgentExecutorIterator) -> Iterator[AddableDict]:
         """Create an async iterator for the `AgentExecutor`."""
-        logger.debug("Initialising AgentExecutorIterator")
+        logger.debug("Initializing AgentExecutorIterator")
         self.reset()
         callback_manager = CallbackManager.configure(
             self.callbacks,
@@ -240,7 +240,7 @@ class AgentExecutorIterator:
         N.B. __aiter__ must be a normal method, so need to initialize async run manager
         on first __anext__ call where we can await it.
         """
-        logger.debug("Initialising AgentExecutorIterator (async)")
+        logger.debug("Initializing AgentExecutorIterator (async)")
         self.reset()
         callback_manager = AsyncCallbackManager.configure(
             self.callbacks,
