@@ -126,7 +126,12 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
         try:
             return json.loads("".join(new_chars + stack), strict=strict)
         except json.JSONDecodeError:
-            # If we still can't parse the string as JSON,
+            # If we still can't parse, remove the last character and try again.
+            new_chars.pop()
+    # If we exhausted all attempts, raise an error.
+    raise OutputParserException(
+        f"Failed to parse JSON from incomplete string: {s}"
+    )e the string as JSON,
             # try removing the last character
             new_chars.pop()
 
