@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator  # noqa: TC003
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessageChunk, BaseMessage, HumanMessage
+from langchain_core.outputs import ChatGenerationChunk
 from langchain_core.runnables import RunnableConfig  # noqa: TC002
 from langchain_core.tools import tool
 from langgraph.prebuilt import ToolCallTransformer
@@ -286,17 +288,13 @@ class TestAgentStreamV3Async:
 
     @pytest.mark.anyio
     async def test_astream_events_v3_streams_chat_model_tokens_realtime(self) -> None:
-        from langchain_core.messages import AIMessageChunk
-        from langchain_core.outputs import ChatGenerationChunk
-        from typing import AsyncIterator
-
         class StreamingFakeModel(FakeToolCallingModel):
             async def _astream(
                 self,
-                messages: list[BaseMessage],
-                stop: list[str] | None = None,
+                _messages: list[BaseMessage],
+                _stop: list[str] | None = None,
                 run_manager: Any = None,
-                **kwargs: Any,
+                **_kwargs: Any,
             ) -> AsyncIterator[ChatGenerationChunk]:
                 for chunk in ["Hello", " world", "!"]:
                     message_chunk = AIMessageChunk(content=chunk)
@@ -311,7 +309,6 @@ class TestAgentStreamV3Async:
 
         tokens = []
         async for msg in run.messages:
-            async for token in msg.text:
-                tokens.append(token)
+            tokens.extend([token async for token in msg.text])
 
         assert tokens == ["Hello", " world", "!"]
