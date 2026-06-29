@@ -60,6 +60,10 @@ from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
 )
+from langchain_core.load.serializable import (
+    SerializedConstructor,
+    SerializedNotImplemented,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -3323,10 +3327,19 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     max_tokens: int | None = Field(default=None, alias="max_completion_tokens")
     """Maximum number of tokens to generate."""
 
+    openai_api_key_secret_id: str | None = Field(
+        default=None, alias="api_key_secret_id", exclude=True
+    )
+    """Secret id to use when serializing `openai_api_key`.
+
+    Defaults to `OPENAI_API_KEY`.
+    """
+
     @property
     def lc_secrets(self) -> dict[str, str]:
         """Mapping of secret environment variables."""
-        return {"openai_api_key": "OPENAI_API_KEY"}
+        secret_id = self.openai_api_key_secret_id or "OPENAI_API_KEY"
+        return {"openai_api_key": secret_id}
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
@@ -3352,6 +3365,15 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             attributes["openai_proxy"] = self.openai_proxy
 
         return attributes
+
+    def to_json(self) -> SerializedConstructor | SerializedNotImplemented:
+        """Serialize the model using public endpoint constructor aliases."""
+        serialized = super().to_json()
+        if serialized["type"] == "constructor":
+            kwargs = serialized["kwargs"]
+            if "openai_api_base" in kwargs:
+                kwargs["base_url"] = kwargs.pop("openai_api_base")
+        return serialized
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

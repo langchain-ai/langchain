@@ -74,6 +74,33 @@ def test_load_openai_chat() -> None:
     assert isinstance(llm2, ChatOpenAI)
 
 
+def test_load_openai_chat_openai_compatible_endpoint_config() -> None:
+    """Test serialization of OpenAI-compatible endpoint runtime config."""
+    llm = ChatOpenAI(  # type: ignore[call-arg]
+        model="google/gemini-3-flash-preview",
+        base_url="https://openrouter.ai/api/v1",
+        openai_api_key="hello",
+        api_key_secret_id="OPENROUTER_API_KEY",
+        use_responses_api=True,
+    )
+
+    llm_obj = dumpd(llm)
+    kwargs = llm_obj["kwargs"]
+    assert kwargs["base_url"] == "https://openrouter.ai/api/v1"
+    assert "openai_api_base" not in kwargs
+    assert kwargs["openai_api_key"]["id"] == ["OPENROUTER_API_KEY"]
+    assert "api_key_secret_id" not in kwargs
+
+    llm2 = load(
+        llm_obj,
+        secrets_map={"OPENROUTER_API_KEY": "hello"},
+        allowed_objects=[ChatOpenAI],
+    )
+
+    assert isinstance(llm2, ChatOpenAI)
+    assert llm2.openai_api_base == "https://openrouter.ai/api/v1"
+
+
 def test_loads_runnable_sequence_prompt_model() -> None:
     """Test serialization/deserialization of a chain:
 
