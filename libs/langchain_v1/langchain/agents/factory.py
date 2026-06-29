@@ -1416,7 +1416,9 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = model_.invoke(messages)
+        from langgraph.config import get_config
+
+        output = model_.invoke(messages, config=get_config())
         if name:
             output.name = name
 
@@ -1464,7 +1466,9 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = await model_.ainvoke(messages)
+        from langgraph.config import get_config
+
+        output = await model_.ainvoke(messages, config=get_config())
         if name:
             output.name = name
 

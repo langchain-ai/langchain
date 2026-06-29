@@ -283,3 +283,35 @@ class TestAgentStreamV3Async:
             assert deltas == ["hi", "hi!"]
         assert len(collected) == 1
         assert collected[0].completed is True
+
+    @pytest.mark.anyio
+    async def test_astream_events_v3_streams_chat_model_tokens_realtime(self) -> None:
+        from langchain_core.messages import AIMessageChunk
+        from langchain_core.outputs import ChatGenerationChunk
+        from typing import AsyncIterator
+
+        class StreamingFakeModel(FakeToolCallingModel):
+            async def _astream(
+                self,
+                messages: list[BaseMessage],
+                stop: list[str] | None = None,
+                run_manager: Any = None,
+                **kwargs: Any,
+            ) -> AsyncIterator[ChatGenerationChunk]:
+                for chunk in ["Hello", " world", "!"]:
+                    message_chunk = AIMessageChunk(content=chunk)
+                    if run_manager:
+                        await run_manager.on_llm_new_token(chunk, chunk=message_chunk)
+                    yield ChatGenerationChunk(message=message_chunk)
+
+        model = StreamingFakeModel()
+        agent = create_agent(model, [])
+
+        run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+
+        tokens = []
+        async for msg in run.messages:
+            async for token in msg.text:
+                tokens.append(token)
+
+        assert tokens == ["Hello", " world", "!"]
