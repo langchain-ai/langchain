@@ -1,5 +1,4 @@
-"""Unit tests for Anthropic text editor and memory tool middleware."""
-
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -308,6 +307,92 @@ class TestFileOperations:
         # New path has the file data
         assert files.get("/memories/new.txt") is not None
         assert files["/memories/new.txt"]["content"] == ["line1"]
+
+    def test_file_tool_rename_integration(self) -> None:
+        """Test that the file_tool callback executes rename without KeyError."""
+        import tempfile
+        from pathlib import Path
+
+        from langchain.tools import ToolRuntime
+
+        from langchain_anthropic.middleware.anthropic_tools import (
+            FilesystemClaudeMemoryMiddleware,
+        )
+
+        # 1. Test state-backed middleware
+        state_middleware = StateClaudeMemoryMiddleware()
+        state: dict[str, Any] = {
+            "messages": [],
+            "memory_files": {
+                "/memories/old.txt": {
+                    "content": ["line1"],
+                    "created_at": "2025-01-01T00:00:00",
+                    "modified_at": "2025-01-01T00:00:00",
+                }
+            },
+        }
+
+        runtime: ToolRuntime = ToolRuntime(
+            context=None,
+            state=state,
+            config={},
+            stream_writer=lambda _: None,
+            tool_call_id="test_id_state",
+            store=None,
+        )
+
+        tool = state_middleware.tools[0]
+
+        # Invoke via tool.invoke - this simulates LangGraph tool node execution
+        result = tool.invoke(
+            {
+                "runtime": runtime,
+                "command": "rename",
+                "path": "/memories/old.txt",
+                "new_path": "/memories/new.txt",
+            }
+        )
+
+        assert isinstance(result, Command)
+        assert isinstance(result.update, dict)
+        files = result.update.get("memory_files", {})
+        assert files.get("/memories/old.txt") is None
+        assert files.get("/memories/new.txt") is not None
+        assert files["/memories/new.txt"]["content"] == ["line1"]
+
+        # 2. Test filesystem-backed middleware
+        with tempfile.TemporaryDirectory() as tmpdir:
+            memories_dir = Path(tmpdir) / "memories"
+            memories_dir.mkdir()
+            old_file = memories_dir / "old.txt"
+            old_file.write_text("line1\n")
+
+            fs_middleware = FilesystemClaudeMemoryMiddleware(root_path=tmpdir)
+            fs_runtime: ToolRuntime = ToolRuntime(
+                context=None,
+                state={},
+                config={},
+                stream_writer=lambda _: None,
+                tool_call_id="test_id_fs",
+                store=None,
+            )
+
+            fs_tool = fs_middleware.tools[0]
+
+            fs_result = fs_tool.invoke(
+                {
+                    "runtime": fs_runtime,
+                    "command": "rename",
+                    "path": "/memories/old.txt",
+                    "new_path": "/memories/new.txt",
+                }
+            )
+
+            assert isinstance(fs_result, Command)
+            assert not old_file.exists()
+            new_file = memories_dir / "new.txt"
+            assert new_file.exists()
+            assert new_file.read_text() == "line1\n"
 
 
 class TestSystemMessageHandling:
