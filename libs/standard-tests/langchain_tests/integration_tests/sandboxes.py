@@ -253,7 +253,7 @@ class SandboxIntegrationTests(BaseStandardTests):
         )
         # ~225 KiB of output, comfortably over the default eviction budget.
         command = (
-            'for i in $(seq 1 5000); do '
+            "for i in $(seq 1 5000); do "
             'echo "L$i: padding to clear the eviction budget"; done'
         )
         model = _ScriptedToolModel(
