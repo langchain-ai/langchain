@@ -45,11 +45,8 @@ class ChatGeneration(Generation):
     def set_text(self) -> Self:
         """Set the text attribute to be the contents of the message.
 
-        Args:
-            values: The values of the object.
-
         Returns:
-            The values of the object with the text attribute set.
+            The model instance with the `text` attribute set.
 
         Raises:
             ValueError: If the message is not a string or a list.
