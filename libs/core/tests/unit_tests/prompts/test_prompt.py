@@ -251,6 +251,52 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     }
 
 
+def test_mustache_prompt_with_falsy_list_items() -> None:
+    """Falsy items in a mustache list section must still render their body.
+
+    Iterating a list section over values like `0`, `False`, `0.0`, or `""` must
+    render the section body once per item - matching the Mustache spec's
+    implicit-iterator behavior - rather than silently skipping the falsy items.
+
+    Regression test: previously these items were dropped because the body-skip
+    check for falsy *sections* also fired for falsy list *items*.
+    """
+    prompt = PromptTemplate.from_template(
+        "{{#scores}}({{.}}){{/scores}}", template_format="mustache"
+    )
+    assert prompt.format(scores=[0, 1, 2, 0, 3]) == "(0)(1)(2)(0)(3)"
+    assert prompt.format(scores=[0]) == "(0)"
+    assert prompt.format(scores=[False]) == "(False)"
+    assert prompt.format(scores=[0.0, 1.5]) == "(0.0)(1.5)"
+
+    # Static body text must also render once per item, even for falsy items.
+    static = PromptTemplate.from_template(
+        "{{#items}}X{{/items}}", template_format="mustache"
+    )
+    assert static.format(items=[0, 0, 0]) == "XXX"
+
+    # Empty-string items render as empty (the body still runs, the value is "").
+    empties = PromptTemplate.from_template(
+        "{{#items}}[{{.}}]{{/items}}", template_format="mustache"
+    )
+    assert empties.format(items=["", "a"]) == "[][a]"
+
+    # Existing behavior is preserved: an empty list renders nothing, a falsy
+    # (non-list) section is skipped, and an inverted section still works.
+    skip = PromptTemplate.from_template(
+        "a{{#items}}X{{/items}}b{{^items}}none{{/items}}", template_format="mustache"
+    )
+    assert skip.format(items=[]) == "abnone"
+    assert skip.format(items=0) == "abnone"
+    assert skip.format(items=[1]) == "aXb"
+
+    # List of dicts (the common case) is unaffected.
+    dicts = PromptTemplate.from_template(
+        "{{#people}}{{name}},{{/people}}", template_format="mustache"
+    )
+    assert dicts.format(people=[{"name": "a"}, {"name": "b"}]) == "a,b,"
+
+
 def test_prompt_from_template_with_partial_variables() -> None:
     """Test prompts can be constructed from a template with partial variables."""
     # given

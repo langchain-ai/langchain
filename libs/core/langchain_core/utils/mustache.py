@@ -12,7 +12,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    cast,
 )
 
 if TYPE_CHECKING:
@@ -21,7 +20,22 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-Scopes: TypeAlias = list[Literal[False, 0] | Mapping[str, Any]]
+class _SkippedScope:
+    """Sentinel pushed onto the scope stack to mark a section body to skip.
+
+    A section is skipped when its scope is falsy (e.g. `{{#x}}...{{/x}}` with a
+    falsy `x`) or when an inverted section's scope is truthy. Using a dedicated
+    sentinel - rather than the falsy value itself - means that falsy *items*
+    encountered while iterating a list section (e.g. `0`, `False`, `""`) are not
+    mistaken for a skipped section and still render their body.
+    """
+
+    __slots__ = ()
+
+
+_SKIPPED_SCOPE = _SkippedScope()
+
+Scopes: TypeAlias = list[Any]
 
 
 # Globals
@@ -529,11 +543,11 @@ def render(
             # Pop out of the latest scope
             del scopes[0]
 
-        # If the current scope is falsy and not the only scope
-        elif not current_scope and len(scopes) != 1:
+        # If we're skipping a falsy section's body and not at the only scope
+        elif current_scope is _SKIPPED_SCOPE and len(scopes) != 1:
             if tag in {"section", "inverted section"}:
-                # Set the most recent scope to a falsy value
-                scopes.insert(0, False)
+                # Keep the scope stack balanced for nested sections being skipped
+                scopes.insert(0, _SKIPPED_SCOPE)
 
         # If we're a literal tag
         elif tag == "literal":
@@ -661,16 +675,19 @@ def render(
                     output += rend
 
             else:
-                # Otherwise we're just a scope section
-                scopes.insert(0, scope)
+                # Otherwise we're just a scope section. A falsy scope means the
+                # body is skipped: push the skip sentinel rather than the falsy
+                # value itself, so falsy items in list sections still render.
+                scopes.insert(0, scope or _SKIPPED_SCOPE)
 
         # If we're an inverted section
         elif tag == "inverted section":
-            # Add the flipped scope to the scopes
+            # An inverted section renders its body only when the scope is falsy;
+            # when it's truthy we push the skip sentinel to suppress the body.
             scope = _get_key(
                 key, scopes, warn=warn, keep=keep, def_ldel=def_ldel, def_rdel=def_rdel
             )
-            scopes.insert(0, cast("Literal[False]", not scope))
+            scopes.insert(0, True if not scope else _SKIPPED_SCOPE)
 
         # If we're a partial
         elif tag == "partial":
