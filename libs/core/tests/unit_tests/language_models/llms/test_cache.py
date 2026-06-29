@@ -109,3 +109,62 @@ async def test_no_cache_generate_async() -> None:
         assert global_cache._cache == {}
     finally:
         set_llm_cache(None)
+
+
+class SizedCache(BaseCache):
+    """Cache that implements __len__, making an empty instance falsy.
+
+    This exercises the `is not None` guard — a truthiness check (`if llm_cache:`)
+    would skip lookups when the cache is empty, silently dropping prompts from
+    both `existing_prompts` and `missing_prompts` and causing a KeyError later.
+    """
+
+    def __init__(self) -> None:
+        self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
+
+    def __len__(self) -> int:
+        return len(self._cache)
+
+    def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
+        return self._cache.get((prompt, llm_string))
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        self._cache[prompt, llm_string] = return_val
+
+    @override
+    def clear(self, **kwargs: Any) -> None:
+        self._cache = {}
+
+
+def test_sized_cache_generate_sync() -> None:
+    """generate() must not raise KeyError when cache implements __len__."""
+    cache = SizedCache()
+    assert len(cache) == 0  # falsy — would break under the old truthiness check
+
+    llm = FakeListLLM(cache=cache, responses=["foo", "bar"])
+
+    # First call: cache miss → LLM called, result stored
+    output = llm.generate(["hello"])
+    assert output.generations[0][0].text == "foo"
+    assert len(cache) == 1
+
+    # Second call: cache hit → same result returned, LLM NOT called again
+    output = llm.generate(["hello"])
+    assert output.generations[0][0].text == "foo"
+    assert len(cache) == 1  # still 1 — no new entry
+
+
+async def test_sized_cache_generate_async() -> None:
+    """agenerate() must not raise KeyError when cache implements __len__."""
+    cache = SizedCache()
+    assert len(cache) == 0
+
+    llm = FakeListLLM(cache=cache, responses=["foo", "bar"])
+
+    output = await llm.agenerate(["hello"])
+    assert output.generations[0][0].text == "foo"
+    assert len(cache) == 1
+
+    output = await llm.agenerate(["hello"])
+    assert output.generations[0][0].text == "foo"
+    assert len(cache) == 1
