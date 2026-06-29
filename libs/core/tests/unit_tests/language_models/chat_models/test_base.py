@@ -1672,6 +1672,56 @@ def test_generate_response_from_error_handles_streaming_response_failure() -> No
     assert metadata["status_code"] == 400
 
 
+async def test_agenerate_propagates_non_exception_base_exception() -> None:
+    """A `BaseException` that is not an `Exception` must propagate unmasked.
+
+    `agenerate` gathers per-message results with `return_exceptions=True` and
+    collects failures with an `isinstance(res, BaseException)` check. The
+    subsequent `on_llm_end` filter must use the same `BaseException` check;
+    otherwise a `BaseException` that is not an `Exception` (e.g.
+    `asyncio.CancelledError`, `KeyboardInterrupt`) slips through, its
+    `generations` attribute is read off the raised object, and the resulting
+    `AttributeError` masks the original exception.
+
+    Regression test for #38469.
+    """
+
+    class _Abort(BaseException):
+        """A `BaseException` that is deliberately not an `Exception`."""
+
+    class _RaisingChatModel(BaseChatModel):
+        @property
+        @override
+        def _llm_type(self) -> str:
+            return "raising"
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            raise _Abort
+
+        @override
+        async def _agenerate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            raise _Abort
+
+    model = _RaisingChatModel()
+    # Attaching a callback makes `run_managers` truthy and exercises the
+    # `on_llm_end` path that previously masked the exception.
+    with pytest.raises(_Abort):
+        await model.agenerate([[HumanMessage("hi")]], callbacks=[BaseCallbackHandler()])
+
+
 def test_filter_invocation_params_for_tracing() -> None:
     """Test that large fields are filtered from invocation params for tracing."""
     params = {

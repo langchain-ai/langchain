@@ -1807,12 +1807,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     *[
                         run_manager.on_llm_end(
                             LLMResult(
-                                generations=[res.generations],  # type: ignore[union-attr]
-                                llm_output=res.llm_output,  # type: ignore[union-attr]
+                                generations=[res.generations],
+                                llm_output=res.llm_output,
                             )
                         )
                         for run_manager, res in zip(run_managers, results, strict=False)
-                        if not isinstance(res, Exception)
+                        if not isinstance(res, BaseException)
                     ]
                 )
             raise exceptions[0]
