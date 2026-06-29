@@ -144,6 +144,39 @@ _STREAM_CHUNKS: list[dict[str, Any]] = [
     },
 ]
 
+_DUPLICATE_FINISH_STREAM_CHUNKS: list[dict[str, Any]] = [
+    {
+        "choices": [{"delta": {"role": "assistant", "content": "Hello"}, "index": 0}],
+        "model": MODEL_NAME,
+        "object": "chat.completion.chunk",
+        "created": 1700000000.0,
+        "id": "gen-stream1",
+    },
+    {
+        "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+        "model": MODEL_NAME,
+        "object": "chat.completion.chunk",
+        "created": 1700000000.0,
+        "id": "gen-stream1",
+    },
+    {
+        "choices": [
+            {
+                "delta": {},
+                "finish_reason": "stop",
+                "native_finish_reason": "end_turn",
+                "index": 0,
+            }
+        ],
+        "usage": {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7},
+        "model": MODEL_NAME,
+        "object": "chat.completion.chunk",
+        "created": 1700000000.0,
+        "id": "gen-stream1",
+        "system_fingerprint": "fp_duplicate",
+    },
+]
+
 
 def _make_sdk_response(response_dict: dict[str, Any]) -> MagicMock:
     """Build a MagicMock that behaves like an SDK ChatResponse."""
@@ -152,11 +185,34 @@ def _make_sdk_response(response_dict: dict[str, Any]) -> MagicMock:
     return mock
 
 
+def _assert_duplicate_finish_result(result: Any) -> None:
+    generation = result.generations[0][0]
+    assert generation.text == "Hello"
+    assert generation.generation_info == {
+        "finish_reason": "stop",
+        "model_name": MODEL_NAME,
+        "id": "gen-stream1",
+        "created": 1700000000,
+        "object": "chat.completion.chunk",
+        "model_provider": "openrouter",
+        "system_fingerprint": "fp_duplicate",
+        "native_finish_reason": "end_turn",
+    }
+    assert generation.message.response_metadata == generation.generation_info
+    assert generation.message.usage_metadata == {
+        "input_tokens": 5,
+        "output_tokens": 2,
+        "total_tokens": 7,
+    }
+
+
 class _MockSyncStream:
     """Synchronous iterator that mimics the SDK EventStream."""
 
     def __init__(self, chunks: list[dict[str, Any]]) -> None:
-        self._chunks = chunks
+        # Copy so `__next__`'s `pop(0)` never drains a caller-supplied list
+        # (e.g. a shared module-level fixture), mirroring `_MockAsyncStream`.
+        self._chunks = list(chunks)
 
     def __iter__(self) -> _MockSyncStream:
         return self
@@ -3335,6 +3391,83 @@ class TestStreamUsage:
         assert usage["input_tokens"] == 10
         assert usage["output_tokens"] == 5
         assert usage["total_tokens"] == 15
+
+    @pytest.mark.parametrize("stream_usage", [True, False])
+    def test_generate_duplicate_finish_chunks_deduplicates_generation_info(
+        self, stream_usage: Literal[True, False]
+    ) -> None:
+        """Test duplicate finish chunks do not concatenate metadata."""
+        model = _make_model(streaming=True, stream_usage=stream_usage)
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _MockSyncStream(
+            _DUPLICATE_FINISH_STREAM_CHUNKS
+        )
+
+        result = model.generate([[HumanMessage(content="Hello")]])
+
+        _assert_duplicate_finish_result(result)
+
+    @pytest.mark.parametrize("stream_usage", [True, False])
+    async def test_agenerate_duplicate_finish_chunks_deduplicates_generation_info(
+        self, stream_usage: Literal[True, False]
+    ) -> None:
+        """Test async duplicate finish chunks do not concatenate metadata."""
+        model = _make_model(streaming=True, stream_usage=stream_usage)
+        model.client = MagicMock()
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream(_DUPLICATE_FINISH_STREAM_CHUNKS)
+        )
+
+        result = await model.agenerate([[HumanMessage(content="Hello")]])
+
+        _assert_duplicate_finish_result(result)
+
+    def test_stream_differing_finish_reasons_keeps_first(self) -> None:
+        """First finish reason wins across repeated terminal chunks.
+
+        OpenRouter can emit several chunks bearing a `finish_reason`. Later
+        terminal chunks should fill only missing metadata fields, so a differing
+        later reason must not surface in any emitted chunk.
+        """
+        finish_chunk: dict[str, Any] = {
+            "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+            "model": MODEL_NAME,
+            "object": "chat.completion.chunk",
+            "created": 1700000000.0,
+            "id": "gen-stream1",
+        }
+        chunks: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-stream1",
+            },
+            finish_chunk,
+            {
+                **finish_chunk,
+                "choices": [{"delta": {}, "finish_reason": "length", "index": 0}],
+            },
+            {
+                **finish_chunk,
+                "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+            },
+        ]
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _MockSyncStream(chunks)
+
+        emitted = list(model.stream("Hi"))
+
+        finish_reasons = [
+            c.response_metadata["finish_reason"]
+            for c in emitted
+            if "finish_reason" in c.response_metadata
+        ]
+        assert finish_reasons == ["stop"]
 
     async def test_astream_options_passed_by_default(self) -> None:
         """Test that async stream sends stream_options by default."""
