@@ -143,6 +143,7 @@ The description *is* the summary — do not add a `# Summary` header.
 - Do **not** cite line numbers; they go stale as soon as the file changes.
 - Rarely include full file paths or filenames. Reference the affected symbol, class, or subsystem by name instead.
 - Wrap class, function, method, parameter, and variable names in backticks.
+- For net new features or behavior-changing bugfixes, PR descriptions should include a `## Release note` section that states the user-visible change in release-note-ready language.
 - Skip dedicated "Test plan" or "Testing" sections in most cases. Mention tests only when coverage is non-obvious, risky, or otherwise notable.
 - Call out areas of the change that require careful review.
 - Add a brief disclaimer noting AI-agent involvement in the contribution.
