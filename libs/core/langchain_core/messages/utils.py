@@ -1888,7 +1888,7 @@ def convert_to_openai_messages(
                     content.append(
                         {
                             "type": "text",
-                            "text": json.dumps(block["json"]),
+                            "text": json.dumps(block["json"], ensure_ascii=False),
                         }
                     )
                 elif (block.get("type") == "guard_content") or "guard_content" in block:

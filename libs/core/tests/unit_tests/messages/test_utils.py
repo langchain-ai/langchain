@@ -1259,6 +1259,20 @@ def test_convert_to_openai_messages_json() -> None:
     assert json.loads(result[0]["content"][0]["text"]) == json_data
 
 
+def test_convert_to_openai_messages_json_preserves_unicode() -> None:
+    # A `json` content block with non-ASCII values must serialize the raw
+    # characters, not `\uXXXX` escapes (matching the `tool_use` path above,
+    # which already passes `ensure_ascii=False`).
+    json_data = {"customer_name": "你好啊集团", "emoji": "🚀"}
+    messages = [HumanMessage(content=[{"type": "json", "json": json_data}])]
+    result = convert_to_openai_messages(messages, text_format="block")
+    text = result[0]["content"][0]["text"]
+    assert json.loads(text) == json_data
+    assert "你好啊集团" in text
+    assert "🚀" in text
+    assert "\\u4f60" not in text  # not escaped
+
+
 def test_convert_to_openai_messages_guard_content() -> None:
     messages = [
         HumanMessage(
