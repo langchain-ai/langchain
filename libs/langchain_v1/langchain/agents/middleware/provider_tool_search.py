@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeAlias
 
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from typing_extensions import NotRequired, TypedDict
 
 from langchain.chat_models.base import _attempt_infer_model_provider
@@ -53,6 +54,17 @@ _SERVER_TOOL_SEARCH_TOOLS: dict[str, _ServerToolSearchSpec] = {
     "openai": {"type": "tool_search"},
 }
 
+# OpenAI's Responses API only excludes deferred tool schemas from the billed input
+# context when they are nested in a `namespace` block alongside the `tool_search`
+# tool. Sent flat with `defer_loading`, the full schemas are still billed and the
+# extra `tool_search` tool becomes pure overhead. These constants name the synthetic
+# namespace that groups the deferred tools.
+_OPENAI_DEFERRED_NAMESPACE_NAME = "deferred_tools"
+_OPENAI_DEFERRED_NAMESPACE_DESCRIPTION = (
+    "Tools deferred behind tool search. Their full schemas are retrieved on demand "
+    "when the model needs them."
+)
+
 
 class ProviderToolSearchMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Defer selected tools behind provider-native tool search.
@@ -67,7 +79,10 @@ class ProviderToolSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Contex
     or when it already carries `extras["defer_loading"] is True`.
 
     Only providers with server-side tool search are supported (currently
-    Anthropic and OpenAI). The provider is inferred from the bound model.
+    Anthropic and OpenAI). The provider is inferred from the bound model. The
+    deferred-tool encoding is provider-specific: OpenAI only excludes deferred
+    schemas from the billed input context when they are nested in a `namespace`
+    block, so deferred tools are wrapped accordingly for OpenAI.
 
     !!! warning
 
@@ -150,8 +165,19 @@ class ProviderToolSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Contex
             )
             raise ValueError(msg)
 
-        bound_tools = [_defer_tool_if_needed(tool, self.searchable_tool_names) for tool in tools]
-        return request.override(tools=[*bound_tools, dict(_SERVER_TOOL_SEARCH_TOOLS[provider])])
+        search_tool = dict(_SERVER_TOOL_SEARCH_TOOLS[provider])
+        if provider == "openai":
+            # OpenAI only realizes the token savings when deferred schemas live
+            # inside a `namespace` block, so wrap them rather than emitting flat.
+            payload_tools = _build_openai_tool_payload(
+                tools, self.searchable_tool_names, search_tool
+            )
+        else:
+            bound_tools = [
+                _defer_tool_if_needed(tool, self.searchable_tool_names) for tool in tools
+            ]
+            payload_tools = [*bound_tools, search_tool]
+        return request.override(tools=payload_tools)
 
     def wrap_model_call(
         self,
@@ -229,6 +255,63 @@ def _defer_tool_if_needed(
         return tool
     extras = {**(tool.extras or {}), "defer_loading": True}
     return tool.model_copy(update={"extras": extras})
+
+
+def _build_openai_tool_payload(
+    tools: list[BaseTool | dict[str, Any]],
+    tool_names: set[str],
+    search_tool: dict[str, Any],
+) -> list[BaseTool | dict[str, Any]]:
+    """Build the OpenAI tool payload with deferred tools nested in a `namespace`.
+
+    OpenAI's Responses API only drops deferred tool schemas from the billed input
+    context when they are wrapped in a `namespace` block; emitting them flat with
+    `defer_loading` keeps the schemas billed and makes the `tool_search` tool pure
+    overhead. Non-deferred tools (and any dict-form tools, which are never
+    deferred) pass through unchanged at the top level.
+
+    Args:
+        tools: Tools bound to the model.
+        tool_names: Names of tools to defer.
+        search_tool: The provider-native tool search descriptor to append.
+
+    Returns:
+        Passthrough tools followed by the deferred-tool `namespace` block and the
+        tool search descriptor.
+    """
+    passthrough: list[BaseTool | dict[str, Any]] = []
+    deferred_specs: list[dict[str, Any]] = []
+    for tool in tools:
+        if isinstance(tool, BaseTool) and _is_deferred_tool(tool, tool_names):
+            deferred_specs.append(_to_openai_deferred_function(tool))
+        else:
+            passthrough.append(tool)
+    namespace = {
+        "type": "namespace",
+        "name": _OPENAI_DEFERRED_NAMESPACE_NAME,
+        "description": _OPENAI_DEFERRED_NAMESPACE_DESCRIPTION,
+        "tools": deferred_specs,
+    }
+    return [*passthrough, namespace, search_tool]
+
+
+def _to_openai_deferred_function(tool: BaseTool) -> dict[str, Any]:
+    """Serialize a tool to an OpenAI Responses-API deferred `function` spec.
+
+    `convert_to_openai_tool` returns Chat-Completions form
+    (`{"type": "function", "function": {...}}`), while the Responses API and its
+    `namespace` blocks expect the flattened form. The inner `function` body is
+    hoisted to the top level and flagged with `defer_loading`.
+
+    Args:
+        tool: Tool to serialize.
+
+    Returns:
+        A flattened Responses-API `function` descriptor marked as deferred.
+    """
+    converted = convert_to_openai_tool(tool)
+    function_spec = converted.get("function", converted)
+    return {"type": "function", **function_spec, "defer_loading": True}
 
 
 def _get_model_provider(model: BaseChatModel, runtime: Any) -> str | None:

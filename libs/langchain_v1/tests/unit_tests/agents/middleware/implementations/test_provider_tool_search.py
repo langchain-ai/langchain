@@ -96,6 +96,14 @@ def _request(provider: str, tools: list[BaseTool | dict[str, Any]]) -> ModelRequ
     )
 
 
+def _openai_namespace(request: ModelRequest) -> dict[str, Any]:
+    """Return the synthetic `namespace` block OpenAI requests wrap deferred tools in."""
+    namespace = next(
+        tool for tool in request.tools if isinstance(tool, dict) and tool.get("type") == "namespace"
+    )
+    return cast("dict[str, Any]", namespace)
+
+
 def _invoke(middleware: ProviderToolSearchMiddleware, request: ModelRequest) -> ModelRequest:
     captured_request = None
 
@@ -148,13 +156,90 @@ def test_accepts_tool_instances_in_searchable_tools() -> None:
 
     modified_request = _invoke(middleware, request)
 
+    namespace = _openai_namespace(modified_request)
+    assert {spec["name"] for spec in namespace["tools"]} == {"send_email"}
+    # Non-deferred tools stay at the top level as `BaseTool` instances.
+    assert any(
+        isinstance(tool, BaseTool) and tool.name == "get_weather" for tool in modified_request.tools
+    )
+    assert OPENAI_SEARCH_TOOL in modified_request.tools
+
+
+def test_openai_wraps_deferred_tools_in_namespace() -> None:
+    """OpenAI deferred tools must be nested in a `namespace` block, not emitted flat.
+
+    Sent flat with `defer_loading`, OpenAI still bills the full schemas and the
+    `tool_search` tool only adds overhead; only the `namespace` form delivers the
+    intended token savings (see issue #38544).
+    """
+    request = _request("openai", [get_weather, send_email])
+    middleware = ProviderToolSearchMiddleware(searchable_tools=["get_weather", "send_email"])
+
+    modified_request = _invoke(middleware, request)
+
+    namespace = _openai_namespace(modified_request)
+    assert namespace["name"]
+    assert namespace["description"]
+    assert {spec["name"] for spec in namespace["tools"]} == {"get_weather", "send_email"}
+    # Deferred tools must not also leak to the top level as flat function specs.
+    assert not any(
+        isinstance(tool, BaseTool) and tool.name in {"get_weather", "send_email"}
+        for tool in modified_request.tools
+    )
+    assert OPENAI_SEARCH_TOOL in modified_request.tools
+
+
+def test_openai_namespace_specs_are_flattened_and_deferred() -> None:
+    """Namespace entries use the flattened Responses-API form flagged `defer_loading`."""
+    request = _request("openai", [send_email])
+    middleware = ProviderToolSearchMiddleware(searchable_tools=["send_email"])
+
+    modified_request = _invoke(middleware, request)
+
+    [spec] = _openai_namespace(modified_request)["tools"]
+    assert spec["type"] == "function"
+    assert spec["name"] == "send_email"
+    assert spec["defer_loading"] is True
+    assert "parameters" in spec
+    # Responses-API form is flat: the Chat-Completions `function` wrapper is hoisted.
+    assert "function" not in spec
+
+
+def test_openai_namespace_excludes_non_deferred_tools() -> None:
+    """Only deferred tools go in the namespace; the rest stay top-level to keep working."""
+    request = _request("openai", [get_weather, send_email])
+    middleware = ProviderToolSearchMiddleware(searchable_tools=["send_email"])
+
+    modified_request = _invoke(middleware, request)
+
+    namespace = _openai_namespace(modified_request)
+    assert {spec["name"] for spec in namespace["tools"]} == {"send_email"}
+    weather_tool = next(
+        tool
+        for tool in modified_request.tools
+        if isinstance(tool, BaseTool) and tool.name == "get_weather"
+    )
+    assert weather_tool.extras is None
+
+
+def test_anthropic_keeps_deferred_tools_flat() -> None:
+    """Anthropic deferral stays flat (no namespace) so its tool search is unaffected."""
+    request = _request("anthropic", [get_weather, send_email])
+    middleware = ProviderToolSearchMiddleware(searchable_tools=["send_email"])
+
+    modified_request = _invoke(middleware, request)
+
+    assert not any(
+        isinstance(tool, dict) and tool.get("type") == "namespace"
+        for tool in modified_request.tools
+    )
     email_tool = next(
         tool
         for tool in modified_request.tools
         if isinstance(tool, BaseTool) and tool.name == "send_email"
     )
     assert email_tool.extras == {"defer_loading": True}
-    assert OPENAI_SEARCH_TOOL in modified_request.tools
+    assert ANTHROPIC_SEARCH_TOOL in modified_request.tools
 
 
 def test_honors_tools_pre_marked_with_defer_loading() -> None:
