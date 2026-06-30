@@ -1005,15 +1005,17 @@ class ChatAnthropic(BaseChatModel):
     Examples:
 
     - `#!python {"type": "enabled", "budget_tokens": 10_000}` (pre-4.7 models)
-    - `#!python {"type": "adaptive"}` (Opus 4.6+)
-    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+)
+    - `#!python {"type": "adaptive"}` (Opus 4.6+, Sonnet 5)
+    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+, Sonnet 5)
+    - `#!python {"type": "disabled"}` (Sonnet 5, where adaptive thinking is
+      on by default)
 
-    !!! note "Claude Opus 4.7"
+    !!! note "Claude Opus 4.7+ and Sonnet 5"
 
-        `budget_tokens` is removed on Opus 4.7 — use `{"type": "adaptive"}`
-        with `output_config.effort` to control reasoning effort. Set `display`
-        to `"summarized"` to receive summarized reasoning in the response
-        (default is `"omitted"`).
+        `budget_tokens` is removed on these models — use `{"type": "adaptive"}`
+        with `output_config.effort` to control reasoning effort. The default
+        `display` is `"omitted"`; set it to `"summarized"` to receive
+        summarized reasoning in the response.
     """
 
     output_config: dict[str, Any] | None = None
