@@ -109,3 +109,59 @@ async def test_no_cache_generate_async() -> None:
         assert global_cache._cache == {}
     finally:
         set_llm_cache(None)
+
+
+class SizedCache(BaseCache):
+    """Cache implementing __len__ to test that empty caches are not skipped.
+
+    An empty cache with __len__ returns 0 and is falsy, which previously caused
+    get_prompts/aget_prompts/aupdate_cache to skip cache operations entirely.
+    """
+
+    def __init__(self) -> None:
+        self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
+
+    def __len__(self) -> int:
+        return len(self._cache)
+
+    def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
+        return self._cache.get((prompt, llm_string), None)
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        self._cache[prompt, llm_string] = return_val
+
+    @override
+    def clear(self, **kwargs: Any) -> None:
+        self._cache = {}
+
+
+def test_sized_cache_generate_sync() -> None:
+    """Regression: cache with __len__ must not be skipped when empty (falsy)."""
+    cache = SizedCache()
+    assert not cache  # empty cache is falsy via __len__
+    try:
+        set_llm_cache(cache)
+        llm = FakeListLLM(responses=["foo", "bar"])
+        output = llm.generate(["hello"])
+        assert output.generations[0][0].text == "foo"
+        assert len(cache) == 1
+        output = llm.generate(["hello"])
+        assert output.generations[0][0].text == "foo"  # served from cache
+    finally:
+        set_llm_cache(None)
+
+
+async def test_sized_cache_generate_async() -> None:
+    """Regression: cache with __len__ must not be skipped when empty (falsy)."""
+    cache = SizedCache()
+    assert not cache  # empty cache is falsy via __len__
+    try:
+        set_llm_cache(cache)
+        llm = FakeListLLM(responses=["foo", "bar"])
+        output = await llm.agenerate(["hello"])
+        assert output.generations[0][0].text == "foo"
+        assert len(cache) == 1
+        output = await llm.agenerate(["hello"])
+        assert output.generations[0][0].text == "foo"  # served from cache
+    finally:
+        set_llm_cache(None)
