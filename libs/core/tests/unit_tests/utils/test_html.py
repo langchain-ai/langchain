@@ -185,6 +185,40 @@ def test_prevent_outside() -> None:
     assert actual == expected
 
 
+def test_prevent_outside_path_boundary() -> None:
+    """`prevent_outside` must honor path boundaries, not raw string prefixes.
+
+    With a path-scoped base URL, a sibling path that merely shares a string
+    prefix (`/docsite` vs `/docs`) is not a child of the base URL and must be
+    excluded. Genuine descendants, the base URL itself, and the base URL
+    followed by a query must still be kept.
+    """
+    html = (
+        '<a href="https://foobar.com/docsite/sneaky">BAD</a>'
+        '<a href="https://foobar.com/docs-other">BAD</a>'
+        '<a href="https://foobar.com/docs/child">OK</a>'
+        '<a href="https://foobar.com/docs">OK</a>'
+        '<a href="https://foobar.com/docs?q=1">OK</a>'
+    )
+
+    expected = sorted(
+        [
+            "https://foobar.com/docs/child",
+            "https://foobar.com/docs",
+            "https://foobar.com/docs?q=1",
+        ]
+    )
+    actual = sorted(
+        extract_sub_links(
+            html,
+            "https://foobar.com/docs",
+            base_url="https://foobar.com/docs",
+            prevent_outside=True,
+        )
+    )
+    assert actual == expected
+
+
 def test_extract_sub_links_with_query() -> None:
     html = (
         '<a href="https://foobar.com?query=123">one</a>'

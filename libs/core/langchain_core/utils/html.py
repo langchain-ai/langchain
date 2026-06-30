@@ -59,6 +59,27 @@ def find_all_links(
     return list(set(re.findall(pattern, raw_html)))
 
 
+def _is_within_base_url(path: str, base_url: str) -> bool:
+    """Return whether `path` is `base_url` itself or a descendant of it.
+
+    A plain `str.startswith` check would treat e.g. `https://example.com/docsite`
+    as a child of `https://example.com/docs`, so require the prefix to end on a
+    path, query, or fragment boundary (unless `base_url` already ends on one).
+
+    Args:
+        path: The absolute URL to test.
+        base_url: The base URL that `path` must fall under.
+
+    Returns:
+        `True` if `path` is `base_url` or sits beneath it, `False` otherwise.
+    """
+    if path == base_url:
+        return True
+    if not path.startswith(base_url):
+        return False
+    return base_url.endswith(("/", "?", "#")) or path[len(base_url)] in ("/", "?", "#")
+
+
 def extract_sub_links(
     raw_html: str,
     url: str,
@@ -123,9 +144,9 @@ def extract_sub_links(
             if parsed_base_url.netloc != parsed_path.netloc:
                 continue
 
-            # Will take care of verifying rest of path after netloc
-            # if it's more specific
-            if not path.startswith(base_url_to_use):
+            # Verify the rest of the path falls under the base URL, requiring a
+            # path/query/fragment boundary so `/docs` does not match `/docsite`.
+            if not _is_within_base_url(path, base_url_to_use):
                 continue
 
         results.append(path)
