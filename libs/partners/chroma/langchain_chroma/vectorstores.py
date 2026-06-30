@@ -812,7 +812,11 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
-        return _results_to_docs_and_scores(results)
+        relevance_score_fn = self._select_relevance_score_fn()
+        return [
+            (doc, relevance_score_fn(score))
+            for doc, score in _results_to_docs_and_scores(results)
+        ]
 
     def similarity_search_with_score(
         self,
