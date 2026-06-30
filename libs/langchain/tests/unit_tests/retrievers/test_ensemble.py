@@ -130,6 +130,57 @@ def test_rank_fusion_bare_strings() -> None:
     assert {doc.page_content for doc in results} == {"foo", "bar"}
 
 
+def test_dedup_within_retriever_keeps_default_scoring() -> None:
+    """Within-retriever duplicates should keep contributing by default."""
+    documents1 = [
+        Document(page_content="long doc chunk 1", metadata={"source": "long"}),
+        Document(page_content="long doc chunk 2", metadata={"source": "long"}),
+        Document(page_content="short doc chunk", metadata={"source": "short"}),
+    ]
+    documents2 = [
+        Document(page_content="short doc chunk", metadata={"source": "short"}),
+    ]
+
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[
+            MockRetriever(docs=documents1),
+            MockRetriever(docs=documents2),
+        ],
+        weights=[0.5, 0.5],
+        id_key="source",
+    )
+
+    ranked_documents = ensemble_retriever.invoke("_")
+
+    assert ranked_documents[0].metadata["source"] == "long"
+
+
+def test_dedup_within_retriever_removes_duplicate_score_contributions() -> None:
+    """Within-retriever duplicates can be ignored before reciprocal rank scoring."""
+    documents1 = [
+        Document(page_content="long doc chunk 1", metadata={"source": "long"}),
+        Document(page_content="long doc chunk 2", metadata={"source": "long"}),
+        Document(page_content="short doc chunk", metadata={"source": "short"}),
+    ]
+    documents2 = [
+        Document(page_content="short doc chunk", metadata={"source": "short"}),
+    ]
+
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[
+            MockRetriever(docs=documents1),
+            MockRetriever(docs=documents2),
+        ],
+        weights=[0.5, 0.5],
+        id_key="source",
+        dedup_within_retriever=True,
+    )
+
+    ranked_documents = ensemble_retriever.invoke("_")
+
+    assert ranked_documents[0].metadata["source"] == "short"
+
+
 async def test_arank_fusion_bare_strings() -> None:
     """arank_fusion should wrap bare strings the same way rank_fusion does."""
     retriever = BareStringRetriever(strings=["foo", "bar"])

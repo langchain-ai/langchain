@@ -63,12 +63,15 @@ class EnsembleRetriever(BaseRetriever):
             of high-ranked items and the consideration given to lower-ranked items.
         id_key: The key in the document's metadata used to determine unique documents.
             If not specified, page_content is used.
+        dedup_within_retriever: Whether to deduplicate each retriever's results before
+            reciprocal rank scoring. If `id_key` is not specified, page_content is used.
     """
 
     retrievers: list[RetrieverLike]
     weights: list[float]
     c: int = 60
     id_key: str | None = None
+    dedup_within_retriever: bool = False
 
     @property
     def config_specs(self) -> list[ConfigurableFieldSpec]:
@@ -321,32 +324,33 @@ class EnsembleRetriever(BaseRetriever):
             msg = "Number of rank lists must be equal to the number of weights."
             raise ValueError(msg)
 
+        if self.dedup_within_retriever:
+            doc_lists = [
+                list(unique_by_key(doc_list, self._get_doc_key))
+                for doc_list in doc_lists
+            ]
+
         # Associate each doc's content with its RRF score for later sorting by it
         # Duplicated contents across retrievers are collapsed & scored cumulatively
-        rrf_score: dict[str, float] = defaultdict(float)
+        rrf_score: dict[Hashable, float] = defaultdict(float)
         for doc_list, weight in zip(doc_lists, self.weights, strict=False):
             for rank, doc in enumerate(doc_list, start=1):
-                rrf_score[
-                    (
-                        doc.page_content
-                        if self.id_key is None
-                        else doc.metadata[self.id_key]
-                    )
-                ] += weight / (rank + self.c)
+                rrf_score[self._get_doc_key(doc)] += weight / (rank + self.c)
 
         # Docs are deduplicated by their contents then sorted by their scores
         all_docs = chain.from_iterable(doc_lists)
         return sorted(
             unique_by_key(
                 all_docs,
-                lambda doc: (
-                    doc.page_content
-                    if self.id_key is None
-                    else doc.metadata[self.id_key]
-                ),
+                self._get_doc_key,
             ),
             reverse=True,
-            key=lambda doc: rrf_score[
-                doc.page_content if self.id_key is None else doc.metadata[self.id_key]
-            ],
+            key=lambda doc: rrf_score[self._get_doc_key(doc)],
+        )
+
+    def _get_doc_key(self, doc: Document) -> Hashable:
+        return (
+            doc.page_content
+            if self.id_key is None
+            else cast("Hashable", doc.metadata[self.id_key])
         )
