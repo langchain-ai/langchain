@@ -1649,9 +1649,10 @@ def create_agent(
         #   potentially artificially injected tool messages, ex HITL
         # - there is a response format -- to allow for jumping to model to handle
         #   regenerating structured output tool calls
-        model_to_tools_destinations = ["tools", exit_node]
-        if response_format or loop_exit_node != "model":
-            model_to_tools_destinations.append(loop_entry_node)
+        # The router (_make_model_to_tools_edge) can return model_destination
+        # (loop_entry_node) in EVERY config, not just when response_format or
+        # after_model are present. See GH issue #38351.
+        model_to_tools_destinations = ["tools", exit_node, loop_entry_node]
 
         graph.add_conditional_edges(
             loop_exit_node,
