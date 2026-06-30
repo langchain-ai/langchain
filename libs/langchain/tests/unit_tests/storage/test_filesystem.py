@@ -1,3 +1,4 @@
+import sys
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
@@ -51,12 +52,14 @@ def test_mset_chmod(chmod_dir_s: str, chmod_file_s: str) -> None:
         key_value_pairs = [("key1", b"value1"), ("key2", b"value2")]
         file_store.mset(key_value_pairs)
 
-        # verify the permissions are set correctly
-        # (test only the standard user/group/other bits)
-        dir_path = file_store.root_path
-        file_path = file_store.root_path / "key1"
-        assert (dir_path.stat().st_mode & 0o777) == chmod_dir
-        assert (file_path.stat().st_mode & 0o777) == chmod_file
+        # Verify the permissions are set correctly on Unix.
+        # Windows does not enforce POSIX permission bits, so we skip
+        # the strict octal assertion on that platform.
+        if sys.platform != "win32":
+            dir_path = file_store.root_path
+            file_path = file_store.root_path / "key1"
+            assert (dir_path.stat().st_mode & 0o777) == chmod_dir
+            assert (file_path.stat().st_mode & 0o777) == chmod_file
 
 
 def test_mget_update_atime() -> None:
