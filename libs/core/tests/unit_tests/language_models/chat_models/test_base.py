@@ -200,7 +200,6 @@ async def test_async_batch_size(
         assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
 
 
-@pytest.mark.xfail(reason="This test is failing due to a bug in the testing code")
 async def test_stream_error_callback() -> None:
     message = "test"
 

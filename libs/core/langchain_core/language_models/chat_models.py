@@ -818,12 +818,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 generations_with_error_metadata = _generate_response_from_error(e)
                 chat_generation_chunk = merge_chat_generation_chunks(chunks)
                 if chat_generation_chunk:
+                    # Merge error metadata into the single per-prompt row so
+                    # generations is always [list[Generation]] (one row per prompt).
                     generations = [
-                        [chat_generation_chunk],
-                        generations_with_error_metadata,
+                        [chat_generation_chunk] + generations_with_error_metadata
                     ]
-                else:
+                elif generations_with_error_metadata:
                     generations = [generations_with_error_metadata]
+                else:
+                    generations = []
                 run_manager.on_llm_error(
                     e,
                     response=LLMResult(generations=generations),
@@ -950,9 +953,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             generations_with_error_metadata = _generate_response_from_error(e)
             chat_generation_chunk = merge_chat_generation_chunks(chunks)
             if chat_generation_chunk:
-                generations = [[chat_generation_chunk], generations_with_error_metadata]
-            else:
+                generations = [
+                    [chat_generation_chunk] + generations_with_error_metadata
+                ]
+            elif generations_with_error_metadata:
                 generations = [generations_with_error_metadata]
+            else:
+                generations = []
             await run_manager.on_llm_error(
                 e,
                 response=LLMResult(generations=generations),
