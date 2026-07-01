@@ -379,6 +379,12 @@ def merge_content(
     """
     merged: str | list[str | dict[Any, Any]]
     merged = "" if first_content is None else first_content
+    # Copy list content so we never mutate the caller's list: the branches below
+    # append to / reassign into ``merged`` in place. Without this, ``merge_content``
+    # (and therefore ``chunk_a + chunk_b``) mutates its first argument. String
+    # content is immutable, so it needs no copy.
+    if isinstance(merged, list):
+        merged = merged.copy()
 
     for content in contents:
         # If current is a string

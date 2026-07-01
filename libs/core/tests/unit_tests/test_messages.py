@@ -1101,6 +1101,30 @@ def test_merge_content(
     assert actual == expected
 
 
+def test_merge_content_does_not_mutate_first() -> None:
+    """merge_content must not mutate its first argument's list in place."""
+    # list whose last element is a non-string block -> append path
+    first: list = [{"type": "text", "text": "a"}]
+    merge_content(first, "b")
+    assert first == [{"type": "text", "text": "a"}]
+
+    # list whose last element is a string -> in-place concat path
+    first_str: list = ["x"]
+    merge_content(first_str, "y")
+    assert first_str == ["x"]
+
+
+def test_message_chunk_add_does_not_mutate_operands() -> None:
+    """chunk_a + chunk_b must not mutate chunk_a (the ``+`` immutability contract)."""
+    a = AIMessageChunk(content=[{"type": "text", "text": "a"}])
+    b = AIMessageChunk(content="b")
+    a + b
+    assert a.content == [{"type": "text", "text": "a"}]
+    # repeated addition must not compound onto the same operand
+    a + b
+    assert a.content == [{"type": "text", "text": "a"}]
+
+
 def test_tool_message_content() -> None:
     ToolMessage("foo", tool_call_id="1")
     ToolMessage(["foo"], tool_call_id="1")
