@@ -6,16 +6,6 @@ from typing import Any, cast
 
 from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on_tokens
 
-try:
-    # Type ignores needed as long as sentence-transformers doesn't support Python 3.14.
-    from sentence_transformers import (  # type: ignore[import-not-found, unused-ignore]
-        SentenceTransformer,
-    )
-
-    _HAS_SENTENCE_TRANSFORMERS = True
-except ImportError:
-    _HAS_SENTENCE_TRANSFORMERS = False
-
 
 class SentenceTransformersTokenTextSplitter(TextSplitter):
     """Splitting text to tokens using sentence model tokenizer."""
@@ -44,13 +34,18 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         """
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
-        if not _HAS_SENTENCE_TRANSFORMERS:
+        try:
+            # Type ignores needed: sentence-transformers doesn't support Python 3.14.
+            from sentence_transformers import (  # type: ignore[import-not-found, unused-ignore]  # noqa: PLC0415
+                SentenceTransformer,
+            )
+        except ImportError:
             msg = (
                 "Could not import sentence_transformers python package. "
                 "This is needed in order to use SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install sentence-transformers`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from None
 
         self.model_name = model_name
         self._model = SentenceTransformer(self.model_name, **(model_kwargs or {}))

@@ -8,13 +8,6 @@ from typing_extensions import override
 
 from langchain_text_splitters.base import TextSplitter
 
-try:
-    import konlpy
-
-    _HAS_KONLPY = True
-except ImportError:
-    _HAS_KONLPY = False
-
 
 class KonlpyTextSplitter(TextSplitter):
     """Splitting text using Konlpy package.
@@ -37,12 +30,13 @@ class KonlpyTextSplitter(TextSplitter):
         """
         super().__init__(**kwargs)
         self._separator = separator
-        if not _HAS_KONLPY:
-            msg = """
-                Konlpy is not installed, please install it with
-                `pip install konlpy`
-                """
-            raise ImportError(msg)
+        try:
+            import konlpy  # noqa: PLC0415
+        except ImportError:
+            msg = (
+                "Konlpy is not installed, please install it with `pip install konlpy`."
+            )
+            raise ImportError(msg) from None
         self.kkma = konlpy.tag.Kkma()
 
     @override
