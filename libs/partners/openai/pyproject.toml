@@ -56,7 +56,7 @@ test = [
     "langchain>=1.0.0,<2.0.0",
     "langchain-tests>=1.1.9,<2.0.0",
 ]
-lint = ["ruff>=0.13.1,<0.14.0"]
+lint = ["ruff>=0.13.1,<0.16.0"]
 dev = []
 test_integration = [
     "httpx>=0.27.0,<1.0.0",
