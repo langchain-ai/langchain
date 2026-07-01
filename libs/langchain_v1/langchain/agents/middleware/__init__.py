@@ -20,6 +20,7 @@ from langchain.agents.middleware.shell_tool import (
     RedactionRule,
     ShellToolMiddleware,
 )
+from langchain.agents.middleware.stack import MiddlewareSpec, MiddlewareStack
 from langchain.agents.middleware.summarization import SummarizationMiddleware, TriggerClause
 from langchain.agents.middleware.todo import TodoListMiddleware
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
@@ -61,6 +62,8 @@ __all__ = [
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
+    "MiddlewareSpec",
+    "MiddlewareStack",
     "ModelCallLimitMiddleware",
     "ModelCallResult",
     "ModelFallbackMiddleware",
