@@ -271,7 +271,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             path = "/" + path
 
         # Check for path traversal
-        if ".." in path or "~" in path:
+        if any(part == ".." for part in path.split("/")) or "~" in path:
             msg = "Path traversal not allowed"
             raise ValueError(msg)
 
