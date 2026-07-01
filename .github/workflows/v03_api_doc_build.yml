@@ -94,7 +94,7 @@ jobs:
           done
 
       - name: "🐍 Setup Python ${{ env.PYTHON_VERSION }}"
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
