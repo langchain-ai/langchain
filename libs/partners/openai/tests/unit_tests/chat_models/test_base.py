@@ -1784,6 +1784,165 @@ def test__construct_lc_result_from_responses_api_error_handling() -> None:
     assert "Test error" in str(excinfo.value)
 
 
+def test_responses_api_include_raw_handles_parse_error() -> None:
+    """include_raw should catch parser errors after a Responses API fallback."""
+
+    class ReasoningSchema(BaseModel):
+        response: str
+
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key=SecretStr("test-api-key"),
+        reasoning={"effort": "low"},
+    )
+    structured_llm = llm.with_structured_output(ReasoningSchema, include_raw=True)
+    sequence = cast(RunnableSequence, structured_llm)
+    binding = cast(
+        RunnableBinding,
+        sequence.first.steps__["raw"],  # type: ignore[attr-defined]
+    )
+    bound_llm = cast(ChatOpenAI, binding.bound)
+
+    try:
+        ReasoningSchema.model_validate_json("Hello! How can I help you today?")
+    except Exception as exc:
+        parse_error = exc
+    else:
+        msg = "Expected invalid JSON to raise"
+        raise AssertionError(msg)
+
+    parse_raw_response = MagicMock()
+    parse_raw_response.parse.side_effect = parse_error
+
+    create_raw_response = MagicMock()
+    create_raw_response.parse.return_value = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text",
+                        text="Hello! How can I help you today?",
+                        annotations=[],
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+    )
+
+    mock_client = MagicMock()
+    mock_client.responses.with_raw_response.parse.return_value = parse_raw_response
+    mock_client.responses.with_raw_response.create.return_value = create_raw_response
+
+    with patch.object(bound_llm, "root_client", mock_client):
+        result = structured_llm.invoke("hi there")
+
+    assert result["raw"].content == [
+        {
+            "type": "text",
+            "text": "Hello! How can I help you today?",
+            "annotations": [],
+            "id": "msg_123",
+        }
+    ]
+    assert result["parsed"] is None
+    assert isinstance(result["parsing_error"], ValueError)
+    mock_client.responses.with_raw_response.parse.assert_called_once()
+    mock_client.responses.with_raw_response.create.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_responses_api_include_raw_handles_parse_error_async() -> None:
+    """include_raw should catch async parser errors after a Responses API fallback."""
+
+    class ReasoningSchema(BaseModel):
+        response: str
+
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key=SecretStr("test-api-key"),
+        reasoning={"effort": "low"},
+    )
+    structured_llm = llm.with_structured_output(ReasoningSchema, include_raw=True)
+    sequence = cast(RunnableSequence, structured_llm)
+    binding = cast(
+        RunnableBinding,
+        sequence.first.steps__["raw"],  # type: ignore[attr-defined]
+    )
+    bound_llm = cast(ChatOpenAI, binding.bound)
+
+    try:
+        ReasoningSchema.model_validate_json("Hello! How can I help you today?")
+    except Exception as exc:
+        parse_error = exc
+    else:
+        msg = "Expected invalid JSON to raise"
+        raise AssertionError(msg)
+
+    parse_raw_response = MagicMock()
+    parse_raw_response.parse.side_effect = parse_error
+
+    create_raw_response = MagicMock()
+    create_raw_response.parse.return_value = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text",
+                        text="Hello! How can I help you today?",
+                        annotations=[],
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+    )
+
+    mock_client = MagicMock()
+    mock_client.responses.with_raw_response.parse = AsyncMock(
+        return_value=parse_raw_response
+    )
+    mock_client.responses.with_raw_response.create = AsyncMock(
+        return_value=create_raw_response
+    )
+
+    with patch.object(bound_llm, "root_async_client", mock_client):
+        result = await structured_llm.ainvoke("hi there")
+
+    assert result["raw"].content == [
+        {
+            "type": "text",
+            "text": "Hello! How can I help you today?",
+            "annotations": [],
+            "id": "msg_123",
+        }
+    ]
+    assert result["parsed"] is None
+    assert isinstance(result["parsing_error"], ValueError)
+    mock_client.responses.with_raw_response.parse.assert_awaited_once()
+    mock_client.responses.with_raw_response.create.assert_awaited_once()
+
+
 def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     """Test a basic text response with no tools or special features."""
     response = Response(
