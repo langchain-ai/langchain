@@ -181,6 +181,34 @@ def test_default_add_texts(vs_class: type[VectorStore]) -> None:
 @pytest.mark.parametrize(
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
 )
+def test_default_add_texts_with_generator(vs_class: type[VectorStore]) -> None:
+    """``add_texts`` must accept a generator without exhausting it before zipping."""
+    store = vs_class()
+    ids_ = store.add_texts(iter(["foo", "bar"]), ids=["1", "2"])
+    assert ids_ == ["1", "2"]
+    assert store.get_by_ids(["1", "2"]) == [
+        Document(id="1", page_content="foo"),
+        Document(id="2", page_content="bar"),
+    ]
+
+
+@pytest.mark.parametrize(
+    "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
+)
+async def test_default_aadd_texts_with_generator(vs_class: type[VectorStore]) -> None:
+    """``aadd_texts`` must accept a generator without exhausting it before zipping."""
+    store = vs_class()
+    ids_ = await store.aadd_texts(iter(["foo", "bar"]), ids=["1", "2"])
+    assert ids_ == ["1", "2"]
+    assert store.get_by_ids(["1", "2"]) == [
+        Document(id="1", page_content="foo"),
+        Document(id="2", page_content="bar"),
+    ]
+
+
+@pytest.mark.parametrize(
+    "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
+)
 async def test_default_aadd_documents(vs_class: type[VectorStore]) -> None:
     """Test delegation to the synchronous method."""
     store = vs_class()

@@ -5,6 +5,7 @@ from typing_extensions import override
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.globals import set_llm_cache
 from langchain_core.language_models import FakeListLLM
+from langchain_core.outputs import Generation
 
 
 class InMemoryCache(BaseCache):
@@ -56,6 +57,57 @@ def test_local_cache_generate_sync() -> None:
         assert output.generations[0][0].text == "foo"
         assert global_cache._cache == {}
         assert len(local_cache._cache) == 1
+    finally:
+        set_llm_cache(None)
+
+
+class EmptyLenCache(BaseCache):
+    """Cache that implements ``__len__`` and is falsy when empty."""
+
+    def __init__(self) -> None:
+        """Initialize with empty cache."""
+        self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
+
+    def __len__(self) -> int:
+        return len(self._cache)
+
+    def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
+        return self._cache.get((prompt, llm_string))
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        self._cache[(prompt, llm_string)] = return_val
+
+    @override
+    def clear(self, **kwargs: Any) -> None:
+        self._cache = {}
+
+
+def test_global_cache_with_len_generate_sync() -> None:
+    """Caches implementing ``__len__`` must work when empty (not falsy-skipped)."""
+    global_cache = EmptyLenCache()
+    try:
+        set_llm_cache(global_cache)
+        llm = FakeListLLM(responses=["foo"])
+        output = llm.generate(["prompt"])
+        assert output.generations[0][0].text == "foo"
+        assert len(global_cache) == 1
+        output = llm.generate(["prompt"])
+        assert output.generations[0][0].text == "foo"
+    finally:
+        set_llm_cache(None)
+
+
+async def test_global_cache_with_len_generate_async() -> None:
+    """Async generate must not skip empty caches that implement ``__len__``."""
+    global_cache = EmptyLenCache()
+    try:
+        set_llm_cache(global_cache)
+        llm = FakeListLLM(responses=["foo"])
+        output = await llm.agenerate(["prompt"])
+        assert output.generations[0][0].text == "foo"
+        assert len(global_cache) == 1
+        output = await llm.agenerate(["prompt"])
+        assert output.generations[0][0].text == "foo"
     finally:
         set_llm_cache(None)
 
