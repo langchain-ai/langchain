@@ -367,6 +367,27 @@ def test_structured_single_str_decorator_no_infer_schema() -> None:
     assert unstructured_tool_input.run("foo") == "foo"
 
 
+def test_tool_no_infer_schema_uses_explicit_description() -> None:
+    """Test that `description` is respected without schema inference."""
+
+    @tool(description="Search weather data.", infer_schema=False)
+    def search_weather(tool_input: str) -> str:
+        return tool_input
+
+    assert search_weather.description == "Search weather data."
+
+
+def test_tool_no_infer_schema_uses_docstring_description() -> None:
+    """Test that docstrings are respected without schema inference."""
+
+    @tool(infer_schema=False)
+    def search_weather(tool_input: str) -> str:
+        """Search weather data."""
+        return tool_input
+
+    assert search_weather.description == "Search weather data."
+
+
 def test_structured_tool_types_parsed() -> None:
     """Test the non-primitive types are correctly passed to structured tools."""
 
