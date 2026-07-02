@@ -1613,7 +1613,10 @@ class BaseChatOpenAI(BaseChatModel):
                 is_first_chunk = True
                 for chunk in response:
                     if not isinstance(chunk, dict):
-                        chunk = chunk.model_dump()
+                        # `parsed` may hold arbitrary Pydantic models.
+                        chunk = chunk.model_dump(
+                            exclude={"choices": {"__all__": {"delta": {"parsed"}}}}
+                        )
                     generation_chunk = self._convert_chunk_to_generation_chunk(
                         chunk,
                         default_chunk_class,
@@ -1878,7 +1881,10 @@ class BaseChatOpenAI(BaseChatModel):
                     model_name=self.model_name,
                 ):
                     if not isinstance(chunk, dict):
-                        chunk = chunk.model_dump()
+                        # `parsed` may hold arbitrary Pydantic models.
+                        chunk = chunk.model_dump(
+                            exclude={"choices": {"__all__": {"delta": {"parsed"}}}}
+                        )
                     generation_chunk = self._convert_chunk_to_generation_chunk(
                         chunk,
                         default_chunk_class,
