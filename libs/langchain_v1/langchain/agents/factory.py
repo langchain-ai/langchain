@@ -208,18 +208,18 @@ def _build_commands(
     Returns:
         List of `Command` objects ready to be returned from a model node.
     """
-    state: dict[str, Any] = {"messages": model_response.result}
-
-    if model_response.structured_response is not None:
-        state["structured_response"] = model_response.structured_response
+    state: dict[str, Any] = {
+        "messages": model_response.result,
+        "structured_response": model_response.structured_response,
+    }
 
     for cmd in middleware_commands or []:
         if cmd.goto:
-            msg = (
-                "Command goto is not yet supported in wrap_model_call middleware. "
-                "Use the jump_to state field with before_model/after_model hooks instead."
-            )
-            raise NotImplementedError(msg)
+            jump_to = cmd.goto
+            if isinstance(jump_to, str):
+                state["jump_to"] = jump_to
+            elif hasattr(jump_to, "node"):
+                state["jump_to"] = jump_to.node
         if cmd.resume:
             msg = "Command resume is not yet supported in wrap_model_call middleware."
             raise NotImplementedError(msg)
@@ -754,6 +754,7 @@ def create_agent(
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
     transformers: Sequence[TransformerFactory] | None = None,
+    stream_final_only: bool = False,
 ) -> CompiledStateGraph[AgentState[Any], ContextT, InputAgentState, OutputAgentState[Any]]: ...
 
 
@@ -776,6 +777,7 @@ def create_agent(
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
     transformers: Sequence[TransformerFactory] | None = None,
+    stream_final_only: bool = False,
 ) -> CompiledStateGraph[
     AgentState[dict[str, Any]], ContextT, InputAgentState, OutputAgentState[dict[str, Any]]
 ]: ...
@@ -800,6 +802,7 @@ def create_agent(
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
     transformers: Sequence[TransformerFactory] | None = None,
+    stream_final_only: bool = False,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
 ]: ...
@@ -822,6 +825,7 @@ def create_agent(
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
     transformers: Sequence[TransformerFactory] | None = None,
+    stream_final_only: bool = False,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
 ]:
@@ -974,6 +978,11 @@ def create_agent(
     # Handle tools being None or empty
     if tools is None:
         tools = []
+
+    if stream_final_only:
+        from langchain.agents.middleware.final_answer import FinalAnswerMiddleware
+
+        middleware = (FinalAnswerMiddleware(), *middleware)
 
     # Convert response format and setup structured output tools
     # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
@@ -1376,7 +1385,8 @@ def create_agent(
             # but not to add new structured tools that weren't declared upfront.
             # Compute output binding
             for tc in effective_response_format.schema_specs:
-                if tc.name not in structured_output_tools:
+                final_tool_names = {t.name for t in final_tools}
+                if tc.name not in final_tool_names:
                     msg = (
                         f"ToolStrategy specifies tool '{tc.name}' "
                         "which wasn't declared in the original "
@@ -1881,7 +1891,7 @@ def _make_model_to_tools_edge(
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
         # 5. If there is a structured response, exit the loop
-        if "structured_response" in state:
+        if state.get("structured_response") is not None:
             return end_destination
 
         # 6. AIMessage has tool calls, but there are no pending tool calls which suggests
@@ -1908,7 +1918,7 @@ def _make_model_to_model_edge(
             )
 
         # 2. Exit condition: A structured response was generated
-        if "structured_response" in state:
+        if state.get("structured_response") is not None:
             return end_destination
 
         # 3. Default: Continue the loop, there may have been an issue with structured

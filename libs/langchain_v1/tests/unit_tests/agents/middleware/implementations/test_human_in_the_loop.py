@@ -350,11 +350,10 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
             len(result["messages"]) == 2
         )  # AI message with accepted tool call + tool message for rejected
 
-        # First message should be the AI message with both tool calls
+        # First message should be the AI message with only the accepted tool call
         updated_ai_message = result["messages"][0]
-        assert len(updated_ai_message.tool_calls) == 2  # Both tool calls remain
-        assert updated_ai_message.tool_calls[0]["name"] == "get_forecast"  # Accepted
-        assert updated_ai_message.tool_calls[1]["name"] == "get_temperature"  # Got response
+        assert len(updated_ai_message.tool_calls) == 1
+        assert updated_ai_message.tool_calls[0]["name"] == "get_forecast"
 
         # Second message should be the tool message for the rejected tool call
         tool_message = result["messages"][1]

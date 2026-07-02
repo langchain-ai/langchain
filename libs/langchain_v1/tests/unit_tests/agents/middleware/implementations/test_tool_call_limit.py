@@ -62,7 +62,35 @@ def test_middleware_initialization_validation() -> None:
     assert middleware.run_limit == 3
 
 
-def test_middleware_name_property() -> None:
+def test_before_model_blocks_when_limit_exceeded() -> None:
+    """Proactive before_model should end run when limits already exhausted."""
+    from langgraph.runtime import Runtime
+
+    middleware = ToolCallLimitMiddleware(thread_limit=2, exit_behavior="end")
+    state: ToolCallLimitState = {
+        "messages": [HumanMessage("hi")],
+        "thread_tool_call_count": {"__all__": 2},
+        "run_tool_call_count": {"__all__": 2},
+    }
+    result = middleware.before_model(state, Runtime())
+    assert result is not None
+    assert result.get("jump_to") == "end"
+    assert "messages" in result
+
+
+def test_before_model_raises_on_limit_exceeded_error_mode() -> None:
+    """Proactive before_model should raise when exit_behavior is error."""
+    from langgraph.runtime import Runtime
+
+    middleware = ToolCallLimitMiddleware(thread_limit=1, exit_behavior="error")
+    state: ToolCallLimitState = {
+        "messages": [HumanMessage("hi")],
+        "thread_tool_call_count": {"__all__": 1},
+        "run_tool_call_count": {"__all__": 1},
+    }
+    with pytest.raises(ToolCallLimitExceededError):
+        middleware.before_model(state, Runtime())
+
     """Test that the name property includes tool name when specified."""
     # Test without tool name
     middleware = ToolCallLimitMiddleware(thread_limit=5)

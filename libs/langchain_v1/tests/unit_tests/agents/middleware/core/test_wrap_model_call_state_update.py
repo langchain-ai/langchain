@@ -637,6 +637,48 @@ class TestComposition:
         assert len(messages) == 2
         assert messages[1].content == "Hello"
 
+    def test_structured_response_cleared_on_subsequent_turn(self) -> None:
+        """Structured output from a prior turn must not persist and end later turns."""
+
+        class StructuredThenChatMiddleware(AgentMiddleware):
+            def __init__(self) -> None:
+                self._turn = 0
+
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ExtendedModelResponse:
+                self._turn += 1
+                response = handler(request)
+                if self._turn == 1:
+                    return ExtendedModelResponse(
+                        model_response=ModelResponse(
+                            result=response.result,
+                            structured_response={"turn": 1},
+                        )
+                    )
+                return ExtendedModelResponse(
+                    model_response=ModelResponse(
+                        result=response.result,
+                        structured_response=None,
+                    )
+                )
+
+        model = GenericFakeChatModel(
+            messages=iter([AIMessage(content="structured"), AIMessage(content="plain")])
+        )
+        agent = create_agent(model=model, middleware=[StructuredThenChatMiddleware()])
+
+        first = agent.invoke({"messages": [HumanMessage("first")]})
+        assert first.get("structured_response") == {"turn": 1}
+
+        second = agent.invoke(
+            {"messages": [*first["messages"], HumanMessage("second")]}
+        )
+        assert second.get("structured_response") is None
+        assert second["messages"][-1].content == "plain"
+
 
 class TestAsyncComposition:
     """Test async ExtendedModelResponse propagation through composed middleware."""

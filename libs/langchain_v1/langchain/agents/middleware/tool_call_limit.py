@@ -289,6 +289,48 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
         """
         return self.tool_name is None or tool_call["name"] == self.tool_name
 
+    def _limits_already_exceeded(self, thread_count: int, run_count: int) -> bool:
+        """Return whether tool call limits are already exhausted."""
+        thread_exceeded = self.thread_limit is not None and thread_count >= self.thread_limit
+        run_exceeded = self.run_limit is not None and run_count >= self.run_limit
+        return thread_exceeded or run_exceeded
+
+    @hook_config(can_jump_to=["end"])
+    @override
+    def before_model(
+        self,
+        state: ToolCallLimitState[ResponseT],
+        runtime: Runtime[ContextT],
+    ) -> dict[str, Any] | None:
+        """Block model calls proactively when tool limits are already exhausted."""
+        count_key = self.tool_name or "__all__"
+        thread_counts = state.get("thread_tool_call_count", {})
+        run_counts = state.get("run_tool_call_count", {})
+        thread_count = thread_counts.get(count_key, 0)
+        run_count = run_counts.get(count_key, 0)
+
+        if not self._limits_already_exceeded(thread_count, run_count):
+            return None
+
+        if self.exit_behavior == "error":
+            raise ToolCallLimitExceededError(
+                thread_count=thread_count,
+                run_count=run_count,
+                thread_limit=self.thread_limit,
+                run_limit=self.run_limit,
+                tool_name=self.tool_name,
+            )
+        if self.exit_behavior == "end":
+            limit_message = _build_final_ai_message_content(
+                thread_count,
+                run_count,
+                self.thread_limit,
+                self.run_limit,
+                self.tool_name,
+            )
+            return {"jump_to": "end", "messages": [AIMessage(content=limit_message)]}
+        return None
+
     def _separate_tool_calls(
         self, tool_calls: list[ToolCall], thread_count: int, run_count: int
     ) -> tuple[list[ToolCall], list[ToolCall], int, int]:

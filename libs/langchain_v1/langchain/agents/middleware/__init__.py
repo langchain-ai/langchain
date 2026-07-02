@@ -3,7 +3,9 @@
 from langgraph.runtime import Runtime
 
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
+from langchain.agents.middleware.dynamic_tools import DynamicToolsMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
+from langchain.agents.middleware.final_answer import FinalAnswerMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
@@ -52,9 +54,11 @@ __all__ = [
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
+    "DynamicToolsMiddleware",
     "DockerExecutionPolicy",
     "ExtendedModelResponse",
     "FilesystemFileSearchMiddleware",
+    "FinalAnswerMiddleware",
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
     "InputAgentState",
