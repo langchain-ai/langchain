@@ -1665,7 +1665,9 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 response = raw_response.parse()
             elif self._use_responses_api(payload):
-                original_schema_obj = kwargs.get("response_format")
+                original_schema_obj = kwargs.get(
+                    "_pydantic_response_format"
+                ) or kwargs.get("response_format")
                 if original_schema_obj and _is_pydantic_class(original_schema_obj):
                     raw_response = self.root_client.responses.with_raw_response.parse(
                         **payload
@@ -1740,6 +1742,11 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 payload = _construct_responses_api_payload(messages, payload)
         else:
+            payload.pop("_pydantic_response_format", None)
+            if "reasoning" in payload and "reasoning_effort" not in payload:
+                reasoning = payload.pop("reasoning")
+                if isinstance(reasoning, dict) and reasoning.get("effort"):
+                    payload["reasoning_effort"] = reasoning["effort"]
             payload["messages"] = [
                 _convert_message_to_dict(_convert_from_v1_to_chat_completions(m))
                 if isinstance(m, AIMessage)
@@ -1929,7 +1936,9 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 response = raw_response.parse()
             elif self._use_responses_api(payload):
-                original_schema_obj = kwargs.get("response_format")
+                original_schema_obj = kwargs.get(
+                    "_pydantic_response_format"
+                ) or kwargs.get("response_format")
                 if original_schema_obj and _is_pydantic_class(original_schema_obj):
                     raw_response = (
                         await self.root_async_client.responses.with_raw_response.parse(
@@ -2489,6 +2498,11 @@ class BaseChatOpenAI(BaseChatModel):
             bind_kwargs = {
                 **dict(
                     response_format=response_format,
+                    **(
+                        {"_pydantic_response_format": schema}
+                        if is_pydantic_schema
+                        else {}
+                    ),
                     ls_structured_output_format={
                         "kwargs": {"method": method, "strict": strict},
                         "schema": convert_to_openai_tool(schema),
@@ -4228,12 +4242,15 @@ def _construct_responses_api_payload(
             payload["tool_choice"] = tool_choice
 
     # Structured output
+    pydantic_schema = payload.pop("_pydantic_response_format", None)
     if schema := payload.pop("response_format", None):
         # For pydantic + non-streaming case, we use responses.parse.
         # Otherwise, we use responses.create.
         strict = payload.pop("strict", None)
-        if not payload.get("stream") and _is_pydantic_class(schema):
-            payload["text_format"] = schema
+        if not payload.get("stream") and (
+            pydantic_schema or _is_pydantic_class(schema)
+        ):
+            payload["text_format"] = pydantic_schema or schema
         else:
             if _is_pydantic_class(schema):
                 schema_dict = schema.model_json_schema()

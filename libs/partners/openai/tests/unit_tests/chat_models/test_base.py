@@ -4423,3 +4423,114 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_structured_output_with_reasoning_uses_pydantic_for_responses_parse() -> None:
+    """When reasoning forces the Responses API, with_structured_output should
+    preserve the original Pydantic class so responses.parse() is used."""
+
+    class MySchema(BaseModel):
+        answer: str
+
+    llm = ChatOpenAI(
+        model="gpt-5", reasoning={"effort": "low"}, api_key=SecretStr("test")
+    )
+    structured_llm = llm.with_structured_output(MySchema)
+
+    # Extract the bound kwargs from the RunnableSequence
+    assert isinstance(structured_llm, RunnableSequence)
+    bound_llm = structured_llm.first
+    assert isinstance(bound_llm, RunnableBinding)
+    bound_kwargs = bound_llm.kwargs
+
+    # The original Pydantic class should be preserved
+    assert "_pydantic_response_format" in bound_kwargs
+    assert bound_kwargs["_pydantic_response_format"] is MySchema
+
+
+def test_structured_output_with_reasoning_payload_has_text_format() -> None:
+    """When using Responses API + structured output with a Pydantic schema,
+    the payload should have text_format set to the Pydantic class."""
+
+    class MySchema(BaseModel):
+        answer: str
+
+    llm = ChatOpenAI(
+        model="gpt-5", reasoning={"effort": "low"}, api_key=SecretStr("test")
+    )
+    structured_llm = llm.with_structured_output(MySchema)
+
+    # Get the bound LLM and build the payload
+    assert isinstance(structured_llm, RunnableSequence)
+    bound_llm = structured_llm.first
+    assert isinstance(bound_llm, RunnableBinding)
+
+    messages = [HumanMessage(content="hello")]
+    payload = bound_llm.bound._get_request_payload(
+        messages, stop=None, **bound_llm.kwargs
+    )
+
+    # text_format should be set to the Pydantic class for responses.parse()
+    assert payload.get("text_format") is MySchema
+    # response_format should have been consumed
+    assert "response_format" not in payload
+    # Internal key should have been consumed
+    assert "_pydantic_response_format" not in payload
+
+
+def test_reasoning_dict_translated_to_effort_on_chat_completions_path() -> None:
+    """When use_responses_api=False but reasoning={...} is set, the reasoning
+    dict should be translated to reasoning_effort for Chat Completions API."""
+
+    llm = ChatOpenAI(
+        model="gpt-5",
+        reasoning={"effort": "medium"},
+        use_responses_api=False,
+        api_key=SecretStr("test"),
+    )
+
+    messages = [HumanMessage(content="hello")]
+    payload = llm._get_request_payload(messages, stop=None)
+
+    # reasoning dict should be translated to reasoning_effort
+    assert "reasoning" not in payload
+    assert payload["reasoning_effort"] == "medium"
+
+
+def test_reasoning_dict_not_translated_when_responses_api_used() -> None:
+    """When using Responses API, reasoning dict should remain as-is (not
+    translated to reasoning_effort)."""
+
+    llm = ChatOpenAI(
+        model="gpt-5",
+        reasoning={"effort": "medium"},
+        use_responses_api=True,
+        api_key=SecretStr("test"),
+    )
+
+    messages = [HumanMessage(content="hello")]
+    payload = llm._get_request_payload(messages, stop=None)
+
+    # reasoning should stay as a dict on the Responses API path
+    assert payload["reasoning"] == {"effort": "medium"}
+    assert "reasoning_effort" not in payload
+
+
+def test_structured_output_without_pydantic_no_private_key() -> None:
+    """When with_structured_output is called with a dict schema (not Pydantic),
+    the _pydantic_response_format key should not be set."""
+
+    schema = {
+        "title": "Answer",
+        "type": "object",
+        "properties": {"answer": {"type": "string"}},
+    }
+    llm = ChatOpenAI(model="gpt-5", api_key=SecretStr("test"))
+    structured_llm = llm.with_structured_output(schema)
+
+    assert isinstance(structured_llm, RunnableSequence)
+    bound_llm = structured_llm.first
+    assert isinstance(bound_llm, RunnableBinding)
+    bound_kwargs = bound_llm.kwargs
+
+    assert "_pydantic_response_format" not in bound_kwargs
