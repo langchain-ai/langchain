@@ -161,6 +161,12 @@ class ChatOpenRouter(BaseChatModel):
     client: Any = Field(default=None, exclude=True)
     """Underlying SDK client (`openrouter.OpenRouter`)."""
 
+    http_client: Any = Field(default=None, exclude=True)
+    """httpx.Client used for custom headers, if any. Closed by close()/aclose()."""
+
+    async_http_client: Any = Field(default=None, exclude=True)
+    """httpx.AsyncClient used for custom headers, if any. Closed by aclose()."""
+
     openrouter_api_key: SecretStr | None = Field(
         alias="api_key",
         default_factory=secret_from_env("OPENROUTER_API_KEY", default=None),
@@ -408,12 +414,12 @@ class ChatOpenRouter(BaseChatModel):
         if extra_headers:
             import httpx  # noqa: PLC0415
 
-            client_kwargs["client"] = httpx.Client(
-                headers=extra_headers, follow_redirects=True
-            )
-            client_kwargs["async_client"] = httpx.AsyncClient(
-                headers=extra_headers, follow_redirects=True
-            )
+            _http = httpx.Client(headers=extra_headers, follow_redirects=True)
+            _async_http = httpx.AsyncClient(headers=extra_headers, follow_redirects=True)
+            client_kwargs["client"] = _http
+            client_kwargs["async_client"] = _async_http
+            self.http_client = _http
+            self.async_http_client = _async_http
         if self.request_timeout is not None:
             client_kwargs["timeout_ms"] = self.request_timeout
         if self.max_retries > 0:
@@ -457,6 +463,48 @@ class ChatOpenRouter(BaseChatModel):
                 )
                 raise ImportError(msg) from e
         return self
+
+    def close(self) -> None:
+        """Close the underlying HTTP transport clients.
+
+        Call this when you are done with the model in a synchronous context to
+        release TCP connections and file descriptors immediately, rather than
+        waiting for garbage collection (which may not close them at all for
+        ``httpx.AsyncClient``).
+
+        For use in async contexts, prefer ``aclose()`` or the async context
+        manager (``async with ChatOpenRouter(...) as llm``).
+        """
+        if self.http_client is not None:
+            self.http_client.close()
+
+    async def aclose(self) -> None:
+        """Asynchronously close the underlying HTTP transport clients.
+
+        Prefer this over ``close()`` when running inside an async event loop.
+        Both the sync and async httpx clients are properly torn down.
+
+        Example::
+
+            async with ChatOpenRouter(model="...") as llm:
+                result = await llm.ainvoke("Hello")
+        """
+        if self.http_client is not None:
+            self.http_client.close()
+        if self.async_http_client is not None:
+            await self.async_http_client.aclose()
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        self.close()
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, *args: Any) -> None:
+        await self.aclose()
 
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None

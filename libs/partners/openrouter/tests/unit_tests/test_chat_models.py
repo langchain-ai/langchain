@@ -1,4 +1,4 @@
-"""Unit tests for `ChatOpenRouter` chat model."""
+﻿"""Unit tests for `ChatOpenRouter` chat model."""
 
 from __future__ import annotations
 
@@ -3531,3 +3531,79 @@ def test_profile() -> None:
     """Test that the model has a profile."""
     model = _make_model()
     assert model.profile
+
+class TestHttpClientLifecycle:
+    """Tests for close/aclose and context manager support (issue #38610)."""
+
+    def test_close_calls_http_client_close(self) -> None:
+        """close() must close the stored sync httpx client."""
+        from unittest.mock import MagicMock
+
+        model = _make_model()
+        mock_http = MagicMock()
+        model.http_client = mock_http
+
+        model.close()
+
+        mock_http.close.assert_called_once()
+
+    def test_close_is_noop_when_no_http_client(self) -> None:
+        """close() must not raise when no httpx clients were created."""
+        model = _make_model()
+        model.http_client = None
+        model.close()  # Should not raise
+
+    @pytest.mark.asyncio
+    async def test_aclose_closes_both_clients(self) -> None:
+        """aclose() must close both sync and async httpx clients."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        model = _make_model()
+        mock_http = MagicMock()
+        mock_async_http = AsyncMock()
+        model.http_client = mock_http
+        model.async_http_client = mock_async_http
+
+        await model.aclose()
+
+        mock_http.close.assert_called_once()
+        mock_async_http.aclose.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_aclose_is_noop_when_no_clients(self) -> None:
+        """aclose() must not raise when no httpx clients were created."""
+        model = _make_model()
+        model.http_client = None
+        model.async_http_client = None
+        await model.aclose()  # Should not raise
+
+    def test_sync_context_manager_closes_http_client(self) -> None:
+        """Sync context manager must close the http_client on exit."""
+        from unittest.mock import MagicMock
+
+        model = _make_model()
+        mock_http = MagicMock()
+        model.http_client = mock_http
+
+        with model:
+            pass
+
+        mock_http.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_async_context_manager_closes_both_clients(self) -> None:
+        """Async context manager must close both httpx clients on exit."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        model = _make_model()
+        mock_http = MagicMock()
+        mock_async_http = AsyncMock()
+        model.http_client = mock_http
+        model.async_http_client = mock_async_http
+
+        async with model:
+            pass
+
+        mock_http.close.assert_called_once()
+        mock_async_http.aclose.assert_called_once()
+
