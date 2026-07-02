@@ -109,3 +109,40 @@ async def test_no_cache_generate_async() -> None:
         assert global_cache._cache == {}
     finally:
         set_llm_cache(None)
+
+
+class EmptyInMemoryCache(InMemoryCache):
+    """Cache with no entries — evaluates falsy via `__len__` returning 0.
+
+    Reproduces the bug where `if llm_cache:` skips lookup/update on an
+    empty-but-configured cache, causing a `KeyError` on the result indexing.
+    """
+
+    def __len__(self) -> int:
+        return len(self._cache)
+
+
+def test_empty_cache_with_len_sync() -> None:
+    """Empty cache implementing __len__ must not be skipped on sync generate."""
+    cache = EmptyInMemoryCache()
+    assert len(cache) == 0  # falsy under `if llm_cache:`, but configured
+    llm = FakeListLLM(cache=cache, responses=["foo", "bar"])
+    output = llm.generate(["hello"])
+    assert output.generations[0][0].text == "foo"
+    # Second call with same prompt should hit cache, not consume next response
+    output = llm.generate(["hello"])
+    assert output.generations[0][0].text == "foo"
+    assert len(cache) == 1
+
+
+async def test_empty_cache_with_len_async() -> None:
+    """Empty cache implementing __len__ must not be skipped on async agenerate."""
+    cache = EmptyInMemoryCache()
+    assert len(cache) == 0  # falsy under `if llm_cache:`, but configured
+    llm = FakeListLLM(cache=cache, responses=["foo", "bar"])
+    output = await llm.agenerate(["hello"])
+    assert output.generations[0][0].text == "foo"
+    # Second call with same prompt should hit cache, not consume next response
+    output = await llm.agenerate(["hello"])
+    assert output.generations[0][0].text == "foo"
+    assert len(cache) == 1
