@@ -533,7 +533,6 @@ def test_chroma_update_document_with_id() -> None:
     assert list(new_embedding) != list(old_embedding)
 
 
-# TODO: RELEVANCE SCORE IS BROKEN. FIX TEST
 def test_chroma_with_relevance_score_custom_normalization_fn() -> None:
     """Test searching with relevance score and custom normalization function."""
     texts = ["foo", "bar", "baz"]

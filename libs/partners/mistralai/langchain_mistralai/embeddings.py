@@ -178,7 +178,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     def validate_environment(self) -> Self:
         """Validate configuration."""
         api_key_str = self.mistral_api_key.get_secret_value()
-        # TODO: handle retries
         if not self.client:
             self.client = httpx.Client(
                 base_url=self.endpoint,
@@ -189,7 +188,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 },
                 timeout=self.timeout,
             )
-        # TODO: handle retries and max_concurrency
         if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=self.endpoint,

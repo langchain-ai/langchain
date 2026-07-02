@@ -3,7 +3,6 @@
 Delegates all validation to `langchain_core._security._policy`.
 """
 
-import os
 import socket
 from typing import Annotated, Any
 from urllib.parse import urlparse
@@ -17,6 +16,9 @@ from pydantic import (
 from langchain_core._security._exceptions import SSRFBlockedError
 from langchain_core._security._policy import (
     SSRFPolicy,
+)
+from langchain_core._security._policy import (
+    _effective_allowed_hosts,
 )
 from langchain_core._security._policy import (
     validate_resolved_ip as _validate_resolved_ip,
@@ -65,14 +67,6 @@ def validate_safe_url(
     parsed = urlparse(url_str)
     hostname = parsed.hostname or ""
 
-    # Test-environment bypass (preserved from original implementation)
-    if (
-        os.environ.get("LANGCHAIN_ENV") == "local_test"
-        and hostname.startswith("test")
-        and "server" in hostname
-    ):
-        return url_str
-
     policy = _policy_for(allow_private=allow_private, allow_http=allow_http)
 
     # Synchronous scheme + hostname checks
@@ -80,6 +74,10 @@ def validate_safe_url(
         _validate_url_sync(url_str, policy)
     except SSRFBlockedError as exc:
         raise ValueError(str(exc)) from exc
+
+    allowed = {h.lower() for h in _effective_allowed_hosts(policy)}
+    if hostname.lower() in allowed:
+        return url_str
 
     # DNS resolution and IP validation
     try:

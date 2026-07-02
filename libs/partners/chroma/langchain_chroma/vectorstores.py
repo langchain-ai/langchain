@@ -318,6 +318,7 @@ class Chroma(VectorStore):
         create_collection_if_not_exists: bool | None = True,  # noqa: FBT001, FBT002
         *,
         ssl: bool = False,
+        image_root: Path | None = None,
     ) -> None:
         """Initialize with a Chroma client.
 
@@ -345,6 +346,8 @@ class Chroma(VectorStore):
                     Used only in `similarity_search_with_relevance_scores`
             create_collection_if_not_exists: Whether to create collection
                     if it doesn't exist. Defaults to `True`.
+            image_root: Root directory for resolving relative image paths in
+                    `add_images`. Defaults to the current working directory.
         """
         _tenant = tenant or chromadb.DEFAULT_TENANT
         _database = database or chromadb.DEFAULT_DATABASE
@@ -418,6 +421,7 @@ class Chroma(VectorStore):
         else:
             self._chroma_collection = self._client.get_collection(name=collection_name)
         self.override_relevance_score_fn = relevance_score_fn
+        self._image_root = (image_root or Path.cwd()).resolve()
 
     def __ensure_collection(self) -> None:
         """Ensure that the collection exists or create it."""
@@ -483,10 +487,27 @@ class Chroma(VectorStore):
             **kwargs,
         )
 
-    @staticmethod
-    def encode_image(uri: str) -> str:
+    def _validate_image_uri(self, uri: str) -> Path:
+        """Validate and resolve an image URI, rejecting path traversal."""
+        if ".." in uri or "~" in uri:
+            msg = "Path traversal not allowed"
+            raise ValueError(msg)
+
+        path = Path(uri)
+        resolved = path.resolve() if path.is_absolute() else (self._image_root / path).resolve()
+
+        try:
+            resolved.relative_to(self._image_root)
+        except ValueError:
+            msg = f"Image path outside allowed root directory: {uri}"
+            raise ValueError(msg) from None
+
+        return resolved
+
+    def encode_image(self, uri: str) -> str:
         """Get base64 string from image URI."""
-        with Path(uri).open("rb") as image_file:
+        validated_path = self._validate_image_uri(uri)
+        with validated_path.open("rb") as image_file:
             return base64.b64encode(image_file.read()).decode("utf-8")
 
     def fork(self, new_name: str) -> Chroma:
@@ -812,7 +833,11 @@ class Chroma(VectorStore):
             where_document=where_document,
             **kwargs,
         )
-        return _results_to_docs_and_scores(results)
+        relevance_score_fn = self._select_relevance_score_fn()
+        return [
+            (doc, relevance_score_fn(score))
+            for doc, score in _results_to_docs_and_scores(results)
+        ]
 
     def similarity_search_with_score(
         self,
@@ -926,6 +951,13 @@ class Chroma(VectorStore):
         spann_distance: str | None = spann_config.get("space") if spann_config else None
 
         distance = hnsw_distance or spann_distance
+
+        if distance is None and self._collection_metadata:
+            distance = self._collection_metadata.get("hnsw:space")
+
+        if distance is None and self._collection is not None:
+            collection_meta = getattr(self._collection, "metadata", None) or {}
+            distance = collection_meta.get("hnsw:space")
 
         if distance == "cosine":
             return self._cosine_relevance_score_fn

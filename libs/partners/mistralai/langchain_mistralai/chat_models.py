@@ -676,7 +676,6 @@ class ChatMistralAI(BaseChatModel):
         else:
             api_key_str = self.mistral_api_key
 
-        # TODO: handle retries
         base_url_str = (
             self.endpoint
             or os.environ.get("MISTRAL_BASE_URL")
@@ -694,7 +693,6 @@ class ChatMistralAI(BaseChatModel):
                 timeout=self.timeout,
                 verify=global_ssl_context,
             )
-        # TODO: handle retries and max_concurrency
         if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=base_url_str,

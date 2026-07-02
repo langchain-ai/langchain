@@ -123,6 +123,12 @@ class TestValidateSafeUrl:
         result = validate_safe_url(url)
         assert result == url
 
+    def test_local_test_does_not_bypass_ssrf_checks(self, monkeypatch: Any) -> None:
+        """Malicious hostnames must not bypass SSRF validation in local_test."""
+        monkeypatch.setenv("LANGCHAIN_ENV", "local_test")
+        with pytest.raises(ValueError):
+            validate_safe_url("http://test.evil.server.com/webhook")
+
 
 class TestIsSafeUrl:
     """Tests for is_safe_url function (non-throwing version)."""
