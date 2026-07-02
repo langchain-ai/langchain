@@ -270,8 +270,9 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         if not path.startswith("/"):
             path = "/" + path
 
-        # Check for path traversal
-        if ".." in path or "~" in path:
+        # Check for path traversal: reject only path components that are exactly
+        # "..", not directory names that merely contain ".." (e.g. "src..old").
+        if "~" in path or any(part == ".." for part in Path(path).parts):
             msg = "Path traversal not allowed"
             raise ValueError(msg)
 

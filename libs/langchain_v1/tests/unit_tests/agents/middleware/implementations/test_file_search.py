@@ -325,6 +325,50 @@ class TestPathTraversalSecurity:
         assert result == "No matches found"
         assert "secret" not in result
 
+    def test_directory_name_with_double_dots_is_allowed(self, tmp_path: Path) -> None:
+        """A path segment that contains '..' but is not '..' should be allowed (issue #38549)."""
+        (tmp_path / "src..old").mkdir()
+        (tmp_path / "src..old" / "file.py").write_text("content", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.py", path="/src..old")
+
+        # Use path-separator-agnostic checks so the test passes on Windows too.
+        assert result != "No files found"
+        assert "src..old" in result
+        assert "file.py" in result
+
+    def test_grep_directory_name_with_double_dots_is_allowed(self, tmp_path: Path) -> None:
+        """Grep should also allow path segments like 'v1..backup' (issue #38549)."""
+        (tmp_path / "v1..backup").mkdir()
+        (tmp_path / "v1..backup" / "main.py").write_text("hello = 1\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="hello", path="/v1..backup")
+
+        assert result != "No matches found"
+        assert "v1..backup" in result
+        assert "main.py" in result
+
+    def test_real_traversal_still_blocked_after_fix(self, tmp_path: Path) -> None:
+        """Actual '..' traversal components must still be rejected after the fix."""
+        (tmp_path / "safe").mkdir()
+        (tmp_path / "secret.txt").write_text("secret", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path / "safe"))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.txt", path="/../")
+
+        assert result == "No files found"
+
 
 class TestGlobPatternTraversalSecurity:
     """Security tests for the glob `pattern` argument (not just the base `path`)."""
