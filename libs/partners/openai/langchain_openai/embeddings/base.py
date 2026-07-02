@@ -8,7 +8,6 @@ from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from typing import Any, Literal, cast
 
 import openai
-import tiktoken
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
@@ -529,6 +528,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     indices.append(i)
                     token_counts.append(len(token_chunk))
         else:
+            try:
+                import tiktoken  # noqa: PLC0415
+            except ImportError as e:
+                msg = (
+                    "tiktoken is required for OpenAI embeddings tokenization. "
+                    "Install with `pip install tiktoken` or set tiktoken_enabled=False."
+                )
+                raise ImportError(msg) from e
             try:
                 encoding = tiktoken.encoding_for_model(model_name)
             except KeyError:
