@@ -25,8 +25,10 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.4.7,<2.0.0",
     "openai>=2.26.0,<3.0.0",
-    "tiktoken>=0.7.0,<1.0.0",
 ]
+
+[project.optional-dependencies]
+tiktoken = ["tiktoken>=0.7.0,<1.0.0"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/openai"
@@ -41,6 +43,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 [dependency-groups]
 test = [
     "pytest>=9.0.3,<10.0.0",
+    "tiktoken>=0.7.0,<1.0.0",
     "freezegun>=1.2.2,<2.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
     "syrupy>=5.0.0,<6.0.0",
