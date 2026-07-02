@@ -348,6 +348,39 @@ def test_structured_single_str_decorator_no_infer_schema() -> None:
     assert unstructured_tool_input.run("foo") == "foo"
 
 
+def test_tool_no_infer_schema_uses_explicit_description() -> None:
+    """An explicit description must be honored when infer_schema is False."""
+
+    @tool(description="Search the weather data.", infer_schema=False)
+    def weather(tool_input: str) -> str:
+        """This docstring should be overridden by the explicit description."""
+        return tool_input
+
+    assert isinstance(weather, BaseTool)
+    assert weather.description == "Search the weather data."
+
+
+def test_tool_no_infer_schema_falls_back_to_docstring() -> None:
+    """Without an explicit description, the docstring becomes the description."""
+
+    @tool(infer_schema=False)
+    def weather(tool_input: str) -> str:
+        """Search the weather data."""
+        return tool_input
+
+    assert isinstance(weather, BaseTool)
+    assert weather.description == "Search the weather data."
+
+
+def test_tool_no_infer_schema_requires_description_or_docstring() -> None:
+    """A missing description and docstring must still raise."""
+    with pytest.raises(ValueError, match="docstring"):
+
+        @tool(infer_schema=False)
+        def weather(tool_input: str) -> str:
+            return tool_input
+
+
 def test_structured_tool_types_parsed() -> None:
     """Test the non-primitive types are correctly passed to structured tools."""
 

@@ -315,17 +315,20 @@ def tool(
                     extras=extras,
                 )
             # If someone doesn't want a schema applied, we must treat it as
-            # a simple string->string function
-            if dec_func.__doc__ is None:
-                msg = (
-                    "Function must have a docstring if "
-                    "description not provided and infer_schema is False."
-                )
-                raise ValueError(msg)
+            # a simple string->string function. Prefer an explicit description,
+            # then fall back to the function's docstring.
+            if tool_description is None:
+                if dec_func.__doc__ is None:
+                    msg = (
+                        "Function must have a docstring if "
+                        "description not provided and infer_schema is False."
+                    )
+                    raise ValueError(msg)
+                tool_description = dec_func.__doc__.strip()
             return Tool(
                 name=tool_name,
                 func=func,
-                description=f"{tool_name} tool",
+                description=tool_description,
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
