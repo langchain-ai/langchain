@@ -971,6 +971,12 @@ class ChatAnthropic(BaseChatModel):
     variable.
     """
 
+    http_client: Any | None = Field(default=None, exclude=True)
+    """Optional custom sync httpx client. Must be paired with `http_async_client`."""
+
+    http_async_client: Any | None = Field(default=None, exclude=True)
+    """Optional custom async httpx client. Must be paired with `http_client`."""
+
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
@@ -1205,7 +1211,17 @@ class ChatAnthropic(BaseChatModel):
 
     @cached_property
     def _client(self) -> anthropic.Client:
+        if self.anthropic_proxy and (self.http_client or self.http_async_client):
+            msg = (
+                "Cannot specify both anthropic_proxy and custom http_client(s). "
+                "Use one or the other."
+            )
+            raise ValueError(msg)
         client_params = self._client_params
+        if self.http_client is not None:
+            params = {**client_params, "http_client": self.http_client}
+            return anthropic.Client(**params)
+
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
@@ -1220,7 +1236,17 @@ class ChatAnthropic(BaseChatModel):
 
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
+        if self.anthropic_proxy and (self.http_client or self.http_async_client):
+            msg = (
+                "Cannot specify both anthropic_proxy and custom http_client(s). "
+                "Use one or the other."
+            )
+            raise ValueError(msg)
         client_params = self._client_params
+        if self.http_async_client is not None:
+            params = {**client_params, "http_client": self.http_async_client}
+            return anthropic.AsyncClient(**params)
+
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
@@ -1270,31 +1296,26 @@ class ChatAnthropic(BaseChatModel):
 
         system, formatted_messages = _format_messages(messages)
 
-        # Only the direct Anthropic API accepts top-level `cache_control`.
-        # Subclasses that route through other transports (e.g. Bedrock) expand
-        # `cache_control` kwargs into block-level breakpoints, the only form
-        # those transports accept.
-        if not _is_direct_anthropic_llm_type(getattr(self, "_llm_type", None)):
-            cache_control = kwargs.pop("cache_control", None)
-            # Empty `formatted_messages` has nothing to attach a breakpoint to;
-            # skip silently. The warning below is reserved for the surprising
-            # case where messages exist but every candidate block is ineligible.
-            if cache_control and formatted_messages:
-                code_execution_tool_ids = _collect_code_execution_tool_ids(
-                    formatted_messages
+        cache_control = kwargs.pop("cache_control", None)
+        # Empty `formatted_messages` has nothing to attach a breakpoint to;
+        # skip silently. The warning below is reserved for the surprising
+        # case where messages exist but every candidate block is ineligible.
+        if cache_control and formatted_messages:
+            code_execution_tool_ids = _collect_code_execution_tool_ids(
+                formatted_messages
+            )
+            applied = _apply_cache_control_to_last_eligible_block(
+                formatted_messages, cache_control, code_execution_tool_ids
+            )
+            if not applied:
+                warnings.warn(
+                    "`cache_control` kwarg was dropped: no eligible "
+                    "content block found (all candidates are "
+                    "`code_execution`-related, which Anthropic forbids "
+                    "breakpoints on).",
+                    UserWarning,
+                    stacklevel=2,
                 )
-                applied = _apply_cache_control_to_last_eligible_block(
-                    formatted_messages, cache_control, code_execution_tool_ids
-                )
-                if not applied:
-                    warnings.warn(
-                        "`cache_control` kwarg was dropped: no eligible "
-                        "content block found (all candidates are "
-                        "`code_execution`-related, which Anthropic forbids "
-                        "breakpoints on).",
-                        UserWarning,
-                        stacklevel=2,
-                    )
 
         payload = {
             "model": self.model,

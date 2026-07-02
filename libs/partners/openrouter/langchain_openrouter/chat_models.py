@@ -66,7 +66,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_openrouter._version import __version__
@@ -160,6 +160,9 @@ class ChatOpenRouter(BaseChatModel):
 
     client: Any = Field(default=None, exclude=True)
     """Underlying SDK client (`openrouter.OpenRouter`)."""
+
+    _sync_httpx_client: Any = PrivateAttr(default=None)
+    _async_httpx_client: Any = PrivateAttr(default=None)
 
     openrouter_api_key: SecretStr | None = Field(
         alias="api_key",
@@ -408,12 +411,15 @@ class ChatOpenRouter(BaseChatModel):
         if extra_headers:
             import httpx  # noqa: PLC0415
 
-            client_kwargs["client"] = httpx.Client(
+            self._close_httpx_clients()
+            self._sync_httpx_client = httpx.Client(
                 headers=extra_headers, follow_redirects=True
             )
-            client_kwargs["async_client"] = httpx.AsyncClient(
+            self._async_httpx_client = httpx.AsyncClient(
                 headers=extra_headers, follow_redirects=True
             )
+            client_kwargs["client"] = self._sync_httpx_client
+            client_kwargs["async_client"] = self._async_httpx_client
         if self.request_timeout is not None:
             client_kwargs["timeout_ms"] = self.request_timeout
         if self.max_retries > 0:
@@ -428,6 +434,56 @@ class ChatOpenRouter(BaseChatModel):
                 retry_connection_errors=True,
             )
         return openrouter.OpenRouter(**client_kwargs)
+
+    def _close_httpx_clients(self) -> None:
+        """Close any custom httpx clients created for attribution headers."""
+        if self._sync_httpx_client is not None:
+            try:
+                if not self._sync_httpx_client.is_closed:
+                    self._sync_httpx_client.close()
+            except Exception:  # noqa: BLE001, S110
+                pass
+            self._sync_httpx_client = None
+        if self._async_httpx_client is not None:
+            try:
+                if not self._async_httpx_client.is_closed:
+                    import asyncio  # noqa: PLC0415
+
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(self._async_httpx_client.aclose())
+                    except RuntimeError:
+                        asyncio.run(self._async_httpx_client.aclose())
+            except Exception:  # noqa: BLE001, S110
+                pass
+            self._async_httpx_client = None
+
+    def close(self) -> None:
+        """Close underlying HTTP clients."""
+        self._close_httpx_clients()
+
+    async def aclose(self) -> None:
+        """Close underlying async HTTP clients."""
+        if self._async_httpx_client is not None:
+            try:
+                if not self._async_httpx_client.is_closed:
+                    await self._async_httpx_client.aclose()
+            except Exception:  # noqa: BLE001, S110
+                pass
+            self._async_httpx_client = None
+        if self._sync_httpx_client is not None:
+            try:
+                if not self._sync_httpx_client.is_closed:
+                    self._sync_httpx_client.close()
+            except Exception:  # noqa: BLE001, S110
+                pass
+            self._sync_httpx_client = None
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:  # noqa: S110
+            pass
 
     @model_validator(mode="after")
     def _set_openrouter_version(self) -> Self:
