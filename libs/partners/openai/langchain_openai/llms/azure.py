@@ -12,6 +12,7 @@ from langchain_core.utils import from_env, secret_from_env
 from pydantic import Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openai._azure_env import azure_openai_api_key_from_env
 from langchain_openai._version import __version__
 from langchain_openai.llms.base import BaseOpenAI
 
@@ -58,14 +59,10 @@ class AzureOpenAI(BaseOpenAI):
         default_factory=from_env("OPENAI_API_VERSION", default=None),
     )
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
-    # Check OPENAI_KEY for backwards compatibility.
-    # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
-    # other forms of azure credentials.
+    # Check OPENAI_API_KEY for backwards compatibility (deprecated).
     openai_api_key: SecretStr | None = Field(
         alias="api_key",
-        default_factory=secret_from_env(
-            ["AZURE_OPENAI_API_KEY", "OPENAI_API_KEY"], default=None
-        ),
+        default_factory=azure_openai_api_key_from_env,
     )
     azure_ad_token: SecretStr | None = Field(
         default_factory=secret_from_env("AZURE_OPENAI_AD_TOKEN", default=None)

@@ -10,6 +10,7 @@ from langchain_core.utils import from_env, secret_from_env
 from pydantic import Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openai._azure_env import azure_openai_api_key_from_env
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
 
@@ -113,14 +114,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
             This means you won't be able to use non-deployment endpoints.
 
     """
-    # Check OPENAI_KEY for backwards compatibility.
-    # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
-    # other forms of azure credentials.
+    # Check OPENAI_API_KEY for backwards compatibility (deprecated).
     openai_api_key: SecretStr | None = Field(
         alias="api_key",
-        default_factory=secret_from_env(
-            ["AZURE_OPENAI_API_KEY", "OPENAI_API_KEY"], default=None
-        ),
+        default_factory=azure_openai_api_key_from_env,
     )
     """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
     openai_api_version: str | None = Field(
