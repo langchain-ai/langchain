@@ -21,7 +21,7 @@ from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptVa
 from pydantic import RootModel, ValidationError
 
 
-@pytest.mark.xfail(reason="TODO: FIX BEFORE 0.3 RELEASE")
+@pytest.mark.xfail(reason="Legacy serialization round-trip still incomplete")
 def test_serialization_of_wellknown_objects() -> None:
     """Test that pydantic is able to serialize and deserialize well known objects."""
     well_known_lc_object = RootModel[

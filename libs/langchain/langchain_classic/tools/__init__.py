@@ -53,6 +53,18 @@ def __getattr__(name: str) -> Any:
     if name == "PythonAstREPLTool":
         return _import_python_tool_python_ast_repl_tool()
     if name == "PythonREPLTool":
+        if not is_interactive_env():
+            warnings.warn(
+                "Importing PythonREPLTool from langchain is deprecated and unsafe. "
+                "The tool executes arbitrary Python code. For hardened execution, use "
+                "langchain-experimental with sandboxing or avoid code-execution tools in "
+                "production agents. Import from langchain-community instead:\n\n"
+                "`from langchain_community.tools import PythonREPLTool`.\n\n"
+                "To install langchain-community run "
+                "`pip install -U langchain-community`.",
+                stacklevel=2,
+                category=LangChainDeprecationWarning,
+            )
         return _import_python_tool_python_repl_tool()
     from langchain_community import tools
 

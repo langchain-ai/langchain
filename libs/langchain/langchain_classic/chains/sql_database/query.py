@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from langchain_core.language_models import BaseLanguageModel
@@ -15,6 +16,63 @@ if TYPE_CHECKING:
 
 def _strip(text: str) -> str:
     return text.strip()
+
+
+_FORBIDDEN_SQL_KEYWORDS = (
+    "DROP",
+    "DELETE",
+    "INSERT",
+    "UPDATE",
+    "ALTER",
+    "CREATE",
+    "TRUNCATE",
+    "EXEC",
+    "EXECUTE",
+    "GRANT",
+    "REVOKE",
+)
+
+
+def validate_sql_query(sql: str, *, allow_write: bool = False) -> str:
+    """Validate a generated SQL query before execution.
+
+    Args:
+        sql: SQL query string to validate.
+        allow_write: If ``False``, only ``SELECT`` statements are permitted.
+
+    Returns:
+        The trimmed SQL string.
+
+    Raises:
+        ValueError: If the SQL query fails validation.
+    """
+    trimmed = sql.strip().rstrip(";")
+    if not trimmed:
+        msg = "SQL query is empty"
+        raise ValueError(msg)
+    if ";" in trimmed:
+        msg = "Multiple SQL statements are not allowed"
+        raise ValueError(msg)
+
+    upper = trimmed.upper()
+    if not allow_write and not upper.lstrip().startswith("SELECT"):
+        msg = "Only SELECT statements are allowed when allow_write=False"
+        raise ValueError(msg)
+
+    for keyword in _FORBIDDEN_SQL_KEYWORDS:
+        if re.search(rf"\b{keyword}\b", upper):
+            if allow_write and keyword in {"INSERT", "UPDATE", "DELETE"}:
+                continue
+            msg = f"SQL statement contains forbidden keyword: {keyword}"
+            raise ValueError(msg)
+
+    return trimmed
+
+
+def _maybe_validate_sql(sql: str, *, validate_sql: bool, allow_write: bool) -> str:
+    if validate_sql:
+        return validate_sql_query(sql, allow_write=allow_write)
+    return _strip(sql)
 
 
 class SQLInput(TypedDict):
@@ -37,6 +95,8 @@ def create_sql_query_chain(
     k: int = 5,
     *,
     get_col_comments: bool | None = None,
+    validate_sql: bool = False,
+    allow_write_sql: bool = False,
 ) -> Runnable[SQLInput | SQLInputWithTables | dict[str, Any], str]:
     r"""Create a chain that generates SQL queries.
 
@@ -162,5 +222,5 @@ def create_sql_query_chain(
         | prompt_to_use.partial(top_k=str(k))
         | llm.bind(stop=["\nSQLResult:"])
         | StrOutputParser()
-        | _strip
+        | (lambda sql: _maybe_validate_sql(sql, validate_sql=validate_sql, allow_write=allow_write_sql))
     )
