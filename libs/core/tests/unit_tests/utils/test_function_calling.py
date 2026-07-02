@@ -410,7 +410,6 @@ def test_convert_to_openai_function(
     assert actual == expected
 
 
-@pytest.mark.xfail(reason="Direct pydantic v2 models not yet supported")
 def test_convert_to_openai_function_nested_v2() -> None:
     class NestedV2(BaseModelV2Maybe):
         nested_v2_arg1: int = FieldV2Maybe(..., description="foo")
@@ -421,7 +420,10 @@ def test_convert_to_openai_function_nested_v2() -> None:
     def my_function(arg1: NestedV2) -> None:
         """Dummy function."""
 
-    convert_to_openai_function(my_function)
+    actual = convert_to_openai_function(my_function)
+    assert actual["name"] == "my_function"
+    assert "arg1" in actual["parameters"]["properties"]
+    assert actual["parameters"]["properties"]["arg1"]["type"] == "object"
 
 
 def test_convert_to_openai_function_nested() -> None:

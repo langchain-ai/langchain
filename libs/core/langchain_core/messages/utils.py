@@ -1127,6 +1127,49 @@ def merge_message_runs(
     return merged
 
 
+def find_safe_message_cutoff(messages: Sequence[BaseMessage], *, keep: int) -> int:
+    """Find a safe message cutoff index that preserves AI/Tool call pairs.
+
+    Returns the index where ``messages[cutoff:]`` can be retained without splitting
+  an `AIMessage` that issued tool calls from its corresponding `ToolMessage`
+    responses.
+
+    Args:
+        messages: Conversation messages in chronological order.
+        keep: Number of trailing messages to preserve.
+
+    Returns:
+        Cutoff index in ``[0, len(messages)]``. Returns ``0`` when fewer than
+        ``keep`` messages are present.
+    """
+    message_list = list(messages)
+    if len(message_list) <= keep:
+        return 0
+
+    target_cutoff = len(message_list) - keep
+    if target_cutoff >= len(message_list) or not isinstance(
+        message_list[target_cutoff], ToolMessage
+    ):
+        return target_cutoff
+
+    tool_call_ids: set[str] = set()
+    idx = target_cutoff
+    while idx < len(message_list) and isinstance(message_list[idx], ToolMessage):
+        tool_msg = message_list[idx]
+        if tool_msg.tool_call_id:
+            tool_call_ids.add(tool_msg.tool_call_id)
+        idx += 1
+
+    for i in range(target_cutoff - 1, -1, -1):
+        msg = message_list[i]
+        if isinstance(msg, AIMessage) and msg.tool_calls:
+            ai_tool_call_ids = {tc.get("id") for tc in msg.tool_calls if tc.get("id")}
+            if tool_call_ids & ai_tool_call_ids:
+                return i
+
+    return idx
+
+
 # TODO: Update so validation errors (for token_counter, for example) are raised on
 # init not at runtime.
 @_runnable_support

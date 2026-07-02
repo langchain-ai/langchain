@@ -249,7 +249,6 @@ def test_global_cache_batch() -> None:
         set_llm_cache(None)
 
 
-@pytest.mark.xfail(reason="Abstraction does not support caching for streaming yet.")
 def test_global_cache_stream() -> None:
     """Test streaming."""
     global_cache = InMemoryCache()
