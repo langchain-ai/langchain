@@ -1491,7 +1491,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
     )
 
 
-@pytest.mark.xfail(reason="Fix order of callback invocations in RunnableSequence")
+@pytest.mark.asyncio
 async def test_chain_ordering() -> None:
     """Test the event stream with a tool."""
 

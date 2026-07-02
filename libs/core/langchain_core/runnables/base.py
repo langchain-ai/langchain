@@ -3757,20 +3757,48 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         **kwargs: Any,
     ) -> Iterator[Output]:
         steps = [self.first, *self.middle, self.last]
-        # transform the input stream of each step with the next
-        # steps that don't natively support transforming an input stream will
-        # buffer input in memory until all available, and then start emitting output
-        final_pipeline = cast("Iterator[Output]", inputs)
-        for idx, step in enumerate(steps):
-            config = patch_config(
-                config, callbacks=run_manager.get_child(f"seq:step:{idx + 1}")
-            )
-            if idx == 0:
-                final_pipeline = step.transform(final_pipeline, config, **kwargs)
-            else:
-                final_pipeline = step.transform(final_pipeline, config)
+        prefix_count = max(1, len(steps) - 2)
 
-        yield from final_pipeline
+        def _buffered_iterator(
+            step: Runnable[Any, Any],
+            step_input: Iterator[Any],
+            step_config: RunnableConfig,
+            step_kwargs: dict[str, Any],
+        ) -> Iterator[Any]:
+            last: Any = None
+            for chunk in step.transform(step_input, step_config, **step_kwargs):
+                last = chunk
+            if last is not None:
+                yield last
+
+        for input_val in inputs:
+
+            def input_iter(val: Input = input_val) -> Iterator[Input]:
+                yield val
+
+            pipeline = cast("Iterator[Any]", input_iter())
+            for idx in range(prefix_count):
+                step_config = patch_config(
+                    config, callbacks=run_manager.get_child(f"seq:step:{idx + 1}")
+                )
+                step_kwargs = kwargs if idx == 0 else {}
+                pipeline = _buffered_iterator(
+                    steps[idx], pipeline, step_config, step_kwargs
+                )
+
+            final_pipeline = pipeline
+            for idx in range(prefix_count, len(steps)):
+                step_config = patch_config(
+                    config, callbacks=run_manager.get_child(f"seq:step:{idx + 1}")
+                )
+                if idx == 0:
+                    final_pipeline = steps[idx].transform(
+                        final_pipeline, step_config, **kwargs
+                    )
+                else:
+                    final_pipeline = steps[idx].transform(final_pipeline, step_config)
+
+            yield from final_pipeline
 
     async def _atransform(
         self,
@@ -3780,22 +3808,51 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
         steps = [self.first, *self.middle, self.last]
-        # stream the last steps
-        # transform the input stream of each step with the next
-        # steps that don't natively support transforming an input stream will
-        # buffer input in memory until all available, and then start emitting output
-        final_pipeline = cast("AsyncIterator[Output]", inputs)
-        for idx, step in enumerate(steps):
-            config = patch_config(
-                config,
-                callbacks=run_manager.get_child(f"seq:step:{idx + 1}"),
-            )
-            if idx == 0:
-                final_pipeline = step.atransform(final_pipeline, config, **kwargs)
-            else:
-                final_pipeline = step.atransform(final_pipeline, config)
-        async for output in final_pipeline:
-            yield output
+        prefix_count = max(1, len(steps) - 2)
+
+        async def _buffered_aiterator(
+            step: Runnable[Any, Any],
+            step_input: AsyncIterator[Any],
+            step_config: RunnableConfig,
+            step_kwargs: dict[str, Any],
+        ) -> AsyncIterator[Any]:
+            last: Any = None
+            async for chunk in step.atransform(step_input, step_config, **step_kwargs):
+                last = chunk
+            if last is not None:
+                yield last
+
+        async for input_val in inputs:
+
+            async def input_aiter(val: Input = input_val) -> AsyncIterator[Input]:
+                yield val
+
+            pipeline = cast("AsyncIterator[Any]", input_aiter())
+            for idx in range(prefix_count):
+                step_config = patch_config(
+                    config,
+                    callbacks=run_manager.get_child(f"seq:step:{idx + 1}"),
+                )
+                step_kwargs = kwargs if idx == 0 else {}
+                pipeline = _buffered_aiterator(
+                    steps[idx], pipeline, step_config, step_kwargs
+                )
+
+            final_pipeline = pipeline
+            for idx in range(prefix_count, len(steps)):
+                step_config = patch_config(
+                    config,
+                    callbacks=run_manager.get_child(f"seq:step:{idx + 1}"),
+                )
+                if idx == 0:
+                    final_pipeline = steps[idx].atransform(
+                        final_pipeline, step_config, **kwargs
+                    )
+                else:
+                    final_pipeline = steps[idx].atransform(final_pipeline, step_config)
+
+            async for output in final_pipeline:
+                yield output
 
     @override
     def transform(

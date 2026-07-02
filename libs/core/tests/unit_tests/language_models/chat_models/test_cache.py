@@ -267,6 +267,23 @@ def test_global_cache_stream() -> None:
         set_llm_cache(None)
 
 
+async def test_global_cache_astream() -> None:
+    """Test async streaming cache."""
+    global_cache = InMemoryCache()
+    try:
+        set_llm_cache(global_cache)
+        messages = [
+            AIMessage(content="hello world"),
+            AIMessage(content="goodbye world"),
+        ]
+        model = GenericFakeChatModel(messages=iter(messages), cache=True)
+        chunks = [chunk async for chunk in model.astream("some input")]
+        assert len(chunks) == 3
+        assert global_cache._cache != {}
+    finally:
+        set_llm_cache(None)
+
+
 class CustomChat(GenericFakeChatModel):
     @classmethod
     def is_lc_serializable(cls) -> bool:

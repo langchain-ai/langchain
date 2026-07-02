@@ -932,6 +932,35 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if self.rate_limiter:
             await self.rate_limiter.aacquire(blocking=True)
 
+        llm_cache = self.cache if isinstance(self.cache, BaseCache) else get_llm_cache()
+        check_cache = self.cache or self.cache is None
+        cache_prompt: str | None = None
+        cache_llm_string: str | None = None
+        if check_cache and llm_cache is not None:
+            cache_llm_string = self._get_llm_string(stop=stop, **kwargs)
+            normalized_messages = [
+                (
+                    msg.model_copy(update={"id": None})
+                    if getattr(msg, "id", None) is not None
+                    else msg
+                )
+                for msg in messages
+            ]
+            cache_prompt = dumps(normalized_messages)
+            cache_val = llm_cache.lookup(cache_prompt, cache_llm_string)
+            if isinstance(cache_val, list):
+                converted_generations = self._convert_cached_generations(cache_val)
+                if converted_generations:
+                    cached_message = converted_generations[0].message
+                    if isinstance(cached_message, AIMessageChunk):
+                        yield cached_message
+                    else:
+                        yield AIMessageChunk(**cached_message.model_dump())
+                    await run_manager.on_llm_end(
+                        LLMResult(generations=[[converted_generations[0]]])
+                    )
+                    return
+
         chunks: list[ChatGenerationChunk] = []
 
         try:
@@ -1004,6 +1033,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         await run_manager.on_llm_end(
             LLMResult(generations=[[generation]]),
         )
+        if (
+            check_cache
+            and llm_cache is not None
+            and cache_prompt is not None
+            and cache_llm_string is not None
+        ):
+            llm_cache.update(cache_prompt, cache_llm_string, [generation])
 
     # --- stream_events v3 ---
 
