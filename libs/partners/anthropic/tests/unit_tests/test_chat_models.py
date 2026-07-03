@@ -2579,6 +2579,24 @@ def test_tool_search_is_builtin_tool() -> None:
     assert not _is_builtin_tool(regular_tool)
 
 
+def test_advisor_is_builtin_tool() -> None:
+    """Test that the advisor server tool is recognized as a built-in tool.
+
+    Without this, a raw ``advisor_*`` tool dict falls through to
+    ``convert_to_anthropic_tool``, which assumes an OpenAI-style tool shape with a
+    ``parameters`` key and raises ``KeyError: 'parameters'`` on tool specs that don't
+    have one (same failure mode previously hit by ``web_search`` in #31240).
+    """
+    advisor_tool = {
+        "type": "advisor_20260301",
+        "name": "advisor",
+        "model": "claude-sonnet-4-6",
+        "max_uses": 3,
+        "max_tokens": 1024,
+    }
+    assert _is_builtin_tool(advisor_tool)
+
+
 def test_tool_search_beta_headers() -> None:
     """Test that tool search tools auto-append the correct beta headers."""
     # Test regex variant
