@@ -53,6 +53,12 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     model_kwargs: dict | None = None
     """Keyword arguments to pass to the model."""
 
+    bill_to: str | None = None
+    """Organization or billing identifier to pass to Hugging Face Inference API."""
+
+    additional_headers: dict[str, str] | None = None
+    """Additional request headers to send to the Hugging Face Inference API."""
+
     huggingfacehub_api_token: str | None = Field(
         default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
     )
@@ -89,16 +95,24 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
                 self.model = DEFAULT_MODEL
                 self.repo_id = DEFAULT_MODEL
 
+            client_kwargs: dict[str, Any] = {}
+            if self.bill_to is not None:
+                client_kwargs["bill_to"] = self.bill_to
+            if self.additional_headers is not None:
+                client_kwargs["headers"] = self.additional_headers
+
             client = InferenceClient(
                 model=self.model,
                 token=huggingfacehub_api_token,
                 provider=self.provider,  # type: ignore[arg-type]
+                **client_kwargs,
             )
 
             async_client = AsyncInferenceClient(
                 model=self.model,
                 token=huggingfacehub_api_token,
                 provider=self.provider,  # type: ignore[arg-type]
+                **client_kwargs,
             )
 
             if self.task not in VALID_TASKS:
