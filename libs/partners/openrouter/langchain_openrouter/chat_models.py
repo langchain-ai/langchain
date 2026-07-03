@@ -567,6 +567,7 @@ class ChatOpenRouter(BaseChatModel):
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         terminal_generation_info: dict[str, Any] = {}
+        seen_finish_reason = False
         for chunk in self.client.chat.send(messages=message_dicts, **params):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
@@ -595,7 +596,8 @@ class ChatOpenRouter(BaseChatModel):
                 chunk_dict, default_chunk_class
             )
             generation_info: dict[str, Any] = {}
-            if choice.get("finish_reason"):
+            if choice.get("finish_reason") and not seen_finish_reason:
+                seen_finish_reason = True
                 candidate_generation_info = _create_stream_generation_info(
                     chunk_dict, choice, self.model_name
                 )
@@ -650,6 +652,7 @@ class ChatOpenRouter(BaseChatModel):
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         terminal_generation_info: dict[str, Any] = {}
+        seen_finish_reason = False
         async for chunk in await self.client.chat.send_async(
             messages=message_dicts, **params
         ):
@@ -680,7 +683,8 @@ class ChatOpenRouter(BaseChatModel):
                 chunk_dict, default_chunk_class
             )
             generation_info: dict[str, Any] = {}
-            if choice.get("finish_reason"):
+            if choice.get("finish_reason") and not seen_finish_reason:
+                seen_finish_reason = True
                 candidate_generation_info = _create_stream_generation_info(
                     chunk_dict, choice, self.model_name
                 )
