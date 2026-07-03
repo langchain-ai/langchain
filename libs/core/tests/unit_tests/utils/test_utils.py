@@ -129,6 +129,33 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        # Metadata fields should not concatenate when identical (issue #38366)
+        ({"model_name": "gpt-4"}, {"model_name": "gpt-4"}, {"model_name": "gpt-4"}),
+        (
+            {"finish_reason": "stop"},
+            {"finish_reason": "stop"},
+            {"finish_reason": "stop"},
+        ),
+        (
+            {"native_finish_reason": "end_turn"},
+            {"native_finish_reason": "end_turn"},
+            {"native_finish_reason": "end_turn"},
+        ),
+        ({"object": "chat.completion"}, {"object": "chat.completion"}, {"object": "chat.completion"}),
+        (
+            {"system_fingerprint": "fp_abc123"},
+            {"system_fingerprint": "fp_abc123"},
+            {"system_fingerprint": "fp_abc123"},
+        ),
+        ({"format": "json"}, {"format": "json"}, {"format": "json"}),
+        # Differing metadata values should still concatenate (no regression)
+        (
+            {"model_name": "gpt-4"},
+            {"model_name": "-turbo"},
+            {"model_name": "gpt-4-turbo"},
+        ),
+        # Unrelated string fields should still concatenate normally
+        ({"content": "hello"}, {"content": " world"}, {"content": "hello world"}),
     ],
 )
 def test_merge_dicts(
