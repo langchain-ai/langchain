@@ -1591,3 +1591,109 @@ def test_request_timeout_tuple_normalized_to_httpx_timeout(
     assert forwarded.connect == 5.0
     assert forwarded.read == 30.0
     assert async_mock.call_args.kwargs["timeout"] == forwarded
+
+
+@pytest.mark.parametrize(
+    ("llm_outputs", "expected_token_usage"),
+    [
+        pytest.param(
+            [
+                {
+                    "token_usage": {
+                        "prompt_tokens": 32,
+                        "completion_tokens": 51,
+                        "total_tokens": 83,
+                        "prompt_tokens_details": {"cached_tokens": 0},
+                    },
+                    "model_name": MODEL_NAME,
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens": 100,
+                        "completion_tokens": 10,
+                        "total_tokens": 110,
+                        "prompt_tokens_details": {"cached_tokens": 75},
+                    },
+                    "model_name": MODEL_NAME,
+                },
+            ],
+            {
+                "prompt_tokens": 132,
+                "completion_tokens": 61,
+                "total_tokens": 193,
+                "prompt_tokens_details": {"cached_tokens": 75},
+            },
+            id="nested-details-summed",
+        ),
+        pytest.param(
+            [
+                {
+                    "token_usage": {
+                        "prompt_tokens": 32,
+                        "prompt_tokens_details": {"cached_tokens": 5},
+                    },
+                    "model_name": MODEL_NAME,
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens": 10,
+                        "prompt_tokens_details": None,
+                    },
+                    "model_name": MODEL_NAME,
+                },
+            ],
+            {
+                "prompt_tokens": 42,
+                "prompt_tokens_details": {"cached_tokens": 5},
+            },
+            id="none-value-skipped",
+        ),
+        pytest.param(
+            [
+                None,
+                {
+                    "token_usage": {"prompt_tokens": 7, "completion_tokens": 3},
+                    "model_name": MODEL_NAME,
+                },
+            ],
+            {"prompt_tokens": 7, "completion_tokens": 3},
+            id="none-output-from-streaming-skipped",
+        ),
+        pytest.param(
+            [
+                {
+                    "token_usage": {"prompt_tokens": 1},
+                    "model_name": MODEL_NAME,
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens": 2,
+                        "completion_tokens_details": {"reasoning_tokens": 4},
+                    },
+                    "model_name": MODEL_NAME,
+                },
+            ],
+            {
+                "prompt_tokens": 3,
+                "completion_tokens_details": {"reasoning_tokens": 4},
+            },
+            id="key-first-seen-in-later-output",
+        ),
+    ],
+)
+def test_combine_llm_outputs_merges_nested_token_usage(
+    llm_outputs: list[dict[str, Any] | None],
+    expected_token_usage: dict[str, Any],
+) -> None:
+    """Nested usage dicts (e.g. `prompt_tokens_details`) must merge, not crash.
+
+    Fireworks responses include nested dicts in `usage` such as
+    `prompt_tokens_details: {"cached_tokens": ...}`; naive `+=` on those
+    raised `TypeError: unsupported operand type(s) for +=: 'dict' and 'dict'`.
+    """
+    llm = ChatFireworks(model=MODEL_NAME, api_key="fake-key")  # type: ignore[arg-type]
+
+    combined = llm._combine_llm_outputs(llm_outputs)
+
+    assert combined["token_usage"] == expected_token_usage
+    assert combined["model_name"] == MODEL_NAME

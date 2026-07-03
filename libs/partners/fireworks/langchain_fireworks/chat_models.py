@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -403,6 +404,34 @@ def _usage_to_metadata(usage: Mapping[str, Any]) -> dict[str, int]:
         "output_tokens": output_tokens,
         "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
     }
+
+
+def _update_token_usage(
+    overall_token_usage: int | dict, new_usage: int | dict
+) -> int | dict:
+    # Token usage is either ints or dictionaries;
+    # e.g. `cached_tokens` is nested inside `prompt_tokens_details`.
+    if isinstance(new_usage, int):
+        if not isinstance(overall_token_usage, int):
+            msg = (
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+            raise ValueError(msg)
+        return new_usage + overall_token_usage
+    if isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            msg = (
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+            raise ValueError(msg)
+        return {
+            k: _update_token_usage(overall_token_usage.get(k, 0), v)
+            for k, v in new_usage.items()
+        }
+    warnings.warn(f"Unexpected type for token usage: {type(new_usage)}")
+    return new_usage
 
 
 def _convert_chunk_to_message_chunk(
@@ -963,8 +992,12 @@ class ChatFireworks(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
+                    if v is None:
+                        continue
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
