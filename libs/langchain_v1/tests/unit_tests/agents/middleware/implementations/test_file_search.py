@@ -190,6 +190,19 @@ class TestFilesystemGlobSearch:
         assert "/src/file1.py" in result
         assert "/other/file2.py" not in result
 
+    def test_glob_allows_path_segments_containing_double_dots(self, tmp_path: Path) -> None:
+        """Test glob search with normal path segments that contain double dots."""
+        (tmp_path / "src..old").mkdir()
+        (tmp_path / "src..old" / "file.py").write_text("content", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.py", path="/src..old")
+
+        assert result == "/src..old/file.py"
+
     def test_glob_no_matches(self, tmp_path: Path) -> None:
         """Test glob search with no matches."""
         (tmp_path / "file.txt").write_text("content", encoding="utf-8")
