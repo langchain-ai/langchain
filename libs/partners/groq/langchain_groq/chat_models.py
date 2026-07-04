@@ -1289,7 +1289,7 @@ class ChatGroq(BaseChatModel):
 
 def _update_token_usage(
     overall_token_usage: float | dict, new_usage: float | dict
-) -> int | float | dict:
+) -> float | dict:
     # Token usage values are either numbers (including float timings such as
     # `queue_time`) or nested dicts, e.g. `cached_tokens` inside
     # `input_tokens_details`.
