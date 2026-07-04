@@ -1,5 +1,5 @@
 from typing import Any
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import ANY, MagicMock, Mock, patch
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
@@ -9,14 +9,14 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatResult, Generation, LLMResult
 from langchain_core.tools import BaseTool
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
     _convert_dict_to_message,
 )
-from langchain_huggingface.llms import HuggingFaceEndpoint
+from langchain_huggingface.llms import HuggingFaceEndpoint, HuggingFacePipeline
 
 
 @pytest.fixture
@@ -100,6 +100,57 @@ def test_to_chat_prompt_valid_messages(chat_hugging_face: Any) -> None:
         ],
         tokenize=False,
         add_generation_prompt=True,
+    )
+
+
+def test_bind_tools_passes_tools_to_pipeline_chat_template() -> None:
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get the weather.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "The city and state.",
+                        }
+                    },
+                    "required": ["location"],
+                },
+            },
+        }
+    ]
+    expected_prompt = "Generated tool prompt"
+
+    tokenizer = MagicMock()
+    tokenizer.apply_chat_template.return_value = expected_prompt
+    llm = Mock(spec=HuggingFacePipeline)
+    llm.model_id = "test/model"
+    llm.model_kwargs = {}
+    llm._generate.return_value = LLMResult(
+        generations=[[Generation(text="tool result")]], llm_output={}
+    )
+
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
+    ):
+        chat = ChatHuggingFace(llm=llm, tokenizer=tokenizer)
+    chat_with_tools = chat.bind_tools(tools)
+
+    result = chat_with_tools.invoke([HumanMessage(content="What is the weather?")])
+
+    assert result.content == "tool result"
+    tokenizer.apply_chat_template.assert_called_once_with(
+        [{"role": "user", "content": "What is the weather?"}],
+        tokenize=False,
+        add_generation_prompt=True,
+        tools=tools,
+    )
+    llm._generate.assert_called_once_with(
+        prompts=[expected_prompt], stop=None, run_manager=ANY
     )
 
 

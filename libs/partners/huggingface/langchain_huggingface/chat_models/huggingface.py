@@ -754,7 +754,8 @@ class ChatHuggingFace(BaseChatModel):
             }
             answer = self.llm.client.chat_completion(messages=message_dicts, **params)
             return self._create_chat_result(answer)
-        llm_input = self._to_chat_prompt(messages)
+        tools = kwargs.pop("tools", None)
+        llm_input = self._to_chat_prompt(messages, tools=tools)
 
         if should_stream:
             stream_iter = self.llm._stream(
@@ -799,7 +800,8 @@ class ChatHuggingFace(BaseChatModel):
         if _is_huggingface_pipeline(self.llm):
             msg = "async generation is not supported with HuggingFacePipeline"
             raise NotImplementedError(msg)
-        llm_input = self._to_chat_prompt(messages)
+        tools = kwargs.pop("tools", None)
+        llm_input = self._to_chat_prompt(messages, tools=tools)
         llm_result = await self.llm._agenerate(
             prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
         )
@@ -882,7 +884,8 @@ class ChatHuggingFace(BaseChatModel):
                     )
                 yield generation_chunk
         else:
-            llm_input = self._to_chat_prompt(messages)
+            tools = kwargs.pop("tools", None)
+            llm_input = self._to_chat_prompt(messages, tools=tools)
             stream_iter = self.llm._stream(
                 llm_input, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -952,6 +955,8 @@ class ChatHuggingFace(BaseChatModel):
     def _to_chat_prompt(
         self,
         messages: list[BaseMessage],
+        *,
+        tools: list[dict[str, Any]] | None = None,
     ) -> str:
         """Convert a list of messages into a prompt format expected by wrapped LLM."""
         if not messages:
@@ -964,9 +969,14 @@ class ChatHuggingFace(BaseChatModel):
 
         messages_dicts = [self._to_chatml_format(m) for m in messages]
 
-        return self.tokenizer.apply_chat_template(
-            messages_dicts, tokenize=False, add_generation_prompt=True
-        )
+        template_kwargs: dict[str, Any] = {
+            "tokenize": False,
+            "add_generation_prompt": True,
+        }
+        if tools:
+            template_kwargs["tools"] = tools
+
+        return self.tokenizer.apply_chat_template(messages_dicts, **template_kwargs)
 
     def _to_chatml_format(self, message: BaseMessage) -> dict:
         """Convert LangChain message to ChatML format."""
