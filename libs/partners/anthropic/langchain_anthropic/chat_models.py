@@ -5,10 +5,18 @@ from __future__ import annotations
 import copy
 import datetime
 import hashlib
+import inspect
 import json
 import re
 import warnings
-from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from functools import cached_property
 from operator import itemgetter
 from typing import Any, Final, Literal, cast
@@ -956,11 +964,25 @@ class ChatAnthropic(BaseChatModel):
     `ANTHROPIC_API_URL` and if that is not set, `ANTHROPIC_BASE_URL`.
     """
 
-    anthropic_api_key: SecretStr = Field(
+    anthropic_api_key: (
+        SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
+    ) = Field(
         alias="api_key",
         default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
     )
-    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
+    """API key to use.
+
+    Can be inferred from the `ANTHROPIC_API_KEY` environment variable, specified
+    as a string, or provided as a sync or async callable that returns a string.
+    Callable keys are refreshed before each request.
+    """
+
+    auth_token_provider: Callable[[], str] | Callable[[], Awaitable[str]] | None = None
+    """Bearer token provider for Anthropic-compatible gateways.
+
+    When set, the callable is invoked before each request and the returned token
+    is sent through the Anthropic SDK's `Authorization: Bearer <token>` auth path.
+    """
 
     anthropic_proxy: str | None = Field(
         default_factory=from_env("ANTHROPIC_PROXY", default=None)
@@ -1182,6 +1204,62 @@ class ChatAnthropic(BaseChatModel):
             profile["max_input_tokens"] = 1_000_000
         return profile
 
+    def _static_api_key(self) -> str | None:
+        if isinstance(self.anthropic_api_key, SecretStr):
+            return self.anthropic_api_key.get_secret_value()
+        if self.anthropic_api_key is None or callable(self.anthropic_api_key):
+            return None
+        return cast(str, self.anthropic_api_key)
+
+    def _resolve_sync_auth_value(
+        self,
+        provider: Callable[[], str] | Callable[[], Awaitable[str]],
+        field_name: str,
+    ) -> str:
+        value = provider()
+        if inspect.isawaitable(value):
+            close = getattr(value, "close", None)
+            if close is not None:
+                close()
+            msg = (
+                f"Async {field_name} providers cannot be used with sync "
+                "ChatAnthropic invocations. Use async methods or provide a sync "
+                "callable."
+            )
+            raise ValueError(msg)
+        return cast(str, value)
+
+    async def _resolve_async_auth_value(
+        self,
+        provider: Callable[[], str] | Callable[[], Awaitable[str]],
+    ) -> str:
+        value = provider()
+        if inspect.isawaitable(value):
+            return cast(str, await value)
+        return cast(str, value)
+
+    def _refresh_sync_auth(self, client: anthropic.Client) -> None:
+        if callable(self.anthropic_api_key):
+            client.api_key = self._resolve_sync_auth_value(
+                self.anthropic_api_key,
+                "api_key",
+            )
+        if self.auth_token_provider is not None:
+            client.auth_token = self._resolve_sync_auth_value(
+                self.auth_token_provider,
+                "auth_token_provider",
+            )
+
+    async def _refresh_async_auth(self, client: anthropic.AsyncClient) -> None:
+        if callable(self.anthropic_api_key):
+            client.api_key = await self._resolve_async_auth_value(
+                self.anthropic_api_key
+            )
+        if self.auth_token_provider is not None:
+            client.auth_token = await self._resolve_async_auth_value(
+                self.auth_token_provider
+            )
+
     @cached_property
     def _client_params(self) -> dict[str, Any]:
         # Merge User-Agent with user-provided headers (user headers take precedence)
@@ -1190,11 +1268,12 @@ class ChatAnthropic(BaseChatModel):
             default_headers.update(self.default_headers)
 
         client_params: dict[str, Any] = {
-            "api_key": self.anthropic_api_key.get_secret_value(),
             "base_url": self.anthropic_api_url,
             "max_retries": self.max_retries,
             "default_headers": default_headers,
         }
+        if (api_key := self._static_api_key()) is not None:
+            client_params["api_key"] = api_key
         # value <= 0 indicates the param should be ignored. None is a meaningful value
         # for Anthropic client and treated differently than not specifying the param at
         # all.
@@ -1428,11 +1507,13 @@ class ChatAnthropic(BaseChatModel):
         return {k: v for k, v in payload.items() if v is not None}
 
     def _create(self, payload: dict) -> Any:
+        self._refresh_sync_auth(self._client)
         if "betas" in payload:
             return self._client.beta.messages.create(**payload)
         return self._client.messages.create(**payload)
 
     async def _acreate(self, payload: dict) -> Any:
+        await self._refresh_async_auth(self._async_client)
         if "betas" in payload:
             return await self._async_client.beta.messages.create(**payload)
         return await self._async_client.messages.create(**payload)
@@ -2206,6 +2287,7 @@ class ChatAnthropic(BaseChatModel):
             kwargs["context_management"] = self.context_management
 
         if self.betas is not None:
+            self._refresh_sync_auth(self._client)
             beta_response = self._client.beta.messages.count_tokens(
                 betas=self.betas,
                 model=self.model,
@@ -2213,6 +2295,7 @@ class ChatAnthropic(BaseChatModel):
                 **kwargs,
             )
             return beta_response.input_tokens
+        self._refresh_sync_auth(self._client)
         response = self._client.messages.count_tokens(
             model=self.model,
             messages=formatted_messages,  # type: ignore[arg-type]

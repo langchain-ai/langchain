@@ -7,7 +7,7 @@ import os
 import warnings
 from collections.abc import Callable
 from typing import Any, Literal, cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import anthropic
 import pytest
@@ -74,6 +74,82 @@ def test_user_agent_header_in_client_params() -> None:
     assert "default_headers" in params
     assert "User-Agent" in params["default_headers"]
     assert params["default_headers"]["User-Agent"].startswith("langchain-anthropic/")
+
+
+def test_callable_api_key_refreshes_before_sync_request() -> None:
+    """Test that sync API key callables are resolved for each request."""
+    tokens = iter(["token-1", "token-2"])
+
+    def api_key_provider() -> str:
+        return next(tokens)
+
+    llm = ChatAnthropic(model=MODEL_NAME, api_key=api_key_provider)  # type: ignore[arg-type]
+    client = llm._client
+    client.messages.create = MagicMock(return_value="ok")  # type: ignore[method-assign]
+
+    assert llm._create({}) == "ok"
+    assert client.api_key == "token-1"
+
+    assert llm._create({}) == "ok"
+    assert client.api_key == "token-2"
+
+
+def test_auth_token_provider_refreshes_before_sync_request() -> None:
+    """Test that bearer token providers refresh the SDK auth token."""
+    expected_values = ["bearer-1", "bearer-2"]
+    tokens = iter(expected_values)
+
+    def auth_token_provider() -> str:
+        return next(tokens)
+
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key=None,
+        auth_token_provider=auth_token_provider,
+    )
+    client = llm._client
+    client.messages.create = MagicMock(return_value="ok")  # type: ignore[method-assign]
+
+    assert llm._create({}) == "ok"
+    assert client.auth_token == expected_values[0]
+    assert client.auth_headers["Authorization"] == f"Bearer {expected_values[0]}"
+
+    assert llm._create({}) == "ok"
+    assert client.auth_token == expected_values[1]
+    assert client.auth_headers["Authorization"] == f"Bearer {expected_values[1]}"
+
+
+@pytest.mark.asyncio
+async def test_async_callable_api_key_refreshes_before_async_request() -> None:
+    """Test that async API key callables are resolved for async requests."""
+    calls = 0
+
+    async def api_key_provider() -> str:
+        nonlocal calls
+        calls += 1
+        return f"async-token-{calls}"
+
+    llm = ChatAnthropic(model=MODEL_NAME, api_key=api_key_provider)  # type: ignore[arg-type]
+    client = llm._async_client
+    client.messages.create = AsyncMock(return_value="ok")  # type: ignore[method-assign]
+
+    assert await llm._acreate({}) == "ok"
+    assert client.api_key == "async-token-1"
+
+    assert await llm._acreate({}) == "ok"
+    assert client.api_key == "async-token-2"
+
+
+def test_async_callable_api_key_fails_for_sync_request() -> None:
+    """Test that sync requests fail clearly for async-only API key callables."""
+
+    async def api_key_provider() -> str:
+        return "async-token"
+
+    llm = ChatAnthropic(model=MODEL_NAME, api_key=api_key_provider)  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="Async api_key providers"):
+        llm._create({})
 
 
 @pytest.mark.parametrize("async_api", [True, False])
