@@ -121,8 +121,8 @@ def merge_lists(left: list[Any] | None, *others: list[Any] | None) -> list[Any] 
                             "index" in e_left
                             and e_left["index"] == e["index"]  # index matches
                             and (  # IDs not inconsistent
-                                e_left.get("id") in (None, "")
-                                or e.get("id") in (None, "")
+                                e_left.get("id") in {None, ""}
+                                or e.get("id") in {None, ""}
                                 or e_left.get("id") == e.get("id")
                             )
                         )
