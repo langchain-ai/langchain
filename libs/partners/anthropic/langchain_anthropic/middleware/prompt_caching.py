@@ -39,14 +39,17 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
 
     Requires both `langchain` and `langchain-anthropic` packages to be installed.
 
-    Applies cache control breakpoints to:
+    The middleware tags stable agent content and passes `cache_control` through
+    `model_settings`:
 
     - **System message**: Tags the last content block of the system message
         with `cache_control` so static system prompt content is cached.
-    - **Tools**: Tags all tool definitions with `cache_control` so tool
-        schemas are cached across turns.
-    - **Last cacheable block**: Tags last cacheable block of message sequence using
-        Anthropic's automatic caching feature.
+    - **Tools**: Tags the last tool definition with `cache_control`. Because
+        tool definitions are sent as one contiguous block, a single trailing
+        breakpoint caches the entire tool set across turns.
+    - **`model_settings`**: Passes `cache_control` to the chat model. The chat
+        model/provider then applies the correct message-tail and
+        provider-specific behavior at request time.
 
     Learn more about Anthropic prompt caching
     [here](https://platform.claude.com/docs/en/build-with-claude/prompt-caching).

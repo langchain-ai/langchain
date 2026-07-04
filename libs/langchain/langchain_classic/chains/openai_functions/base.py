@@ -107,7 +107,7 @@ def create_openai_fn_chain(
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
 
-        model = ChatOpenAI(model="gpt-4", temperature=0)
+        model = ChatOpenAI(model="gpt-5.5", temperature=0)
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", "You are a world class algorithm for recording entities."),
@@ -191,7 +191,7 @@ def create_structured_output_chain(
             color: str = Field(..., description="The dog's color")
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
-        model = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
+        model = ChatOpenAI(model="gpt-5.5", temperature=0)
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", "You are a world class algorithm for extracting information in structured formats."),

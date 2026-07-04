@@ -19,7 +19,7 @@ class StrOutputParser(BaseTransformOutputParser[str]):
         from langchain_core.output_parsers import StrOutputParser
         from langchain_openai import ChatOpenAI
 
-        model = ChatOpenAI(model="gpt-4o")
+        model = ChatOpenAI(model="openai:gpt-5.5")
         parser = StrOutputParser()
 
         # Get string output from a model

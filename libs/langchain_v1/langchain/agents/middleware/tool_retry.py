@@ -352,8 +352,7 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
 
         Args:
             request: Tool call request with call `dict`, `BaseTool`, state, and runtime.
-            handler: Async callable to execute the tool and returns `ToolMessage` or
-                `Command`.
+            handler: Async callable to execute the tool and returns `ToolMessage` or `Command`.
 
         Returns:
             `ToolMessage` or `Command` (the final result).

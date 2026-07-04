@@ -13,6 +13,7 @@ from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    InputAgentState,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
@@ -76,16 +77,19 @@ def test_middleware_can_modify_tools() -> None:
     @tool
     def tool_a(value: str) -> str:
         """Tool A."""
+        _ = value
         return "A"
 
     @tool
     def tool_b(value: str) -> str:
         """Tool B."""
+        _ = value
         return "B"
 
     @tool
     def tool_c(value: str) -> str:
         """Tool C."""
+        _ = value
         return "C"
 
     class ToolFilteringMiddleware(AgentMiddleware):
@@ -129,11 +133,13 @@ def test_unknown_tool_raises_error() -> None:
     @tool
     def known_tool(value: str) -> str:
         """A known tool."""
+        _ = value
         return "result"
 
     @tool
     def unknown_tool(value: str) -> str:
         """An unknown tool not passed to create_agent."""
+        _ = value
         return "unknown"
 
     class BadMiddleware(AgentMiddleware):
@@ -175,6 +181,9 @@ def test_middleware_can_add_and_remove_tools() -> None:
     class AdminState(AgentState[Any]):
         is_admin: bool
 
+    class AdminInputState(InputAgentState):
+        is_admin: bool
+
     class ConditionalToolMiddleware(AgentMiddleware[AdminState]):
         state_schema = AdminState
 
@@ -204,11 +213,11 @@ def test_middleware_can_add_and_remove_tools() -> None:
 
     # Test non-admin user - should not have access to admin_tool
     # We can't directly inspect the bound model, but we can verify the agent runs
-    result = agent.invoke({"messages": [HumanMessage("Hello")], "is_admin": False})
+    result = agent.invoke(AdminInputState(messages=[HumanMessage("Hello")], is_admin=False))
     assert "messages" in result
 
     # Test admin user - should have access to all tools
-    result = agent.invoke({"messages": [HumanMessage("Hello")], "is_admin": True})
+    result = agent.invoke(AdminInputState(messages=[HumanMessage("Hello")], is_admin=True))
     assert "messages" in result
 
 
@@ -218,6 +227,7 @@ def test_empty_tools_list_is_valid() -> None:
     @tool
     def some_tool(value: str) -> str:
         """Some tool."""
+        _ = value
         return "result"
 
     class NoToolsMiddleware(AgentMiddleware):
@@ -251,16 +261,19 @@ def test_tools_preserved_across_multiple_middleware() -> None:
     @tool
     def tool_a(value: str) -> str:
         """Tool A."""
+        _ = value
         return "A"
 
     @tool
     def tool_b(value: str) -> str:
         """Tool B."""
+        _ = value
         return "B"
 
     @tool
     def tool_c(value: str) -> str:
         """Tool C."""
+        _ = value
         return "C"
 
     class FirstMiddleware(AgentMiddleware):
@@ -324,11 +337,13 @@ def test_middleware_with_additional_tools() -> None:
     @tool
     def base_tool(value: str) -> str:
         """Base tool."""
+        _ = value
         return "base"
 
     @tool
     def middleware_tool(value: str) -> str:
         """Tool provided by middleware."""
+        _ = value
         return "middleware"
 
     class ToolProvidingMiddleware(AgentMiddleware):
@@ -366,13 +381,14 @@ def test_tool_node_not_accepted() -> None:
     @tool
     def some_tool(value: str) -> str:
         """Some tool."""
+        _ = value
         return "result"
 
     tool_node = ToolNode([some_tool])
 
     with pytest.raises(TypeError, match="'ToolNode' object is not iterable"):
-        create_agent(
+        create_agent(  # type: ignore[call-overload]
             model=FakeToolCallingModel(),
-            tools=tool_node,  # type: ignore[arg-type]
+            tools=tool_node,
             system_prompt="You are a helpful assistant.",
         )

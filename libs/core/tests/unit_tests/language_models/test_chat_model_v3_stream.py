@@ -1,4 +1,4 @@
-"""Tests for stream_v2 / astream_v2 and ChatModelStream."""
+"""Tests for `stream_events(version="v3")` (sync + async) and `ChatModelStream`."""
 
 from __future__ import annotations
 
@@ -133,7 +133,7 @@ class TestChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="Hello"),
+                delta={"type": "text-delta", "text": "Hello"},
             )
         )
         assert stream._text_acc == "Hello"
@@ -144,9 +144,7 @@ class TestChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=ReasoningContentBlock(
-                    type="reasoning", reasoning="think"
-                ),
+                delta={"type": "reasoning-delta", "reasoning": "think"},
             )
         )
         assert stream._reasoning_acc == "think"
@@ -157,7 +155,7 @@ class TestChatModelStream:
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=ToolCall(
+                content=ToolCall(
                     type="tool_call",
                     id="tc1",
                     name="search",
@@ -170,7 +168,8 @@ class TestChatModelStream:
 
     def test_finish(self) -> None:
         stream = ChatModelStream()
-        assert not stream.done
+        done = stream.done
+        assert not done
         usage = UsageInfo(input_tokens=10, output_tokens=5, total_tokens=15)
         stream._finish(MessageFinishData(event="message-finish", usage=usage))
         assert stream.done
@@ -188,12 +187,12 @@ class TestChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="Hi"),
+                delta={"type": "text-delta", "text": "Hi"},
             ),
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text=" there"),
+                delta={"type": "text-delta", "text": " there"},
             ),
         ]
         finish = MessageFinishData(event="message-finish")
@@ -228,14 +227,14 @@ class TestAsyncChatModelStream:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="Hello"),
+                delta={"type": "text-delta", "text": "Hello"},
             )
         )
         stream._push_content_block_delta(
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text=" world"),
+                delta={"type": "text-delta", "text": " world"},
             )
         )
         stream._finish(MessageFinishData(event="message-finish"))
@@ -253,7 +252,7 @@ class TestAsyncChatModelStream:
                 ContentBlockDeltaData(
                     event="content-block-delta",
                     index=0,
-                    content_block=TextContentBlock(type="text", text="a"),
+                    delta={"type": "text-delta", "text": "a"},
                 )
             )
             await asyncio.sleep(0)
@@ -261,7 +260,7 @@ class TestAsyncChatModelStream:
                 ContentBlockDeltaData(
                     event="content-block-delta",
                     index=0,
-                    content_block=TextContentBlock(type="text", text="b"),
+                    delta={"type": "text-delta", "text": "b"},
                 )
             )
             await asyncio.sleep(0)
@@ -279,7 +278,7 @@ class TestAsyncChatModelStream:
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=ToolCall(
+                content=ToolCall(
                     type="tool_call",
                     id="tc1",
                     name="search",
@@ -303,20 +302,20 @@ class TestAsyncChatModelStream:
 
 
 class TestStreamV2:
-    """Test BaseChatModel.stream_v2() with FakeListChatModel."""
+    """Test `BaseChatModel.stream_events(version="v3")` with `FakeListChatModel`."""
 
-    def test_stream_v2_text(self) -> None:
+    def test_stream_events_v3_text(self) -> None:
         model = FakeListChatModel(responses=["Hello world!"])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
 
         assert isinstance(stream, ChatModelStream)
         deltas = list(stream.text)
         assert "".join(deltas) == "Hello world!"
         assert stream.done
 
-    def test_stream_v2_usage(self) -> None:
+    def test_stream_events_v3_usage(self) -> None:
         model = FakeListChatModel(responses=["Hi"])
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
 
         # Drain stream
         for _ in stream.text:
@@ -325,10 +324,12 @@ class TestStreamV2:
         assert stream.output.usage_metadata is None
         assert stream.done
 
-    def test_stream_v2_malformed_tool_args_produce_invalid_tool_call(self) -> None:
+    def test_stream_events_v3_malformed_tool_args_produce_invalid_tool_call(
+        self,
+    ) -> None:
         """End-to-end: malformed tool-call JSON becomes invalid_tool_calls."""
         model = _MalformedToolCallModel()
-        stream = model.stream_v2("test")
+        stream = model.stream_events("test", version="v3")
         msg = stream.output
 
         assert msg.tool_calls == []
@@ -338,10 +339,12 @@ class TestStreamV2:
         assert itc["args"] == '{"q": '
         assert itc["id"] == "call_1"
 
-    def test_stream_v2_translates_anthropic_server_tool_use_to_protocol(self) -> None:
+    def test_stream_events_v3_translates_anthropic_server_tool_use_to_protocol(
+        self,
+    ) -> None:
         """Phase E end-to-end: server_tool_use becomes server_tool_call in output."""
         model = _AnthropicStyleServerToolModel()
-        stream = model.stream_v2("weather?")
+        stream = model.stream_events("weather?", version="v3")
         msg = stream.output
 
         assert isinstance(msg.content, list)
@@ -355,21 +358,21 @@ class TestStreamV2:
 
 
 class TestAstreamV2:
-    """Test BaseChatModel.astream_v2() with FakeListChatModel."""
+    """Test `BaseChatModel.astream_events(version="v3")` with `FakeListChatModel`."""
 
     @pytest.mark.asyncio
-    async def test_astream_v2_text(self) -> None:
+    async def test_astream_events_v3_text(self) -> None:
         model = FakeListChatModel(responses=["Hello!"])
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
 
         assert isinstance(stream, AsyncChatModelStream)
         full = await stream.text
         assert full == "Hello!"
 
     @pytest.mark.asyncio
-    async def test_astream_v2_deltas(self) -> None:
+    async def test_astream_events_v3_deltas(self) -> None:
         model = FakeListChatModel(responses=["Hi"])
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
 
         deltas = [d async for d in stream.text]
         assert "".join(deltas) == "Hi"
@@ -391,14 +394,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="A"),
+                delta={"type": "text-delta", "text": "A"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=TextContentBlock(type="text", text="A"),
+                content=TextContentBlock(type="text", text="A"),
             )
         )
         # Block 1: "B"
@@ -406,14 +409,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=1,
-                content_block=TextContentBlock(type="text", text="B"),
+                delta={"type": "text-delta", "text": "B"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=1,
-                content_block=TextContentBlock(type="text", text="B"),
+                content=TextContentBlock(type="text", text="B"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
@@ -437,14 +440,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=ReasoningContentBlock(type="reasoning", reasoning="one"),
+                delta={"type": "reasoning-delta", "reasoning": "one"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=ReasoningContentBlock(type="reasoning", reasoning="one"),
+                content=ReasoningContentBlock(type="reasoning", reasoning="one"),
             )
         )
         # Block 1: "two"
@@ -452,14 +455,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=1,
-                content_block=ReasoningContentBlock(type="reasoning", reasoning="two"),
+                delta={"type": "reasoning-delta", "reasoning": "two"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=1,
-                content_block=ReasoningContentBlock(type="reasoning", reasoning="two"),
+                content=ReasoningContentBlock(type="reasoning", reasoning="two"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
@@ -484,14 +487,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="hel"),
+                delta={"type": "text-delta", "text": "hel"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=TextContentBlock(type="text", text="hello"),
+                content=TextContentBlock(type="text", text="hello"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
@@ -522,7 +525,7 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="aaa"),
+                delta={"type": "text-delta", "text": "aaa"},
             )
         )
         # Block 1 streams deltas before block 0 finishes.
@@ -530,7 +533,7 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=1,
-                content_block=TextContentBlock(type="text", text="bb"),
+                delta={"type": "text-delta", "text": "bb"},
             )
         )
         # Block 0 finishes with authoritative text different from deltas.
@@ -538,14 +541,14 @@ class TestPerBlockAccumulation:
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=TextContentBlock(type="text", text="XXX"),
+                content=TextContentBlock(type="text", text="XXX"),
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=1,
-                content_block=TextContentBlock(type="text", text="bb"),
+                content=TextContentBlock(type="text", text="bb"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
@@ -568,16 +571,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=ReasoningContentBlock(type="reasoning", reasoning="thi"),
+                delta={"type": "reasoning-delta", "reasoning": "thi"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=ReasoningContentBlock(
-                    type="reasoning", reasoning="thinking"
-                ),
+                content=ReasoningContentBlock(type="reasoning", reasoning="thinking"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
@@ -598,14 +599,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=0,
-                content_block=TextContentBlock(type="text", text="before"),
+                delta={"type": "text-delta", "text": "before"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=0,
-                content_block=TextContentBlock(type="text", text="before"),
+                content=TextContentBlock(type="text", text="before"),
             )
         )
         # Block 1: tool_call
@@ -613,7 +614,7 @@ class TestPerBlockAccumulation:
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=1,
-                content_block=ToolCall(
+                content=ToolCall(
                     type="tool_call",
                     id="tc1",
                     name="search",
@@ -626,14 +627,14 @@ class TestPerBlockAccumulation:
             ContentBlockDeltaData(
                 event="content-block-delta",
                 index=2,
-                content_block=TextContentBlock(type="text", text="after"),
+                delta={"type": "text-delta", "text": "after"},
             )
         )
         stream.dispatch(
             ContentBlockFinishData(
                 event="content-block-finish",
                 index=2,
-                content_block=TextContentBlock(type="text", text="after"),
+                content=TextContentBlock(type="text", text="after"),
             )
         )
         stream.dispatch(MessageFinishData(event="message-finish"))
@@ -694,33 +695,34 @@ class TestStructuredOutputKwargStripping:
 
     `stream()` / `astream()` pop `ls_structured_output_format` and
     `structured_output_format` before forwarding kwargs to `_stream` —
-    provider clients reject unknown kwargs. `stream_v2` / `astream_v2`
-    must do the same, or `.with_structured_output().stream_v2()` breaks.
+    provider clients reject unknown kwargs. `stream_events(version="v3")` /
+    `astream_events(version="v3")` must do the same, or
+    `.with_structured_output().stream_events(version="v3")` breaks.
     """
 
-    def test_stream_v2_strips_ls_structured_output_format(self) -> None:
+    def test_stream_events_v3_strips_ls_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(ls_structured_output_format={"schema": {"type": "object"}})
-        stream = bound.stream_v2("test")
-        _ = stream.output  # drain
+        stream = bound.stream_events("test", version="v3")
+        _ = stream.output
         recorded = _RecordingStreamModel.last_stream_kwargs
         assert "ls_structured_output_format" not in recorded
         assert "structured_output_format" not in recorded
 
-    def test_stream_v2_strips_structured_output_format(self) -> None:
+    def test_stream_events_v3_strips_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(structured_output_format={"schema": {"type": "object"}})
-        stream = bound.stream_v2("test")
+        stream = bound.stream_events("test", version="v3")
         _ = stream.output
         recorded = _RecordingStreamModel.last_stream_kwargs
         assert "ls_structured_output_format" not in recorded
         assert "structured_output_format" not in recorded
 
     @pytest.mark.asyncio
-    async def test_astream_v2_strips_ls_structured_output_format(self) -> None:
+    async def test_astream_events_v3_strips_ls_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(ls_structured_output_format={"schema": {"type": "object"}})
-        stream = await bound.astream_v2("test")
+        stream = await bound.astream_events("test", version="v3")
         _ = await stream
         assert (
             "ls_structured_output_format"
@@ -731,10 +733,10 @@ class TestStructuredOutputKwargStripping:
         )
 
     @pytest.mark.asyncio
-    async def test_astream_v2_strips_structured_output_format(self) -> None:
+    async def test_astream_events_v3_strips_structured_output_format(self) -> None:
         model = _RecordingStreamModel()
         bound = model.bind(structured_output_format={"schema": {"type": "object"}})
-        stream = await bound.astream_v2("test")
+        stream = await bound.astream_events("test", version="v3")
         _ = await stream
         assert (
             "ls_structured_output_format"
@@ -849,7 +851,7 @@ class TestAsyncStreamAclose:
     async def test_aclose_cancels_producer_task(self) -> None:
         gate = asyncio.Event()
         model = _GatedStreamModel(gate=gate)
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
 
         # Pull the first delta so the producer enters the gated section.
         aiter_ = stream.text.__aiter__()
@@ -867,7 +869,7 @@ class TestAsyncStreamAclose:
     async def test_aclose_is_idempotent(self) -> None:
         gate = asyncio.Event()
         model = _GatedStreamModel(gate=gate)
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
         aiter_ = stream.text.__aiter__()
         await aiter_.__anext__()
 
@@ -878,7 +880,7 @@ class TestAsyncStreamAclose:
     async def test_async_context_manager_closes_stream(self) -> None:
         gate = asyncio.Event()
         model = _GatedStreamModel(gate=gate)
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
 
         async with stream as s:
             assert s is stream
@@ -901,7 +903,7 @@ class TestAsyncStreamAclose:
         """
         teardown_gate = asyncio.Event()
         model = _SlowTeardownModel(teardown_gate=teardown_gate)
-        stream = await model.astream_v2("test")
+        stream = await model.astream_events("test", version="v3")
 
         # Prime the producer so it enters `_astream`'s forever-blocking
         # await.
@@ -951,7 +953,7 @@ class TestAsyncStreamAclose:
     async def test_aclose_before_producer_starts_resolves_projections(self) -> None:
         """Early-cancel path: `_produce` never runs.
 
-        If a consumer calls `astream_v2()` and immediately `aclose()`
+        If a consumer calls `astream_events(version="v3")` and immediately `aclose()`
         (or `async with` exits before the loop schedules `_produce`),
         `task.cancel()` marks the task cancelled without ever invoking
         its body — so neither `stream.fail` nor `on_llm_error` fires.
@@ -967,10 +969,12 @@ class TestAsyncStreamAclose:
         handler = RecordingHandler()
         gate = asyncio.Event()
         model = _GatedStreamModel(gate=gate)
-        stream = await model.astream_v2("test", config={"callbacks": [handler]})
-        # No yield to the event loop between `astream_v2` returning and
-        # `aclose()` — the producer task has been created but its body
-        # has not executed.
+        stream = await model.astream_events(
+            "test", config={"callbacks": [handler]}, version="v3"
+        )
+        # No yield to the event loop between `astream_events(version="v3")`
+        # returning and `aclose()` — the producer task has been created
+        # but its body has not executed.
         await stream.aclose()
 
         # `await stream.output` must resolve (with CancelledError)
@@ -1007,7 +1011,9 @@ class TestAsyncStreamAclose:
         handler = RecordingHandler()
         gate = asyncio.Event()
         model = _GatedStreamModel(gate=gate)
-        stream = await model.astream_v2("test", config={"callbacks": [handler]})
+        stream = await model.astream_events(
+            "test", config={"callbacks": [handler]}, version="v3"
+        )
 
         aiter_ = stream.text.__aiter__()
         await aiter_.__anext__()
@@ -1047,7 +1053,9 @@ class TestAsyncStreamAclose:
 
         handler = SlowEndHandler()
         model = FakeListChatModel(responses=["ok"])
-        stream = await model.astream_v2("test", config={"callbacks": [handler]})
+        stream = await model.astream_events(
+            "test", config={"callbacks": [handler]}, version="v3"
+        )
 
         # Wait until the stream has assembled the message and the
         # slow on_llm_end handler has started running.
@@ -1167,9 +1175,9 @@ class TestCacheHitV2Replay:
 class _ProviderMetadataStreamModel(BaseChatModel):
     """Fake model that advertises `output_version="responses/v1"` in metadata.
 
-    Verifies `stream_v2` pins the assembled message's `output_version` to
-    `"v1"` — the shape it actually produces — regardless of what the
-    provider's chunk metadata claims.
+    Verifies that `stream_events(version="v3")` pins the assembled
+    message's `output_version` to `"v1"` — the shape it actually
+    produces — regardless of what the provider's chunk metadata claims.
     """
 
     @property
@@ -1203,11 +1211,11 @@ class _ProviderMetadataStreamModel(BaseChatModel):
 
 
 class TestOutputVersionPinning:
-    """`stream_v2().output` always serializes as v1 content blocks."""
+    """`stream_events(version="v3").output` always serializes as v1 content blocks."""
 
     def test_output_version_pinned_to_v1(self) -> None:
         model = _ProviderMetadataStreamModel()
-        stream = model.stream_v2("hi")
+        stream = model.stream_events("hi", version="v3")
         msg = stream.output
         # Assembled message must claim `"v1"` even though the provider
         # chunk metadata advertised `"responses/v1"`.
@@ -1329,7 +1337,7 @@ class TestBedrockConverseToolCallArgs:
 
     def test_bedrock_tool_call_assembles_without_error(self) -> None:
         model = _BedrockConverseToolCallModel()
-        stream = model.stream_v2("What's the weather in Boston?")
+        stream = model.stream_events("What's the weather in Boston?", version="v3")
         # Drive the stream to completion — the raise would have surfaced here.
         events = list(stream)
 
@@ -1355,3 +1363,120 @@ class TestBedrockConverseToolCallArgs:
         ]
         assert len(text_blocks) == 1
         assert text_blocks[0]["text"] == "Hello Boston!"
+
+
+class _CachedUsageModel(BaseChatModel):
+    """Replays an Anthropic-shaped usage split across stream chunks.
+
+    Anthropic reports input tokens (with `input_token_details` carrying
+    `cache_read` / `cache_creation`) on the opening chunk and output
+    tokens on the terminal chunk; `input_tokens` already includes the
+    cached portions.
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return "cached-usage-fake"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise NotImplementedError
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="Hello",
+                usage_metadata={
+                    "input_tokens": 100,
+                    "output_tokens": 0,
+                    "total_tokens": 100,
+                    "input_token_details": {"cache_read": 90, "cache_creation": 7},
+                },
+            )
+        )
+        yield ChatGenerationChunk(message=AIMessageChunk(content=" world"))
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                usage_metadata={
+                    "input_tokens": 0,
+                    "output_tokens": 5,
+                    "total_tokens": 5,
+                    "output_token_details": {"reasoning": 3},
+                },
+            )
+        )
+
+
+_EXPECTED_CACHED_USAGE = {
+    "input_tokens": 100,
+    "output_tokens": 5,
+    "total_tokens": 105,
+    "input_token_details": {"cache_read": 90, "cache_creation": 7},
+    "output_token_details": {"reasoning": 3},
+}
+
+
+class TestUsageTokenDetails:
+    """Regression: v3 streaming must not drop usage token detail dicts.
+
+    Providers fold cache reads/writes into `input_tokens` and break them
+    out in `input_token_details`; dropping the details makes tracers
+    (e.g. LangSmith) price every input token at the uncached rate.
+    """
+
+    def test_stream_events_v3_output_preserves_token_details(self) -> None:
+        model = _CachedUsageModel()
+        stream = model.stream_events("hi", version="v3")
+        for _ in stream:
+            pass
+        assert stream.output.usage_metadata == _EXPECTED_CACHED_USAGE
+
+    def test_stream_events_v3_on_llm_end_preserves_token_details(self) -> None:
+        end_usages: list[Any] = []
+
+        class RecordingHandler(BaseCallbackHandler):
+            def on_llm_end(self, response: Any, **_: Any) -> None:
+                end_usages.append(response.generations[0][0].message.usage_metadata)
+
+        model = _CachedUsageModel()
+        stream = model.stream_events(
+            "hi", config={"callbacks": [RecordingHandler()]}, version="v3"
+        )
+        for _ in stream:
+            pass
+        assert end_usages == [_EXPECTED_CACHED_USAGE]
+
+    @pytest.mark.asyncio
+    async def test_astream_events_v3_on_llm_end_preserves_token_details(self) -> None:
+        end_usages: list[Any] = []
+
+        class RecordingHandler(AsyncCallbackHandler):
+            async def on_llm_end(self, response: Any, **_: Any) -> None:
+                end_usages.append(response.generations[0][0].message.usage_metadata)
+
+        model = _CachedUsageModel()
+        stream = await model.astream_events(
+            "hi", config={"callbacks": [RecordingHandler()]}, version="v3"
+        )
+        async for _ in stream:
+            pass
+        # `on_llm_end` fires from the producer task; let it run to completion.
+        for _ in range(20):
+            if end_usages:
+                break
+            await asyncio.sleep(0)
+        assert end_usages == [_EXPECTED_CACHED_USAGE]

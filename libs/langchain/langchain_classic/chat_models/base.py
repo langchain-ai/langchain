@@ -1023,7 +1023,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             yield x
 
     @override
-    async def astream_events(
+    async def astream_events(  # type: ignore[override]
         self,
         input: Any,
         config: RunnableConfig | None = None,

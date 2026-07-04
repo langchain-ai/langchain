@@ -11,6 +11,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import (
@@ -44,7 +45,7 @@ def calculate(expression: str) -> str:
 @tool
 def send_email(to: str, subject: str) -> str:
     """Send an email to someone."""
-    return f"Email sent to {to}"
+    return f"Email with subject {subject} sent to {to}"
 
 
 @tool
@@ -56,6 +57,7 @@ def get_stock_price(symbol: str) -> str:
 class FakeModel(GenericFakeChatModel):
     tool_style: Literal["openai", "anthropic"] = "openai"
 
+    @override
     def bind_tools(
         self,
         tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],

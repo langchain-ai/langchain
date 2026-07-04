@@ -17,7 +17,7 @@
 #    - Organization: Members (read)
 # 2. Install the app on your organization and this repository
 # 3. Add these repository secrets:
-#    - ORG_MEMBERSHIP_APP_ID: Your app's ID
+#    - ORG_MEMBERSHIP_APP_CLIENT_ID: Your app's client ID
 #    - ORG_MEMBERSHIP_APP_PRIVATE_KEY: Your app's private key
 #
 # The GitHub App token is required to check private organization membership.
@@ -51,13 +51,13 @@ jobs:
       issues: write
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
 
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
-          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          client-id: ${{ secrets.ORG_MEMBERSHIP_APP_CLIENT_ID }}
           private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
 
       - name: Check if contributor is external
@@ -119,13 +119,13 @@ jobs:
       issues: write
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
 
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
-          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          client-id: ${{ secrets.ORG_MEMBERSHIP_APP_CLIENT_ID }}
           private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
 
       - name: Backfill labels on open issues

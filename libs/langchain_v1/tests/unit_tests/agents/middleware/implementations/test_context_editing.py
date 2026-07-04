@@ -37,14 +37,14 @@ class _TokenCountingChatModel(FakeChatModel):
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
-        tools: Sequence | None = None,
+        tools: Sequence[Any] | None = None,
     ) -> int:
         return sum(_count_message_tokens(message) for message in messages)
 
 
 def _count_message_tokens(message: MessageLikeRepresentation) -> int:
     if isinstance(message, (AIMessage, ToolMessage)):
-        return _count_content(message.content)
+        return _count_content(cast("MessageLikeRepresentation", message.content))
     if isinstance(message, str):
         return len(message)
     return len(str(message))
