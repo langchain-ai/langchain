@@ -836,21 +836,12 @@ class ChatGroq(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
-                    if k in overall_token_usage and v is not None:
-                        # Handle nested dictionaries
-                        if isinstance(v, dict):
-                            if k not in overall_token_usage:
-                                overall_token_usage[k] = {}
-                            for nested_k, nested_v in v.items():
-                                if (
-                                    nested_k in overall_token_usage[k]
-                                    and nested_v is not None
-                                ):
-                                    overall_token_usage[k][nested_k] += nested_v
-                                else:
-                                    overall_token_usage[k][nested_k] = nested_v
-                        else:
-                            overall_token_usage[k] += v
+                    if v is None:
+                        continue
+                    if k in overall_token_usage:
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
@@ -1294,6 +1285,35 @@ class ChatGroq(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
+
+def _update_token_usage(
+    overall_token_usage: float | dict, new_usage: float | dict
+) -> int | float | dict:
+    # Token usage values are either numbers (including float timings such as
+    # `queue_time`) or nested dicts, e.g. `cached_tokens` inside
+    # `input_tokens_details`.
+    if isinstance(new_usage, (int, float)):
+        if not isinstance(overall_token_usage, (int, float)):
+            msg = (
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+            raise TypeError(msg)
+        return new_usage + overall_token_usage
+    if isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            msg = (
+                f"Got different types for token usage: "
+                f"{type(new_usage)} and {type(overall_token_usage)}"
+            )
+            raise TypeError(msg)
+        return {
+            k: _update_token_usage(overall_token_usage.get(k, 0), v)
+            for k, v in new_usage.items()
+        }
+    warnings.warn(f"Unexpected type for token usage: {type(new_usage)}", stacklevel=2)
+    return new_usage
 
 
 def _is_pydantic_class(obj: Any) -> bool:

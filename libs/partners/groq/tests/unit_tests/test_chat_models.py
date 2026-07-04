@@ -1031,6 +1031,92 @@ def test_combine_llm_outputs_with_missing_details() -> None:
     assert "input_tokens_details" not in result["token_usage"]
 
 
+@pytest.mark.parametrize(
+    ("llm_outputs", "expected_token_usage"),
+    [
+        pytest.param(
+            [
+                {
+                    "token_usage": {"queue_time": 0.5, "total_tokens": 30},
+                    "model_name": "test-model",
+                },
+                {
+                    "token_usage": {"queue_time": None, "total_tokens": 40},
+                    "model_name": "test-model",
+                },
+            ],
+            {"queue_time": 0.5, "total_tokens": 70},
+            id="later-none-does-not-clobber-accumulated-value",
+        ),
+        pytest.param(
+            [
+                {"token_usage": {"queue_time": None}, "model_name": "test-model"},
+                {"token_usage": {"queue_time": 0.5}, "model_name": "test-model"},
+            ],
+            {"queue_time": 0.5},
+            id="none-first-then-number-does-not-raise",
+        ),
+        pytest.param(
+            [
+                {
+                    "token_usage": {"queue_time": 0.25, "prompt_time": 0.125},
+                    "model_name": "test-model",
+                },
+                {
+                    "token_usage": {"queue_time": 0.5, "prompt_time": 0.25},
+                    "model_name": "test-model",
+                },
+            ],
+            {"queue_time": 0.75, "prompt_time": 0.375},
+            id="float-timings-accumulate",
+        ),
+    ],
+)
+def test_combine_llm_outputs_none_and_float_handling(
+    llm_outputs: list[dict[str, Any] | None],
+    expected_token_usage: dict[str, Any],
+) -> None:
+    """None values must be skipped, not clobber or crash the accumulation."""
+    llm = ChatGroq(model="test-model")
+
+    result = llm._combine_llm_outputs(llm_outputs)
+
+    assert result["token_usage"] == expected_token_usage
+
+
+def test_combine_llm_outputs_does_not_mutate_inputs() -> None:
+    """Merging nested details must not modify the per-generation llm_outputs.
+
+    `BaseChatModel.generate` calls `_combine_llm_outputs` before the
+    per-generation `llm_output` dicts are passed to `on_llm_end` callbacks,
+    so in-place mutation corrupts the first generation's reported usage.
+    """
+    llm = ChatGroq(model="test-model")
+    first_details = {"cached_tokens": 80}
+    llm_outputs: list[dict[str, Any] | None] = [
+        {
+            "token_usage": {
+                "prompt_tokens": 100,
+                "input_tokens_details": first_details,
+            },
+            "model_name": "test-model",
+        },
+        {
+            "token_usage": {
+                "prompt_tokens": 200,
+                "input_tokens_details": {"cached_tokens": 150},
+            },
+            "model_name": "test-model",
+        },
+    ]
+
+    result = llm._combine_llm_outputs(llm_outputs)
+
+    assert first_details == {"cached_tokens": 80}
+    assert result["token_usage"]["input_tokens_details"] is not first_details
+    assert result["token_usage"]["input_tokens_details"] == {"cached_tokens": 230}
+
+
 def test_profile() -> None:
     model = ChatGroq(model="openai/gpt-oss-20b")
     assert model.profile
