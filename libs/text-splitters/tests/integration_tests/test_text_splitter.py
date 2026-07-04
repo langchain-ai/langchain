@@ -1,7 +1,9 @@
 """Test text splitters that require an integration."""
 
+from typing import TYPE_CHECKING, cast
+
 import pytest
-from transformers import AutoTokenizer
+from transformers.models.auto.tokenization_auto import AutoTokenizer
 
 from langchain_text_splitters import (
     TokenTextSplitter,
@@ -11,6 +13,9 @@ from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
 
+if TYPE_CHECKING:
+    from transformers import PreTrainedTokenizerBase
+
 
 def test_huggingface_type_check() -> None:
     """Test that type checks are done properly on input."""
@@ -18,14 +23,19 @@ def test_huggingface_type_check() -> None:
         ValueError,
         match="Tokenizer received was not an instance of PreTrainedTokenizerBase",
     ):
-        CharacterTextSplitter.from_huggingface_tokenizer("foo")  # type: ignore[arg-type]
+        CharacterTextSplitter.from_huggingface_tokenizer("foo")  # ty: ignore[invalid-argument-type]
 
 
 def test_huggingface_tokenizer() -> None:
     """Test text splitter that uses a HuggingFace tokenizer."""
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
     text_splitter = CharacterTextSplitter.from_huggingface_tokenizer(
-        tokenizer, separator=" ", chunk_size=1, chunk_overlap=0
+        # for some reason ty doesn't see tokenizer
+        # as TokenizersBackend | SentencePieceBackend
+        cast("PreTrainedTokenizerBase", tokenizer),
+        separator=" ",
+        chunk_size=1,
+        chunk_overlap=0,
     )
     output = text_splitter.split_text("foo bar")
     assert output == ["foo", "bar"]
@@ -84,6 +94,7 @@ def test_sentence_transformers_split_text() -> None:
 @pytest.mark.requires("sentence_transformers")
 def test_sentence_transformers_multiple_tokens() -> None:
     splitter = SentenceTransformersTokenTextSplitter(chunk_overlap=0)
+    assert splitter.maximum_tokens_per_chunk is not None
     text = "Lorem "
 
     text_token_count_including_start_and_stop_tokens = splitter.count_tokens(text=text)

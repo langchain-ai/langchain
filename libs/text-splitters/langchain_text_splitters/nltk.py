@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
 from langchain_text_splitters.base import TextSplitter
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 try:
     import nltk
@@ -41,24 +44,27 @@ class NLTKTextSplitter(TextSplitter):
         """
         super().__init__(**kwargs)
         self._separator = separator
-        self._language = language
-        self._use_span_tokenize = use_span_tokenize
-        if self._use_span_tokenize and self._separator:
+        if use_span_tokenize and self._separator:
             msg = "When use_span_tokenize is True, separator should be ''"
             raise ValueError(msg)
         if not _HAS_NLTK:
             msg = "NLTK is not installed, please install it with `pip install nltk`."
             raise ImportError(msg)
-        if self._use_span_tokenize:
-            self._tokenizer = nltk.tokenize._get_punkt_tokenizer(self._language)  # noqa: SLF001
+        if use_span_tokenize:
+            self._tokenizer = self._span_tokenizer(language)
         else:
-            self._tokenizer = nltk.tokenize.sent_tokenize
+            self._tokenizer = self._sent_tokenizer(language)
 
-    @override
-    def split_text(self, text: str) -> list[str]:
-        # First we naively split the large input into a bunch of smaller ones.
-        if self._use_span_tokenize:
-            spans = list(self._tokenizer.span_tokenize(text))
+    @staticmethod
+    def _sent_tokenizer(language: str) -> Callable[[str], list[str]]:
+        return lambda text: nltk.tokenize.sent_tokenize(text, language)
+
+    @staticmethod
+    def _span_tokenizer(language: str) -> Callable[[str], list[str]]:
+        tokenizer = nltk.tokenize._get_punkt_tokenizer(language)  # noqa: SLF001
+
+        def _tokenize(text: str) -> list[str]:
+            spans = list(tokenizer.span_tokenize(text))
             splits = []
             for i, (start, end) in enumerate(spans):
                 if i > 0:
@@ -67,6 +73,12 @@ class NLTKTextSplitter(TextSplitter):
                 else:
                     sentence = text[start:end]
                 splits.append(sentence)
-        else:
-            splits = self._tokenizer(text, language=self._language)
+            return splits
+
+        return _tokenize
+
+    @override
+    def split_text(self, text: str) -> list[str]:
+        # First we naively split the large input into a bunch of smaller ones.
+        splits = self._tokenizer(text)
         return self._merge_splits(splits, self._separator)
