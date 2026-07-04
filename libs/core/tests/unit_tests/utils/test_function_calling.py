@@ -1370,6 +1370,52 @@ class TestParseGoogleDocstring:
         assert set(args) == {"x"}
         assert "y: the y value" in args["x"]
 
+    def test_raises_section_before_args_excluded_from_description(self) -> None:
+        """A `Raises:` block before `Args:` must not leak into the description.
+
+        Only `Returns:`/`Example:` used to terminate description collection, so
+        other Google-style sections (`Raises:`, `Note:`, `Yields:`, ...) placed
+        before the `Args:` block were concatenated into the description that is
+        advertised to a model.
+        """
+        docstring = (
+            "Summary line.\n"
+            "\n"
+            "Raises:\n"
+            "    ValueError: when the input is bad\n"
+            "\n"
+            "Args:\n"
+            "    x: The x value"
+        )
+        desc, args = _parse_google_docstring(docstring, ["x"])
+        assert desc == "Summary line."
+        assert args == {"x": "The x value"}
+
+    def test_note_section_without_args_excluded_from_description(self) -> None:
+        """A `Note:` section with no `Args:` block must not leak into the description.
+
+        With no `Args:` block to break on, every block is scanned; a trailing
+        `Note:` section previously folded into the description.
+        """
+        docstring = "Do a thing.\n\nNote:\n    be careful here"
+        desc, args = _parse_google_docstring(docstring, [])
+        assert desc == "Do a thing."
+        assert args == {}
+
+    def test_multiple_non_arg_sections_excluded_from_description(self) -> None:
+        """`Yields:`/`Warning:` sections stay out of the description too."""
+        docstring = (
+            "Stream items.\n"
+            "\n"
+            "Yields:\n"
+            "    Each item in turn.\n"
+            "\n"
+            "Warning:\n"
+            "    This is lazy."
+        )
+        desc, _args = _parse_google_docstring(docstring, [])
+        assert desc == "Stream items."
+
 
 def test_convert_to_openai_tool_apply_patch_passthrough() -> None:
     """Test apply_patch is passed through as an OpenAI built-in tool."""

@@ -726,6 +726,31 @@ def tool_example_to_messages(
 
 _MIN_DOCSTRING_BLOCKS = 2
 
+# Google-style docstring section headers that are not part of the function's
+# summary/description. Description blocks are collected only until one of these
+# headers is reached, so a section such as `Raises:` or `Note:` that appears
+# before (or in the absence of) an `Args:` block does not leak into the
+# description advertised to a model.
+_DESCRIPTION_TERMINATORS = (
+    "Args:",
+    "Arguments:",
+    "Attributes:",
+    "Example:",
+    "Examples:",
+    "Note:",
+    "Notes:",
+    "Raises:",
+    "References:",
+    "Return:",
+    "Returns:",
+    "Todo:",
+    "Warning:",
+    "Warnings:",
+    "Warns:",
+    "Yield:",
+    "Yields:",
+)
+
 
 def _parse_google_docstring(
     docstring: str | None,
@@ -767,7 +792,7 @@ def _parse_google_docstring(
             if block.startswith("Args:"):
                 args_block = block
                 break
-            if block.startswith(("Returns:", "Example:")):
+            if block.startswith(_DESCRIPTION_TERMINATORS):
                 # Don't break in case Args come after
                 past_descriptors = True
             elif not past_descriptors:
