@@ -30,8 +30,9 @@ def test_huggingface_tokenizer() -> None:
     """Test text splitter that uses a HuggingFace tokenizer."""
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
     text_splitter = CharacterTextSplitter.from_huggingface_tokenizer(
-        # for some reason ty doesn't see tokenizer
-        # as TokenizersBackend | SentencePieceBackend
+        # AutoTokenizer.from_pretrained returns a backend union
+        # (TokenizersBackend | SentencePieceBackend) that ty won't narrow to
+        # PreTrainedTokenizerBase, so cast to satisfy from_huggingface_tokenizer.
         cast("PreTrainedTokenizerBase", tokenizer),
         separator=" ",
         chunk_size=1,
@@ -59,9 +60,24 @@ def test_token_text_splitter_overlap() -> None:
 
 def test_token_text_splitter_from_tiktoken() -> None:
     splitter = TokenTextSplitter.from_tiktoken_encoder(model_name="gpt-4.1-mini")
-    expected_tokenizer = "cl100k_base"
+    expected_tokenizer = "o200k_base"
     actual_tokenizer = splitter._tokenizer.name
     assert expected_tokenizer == actual_tokenizer
+
+
+def test_character_text_splitter_from_tiktoken() -> None:
+    """The base (non-`TokenTextSplitter`) `from_tiktoken_encoder` path.
+
+    Verifies that a plain `CharacterTextSplitter` gets a token-based length
+    function wired in, without the tiktoken configuration leaking into a
+    constructor that does not accept it.
+    """
+    splitter = CharacterTextSplitter.from_tiktoken_encoder(
+        encoding_name="gpt2", chunk_size=5, chunk_overlap=0
+    )
+    # Length is measured in tokens, not characters: "abcdef" is 2 gpt2 tokens,
+    # so the 30-character string below is 10 tokens.
+    assert splitter._length_function("abcdef" * 5) == 10
 
 
 @pytest.mark.requires("sentence_transformers")

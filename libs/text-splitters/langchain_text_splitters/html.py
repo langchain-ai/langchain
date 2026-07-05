@@ -881,7 +881,8 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 element: The HTML element to process.
 
             Returns:
-                The processed text of the element.
+                The processed text of the element, or an empty string for
+                    elements with no extractable text.
             """
             if isinstance(element, Tag):
                 if element.name in self._custom_handlers:

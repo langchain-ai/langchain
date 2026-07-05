@@ -9,7 +9,6 @@ from typing_extensions import override
 from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on_tokens
 
 try:
-    # Type ignores needed as long as sentence-transformers doesn't support Python 3.14.
     from sentence_transformers import (
         SentenceTransformer,
     )

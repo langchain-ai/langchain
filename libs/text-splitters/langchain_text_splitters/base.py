@@ -229,6 +229,25 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         allowed_special: Literal["all"] | AbstractSet[str] | None = None,
         disallowed_special: Literal["all"] | Collection[str] = "all",
     ) -> Callable[[str], int]:
+        """Build a `tiktoken`-based length function.
+
+        Shared by `from_tiktoken_encoder` on both `TextSplitter` and
+        `TokenTextSplitter`.
+
+        Args:
+            encoding_name: The name of the tiktoken encoding to use.
+            model_name: The name of the model to use.
+
+                If provided, this will override the `encoding_name`.
+            allowed_special: Special tokens that are allowed during encoding.
+            disallowed_special: Special tokens that are disallowed during encoding.
+
+        Returns:
+            A function that returns the token length of a string.
+
+        Raises:
+            ImportError: If the tiktoken package is not installed.
+        """
         if allowed_special is None:
             allowed_special = set()
         if not _HAS_TIKTOKEN:
@@ -274,7 +293,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             disallowed_special: Special tokens that are disallowed during encoding.
 
         Returns:
-            An instance of `TextSplitter` using tiktoken for length calculation.
+            An instance of the calling class using tiktoken for length calculation.
 
         Raises:
             ImportError: If the tiktoken package is not installed.
@@ -351,6 +370,25 @@ class TokenTextSplitter(TextSplitter):
         disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> Self:
+        """Text splitter that uses `tiktoken` encoder to count length.
+
+        Unlike the base implementation, this also seeds the constructor with the
+        tiktoken configuration so the splitter tokenizes on the same encoding.
+
+        Args:
+            encoding_name: The name of the tiktoken encoding to use.
+            model_name: The name of the model to use.
+
+                If provided, this will override the `encoding_name`.
+            allowed_special: Special tokens that are allowed during encoding.
+            disallowed_special: Special tokens that are disallowed during encoding.
+
+        Returns:
+            A `TokenTextSplitter` instance using tiktoken for length calculation.
+
+        Raises:
+            ImportError: If the tiktoken package is not installed.
+        """
         length_function = cls._tiktoken_length_function(
             encoding_name, model_name, allowed_special, disallowed_special
         )
