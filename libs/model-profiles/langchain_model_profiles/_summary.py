@@ -315,7 +315,7 @@ def build_summary(provider_diffs: dict[str, ProfileDiff]) -> str:
     """Assemble the full Markdown summary across all providers.
 
     When more than one provider has changes, each provider's section is wrapped
-    in a ``<details>`` toggle so the PR body stays skimmable.
+    in a `<details>` toggle so the PR body stays skimmable.
 
     Args:
         provider_diffs: Mapping of provider name to its `ProfileDiff`.
