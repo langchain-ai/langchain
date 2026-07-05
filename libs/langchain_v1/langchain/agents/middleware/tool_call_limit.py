@@ -202,6 +202,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
         self,
         *,
         tool_name: str | None = None,
+        message: str | None = None,
         thread_limit: int | None = None,
         run_limit: int | None = None,
         exit_behavior: ExitBehavior = "continue",
@@ -211,6 +212,8 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
         Args:
             tool_name: Name of the specific tool to limit. If `None`, limits apply
                 to all tools.
+            message: Custom model-facing message to use for blocked tool calls.
+                If `None`, the default blocked-tool wording is used.
             thread_limit: Maximum number of tool calls allowed per thread.
                 `None` means no limit.
             run_limit: Maximum number of tool calls allowed per run.
@@ -248,6 +251,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             raise ValueError(msg)
 
         self.tool_name = tool_name
+        self.message = message
         self.thread_limit = thread_limit
         self.run_limit = run_limit
         self.exit_behavior = exit_behavior
@@ -404,8 +408,13 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
                 tool_name=self.tool_name,
             )
 
-        # Build tool message content (sent to model - no thread/run details)
-        tool_msg_content = _build_tool_message_content(self.tool_name)
+        # Build tool message content (sent to model - no thread/run details).
+        # Use custom message when provided, otherwise keep default wording.
+        tool_msg_content = (
+            self.message
+            if self.message is not None
+            else _build_tool_message_content(self.tool_name)
+        )
 
         # Inject artificial error ToolMessages for blocked tool calls
         artificial_messages: list[ToolMessage | AIMessage] = [

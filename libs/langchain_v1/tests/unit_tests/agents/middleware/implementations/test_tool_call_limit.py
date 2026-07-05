@@ -27,6 +27,7 @@ def test_middleware_initialization_validation() -> None:
     assert middleware.run_limit == 3
     assert middleware.exit_behavior == "continue"
     assert middleware.tool_name is None
+    assert middleware.message is None
 
     # Test with tool name
     middleware = ToolCallLimitMiddleware(tool_name="search", thread_limit=5)
@@ -78,6 +79,103 @@ def test_middleware_name_property() -> None:
     assert middleware1.name != middleware2.name
     assert middleware1.name == "ToolCallLimitMiddleware[search]"
     assert middleware2.name == "ToolCallLimitMiddleware[calculator]"
+
+
+def test_custom_message_blocks_tool_call_in_continue_mode() -> None:
+    """Test that custom blocked-tool messages are used for continue mode."""
+    middleware = ToolCallLimitMiddleware(
+        thread_limit=1,
+        exit_behavior="continue",
+        message="Please do not call this tool again.",
+    )
+    runtime = None
+
+    state = ToolCallLimitState(
+        messages=[
+            AIMessage(
+                "Response",
+                tool_calls=[
+                    {"name": "search", "args": {}, "id": "1"},
+                    {"name": "search", "args": {}, "id": "2"},
+                ],
+            )
+        ],
+        thread_tool_call_count={"__all__": 0},
+        run_tool_call_count={"__all__": 0},
+    )
+
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].content == "Please do not call this tool again."
+
+
+def test_custom_message_blocks_tool_call_in_end_mode() -> None:
+    """Test that custom blocked-tool messages are used for end mode."""
+    middleware = ToolCallLimitMiddleware(
+        thread_limit=1,
+        exit_behavior="end",
+        message="This conversation was handed off; do not call the tool again.",
+    )
+    runtime = None
+
+    state = ToolCallLimitState(
+        messages=[
+            AIMessage(
+                "Response",
+                tool_calls=[
+                    {"name": "search", "args": {}, "id": "1"},
+                    {"name": "search", "args": {}, "id": "2"},
+                ],
+            )
+        ],
+        thread_tool_call_count={"__all__": 0},
+        run_tool_call_count={"__all__": 0},
+    )
+
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+    assert result["jump_to"] == "end"
+
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].content == "This conversation was handed off; do not call the tool again."
+
+    ai_messages = [msg for msg in result["messages"] if isinstance(msg, AIMessage)]
+    assert len(ai_messages) == 1
+    assert "limit" in ai_messages[0].content.lower()
+
+
+def test_custom_message_does_not_change_error_exit_behavior() -> None:
+    """Test that custom message does not affect error exit behavior."""
+    middleware = ToolCallLimitMiddleware(
+        thread_limit=1,
+        exit_behavior="error",
+        message="Custom blocked tool message should not be used.",
+    )
+    runtime = None
+
+    state = ToolCallLimitState(
+        messages=[
+            AIMessage(
+                "Response",
+                tool_calls=[
+                    {"name": "search", "args": {}, "id": "1"},
+                    {"name": "search", "args": {}, "id": "2"},
+                ],
+            )
+        ],
+        thread_tool_call_count={"__all__": 0},
+        run_tool_call_count={"__all__": 0},
+    )
+
+    with pytest.raises(ToolCallLimitExceededError) as exc_info:
+        middleware.after_model(state, runtime)  # type: ignore[arg-type]
+
+    assert "Custom blocked tool message" not in str(exc_info.value)
+    assert "limit" in str(exc_info.value).lower()
 
 
 def test_middleware_unit_functionality() -> None:
