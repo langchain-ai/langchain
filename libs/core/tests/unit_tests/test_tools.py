@@ -770,6 +770,24 @@ def test_missing_docstring() -> None:
     assert not MyTool.description  # type: ignore[attr-defined]
 
 
+def test_tool_class_does_not_inherit_parent_docstring() -> None:
+    """Test tool class descriptions use only directly defined docstrings."""
+
+    class ParentTool(BaseModel):
+        """Parent tool."""
+
+        foo: str
+
+    @tool
+    class ChildTool(ParentTool):
+        bar: str
+
+    assert not ChildTool.description  # type: ignore[attr-defined]
+    assert (
+        _schema(ChildTool.args_schema).get("description", "") == ""  # type: ignore[attr-defined]
+    )
+
+
 def test_create_tool_positional_args() -> None:
     """Test that positional arguments are allowed."""
     test_tool = Tool("test_name", lambda x: x, "test_description")

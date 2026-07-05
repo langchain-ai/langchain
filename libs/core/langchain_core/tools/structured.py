@@ -230,6 +230,12 @@ class StructuredTool(BaseTool):
                     f"got {args_schema}"
                 )
                 raise TypeError(msg)
+        if (
+            description_ is None
+            and isinstance(source_function, type)
+            and is_basemodel_subclass(source_function)
+        ):
+            description_ = ""
         if description_ is None:
             msg = "Function must have a docstring if description not provided."
             raise ValueError(msg)

@@ -142,7 +142,7 @@ def _parse_python_function_docstring(
     Returns:
         A tuple containing the function description and argument descriptions.
     """
-    docstring = inspect.getdoc(function)
+    docstring = _get_direct_doc(function)
     return _parse_google_docstring(
         docstring,
         list(annotations),
@@ -168,6 +168,14 @@ def _validate_docstring_args_against_annotations(
             raise ValueError(msg)
 
 
+def _get_direct_doc(obj: Any) -> str | None:
+    """Return the docstring defined directly on `obj`, if any."""
+    doc = getattr(obj, "__doc__", None)
+    if doc is None:
+        return None
+    return inspect.cleandoc(doc)
+
+
 def _infer_arg_descriptions(
     fn: Callable[..., Any],
     *,
@@ -190,7 +198,7 @@ def _infer_arg_descriptions(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
         )
     else:
-        description = inspect.getdoc(fn) or ""
+        description = _get_direct_doc(fn) or ""
         arg_descriptions = {}
     if parse_docstring:
         _validate_docstring_args_against_annotations(arg_descriptions, annotations)
