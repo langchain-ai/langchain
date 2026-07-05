@@ -843,5 +843,18 @@ def _recursive_set_additional_properties_false(
                 _recursive_set_additional_properties_false(sub_schema)
         if "items" in schema:
             _recursive_set_additional_properties_false(schema["items"])
+        # Pydantic 2 emits nested models via `$defs` (JSON Schema 2020-12) or
+        # `definitions` (older drafts), with `properties` referencing them by
+        # `$ref`. OpenAI's strict-mode validator requires `additionalProperties`
+        # on every object schema, including those living inside `$defs` — see
+        # langchain-ai/langchain#38223. Without this descent the inner models
+        # come back to OpenAI without `additionalProperties: false` and the
+        # request is rejected with a 400 ("additionalProperties is required to
+        # be supplied and to be false").
+        for defs_key in ("$defs", "definitions"):
+            defs = schema.get(defs_key)
+            if isinstance(defs, dict):
+                for sub_schema in defs.values():
+                    _recursive_set_additional_properties_false(sub_schema)
 
     return schema

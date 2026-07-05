@@ -501,6 +501,95 @@ def test_convert_to_openai_function_nested_strict() -> None:
     assert actual == expected
 
 
+def test_convert_to_openai_function_strict_pydantic_defs() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/38223.
+
+    Pydantic 2 emits nested models into ``$defs`` and references them via
+    ``$ref``. OpenAI's strict-mode validator rejects the request unless
+    ``additionalProperties: false`` is set on every object schema — including
+    those living inside ``$defs``. Previously the recursive fixup only walked
+    ``properties`` / ``items`` / ``anyOf`` and missed ``$defs`` entirely.
+
+    Note: passing a Pydantic class to ``convert_to_openai_function`` would
+    route through ``_convert_json_schema_to_openai_function`` which inlines
+    ``$defs`` (after dereferencing) before the strict fixup ever runs. The
+    only path that preserves ``$defs`` is when the schema is supplied as a
+    JSON-schema dict (the form ``ChatOpenAI._get_request_payload`` emits on
+    the streaming structured-output path) — this is exactly the case the
+    issue reproduces, so we test it directly.
+    """
+    schema_dict: dict = {
+        "title": "Plan",
+        "type": "object",
+        "properties": {
+            "steps": {
+                "description": "ordered steps",
+                "type": "array",
+                "items": {"$ref": "#/$defs/Step"},
+            },
+        },
+        "required": ["steps"],
+        "$defs": {
+            "Step": {
+                "type": "object",
+                "title": "Step",
+                "properties": {
+                    "name": {"type": "string", "title": "Name"},
+                    "detail": {
+                        "anyOf": [{"type": "string"}, {"type": "null"}],
+                        "default": None,
+                        "title": "Detail",
+                    },
+                },
+                "required": ["name"],
+            },
+        },
+    }
+
+    fn = convert_to_openai_function(schema_dict, strict=True)
+    params = fn["parameters"]
+
+    # Top-level object
+    assert params["additionalProperties"] is False
+    assert params["required"] == ["steps"]
+
+    # Inner model in $defs — was the bug surface.
+    step_def = params["$defs"]["Step"]
+    assert step_def["additionalProperties"] is False
+    # ``detail`` is Optional so only ``name`` should be required.
+    assert step_def["required"] == ["name"]
+
+
+def test_convert_to_openai_function_strict_dict_definitions_block() -> None:
+    """``definitions`` (older JSON Schema drafts) should also be walked."""
+    schema_dict: dict = {
+        "title": "Plan",
+        "type": "object",
+        "properties": {
+            "steps": {
+                "type": "array",
+                "items": {"$ref": "#/definitions/Step"},
+            },
+        },
+        "required": ["steps"],
+        "definitions": {
+            "Step": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "detail": {"type": "string"},
+                },
+                "required": ["name", "detail"],
+            },
+        },
+    }
+
+    fn = convert_to_openai_function(schema_dict, strict=True)
+    params = fn["parameters"]
+    assert params["additionalProperties"] is False
+    assert params["definitions"]["Step"]["additionalProperties"] is False
+
+
 def test_convert_to_openai_function_strict_union_of_objects_arg_type() -> None:
     class NestedA(BaseModel):
         foo: str
