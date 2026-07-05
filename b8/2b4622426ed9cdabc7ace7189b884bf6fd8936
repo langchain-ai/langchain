@@ -1,0 +1,24 @@
+libs/core/langchain_core/document_loaders/langsmith.py
+  s_4d20ce0f2c5635::t_1c696bc93d33c6 150-151
+libs/core/tests/unit_tests/document_loaders/test_langsmith.py
+  s_4d20ce0f2c5635::t_fbe7b4b7db3885 25-33
+  s_4d20ce0f2c5635::t_dcd6069445c86b 2
+  s_4d20ce0f2c5635::t_0c1223084c3996 84-93
+  s_4d20ce0f2c5635::t_44020faf04748f 83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b82b4622426ed9cdabc7ace7189b884bf6fd8936",
+  "prompts": {},
+  "sessions": {
+    "s_4d20ce0f2c5635": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "22fadb4f-336d-4210-97f6-fbcd7da040f3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
