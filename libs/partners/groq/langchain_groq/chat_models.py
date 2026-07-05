@@ -97,11 +97,22 @@ class GroqContextOverflowError(groq.BadRequestError, ContextOverflowError):
 def _handle_groq_invalid_request(e: groq.BadRequestError) -> NoReturn:
     """Promote context-length errors to `GroqContextOverflowError`.
 
-    Groq surfaces an over-long prompt as a 400 `BadRequestError` whose body
-    carries `"code": "context_length_exceeded"`. The SDK does not expose that
-    code as an attribute, so it is matched against the stringified error (which
-    includes the JSON body) as well, with `"reduce the length"` from the message
-    as a secondary signal.
+    Groq surfaces an over-long prompt as a 400 `BadRequestError`, but the body
+    shape varies by model and API version, so detection covers each observed
+    form:
+
+    - The current API (verified live) returns no error code; the message reads
+        "Please reduce the length of the messages or completion.", matched by
+        `"reduce the length"`. This is the signal that actually fires today.
+    - Some responses instead carry `"code": "context_length_exceeded"` in the
+        body (see letta-ai/letta#1963), which the SDK folds into `str(e)` and is
+        matched by the substring check.
+    - The `getattr` check is forward-compatible defense in case a future SDK
+        exposes the code as an attribute; no current version does.
+
+    Always raises: `GroqContextOverflowError` for a context overflow, otherwise
+    the original error unchanged. Callers depend on this (`NoReturn`) so that
+    code after the call site can assume the request did not overflow.
     """
     if (
         getattr(e, "code", None) == "context_length_exceeded"
@@ -546,25 +557,14 @@ class ChatGroq(BaseChatModel):
             "default_query": self.default_query,
         }
 
-        try:
-            import groq  # noqa: PLC0415
-
-            sync_specific: dict[str, Any] = {"http_client": self.http_client}
-            if not self.client:
-                self.client = groq.Groq(
-                    **client_params, **sync_specific
-                ).chat.completions
-            if not self.async_client:
-                async_specific: dict[str, Any] = {"http_client": self.http_async_client}
-                self.async_client = groq.AsyncGroq(
-                    **client_params, **async_specific
-                ).chat.completions
-        except ImportError as exc:
-            msg = (
-                "Could not import groq python package. "
-                "Please install it with `pip install groq`."
-            )
-            raise ImportError(msg) from exc
+        sync_specific: dict[str, Any] = {"http_client": self.http_client}
+        if not self.client:
+            self.client = groq.Groq(**client_params, **sync_specific).chat.completions
+        if not self.async_client:
+            async_specific: dict[str, Any] = {"http_client": self.http_async_client}
+            self.async_client = groq.AsyncGroq(
+                **client_params, **async_specific
+            ).chat.completions
         return self
 
     @model_validator(mode="after")

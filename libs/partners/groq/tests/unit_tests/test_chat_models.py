@@ -29,6 +29,7 @@ from langchain_groq.chat_models import (
     _convert_dict_to_message,
     _create_usage_metadata,
     _format_message_content,
+    _handle_groq_invalid_request,
 )
 
 if "GROQ_API_KEY" not in os.environ:
@@ -1110,24 +1111,35 @@ def test_metadata_versions() -> None:
     assert "langchain-groq" in versions
 
 
-def _bad_request_error(body: dict[str, Any], status_code: int = 400) -> Exception:
+def _bad_request_error(
+    body: dict[str, Any], status_code: int = 400
+) -> groq.BadRequestError:
     """Build a `groq.BadRequestError` the way the SDK does for a 4xx response.
 
-    The Groq SDK formats the error message as ``Error code: <status> - <body>``,
-    so the JSON body (including its ``code`` field) ends up in ``str(e)``. This
-    mirrors `groq._base_client.BaseClient._make_status_error_from_response`.
+    Mirrors `groq._base_client.BaseClient._make_status_error_from_response`: the
+    message is formatted as ``Error code: <status> - <body>`` (so the JSON body
+    ends up in ``str(e)``), and ``e.body`` is the full parsed JSON envelope.
+    Both were verified against the live SDK.
     """
     request = httpx.Request("POST", "https://api.groq.com/openai/v1/chat/completions")
     response = httpx.Response(status_code=status_code, request=request)
     message = f"Error code: {status_code} - {body}"
-    return groq.BadRequestError(message, response=response, body=body.get("error"))
+    return groq.BadRequestError(message, response=response, body=body)
 
 
-# Verified shape of a real Groq context-overflow response. See
-# https://console.groq.com/docs/errors and letta-ai/letta#1963.
+# Real Groq context-overflow error bodies. The codeless form is verified live
+# against the Groq API (llama-3.1-8b-instant); the code-bearing form is reported
+# in letta-ai/letta#1963. Detection must handle both.
 _CONTEXT_OVERFLOW_BODY = {
     "error": {
         "message": "Please reduce the length of the messages or completion.",
+        "type": "invalid_request_error",
+        "param": "messages",
+    }
+}
+_CONTEXT_OVERFLOW_BODY_WITH_CODE = {
+    "error": {
+        "message": "This model's maximum context length was exceeded.",
         "type": "invalid_request_error",
         "param": "messages",
         "code": "context_length_exceeded",
@@ -1145,7 +1157,7 @@ def test_context_overflow_error_invoke_sync() -> None:
     with pytest.raises(ContextOverflowError) as exc_info:
         llm.invoke([HumanMessage(content="test")])
 
-    assert "context_length_exceeded" in str(exc_info.value)
+    assert "reduce the length" in str(exc_info.value)
     assert isinstance(exc_info.value, GroqContextOverflowError)
 
 
@@ -1163,7 +1175,7 @@ async def test_context_overflow_error_invoke_async() -> None:
     with pytest.raises(ContextOverflowError) as exc_info:
         await llm.ainvoke([HumanMessage(content="test")])
 
-    assert "context_length_exceeded" in str(exc_info.value)
+    assert "reduce the length" in str(exc_info.value)
     assert isinstance(exc_info.value, GroqContextOverflowError)
 
 
@@ -1177,7 +1189,7 @@ def test_context_overflow_error_stream_sync() -> None:
     with pytest.raises(ContextOverflowError) as exc_info:
         list(llm.stream([HumanMessage(content="test")]))
 
-    assert "context_length_exceeded" in str(exc_info.value)
+    assert "reduce the length" in str(exc_info.value)
     assert isinstance(exc_info.value, GroqContextOverflowError)
 
 
@@ -1196,7 +1208,7 @@ async def test_context_overflow_error_stream_async() -> None:
         async for _ in llm.astream([HumanMessage(content="test")]):
             pass
 
-    assert "context_length_exceeded" in str(exc_info.value)
+    assert "reduce the length" in str(exc_info.value)
     assert isinstance(exc_info.value, GroqContextOverflowError)
 
 
@@ -1248,4 +1260,65 @@ def test_context_overflow_error_carries_response_metadata() -> None:
         llm.invoke([HumanMessage(content="test")])
 
     assert exc_info.value.response.status_code == 400
-    assert exc_info.value.body == _CONTEXT_OVERFLOW_BODY["error"]
+    assert exc_info.value.body == _CONTEXT_OVERFLOW_BODY
+
+
+# The three detection branches in `_handle_groq_invalid_request` are OR'd, and
+# real overflow responses only ever satisfy one at a time, so each is exercised
+# in isolation below — otherwise a branch could be deleted without any test
+# noticing.
+
+
+def test_handle_invalid_request_promotes_codeless_message() -> None:
+    """Branch: live overflow has no code; `reduce the length` is the only signal."""
+    err = _bad_request_error(_CONTEXT_OVERFLOW_BODY)
+    # Guard: this shape must not accidentally satisfy the code-based branches.
+    assert "context_length_exceeded" not in str(err)
+
+    with pytest.raises(GroqContextOverflowError):
+        _handle_groq_invalid_request(err)
+
+
+def test_handle_invalid_request_promotes_code_in_body() -> None:
+    """Branch: some responses carry `code` but no `reduce the length` phrase."""
+    err = _bad_request_error(_CONTEXT_OVERFLOW_BODY_WITH_CODE)
+    # Guard: this shape must not accidentally satisfy the message-based branch.
+    assert "reduce the length" not in str(err)
+
+    with pytest.raises(GroqContextOverflowError):
+        _handle_groq_invalid_request(err)
+
+
+def test_handle_invalid_request_promotes_code_attribute() -> None:
+    """Branch: forward-compat guard for a future SDK that exposes `.code`."""
+    err = _bad_request_error(
+        {"error": {"message": "boom", "type": "invalid_request_error"}}
+    )
+    err.code = "context_length_exceeded"  # type: ignore[attr-defined]
+    # Guard: neither string-based branch should fire, so only `.code` promotes.
+    assert "context_length_exceeded" not in str(err)
+    assert "reduce the length" not in str(err)
+
+    with pytest.raises(GroqContextOverflowError):
+        _handle_groq_invalid_request(err)
+
+
+def test_handle_invalid_request_ignores_max_tokens_error() -> None:
+    """A `max_tokens`-too-large 400 must not be promoted (verified live shape)."""
+    max_tokens_body = {
+        "error": {
+            "message": (
+                "`max_tokens` must be less than or equal to `131072`, the maximum "
+                "value for `max_tokens` is less than the `context_window` for this "
+                "model"
+            ),
+            "type": "invalid_request_error",
+            "param": "max_tokens",
+        }
+    }
+    err = _bad_request_error(max_tokens_body)
+
+    with pytest.raises(groq.BadRequestError) as exc_info:
+        _handle_groq_invalid_request(err)
+
+    assert not isinstance(exc_info.value, ContextOverflowError)
