@@ -1,0 +1,19 @@
+libs/partners/mistralai/tests/unit_tests/test_chat_models.py
+  s_52762df9f5cfb2::t_72f08b9469fa3e 5,24-26,707-772,872
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "212fc9e337e697416c79761b5ee3d6c2e4f758a8",
+  "prompts": {},
+  "sessions": {
+    "s_52762df9f5cfb2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8a0eb8c8-64dc-4fcc-96ca-637084fabcca",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
