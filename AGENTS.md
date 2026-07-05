@@ -282,7 +282,37 @@ The `echo y |` pipe is required when `--data-dir` is outside the `libs/model-pro
 
 ### Release process
 
-Releases are triggered manually via `.github/workflows/_release.yml` with `working-directory` and `release-version` inputs.
+Each partner package is released independently. The full flow is:
+
+1. **Version bump PR.** Create a PR that bumps three files by one line each:
+   - `langchain_<partner>/_version.py` — `__version__`
+   - `pyproject.toml` — `version`
+   - `uv.lock` — regenerate with `uv lock` from the package directory; keep only the package-version line if `uv lock` touches unrelated entries
+
+   Title follows Conventional Commits: `release(<partner>): <version>` (e.g. `release(openrouter): 0.2.6`). Use the branch name `release/<partner>-<version>`.
+
+   Patch vs. minor bump follows in-repo precedent: within a `0.x` series, fixes and additive features get a patch bump (e.g. `session_id` field → 0.2.1→0.2.2, `parallel_tool_calls` → 0.2.3→0.2.4).
+
+2. **Merge the PR** to `master`.
+
+3. **Trigger the release workflow.** Run `gh workflow run` against the "🚀 Package Release" workflow (`_release.yml`, file ID `63880841`):
+
+   ```bash
+   gh workflow run 63880841 --repo langchain-ai/langchain \
+     -f working-directory=<partner> -f release-version=<version>
+   ```
+
+   `working-directory` is the short partner name from the workflow's dropdown (e.g. `openrouter`, not `libs/partners/openrouter`).
+
+4. **The workflow handles everything else automatically** — do **not** create a GitHub release or tag manually. The `mark-release` job (using `ncipollo/release-action`) creates the GitHub release, tag, and release notes after PyPI publish succeeds. The release notes body is auto-generated from commit history between the previous tag and HEAD.
+
+   Monitor the run:
+
+   ```bash
+   gh run view <run-id> --repo langchain-ai/langchain
+   ```
+
+   The full job chain is: build → release-notes → pre-release-checks → TestPyPI publish → PyPI publish → tag GitHub release.
 
 ### PR labeling and linting
 
