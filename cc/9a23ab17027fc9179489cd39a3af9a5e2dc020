@@ -1,0 +1,29 @@
+libs/partners/mistralai/langchain_mistralai/_compat.py
+  s_8390dc47537f77::t_c65276e5fb0aa4 5-6,19-61,111-121
+libs/partners/mistralai/uv.lock
+  s_9dccca3a41ab8e::t_894eaa6e85fe76 209,355
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "cc9a23ab17027fc9179489cd39a3af9a5e2dc020",
+  "prompts": {},
+  "sessions": {
+    "s_8390dc47537f77": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "141f80fe-0ecc-4520-ace9-79507d897697",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    },
+    "s_9dccca3a41ab8e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fc91a3c8-8108-4f59-a1ce-a8024dda8b8c",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
