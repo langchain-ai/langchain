@@ -401,7 +401,10 @@ def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) ->
 
 
 def _clean_block(block: dict) -> dict:
-    # Remove "index" key added for message aggregation in langchain-core
+    # Remove internal keys added by LangChain or by provider response normalization.
+    if block.get("type") == "text" and "text" in block:
+        return {"type": "text", "text": block["text"]}
+
     new_block = {k: v for k, v in block.items() if k != "index"}
     if block.get("type") == "thinking" and isinstance(block.get("thinking"), list):
         new_block["thinking"] = [
@@ -521,9 +524,7 @@ def _convert_message_to_mistral_chat_message(
 
         elif isinstance(content, list):
             content = [
-                _clean_block(block)
-                if isinstance(block, dict) and "index" in block
-                else block
+                _clean_block(block) if isinstance(block, dict) else block
                 for block in content
             ]
         else:

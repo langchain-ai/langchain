@@ -57,6 +57,42 @@ def test_sanitize_chat_completions_content_passthrough_string() -> None:
     assert _sanitize_chat_completions_content("hello") == "hello"
 
 
+def test_ai_message_reference_metadata_does_not_reach_wire() -> None:
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "The answer is "},
+            {"type": "text", "text": "42", "reference": {"reference_ids": [0]}},
+            {"type": "text", "text": "."},
+        ],
+        response_metadata={"model_provider": "mistralai"},
+    )
+
+    result = _convert_message_to_mistral_chat_message(message)
+    assert result["content"] == [
+        {"type": "text", "text": "The answer is "},
+        {"type": "text", "text": "42"},
+        {"type": "text", "text": "."},
+    ]
+
+
+def test_v1_ai_message_reference_metadata_does_not_reach_wire() -> None:
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "The answer is "},
+            {"type": "text", "text": "42", "reference": {"reference_ids": [0]}},
+            {"type": "text", "text": "."},
+        ],
+        response_metadata={"model_provider": "mistralai", "output_version": "v1"},
+    )
+
+    result = _convert_message_to_mistral_chat_message(message)
+    assert result["content"] == [
+        {"type": "text", "text": "The answer is "},
+        {"type": "text", "text": "42"},
+        {"type": "text", "text": "."},
+    ]
+
+
 def test_mistralai_model_param() -> None:
     llm = ChatMistralAI(model="foo")  # type: ignore[call-arg]
     assert llm.model == "foo"
@@ -562,7 +598,7 @@ def test__convert_dict_to_message_citations_to_content_blocks() -> None:
     annotations = block_1["annotations"]
     assert len(annotations) == 1
     assert annotations[0]["type"] == "citation"
-    assert annotations[0]["cited_text"] == cited_text
+    assert "cited_text" not in annotations[0]
     assert annotations[0]["extras"]["reference_ids"] == [0]
 
     # Third block: plain text
@@ -845,6 +881,17 @@ def test_citation_no_text_in_reference() -> None:
     assert blocks[0]["text"] == ""
     block_0 = cast("types.TextContentBlock", blocks[0])
     assert "cited_text" not in block_0["annotations"][0]
+
+
+def test_citation_empty_reference_metadata_still_adds_annotation() -> None:
+    """Presence of reference metadata is the signal, even if the metadata is empty."""
+    from langchain_mistralai._compat import _convert_to_v1_from_mistral
+
+    message = AIMessage(content=[{"type": "text", "text": "42", "reference": {}}])
+    blocks = _convert_to_v1_from_mistral(message)
+
+    block_0 = cast("types.TextContentBlock", blocks[0])
+    assert block_0["annotations"] == [{"type": "citation"}]
 
 
 def test_malformed_annotation_does_not_crash() -> None:

@@ -16,48 +16,42 @@ def _convert_from_v1_to_mistral(
     new_content: list = []
     for block in content:
         if block["type"] == "text":
-            if model_provider == "mistralai" and "annotations" in block:
-                # When a text block carries citation annotations, convert each
-                # annotation back to a text block with "reference" metadata so
-                # the round-trip preserves both visible text and citation data.
-                emitted_reference = False
-                for annotation in block["annotations"]:
+            annotations = block.get("annotations")
+            if model_provider == "mistralai" and isinstance(annotations, list):
+                reference_meta: dict[str, Any] = {}
+                has_reference = False
+                for annotation in annotations:
                     if not isinstance(annotation, dict):
                         continue
                     ann_type = annotation.get("type")
                     if ann_type == "non_standard_annotation":
                         value = annotation.get("value")
                         if isinstance(value, dict) and value.get("type") == "reference":
-                            ref_meta = {
-                                k: v
-                                for k, v in value.items()
-                                if k not in ("type", "text")
-                            }
-                            new_block: dict[str, Any] = {
-                                "type": "text",
-                                "text": block.get("text", ""),
-                                "reference": ref_meta,
-                            }
-                            if "index" in value:
-                                new_block["index"] = value["index"]
-                            new_content.append(new_block)
-                            emitted_reference = True
+                            reference_meta.update(
+                                {
+                                    k: v
+                                    for k, v in value.items()
+                                    if k not in ("type", "text", "index")
+                                }
+                            )
+                            has_reference = True
                     elif ann_type == "citation":
-                        citation_meta: dict[str, Any] = {}
                         extras = annotation.get("extras", {})
                         if isinstance(extras, dict):
-                            citation_meta.update(extras)
+                            reference_meta.update(extras)
                         cited_text = annotation.get("cited_text")
                         if cited_text and cited_text != block.get("text", ""):
-                            citation_meta["cited_text"] = cited_text
-                        new_block = {
+                            reference_meta["cited_text"] = cited_text
+                        has_reference = True
+                if has_reference:
+                    new_content.append(
+                        {
                             "type": "text",
                             "text": block.get("text", ""),
-                            "reference": citation_meta,
+                            "reference": reference_meta,
                         }
-                        new_content.append(new_block)
-                        emitted_reference = True
-                if not emitted_reference:
+                    )
+                else:
                     new_content.append({"type": "text", "text": block.get("text", "")})
             else:
                 new_content.append({"text": block.get("text", ""), "type": "text"})
@@ -114,12 +108,17 @@ def _convert_to_v1_from_mistral(message: AIMessage) -> list[types.ContentBlock]:
                     # normalized Mistral citation chunk), attach it as a
                     # Citation annotation so downstream consumers can map
                     # answer fragments back to source documents.
-                    if ref_meta := block.get("reference"):
+                    if "reference" in block:
                         citation: types.Citation = {"type": "citation"}
-                        if block["text"]:
-                            citation["cited_text"] = block["text"]
-                        if isinstance(ref_meta, dict) and ref_meta:
-                            citation["extras"] = ref_meta
+                        ref_meta = block.get("reference")
+                        if isinstance(ref_meta, dict):
+                            if cited_text := ref_meta.get("cited_text"):
+                                citation["cited_text"] = cited_text
+                            extras = {
+                                k: v for k, v in ref_meta.items() if k != "cited_text"
+                            }
+                            if extras:
+                                citation["extras"] = extras
                         text_block["annotations"] = [citation]
                     content_blocks.append(text_block)
 
