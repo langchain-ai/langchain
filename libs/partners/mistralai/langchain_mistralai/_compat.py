@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
 from langchain_core.messages.block_translators import register_translator
@@ -14,7 +16,49 @@ def _convert_from_v1_to_mistral(
     new_content: list = []
     for block in content:
         if block["type"] == "text":
-            new_content.append({"text": block.get("text", ""), "type": "text"})
+            if model_provider == "mistralai" and "annotations" in block:
+                # When a text block carries citation annotations, convert each
+                # annotation back to a text block with "reference" metadata so
+                # the round-trip preserves both visible text and citation data.
+                emitted_reference = False
+                for annotation in block["annotations"]:
+                    if not isinstance(annotation, dict):
+                        continue
+                    ann_type = annotation.get("type")
+                    if ann_type == "non_standard_annotation":
+                        value = annotation.get("value")
+                        if isinstance(value, dict) and value.get("type") == "reference":
+                            ref_text = value.get("text", "")
+                            ref_meta = {
+                                k: v
+                                for k, v in value.items()
+                                if k not in ("type", "text")
+                            }
+                            new_block: dict[str, Any] = {
+                                "type": "text",
+                                "text": ref_text,
+                                "reference": ref_meta,
+                            }
+                            if "index" in value:
+                                new_block["index"] = value["index"]
+                            new_content.append(new_block)
+                            emitted_reference = True
+                    elif ann_type == "citation":
+                        citation_meta: dict[str, Any] = {}
+                        extras = annotation.get("extras", {})
+                        if isinstance(extras, dict):
+                            citation_meta.update(extras)
+                        new_block = {
+                            "type": "text",
+                            "text": annotation.get("cited_text", ""),
+                            "reference": citation_meta,
+                        }
+                        new_content.append(new_block)
+                        emitted_reference = True
+                if not emitted_reference:
+                    new_content.append({"type": "text", "text": block.get("text", "")})
+            else:
+                new_content.append({"text": block.get("text", ""), "type": "text"})
 
         elif (
             block["type"] == "reasoning"
@@ -64,6 +108,17 @@ def _convert_to_v1_from_mistral(message: AIMessage) -> list[types.ContentBlock]:
                     }
                     if "index" in block:
                         text_block["index"] = block["index"]
+                    # If the text block carries reference metadata (from a
+                    # normalized Mistral citation chunk), attach it as a
+                    # Citation annotation so downstream consumers can map
+                    # answer fragments back to source documents.
+                    if ref_meta := block.get("reference"):
+                        citation: types.Citation = {"type": "citation"}
+                        if block["text"]:
+                            citation["cited_text"] = block["text"]
+                        if isinstance(ref_meta, dict) and ref_meta:
+                            citation["extras"] = ref_meta
+                        text_block["annotations"] = [citation]
                     content_blocks.append(text_block)
 
                 elif block.get("type") == "thinking" and isinstance(

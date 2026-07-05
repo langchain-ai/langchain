@@ -18,8 +18,10 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
 )
+from langchain_core.messages import content as types
 from pydantic import SecretStr
 
+from langchain_mistralai._compat import _convert_to_v1_from_mistral
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
     _convert_chunk_to_message_chunk,
@@ -293,40 +295,93 @@ def test__convert_dict_to_message_with_missing_content() -> None:
 
 
 def test__convert_dict_to_message_with_citations() -> None:
+    """Reference blocks normalized to text blocks with reference metadata."""
     cited_text = "the temperature is 20 degrees C"
-    expected_citation = {
-        "type": "reference",
-        "reference_ids": [0],
-        "text": cited_text,
-    }
-    citation_content = [
+    raw_content: list[str | dict] = [
         {"type": "text", "text": "According to the document, "},
-        expected_citation,
+        {"type": "reference", "reference_ids": [0], "text": cited_text},
         {"type": "text", "text": " on average."},
     ]
-    message = {"role": "assistant", "content": citation_content}
+    message = {"role": "assistant", "content": raw_content}
     result = _convert_mistral_chat_message_to_message(message)
 
-    assert result.content == (
+    content = cast("list[str | dict]", result.content)
+    # The reference block is normalized to type="text" so .text includes it
+    assert content[0] == {"type": "text", "text": "According to the document, "}
+    block_1 = cast("dict", content[1])
+    assert block_1["type"] == "text"
+    assert block_1["text"] == cited_text
+    assert block_1["reference"] == {"reference_ids": [0]}
+    assert content[2] == {"type": "text", "text": " on average."}
+    assert result.response_metadata["model_provider"] == "mistralai"
+    assert "citations" not in result.response_metadata
+
+
+def test__convert_dict_to_message_citations_text_accessor() -> None:
+    """message.text includes cited spans from normalized reference blocks."""
+    cited_text = "the temperature is 20 degrees C"
+    raw_content: list[str | dict] = [
+        {"type": "text", "text": "According to the document, "},
+        {"type": "reference", "reference_ids": [0], "text": cited_text},
+        {"type": "text", "text": " on average."},
+    ]
+    message = {"role": "assistant", "content": raw_content}
+    result = _convert_mistral_chat_message_to_message(message)
+
+    # .text should include all visible text, including the cited span
+    assert str(result.text) == (
         "According to the document, the temperature is 20 degrees C on average."
     )
-    assert result.response_metadata["model_provider"] == "mistralai"
-    assert result.response_metadata["citations"] == [expected_citation]
+
+
+def test__convert_dict_to_message_citations_to_content_blocks() -> None:
+    """content_blocks translates reference metadata to TextContentBlock."""
+    cited_text = "the temperature is 20 degrees C"
+    raw_content: list[str | dict] = [
+        {"type": "text", "text": "According to the document, "},
+        {"type": "reference", "reference_ids": [0], "text": cited_text},
+        {"type": "text", "text": " on average."},
+    ]
+    message = {"role": "assistant", "content": raw_content}
+    result = _convert_mistral_chat_message_to_message(message)
+
+    blocks = _convert_to_v1_from_mistral(cast("AIMessage", result))
+    assert len(blocks) == 3
+
+    # First block: plain text
+    assert blocks[0]["type"] == "text"
+    assert blocks[0]["text"] == "According to the document, "
+
+    # Second block: text with citation annotation
+    block_1 = cast("types.TextContentBlock", blocks[1])
+    assert block_1["type"] == "text"
+    assert block_1["text"] == cited_text
+    annotations = block_1["annotations"]
+    assert len(annotations) == 1
+    assert annotations[0]["type"] == "citation"
+    assert annotations[0]["cited_text"] == cited_text
+    assert annotations[0]["extras"]["reference_ids"] == [0]
+
+    # Third block: plain text
+    assert blocks[2]["type"] == "text"
+    assert blocks[2]["text"] == " on average."
 
 
 def test_create_chat_result_with_citations() -> None:
+    """Citations are normalized to text blocks with reference metadata in .content."""
     chat = ChatMistralAI()
-    expected_citation = {"type": "reference", "reference_ids": [0], "text": "42"}
+    raw_citation = {"type": "reference", "reference_ids": [0], "text": "42"}
+    raw_content: list[str | dict] = [
+        {"type": "text", "text": "The answer is "},
+        raw_citation,
+        {"type": "text", "text": "."},
+    ]
     response = {
         "choices": [
             {
                 "message": {
                     "role": "assistant",
-                    "content": [
-                        {"type": "text", "text": "The answer is "},
-                        expected_citation,
-                        {"type": "text", "text": "."},
-                    ],
+                    "content": raw_content,
                 },
                 "finish_reason": "stop",
             }
@@ -336,12 +391,19 @@ def test_create_chat_result_with_citations() -> None:
     result = chat._create_chat_result(response)
     message = result.generations[0].message
 
-    assert message.content == "The answer is 42."
-    assert message.response_metadata["citations"] == [expected_citation]
+    content = cast("list[str | dict]", message.content)
+    # The reference block is normalized; .text includes the cited span
+    block_1 = cast("dict", content[1])
+    assert block_1["type"] == "text"
+    assert block_1["text"] == "42"
+    assert block_1["reference"] == {"reference_ids": [0]}
+    assert str(message.text) == "The answer is 42."
+    assert "citations" not in message.response_metadata
 
 
 def test__convert_chunk_to_message_chunk_with_citations() -> None:
-    expected_citation = {"type": "reference", "reference_ids": [0], "text": "42"}
+    """Streaming reference blocks are normalized to text blocks in chunk .content."""
+    raw_citation = {"type": "reference", "reference_ids": [0], "text": "42"}
     text_chunk = {
         "choices": [
             {
@@ -356,7 +418,7 @@ def test__convert_chunk_to_message_chunk_with_citations() -> None:
                 "delta": {
                     "role": "assistant",
                     "content": [
-                        dict(expected_citation),
+                        dict(raw_citation),
                     ],
                 },
                 "finish_reason": "stop",
@@ -373,12 +435,166 @@ def test__convert_chunk_to_message_chunk_with_citations() -> None:
     )
 
     assert isinstance(result_2, AIMessageChunk)
-    assert result_2.response_metadata["citations"] == [expected_citation]
+    # Reference block is normalized to type="text" with reference metadata
+    assert result_2.content == [
+        {"type": "text", "text": "42", "reference": {"reference_ids": [0]}, "index": 0},
+    ]
+    assert "citations" not in result_2.response_metadata
 
     full = result_1 + result_2
     assert isinstance(full, AIMessageChunk)
-    assert full.response_metadata["citations"] == [expected_citation]
+    assert "citations" not in full.response_metadata
     assert full.response_metadata["finish_reason"] == "stop"
+    # .text includes the cited span
+    assert str(full.text) == "The answer is 42"
+
+
+def test_citation_round_trip() -> None:
+    """Round-trip through v1 preserves text and reference metadata."""
+    from langchain_mistralai._compat import (
+        _convert_from_v1_to_mistral,
+        _convert_to_v1_from_mistral,
+    )
+
+    # Start with normalized content (as produced by _convert_mistral_chat_message)
+    original_content: list[str | dict] = [
+        {"type": "text", "text": "The answer is "},
+        {"type": "text", "text": "42", "reference": {"reference_ids": [0]}},
+        {"type": "text", "text": "."},
+    ]
+    message = AIMessage(content=original_content)
+    v1_blocks = _convert_to_v1_from_mistral(message)
+    round_tripped = _convert_from_v1_to_mistral(v1_blocks, "mistralai")
+
+    # Should have exactly 3 blocks, no duplication of cited text
+    assert len(round_tripped) == 3
+    assert round_tripped[0] == {"type": "text", "text": "The answer is "}
+    block_1 = cast("dict", round_tripped[1])
+    assert block_1["type"] == "text"
+    assert block_1["text"] == "42"
+    assert block_1["reference"] == {"reference_ids": [0]}
+    assert round_tripped[2] == {"type": "text", "text": "."}
+
+
+def test_citation_round_trip_preserves_extra_fields() -> None:
+    """Extra provider fields on reference metadata survive the round-trip."""
+    from langchain_mistralai._compat import (
+        _convert_from_v1_to_mistral,
+        _convert_to_v1_from_mistral,
+    )
+
+    original_content: list[str | dict] = [
+        {"type": "text", "text": "cited span", "reference": {"reference_ids": [1, 2]}},
+    ]
+    message = AIMessage(content=original_content)
+    v1_blocks = _convert_to_v1_from_mistral(message)
+    round_tripped = _convert_from_v1_to_mistral(v1_blocks, "mistralai")
+
+    assert len(round_tripped) == 1
+    block_0 = cast("dict", round_tripped[0])
+    assert block_0["type"] == "text"
+    assert block_0["text"] == "cited span"
+    assert block_0["reference"] == {"reference_ids": [1, 2]}
+
+
+def test_citation_streaming_accumulated_content() -> None:
+    """Streaming chunks accumulate normalized text blocks in full.content."""
+    raw_citation = {"type": "reference", "reference_ids": [0], "text": "42"}
+    text_chunk = {
+        "choices": [
+            {
+                "delta": {"role": "assistant", "content": "The answer is "},
+                "finish_reason": None,
+            }
+        ],
+    }
+    reference_chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": [dict(raw_citation)],
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "model": "mistral-small-latest",
+    }
+
+    result_1, index, index_type = _convert_chunk_to_message_chunk(
+        text_chunk, AIMessageChunk, -1, "", None
+    )
+    result_2, _, _ = _convert_chunk_to_message_chunk(
+        reference_chunk, AIMessageChunk, index, index_type, None
+    )
+
+    full = result_1 + result_2
+    # full.content should contain both the text and the normalized reference block
+    assert isinstance(full.content, list)
+    assert any(
+        isinstance(b, dict)
+        and b.get("type") == "text"
+        and b.get("text") == "42"
+        and cast("dict", b.get("reference", {})).get("reference_ids") == [0]
+        for b in full.content
+    )
+
+
+def test_citation_index_not_in_extras() -> None:
+    """Streaming index should not leak into citation extras."""
+    from langchain_mistralai._compat import _convert_to_v1_from_mistral
+
+    content: list[str | dict] = [
+        {"type": "text", "text": "42", "reference": {"reference_ids": [0]}, "index": 0},
+    ]
+    message = AIMessageChunk(content=content)
+    blocks = _convert_to_v1_from_mistral(message)
+    assert len(blocks) == 1
+    block_0 = cast("types.TextContentBlock", blocks[0])
+    annotation = block_0["annotations"][0]
+    extras = cast("dict", annotation.get("extras", {}))
+    assert "index" not in extras
+
+
+def test_citation_no_text_in_reference() -> None:
+    """A reference block with no text still converts without error."""
+    from langchain_mistralai._compat import _convert_to_v1_from_mistral
+
+    content: list[str | dict] = [
+        {"type": "text", "text": "", "reference": {"reference_ids": [0]}},
+    ]
+    message = AIMessage(content=content)
+    blocks = _convert_to_v1_from_mistral(message)
+    assert len(blocks) == 1
+    assert blocks[0]["type"] == "text"
+    assert blocks[0]["text"] == ""
+    block_0 = cast("types.TextContentBlock", blocks[0])
+    assert "cited_text" not in block_0["annotations"][0]
+
+
+def test_malformed_annotation_does_not_crash() -> None:
+    """Malformed annotations are skipped, not raised."""
+    from langchain_mistralai._compat import _convert_from_v1_to_mistral
+
+    content: list = [
+        {
+            "type": "text",
+            "text": "hello",
+            "annotations": [
+                None,  # not a dict
+                {"type": "unknown"},  # unrecognized type
+                {"type": "citation", "cited_text": "cited"},  # valid
+            ],
+        }
+    ]
+    result = _convert_from_v1_to_mistral(content, "mistralai")
+    # The valid citation produces a text block with reference metadata;
+    # the text block is not appended because a reference was emitted.
+    assert len(result) == 1
+    block_0 = cast("dict", result[0])
+    assert block_0["type"] == "text"
+    assert block_0["text"] == "cited"
+    assert "reference" in block_0
 
 
 def test_custom_token_counting() -> None:
