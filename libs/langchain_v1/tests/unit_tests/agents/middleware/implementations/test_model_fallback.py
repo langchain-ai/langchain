@@ -14,9 +14,11 @@ from langchain_core.tools import BaseTool, tool
 from typing_extensions import override
 
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware import model_fallback as model_fallback_module
 from langchain.agents.middleware.model_fallback import (
     ModelFallbackMiddleware,
     _sanitize_request_for_fallback,
+    _supports_anthropic_cache_control,
 )
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 from tests.unit_tests.agents.model import FakeToolCallingModel
@@ -716,3 +718,352 @@ def test_model_request_is_frozen() -> None:
     # Original request should be unchanged
     assert request2.model != new_model
     assert request2.system_prompt != "override prompt"
+
+
+class _FakeAnthropicModel(GenericFakeChatModel):
+    """Fake model that reports `anthropic-chat` as its `_llm_type`.
+
+    This simulates a direct-Anthropic model for provider-based cache-control
+    detection without importing the real `ChatAnthropic` (which requires
+    `langchain-anthropic`).
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return "anthropic-chat"
+
+
+class _FakeBedrockAnthropicModel(GenericFakeChatModel):
+    """Fake model that reports `anthropic-bedrock-chat` as its `_llm_type`.
+
+    Simulates a Bedrock-hosted Claude model. `ChatAnthropic._get_request_payload`
+    translates the top-level `cache_control` kwarg into a block-level breakpoint
+    for this `_llm_type`, while content-block and tool markers pass through, so
+    cache markers are valid for this provider.
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return "anthropic-bedrock-chat"
+
+
+class _FakeVertexAnthropicModel(GenericFakeChatModel):
+    """Fake model that reports `anthropic-chat-vertexai` as its `_llm_type`."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "anthropic-chat-vertexai"
+
+
+class _FakeNonStringLlmTypeModel(GenericFakeChatModel):
+    """Fake whose `_llm_type` is not a string, exercising the `isinstance` guard.
+
+    A list is deliberately unhashable, so without the guard the frozenset
+    membership test would raise `TypeError` rather than return `False`.
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return ["anthropic-chat"]  # type: ignore[return-value]
+
+
+_ANTHROPIC_COMPATIBLE_FAKES = [
+    _FakeAnthropicModel,
+    _FakeBedrockAnthropicModel,
+    _FakeVertexAnthropicModel,
+]
+
+
+def test_supports_anthropic_cache_control() -> None:
+    """`_supports_anthropic_cache_control` detects Anthropic-compatible models."""
+    assert _supports_anthropic_cache_control(_FakeAnthropicModel(messages=iter([])))
+    assert _supports_anthropic_cache_control(_FakeBedrockAnthropicModel(messages=iter([])))
+    assert _supports_anthropic_cache_control(_FakeVertexAnthropicModel(messages=iter([])))
+    assert not _supports_anthropic_cache_control(GenericFakeChatModel(messages=iter([])))
+    assert not _supports_anthropic_cache_control(FakeToolCallingModel())
+    # A non-string `_llm_type` must be rejected by the guard rather than raising.
+    assert not _supports_anthropic_cache_control(_FakeNonStringLlmTypeModel(messages=iter([])))
+
+
+def test_fallback_preserves_cache_markers_for_anthropic_sync() -> None:
+    """Anthropic fallback keeps cache markers; non-Anthropic fallback strips them."""
+    primary_model = _FakeAnthropicModel(messages=iter([AIMessage(content="primary response")]))
+    anthropic_fallback = _FakeAnthropicModel(
+        messages=iter([AIMessage(content="anthropic fallback")])
+    )
+    non_anthropic_fallback = GenericFakeChatModel(
+        messages=iter([AIMessage(content="non-anthropic fallback")])
+    )
+    middleware = ModelFallbackMiddleware(anthropic_fallback, non_anthropic_fallback)
+    request = _make_request_with_cache_markers(primary_model)
+    attempts: list[ModelRequest] = []
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            # Primary attempt — markers present
+            _assert_request_has_cache_markers(req)
+            msg = "Primary model failed"
+            raise ValueError(msg)
+        if len(attempts) == 2:
+            # Anthropic fallback — markers preserved
+            assert req.model is anthropic_fallback
+            _assert_request_has_cache_markers(req)
+            msg = "Anthropic fallback failed"
+            raise ValueError(msg)
+        # Non-Anthropic fallback — markers stripped
+        assert req.model is non_anthropic_fallback
+        _assert_request_is_sanitized(req)
+        return ModelResponse(result=[AIMessage(content="non-anthropic fallback")])
+
+    response = middleware.wrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ModelResponse)
+    assert response.result[0].content == "non-anthropic fallback"
+    assert len(attempts) == 3
+    _assert_request_has_cache_markers(request)
+
+
+async def test_fallback_preserves_cache_markers_for_anthropic_async() -> None:
+    """Async: Anthropic fallback keeps cache markers; non-Anthropic strips them."""
+    primary_model = _FakeAnthropicModel(messages=iter([AIMessage(content="primary response")]))
+    anthropic_fallback = _FakeAnthropicModel(
+        messages=iter([AIMessage(content="anthropic fallback")])
+    )
+    non_anthropic_fallback = GenericFakeChatModel(
+        messages=iter([AIMessage(content="non-anthropic fallback")])
+    )
+    middleware = ModelFallbackMiddleware(anthropic_fallback, non_anthropic_fallback)
+    request = _make_request_with_cache_markers(primary_model)
+    attempts: list[ModelRequest] = []
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            _assert_request_has_cache_markers(req)
+            msg = "Primary model failed"
+            raise ValueError(msg)
+        if len(attempts) == 2:
+            assert req.model is anthropic_fallback
+            _assert_request_has_cache_markers(req)
+            msg = "Anthropic fallback failed"
+            raise ValueError(msg)
+        assert req.model is non_anthropic_fallback
+        _assert_request_is_sanitized(req)
+        return ModelResponse(result=[AIMessage(content="non-anthropic fallback")])
+
+    response = await middleware.awrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ModelResponse)
+    assert response.result[0].content == "non-anthropic fallback"
+    assert len(attempts) == 3
+    _assert_request_has_cache_markers(request)
+
+
+@pytest.mark.parametrize("fallback_cls", _ANTHROPIC_COMPATIBLE_FAKES)
+def test_fallback_preserves_cache_markers_for_anthropic_compatible_sync(
+    fallback_cls: type[GenericFakeChatModel],
+) -> None:
+    """Any Anthropic-compatible fallback (direct, Bedrock, Vertex) keeps markers."""
+    primary_model = _FakeAnthropicModel(messages=iter([AIMessage(content="primary response")]))
+    fallback = fallback_cls(messages=iter([AIMessage(content="fallback")]))
+    middleware = ModelFallbackMiddleware(fallback)
+    request = _make_request_with_cache_markers(primary_model)
+    attempts: list[ModelRequest] = []
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            _assert_request_has_cache_markers(req)
+            msg = "Primary model failed"
+            raise ValueError(msg)
+        # Anthropic-compatible fallback — markers preserved
+        assert req.model is fallback
+        _assert_request_has_cache_markers(req)
+        return ModelResponse(result=[AIMessage(content="fallback")])
+
+    response = middleware.wrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ModelResponse)
+    assert response.result[0].content == "fallback"
+    assert len(attempts) == 2
+    _assert_request_has_cache_markers(request)
+
+
+@pytest.mark.parametrize("fallback_cls", _ANTHROPIC_COMPATIBLE_FAKES)
+async def test_fallback_preserves_cache_markers_for_anthropic_compatible_async(
+    fallback_cls: type[GenericFakeChatModel],
+) -> None:
+    """Async: any Anthropic-compatible fallback (direct, Bedrock, Vertex) keeps markers."""
+    primary_model = _FakeAnthropicModel(messages=iter([AIMessage(content="primary response")]))
+    fallback = fallback_cls(messages=iter([AIMessage(content="fallback")]))
+    middleware = ModelFallbackMiddleware(fallback)
+    request = _make_request_with_cache_markers(primary_model)
+    attempts: list[ModelRequest] = []
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            _assert_request_has_cache_markers(req)
+            msg = "Primary model failed"
+            raise ValueError(msg)
+        assert req.model is fallback
+        _assert_request_has_cache_markers(req)
+        return ModelResponse(result=[AIMessage(content="fallback")])
+
+    response = await middleware.awrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ModelResponse)
+    assert response.result[0].content == "fallback"
+    assert len(attempts) == 2
+    _assert_request_has_cache_markers(request)
+
+
+def test_fallback_reverse_order_preserves_anthropic_markers_sync() -> None:
+    """A non-Anthropic fallback first must not corrupt a later Anthropic fallback.
+
+    Each iteration derives its request from the original, so the Anthropic
+    fallback still sees cache markers even though the earlier non-Anthropic
+    fallback received a sanitized request. Guards against a regression to
+    loop-carried reassignment of the request.
+    """
+    primary_model = _FakeAnthropicModel(messages=iter([AIMessage(content="primary response")]))
+    non_anthropic_fallback = GenericFakeChatModel(
+        messages=iter([AIMessage(content="non-anthropic fallback")])
+    )
+    anthropic_fallback = _FakeAnthropicModel(
+        messages=iter([AIMessage(content="anthropic fallback")])
+    )
+    middleware = ModelFallbackMiddleware(non_anthropic_fallback, anthropic_fallback)
+    request = _make_request_with_cache_markers(primary_model)
+    attempts: list[ModelRequest] = []
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            _assert_request_has_cache_markers(req)
+            msg = "Primary model failed"
+            raise ValueError(msg)
+        if len(attempts) == 2:
+            # Non-Anthropic fallback first — markers stripped
+            assert req.model is non_anthropic_fallback
+            _assert_request_is_sanitized(req)
+            msg = "Non-Anthropic fallback failed"
+            raise ValueError(msg)
+        # Anthropic fallback second — markers still present (derived from original)
+        assert req.model is anthropic_fallback
+        _assert_request_has_cache_markers(req)
+        return ModelResponse(result=[AIMessage(content="anthropic fallback")])
+
+    response = middleware.wrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ModelResponse)
+    assert response.result[0].content == "anthropic fallback"
+    assert len(attempts) == 3
+    _assert_request_has_cache_markers(request)
+
+
+async def test_fallback_reverse_order_preserves_anthropic_markers_async() -> None:
+    """Async: non-Anthropic fallback first must not corrupt a later Anthropic fallback."""
+    primary_model = _FakeAnthropicModel(messages=iter([AIMessage(content="primary response")]))
+    non_anthropic_fallback = GenericFakeChatModel(
+        messages=iter([AIMessage(content="non-anthropic fallback")])
+    )
+    anthropic_fallback = _FakeAnthropicModel(
+        messages=iter([AIMessage(content="anthropic fallback")])
+    )
+    middleware = ModelFallbackMiddleware(non_anthropic_fallback, anthropic_fallback)
+    request = _make_request_with_cache_markers(primary_model)
+    attempts: list[ModelRequest] = []
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            _assert_request_has_cache_markers(req)
+            msg = "Primary model failed"
+            raise ValueError(msg)
+        if len(attempts) == 2:
+            assert req.model is non_anthropic_fallback
+            _assert_request_is_sanitized(req)
+            msg = "Non-Anthropic fallback failed"
+            raise ValueError(msg)
+        assert req.model is anthropic_fallback
+        _assert_request_has_cache_markers(req)
+        return ModelResponse(result=[AIMessage(content="anthropic fallback")])
+
+    response = await middleware.awrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ModelResponse)
+    assert response.result[0].content == "anthropic fallback"
+    assert len(attempts) == 3
+    _assert_request_has_cache_markers(request)
+
+
+def test_fallback_sanitizer_error_is_not_masked_sync(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A sanitizer bug must surface, not be swallowed and hidden by a later success.
+
+    The sanitized request is built outside the ``try`` that guards the model
+    call, so an exception from sanitization propagates immediately instead of
+    being caught, recorded as a model failure, and masked when a subsequent
+    Anthropic fallback succeeds.
+    """
+
+    def _boom(_request: ModelRequest) -> ModelRequest:
+        msg = "sanitizer boom"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(model_fallback_module, "_sanitize_request_for_fallback", _boom)
+
+    primary_model = _FakeAnthropicModel(messages=iter([AIMessage(content="primary response")]))
+    non_anthropic_fallback = GenericFakeChatModel(
+        messages=iter([AIMessage(content="non-anthropic fallback")])
+    )
+    anthropic_fallback = _FakeAnthropicModel(
+        messages=iter([AIMessage(content="anthropic fallback")])
+    )
+    middleware = ModelFallbackMiddleware(non_anthropic_fallback, anthropic_fallback)
+    request = _make_request_with_cache_markers(primary_model)
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        if req.model is primary_model:
+            msg = "Primary model failed"
+            raise ValueError(msg)
+        # The Anthropic fallback must never be reached: the sanitizer error on
+        # the preceding non-Anthropic fallback should have propagated first.
+        return ModelResponse(result=[AIMessage(content="should not be reached")])
+
+    with pytest.raises(RuntimeError, match="sanitizer boom"):
+        middleware.wrap_model_call(request, mock_handler)
+
+
+async def test_fallback_sanitizer_error_is_not_masked_async(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Async: a sanitizer bug must surface, not be masked by a later success."""
+
+    def _boom(_request: ModelRequest) -> ModelRequest:
+        msg = "sanitizer boom"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(model_fallback_module, "_sanitize_request_for_fallback", _boom)
+
+    primary_model = _FakeAnthropicModel(messages=iter([AIMessage(content="primary response")]))
+    non_anthropic_fallback = GenericFakeChatModel(
+        messages=iter([AIMessage(content="non-anthropic fallback")])
+    )
+    anthropic_fallback = _FakeAnthropicModel(
+        messages=iter([AIMessage(content="anthropic fallback")])
+    )
+    middleware = ModelFallbackMiddleware(non_anthropic_fallback, anthropic_fallback)
+    request = _make_request_with_cache_markers(primary_model)
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        if req.model is primary_model:
+            msg = "Primary model failed"
+            raise ValueError(msg)
+        return ModelResponse(result=[AIMessage(content="should not be reached")])
+
+    with pytest.raises(RuntimeError, match="sanitizer boom"):
+        await middleware.awrap_model_call(request, mock_handler)

@@ -4,10 +4,13 @@ When a caching middleware such as `AnthropicPromptCachingMiddleware` wraps this
 middleware from the outside, it applies Anthropic `cache_control` markers to the
 request *before* the fallback loop runs. Those markers are provider-specific and
 cause API errors on non-Anthropic fallback models, so this middleware strips them
-from fallback attempts. The knowledge of the `cache_control` marker is duplicated
-here (rather than owned solely by the Anthropic partner package) because an outer
-caching middleware never re-runs during fallback and therefore cannot clean up
-after itself.
+from fallback attempts — but only when the fallback model itself cannot accept
+Anthropic cache markers. When the fallback is another Anthropic model the markers
+are valid and preserve prompt caching, so they are left intact.
+
+The knowledge of the `cache_control` marker is duplicated here (rather than owned
+solely by the Anthropic partner package) because an outer caching middleware
+never re-runs during fallback and therefore cannot clean up after itself.
 """
 
 from __future__ import annotations
@@ -235,6 +238,43 @@ def _without_cache_control_from_content_block(
     return sanitized_block, changed
 
 
+# `_llm_type` values that indicate a model speaks an Anthropic-compatible API
+# and therefore accepts `cache_control` markers. Direct Anthropic models
+# (`ChatAnthropic`) report `"anthropic-chat"`; Bedrock-hosted Claude
+# (`ChatAnthropicBedrock`, a `ChatAnthropic` subclass in `langchain-aws`) reports
+# `"anthropic-bedrock-chat"` and translates the top-level kwarg into block-level
+# breakpoints inside the inherited `ChatAnthropic._get_request_payload`, while
+# content-block and tool `cache_control` markers pass through unchanged.
+# Vertex-hosted Claude (`ChatAnthropicVertex` in `langchain-google`) reports
+# `"anthropic-chat-vertexai"` and nests the same marker shape through its own
+# request builder — not the shared `ChatAnthropic` method. All three keep prompt
+# caching intact on fallback.
+#
+# Keep this set in sync with those classes' `_llm_type` values, which live in
+# separate repositories. If a value drifts or a new Anthropic transport ships,
+# the failure mode is silent loss of prompt caching (markers stripped from a
+# model that supports them), not a hard error — so CI here will not catch it.
+_ANTHROPIC_LLM_TYPES: frozenset[str] = frozenset(
+    {
+        "anthropic-chat",
+        "anthropic-bedrock-chat",
+        "anthropic-chat-vertexai",
+    }
+)
+
+
+def _supports_anthropic_cache_control(model: BaseChatModel) -> bool:
+    """Return whether `model` accepts Anthropic `cache_control` markers.
+
+    Checked via `_llm_type` so the decision is provider-based rather than
+    model-name-based: any Anthropic-compatible model (including future model IDs
+    we have not seen) keeps its cache markers on fallback, while OpenAI, Gemini,
+    and other non-Anthropic providers get a sanitized request.
+    """
+    llm_type = getattr(model, "_llm_type", None)
+    return isinstance(llm_type, str) and llm_type in _ANTHROPIC_LLM_TYPES
+
+
 class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Automatic fallback to alternative models on errors.
 
@@ -307,15 +347,18 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         except Exception as e:
             last_exception = e
 
-        # Sanitize once, outside the loop: sanitization is model-independent, so
-        # keeping it out of the try avoids masking a sanitizer bug as a model
-        # failure and avoids re-sanitizing the payload for every fallback model.
-        sanitized_request = _sanitize_request_for_fallback(request)
-
-        # Try fallback models
+        # Try fallback models — sanitize cache markers only when the fallback
+        # model cannot accept them (i.e. is not an Anthropic-compatible model).
+        # The request is derived outside the try so a sanitizer or `_llm_type`
+        # bug surfaces directly instead of being masked as a model failure.
         for fallback_model in self.models:
+            fallback_request = (
+                request
+                if _supports_anthropic_cache_control(fallback_model)
+                else _sanitize_request_for_fallback(request)
+            )
             try:
-                return handler(sanitized_request.override(model=fallback_model))
+                return handler(fallback_request.override(model=fallback_model))
             except Exception as e:
                 last_exception = e
                 continue
@@ -346,15 +389,18 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         except Exception as e:
             last_exception = e
 
-        # Sanitize once, outside the loop: sanitization is model-independent, so
-        # keeping it out of the try avoids masking a sanitizer bug as a model
-        # failure and avoids re-sanitizing the payload for every fallback model.
-        sanitized_request = _sanitize_request_for_fallback(request)
-
-        # Try fallback models
+        # Try fallback models — sanitize cache markers only when the fallback
+        # model cannot accept them (i.e. is not an Anthropic-compatible model).
+        # The request is derived outside the try so a sanitizer or `_llm_type`
+        # bug surfaces directly instead of being masked as a model failure.
         for fallback_model in self.models:
+            fallback_request = (
+                request
+                if _supports_anthropic_cache_control(fallback_model)
+                else _sanitize_request_for_fallback(request)
+            )
             try:
-                return await handler(sanitized_request.override(model=fallback_model))
+                return await handler(fallback_request.override(model=fallback_model))
             except Exception as e:
                 last_exception = e
                 continue
