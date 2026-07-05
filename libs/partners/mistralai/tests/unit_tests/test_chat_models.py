@@ -305,10 +305,12 @@ def test__convert_dict_to_message_with_citations() -> None:
     message = {"role": "assistant", "content": raw_content}
     result = _convert_mistral_chat_message_to_message(message)
 
-    content = cast("list[str | dict]", result.content)
+    assert isinstance(result.content, list)
+    content = result.content
     # The reference block is normalized to type="text" so .text includes it
     assert content[0] == {"type": "text", "text": "According to the document, "}
-    block_1 = cast("dict", content[1])
+    assert isinstance(content[1], dict)
+    block_1 = content[1]
     assert block_1["type"] == "text"
     assert block_1["text"] == cited_text
     assert block_1["reference"] == {"reference_ids": [0]}
@@ -345,7 +347,8 @@ def test__convert_dict_to_message_citations_to_content_blocks() -> None:
     message = {"role": "assistant", "content": raw_content}
     result = _convert_mistral_chat_message_to_message(message)
 
-    blocks = _convert_to_v1_from_mistral(cast("AIMessage", result))
+    assert isinstance(result, AIMessage)
+    blocks = _convert_to_v1_from_mistral(result)
     assert len(blocks) == 3
 
     # First block: plain text
@@ -391,9 +394,11 @@ def test_create_chat_result_with_citations() -> None:
     result = chat._create_chat_result(response)
     message = result.generations[0].message
 
-    content = cast("list[str | dict]", message.content)
+    assert isinstance(message.content, list)
+    content = message.content
     # The reference block is normalized; .text includes the cited span
-    block_1 = cast("dict", content[1])
+    assert isinstance(content[1], dict)
+    block_1 = content[1]
     assert block_1["type"] == "text"
     assert block_1["text"] == "42"
     assert block_1["reference"] == {"reference_ids": [0]}
@@ -469,7 +474,8 @@ def test_citation_round_trip() -> None:
     # Should have exactly 3 blocks, no duplication of cited text
     assert len(round_tripped) == 3
     assert round_tripped[0] == {"type": "text", "text": "The answer is "}
-    block_1 = cast("dict", round_tripped[1])
+    assert isinstance(round_tripped[1], dict)
+    block_1 = round_tripped[1]
     assert block_1["type"] == "text"
     assert block_1["text"] == "42"
     assert block_1["reference"] == {"reference_ids": [0]}
@@ -491,7 +497,8 @@ def test_citation_round_trip_preserves_extra_fields() -> None:
     round_tripped = _convert_from_v1_to_mistral(v1_blocks, "mistralai")
 
     assert len(round_tripped) == 1
-    block_0 = cast("dict", round_tripped[0])
+    assert isinstance(round_tripped[0], dict)
+    block_0 = round_tripped[0]
     assert block_0["type"] == "text"
     assert block_0["text"] == "cited span"
     assert block_0["reference"] == {"reference_ids": [1, 2]}
@@ -535,7 +542,8 @@ def test_citation_streaming_accumulated_content() -> None:
         isinstance(b, dict)
         and b.get("type") == "text"
         and b.get("text") == "42"
-        and cast("dict", b.get("reference", {})).get("reference_ids") == [0]
+        and isinstance(ref := b.get("reference"), dict)
+        and ref.get("reference_ids") == [0]
         for b in full.content
     )
 
@@ -552,7 +560,8 @@ def test_citation_index_not_in_extras() -> None:
     assert len(blocks) == 1
     block_0 = cast("types.TextContentBlock", blocks[0])
     annotation = block_0["annotations"][0]
-    extras = cast("dict", annotation.get("extras", {}))
+    extras = annotation.get("extras", {})
+    assert isinstance(extras, dict)
     assert "index" not in extras
 
 
@@ -591,7 +600,8 @@ def test_malformed_annotation_does_not_crash() -> None:
     # The valid citation produces a text block with reference metadata;
     # the text block is not appended because a reference was emitted.
     assert len(result) == 1
-    block_0 = cast("dict", result[0])
+    assert isinstance(result[0], dict)
+    block_0 = result[0]
     assert block_0["type"] == "text"
     assert block_0["text"] == "cited"
     assert "reference" in block_0
