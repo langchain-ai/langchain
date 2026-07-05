@@ -49,7 +49,7 @@ lint lint_diff lint_package lint_tests:
 	./scripts/lint_imports.sh
 	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_LINT) ruff check $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_LINT) ruff format $(PYTHON_FILES) --diff
-	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_LINT) ty check $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || $(UV_RUN_TYPE) ty check $(PYTHON_FILES)
 
 type:
 	$(UV_RUN_TYPE) ty check $(PYTHON_FILES)
