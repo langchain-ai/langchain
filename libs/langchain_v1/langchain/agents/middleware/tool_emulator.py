@@ -36,7 +36,7 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
             middleware = LLMToolEmulator()
 
             agent = create_agent(
-                model="openai:gpt-4o",
+                model="openai:gpt-5.5",
                 tools=[get_weather, get_user_location, calculator],
                 middleware=[middleware],
             )

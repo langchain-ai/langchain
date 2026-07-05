@@ -13,6 +13,7 @@ def _call(cls: type[Embeddings], **kwargs: Any) -> Embeddings:
 
 
 _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., Embeddings]]] = {
+    "azure_ai": ("langchain_azure_ai.embeddings", "AzureAIOpenAIApiEmbeddingsModel", _call),
     "azure_openai": ("langchain_openai", "AzureOpenAIEmbeddings", _call),
     "bedrock": (
         "langchain_aws",
@@ -84,7 +85,7 @@ def _get_embeddings_class_creator(provider: str) -> Callable[..., Embeddings]:
     try:
         module = importlib.import_module(module_name)
     except ImportError as e:
-        pkg = module_name.replace("_", "-")
+        pkg = module_name.split(".", maxsplit=1)[0].replace("_", "-")
         msg = f"Could not import {pkg} python package. Please install it with `pip install {pkg}`"
         raise ImportError(msg) from e
 
@@ -217,6 +218,7 @@ def init_embeddings(
             are:
 
             - `openai`                  -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
+            - `azure_ai`                -> [`langchain-azure-ai`](https://docs.langchain.com/oss/python/integrations/providers/microsoft)
             - `azure_openai`            -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
             - `bedrock`                 -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
             - `cohere`                  -> [`langchain-cohere`](https://docs.langchain.com/oss/python/integrations/providers/cohere)

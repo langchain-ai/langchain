@@ -5,15 +5,21 @@ import json
 import re
 import sys
 import tempfile
+import warnings
 from pathlib import Path
-from typing import Any
+from typing import Any, get_type_hints
 
 import httpx
 
-try:
-    import tomllib  # type: ignore[import-not-found]  # Python 3.11+
-except ImportError:
-    import tomli as tomllib  # type: ignore[import-not-found,no-redef]
+# Use a `sys.version_info` guard rather than try/except: under strict mypy,
+# `warn_unused_ignores` cannot be satisfied across versions with try/except
+# (3.10 needs an `import-not-found` ignore on `tomllib`; 3.11+ flags it unused).
+# mypy resolves this guard per target version and exempts it from
+# `warn_unreachable`, so it type-checks cleanly with no ignores.
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 
 def _validate_data_dir(data_dir: Path) -> Path:
@@ -106,6 +112,11 @@ def _model_data_to_profile(model_data: dict[str, Any]) -> dict[str, Any]:
     output_modalities = modalities.get("output") or []
 
     profile = {
+        "name": model_data.get("name"),
+        "status": model_data.get("status"),
+        "release_date": model_data.get("release_date"),
+        "last_updated": model_data.get("last_updated"),
+        "open_weights": model_data.get("open_weights"),
         "max_input_tokens": limit.get("context"),
         "max_output_tokens": limit.get("output"),
         "text_inputs": "text" in input_modalities,
@@ -120,7 +131,10 @@ def _model_data_to_profile(model_data: dict[str, Any]) -> dict[str, Any]:
         "reasoning_output": model_data.get("reasoning"),
         "tool_calling": model_data.get("tool_call"),
         "tool_choice": model_data.get("tool_choice"),
+        "tool_call_streaming": model_data.get("tool_call_streaming"),
         "structured_output": model_data.get("structured_output"),
+        "attachment": model_data.get("attachment"),
+        "temperature": model_data.get("temperature"),
         "image_url_inputs": model_data.get("image_url_inputs"),
         "image_tool_message": model_data.get("image_tool_message"),
         "pdf_tool_message": model_data.get("pdf_tool_message"),
@@ -141,6 +155,38 @@ def _apply_overrides(
             if value is not None:
                 merged[key] = value  # noqa: PERF403
     return merged
+
+
+def _warn_undeclared_profile_keys(
+    profiles: dict[str, dict[str, Any]],
+) -> None:
+    """Warn if any profile keys are not declared in `ModelProfile`.
+
+    Args:
+        profiles: Mapping of model IDs to their profile dicts.
+    """
+    try:
+        from langchain_core.language_models.model_profile import ModelProfile
+    except ImportError:
+        # langchain-core may not be installed or importable; skip check.
+        return
+
+    try:
+        declared = set(get_type_hints(ModelProfile).keys())
+    except (TypeError, NameError):
+        # get_type_hints raises NameError on unresolvable forward refs and
+        # TypeError when annotations evaluate to non-type objects.
+        return
+    extra = sorted({k for p in profiles.values() for k in p} - declared)
+    if extra:
+        warnings.warn(
+            f"Profile keys not declared in langchain_core ModelProfile: {extra}. "
+            f"Add these fields to "
+            f"langchain_core.language_models.model_profile.ModelProfile and "
+            f"release langchain-core before publishing partner packages that "
+            f"use these profiles.",
+            stacklevel=2,
+        )
 
 
 def _ensure_safe_output_path(base_dir: Path, output_file: Path) -> None:
@@ -293,6 +339,8 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     for model_id in sorted(extra_models):
         profiles[model_id] = _apply_overrides({}, provider_aug, model_augs[model_id])
 
+    _warn_undeclared_profile_keys(profiles)
+
     # Ensure directory exists
     try:
         data_dir.mkdir(parents=True, exist_ok=True, mode=0o755)
@@ -351,10 +399,53 @@ def main() -> None:
         help="Data directory containing profile_augmentations.toml",
     )
 
+    # summarize command
+    summarize_parser = subparsers.add_parser(
+        "summarize",
+        help="Summarize profile changes vs a git ref as Markdown (for PR bodies)",
+    )
+    summarize_parser.add_argument(
+        "--providers",
+        required=True,
+        help=(
+            "JSON array of objects with 'provider' and 'data_dir' keys "
+            "(data_dir relative to the repo root)."
+        ),
+    )
+    summarize_parser.add_argument(
+        "--base-ref",
+        default="HEAD",
+        help="Git ref to compare the working tree against (default: HEAD).",
+    )
+    summarize_parser.add_argument(
+        "--repo-root",
+        type=Path,
+        default=None,
+        help="Repository root (default: current directory).",
+    )
+
     args = parser.parse_args()
 
     if args.command == "refresh":
         refresh(args.provider, args.data_dir)
+    elif args.command == "summarize":
+        from langchain_model_profiles._summary import summarize
+
+        try:
+            providers = json.loads(args.providers)
+        except json.JSONDecodeError as e:
+            parser.error(f"--providers is not valid JSON: {e}")
+
+        if not isinstance(providers, list):
+            parser.error("--providers must be a JSON array")
+
+        try:
+            output = summarize(
+                providers, base_ref=args.base_ref, repo_root=args.repo_root
+            )
+        except (RuntimeError, ValueError, TypeError) as e:
+            parser.error(str(e))
+        print(output)
 
 
 if __name__ == "__main__":

@@ -69,6 +69,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
+from langchain_huggingface._version import __version__
 from langchain_huggingface.data._profiles import _PROFILES
 from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
@@ -581,6 +582,12 @@ class ChatHuggingFace(BaseChatModel):
             self.model_kwargs = self.llm.model_kwargs.copy()
 
     @model_validator(mode="after")
+    def _set_huggingface_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-huggingface", __version__)
+        return self
+
+    @model_validator(mode="after")
     def validate_llm(self) -> Self:
         if (
             not _is_huggingface_hub(self.llm)
@@ -596,12 +603,10 @@ class ChatHuggingFace(BaseChatModel):
             raise TypeError(msg)
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None and self.model_id:
-            self.profile = _get_default_model_profile(self.model_id)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        if self.model_id:
+            return _get_default_model_profile(self.model_id) or None
+        return None
 
     @classmethod
     def from_model_id(

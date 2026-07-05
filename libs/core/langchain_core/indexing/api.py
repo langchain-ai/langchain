@@ -90,6 +90,9 @@ def _hash_nested_dict(
 
 def _batch(size: int, iterable: Iterable[T]) -> Iterator[list[T]]:
     """Utility batching function."""
+    if size <= 0:
+        msg = f"Batch size must be a positive integer, got {size}."
+        raise ValueError(msg)
     it = iter(iterable)
     while True:
         chunk = list(islice(it, size))
@@ -100,6 +103,9 @@ def _batch(size: int, iterable: Iterable[T]) -> Iterator[list[T]]:
 
 async def _abatch(size: int, iterable: AsyncIterable[T]) -> AsyncIterator[list[T]]:
     """Utility batching function."""
+    if size <= 0:
+        msg = f"Batch size must be a positive integer, got {size}."
+        raise ValueError(msg)
     batch: list[T] = []
     async for element in iterable:
         if len(batch) < size:
@@ -123,7 +129,7 @@ def _get_source_id_assigner(
         return lambda doc: doc.metadata[source_id_key]
     if callable(source_id_key):
         return source_id_key
-    msg = (
+    msg = (  # type: ignore[unreachable]
         f"source_id_key should be either None, a string or a callable. "
         f"Got {source_id_key} of type {type(source_id_key)}."
     )
@@ -162,7 +168,7 @@ def _calculate_hash(
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
     if algorithm == "sha512":
         return hashlib.sha512(text.encode("utf-8")).hexdigest()
-    msg = f"Unsupported hashing algorithm: {algorithm}"
+    msg = f"Unsupported hashing algorithm: {algorithm}"  # type: ignore[unreachable]
     raise ValueError(msg)
 
 
@@ -264,7 +270,7 @@ def _delete(
             msg = "The delete operation to DocumentIndex failed."
             raise IndexingException(msg)
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Vectorstore should be either a VectorStore or a DocumentIndex. "
             f"Got {type(vector_store)}."
         )
@@ -437,7 +443,7 @@ def index(
     elif isinstance(destination, DocumentIndex):
         pass
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Vectorstore should be either a VectorStore or a DocumentIndex. "
             f"Got {type(destination)}."
         )
@@ -619,7 +625,7 @@ async def _adelete(
             msg = "The delete operation to DocumentIndex failed."
             raise IndexingException(msg)
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Vectorstore should be either a VectorStore or a DocumentIndex. "
             f"Got {type(vector_store)}."
         )
@@ -780,7 +786,7 @@ async def aindex(
     elif isinstance(destination, DocumentIndex):
         pass
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Vectorstore should be either a VectorStore or a DocumentIndex. "
             f"Got {type(destination)}."
         )
