@@ -1,0 +1,23 @@
+libs/partners/openrouter/langchain_openrouter/chat_models.py
+  s_d9288d723731b5::t_373c85008c2b84 319-325,327,330-331
+libs/partners/openrouter/tests/unit_tests/test_chat_models.py
+  s_d9288d723731b5::t_d9c1958be492c9 559
+  s_d9288d723731b5::t_101cbdd9c2d840 515,517
+  s_d9288d723731b5::t_f5d8b4c542d893 590-644
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "178572264e802e06b48013f45a0cbe4f1b8ae97c",
+  "prompts": {},
+  "sessions": {
+    "s_d9288d723731b5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99a6773c-eb33-405a-9902-5c7a1952360d",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
