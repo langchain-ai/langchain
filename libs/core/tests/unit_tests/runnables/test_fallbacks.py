@@ -335,14 +335,16 @@ class FakeStructuredOutputModel(BaseChatModel):
     @override
     def bind_tools(
         self,
-        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
+        tools: Sequence[
+            dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.bind(tools=tools)
 
     @override
     def with_structured_output(
-        self, schema: dict | type[BaseModel], **kwargs: Any
+        self, schema: dict[str, Any] | type[BaseModel], **kwargs: Any
     ) -> Runnable[LanguageModelInput, dict[str, int] | BaseModel]:
         return RunnableLambda(lambda _: {"foo": self.foo})
 
@@ -368,7 +370,9 @@ class FakeModel(BaseChatModel):
     @override
     def bind_tools(
         self,
-        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
+        tools: Sequence[
+            dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.bind(tools=tools)

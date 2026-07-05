@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 
     from bs4 import Tag
 
+
 FAKE_PYTHON_TEXT = """
 class Foo:
 
@@ -1009,6 +1010,23 @@ class Program
         "}\n    }",
         "}",
     ]
+
+
+def test_csharp_separators_no_java_keywords() -> None:
+    """C# separators should not contain Java-only keywords."""
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.CSHARP, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    # "implements" is a Java keyword; C# uses ":" for interface implementation
+    assert "\nimplements " not in splitter._separators
+
+
+def test_elixir_separators_no_while() -> None:
+    """Elixir has no while loop; the separator should not be present."""
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.ELIXIR, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    assert "\nwhile " not in splitter._separators
 
 
 def test_cpp_code_splitter() -> None:
@@ -3196,11 +3214,12 @@ def test_split_json() -> None:
     def random_val() -> str:
         return "".join(random.choices(string.ascii_letters, k=random.randint(4, 12)))
 
-    test_data: Any = {
+    val1: dict[str, Any] = {f"val1{i}": random_val() for i in range(100)}
+    val1["val16"] = {f"val16{i}": random_val() for i in range(100)}
+    test_data: dict[str, Any] = {
         "val0": random_val(),
-        "val1": {f"val1{i}": random_val() for i in range(100)},
+        "val1": val1,
     }
-    test_data["val1"]["val16"] = {f"val16{i}": random_val() for i in range(100)}
 
     # uses create_docs and split_text
     docs = splitter.create_documents(texts=[test_data])
@@ -3218,11 +3237,12 @@ def test_split_json_with_lists() -> None:
     def random_val() -> str:
         return "".join(random.choices(string.ascii_letters, k=random.randint(4, 12)))
 
-    test_data: Any = {
+    val1: dict[str, Any] = {f"val1{i}": random_val() for i in range(100)}
+    val1["val16"] = {f"val16{i}": random_val() for i in range(100)}
+    test_data: dict[str, Any] = {
         "val0": random_val(),
-        "val1": {f"val1{i}": random_val() for i in range(100)},
+        "val1": val1,
     }
-    test_data["val1"]["val16"] = {f"val16{i}": random_val() for i in range(100)}
 
     test_data_list: Any = {"testPreprocessing": [test_data]}
 

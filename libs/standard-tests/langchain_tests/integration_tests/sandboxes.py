@@ -37,12 +37,19 @@ import base64
 import shlex
 import sys
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from collections.abc import (
+    Iterator,  # noqa: TC003  # runtime import: pydantic resolves the field annotation
+)
+from typing import Any
 
 import pytest
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from pydantic import Field
 
 deepagents = pytest.importorskip("deepagents")
 
+from deepagents.backends import CompositeBackend
 from deepagents.backends.protocol import (
     ExecuteResponse,
     FileDownloadResponse,
@@ -50,15 +57,27 @@ from deepagents.backends.protocol import (
     ReadResult,
     SandboxBackendProtocol,
 )
+from deepagents.graph import create_deep_agent
 
 from langchain_tests.base import BaseStandardTests
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 
 def _quote(path: str) -> str:
     return shlex.quote(path)
+
+
+class _ScriptedToolModel(GenericFakeChatModel):
+    """Fake chat model that replays scripted `AIMessage`s and accepts any tools.
+
+    `bind_tools` is a no-op so scripted tool calls pass through unchanged, and
+    `messages` is excluded from serialization so tracing cannot consume the
+    iterator before the agent pulls from it.
+    """
+
+    messages: Iterator[AIMessage | str] = Field(exclude=True)
+
+    def bind_tools(self, tools: Any, **kwargs: Any) -> _ScriptedToolModel:  # noqa: ARG002
+        return self
 
 
 class SandboxIntegrationTests(BaseStandardTests):
@@ -211,6 +230,76 @@ class SandboxIntegrationTests(BaseStandardTests):
         assert result.truncated is False
         assert len(result.output) >= 500 * 1024
         assert result.output.startswith("x")
+
+    def test_execute_capture_at_source_offload(
+        self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
+    ) -> None:
+        """A large `execute` result is offloaded to a file and read back.
+
+        Drives a deep agent (fake model -> `execute` tool call) end-to-end and
+        checks that an over-budget result is not returned inline: the agent gets
+        a head/tail preview plus a `read_file` pointer, and the full output is
+        retrievable from the sandbox. The offload happens via capture-at-source
+        when the sandbox supports it, or the middleware's generic eviction
+        otherwise -- this asserts the outcome, not the mechanism. `artifacts_root`
+        is pinned under the writable test root so the offload file does not land
+        at the sandbox filesystem root.
+        """
+        if not self.has_sync:
+            pytest.skip("Sync tests not supported.")
+
+        backend = CompositeBackend(
+            default=sandbox_backend, routes={}, artifacts_root=sandbox_test_root
+        )
+        # ~225 KiB of output, comfortably over the default eviction budget.
+        command = (
+            "for i in $(seq 1 5000); do "
+            'echo "L$i: padding to clear the eviction budget"; done'
+        )
+        model = _ScriptedToolModel(
+            messages=iter(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "execute",
+                                "args": {"command": command},
+                                "id": "exec_1",
+                                "type": "tool_call",
+                            }
+                        ],
+                    ),
+                    AIMessage(content="done"),
+                ]
+            )
+        )
+        agent = create_deep_agent(model=model, backend=backend)
+
+        result = agent.invoke({"messages": [HumanMessage(content="run it")]})
+
+        tool_messages = [
+            m
+            for m in result["messages"]
+            if isinstance(m, ToolMessage) and m.name == "execute"
+        ]
+        assert tool_messages, "execute tool was not called"
+        content = tool_messages[0].content
+        capture_path = self.sandbox_path(
+            "large_tool_results/exec_1", root_dir=sandbox_test_root
+        )
+        # Offloaded: a read_file pointer and a head/tail preview, middle omitted.
+        assert capture_path in content
+        assert "read_file" in content
+        assert "L1:" in content
+        assert "L100:" not in content
+
+        # The full output is preserved on the sandbox and readable back.
+        read_back = sandbox_backend.read(capture_path)
+        assert isinstance(read_back, ReadResult)
+        assert read_back.error is None
+        assert read_back.file_data is not None
+        assert "L100:" in read_back.file_data["content"]
 
     def test_edit_single_occurrence(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str

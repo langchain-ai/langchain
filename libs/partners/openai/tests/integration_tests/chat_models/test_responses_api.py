@@ -3,7 +3,7 @@
 import base64
 import json
 import os
-from typing import Annotated, Any, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
 import openai
 import pytest
@@ -31,6 +31,14 @@ from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI, custom_tool
 from langchain_openai.chat_models.base import _convert_to_openai_response_format
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
+    from langchain_core.language_models.chat_model_stream import (
+        AsyncChatModelStream,
+        ChatModelStream,
+    )
 
 MODEL_NAME = "gpt-4o-mini"
 
@@ -113,9 +121,10 @@ def test_web_search(
     # Test streaming
     full: BaseMessage
     if use_v2_stream:
-        full = llm.stream_v2(
+        full = llm.stream_events(
             "What was a positive news story from today?",
             tools=[{"type": "web_search_preview"}],
+            version="v3",
         ).output
     else:
         aggregated: BaseMessageChunk | None = None
@@ -189,6 +198,62 @@ async def test_web_search_async() -> None:
         assert len(msg.additional_kwargs["tool_outputs"]) == 1
         tool_output = msg.additional_kwargs["tool_outputs"][0]
         assert tool_output["type"] == "web_search_call"
+
+
+@pytest.mark.default_cassette("test_apply_patch.yaml.gz")
+@pytest.mark.vcr
+def test_apply_patch() -> None:
+    """Test the apply_patch built-in tool end-to-end.
+
+    apply_patch is a client-executed tool: the model proposes a file operation
+    via an `apply_patch_call` block, the client applies it, and the result is
+    returned as an `apply_patch_call_output` block. Requires a model that
+    supports the tool.
+    """
+    prompt = "Create a new file named hello.txt containing the line: hello world"
+    llm = ChatOpenAI(model="gpt-5.1", output_version="responses/v1")
+    tool = {"type": "apply_patch"}
+
+    # Non-streaming: the model should emit an apply_patch_call block.
+    response = llm.invoke(prompt, tools=[tool])
+    assert isinstance(response, AIMessage)
+    calls = [
+        block
+        for block in response.content
+        if isinstance(block, dict) and block["type"] == "apply_patch_call"
+    ]
+    assert len(calls) == 1
+    call = calls[0]
+    assert call["call_id"]
+    assert call["operation"]["type"] in ("create_file", "update_file", "delete_file")
+
+    # Streaming: the apply_patch_call block survives chunk aggregation.
+    aggregated: BaseMessageChunk | None = None
+    for chunk in llm.stream(prompt, tools=[tool]):
+        assert isinstance(chunk, AIMessageChunk)
+        aggregated = chunk if aggregated is None else aggregated + chunk
+    assert isinstance(aggregated, AIMessageChunk)
+    assert any(
+        isinstance(block, dict) and block["type"] == "apply_patch_call"
+        for block in aggregated.content
+    )
+
+    # Round-trip: return an apply_patch_call_output and continue the conversation.
+    output_message = HumanMessage(
+        content=[
+            {
+                "type": "apply_patch_call_output",
+                "call_id": call["call_id"],
+                "status": "completed",
+                "output": f"Created {call['operation']['path']}",
+            }
+        ]
+    )
+    follow_up = llm.invoke(
+        [HumanMessage(prompt), response, output_message],
+        tools=[tool],
+    )
+    assert isinstance(follow_up, AIMessage)
 
 
 @pytest.mark.default_cassette("test_function_calling.yaml.gz")
@@ -284,7 +349,10 @@ def test_agent_loop_streaming(
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
     if use_v2_stream:
-        tool_call_message = llm_with_tools.stream_v2([input_message]).output
+        tool_call_message = cast(
+            "ChatModelStream",
+            llm_with_tools.stream_events([input_message], version="v3"),
+        ).output
     else:
         tool_call_message = llm_with_tools.invoke([input_message])
     assert isinstance(tool_call_message, AIMessage)
@@ -294,8 +362,12 @@ def test_agent_loop_streaming(
     tool_message = get_weather.invoke(tool_call)
     assert isinstance(tool_message, ToolMessage)
     if use_v2_stream:
-        response = llm_with_tools.stream_v2(
-            [input_message, tool_call_message, tool_message]
+        response = cast(
+            "ChatModelStream",
+            llm_with_tools.stream_events(
+                [input_message, tool_call_message, tool_message],
+                version="v3",
+            ),
         ).output
     else:
         response = llm_with_tools.invoke(
@@ -310,8 +382,8 @@ def test_agent_loop_streaming(
 
 @pytest.mark.default_cassette("test_agent_loop_streaming.yaml.gz")
 @pytest.mark.vcr
-async def test_agent_loop_streaming_astream_v2_v1() -> None:
-    """Async multi-turn through `astream_v2`.
+async def test_agent_loop_streaming_astream_events_v3_v1() -> None:
+    """Async multi-turn through `astream_events(version="v3")`.
 
     Mirrors `test_agent_loop_streaming` for `output_version="v1"` but
     exercises `AsyncChatModelStream` end-to-end: aggregation in the
@@ -335,7 +407,10 @@ async def test_agent_loop_streaming_astream_v2_v1() -> None:
     )
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
-    stream = await llm_with_tools.astream_v2([input_message])
+    stream = await cast(
+        "Awaitable[AsyncChatModelStream]",
+        llm_with_tools.astream_events([input_message], version="v3"),
+    )
     tool_call_message = await stream
     assert isinstance(tool_call_message, AIMessage)
     tool_calls = tool_call_message.tool_calls
@@ -343,8 +418,12 @@ async def test_agent_loop_streaming_astream_v2_v1() -> None:
     tool_call = tool_calls[0]
     tool_message = get_weather.invoke(tool_call)
     assert isinstance(tool_message, ToolMessage)
-    stream = await llm_with_tools.astream_v2(
-        [input_message, tool_call_message, tool_message]
+    stream = await cast(
+        "Awaitable[AsyncChatModelStream]",
+        llm_with_tools.astream_events(
+            [input_message, tool_call_message, tool_message],
+            version="v3",
+        ),
     )
     response = await stream
     assert isinstance(response, AIMessage)
@@ -432,7 +511,9 @@ def test_parsed_strict() -> None:
 
     schema = _convert_to_openai_response_format(Joke)
     invalid_schema = cast(dict, _convert_to_openai_response_format(Joke, strict=True))
-    invalid_schema["json_schema"]["schema"]["required"] = ["setup"]  # make invalid
+    # Intentionally make the strict schema invalid. OpenAI requires every property
+    # to appear in `required`; omitting `punchline` should produce a BadRequestError.
+    invalid_schema["json_schema"]["schema"]["required"] = ["setup"]
 
     # Test not strict
     response = llm.invoke("Tell me a joke", response_format=schema)
@@ -506,14 +587,14 @@ def test_function_calling_and_structured_output(schema: Any) -> None:
 @pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
 def test_reasoning(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
     llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version=output_version
+        model="gpt-5-nano", use_responses_api=True, output_version=output_version
     )
     response = llm.invoke("Hello", reasoning={"effort": "low"})
     assert isinstance(response, AIMessage)
 
     # Test init params + streaming
     llm = ChatOpenAI(
-        model="o4-mini", reasoning={"effort": "low"}, output_version=output_version
+        model="gpt-5-nano", reasoning={"effort": "low"}, output_version=output_version
     )
     full: BaseMessageChunk | None = None
     for chunk in llm.stream("Hello"):
@@ -636,7 +717,7 @@ def test_stream_reasoning_summary(
     use_v2_stream: bool,
 ) -> None:
     llm = ChatOpenAI(
-        model="o4-mini",
+        model="gpt-5-nano",
         # Routes to Responses API if `reasoning` is set.
         reasoning={"effort": "medium", "summary": "auto"},
         output_version=output_version,
@@ -647,7 +728,7 @@ def test_stream_reasoning_summary(
     }
     response_1: BaseMessage
     if use_v2_stream:
-        response_1 = llm.stream_v2([message_1]).output
+        response_1 = llm.stream_events([message_1], version="v3").output
     else:
         aggregated: BaseMessageChunk | None = None
         for chunk in llm.stream([message_1]):
@@ -716,7 +797,7 @@ def test_code_interpreter(
     output_version: Literal["v0", "responses/v1", "v1"], use_v2_stream: bool
 ) -> None:
     llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version=output_version
+        model="gpt-5-nano", use_responses_api=True, output_version=output_version
     )
     llm_with_tools = llm.bind_tools(
         [{"type": "code_interpreter", "container": {"type": "auto"}}]
@@ -769,7 +850,10 @@ def test_code_interpreter(
 
     full: BaseMessage
     if use_v2_stream:
-        full = llm_with_tools.stream_v2([input_message]).output
+        full = cast(
+            "ChatModelStream",
+            llm_with_tools.stream_events([input_message], version="v3"),
+        ).output
     else:
         aggregated: BaseMessageChunk | None = None
         for chunk in llm_with_tools.stream([input_message]):
@@ -811,7 +895,7 @@ def test_code_interpreter(
 
 @pytest.mark.vcr
 def test_mcp_builtin() -> None:
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True, output_version="v0")
+    llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True, output_version="v0")
 
     llm_with_tools = llm.bind_tools(
         [
@@ -933,7 +1017,10 @@ def test_mcp_builtin_zdr_v1(use_v2_stream: bool) -> None:
     }
     full: BaseMessage
     if use_v2_stream:
-        full = llm_with_tools.stream_v2([input_message]).output
+        full = cast(
+            "ChatModelStream",
+            llm_with_tools.stream_events([input_message], version="v3"),
+        ).output
     else:
         aggregated: BaseMessageChunk | None = None
         for chunk in llm_with_tools.stream([input_message]):
@@ -1365,7 +1452,7 @@ def test_compaction_streaming(
 
     def _run(messages: list) -> AIMessage:
         if use_v2_stream:
-            return llm.stream_v2(messages).output
+            return llm.stream_events(messages, version="v3").output
         result = llm.invoke(messages)
         assert isinstance(result, AIMessage)
         return result
@@ -1746,16 +1833,16 @@ def test_client_executed_tool_search() -> None:
 @pytest.mark.default_cassette("test_reasoning_text_v1_v2_parity.yaml.gz")
 @pytest.mark.vcr
 def test_reasoning_text_v1_v2_parity() -> None:
-    """`stream()` and `stream_v2()` must agree on reasoning + text output.
+    """`stream()` and `stream_events(version="v3")` agree on reasoning + text.
 
     Exercises the non-tool-call branch of the parity claim: a reasoning
-    model (`o4-mini` via the Responses API) produces one or more
+    model (`gpt-5-nano` via the Responses API) produces one or more
     `reasoning` blocks followed by a `text` block. Both paths replay the
     same recorded HTTP response (cassette with `allow_playback_repeats`),
     so any remaining divergence is a library issue.
     """
     llm = ChatOpenAI(
-        model="o4-mini",
+        model="gpt-5-nano",
         reasoning={"effort": "low", "summary": "auto"},
         output_version="v1",
     )
@@ -1767,7 +1854,7 @@ def test_reasoning_text_v1_v2_parity() -> None:
         v1 = chunk if v1 is None else v1 + chunk
     assert isinstance(v1, AIMessageChunk)
 
-    stream = llm.stream_v2([prompt])
+    stream = llm.stream_events([prompt], version="v3")
     events = list(stream)
     assert_valid_event_stream(events)
     v2 = stream.output

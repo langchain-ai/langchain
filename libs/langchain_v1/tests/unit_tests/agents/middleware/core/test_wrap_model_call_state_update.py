@@ -12,6 +12,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.errors import InvalidUpdateError
 from langgraph.types import Command
+from typing_extensions import override
 
 from langchain.agents import AgentState, create_agent
 from langchain.agents.middleware.types import (
@@ -152,7 +153,7 @@ class TestCustomStateField:
             summary: str
 
         class SummaryMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -221,6 +222,7 @@ class TestBackwardsCompatibility:
         """Existing middleware returning AIMessage works identically."""
 
         class ShortCircuitMiddleware(AgentMiddleware):
+            @override
             def wrap_model_call(
                 self,
                 request: ModelRequest,
@@ -435,7 +437,7 @@ class TestComposition:
             custom_key: str
 
         class OuterMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -454,7 +456,7 @@ class TestComposition:
                 )
 
         class InnerMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -491,7 +493,7 @@ class TestComposition:
             outer_key: str
 
         class OuterMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -505,7 +507,7 @@ class TestComposition:
                 )
 
         class InnerMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -548,7 +550,7 @@ class TestComposition:
                 return handler(request)
 
         class InnerMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -750,7 +752,7 @@ class TestAsyncComposition:
                 return await handler(request)
 
         class InnerMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             async def awrap_model_call(
                 self,

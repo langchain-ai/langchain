@@ -18,7 +18,7 @@ During deserialization, escaped dicts are unwrapped and returned as plain dicts,
 NOT instantiated as LC objects.
 """
 
-from typing import Any
+from typing import Any, cast
 
 from langchain_core.load.serializable import (
     Serializable,
@@ -102,16 +102,25 @@ def _serialize_value(obj: Any) -> Any:
     return to_json_not_implemented(obj)
 
 
-def _is_lc_secret(obj: Any) -> bool:
-    """Check if an object is a LangChain secret marker."""
-    expected_num_keys = 3
-    return (
-        isinstance(obj, dict)
-        and obj.get("lc") == 1
-        and obj.get("type") == "secret"
-        and "id" in obj
-        and len(obj) == expected_num_keys
-    )
+def _get_secret_keys(obj: Serializable) -> set[str]:
+    """Return the merged set of constructor kwarg names declared as secrets.
+
+    Mirrors the MRO walk in `Serializable.to_json` so the keys returned here
+    match the keys whose values `_replace_secrets` rewrites into secret
+    markers. Used by `_serialize_lc_object` to decide which kwargs to skip
+    when escaping user data.
+    """
+    secrets: dict[str, str] = {}
+    model_fields = type(obj).model_fields
+    for cls in [None, *obj.__class__.mro()]:
+        if cls is Serializable:
+            break
+        this = cast("Serializable", obj if cls is None else super(cls, obj))
+        secrets.update(this.lc_secrets)
+        for key in list(secrets):
+            if (key in model_fields) and (alias := model_fields[key].alias) is not None:
+                secrets[alias] = secrets[key]
+    return set(secrets)
 
 
 def _serialize_lc_object(obj: Any) -> dict[str, Any]:
@@ -124,9 +133,15 @@ def _serialize_lc_object(obj: Any) -> dict[str, Any]:
         The serialized dict with user data in kwargs escaped as needed.
 
     Note:
-        Kwargs values are processed with `_serialize_value` to escape user data (like
-        metadata) that contains `'lc'` keys. Secret fields (from `lc_secrets`) are
-        skipped because `to_json()` replaces their values with secret markers.
+        Kwargs values are processed with `_serialize_value` to escape user data
+        (like metadata) that contains `'lc'` keys. Secret fields are identified
+        by the class's declared `lc_secrets` and skipped because `to_json()`
+        already converted their values to secret markers.
+
+        The check is key-based rather than shape-based. A shape-based check
+        ("this dict looks like a secret marker") can be forged by user data,
+        letting attacker-controlled free-form dicts bypass escaping and reach
+        the Reviver.
     """
     if not isinstance(obj, Serializable):
         msg = f"Expected Serializable, got {type(obj)}"
@@ -134,11 +149,13 @@ def _serialize_lc_object(obj: Any) -> dict[str, Any]:
 
     serialized: dict[str, Any] = dict(obj.to_json())
 
-    # Process kwargs to escape user data that could be confused with LC objects
-    # Skip secret fields - to_json() already converted them to secret markers
+    # Process kwargs to escape user data that could be confused with LC objects.
+    # Skip kwargs declared as secrets - `to_json()` already replaced their
+    # values with secret markers via `_replace_secrets`.
     if serialized.get("type") == "constructor" and "kwargs" in serialized:
+        secret_keys = _get_secret_keys(obj)
         serialized["kwargs"] = {
-            k: v if _is_lc_secret(v) else _serialize_value(v)
+            k: v if k in secret_keys else _serialize_value(v)
             for k, v in serialized["kwargs"].items()
         }
 

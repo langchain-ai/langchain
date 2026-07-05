@@ -7,6 +7,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.tool_call_limit import (
+    ExitBehavior,
     ToolCallLimitExceededError,
     ToolCallLimitMiddleware,
     ToolCallLimitState,
@@ -34,7 +35,8 @@ def test_middleware_initialization_validation() -> None:
     assert middleware.run_limit is None
 
     # Test exit behaviors
-    for behavior in ["error", "end", "continue"]:
+    behaviors: tuple[ExitBehavior, ...] = ("error", "end", "continue")
+    for behavior in behaviors:
         middleware = ToolCallLimitMiddleware(thread_limit=5, exit_behavior=behavior)
         assert middleware.exit_behavior == behavior
 

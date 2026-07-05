@@ -2,6 +2,7 @@
 
 import re
 from collections.abc import Callable
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
@@ -48,7 +49,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
         ```
     """
 
-    examples: list[dict]
+    examples: list[dict[str, Any]]
     """A list of the examples that the prompt template expects."""
 
     example_prompt: PromptTemplate
@@ -92,12 +93,12 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
         self.example_text_lengths = [self.get_text_length(eg) for eg in string_examples]
         return self
 
-    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict[str, Any]]:
         """Select which examples to use based on the input lengths.
 
         Args:
             input_variables: A dictionary with keys as input variables
-               and values as their values.
+                and values as their values.
 
         Returns:
             A list of examples to include in the prompt.
@@ -115,12 +116,14 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
             i += 1
         return examples
 
-    async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    async def aselect_examples(
+        self, input_variables: dict[str, str]
+    ) -> list[dict[str, Any]]:
         """Async select which examples to use based on the input lengths.
 
         Args:
             input_variables: A dictionary with keys as input variables
-               and values as their values.
+                and values as their values.
 
         Returns:
             A list of examples to include in the prompt.

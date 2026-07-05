@@ -29,7 +29,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         ```
     """
 
-    template: dict = Field(default_factory=dict)
+    template: dict[str, Any] = Field(default_factory=dict)
     """Template for the prompt."""
 
     template_format: PromptTemplateFormat = "f-string"
