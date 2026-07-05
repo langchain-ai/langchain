@@ -2,7 +2,7 @@
 
 import os
 from collections.abc import AsyncGenerator, Generator
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -19,8 +19,10 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.messages import content as types
 from pydantic import SecretStr
+
+if TYPE_CHECKING:
+    from langchain_core.messages import content as types
 
 from langchain_mistralai._compat import _convert_to_v1_from_mistral
 from langchain_mistralai.chat_models import (  # type: ignore[import]
@@ -702,6 +704,72 @@ def test_citation_round_trip_preserves_extra_fields() -> None:
     assert block_0["reference"] == {"reference_ids": [1, 2]}
 
 
+def test_citation_round_trip_preserves_annotated_response_text() -> None:
+    """Serializing citations preserves block text, not citation source excerpts."""
+    from langchain_mistralai._compat import _convert_from_v1_to_mistral
+
+    content: list[types.ContentBlock] = [
+        {
+            "type": "text",
+            "text": "The answer is 42.",
+            "annotations": [
+                {
+                    "type": "citation",
+                    "cited_text": "source excerpt mentioning 42",
+                    "extras": {"reference_ids": [0]},
+                }
+            ],
+        }
+    ]
+    round_tripped = _convert_from_v1_to_mistral(content, "mistralai")
+
+    assert len(round_tripped) == 1
+    assert isinstance(round_tripped[0], dict)
+    block = round_tripped[0]
+    assert block["type"] == "text"
+    assert block["text"] == "The answer is 42."
+    assert block["reference"]["reference_ids"] == [0]
+    assert block["reference"]["cited_text"] == "source excerpt mentioning 42"
+
+
+def test_citation_streaming_v1_reference_gets_separate_index() -> None:
+    """Reference chunks do not merge into surrounding v1 text block indexes."""
+    text_chunk = {
+        "choices": [
+            {
+                "delta": {"role": "assistant", "content": "The answer is "},
+                "finish_reason": None,
+            }
+        ],
+    }
+    reference_chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "reference", "reference_ids": [0], "text": "42"},
+                    ],
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "model": "mistral-small-latest",
+    }
+
+    result_1, index, index_type = _convert_chunk_to_message_chunk(
+        text_chunk, AIMessageChunk, -1, "", "v1"
+    )
+    result_2, _, _ = _convert_chunk_to_message_chunk(
+        reference_chunk, AIMessageChunk, index, index_type, "v1"
+    )
+
+    assert result_1.content == [{"type": "text", "text": "The answer is ", "index": 0}]
+    assert result_2.content == [
+        {"type": "text", "text": "42", "reference": {"reference_ids": [0]}, "index": 1},
+    ]
+
+
 def test_citation_streaming_accumulated_content() -> None:
     """Streaming chunks accumulate normalized text blocks in full.content."""
     raw_citation = {"type": "reference", "reference_ids": [0], "text": "42"}
@@ -801,7 +869,7 @@ def test_malformed_annotation_does_not_crash() -> None:
     assert isinstance(result[0], dict)
     block_0 = result[0]
     assert block_0["type"] == "text"
-    assert block_0["text"] == "cited"
+    assert block_0["text"] == "hello"
     assert "reference" in block_0
 
 

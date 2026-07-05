@@ -28,7 +28,6 @@ def _convert_from_v1_to_mistral(
                     if ann_type == "non_standard_annotation":
                         value = annotation.get("value")
                         if isinstance(value, dict) and value.get("type") == "reference":
-                            ref_text = value.get("text", "")
                             ref_meta = {
                                 k: v
                                 for k, v in value.items()
@@ -36,7 +35,7 @@ def _convert_from_v1_to_mistral(
                             }
                             new_block: dict[str, Any] = {
                                 "type": "text",
-                                "text": ref_text,
+                                "text": block.get("text", ""),
                                 "reference": ref_meta,
                             }
                             if "index" in value:
@@ -48,9 +47,12 @@ def _convert_from_v1_to_mistral(
                         extras = annotation.get("extras", {})
                         if isinstance(extras, dict):
                             citation_meta.update(extras)
+                        cited_text = annotation.get("cited_text")
+                        if cited_text and cited_text != block.get("text", ""):
+                            citation_meta["cited_text"] = cited_text
                         new_block = {
                             "type": "text",
-                            "text": annotation.get("cited_text", ""),
+                            "text": block.get("text", ""),
                             "reference": citation_meta,
                         }
                         new_content.append(new_block)

@@ -303,8 +303,9 @@ def _convert_chunk_to_message_chunk(
     if isinstance(content, list):
         for block in content:
             if isinstance(block, dict):
-                if "type" in block and block["type"] != index_type:
-                    index_type = block["type"]
+                block_type = "reference" if "reference" in block else block.get("type")
+                if block_type is not None and block_type != index_type:
+                    index_type = block_type
                     index = index + 1
                 if "index" not in block:
                     block["index"] = index
