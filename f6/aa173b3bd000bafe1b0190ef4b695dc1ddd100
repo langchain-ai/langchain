@@ -1,0 +1,1333 @@
+.github/ISSUE_TEMPLATE/bug-report.yml
+  s_1f44fde9cd8428::t_8d567bf87961cd 25
+.github/ISSUE_TEMPLATE/feature-request.yml
+  s_1f44fde9cd8428::t_ef68bfb20a801c 28
+.github/PULL_REQUEST_TEMPLATE.md
+  s_1f44fde9cd8428::t_8597b127ac5188 3-5,25,30-32
+.github/actions/uv_setup/action.yml
+  s_1f44fde9cd8428::t_da9f90d9dd658f 24
+.github/dependabot.yml
+  s_1f44fde9cd8428::t_3e58821b153aab 32-39,72-79,100-107
+.github/scripts/check_diff.py
+  s_1f44fde9cd8428::t_14ff2f40c83008 36-41,48,229-236,245-278,280,319-320,353-359,392
+.github/scripts/check_extras_sync.py
+  s_1f44fde9cd8428::t_efb88a64ccc7d2 1-118
+.github/scripts/get_min_versions.py
+  s_1f44fde9cd8428::t_9ef63051fd1ea7 199-214
+.github/scripts/test_release_options.py
+  s_1f44fde9cd8428::t_2fb70dbb740b01 1-66
+.github/workflows/_compile_integration_test.yml
+  s_1f44fde9cd8428::t_5352ba6d05c706 38
+.github/workflows/_lint.yml
+  s_1f44fde9cd8428::t_dd2a666ab83526 41
+.github/workflows/_refresh_model_profiles.yml
+  s_1f44fde9cd8428::t_5e5c932910fc89 19,72,79,94,98,170-195,198,200,205,211
+.github/workflows/_release.yml
+  s_1f44fde9cd8428::t_88be53d9d69bf0 8-21,29-52,57,59-90,101-118,124-134,143-145,155,161-261,266,277,280,283,285,296,301,307,364,384,388,394,414,416,419,423,427-432,435,446,450,455,457,462,468,472,485,487-490,494,498,538-578,583,585,591,597-600,616,623,629,633,635-636,639-647,650-656,658-704,706-718,724,728-729,737-738,744-745,754-764,768,776,780,789,791,799-800,808,816,824-826,828,840,843,849,851,854,857,859,866,874,876,885,888,894,896,899,902,904-908
+.github/workflows/_test.yml
+  s_1f44fde9cd8428::t_b9d7ca80b34199 36
+.github/workflows/_test_pydantic.yml
+  s_1f44fde9cd8428::t_1c137dcd896124 39
+.github/workflows/_test_vcr.yml
+  s_1f44fde9cd8428::t_d64c0eda3b9951 1-66
+.github/workflows/auto-label-by-package.yml
+  s_1f44fde9cd8428::t_ae2057707887ef 12,19,24-32
+.github/workflows/block_fork_main_prs.yml
+  s_1f44fde9cd8428::t_947ea5b315ca5f 1-146
+.github/workflows/bump_uv_pin.yml
+  s_1f44fde9cd8428::t_e22b508e657f04 1,3-6,8-11,13,16-17,23-25,28-30,33-34,36,38-39,41,43-75,77-88,90-136,138-205
+.github/workflows/check_agents_sync.yml
+  s_1f44fde9cd8428::t_3bb160b42d94d0 26,30
+.github/workflows/check_diffs.yml
+  s_1f44fde9cd8428::t_e1ae7bdf156924 49,51,57-58,61-62,65,73,131-145,162,192-207,217,220
+.github/workflows/check_extras_sync.yml
+  s_1f44fde9cd8428::t_bc09cc7136956d 1-73
+.github/workflows/check_release_deps.yml
+  s_1f44fde9cd8428::t_c03155f0eabcb4 1-288
+.github/workflows/check_versions.yml
+  s_1f44fde9cd8428::t_4bf108ba51246f 1,5,12-15,22,26,28-30,32-53
+.github/workflows/close_unchecked_issues.yml
+  s_1f44fde9cd8428::t_2f01158c3a4512 8-12,32,39,43,45,50,54-55,57-78,81-85,90-140,142-145,150-153,156-163,165-197
+.github/workflows/codspeed.yml
+  s_1f44fde9cd8428::t_ea0773484c80c8 32,35,37,43-44,47-48,51,59,65,84
+.github/workflows/integration_tests.yml
+  s_1f44fde9cd8428::t_69bbf72545261d 8,13-47,49-50,52-55,92-95,98-99,103-107,112-145,148,157-158,161-167,175,180,189,194,217-222,228-277,285-290,374,378
+.github/workflows/pr_labeler.yml
+  s_1f44fde9cd8428::t_682e2e719e3ad3 20,45,55,60,62,76,90,184,196
+.github/workflows/pr_labeler_backfill.yml
+  s_1f44fde9cd8428::t_2e89e56e45f138 22,30,34,36,40
+.github/workflows/pr_lint_trailer.yml
+  s_1f44fde9cd8428::t_7333eb8ac8df27 1-175
+.github/workflows/refresh_model_profiles.yml
+  s_1f44fde9cd8428::t_e5d3cb15710689 21,40,42,44
+.github/workflows/remove_waiting_on_author.yml
+  s_1f44fde9cd8428::t_fdac15338573b9 1-61
+.github/workflows/reopen_on_assignment.yml
+  s_1f44fde9cd8428::t_050b8edce1f977 22,25,30,163-195
+.github/workflows/require_issue_link.yml
+  s_1f44fde9cd8428::t_32b4beed60dd74 38,54,287,316,370,385,387-388,397-399
+.github/workflows/tag-external-issues.yml
+  s_1f44fde9cd8428::t_8ad28ebeb7937f 20,47,54,58,60,66,81,97,115,122,126,128,132
+.pre-commit-config.yaml
+  s_1f44fde9cd8428::t_35235be13ed9da 126-215
+AGENTS.md
+  s_1f44fde9cd8428::t_a243b322075474 76-84,91-93,95-99,105-106,109-132,134,136-149,248-257,298-313,327-330
+CLAUDE.md
+  s_1f44fde9cd8428::t_b0df28ccf4ab92 76-84,91-93,95-99,105-106,109-132,134,136-149,248-257,298-313,327-330
+README.md
+  s_1f44fde9cd8428::t_17622a467a93ca 19,26-27,38,42-44,53,72,74-80
+libs/core/Makefile
+  s_1f44fde9cd8428::t_48bcf22bc20b40 20
+libs/core/README.md
+  s_1f44fde9cd8428::t_ea89267ae2049f 6,16,48-52
+libs/core/langchain_core/_api/beta_decorator.py
+  s_1f44fde9cd8428::t_943f63bf700a60 29,148,151-155,159,164,169,171,173-181
+libs/core/langchain_core/_api/deprecation.py
+  s_1f44fde9cd8428::t_9d16c41cb28254 15,18,20,23,32-48,79-87,91-93,170-171,234-236,244-246,271-273,286,296-297,334,389,470-477,517-518,523
+libs/core/langchain_core/_security/__init__.py
+  s_1f44fde9cd8428::t_e80fee97adab3b 1-36
+libs/core/langchain_core/_security/_exceptions.py
+  s_1f44fde9cd8428::t_6072a02a09a6b2 1-9
+libs/core/langchain_core/_security/_policy.py
+  s_1f44fde9cd8428::t_f4397cfc1afbfa 1-313
+libs/core/langchain_core/_security/_ssrf_protection.py
+  s_1f44fde9cd8428::t_f29e3422b78e64 1,3,17-26,29-38,53-54,56,59,62,66,68,76,78-82,84,89,95-98,116
+libs/core/langchain_core/_security/_transport.py
+  s_1f44fde9cd8428::t_4700d0ba6b5f50 1-254
+libs/core/langchain_core/agents.py
+  s_1f44fde9cd8428::t_0e72ab0689e63d 54,71-73,154,169
+libs/core/langchain_core/caches.py
+  s_1f44fde9cd8428::t_9b60f624d16fe7 169,176
+libs/core/langchain_core/callbacks/base.py
+  s_1f44fde9cd8428::t_ffcd982fa64878 12,67,82,128-167,332-335,601-604,634,647,696-720,1208-1212,1214-1216
+libs/core/langchain_core/callbacks/manager.py
+  s_1f44fde9cd8428::t_dd42e6cce8e82e 8,11,39,218,256-284,314-317,364,371-375,414,419,421,710,718,785-804,829,837,907-926,1692-1694,1706-1709,1723-1724,2221-2223,2235-2238,2252-2253,2400-2401,2414-2417,2540,2558-2563,2585-2610
+libs/core/langchain_core/callbacks/streaming_stdout.py
+  s_1f44fde9cd8428::t_fee703d8a59345 50-52,56,59
+libs/core/langchain_core/callbacks/usage.py
+  s_1f44fde9cd8428::t_954c87210bcb5b 26,100
+libs/core/langchain_core/chat_sessions.py
+  s_1f44fde9cd8428::t_ab99277d2d939b 4,18
+libs/core/langchain_core/document_loaders/langsmith.py
+  s_1f44fde9cd8428::t_551562ac571524 51,97-98
+libs/core/langchain_core/documents/base.py
+  s_1f44fde9cd8428::t_325f999e9ac7e3 55,221,258
+libs/core/langchain_core/env.py
+  s_1f44fde9cd8428::t_fae937e7cbf27d 10
+libs/core/langchain_core/example_selectors/base.py
+  s_1f44fde9cd8428::t_930c963774d38d 37,48-50
+libs/core/langchain_core/example_selectors/length_based.py
+  s_1f44fde9cd8428::t_acf4a84772830b 5,52,96,101,119-121,126
+libs/core/langchain_core/example_selectors/semantic_similarity.py
+  s_1f44fde9cd8428::t_cc50a4f6c2b8b3 18,36,39,42,46,61,104,122-124,145,152,189,196,241,257-259,278,285,324,332
+libs/core/langchain_core/indexing/api.py
+  s_1f44fde9cd8428::t_2ee529246133da 93-95,106-108,132,171,273,446,628,789
+libs/core/langchain_core/language_models/_compat_bridge.py
+  s_1f44fde9cd8428::t_8e6991595f6973 1-844
+libs/core/langchain_core/language_models/_utils.py
+  s_1f44fde9cd8428::t_d0b319628ee1d4 5,18-32,34,321
+libs/core/langchain_core/language_models/base.py
+  s_1f44fde9cd8428::t_f38d1b911e3fd3 5,142-165,195,207-275,391-392,453
+libs/core/langchain_core/language_models/chat_model_stream.py
+  s_1f44fde9cd8428::t_5ab79ae6cfa2e1 1-1441
+libs/core/langchain_core/language_models/chat_models.py
+  s_1f44fde9cd8428::t_5faed23d591332 6,14,16,20,30-35,37,46-49,70,84,86-89,94,99-101,104,111,251-253,435,437,439,456,513-536,557,560-562,564-569,571,575-713,753-755,795,807,882-884,928,939,972-1369,1372-1374,1377-1379,1418-1464,1469-1470,1479-1503,1571,1633-1635,1697,1759-1761,1891-1895,1909-1938,1941,1971,1981,2050-2054,2068-2093,2096,2127,2138,2306,2308-2316,2321-2337,2340,2520,2522,2540-2628,2679
+libs/core/langchain_core/language_models/fake_chat_models.py
+  s_1f44fde9cd8428::t_8fe7cb2383db10 277
+libs/core/langchain_core/language_models/llms.py
+  s_1f44fde9cd8428::t_67af8d8bd3deaf 9,36,47,63,68,154,163,199,232,237,265,270,307,309,311,328,528,544-546,601,617-619,859,909,957-958,963-964,974-976,984-985,993,995-997,1078-1079,1142,1229-1230,1235-1236,1246-1248,1256-1257,1260,1265,1267-1269,1364,1388,1390-1398,1403-1407,1429
+libs/core/langchain_core/language_models/model_profile.py
+  s_1f44fde9cd8428::t_b9f2077f67c1f6 14,16-22,24,26-27,35,38,52,81,84,89,92,111,114-120,124,146
+libs/core/langchain_core/load/_validation.py
+  s_1f44fde9cd8428::t_d30cec49bdf76b 21,105-123,136-144,152-154,156,158
+libs/core/langchain_core/load/load.py
+  s_1f44fde9cd8428::t_762eb8276effc2 14,16-21,23-27,29,31-34,36,38-47,51-65,72-75,124,164-181,183,188,196,208-212,324,347-349,361-365,368-377,408-420,441,443,548-556,575-577,589-590,595-603,609-618,655-667,686-688,701-702,707-715,721-730,791-803
+libs/core/langchain_core/load/mapping.py
+  s_1f44fde9cd8428::t_7bbb89f074e464 286-290,324-329,389-394
+libs/core/langchain_core/load/serializable.py
+  s_1f44fde9cd8428::t_a956f880a2645d 168
+libs/core/langchain_core/messages/ai.py
+  s_1f44fde9cd8428::t_7b49c4edec84a9 99-100,188,195,202,224,231,250-255,309,439,448-457,786-787,849-850
+libs/core/langchain_core/messages/base.py
+  s_1f44fde9cd8428::t_effe2f10247543 103,106,114,149,156,163,367-369,380,394,474,488
+libs/core/langchain_core/messages/block_translators/anthropic.py
+  s_1f44fde9cd8428::t_ea8943b12e622f 200,202
+libs/core/langchain_core/messages/block_translators/google_genai.py
+  s_1f44fde9cd8428::t_d9a387019844f6 359,488
+libs/core/langchain_core/messages/block_translators/groq.py
+  s_1f44fde9cd8428::t_d5d05adab0306b 30
+libs/core/langchain_core/messages/block_translators/langchain_v0.py
+  s_1f44fde9cd8428::t_37b1693fee4487 47-48,56-58
+libs/core/langchain_core/messages/block_translators/openai.py
+  s_1f44fde9cd8428::t_7b04b931de92b2 22,59-61,269,334,339-341,426-427,443-445
+libs/core/langchain_core/messages/content.py
+  s_1f44fde9cd8428::t_1ac57d0c8e366a 73,908
+libs/core/langchain_core/messages/human.py
+  s_1f44fde9cd8428::t_d83857ff374ece 35,42,49,56
+libs/core/langchain_core/messages/system.py
+  s_1f44fde9cd8428::t_cbec393b77d0a0 35,42,49,56
+libs/core/langchain_core/messages/tool.py
+  s_1f44fde9cd8428::t_4b9f0742d8d65b 84,86-87,92,138,145,152,167,350,386-388
+libs/core/langchain_core/messages/utils.py
+  s_1f44fde9cd8428::t_179a6f1c8e53ac 104,142,309-310,312-317,515,547,584-588,595,684-705,715-718,745-760,779,928-930,1139,1279,1484,1491,1495,1519,1536,1541,1546,1555,1606,1625,1630,1633,1644,1646,1648-1650,1652-1655,2225,2256,2337,2340
+libs/core/langchain_core/output_parsers/base.py
+  s_1f44fde9cd8428::t_74af404931b705 5,18,26-27,75,141,347-357
+libs/core/langchain_core/output_parsers/list.py
+  s_1f44fde9cd8428::t_e85c88faff3127 61,213,244
+libs/core/langchain_core/output_parsers/openai_functions.py
+  s_1f44fde9cd8428::t_8fab3be1d7b5d0 19,222,245-246,271,273-279,281-282,284-288,301
+libs/core/langchain_core/output_parsers/openai_tools.py
+  s_1f44fde9cd8428::t_41271286db35ef 9-10,102,341,344
+libs/core/langchain_core/output_parsers/pydantic.py
+  s_1f44fde9cd8428::t_fefcc10765d641 4,25,31-34,40
+libs/core/langchain_core/output_parsers/string.py
+  s_1f44fde9cd8428::t_b94b8779ec8cfa 22
+libs/core/langchain_core/output_parsers/xml.py
+  s_1f44fde9cd8428::t_e937db44d5144a 151,173,275,278,280-281
+libs/core/langchain_core/outputs/chat_result.py
+  s_1f44fde9cd8428::t_a6c110e222100f 3-4,30
+libs/core/langchain_core/outputs/generation.py
+  s_1f44fde9cd8428::t_f78f002f5df757 79
+libs/core/langchain_core/outputs/llm_result.py
+  s_1f44fde9cd8428::t_56a71b387211bf 6,40
+libs/core/langchain_core/prompt_values.py
+  s_1f44fde9cd8428::t_f5aedb9698fad0 11,149
+libs/core/langchain_core/prompts/base.py
+  s_1f44fde9cd8428::t_5e8c32a843a651 5,9,18,21,27-28,39,61-64,127,131,161,197-199,204,211-214,240-243,289-291,307-309,353-363,376-380,407-409,420-422,424-425,432-434
+libs/core/langchain_core/prompts/chat.py
+  s_1f44fde9cd8428::t_66273eda280c80 36,232,390,394,405,414,437-440,442,448,513,530,533,602,606,610,613,633,637,641,644,695,700,788,1053,1069,1198,1226,1343,1361,1465,1488
+libs/core/langchain_core/prompts/dict.py
+  s_1f44fde9cd8428::t_86d545b8c3d260 7,19,25-42,48-53,77-78,126
+libs/core/langchain_core/prompts/few_shot.py
+  s_1f44fde9cd8428::t_b68c3949777278 37,56,82,101
+libs/core/langchain_core/prompts/few_shot_with_templates.py
+  s_1f44fde9cd8428::t_43025a49488838 22,66,109,114-115,117,122-123
+libs/core/langchain_core/prompts/image.py
+  s_1f44fde9cd8428::t_96bbbb69c847fa 12,18,20-32,59-65
+libs/core/langchain_core/prompts/loading.py
+  s_1f44fde9cd8428::t_36f32a0d4ef3d2 7,23,29,56-57,62-65,87-88,100-102,104-105,107-111,117-119,142,153,188,222,228-231,257,276,292
+libs/core/langchain_core/prompts/prompt.py
+  s_1f44fde9cd8428::t_d050a3c8ebe051 91
+libs/core/langchain_core/prompts/string.py
+  s_1f44fde9cd8428::t_9595ab6191e0f3 216,222-261,286-287,313,316,318,328,393
+libs/core/langchain_core/prompts/structured.py
+  s_1f44fde9cd8428::t_98ec4353667515 3-10,13,21,40,48,99,147-167,171-176,187
+libs/core/langchain_core/runnables/__init__.py
+  s_1f44fde9cd8428::t_d0da85c3242893 6
+libs/core/langchain_core/runnables/base.py
+  s_1f44fde9cd8428::t_254be9b4feb0d4 41,45,101-106,109-110,375,382,448,451,461,527,616,627-632,635-655,669,672-695,697-698,822,869,1300-1304,1330-1331,1344-1369,1539-1555,1568-1570,1573-1616,1631-1638,1654,1661-1747,2153,2542,2644,2964,2982,2994,3013-3014,3017-3018,3030-3031,3035,3037,3043-3059,3159,3177,3240,3253,3320-3340,3344-3349,3368-3389,3393-3395,3397,4010,4021,4025-4026,4030-4032,4038,4040,4061-4063,4279,4333,4351,4499,4502,4912,4915,4931,4962,5057,5072,5248,5269,5491,5508,5565,5656,5664,5668-5671,5677,5685,5689-5692,5694-5696,5699,5703-5704,5706-5710,5712-5719,5955,5961,6199-6301,6303,6308-6336,6610-6628,6647
+libs/core/langchain_core/runnables/branch.py
+  s_1f44fde9cd8428::t_a432f97b8c0d08 16,38,81,83,110,130,158,166
+libs/core/langchain_core/runnables/config.py
+  s_1f44fde9cd8428::t_4b5e9bd9c78407 10-18,149-170,297,299-305,307,399-430,446-449,576-578,597-599
+libs/core/langchain_core/runnables/configurable.py
+  s_1f44fde9cd8428::t_e235e8c8daf5c4 22,47,94,99,501,527,623
+libs/core/langchain_core/runnables/fallbacks.py
+  s_1f44fde9cd8428::t_c54693bd6d26c6 10,31,58-59,122,126,607,609,612,616
+libs/core/langchain_core/runnables/graph.py
+  s_1f44fde9cd8428::t_8ccf9006089ad7 21-25,102,182,316
+libs/core/langchain_core/runnables/graph_mermaid.py
+  s_1f44fde9cd8428::t_a087f395bd1b7a 324,398
+libs/core/langchain_core/runnables/history.py
+  s_1f44fde9cd8428::t_0621f3735fa974 16,39,324-331,394,453,491,551,560,568,577
+libs/core/langchain_core/runnables/passthrough.py
+  s_1f44fde9cd8428::t_2ab4a592470deb 14,22,38,349,392-394,431,440-444,452-453,455-456,492,521,575,584-588,622,628,638-642,754
+libs/core/langchain_core/runnables/utils.py
+  s_1f44fde9cd8428::t_854307c553faab 49-51,65-67,150,157-158,368,387,411,564,567,570,573,587,590,593,596,599,613,616,619,622,625,644,647,650,653,656,659,753,770,779,781
+libs/core/langchain_core/tools/__init__.py
+  s_1f44fde9cd8428::t_e0e69f1abfa865 3
+libs/core/langchain_core/tools/base.py
+  s_1f44fde9cd8428::t_f44a8e894a1510 12,31,41,69,128-132,154,172,176,223,266,272,376-389,394-427,521-534,602,615-668,676-681,692-694,700,703-705,715,733,743,753,786,793,808-810,825-827,829,902,939-940,974,1107,1273,1284-1289,1293-1295,1298-1300,1321,1324,1336,1339,1342,1375-1376,1378-1383,1386-1387,1397-1398,1400-1403,1406,1409,1411-1418,1454,1471,1605,1619,1651-1653
+libs/core/langchain_core/tools/convert.py
+  s_1f44fde9cd8428::t_c3998f02d20af3 14,28,34,49,74,78-79,89,262,272-274,279,387,396,398,403,423-424,447
+libs/core/langchain_core/tools/retriever.py
+  s_1f44fde9cd8428::t_7d53af0ed9a0b8 36
+libs/core/langchain_core/tools/simple.py
+  s_1f44fde9cd8428::t_67c2a8aa2a726c 47,60,73-74,159-163,171
+libs/core/langchain_core/tools/structured.py
+  s_1f44fde9cd8428::t_494b7a931b0427 62,135,266
+libs/core/langchain_core/tracers/_streaming.py
+  s_1f44fde9cd8428::t_43c574f278fb17 31-49,52
+libs/core/langchain_core/tracers/base.py
+  s_1f44fde9cd8428::t_82717a215868fc 50-58,152,164,542,580-588,648,922
+libs/core/langchain_core/tracers/core.py
+  s_1f44fde9cd8428::t_e80122d4689684 54-56,76-78,86,89,92-101,132-134,245,452,558,605,612
+libs/core/langchain_core/tracers/evaluation.py
+  s_1f44fde9cd8428::t_2a2f1d156ef15f 59
+libs/core/langchain_core/tracers/event_stream.py
+  s_1f44fde9cd8428::t_d74caa5ca9e2c1 101-103,432,468-469,506,821-823,1048
+libs/core/langchain_core/tracers/langchain.py
+  s_1f44fde9cd8428::t_a2623602d30275 30-31,36,39-54,145-146,162-164,176-218,332,362,468-490
+libs/core/langchain_core/tracers/log_stream.py
+  s_1f44fde9cd8428::t_3dc6e3bb39f552 232,540,588,620,708
+libs/core/langchain_core/tracers/memory_stream.py
+  s_1f44fde9cd8428::t_f7183b37ae18ac 14,21,87,129
+libs/core/langchain_core/utils/_merge.py
+  s_1f44fde9cd8428::t_1e205f982040b0 89,124-125
+libs/core/langchain_core/utils/aiter.py
+  s_1f44fde9cd8428::t_18a44268ef4678 217,280
+libs/core/langchain_core/utils/formatting.py
+  s_1f44fde9cd8428::t_c6af7e386ac6da 24
+libs/core/langchain_core/utils/function_calling.py
+  s_1f44fde9cd8428::t_499a17e3335197 60,73,87,122,207,213,244,280,350,374,438-440,443-444,447,450,512,518,551,580,735,784,786-794,796-804
+libs/core/langchain_core/utils/html.py
+  s_1f44fde9cd8428::t_cb70348bfa62b5 47,67
+libs/core/langchain_core/utils/input.py
+  s_1f44fde9cd8428::t_5f679a0e189cf6 15
+libs/core/langchain_core/utils/json.py
+  s_1f44fde9cd8428::t_760dc0be142f42 194-196
+libs/core/langchain_core/utils/json_schema.py
+  s_1f44fde9cd8428::t_ba1d2d14d4f0ec 12,36,189,191,193,269
+libs/core/langchain_core/utils/mustache.py
+  s_1f44fde9cd8428::t_d62a3bb6f52a36 387-389
+libs/core/langchain_core/utils/pydantic.py
+  s_1f44fde9cd8428::t_4ef6701ad5389e 72-73,129-131,207,209,238,288,290,346-389,447
+libs/core/langchain_core/utils/strings.py
+  s_1f44fde9cd8428::t_a6b840243a0d23 25
+libs/core/langchain_core/utils/usage.py
+  s_1f44fde9cd8428::t_ea0fa1b82a5c77 4,8-9,15,40
+libs/core/langchain_core/utils/utils.py
+  s_1f44fde9cd8428::t_9b872ea652f197 24,34
+libs/core/langchain_core/vectorstores/base.py
+  s_1f44fde9cd8428::t_953f73f09411be 49,188,852,875,973,988
+libs/core/langchain_core/vectorstores/in_memory.py
+  s_1f44fde9cd8428::t_d221f8eda2a222 492,507
+libs/core/langchain_core/vectorstores/utils.py
+  s_1f44fde9cd8428::t_80d99e915bb31d 13,30-34,39,98-100,105,113-114
+libs/core/langchain_core/version.py
+  s_1f44fde9cd8428::t_1137293c7dba45 1,3
+libs/core/pyproject.toml
+  s_1f44fde9cd8428::t_92dbdf35425856 24,35,44,51,54,62,65,67,75,82,93
+libs/core/scripts/check_version.py
+  s_1f44fde9cd8428::t_1c713fdc28f6b3 1,4-6,13-17,33-50,58-60,87-97
+libs/core/tests/benchmarks/test_async_callbacks.py
+  s_1f44fde9cd8428::t_6cbd78333b0b0e 36
+libs/core/tests/benchmarks/test_tool_schema_conversion.py
+  s_1f44fde9cd8428::t_86fcf957231d4a 1-69
+libs/core/tests/unit_tests/_api/test_deprecation.py
+  s_1f44fde9cd8428::t_d1ba939f245a63 2-3,11,14,78-87,135-153,614-653
+libs/core/tests/unit_tests/callbacks/test_handle_event.py
+  s_1f44fde9cd8428::t_12ecf988d803be 8,11-13,15,24-30,68-123,135,172,198-262
+libs/core/tests/unit_tests/document_loaders/test_langsmith.py
+  s_1f44fde9cd8428::t_db6755c0d26ffd 5,17-22
+libs/core/tests/unit_tests/documents/test_document.py
+  s_1f44fde9cd8428::t_a101db918f42c8 1-2,4,16-27
+libs/core/tests/unit_tests/example_selectors/test_length_based_example_selector.py
+  s_1f44fde9cd8428::t_c66622bca058c7 3-4,69
+libs/core/tests/unit_tests/example_selectors/test_similarity.py
+  s_1f44fde9cd8428::t_a42cde602b29c0 18,30,69
+libs/core/tests/unit_tests/fake/test_fake_chat_model.py
+  s_1f44fde9cd8428::t_fb67e70d560946 8,145-150,192,200-201
+libs/core/tests/unit_tests/indexing/test_indexing.py
+  s_1f44fde9cd8428::t_fa7686d642f01f 19,2437-2456
+libs/core/tests/unit_tests/language_models/chat_models/test_base.py
+  s_1f44fde9cd8428::t_67dd626575cab5 6-9,12,16,18-19,27-35,51,55,57,67,101-135,377-390,510-529,1312-1504,1673-1840
+libs/core/tests/unit_tests/language_models/llms/test_base.py
+  s_1f44fde9cd8428::t_7a922e316c73bf 1,3,8,18,28-62,325-415
+libs/core/tests/unit_tests/language_models/test_chat_model_stream.py
+  s_1f44fde9cd8428::t_ff4667e66cdfb1 1-904
+libs/core/tests/unit_tests/language_models/test_chat_model_streamer.py
+  s_1f44fde9cd8428::t_d21e1d2ac98b1d 1-484
+libs/core/tests/unit_tests/language_models/test_chat_model_v3_stream.py
+  s_1f44fde9cd8428::t_2cb916739d8826 1-1482
+libs/core/tests/unit_tests/language_models/test_compat_bridge.py
+  s_1f44fde9cd8428::t_985c3c85766179 1-1403
+libs/core/tests/unit_tests/language_models/test_imports.py
+  s_1f44fde9cd8428::t_227c8b8db29e8a 1-6,34-71
+libs/core/tests/unit_tests/language_models/test_v1_parity.py
+  s_1f44fde9cd8428::t_e6816bdd64e835 1-392
+libs/core/tests/unit_tests/load/test_secret_injection.py
+  s_1f44fde9cd8428::t_afb4c93463a7d1 48,201,283,310
+libs/core/tests/unit_tests/load/test_serializable.py
+  s_1f44fde9cd8428::t_700e7fad24d734 1,3,9-10,13-15,24-27,549,605-638,939-1176
+libs/core/tests/unit_tests/messages/test_ai.py
+  s_1f44fde9cd8428::t_2df7b0028cc638 1,358,362,382-387,474-479,493-558
+libs/core/tests/unit_tests/messages/test_utils.py
+  s_1f44fde9cd8428::t_c85a2164fff9a3 761-762,768,1292,2962-3106
+libs/core/tests/unit_tests/output_parsers/test_base_parsers.py
+  s_1f44fde9cd8428::t_21776caa5bec01 3-5,8,14,20-35
+libs/core/tests/unit_tests/output_parsers/test_openai_tools.py
+  s_1f44fde9cd8428::t_b88ec3fab1e0ec 818,851
+libs/core/tests/unit_tests/output_parsers/test_pydantic_parser.py
+  s_1f44fde9cd8428::t_4954b88f332dd0 176
+libs/core/tests/unit_tests/prompts/test_chat.py
+  s_1f44fde9cd8428::t_d9042abaf610e7 1204-1206,1208,1261,1405,1874,1957-1974
+libs/core/tests/unit_tests/prompts/test_dict.py
+  s_1f44fde9cd8428::t_a74af927934c49 1-6,40-118
+libs/core/tests/unit_tests/prompts/test_few_shot_with_templates.py
+  s_1f44fde9cd8428::t_ba4f4c26e7be87 84-106
+libs/core/tests/unit_tests/prompts/test_image.py
+  s_1f44fde9cd8428::t_c0782d1819acbf 3-4,7,18,113-138,140-142
+libs/core/tests/unit_tests/prompts/test_loading.py
+  s_1f44fde9cd8428::t_8fe764cec254fc 8,11,110-128,302-364
+libs/core/tests/unit_tests/prompts/test_prompt.py
+  s_1f44fde9cd8428::t_081bc2a6299152 12,22-30,230
+libs/core/tests/unit_tests/prompts/test_string.py
+  s_1f44fde9cd8428::t_e930d7f596d1c1 4-9,47-90
+libs/core/tests/unit_tests/prompts/test_structured.py
+  s_1f44fde9cd8428::t_9d23d970ec9f1e 9,24,32-33,81-83,85,107-110
+libs/core/tests/unit_tests/pydantic_utils.py
+  s_1f44fde9cd8428::t_940f45c86a3895 1,5,9-15,85,111
+libs/core/tests/unit_tests/runnables/__snapshots__/test_fallbacks.ambr
+  s_1f44fde9cd8428::t_feacfd83141929 87,131,271,284,325,338,350
+libs/core/tests/unit_tests/runnables/__snapshots__/test_runnable.ambr
+  s_1f44fde9cd8428::t_bf3fe310ff2ac8 100,230,349,460,851,887,1012,1112,1223,1252,1352,1462,1579,1702,1870,1943,13410,13613,13639-13640,13765,13777,13920,13941
+libs/core/tests/unit_tests/runnables/conftest.py
+  s_1f44fde9cd8428::t_78355d38ff3f41 1-37
+libs/core/tests/unit_tests/runnables/test_config.py
+  s_1f44fde9cd8428::t_87e07e81dd9516 19-20,28-29,68,78-235,326-416
+libs/core/tests/unit_tests/runnables/test_fallbacks.py
+  s_1f44fde9cd8428::t_063b2105c1108e 338-340,347,373-375
+libs/core/tests/unit_tests/runnables/test_graph.py
+  s_1f44fde9cd8428::t_36eefed2412d15 229-231,236
+libs/core/tests/unit_tests/runnables/test_history.py
+  s_1f44fde9cd8428::t_00a210a2c25ff0 29-36
+libs/core/tests/unit_tests/runnables/test_runnable.py
+  s_1f44fde9cd8428::t_91217c203073ae 22-25,96-106,109-115,463,483,520,552,695,712,718,862,1184,1730,1744,2169-2173,2387,2498,2765,2895,2939,2971,2979,3027,3035,3049,3057,3164,3175,3190-3192,3205,3208-3210,3216-3217,3236,3239-3241,3247,3253,3256,3259,3276,3291,3306-3308,3327,3338,3353-3356,3366-3367,3369,3371,3399,3403,3405,3415,3419,3421,3459,3474,3489-3491,3496,3592,3596,3714,3718-3720,3723,3797-3801,3811-3845,3902-3903,3928,3931,5398-5399,5452,5472,5842,5845-6005
+libs/core/tests/unit_tests/runnables/test_runnable_events_v1.py
+  s_1f44fde9cd8428::t_e2e7716083128e 37-46,91,565,695-697,1087,1092-1094
+libs/core/tests/unit_tests/runnables/test_runnable_events_v2.py
+  s_1f44fde9cd8428::t_33a33d9890c42f 59-66,104,632,746-748,1106,1111-1113
+libs/core/tests/unit_tests/runnables/test_runnable_events_v3.py
+  s_1f44fde9cd8428::t_43207ddd5a15ac 1-23
+libs/core/tests/unit_tests/runnables/test_tracing_interops.py
+  s_1f44fde9cd8428::t_e52b8879e72bba 3-4,7,18-19,24,26,51,57-59,86-117,312,424-425,462-463,511-514,524-525,536-539,558-1303
+libs/core/tests/unit_tests/runnables/test_utils.py
+  s_1f44fde9cd8428::t_5242d98d671af1 59
+libs/core/tests/unit_tests/stores/test_in_memory.py
+  s_1f44fde9cd8428::t_6b74009cb109fe 26
+libs/core/tests/unit_tests/test_messages.py
+  s_1f44fde9cd8428::t_3a1f3088fbe546 2,491,1095-1099
+libs/core/tests/unit_tests/test_prompt_values.py
+  s_1f44fde9cd8428::t_1e43f06ea837dd 15
+libs/core/tests/unit_tests/test_ssrf_policy_transport.py
+  s_1f44fde9cd8428::t_d9fe649cc1a5da 1-427
+libs/core/tests/unit_tests/test_ssrf_protection.py
+  s_1f44fde9cd8428::t_903c7dbe4b469e 33,36,67,71,79,84,100
+libs/core/tests/unit_tests/test_tools.py
+  s_1f44fde9cd8428::t_c1d2efca374bec 6,44,54,64,66,74,77,80-84,103,125,134,137-139,143-158,180-182,186,200-202,206,220-222,226,239,258,261-263,275,344,384,848-913,945-990,1079,1145,1192-1194,1196,2001,2121,2169,2191-2276,2292-2294,2306-2307,2356-2358,2360-2364,2367-2368,2378,2380-2381,2383-2384,2388,2392,2403,2405-2409,2433,2442,2466,2892,2930,3204,3238,3306,3374,3889-4065
+libs/core/tests/unit_tests/tracers/test_async_base_tracer.py
+  s_1f44fde9cd8428::t_d92dd9f241417d 217-250
+libs/core/tests/unit_tests/tracers/test_base_tracer.py
+  s_1f44fde9cd8428::t_3760f6f813a6e5 220-253
+libs/core/tests/unit_tests/tracers/test_langchain.py
+  s_1f44fde9cd8428::t_f81a9fbf9af6b3 1,19,701-951
+libs/core/tests/unit_tests/tracers/test_memory_stream.py
+  s_1f44fde9cd8428::t_d3b11b0aed5dcc 15,33,66,88
+libs/core/tests/unit_tests/utils/test_function_calling.py
+  s_1f44fde9cd8428::t_1ab949ecdfe2af 29,33,53,64,77,89-92,94-96,234,252,272,318-319,323-326,328,648,675-677,1047-1049,1090-1091,1095-1098,1132,1135,1254-1382
+libs/core/tests/unit_tests/utils/test_pydantic.py
+  s_1f44fde9cd8428::t_d89546f9f0b0d5 17-18,158-207
+libs/core/tests/unit_tests/utils/test_rm_titles.py
+  s_1f44fde9cd8428::t_53eddc489bd93e 1-2,234
+libs/core/tests/unit_tests/utils/test_utils.py
+  s_1f44fde9cd8428::t_3255daa0590257 135-137,165-167,443
+libs/core/tests/unit_tests/vectorstores/test_utils.py
+  s_1f44fde9cd8428::t_5f493dac8cc3c2 9,65-66,74
+libs/core/tests/unit_tests/vectorstores/test_vectorstore.py
+  s_1f44fde9cd8428::t_a662416c901ce1 33,61,107
+libs/core/uv.lock
+  s_1f44fde9cd8428::t_952baefd06f828 2,5-6,8-9,113-152,216,221,223,605,607,609,677-678,680-681,938,961,963,981,999,1001,1042,1046,1093,1117-1118,1126,1131,1136-1147,1150,1173-1174,1179,1185,1188,1194,1204-1205,1208-1209,1219,1226,1233,1243,1247,1249,1263-1343,1466,1471,1473,1478,1481,1488-1532,1561,1579,1581,1610,1619,1621,1707-1708,1710-1711,1912,1914,1916,2185,2196,2198,2886,2888,2890-2898,2912,2914,2916,2972,2974,2976,2981-3089,3094,3100,3102,3173-3240
+libs/langchain/Makefile
+  s_1f44fde9cd8428::t_61ca7acee91d3d 26,55-57,61-63,66,69-70
+libs/langchain/README.md
+  s_1f44fde9cd8428::t_068f7be1edb022 6,16,38-42
+libs/langchain/langchain_classic/_api/deprecation.py
+  s_1f44fde9cd8428::t_06f50124953a4e 11-15
+libs/langchain/langchain_classic/_api/module_import.py
+  s_1f44fde9cd8428::t_d3c9c43fa7e8d7 100,134
+libs/langchain/langchain_classic/agents/agent.py
+  s_1f44fde9cd8428::t_f72cad957f42e5 613,702
+libs/langchain/langchain_classic/agents/agent_toolkits/vectorstore/base.py
+  s_1f44fde9cd8428::t_c96587ba735a2b 24-28,116-120
+libs/langchain/langchain_classic/agents/agent_types.py
+  s_1f44fde9cd8428::t_0e390075d72de0 13
+libs/langchain/langchain_classic/agents/chat/base.py
+  s_1f44fde9cd8428::t_3e98782f12ae48 34
+libs/langchain/langchain_classic/agents/conversational/base.py
+  s_1f44fde9cd8428::t_eb6879417488fa 32
+libs/langchain/langchain_classic/agents/conversational_chat/base.py
+  s_1f44fde9cd8428::t_d6c99f47e64868 36
+libs/langchain/langchain_classic/agents/initialize.py
+  s_1f44fde9cd8428::t_6f1d4e3c650bc7 22
+libs/langchain/langchain_classic/agents/loading.py
+  s_1f44fde9cd8428::t_a4a7a45cfb1e93 38,101
+libs/langchain/langchain_classic/agents/mrkl/base.py
+  s_1f44fde9cd8428::t_e5673990aa87f6 43,182
+libs/langchain/langchain_classic/agents/openai_assistant/base.py
+  s_1f44fde9cd8428::t_0949f02c81806f 24-26,153,173,195,281,284,414,417,622,776
+libs/langchain/langchain_classic/agents/openai_functions_agent/base.py
+  s_1f44fde9cd8428::t_27855741670777 38
+libs/langchain/langchain_classic/agents/openai_functions_multi_agent/base.py
+  s_1f44fde9cd8428::t_f6b0e69ddfa4b5 106
+libs/langchain/langchain_classic/agents/react/base.py
+  s_1f44fde9cd8428::t_63fd41aae95774 34,87,141,168
+libs/langchain/langchain_classic/agents/self_ask_with_search/base.py
+  s_1f44fde9cd8428::t_d3034123898776 31,76
+libs/langchain/langchain_classic/agents/structured_chat/base.py
+  s_1f44fde9cd8428::t_960740a77f2981 38
+libs/langchain/langchain_classic/agents/xml/base.py
+  s_1f44fde9cd8428::t_c3f43bb0a75d01 22
+libs/langchain/langchain_classic/base_memory.py
+  s_1f44fde9cd8428::t_21665070610dce 21-27
+libs/langchain/langchain_classic/callbacks/streaming_aiter.py
+  s_1f44fde9cd8428::t_6b9c683310d90d 42-47
+libs/langchain/langchain_classic/callbacks/streaming_aiter_final_only.py
+  s_1f44fde9cd8428::t_13a93d46900bfe 84-88,90,102
+libs/langchain/langchain_classic/callbacks/streaming_stdout_final_only.py
+  s_1f44fde9cd8428::t_3979d17aa4d384 79-81,83-84,86,99
+libs/langchain/langchain_classic/chains/api/base.py
+  s_1f44fde9cd8428::t_5fbf453b805852 61-66
+libs/langchain/langchain_classic/chains/base.py
+  s_1f44fde9cd8428::t_2497977e382170 368,420,579,653,799
+libs/langchain/langchain_classic/chains/combine_documents/base.py
+  s_1f44fde9cd8428::t_8027ad8253c2a5 170-175
+libs/langchain/langchain_classic/chains/combine_documents/map_reduce.py
+  s_1f44fde9cd8428::t_b74c79e14f18ef 22-26
+libs/langchain/langchain_classic/chains/combine_documents/map_rerank.py
+  s_1f44fde9cd8428::t_9b3c683bbb162c 23-27
+libs/langchain/langchain_classic/chains/combine_documents/reduce.py
+  s_1f44fde9cd8428::t_2a4257cae1f3eb 133-137
+libs/langchain/langchain_classic/chains/combine_documents/refine.py
+  s_1f44fde9cd8428::t_735f939fc310d8 26-30
+libs/langchain/langchain_classic/chains/combine_documents/stuff.py
+  s_1f44fde9cd8428::t_3fa323cd54b4ae 71,106-110
+libs/langchain/langchain_classic/chains/constitutional_ai/base.py
+  s_1f44fde9cd8428::t_8e2eac36acd8cb 22-27
+libs/langchain/langchain_classic/chains/conversation/base.py
+  s_1f44fde9cd8428::t_5e15c43e983177 16-21,54,92
+libs/langchain/langchain_classic/chains/conversational_retrieval/base.py
+  s_1f44fde9cd8428::t_4f9958c5b36820 261
+libs/langchain/langchain_classic/chains/hyde/base.py
+  s_1f44fde9cd8428::t_701f264443b02f 43
+libs/langchain/langchain_classic/chains/llm.py
+  s_1f44fde9cd8428::t_0beb649a92edcc 43
+libs/langchain/langchain_classic/chains/llm_checker/base.py
+  s_1f44fde9cd8428::t_807ef9d5b39e4c 68-73
+libs/langchain/langchain_classic/chains/llm_math/base.py
+  s_1f44fde9cd8428::t_7f632820b847f9 26-30
+libs/langchain/langchain_classic/chains/llm_summarization_checker/base.py
+  s_1f44fde9cd8428::t_36adc07528be7b 73-78
+libs/langchain/langchain_classic/chains/loading.py
+  s_1f44fde9cd8428::t_0a38775ee1f439 679-680,699-700
+libs/langchain/langchain_classic/chains/mapreduce.py
+  s_1f44fde9cd8428::t_8e0199975ee468 32-36
+libs/langchain/langchain_classic/chains/moderation.py
+  s_1f44fde9cd8428::t_0e34da580277e2 72
+libs/langchain/langchain_classic/chains/natbot/base.py
+  s_1f44fde9cd8428::t_1b965fe69e58a7 21-22
+libs/langchain/langchain_classic/chains/openai_functions/base.py
+  s_1f44fde9cd8428::t_071879fdace2b0 41,110,146,194
+libs/langchain/langchain_classic/chains/openai_functions/citation_fuzzy_match.py
+  s_1f44fde9cd8428::t_f13fac37fb40d8 125
+libs/langchain/langchain_classic/chains/openai_functions/extraction.py
+  s_1f44fde9cd8428::t_a7ac7d1687f3f0 49-53,92-96
+libs/langchain/langchain_classic/chains/openai_functions/openapi.py
+  s_1f44fde9cd8428::t_c55f75674f9601 30-35,92-96,212-216,222,225,272-273,288-290,294,303
+libs/langchain/langchain_classic/chains/openai_functions/qa_with_structure.py
+  s_1f44fde9cd8428::t_7a523c740f9add 32-38,117-123
+libs/langchain/langchain_classic/chains/openai_functions/tagging.py
+  s_1f44fde9cd8428::t_ffce01e5b37654 38-42,81,108-112,151
+libs/langchain/langchain_classic/chains/openai_tools/extraction.py
+  s_1f44fde9cd8428::t_7960434ffcabae 19-25
+libs/langchain/langchain_classic/chains/qa_generation/base.py
+  s_1f44fde9cd8428::t_09c7a6744a93a0 21-25
+libs/langchain/langchain_classic/chains/qa_with_sources/base.py
+  s_1f44fde9cd8428::t_18bfd745dac663 39-43,220-224
+libs/langchain/langchain_classic/chains/qa_with_sources/loading.py
+  s_1f44fde9cd8428::t_bc8f72da07687f 169-173
+libs/langchain/langchain_classic/chains/query_constructor/base.py
+  s_1f44fde9cd8428::t_b3f871d29af679 271
+libs/langchain/langchain_classic/chains/question_answering/chain.py
+  s_1f44fde9cd8428::t_7b36600a4bf94b 234-238
+libs/langchain/langchain_classic/chains/retrieval_qa/base.py
+  s_1f44fde9cd8428::t_87a557d9bb30dc 33-37,211-215,300-304
+libs/langchain/langchain_classic/chains/router/llm_router.py
+  s_1f44fde9cd8428::t_719e711dde052c 26-31
+libs/langchain/langchain_classic/chains/router/multi_prompt.py
+  s_1f44fde9cd8428::t_a85a1de480f30f 27-32
+libs/langchain/langchain_classic/chains/sql_database/query.py
+  s_1f44fde9cd8428::t_3029273e9bd9d5 78
+libs/langchain/langchain_classic/chains/structured_output/base.py
+  s_1f44fde9cd8428::t_a394ccec5bd66d 33-37,104,126-130,201,254,281,303,330
+libs/langchain/langchain_classic/chat_models/base.py
+  s_1f44fde9cd8428::t_26611d52e1c2d2 8,72-80,91-105,108-112,114-117,126-168,191,243-245,254,256,258-259,265,267,272,275,284,287,294,296-298,303,312-313,318,339,351,355,357,1026
+libs/langchain/langchain_classic/embeddings/base.py
+  s_1f44fde9cd8428::t_5f53c6b3d5f870 5,131-139
+libs/langchain/langchain_classic/evaluation/agents/trajectory_eval_chain.py
+  s_1f44fde9cd8428::t_4adf62ca730cf5 116
+libs/langchain/langchain_classic/evaluation/criteria/eval_chain.py
+  s_1f44fde9cd8428::t_c97d11f0317af2 208
+libs/langchain/langchain_classic/evaluation/embedding_distance/base.py
+  s_1f44fde9cd8428::t_e06489de4ec19c 63,124
+libs/langchain/langchain_classic/evaluation/loading.py
+  s_1f44fde9cd8428::t_dfaccc0aa5be8c 155
+libs/langchain/langchain_classic/evaluation/scoring/__init__.py
+  s_1f44fde9cd8428::t_49e9a64c138078 10
+libs/langchain/langchain_classic/hub.py
+  s_1f44fde9cd8428::t_abba54d8cc0477 6,8-9,12-18,25,50-51,53,55-58,62-68,78-101,106-108,116-117
+libs/langchain/langchain_classic/memory/buffer.py
+  s_1f44fde9cd8428::t_dd49abfce5cfa7 15-21,96-102
+libs/langchain/langchain_classic/memory/buffer_window.py
+  s_1f44fde9cd8428::t_d8f587ac0b7d95 12-18
+libs/langchain/langchain_classic/memory/chat_memory.py
+  s_1f44fde9cd8428::t_f4e450ec538cfe 19-25
+libs/langchain/langchain_classic/memory/entity.py
+  s_1f44fde9cd8428::t_79f404c66f5556 32-38,67-73,104-110,222-228,349-355,474-480
+libs/langchain/langchain_classic/memory/summary.py
+  s_1f44fde9cd8428::t_238c8e15d83cbe 21-25,87-93
+libs/langchain/langchain_classic/memory/summary_buffer.py
+  s_1f44fde9cd8428::t_017c312ea2dd57 14-20
+libs/langchain/langchain_classic/memory/token_buffer.py
+  s_1f44fde9cd8428::t_0c5b7f1e9f67ed 13-19
+libs/langchain/langchain_classic/memory/vectorstore.py
+  s_1f44fde9cd8428::t_7ae551fc0a86c7 17-23
+libs/langchain/langchain_classic/retrievers/document_compressors/cohere_rerank.py
+  s_1f44fde9cd8428::t_c6445151dbcb57 17
+libs/langchain/langchain_classic/retrievers/document_compressors/listwise_rerank.py
+  s_1f44fde9cd8428::t_eb492e379ed187 67
+libs/langchain/langchain_classic/retrievers/ensemble.py
+  s_1f44fde9cd8428::t_3811c3a48735fb 297
+libs/langchain/langchain_classic/runnables/hub.py
+  s_1f44fde9cd8428::t_67feeed92ede3c 3,8-14
+libs/langchain/langchain_classic/runnables/openai_functions.py
+  s_1f44fde9cd8428::t_688293de318f77 3,7,49-50,52-54
+libs/langchain/langchain_classic/smith/evaluation/string_run_evaluator.py
+  s_1f44fde9cd8428::t_2f74341db67f0b 8,34-36,67
+libs/langchain/langchain_classic/storage/_lc_store.py
+  s_1f44fde9cd8428::t_9bca5414b46cdb 28,36-43,62-82
+libs/langchain/pyproject.toml
+  s_1f44fde9cd8428::t_525f0b6589c164 23,26-27,37,40-41,61,67,71,81,85,98,135-136
+libs/langchain/tests/integration_tests/chat_models/test_base.py
+  s_1f44fde9cd8428::t_4b4b01bbe09971 23-25,49
+libs/langchain/tests/integration_tests/retrievers/document_compressors/test_listwise_rerank.py
+  s_1f44fde9cd8428::t_45d71eaab4d569 20
+libs/langchain/tests/unit_tests/agents/test_agent.py
+  s_1f44fde9cd8428::t_91939abbc1a056 466,573,685
+libs/langchain/tests/unit_tests/chat_models/test_base.py
+  s_1f44fde9cd8428::t_91f2990359f9f0 12-13,36,90,124,126,137,209,211,221-223,241,282
+libs/langchain/tests/unit_tests/llms/test_fake_chat_model.py
+  s_1f44fde9cd8428::t_97e06f07f0595f 176,184-185
+libs/langchain/tests/unit_tests/retrievers/test_ensemble.py
+  s_1f44fde9cd8428::t_42fd3781d8e622 1-4,26-49,122-156
+libs/langchain/tests/unit_tests/test_hub.py
+  s_1f44fde9cd8428::t_ef6762199dc2c9 1-28
+libs/langchain/uv.lock
+  s_1f44fde9cd8428::t_85d7fa1c8dba2d 5-6,8-9,36,46,49-168,204,216,218,306-345,394-505,604,609,611,923-941,1066,1072-1134,1248-1299,1875-1878,2093,2095,2097,2165-2166,2168-2169,2223-2231,2529,2552,2554,2572,2590,2592,2606,2617,2619,2631-2644,2647,2654,2656,2674-2696,2699,2719-2727,2819-2821,2842,2850,2860-2861,2870,2881,2893-2931,2934,2938,2951,2975-2976,2984,2989,3040,3056,3058,3119,3135,3143-3144,3151,3161,3178-3189,3192,3214-3215,3220,3226,3229,3235,3245-3246,3249-3250,3260,3267,3303-3304,3307-3351,3353,3355,3360,3370,3374,3376,3390-3470,3570-3581,3605,3610,3612,3727-3752,3857,3860,3867-3911,3953,3971,3973,4002,4011,4013,4270-4325,4446-4539,4761-4813,4979-4992,5014-5030,5033,5044,5046,5972,5978,5980,6193,6195,6197-6205,6296,6298,6300,6305,6307,6309,6364-6376,6409,6411,6413,6456,6462,6464
+libs/langchain_v1/Makefile
+  s_1f44fde9cd8428::t_4a957211a0013f 1,41,47-50,123
+libs/langchain_v1/README.md
+  s_1f44fde9cd8428::t_1ea08cd9097c2d 6,16,40-44
+libs/langchain_v1/langchain/__init__.py
+  s_1f44fde9cd8428::t_1ca98d2a2805f7 3
+libs/langchain_v1/langchain/agents/_subagent_transformer.py
+  s_1f44fde9cd8428::t_3587cb4a05ebd0 1-307
+libs/langchain_v1/langchain/agents/factory.py
+  s_1f44fde9cd8428::t_e241a4030f1064 5-6,8,27-28,31,33,39,44,65,67,87,143,155-173,182-183,209,238,250-251,330,341-342,418-431,471-473,512-513,522-523,567-570,576-595,738-807,824,826,836,920-926,985-986,1149-1154,1160,1358-1359,1361-1365,1367,1785-1786,1795-1800,1876-1879,1881,1959
+libs/langchain_v1/langchain/agents/middleware/__init__.py
+  s_1f44fde9cd8428::t_86d0a1f7b5ec38 15,23,33,37,60,70,73,82
+libs/langchain_v1/langchain/agents/middleware/_execution.py
+  s_1f44fde9cd8428::t_4eb08d35a3ed14 279
+libs/langchain_v1/langchain/agents/middleware/_retry.py
+  s_1f44fde9cd8428::t_adfe63921e35bb 29-32
+libs/langchain_v1/langchain/agents/middleware/file_search.py
+  s_1f44fde9cd8428::t_d810ef71b626f9 11-12,25-43,181-189,193-195,205,332-335,364-397
+libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py
+  s_1f44fde9cd8428::t_37ec4b45a46875 3-5,8-9,19,22-26,51,104-117,119-120,122-126,194-214,232-233,240-242,256,323-325,334-342,351-383,415-416
+libs/langchain_v1/langchain/agents/middleware/model_call_limit.py
+  s_1f44fde9cd8428::t_dffbcc0ff12265 111,117
+libs/langchain_v1/langchain/agents/middleware/model_fallback.py
+  s_1f44fde9cd8428::t_7399a7a4778f2a 1-14,18-21,37-275,286,290,295,299,350-353,355-359,361,392-395,397-401,403
+libs/langchain_v1/langchain/agents/middleware/pii.py
+  s_1f44fde9cd8428::t_bca12c4626d18b 5-6,8-9,36-489,530,538,548,592-617,638-657
+libs/langchain_v1/langchain/agents/middleware/provider_tool_search.py
+  s_1f44fde9cd8428::t_899e185636579f 1-307
+libs/langchain_v1/langchain/agents/middleware/shell_tool.py
+  s_1f44fde9cd8428::t_2544959c444108 18,761-778,785,874-893
+libs/langchain_v1/langchain/agents/middleware/summarization.py
+  s_1f44fde9cd8428::t_eaf8d5af14eb83 7,53,57,61,65,79-89,95-111,174-207,231,246-252,266-272,332-342,356,445-560,575-578,585,588-621,811-813,837-839
+libs/langchain_v1/langchain/agents/middleware/todo.py
+  s_1f44fde9cd8428::t_e864adb2ba4ca7 52,57,67,74,84-86,89-94,97-105,108-113,115-117,122,130,132-136,189,192
+libs/langchain_v1/langchain/agents/middleware/tool_call_limit.py
+  s_1f44fde9cd8428::t_d7fa5cf1cd1f05 169,178,189,303
+libs/langchain_v1/langchain/agents/middleware/tool_emulator.py
+  s_1f44fde9cd8428::t_0246b22c20279a 39
+libs/langchain_v1/langchain/agents/middleware/tool_retry.py
+  s_1f44fde9cd8428::t_99b0ee2b2a00c3 355
+libs/langchain_v1/langchain/agents/middleware/tool_selection.py
+  s_1f44fde9cd8428::t_66e16eb8db27b6 109,118,167,282,324
+libs/langchain_v1/langchain/agents/middleware/types.py
+  s_1f44fde9cd8428::t_b14ba6eb7fa1f8 5,30-31,38,47,52,90-92,119,131,247,313-314,355,361,368-373,401-410,814-823,825-831,833-848,850-861,1042-1046,1056-1069,1076-1078,1087-1100,1218-1222,1230-1243,1250-1252,1261-1274,1425-1429,1439-1452,1459-1461,1470-1483,1602-1606,1614-1627,1634-1636,1645-1658,1667,1675,1681,1684,1738,1749,1758-1771,1778,1791,1800-1814,1823,1835,1841,1848,1929,1939-1942,1948-1961,1967-1970,1974-1987,2114,2120-2133,2140,2144-2157
+libs/langchain_v1/langchain/agents/structured_output.py
+  s_1f44fde9cd8428::t_7cc674a8b05e35 79,95,98,348,395
+libs/langchain_v1/langchain/chat_models/base.py
+  s_1f44fde9cd8428::t_2cf120f64cb67a 222-226,230-231,240-282,308-309,361-363,372,376-377,383,390,393,405,412,414-416,421,430-431,453,465,469,471,477,557,559-567,991,1020-1025,1031-1034,1037-1044,1050-1053
+libs/langchain_v1/pyproject.toml
+  s_1f44fde9cd8428::t_aa7151338bad33 24,27-28,58,64,67,71-72,75,82,91,108,143,177
+libs/langchain_v1/tests/benchmarks/test_create_agent.py
+  s_1f44fde9cd8428::t_67fe8275d218c1 1-44
+libs/langchain_v1/tests/integration_tests/agents/middleware/test_human_in_the_loop_integration.py
+  s_1f44fde9cd8428::t_cdd37ecff01602 1-94
+libs/langchain_v1/tests/integration_tests/agents/middleware/test_shell_tool_integration.py
+  s_1f44fde9cd8428::t_dd265090f4c77b 1,34,56,83,120
+libs/langchain_v1/tests/integration_tests/chat_models/test_base.py
+  s_1f44fde9cd8428::t_31db33e450dec7 23,45
+libs/langchain_v1/tests/unit_tests/agents/conftest_store.py
+  s_1f44fde9cd8428::t_5832909a29021c 10,15,22,28,34,40,46,52
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_composition.py
+  s_1f44fde9cd8428::t_9981e17dbc181e 34,199,232,280,336
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_decorators.py
+  s_1f44fde9cd8428::t_c1502c46b44604 18,194,203,532,547,634,695,713,727,744,762,766,790,814
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_dynamic_tools.py
+  s_1f44fde9cd8428::t_59e1ecba87f0a1 9,15,21-22,26,31-33,166,215-220,222-223,255
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_framework.py
+  s_1f44fde9cd8428::t_630c8974789b8f 3,17,38-40,48,60,65,77,102-103,153,165,171,184,207-208,237,242,247,374-378,391-396,407,419,431-435,444,472-475,493,498,535,539,585,598,648,660,665,677,705,711,742,762,767,779,878,886,895,903
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_tools.py
+  s_1f44fde9cd8428::t_a89a7252b4ed5b 16,80,86,92,136,142,184-186,216,220,230,264,270,276,340,346,384,390,392
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_transformers.py
+  s_1f44fde9cd8428::t_de376bb1f30fdb 1-143
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_wrap_model_call.py
+  s_1f44fde9cd8428::t_2dd06e9cdf3773 172,1198
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_wrap_model_call_state_update.py
+  s_1f44fde9cd8428::t_b06498465a63c1 15,156,225,440,459,496,510,553,755
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_wrap_tool_call.py
+  s_1f44fde9cd8428::t_7a364d4f78e8f3 294,641
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_context_editing.py
+  s_1f44fde9cd8428::t_ff6b3e02a9d6d9 40,47
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_file_search.py
+  s_1f44fde9cd8428::t_4a53e7e59f5604 3,14,37,47,215-241,329-497
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_human_in_the_loop.py
+  s_1f44fde9cd8428::t_ca37b796bbcf3d 7,15,154-316,706,918-1021
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_model_call_limit.py
+  s_1f44fde9cd8428::t_b2741f6f2ce4e5 1-2,10,18-20,224-227,231
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_model_fallback.py
+  s_1f44fde9cd8428::t_4beee87cb60e19 13,17-22,51-338,721-1069
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_model_retry.py
+  s_1f44fde9cd8428::t_88e45722c6c709 13,33,71,346
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_pii.py
+  s_1f44fde9cd8428::t_0b7db9285caa94 7-16,18-19,23,28,582,590,605,613,712-2371
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_provider_tool_search.py
+  s_1f44fde9cd8428::t_77e941566a3238 1-434
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_shell_execution_policies.py
+  s_1f44fde9cd8428::t_db656c24246ecb 30
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_shell_tool.py
+  s_1f44fde9cd8428::t_57a88ab9d96988 7,159
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_summarization.py
+  s_1f44fde9cd8428::t_ecc1835b68f2b7 2,10,32-37,41-56,107-114,960-993,1155-1712,1729,1743,1768-1839,1917-2018
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_tool_call_limit.py
+  s_1f44fde9cd8428::t_fdac4ab2b9f0a0 10,38-39
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_tool_emulator.py
+  s_1f44fde9cd8428::t_7b706aa1b294b6 15,48,93,105
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_tool_retry.py
+  s_1f44fde9cd8428::t_a0b2be75b04254 501
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_tool_selection.py
+  s_1f44fde9cd8428::t_0342b5d6cb0e1c 14,48,60
+libs/langchain_v1/tests/unit_tests/agents/middleware_typing/test_middleware_backwards_compat.py
+  s_1f44fde9cd8428::t_b5a022642633d1 17,42,110
+libs/langchain_v1/tests/unit_tests/agents/middleware_typing/test_middleware_typing.py
+  s_1f44fde9cd8428::t_9f8cb6b33d473e 12-13,24,31,34,77-82,90,119,130,265-319,386
+libs/langchain_v1/tests/unit_tests/agents/model.py
+  s_1f44fde9cd8428::t_4c710f9cba4126 29
+libs/langchain_v1/tests/unit_tests/agents/test_agent_name.py
+  s_1f44fde9cd8428::t_9b5049699b6a15 8-9,124-126,162-164,185-187,223-225
+libs/langchain_v1/tests/unit_tests/agents/test_agent_streaming.py
+  s_1f44fde9cd8428::t_43eebef1699c6d 1-285
+libs/langchain_v1/tests/unit_tests/agents/test_create_agent_tool_validation.py
+  s_1f44fde9cd8428::t_4bc5367ac08612 6,12,18-23,39-42,50-51,58,62,73-76,103-105,113-114,121,125,136-138,176,192,205-265,273,283,286-287,291-298,300-301,309-311,313-315,317-320,324-326,349-352,367,376-377,393-396
+libs/langchain_v1/tests/unit_tests/agents/test_fetch_last_ai_and_tool_messages.py
+  s_1f44fde9cd8428::t_4c47c1dec3e78d 8,15,32,56,73,84,97
+libs/langchain_v1/tests/unit_tests/agents/test_injected_runtime_create_agent.py
+  s_1f44fde9cd8428::t_807c08e9364d19 25,28,306-308,333-336,450,489,494,628-631,702-706,750-753,833-837
+libs/langchain_v1/tests/unit_tests/agents/test_kwargs_tool_runtime_injection.py
+  s_1f44fde9cd8428::t_3d6c12ce80e1fe 19-20
+libs/langchain_v1/tests/unit_tests/agents/test_response_format.py
+  s_1f44fde9cd8428::t_a93bf3e1349912 16,806,840,908,943-1018
+libs/langchain_v1/tests/unit_tests/agents/test_responses_spec.py
+  s_1f44fde9cd8428::t_7846d21af6838a 33-34,121,138
+libs/langchain_v1/tests/unit_tests/agents/test_return_direct_spec.py
+  s_1f44fde9cd8428::t_77cc43d1d4b303 26-27,82
+libs/langchain_v1/tests/unit_tests/agents/test_state_schema.py
+  s_1f44fde9cd8428::t_4c3d4e45e93d7a 9,13,15,19,44-46,55-57,71-75,85-90,105-107,124,139-142,148,163-167,197-199,214-217,237-240,262-266,283-351
+libs/langchain_v1/tests/unit_tests/agents/test_subagent_streaming.py
+  s_1f44fde9cd8428::t_0fd889e7881df9 1-99
+libs/langchain_v1/tests/unit_tests/agents/test_subagent_transformer.py
+  s_1f44fde9cd8428::t_cdc47aea880ed4 1-248
+libs/langchain_v1/tests/unit_tests/agents/test_system_message.py
+  s_1f44fde9cd8428::t_c535726b961e51 28-29,324,392,438,610,700,702,744,768,798-804,806-808,810,812,830-841,843-846,904,927
+libs/langchain_v1/tests/unit_tests/chat_models/test_chat_models.py
+  s_1f44fde9cd8428::t_b332facf23924e 2,17-18,39,82-83,133,167,169,174,180,229,237,259,261,270,288,301,329,337,345
+libs/langchain_v1/uv.lock
+  s_1f44fde9cd8428::t_e28114ec9f0f7f 5-6,8-9,36,46,49-168,195,207,209,227-266,956,962-1011,1050,1787,1789,1791,1974,2045,2086,2097-2099,2105,2116,2122,2132,2138,2146-2147,2154,2157,2159,2219,2231,2233,2262,2266,2279,2303-2304,2312,2317,2368,2384,2386,2447,2463-2464,2471-2472,2479,2489,2506-2517,2520,2543-2544,2549,2555,2558,2564,2574-2575,2578-2579,2589,2595-2597,2599-2600,2650,2660,2662,2667,2673,2675,2680,2686,2688,2693,2697-2698,2700,2702,2704,2709,2719-2720,2723,2725,2730-2810,3209,3212,3219-3263,3414-3415,3417-3418,3703-3796,3969-4021,4189,4196,4198,4212,4214-4217,4219,4229,4240,4242,5038,5040,5042,5085,5091,5093
+libs/model-profiles/README.md
+  s_1f44fde9cd8428::t_6b4fa798151706 6,16,44-48
+libs/model-profiles/langchain_model_profiles/_summary.py
+  s_1f44fde9cd8428::t_c45d3f2d06cd37 1-493
+libs/model-profiles/langchain_model_profiles/cli.py
+  s_1f44fde9cd8428::t_90cdb4415e5dc4 14-22,134,402-426,431-448
+libs/model-profiles/pyproject.toml
+  s_1f44fde9cd8428::t_1e003e6d46c559 24,40,48,51,55,58,61,65,68,73,79-84
+libs/model-profiles/tests/unit_tests/test_cli.py
+  s_1f44fde9cd8428::t_0c96b4fc0ec9a1 20,60,104,130,154,180,215,217-219,223,272,274
+libs/model-profiles/tests/unit_tests/test_summary.py
+  s_1f44fde9cd8428::t_ceb296c8105682 1-536
+libs/model-profiles/uv.lock
+  s_1f44fde9cd8428::t_59ff5d4cb7b3f0 5-8,42-81,371,373,375,507,540,551-553,559,570,576,580,593,617-618,626,631,638,688-689,695,700,706,722-723,730-731,738,748,752-763,766,776,778,783,789,791,796,802,804,809,813-814,816,818,820,825,828-829,836-837,839-840,843,845,850-930,935,938,945-989,1003,1015,1017,1168,1170,1172,1186,1194,1196,1201,1206-1312,1326,1337,1339,1344,1351,1353,1358,1365,1367,1384,1389,1391,1593,1601,1603,1620-1640,1654,1659,1661,1666,1668,1670,1675,1681-1731,1806,1808,1810,1836,1838,1840,1845-1940,1975-2033
+libs/partners/Makefile
+  s_1f44fde9cd8428::t_383296a1af5dd9 1-20
+libs/partners/anthropic/Makefile
+  s_1f44fde9cd8428::t_26b68240560e1d 18
+libs/partners/anthropic/README.md
+  s_1f44fde9cd8428::t_655b574498f4ea 6,13,33-37
+libs/partners/anthropic/langchain_anthropic/_client_utils.py
+  s_1f44fde9cd8428::t_c8e265fa00e51f 26-27,38-39
+libs/partners/anthropic/langchain_anthropic/_version.py
+  s_1f44fde9cd8428::t_9832a99503f2e3 1,3
+libs/partners/anthropic/langchain_anthropic/chat_models.py
+  s_1f44fde9cd8428::t_21e6405b7810d9 7,59,241-285,321,565,644-656,663-667,677-691,719-721,723-725,750-859,1003-1011,1013-1043,1045-1046,1049-1050,1052-1053,1132,1173-1178,1273-1298,1320-1326,1355-1357,1418-1427,1604-1636,1694-1698,1746-1747,2327
+libs/partners/anthropic/langchain_anthropic/data/_profiles.py
+  s_1f44fde9cd8428::t_57ad28d7c13d63 21,44,48,71,75,98,100-104,107,117,125,127-131,152,154-158,179,181-184,186-187,197,200,205,230-231,257,283,309,335,361,386-387,413,438-489,491,517,543,569,595,620-645,647
+libs/partners/anthropic/langchain_anthropic/data/profile_augmentations.toml
+  s_1f44fde9cd8428::t_2e9dadb73661a9 9-12,17-19,22-30
+libs/partners/anthropic/langchain_anthropic/llms.py
+  s_1f44fde9cd8428::t_29d5062146a0aa 10,134
+libs/partners/anthropic/langchain_anthropic/middleware/anthropic_tools.py
+  s_1f44fde9cd8428::t_79b147534a1159 96-120,150-151,875-879
+libs/partners/anthropic/langchain_anthropic/middleware/file_search.py
+  s_1f44fde9cd8428::t_0822ed31e4b0ee 38-39,45-46
+libs/partners/anthropic/langchain_anthropic/middleware/prompt_caching.py
+  s_1f44fde9cd8428::t_d00f9d65b45502 42-43,46-52,134-137
+libs/partners/anthropic/langchain_anthropic/output_parsers.py
+  s_1f44fde9cd8428::t_c70685d4b12a5c 80
+libs/partners/anthropic/pyproject.toml
+  s_1f44fde9cd8428::t_a82fbfb8d27d60 23,26-27,37,43,47,49,57-58,60-61,63,77-83,129
+libs/partners/anthropic/scripts/check_version.py
+  s_1f44fde9cd8428::t_815964c0fb5614 5
+libs/partners/anthropic/tests/conftest.py
+  s_1f44fde9cd8428::t_a14aa53de8ac80 28-31
+libs/partners/anthropic/tests/integration_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_4dfa0802f3e45f 9,31-39,914-924,937-943,951-1010,1017-1025,1055-1067,1126-1127,1149-1161,1266,2519,2573,2624-2716
+libs/partners/anthropic/tests/unit_tests/middleware/test_anthropic_tools.py
+  s_1f44fde9cd8428::t_06051d6f4b5f05 65-91
+libs/partners/anthropic/tests/unit_tests/middleware/test_prompt_caching.py
+  s_1f44fde9cd8428::t_33498eebfac978 73,159,240-242,245,278,316,582-674
+libs/partners/anthropic/tests/unit_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_e6a2db65f80a88 17-23,32,34,40,52-67,162,164,200-207,209-216,764,796-942,1899-2106,2141-2142,2221-2414,2893-2895,3346-3580
+libs/partners/anthropic/tests/unit_tests/test_client_utils.py
+  s_1f44fde9cd8428::t_d9183207f4f1d6 6,9,65-78
+libs/partners/anthropic/tests/unit_tests/test_llms.py
+  s_1f44fde9cd8428::t_6d6f632bb02cb6 3-4,12-19
+libs/partners/anthropic/tests/unit_tests/test_standard.py
+  s_1f44fde9cd8428::t_47e22bd818171c 16-20,27,32-35
+libs/partners/anthropic/uv.lock
+  s_1f44fde9cd8428::t_2e835dfd7eee72 5-8,32,44,46,64-112,419,421,423,555,583,594-596,602,613,619,659,673-674,681,684,686,692,696,709,733-734,742,747,752-763,766,789-790,795,801,804,810,820,822,827,833,835,840,846,848,853,857-858,860,862,864,869,879-880,883-970,996,999-1000,1006-1050,1133-1136,1364,1366,1368,1542,1550,1553,1555,1560,1563,1565,1567,1569,1776,1784,1786,1860,1865,1867,1972,1974,1976,2010,2016,2018,2053-2111
+libs/partners/chroma/Makefile
+  s_1f44fde9cd8428::t_ec00c8663e9e97 18,57-59,67
+libs/partners/chroma/README.md
+  s_1f44fde9cd8428::t_241aded1f491a7 6,13,23-27
+libs/partners/chroma/langchain_chroma/__init__.py
+  s_1f44fde9cd8428::t_6ba02ae48f7c42 3,8
+libs/partners/chroma/langchain_chroma/_version.py
+  s_1f44fde9cd8428::t_737d54474c5c67 1-3
+libs/partners/chroma/pyproject.toml
+  s_1f44fde9cd8428::t_9b14e516031caa 24,36,42,46,48,50-51,57,59
+libs/partners/chroma/scripts/check_version.py
+  s_1f44fde9cd8428::t_513b35d4896184 1-65
+libs/partners/chroma/tests/unit_tests/test_imports.py
+  s_1f44fde9cd8428::t_1ff9f45dc7bdc7 5
+libs/partners/chroma/uv.lock
+  s_1f44fde9cd8428::t_c3b15e7405e78e 5-6,8-9,47-86,96-104,348,381,383-387,423-431,453-461,702,704,706,831,849,854-855,860-861,865,871,875,888,912-913,921,926,931-942,945,968-969,974,980,983,989,992-993,1000-1001,1003-1004,1007-1094,1241,1244-1245,1251-1295,1378-1379,1381-1382,1519-1520,1522-1523,1745,1747,1749,2095,2102,2104,2148,2156,2159,2161,2166,2169,2171,2173,2175,2263-2275,2290,2292,2294,2630,2635,2637,2745-2746,2764-2765,2810,2812,2814,2917,2923,2925,3197-3314
+libs/partners/deepseek/Makefile
+  s_1f44fde9cd8428::t_6f39fdaa3db385 24,58-60,68
+libs/partners/deepseek/README.md
+  s_1f44fde9cd8428::t_a0131219b9da54 6,13,33-37
+libs/partners/deepseek/langchain_deepseek/__init__.py
+  s_1f44fde9cd8428::t_f480fc861451bb 3
+libs/partners/deepseek/langchain_deepseek/_version.py
+  s_1f44fde9cd8428::t_5121504509c239 1-3
+libs/partners/deepseek/langchain_deepseek/chat_models.py
+  s_1f44fde9cd8428::t_9bebfd328ae9c9 30,228-237
+libs/partners/deepseek/langchain_deepseek/data/_profiles.py
+  s_1f44fde9cd8428::t_4456b4bc9feef8 24-25,38,45-46,59-103
+libs/partners/deepseek/langchain_deepseek/data/profile_augmentations.toml
+  s_1f44fde9cd8428::t_8e41946bce96be 1-4
+libs/partners/deepseek/pyproject.toml
+  s_1f44fde9cd8428::t_a08cfde298b3f4 26,36,42-43,47-48,53,57,65
+libs/partners/deepseek/scripts/check_version.py
+  s_1f44fde9cd8428::t_211d40d911df4c 1-65
+libs/partners/deepseek/tests/unit_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_ec5558b3bcc983 440-449
+libs/partners/deepseek/tests/unit_tests/test_imports.py
+  s_1f44fde9cd8428::t_134cbc706a15e5 1-10
+libs/partners/deepseek/uv.lock
+  s_1f44fde9cd8428::t_05ac50daf68740 5-8,42-90,276-284,324,326,328,436,440,453,477-478,486,491,516,533-534,538,541,545,561,569-570,577,587,591-602,605,628-629,634,640,643,649,659-660,663-672,674-750,776,779-780,786-830,913-916,1108,1110,1112,1282,1290,1293,1295,1300,1303,1305,1307,1309,1397-1409,1658,1663,1665,1812,1814,1816,1850,1856,1858,1893-1960,2030-2147
+libs/partners/exa/Makefile
+  s_1f44fde9cd8428::t_e69a8a2bc447d0 13,15,18-20,60-62,70
+libs/partners/exa/README.md
+  s_1f44fde9cd8428::t_910fe1364c5ab4 6,13,23-27
+libs/partners/exa/langchain_exa/__init__.py
+  s_1f44fde9cd8428::t_777b1490787274 8,18
+libs/partners/exa/langchain_exa/_version.py
+  s_1f44fde9cd8428::t_742c0747942558 1-3
+libs/partners/exa/pyproject.toml
+  s_1f44fde9cd8428::t_3c5c1dd3484027 25,35,41,44,46,48-49,52,55,60,67
+libs/partners/exa/scripts/check_version.py
+  s_1f44fde9cd8428::t_8000db908b1cdb 1-65
+libs/partners/exa/tests/unit_tests/test_imports.py
+  s_1f44fde9cd8428::t_4559774841b434 11
+libs/partners/exa/uv.lock
+  s_1f44fde9cd8428::t_1f9a46525ad95c 5-8,42-90,290-298,350,352,354,462,466,479,503-504,512,517,543,557,562-563,567-568,571-582,587,610-611,616,622,625,631,641-642,645,647-732,758,761-762,768-812,895-898,1090,1092,1094,1264,1272,1275,1277,1282,1285,1287,1289,1291,1379-1391,1554,1559,1561,1647,1649,1651,1685,1691,1693,1728-1795,1865-1982
+libs/partners/fireworks/Makefile
+  s_1f44fde9cd8428::t_20d227bb04a9fb 18,56-58,66
+libs/partners/fireworks/README.md
+  s_1f44fde9cd8428::t_ba2b1c0c0cfdad 6,13,33-37
+libs/partners/fireworks/langchain_fireworks/__init__.py
+  s_1f44fde9cd8428::t_6cef371e7c498e 3
+libs/partners/fireworks/langchain_fireworks/_version.py
+  s_1f44fde9cd8428::t_374c03d9eebf86 1-3
+libs/partners/fireworks/langchain_fireworks/chat_models.py
+  s_1f44fde9cd8428::t_d0aafd55586bf6 13,17-26,31,43,61-64,96,103,176-314,327-332,334-339,344-349,370-375,385-387,398-407,411-429,455-456,462,475-653,667,669-687,717-723,726-738,790-806,813-837,850-855,866-878,880-886,888-894,897-917,935-936,986-987,990-996,1000-1009,1040-1045,1062,1065-1075,1088-1089,1101-1102,1105-1111,1115-1124,1158-1163
+libs/partners/fireworks/langchain_fireworks/data/_profiles.py
+  s_1f44fde9cd8428::t_fce2c30118d374 19-22,24-25,36,39,41-44,46-47,58,61,63-66,68,82,84-87,89,103,105-108,110-111,124,126-129,131-132,145,147-150,152-153,155,164,166,168-171,173-174,176,185,187,189-192,194-195,204,208,210-213,215-216,227,229,231-237,241,248,250,252-255,257-258,271,273-276,278-279,292,294-297,299-300,311-353,355
+libs/partners/fireworks/langchain_fireworks/data/profile_augmentations.toml
+  s_1f44fde9cd8428::t_d416df0dca9269 1-4
+libs/partners/fireworks/langchain_fireworks/embeddings.py
+  s_1f44fde9cd8428::t_ab60c397368a68 74-78
+libs/partners/fireworks/langchain_fireworks/llms.py
+  s_1f44fde9cd8428::t_c18914ec65e01f 18,20,102-107
+libs/partners/fireworks/langchain_fireworks/version.py
+  s_1f44fde9cd8428::t_34becdad6a4e86 1,3
+libs/partners/fireworks/pyproject.toml
+  s_1f44fde9cd8428::t_0b124d17ca126d 23,26-27,39,45,48,50-51,54,58,60,65-76,83
+libs/partners/fireworks/scripts/check_version.py
+  s_1f44fde9cd8428::t_4fbc218ab9236a 1-65
+libs/partners/fireworks/tests/integration_tests/_rate_limiter.py
+  s_1f44fde9cd8428::t_1d6460e3e3d724 1-18
+libs/partners/fireworks/tests/integration_tests/conftest.py
+  s_1f44fde9cd8428::t_9b8913ea6278bd 1-52
+libs/partners/fireworks/tests/integration_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_cbe8e7a7036c5f 17,25-27,65-67,104,115,123,165-167
+libs/partners/fireworks/tests/integration_tests/test_llms.py
+  s_1f44fde9cd8428::t_4f9e69281a6935 16
+libs/partners/fireworks/tests/integration_tests/test_standard.py
+  s_1f44fde9cd8428::t_ef5a7d2abdc519 11,22,24
+libs/partners/fireworks/tests/unit_tests/__snapshots__/test_standard.ambr
+  s_1f44fde9cd8428::t_058b5f4db69c0e 25
+libs/partners/fireworks/tests/unit_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_03e19ea8489788 5-26,29-77,118-1593
+libs/partners/fireworks/tests/unit_tests/test_embeddings.py
+  s_1f44fde9cd8428::t_d709c7b6304124 3-4,10-13
+libs/partners/fireworks/tests/unit_tests/test_embeddings_standard.py
+  s_1f44fde9cd8428::t_68c32c2bb953ba 5,16-17
+libs/partners/fireworks/uv.lock
+  s_1f44fde9cd8428::t_74ad0238fbb044 5-8,15-17,19-22,35,47-150,190-229,248-256,453,456-458,460,462-463,465,467,614-615,618,621,623,628,630,632,740,744,757,781-782,790,795,802,822,836,843,848-849,851,855,859,863-874,877,900-901,906,912,915,921,924-925,932-933,935-936,939,941-1026,1154,1157-1158,1164-1208,1291-1294,1486-1490,1749,1757,1760,1762,1767,1770,1772,1774,1776,1839-1850,1967,1975,1977,2051,2056,2058,2165,2167,2169,2203,2209,2211,2246-2313,2384-2498
+libs/partners/groq/Makefile
+  s_1f44fde9cd8428::t_8ddf3db9c68829 19,57-59,67
+libs/partners/groq/README.md
+  s_1f44fde9cd8428::t_f36f78a16c2964 6,13,29-33
+libs/partners/groq/langchain_groq/__init__.py
+  s_1f44fde9cd8428::t_bb5668a69eb7f0 3,6-9
+libs/partners/groq/langchain_groq/_compat.py
+  s_1f44fde9cd8428::t_0dd8f239cdff70 12
+libs/partners/groq/langchain_groq/_version.py
+  s_1f44fde9cd8428::t_af8da7a5c75cfd 1-3
+libs/partners/groq/langchain_groq/chat_models.py
+  s_1f44fde9cd8428::t_c64f88e815cfd8 9,11,16,76,93-125,146,191,213,295,380,468-470,480-481,564-577,661-664,685-688,702-705,707,758-761,763,991,1623,1625,1627,1629-1631,1633-1634
+libs/partners/groq/langchain_groq/data/_profiles.py
+  s_1f44fde9cd8428::t_3fa413e7c46d05 20-21,38,41-42,59,76-77,96-97,102,122,142-143,160,165-167,182,185-188,203,208,229,249-251,265,270-273,291,295-296,311,315-316
+libs/partners/groq/langchain_groq/version.py
+  s_1f44fde9cd8428::t_5d09bdb457833a 1,3
+libs/partners/groq/pyproject.toml
+  s_1f44fde9cd8428::t_7267249354fd96 23,26,36,42,45,47-48,51-52,54,58,65
+libs/partners/groq/scripts/check_version.py
+  s_1f44fde9cd8428::t_dd70658fb9aa8c 1-65
+libs/partners/groq/tests/integration_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_c3d96c3b2fdc54 28-29,384-386,410,440,464,472-473,476,478-484,486-488,490,497,505-506,509,511-517,519-521,523,571-573
+libs/partners/groq/tests/integration_tests/test_standard.py
+  s_1f44fde9cd8428::t_703b9aa7d58c4a 24-28,42-46
+libs/partners/groq/tests/unit_tests/__snapshots__/test_standard.ambr
+  s_1f44fde9cd8428::t_f1832979da51db 19
+libs/partners/groq/tests/unit_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_e62c43882e3014 8-9,12,27,32,297,468-508,1103-1324
+libs/partners/groq/tests/unit_tests/test_standard.py
+  s_1f44fde9cd8428::t_03292e1065a4f4 20
+libs/partners/groq/uv.lock
+  s_1f44fde9cd8428::t_1567be801bf360 5-8,42-90,276-284,341,343,345,380,384,397,421-422,430,435,442,460,473,477-478,482,484-496,501,524-525,530,536,539,545,555-556,559-568,570-646,672,675-676,682-726,809-812,985,987,989,1159,1167,1170,1172,1177,1180,1182,1184,1186,1286-1298,1440,1445,1447,1521,1523,1525,1559,1565,1567,1602-1669,1739-1856
+libs/partners/huggingface/Makefile
+  s_1f44fde9cd8428::t_bc7f6d890b503f 1,19,58-60,67-68
+libs/partners/huggingface/README.md
+  s_1f44fde9cd8428::t_b8649029643393 6,13,21,29,49-53
+libs/partners/huggingface/langchain_huggingface/__init__.py
+  s_1f44fde9cd8428::t_c9ba84b4b47b83 3,22
+libs/partners/huggingface/langchain_huggingface/_version.py
+  s_1f44fde9cd8428::t_a5cd341c503133 1-3
+libs/partners/huggingface/langchain_huggingface/chat_models/huggingface.py
+  s_1f44fde9cd8428::t_f8378952f5ea1f 72,584-589
+libs/partners/huggingface/langchain_huggingface/data/_profiles.py
+  s_1f44fde9cd8428::t_becf1525538e80 19-39,59,80-146,167-211,232,253,274,295,316,337-403,424-490,511-555,576,597-707,728,749,770,791-982,1003,1024,1045-1088
+libs/partners/huggingface/langchain_huggingface/data/profile_augmentations.toml
+  s_1f44fde9cd8428::t_79aa1f251645a9 1-4
+libs/partners/huggingface/langchain_huggingface/embeddings/huggingface_endpoint.py
+  s_1f44fde9cd8428::t_5807c25eeb01b6 68-73
+libs/partners/huggingface/langchain_huggingface/llms/huggingface_endpoint.py
+  s_1f44fde9cd8428::t_5d3804f42922fb 8,20-21,29-34,230-236,254-259
+libs/partners/huggingface/langchain_huggingface/llms/huggingface_pipeline.py
+  s_1f44fde9cd8428::t_00ea2dfe22c73e 12,14,96-101
+libs/partners/huggingface/pyproject.toml
+  s_1f44fde9cd8428::t_a92b136fff37ef 23,26,37,49-50,53,59,61,69,73,81
+libs/partners/huggingface/scripts/check_version.py
+  s_1f44fde9cd8428::t_d2d9d066a34c42 1-65
+libs/partners/huggingface/tests/unit_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_8fe9d2eccce198 216-218,332-342
+libs/partners/huggingface/uv.lock
+  s_1f44fde9cd8428::t_45cafeb9fae588 5-8,31,41,44-163,221-260,288-296,482-551,603-611,624-632,910,912,914,982-985,1107,1135,1146-1148,1154,1165,1195,1199,1212,1236-1237,1245,1250,1257,1286,1307,1313-1314,1317,1325-1336,1341,1364-1365,1370,1376,1379,1385,1395,1397,1402,1408,1410,1415,1421,1423,1428,1432-1433,1435,1437,1439,1444,1447-1448,1455-1456,1458-1459,1462-1549,1768,1771-1772,1778-1822,1861-1864,1946-1949,2033-2034,2036-2038,2040-2041,2045-2046,2049-2050,2054-2055,2058-2059,2063-2064,2067-2068,2072-2073,2076,2079-2080,2084-2085,2088,2091-2092,2096-2097,2100-2101,2105-2106,2109-2110,2114-2115,2118-2120,2123-2124,2128-2129,2132,2135-2136,2140-2141,2144-2145,2149-2150,2153-2154,2158-2159,2162-2163,2167-2168,2171-2172,2176-2177,2180-2181,2341,2343,2345,2685,2693,2696,2698,2703,2706,2708,2710,2712,2788-2800,2815,2817,2819,3287-3290,3386,3388,3390,3493,3498,3500,3587,3590-3591,3597-3602,3604,3608-3631,3636,3638,3640-3648,3674,3686,3688,3690,3695,3698-3709,3763,3765,3767,3801,3807,3809,3853-3911
+libs/partners/mistralai/Makefile
+  s_1f44fde9cd8428::t_69cbbc1265e9f8 24,59-61,69
+libs/partners/mistralai/README.md
+  s_1f44fde9cd8428::t_ba0e0445e48ef3 6,13,29-33
+libs/partners/mistralai/langchain_mistralai/__init__.py
+  s_1f44fde9cd8428::t_ef3440ce04601f 3,7-11
+libs/partners/mistralai/langchain_mistralai/_compat.py
+  s_1f44fde9cd8428::t_80f0933c37031d 15
+libs/partners/mistralai/langchain_mistralai/_version.py
+  s_1f44fde9cd8428::t_05ee32db6e13e2 1-3
+libs/partners/mistralai/langchain_mistralai/chat_models.py
+  s_1f44fde9cd8428::t_61571012e8ddcb 47-50,81,417-468,475,547,590-597,651,705-710,807-809
+libs/partners/mistralai/langchain_mistralai/data/_profiles.py
+  s_1f44fde9cd8428::t_670f9824a14eaf 41-62,83,104,125,146,167,288-289,386-406,409-410,412-413,422,424-425,528-548
+libs/partners/mistralai/pyproject.toml
+  s_1f44fde9cd8428::t_eb5c6eeec40452 23,26,39,45-47,49-50,55,59,66
+libs/partners/mistralai/scripts/check_version.py
+  s_1f44fde9cd8428::t_81bbdbc372c940 1-65
+libs/partners/mistralai/tests/integration_tests/_rate_limiter.py
+  s_1f44fde9cd8428::t_be6e83707198fa 1-18
+libs/partners/mistralai/tests/integration_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_baedfd48a418a6 16,21,74,95,120,153,177-181,202-222
+libs/partners/mistralai/tests/integration_tests/test_standard.py
+  s_1f44fde9cd8428::t_fe4a57cabf06a7 10,20-24
+libs/partners/mistralai/tests/unit_tests/__snapshots__/test_standard.ambr
+  s_1f44fde9cd8428::t_45ffdb1c920304 11,23-24
+libs/partners/mistralai/tests/unit_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_6456821406ff97 20,32,34,40-57,97-99,102,139-312,346-350,833-834,839-840,848-893,973-981
+libs/partners/mistralai/tests/unit_tests/test_imports.py
+  s_1f44fde9cd8428::t_c1a8f62c2b4df6 3
+libs/partners/nomic/Makefile
+  s_1f44fde9cd8428::t_093ad45cc5a2bf 13,15,18-20,60-62,70
+libs/partners/nomic/README.md
+  s_1f44fde9cd8428::t_6a5de9cb0ea997 6,13,23-27
+libs/partners/nomic/langchain_nomic/__init__.py
+  s_1f44fde9cd8428::t_1bdca56a6966ba 3,6
+libs/partners/nomic/langchain_nomic/_version.py
+  s_1f44fde9cd8428::t_856bf58cb75e97 1-3
+libs/partners/nomic/pyproject.toml
+  s_1f44fde9cd8428::t_954d4484fa0fb0 25,36,42,45,47,49-50,55,57,60,92
+libs/partners/nomic/scripts/check_version.py
+  s_1f44fde9cd8428::t_e67bb0a48b15c5 1-65
+libs/partners/nomic/tests/unit_tests/test_imports.py
+  s_1f44fde9cd8428::t_973ae6d5bb8a57 7
+libs/partners/nomic/uv.lock
+  s_1f44fde9cd8428::t_d62fc33695a430 5-8,44-83,93-101,290-298,350,352,354,428,432,445,469-470,478,483,510,525,530-531,535-536,539-550,555,578-579,584,590,593,599,609-610,613-700,739,742-743,749-793,901-904,1141,1143,1145,1150-1243,1266-1318,1470,1472-1475,1477,1482,1490,1493,1495,1500,1503,1505,1507,1509,1597-1609,1930,1935,1937,2032,2034,2036,2070,2076,2078,2113-2180,2259-2376
+libs/partners/ollama/Makefile
+  s_1f44fde9cd8428::t_a6118176a1cee0 30,51,54,63-65,73
+libs/partners/ollama/README.md
+  s_1f44fde9cd8428::t_f96aea89c131de 6,13,33-37
+libs/partners/ollama/langchain_ollama/__init__.py
+  s_1f44fde9cd8428::t_4da1f812296a4b 7
+libs/partners/ollama/langchain_ollama/_utils.py
+  s_1f44fde9cd8428::t_7ae5b005b8899e 6,50-76,84-86,92-95,102-122,124,126-127,139
+libs/partners/ollama/langchain_ollama/_version.py
+  s_1f44fde9cd8428::t_e57bec5c2e4bce 1-3
+libs/partners/ollama/langchain_ollama/chat_models.py
+  s_1f44fde9cd8428::t_12861decbe3a11 47,87,98,631-655,796-800,806-808,824-930,934-950,981,1034-1036,1038-1040,1090-1093,1196,1266-1271,1348-1353,1719,1735,1759
+libs/partners/ollama/langchain_ollama/embeddings.py
+  s_1f44fde9cd8428::t_14c8afff343dc6 9-15,133-146,326-330,349
+libs/partners/ollama/langchain_ollama/llms.py
+  s_1f44fde9cd8428::t_f1291044e1563e 23,323-328,485,504
+libs/partners/ollama/pyproject.toml
+  s_1f44fde9cd8428::t_7b01456bb5daa2 23,26-27,36,42-43,46-48,52,54,58,116
+libs/partners/ollama/scripts/check_version.py
+  s_1f44fde9cd8428::t_85f8cd956718f3 1-65
+libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models.py
+  s_1f44fde9cd8428::t_aa3b587c703f3f 5,72,116-151
+libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models_reasoning.py
+  s_1f44fde9cd8428::t_6090d1bf020106 4-9,232-270
+libs/partners/ollama/tests/unit_tests/test_auth.py
+  s_1f44fde9cd8428::t_53519a12a734b5 28-34,47-72,252-295
+libs/partners/ollama/tests/unit_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_a334976c8ef9fd 5,7,11,95,97-104,106-125,451-754,815-1175
+libs/partners/ollama/tests/unit_tests/test_embeddings.py
+  s_1f44fde9cd8428::t_1c6359d432ba6c 4,57-110
+libs/partners/ollama/tests/unit_tests/test_llms.py
+  s_1f44fde9cd8428::t_3137180e7f29e4 93-101
+libs/partners/ollama/uv.lock
+  s_1f44fde9cd8428::t_c51f1e817a45df 5-8,42-50,227-235,275,277,279,314,318,331,355-356,364,369,376,393,397,403,407,411-412,415-416,419-430,435,458-459,464,470,473,479,489-490,493,495,590-593,676,682,684,944,955,957,962,965,967,969,971,1047-1059,1201,1206,1208,1259-1282,1306,1308,1310,1344,1350,1352,1387-1454,1524-1641
+libs/partners/openai/Makefile
+  s_1f44fde9cd8428::t_53450d82239fd1 28-33,75-77,85
+libs/partners/openai/README.md
+  s_1f44fde9cd8428::t_d87e02c9e8caaa 6,13,33-37
+libs/partners/openai/langchain_openai/__init__.py
+  s_1f44fde9cd8428::t_8ce1f6d9be728b 3,5,17-18
+libs/partners/openai/langchain_openai/_version.py
+  s_1f44fde9cd8428::t_0335f5c70b3039 1-3
+libs/partners/openai/langchain_openai/chat_models/_client_utils.py
+  s_1f44fde9cd8428::t_767c211517276b 1,3-6,8-9,16,18-21,23,25,29-360,367-368,379-380,388-390,392-393,396-405,409-411,413-414,417-475,477,482-484,486,491-493,495,499-501,510,512,516-518,527,529,553,560-683
+libs/partners/openai/langchain_openai/chat_models/_compat.py
+  s_1f44fde9cd8428::t_0bb93f28aef00b 108-109,290,294,412-413
+libs/partners/openai/langchain_openai/chat_models/azure.py
+  s_1f44fde9cd8428::t_bd0bb239b17dcc 77,150,198,218,542,548,709-712,752-755,874-875,971,1004,1035,1069,1101,1129
+libs/partners/openai/langchain_openai/chat_models/base.py
+  s_1f44fde9cd8428::t_45b4836c4358c0 126-127,133,135-138,141-142,144-145,155,165-178,196,526,568,665-676,759,765,817-923,1087-1107,1140-1153,1224-1240,1249-1252,1257-1259,1267-1270,1275-1277,1375-1381,1413-1415,1520-1524,1875-1879,2063,2196-2201,2357,2613,2686,2766,3183,3506,3855,3864,4030-4035,4171-4173,4186-4188,4420-4442,4532-4533,4537-4539,4553-4554,4559-4569,4608-4612,4781-4782,4836-4865,4963-4965,4967,4972,5037-5038
+libs/partners/openai/langchain_openai/chat_models/codex.py
+  s_1f44fde9cd8428::t_de86619e46a8d0 1-557
+libs/partners/openai/langchain_openai/chatgpt_oauth.py
+  s_1f44fde9cd8428::t_5a619070c624fc 1-1063
+libs/partners/openai/langchain_openai/data/_profiles.py
+  s_1f44fde9cd8428::t_b37dfd9bc84dbd 19-22,24-25,27,31,34-35,43,70,97,124,136,151,163,178,205,217,232,259,286,313,325,340,367,394,421,448,475,502,529,556,583,610,637,664,691,718,745,772,799,826,853,880,907,934,936-939,941-942,946,961,963-966,968-969,971,973,980,982-1007,1014,1016-1019,1021-1022,1024,1028,1031,1033-1034,1040-1119,1146,1158,1173,1199,1226,1253,1280,1306,1332,1358,1384
+libs/partners/openai/langchain_openai/data/profile_augmentations.toml
+  s_1f44fde9cd8428::t_1abb1cf08e0a8d 9
+libs/partners/openai/langchain_openai/embeddings/base.py
+  s_1f44fde9cd8428::t_c4349c4defc98c 215-219
+libs/partners/openai/langchain_openai/llms/azure.py
+  s_1f44fde9cd8428::t_0755ec20a268a1 15,121-126
+libs/partners/openai/langchain_openai/llms/base.py
+  s_1f44fde9cd8428::t_4dce94bf4e84e6 12,24-26,100-101,214-221,314-319,676-683,685-697,703,710-711,717,740-751,754-758,760
+libs/partners/openai/langchain_openai/middleware/openai_moderation.py
+  s_1f44fde9cd8428::t_10e600105765fe 25
+libs/partners/openai/pyproject.toml
+  s_1f44fde9cd8428::t_72d6dd2530ead2 23,26,37,43,46,48,56-57,59-60,68,81
+libs/partners/openai/scripts/RECORD_CODEX_CASSETTES.md
+  s_1f44fde9cd8428::t_ab56a74f64dabd 1-112
+libs/partners/openai/scripts/check_version.py
+  s_1f44fde9cd8428::t_54531237b4fef5 1-65
+libs/partners/openai/scripts/record_codex_cassettes.sh
+  s_1f44fde9cd8428::t_5397d20c8ce653 1-181
+libs/partners/openai/tests/conftest.py
+  s_1f44fde9cd8428::t_7d5a8ab3e65a29 1,3-4,11-12,17-22,25-164,167,171,176,179-186,195-197,207-228,238-239
+libs/partners/openai/tests/integration_tests/chat_models/conftest.py
+  s_1f44fde9cd8428::t_81f8fc3620c81f 1-128
+libs/partners/openai/tests/integration_tests/chat_models/test_base.py
+  s_1f44fde9cd8428::t_7681080e35ce2b 9,25-26,32-34,114-117,629,783,826,903,931,996,1015,1017,1024,1026,1070-1071,1261-1321
+libs/partners/openai/tests/integration_tests/chat_models/test_base_standard.py
+  s_1f44fde9cd8428::t_094426f5f4c956 107
+libs/partners/openai/tests/integration_tests/chat_models/test_codex.py
+  s_1f44fde9cd8428::t_5e71be77cdaba9 1-370
+libs/partners/openai/tests/integration_tests/chat_models/test_codex_standard.py
+  s_1f44fde9cd8428::t_7c990be36bc502 1-157
+libs/partners/openai/tests/integration_tests/chat_models/test_responses_api.py
+  s_1f44fde9cd8428::t_07a58d01064e24 6,28,35-42,103-113,122-138,203-258,325-336,351-357,364-426,428,514-516,590,597,706-714,717,720,729-738,787-798,800,851-863,898,991-992,1018-1030,1032,1434-1444,1453-1459,1466,1475,1491,1831-1895
+libs/partners/openai/tests/integration_tests/chat_models/test_responses_standard.py
+  s_1f44fde9cd8428::t_1ec2a1864c9ef5 52
+libs/partners/openai/tests/integration_tests/embeddings/test_base.py
+  s_1f44fde9cd8428::t_5d5ee7a10f0c71 38,41,53,56
+libs/partners/openai/tests/integration_tests/llms/test_base.py
+  s_1f44fde9cd8428::t_8b8c42194ea401 267
+libs/partners/openai/tests/unit_tests/chat_models/conftest.py
+  s_1f44fde9cd8428::t_138e49bf15b528 1-18
+libs/partners/openai/tests/unit_tests/chat_models/test_azure.py
+  s_1f44fde9cd8428::t_1d952c5d049cf3 13-16,23,53-138,173,183,186,244,262,272-284
+libs/partners/openai/tests/unit_tests/chat_models/test_base.py
+  s_1f44fde9cd8428::t_dd74614f576f34 27,39-44,46,81,93-95,119-120,123,126,129,133,137,142,531-536,552-553,577-578,623-644,651,719-722,750,940,946-976,992,999,1111,1123-1124,1146-1158,1234,1250,1267,1283,1290,1300,1333,1360,1416-1448,1454-1662,1673,1680,1723,1737,1772,1792,1835-1838,1854,1891,1959,2002,2055,2092,2180,2206-2377,2387,2437,2529,2774-2870,3102,3144,3155,3176,3187,3298-3348,3521-3566,3676,3689,3806,3825,3892,4007-4012,4199-4225,4242-4250,4306-4317,4320,4340,4358,4399
+libs/partners/openai/tests/unit_tests/chat_models/test_client_utils.py
+  s_1f44fde9cd8428::t_c5f958d8f3995f 1-831
+libs/partners/openai/tests/unit_tests/chat_models/test_codex.py
+  s_1f44fde9cd8428::t_8a14b1d17193bb 1-679
+libs/partners/openai/tests/unit_tests/chat_models/test_responses_stream.py
+  s_1f44fde9cd8428::t_432720b7ed571f 3-4,9,51-52,62,94,540,728,766-822,834,869,899,979,1019,1046-1148
+libs/partners/openai/tests/unit_tests/chat_models/test_stream_chunk_timeout.py
+  s_1f44fde9cd8428::t_7abbcf64d45560 1-437
+libs/partners/openai/tests/unit_tests/llms/test_base.py
+  s_1f44fde9cd8428::t_083b0d1805289f 11-12,67
+libs/partners/openai/tests/unit_tests/test_chatgpt_oauth.py
+  s_1f44fde9cd8428::t_2e99b915b9e443 1-1031
+libs/partners/openai/tests/unit_tests/test_check_version.py
+  s_1f44fde9cd8428::t_c21aa0b6ed41e1 1-62
+libs/partners/openai/tests/unit_tests/test_imports.py
+  s_1f44fde9cd8428::t_fbe205b6441469 4,11
+libs/partners/openai/tests/unit_tests/test_load.py
+  s_1f44fde9cd8428::t_25e1cdbad1e560 8-9,41-45,60-64
+libs/partners/openai/tests/unit_tests/test_token_counts.py
+  s_1f44fde9cd8428::t_95dc203d44c981 10-11,16
+libs/partners/openai/uv.lock
+  s_1f44fde9cd8428::t_df5294af639769 5-8,45-93,468,470,472,604,632,643-645,651,662,668,672,685,709-710,718,723,730,778,786-787,794,804,808-819,822,845-846,851,857,860,866,876,878,883,889,891,896,902,904,909,913-914,916,918,920,925,935-936,939-1026,1052,1055-1056,1062-1106,1189-1192,1275,1287,1289,1440,1442,1444,1449-1542,1712,1720,1723,1725,1730,1733,1735,1737,1739,2134,2139,2141,2331,2333,2335,2369,2375,2377,2412-2470
+libs/partners/openrouter/Makefile
+  s_1f44fde9cd8428::t_b37f11da15f721 24,58-60,68
+libs/partners/openrouter/README.md
+  s_1f44fde9cd8428::t_b1bec6691bd6b6 6,11,31-35
+libs/partners/openrouter/langchain_openrouter/__init__.py
+  s_1f44fde9cd8428::t_16b4b453c31ca0 3,8
+libs/partners/openrouter/langchain_openrouter/_version.py
+  s_1f44fde9cd8428::t_297ff91ee7def9 1-3
+libs/partners/openrouter/langchain_openrouter/chat_models.py
+  s_1f44fde9cd8428::t_05a48576d7fc30 72,86-103,127,141-142,316-351,432-437,534,552,555,569-570,598-609,638,652,654,683-694,761-764,850,866-868,871-872,1124-1216,1268-1270,1274-1276,1439,1483,1485,1487,1489,1491-1492
+libs/partners/openrouter/langchain_openrouter/data/_profiles.py
+  s_1f44fde9cd8428::t_8afdaa7b89c582 19-25,27,36-37,39,41-44,46-47,49,57-59,61,63-69,71,79-81,83,85-88,90-91,93,101-103,105,107-110,112-113,115,122-125,127,129-135,137,145,147,149,151-154,157,162,169,172,174-177,179-180,189,191,194,196-199,201-202,204,211,213-214,216,218-221,224,233,235,238,240-246,248,257-258,260,262-265,267-268,278,282,284-287,289-290,295-296,300-302,304,306-312,316,318-319,322-327,329-332,334-335,339,341-342,345-348,350,352-355,357-358,362,364-365,368-371,373,375-381,385,387-388,391-394,396,398-404,406,408,414-417,419,421-634,645,648,650-653,655-678,692,694-719,721-4306,4308,4316,4318-4320,4322-4328,4330,4340-4342,4344-4350,4352,4362-4364,4366-4372,4374,4376,4385-4387,4389-4395,4397,4399,4405,4408-4410,4412-4415,4417-4418,4421-4422,4427,4431-4432,4434-4437,4439-4440,4443,4445,4454-4455,4457-4460,4462-4463,4466,4468,4473,4477-4478,4480-4483,4485-4486,4489,4491,4500-4501,4503-4506,4508-4509,4512,4514,4523-4524,4526-4529,4531-4532,4535,4537,4539,4543,4546-4547,4549-4552,4554-4555,4558,4560,4569-4570,4572-4575,4577-4578,4581,4583,4592-4593,4595-4598,4600-4601,4604,4606,4615-4616,4618-4621,4624,4627,4629,4638-4639,4641-4644,4646-4647,4650,4652,4661-4662,4664-4667,4669-4670,4672,4674,4677,4679,4684,4686-4689,4691-4692,4694,4696,4699,4701,4706,4708-4714,4716,4718,4725-4729,4731-4734,4739,4746-4747,4749,4751,4753-4756,4758-4759,4761,4768-4771,4773,4775-4778,4780-4781,4783,4790,4793,4795,4797-4800,4803,4805,4812,4814-4815,4817,4819-4822,4824-4825,4827,4834-4837,4839,4841-4847,4851,4857-4859,4861-4862,4864-4870,4872,4874,4880,4882,4884-4885,4887-4893,4895,4897,4903-4905,4907-4908,4910-4916,4918,4920,4926-4928,4931,4933-4936,4938-4939,4943,4949,4952-4954,4956-4959,4961-4962,4966,4975-4977,4979-4982,4984-4985,4987,4989,4995,4998-5008,5010,5012,5018-5023,5025-5031,5033,5035,5042-5044,5046,5048-5054,5058,5064-5066,5068-5069,5071-5077,5080-5082,5084,5087-5089,5092,5094-5100,5110-5111,5113-5114,5116-5122,5133,5136,5138-5142,5144,5153-5155,5157-5158,5160-5166,5175-5177,5179-5180,5182-5188,5190,5192,5198,5200,5202,5204-5210,5212,5219-5222,5224,5226-5232,5242-5243,5246,5248-5254,5256,5264-5266,5268,5270-5276,5278,5285-5286,5288-5310,5312,5314-5317,5319-5320,5329,5331,5334,5336-5339,5341-5342,5351,5353,5356,5358-5361,5363-5364,5373,5375,5378,5380-5386,5388,5395,5397-5398,5400,5402-5406,5408,5410,5417,5419-5420,5422,5424-5427,5430,5432,5441-5442,5444,5446-5449,5451-5452,5454,5464,5466,5468-5471,5473-5474,5476,5486,5488,5490-5493,5495,5506-5507,5510,5512-5518,5532,5534-5540,5554,5556-5562,5576,5578-5581,5583-5584,5588,5593-5594,5598,5600-5603,5605-5606,5615,5617,5620,5622-5625,5628,5638-5639,5642,5644-5647,5649-5650,5659,5661,5664,5666-5669,5672,5683,5686,5688-5691,5693-5694,5708,5710-5713,5715-5716,5725,5727,5730,5732-5735,5737-5738,5749,5752,5754-5757,5759-5760,5762,5771,5774,5776-5779,5782,5793,5796,5798-5801,5803-5804,5813,5818,5820-5825,5828,5838,5840,5842-5845,5847-5848,5850,5859-5860,5862,5864-5870,5872,5882,5884,5886-5889,5891-5892,5894,5901,5904,5906,5908-5914,5916,5923-5926,5928,5930-5933,5935-5936,5938,5945,5948,5950,5952-5955,5957-5958,5960,5964,5970,5972,5974-5980,5982,5989,5992,5994,5996-6002,6004,6011,6014,6016,6018-6024,6026,6036-6038,6040-6046,6055,6060,6062-6068,6082,6084-6090,6099,6104,6106-6112,6126,6128-6134,6143,6148,6150-6156,6165,6169-6170,6172-6178,6191-6192,6194-6200,6204,6214,6216-6222,6226,6235-6236,6238-6244,6248,6257-6266,6270,6279-6280,6282-6288,6292,6302,6304-6307,6309-6310,6314,6319,6324,6326-6329,6331-6332,6336,6343,6345-6346,6348-6354,6356,6358,6366,6368,6370-6373,6375-6376,6378,6380,6388,6390,6392-6395,6397-6398,6400,6402,6409-6410,6412,6414-6420,6422,6424,6432,6434,6436-6442,6453,6456,6458-6461,6463,6466,6468,6475-6476,6478,6480-6483,6485-6486,6488,6498,6500,6502-6505,6507-6508,6522,6524-6527,6529-6530,6532,6534,6539,6542,6544,6546-6549,6551-6552,6561,6566,6568-6574,6576,6585-6588,6590-6596,6607,6610,6612-6618,6620,6630-6632,6634-6637,6639-6640,6650,6654,6656-6659,6661-6662,6671-6672,6676,6678-6681,6683-6684,6693,6698,6700-6703,6705-6706,6716,6720,6722-6725,6727,6737,6739,6742,6744-6750,6752,6754,6759,6761-6762,6764,6766-6770,6772,6781-6783,6786,6788-6791,6793-6794,6803-6805,6808,6810-6814,6816,6827,6830,6832-6835,6837-6838,6848,6852,6854-6857,6859-6860,6870-6871,6874,6876-6879,6881-6882,6891-6892,6896,6898-6901,6903-6904,6906,6908,6913,6916,6918,6920-6926,6928,6930,6935-6936,6938,6940,6942-6945,6947-6948,6962,6964-6969,6972,6975-6976,6981,6984,6986-6992,6996,6998-6999,7002-7005,7007,7009-7015,7019,7026-7028,7030,7032-7038,7040,7042,7050-7051,7053,7055-7058,7060-7061,7063,7070,7073,7075,7077-7083,7085-7087,7092,7094-7095,7097,7099-7105,7119,7121-7125,7127,7138,7141,7143-7149,7160,7163,7165-7171,7182-7183,7185,7187-7193,7195,7207,7209-7215,7219,7226,7229,7231-7237,7239,7247-7249,7251,7253-7259,7273,7275-7278,7280-7281,7295,7297-7301,7303,7305-7307,7314-7315,7317,7319-7322,7324-7325,7339,7341-7344,7346-7347,7361,7363-7369,7371,7373,7380-7381,7383,7385-7391,7393,7395,7402-7406,7408-7414,7418-7419,7429,7431-7436,7439,7441,7450-7452,7454-7459,7462,7464,7473-7496,7498,7500-7506,7508-7511,7519,7521,7523-7529,7531,7541,7543,7545-7551,7553,7555,7564-7566,7568-7571,7573-7574,7576,7578,7587-7589
+libs/partners/openrouter/langchain_openrouter/data/profile_augmentations.toml
+  s_1f44fde9cd8428::t_eb63e4235ed11d 1-4
+libs/partners/openrouter/pyproject.toml
+  s_1f44fde9cd8428::t_f81a49fe23f3eb 23,26-27,36,42,47-48,52-53,57,64
+libs/partners/openrouter/scripts/check_version.py
+  s_1f44fde9cd8428::t_28b1cacca330e3 1-65
+libs/partners/openrouter/tests/integration_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_cbeacdd8882680 6-11,70,75-115
+libs/partners/openrouter/tests/integration_tests/test_standard.py
+  s_1f44fde9cd8428::t_e8ef71b91e424b 50,54,102
+libs/partners/openrouter/tests/unit_tests/__snapshots__/test_standard.ambr
+  s_1f44fde9cd8428::t_0f63a942cc13fa 14
+libs/partners/openrouter/tests/unit_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_16b4ca7dc07483 36,147-179,188-208,213-215,331-338,557,823-827,881-902,919-1027,1123-1136,1295-1304,1306-1323,1330-1338,1341-1523,1765,1769,2006-2040,2769,2844,2912-2913,2915-2918,2920-2921,2924,2932,2937-2940,2943-2945,2947,3395-3471
+libs/partners/openrouter/tests/unit_tests/test_imports.py
+  s_1f44fde9cd8428::t_151c4cca1fa387 6
+libs/partners/openrouter/tests/unit_tests/test_standard.py
+  s_1f44fde9cd8428::t_4e3f624c5eec0b 7,63
+libs/partners/openrouter/uv.lock
+  s_1f44fde9cd8428::t_07ab55013a386a 5-6,37-76,303-311,351,353,355,379-387,399,403,416,440-441,449,454,461,479,488,492,496,501,504-516,520,543-544,549,555,558,564,574,578,580,585,587,589-665,691,694,701,703-745,827-828,908,913,916,918,1191,1202,1204,1310-1322,1550,1552,1554,1588,1594,1596,1631-1698
+libs/partners/perplexity/Makefile
+  s_1f44fde9cd8428::t_4d907cdd0c1543 1,22-23,57-59,66-67
+libs/partners/perplexity/README.md
+  s_1f44fde9cd8428::t_1e2651c28da069 6,13,33-37
+libs/partners/perplexity/langchain_perplexity/__init__.py
+  s_1f44fde9cd8428::t_2c166054d54700 3,5,21,23
+libs/partners/perplexity/langchain_perplexity/_version.py
+  s_1f44fde9cd8428::t_a1100af0b5b4d3 1-3
+libs/partners/perplexity/langchain_perplexity/chat_models.py
+  s_1f44fde9cd8428::t_a02c9dfb69d80c 5,7,37,45,48,50-53,59,113-595,675-699,731-764,843-848,856-862,864,867,922,931-963,979-1112,1150-1152,1156-1174,1201-1222,1224,1267-1269,1273-1291,1316-1335,1337,1386-1388,1390-1396,1453-1455,1457-1463,1519-1586
+libs/partners/perplexity/langchain_perplexity/data/_profiles.py
+  s_1f44fde9cd8428::t_62696ee2b1b909 45,47
+libs/partners/perplexity/langchain_perplexity/embeddings.py
+  s_1f44fde9cd8428::t_1a32d6d4de13d9 1-184
+libs/partners/perplexity/pyproject.toml
+  s_1f44fde9cd8428::t_1d49a5fe4c6691 23,26-27,36,42,45,47,52,55,61,66,73-77
+libs/partners/perplexity/scripts/check_version.py
+  s_1f44fde9cd8428::t_9f1d930ec99d42 1-65
+libs/partners/perplexity/tests/integration_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_f0baf27913ce1b 103-150
+libs/partners/perplexity/tests/integration_tests/test_chat_models_standard.py
+  s_1f44fde9cd8428::t_e59a6787f351ae 3-4,21-28,38-80
+libs/partners/perplexity/tests/integration_tests/test_embeddings.py
+  s_1f44fde9cd8428::t_ef41aa88cf07a8 1-56
+libs/partners/perplexity/tests/integration_tests/test_embeddings_standard.py
+  s_1f44fde9cd8428::t_cb1d2f10dce187 1-23
+libs/partners/perplexity/tests/unit_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_d40244bb96ea22 1,5-13,17-23,226-237,241-665
+libs/partners/perplexity/tests/unit_tests/test_chat_models_responses.py
+  s_1f44fde9cd8428::t_d2ae9ded945220 1-1038
+libs/partners/perplexity/tests/unit_tests/test_embeddings.py
+  s_1f44fde9cd8428::t_c81aad38e87142 1-203
+libs/partners/perplexity/tests/unit_tests/test_embeddings_standard.py
+  s_1f44fde9cd8428::t_da2932ff5c0b27 1-20
+libs/partners/perplexity/tests/unit_tests/test_imports.py
+  s_1f44fde9cd8428::t_d3f9c9c8ee5b51 4,6
+libs/partners/perplexity/uv.lock
+  s_1f44fde9cd8428::t_26d2edad2e7355 5-8,42-90,440,442,444,479,483,496,520-521,529,534,541,577,581,586-587,594,601,605-616,619,642-643,648,654,657,663,673-674,677-764,790,793-794,800-844,927-930,1103,1105,1107,1112,1122,1124,1129-1222,1392,1400,1403,1405,1410,1413,1415,1417,1419,1707,1712,1714,1821,1823,1825,1859,1865,1867,1902-1969,2039-2156
+libs/partners/qdrant/Makefile
+  s_1f44fde9cd8428::t_1cd46088e8102b 19,58-60,68
+libs/partners/qdrant/README.md
+  s_1f44fde9cd8428::t_30c751e5aa5513 6,13,23-27
+libs/partners/qdrant/langchain_qdrant/__init__.py
+  s_1f44fde9cd8428::t_27ee23e8500b7f 3,16
+libs/partners/qdrant/langchain_qdrant/_version.py
+  s_1f44fde9cd8428::t_d0a3c8eb746f77 1-3
+libs/partners/qdrant/pyproject.toml
+  s_1f44fde9cd8428::t_623114bbb21923 27,36,47,50,53,55,57,61,63,72
+libs/partners/qdrant/scripts/check_version.py
+  s_1f44fde9cd8428::t_2c9ffe1966c9fc 1-65
+libs/partners/qdrant/tests/unit_tests/test_imports.py
+  s_1f44fde9cd8428::t_26b514bbcd8f61 10
+libs/partners/qdrant/uv.lock
+  s_1f44fde9cd8428::t_61641ffe0dcf50 5-8,45-93,282-290,534,536,538,573,577,590,614-615,623,628,633-644,673,692,697-698,703,705,709,715,738-739,744,750,753,759,769-770,773-860,1020,1023-1024,1030-1074,1157-1160,1373,1375,1377,1382-1475,1733,1741,1744,1746,1751,1754,1756,1758,1760,1848-1860,1980,1988,1990,2154,2159,2161,2272,2274,2276,2310,2316,2318,2353-2420,2499-2616
+libs/partners/xai/Makefile
+  s_1f44fde9cd8428::t_c2ef4074baafce 22,56-58,66
+libs/partners/xai/README.md
+  s_1f44fde9cd8428::t_3e43a2e98235af 6,13,33-37
+libs/partners/xai/langchain_xai/__init__.py
+  s_1f44fde9cd8428::t_e6e93494980974 3,6-9
+libs/partners/xai/langchain_xai/_version.py
+  s_1f44fde9cd8428::t_0537a6caafb22a 1-3
+libs/partners/xai/langchain_xai/chat_models.py
+  s_1f44fde9cd8428::t_052583c39efd65 15,44-60,446,490-499,567-590
+libs/partners/xai/langchain_xai/data/_profiles.py
+  s_1f44fde9cd8428::t_068bb12f8ee95b 19-22,24-25,29,37,40,42-45,47,52,60,63,65-68,70,75,81-83,86,88-91,93,98,106,109,111-114,116-117,121,127,129,132,134-137,139-140,144,146-147,151,153-154,156-159,161-162,166,168-169,172,175-176,178-181,183-184,188-190,193,195,197-198
+libs/partners/xai/langchain_xai/data/profile_augmentations.toml
+  s_1f44fde9cd8428::t_49b51f0854d36a 1-4
+libs/partners/xai/pyproject.toml
+  s_1f44fde9cd8428::t_9187152a3d0913 27,38,44,47,49,52-53,58,61,64-70,78
+libs/partners/xai/scripts/check_version.py
+  s_1f44fde9cd8428::t_afd65da2815fe4 1-65
+libs/partners/xai/tests/integration_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_7c6eef3eba1510 103-112,117-119,128-130
+libs/partners/xai/tests/integration_tests/test_chat_models_standard.py
+  s_1f44fde9cd8428::t_fec6a4a66aa4a8 41-63
+libs/partners/xai/tests/unit_tests/test_chat_models.py
+  s_1f44fde9cd8428::t_af50086cb15615 51-52,57-58,87-132,210-219
+libs/partners/xai/tests/unit_tests/test_imports.py
+  s_1f44fde9cd8428::t_fa45028ff97eb2 3
+libs/partners/xai/uv.lock
+  s_1f44fde9cd8428::t_c635938e4d7fb6 5-8,16-19,32,44-147,187-226,245-253,458-466,612,614,616,724,728,741,765-766,774,779,786,802-803,810-811,818,828,832-843,846,869-870,875,881,884,912,930,936-937,941-942,946,952,955-956,963-964,966-967,970,972-1057,1185,1188-1189,1195-1239,1322-1325,1517,1519,1521,1780,1788,1791,1793,1798,1801,1803,1805,1807,1895-1907,2093,2101,2103,2177,2182,2184,2313-2314,2331-2332,2389,2391,2393,2427,2433,2435,2470-2537,2607-2724
+libs/standard-tests/README.md
+  s_1f44fde9cd8428::t_03f7fa36f21b6d 6,13
+libs/standard-tests/langchain_tests/_langsmith_plugin.py
+  s_1f44fde9cd8428::t_e351f476f134aa 1-91
+libs/standard-tests/langchain_tests/base.py
+  s_1f44fde9cd8428::t_8e4b2fe45f738c 49-60
+libs/standard-tests/langchain_tests/conftest.py
+  s_1f44fde9cd8428::t_b8886468797240 6,21-46,70-72,100,117
+libs/standard-tests/langchain_tests/integration_tests/chat_models.py
+  s_1f44fde9cd8428::t_76ef6d461ce78f 16-19,42,137-152,871-875,924-928,937-1000,1685-1688,1703-1706,1709,1711-1712,1717-1724,1766-1767,1782-1785,1788,1790-1791,1796-1803
+libs/standard-tests/langchain_tests/integration_tests/sandboxes.py
+  s_1f44fde9cd8428::t_6518aa2d4b1867 35-38,40-43,46-48,52,54,57,60,64-80,86-95,122-123,126-127,129-131,135,143-145,149,153-175,177-219,221-305,310,316-326,329-340,342-345,348-357,359-362,365-374,376-378,383-385,398,404-406,419,425,439,446-457,471,478-489,503,509,520-545,547,553-555,566,572,583,589,629,638-640,675-1976
+libs/standard-tests/langchain_tests/unit_tests/chat_models.py
+  s_1f44fde9cd8428::t_e691d151335c7d 724,1108-1128
+libs/standard-tests/langchain_tests/utils/stream_lifecycle.py
+  s_1f44fde9cd8428::t_089bed480006f5 1-235
+libs/standard-tests/pyproject.toml
+  s_1f44fde9cd8428::t_025b22c71725a1 24,27-29,31,47,51-53,55,59
+libs/standard-tests/tests/unit_tests/test_langsmith_plugin.py
+  s_1f44fde9cd8428::t_198546e309fd84 1-150
+libs/standard-tests/uv.lock
+  s_1f44fde9cd8428::t_b517bcd2b9de63 5-6,40-79,278-286,338,340,342,377,381,394,418-419,427,432,437-448,451,483-484,489,495,498,504,507-508,515-516,518-519,522,524,529,531,533-609,635,638,645,647-689,771-772,944,946,948,980,988,990,995,1000,1002-1106,1120,1131,1133,1138,1145,1147,1204,1209,1211,1320-1345,1347,1349,1354,1359,1361,1366,1368,1370,1429,1431,1433,1459,1461,1463,1468,1470,1472-1563,1568,1574,1576-1644,1740-1857
+libs/text-splitters/Makefile
+  s_1f44fde9cd8428::t_4e1f3809a7e864 52,55
+libs/text-splitters/README.md
+  s_1f44fde9cd8428::t_0583658a6857e0 6,13,37-41
+libs/text-splitters/extended_testing_deps.txt
+  s_1f44fde9cd8428::t_32f7d58e4ff876 1
+libs/text-splitters/langchain_text_splitters/base.py
+  s_1f44fde9cd8428::t_8b1b01359c1fdb 217,225-226,231-235,246,275,277-304,332,363-404
+libs/text-splitters/langchain_text_splitters/character.py
+  s_1f44fde9cd8428::t_6006d5e213a08e 8-9,27,152
+libs/text-splitters/langchain_text_splitters/html.py
+  s_1f44fde9cd8428::t_d30d939f0cd8e4 18,188-194,196-199,217-218,221-224,536,884-885,887-889,891,898-903
+libs/text-splitters/langchain_text_splitters/jsx.py
+  s_1f44fde9cd8428::t_c3b3fc1488b7a0 6-7,48
+libs/text-splitters/langchain_text_splitters/markdown.py
+  s_1f44fde9cd8428::t_c942369c229394 458-459
+libs/text-splitters/langchain_text_splitters/nltk.py
+  s_1f44fde9cd8428::t_c249084239834d 5,11-13,47,53-54,56,58-67,76-83
+libs/text-splitters/langchain_text_splitters/sentence_transformers.py
+  s_1f44fde9cd8428::t_89e944f4086ba9 7-8,12,65-71,76-79,88
+libs/text-splitters/langchain_text_splitters/spacy.py
+  s_1f44fde9cd8428::t_1d9e0dfa8a21f1 12-13,16
+libs/text-splitters/pyproject.toml
+  s_1f44fde9cd8428::t_37a179224e367f 25,28,37,46,49-52,59,63,68,77,83-84,86-87
+libs/text-splitters/tests/integration_tests/test_text_splitter.py
+  s_1f44fde9cd8428::t_00e7c80293c522 3-4,6,16-18,26,33-39,62-63,68-82,113
+libs/text-splitters/tests/unit_tests/test_text_splitters.py
+  s_1f44fde9cd8428::t_f4eca7e64d5e3e 42,1015-1031,3217-3219,3221,3240-3242,3244
+libs/text-splitters/uv.lock
+  s_1f44fde9cd8428::t_9b923782d7bf76 5-6,169,175,177,182,187,189,462-531,643-651,749-776,809,819,822,824,829,831,833,900-901,1168,1191,1193,1211,1229,1231,1245,1256,1258,1272,1276,1289,1313-1314,1322,1327,1332-1343,1346,1378-1380,1382-1383,1391-1392,1395-1396,1406,1412-1414,1416-1417,1423,1426-1427,1434-1435,1437-1438,1441,1443,1584,1589,1591,1684,1702,1704,1748-1749,1776,1785,1787,1872-1873,1956-1957,1959-1961,1963-1964,1968-1969,1972-1973,1977-1978,1981-1982,1986-1987,1990-1991,1995-1996,1999,2002-2003,2007-2008,2011,2014-2015,2019-2020,2023-2024,2028-2029,2032-2033,2037-2038,2041-2043,2046-2047,2051-2052,2055,2058-2059,2063-2064,2067-2068,2072-2073,2076-2077,2081-2082,2085-2086,2090-2091,2094-2095,2099-2100,2103-2104,2380,2388,2390,2395,2400-2506,2520,2531,2533,2538,2545,2547,2564,2569,2571,2809-2925,3138-3158,3293-3294,3377,3391,3393,3627,3629,3631,3721,3727-3777,3858,3861-3862,3868-3873,3875,3879-3902,3907,3909,3911-3919,3945,3959,3961,3966-3985,3987,3989-4005,4034,4039,4041,4076,4078,4080,4085-4180,4283-4350,4429-4546
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f6aa173b3bd000bafe1b0190ef4b695dc1ddd100",
+  "prompts": {},
+  "sessions": {
+    "s_1f44fde9cd8428": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "475fe0bf-d219-47d5-9484-ea66b6af087e",
+        "model": "unknown"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
