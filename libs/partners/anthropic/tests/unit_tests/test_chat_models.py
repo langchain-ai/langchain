@@ -159,9 +159,9 @@ def test_set_default_max_tokens() -> None:
     llm = ChatAnthropic(model="claude-3-7-sonnet-20250219", anthropic_api_key="test")
     assert llm.max_tokens == 64000
 
-    # Test claude-3-5-haiku models
+    # Test claude-3-5-haiku models (profile removed, should fall back to 4096)
     llm = ChatAnthropic(model="claude-3-5-haiku-20241022", anthropic_api_key="test")
-    assert llm.max_tokens == 8192
+    assert llm.max_tokens == 4096
 
     # Test claude-3-haiku models (should default to 4096)
     llm = ChatAnthropic(model="claude-3-haiku-20240307", anthropic_api_key="test")
