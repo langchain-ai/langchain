@@ -192,6 +192,7 @@ jobs:
   # Verify _release.yml dropdown options stay in sync with package directories
   check-release-options:
     name: "Validate Release Options"
+    if: github.repository_owner == 'langchain-ai'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6

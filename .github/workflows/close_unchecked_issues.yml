@@ -29,6 +29,7 @@ concurrency:
 
 jobs:
   check-boxes:
+    if: github.repository_owner == 'langchain-ai'
     runs-on: ubuntu-latest
     permissions:
       contents: read
