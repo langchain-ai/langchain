@@ -25,12 +25,45 @@ class TestParseUrlWithAuth:
         result = parse_url_with_auth(url)
         assert result == (url, None)
 
+    def test_parse_url_with_auth_no_scheme_host_port(self) -> None:
+        """Test scheme-less host:port is accepted with default http scheme."""
+        url = "ollama:11434"
+        cleaned_url, headers = parse_url_with_auth(url)
+        assert cleaned_url == "http://ollama:11434"
+        assert headers is None
+
     def test_parse_url_with_auth_with_credentials(self) -> None:
         """Test URLs with authentication credentials."""
         url = "https://user:password@ollama.example.com:11434"
         cleaned_url, headers = parse_url_with_auth(url)
 
         expected_url = "https://ollama.example.com:11434"
+        expected_credentials = base64.b64encode(b"user:password").decode()
+        expected_headers = {"Authorization": f"Basic {expected_credentials}"}
+
+        assert cleaned_url == expected_url
+        assert headers == expected_headers
+
+    def test_parse_url_with_auth_localhost_no_scheme(self) -> None:
+        """Test scheme-less localhost:port is accepted."""
+        url = "localhost:11434"
+        cleaned_url, headers = parse_url_with_auth(url)
+        assert cleaned_url == "http://localhost:11434"
+        assert headers is None
+
+    def test_parse_url_with_auth_no_scheme_with_path(self) -> None:
+        """Test scheme-less host:port with path and query."""
+        url = "ollama:11434/v1/chat?timeout=30#section"
+        cleaned_url, headers = parse_url_with_auth(url)
+        assert cleaned_url == "http://ollama:11434/v1/chat?timeout=30#section"
+        assert headers is None
+
+    def test_parse_url_with_auth_no_scheme_with_credentials(self) -> None:
+        """Test scheme-less URL with authentication credentials."""
+        url = "user:password@ollama.example.com:11434"
+        cleaned_url, headers = parse_url_with_auth(url)
+
+        expected_url = "http://ollama.example.com:11434"
         expected_credentials = base64.b64encode(b"user:password").decode()
         expected_headers = {"Authorization": f"Basic {expected_credentials}"}
 
@@ -215,6 +248,50 @@ class TestUrlAuthEdgeCases:
 
         assert cleaned_url == expected_url
         assert headers == expected_headers
+
+    def test_parse_url_with_auth_empty_string(self) -> None:
+        """Test that empty string input returns None, None."""
+        result = parse_url_with_auth("")
+        assert result == (None, None)
+
+    def test_parse_url_with_auth_bare_hostname(self) -> None:
+        """Test that bare hostname without port or scheme is rejected."""
+        result = parse_url_with_auth("my-ollama-host")
+        assert result == (None, None)
+
+    def test_parse_url_with_auth_model_name_with_colon(self) -> None:
+        """Test that model names with colons are rejected, not treated as URLs."""
+        assert parse_url_with_auth("llama3:latest") == (None, None)
+        assert parse_url_with_auth("mistral:7b") == (None, None)
+
+    def test_parse_url_with_auth_non_http_scheme(self) -> None:
+        """Test that non-http/https schemes are rejected."""
+        assert parse_url_with_auth("ftp://ollama:11434") == (None, None)
+
+    def test_parse_url_with_auth_ipv6_no_auth(self) -> None:
+        """Test that IPv6 addresses are preserved correctly."""
+        url = "http://[::1]:11434"
+        result = parse_url_with_auth(url)
+        assert result == (url, None)
+
+    def test_parse_url_with_auth_ipv6_with_auth(self) -> None:
+        """Test that IPv6 addresses with credentials are handled correctly."""
+        url = "https://user:password@[::1]:11434"
+        cleaned_url, headers = parse_url_with_auth(url)
+
+        expected_url = "https://[::1]:11434"
+        expected_credentials = base64.b64encode(b"user:password").decode()
+        expected_headers = {"Authorization": f"Basic {expected_credentials}"}
+
+        assert cleaned_url == expected_url
+        assert headers == expected_headers
+
+    def test_parse_url_with_auth_port_zero(self) -> None:
+        """Test that port 0 is preserved, not silently dropped."""
+        url = "http://host:0"
+        cleaned_url, headers = parse_url_with_auth(url)
+        assert cleaned_url == url
+        assert headers is None
 
     def test_parse_url_with_auth_complex_password(self) -> None:
         """Test with complex passwords containing special characters."""

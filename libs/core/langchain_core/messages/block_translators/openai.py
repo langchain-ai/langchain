@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from langchain_core.messages import AIMessage
 
 
-def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
+def convert_to_openai_image_block(block: dict[str, Any]) -> dict[str, Any]:
     """Convert `ImageContentBlock` to format expected by OpenAI Chat Completions.
 
     Args:
@@ -56,8 +56,9 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
 
 
 def convert_to_openai_data_block(
-    block: dict, api: Literal["chat/completions", "responses"] = "chat/completions"
-) -> dict:
+    block: dict[str, Any],
+    api: Literal["chat/completions", "responses"] = "chat/completions",
+) -> dict[str, Any]:
     """Format standard data content block to format expected by OpenAI.
 
     "Standard data content block" can include old-style LangChain v0 blocks
@@ -265,7 +266,7 @@ def _convert_to_v1_from_chat_completions_chunk(
 def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
     """Convert a v1 message to the Chat Completions format."""
     if isinstance(message.content, list):
-        new_content: list = []
+        new_content: list[Any] = []
         for block in message.content:
             if isinstance(block, dict):
                 block_type = block.get("type")
@@ -330,15 +331,14 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
     ]
 
     # Build a bucket for every known block type
-    buckets: dict[str, list] = {key: [] for key in content_order}
+    buckets: dict[str, list[Any]] = {key: [] for key in content_order}
     unknown_blocks = []
 
     # Reasoning
     if reasoning := message.additional_kwargs.get("reasoning"):
-        if isinstance(message, AIMessageChunk) and message.chunk_position != "last":
-            buckets["reasoning"].append({**reasoning, "type": "reasoning"})
-        else:
-            buckets["reasoning"].append(reasoning)
+        if "type" not in reasoning:
+            reasoning = {**reasoning, "type": "reasoning"}
+        buckets["reasoning"].append(reasoning)
 
     # Refusal
     if refusal := message.additional_kwargs.get("refusal"):
@@ -423,8 +423,8 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
 
 
 def _convert_openai_format_to_data_block(
-    block: dict,
-) -> types.ContentBlock | dict[Any, Any]:
+    block: dict[str, Any],
+) -> types.ContentBlock | dict[str, Any]:
     """Convert OpenAI image/audio/file content block to respective v1 multimodal block.
 
     We expect that the incoming block is verified to be in OpenAI Chat Completions
@@ -440,7 +440,9 @@ def _convert_openai_format_to_data_block(
     """
 
     # Extract extra keys to put them in `extras`
-    def _extract_extras(block_dict: dict, known_keys: set[str]) -> dict[str, Any]:
+    def _extract_extras(
+        block_dict: dict[str, Any], known_keys: set[str]
+    ) -> dict[str, Any]:
         """Extract unknown keys from block to preserve as extras."""
         return {k: v for k, v in block_dict.items() if k not in known_keys}
 

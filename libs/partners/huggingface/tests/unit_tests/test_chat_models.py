@@ -213,7 +213,9 @@ def test_bind_tools(chat_hugging_face: Any) -> None:
             "langchain_huggingface.chat_models.huggingface.convert_to_openai_tool",
             side_effect=lambda x: x,
         ),
-        patch("langchain_core.runnables.base.Runnable.bind") as mock_super_bind,
+        patch(
+            "langchain_core.language_models.chat_models.BaseChatModel.bind"
+        ) as mock_super_bind,
     ):
         chat_hugging_face.bind_tools(tools, tool_choice="auto")
         mock_super_bind.assert_called_once()
@@ -325,6 +327,17 @@ def test_inheritance_with_empty_llm() -> None:
         # relevant attrs
         assert chat.max_tokens is None
         assert chat.temperature is None
+
+
+def test_metadata_versions(chat_hugging_face: Any) -> None:
+    """Test that metadata reports the correct version info."""
+    from langchain_huggingface._version import __version__
+
+    assert chat_hugging_face.metadata is not None
+    versions = chat_hugging_face.metadata["lc_versions"]
+    assert "langchain-core" in versions
+    assert "langchain-huggingface" in versions
+    assert versions["langchain-huggingface"] == __version__
 
 
 def test_profile() -> None:

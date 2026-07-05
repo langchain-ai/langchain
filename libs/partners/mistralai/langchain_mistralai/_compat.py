@@ -12,7 +12,7 @@ from langchain_core.messages.block_translators import register_translator
 def _convert_from_v1_to_mistral(
     content: list[types.ContentBlock],
     model_provider: str | None,
-) -> str | list[str | dict]:
+) -> str | list[str | dict[str, Any]]:
     new_content: list = []
     for block in content:
         if block["type"] == "text":

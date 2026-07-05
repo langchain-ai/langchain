@@ -4,7 +4,7 @@ from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_openrouter.chat_models import ChatOpenRouter
 
-MODEL_NAME = "openai/gpt-4o-mini"
+MODEL_NAME = "openai/gpt-5.5"
 
 
 class TestChatOpenRouterUnit(ChatModelUnitTests):
@@ -60,4 +60,4 @@ class TestChatOpenRouterUnit(ChatModelUnitTests):
 
     @property
     def model_override_value(self) -> str:
-        return "openai/gpt-4o"
+        return MODEL_NAME

@@ -57,10 +57,8 @@ _ORIGIN_MAP: dict[type, Any] = {
     collections.abc.Mapping: typing.Mapping,
     collections.abc.Sequence: typing.Sequence,
     collections.abc.MutableMapping: typing.MutableMapping,
+    types.UnionType: Union,
 }
-# Add UnionType mapping for Python 3.10+
-if hasattr(types, "UnionType"):
-    _ORIGIN_MAP[types.UnionType] = Union
 
 
 class FunctionDescription(TypedDict):
@@ -72,7 +70,7 @@ class FunctionDescription(TypedDict):
     description: str
     """A description of the function."""
 
-    parameters: dict
+    parameters: dict[str, Any]
     """The parameters of the function."""
 
 
@@ -86,7 +84,7 @@ class ToolDescription(TypedDict):
     """The function description."""
 
 
-def _rm_titles(kv: dict, prev_key: str = "") -> dict:
+def _rm_titles(kv: dict[str, Any], prev_key: str = "") -> dict[str, Any]:
     """Recursively removes `'title'` fields from a JSON schema dictionary.
 
     Remove `'title'` fields from the input JSON schema dictionary,
@@ -121,7 +119,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
 
 
 def _convert_json_schema_to_openai_function(
-    schema: dict,
+    schema: dict[str, Any],
     *,
     name: str | None = None,
     description: str | None = None,
@@ -206,13 +204,13 @@ def _convert_pydantic_to_openai_function(
     )
 
 
-def _get_python_function_name(function: Callable) -> str:
+def _get_python_function_name(function: Callable[..., Any]) -> str:
     """Get the name of a Python function."""
     return function.__name__
 
 
 def _convert_python_function_to_openai_function(
-    function: Callable,
+    function: Callable[..., Any],
 ) -> FunctionDescription:
     """Convert a Python function to an OpenAI function-calling API compatible dict.
 
@@ -243,7 +241,7 @@ def _convert_python_function_to_openai_function(
 
 
 def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
-    visited: dict = {}
+    visited: dict[type, type] = {}
 
     model = cast(
         "type[BaseModel]",
@@ -279,7 +277,7 @@ def _convert_any_typed_dicts_to_pydantic(
         description, arg_descriptions = _parse_google_docstring(
             docstring, list(annotations_)
         )
-        fields: dict = {}
+        fields: dict[str, Any] = {}
         for arg, arg_type in annotations_.items():
             if get_origin(arg_type) in {Annotated, typing_extensions.Annotated}:
                 annotated_args = get_args(arg_type)
@@ -349,7 +347,7 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
             return _convert_pydantic_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
-        error_msg = (
+        error_msg = (  # type: ignore[unreachable]
             f"Unsupported tool call schema: {tool.tool_call_schema}. "
             "Tool call schema must be a JSON schema dict or a Pydantic model."
         )
@@ -373,7 +371,7 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
 
 def convert_to_openai_function(
-    function: Mapping[str, Any] | type | Callable | BaseTool,
+    function: Mapping[str, Any] | type | Callable[..., Any] | BaseTool,
     *,
     strict: bool | None = None,
 ) -> dict[str, Any]:
@@ -437,16 +435,19 @@ def convert_to_openai_function(
         if function_copy and "properties" in function_copy:
             oai_function["parameters"] = function_copy
     elif isinstance(function, type) and is_basemodel_subclass(function):
-        oai_function = cast("dict", _convert_pydantic_to_openai_function(function))
+        oai_function = cast(
+            "dict[str, Any]", _convert_pydantic_to_openai_function(function)
+        )
     elif is_typeddict(function):
         oai_function = cast(
-            "dict", _convert_typed_dict_to_openai_function(cast("type", function))
+            "dict[str, Any]",
+            _convert_typed_dict_to_openai_function(cast("type", function)),
         )
     elif isinstance(function, langchain_core.tools.base.BaseTool):
-        oai_function = cast("dict", _format_tool_to_openai_function(function))
+        oai_function = cast("dict[str, Any]", _format_tool_to_openai_function(function))
     elif callable(function):
         oai_function = cast(
-            "dict", _convert_python_function_to_openai_function(function)
+            "dict[str, Any]", _convert_python_function_to_openai_function(function)
         )
     else:
         if isinstance(function, dict) and (
@@ -508,12 +509,13 @@ _WellKnownOpenAITools = (
     "web_search_preview",
     "web_search",
     "tool_search",
+    "apply_patch",
     "namespace",
 )
 
 
 def convert_to_openai_tool(
-    tool: Mapping[str, Any] | type[BaseModel] | Callable | BaseTool,
+    tool: Mapping[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool,
     *,
     strict: bool | None = None,
 ) -> dict[str, Any]:
@@ -546,7 +548,7 @@ def convert_to_openai_tool(
 
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with `"type"` in `"file_search"`, `"function"`,
-        `"computer_use_preview"`, `"web_search_preview"`.
+        `"computer_use_preview"`, `"web_search_preview"`, `"apply_patch"`.
 
     !!! warning "Behavior changed in `langchain-core` 0.3.63"
 
@@ -575,7 +577,7 @@ def convert_to_openai_tool(
 
 
 def convert_to_json_schema(
-    schema: dict[str, Any] | type[BaseModel] | Callable | BaseTool,
+    schema: dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool,
     *,
     strict: bool | None = None,
 ) -> dict[str, Any]:
@@ -730,7 +732,7 @@ def _parse_google_docstring(
     args: list[str],
     *,
     error_on_invalid_docstring: bool = False,
-) -> tuple[str, dict]:
+) -> tuple[str, dict[str, str]]:
     """Parse the function and argument descriptions from the docstring of a function.
 
     Assumes the function docstring follows Google Python style guide.
@@ -779,11 +781,27 @@ def _parse_google_docstring(
             raise ValueError(msg)
         description = ""
         args_block = None
-    arg_descriptions = {}
+    arg_descriptions: dict[str, str] = {}
     if args_block:
-        arg = None
+        arg: str | None = None
+        # Base indentation, latched once from the first argument line, lets us
+        # distinguish new argument definitions from continuation lines. This
+        # assumes Google-style uniform indentation of argument names: a line
+        # indented deeper than the first argument is treated as a continuation
+        # (even if it contains a colon), so a more-indented later `name:` line
+        # in a malformed, non-uniformly-indented block folds into the previous
+        # argument rather than starting a new one.
+        arg_indent: int | None = None
         for line in args_block.split("\n")[1:]:
-            if ":" in line:
+            if not line.strip():
+                continue
+            current_indent = len(line) - len(line.lstrip())
+            if arg_indent is None and ":" in line:
+                arg_indent = current_indent
+            is_continuation = arg_indent is not None and current_indent > arg_indent
+            if arg is not None and is_continuation:
+                arg_descriptions[arg] += " " + line.strip()
+            elif ":" in line:
                 arg, desc = line.split(":", maxsplit=1)
                 arg = arg.strip()
                 arg_name, _, annotations_ = arg.partition(" ")

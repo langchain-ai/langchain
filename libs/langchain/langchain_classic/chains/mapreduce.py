@@ -29,11 +29,11 @@ from langchain_classic.chains.llm import LLMChain
 
 @deprecated(
     since="0.2.13",
-    removal="1.0",
-    message=(
-        "Refer to migration guide here for a recommended implementation using "
-        "LangGraph: https://docs.langchain.com/oss/python/langgraph/graph-api#map-reduce-and-the-send-api"
-        "."
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "For map-reduce branching, build a LangGraph using the Send API. See "
+        "https://docs.langchain.com/oss/python/langgraph/use-graph-api#map-reduce-and-the-send-api"
     ),
 )
 class MapReduceChain(Chain):

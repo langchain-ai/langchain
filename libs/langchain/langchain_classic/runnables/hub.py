@@ -1,9 +1,17 @@
 from typing import Any
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.runnables.base import RunnableBindingBase
 from langchain_core.runnables.utils import Input, Output
 
 
+@deprecated(
+    since="1.0.7",
+    removal="2.0.0",
+    message=(
+        "langchain_classic.hub.pull is deprecated. Use the LangSmith SDK instead."
+    ),
+)
 class HubRunnable(RunnableBindingBase[Input, Output]):  # type: ignore[no-redef]
     """An instance of a runnable stored in the LangChain Hub."""
 

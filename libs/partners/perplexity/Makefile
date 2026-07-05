@@ -1,4 +1,4 @@
-.PHONY: all format lint type test tests integration_tests help extended_tests
+.PHONY: all format lint type test tests integration_tests help extended_tests check_version
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -19,7 +19,8 @@ test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest $(TEST_FILE)
+	uv run --group test --group test_integration pytest -v --tb=short -n 4 \
+		--retries 3 --retry-delay 5 $(TEST_FILE)
 
 ######################
 # LINTING AND FORMATTING
@@ -53,13 +54,17 @@ format format_diff:
 check_imports: $(shell find langchain_perplexity -name '*.py')
 	$(UV_RUN_LINT) python ./scripts/check_imports.py $^
 
+check_version:
+	uv run python ./scripts/check_version.py
+
 ######################
 # HELP
 ######################
 
 help:
 	@echo '----'
-	@echo 'check_imports				- check imports'
+	@echo 'check_imports                - check imports'
+	@echo 'check_version                - validate version consistency'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
 	@echo 'type                         - run type checking'

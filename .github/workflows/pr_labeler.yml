@@ -17,7 +17,7 @@
 #    - Organization: Members (read)
 # 2. Install the app on your organization and this repository
 # 3. Add these repository secrets:
-#    - ORG_MEMBERSHIP_APP_ID: Your app's ID
+#    - ORG_MEMBERSHIP_APP_CLIENT_ID: Your app's client ID
 #    - ORG_MEMBERSHIP_APP_PRIVATE_KEY: Your app's private key
 #
 # The GitHub App token is required to check private organization membership
@@ -42,6 +42,7 @@ concurrency:
 
 jobs:
   label:
+    if: github.repository_owner == 'langchain-ai'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,14 +52,14 @@ jobs:
     steps:
       # Checks out the BASE branch (safe for pull_request_target — never
       # the PR head). Needed to load .github/scripts/pr-labeler*.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
 
       - name: Generate GitHub App token
         if: github.event.action == 'opened'
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
-          app-id: ${{ secrets.ORG_MEMBERSHIP_APP_ID }}
+          client-id: ${{ secrets.ORG_MEMBERSHIP_APP_CLIENT_ID }}
           private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
 
       - name: Verify App token
@@ -72,7 +73,7 @@ jobs:
       - name: Check org membership
         if: github.event.action == 'opened'
         id: check-membership
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
@@ -86,7 +87,7 @@ jobs:
             core.setOutput('is-external', isExternal ? 'true' : 'false');
 
       - name: Apply PR labels
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           IS_EXTERNAL: ${{ steps.check-membership.outputs.is-external }}
         with:
@@ -180,7 +181,7 @@ jobs:
       # event fires and triggers require_issue_link.yml.
       - name: Apply contributor tier label
         if: github.event.action == 'opened' && steps.check-membership.outputs.is-external == 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
@@ -192,7 +193,7 @@ jobs:
 
       - name: Add external label
         if: github.event.action == 'opened' && steps.check-membership.outputs.is-external == 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           # Use App token so the "labeled" event propagates to downstream
           # workflows (e.g. require_issue_link.yml). Events created by the

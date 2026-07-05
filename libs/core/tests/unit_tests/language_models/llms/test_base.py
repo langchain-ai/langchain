@@ -1,9 +1,11 @@
+import warnings
 from collections.abc import AsyncIterator, Iterator
-from typing import Any
+from typing import Any, get_type_hints
 
 import pytest
 from typing_extensions import override
 
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -13,6 +15,7 @@ from langchain_core.language_models import (
     BaseLLM,
     FakeListLLM,
 )
+from langchain_core.language_models._utils import _filter_invocation_params_for_tracing
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.callbacks import (
@@ -20,6 +23,41 @@ from tests.unit_tests.fake.callbacks import (
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
+
+
+def test_asdict_replaces_deprecated_dict() -> None:
+    llm = FakeListLLM(responses=["foo"])
+
+    expected = {"responses": ["foo"], "_type": "fake-list"}
+    assert llm.asdict() == expected
+    with pytest.warns(LangChainDeprecationWarning, match="asdict"):
+        assert llm.dict() == expected
+
+
+def test_base_llm_type_hints_resolve() -> None:
+    assert get_type_hints(BaseLLM.asdict)["return"] == dict[str, Any]
+
+
+def test_invoke_preserves_deprecated_dict_override() -> None:
+    """Invoking should preserve `dict()` overrides until `dict()` is removed."""
+
+    class CustomDictLLM(FakeListLLM):
+        @override
+        def dict(self, **kwargs: Any) -> dict[str, Any]:
+            data = super().dict(**kwargs)
+            data["custom_trace_param"] = "custom"
+            return data
+
+    llm = CustomDictLLM(responses=["foo"])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        with collect_runs() as cb:
+            assert llm.invoke("hello") == "foo"
+
+    assert cb.traced_runs[0].extra is not None
+    assert cb.traced_runs[0].extra["invocation_params"]["custom_trace_param"] == (
+        "custom"
+    )
 
 
 def test_batch() -> None:
@@ -284,3 +322,94 @@ def test_get_ls_params() -> None:
 
     ls_params = llm._get_ls_params(stop=["stop"])
     assert ls_params["ls_stop"] == ["stop"]
+
+
+def test_filter_invocation_params_for_tracing() -> None:
+    """Test that large fields are filtered from invocation params for tracing."""
+    params = {
+        "temperature": 0.7,
+        "tools": [{"name": "test_tool"}],
+        "functions": [{"name": "test_function"}],
+        "messages": [{"role": "system", "content": "test"}],
+        "response_format": {"type": "json_object"},
+    }
+    filtered = _filter_invocation_params_for_tracing(params)
+
+    # Should include temperature
+    assert "temperature" in filtered
+    assert filtered["temperature"] == 0.7
+
+    # Should exclude these large fields
+    assert "tools" not in filtered
+    assert "functions" not in filtered
+    assert "messages" not in filtered
+    assert "response_format" not in filtered
+
+
+class FakeLLMWithInvocationParams(BaseLLM):
+    """Fake LLM with invocation params for testing tracing."""
+
+    temperature: float = 0.7
+
+    @property
+    @override
+    def _llm_type(self) -> str:
+        return "fake-llm-with-invocation-params"
+
+    @property
+    @override
+    def _identifying_params(self) -> dict[str, Any]:
+        return {
+            "temperature": self.temperature,
+            "tools": [{"name": "test_tool"}],
+            "functions": [{"name": "test_function"}],
+            "messages": [{"role": "system", "content": "test"}],
+            "response_format": {"type": "json_object"},
+        }
+
+    @override
+    def _generate(
+        self,
+        prompts: list[str],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        generations = [[Generation(text="test response")]]
+        return LLMResult(generations=generations)
+
+    @override
+    async def _agenerate(
+        self,
+        prompts: list[str],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        generations = [[Generation(text="test response")]]
+        return LLMResult(generations=generations)
+
+
+async def test_llm_invocation_params_filtered_in_stream() -> None:
+    """Test that invocation params are filtered when streaming."""
+
+    # Create a custom LLM that supports streaming
+    class FakeStreamingLLM(FakeLLMWithInvocationParams):
+        @override
+        def _stream(
+            self,
+            prompt: str,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> Iterator[GenerationChunk]:
+            yield GenerationChunk(text="test ")
+
+    streaming_llm = FakeStreamingLLM()
+
+    with collect_runs() as cb:
+        list(streaming_llm.stream("Hello", config={"callbacks": [cb]}))
+        assert len(cb.traced_runs) == 1
+        run = cb.traced_runs[0]
+        # Verify the run was traced
+        assert run.extra is not None

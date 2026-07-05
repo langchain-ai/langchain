@@ -59,7 +59,7 @@ class StructuredTool(BaseTool):
     @override
     async def ainvoke(
         self,
-        input: str | dict | ToolCall,
+        input: str | dict[str, Any] | ToolCall,
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Any:
@@ -132,7 +132,7 @@ class StructuredTool(BaseTool):
     @classmethod
     def from_function(
         cls,
-        func: Callable | None = None,
+        func: Callable[..., Any] | None = None,
         coroutine: Callable[..., Awaitable[Any]] | None = None,
         name: str | None = None,
         description: str | None = None,
@@ -263,7 +263,7 @@ class StructuredTool(BaseTool):
         )
 
 
-def _filter_schema_args(func: Callable) -> list[str]:
+def _filter_schema_args(func: Callable[..., Any]) -> list[str]:
     filter_args = list(FILTERED_ARGS)
     if config_param := _get_runnable_config_param(func):
         filter_args.append(config_param)

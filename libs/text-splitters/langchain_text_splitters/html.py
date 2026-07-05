@@ -15,8 +15,7 @@ from typing import (
     cast,
 )
 
-import requests
-from langchain_core._api import beta
+from langchain_core._api import beta, deprecated
 from langchain_core.documents import BaseDocumentTransformer, Document
 from typing_extensions import override
 
@@ -186,8 +185,18 @@ class HTMLHeaderTextSplitter:
         """
         return self.split_text_from_file(StringIO(text))
 
+    @deprecated(
+        since="1.1.2",
+        removal="2.0.0",
+        addendum=(
+            "Fetch the HTML content from the URL yourself and pass it to `split_text`."
+        ),
+    )
     def split_text_from_url(
-        self, url: str, timeout: int = 10, **kwargs: Any
+        self,
+        url: str,
+        timeout: int = 10,
+        **kwargs: Any,  # noqa: ARG002
     ) -> list[Document]:
         """Fetch text content from a URL and split it into documents.
 
@@ -205,14 +214,14 @@ class HTMLHeaderTextSplitter:
         Raises:
             requests.RequestException: If the HTTP request fails.
         """
-        from langchain_core._security._ssrf_protection import (  # noqa: PLC0415
-            validate_safe_url,
+        from langchain_core._security._transport import (  # noqa: PLC0415
+            ssrf_safe_client,
         )
 
-        validate_safe_url(url, allow_private=False, allow_http=True)
-        response = requests.get(url, timeout=timeout, **kwargs)
-        response.raise_for_status()
-        return self.split_text(response.text)
+        with ssrf_safe_client() as client:
+            response = client.get(url, timeout=timeout)
+            response.raise_for_status()
+            return self.split_text(response.text)
 
     def split_text_from_file(self, file: str | IO[str]) -> list[Document]:
         """Split HTML content from a file into a list of `Document` objects.
@@ -524,7 +533,7 @@ class HTMLSectionSplitter:
         # Apply XSLT access control to prevent file/network access
         # DENY_ALL is a predefined access control that blocks all file/network access
         # Type ignore needed due to incomplete lxml type stubs
-        ac = etree.XSLTAccessControl.DENY_ALL  # type: ignore[attr-defined]
+        ac = etree.XSLTAccessControl.DENY_ALL  # ty: ignore[unresolved-attribute]
 
         tree = etree.parse(StringIO(html_content), html_parser)
         xslt_tree = etree.parse(self.xslt_path, xslt_parser)
@@ -872,24 +881,26 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 element: The HTML element to process.
 
             Returns:
-                The processed text of the element.
+                The processed text of the element, or an empty string for
+                    elements with no extractable text.
             """
-            element = cast("Tag | NavigableString", element)
-            if element.name in self._custom_handlers:
-                return self._custom_handlers[element.name](element)
+            if isinstance(element, Tag):
+                if element.name in self._custom_handlers:
+                    return self._custom_handlers[element.name](element)
 
-            text = ""
-
-            if element.name is not None:
+                text = ""
                 for child in element.children:
                     child_text = _get_element_text(child).strip()
                     if text and child_text:
                         text += " "
                     text += child_text
-            elif element.string:
-                text += element.string
 
-            return self._normalize_and_clean_text(text)
+                return self._normalize_and_clean_text(text)
+
+            if hasattr(element, "string") and isinstance(element.string, str):
+                return self._normalize_and_clean_text(element.string)
+
+            return ""
 
         elements = _find_all_tags(soup, recursive=False)
 

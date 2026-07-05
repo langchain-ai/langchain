@@ -6,15 +6,17 @@ AgentState without needing to create custom middleware.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, get_args, get_type_hints
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
+from typing_extensions import NotRequired, Required, override
 
-from langchain.agents import create_agent
+from langchain.agents import create_agent, factory
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    InputAgentState,
     PrivateStateAttr,
 )
 
@@ -39,6 +41,9 @@ def test_state_schema_single_custom_field() -> None:
     class CustomState(AgentState[Any]):
         custom_field: str
 
+    class CustomInputState(InputAgentState):
+        custom_field: str
+
     agent = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[[{"args": {"x": 1}, "id": "call_1", "name": "simple_tool"}], []]
@@ -47,7 +52,9 @@ def test_state_schema_single_custom_field() -> None:
         state_schema=CustomState,
     )
 
-    result = agent.invoke({"messages": [HumanMessage("Test")], "custom_field": "test_value"})
+    result = agent.invoke(
+        CustomInputState(messages=[HumanMessage("Test")], custom_field="test_value")
+    )
 
     assert result["custom_field"] == "test_value"
     assert len(result["messages"]) == 4
@@ -61,6 +68,11 @@ def test_state_schema_multiple_custom_fields() -> None:
         session_id: str
         context: str
 
+    class CustomInputState(InputAgentState):
+        user_id: str
+        session_id: str
+        context: str
+
     agent = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[[{"args": {"x": 1}, "id": "call_1", "name": "simple_tool"}], []]
@@ -70,12 +82,12 @@ def test_state_schema_multiple_custom_fields() -> None:
     )
 
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Test")],
-            "user_id": "user_123",
-            "session_id": "session_456",
-            "context": "test_ctx",
-        }
+        CustomInputState(
+            messages=[HumanMessage("Test")],
+            user_id="user_123",
+            session_id="session_456",
+            context="test_ctx",
+        )
     )
 
     assert result["user_id"] == "user_123"
@@ -88,6 +100,9 @@ def test_state_schema_with_tool_runtime() -> None:
     """Test that custom state fields are accessible via ToolRuntime."""
 
     class ExtendedState(AgentState[Any]):
+        counter: int
+
+    class ExtendedInputState(InputAgentState):
         counter: int
 
     runtime_data = {}
@@ -106,7 +121,7 @@ def test_state_schema_with_tool_runtime() -> None:
         state_schema=ExtendedState,
     )
 
-    result = agent.invoke({"messages": [HumanMessage("Test")], "counter": 5})
+    result = agent.invoke(ExtendedInputState(messages=[HumanMessage("Test")], counter=5))
 
     assert runtime_data["counter"] == 5
     assert "Counter is 5" in result["messages"][2].content
@@ -121,11 +136,16 @@ def test_state_schema_with_middleware() -> None:
     class MiddlewareState(AgentState[Any]):
         middleware_data: str
 
+    class UserAndMiddlewareInputState(InputAgentState):
+        user_name: str
+        middleware_data: str
+
     middleware_calls = []
 
     class TestMiddleware(AgentMiddleware[MiddlewareState, None]):
         state_schema = MiddlewareState
 
+        @override
         def before_model(self, state: MiddlewareState, runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append(state["middleware_data"])
             return {}
@@ -140,11 +160,11 @@ def test_state_schema_with_middleware() -> None:
     )
 
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Test")],
-            "user_name": "Alice",
-            "middleware_data": "test_data",
-        }
+        UserAndMiddlewareInputState(
+            messages=[HumanMessage("Test")],
+            user_name="Alice",
+            middleware_data="test_data",
+        )
     )
 
     assert result["user_name"] == "Alice"
@@ -174,6 +194,9 @@ async def test_state_schema_async() -> None:
     class AsyncState(AgentState[Any]):
         async_field: str
 
+    class AsyncInputState(InputAgentState):
+        async_field: str
+
     @tool
     async def async_tool(x: int) -> str:
         """Async tool."""
@@ -188,10 +211,10 @@ async def test_state_schema_async() -> None:
     )
 
     result = await agent.ainvoke(
-        {
-            "messages": [HumanMessage("Test async")],
-            "async_field": "async_value",
-        }
+        AsyncInputState(
+            messages=[HumanMessage("Test async")],
+            async_field="async_value",
+        )
     )
 
     assert result["async_field"] == "async_value"
@@ -208,6 +231,10 @@ def test_state_schema_with_private_state_field() -> None:
     """
 
     class StateWithPrivateField(AgentState[Any]):
+        public_field: str
+        private_field: Annotated[str, PrivateStateAttr]
+
+    class InputStateWithPrivateField(InputAgentState):
         public_field: str
         private_field: Annotated[str, PrivateStateAttr]
 
@@ -232,11 +259,11 @@ def test_state_schema_with_private_state_field() -> None:
 
     # Invoke the agent with BOTH public and private fields
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Test private state")],
-            "public_field": "public_value",
-            "private_field": "private_value",  # This should be filtered out
-        }
+        InputStateWithPrivateField(
+            messages=[HumanMessage("Test private state")],
+            public_field="public_value",
+            private_field="private_value",  # This should be filtered out
+        )
     )
 
     # Assert that public_field is preserved in the result
@@ -253,3 +280,72 @@ def test_state_schema_with_private_state_field() -> None:
 
     # Verify the agent executed normally
     assert len(result["messages"]) == 4  # Human, AI (tool call), Tool result, AI (final)
+
+
+def test_last_schema_wins_for_conflicting_field() -> None:
+    """The last schema in the list wins when multiple schemas declare the same field.
+
+    In practice this means state_schema (passed last) overrides middleware annotations,
+    and a later middleware overrides an earlier one.
+    """
+
+    class FirstState(AgentState[Any]):
+        shared_field: Annotated[str, "first"]
+
+    class MiddleState(AgentState[Any]):
+        shared_field: Annotated[str, "middle"]
+
+    class LastState(AgentState[Any]):
+        shared_field: Annotated[str, "last"]
+
+    resolved, _, _ = factory._resolve_schemas([FirstState, MiddleState, LastState])
+    hints = get_type_hints(resolved, include_extras=True)
+    assert get_args(hints["shared_field"])[1] == "last"
+
+
+def test_get_schema_type_hints_cache_hits_for_reused_schema() -> None:
+    """Test repeated schema resolution reuses cached type hints for the same schema."""
+
+    class CachedState(AgentState[Any]):
+        cached_field: str
+        required_field: Required[int]
+        optional_field: NotRequired[Annotated[str, PrivateStateAttr]]
+
+    factory._get_schema_type_hints.cache_clear()
+
+    factory._resolve_schemas([CachedState])
+    first_info = factory._get_schema_type_hints.cache_info()
+    factory._resolve_schemas([CachedState])
+    second_info = factory._get_schema_type_hints.cache_info()
+
+    assert first_info.misses == 1
+    assert first_info.hits == 0
+    assert second_info.misses == 1
+    assert second_info.hits == 1
+
+
+def test_get_schema_type_hints_cache_accepts_distinct_local_schema_types() -> None:
+    """Test locally defined schema classes remain hashable cache keys."""
+    factory._get_schema_type_hints.cache_clear()
+
+    def make_state_schema(name: str) -> type[AgentState[Any]]:
+        class LocalState(AgentState[Any]):
+            value: str
+            required_value: Required[int]
+            optional_private_value: NotRequired[Annotated[str, PrivateStateAttr]]
+
+        LocalState.__name__ = name
+        return LocalState
+
+    schema_a = make_state_schema("LocalStateA")
+    schema_b = make_state_schema("LocalStateB")
+
+    factory._resolve_schemas([schema_a, schema_b])
+    first_info = factory._get_schema_type_hints.cache_info()
+    factory._resolve_schemas([schema_a, schema_b])
+    second_info = factory._get_schema_type_hints.cache_info()
+
+    assert first_info.misses == 2
+    assert first_info.hits == 0
+    assert second_info.misses == 2
+    assert second_info.hits == 2
