@@ -26,6 +26,10 @@ def _populate_extras(
     return standard_block
 
 
+def _non_standard_block(block: dict[str, Any]) -> types.NonStandardContentBlock:
+    return {"type": "non_standard", "value": block}
+
+
 def _convert_to_v1_from_anthropic_input(
     content: list[types.ContentBlock],
 ) -> list[types.ContentBlock]:
@@ -54,87 +58,107 @@ def _convert_to_v1_from_anthropic_input(
         ]
         for block in blocks:
             block_type = block.get("type")
+            source = block.get("source")
 
             if (
                 block_type == "document"
-                and "source" in block
-                and "type" in block["source"]
+                and isinstance(source, dict)
+                and "type" in source
             ):
-                if block["source"]["type"] == "base64":
+                if source["type"] == "base64":
+                    if "data" not in source or "media_type" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     file_block: types.FileContentBlock = {
                         "type": "file",
-                        "base64": block["source"]["data"],
-                        "mime_type": block["source"]["media_type"],
+                        "base64": source["data"],
+                        "mime_type": source["media_type"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "url":
+                elif source["type"] == "url":
+                    if "url" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     file_block = {
                         "type": "file",
-                        "url": block["source"]["url"],
+                        "url": source["url"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "file":
+                elif source["type"] == "file":
+                    if "file_id" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     file_block = {
                         "type": "file",
-                        "id": block["source"]["file_id"],
+                        "id": source["file_id"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "text":
+                elif source["type"] == "text":
+                    if "data" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     plain_text_block: types.PlainTextContentBlock = {
                         "type": "text-plain",
-                        "text": block["source"]["data"],
+                        "text": source["data"],
                         "mime_type": block.get("media_type", "text/plain"),
                     }
                     _populate_extras(plain_text_block, block, {"type", "source"})
                     yield plain_text_block
 
                 else:
-                    yield {"type": "non_standard", "value": block}
+                    yield _non_standard_block(block)
 
             elif (
-                block_type == "image"
-                and "source" in block
-                and "type" in block["source"]
+                block_type == "image" and isinstance(source, dict) and "type" in source
             ):
-                if block["source"]["type"] == "base64":
+                if source["type"] == "base64":
+                    if "data" not in source or "media_type" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     image_block: types.ImageContentBlock = {
                         "type": "image",
-                        "base64": block["source"]["data"],
-                        "mime_type": block["source"]["media_type"],
+                        "base64": source["data"],
+                        "mime_type": source["media_type"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block
 
-                elif block["source"]["type"] == "url":
+                elif source["type"] == "url":
+                    if "url" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     image_block = {
                         "type": "image",
-                        "url": block["source"]["url"],
+                        "url": source["url"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block
 
-                elif block["source"]["type"] == "file":
+                elif source["type"] == "file":
+                    if "file_id" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     image_block = {
                         "type": "image",
-                        "id": block["source"]["file_id"],
+                        "id": source["file_id"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block
 
                 else:
-                    yield {"type": "non_standard", "value": block}
+                    yield _non_standard_block(block)
 
             elif block_type in types.KNOWN_BLOCK_TYPES:
                 yield cast("types.ContentBlock", block)
 
             else:
-                yield {"type": "non_standard", "value": block}
+                yield _non_standard_block(block)
 
     return list(_iter_blocks())
 
@@ -143,6 +167,11 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
     citation_type = citation.get("type")
 
     if citation_type == "web_search_result_location":
+        if "cited_text" not in citation or "url" not in citation:
+            return {
+                "type": "non_standard_annotation",
+                "value": citation,
+            }
         url_citation: types.Citation = {
             "type": "citation",
             "cited_text": citation["cited_text"],
@@ -165,6 +194,11 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
         "page_location",
         "search_result_location",
     }:
+        if "cited_text" not in citation:
+            return {
+                "type": "non_standard_annotation",
+                "value": citation,
+            }
         document_citation: types.Citation = {
             "type": "citation",
             "cited_text": citation["cited_text"],

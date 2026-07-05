@@ -507,3 +507,66 @@ def test_convert_to_v1_from_anthropic_input() -> None:
     ]
 
     assert message.content_blocks == expected
+
+
+def test_convert_to_v1_from_anthropic_input_malformed_sources() -> None:
+    content = [
+        {"type": "document", "source": {"type": "base64", "media_type": "app/pdf"}},
+        {"type": "document", "source": {"type": "url"}},
+        {"type": "document", "source": {"type": "file"}},
+        {"type": "document", "source": {"type": "text"}},
+        {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg"}},
+        {"type": "image", "source": {"type": "url"}},
+        {"type": "image", "source": {"type": "file"}},
+    ]
+    message = HumanMessage(content)
+
+    assert message.content_blocks == [
+        *[{"type": "non_standard", "value": block} for block in content[:4]],
+        *content[4:],
+    ]
+
+
+def test_convert_to_v1_from_anthropic_malformed_citations() -> None:
+    message = AIMessage(
+        [
+            {
+                "type": "text",
+                "text": "Source-backed answer.",
+                "citations": [
+                    {
+                        "type": "web_search_result_location",
+                        "cited_text": "Source text",
+                    },
+                    {
+                        "type": "search_result_location",
+                        "title": "Document Title",
+                    },
+                ],
+            },
+        ],
+        response_metadata={"model_provider": "anthropic"},
+    )
+
+    assert message.content_blocks == [
+        {
+            "type": "text",
+            "text": "Source-backed answer.",
+            "annotations": [
+                {
+                    "type": "non_standard_annotation",
+                    "value": {
+                        "type": "web_search_result_location",
+                        "cited_text": "Source text",
+                    },
+                },
+                {
+                    "type": "non_standard_annotation",
+                    "value": {
+                        "type": "search_result_location",
+                        "title": "Document Title",
+                    },
+                },
+            ],
+        },
+    ]
