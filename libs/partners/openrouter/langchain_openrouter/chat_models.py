@@ -365,7 +365,6 @@ class ChatOpenRouter(BaseChatModel):
 
     See https://openrouter.ai/docs/guides/features/broadcast/overview
     """
-    """
 
     model_config = ConfigDict(populate_by_name=True)
 
