@@ -80,6 +80,7 @@ def _sanitize_tools(
     changed = False
 
     for tool in tools:
+        sanitized_tool: BaseTool | dict[str, Any]
         if isinstance(tool, BaseTool):
             sanitized_tool, tool_changed = _sanitize_base_tool(tool)
         else:
