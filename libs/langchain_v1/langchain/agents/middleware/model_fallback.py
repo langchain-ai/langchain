@@ -38,7 +38,7 @@ def _sanitize_content_blocks(
             sanitized_content.append(block)
             continue
 
-        sanitized_block, block_changed = _without_cache_control(block)
+        sanitized_block, block_changed = _without_cache_control_from_content_block(block)
         changed = changed or block_changed
         sanitized_content.append(sanitized_block)
 
@@ -163,6 +163,29 @@ def _without_cache_control(payload: dict[str, Any]) -> tuple[dict[str, Any], boo
         {key: value for key, value in payload.items() if key != "cache_control"},
         True,
     )
+
+
+def _without_cache_control_from_content_block(
+    block: dict[str, Any],
+) -> tuple[dict[str, Any], bool]:
+    """Return content block without Anthropic cache markers."""
+    sanitized_block, changed = _without_cache_control(block)
+
+    for nested_key in ("extras", "metadata"):
+        nested_payload = sanitized_block.get(nested_key)
+        if not isinstance(nested_payload, dict):
+            continue
+
+        sanitized_payload, nested_changed = _without_cache_control(nested_payload)
+        if not nested_changed:
+            continue
+
+        if sanitized_block is block:
+            sanitized_block = dict(block)
+        sanitized_block[nested_key] = sanitized_payload
+        changed = True
+
+    return sanitized_block, changed
 
 
 class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):

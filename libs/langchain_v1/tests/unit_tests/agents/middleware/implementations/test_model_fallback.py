@@ -61,7 +61,14 @@ def _make_request_with_cache_markers(primary_model: BaseChatModel) -> ModelReque
         system_message=SystemMessage(
             content=[
                 {"type": "text", "text": "policy", "cache_control": {"type": "ephemeral"}},
-                {"type": "text", "text": "extra"},
+                {
+                    "type": "text",
+                    "text": "extra",
+                    "extras": {
+                        "priority": "high",
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                },
             ]
         ),
         messages=[
@@ -72,12 +79,30 @@ def _make_request_with_cache_markers(primary_model: BaseChatModel) -> ModelReque
                         "text": "question",
                         "cache_control": {"type": "ephemeral"},
                     },
-                    {"type": "text", "text": "details"},
+                    {
+                        "type": "text",
+                        "text": "details",
+                        "metadata": {
+                            "source": "user",
+                            "cache_control": {"type": "ephemeral"},
+                        },
+                    },
                 ]
             ),
             AIMessage(
                 content=[
-                    {"type": "text", "text": "previous", "cache_control": {"type": "ephemeral"}},
+                    {
+                        "type": "text",
+                        "text": "previous",
+                        "extras": {
+                            "turn": 1,
+                            "cache_control": {"type": "ephemeral"},
+                        },
+                        "metadata": {
+                            "source": "assistant",
+                            "cache_control": {"type": "ephemeral"},
+                        },
+                    },
                 ]
             ),
         ],
@@ -105,16 +130,29 @@ def _assert_request_has_cache_markers(request: ModelRequest) -> None:
     assert isinstance(system_content, list)
     assert isinstance(system_content[0], dict)
     assert "cache_control" in system_content[0]
+    assert isinstance(system_content[1], dict)
+    system_extras = system_content[1].get("extras")
+    assert isinstance(system_extras, dict)
+    assert "cache_control" in system_extras
 
     first_message_content = request.messages[0].content
     assert isinstance(first_message_content, list)
     assert isinstance(first_message_content[0], dict)
     assert "cache_control" in first_message_content[0]
+    assert isinstance(first_message_content[1], dict)
+    first_message_metadata = first_message_content[1].get("metadata")
+    assert isinstance(first_message_metadata, dict)
+    assert "cache_control" in first_message_metadata
 
     second_message_content = request.messages[1].content
     assert isinstance(second_message_content, list)
     assert isinstance(second_message_content[0], dict)
-    assert "cache_control" in second_message_content[0]
+    second_message_extras = second_message_content[0].get("extras")
+    assert isinstance(second_message_extras, dict)
+    assert "cache_control" in second_message_extras
+    second_message_metadata = second_message_content[0].get("metadata")
+    assert isinstance(second_message_metadata, dict)
+    assert "cache_control" in second_message_metadata
 
     base_tool = request.tools[0]
     assert isinstance(base_tool, BaseTool)
@@ -139,6 +177,8 @@ def _assert_request_is_sanitized(request: ModelRequest) -> None:
     assert all(
         not (isinstance(block, dict) and "cache_control" in block) for block in system_content
     )
+    assert isinstance(system_content[1], dict)
+    assert system_content[1].get("extras") == {"priority": "high"}
 
     for message in request.messages:
         message_content = message.content
@@ -147,6 +187,17 @@ def _assert_request_is_sanitized(request: ModelRequest) -> None:
                 not (isinstance(block, dict) and "cache_control" in block)
                 for block in message_content
             )
+
+    first_message_content = request.messages[0].content
+    assert isinstance(first_message_content, list)
+    assert isinstance(first_message_content[1], dict)
+    assert first_message_content[1].get("metadata") == {"source": "user"}
+
+    second_message_content = request.messages[1].content
+    assert isinstance(second_message_content, list)
+    assert isinstance(second_message_content[0], dict)
+    assert second_message_content[0].get("extras") == {"turn": 1}
+    assert second_message_content[0].get("metadata") == {"source": "assistant"}
 
     base_tool = request.tools[0]
     assert isinstance(base_tool, BaseTool)
