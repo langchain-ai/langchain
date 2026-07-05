@@ -314,18 +314,21 @@ def render_provider_section(provider: str, diff: ProfileDiff) -> str | None:
 def build_summary(provider_diffs: dict[str, ProfileDiff]) -> str:
     """Assemble the full Markdown summary across all providers.
 
+    When more than one provider has changes, each provider's section is wrapped
+    in a `<details>` toggle so the PR body stays skimmable.
+
     Args:
         provider_diffs: Mapping of provider name to its `ProfileDiff`.
 
     Returns:
         Markdown summary. When nothing changed, a short note is returned.
     """
-    sections = [
-        section
+    provider_sections = [
+        (provider, section)
         for provider in sorted(provider_diffs)
         if (section := render_provider_section(provider, provider_diffs[provider]))
     ]
-    if not sections:
+    if not provider_sections:
         return "No model profile data changed."
 
     total_added = sum(len(d.added) for d in provider_diffs.values())
@@ -333,8 +336,23 @@ def build_summary(provider_diffs: dict[str, ProfileDiff]) -> str:
     total_changed = sum(len(d.changed) for d in provider_diffs.values())
     headline = (
         f"**{total_added} added · {total_removed} removed · "
-        f"{total_changed} changed** across {len(sections)} provider(s)."
+        f"{total_changed} changed** across {len(provider_sections)} provider(s)."
     )
+
+    # Wrap each section in a <details> toggle only when multiple providers
+    # changed, so a single-provider summary stays flat.
+    wrap = len(provider_sections) > 1
+    sections = []
+    for provider, section in provider_sections:
+        if not wrap:
+            sections.append(section)
+            continue
+        # Strip the "### {provider}" heading so the <summary> tag is the sole
+        # label for the toggle.
+        body = section.removeprefix(f"### {provider}").lstrip("\n")
+        sections.append(
+            f"<details>\n<summary>{provider}</summary>\n\n{body}\n\n</details>"
+        )
 
     return "\n\n".join(["## Summary of changes", headline, *sections])
 
