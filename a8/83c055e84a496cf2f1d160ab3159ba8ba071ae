@@ -1,0 +1,19 @@
+libs/text-splitters/Makefile
+  s_4eda31259d748d::t_893e0112c98fd3 52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a883c055e84a496cf2f1d160ab3159ba8ba071ae",
+  "prompts": {},
+  "sessions": {
+    "s_4eda31259d748d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f2ffd-0392-7a40-8277-bbfd14b90d60",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
