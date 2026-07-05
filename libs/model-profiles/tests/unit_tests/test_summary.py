@@ -166,6 +166,7 @@ def test_build_summary_headline() -> None:
     assert "1 added" in summary
     assert "1 removed" in summary
     assert "1 changed" in summary
+    assert "across 1 provider(s)." in summary
 
 
 def test_build_summary_no_changes() -> None:
@@ -308,7 +309,72 @@ def test_build_summary_multi_provider_sorted() -> None:
     diff_a = diff_profiles({}, {"a": {"name": "A"}})
     diff_z = diff_profiles({}, {"z": {"name": "Z"}})
     summary = build_summary({"zzz": diff_z, "aaa": diff_a})
-    assert summary.index("### aaa") < summary.index("### zzz")
+    assert summary.index("<summary>aaa</summary>") < summary.index(
+        "<summary>zzz</summary>"
+    )
+
+
+def test_build_summary_multi_provider_wraps_in_toggles() -> None:
+    """More than one changed provider gets each wrapped in a <details> toggle."""
+    diff_a = diff_profiles({}, {"a": {"name": "A"}})
+    diff_z = diff_profiles({}, {"z": {"name": "Z"}})
+    summary = build_summary({"aaa": diff_a, "zzz": diff_z})
+    assert summary.count("<details>") == 2
+    assert summary.count("</details>") == 2
+    assert "<summary>aaa</summary>" in summary
+    assert "<summary>zzz</summary>" in summary
+    # The "### provider" headings are stripped inside toggles.
+    assert "### aaa" not in summary
+    assert "### zzz" not in summary
+    # Headline counts only the wrapped providers.
+    assert "across 2 provider(s)." in summary
+    # Each toggle keeps its section body (guards against over-stripping): the
+    # per-provider "N added" marker and model rows survive, and each row lands
+    # after its own <summary> label rather than being dropped or misattributed.
+    assert summary.count("1 added") == 2
+    assert (
+        summary.index("<summary>aaa</summary>")
+        < summary.index("- `a`")
+        < summary.index("<summary>zzz</summary>")
+        < summary.index("- `z`")
+    )
+
+
+def test_build_summary_multi_provider_preserves_removed_and_changed() -> None:
+    """Multi-provider toggles keep removed and changed bodies, not just added."""
+    diff = diff_profiles(extract_profiles(_OLD_SOURCE), extract_profiles(_NEW_SOURCE))
+    other = diff_profiles({}, {"m": {"name": "M"}})
+    summary = build_summary({"openai": diff, "zzz": other})
+    assert summary.count("<details>") == 2
+    # The realistic diff's removed and changed phrases survive the heading strip.
+    assert "1 removed" in summary
+    assert "`old-model`" in summary
+    assert "max output tokens 4,096 → 16,384" in summary
+    # Changed content stays inside the openai toggle, before the next provider.
+    assert (
+        summary.index("<summary>openai</summary>")
+        < summary.index("max output tokens 4,096 → 16,384")
+        < summary.index("<summary>zzz</summary>")
+    )
+
+
+def test_build_summary_single_provider_no_toggle() -> None:
+    """A single changed provider renders as a plain section without toggles."""
+    diff = diff_profiles(extract_profiles(_OLD_SOURCE), extract_profiles(_NEW_SOURCE))
+    summary = build_summary({"openai": diff})
+    assert "<details>" not in summary
+    assert "### openai" in summary
+    assert "across 1 provider(s)." in summary
+
+
+def test_build_summary_empty_diff_filtered_from_count() -> None:
+    """Providers with empty diffs are excluded from the toggle/count decision."""
+    diff_a = diff_profiles({}, {"a": {"name": "A"}})
+    summary = build_summary({"aaa": diff_a, "empty": ProfileDiff()})
+    # Only one provider actually changed, so no toggles and the count is 1.
+    assert "<details>" not in summary
+    assert "### aaa" in summary
+    assert "across 1 provider(s)." in summary
 
 
 def test_summarize_removed_when_file_deleted(tmp_path: Path) -> None:
