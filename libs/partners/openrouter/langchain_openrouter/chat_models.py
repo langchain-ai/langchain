@@ -313,16 +313,19 @@ class ChatOpenRouter(BaseChatModel):
     plugins: list[dict[str, Any]] | None = None
     """Plugins configuration for OpenRouter."""
 
-    default_headers: dict[str, str] | None = None
+    default_headers: dict[str, str] | None = Field(default=None, exclude=True)
     """Additional HTTP headers to include on every request to OpenRouter.
 
     Headers set here become the underlying httpx client's default headers, so
     they are sent on every request to OpenRouter. Useful for upstream provider
     features that require custom headers — for example, xAI's `x-grok-conv-id`
-    for sticky-routing prompt cache hits, or provider-specific authentication,
-    region routing, or A/B test bucketing headers. Whether a given header is
+    for sticky-routing prompt cache hits, region routing, A/B test bucketing
+    headers, or provider-specific authentication. Whether a given header is
     forwarded to the upstream provider (versus consumed by OpenRouter itself)
     is determined by OpenRouter; consult its docs for which headers propagate.
+
+    Because these headers may contain credentials, they are excluded from
+    LangChain serialization.
 
     Example: `{"x-grok-conv-id": "session-abc123"}`
 

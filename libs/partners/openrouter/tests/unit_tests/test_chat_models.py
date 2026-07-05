@@ -711,6 +711,33 @@ class TestSerialization:
         serialized = dumps(model)
         assert "super-secret-key" not in serialized
 
+    def test_dumpd_excludes_default_headers(self) -> None:
+        """Test that default_headers are excluded from serialized kwargs."""
+        model = _make_model(
+            default_headers={
+                "Authorization": "Bearer provider-token",
+                "x-grok-conv-id": "session-abc-123",
+            }
+        )
+
+        serialized = dumpd(model)
+
+        assert "default_headers" not in serialized["kwargs"]
+
+    def test_dumps_does_not_leak_default_headers(self) -> None:
+        """Test that dumps output does not contain default header values."""
+        model = _make_model(
+            default_headers={
+                "Authorization": "Bearer provider-token",
+                "x-grok-conv-id": "session-abc-123",
+            }
+        )
+
+        serialized = dumps(model)
+
+        assert "provider-token" not in serialized
+        assert "session-abc-123" not in serialized
+
 
 # ===========================================================================
 # Mocked generate / stream tests
