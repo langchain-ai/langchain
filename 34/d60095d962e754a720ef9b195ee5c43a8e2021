@@ -1,0 +1,32 @@
+libs/partners/groq/langchain_groq/chat_models.py
+  s_7c8ad72270afbe::t_ed3cbc005ff0ea 100-115
+  s_7c8ad72270afbe::t_c7081175d028a6 560-567
+libs/partners/groq/tests/unit_tests/test_chat_models.py
+  s_7c8ad72270afbe::t_8e8a9fe4a9b322 1263
+  s_7c8ad72270afbe::t_535b74da8359b2 1160,1178,1192,1211
+  s_7c8ad72270afbe::t_81e576dc17d735 32
+  s_7c8ad72270afbe::t_7d5a522dfdf87c 1264-1324
+  s_7c8ad72270afbe::t_4521849a81eac6 1114-1116,1119-1122,1127,1130-1132,1138-1142
+  s_7c8ad72270afbe::t_b93a71a531c102 1143-1144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "34d60095d962e754a720ef9b195ee5c43a8e2021",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  },
+  "sessions": {
+    "s_7c8ad72270afbe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0144c895-26f5-4b08-ae87-d1ca3aeb156b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
