@@ -325,7 +325,9 @@ def _convert_chunk_to_message_chunk(
             try:
                 tool_call_chunks = []
                 for raw_tool_call in raw_tool_calls:
-                    if not raw_tool_call.get("index") and not raw_tool_call.get("id"):
+                    if raw_tool_call.get("index") is None and not raw_tool_call.get(
+                        "id"
+                    ):
                         tool_call_id = uuid.uuid4().hex[:]
                     else:
                         tool_call_id = raw_tool_call.get("id")

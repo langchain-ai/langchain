@@ -690,6 +690,60 @@ def test__convert_chunk_to_message_chunk_with_citations() -> None:
     assert str(full.text) == "The answer is 42"
 
 
+def test__convert_chunk_to_message_chunk_preserves_tool_call_index_zero() -> None:
+    """Streaming tool call chunks with index 0 should merge by index."""
+    name_chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "tool_calls": [
+                        {
+                            "index": 0,
+                            "function": {"name": "search", "arguments": ""},
+                        }
+                    ]
+                },
+                "finish_reason": None,
+            }
+        ],
+    }
+    args_chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "tool_calls": [
+                        {
+                            "index": 0,
+                            "function": {"arguments": '{"q": "weather"}'},
+                        }
+                    ]
+                },
+                "finish_reason": None,
+            }
+        ],
+    }
+
+    result_1, index, index_type = _convert_chunk_to_message_chunk(
+        name_chunk, AIMessageChunk, -1, "", None
+    )
+    result_2, _, _ = _convert_chunk_to_message_chunk(
+        args_chunk, AIMessageChunk, index, index_type, None
+    )
+
+    full = result_1 + result_2
+
+    assert isinstance(full, AIMessageChunk)
+    assert full.tool_calls == [
+        {
+            "name": "search",
+            "args": {"q": "weather"},
+            "id": None,
+            "type": "tool_call",
+        }
+    ]
+    assert full.invalid_tool_calls == []
+
+
 def test_citation_round_trip() -> None:
     """Round-trip through v1 preserves text and reference metadata."""
     from langchain_mistralai._compat import (
