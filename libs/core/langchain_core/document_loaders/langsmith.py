@@ -147,7 +147,8 @@ def _get_content_from_inputs(inputs: Any, content_key: Sequence[str]) -> Any:
         The extracted content value.
 
     Raises:
-        KeyError: If the requested `content_key` path cannot be resolved.
+        KeyError: If a key in `content_key` is missing, or an intermediate value
+            along the path is not a mapping.
     """
     content = inputs
     full_path = ".".join(content_key)

@@ -1,4 +1,5 @@
 import datetime
+import json
 import uuid
 from unittest.mock import MagicMock, patch
 
@@ -19,6 +20,15 @@ def test_init_with_client_and_client_kwargs_raises() -> None:
 
     with pytest.raises(ValueError, match="Received both `client` and `client_kwargs`"):
         LangSmithLoader(client=client, api_key="secret")
+
+
+def test_init_with_client_only() -> None:
+    """A bare `client` (no `client_kwargs`) should be accepted."""
+    client = MagicMock()
+
+    loader = LangSmithLoader(client=client)
+
+    assert loader._client is client
 
 
 EXAMPLES = [
@@ -68,6 +78,17 @@ def test_lazy_load() -> None:
         )
     actual = list(loader.lazy_load())
     assert expected == actual
+
+
+@patch("langsmith.Client.list_examples", MagicMock(return_value=iter(EXAMPLES[:1])))
+def test_lazy_load_with_empty_content_key_returns_whole_inputs() -> None:
+    """An empty `content_key` (the default) yields the full inputs payload."""
+    loader = LangSmithLoader(api_key="dummy", dataset_id="mock")
+
+    docs = list(loader.lazy_load())
+
+    assert len(docs) == 1
+    assert docs[0].page_content == json.dumps({"first": {"second": "foo"}}, indent=2)
 
 
 @patch("langsmith.Client.list_examples", MagicMock(return_value=iter(EXAMPLES[:1])))
