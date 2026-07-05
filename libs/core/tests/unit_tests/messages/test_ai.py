@@ -211,6 +211,79 @@ def test_init_tool_calls() -> None:
     msg.tool_calls = [{"name": "bar", "args": {"c": "d"}, "id": "def"}]
 
 
+def test_streaming_tool_call_empty_args_not_fired_prematurely() -> None:
+    """Fragmented SSE providers (e.g. OpenRouter, deepseek-v3.2) send the first
+    tool-call chunk with args='' before subsequent chunks carry the actual JSON.
+    The accumulator must NOT create a tool_call with args={} from that empty-
+    string fragment — doing so causes tools to be invoked with missing arguments
+    before all argument chunks have arrived (issue #35514).
+    """
+    # Simulate provider behaviour: first chunk carries name/id but args=''
+    chunk1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name="get_weather", args="", id="call_abc", index=0),
+        ],
+    )
+
+    # No tool_calls on the first chunk — args haven't arrived yet
+    assert chunk1.tool_calls == [], (
+        "tool_calls must be empty when first SSE chunk has args='' "
+        "(premature tool invocation with {} args)"
+    )
+
+    # Second chunk carries the actual argument JSON (fragmented)
+    chunk2 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name=None, args='{"city": "London"}', id=None, index=0
+            ),
+        ],
+    )
+
+    # Third chunk is the end-of-stream sentinel
+    chunk3 = AIMessageChunk(content="", chunk_position="last")
+
+    # Accumulate all chunks as BaseCumulativeTransformOutputParser does
+    accumulated = chunk1 + chunk2 + chunk3
+
+    assert accumulated.chunk_position == "last"
+    assert len(accumulated.tool_calls) == 1
+    tc = accumulated.tool_calls[0]
+    assert tc["name"] == "get_weather"
+    assert tc["id"] == "call_abc"
+    assert tc["args"] == {"city": "London"}, (
+        "Full args must be present in the accumulated message"
+    )
+
+
+def test_streaming_tool_call_zero_arg_tool_fires_at_stream_end() -> None:
+    """A tool that genuinely takes no arguments may stream args='' across all
+    its chunks. The tool call must still be created (with args={}) once the
+    stream is complete (chunk_position='last'), even though args never exceeded
+    the empty string.
+    """
+    chunk_zero_arg = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name="get_time", args="", id="call_xyz", index=0),
+        ],
+    )
+    # Mid-stream: no tool call yet
+    assert chunk_zero_arg.tool_calls == []
+
+    # Stream ends
+    sentinel = AIMessageChunk(content="", chunk_position="last")
+    accumulated = chunk_zero_arg + sentinel
+
+    assert accumulated.chunk_position == "last"
+    assert len(accumulated.tool_calls) == 1
+    tc = accumulated.tool_calls[0]
+    assert tc["name"] == "get_time"
+    assert tc["args"] == {}, "Zero-arg tool must fire with args={} at stream end"
+
+
 def test_content_blocks() -> None:
     message = AIMessage(
         "",

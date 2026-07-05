@@ -554,7 +554,22 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         for chunk in self.tool_call_chunks:
             try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
+                args_str = chunk["args"]
+                if args_str == "" and self.chunk_position != "last":
+                    # An empty-string args field during streaming means the
+                    # provider has not yet sent any argument data for this tool
+                    # call — upstream SSE implementations (e.g. OpenRouter,
+                    # deepseek-v3.2) commonly fragment tool-call arguments
+                    # across multiple chunks, emitting args='' in the first
+                    # chunk before the actual JSON arrives in subsequent ones.
+                    # Parsing '' as {} here and populating tool_calls would
+                    # cause the tool to be invoked prematurely with empty
+                    # arguments before all argument chunks have been received.
+                    # We skip the chunk now; once the full argument string is
+                    # accumulated (or the stream ends with chunk_position="last")
+                    # the args will be parsed correctly on the next validator run.
+                    continue
+                args_ = parse_partial_json(args_str) if args_str else {}
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
