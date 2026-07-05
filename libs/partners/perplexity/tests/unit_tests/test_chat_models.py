@@ -229,7 +229,7 @@ def test_metadata_versions() -> None:
 
     llm = ChatPerplexity(model="test")
     assert llm.metadata is not None
-    versions = llm.metadata["versions"]
+    versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-perplexity" in versions
     assert versions["langchain-perplexity"] == __version__
@@ -241,7 +241,7 @@ def test_profile() -> None:
 
 
 def test_convert_tool_message_to_dict() -> None:
-    """A ToolMessage serializes to a ``tool``-role dict so tool results can be
+    """A ToolMessage serializes to a `tool`-role dict so tool results can be
     fed back to the model in a client-side tool-calling loop."""
     llm = ChatPerplexity(model="test", api_key="test")
     message = ToolMessage(content="result text", tool_call_id="call_123")
@@ -253,7 +253,7 @@ def test_convert_tool_message_to_dict() -> None:
 
 
 def test_convert_ai_message_with_tool_calls_to_dict() -> None:
-    """``AIMessage.tool_calls`` are serialized rather than dropped."""
+    """`AIMessage.tool_calls` are serialized rather than dropped."""
     llm = ChatPerplexity(model="test", api_key="test")
     message = AIMessage(
         content="",
@@ -532,7 +532,7 @@ def test_translate_responses_input_keeps_assistant_text_with_tool_calls() -> Non
 
 def test_to_responses_payload_flattens_tools_and_translates_messages() -> None:
     """End-to-end: `_to_responses_payload` flattens tools and translates tool turns."""
-    llm = ChatPerplexity(model="openai/gpt-5.5", api_key="test", use_responses_api=True)
+    llm = ChatPerplexity(model="openai/gpt-5", api_key="test", use_responses_api=True)
     message_dicts: list[dict[str, Any]] = [
         {"role": "user", "content": "weather in Paris?"},
         {
@@ -606,7 +606,7 @@ def test_convert_responses_stream_event_aggregates_multiple_tool_calls() -> None
     `call_id`/`id` are intentionally omitted so that `index` (derived from each
     event's `output_index`) is the *only* thing separating the two calls. This
     keeps the test sensitive to the indexing logic: with a hardcoded
-    ``index=0`` the chunks would merge into one corrupted call. Real streams
+    `index=0` the chunks would merge into one corrupted call. Real streams
     always carry a unique `call_id`, which would keep the calls distinct on its
     own, so this payload isolates the mechanism rather than mirroring the wire
     format.

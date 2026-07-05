@@ -26,6 +26,14 @@ from langchain_core.tracers.root_listeners import (
 )
 from tests.unit_tests.pydantic_utils import _schema
 
+# This module is the compatibility test suite for `RunnableWithMessageHistory`,
+# so constructing that deprecated class is the behavior under test.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:RunnableWithMessageHistory is deprecated. Use LangGraph's built-in "
+    "persistence instead.:"
+    "langchain_core._api.deprecation.LangChainDeprecationWarning"
+)
+
 
 def test_interfaces() -> None:
     history = InMemoryChatMessageHistory()

@@ -3,6 +3,7 @@
 import inspect
 import json
 import logging
+import pickle
 import sys
 import textwrap
 import threading
@@ -40,6 +41,7 @@ from langchain_core.messages import ToolCall, ToolMessage
 from langchain_core.messages.tool import ToolOutputMixin
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
+    Runnable,
     RunnableConfig,
     RunnableLambda,
     ensure_config,
@@ -49,6 +51,7 @@ from langchain_core.tools import (
     StructuredTool,
     Tool,
     ToolException,
+    convert_runnable_to_tool,
     tool,
 )
 from langchain_core.tools.base import (
@@ -68,11 +71,17 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import (
+    TypeBaseModel,
     _create_subset_model,
     create_model_v2,
+    model_json_schema,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
-from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
+from tests.unit_tests.pydantic_utils import (
+    _normalize_schema,
+    _schema,
+    skip_if_no_pydantic_v1,
+)
 
 try:
     from langgraph.prebuilt import ToolRuntime  # type: ignore[import-not-found]
@@ -91,7 +100,7 @@ def _get_tool_call_json_schema(tool: BaseTool) -> dict[str, Any]:
         return tool_schema.model_json_schema()
     if issubclass(tool_schema, BaseModelV1):
         return tool_schema.schema()
-    return {}
+    return {}  # type: ignore[unreachable]
 
 
 def test_unnamed_decorator() -> None:
@@ -844,7 +853,12 @@ def test_exception_handling_callable_message_content_blocks() -> None:
 
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = tool_.invoke(
-        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+        {
+            "type": "tool_call",
+            "args": {},
+            "name": "exception",
+            "id": "call_1",
+        }
     )
 
     assert isinstance(actual, ToolMessage)
@@ -861,7 +875,12 @@ def test_exception_handling_callable_message_content_blocks_sequence() -> None:
 
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = tool_.invoke(
-        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+        {
+            "type": "tool_call",
+            "args": {},
+            "name": "exception",
+            "id": "call_1",
+        }
     )
 
     assert isinstance(actual, ToolMessage)
@@ -878,7 +897,12 @@ def test_exception_handling_callable_invalid_blocks_stringified() -> None:
 
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = tool_.invoke(
-        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+        {
+            "type": "tool_call",
+            "args": {},
+            "name": "exception",
+            "id": "call_1",
+        }
     )
 
     assert isinstance(actual, ToolMessage)
@@ -926,7 +950,12 @@ async def test_async_exception_handling_callable_message_content_blocks() -> Non
 
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = await tool_.ainvoke(
-        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+        {
+            "type": "tool_call",
+            "args": {},
+            "name": "exception",
+            "id": "call_1",
+        }
     )
 
     assert isinstance(actual, ToolMessage)
@@ -945,7 +974,12 @@ async def test_async_exception_handling_callable_message_content_blocks_sequence
 
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = await tool_.ainvoke(
-        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+        {
+            "type": "tool_call",
+            "args": {},
+            "name": "exception",
+            "id": "call_1",
+        }
     )
 
     assert isinstance(actual, ToolMessage)
@@ -1964,7 +1998,7 @@ def test_tool_inherited_injected_arg() -> None:
             return y
 
     tool_ = InheritedInjectedArgTool()
-    assert tool_.get_input_schema().model_json_schema() == {
+    assert tool_.get_input_jsonschema() == {
         "title": "FooSchema",  # Matches the title from the provided schema
         "description": "foo.",
         "type": "object",
@@ -2084,13 +2118,7 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
     }
 
     input_schema = tool.get_input_schema()
-    if issubclass(input_schema, BaseModel):
-        input_json_schema = input_schema.model_json_schema()
-    elif issubclass(input_schema, BaseModelV1):
-        input_json_schema = input_schema.schema()
-    else:
-        msg = "Unknown input schema type"
-        raise TypeError(msg)
+    input_json_schema = model_json_schema(input_schema)
 
     assert input_json_schema == {
         "properties": {
@@ -2138,7 +2166,7 @@ def test_args_schema_explicitly_typed() -> None:
 
     tool = SomeTool(name="some_tool", description="some description")
 
-    assert tool.get_input_schema().model_json_schema() == {
+    assert tool.get_input_jsonschema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -2160,6 +2188,92 @@ def test_args_schema_explicitly_typed() -> None:
     }
 
 
+@skip_if_no_pydantic_v1
+def test_get_input_jsonschema_v1_args_schema() -> None:
+    """`get_input_jsonschema()` works for a tool with a Pydantic v1 `args_schema`.
+
+    Regression test: previously this raised `AttributeError` because a Pydantic
+    v1 model does not implement `model_json_schema`.
+    """
+
+    class FooV1(BaseModelV1):
+        a: int
+        b: str
+
+    class SomeTool(BaseTool):
+        args_schema: type[BaseModelV1] = FooV1
+
+        @override
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(name="some_tool", description="some description", args_schema=FooV1)
+
+    assert tool.get_input_jsonschema()["properties"] == {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "string"},
+    }
+
+
+@skip_if_no_pydantic_v1
+def test_v1_args_schema_excludes_injected_args() -> None:
+    """A Pydantic v1 `args_schema` must not expose injected args via `.args`.
+
+    Injected arguments are supplied by the framework rather than the model, so
+    they must be hidden from the tool-call schema regardless of the `args_schema`
+    Pydantic version. Previously a v1 `args_schema` bypassed `tool_call_schema`
+    and leaked injected arguments into `.args`.
+    """
+
+    class FooV1(BaseModelV1):
+        a: int
+        injected: Annotated[str, InjectedToolArg()] = "default"
+
+    class SomeTool(BaseTool):
+        args_schema: type[BaseModelV1] = FooV1
+
+        @override
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return "foo"
+
+    tool = SomeTool(name="some_tool", description="some description", args_schema=FooV1)
+
+    assert set(tool.args) == {"a"}
+    assert "injected" not in tool.args
+
+
+@skip_if_no_pydantic_v1
+def test_convert_runnable_to_tool_v1_input_schema() -> None:
+    """`convert_runnable_to_tool` works for a runnable with a v1 input schema.
+
+    Regression test: deriving the tool schema from the runnable previously
+    assumed a Pydantic v2 input schema and raised on v1.
+    """
+
+    class FooV1(BaseModelV1):
+        a: int
+
+    class V1InputRunnable(Runnable[Any, Any]):
+        @override
+        def get_input_schema(
+            self, config: RunnableConfig | None = None
+        ) -> TypeBaseModel:
+            return FooV1
+
+        @override
+        def invoke(
+            self,
+            input: Any,
+            config: RunnableConfig | None = None,
+            **kwargs: Any,
+        ) -> Any:
+            return input
+
+    tool = convert_runnable_to_tool(V1InputRunnable())
+
+    assert set(tool.args) == {"a"}
+
+
 @pytest.mark.parametrize("pydantic_model", TEST_MODELS)
 def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -> None:
     """This should test that one can type the args schema as a Pydantic model."""
@@ -2175,14 +2289,9 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
 
     assert foo_tool.invoke({"a": 5, "b": "hello"}) == "foo"
 
-    args_schema = cast("type[BaseModel]", foo_tool.args_schema)
-    if issubclass(args_schema, BaseModel):
-        args_json_schema = args_schema.model_json_schema()
-    elif issubclass(args_schema, BaseModelV1):
-        args_json_schema = args_schema.schema()
-    else:
-        msg = "Unknown input schema type"
-        raise TypeError(msg)
+    args_schema = cast("TypeBaseModel", foo_tool.args_schema)
+    args_json_schema = model_json_schema(args_schema)
+
     assert args_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2194,13 +2303,8 @@ def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -
     }
 
     input_schema = foo_tool.get_input_schema()
-    if issubclass(input_schema, BaseModel):
-        input_json_schema = input_schema.model_json_schema()
-    elif issubclass(input_schema, BaseModelV1):
-        input_json_schema = input_schema.schema()
-    else:
-        msg = "Unknown input schema type"
-        raise TypeError(msg)
+    input_json_schema = model_json_schema(input_schema)
+
     assert input_json_schema == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
@@ -2271,20 +2375,21 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     if use_v1_namespace:
         if sys.version_info >= (3, 14):
             pytest.skip("pydantic.v1 namespace not supported with Python 3.14+")
+        else:
 
-        class ModelA(BaseModelV1, Generic[A], extra="allow"):
-            a: A
+            class ModelA(BaseModelV1, Generic[A], extra="allow"):
+                a: A
 
-        class EmptyModel(BaseModelV1, Generic[A], extra="allow"):
-            pass
+            class EmptyModel(BaseModelV1, Generic[A], extra="allow"):
+                pass
 
     else:
 
-        class ModelA(BaseModel, Generic[A]):  # type: ignore[no-redef]
+        class ModelA(BaseModel, Generic[A]):  # type: ignore[no-redef, unused-ignore]
             a: A
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
-        class EmptyModel(BaseModel, Generic[A]):  # type: ignore[no-redef]
+        class EmptyModel(BaseModel, Generic[A]):  # type: ignore[no-redef, unused-ignore]
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     class ModelB(ModelA[str]):
@@ -2784,7 +2889,7 @@ def test_structured_tool_args_schema_dict(caplog: pytest.LogCaptureFixture) -> N
     assert _get_tool_call_json_schema(tool) == args_schema
     # test that the input schema is the same as the parent (Runnable) input schema
     assert (
-        tool.get_input_schema().model_json_schema()
+        tool.get_input_jsonschema()
         == create_model_v2(
             tool.get_name("Input"),
             root=tool.InputType,
@@ -2822,7 +2927,7 @@ def test_simple_tool_args_schema_dict() -> None:
     assert _get_tool_call_json_schema(tool) == args_schema
     # test that the input schema is the same as the parent (Runnable) input schema
     assert (
-        tool.get_input_schema().model_json_schema()
+        tool.get_input_jsonschema()
         == create_model_v2(
             tool.get_name("Input"),
             root=tool.InputType,
@@ -3840,7 +3945,7 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
     """End-to-end: a tool returning a list of ToolOutputMixin via invoke."""
 
     @tool
-    def multi(x: int) -> list:
+    def multi(x: int) -> list[ToolMessage]:
         """Return multiple outputs."""
         return [
             ToolMessage(f"result-{i}", tool_call_id=f"sub-{i}", name="multi")
@@ -3848,8 +3953,113 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
         ]
 
     result = multi.invoke(
-        {"type": "tool_call", "args": {"x": 3}, "name": "multi", "id": "outer"}
+        {
+            "type": "tool_call",
+            "args": {"x": 3},
+            "name": "multi",
+            "id": "outer",
+        }
     )
     assert isinstance(result, list)
     assert len(result) == 3
     assert all(isinstance(m, ToolMessage) for m in result)
+
+
+class _MemoSchemaInput(BaseModel):
+    query: str = Field(description="Query to run.")
+
+
+class _MemoSchemaTool(BaseTool):
+    """Module-level tool so pickling by class reference works."""
+
+    name: str = "memo_schema_tool"
+    description: str = "Tool for tool_call_schema memoization tests."
+    args_schema: type[BaseModel] = _MemoSchemaInput
+
+    def _run(self, query: str) -> str:
+        return query
+
+
+def test_tool_call_schema_memoized_across_accesses() -> None:
+    tool = _MemoSchemaTool()
+    first = tool.tool_call_schema
+    assert tool.tool_call_schema is first
+
+
+def test_tool_call_schema_memo_invalidated_on_reassignment() -> None:
+    tool = _MemoSchemaTool()
+    first = tool.tool_call_schema
+
+    tool.description = "Updated description."
+    second = tool.tool_call_schema
+    assert second is not first
+    assert (
+        cast("type[BaseModel]", second).model_json_schema()["description"]
+        == "Updated description."
+    )
+
+    class OtherInput(BaseModel):
+        other_field: str = Field(description="A different field.")
+
+    tool.args_schema = OtherInput
+    third = tool.tool_call_schema
+    assert third is not second
+    assert (
+        "other_field"
+        in cast("type[BaseModel]", third).model_json_schema()["properties"]
+    )
+
+
+def test_tool_picklable_after_tool_call_schema_access() -> None:
+    """The memoized schema is a dynamic class and must not leak into pickles."""
+    tool = _MemoSchemaTool()
+    pickle.loads(pickle.dumps(tool))
+
+    schema = tool.tool_call_schema
+    restored = pickle.loads(pickle.dumps(tool))
+    restored_schema = cast("type[BaseModel]", restored.tool_call_schema)
+    assert restored_schema.model_json_schema()["title"] == "memo_schema_tool"
+    # Pickling must not clear the live instance's memo.
+    assert tool.tool_call_schema is schema
+
+
+def test_tool_call_schema_memo_not_stale_after_model_copy() -> None:
+    """`model_copy(update=...)` bypasses `__setattr__`; the memo must still clear."""
+    tool = _MemoSchemaTool()
+    original_schema = tool.tool_call_schema
+
+    copied = tool.model_copy(update={"description": "Copied description."})
+    copied_schema = cast("type[BaseModel]", copied.tool_call_schema)
+    assert copied_schema.model_json_schema()["description"] == "Copied description."
+
+    # The original keeps its memo and is unaffected by the copy.
+    assert tool.tool_call_schema is original_schema
+
+
+def test_tool_call_schema_json_schema_cached() -> None:
+    """`model_json_schema()` is cached on the memoized subset model class."""
+    tool = _MemoSchemaTool()
+    schema_cls = cast("type[BaseModel]", tool.tool_call_schema)
+
+    first = schema_cls.model_json_schema()
+    second = schema_cls.model_json_schema()
+    assert first is second  # same dict object, not a regenerate
+
+    # Non-default arguments bypass the cache and delegate to pydantic.
+    by_alias_off = schema_cls.model_json_schema(by_alias=False)
+    assert by_alias_off is not first
+
+
+def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> None:
+    """Reassigning an input field creates a fresh class with a fresh cache."""
+    tool = _MemoSchemaTool()
+    old_cls = cast("type[BaseModel]", tool.tool_call_schema)
+    old_schema = old_cls.model_json_schema()
+
+    tool.description = "New description for cache test."
+    new_cls = cast("type[BaseModel]", tool.tool_call_schema)
+    assert new_cls is not old_cls
+
+    new_schema = new_cls.model_json_schema()
+    assert new_schema is not old_schema
+    assert new_schema["description"] == "New description for cache test."

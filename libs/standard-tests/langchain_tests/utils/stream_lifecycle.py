@@ -29,7 +29,12 @@ if TYPE_CHECKING:
 
 
 _DELTAABLE_TYPES = frozenset(
-    {"text", "reasoning", "tool_call_chunk", "server_tool_call_chunk"}
+    {
+        "text",
+        "reasoning",
+        "tool_call_chunk",
+        "server_tool_call_chunk",
+    }
 )
 
 

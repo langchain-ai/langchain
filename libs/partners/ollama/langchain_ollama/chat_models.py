@@ -892,13 +892,13 @@ class ChatOllama(BaseChatModel):
         self,
         response_format: dict[str, Any],
     ) -> dict[str, Any] | None:
-        """Extract the raw JSON schema from an OpenAI ``json_schema`` envelope.
+        """Extract the raw JSON schema from an OpenAI `json_schema` envelope.
 
         Args:
-            response_format: A dict with ``type: "json_schema"``.
+            response_format: A dict with `type: "json_schema"`.
 
         Returns:
-            The raw JSON schema dict, or ``None`` if extraction fails.
+            The raw JSON schema dict, or `None` if extraction fails.
         """
         json_schema_block = response_format.get("json_schema")
         if not isinstance(json_schema_block, dict):

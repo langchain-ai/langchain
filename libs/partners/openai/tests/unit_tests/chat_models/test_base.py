@@ -943,6 +943,37 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
     )
 
 
+def test_bind_tools_response_format_defaults_strict() -> None:
+    """Test that strict defaults to True when response_format is provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(
+        tools=[GenerateUsername],
+        response_format=MakeASandwich,
+    )
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert tools[0]["function"]["strict"] is True
+
+
+def test_bind_tools_response_format_respects_strict_false() -> None:
+    """Test that strict=False is respected even when response_format is provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(
+        tools=[GenerateUsername],
+        response_format=MakeASandwich,
+        strict=False,
+    )
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert tools[0]["function"]["strict"] is False
+
+
+def test_bind_tools_no_response_format_keeps_strict_none() -> None:
+    """Test that strict stays None when response_format is not provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(tools=[GenerateUsername])
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert "strict" not in tools[0]["function"]
+
+
 @pytest.mark.parametrize(
     "schema", [GenerateUsername, GenerateUsername.model_json_schema()]
 )
@@ -1089,7 +1120,8 @@ def test_schema_from_with_structured_output(schema: type) -> None:
         "title": schema.__name__,
         "type": "object",
     }
-    actual = structured_llm.get_output_schema().model_json_schema()
+    output_schema = cast("type[BaseModel]", structured_llm.get_output_schema())
+    actual = output_schema.model_json_schema()
     assert actual == expected
 
 
@@ -1379,6 +1411,39 @@ def test_minimal_reasoning_effort_payload(
         else:
             # max_tokens gets converted to max_completion_tokens in non-responses API
             assert payload["max_completion_tokens"] == 100
+
+
+@pytest.mark.parametrize("via_invoke", [False, True])
+def test_responses_api_payload_excludes_stop(via_invoke: bool) -> None:
+    """The Responses API rejects `stop`, so it must be dropped from the payload.
+
+    Covers `stop` supplied both at construction time and at invoke time, since
+    they reach the payload through different code paths.
+    """
+    if via_invoke:
+        llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+        payload = llm._get_request_payload(
+            [HumanMessage(content="Hello")], stop=["END"]
+        )
+    else:
+        llm = ChatOpenAI(  # type: ignore[call-arg]
+            model=OPENAI_TEST_MODEL, stop=["END"], use_responses_api=True
+        )
+        payload = llm._get_request_payload([HumanMessage(content="Hello")])
+
+    assert "stop" not in payload
+
+
+def test_chat_completions_payload_includes_stop() -> None:
+    """`stop` must be preserved for the Chat Completions API, which supports it.
+
+    Guards against an over-broad change dropping `stop` outside the Responses API.
+    """
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, stop=["END"])  # type: ignore[call-arg]
+
+    payload = llm._get_request_payload([HumanMessage(content="Hello")])
+
+    assert payload["stop"] == ["END"]
 
 
 def test_output_version_compat() -> None:
@@ -2704,6 +2769,103 @@ def test__construct_responses_api_input_human_message_with_image_url_conversion(
     assert result[0]["content"][1]["type"] == "input_image"
     assert result[0]["content"][1]["image_url"] == "https://example.com/image.jpg"
     assert result[0]["content"][1]["detail"] == "high"
+
+
+def test__construct_responses_api_input_store_false_replays_stateless_history() -> None:
+    ai_message = AIMessage(
+        content=[
+            {"type": "reasoning", "id": "rs_123", "summary": []},
+            {
+                "type": "reasoning",
+                "id": "rs_456",
+                "summary": [],
+                "encrypted_content": "",
+            },
+            {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+        ],
+        response_metadata={"id": "resp_123"},
+    )
+
+    result = _construct_responses_api_input([ai_message], store=False)
+
+    assert result == [
+        {
+            "type": "reasoning",
+            "id": "rs_456",
+            "summary": [],
+            "encrypted_content": "",
+        },
+        {
+            "type": "message",
+            "content": [
+                {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+            ],
+            "role": "assistant",
+        },
+    ]
+
+
+@pytest.mark.parametrize("store", [None, True])
+def test__construct_responses_api_input_store_enabled_keeps_item_ids(
+    store: bool | None,
+) -> None:
+    ai_message = AIMessage(
+        content=[
+            {"type": "reasoning", "id": "rs_123", "summary": []},
+            {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+        ],
+        response_metadata={"id": "resp_123"},
+    )
+
+    result = _construct_responses_api_input([ai_message], store=store)
+
+    assert result == [
+        {"type": "reasoning", "id": "rs_123", "summary": []},
+        {
+            "type": "message",
+            "content": [
+                {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+            ],
+            "role": "assistant",
+            "id": "msg_123",
+        },
+    ]
+
+
+def test__construct_responses_api_input_store_false_keeps_full_tool_call_items() -> (
+    None
+):
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "function_call",
+                "name": "get_weather",
+                "arguments": '{"location": "San Francisco"}',
+                "call_id": "call_123",
+                "id": "fc_456",
+            }
+        ],
+        tool_calls=[
+            {
+                "id": "call_123",
+                "name": "get_weather",
+                "args": {"location": "San Francisco"},
+                "type": "tool_call",
+            }
+        ],
+    )
+
+    result = _construct_responses_api_input([ai_message], store=False)
+
+    assert result == [
+        {
+            "type": "function_call",
+            "name": "get_weather",
+            "arguments": '{"location": "San Francisco"}',
+            "call_id": "call_123",
+            "id": "fc_456",
+        }
+    ]
 
 
 def test__construct_responses_api_input_ai_message_with_tool_calls() -> None:
@@ -4081,7 +4243,7 @@ def test_metadata_versions() -> None:
     """Test that metadata reports the correct version info."""
     llm = ChatOpenAI()
     assert llm.metadata is not None
-    versions = llm.metadata["versions"]
+    versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-openai" in versions
 

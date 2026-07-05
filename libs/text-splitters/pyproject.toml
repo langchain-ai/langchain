@@ -25,7 +25,7 @@ classifiers = [
 version = "1.1.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.4.6,<2.0.0",
+    "langchain-core>=1.4.7,<2.0.0",
 ]
 
 [project.urls]
@@ -43,11 +43,14 @@ lint = [
     "ruff>=0.15.0,<0.16.0",
 ]
 typing = [
-    "mypy>=2.1.0,<2.2.0",
+    "ty>=0.0.56,<0.1.0",
     "lxml-stubs>=0.5.1,<1.0.0",
     "types-requests>=2.31.0.20240218,<3.0.0.0",
+    "spacy>=3.8.13,<4.0.0",
+    "nltk>=3.9.1,<4.0.0",
+    "transformers>=4.51.3,<6.0.0",
+    "sentence-transformers>=5.3.0,<6.0.0",
     "tiktoken>=0.8.0,<1.0.0",
-    "beautifulsoup4>=4.13.5,<5.0.0",
 ]
 dev = [
     "jupyter<2.0.0,>=1.0.0",
@@ -77,15 +80,11 @@ constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 langchain-core = { path = "../core", editable = true }
 en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
 
-[tool.mypy]
-plugins = ["pydantic.mypy"]
-strict = true
-enable_error_code = "deprecated"
-warn_unreachable = true
+[tool.ty.rules]
+all = "error"
 
-[[tool.mypy.overrides]]
-module = ["konlpy", "nltk", "transformers", "transformers.*",]
-ignore_missing_imports = true
+[tool.ty.analysis]
+allowed-unresolved-imports = ["konlpy.**"]
 
 [tool.ruff.format]
 docstring-code-format = true

@@ -207,7 +207,7 @@ def test_apply_patch() -> None:
 
     apply_patch is a client-executed tool: the model proposes a file operation
     via an `apply_patch_call` block, the client applies it, and the result is
-    returned as an ``apply_patch_call_output`` block. Requires a model that
+    returned as an `apply_patch_call_output` block. Requires a model that
     supports the tool.
     """
     prompt = "Create a new file named hello.txt containing the line: hello world"
@@ -511,7 +511,9 @@ def test_parsed_strict() -> None:
 
     schema = _convert_to_openai_response_format(Joke)
     invalid_schema = cast(dict, _convert_to_openai_response_format(Joke, strict=True))
-    invalid_schema["json_schema"]["schema"]["required"] = ["setup"]  # make invalid
+    # Intentionally make the strict schema invalid. OpenAI requires every property
+    # to appear in `required`; omitting `punchline` should produce a BadRequestError.
+    invalid_schema["json_schema"]["schema"]["required"] = ["setup"]
 
     # Test not strict
     response = llm.invoke("Tell me a joke", response_format=schema)

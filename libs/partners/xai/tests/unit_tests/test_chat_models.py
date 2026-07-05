@@ -84,6 +84,52 @@ def test_chat_xai_api_base_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert llm.xai_api_base == "http://env.example.test/v1"
 
 
+@pytest.mark.parametrize(
+    "model",
+    [
+        # Profiled reasoning models (`reasoning_output=True`).
+        "grok-4.3",
+        "grok-4.20-0309-reasoning",
+        # Unprofiled families that the live API rejects `stop` on. `grok-4`
+        # base and `grok-4-fast-non-reasoning` lack the substring "reasoning"
+        # yet still reject `stop`; `grok-code-fast` is a separate family.
+        "grok-3",
+        "grok-3-mini",
+        "grok-4",
+        "grok-4-0709",
+        "grok-4-fast-reasoning",
+        "grok-4-fast-non-reasoning",
+        "grok-code-fast-1",
+    ],
+)
+def test_reasoning_model_payload_drops_stop(model: str) -> None:
+    llm = ChatXAI(
+        model=model,
+        api_key=SecretStr("test-api-key"),
+        stop_sequences=["END"],
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert "stop" not in payload
+
+
+def test_non_reasoning_model_payload_keeps_stop() -> None:
+    # `grok-4.20-0309-non-reasoning` is profiled with `reasoning_output=False`
+    # and the live API accepts `stop` for it, even though its name contains
+    # "non-reasoning" like the unprofiled `grok-4-fast-non-reasoning` that does
+    # not. The profile must take precedence over the name-based fallback.
+    llm = ChatXAI(
+        model="grok-4.20-0309-non-reasoning",
+        api_key=SecretStr("test-api-key"),
+        stop_sequences=["END"],
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert payload["stop"] == ["END"]
+
+
 def test_function_dict_to_message_function_message() -> None:
     content = json.dumps({"result": "Example #1"})
     name = "test_function"
@@ -167,7 +213,7 @@ def test_metadata_versions() -> None:
     """Test that metadata reports the correct version info."""
     llm = ChatXAI(model=MODEL_NAME)
     assert llm.metadata is not None
-    versions = llm.metadata["versions"]
+    versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-xai" in versions
     assert "langchain-openai" in versions

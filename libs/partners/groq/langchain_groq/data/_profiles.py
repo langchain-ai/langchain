@@ -248,7 +248,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "name": "Safety GPT OSS 20B",
         "status": "beta",
         "release_date": "2025-10-29",
-        "last_updated": "2025-10-29",
+        "last_updated": "2026-06-29",
         "open_weights": True,
         "max_input_tokens": 131072,
         "max_output_tokens": 65536,

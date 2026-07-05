@@ -101,7 +101,7 @@ AnyMessage = Annotated[
 """A type representing any defined `Message` or `MessageChunk` type."""
 
 
-def _has_base64_data(block: dict) -> bool:
+def _has_base64_data(block: dict[str, Any]) -> bool:
     """Check if a content block contains base64 encoded data.
 
     Args:
@@ -139,7 +139,7 @@ def _truncate(text: str, max_len: int = _XML_CONTENT_BLOCK_MAX_LEN) -> str:
     return text[:max_len] + "..."
 
 
-def _format_content_block_xml(block: dict) -> str | None:
+def _format_content_block_xml(block: dict[str, Any]) -> str | None:
     """Format a content block as XML.
 
     Args:
@@ -581,14 +581,18 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
 
 
 MessageLikeRepresentation = (
-    BaseMessage | list[str] | tuple[str, str] | str | dict[str, Any]
+    BaseMessage
+    | list[str]
+    | tuple[str, str | list[str | dict[str, Any]]]
+    | str
+    | dict[str, Any]
 )
 """A type representing the various ways a message can be represented."""
 
 
 def _create_message_from_message_type(
     message_type: str,
-    content: str,
+    content: str | list[str | dict[str, Any]],
     name: str | None = None,
     tool_call_id: str | None = None,
     tool_calls: list[dict[str, Any]] | None = None,
@@ -772,7 +776,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
             msg_type, msg_content, **msg_kwargs
         )
     else:
-        msg = f"Unsupported message type: {type(message)}"
+        msg = f"Unsupported message type: {type(message)}"  # type: ignore[unreachable]
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise NotImplementedError(msg)
 
@@ -1477,7 +1481,7 @@ def trim_messages(
         else:
             list_token_counter = actual_token_counter
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"'token_counter' expected to be a model that implements "
             f"'get_num_tokens_from_messages()' or a function. Received object of type "
             f"{type(actual_token_counter)}."
@@ -1512,7 +1516,7 @@ def trim_messages(
             end_on=end_on,
             text_splitter=text_splitter_fn,
         )
-    msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
+    msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."  # type: ignore[unreachable]
     raise ValueError(msg)
 
 
@@ -1534,7 +1538,7 @@ def convert_to_openai_messages(
 
 @overload
 def convert_to_openai_messages(
-    messages: _MultipleMessages,
+    messages: _MultipleMessages[Any],
     *,
     text_format: Literal["string", "block"] = "string",
     include_id: bool = False,
@@ -1639,12 +1643,13 @@ def convert_to_openai_messages(
 
     oai_messages: list[dict[str, Any]] = []
 
+    messages_: Sequence[MessageLikeRepresentation]
     if is_single := isinstance(messages, (BaseMessage, dict, str)):
-        messages = [messages]
+        messages_ = [messages]
+    else:
+        messages_ = cast("Sequence[MessageLikeRepresentation]", messages)
 
-    messages = convert_to_messages(messages)
-
-    for i, message in enumerate(messages):
+    for i, message in enumerate(convert_to_messages(messages_)):
         oai_msg: dict[str, Any] = {"role": _get_message_openai_role(message)}
         tool_messages: list[dict[str, Any]] = []
         content: str | list[dict[str, Any]]
@@ -2329,10 +2334,10 @@ def count_tokens_approximately(
                         message_chars += len(repr(block))
                 else:
                     # Fallback for unexpected block types
-                    message_chars += len(repr(block))
+                    message_chars += len(repr(block))  # type: ignore[unreachable]
         else:
             # Fallback for other content types
-            content = repr(message.content)
+            content = repr(message.content)  # type: ignore[unreachable]
             message_chars += len(content)
 
         if (

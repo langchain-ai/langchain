@@ -9,12 +9,11 @@ from typing_extensions import override
 from langchain_text_splitters.base import TextSplitter
 
 try:
-    # Type ignores needed as long as spacy doesn't support Python 3.14.
-    import spacy  # type: ignore[import-not-found, unused-ignore]
-    from spacy.lang.en import English  # type: ignore[import-not-found, unused-ignore]
+    import spacy
+    from spacy.lang.en import English
 
     if TYPE_CHECKING:
-        from spacy.language import (  # type: ignore[import-not-found, unused-ignore]
+        from spacy.language import (
             Language,
         )
 

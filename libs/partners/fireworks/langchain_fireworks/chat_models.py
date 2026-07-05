@@ -664,8 +664,27 @@ class ChatFireworks(BaseChatModel):
         ```python
         from langchain_fireworks.chat_models import ChatFireworks
 
-        fireworks = ChatFireworks(model_name="accounts/fireworks/models/gpt-oss-120b")
+        model = ChatFireworks(model_name="accounts/fireworks/models/gpt-oss-120b")
         ```
+
+    Fireworks request headers can be passed with `extra_headers`. For prompt
+    caching, `x-session-affinity` pins requests to a replica so related calls can
+    reuse the same prompt-cache session:
+
+    ```python
+    model.invoke(
+        "Hello",
+        extra_headers={"x-session-affinity": "user-42"},
+    )
+    ```
+
+    The Fireworks SDK also accepts a typed `prompt_cache_key` field (passed as a
+    regular keyword argument), which it treats as the preferred alternative to
+    the raw `x-session-affinity` header:
+
+    ```python
+    model.invoke("Hello", prompt_cache_key="user-42")
+    ```
     """
 
     @property

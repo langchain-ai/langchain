@@ -143,7 +143,7 @@ class ChatGroq(BaseChatModel):
 
     Key init args — completion params:
         model:
-            Name of Groq model to use, e.g. `llama-3.1-8b-instant`.
+            Name of Groq model to use, e.g. `openai/gpt-oss-20b`.
         temperature:
             Sampling temperature. Ranges from `0.0` to `1.0`.
         max_tokens:
@@ -188,7 +188,7 @@ class ChatGroq(BaseChatModel):
         from langchain_groq import ChatGroq
 
         model = ChatGroq(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             temperature=0.0,
             max_retries=2,
             # other params...
@@ -210,7 +210,7 @@ class ChatGroq(BaseChatModel):
         response_metadata={'token_usage': {'completion_tokens': 38,
         'prompt_tokens': 28, 'total_tokens': 66, 'completion_time':
         0.057975474, 'prompt_time': 0.005366091, 'queue_time': None,
-        'total_time': 0.063341565}, 'model_name': 'llama-3.1-8b-instant',
+        'total_time': 0.063341565}, 'model_name': 'openai/gpt-oss-20b',
         'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
         'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
         ```
@@ -292,7 +292,7 @@ class ChatGroq(BaseChatModel):
         response_metadata={'token_usage': {'completion_tokens': 53,
         'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
         0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
-        'total_time': 0.090988878}, 'model_name': 'llama-3.1-8b-instant',
+        'total_time': 0.090988878}, 'model_name': 'openai/gpt-oss-20b',
         'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
         'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
         ```
@@ -377,7 +377,7 @@ class ChatGroq(BaseChatModel):
                 "queue_time": None,
                 "total_time": 0.11947467,
             },
-            "model_name": "llama-3.1-8b-instant",
+            "model_name": "openai/gpt-oss-20b",
             "system_fingerprint": "fp_c5f20b5bb1",
             "finish_reason": "stop",
             "logprobs": None,
@@ -465,7 +465,9 @@ class ChatGroq(BaseChatModel):
     max_tokens: int | None = None
     """Maximum number of tokens to generate."""
 
-    service_tier: Literal["on_demand", "flex", "auto"] = Field(default="on_demand")
+    service_tier: Literal["on_demand", "flex", "auto", "performance"] = Field(
+        default="on_demand"
+    )
     """Optional parameter that you can include to specify the service tier you'd like to
     use for requests.
 
@@ -475,6 +477,8 @@ class ChatGroq(BaseChatModel):
         reliability for workloads that don't require guaranteed processing.
     - `'auto'`: Uses on-demand rate limits, then falls back to `'flex'` if those
         limits are exceeded
+    - `'performance'`: Highest tier, providing reliable low latency for the most
+        critical production applications.
 
     See the [Groq documentation](https://console.groq.com/docs/flex-processing) for more
     details and a list of service tiers and descriptions.

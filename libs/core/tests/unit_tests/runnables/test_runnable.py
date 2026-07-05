@@ -19,7 +19,10 @@ from uuid import UUID
 import pytest
 from freezegun import freeze_time
 from packaging import version
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import Field as FieldV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from pytest_mock import MockerFixture
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import TypedDict, override
@@ -90,10 +93,25 @@ from langchain_core.tracers import (
 )
 from langchain_core.tracers._compat import pydantic_copy
 from langchain_core.tracers.context import collect_runs
-from langchain_core.utils.pydantic import PYDANTIC_VERSION
+from langchain_core.utils.pydantic import (
+    PYDANTIC_VERSION,
+    TypeBaseModel,
+    model_validate,
+)
 from langchain_core.version import VERSION
-from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
+from tests.unit_tests.pydantic_utils import (
+    _normalize_schema,
+    _schema,
+    skip_if_no_pydantic_v1,
+)
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
+
+# Several tests assert the legacy `RunLog` / `RunLogPatch` output produced by
+# `astream_log`, which cannot be replaced by `astream` without losing coverage.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:astream_log is deprecated. Use astream instead.:"
+    "langchain_core._api.deprecation.LangChainDeprecationWarning"
+)
 
 PYDANTIC_VERSION_AT_LEAST_29 = version.parse("2.9") <= PYDANTIC_VERSION
 PYDANTIC_VERSION_AT_LEAST_210 = version.parse("2.10") <= PYDANTIC_VERSION
@@ -442,7 +460,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "CommaSeparatedListOutputParserOutput",
     }
 
-    router: Runnable = RouterRunnable({})
+    router = RouterRunnable[Any]({})
 
     assert _schema(router.input_schema) == {
         "$ref": "#/definitions/RouterInput",
@@ -499,7 +517,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
     foo_ = RunnableLambda(foo)
 
-    assert foo_.assign(bar=lambda _: "foo").get_output_schema().model_json_schema() == {
+    assert foo_.assign(bar=lambda _: "foo").get_output_jsonschema() == {
         "properties": {"bar": {"title": "Bar"}, "root": {"title": "Root"}},
         "required": ["root", "bar"],
         "title": "RunnableAssignOutput",
@@ -691,7 +709,7 @@ def test_schema_complex_seq() -> None:
 
     model = FakeListChatModel(responses=[""])
 
-    chain1: Runnable = RunnableSequence(
+    chain1 = RunnableSequence[dict[str, Any], str](
         prompt1, model, StrOutputParser(), name="city_chain"
     )
 
@@ -2151,7 +2169,7 @@ async def test_prompt_with_llm(
                     "metadata": {
                         "ls_model_type": "llm",
                         "ls_provider": "fakelist",
-                        "versions": {"langchain-core": VERSION},
+                        "lc_versions": {"langchain-core": VERSION},
                     },
                     "name": "FakeListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2366,7 +2384,7 @@ async def test_prompt_with_llm_parser(
                     "metadata": {
                         "ls_model_type": "llm",
                         "ls_provider": "fakestreaminglist",
-                        "versions": {"langchain-core": VERSION},
+                        "lc_versions": {"langchain-core": VERSION},
                     },
                     "name": "FakeStreamingListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -3006,7 +3024,7 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
         input={"question": lambda x: x["question"]},
     )
 
-    def router(value: dict[str, Any]) -> Runnable:
+    def router(value: dict[str, Any]) -> Runnable[dict[str, Any], str]:
         if value["key"] == "math":
             return itemgetter("input") | math_chain
         if value["key"] == "english":
@@ -3028,7 +3046,7 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
     assert result2 == ["4", "2"]
 
     # Test ainvoke
-    async def arouter(params: dict[str, Any]) -> Runnable:
+    async def arouter(params: dict[str, Any]) -> Runnable[dict[str, Any], str]:
         if params["key"] == "math":
             return itemgetter("input") | math_chain
         if params["key"] == "english":
@@ -3475,7 +3493,7 @@ async def test_map_astream_iterator_input() -> None:
     assert final_value.get("passthrough") == llm_res
 
     simple_map = RunnableMap(passthrough=RunnablePassthrough())
-    assert loads(dumps(simple_map)) == simple_map
+    assert loads(dumps(simple_map), allowed_objects="core") == simple_map
 
 
 def test_with_config_with_config() -> None:
@@ -3808,7 +3826,8 @@ def _empty_mapper_assign() -> RunnableAssign:
         async for _ in it:
             pass
         return
-        yield  # pragma: no cover  # make this an async generator function
+        # make this an async generator function
+        yield  # type: ignore[unreachable]  # pragma: no cover
 
     return RunnablePassthrough.assign(foo=RunnableGenerator(empty_gen, aempty_gen))
 
@@ -3906,10 +3925,10 @@ def test_each(snapshot: SnapshotAssertion) -> None:
 
 
 def test_recursive_lambda() -> None:
-    def _simple_recursion(x: int) -> int | Runnable:
+    def _simple_recursion(x: int) -> Runnable[Any, int]:
         if x < 10:
             return RunnableLambda(lambda *_: _simple_recursion(x + 1))
-        return x
+        return RunnableLambda(lambda *_: x)
 
     runnable = RunnableLambda(_simple_recursion)
     assert runnable.invoke(5) == 10
@@ -5820,6 +5839,167 @@ def test_runnable_typed_dict_schema() -> None:
         other=other_runnable,
     )
     assert (
-        repr(parallel.input_schema.model_validate({"foo": "Y", "bar": "Z"}))
+        repr(model_validate(parallel.input_schema, {"foo": "Y", "bar": "Z"}))
         == "RunnableParallel<foo,other>Input(root={'foo': 'Y', 'bar': 'Z'})"
     )
+
+
+class _RunnableWithInputSchema(Runnable[Any, Any]):
+    def __init__(self, input_schema: TypeBaseModel) -> None:
+        self._input_schema = input_schema
+
+    @property
+    @override
+    def InputType(self) -> Any:
+        return self._input_schema
+
+    @override
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
+        _ = config
+        return self._input_schema
+
+    @override
+    def invoke(
+        self,
+        input: Any,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        return input
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_parallel_preserves_required_v1_input_fields() -> None:
+    class InputModel(BaseModelV1):
+        a: int
+        b: int = 2
+
+    parallel = RunnableParallel(foo=_RunnableWithInputSchema(InputModel))
+
+    schema = cast("type[BaseModel]", parallel.input_schema)
+    assert schema.model_json_schema()["required"] == ["a"]
+    with pytest.raises(ValidationError):
+        schema.model_validate({})
+
+    model = schema.model_validate({"a": 1})
+    assert model.model_dump() == {"a": 1, "b": 2}
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_parallel_uses_base_schema_for_v1_root_model() -> None:
+    class InputModel(BaseModelV1):
+        __root__: dict[str, int]
+
+    parallel = RunnableParallel(foo=_RunnableWithInputSchema(InputModel))
+
+    schema = parallel.input_schema
+    assert schema is InputModel
+    assert schema.schema() == {
+        "additionalProperties": {"type": "integer"},
+        "title": "InputModel",
+        "type": "object",
+    }
+    assert schema.parse_obj({"a": 1}).__root__ == {"a": 1}
+    with pytest.raises(ValidationErrorV1):
+        schema.parse_obj({"a": "not an int"})
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_sequence_v1_input_schema() -> None:
+    """A `RunnableSequence` exposes a Pydantic v1 first-step input schema.
+
+    Regression test: deriving the sequence schema previously assumed Pydantic v2.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+
+    sequence = _RunnableWithInputSchema(InputModel) | RunnableLambda(lambda x: x)
+
+    assert sequence.get_input_jsonschema()["properties"] == {
+        "a": {"title": "A", "type": "integer"}
+    }
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_branch_v1_input_schema() -> None:
+    """A `RunnableBranch` exposes a Pydantic v1 input schema.
+
+    Regression test: `get_input_schema` previously assumed Pydantic v2 when
+    inspecting each branch's schema.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+
+    branch = RunnableBranch(
+        (lambda _: True, _RunnableWithInputSchema(InputModel)),
+        _RunnableWithInputSchema(InputModel),
+    )
+
+    assert branch.get_input_jsonschema()["properties"] == {
+        "a": {"title": "A", "type": "integer"}
+    }
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_parallel_preserves_v1_default_factory() -> None:
+    """A v1 `default_factory` field keeps its factory in the derived schema.
+
+    Regression test for `_get_schema_field_definition`: without the dedicated
+    `default_factory` branch the factory is dropped and the field defaults to
+    `None` instead of producing the factory's value.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+        items: list[int] = FieldV1(default_factory=list)
+
+    parallel = RunnableParallel(foo=_RunnableWithInputSchema(InputModel))
+
+    schema = cast("type[BaseModel]", parallel.input_schema)
+    # The factory field is optional, so only `a` is required.
+    assert schema.model_json_schema()["required"] == ["a"]
+
+    # The factory runs when omitted, yielding `[]` rather than `None`.
+    assert schema.model_validate({"a": 1}).model_dump() == {"a": 1, "items": []}
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_sequence_v1_output_schema_with_assign() -> None:
+    """A sequence ending in `RunnableAssign` derives a v1 upstream output schema.
+
+    Regression test: `_seq_output_schema` previously read `.model_fields` on the
+    upstream schema (v2-only) and translated required v1 fields as optional.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+
+    sequence = _RunnableWithInputSchema(InputModel) | RunnableAssign(
+        RunnableParallel(bar=RunnableLambda(lambda _: "bar"))
+    )
+
+    schema = sequence.get_output_jsonschema()
+    assert set(schema["properties"]) == {"a", "bar"}
+    # The required v1 field survives as required rather than becoming optional.
+    assert "a" in schema["required"]
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_sequence_v1_output_schema_with_pick() -> None:
+    """A sequence ending in `RunnablePick` derives a v1 upstream output schema.
+
+    Regression test: `_seq_output_schema` previously read `.model_fields` on the
+    upstream schema (v2-only) for the `RunnablePick` branch.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+        b: int
+
+    sequence = _RunnableWithInputSchema(InputModel) | RunnablePick(["a"])
+
+    schema = sequence.get_output_jsonschema()
+    assert set(schema["properties"]) == {"a"}
+    assert "a" in schema["required"]

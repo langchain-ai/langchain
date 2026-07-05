@@ -294,7 +294,7 @@ def test_with_structured_output_json_schema_strict_ignored_on_unsupported_model(
 
         foo: str
 
-    structured_model = ChatGroq(model="llama-3.1-8b-instant").with_structured_output(
+    structured_model = ChatGroq(model="qwen/qwen3.6-27b").with_structured_output(
         Response, method="json_schema", strict=True
     )
 
@@ -1106,7 +1106,7 @@ def test_metadata_versions() -> None:
     """Test that metadata reports the correct version info."""
     llm = ChatGroq(model="foo")  # type: ignore[call-arg]
     assert llm.metadata is not None
-    versions = llm.metadata["versions"]
+    versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-groq" in versions
 

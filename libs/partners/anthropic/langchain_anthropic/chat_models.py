@@ -1005,15 +1005,17 @@ class ChatAnthropic(BaseChatModel):
     Examples:
 
     - `#!python {"type": "enabled", "budget_tokens": 10_000}` (pre-4.7 models)
-    - `#!python {"type": "adaptive"}` (Opus 4.6+)
-    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+)
+    - `#!python {"type": "adaptive"}` (Opus 4.6+, Sonnet 5)
+    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+, Sonnet 5)
+    - `#!python {"type": "disabled"}` (Sonnet 5, where adaptive thinking is
+      on by default)
 
-    !!! note "Claude Opus 4.7"
+    !!! note "Claude Opus 4.7+ and Sonnet 5"
 
-        `budget_tokens` is removed on Opus 4.7 — use `{"type": "adaptive"}`
-        with `output_config.effort` to control reasoning effort. Set `display`
-        to `"summarized"` to receive summarized reasoning in the response
-        (default is `"omitted"`).
+        `budget_tokens` is removed on these models — use `{"type": "adaptive"}`
+        with `output_config.effort` to control reasoning effort. The default
+        `display` is `"omitted"`; set it to `"summarized"` to receive
+        summarized reasoning in the response.
     """
 
     output_config: dict[str, Any] | None = None
@@ -1598,6 +1600,39 @@ class ChatAnthropic(BaseChatModel):
                 tool_call_chunks=tool_call_chunks,
             )
             block_start_event = event
+
+        elif (
+            event.type == "content_block_start"
+            and event.content_block is not None
+            and event.content_block.type in ("text", "thinking")
+        ):
+            # Anthropic can place the opening content of a text or thinking block
+            # directly on the `content_block_start` event instead of in a
+            # following delta. This is common for the assistant turn that follows
+            # a tool result. Emit that initial content here so it is not dropped
+            # from the aggregated message. The deltas that follow are emitted as
+            # separate chunks sharing this block's `index`; chunk addition
+            # (`AIMessageChunk.__add__`) later coalesces them into one block.
+            block_start_event = event
+            if event.content_block.type == "text":
+                text = getattr(event.content_block, "text", "") or ""
+                if text:
+                    if coerce_content_to_string:
+                        message_chunk = AIMessageChunk(content=text)
+                    else:
+                        content_block = event.content_block.model_dump()
+                        content_block["index"] = event.index
+                        if content_block.get("citations") is None:
+                            content_block.pop("citations", None)
+                        message_chunk = AIMessageChunk(content=[content_block])
+            else:  # thinking
+                thinking = getattr(event.content_block, "thinking", "") or ""
+                signature = getattr(event.content_block, "signature", "") or ""
+                if thinking or signature:
+                    content_block = event.content_block.model_dump()
+                    content_block["index"] = event.index
+                    content_block["type"] = "thinking"
+                    message_chunk = AIMessageChunk(content=[content_block])
 
         # Process incremental content updates
         elif event.type == "content_block_delta":

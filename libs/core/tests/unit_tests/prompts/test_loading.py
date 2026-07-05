@@ -316,7 +316,7 @@ def test_symlink_txt_to_py_is_blocked(tmp_path: Path) -> None:
         os.chdir(tmp_path)
         with (
             suppress_langchain_deprecation_warning(),
-            pytest.raises(ValueError),  # noqa: PT011
+            pytest.raises(ValueError, match="files are supported"),
         ):
             load_prompt_from_config(config)
     finally:
@@ -341,7 +341,7 @@ def test_symlink_jinja2_rce_is_blocked(tmp_path: Path) -> None:
     }
     with (
         suppress_langchain_deprecation_warning(),
-        pytest.raises(ValueError),  # noqa: PT011
+        pytest.raises(ValueError, match="files are supported"),
     ):
         load_prompt_from_config(config, allow_dangerous_paths=True)
 

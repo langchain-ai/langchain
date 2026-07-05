@@ -1263,6 +1263,7 @@ def test_structured_output_thinking_enabled() -> None:
         assert isinstance(chunk, GenerateUsername)
 
 
+@pytest.mark.retry(count=3, delay=1)
 def test_structured_output_thinking_force_tool_use() -> None:
     # Structured output currently relies on forced tool use, which is not supported
     # when `thinking` is enabled. When this test fails, it means that the feature

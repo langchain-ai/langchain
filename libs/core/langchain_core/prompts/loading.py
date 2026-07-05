@@ -20,13 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 def _validate_path(path: Path) -> None:
-    """Reject absolute paths and ``..`` traversal components.
+    """Reject absolute paths and `..` traversal components.
 
     Args:
         path: The path to validate.
 
     Raises:
-        ValueError: If the path is absolute or contains ``..`` components.
+        ValueError: If the path is absolute or contains `..` components.
     """
     if path.is_absolute():
         msg = (
@@ -59,10 +59,10 @@ def load_prompt_from_config(
 
     Args:
         config: Dict containing the prompt configuration.
-        allow_dangerous_paths: If ``False`` (default), file paths in the
-            config (such as ``template_path``, ``examples``, and
-            ``example_prompt_path``) are validated to reject absolute paths
-            and directory traversal (``..``) sequences. Set to ``True`` only
+        allow_dangerous_paths: If `False` (default), file paths in the
+            config (such as `template_path`, `examples`, and
+            `example_prompt_path`) are validated to reject absolute paths
+            and directory traversal (`..`) sequences. Set to `True` only
             if you trust the source of the config.
 
     Returns:
@@ -104,7 +104,11 @@ def _load_template(
         if resolved_path.suffix == ".txt":
             template = resolved_path.read_text(encoding="utf-8")
         else:
-            raise ValueError
+            msg = (
+                f"Unsupported template file format: '{resolved_path.suffix}'. "
+                "Only '.txt' files are supported."
+            )
+            raise ValueError(msg)
         # Set the template variable to the extracted variable.
         config[var_name] = template
     return config
@@ -221,10 +225,10 @@ def load_prompt(
     Args:
         path: Path to the prompt file.
         encoding: Encoding of the file.
-        allow_dangerous_paths: If ``False`` (default), file paths referenced
-            inside the loaded config (such as ``template_path``, ``examples``,
-            and ``example_prompt_path``) are validated to reject absolute paths
-            and directory traversal (``..``) sequences. Set to ``True`` only
+        allow_dangerous_paths: If `False` (default), file paths referenced
+            inside the loaded config (such as `template_path`, `examples`,
+            and `example_prompt_path`) are validated to reject absolute paths
+            and directory traversal (`..`) sequences. Set to `True` only
             if you trust the source of the config.
 
     Returns:

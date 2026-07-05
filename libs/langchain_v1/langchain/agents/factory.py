@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import functools
+import importlib
 import itertools
 import re
 from dataclasses import dataclass, field, fields
@@ -61,9 +62,9 @@ from langchain.chat_models import init_chat_model
 
 @dataclass
 class _ComposedExtendedModelResponse(Generic[ResponseT]):
-    """Internal result from composed ``wrap_model_call`` middleware.
+    """Internal result from composed `wrap_model_call` middleware.
 
-    Unlike ``ExtendedModelResponse`` (user-facing, single command), this holds the
+    Unlike `ExtendedModelResponse` (user-facing, single command), this holds the
     full list of commands accumulated across all middleware layers during
     composition.
     """
@@ -139,7 +140,7 @@ Option 2: Handle dynamic tools in middleware (for tools created at runtime)
 
 
 def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
-    """Remove ``runtime`` and ``handler`` from trace inputs before sending to LangSmith."""
+    """Remove `runtime` and `handler` from trace inputs before sending to LangSmith."""
     filtered = inputs.copy()
     filtered.pop("handler", None)
     req = filtered.get("request")
@@ -158,10 +159,10 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     r"(^|[/:.])gpt-4o($|[-/:])",
     r"(^|[/:.])gpt-5($|[-/:])",
     r"(^|[/:.])gpt-5\.1($|[-/:])",
-    r"(^|[/:.])gpt-5\.2($|[/:])",
+    r"(^|[/:.])gpt-5\.2(-\d{4}-\d{2}-\d{2})?($|[/:])",
     r"(^|[/:.])gpt-5\.2-(chat|codex)($|[-/:])",
     r"(^|[/:.])gpt-5\.3($|[-/:])",
-    r"(^|[/:.])gpt-5\.4($|[/:])",
+    r"(^|[/:.])gpt-5\.4(-\d{4}-\d{2}-\d{2})?($|[/:])",
     r"(^|[/:.])gpt-5\.4-(mini|nano)($|[-/:])",
     r"(^|[/:.])gpt-5\.5($|[-/:])",
     r"(^|[/:.])claude-(fable|mythos)-5(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
@@ -178,8 +179,8 @@ def _normalize_to_model_response(
 ) -> ModelResponse:
     """Normalize middleware return value to ModelResponse.
 
-    At inner composition boundaries, ``ExtendedModelResponse`` is unwrapped to its
-    underlying ``ModelResponse`` so that inner middleware always sees ``ModelResponse``
+    At inner composition boundaries, `ExtendedModelResponse` is unwrapped to its
+    underlying `ModelResponse` so that inner middleware always sees `ModelResponse`
     from the handler.
     """
     if isinstance(result, AIMessage):
@@ -205,7 +206,7 @@ def _build_commands(
             composition (inner-first ordering).
 
     Returns:
-        List of ``Command`` objects ready to be returned from a model node.
+        List of `Command` objects ready to be returned from a model node.
     """
     state: dict[str, Any] = {"messages": model_response.result}
 
@@ -234,7 +235,7 @@ def _build_commands(
 def _chain_model_call_handlers(
     handlers: Sequence[_ModelCallHandler[ContextT]],
 ) -> _ComposedModelCallHandler[ContextT] | None:
-    """Compose multiple ``wrap_model_call`` handlers into single middleware stack.
+    """Compose multiple `wrap_model_call` handlers into single middleware stack.
 
     Composes handlers so first in list becomes outermost layer. Each handler receives a
     handler callback to execute inner layers. Commands from each layer are accumulated
@@ -246,8 +247,8 @@ def _chain_model_call_handlers(
             First handler wraps all others.
 
     Returns:
-        Composed handler returning ``_ComposedExtendedModelResponse``,
-        or ``None`` if handlers empty.
+        Composed handler returning `_ComposedExtendedModelResponse`,
+        or `None` if handlers empty.
     """
     if not handlers:
         return None
@@ -326,7 +327,7 @@ def _chain_model_call_handlers(
 def _chain_async_model_call_handlers(
     handlers: Sequence[_AsyncModelCallHandler[ContextT]],
 ) -> _ComposedAsyncModelCallHandler[ContextT] | None:
-    """Compose multiple async ``wrap_model_call`` handlers into single middleware stack.
+    """Compose multiple async `wrap_model_call` handlers into single middleware stack.
 
     Commands from each layer are accumulated into a list (inner-first, then outer)
     without merging.
@@ -337,8 +338,8 @@ def _chain_async_model_call_handlers(
             First handler wraps all others.
 
     Returns:
-        Composed async handler returning ``_ComposedExtendedModelResponse``,
-        or ``None`` if handlers empty.
+        Composed async handler returning `_ComposedExtendedModelResponse`,
+        or `None` if handlers empty.
     """
     if not handlers:
         return None
@@ -570,6 +571,26 @@ def _supports_provider_strategy(
         if model_name
         else False
     )
+
+
+def _is_openai_compatible_model(model: BaseChatModel) -> bool:
+    """Check if a model inherits from `BaseChatOpenAI`.
+
+    Used to redundantly set `strict=True` on tools when `response_format` is
+    provided, as older versions of `langchain-openai` do not auto-set it.
+    Covers `ChatOpenAI`, `ChatDeepSeek`, `ChatXAI`, etc.
+
+    Args:
+        model: The chat model to check.
+
+    Returns:
+        `True` if the model inherits from `BaseChatOpenAI`, `False` otherwise.
+    """
+    try:
+        base_chat_openai = importlib.import_module("langchain_openai.chat_models.base")
+    except ImportError:
+        return False
+    return isinstance(model, base_chat_openai.BaseChatOpenAI)
 
 
 def _handle_structured_output_error(
@@ -1334,11 +1355,16 @@ def create_agent(
         # Bind model based on effective response format
         if isinstance(effective_response_format, ProviderStrategy):
             # (Backward compatibility) Use OpenAI format structured output
+            # Redundantly set strict=True on tools for OpenAI-compatible models, as older
+            # versions of langchain-openai do not auto-set it in bind_tools.
             kwargs = effective_response_format.to_model_kwargs()
+            bind_kwargs: dict[str, Any] = {**kwargs, **request.model_settings}
+            if _is_openai_compatible_model(request.model) and not getattr(
+                request.model, "use_responses_api", False
+            ):
+                bind_kwargs["strict"] = True
             return (
-                request.model.bind_tools(
-                    final_tools, strict=True, **kwargs, **request.model_settings
-                ),
+                request.model.bind_tools(final_tools, **bind_kwargs),
                 effective_response_format,
             )
 

@@ -214,7 +214,7 @@ class Tee(Generic[T]):
             lock: The lock to synchronise access to the shared buffers.
 
         """
-        self._iterator = iterable.__aiter__()  # before 3.10 aiter() doesn't exist
+        self._iterator = aiter(iterable)
         self._buffers: list[deque[T]] = [deque() for _ in range(n)]
         self._children = tuple(
             tee_peer(

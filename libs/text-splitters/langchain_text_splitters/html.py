@@ -533,7 +533,7 @@ class HTMLSectionSplitter:
         # Apply XSLT access control to prevent file/network access
         # DENY_ALL is a predefined access control that blocks all file/network access
         # Type ignore needed due to incomplete lxml type stubs
-        ac = etree.XSLTAccessControl.DENY_ALL  # type: ignore[attr-defined]
+        ac = etree.XSLTAccessControl.DENY_ALL  # ty: ignore[unresolved-attribute]
 
         tree = etree.parse(StringIO(html_content), html_parser)
         xslt_tree = etree.parse(self.xslt_path, xslt_parser)
@@ -881,24 +881,26 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 element: The HTML element to process.
 
             Returns:
-                The processed text of the element.
+                The processed text of the element, or an empty string for
+                    elements with no extractable text.
             """
-            element = cast("Tag | NavigableString", element)
-            if element.name in self._custom_handlers:
-                return self._custom_handlers[element.name](element)
+            if isinstance(element, Tag):
+                if element.name in self._custom_handlers:
+                    return self._custom_handlers[element.name](element)
 
-            text = ""
-
-            if element.name is not None:
+                text = ""
                 for child in element.children:
                     child_text = _get_element_text(child).strip()
                     if text and child_text:
                         text += " "
                     text += child_text
-            elif element.string:
-                text += element.string
 
-            return self._normalize_and_clean_text(text)
+                return self._normalize_and_clean_text(text)
+
+            if hasattr(element, "string") and isinstance(element.string, str):
+                return self._normalize_and_clean_text(element.string)
+
+            return ""
 
         elements = _find_all_tags(soup, recursive=False)
 

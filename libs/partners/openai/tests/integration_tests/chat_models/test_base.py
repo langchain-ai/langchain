@@ -111,8 +111,10 @@ async def test_callable_api_key_async(monkeypatch: pytest.MonkeyPatch) -> None:
     assert isinstance(async_response, AIMessage)
     assert calls["async"] == 1
 
-    with pytest.raises(ValueError):
-        # We do not create a sync callable from an async one
+    with pytest.raises(ValueError, match="Sync client is not available"):
+        # This intentionally records a failed ChatOpenAI run in scheduled LangSmith
+        # traces: async API-key callables are valid for async methods, but sync
+        # invocation must fail.
         _ = model.invoke("hello")
 
 
@@ -708,7 +710,7 @@ async def test_openai_response_headers_async(use_responses_api: bool) -> None:
 
 
 def test_image_token_counting_jpeg() -> None:
-    model = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
+    model = ChatOpenAI(model="gpt-4o", temperature=0)
     image_url = "https://raw.githubusercontent.com/langchain-ai/docs/9f99bb977307a1bd5efeb8dc6b67eb13904c4af1/src/oss/images/checkpoints.jpg"
     message = HumanMessage(
         content=[
@@ -742,7 +744,7 @@ def test_image_token_counting_jpeg() -> None:
 
 
 def test_image_token_counting_png() -> None:
-    model = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
+    model = ChatOpenAI(model="gpt-4o", temperature=0)
     image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
     message = HumanMessage(
         content=[
