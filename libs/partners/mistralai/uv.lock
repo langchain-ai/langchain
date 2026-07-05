@@ -474,7 +474,7 @@ typing = [
 
 [[package]]
 name = "langchain-mistralai"
-version = "1.1.5"
+version = "1.1.6"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
