@@ -316,18 +316,19 @@ class ChatOpenRouter(BaseChatModel):
     default_headers: dict[str, str] | None = None
     """Additional HTTP headers to include on every request to OpenRouter.
 
-    Headers set here are merged into the underlying httpx client's default
-    headers and forwarded by OpenRouter to the upstream provider. Useful for
-    upstream provider features that require custom headers — for example,
-    xAI's ``x-grok-conv-id`` for sticky-routing prompt cache hits, or
-    provider-specific authentication, region routing, or A/B test bucketing
-    headers.
+    Headers set here become the underlying httpx client's default headers, so
+    they are sent on every request to OpenRouter. Useful for upstream provider
+    features that require custom headers — for example, xAI's `x-grok-conv-id`
+    for sticky-routing prompt cache hits, or provider-specific authentication,
+    region routing, or A/B test bucketing headers. Whether a given header is
+    forwarded to the upstream provider (versus consumed by OpenRouter itself)
+    is determined by OpenRouter; consult its docs for which headers propagate.
 
-    Example: ``{"x-grok-conv-id": "session-abc123"}``
+    Example: `{"x-grok-conv-id": "session-abc123"}`
 
     Headers set via this field are merged with the OpenRouter app-attribution
-    headers (``HTTP-Referer``, ``X-Title``, ``X-OpenRouter-Categories``) — if a
-    key collides, the value from ``default_headers`` takes precedence.
+    headers (`HTTP-Referer`, `X-Title`, `X-OpenRouter-Categories`) — if a key
+    collides, the value from `default_headers` takes precedence.
     """
 
     session_id: str | None = Field(

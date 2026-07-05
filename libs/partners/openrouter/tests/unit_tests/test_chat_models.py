@@ -512,9 +512,9 @@ class TestChatOpenRouterInstantiation:
         """Test that default_headers are forwarded to the underlying httpx clients.
 
         Without this support, user-supplied headers like xAI's
-        ``x-grok-conv-id`` (used for sticky-routing prompt cache hits) had no
+        `x-grok-conv-id` (used for sticky-routing prompt cache hits) had no
         way to reach the upstream provider — they were silently absorbed into
-        ``model_kwargs`` by the ``build_extra`` validator.
+        `model_kwargs` by the `build_extra` validator.
         """
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
@@ -556,7 +556,7 @@ class TestChatOpenRouterInstantiation:
             assert sync_headers["x-custom-trace-id"] == "trace-001"
 
     def test_default_headers_override_app_attribution(self) -> None:
-        """Test that default_headers takes precedence over collidng built-in keys."""
+        """Test that default_headers takes precedence over colliding built-in keys."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -586,6 +586,61 @@ class TestChatOpenRouterInstantiation:
             assert sync_headers["X-Title"] == "LangChain"
             # No spurious extra headers
             assert "x-grok-conv-id" not in sync_headers
+
+    def test_default_headers_sole_source_creates_client(self) -> None:
+        """default_headers alone (no app attribution) still creates httpx clients.
+
+        Guards against a regression where the `if extra_headers:` check runs
+        before `default_headers` is merged in — the header would then be
+        dropped and no custom client created.
+        """
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url=None,
+                app_title=None,
+                app_categories=None,
+                default_headers={"x-grok-conv-id": "session-solo"},
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert "client" in call_kwargs
+            assert "async_client" in call_kwargs
+            assert call_kwargs["client"].headers["x-grok-conv-id"] == "session-solo"
+            assert (
+                call_kwargs["async_client"].headers["x-grok-conv-id"] == "session-solo"
+            )
+
+    def test_default_headers_override_app_categories(self) -> None:
+        """default_headers can override the built-in X-OpenRouter-Categories."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_categories=["programming", "translation"],
+                default_headers={"X-OpenRouter-Categories": "custom-category"},
+            )
+            call_kwargs = mock_cls.call_args[1]
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["X-OpenRouter-Categories"] == "custom-category"
+
+    def test_default_headers_empty_dict_no_custom_client(self) -> None:
+        """An empty default_headers dict behaves like None (no custom client)."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url=None,
+                app_title=None,
+                app_categories=None,
+                default_headers={},
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert "client" not in call_kwargs
+            assert "async_client" not in call_kwargs
 
     def test_reasoning_in_params(self) -> None:
         """Test that `reasoning` is included in default params."""
