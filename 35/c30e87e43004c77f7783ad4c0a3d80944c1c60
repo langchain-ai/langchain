@@ -1,0 +1,33 @@
+libs/text-splitters/langchain_text_splitters/html.py
+  s_d11cc140d62d94::t_786ffc3431d163 884-885
+libs/text-splitters/langchain_text_splitters/base.py
+  s_d11cc140d62d94::t_db28bad8c95967 296
+  h_9f69767fa5fabf 240,381
+  s_d11cc140d62d94::t_4060bb78b15f9a 373-380,382-391
+  s_d11cc140d62d94::t_a92f9c3eb72c98 232-239,241-250
+libs/text-splitters/tests/integration_tests/test_text_splitter.py
+  s_d11cc140d62d94::t_059a48753eedc1 33-35
+  s_d11cc140d62d94::t_0bcd29c83c18b6 68-82
+  s_d11cc140d62d94::t_e145dddf54e936 63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "35c30e87e43004c77f7783ad4c0a3d80944c1c60",
+  "prompts": {},
+  "humans": {
+    "h_9f69767fa5fabf": {
+      "author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  },
+  "sessions": {
+    "s_d11cc140d62d94": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7f89dbfb-d240-445b-b1fb-16004e0fd488",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
