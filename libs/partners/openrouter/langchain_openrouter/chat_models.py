@@ -140,6 +140,7 @@ class ChatOpenRouter(BaseChatModel):
         | `app_categories` | `list[str] | None` | Marketplace attribution categories. |
         | `session_id` | `str | None` | Group related requests for observability. |
         | `trace` | `dict[str, Any] | None` | Trace metadata for broadcasts. |
+        | `default_headers` | `Mapping[str, str] | None` | Extra request headers. |
         | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
 
     ??? info "Instantiate"
@@ -313,7 +314,7 @@ class ChatOpenRouter(BaseChatModel):
     plugins: list[dict[str, Any]] | None = None
     """Plugins configuration for OpenRouter."""
 
-    default_headers: dict[str, str] | None = Field(default=None, exclude=True)
+    default_headers: Mapping[str, str] | None = Field(default=None, exclude=True)
     """Additional HTTP headers to include on every request to OpenRouter.
 
     Headers set here become the underlying httpx client's default headers, so
@@ -330,8 +331,9 @@ class ChatOpenRouter(BaseChatModel):
     Example: `{"x-grok-conv-id": "session-abc123"}`
 
     Headers set via this field are merged with the OpenRouter app-attribution
-    headers (`HTTP-Referer`, `X-Title`, `X-OpenRouter-Categories`) — if a key
-    collides, the value from `default_headers` takes precedence.
+    headers (`HTTP-Referer`, `X-Title`, `X-OpenRouter-Categories`); on a
+    collision the value from `default_headers` takes precedence, matched
+    case-insensitively (HTTP header names are case-insensitive).
     """
 
     session_id: str | None = Field(
@@ -342,7 +344,7 @@ class ChatOpenRouter(BaseChatModel):
     Useful any time multiple requests should share an observability
     grouping (e.g. a conversation, an agent workflow, a batch job, or a CI
     run). Equivalent to setting the `x-session-id` HTTP header on the
-    underlying request. OpenRouter rejects values longer than 128
+    underlying request. OpenRouter rejects values longer than 256
     characters.
 
     Falls back to the `OPENROUTER_SESSION_ID` environment variable when
@@ -426,9 +428,18 @@ class ChatOpenRouter(BaseChatModel):
             extra_headers["X-Title"] = self.app_title
         if self.app_categories:
             extra_headers["X-OpenRouter-Categories"] = ",".join(self.app_categories)
-        # User-supplied headers are merged last so they take precedence over the
-        # built-in app-attribution headers if a key collides.
+        # User-supplied headers take precedence over the built-in
+        # app-attribution headers on collision. HTTP header names are
+        # case-insensitive, so drop any built-in whose name case-insensitively
+        # matches a user header before merging; a plain dict update would keep
+        # both spellings and httpx would then send a doubled header.
         if self.default_headers:
+            user_header_names = {name.casefold() for name in self.default_headers}
+            extra_headers = {
+                name: value
+                for name, value in extra_headers.items()
+                if name.casefold() not in user_header_names
+            }
             extra_headers.update(self.default_headers)
         if extra_headers:
             import httpx  # noqa: PLC0415

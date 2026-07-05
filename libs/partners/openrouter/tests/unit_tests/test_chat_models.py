@@ -509,12 +509,12 @@ class TestChatOpenRouterInstantiation:
             assert "async_client" not in call_kwargs
 
     def test_default_headers_passed_to_client(self) -> None:
-        """Test that default_headers are forwarded to the underlying httpx clients.
+        """Test that `default_headers` are forwarded to the httpx clients.
 
-        Without this support, user-supplied headers like xAI's
-        `x-grok-conv-id` (used for sticky-routing prompt cache hits) had no
-        way to reach the upstream provider — they were silently absorbed into
-        `model_kwargs` by the `build_extra` validator.
+        Before this field existed, setting `default_headers` had no effect on
+        the HTTP layer: `build_extra` diverted the unrecognized parameter into
+        `model_kwargs` (with a "not default parameter" warning), so the header
+        never reached the outbound request.
         """
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
@@ -533,7 +533,7 @@ class TestChatOpenRouterInstantiation:
             assert async_headers["x-grok-conv-id"] == "session-abc-123"
 
     def test_default_headers_coexist_with_app_attribution(self) -> None:
-        """Test that default_headers merges with built-in attribution headers."""
+        """Test that `default_headers` merges with built-in attribution headers."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -556,7 +556,7 @@ class TestChatOpenRouterInstantiation:
             assert sync_headers["x-custom-trace-id"] == "trace-001"
 
     def test_default_headers_override_app_attribution(self) -> None:
-        """Test that default_headers takes precedence over colliding built-in keys."""
+        """Test that `default_headers` takes precedence over colliding built-in keys."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -571,7 +571,7 @@ class TestChatOpenRouterInstantiation:
             assert sync_headers["X-Title"] == "Override Title"
 
     def test_default_headers_none_no_custom_headers(self) -> None:
-        """Test that default_headers=None doesn't interfere with default behavior."""
+        """Test that `default_headers=None` doesn't interfere with default behavior."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -588,7 +588,7 @@ class TestChatOpenRouterInstantiation:
             assert "x-grok-conv-id" not in sync_headers
 
     def test_default_headers_sole_source_creates_client(self) -> None:
-        """default_headers alone (no app attribution) still creates httpx clients.
+        """`default_headers` alone (no app attribution) still creates httpx clients.
 
         Guards against a regression where the `if extra_headers:` check runs
         before `default_headers` is merged in — the header would then be
@@ -613,7 +613,7 @@ class TestChatOpenRouterInstantiation:
             )
 
     def test_default_headers_override_app_categories(self) -> None:
-        """default_headers can override the built-in X-OpenRouter-Categories."""
+        """`default_headers` can override the built-in `X-OpenRouter-Categories`."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -627,7 +627,7 @@ class TestChatOpenRouterInstantiation:
             assert sync_headers["X-OpenRouter-Categories"] == "custom-category"
 
     def test_default_headers_empty_dict_no_custom_client(self) -> None:
-        """An empty default_headers dict behaves like None (no custom client)."""
+        """An empty `default_headers` dict behaves like `None` (no custom client)."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -641,6 +641,45 @@ class TestChatOpenRouterInstantiation:
             call_kwargs = mock_cls.call_args[1]
             assert "client" not in call_kwargs
             assert "async_client" not in call_kwargs
+
+    def test_default_headers_override_is_case_insensitive(self) -> None:
+        """A case-variant user header overrides the built-in, not doubles it.
+
+        HTTP header names are case-insensitive, so `default_headers` keyed with
+        different casing than a built-in attribution header (`http-referer` vs
+        `HTTP-Referer`) must replace it rather than send both values.
+        """
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url="https://builtin.example",
+                default_headers={"http-referer": "https://override.example"},
+            )
+            sync_headers = mock_cls.call_args[1]["client"].headers
+            # httpx headers are case-insensitive: the override value wins under
+            # either spelling, with no comma-joined doubling.
+            assert sync_headers["HTTP-Referer"] == "https://override.example"
+            assert sync_headers["http-referer"] == "https://override.example"
+            assert "," not in sync_headers["HTTP-Referer"]
+
+    def test_default_headers_not_swept_into_model_kwargs(self) -> None:
+        """`default_headers` is a first-class field, not extra `model_kwargs`.
+
+        Guards the motivating regression: `build_extra` must recognize
+        `default_headers`, leave it out of `model_kwargs`, and not emit the
+        "not default parameter" warning that unrecognized kwargs trigger.
+        """
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            model = ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                default_headers={"x-grok-conv-id": "session-abc-123"},
+            )
+        assert model.model_kwargs == {}
+        assert not any("not default parameter" in str(w.message) for w in caught)
 
     def test_reasoning_in_params(self) -> None:
         """Test that `reasoning` is included in default params."""
