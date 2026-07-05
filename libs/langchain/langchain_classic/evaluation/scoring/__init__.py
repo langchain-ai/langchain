@@ -7,7 +7,7 @@ criteria and or a reference answer.
 Example:
     >>> from langchain_openai import ChatOpenAI
     >>> from langchain_classic.evaluation.scoring import ScoreStringEvalChain
-    >>> model = ChatOpenAI(temperature=0, model_name="gpt-4")
+    >>> model = ChatOpenAI(temperature=0, model_name="gpt-5.5")
     >>> chain = ScoreStringEvalChain.from_llm(llm=model)
     >>> result = chain.evaluate_strings(
     ...     input="What is the chemical formula for water?",

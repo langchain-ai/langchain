@@ -321,7 +321,7 @@ def draw_mermaid_png(
             proxies=proxies,
         )
     else:
-        supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
+        supported_methods = ", ".join([m.value for m in MermaidDrawMethod])  # type: ignore[unreachable]
         msg = (
             f"Invalid draw method: {draw_method}. "
             f"Supported draw methods are: {supported_methods}"
@@ -395,7 +395,7 @@ async def _render_mermaid_using_pyppeteer(
     await browser.close()
 
     if output_file_path is not None:
-        await asyncio.get_event_loop().run_in_executor(
+        await asyncio.get_running_loop().run_in_executor(
             None, Path(output_file_path).write_bytes, img_bytes
         )
 

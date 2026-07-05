@@ -21,7 +21,7 @@ inputs:
     default: "**"
 
 env:
-  UV_VERSION: "0.5.25"
+  UV_VERSION: "0.11.26"
 
 runs:
   using: composite

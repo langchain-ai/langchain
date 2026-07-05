@@ -31,7 +31,7 @@ def _filter_invocation_params_for_tracing(params: dict[str, Any]) -> dict[str, A
 
 
 def is_openai_data_block(
-    block: dict, filter_: Literal["image", "audio", "file"] | None = None
+    block: dict[str, Any], filter_: Literal["image", "audio", "file"] | None = None
 ) -> bool:
     """Check whether a block contains multimodal data in OpenAI Chat Completions format.
 
@@ -318,7 +318,7 @@ def _ensure_message_copy(message: T, formatted_message: T) -> T:
 
 
 def _update_content_block(
-    formatted_message: "BaseMessage", idx: int, new_block: ContentBlock | dict
+    formatted_message: "BaseMessage", idx: int, new_block: ContentBlock | dict[str, Any]
 ) -> None:
     """Update a content block at the given index, handling type issues."""
     # Type ignore needed because:

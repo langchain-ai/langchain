@@ -23,11 +23,12 @@ from langchain_classic.chains.router.base import RouterChain
 
 @deprecated(
     since="0.2.12",
-    removal="1.0",
-    message=(
-        "Use RunnableLambda to select from multiple prompt templates. See example "
-        "in API reference: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.router.llm_router.LLMRouterChain.html"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build routing logic with `create_agent` (e.g. with subagents or "
+        "prompt-selection middleware). See "
+        "https://docs.langchain.com/oss/python/langchain/agents"
     ),
 )
 class LLMRouterChain(RouterChain):

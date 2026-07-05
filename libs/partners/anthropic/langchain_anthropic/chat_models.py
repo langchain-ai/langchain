@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import datetime
+import hashlib
 import json
 import re
 import warnings
@@ -55,7 +56,7 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, Self, TypedDict
 
 from langchain_anthropic import __version__
 from langchain_anthropic._client_utils import (
@@ -237,6 +238,51 @@ def _format_image(url: str) -> dict:
     )
 
 
+_TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
+"""Anthropic requires `tool_use`/`tool_result` IDs to match this pattern."""
+
+
+def _normalize_tool_call_id(tool_call_id: str | None) -> str | None:
+    """Map a tool-call ID to an Anthropic-compatible form if needed.
+
+    Anthropic rejects `tool_use`/`tool_result` IDs that don't match
+    `^[a-zA-Z0-9_-]+$`. IDs minted by other providers can violate this when a
+    thread is replayed across providers (e.g. Fireworks/Kimi emits
+    `functions.write_todos:0`, whose `.` and `:` are invalid). Valid IDs are
+    returned unchanged; invalid ones are hashed deterministically so that a
+    rewritten `tool_use.id` and its paired `tool_use_id` resolve to the same
+    value, both within a request and across turns.
+
+    Empty and `None` IDs are passed through unchanged so that a genuinely
+    malformed request surfaces as a clear error from Anthropic rather than
+    being masked by a synthesized ID.
+
+    Args:
+        tool_call_id: The tool-call ID to normalize.
+
+    Returns:
+        The original ID if it is empty, `None`, or already valid; otherwise a
+            deterministic Anthropic-compatible replacement.
+    """
+    if not tool_call_id or _TOOL_CALL_ID_PATTERN.match(tool_call_id):
+        return tool_call_id
+    digest = hashlib.sha256(tool_call_id.encode()).hexdigest()
+    return f"toolu_{digest[:24]}"
+
+
+def _normalize_block_tool_use_id(block: dict) -> dict:
+    """Return `block` with its `tool_use_id` normalized, if it carries one.
+
+    Mirrors `_normalize_tool_call_id` for `tool_result`-style content blocks so
+    that a `tool_use_id` arriving pre-structured (e.g. on a `ToolMessage` whose
+    content is already a list of `tool_result` blocks) stays consistent with its
+    paired, normalized `tool_use.id`. A no-op for already-valid IDs.
+    """
+    if "tool_use_id" in block:
+        return {**block, "tool_use_id": _normalize_tool_call_id(block["tool_use_id"])}
+    return block
+
+
 def _merge_messages(
     messages: Sequence[BaseMessage],
 ) -> list[SystemMessage | AIMessage | HumanMessage]:
@@ -272,7 +318,7 @@ def _merge_messages(
                 tool_result: dict = {
                     "type": "tool_result",
                     "content": tool_content,
-                    "tool_use_id": curr.tool_call_id,
+                    "tool_use_id": _normalize_tool_call_id(curr.tool_call_id),
                     "is_error": curr.status == "error",
                 }
                 if cache_ctrl:
@@ -516,7 +562,7 @@ def _format_messages(
                                 type="tool_use",
                                 name=block["name"],
                                 input=args,
-                                id=block["id"],
+                                id=cast("str", _normalize_tool_call_id(block["id"])),
                             )
                             if caller := block.get("caller"):
                                 tool_use_block["caller"] = caller
@@ -595,24 +641,30 @@ def _format_messages(
                     ):
                         # Tool search results with tool_reference blocks
                         content.append(
-                            {
-                                k: v
-                                for k, v in block.items()
-                                if k
-                                in (
-                                    "type",
-                                    "content",
-                                    "tool_use_id",
-                                    "cache_control",
-                                )
-                            },
+                            _normalize_block_tool_use_id(
+                                {
+                                    k: v
+                                    for k, v in block.items()
+                                    if k
+                                    in (
+                                        "type",
+                                        "content",
+                                        "tool_use_id",
+                                        "cache_control",
+                                    )
+                                },
+                            ),
                         )
                     elif block["type"] == "tool_result":
                         # Regular tool results that need content formatting
                         tool_content = _format_messages(
                             [HumanMessage(block["content"])],
                         )[1][0]["content"]
-                        content.append({**block, "content": tool_content})
+                        content.append(
+                            _normalize_block_tool_use_id(
+                                {**block, "content": tool_content},
+                            ),
+                        )
                     elif block["type"] in (
                         "code_execution_tool_result",
                         "bash_code_execution_tool_result",
@@ -622,19 +674,21 @@ def _format_messages(
                         "web_fetch_tool_result",
                     ):
                         content.append(
-                            {
-                                k: v
-                                for k, v in block.items()
-                                if k
-                                in (
-                                    "type",
-                                    "content",
-                                    "tool_use_id",
-                                    "is_error",  # for mcp_tool_result
-                                    "cache_control",
-                                    "retrieved_at",  # for web_fetch_tool_result
-                                )
-                            },
+                            _normalize_block_tool_use_id(
+                                {
+                                    k: v
+                                    for k, v in block.items()
+                                    if k
+                                    in (
+                                        "type",
+                                        "content",
+                                        "tool_use_id",
+                                        "is_error",  # for mcp_tool_result
+                                        "cache_control",
+                                        "retrieved_at",  # for web_fetch_tool_result
+                                    )
+                                },
+                            ),
                         )
                     else:
                         content.append(block)
@@ -662,8 +716,13 @@ def _format_messages(
                 for block in content
                 if cast("dict", block)["type"] == "tool_use"
             ]
+            # `tool_use_ids` are already normalized via the branches above, so
+            # compare against the normalized tool-call ID to avoid emitting a
+            # duplicate `tool_use` block when the original ID was rewritten.
             missing_tool_calls = [
-                tc for tc in message.tool_calls if tc["id"] not in tool_use_ids
+                tc
+                for tc in message.tool_calls
+                if _normalize_tool_call_id(tc["id"]) not in tool_use_ids
             ]
             cast("list", content).extend(
                 _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls),
@@ -686,6 +745,116 @@ def _format_messages(
             continue
         formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
+
+
+def _collect_code_execution_tool_ids(formatted_messages: list[dict]) -> set[str]:
+    """Collect `tool_use` IDs that were called by `code_execution`.
+
+    These blocks cannot have `cache_control` applied per Anthropic API
+    requirements.
+    """
+    code_execution_tool_ids: set[str] = set()
+
+    for message in formatted_messages:
+        if message.get("role") != "assistant":
+            continue
+        content = message.get("content", [])
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            if block.get("type") != "tool_use":
+                continue
+            caller = block.get("caller")
+            if isinstance(caller, dict):
+                caller_type = caller.get("type", "")
+                if caller_type.startswith("code_execution"):
+                    tool_id = block.get("id")
+                    if tool_id:
+                        code_execution_tool_ids.add(tool_id)
+
+    return code_execution_tool_ids
+
+
+def _is_code_execution_related_block(
+    block: dict,
+    code_execution_tool_ids: set[str],
+) -> bool:
+    """Return whether a content block is related to `code_execution`.
+
+    Returns `True` for blocks that should NOT have `cache_control` applied.
+    """
+    if not isinstance(block, dict):
+        return False
+
+    block_type = block.get("type")
+
+    if block_type == "tool_use":
+        caller = block.get("caller")
+        if isinstance(caller, dict):
+            caller_type = caller.get("type", "")
+            if caller_type.startswith("code_execution"):
+                return True
+
+    if block_type == "tool_result":
+        tool_use_id = block.get("tool_use_id")
+        if tool_use_id and tool_use_id in code_execution_tool_ids:
+            return True
+
+    return False
+
+
+def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
+    """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
+
+    Only the direct API accepts the top-level `cache_control` request param.
+    Subclasses that route through other transports (Bedrock, future backends)
+    override `_llm_type` and must expand `cache_control` kwargs into
+    block-level breakpoints instead.
+
+    Non-string `_llm_type` values return `False` rather than raising, so a
+    misbehaving subclass falls through to the safer non-direct branch.
+    """
+    return llm_type == "anthropic-chat"
+
+
+def _apply_cache_control_to_last_eligible_block(
+    formatted_messages: list[dict],
+    cache_control: Any,
+    code_execution_tool_ids: set[str],
+) -> bool:
+    """Place `cache_control` on the last block eligible for a breakpoint.
+
+    Walks messages newest-to-oldest and, within each, blocks newest-to-oldest,
+    skipping `code_execution`-related blocks (Anthropic rejects breakpoints
+    there). String message content is promoted to a single text block so the
+    breakpoint can be attached.
+
+    Returns:
+        `True` if a breakpoint was applied, `False` if every candidate was
+            `code_execution`-related (caller should warn and drop the kwarg).
+    """
+    for formatted_message in reversed(formatted_messages):
+        content = formatted_message.get("content")
+        if isinstance(content, list) and content:
+            for block in reversed(content):
+                if not isinstance(block, dict):
+                    continue
+                if _is_code_execution_related_block(block, code_execution_tool_ids):
+                    continue
+                block["cache_control"] = cache_control
+                return True
+        elif isinstance(content, str):
+            formatted_message["content"] = [
+                {
+                    "type": "text",
+                    "text": content,
+                    "cache_control": cache_control,
+                }
+            ]
+            return True
+    return False
 
 
 class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
@@ -836,15 +1005,17 @@ class ChatAnthropic(BaseChatModel):
     Examples:
 
     - `#!python {"type": "enabled", "budget_tokens": 10_000}` (pre-4.7 models)
-    - `#!python {"type": "adaptive"}` (Opus 4.6+)
-    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+)
+    - `#!python {"type": "adaptive"}` (Opus 4.6+, Sonnet 5)
+    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+, Sonnet 5)
+    - `#!python {"type": "disabled"}` (Sonnet 5, where adaptive thinking is
+      on by default)
 
-    !!! note "Claude Opus 4.7"
+    !!! note "Claude Opus 4.7+ and Sonnet 5"
 
-        `budget_tokens` is removed on Opus 4.7 — use `{"type": "adaptive"}`
-        with `output_config.effort` to control reasoning effort. Set `display`
-        to `"summarized"` to receive summarized reasoning in the response
-        (default is `"omitted"`).
+        `budget_tokens` is removed on these models — use `{"type": "adaptive"}`
+        with `output_config.effort` to control reasoning effort. The default
+        `display` is `"omitted"`; set it to `"summarized"` to receive
+        summarized reasoning in the response.
     """
 
     output_config: dict[str, Any] | None = None
@@ -999,6 +1170,12 @@ class ChatAnthropic(BaseChatModel):
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
 
+    @model_validator(mode="after")
+    def _set_anthropic_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-anthropic", __version__)
+        return self
+
     def _resolve_model_profile(self) -> ModelProfile | None:
         profile = _get_default_model_profile(self.model) or None
         if profile is not None and self.betas and "context-1m-2025-08-07" in self.betas:
@@ -1093,6 +1270,32 @@ class ChatAnthropic(BaseChatModel):
 
         system, formatted_messages = _format_messages(messages)
 
+        # Only the direct Anthropic API accepts top-level `cache_control`.
+        # Subclasses that route through other transports (e.g. Bedrock) expand
+        # `cache_control` kwargs into block-level breakpoints, the only form
+        # those transports accept.
+        if not _is_direct_anthropic_llm_type(getattr(self, "_llm_type", None)):
+            cache_control = kwargs.pop("cache_control", None)
+            # Empty `formatted_messages` has nothing to attach a breakpoint to;
+            # skip silently. The warning below is reserved for the surprising
+            # case where messages exist but every candidate block is ineligible.
+            if cache_control and formatted_messages:
+                code_execution_tool_ids = _collect_code_execution_tool_ids(
+                    formatted_messages
+                )
+                applied = _apply_cache_control_to_last_eligible_block(
+                    formatted_messages, cache_control, code_execution_tool_ids
+                )
+                if not applied:
+                    warnings.warn(
+                        "`cache_control` kwarg was dropped: no eligible "
+                        "content block found (all candidates are "
+                        "`code_execution`-related, which Anthropic forbids "
+                        "breakpoints on).",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -1149,8 +1352,9 @@ class ChatAnthropic(BaseChatModel):
         # Handle deprecated output_format parameter for backward compatibility
         if "output_format" in payload:
             warnings.warn(
-                "The 'output_format' parameter is deprecated and will be removed in a "
-                "future version. Use 'output_config={\"format\": ...}' instead.",
+                "The 'output_format' parameter is deprecated and will be removed in "
+                "langchain-anthropic 2.0.0. Use 'output_config={\"format\": ...}' "
+                "instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -1396,6 +1600,39 @@ class ChatAnthropic(BaseChatModel):
                 tool_call_chunks=tool_call_chunks,
             )
             block_start_event = event
+
+        elif (
+            event.type == "content_block_start"
+            and event.content_block is not None
+            and event.content_block.type in ("text", "thinking")
+        ):
+            # Anthropic can place the opening content of a text or thinking block
+            # directly on the `content_block_start` event instead of in a
+            # following delta. This is common for the assistant turn that follows
+            # a tool result. Emit that initial content here so it is not dropped
+            # from the aggregated message. The deltas that follow are emitted as
+            # separate chunks sharing this block's `index`; chunk addition
+            # (`AIMessageChunk.__add__`) later coalesces them into one block.
+            block_start_event = event
+            if event.content_block.type == "text":
+                text = getattr(event.content_block, "text", "") or ""
+                if text:
+                    if coerce_content_to_string:
+                        message_chunk = AIMessageChunk(content=text)
+                    else:
+                        content_block = event.content_block.model_dump()
+                        content_block["index"] = event.index
+                        if content_block.get("citations") is None:
+                            content_block.pop("citations", None)
+                        message_chunk = AIMessageChunk(content=[content_block])
+            else:  # thinking
+                thinking = getattr(event.content_block, "thinking", "") or ""
+                signature = getattr(event.content_block, "signature", "") or ""
+                if thinking or signature:
+                    content_block = event.content_block.model_dump()
+                    content_block["index"] = event.index
+                    content_block["type"] = "thinking"
+                    message_chunk = AIMessageChunk(content=[content_block])
 
         # Process incremental content updates
         elif event.type == "content_block_delta":
@@ -2087,7 +2324,7 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
             type="tool_use",
             name=tool_call["name"],
             input=tool_call["args"],
-            id=cast("str", tool_call["id"]),
+            id=cast("str", _normalize_tool_call_id(tool_call["id"])),
         )
         for tool_call in tool_calls
     ]

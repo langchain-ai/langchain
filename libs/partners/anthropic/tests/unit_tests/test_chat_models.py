@@ -14,7 +14,13 @@ import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
 from langchain_core.exceptions import ContextOverflowError
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
@@ -23,12 +29,15 @@ from pydantic import BaseModel, Field, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
+from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
+    _TOOL_CALL_ID_PATTERN,
     _create_usage_metadata,
     _format_image,
     _format_messages,
     _is_builtin_tool,
     _merge_messages,
+    _normalize_tool_call_id,
     _thinking_in_params,
     convert_to_anthropic_tool,
 )
@@ -40,19 +49,22 @@ MODEL_NAME = "claude-sonnet-4-5-20250929"
 
 def test_initialization() -> None:
     """Test chat model initialization."""
-    for model in [
-        ChatAnthropic(model_name=MODEL_NAME, api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
-        ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
-            model=MODEL_NAME,
-            anthropic_api_key="xyz",
-            default_request_timeout=2,
-            base_url="https://api.anthropic.com",
-        ),
-    ]:
-        assert model.model == MODEL_NAME
-        assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
-        assert model.default_request_timeout == 2.0
-        assert model.anthropic_api_url == "https://api.anthropic.com"
+    with patch.dict(os.environ, {"ANTHROPIC_API_URL": "https://api.anthropic.com"}):
+        for model in [
+            ChatAnthropic(model_name=MODEL_NAME, api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
+            ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
+                model=MODEL_NAME,
+                anthropic_api_key="xyz",
+                default_request_timeout=2,
+                base_url="https://api.anthropic.com",
+            ),
+        ]:
+            assert model.model == MODEL_NAME
+            assert (
+                cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
+            )
+            assert model.default_request_timeout == 2.0
+            assert model.anthropic_api_url == "https://api.anthropic.com"
 
 
 def test_user_agent_header_in_client_params() -> None:
@@ -147,9 +159,9 @@ def test_set_default_max_tokens() -> None:
     llm = ChatAnthropic(model="claude-3-7-sonnet-20250219", anthropic_api_key="test")
     assert llm.max_tokens == 64000
 
-    # Test claude-3-5-haiku models
+    # Test claude-3-5-haiku models (profile removed, should fall back to 4096)
     llm = ChatAnthropic(model="claude-3-5-haiku-20241022", anthropic_api_key="test")
-    assert llm.max_tokens == 8192
+    assert llm.max_tokens == 4096
 
     # Test claude-3-haiku models (should default to 4096)
     llm = ChatAnthropic(model="claude-3-haiku-20240307", anthropic_api_key="test")
@@ -185,9 +197,23 @@ def test_anthropic_model_kwargs() -> None:
 @pytest.mark.requires("anthropic")
 def test_anthropic_fields_in_model_kwargs() -> None:
     """Test that for backwards compatibility fields can be passed in as model_kwargs."""
-    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "Parameters {'max_tokens_to_sample'} should be specified explicitly. "
+            "Instead they were passed in as part of `model_kwargs` parameter."
+        ),
+    ):
+        llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
-    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "Parameters {'max_tokens'} should be specified explicitly. Instead they "
+            "were passed in as part of `model_kwargs` parameter."
+        ),
+    ):
+        llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
 
 
@@ -735,7 +761,7 @@ def test__format_messages_with_tool_calls() -> None:
     assert expected == actual
 
     # Check handling of empty AIMessage
-    empty_contents: list[str | list[str | dict]] = ["", []]
+    empty_contents: list[str | list[str | dict[str, Any]]] = ["", []]
     for empty_content in empty_contents:
         ## Permit message in final position
         _, anthropic_messages = _format_messages([human, AIMessage(empty_content)])
@@ -765,6 +791,153 @@ def test__format_messages_with_tool_calls() -> None:
             "user",
             "user",
         ]
+
+
+def test__normalize_tool_call_id() -> None:
+    # Already-valid IDs (including native Anthropic and OpenAI styles) pass
+    # through unchanged.
+    for valid in ("1", "toolu_01abcDEF-_", "call_Ao02pnFYXD6GN1yzc0uXPsvF"):
+        assert _normalize_tool_call_id(valid) == valid
+
+    # Empty and None IDs pass through so a malformed request surfaces a clear
+    # error from Anthropic rather than a synthesized ID.
+    assert _normalize_tool_call_id("") == ""
+    assert _normalize_tool_call_id(None) is None
+
+    # Foreign IDs with characters Anthropic rejects (e.g. Fireworks/Kimi's
+    # `functions.write_todos:0`) are rewritten to a compatible form.
+    invalid = "functions.write_todos:0"
+    normalized = _normalize_tool_call_id(invalid)
+    assert normalized is not None
+    assert normalized != invalid
+    assert _TOOL_CALL_ID_PATTERN.match(normalized)
+
+    # Deterministic + idempotent: same input always maps to the same output.
+    assert _normalize_tool_call_id(invalid) == normalized
+    assert _normalize_tool_call_id(normalized) == normalized
+
+    # Distinct invalid IDs map to distinct replacements (no collision that
+    # would break multi-tool turns).
+    other = _normalize_tool_call_id("functions.read_file:1")
+    assert other != normalized
+
+
+def test__format_messages_normalizes_cross_provider_tool_call_ids() -> None:
+    """A `tool_use.id` and its paired `tool_use_id` must normalize identically.
+
+    Reproduces the Fireworks/Kimi -> Anthropic 400 from replaying a thread whose
+    tool-call IDs were minted by another provider.
+    """
+    bad_id = "functions.write_todos:0"
+    ai = AIMessage(
+        "",
+        tool_calls=[{"name": "write_todos", "id": bad_id, "args": {"todos": []}}],
+    )
+    tool = ToolMessage("done", tool_call_id=bad_id)
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+
+    tool_use = formatted[1]["content"][0]
+    tool_result = formatted[2]["content"][0]
+    assert tool_use["type"] == "tool_use"
+    assert tool_result["type"] == "tool_result"
+
+    # The rewritten IDs are valid and still reference each other.
+    assert _TOOL_CALL_ID_PATTERN.match(tool_use["id"])
+    assert tool_use["id"] == tool_result["tool_use_id"]
+    assert tool_use["id"] == _normalize_tool_call_id(bad_id)
+
+
+def test__format_messages_normalizes_prestructured_tool_result_id() -> None:
+    """A `ToolMessage` whose content is already `tool_result` blocks is covered.
+
+    This shape bypasses the `tool_call_id` normalization in `_merge_messages` and
+    flows through the `tool_result` content branch, so its `tool_use_id` must
+    still be normalized to match the paired `tool_use.id`.
+    """
+    bad_id = "functions.write_todos:0"
+    ai = AIMessage(
+        "",
+        tool_calls=[{"name": "write_todos", "id": bad_id, "args": {"todos": []}}],
+    )
+    tool = ToolMessage(
+        [{"type": "tool_result", "tool_use_id": bad_id, "content": "done"}],
+        tool_call_id=bad_id,
+    )
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+
+    tool_use = formatted[1]["content"][0]
+    tool_result = formatted[2]["content"][0]
+    assert tool_use["id"] == tool_result["tool_use_id"]
+    assert tool_use["id"] == _normalize_tool_call_id(bad_id)
+
+
+def test__format_messages_normalizes_inline_tool_use_block() -> None:
+    """An invalid ID on an inline `tool_use` content block is normalized.
+
+    Covers the v1-compat destination where tool calls are stored as content
+    blocks rather than the `tool_calls` attribute, paired with a `ToolMessage`.
+    """
+    bad_id = "functions.search:2"
+    ai = AIMessage(
+        [{"type": "tool_use", "name": "search", "id": bad_id, "input": {"q": "x"}}],
+    )
+    tool = ToolMessage("result", tool_call_id=bad_id)
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+
+    tool_use = formatted[1]["content"][0]
+    tool_result = formatted[2]["content"][0]
+    assert _TOOL_CALL_ID_PATTERN.match(tool_use["id"])
+    assert tool_use["id"] == tool_result["tool_use_id"]
+
+
+def test__format_messages_dedupes_overlapping_normalized_tool_use() -> None:
+    """An invalid ID shared by a `tool_use` block and `tool_calls` yields one block.
+
+    Guards the dedup branch: `tool_use_ids` are normalized, so the comparison
+    against the (also normalized) tool-call ID must not re-emit a duplicate block.
+    """
+    bad_id = "functions.write_todos:0"
+    ai = AIMessage(
+        [{"type": "tool_use", "name": "write_todos", "id": bad_id, "input": {"a": 1}}],
+        tool_calls=[{"name": "write_todos", "id": bad_id, "args": {"a": 1}}],
+    )
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai])
+
+    tool_use_blocks = [b for b in formatted[1]["content"] if b["type"] == "tool_use"]
+    assert len(tool_use_blocks) == 1
+    assert _TOOL_CALL_ID_PATTERN.match(tool_use_blocks[0]["id"])
+
+
+def test__format_messages_normalizes_distinct_ids_independently() -> None:
+    """Multiple distinct invalid IDs in one turn stay distinct and correctly paired."""
+    id_a = "functions.write_todos:0"
+    id_b = "functions.read_file:1"
+    ai = AIMessage(
+        "",
+        tool_calls=[
+            {"name": "write_todos", "id": id_a, "args": {}},
+            {"name": "read_file", "id": id_b, "args": {}},
+        ],
+    )
+    tool_a = ToolMessage("a", tool_call_id=id_a)
+    tool_b = ToolMessage("b", tool_call_id=id_b)
+
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool_a, tool_b])
+
+    tool_uses = formatted[1]["content"]
+    results = formatted[2]["content"]
+    assert tool_uses[0]["id"] == _normalize_tool_call_id(id_a)
+    assert tool_uses[1]["id"] == _normalize_tool_call_id(id_b)
+    assert tool_uses[0]["id"] != tool_uses[1]["id"]
+    # Each result still pairs with its own tool_use.
+    assert {r["tool_use_id"] for r in results} == {
+        tool_uses[0]["id"],
+        tool_uses[1]["id"],
+    }
 
 
 def test__format_tool_use_block() -> None:
@@ -1723,6 +1896,214 @@ def test_cache_control_kwarg() -> None:
     ]
 
 
+class _BedrockLikeAnthropic(ChatAnthropic):
+    """Stand-in for `ChatAnthropicBedrock` for `_llm_type`-based gating tests.
+
+    Vertex is not modeled here: `langchain-google-vertexai`'s
+    `ChatAnthropicVertex` does not subclass `ChatAnthropic` and ships its own
+    `_get_request_payload`, so it never reaches the gate under test.
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        return "anthropic-bedrock-chat"
+
+
+def test_cache_control_kwarg_bedrock_injects_into_blocks() -> None:
+    """Non-direct subclasses must place `cache_control` inside the last block.
+
+    Transports like Bedrock reject the top-level `cache_control` field, so
+    the kwarg has to be expanded into a nested breakpoint to remain effective.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+
+    assert "cache_control" not in payload
+    last_message = payload["messages"][-1]
+    assert last_message["content"] == [
+        {"type": "text", "text": "baz", "cache_control": {"type": "ephemeral"}}
+    ]
+
+
+def test_cache_control_kwarg_bedrock_with_list_content() -> None:
+    """`cache_control` lands on the last block when content is already a list."""
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage([{"type": "text", "text": "foo"}])]
+    payload = llm._get_request_payload(
+        messages, cache_control={"type": "ephemeral", "ttl": "1h"}
+    )
+
+    assert "cache_control" not in payload
+    last_block = payload["messages"][-1]["content"][-1]
+    assert last_block["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
+
+
+def test_cache_control_kwarg_bedrock_skips_code_execution_blocks() -> None:
+    """`cache_control` must skip `code_execution`-related blocks.
+
+    Anthropic rejects breakpoints applied to those blocks, so the injector
+    walks backwards until it finds an eligible block.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {"type": "text", "text": "earlier text"},
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "get_weather",
+                "input": {"location": "NYC"},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            },
+        ]
+    )
+
+    payload = llm._get_request_payload(
+        [HumanMessage("hi"), ai_message],
+        cache_control={"type": "ephemeral"},
+    )
+
+    last_content = payload["messages"][-1]["content"]
+    assert last_content[0]["cache_control"] == {"type": "ephemeral"}
+    assert "cache_control" not in last_content[1]
+
+
+def test_cache_control_kwarg_bedrock_walks_back_to_earlier_message() -> None:
+    """When the last message has no eligible blocks, walk back to a prior one.
+
+    Pins the contract that `reversed(formatted_messages)` is intentional: a
+    refactor that only inspects the last message would silently regress.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "noop",
+                "input": {},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            }
+        ]
+    )
+
+    payload = llm._get_request_payload(
+        [HumanMessage("earlier"), ai_message],
+        cache_control={"type": "ephemeral"},
+    )
+
+    first_message_content = payload["messages"][0]["content"]
+    assert first_message_content == [
+        {"type": "text", "text": "earlier", "cache_control": {"type": "ephemeral"}}
+    ]
+    last_message_content = payload["messages"][-1]["content"]
+    assert all("cache_control" not in block for block in last_message_content)
+
+
+def test_cache_control_kwarg_bedrock_no_eligible_block_warns() -> None:
+    """When every candidate is `code_execution`-related, warn and drop the kwarg.
+
+    Pins the silent-drop contract: payload remains valid for Anthropic, but
+    the caller is told their cache request was skipped.
+    """
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": "toolu_code_exec_1",
+                "name": "noop",
+                "input": {},
+                "caller": {
+                    "type": "code_execution_20250825",
+                    "tool_id": "srvtoolu_abc",
+                },
+            }
+        ]
+    )
+
+    with pytest.warns(UserWarning, match="cache_control.*dropped"):
+        payload = llm._get_request_payload(
+            [ai_message],
+            cache_control={"type": "ephemeral"},
+        )
+
+    assert "cache_control" not in payload
+    only_block = payload["messages"][-1]["content"][0]
+    assert "cache_control" not in only_block
+
+
+def test_cache_control_absent_kwarg_bedrock_is_noop() -> None:
+    """Without a `cache_control` kwarg, the Bedrock branch must not mutate."""
+    llm = _BedrockLikeAnthropic(model=MODEL_NAME)
+
+    messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
+    payload = llm._get_request_payload(messages)
+
+    assert "cache_control" not in payload
+    for message in payload["messages"]:
+        content = message["content"]
+        if isinstance(content, list):
+            for block in content:
+                assert "cache_control" not in block
+
+
+def test_cache_control_kwarg_unknown_subclass_injects_into_blocks() -> None:
+    """Any subclass that overrides `_llm_type` is treated as non-direct.
+
+    The gate is allowlist-shaped on `"anthropic-chat"`, so a future subclass
+    routing through a new transport is safe by default rather than silently
+    sending an unsupported top-level field.
+    """
+
+    class _FutureTransportAnthropic(ChatAnthropic):
+        @property
+        def _llm_type(self) -> str:
+            return "anthropic-some-future-transport"
+
+    llm = _FutureTransportAnthropic(model=MODEL_NAME)
+    payload = llm._get_request_payload(
+        [HumanMessage("hello")],
+        cache_control={"type": "ephemeral"},
+    )
+
+    assert "cache_control" not in payload
+    assert payload["messages"][-1]["content"] == [
+        {"type": "text", "text": "hello", "cache_control": {"type": "ephemeral"}}
+    ]
+
+
+@pytest.mark.parametrize(
+    ("llm_type", "expected"),
+    [
+        ("anthropic-chat", True),
+        ("anthropic-bedrock-chat", False),
+        ("anthropic-chat-vertexai", False),
+        ("", False),
+        ("ANTHROPIC-CHAT", False),
+        (None, False),
+        (object(), False),
+    ],
+)
+def test_is_direct_anthropic_llm_type(llm_type: object, expected: bool) -> None:  # noqa: FBT001
+    """Predicate is exact-match and tolerates non-string inputs."""
+    from langchain_anthropic.chat_models import _is_direct_anthropic_llm_type
+
+    assert _is_direct_anthropic_llm_type(llm_type) is expected
+
+
 def test_context_management_in_payload() -> None:
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
@@ -1757,6 +2138,8 @@ def test_anthropic_model_params() -> None:
         "ls_max_tokens": 64000,
         "ls_temperature": None,
     }
+    assert llm.metadata is not None
+    assert llm.metadata["lc_versions"]["langchain-anthropic"] == __version__
 
     ls_params = llm._get_ls_params(model=MODEL_NAME)
     assert ls_params.get("ls_model_name") == MODEL_NAME
@@ -1833,6 +2216,200 @@ def test_streaming_cache_token_reporting() -> None:
     assert delta_chunk.usage_metadata["input_tokens"] == 135
     assert delta_chunk.usage_metadata["output_tokens"] == 50
     assert delta_chunk.usage_metadata["total_tokens"] == 185
+
+
+def _aggregate_anthropic_events(
+    llm: ChatAnthropic,
+    events: list[Any],
+    *,
+    coerce_content_to_string: bool,
+) -> AIMessageChunk | None:
+    """Drive the handler over `events` and sum chunks like `_stream` does."""
+    block_start_event = None
+    aggregate: AIMessageChunk | None = None
+    for event in events:
+        chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+            event,
+            stream_usage=True,
+            coerce_content_to_string=coerce_content_to_string,
+            block_start_event=block_start_event,
+        )
+        if chunk is not None:
+            aggregate = chunk if aggregate is None else aggregate + chunk
+    return aggregate
+
+
+def test_text_content_block_start_carries_initial_text() -> None:
+    """Regression test: text on `content_block_start` must not be dropped.
+
+    Anthropic sometimes places the opening text of a text block directly on the
+    `content_block_start` event (rather than in a following `text_delta`),
+    most often on the assistant turn that follows a tool result. The handler
+    previously only built a chunk on `content_block_start` for tool / document
+    / redacted_thinking blocks, so the leading text was silently dropped from the
+    aggregated message that gets persisted.
+    """
+    from anthropic.types import (
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageStartEvent,
+        TextDelta,
+    )
+
+    msg = Message(
+        id="msg_repro",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+    events = [
+        RawMessageStartEvent(message=msg, type="message_start"),
+        # The first text rides the START event; the rest arrives as a delta.
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="Here", type="text"),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="'s the answer.", type="text_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+    ]
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    # String content path (no tools / thinking).
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=True)
+    assert aggregate is not None
+    assert aggregate.text == "Here's the answer."
+
+    # Structured content path (e.g. tools / thinking enabled elsewhere).
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=False)
+    assert aggregate is not None
+    assert aggregate.text == "Here's the answer."
+    # The start-event block and the following delta must coalesce into a single
+    # text block that carries the block `index` and no spurious `citations`.
+    assert isinstance(aggregate.content, list)
+    text_blocks = [
+        block
+        for block in aggregate.content
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    assert len(text_blocks) == 1
+    assert text_blocks[0]["index"] == 0
+    assert "citations" not in text_blocks[0]
+
+
+def test_empty_text_content_block_start_emits_no_chunk() -> None:
+    """An empty `TextBlock` start must not change behavior (no spurious chunk)."""
+    from anthropic.types import RawContentBlockStartEvent
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="", type="text"),
+            index=0,
+            type="content_block_start",
+        ),
+        stream_usage=True,
+        coerce_content_to_string=True,
+        block_start_event=None,
+    )
+    assert chunk is None
+    # The block is still tracked so subsequent deltas resolve against it.
+    assert block_start_event is not None
+
+
+def test_thinking_content_block_start_carries_initial_thinking() -> None:
+    """Regression test: thinking/signature on `content_block_start` must survive.
+
+    As with text blocks, Anthropic can place a thinking block's opening
+    `thinking` content (and its `signature`) directly on the
+    `content_block_start` event rather than in a following `thinking_delta` /
+    `signature_delta`. The handler previously only built a chunk on
+    `content_block_start` for tool / document / redacted_thinking blocks, so the
+    leading thinking content was silently dropped from the aggregated message.
+    """
+    from anthropic.types import (
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageStartEvent,
+        ThinkingBlock,
+        ThinkingDelta,
+    )
+
+    msg = Message(
+        id="msg_repro",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+    events = [
+        RawMessageStartEvent(message=msg, type="message_start"),
+        # The opening thinking + signature ride the START event.
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(
+                thinking="Let me ", signature="sig123", type="thinking"
+            ),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="think about it.", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+    ]
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    # Thinking is only represented in the structured-content path.
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=False)
+    assert aggregate is not None
+    assert isinstance(aggregate.content, list)
+    thinking_blocks = [
+        block
+        for block in aggregate.content
+        if isinstance(block, dict) and block.get("type") == "thinking"
+    ]
+    assert len(thinking_blocks) == 1
+    # The leading thinking from the start event merges with the following delta,
+    # and the signature carried on the start event is preserved.
+    assert thinking_blocks[0]["thinking"] == "Let me think about it."
+    assert thinking_blocks[0]["signature"] == "sig123"
+
+
+def test_empty_thinking_content_block_start_emits_no_chunk() -> None:
+    """An empty `ThinkingBlock` start must not emit a spurious chunk."""
+    from anthropic.types import RawContentBlockStartEvent, ThinkingBlock
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(thinking="", signature="", type="thinking"),
+            index=0,
+            type="content_block_start",
+        ),
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=None,
+    )
+    assert chunk is None
+    # The block is still tracked so subsequent deltas resolve against it.
+    assert block_start_event is not None
 
 
 def test_strict_tool_use() -> None:
@@ -2843,3 +3420,161 @@ def test_no_task_budget_no_beta() -> None:
     betas = payload.get("betas")
     if betas:
         assert "task-budgets-2026-03-13" not in betas
+
+
+def test_anthropic_stream_events_v3_lifecycle() -> None:
+    """Validate lifecycle events across a thinking + text + tool_use stream.
+
+    Anthropic emits raw `content_block_start` / `content_block_delta` /
+    `content_block_stop` events with integer `index` fields, interleaved
+    with `message_start` and `message_delta`. This test threads a
+    realistic event sequence through `_stream` via a mocked raw client
+    and asserts that `stream_events(version="v3")` produces a spec-conformant
+    event stream: paired start/finish per block, no interleaving, sequential
+    `uint` wire indices.
+    """
+    from unittest.mock import patch
+
+    from anthropic.types import (
+        InputJSONDelta,
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageDeltaEvent,
+        RawMessageStartEvent,
+        RawMessageStopEvent,
+        TextDelta,
+        ThinkingBlock,
+        ThinkingDelta,
+        ToolUseBlock,
+    )
+    from anthropic.types.raw_message_delta_event import Delta as RawMessageDelta
+    from anthropic.types.raw_message_delta_event import (
+        MessageDeltaUsage as RawMessageDeltaUsage,
+    )
+    from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
+
+    msg = Message(
+        id="msg_1",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+
+    events = [
+        RawMessageStartEvent(message=msg, type="message_start"),
+        # thinking block (index=0)
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(signature="", thinking="", type="thinking"),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="Let me ", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="think.", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+        # text block (index=1)
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="", type="text"),
+            index=1,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="The answer ", type="text_delta"),
+            index=1,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="is 42.", type="text_delta"),
+            index=1,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=1, type="content_block_stop"),
+        # tool_use block (index=2)
+        RawContentBlockStartEvent(
+            content_block=ToolUseBlock(
+                id="toolu_1",
+                input={},
+                name="search",
+                type="tool_use",
+            ),
+            index=2,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=InputJSONDelta(partial_json='{"q":', type="input_json_delta"),
+            index=2,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=InputJSONDelta(partial_json=' "weather"}', type="input_json_delta"),
+            index=2,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=2, type="content_block_stop"),
+        # message_delta with final usage and stop_reason
+        RawMessageDeltaEvent(
+            delta=RawMessageDelta(stop_reason="tool_use", stop_sequence=None),
+            type="message_delta",
+            usage=RawMessageDeltaUsage(
+                output_tokens=50,
+                input_tokens=10,
+                cache_read_input_tokens=0,
+                cache_creation_input_tokens=0,
+            ),
+        ),
+        RawMessageStopEvent(type="message_stop"),
+    ]
+
+    # Enable thinking so `coerce_content_to_string=False` in `_stream`,
+    # which gives every content block an integer `index` field — the
+    # structured path the protocol bridge actually exercises.  Default
+    # (no tools / thinking / documents) coerces text to a plain string,
+    # which strips indices and is a separate code path not covered here.
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        thinking={"type": "enabled", "budget_tokens": 1024},
+    )
+
+    def mock_create(_payload: Any) -> list:
+        return events
+
+    with patch.object(llm, "_create", mock_create):
+        stream_events = list(llm.stream_events("Test query", version="v3"))
+
+    assert_valid_event_stream(stream_events)
+
+    finishes = [e for e in stream_events if e["event"] == "content-block-finish"]
+    types = [f["content"]["type"] for f in finishes]
+    assert types == ["reasoning", "text", "tool_call"]
+
+    wire_indices = [f["index"] for f in finishes]
+    assert wire_indices == [0, 1, 2]
+
+    # Content accumulation reaches content-block-finish intact.
+    reasoning_block = cast("dict[str, Any]", finishes[0]["content"])
+    text_block = cast("dict[str, Any]", finishes[1]["content"])
+    tool_block = cast("dict[str, Any]", finishes[2]["content"])
+    assert reasoning_block["reasoning"] == "Let me think."
+    assert text_block["text"] == "The answer is 42."
+    assert tool_block["args"] == {"q": "weather"}
+    assert tool_block["name"] == "search"
+
+    # message-finish carries the tool_use stop reason inside metadata
+    # (protocol 0.0.9 moved the finish reason off the top-level event
+    # and into `metadata`, where the bridge deposits the provider's raw
+    # `stop_reason` alongside other response metadata).
+    message_finish = cast("dict[str, Any]", stream_events[-1])
+    assert message_finish["event"] == "message-finish"
+    assert message_finish["metadata"]["stop_reason"] == "tool_use"

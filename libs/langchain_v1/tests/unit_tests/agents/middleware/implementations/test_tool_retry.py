@@ -498,6 +498,7 @@ def test_tool_retry_custom_exception_filter() -> None:
     @tool
     def custom_error_tool(val: str) -> str:
         """Tool that raises CustomError."""
+        _ = val
         attempt_count["value"] += 1
         if attempt_count["value"] == 1:
             msg = "Retryable error"

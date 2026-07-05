@@ -9,6 +9,7 @@ import pytest
 from packaging import version
 from syrupy.assertion import SnapshotAssertion
 
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
@@ -16,6 +17,15 @@ from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 PYDANTIC_VERSION_AT_LEAST_29 = version.parse("2.9") <= PYDANTIC_VERSION
+
+
+def test_asdict_replaces_deprecated_dict() -> None:
+    prompt = PromptTemplate.from_template("This is a {foo} test.")
+
+    prompt_dict = prompt.asdict()
+    assert prompt_dict["_type"] == "prompt"
+    with pytest.warns(LangChainDeprecationWarning, match="asdict"):
+        assert prompt.dict() == prompt_dict
 
 
 def test_prompt_valid() -> None:
@@ -217,11 +227,7 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     {{/foo}}is a test."""
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(foo=[{"bar": "yo"}, {"bar": "hello"}]) == (
-        """This
-        yo
-    
-        hello
-    is a test."""  # noqa: W293
+        "This\n        yo\n    \n        hello\n    is a test."
     )
     assert prompt.input_variables == ["foo"]
     if PYDANTIC_VERSION_AT_LEAST_29:

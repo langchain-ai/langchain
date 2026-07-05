@@ -69,6 +69,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openrouter._version import __version__
 from langchain_openrouter.data._profiles import _PROFILES
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
@@ -80,6 +81,24 @@ _INTERNAL_KWARGS = frozenset({"ls_structured_output_format"})
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
+
+
+def _create_stream_generation_info(
+    chunk_dict: dict[str, Any], choice: dict[str, Any], model_name: str
+) -> dict[str, Any]:
+    generation_info = {"finish_reason": choice["finish_reason"]}
+    generation_info["model_name"] = chunk_dict.get("model") or model_name
+    if system_fingerprint := chunk_dict.get("system_fingerprint"):
+        generation_info["system_fingerprint"] = system_fingerprint
+    if native_finish_reason := choice.get("native_finish_reason"):
+        generation_info["native_finish_reason"] = native_finish_reason
+    if response_id := chunk_dict.get("id"):
+        generation_info["id"] = response_id
+    if created := chunk_dict.get("created"):
+        generation_info["created"] = int(created)
+    if object_ := chunk_dict.get("object"):
+        generation_info["object"] = object_
+    return generation_info
 
 
 class ChatOpenRouter(BaseChatModel):
@@ -105,7 +124,7 @@ class ChatOpenRouter(BaseChatModel):
 
         | Param | Type | Description |
         | ----- | ---- | ----------- |
-        | `model` | `str` | Model name, e.g. `'openai/gpt-4o-mini'`. |
+        | `model` | `str` | Model name |
         | `temperature` | `float | None` | Sampling temperature. |
         | `max_tokens` | `int | None` | Max tokens to generate. |
 
@@ -119,6 +138,8 @@ class ChatOpenRouter(BaseChatModel):
         | `app_url` | `str | None` | App URL for attribution. |
         | `app_title` | `str | None` | App title for attribution. |
         | `app_categories` | `list[str] | None` | Marketplace attribution categories. |
+        | `session_id` | `str | None` | Group related requests for observability. |
+        | `trace` | `dict[str, Any] | None` | Trace metadata for broadcasts. |
         | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
 
     ??? info "Instantiate"
@@ -292,6 +313,42 @@ class ChatOpenRouter(BaseChatModel):
     plugins: list[dict[str, Any]] | None = None
     """Plugins configuration for OpenRouter."""
 
+    session_id: str | None = Field(
+        default_factory=from_env("OPENROUTER_SESSION_ID", default=None),
+    )
+    """Identifier used by OpenRouter to group related requests together.
+
+    Useful any time multiple requests should share an observability
+    grouping (e.g. a conversation, an agent workflow, a batch job, or a CI
+    run). Equivalent to setting the `x-session-id` HTTP header on the
+    underlying request. OpenRouter rejects values longer than 128
+    characters.
+
+    Falls back to the `OPENROUTER_SESSION_ID` environment variable when
+    unset, so callers can group all requests from a process without
+    threading the value through application code. Empty strings are
+    treated as unset.
+
+    Example: `"conv-2026-04-30-abc"`
+
+    See https://openrouter.ai/docs/guides/features/broadcast/overview
+    """
+
+    trace: dict[str, Any] | None = None
+    """Trace metadata for observability tools (e.g. Langfuse, LangSmith).
+
+    Forwarded by OpenRouter to configured broadcast destinations. Common
+    keys include `trace_id`, `trace_name`, `span_name`, `generation_name`,
+    and `parent_span_id`; see the OpenRouter broadcast docs for the
+    current full set. Unknown keys are forwarded as custom metadata.
+
+    No environment-variable fallback — set per-call or on the constructor.
+
+    Example: `{"trace_id": "abc-123", "span_name": "summarize"}`
+
+    See https://openrouter.ai/docs/guides/features/broadcast/overview
+    """
+
     model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
@@ -371,6 +428,12 @@ class ChatOpenRouter(BaseChatModel):
                 retry_connection_errors=True,
             )
         return openrouter.OpenRouter(**client_kwargs)
+
+    @model_validator(mode="after")
+    def _set_openrouter_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-openrouter", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
@@ -468,8 +531,7 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
-        response = self.client.chat.send(messages=sdk_messages, **params)
+        response = self.client.chat.send(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
     async def _agenerate(
@@ -487,11 +549,10 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
-        response = await self.client.chat.send_async(messages=sdk_messages, **params)
+        response = await self.client.chat.send_async(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
-    def _stream(  # noqa: C901, PLR0912
+    def _stream(  # noqa: C901
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -503,10 +564,10 @@ class ChatOpenRouter(BaseChatModel):
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        for chunk in self.client.chat.send(messages=sdk_messages, **params):
+        terminal_generation_info: dict[str, Any] = {}
+        for chunk in self.client.chat.send(messages=message_dicts, **params):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
                 if error := chunk_dict.get("error"):
@@ -534,21 +595,18 @@ class ChatOpenRouter(BaseChatModel):
                 chunk_dict, default_chunk_class
             )
             generation_info: dict[str, Any] = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-                # Include response-level metadata on the final chunk
-                response_model = chunk_dict.get("model")
-                generation_info["model_name"] = response_model or self.model_name
-                if system_fingerprint := chunk_dict.get("system_fingerprint"):
-                    generation_info["system_fingerprint"] = system_fingerprint
-                if native_finish_reason := choice.get("native_finish_reason"):
-                    generation_info["native_finish_reason"] = native_finish_reason
-                if response_id := chunk_dict.get("id"):
-                    generation_info["id"] = response_id
-                if created := chunk_dict.get("created"):
-                    generation_info["created"] = int(created)
-                if object_ := chunk_dict.get("object"):
-                    generation_info["object"] = object_
+            if choice.get("finish_reason"):
+                candidate_generation_info = _create_stream_generation_info(
+                    chunk_dict, choice, self.model_name
+                )
+                generation_info.update(
+                    {
+                        key: value
+                        for key, value in candidate_generation_info.items()
+                        if key not in terminal_generation_info
+                    }
+                )
+                terminal_generation_info.update(generation_info)
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -577,7 +635,7 @@ class ChatOpenRouter(BaseChatModel):
                 )
             yield generation_chunk
 
-    async def _astream(  # noqa: C901, PLR0912
+    async def _astream(  # noqa: C901
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -589,11 +647,11 @@ class ChatOpenRouter(BaseChatModel):
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+        terminal_generation_info: dict[str, Any] = {}
         async for chunk in await self.client.chat.send_async(
-            messages=sdk_messages, **params
+            messages=message_dicts, **params
         ):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
@@ -622,21 +680,18 @@ class ChatOpenRouter(BaseChatModel):
                 chunk_dict, default_chunk_class
             )
             generation_info: dict[str, Any] = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-                # Include response-level metadata on the final chunk
-                response_model = chunk_dict.get("model")
-                generation_info["model_name"] = response_model or self.model_name
-                if system_fingerprint := chunk_dict.get("system_fingerprint"):
-                    generation_info["system_fingerprint"] = system_fingerprint
-                if native_finish_reason := choice.get("native_finish_reason"):
-                    generation_info["native_finish_reason"] = native_finish_reason
-                if response_id := chunk_dict.get("id"):
-                    generation_info["id"] = response_id
-                if created := chunk_dict.get("created"):
-                    generation_info["created"] = int(created)  # UNIX timestamp
-                if object_ := chunk_dict.get("object"):
-                    generation_info["object"] = object_
+            if choice.get("finish_reason"):
+                candidate_generation_info = _create_stream_generation_info(
+                    chunk_dict, choice, self.model_name
+                )
+                generation_info.update(
+                    {
+                        key: value
+                        for key, value in candidate_generation_info.items()
+                        if key not in terminal_generation_info
+                    }
+                )
+                terminal_generation_info.update(generation_info)
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -703,6 +758,10 @@ class ChatOpenRouter(BaseChatModel):
             params["route"] = self.route
         if self.plugins is not None:
             params["plugins"] = self.plugins
+        if self.session_id:
+            params["session_id"] = self.session_id
+        if self.trace is not None:
+            params["trace"] = self.trace
         return params
 
     def _create_message_dicts(
@@ -788,6 +847,7 @@ class ChatOpenRouter(BaseChatModel):
         *,
         tool_choice: dict | str | bool | None = None,
         strict: bool | None = None,
+        parallel_tool_calls: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -803,8 +863,13 @@ class ChatOpenRouter(BaseChatModel):
 
                 If `None`, the `strict` argument will not be passed to
                 the model.
+            parallel_tool_calls: Set to `False` to disable parallel tool use.
+                Defaults to `None` (no specification, which allows parallel
+                tool use).
             **kwargs: Any additional parameters.
         """
+        if parallel_tool_calls is not None:
+            kwargs["parallel_tool_calls"] = parallel_tool_calls
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
@@ -955,74 +1020,6 @@ def _strip_internal_kwargs(params: dict[str, Any]) -> None:
         params.pop(key, None)
 
 
-def _has_file_content_blocks(message_dicts: list[dict[str, Any]]) -> bool:
-    """Return `True` if any message dict contains a `file` content block."""
-    for msg in message_dicts:
-        content = msg.get("content")
-        if isinstance(content, list):
-            for block in content:
-                if isinstance(block, dict) and block.get("type") == "file":
-                    return True
-    return False
-
-
-def _wrap_messages_for_sdk(
-    message_dicts: list[dict[str, Any]],
-) -> list[dict[str, Any]] | list[Any]:
-    """Wrap message dicts as SDK Pydantic models when file blocks are present.
-
-    The OpenRouter Python SDK does not include `file` in its
-    `ChatMessageContentItem` discriminated union, so Pydantic validation
-    rejects file content blocks even though the OpenRouter **API** supports
-    them. Using `model_construct` on the SDK's message classes bypasses
-    validation while still producing the correct JSON payload.
-
-    When no file blocks are detected the original dicts are returned unchanged
-    so the normal (validated) code path is preserved.
-
-    Args:
-        message_dicts: Message dicts produced by `_convert_message_to_dict`.
-
-    Returns:
-        The original list when no file blocks are present, or a list of SDK
-        Pydantic model instances otherwise.
-    """
-    if not _has_file_content_blocks(message_dicts):
-        return message_dicts
-
-    try:
-        from openrouter import components  # noqa: PLC0415
-    except ImportError:
-        warnings.warn(
-            "Could not import openrouter.components; file content blocks "
-            "will be sent as raw dicts which may cause validation errors.",
-            stacklevel=2,
-        )
-        return message_dicts
-
-    role_to_model: dict[str, type[BaseModel]] = {
-        "user": components.ChatUserMessage,
-        "system": components.ChatSystemMessage,
-        "assistant": components.ChatAssistantMessage,
-        "tool": components.ChatToolMessage,
-        "developer": components.ChatDeveloperMessage,
-    }
-
-    wrapped: list[Any] = []
-    for msg in message_dicts:
-        model_cls = role_to_model.get(msg.get("role", ""))
-        if model_cls is None:
-            warnings.warn(
-                f"Unknown message role {msg.get('role')!r} encountered during "
-                f"SDK wrapping; passing raw dict to the API.",
-                stacklevel=2,
-            )
-            wrapped.append(msg)
-            continue
-        wrapped.append(model_cls.model_construct(**msg))
-    return wrapped
-
-
 #
 # Type conversion helpers
 #
@@ -1124,6 +1121,99 @@ def _format_message_content(content: Any) -> Any:
     return content
 
 
+def _merge_reasoning_run(run: list[dict[str, Any]]) -> dict[str, Any]:
+    """Merge a run of consecutive same-`(type, index)` reasoning fragments."""
+    merged_entry: dict[str, Any] = {}
+    text_parts: list[str] = []
+    has_text = False
+    for frag in run:
+        for k, v in frag.items():
+            if k == "text":
+                has_text = True
+                if v:
+                    text_parts.append(v)
+            elif v is not None:
+                merged_entry[k] = v
+    if has_text:
+        merged_entry["text"] = "".join(text_parts)
+    return merged_entry
+
+
+def _strip_ephemeral_reasoning_ids(value: Any) -> Any:
+    """Remove OpenAI Responses reasoning item IDs from outbound payloads."""
+    if isinstance(value, list):
+        return [_strip_ephemeral_reasoning_ids(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: _strip_ephemeral_reasoning_ids(item)
+            for key, item in value.items()
+            if not (key == "id" and isinstance(item, str) and item.startswith("rs_"))
+        }
+    return value
+
+
+def _merge_reasoning_details(
+    details: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge fragmented `reasoning_details` from streaming chunk concatenation.
+
+    During streaming, `AIMessageChunk.__add__` list-concatenates
+    `reasoning_details` in `additional_kwargs`, fragmenting a single entry
+    into many. When serialized back to the API via
+    `_convert_message_to_dict`, these fragments cause
+    `BadRequestResponseError` on multi-turn conversations (the provider
+    rejects the malformed thinking block with `Invalid signature`).
+
+    Streaming deltas tag each fragment with the `index` of the entry it
+    belongs to in the original (non-streamed) array, so this function groups
+    consecutive entries by `(type, index)` and merges each group into one.
+    Entries without an `index` are preserved as-is, since non-streaming
+    responses can legitimately contain multiple entries.
+
+    Within a merged group, `text` values are concatenated in order. Other
+    metadata fields (e.g. `format`, `signature`) use last-non-`None`-wins
+    semantics, which preserves stable provider metadata without concatenating
+    repeated strings — Anthropic-style reasoning streams emit a single
+    signature-bearing fragment at the end of the block.
+
+    A list with zero or one items passes through unchanged.
+    """
+    if not isinstance(details, list) or len(details) <= 1:
+        return details
+
+    merged: list[dict[str, Any]] = []
+    i = 0
+    while i < len(details):
+        entry = details[i]
+        # Without an index we cannot distinguish streaming fragments from
+        # distinct non-streaming entries, so leave them alone. Same for any
+        # non-dict items that may have slipped in upstream.
+        if not isinstance(entry, dict) or entry.get("index") is None:
+            merged.append(entry)
+            i += 1
+            continue
+
+        entry_type = entry.get("type", "")
+        entry_index = entry["index"]
+        run = [entry]
+        i += 1
+        while i < len(details):
+            nxt = details[i]
+            if (
+                isinstance(nxt, dict)
+                and nxt.get("type", "") == entry_type
+                and nxt.get("index") == entry_index
+            ):
+                run.append(nxt)
+                i += 1
+            else:
+                break
+
+        merged.append(entry if len(run) == 1 else _merge_reasoning_run(run))
+
+    return merged
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C901, PLR0912
     """Convert a LangChain message to an OpenRouter-compatible dict payload.
 
@@ -1175,14 +1265,15 @@ def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C
             ):
                 message_dict["content"] = None
         # Preserve reasoning content for multi-turn conversations (e.g.
-        # tool-calling loops). OpenRouter stores reasoning in "reasoning" and
-        # optional structured details in "reasoning_details".
+        # tool-calling loops). OpenRouter stores reasoning text in `reasoning`
+        # and structured fragment details in `reasoning_details`; the latter
+        # is merged before serialization to undo streaming fragmentation.
         if "reasoning_content" in message.additional_kwargs:
             message_dict["reasoning"] = message.additional_kwargs["reasoning_content"]
         if "reasoning_details" in message.additional_kwargs:
-            message_dict["reasoning_details"] = message.additional_kwargs[
-                "reasoning_details"
-            ]
+            message_dict["reasoning_details"] = _strip_ephemeral_reasoning_ids(
+                _merge_reasoning_details(message.additional_kwargs["reasoning_details"])
+            )
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, ToolMessage):
@@ -1345,7 +1436,7 @@ def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911, PLR0912
 
 
 def _lc_tool_call_to_openrouter_tool_call(tool_call: ToolCall) -> dict[str, Any]:
-    """Convert a LangChain ``ToolCall`` to an OpenRouter tool call dict.
+    """Convert a LangChain `ToolCall` to an OpenRouter tool call dict.
 
     Serializes `args` (a dict) via `json.dumps`.
     """

@@ -9,10 +9,9 @@ from collections.abc import Awaitable, Callable
 from typing import (
     TYPE_CHECKING,
     Any,
-    cast,
 )
 
-from pydantic import BaseModel, RootModel
+from pydantic import RootModel
 from typing_extensions import override
 
 from langchain_core.runnables.base import (
@@ -20,6 +19,7 @@ from langchain_core.runnables.base import (
     Runnable,
     RunnableParallel,
     RunnableSerializable,
+    _get_schema_field_definition,
 )
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -35,7 +35,7 @@ from langchain_core.runnables.utils import (
 )
 from langchain_core.utils.aiter import atee
 from langchain_core.utils.iter import safetee
-from langchain_core.utils.pydantic import create_model_v2
+from langchain_core.utils.pydantic import TypeBaseModel, create_model_v2, get_fields
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Mapping
@@ -346,7 +346,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             yield chunk
 
 
-_graph_passthrough: RunnablePassthrough = RunnablePassthrough()
+_graph_passthrough = RunnablePassthrough[Any]()
 
 
 class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
@@ -389,7 +389,9 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         ```
     """
 
-    mapper: RunnableParallel
+    # Ideally we would type mapper as RunnableParallel[dict[str, Any]]
+    # but this fails validation for Pydantic <2.10
+    mapper: RunnableParallel  # type: ignore[type-arg]
 
     def __init__(self, mapper: RunnableParallel[dict[str, Any]], **kwargs: Any) -> None:
         """Create a `RunnableAssign`.
@@ -426,7 +428,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         return super().get_name(suffix, name=name)
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         map_input_schema = self.mapper.get_input_schema(config)
         if not issubclass(map_input_schema, RootModel):
             # ie. it's a dict
@@ -435,9 +437,11 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         return super().get_input_schema(config)
 
     @override
-    def get_output_schema(
-        self, config: RunnableConfig | None = None
-    ) -> type[BaseModel]:
+    def get_output_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
+        # The return type stays `TypeBaseModel` (rather than narrowing to
+        # `type[BaseModel]` as `RunnableParallel.get_output_schema` does) because
+        # the fallback branches return the mapper's output schema or delegate to
+        # `super().get_output_schema()`, either of which may be a Pydantic v1 model.
         map_input_schema = self.mapper.get_input_schema(config)
         map_output_schema = self.mapper.get_output_schema(config)
         if not issubclass(map_input_schema, RootModel) and not issubclass(
@@ -445,11 +449,11 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         ):
             fields = {}
 
-            for name, field_info in map_input_schema.model_fields.items():
-                fields[name] = (field_info.annotation, field_info.default)
+            for name, field_info in get_fields(map_input_schema).items():
+                fields[name] = _get_schema_field_definition(field_info)
 
-            for name, field_info in map_output_schema.model_fields.items():
-                fields[name] = (field_info.annotation, field_info.default)
+            for name, field_info in get_fields(map_output_schema).items():
+                fields[name] = _get_schema_field_definition(field_info)
 
             return create_model_v2("RunnableAssignOutput", field_definitions=fields)
         if not issubclass(map_output_schema, RootModel):
@@ -485,7 +489,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         **kwargs: Any,
     ) -> dict[str, Any]:
         if not isinstance(value, dict):
-            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            msg = "The input to RunnablePassthrough.assign() must be a dict."  # type: ignore[unreachable]
             raise ValueError(msg)  # noqa: TRY004
 
         return {
@@ -514,7 +518,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         **kwargs: Any,
     ) -> dict[str, Any]:
         if not isinstance(value, dict):
-            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            msg = "The input to RunnablePassthrough.assign() must be a dict."  # type: ignore[unreachable]
             raise ValueError(msg)  # noqa: TRY004
 
         return {
@@ -568,7 +572,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             # consume passthrough stream
             for chunk in for_passthrough:
                 if not isinstance(chunk, dict):
-                    msg = "The input to RunnablePassthrough.assign() must be a dict."
+                    msg = "The input to RunnablePassthrough.assign() must be a dict."  # type: ignore[unreachable]
                     raise ValueError(msg)  # noqa: TRY004
                 # remove mapper keys from passthrough chunk, to be overwritten by map
                 filtered = AddableDict(
@@ -577,9 +581,11 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
                 if filtered:
                     yield filtered
             # yield map output
-            yield cast("dict[str, Any]", first_map_chunk_future.result())
-            for chunk in map_output:
-                yield chunk
+            first_chunk = first_map_chunk_future.result()
+            if first_chunk is not None:
+                yield first_chunk
+                for chunk in map_output:
+                    yield chunk
 
     @override
     def transform(
@@ -613,13 +619,13 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             **kwargs,
         )
         # start map output stream
-        first_map_chunk_task: asyncio.Task = asyncio.create_task(
+        first_map_chunk_task = asyncio.create_task(
             anext(map_output, None),
         )
         # consume passthrough stream
         async for chunk in for_passthrough:
             if not isinstance(chunk, dict):
-                msg = "The input to RunnablePassthrough.assign() must be a dict."
+                msg = "The input to RunnablePassthrough.assign() must be a dict."  # type: ignore[unreachable]
                 raise ValueError(msg)  # noqa: TRY004
 
             # remove mapper keys from passthrough chunk, to be overwritten by map output
@@ -629,9 +635,11 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             if filtered:
                 yield filtered
         # yield map output
-        yield await first_map_chunk_task
-        async for chunk in map_output:
-            yield chunk
+        first_chunk = await first_map_chunk_task
+        if first_chunk is not None:
+            yield first_chunk
+            async for chunk in map_output:
+                yield chunk
 
     @override
     async def atransform(
@@ -743,7 +751,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], Any]):
 
     def _pick(self, value: dict[str, Any]) -> Any:
         if not isinstance(value, dict):
-            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            msg = "The input to RunnablePassthrough.assign() must be a dict."  # type: ignore[unreachable]
             raise ValueError(msg)  # noqa: TRY004
 
         if isinstance(self.keys, str):

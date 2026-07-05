@@ -71,7 +71,11 @@ class FireworksEmbeddings(BaseModel, Embeddings):
         alias="api_key",
         default_factory=secret_from_env(
             "FIREWORKS_API_KEY",
-            default="",
+            error_message=(
+                "You must specify an api key. "
+                "You can pass it an argument as `api_key=...` or "
+                "set the environment variable `FIREWORKS_API_KEY`."
+            ),
         ),
     )
     """Fireworks API key.
