@@ -44,6 +44,7 @@ jobs:
     # intra-monorepo pins ahead of a sibling release on purpose. Maintainers can
     # acknowledge an unusual coordinated release with the bypass label.
     if: >-
+      github.repository_owner == 'langchain-ai' &&
       startsWith(github.event.pull_request.title, 'release') &&
       !contains(github.event.pull_request.labels.*.name, 'release-deps: acknowledged')
     runs-on: ubuntu-latest
