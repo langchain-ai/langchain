@@ -1,7 +1,18 @@
-"""Model fallback middleware for agents."""
+"""Model fallback middleware for agents.
+
+When a caching middleware such as `AnthropicPromptCachingMiddleware` wraps this
+middleware from the outside, it applies Anthropic `cache_control` markers to the
+request *before* the fallback loop runs. Those markers are provider-specific and
+cause API errors on non-Anthropic fallback models, so this middleware strips them
+from fallback attempts. The knowledge of the `cache_control` marker is duplicated
+here (rather than owned solely by the Anthropic partner package) because an outer
+caching middleware never re-runs during fallback and therefore cannot clean up
+after itself.
+"""
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.tools import BaseTool
@@ -21,6 +32,8 @@ if TYPE_CHECKING:
 
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.messages import AIMessage, AnyMessage, SystemMessage
+
+logger = logging.getLogger(__name__)
 
 
 def _sanitize_content_blocks(
@@ -115,11 +128,23 @@ def _sanitize_request_for_fallback(request: ModelRequest[ContextT]) -> ModelRequ
     if not overrides:
         return request
 
+    # Log only the field names that changed, never request content (may contain
+    # prompt data or PII).
+    logger.debug(
+        "Stripped Anthropic cache_control markers from %s before fallback attempt",
+        sorted(overrides),
+    )
+
     return request.override(**overrides)
 
 
 def _sanitize_message(message: AnyMessage) -> tuple[AnyMessage, bool]:
-    """Remove Anthropic cache markers from a single message."""
+    """Remove Anthropic cache markers from a single message.
+
+    Returns:
+        The sanitized message (the original instance when unchanged) and whether
+            any marker was removed.
+    """
     sanitized_content = _sanitize_content_blocks(message.content)
     if sanitized_content is message.content:
         return message, False
@@ -128,7 +153,14 @@ def _sanitize_message(message: AnyMessage) -> tuple[AnyMessage, bool]:
 
 
 def _sanitize_base_tool(tool: BaseTool) -> tuple[BaseTool, bool]:
-    """Remove Anthropic cache markers from a `BaseTool` payload."""
+    """Remove Anthropic cache markers from a `BaseTool` payload.
+
+    Returns:
+        The sanitized tool (the original instance when unchanged) and whether any
+            marker was removed.
+
+            Emptied `extras` collapse back to `None`.
+    """
     if not tool.extras:
         return tool, False
 
@@ -140,7 +172,14 @@ def _sanitize_base_tool(tool: BaseTool) -> tuple[BaseTool, bool]:
 
 
 def _sanitize_dict_tool(tool: dict[str, Any]) -> tuple[dict[str, Any], bool]:
-    """Remove Anthropic cache markers from a dict-style tool payload."""
+    """Remove Anthropic cache markers from a dict-style tool payload.
+
+    Returns:
+        The sanitized tool (the original instance when unchanged) and whether any
+            marker was removed.
+
+            Emptied `extras` collapse back to `None`.
+    """
     sanitized_tool, changed = _without_cache_control(tool)
 
     extras = sanitized_tool.get("extras")
@@ -168,7 +207,15 @@ def _without_cache_control(payload: dict[str, Any]) -> tuple[dict[str, Any], boo
 def _without_cache_control_from_content_block(
     block: dict[str, Any],
 ) -> tuple[dict[str, Any], bool]:
-    """Return content block without Anthropic cache markers."""
+    """Return content block without Anthropic cache markers.
+
+    Strips `cache_control` from the block itself and from its nested `extras` and
+    `metadata` payloads.
+
+    Returns:
+        The sanitized block (the original instance when unchanged) and whether any
+            marker was removed.
+    """
     sanitized_block, changed = _without_cache_control(block)
 
     for nested_key in ("extras", "metadata"):
@@ -260,13 +307,15 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         except Exception as e:
             last_exception = e
 
+        # Sanitize once, outside the loop: sanitization is model-independent, so
+        # keeping it out of the try avoids masking a sanitizer bug as a model
+        # failure and avoids re-sanitizing the payload for every fallback model.
+        sanitized_request = _sanitize_request_for_fallback(request)
+
         # Try fallback models
         for fallback_model in self.models:
             try:
-                fallback_request = _sanitize_request_for_fallback(
-                    request.override(model=fallback_model)
-                )
-                return handler(fallback_request)
+                return handler(sanitized_request.override(model=fallback_model))
             except Exception as e:
                 last_exception = e
                 continue
@@ -297,13 +346,15 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         except Exception as e:
             last_exception = e
 
+        # Sanitize once, outside the loop: sanitization is model-independent, so
+        # keeping it out of the try avoids masking a sanitizer bug as a model
+        # failure and avoids re-sanitizing the payload for every fallback model.
+        sanitized_request = _sanitize_request_for_fallback(request)
+
         # Try fallback models
         for fallback_model in self.models:
             try:
-                fallback_request = _sanitize_request_for_fallback(
-                    request.override(model=fallback_model)
-                )
-                return await handler(fallback_request)
+                return await handler(sanitized_request.override(model=fallback_model))
             except Exception as e:
                 last_exception = e
                 continue

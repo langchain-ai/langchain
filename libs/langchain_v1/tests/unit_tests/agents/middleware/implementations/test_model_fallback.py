@@ -14,7 +14,10 @@ from langchain_core.tools import BaseTool, tool
 from typing_extensions import override
 
 from langchain.agents.factory import create_agent
-from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
+from langchain.agents.middleware.model_fallback import (
+    ModelFallbackMiddleware,
+    _sanitize_request_for_fallback,
+)
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -263,6 +266,72 @@ async def test_fallback_sanitizes_cache_markers_async() -> None:
     assert response.result[0].content == "fallback response"
     assert len(attempts) == 2
     _assert_request_has_cache_markers(request)
+
+
+def test_sanitize_collapses_emptied_extras_to_none() -> None:
+    """Stripping the only `extras` key (`cache_control`) resets `extras` to None."""
+
+    @tool(extras={"cache_control": {"type": "ephemeral"}})
+    def base_tool_only_cache(query: str) -> str:
+        """Tool whose extras hold only a cache marker."""
+        return query
+
+    request = _make_request().override(
+        tools=[
+            base_tool_only_cache,
+            {
+                "name": "dict_tool",
+                "description": "dict-style tool payload",
+                "extras": {"cache_control": {"type": "ephemeral"}},
+            },
+        ],
+    )
+
+    sanitized = _sanitize_request_for_fallback(request)
+
+    base_tool = sanitized.tools[0]
+    assert isinstance(base_tool, BaseTool)
+    assert base_tool.extras is None
+
+    dict_tool = sanitized.tools[1]
+    assert isinstance(dict_tool, dict)
+    assert dict_tool.get("extras") is None
+
+
+def test_sanitize_returns_same_request_when_no_markers() -> None:
+    """A marker-free request passes through as the same instance (no copies)."""
+
+    @tool
+    def plain_tool(query: str) -> str:
+        """Marker-free tool."""
+        return query
+
+    request = _make_request().override(
+        model_settings={"temperature": 0.5},
+        system_message=SystemMessage(content=[{"type": "text", "text": "policy"}]),
+        messages=[HumanMessage(content=[{"type": "text", "text": "question"}])],
+        tools=[plain_tool],
+    )
+
+    assert _sanitize_request_for_fallback(request) is request
+
+
+def test_sanitize_preserves_identity_of_unchanged_fields() -> None:
+    """Only fields containing markers are copied; the rest keep object identity."""
+    request = _make_request().override(
+        model_settings={"temperature": 0.5, "cache_control": {"type": "ephemeral"}},
+        system_message=SystemMessage(content=[{"type": "text", "text": "policy"}]),
+        messages=[HumanMessage(content=[{"type": "text", "text": "question"}])],
+    )
+
+    sanitized = _sanitize_request_for_fallback(request)
+
+    # Only `model_settings` contained a marker, so everything else is untouched.
+    assert sanitized is not request
+    assert sanitized.model_settings == {"temperature": 0.5}
+    assert sanitized.system_message is request.system_message
+    assert sanitized.messages is request.messages
+    assert sanitized.tools is request.tools
 
 
 def test_primary_model_succeeds() -> None:
