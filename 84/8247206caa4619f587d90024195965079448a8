@@ -1,0 +1,21 @@
+libs/partners/openrouter/langchain_openrouter/_version.py
+  s_f4c76004943013::t_d32e3889301f88 3
+libs/partners/openrouter/pyproject.toml
+  s_f4c76004943013::t_4d0aaadf756341 23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "848247206caa4619f587d90024195965079448a8",
+  "prompts": {},
+  "sessions": {
+    "s_f4c76004943013": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "95241a57-93da-47ad-a5fe-2da9eeebe681",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
