@@ -26,6 +26,10 @@ def _populate_extras(
     return standard_block
 
 
+def _has_source_fields(source: dict[str, Any], *field_names: str) -> bool:
+    return all(field_name in source for field_name in field_names)
+
+
 def _convert_to_v1_from_anthropic_input(
     content: list[types.ContentBlock],
 ) -> list[types.ContentBlock]:
@@ -54,41 +58,44 @@ def _convert_to_v1_from_anthropic_input(
         ]
         for block in blocks:
             block_type = block.get("type")
+            source = block.get("source")
 
             if (
                 block_type == "document"
-                and "source" in block
-                and "type" in block["source"]
+                and isinstance(source, dict)
+                and "type" in source
             ):
-                if block["source"]["type"] == "base64":
+                if source["type"] == "base64" and _has_source_fields(
+                    source, "data", "media_type"
+                ):
                     file_block: types.FileContentBlock = {
                         "type": "file",
-                        "base64": block["source"]["data"],
-                        "mime_type": block["source"]["media_type"],
+                        "base64": source["data"],
+                        "mime_type": source["media_type"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "url":
+                elif source["type"] == "url" and _has_source_fields(source, "url"):
                     file_block = {
                         "type": "file",
-                        "url": block["source"]["url"],
+                        "url": source["url"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "file":
+                elif source["type"] == "file" and _has_source_fields(source, "file_id"):
                     file_block = {
                         "type": "file",
-                        "id": block["source"]["file_id"],
+                        "id": source["file_id"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "text":
+                elif source["type"] == "text" and _has_source_fields(source, "data"):
                     plain_text_block: types.PlainTextContentBlock = {
                         "type": "text-plain",
-                        "text": block["source"]["data"],
+                        "text": source["data"],
                         "mime_type": block.get("media_type", "text/plain"),
                     }
                     _populate_extras(plain_text_block, block, {"type", "source"})
@@ -99,30 +106,32 @@ def _convert_to_v1_from_anthropic_input(
 
             elif (
                 block_type == "image"
-                and "source" in block
-                and "type" in block["source"]
+                and isinstance(source, dict)
+                and "type" in source
             ):
-                if block["source"]["type"] == "base64":
+                if source["type"] == "base64" and _has_source_fields(
+                    source, "data", "media_type"
+                ):
                     image_block: types.ImageContentBlock = {
                         "type": "image",
-                        "base64": block["source"]["data"],
-                        "mime_type": block["source"]["media_type"],
+                        "base64": source["data"],
+                        "mime_type": source["media_type"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block
 
-                elif block["source"]["type"] == "url":
+                elif source["type"] == "url" and _has_source_fields(source, "url"):
                     image_block = {
                         "type": "image",
-                        "url": block["source"]["url"],
+                        "url": source["url"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block
 
-                elif block["source"]["type"] == "file":
+                elif source["type"] == "file" and _has_source_fields(source, "file_id"):
                     image_block = {
                         "type": "image",
-                        "id": block["source"]["file_id"],
+                        "id": source["file_id"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block

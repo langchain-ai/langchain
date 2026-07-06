@@ -507,3 +507,18 @@ def test_convert_to_v1_from_anthropic_input() -> None:
     ]
 
     assert message.content_blocks == expected
+
+
+def test_convert_to_v1_from_malformed_anthropic_input() -> None:
+    content = [
+        {"type": "image", "source": {"type": "base64", "media_type": "image/png"}},
+        {"type": "document", "source": {"type": "url"}},
+        {"type": "document", "source": {"type": "file"}},
+        {"type": "document", "source": {"type": "text"}},
+    ]
+    message = HumanMessage(content)
+
+    assert message.content_blocks == [
+        content[0],
+        *({"type": "non_standard", "value": block} for block in content[1:]),
+    ]
