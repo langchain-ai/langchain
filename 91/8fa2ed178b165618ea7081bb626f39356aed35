@@ -1,0 +1,29 @@
+libs/langchain_v1/langchain/agents/middleware/_execution.py
+  s_172d9674e0edd7::t_2cc95a98e371c8 223,328
+libs/langchain_v1/uv.lock
+  s_a3d9632f80da57::t_a48bb8d25b17df 991,2531-2532
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "918fa2ed178b165618ea7081bb626f39356aed35",
+  "prompts": {},
+  "sessions": {
+    "s_172d9674e0edd7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6d779724-dd57-4e72-94e7-b9ca7555911a",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    },
+    "s_a3d9632f80da57": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "533e6700-299f-424d-91c5-54e22f672b7b",
+        "model": "unknown"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
