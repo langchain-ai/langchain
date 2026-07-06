@@ -211,6 +211,100 @@ def test_init_tool_calls() -> None:
     msg.tool_calls = [{"name": "bar", "args": {"c": "d"}, "id": "def"}]
 
 
+def test_streaming_tool_call_empty_args_not_fired_prematurely() -> None:
+    """A non-final chunk with args="" means the args haven't arrived yet.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38682.
+    """
+    chunk_1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": "get_weather",
+                "args": "",
+                "id": "call_abc",
+                "index": 0,
+            }
+        ],
+    )
+    assert chunk_1.tool_calls == []
+    assert chunk_1.invalid_tool_calls == []
+
+    chunk_2 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": None,
+                "args": '{"city": "Paris"}',
+                "id": None,
+                "index": 0,
+            }
+        ],
+    )
+    # Still not marked as the last chunk, but args are now complete/parseable.
+    merged = chunk_1 + chunk_2
+    assert merged.tool_calls == [
+        {
+            "name": "get_weather",
+            "args": {"city": "Paris"},
+            "id": "call_abc",
+            "type": "tool_call",
+        }
+    ]
+
+    # Once the stream is finalized, the accumulated message still has the
+    # full args.
+    final = merged + AIMessageChunk(content="", chunk_position="last")
+    assert final.tool_calls == [
+        {
+            "name": "get_weather",
+            "args": {"city": "Paris"},
+            "id": "call_abc",
+            "type": "tool_call",
+        }
+    ]
+
+
+def test_streaming_tool_call_zero_arg_tool_fires_at_stream_end() -> None:
+    """A zero-argument tool call still resolves to `{}` once finalized."""
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": "ping",
+                "args": "",
+                "id": "call_zero",
+                "index": 0,
+            }
+        ],
+        chunk_position="last",
+    )
+    assert chunk.tool_calls == [
+        {"name": "ping", "args": {}, "id": "call_zero", "type": "tool_call"}
+    ]
+
+    # `args=None` (field never sent) is unambiguous and resolves immediately,
+    # even mid-stream.
+    none_args_chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": "ping",
+                "args": None,
+                "id": "call_zero",
+                "index": 0,
+            }
+        ],
+    )
+    assert none_args_chunk.tool_calls == [
+        {"name": "ping", "args": {}, "id": "call_zero", "type": "tool_call"}
+    ]
+
+
 def test_content_blocks() -> None:
     message = AIMessage(
         "",

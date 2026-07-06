@@ -553,6 +553,14 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             )
 
         for chunk in self.tool_call_chunks:
+            # An empty-string ``args`` on a non-final chunk means the provider
+            # has started streaming the tool call (name/id sent) but the
+            # argument payload has not arrived yet — treat it as incomplete
+            # rather than resolving to `{}`, which would fire the tool call
+            # prematurely. ``None`` still means "no args" and resolves to
+            # `{}` immediately, as before.
+            if chunk["args"] == "" and self.chunk_position != "last":
+                continue
             try:
                 args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
                 if isinstance(args_, dict):
