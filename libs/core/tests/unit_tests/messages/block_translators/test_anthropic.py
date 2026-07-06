@@ -507,3 +507,61 @@ def test_convert_to_v1_from_anthropic_input() -> None:
     ]
 
     assert message.content_blocks == expected
+
+
+def test_anthropic_input_malformed_sources_do_not_raise() -> None:
+    malformed_blocks = [
+        {"type": "image", "source": {"type": "base64"}},
+        {"type": "document", "source": {"type": "url"}},
+        {"type": "document", "source": {"type": "file"}},
+        {"type": "document", "source": {"type": "text"}},
+        {"type": "document", "source": None},
+    ]
+    message = HumanMessage(malformed_blocks)
+
+    assert message.content_blocks == [
+        malformed_blocks[0],
+        *[{"type": "non_standard", "value": block} for block in malformed_blocks[1:]],
+    ]
+
+
+def test_anthropic_malformed_citations_fall_back_to_non_standard() -> None:
+    message = AIMessage(
+        [
+            {
+                "type": "text",
+                "text": "Cited answer",
+                "citations": [
+                    {
+                        "type": "web_search_result_location",
+                        "url": "https://example.com",
+                    },
+                    {"type": "char_location", "document_title": "Example document"},
+                ],
+            }
+        ],
+        response_metadata={"model_provider": "anthropic"},
+    )
+
+    assert message.content_blocks == [
+        {
+            "type": "text",
+            "text": "Cited answer",
+            "annotations": [
+                {
+                    "type": "non_standard_annotation",
+                    "value": {
+                        "type": "web_search_result_location",
+                        "url": "https://example.com",
+                    },
+                },
+                {
+                    "type": "non_standard_annotation",
+                    "value": {
+                        "type": "char_location",
+                        "document_title": "Example document",
+                    },
+                },
+            ],
+        }
+    ]
