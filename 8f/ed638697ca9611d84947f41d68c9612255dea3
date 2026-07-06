@@ -1,0 +1,19 @@
+libs/core/uv.lock
+  s_a3d9632f80da57::t_38ad747e020d3d 493,655-665,687-697,709,1224,1226
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8fed638697ca9611d84947f41d68c9612255dea3",
+  "prompts": {},
+  "sessions": {
+    "s_a3d9632f80da57": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "533e6700-299f-424d-91c5-54e22f672b7b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
