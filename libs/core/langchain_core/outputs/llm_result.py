@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -37,11 +37,12 @@ class LLMResult(BaseModel):
     chat message.
     """
 
-    llm_output: dict | None = None
-    """For arbitrary LLM provider specific output.
+    llm_output: dict[str, Any] | None = None
+    """For arbitrary model provider-specific output.
 
     This dictionary is a free-form dictionary that can contain any information that the
-    provider wants to return. It is not standardized and is provider-specific.
+    provider wants to return. It is not standardized and keys may vary by provider and
+    over time.
 
     Users should generally avoid relying on this field and instead rely on accessing
     relevant information from standardized fields present in AIMessage.

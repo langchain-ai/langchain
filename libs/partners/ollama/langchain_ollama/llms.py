@@ -20,6 +20,7 @@ from langchain_ollama._utils import (
     parse_url_with_auth,
     validate_model,
 )
+from langchain_ollama._version import __version__
 
 
 class OllamaLLM(BaseLLM):
@@ -320,6 +321,12 @@ class OllamaLLM(BaseLLM):
         return params
 
     @model_validator(mode="after")
+    def _set_ollama_llm_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-ollama", __version__)
+        return self
+
+    @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
         client_kwargs = self.client_kwargs or {}
@@ -475,7 +482,7 @@ class OllamaLLM(BaseLLM):
                 **kwargs,
             )
             generations.append([final_chunk])
-        return LLMResult(generations=generations)  # type: ignore[arg-type]
+        return LLMResult(generations=generations)
 
     async def _agenerate(
         self,
@@ -494,7 +501,7 @@ class OllamaLLM(BaseLLM):
                 **kwargs,
             )
             generations.append([final_chunk])
-        return LLMResult(generations=generations)  # type: ignore[arg-type]
+        return LLMResult(generations=generations)
 
     def _stream(
         self,

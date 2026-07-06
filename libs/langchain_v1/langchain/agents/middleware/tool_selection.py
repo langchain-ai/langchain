@@ -106,7 +106,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             middleware = LLMToolSelectorMiddleware(max_tools=3)
 
             agent = create_agent(
-                model="openai:gpt-4o",
+                model="openai:gpt-5.5",
                 tools=[tool1, tool2, tool3, tool4, tool5],
                 middleware=[middleware],
             )
@@ -115,7 +115,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         !!! example "Use a smaller model for selection"
 
             ```python
-            middleware = LLMToolSelectorMiddleware(model="openai:gpt-4o-mini", max_tools=2)
+            middleware = LLMToolSelectorMiddleware(model="openai:gpt-5.4-mini", max_tools=2)
             ```
     """
 
@@ -164,8 +164,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             request: the model request.
 
         Returns:
-            `SelectionRequest` with prepared inputs, or `None` if no selection is
-            needed.
+            `SelectionRequest` with prepared inputs, or `None` if no selection is needed.
 
         Raises:
             ValueError: If tools in `always_include` are not found in the request.
@@ -280,8 +279,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns
-                `ModelResponse`.
+            handler: Async callback that executes the model request and returns `ModelResponse`.
 
         Returns:
             The model call result.
@@ -323,8 +321,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns
-                `ModelResponse`.
+            handler: Async callback that executes the model request and returns `ModelResponse`.
 
         Returns:
             The model call result.

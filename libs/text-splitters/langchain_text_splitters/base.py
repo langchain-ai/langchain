@@ -232,16 +232,17 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
-    @classmethod
-    def from_tiktoken_encoder(
-        cls,
+    @staticmethod
+    def _tiktoken_length_function(
         encoding_name: str = "gpt2",
         model_name: str | None = None,
-        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
         disallowed_special: Literal["all"] | Collection[str] = "all",
-        **kwargs: Any,
-    ) -> Self:
-        """Text splitter that uses `tiktoken` encoder to count length.
+    ) -> Callable[[str], int]:
+        """Build a `tiktoken`-based length function.
+
+        Shared by `from_tiktoken_encoder` on both `TextSplitter` and
+        `TokenTextSplitter`.
 
         Args:
             encoding_name: The name of the tiktoken encoding to use.
@@ -252,11 +253,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             disallowed_special: Special tokens that are disallowed during encoding.
 
         Returns:
-            An instance of `TextSplitter` using tiktoken for length calculation.
+            A function that returns the token length of a string.
 
         Raises:
             ImportError: If the tiktoken package is not installed.
         """
+        if allowed_special is None:
+            allowed_special = set()
         tiktoken = cast("Any", _import_tiktoken())
 
         if model_name is not None:
@@ -273,16 +276,36 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 )
             )
 
-        if issubclass(cls, TokenTextSplitter):
-            extra_kwargs = {
-                "encoding_name": encoding_name,
-                "model_name": model_name,
-                "allowed_special": allowed_special,
-                "disallowed_special": disallowed_special,
-            }
-            kwargs = {**kwargs, **extra_kwargs}
+        return _tiktoken_encoder
 
-        return cls(length_function=_tiktoken_encoder, **kwargs)
+    @classmethod
+    def from_tiktoken_encoder(
+        cls,
+        encoding_name: str = "gpt2",
+        model_name: str | None = None,
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
+        disallowed_special: Literal["all"] | Collection[str] = "all",
+        **kwargs: Any,
+    ) -> Self:
+        """Text splitter that uses `tiktoken` encoder to count length.
+
+        Args:
+            encoding_name: The name of the tiktoken encoding to use.
+            model_name: The name of the model to use.
+                If provided, this will override the `encoding_name`.
+            allowed_special: Special tokens that are allowed during encoding.
+            disallowed_special: Special tokens that are disallowed during encoding.
+
+        Returns:
+            An instance of the calling class using tiktoken for length calculation.
+
+        Raises:
+            ImportError: If the tiktoken package is not installed.
+        """
+        length_function = cls._tiktoken_length_function(
+            encoding_name, model_name, allowed_special, disallowed_special
+        )
+        return cls(length_function=length_function, **kwargs)
 
     @override
     def transform_documents(
@@ -306,16 +329,15 @@ class TokenTextSplitter(TextSplitter):
         self,
         encoding_name: str = "gpt2",
         model_name: str | None = None,
-        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
         disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> None:
-        """Create a new `TextSplitter`.
+        """Create a new `TokenTextSplitter`.
 
         Args:
             encoding_name: The name of the tiktoken encoding to use.
             model_name: The name of the model to use.
-
                 If provided, this will override the `encoding_name`.
             allowed_special: Special tokens that are allowed during encoding.
             disallowed_special: Special tokens that are disallowed during encoding.
@@ -323,6 +345,8 @@ class TokenTextSplitter(TextSplitter):
         Raises:
             ImportError: If the tiktoken package is not installed.
         """
+        if allowed_special is None:
+            allowed_special = set()
         super().__init__(**kwargs)
         try:
             tiktoken = cast("Any", _import_tiktoken())
@@ -342,6 +366,48 @@ class TokenTextSplitter(TextSplitter):
         self._allowed_special = allowed_special
         self._disallowed_special = disallowed_special
 
+    @classmethod
+    @override
+    def from_tiktoken_encoder(
+        cls,
+        encoding_name: str = "gpt2",
+        model_name: str | None = None,
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
+        disallowed_special: Literal["all"] | Collection[str] = "all",
+        **kwargs: Any,
+    ) -> Self:
+        """Text splitter that uses `tiktoken` encoder to count length.
+
+        Unlike the base implementation, this also seeds the constructor with the
+        tiktoken configuration so the splitter tokenizes on the same encoding.
+
+        Args:
+            encoding_name: The name of the tiktoken encoding to use.
+            model_name: The name of the model to use.
+
+                If provided, this will override the `encoding_name`.
+            allowed_special: Special tokens that are allowed during encoding.
+            disallowed_special: Special tokens that are disallowed during encoding.
+
+        Returns:
+            A `TokenTextSplitter` instance using tiktoken for length calculation.
+
+        Raises:
+            ImportError: If the tiktoken package is not installed.
+        """
+        length_function = cls._tiktoken_length_function(
+            encoding_name, model_name, allowed_special, disallowed_special
+        )
+        return cls(
+            length_function=length_function,
+            encoding_name=encoding_name,
+            model_name=model_name,
+            allowed_special=allowed_special,
+            disallowed_special=disallowed_special,
+            **kwargs,
+        )
+
+    @override
     def split_text(self, text: str) -> list[str]:
         """Splits the input text into smaller chunks based on tokenization.
 

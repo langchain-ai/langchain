@@ -6,12 +6,14 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, cast
+from typing import Any, Literal, NoReturn, cast
 
+import groq
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -71,15 +73,54 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_groq._compat import _convert_from_v1_to_groq
+from langchain_groq._version import __version__
 from langchain_groq.data._profiles import _PROFILES
-from langchain_groq.version import __version__
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+_STRICT_STRUCTURED_OUTPUT_MODELS = frozenset(
+    {
+        "openai/gpt-oss-20b",
+        "openai/gpt-oss-120b",
+    }
+)
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
+
+
+class GroqContextOverflowError(groq.BadRequestError, ContextOverflowError):
+    """`BadRequestError` raised when input exceeds Groq's context limit."""
+
+
+def _handle_groq_invalid_request(e: groq.BadRequestError) -> NoReturn:
+    """Promote context-length errors to `GroqContextOverflowError`.
+
+    Groq surfaces an over-long prompt as a 400 `BadRequestError`, but the body
+    shape varies by model and API version, so detection covers each observed
+    form:
+
+    - The current API (verified live) returns no error code; the message reads
+        "Please reduce the length of the messages or completion.", matched by
+        `"reduce the length"`. This is the signal that actually fires today.
+    - Some responses instead carry `"code": "context_length_exceeded"` in the
+        body (see letta-ai/letta#1963), which the SDK folds into `str(e)` and is
+        matched by the substring check.
+    - The `getattr` check is forward-compatible defense in case a future SDK
+        exposes the code as an attribute; no current version does.
+
+    Always raises: `GroqContextOverflowError` for a context overflow, otherwise
+    the original error unchanged. Callers depend on this (`NoReturn`) so that
+    code after the call site can assume the request did not overflow.
+    """
+    if (
+        getattr(e, "code", None) == "context_length_exceeded"
+        or "context_length_exceeded" in str(e)
+        or "reduce the length" in str(e)
+    ):
+        raise GroqContextOverflowError(str(e), response=e.response, body=e.body) from e
+    raise e
 
 
 class ChatGroq(BaseChatModel):
@@ -102,7 +143,7 @@ class ChatGroq(BaseChatModel):
 
     Key init args — completion params:
         model:
-            Name of Groq model to use, e.g. `llama-3.1-8b-instant`.
+            Name of Groq model to use, e.g. `openai/gpt-oss-20b`.
         temperature:
             Sampling temperature. Ranges from `0.0` to `1.0`.
         max_tokens:
@@ -147,7 +188,7 @@ class ChatGroq(BaseChatModel):
         from langchain_groq import ChatGroq
 
         model = ChatGroq(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             temperature=0.0,
             max_retries=2,
             # other params...
@@ -169,7 +210,7 @@ class ChatGroq(BaseChatModel):
         response_metadata={'token_usage': {'completion_tokens': 38,
         'prompt_tokens': 28, 'total_tokens': 66, 'completion_time':
         0.057975474, 'prompt_time': 0.005366091, 'queue_time': None,
-        'total_time': 0.063341565}, 'model_name': 'llama-3.1-8b-instant',
+        'total_time': 0.063341565}, 'model_name': 'openai/gpt-oss-20b',
         'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
         'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
         ```
@@ -192,9 +233,8 @@ class ChatGroq(BaseChatModel):
         print(response.content)
         ```
 
-        Vision-capable models:
-        - meta-llama/llama-4-scout-17b-16e-instruct
-        - meta-llama/llama-4-maverick-17b-128e-instruct
+        See [Groq model docs](https://console.groq.com/docs/vision#supported-models)
+        for the latest available vision models.
 
         Maximum image size: 20MB per request.
 
@@ -252,7 +292,7 @@ class ChatGroq(BaseChatModel):
         response_metadata={'token_usage': {'completion_tokens': 53,
         'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
         0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
-        'total_time': 0.090988878}, 'model_name': 'llama-3.1-8b-instant',
+        'total_time': 0.090988878}, 'model_name': 'openai/gpt-oss-20b',
         'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
         'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
         ```
@@ -337,7 +377,7 @@ class ChatGroq(BaseChatModel):
                 "queue_time": None,
                 "total_time": 0.11947467,
             },
-            "model_name": "llama-3.1-8b-instant",
+            "model_name": "openai/gpt-oss-20b",
             "system_fingerprint": "fp_c5f20b5bb1",
             "finish_reason": "stop",
             "logprobs": None,
@@ -351,6 +391,11 @@ class ChatGroq(BaseChatModel):
 
     model_name: str = Field(alias="model")
     """Model name to use."""
+
+    @property
+    def model(self) -> str:
+        """Same as model_name."""
+        return self.model_name
 
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -420,7 +465,9 @@ class ChatGroq(BaseChatModel):
     max_tokens: int | None = None
     """Maximum number of tokens to generate."""
 
-    service_tier: Literal["on_demand", "flex", "auto"] = Field(default="on_demand")
+    service_tier: Literal["on_demand", "flex", "auto", "performance"] = Field(
+        default="on_demand"
+    )
     """Optional parameter that you can include to specify the service tier you'd like to
     use for requests.
 
@@ -430,6 +477,8 @@ class ChatGroq(BaseChatModel):
         reliability for workloads that don't require guaranteed processing.
     - `'auto'`: Uses on-demand rate limits, then falls back to `'flex'` if those
         limits are exceeded
+    - `'performance'`: Highest tier, providing reliable low latency for the most
+        critical production applications.
 
     See the [Groq documentation](https://console.groq.com/docs/flex-processing) for more
     details and a list of service tiers and descriptions.
@@ -512,33 +561,24 @@ class ChatGroq(BaseChatModel):
             "default_query": self.default_query,
         }
 
-        try:
-            import groq  # noqa: PLC0415
-
-            sync_specific: dict[str, Any] = {"http_client": self.http_client}
-            if not self.client:
-                self.client = groq.Groq(
-                    **client_params, **sync_specific
-                ).chat.completions
-            if not self.async_client:
-                async_specific: dict[str, Any] = {"http_client": self.http_async_client}
-                self.async_client = groq.AsyncGroq(
-                    **client_params, **async_specific
-                ).chat.completions
-        except ImportError as exc:
-            msg = (
-                "Could not import groq python package. "
-                "Please install it with `pip install groq`."
-            )
-            raise ImportError(msg) from exc
+        sync_specific: dict[str, Any] = {"http_client": self.http_client}
+        if not self.client:
+            self.client = groq.Groq(**client_params, **sync_specific).chat.completions
+        if not self.async_client:
+            async_specific: dict[str, Any] = {"http_client": self.http_async_client}
+            self.async_client = groq.AsyncGroq(
+                **client_params, **async_specific
+            ).chat.completions
         return self
 
     @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
+    def _set_groq_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-groq", __version__)
         return self
+
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
 
     #
     # Serializable class method overrides
@@ -618,7 +658,10 @@ class ChatGroq(BaseChatModel):
             **params,
             **kwargs,
         }
-        response = self.client.create(messages=message_dicts, **params)
+        try:
+            response = self.client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_invalid_request(e)
         return self._create_chat_result(response, params)
 
     async def _agenerate(
@@ -639,7 +682,10 @@ class ChatGroq(BaseChatModel):
             **params,
             **kwargs,
         }
-        response = await self.async_client.create(messages=message_dicts, **params)
+        try:
+            response = await self.async_client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_invalid_request(e)
         return self._create_chat_result(response, params)
 
     def _stream(
@@ -653,8 +699,12 @@ class ChatGroq(BaseChatModel):
 
         params = {**params, **kwargs, "stream": True}
 
+        try:
+            stream = self.client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_invalid_request(e)
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        for chunk in self.client.create(messages=message_dicts, **params):
+        for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()  # noqa: PLW2901
             if len(chunk["choices"]) == 0:
@@ -705,10 +755,12 @@ class ChatGroq(BaseChatModel):
 
         params = {**params, **kwargs, "stream": True}
 
+        try:
+            stream = await self.async_client.create(messages=message_dicts, **params)
+        except groq.BadRequestError as e:
+            _handle_groq_invalid_request(e)
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        async for chunk in await self.async_client.create(
-            messages=message_dicts, **params
-        ):
+        async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()  # noqa: PLW2901
             if len(chunk["choices"]) == 0:
@@ -903,6 +955,7 @@ class ChatGroq(BaseChatModel):
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         r"""Model wrapper that returns outputs formatted to match the given schema.
@@ -935,9 +988,7 @@ class ChatGroq(BaseChatModel):
                     Uses Groq's tool-calling [API](https://console.groq.com/docs/tool-use)
                 - `'json_schema'`:
                     Uses Groq's [Structured Output API](https://console.groq.com/docs/structured-outputs).
-                    Supported for a subset of models, including `openai/gpt-oss`,
-                    `moonshotai/kimi-k2-instruct-0905`, and some `meta-llama/llama-4`
-                    models. See [docs](https://console.groq.com/docs/structured-outputs)
+                    Supported for a subset of models. See [docs](https://console.groq.com/docs/structured-outputs)
                     for details.
                 - `'json_mode'`:
                     Uses Groq's [JSON mode](https://console.groq.com/docs/structured-outputs#json-object-mode).
@@ -974,6 +1025,16 @@ class ChatGroq(BaseChatModel):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+            strict:
+                Only used with `method="json_schema"`. When `True`, Groq's Structured
+                Output API uses constrained decoding to guarantee schema compliance.
+                This requires every object to set `additionalProperties: false` and
+                all properties to be listed in `required`. When `False`, schema
+                adherence is best-effort. If `None`, the argument is omitted.
+
+                Strict mode is only supported for `openai/gpt-oss-20b` and
+                `openai/gpt-oss-120b`. For other models, `strict=True` is ignored.
 
             kwargs:
                 Any additional parameters to pass to the `langchain.runnable.Runnable`
@@ -1168,7 +1229,6 @@ class ChatGroq(BaseChatModel):
         ```
 
         """  # noqa: E501
-        _ = kwargs.pop("strict", None)
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
@@ -1206,14 +1266,25 @@ class ChatGroq(BaseChatModel):
                     "Received None."
                 )
                 raise ValueError(msg)
-            json_schema = convert_to_json_schema(schema)
+            if (
+                strict is True
+                and self.model_name not in _STRICT_STRUCTURED_OUTPUT_MODELS
+            ):
+                # Ignore unsupported strict=True to preserve backward compatibility.
+                strict = None
+            json_schema = convert_to_json_schema(schema, strict=strict)
             schema_name = json_schema.get("title", "")
-            response_format = {
+            response_format: dict[str, Any] = {
                 "type": "json_schema",
                 "json_schema": {"name": schema_name, "schema": json_schema},
             }
+            if strict is not None:
+                response_format["json_schema"]["strict"] = strict
+            ls_format_kwargs: dict[str, Any] = {"method": "json_schema"}
+            if strict is not None:
+                ls_format_kwargs["strict"] = strict
             ls_format_info = {
-                "kwargs": {"method": "json_schema"},
+                "kwargs": ls_format_kwargs,
                 "schema": json_schema,
             }
             llm = self.bind(
@@ -1243,8 +1314,9 @@ class ChatGroq(BaseChatModel):
             )
         else:
             msg = (
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
+                "Unrecognized method argument. Expected one of "
+                "'function_calling', 'json_mode', or 'json_schema'. "
+                f"Received: '{method}'"
             )
             raise ValueError(msg)
 
@@ -1330,7 +1402,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 for block in message.content
                 if isinstance(block, dict) and block.get("type") == "text"
             ]
-            message_dict["content"] = text_blocks if text_blocks else ""
+            message_dict["content"] = text_blocks or ""
 
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
@@ -1548,17 +1620,18 @@ def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
     """
     # Support both formats: new Responses API uses "input_tokens",
     # Chat Completions API uses "prompt_tokens"
+    _input = groq_token_usage.get("input_tokens")
     input_tokens = (
-        groq_token_usage.get("input_tokens")
-        or groq_token_usage.get("prompt_tokens")
-        or 0
+        _input if _input is not None else (groq_token_usage.get("prompt_tokens") or 0)
     )
+    _output = groq_token_usage.get("output_tokens")
     output_tokens = (
-        groq_token_usage.get("output_tokens")
-        or groq_token_usage.get("completion_tokens")
-        or 0
+        _output
+        if _output is not None
+        else (groq_token_usage.get("completion_tokens") or 0)
     )
-    total_tokens = groq_token_usage.get("total_tokens") or input_tokens + output_tokens
+    _total = groq_token_usage.get("total_tokens")
+    total_tokens = _total if _total is not None else input_tokens + output_tokens
 
     # Support both formats for token details:
     # Responses API uses "*_tokens_details", Chat Completions API might use

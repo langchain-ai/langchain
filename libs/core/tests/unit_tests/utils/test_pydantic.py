@@ -14,6 +14,8 @@ from langchain_core.utils.pydantic import (
     get_fields,
     is_basemodel_instance,
     is_basemodel_subclass,
+    model_json_schema,
+    model_validate,
     pre_init,
 )
 
@@ -153,6 +155,56 @@ def test_fields_pydantic_v1_from_2() -> None:
     assert fields == {"x": Foo.__fields__["x"]}
 
 
+def test_model_json_schema_v2() -> None:
+    class Foo(BaseModel):
+        x: int
+
+    assert model_json_schema(Foo) == Foo.model_json_schema()
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+def test_model_json_schema_v1() -> None:
+    class Foo(BaseModelV1):
+        x: int
+
+    assert model_json_schema(Foo) == Foo.schema()
+
+
+def test_model_json_schema_non_model() -> None:
+    with pytest.raises(TypeError, match="Expected a Pydantic model"):
+        model_json_schema(dict)  # type: ignore[arg-type]
+
+
+def test_model_validate_v2() -> None:
+    class Foo(BaseModel):
+        x: int
+
+    result = model_validate(Foo, {"x": 1})
+    assert isinstance(result, Foo)
+    assert result.x == 1
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+def test_model_validate_v1() -> None:
+    class Foo(BaseModelV1):
+        x: int
+
+    result = model_validate(Foo, {"x": 1})
+    assert isinstance(result, Foo)
+    assert result.x == 1
+
+
+def test_model_validate_non_model() -> None:
+    with pytest.raises(TypeError, match="Expected a Pydantic model"):
+        model_validate(dict, {"x": 1})  # type: ignore[arg-type]
+
+
 def test_create_model_v2() -> None:
     """Test that create model v2 works as expected."""
     with warnings.catch_warnings(record=True) as record:
@@ -186,3 +238,22 @@ def test_create_model_v2() -> None:
         foo.model_json_schema()
 
     assert list(record) == []
+
+
+def test_create_subset_model_v2_preserves_default_factory() -> None:
+    """Fields with default_factory should not be marked as required."""
+
+    class Original(BaseModel):
+        required_field: str
+        names: list[str] = Field(default_factory=list, description="Some names")
+        mapping: dict[str, int] = Field(default_factory=dict, description="A mapping")
+
+    subset = _create_subset_model_v2(
+        "Subset",
+        Original,
+        ["required_field", "names", "mapping"],
+    )
+    schema = subset.model_json_schema()
+    assert schema.get("required") == ["required_field"]
+    assert "names" not in schema.get("required", [])
+    assert "mapping" not in schema.get("required", [])

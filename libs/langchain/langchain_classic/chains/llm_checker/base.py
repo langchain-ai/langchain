@@ -65,12 +65,13 @@ def _load_question_to_checked_assertions_chain(
 
 @deprecated(
     since="0.2.13",
-    message=(
-        "See LangGraph guides for a variety of self-reflection and corrective "
-        "strategies for question-answering and other tasks: "
-        "https://docs.langchain.com/oss/python/langchain/overview"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build self-reflection or corrective loops with `create_agent` (e.g. "
+        "via custom middleware). See "
+        "https://docs.langchain.com/oss/python/langchain/agents"
     ),
-    removal="1.0",
 )
 class LLMCheckerChain(Chain):
     """Chain for question-answering with self-verification.

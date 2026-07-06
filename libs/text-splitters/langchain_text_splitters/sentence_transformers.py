@@ -5,6 +5,8 @@ from __future__ import annotations
 from importlib import import_module
 from typing import Any, cast
 
+from typing_extensions import override
+
 from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on_tokens
 
 
@@ -55,11 +57,21 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         self.maximum_tokens_per_chunk = self._model.max_seq_length
 
         if tokens_per_chunk is None:
+            if self.maximum_tokens_per_chunk is None:
+                msg = (
+                    "The model does not have a maximum token limit, "
+                    "and tokens_per_chunk was not provided. "
+                    "Please provide a value for tokens_per_chunk."
+                )
+                raise ValueError(msg)
             self.tokens_per_chunk = self.maximum_tokens_per_chunk
         else:
             self.tokens_per_chunk = tokens_per_chunk
 
-        if self.tokens_per_chunk > self.maximum_tokens_per_chunk:
+        if (
+            self.maximum_tokens_per_chunk is not None
+            and self.tokens_per_chunk > self.maximum_tokens_per_chunk
+        ):
             msg = (
                 f"The token limit of the models '{self.model_name}'"
                 f" is: {self.maximum_tokens_per_chunk}."
@@ -68,6 +80,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             )
             raise ValueError(msg)
 
+    @override
     def split_text(self, text: str) -> list[str]:
         """Splits the input text into smaller components by splitting text on tokens.
 

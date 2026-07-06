@@ -18,9 +18,9 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         llm = HuggingFaceEndpoint(  # type: ignore[call-arg]
-            repo_id="meta-llama/Llama-4-Maverick-17B-128E-Instruct",
+            repo_id="meta-llama/Llama-3.3-70B-Instruct",
             task="conversational",
-            provider="fireworks-ai",
+            provider="together",
             temperature=0,
         )
         return {"llm": llm}

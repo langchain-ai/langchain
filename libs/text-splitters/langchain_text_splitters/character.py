@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from typing import Any, Literal
 
+from typing_extensions import override
+
 from langchain_text_splitters.base import Language, TextSplitter
 
 
@@ -22,6 +24,7 @@ class CharacterTextSplitter(TextSplitter):
         self._separator = separator
         self._is_separator_regex = is_separator_regex
 
+    @override
     def split_text(self, text: str) -> list[str]:
         """Split into chunks without re-inserting lookaround separators.
 
@@ -146,6 +149,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             final_chunks.extend(merged_text)
         return final_chunks
 
+    @override
     def split_text(self, text: str) -> list[str]:
         """Split the input text into smaller chunks based on predefined separators.
 
@@ -266,7 +270,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nfor ",
                 "\nwhile ",
                 "\nwhen ",
-                "\ncase ",
                 "\nelse ",
                 # Split by the normal type of lines
                 "\n\n",
@@ -440,7 +443,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # Split along control flow statements
                 "\nif ",
                 "\nunless ",
-                "\nwhile ",
                 "\ncase ",
                 "\ncond ",
                 "\nwith ",
@@ -464,7 +466,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\nfor ",
                 "\nloop ",
                 "\nmatch ",
-                "\nconst ",
                 # Split by the normal type of lines
                 "\n\n",
                 "\n",
@@ -593,7 +594,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             return [
                 "\ninterface ",
                 "\nenum ",
-                "\nimplements ",
                 "\ndelegate ",
                 "\nevent ",
                 # Split along class definitions
@@ -720,7 +720,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\ndata ",
                 "\nnewtype ",
                 "\ntype ",
-                "\n:: ",
                 # Split along module declarations
                 "\nmodule ",
                 # Split along import statements
@@ -735,7 +734,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 # Split along guards in function definitions
                 "\n| ",
                 # Split along record field declarations
-                "\ndata ",
                 "\n= {",
                 "\n, ",
                 # Split by the normal type of lines
