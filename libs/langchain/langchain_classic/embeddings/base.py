@@ -2,6 +2,7 @@ import functools
 from importlib import util
 from typing import Any
 
+from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable
 
@@ -127,6 +128,15 @@ def _check_pkg(pkg: str) -> None:
         raise ImportError(msg)
 
 
+@deprecated(
+    since="1.0.5",
+    removal="2.0.0",
+    alternative="langchain.embeddings.init_embeddings",
+    addendum=(
+        "Maintained in `langchain`; `langchain-classic` retains this entry point "
+        "for import-compatibility only."
+    ),
+)
 def init_embeddings(
     model: str,
     *,

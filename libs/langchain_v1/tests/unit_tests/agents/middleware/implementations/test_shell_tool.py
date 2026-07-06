@@ -7,7 +7,7 @@ import signal
 import tempfile
 import time
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
@@ -161,7 +161,7 @@ def test_session_resources_finalizer_cleans_up(tmp_path: Path) -> None:
         def __init__(self) -> None:
             self.stopped: bool = False
 
-        def stop(self, timeout: float) -> None:
+        def stop(self, *_args: Any, **_kwargs: Any) -> None:
             self.stopped = True
 
     session = DummySession()

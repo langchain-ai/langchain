@@ -5,8 +5,10 @@ import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from langchain_core._api import suppress_langchain_deprecation_warning
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
@@ -103,6 +105,25 @@ def test_saving_loading_round_trip(tmp_path: Path) -> None:
         few_shot_prompt.save(file_path=tmp_path / "few_shot.yaml")
         loaded_prompt = load_prompt(tmp_path / "few_shot.yaml")
     assert loaded_prompt == few_shot_prompt
+
+
+def test_save_preserves_deprecated_dict_override(tmp_path: Path) -> None:
+    """Saving should preserve `dict()` overrides until `dict()` is removed."""
+
+    class CustomDictPrompt(PromptTemplate):
+        @override
+        def dict(self, **kwargs: Any) -> dict[str, Any]:
+            data = super().dict(**kwargs)
+            data["custom_save_param"] = "custom"
+            return data
+
+    prompt = CustomDictPrompt(input_variables=["name"], template="Hello {name}")
+    output_path = tmp_path / "prompt.json"
+
+    with suppress_langchain_deprecation_warning():
+        prompt.save(output_path)
+
+    assert json.loads(output_path.read_text())["custom_save_param"] == "custom"
 
 
 def test_loading_with_template_as_file() -> None:
@@ -276,6 +297,69 @@ def test_load_prompt_from_config_few_shot_rejects_absolute_example_prompt_path(
         pytest.raises(ValueError, match="is absolute"),
     ):
         load_prompt_from_config(config)
+
+
+def test_symlink_txt_to_py_is_blocked(tmp_path: Path) -> None:
+    """Test symlink redirects cannot get around file extension check."""
+    sensitive = tmp_path / "sensitive_source.py"
+    sensitive.write_text("INTERNAL_SECRET='ABC-123-XYZ'")
+    symlink = tmp_path / "exploit_link.txt"
+    symlink.symlink_to(sensitive)
+
+    config = {
+        "_type": "prompt",
+        "template_path": "exploit_link.txt",
+        "input_variables": [],
+    }
+    original_dir = Path.cwd()
+    try:
+        os.chdir(tmp_path)
+        with (
+            suppress_langchain_deprecation_warning(),
+            pytest.raises(ValueError, match="files are supported"),
+        ):
+            load_prompt_from_config(config)
+    finally:
+        os.chdir(original_dir)
+
+
+def test_symlink_jinja2_rce_is_blocked(tmp_path: Path) -> None:
+    """Check jinja2 templates cannot be used to perform RCE via symlinks."""
+    payload = tmp_path / "rce_payload.py"
+    payload.write_text(
+        "{{ self.__init__.__globals__.__builtins__"
+        ".__import__('os').popen('id').read() }}"
+    )
+    symlink = tmp_path / "rce_bypass.txt"
+    symlink.symlink_to(payload)
+
+    config = {
+        "_type": "prompt",
+        "template_path": str(symlink),
+        "template_format": "jinja2",
+        "input_variables": [],
+    }
+    with (
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(ValueError, match="files are supported"),
+    ):
+        load_prompt_from_config(config, allow_dangerous_paths=True)
+
+
+def test_save_symlink_to_py_is_blocked(tmp_path: Path) -> None:
+    """Test that save() resolves symlinks before checking the file extension."""
+    target = tmp_path / "malicious.py"
+    symlink = tmp_path / "output.json"
+    symlink.symlink_to(target)
+
+    prompt = PromptTemplate(input_variables=["name"], template="Hello {name}")
+    with (
+        suppress_langchain_deprecation_warning(),
+        pytest.raises(ValueError, match="must be json or yaml"),
+    ):
+        prompt.save(symlink)
+
+    assert not target.exists()
 
 
 def test_loading_few_shot_prompt_from_yaml() -> None:

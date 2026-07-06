@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 from typing_extensions import TypedDict
 
@@ -146,7 +146,7 @@ class ImagePromptValue(PromptValue):
 
     def to_messages(self) -> list[BaseMessage]:
         """Return prompt (image URL) as messages."""
-        return [HumanMessage(content=[cast("dict", self.image_url)])]
+        return [HumanMessage(content=[cast("dict[str, Any]", self.image_url)])]
 
 
 class ChatPromptValueConcrete(ChatPromptValue):

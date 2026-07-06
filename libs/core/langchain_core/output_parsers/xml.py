@@ -63,8 +63,9 @@ class _StreamingParser:
             if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
-                    "Please install it to use the defusedxml parser."
-                    "You can install it with `pip install defusedxml` "
+                    "Please install it to use the defusedxml parser. "
+                    "You can install it with `pip install defusedxml`. "
+                    "See https://github.com/tiran/defusedxml for more details"
                 )
                 raise ImportError(msg)
             parser_ = XMLParser(target=TreeBuilder())
@@ -148,7 +149,7 @@ class _StreamingParser:
             self.pull_parser.close()
 
 
-class XMLOutputParser(BaseTransformOutputParser):
+class XMLOutputParser(BaseTransformOutputParser[dict[str, Any]]):
     """Parse an output using xml format.
 
     Returns a dictionary of tags.
@@ -170,7 +171,7 @@ class XMLOutputParser(BaseTransformOutputParser):
     3. A badly-formatted XML instance (unexpected 'tag' element):
         `'<foo>\n   <tag>\n   </tag>\n</foo>'`
     """
-    encoding_matcher: re.Pattern = re.compile(
+    encoding_matcher: re.Pattern[str] = re.compile(
         r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
     )
 
@@ -214,8 +215,8 @@ class XMLOutputParser(BaseTransformOutputParser):
 
         Raises:
             OutputParserException: If the XML is not well-formed.
-            ImportError: If defus`edxml is not installed and the `defusedxml` parser is
-                requested.
+            ImportError: If `defusedxml` is not installed and the `defusedxml` parser
+                is requested.
         """
         # Try to find XML string within triple backticks
         # Imports are temporarily placed here to avoid issue with caching on CI
@@ -224,8 +225,8 @@ class XMLOutputParser(BaseTransformOutputParser):
             if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
-                    "Please install it to use the defusedxml parser."
-                    "You can install it with `pip install defusedxml`"
+                    "Please install it to use the defusedxml parser. "
+                    "You can install it with `pip install defusedxml`. "
                     "See https://github.com/tiran/defusedxml for more details"
                 )
                 raise ImportError(msg)
@@ -272,13 +273,13 @@ class XMLOutputParser(BaseTransformOutputParser):
             # If root text contains any non-whitespace character it
             # returns {root.tag: root.text}
             return {root.tag: root.text}
-        result: dict = {root.tag: []}
+        root_tag: list[Any] = []
         for child in root:
             if len(child) == 0:
-                result[root.tag].append({child.tag: child.text})
+                root_tag.append({child.tag: child.text})
             else:
-                result[root.tag].append(self._root_to_dict(child))
-        return result
+                root_tag.append(self._root_to_dict(child))
+        return {root.tag: root_tag}
 
     @property
     def _type(self) -> str:

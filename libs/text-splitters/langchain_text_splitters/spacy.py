@@ -2,25 +2,18 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from importlib import import_module
+from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import override
 
 from langchain_text_splitters.base import TextSplitter
 
-try:
+if TYPE_CHECKING:
     # Type ignores needed as long as spacy doesn't support Python 3.14.
-    import spacy  # type: ignore[import-not-found, unused-ignore]
-    from spacy.lang.en import English  # type: ignore[import-not-found, unused-ignore]
-
-    if TYPE_CHECKING:
-        from spacy.language import (  # type: ignore[import-not-found, unused-ignore]
-            Language,
-        )
-
-    _HAS_SPACY = True
-except ImportError:
-    _HAS_SPACY = False
+    from spacy.language import (  # type: ignore[import-not-found, unused-ignore]
+        Language,
+    )
 
 
 class SpacyTextSplitter(TextSplitter):
@@ -61,11 +54,14 @@ class SpacyTextSplitter(TextSplitter):
 def _make_spacy_pipeline_for_splitting(
     pipeline: str, *, max_length: int = 1_000_000
 ) -> Language:
-    if not _HAS_SPACY:
+    try:
+        spacy = cast("Any", import_module("spacy"))
+        english_cls = cast("Any", import_module("spacy.lang.en")).English
+    except ImportError as err:
         msg = "Spacy is not installed, please install it with `pip install spacy`."
-        raise ImportError(msg)
+        raise ImportError(msg) from err
     if pipeline == "sentencizer":
-        sentencizer: Language = English()
+        sentencizer: Language = english_cls()
         sentencizer.add_pipe("sentencizer")
     else:
         sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])

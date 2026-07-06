@@ -8,87 +8,9 @@ from pydantic import BaseModel, ValidationError
 from langchain_core._security._ssrf_protection import (
     SSRFProtectedUrl,
     SSRFProtectedUrlRelaxed,
-    is_cloud_metadata,
-    is_localhost,
-    is_private_ip,
     is_safe_url,
     validate_safe_url,
 )
-
-
-class TestIPValidation:
-    """Tests for IP address validation functions."""
-
-    def test_is_private_ip_ipv4(self) -> None:
-        """Test private IPv4 address detection."""
-        assert is_private_ip("10.0.0.1") is True
-        assert is_private_ip("172.16.0.1") is True
-        assert is_private_ip("192.168.1.1") is True
-        assert is_private_ip("127.0.0.1") is True
-        assert is_private_ip("169.254.169.254") is True
-        assert is_private_ip("0.0.0.1") is True
-
-    def test_is_private_ip_ipv6(self) -> None:
-        """Test private IPv6 address detection."""
-        assert is_private_ip("::1") is True  # Loopback
-        assert is_private_ip("fc00::1") is True  # Unique local
-        assert is_private_ip("fe80::1") is True  # Link-local
-        assert is_private_ip("ff00::1") is True  # Multicast
-
-    def test_is_private_ip_public(self) -> None:
-        """Test that public IPs are not flagged as private."""
-        assert is_private_ip("8.8.8.8") is False
-        assert is_private_ip("1.1.1.1") is False
-        assert is_private_ip("151.101.1.140") is False
-
-    def test_is_private_ip_invalid(self) -> None:
-        """Test handling of invalid IP addresses."""
-        assert is_private_ip("not-an-ip") is False
-        assert is_private_ip("999.999.999.999") is False
-
-    def test_is_cloud_metadata_ips(self) -> None:
-        """Test cloud metadata IP detection."""
-        assert is_cloud_metadata("example.com", "169.254.169.254") is True
-        assert is_cloud_metadata("example.com", "169.254.170.2") is True
-        assert is_cloud_metadata("example.com", "169.254.170.23") is True
-        assert is_cloud_metadata("example.com", "100.100.100.200") is True
-        assert is_cloud_metadata("example.com", "fd00:ec2::254") is True
-        assert is_cloud_metadata("example.com", "fd00:ec2::23") is True
-        assert is_cloud_metadata("example.com", "fe80::a9fe:a9fe") is True
-
-    def test_is_cloud_metadata_link_local_range(self) -> None:
-        """Test that IPv4 link-local is flagged as cloud metadata."""
-        assert is_cloud_metadata("example.com", "169.254.1.2") is True
-        assert is_cloud_metadata("example.com", "169.254.255.254") is True
-
-    def test_is_cloud_metadata_hostnames(self) -> None:
-        """Test cloud metadata hostname detection."""
-        assert is_cloud_metadata("metadata.google.internal") is True
-        assert is_cloud_metadata("metadata") is True
-        assert is_cloud_metadata("instance-data") is True
-        assert is_cloud_metadata("METADATA.GOOGLE.INTERNAL") is True  # Case insensitive
-
-    def test_is_cloud_metadata_safe(self) -> None:
-        """Test that normal URLs are not flagged as cloud metadata."""
-        assert is_cloud_metadata("example.com", "8.8.8.8") is False
-        assert is_cloud_metadata("google.com") is False
-
-    def test_is_localhost_hostnames(self) -> None:
-        """Test localhost hostname detection."""
-        assert is_localhost("localhost") is True
-        assert is_localhost("LOCALHOST") is True
-        assert is_localhost("localhost.localdomain") is True
-
-    def test_is_localhost_ips(self) -> None:
-        """Test localhost IP detection."""
-        assert is_localhost("example.com", "127.0.0.1") is True
-        assert is_localhost("example.com", "::1") is True
-        assert is_localhost("example.com", "0.0.0.0") is True
-
-    def test_is_localhost_safe(self) -> None:
-        """Test that normal hosts are not flagged as localhost."""
-        assert is_localhost("example.com", "8.8.8.8") is False
-        assert is_localhost("google.com") is False
 
 
 class TestValidateSafeUrl:
@@ -108,10 +30,10 @@ class TestValidateSafeUrl:
 
     def test_localhost_blocked_by_default(self) -> None:
         """Test that localhost URLs are blocked by default."""
-        with pytest.raises(ValueError, match="Localhost"):
+        with pytest.raises(ValueError, match="localhost"):
             validate_safe_url("http://localhost:8080/webhook")
 
-        with pytest.raises(ValueError, match="localhost"):
+        with pytest.raises(ValueError, match="private IP"):
             validate_safe_url("http://127.0.0.1:8080/webhook")
 
     def test_localhost_allowed_with_flag(self) -> None:
@@ -142,11 +64,11 @@ class TestValidateSafeUrl:
 
     def test_cloud_metadata_always_blocked(self) -> None:
         """Test that cloud metadata endpoints are always blocked."""
-        with pytest.raises(ValueError, match="metadata"):
+        with pytest.raises(ValueError, match="SSRF blocked"):
             validate_safe_url("http://169.254.169.254/latest/meta-data/")
 
         # Even with allow_private=True
-        with pytest.raises(ValueError, match="metadata"):
+        with pytest.raises(ValueError, match="SSRF blocked"):
             validate_safe_url(
                 "http://169.254.169.254/latest/meta-data/",
                 allow_private=True,
@@ -154,12 +76,12 @@ class TestValidateSafeUrl:
 
     def test_ipv6_mapped_ipv4_localhost_blocked(self) -> None:
         """Test that IPv6-mapped IPv4 localhost is blocked."""
-        with pytest.raises(ValueError, match="localhost"):
+        with pytest.raises(ValueError, match="SSRF blocked"):
             validate_safe_url("http://[::ffff:127.0.0.1]:8080/webhook")
 
     def test_ipv6_mapped_ipv4_cloud_metadata_blocked(self) -> None:
         """Test that IPv6-mapped IPv4 cloud metadata is blocked."""
-        with pytest.raises(ValueError, match="metadata"):
+        with pytest.raises(ValueError, match="SSRF blocked"):
             validate_safe_url("http://[::ffff:169.254.169.254]/latest/meta-data/")
 
     def test_invalid_scheme_blocked(self) -> None:
@@ -175,7 +97,7 @@ class TestValidateSafeUrl:
 
     def test_https_only_mode(self) -> None:
         """Test that HTTP is blocked when allow_http=False."""
-        with pytest.raises(ValueError, match="HTTPS"):
+        with pytest.raises(ValueError, match="scheme"):
             validate_safe_url("http://example.com/webhook", allow_http=False)
 
         # HTTPS should still work

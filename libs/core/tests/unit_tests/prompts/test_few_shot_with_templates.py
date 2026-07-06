@@ -81,3 +81,26 @@ def test_prompttemplate_validation() -> None:
         example_prompt=EXAMPLE_PROMPT,
         example_separator="\n",
     ).input_variables == ["content", "new_content"]
+
+
+async def test_get_examples_requires_examples_or_selector() -> None:
+    """Both `_get_examples` and `_aget_examples` raise when neither is set.
+
+    The constructor validator forbids the neither-provided case, so the fields
+    are cleared after construction to reach the guard inside the getters.
+    """
+    suffix = PromptTemplate(input_variables=[], template="end")
+    prompt = FewShotPromptWithTemplates(
+        suffix=suffix,
+        input_variables=[],
+        examples=[{"question": "foo", "answer": "bar"}],
+        example_prompt=EXAMPLE_PROMPT,
+    )
+    prompt.examples = None
+    prompt.example_selector = None
+
+    match = "One of 'examples' and 'example_selector' should be provided"
+    with pytest.raises(ValueError, match=match):
+        prompt._get_examples()
+    with pytest.raises(ValueError, match=match):
+        await prompt._aget_examples()
