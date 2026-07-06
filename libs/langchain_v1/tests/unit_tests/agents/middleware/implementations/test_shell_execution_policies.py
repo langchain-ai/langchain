@@ -204,7 +204,7 @@ def test_codex_policy_spawns_codex_cli(monkeypatch: pytest.MonkeyPatch, tmp_path
         assert cwd == tmp_path
         assert env["TEST_VAR"] == "1"
         assert preexec_fn is None
-        assert not start_new_session
+        assert start_new_session is True
         return Mock()
 
     monkeypatch.setattr(
@@ -298,7 +298,7 @@ def test_docker_policy_spawns_docker_run(monkeypatch: pytest.MonkeyPatch, tmp_pa
         recorded["command"] = list(command)
         assert cwd == tmp_path
         assert "PATH" in env  # host environment should retain system PATH
-        assert not start_new_session
+        assert start_new_session is True
         return Mock()
 
     monkeypatch.setattr(
@@ -407,3 +407,34 @@ def test_docker_policy_resolve_missing_binary(monkeypatch: pytest.MonkeyPatch) -
     policy = DockerExecutionPolicy()
     with pytest.raises(RuntimeError):
         policy._resolve_binary()
+
+
+def test_all_policies_use_dedicated_process_group(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Policies that do not expose a process-group override must always spawn
+    with start_new_session=True so that ShellSession._kill_process can safely
+    killpg the entire subprocess tree on timeout without risking the caller's
+    process group. HostExecutionPolicy(create_process_group=False) is the only
+    case where a shared group is intentional, and _kill_process guards against
+    that via its getpgid/getpgrp check."""
+    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/fake")
+
+    for policy in [
+        HostExecutionPolicy(),
+        CodexSandboxExecutionPolicy(platform="linux"),
+        DockerExecutionPolicy(),
+    ]:
+        captured: dict[str, Any] = {}
+
+        def fake_launch(
+            *_args: Any, start_new_session: bool, **_kwargs: Any
+        ) -> subprocess.Popen[str]:
+            captured["start_new_session"] = start_new_session
+            return Mock(spec=subprocess.Popen, pid=9999)
+
+        monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)
+        policy.spawn(workspace=tmp_path, env={"PATH": "/bin"}, command=("/bin/sh",))
+        assert captured["start_new_session"] is True, (
+            f"{type(policy).__name__} must use start_new_session=True"
+        )
