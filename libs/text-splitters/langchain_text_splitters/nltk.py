@@ -42,9 +42,9 @@ class NLTKTextSplitter(TextSplitter):
             raise ValueError(msg)
         try:
             import nltk  # noqa: PLC0415,F401
-        except ImportError:
+        except ImportError as err:
             msg = "NLTK is not installed, please install it with `pip install nltk`."
-            raise ImportError(msg) from None
+            raise ImportError(msg) from err
         if use_span_tokenize:
             self._tokenizer = self._span_tokenizer(language)
         else:

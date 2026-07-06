@@ -32,13 +32,13 @@ TS = TypeVar("TS", bound="TextSplitter")
 def _import_tiktoken() -> object:
     try:
         import tiktoken  # noqa: PLC0415
-    except ImportError:
+    except ImportError as err:
         msg = (
             "Could not import tiktoken python package. "
             "This is needed in order to calculate max_tokens_for_prompt. "
             "Please install it with `pip install tiktoken`."
         )
-        raise ImportError(msg) from None
+        raise ImportError(msg) from err
     return tiktoken
 
 
@@ -47,12 +47,12 @@ def _import_pretrained_tokenizer_base() -> type[PreTrainedTokenizerBase]:
         from transformers.tokenization_utils_base import (  # noqa: PLC0415
             PreTrainedTokenizerBase,
         )
-    except ImportError:
+    except ImportError as err:
         msg = (
             "Could not import transformers python package. "
             "Please install it with `pip install transformers`."
         )
-        raise ValueError(msg) from None
+        raise ValueError(msg) from err
     return PreTrainedTokenizerBase
 
 
@@ -350,13 +350,13 @@ class TokenTextSplitter(TextSplitter):
         super().__init__(**kwargs)
         try:
             tiktoken = cast("Any", _import_tiktoken())
-        except ImportError:
+        except ImportError as err:
             msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
                 "Please install it with `pip install tiktoken`."
             )
-            raise ImportError(msg) from None
+            raise ImportError(msg) from err
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)

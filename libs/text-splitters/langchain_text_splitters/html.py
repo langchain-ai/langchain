@@ -43,26 +43,26 @@ def _import_bs4(
     try:
         from bs4 import BeautifulSoup, Tag  # noqa: PLC0415
         from bs4.element import NavigableString  # noqa: PLC0415
-    except ImportError:
-        raise ImportError(import_error_message) from None
+    except ImportError as err:
+        raise ImportError(import_error_message) from err
     return BeautifulSoup, Tag, NavigableString
 
 
 def _import_lxml_etree() -> object:
     try:
         from lxml import etree  # noqa: PLC0415
-    except ImportError:
+    except ImportError as err:
         msg = "Unable to import lxml, please install with `pip install lxml`."
-        raise ImportError(msg) from None
+        raise ImportError(msg) from err
     return etree
 
 
 def _import_nltk() -> object:
     try:
         import nltk  # noqa: PLC0415
-    except ImportError:
+    except ImportError as err:
         msg = "Could not import nltk. Please install it with 'pip install nltk'."
-        raise ImportError(msg) from None
+        raise ImportError(msg) from err
     return nltk
 
 

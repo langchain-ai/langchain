@@ -10,6 +10,7 @@ from typing_extensions import override
 from langchain_text_splitters.base import TextSplitter
 
 if TYPE_CHECKING:
+    # Type ignores needed as long as spacy doesn't support Python 3.14.
     from spacy.language import (  # type: ignore[import-not-found, unused-ignore]
         Language,
     )
@@ -56,9 +57,9 @@ def _make_spacy_pipeline_for_splitting(
     try:
         spacy = cast("Any", import_module("spacy"))
         english_cls = cast("Any", import_module("spacy.lang.en")).English
-    except ImportError:
+    except ImportError as err:
         msg = "Spacy is not installed, please install it with `pip install spacy`."
-        raise ImportError(msg) from None
+        raise ImportError(msg) from err
     if pipeline == "sentencizer":
         sentencizer: Language = english_cls()
         sentencizer.add_pipe("sentencizer")

@@ -34,19 +34,20 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
         Raises:
             ImportError: If the `sentence_transformers` package is not installed.
+            ValueError: If `tokens_per_chunk` exceeds the model's maximum token limit.
         """
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
         try:
             sentence_transformers = cast("Any", import_module("sentence_transformers"))
             sentence_transformer_cls = sentence_transformers.SentenceTransformer
-        except ImportError:
+        except ImportError as err:
             msg = (
                 "Could not import sentence_transformers python package. "
                 "This is needed in order to use SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install sentence-transformers`."
             )
-            raise ImportError(msg) from None
+            raise ImportError(msg) from err
 
         self.model_name = model_name
         self._model = sentence_transformer_cls(self.model_name, **(model_kwargs or {}))

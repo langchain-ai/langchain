@@ -32,11 +32,11 @@ class KonlpyTextSplitter(TextSplitter):
         self._separator = separator
         try:
             import konlpy  # noqa: PLC0415
-        except ImportError:
+        except ImportError as err:
             msg = (
                 "Konlpy is not installed, please install it with `pip install konlpy`."
             )
-            raise ImportError(msg) from None
+            raise ImportError(msg) from err
         self.kkma = konlpy.tag.Kkma()
 
     @override
