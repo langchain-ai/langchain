@@ -98,7 +98,9 @@ def _assign_name(name: str | None, serialized: dict[str, Any] | None) -> str:
 T = TypeVar("T")
 
 
-class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHandler):
+class _AstreamEventsCallbackHandler(
+    AsyncCallbackHandler, _StreamingCallbackHandler[Any]
+):
     """An implementation of an async callback handler for astream events."""
 
     def __init__(
@@ -427,7 +429,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     @override
     async def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
@@ -463,7 +465,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         elif run_info["run_type"] == "llm":
             event = "on_llm_stream"
             if chunk is None:
-                chunk_ = GenerationChunk(text=token)
+                text = token if isinstance(token, str) else ""
+                chunk_ = GenerationChunk(text=text)
             else:
                 chunk_ = cast("GenerationChunk", chunk)
         else:
@@ -500,7 +503,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         inputs_ = run_info.get("inputs")
 
         generations: list[list[GenerationChunk]] | list[list[ChatGenerationChunk]]
-        output: dict | BaseMessage = {}
+        output: dict[str, Any] | BaseMessage = {}
 
         if run_info["run_type"] == "chat_model":
             generations = cast("list[list[ChatGenerationChunk]]", response.generations)
@@ -815,7 +818,9 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_info["run_type"],
         )
 
-    def __deepcopy__(self, memo: dict) -> _AstreamEventsCallbackHandler:
+    def __deepcopy__(
+        self, memo: dict[int, Any] | None = None
+    ) -> _AstreamEventsCallbackHandler:
         """Return self."""
         return self
 
@@ -1040,7 +1045,7 @@ async def _astream_events_implementation_v2(
         callbacks.add_handler(event_streamer, inherit=True)
         config["callbacks"] = callbacks
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Unexpected type for callbacks: {callbacks}."
             "Expected None, list or AsyncCallbackManager."
         )

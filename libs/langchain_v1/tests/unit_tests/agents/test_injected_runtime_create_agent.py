@@ -22,9 +22,10 @@ from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import InjectedStore
 from langgraph.store.memory import InMemoryStore
+from typing_extensions import override
 
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, InputAgentState
 from langchain.tools import InjectedState, ToolRuntime
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -254,9 +255,10 @@ def test_tool_runtime_config_access() -> None:
         config_data["has_configurable"] = (
             "configurable" in runtime.config if runtime.config else False
         )
-        # Config may have run_id or other fields depending on execution context
         if runtime.config:
             config_data["config_keys"] = list(runtime.config.keys())
+            config_data["recursion_limit"] = runtime.config.get("recursion_limit")
+            config_data["metadata"] = runtime.config.get("metadata")
         return f"Config accessed for {x}"
 
     agent = create_agent(
@@ -270,13 +272,26 @@ def test_tool_runtime_config_access() -> None:
         system_prompt="You are a helpful assistant.",
     )
 
-    result = agent.invoke({"messages": [HumanMessage("Test config")]})
+    result = agent.invoke(
+        {"messages": [HumanMessage("Test config")]},
+    )
 
-    # Verify config was accessible
     assert config_data["config_exists"] is True
     assert "config_keys" in config_data
+    assert config_data["recursion_limit"] == 9999
+    assert config_data["metadata"]["ls_integration"] == "langchain_create_agent"
 
-    # Verify tool executed
+    tool_message = result["messages"][2]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.content == "Config accessed for 5"
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Test config again")]},
+        config={"recursion_limit": 7},
+    )
+
+    assert config_data["recursion_limit"] == 7
+
     tool_message = result["messages"][2]
     assert isinstance(tool_message, ToolMessage)
     assert tool_message.content == "Config accessed for 5"
@@ -286,6 +301,9 @@ def test_tool_runtime_with_custom_state() -> None:
     """Test ToolRuntime works with custom state schemas."""
 
     class CustomState(AgentState[Any]):
+        custom_field: str
+
+    class CustomInputState(InputAgentState):
         custom_field: str
 
     runtime_state = {}
@@ -312,10 +330,10 @@ def test_tool_runtime_with_custom_state() -> None:
     )
 
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Test custom state")],
-            "custom_field": "custom_value",
-        }
+        CustomInputState(
+            messages=[HumanMessage("Test custom state")],
+            custom_field="custom_value",
+        )
     )
 
     # Verify custom field was accessible
@@ -429,6 +447,7 @@ def test_tool_runtime_error_handling() -> None:
     @tool
     def safe_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool that handles errors safely."""
+        assert isinstance(runtime, ToolRuntime)
         try:
             if x == 0:
                 return "Error: Cannot process zero"
@@ -467,10 +486,12 @@ def test_tool_runtime_with_middleware() -> None:
     runtime_calls = []
 
     class TestMiddleware(AgentMiddleware):
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append("before_model")
             return {}
 
+        @override
         def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append("after_model")
             return {}
@@ -604,6 +625,10 @@ def test_combined_injected_state_runtime_store() -> None:
         user_id: str
         session_id: str
 
+    class CustomInputState(InputAgentState):
+        user_id: str
+        session_id: str
+
     # Define explicit args schema that only includes LLM-controlled parameters
     weather_schema = {
         "type": "object",
@@ -674,11 +699,11 @@ def test_combined_injected_state_runtime_store() -> None:
 
     # Invoke with custom state fields
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("What's the weather like?")],
-            "user_id": "user_42",
-            "session_id": "session_abc123",
-        }
+        CustomInputState(
+            messages=[HumanMessage("What's the weather like?")],
+            user_id="user_42",
+            session_id="session_abc123",
+        )
     )
 
     # Verify tool executed successfully
@@ -719,6 +744,10 @@ async def test_combined_injected_state_runtime_store_async() -> None:
 
     # Custom state schema
     class CustomState(AgentState[Any]):
+        api_key: str
+        request_id: str
+
+    class CustomInputState(InputAgentState):
         api_key: str
         request_id: str
 
@@ -801,11 +830,11 @@ async def test_combined_injected_state_runtime_store_async() -> None:
 
     # Invoke async
     result = await agent.ainvoke(
-        {
-            "messages": [HumanMessage("Search for something")],
-            "api_key": "sk-test-key-xyz",
-            "request_id": "req_999",
-        }
+        CustomInputState(
+            messages=[HumanMessage("Search for something")],
+            api_key="sk-test-key-xyz",
+            request_id="req_999",
+        )
     )
 
     # Verify tool executed successfully

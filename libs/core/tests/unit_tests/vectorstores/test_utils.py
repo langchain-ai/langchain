@@ -6,6 +6,7 @@ import pytest
 
 pytest.importorskip("numpy")
 import numpy as np
+import numpy.typing as npt
 
 from langchain_core.vectorstores.utils import _cosine_similarity
 
@@ -61,8 +62,8 @@ class TestCosineSimilarity:
 
     def test_numpy_array_input(self) -> None:
         """Test with numpy array inputs."""
-        x: np.ndarray = np.array([[1, 0], [0, 1]])
-        y: np.ndarray = np.array([[1, 0], [0, 1]])
+        x: npt.NDArray[np.floating] = np.array([[1, 0], [0, 1]])
+        y: npt.NDArray[np.floating] = np.array([[1, 0], [0, 1]])
         result = _cosine_similarity(x, y)
         expected = np.array([[1.0, 0.0], [0.0, 1.0]])
         np.testing.assert_array_almost_equal(result, expected)
@@ -70,7 +71,7 @@ class TestCosineSimilarity:
     def test_mixed_input_types(self) -> None:
         """Test with mixed input types (list and numpy array)."""
         x: list[list[float]] = [[1, 0], [0, 1]]
-        y: np.ndarray = np.array([[1, 0], [0, 1]])
+        y: npt.NDArray[np.floating] = np.array([[1, 0], [0, 1]])
         result = _cosine_similarity(x, y)
         expected = np.array([[1.0, 0.0], [0.0, 1.0]])
         np.testing.assert_array_almost_equal(result, expected)

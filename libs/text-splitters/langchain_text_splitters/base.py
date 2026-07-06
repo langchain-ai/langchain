@@ -12,6 +12,7 @@ from typing import (
     Any,
     Literal,
     TypeVar,
+    cast,
 )
 
 from langchain_core.documents import BaseDocumentTransformer, Document
@@ -21,24 +22,38 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Collection, Iterable, Sequence
     from collections.abc import Set as AbstractSet
 
-
-try:
-    import tiktoken
-
-    _HAS_TIKTOKEN = True
-except ImportError:
-    _HAS_TIKTOKEN = False
-
-try:
     from transformers.tokenization_utils_base import PreTrainedTokenizerBase
-
-    _HAS_TRANSFORMERS = True
-except ImportError:
-    _HAS_TRANSFORMERS = False
 
 logger = logging.getLogger(__name__)
 
 TS = TypeVar("TS", bound="TextSplitter")
+
+
+def _import_tiktoken() -> object:
+    try:
+        import tiktoken  # noqa: PLC0415
+    except ImportError as err:
+        msg = (
+            "Could not import tiktoken python package. "
+            "This is needed in order to calculate max_tokens_for_prompt. "
+            "Please install it with `pip install tiktoken`."
+        )
+        raise ImportError(msg) from err
+    return tiktoken
+
+
+def _import_pretrained_tokenizer_base() -> type[PreTrainedTokenizerBase]:
+    try:
+        from transformers.tokenization_utils_base import (  # noqa: PLC0415
+            PreTrainedTokenizerBase,
+        )
+    except ImportError as err:
+        msg = (
+            "Could not import transformers python package. "
+            "Please install it with `pip install transformers`."
+        )
+        raise ValueError(msg) from err
+    return PreTrainedTokenizerBase
 
 
 class TextSplitter(BaseDocumentTransformer, ABC):
@@ -206,15 +221,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             An instance of `TextSplitter` using the Hugging Face tokenizer for length
                 calculation.
         """
-        if not _HAS_TRANSFORMERS:
-            msg = (
-                "Could not import transformers python package. "
-                "Please install it with `pip install transformers`."
-            )
-            raise ValueError(msg)
+        pretrained_tokenizer_base = _import_pretrained_tokenizer_base()
 
-        if not isinstance(tokenizer, PreTrainedTokenizerBase):
-            msg = "Tokenizer received was not an instance of PreTrainedTokenizerBase"  # type: ignore[unreachable]
+        if not isinstance(tokenizer, pretrained_tokenizer_base):
+            msg = "Tokenizer received was not an instance of PreTrainedTokenizerBase"
             raise ValueError(msg)  # noqa: TRY004
 
         def _huggingface_tokenizer_length(text: str) -> int:
@@ -222,16 +232,17 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
-    @classmethod
-    def from_tiktoken_encoder(
-        cls,
+    @staticmethod
+    def _tiktoken_length_function(
         encoding_name: str = "gpt2",
         model_name: str | None = None,
-        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
         disallowed_special: Literal["all"] | Collection[str] = "all",
-        **kwargs: Any,
-    ) -> Self:
-        """Text splitter that uses `tiktoken` encoder to count length.
+    ) -> Callable[[str], int]:
+        """Build a `tiktoken`-based length function.
+
+        Shared by `from_tiktoken_encoder` on both `TextSplitter` and
+        `TokenTextSplitter`.
 
         Args:
             encoding_name: The name of the tiktoken encoding to use.
@@ -242,18 +253,14 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             disallowed_special: Special tokens that are disallowed during encoding.
 
         Returns:
-            An instance of `TextSplitter` using tiktoken for length calculation.
+            A function that returns the token length of a string.
 
         Raises:
             ImportError: If the tiktoken package is not installed.
         """
-        if not _HAS_TIKTOKEN:
-            msg = (
-                "Could not import tiktoken python package. "
-                "This is needed in order to calculate max_tokens_for_prompt. "
-                "Please install it with `pip install tiktoken`."
-            )
-            raise ImportError(msg)
+        if allowed_special is None:
+            allowed_special = set()
+        tiktoken = cast("Any", _import_tiktoken())
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -269,16 +276,36 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 )
             )
 
-        if issubclass(cls, TokenTextSplitter):
-            extra_kwargs = {
-                "encoding_name": encoding_name,
-                "model_name": model_name,
-                "allowed_special": allowed_special,
-                "disallowed_special": disallowed_special,
-            }
-            kwargs = {**kwargs, **extra_kwargs}
+        return _tiktoken_encoder
 
-        return cls(length_function=_tiktoken_encoder, **kwargs)
+    @classmethod
+    def from_tiktoken_encoder(
+        cls,
+        encoding_name: str = "gpt2",
+        model_name: str | None = None,
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
+        disallowed_special: Literal["all"] | Collection[str] = "all",
+        **kwargs: Any,
+    ) -> Self:
+        """Text splitter that uses `tiktoken` encoder to count length.
+
+        Args:
+            encoding_name: The name of the tiktoken encoding to use.
+            model_name: The name of the model to use.
+                If provided, this will override the `encoding_name`.
+            allowed_special: Special tokens that are allowed during encoding.
+            disallowed_special: Special tokens that are disallowed during encoding.
+
+        Returns:
+            An instance of the calling class using tiktoken for length calculation.
+
+        Raises:
+            ImportError: If the tiktoken package is not installed.
+        """
+        length_function = cls._tiktoken_length_function(
+            encoding_name, model_name, allowed_special, disallowed_special
+        )
+        return cls(length_function=length_function, **kwargs)
 
     @override
     def transform_documents(
@@ -302,16 +329,15 @@ class TokenTextSplitter(TextSplitter):
         self,
         encoding_name: str = "gpt2",
         model_name: str | None = None,
-        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
         disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> None:
-        """Create a new `TextSplitter`.
+        """Create a new `TokenTextSplitter`.
 
         Args:
             encoding_name: The name of the tiktoken encoding to use.
             model_name: The name of the model to use.
-
                 If provided, this will override the `encoding_name`.
             allowed_special: Special tokens that are allowed during encoding.
             disallowed_special: Special tokens that are disallowed during encoding.
@@ -319,14 +345,18 @@ class TokenTextSplitter(TextSplitter):
         Raises:
             ImportError: If the tiktoken package is not installed.
         """
+        if allowed_special is None:
+            allowed_special = set()
         super().__init__(**kwargs)
-        if not _HAS_TIKTOKEN:
+        try:
+            tiktoken = cast("Any", _import_tiktoken())
+        except ImportError as err:
             msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
                 "Please install it with `pip install tiktoken`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from err
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -336,6 +366,48 @@ class TokenTextSplitter(TextSplitter):
         self._allowed_special = allowed_special
         self._disallowed_special = disallowed_special
 
+    @classmethod
+    @override
+    def from_tiktoken_encoder(
+        cls,
+        encoding_name: str = "gpt2",
+        model_name: str | None = None,
+        allowed_special: Literal["all"] | AbstractSet[str] | None = None,
+        disallowed_special: Literal["all"] | Collection[str] = "all",
+        **kwargs: Any,
+    ) -> Self:
+        """Text splitter that uses `tiktoken` encoder to count length.
+
+        Unlike the base implementation, this also seeds the constructor with the
+        tiktoken configuration so the splitter tokenizes on the same encoding.
+
+        Args:
+            encoding_name: The name of the tiktoken encoding to use.
+            model_name: The name of the model to use.
+
+                If provided, this will override the `encoding_name`.
+            allowed_special: Special tokens that are allowed during encoding.
+            disallowed_special: Special tokens that are disallowed during encoding.
+
+        Returns:
+            A `TokenTextSplitter` instance using tiktoken for length calculation.
+
+        Raises:
+            ImportError: If the tiktoken package is not installed.
+        """
+        length_function = cls._tiktoken_length_function(
+            encoding_name, model_name, allowed_special, disallowed_special
+        )
+        return cls(
+            length_function=length_function,
+            encoding_name=encoding_name,
+            model_name=model_name,
+            allowed_special=allowed_special,
+            disallowed_special=disallowed_special,
+            **kwargs,
+        )
+
+    @override
     def split_text(self, text: str) -> list[str]:
         """Splits the input text into smaller chunks based on tokenization.
 
@@ -353,10 +425,14 @@ class TokenTextSplitter(TextSplitter):
         """
 
         def _encode(_text: str) -> list[int]:
-            return self._tokenizer.encode(
-                _text,
-                allowed_special=self._allowed_special,
-                disallowed_special=self._disallowed_special,
+            # `tiktoken` is lazy-imported, so mypy cannot infer the encoder return.
+            return cast(
+                "list[int]",
+                self._tokenizer.encode(
+                    _text,
+                    allowed_special=self._allowed_special,
+                    disallowed_special=self._disallowed_special,
+                ),
             )
 
         tokenizer = Tokenizer(

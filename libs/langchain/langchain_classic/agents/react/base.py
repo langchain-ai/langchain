@@ -31,7 +31,7 @@ _LOOKUP_AND_SEARCH_TOOLS = {"Lookup", "Search"}
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
-    removal="1.0",
+    removal="2.0.0",
 )
 class ReActDocstoreAgent(Agent):
     """Agent for the ReAct chain."""
@@ -84,7 +84,7 @@ class ReActDocstoreAgent(Agent):
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
-    removal="1.0",
+    removal="2.0.0",
 )
 class DocstoreExplorer:
     """Class to assist with exploration of a document store."""
@@ -138,7 +138,7 @@ class DocstoreExplorer:
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
-    removal="1.0",
+    removal="2.0.0",
 )
 class ReActTextWorldAgent(ReActDocstoreAgent):
     """Agent for the ReAct TextWorld chain."""
@@ -165,7 +165,7 @@ class ReActTextWorldAgent(ReActDocstoreAgent):
 @deprecated(
     "0.1.0",
     message=AGENT_DEPRECATION_WARNING,
-    removal="1.0",
+    removal="2.0.0",
 )
 class ReActChain(AgentExecutor):
     """[Deprecated] Chain that implements the ReAct paper."""

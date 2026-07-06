@@ -166,7 +166,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
                 exit_behavior="continue",  # default
             )
 
-            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            agent = create_agent("openai:gpt-5.5", middleware=[limiter])
             ```
 
         !!! example "Stop immediately when limit exceeded"
@@ -175,7 +175,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             # End execution immediately with an AI message
             limiter = ToolCallLimitMiddleware(run_limit=5, exit_behavior="end")
 
-            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            agent = create_agent("openai:gpt-5.5", middleware=[limiter])
             ```
 
         !!! example "Raise exception on limit"
@@ -186,7 +186,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
                 tool_name="search", thread_limit=5, exit_behavior="error"
             )
 
-            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            agent = create_agent("openai:gpt-5.5", middleware=[limiter])
 
             try:
                 result = await agent.invoke({"messages": [HumanMessage("Task")]})
@@ -300,8 +300,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             run_count: Current run call count.
 
         Returns:
-            Tuple of `(allowed_calls, blocked_calls, final_thread_count,
-                final_run_count)`.
+            Tuple of `(allowed_calls, blocked_calls, final_thread_count, final_run_count)`.
         """
         allowed_calls: list[ToolCall] = []
         blocked_calls: list[ToolCall] = []

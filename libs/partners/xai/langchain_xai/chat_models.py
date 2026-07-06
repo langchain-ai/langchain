@@ -7,11 +7,12 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 import openai
 from langchain_core.messages import AIMessageChunk
-from langchain_core.utils import secret_from_env
+from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_xai._version import __version__
 from langchain_xai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
@@ -38,6 +39,23 @@ _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
+
+
+def _model_rejects_stop(model_name: str) -> bool:
+    """Whether an *unprofiled* xAI model rejects the `stop` parameter.
+
+    Used only as a fallback when no model profile is available; profiled models
+    defer to their `reasoning_output` flag, which is authoritative. The flag and
+    the name cannot be reconciled by string matching alone: the API accepts
+    `stop` for `grok-4.20-0309-non-reasoning` but rejects it for
+    `grok-4-fast-non-reasoning`, despite both containing `non-reasoning`.
+
+    Every current `grok-3`, `grok-4`, and `grok-code-fast` model that is not in
+    the generated profiles rejects `stop`, so the fallback drops it for those
+    families. Dropping a `stop` the API would reject degrades more gracefully
+    than letting the request fail outright.
+    """
+    return model_name.startswith(("grok-3", "grok-4")) or "grok-code-fast" in model_name
 
 
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
@@ -397,6 +415,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     model_name: str = Field(default="grok-4", alias="model")
     """Model name to use."""
+
     xai_api_key: SecretStr | None = Field(
         alias="api_key",
         default_factory=secret_from_env("XAI_API_KEY", default=None),
@@ -405,8 +424,16 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     Automatically read from env variable `XAI_API_KEY` if not provided.
     """
-    xai_api_base: str = Field(default="https://api.x.ai/v1/")
-    """Base URL path for API requests."""
+
+    xai_api_base: str = Field(
+        alias="base_url",
+        default_factory=from_env("XAI_API_BASE", default="https://api.x.ai/v1/"),
+    )
+    """Base URL path for API requests.
+
+    Automatically read from env variable `XAI_API_BASE` if not provided.
+    """
+
     search_parameters: dict[str, Any] | None = None
     """**Deprecated.** Use web search tools instead:
 
@@ -416,6 +443,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     """
 
     openai_api_key: SecretStr | None = None
+
     openai_api_base: str | None = None
 
     model_config = ConfigDict(
@@ -439,19 +467,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         """
         return ["langchain_xai", "chat_models"]
 
-    @property
-    def lc_attributes(self) -> dict[str, Any]:
-        """List of attribute names that should be included in the serialized kwargs.
-
-        These attributes must be accepted by the constructor.
-        """
-        attributes: dict[str, Any] = {}
-
-        if self.xai_api_base:
-            attributes["xai_api_base"] = self.xai_api_base
-
-        return attributes
-
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by LangChain."""
@@ -471,6 +486,16 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "xai"
         return params
+
+    @model_validator(mode="after")
+    def _set_xai_version(self) -> Self:
+        """Set package version in metadata.
+
+        Named uniquely to avoid shadowing `BaseChatOpenAI._set_openai_chat_version`;
+        Pydantic replaces same-named validators rather than chaining them.
+        """
+        self._add_version("langchain-xai", __version__)
+        return self
 
     @model_validator(mode="after")
     def _warn_search_parameters_deprecated(self) -> Self:
@@ -536,12 +561,32 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
+
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> dict:
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        if payload.get("stop") is not None:
+            # xAI rejects `stop` for reasoning models. The model profile is
+            # authoritative when available (it correctly distinguishes models
+            # that only differ from each other by profile, not by name); the
+            # name-based check is a fallback for aliases absent from the
+            # generated profiles.
+            model_profile = self._resolve_model_profile()
+            rejects_stop = (
+                bool(model_profile.get("reasoning_output"))
+                if model_profile is not None
+                else _model_rejects_stop(self.model_name)
+            )
+            if rejects_stop:
+                payload.pop("stop", None)
+        return payload
 
     def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
         """Route to Chat Completions or Responses API."""

@@ -19,12 +19,13 @@ from langchain_classic.chains.llm import LLMChain
 
 @deprecated(
     since="0.2.13",
-    message=(
-        "This class is deprecated and will be removed in langchain 1.0. "
-        "See API reference for replacement: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.constitutional_ai.base.ConstitutionalChain.html"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Implement guardrails as middleware on an agent built with "
+        "`langchain.agents.create_agent`. See "
+        "https://docs.langchain.com/oss/python/langchain/guardrails"
     ),
-    removal="1.0",
 )
 class ConstitutionalChain(Chain):
     r'''Chain for applying constitutional principles.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import random
 import re
 import string
@@ -38,6 +39,7 @@ if TYPE_CHECKING:
 
     from bs4 import Tag
 
+
 FAKE_PYTHON_TEXT = """
 class Foo:
 
@@ -50,6 +52,133 @@ def testing_func():
 
 def bar():
 """
+
+
+def test_no_heavy_imports_on_package_load() -> None:
+    """Ensure importing the package does not eagerly import heavy dependencies.
+
+    Runs in a fresh interpreter so the result is unaffected by modules the test
+    session already imported. A `sys.meta_path` finder records any *attempt* to
+    import a heavy optional dependency, so the guard holds whether or not those
+    packages are installed in the current environment (a plain `sys.modules` check
+    would pass vacuously when the packages are absent).
+    """
+    import subprocess  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+
+    script = textwrap.dedent(
+        """
+        import sys
+
+        blocked = {
+            "nltk", "spacy", "sentence_transformers", "konlpy", "torch",
+            "transformers", "tiktoken",
+        }
+        attempted = []
+
+        class _Recorder:
+            def find_spec(self, name, path=None, target=None):
+                if name.split(".")[0] in blocked:
+                    attempted.append(name.split(".")[0])
+                return None  # defer to the real finders
+
+        sys.meta_path.insert(0, _Recorder())
+        import langchain_text_splitters  # noqa: F401
+        print(",".join(sorted(set(attempted))))
+        """
+    )
+    result = subprocess.run(  # noqa: S603  # list args, no shell; input is static
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+    assert result.returncode == 0, (
+        f"Importing langchain_text_splitters failed:\n{result.stderr}"
+    )
+    attempted = [p for p in result.stdout.strip().split(",") if p]
+    assert not attempted, (
+        f"Heavy packages imported at langchain_text_splitters load time: {attempted}"
+    )
+
+
+@pytest.mark.parametrize(
+    ("module_name", "expected_message"),
+    [
+        ("konlpy", "pip install konlpy"),
+        ("nltk", "pip install nltk"),
+        ("spacy", "pip install spacy"),
+        ("sentence_transformers", "pip install sentence-transformers"),
+    ],
+)
+def test_missing_optional_dependency_raises_importerror(
+    module_name: str,
+    expected_message: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Each splitter raises a helpful ImportError when its optional dep is missing.
+
+    The missing dependency is simulated by forcing its import to fail, so the test
+    is independent of whether the optional package is actually installed.
+    """
+    import sys  # noqa: PLC0415
+
+    from langchain_text_splitters.konlpy import KonlpyTextSplitter  # noqa: PLC0415
+    from langchain_text_splitters.nltk import NLTKTextSplitter  # noqa: PLC0415
+    from langchain_text_splitters.sentence_transformers import (  # noqa: PLC0415
+        SentenceTransformersTokenTextSplitter,
+    )
+    from langchain_text_splitters.spacy import SpacyTextSplitter  # noqa: PLC0415
+
+    constructors: dict[str, Callable[[], TextSplitter]] = {
+        "konlpy": KonlpyTextSplitter,
+        "nltk": NLTKTextSplitter,
+        "spacy": SpacyTextSplitter,
+        "sentence_transformers": SentenceTransformersTokenTextSplitter,
+    }
+
+    # `None` in sys.modules makes both `import x` and `import_module(x)` raise
+    # ImportError, exercising the splitter's missing-dependency branch.
+    monkeypatch.setitem(sys.modules, module_name, None)
+    with pytest.raises(ImportError, match=re.escape(expected_message)):
+        constructors[module_name]()
+
+
+@pytest.mark.parametrize(
+    "class_name",
+    [
+        "KonlpyTextSplitter",
+        "NLTKTextSplitter",
+        "SpacyTextSplitter",
+        "SentenceTransformersTokenTextSplitter",
+    ],
+)
+def test_lazy_getattr_resolves(class_name: str) -> None:
+    """`__getattr__` resolves lazy splitter classes from the package namespace."""
+    import langchain_text_splitters as lts  # noqa: PLC0415
+
+    try:
+        cls = getattr(lts, class_name)
+    except ImportError:
+        pytest.skip(f"Optional dependency for {class_name} not installed")
+    assert isinstance(cls, type), f"{class_name} should be a class, got {type(cls)}"
+
+
+def test_lazy_getattr_raises_for_unknown() -> None:
+    """Accessing an unknown attribute raises `AttributeError`."""
+    import langchain_text_splitters as lts  # noqa: PLC0415
+
+    with pytest.raises(AttributeError, match="no_such_thing"):
+        _ = lts.no_such_thing  # type: ignore[attr-defined]
+
+
+def test_lightweight_splitters_remain_eagerly_accessible() -> None:
+    """Lightweight splitters are still directly importable from the package."""
+    import langchain_text_splitters as lts  # noqa: PLC0415
+
+    assert issubclass(lts.RecursiveCharacterTextSplitter, lts.TextSplitter)
+    assert issubclass(lts.CharacterTextSplitter, lts.TextSplitter)
 
 
 def test_character_text_splitter() -> None:
@@ -1008,6 +1137,23 @@ class Program
         "}\n    }",
         "}",
     ]
+
+
+def test_csharp_separators_no_java_keywords() -> None:
+    """C# separators should not contain Java-only keywords."""
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.CSHARP, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    # "implements" is a Java keyword; C# uses ":" for interface implementation
+    assert "\nimplements " not in splitter._separators
+
+
+def test_elixir_separators_no_while() -> None:
+    """Elixir has no while loop; the separator should not be present."""
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.ELIXIR, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    assert "\nwhile " not in splitter._separators
 
 
 def test_cpp_code_splitter() -> None:
@@ -3195,11 +3341,12 @@ def test_split_json() -> None:
     def random_val() -> str:
         return "".join(random.choices(string.ascii_letters, k=random.randint(4, 12)))
 
-    test_data: Any = {
+    val1: dict[str, Any] = {f"val1{i}": random_val() for i in range(100)}
+    val1["val16"] = {f"val16{i}": random_val() for i in range(100)}
+    test_data: dict[str, Any] = {
         "val0": random_val(),
-        "val1": {f"val1{i}": random_val() for i in range(100)},
+        "val1": val1,
     }
-    test_data["val1"]["val16"] = {f"val16{i}": random_val() for i in range(100)}
 
     # uses create_docs and split_text
     docs = splitter.create_documents(texts=[test_data])
@@ -3217,11 +3364,12 @@ def test_split_json_with_lists() -> None:
     def random_val() -> str:
         return "".join(random.choices(string.ascii_letters, k=random.randint(4, 12)))
 
-    test_data: Any = {
+    val1: dict[str, Any] = {f"val1{i}": random_val() for i in range(100)}
+    val1["val16"] = {f"val16{i}": random_val() for i in range(100)}
+    test_data: dict[str, Any] = {
         "val0": random_val(),
-        "val1": {f"val1{i}": random_val() for i in range(100)},
+        "val1": val1,
     }
-    test_data["val1"]["val16"] = {f"val16{i}": random_val() for i in range(100)}
 
     test_data_list: Any = {"testPreprocessing": [test_data]}
 
@@ -3251,6 +3399,109 @@ def test_split_json_many_calls() -> None:
 
     assert chunk0 == chunk0_output
     assert chunk1 == chunk1_output
+
+
+def test_split_json_with_empty_dict_values() -> None:
+    """Test that empty dicts in JSON values are preserved, not dropped."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=300)
+
+    data: dict[str, Any] = {
+        "a": "hello",
+        "b": {},
+        "c": "world",
+    }
+    chunks = splitter.split_json(data)
+    # Recombine all chunks into a single dict
+    merged: dict[str, Any] = {}
+    for chunk in chunks:
+        merged.update(chunk)
+
+    assert merged == {"a": "hello", "b": {}, "c": "world"}
+
+
+def test_split_json_with_nested_empty_dicts() -> None:
+    """Test that nested empty dicts are preserved."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=300)
+
+    data: dict[str, Any] = {
+        "level1": {
+            "level2a": {},
+            "level2b": "value",
+        }
+    }
+    chunks = splitter.split_json(data)
+    merged: dict[str, Any] = {}
+    for chunk in chunks:
+        merged.update(chunk)
+
+    assert merged == {"level1": {"level2a": {}, "level2b": "value"}}
+
+
+def test_split_json_empty_dict_only() -> None:
+    """Test splitting a JSON that contains only an empty dict at the top level.
+
+    An empty top-level dict should produce a single empty chunk (or no chunks).
+    """
+    splitter = RecursiveJsonSplitter(max_chunk_size=300)
+
+    data: dict[str, Any] = {}
+    chunks = splitter.split_json(data)
+    # With nothing to split, result should be empty list
+    assert chunks == []
+
+
+def test_split_json_mixed_empty_and_nonempty_dicts() -> None:
+    """Test a realistic structure mixing empty and non-empty nested dicts."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=300)
+
+    data: dict[str, Any] = {
+        "config": {},
+        "metadata": {"author": "test", "tags": {}},
+        "content": "some text",
+    }
+    chunks = splitter.split_json(data)
+    merged: dict[str, Any] = {}
+    for chunk in chunks:
+        for k, v in chunk.items():
+            if k in merged and isinstance(merged[k], dict) and isinstance(v, dict):
+                merged[k].update(v)
+            else:
+                merged[k] = v
+
+    assert merged["config"] == {}
+    assert merged["metadata"] == {"author": "test", "tags": {}}
+    assert merged["content"] == "some text"
+
+
+def test_split_json_empty_dict_value_in_large_payload() -> None:
+    """Test that empty dict values survive chunking in a larger payload."""
+    max_chunk = 200
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk)
+
+    data: dict[str, Any] = {
+        "key0": "x" * 50,
+        "empty": {},
+        "key1": "y" * 50,
+        "nested": {f"k{i}": f"v{i}" for i in range(20)},
+    }
+    chunks = splitter.split_json(data)
+
+    # Verify all chunks are within size limits
+    for chunk in chunks:
+        assert len(json.dumps(chunk)) < max_chunk * 1.05
+
+    # Verify the empty dict is somewhere in the chunks
+    found_empty = False
+    for chunk in chunks:
+        # Walk nested structure to find "empty": {}
+        if "empty" in chunk and chunk["empty"] == {}:
+            found_empty = True
+            break
+        for v in chunk.values():
+            if isinstance(v, dict) and "empty" in v and v["empty"] == {}:
+                found_empty = True
+                break
+    assert found_empty, "Empty dict value was lost during splitting"
 
 
 def test_powershell_code_splitter_short_code() -> None:
