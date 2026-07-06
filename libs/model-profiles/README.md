@@ -13,7 +13,7 @@ CLI tool for updating model profile data in LangChain integration packages.
 ## Quick Install
 
 ```bash
-pip install langchain-model-profiles
+uv add langchain-model-profiles
 ```
 
 ## 🤔 What is this?
@@ -41,3 +41,8 @@ langchain-profiles refresh --provider anthropic --data-dir ./langchain_anthropic
 ```
 
 This downloads the latest model data from models.dev, merges it with any augmentations defined in `profile_augmentations.toml`, and generates a `profiles.py` file.
+
+## Resources
+
+- [LangChain Academy](https://academy.langchain.com/) — comprehensive, free courses on LangChain libraries and products, made by the LangChain team
+- [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) — community guidelines and standards

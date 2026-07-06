@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -114,6 +115,16 @@ def test_convert_dict_to_message_without_reasoning_content() -> None:
     assert isinstance(message, AIMessage)
     assert message.content == "The answer is 42."
     assert "reasoning_content" not in message.additional_kwargs
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    os.environ.setdefault("FIREWORKS_API_KEY", "fake-key")
+    llm = ChatFireworks(model="accounts/fireworks/models/llama-v3-70b-instruct")
+    assert llm.metadata is not None
+    versions = llm.metadata["lc_versions"]
+    assert "langchain-core" in versions
+    assert "langchain-fireworks" in versions
 
 
 def test_format_message_content_passthrough_string() -> None:
@@ -1096,6 +1107,67 @@ class TestConvertChunkToMessageChunk:
             "output_tokens": 2,
             "total_tokens": 3,
         }
+
+
+class TestExtraHeaders:
+    """Tests for request-specific HTTP header plumbing."""
+
+    def test_extra_headers_forwarded_to_sync_create(self) -> None:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "ok"}}],
+            "usage": {},
+        }
+        headers = {
+            "x-session-affinity": "thread-123",
+            "x-multi-turn-session-id": "thread-123",
+        }
+
+        model.invoke("Hello", extra_headers=headers)
+
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["extra_headers"] == headers
+        # `extra_headers` must reach the SDK at the top level, not be folded
+        # into `extra_body` by `_prepare_sdk_kwargs`.
+        assert "extra_headers" not in call_kwargs.get("extra_body", {})
+
+    async def test_extra_headers_forwarded_to_async_create(self) -> None:
+        model = _make_model()
+        model.async_client = MagicMock()
+        headers = {
+            "x-session-affinity": "thread-123",
+            "x-multi-turn-session-id": "thread-123",
+        }
+
+        async def _create(**_kwargs: Any) -> dict[str, Any]:
+            return {
+                "choices": [{"message": {"role": "assistant", "content": "ok"}}],
+                "usage": {},
+            }
+
+        model.async_client.create = MagicMock(side_effect=_create)
+
+        await model.ainvoke("Hello", extra_headers=headers)
+
+        call_kwargs = model.async_client.create.call_args[1]
+        assert call_kwargs["extra_headers"] == headers
+
+    def test_extra_headers_forwarded_when_streaming(self) -> None:
+        """`extra_headers` must also survive the separate streaming param path."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = iter(list(_STREAM_CHUNKS))
+        headers = {
+            "x-session-affinity": "thread-123",
+            "x-multi-turn-session-id": "thread-123",
+        }
+
+        list(model.stream("Hello", extra_headers=headers))
+
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["extra_headers"] == headers
+        assert "extra_headers" not in call_kwargs.get("extra_body", {})
 
 
 class TestStreamUsage:

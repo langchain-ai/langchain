@@ -9,7 +9,8 @@ Run type check: uv run --group typing mypy <this file>
 Run tests: uv run --group test pytest <this file> -v
 
 To see type errors being caught, run:
-  uv run --group typing mypy .../test_middleware_type_errors.py
+
+    uv run --group typing mypy .../test_middleware_type_errors.py
 """
 
 from __future__ import annotations
@@ -20,15 +21,17 @@ import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, assert_type, override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
+    InputAgentState,
     ModelRequest,
     ModelResponse,
+    OutputAgentState,
     ResponseT,
     before_model,
 )
@@ -71,6 +74,12 @@ class SummaryResult(BaseModel):
     key_points: list[str]
 
 
+class CustomAgentState(AgentState[Any]):
+    """Custom state schema without a structured response format."""
+
+    user_id: str
+
+
 # =============================================================================
 # 1. BACKWARDS COMPATIBLE: Middlewares without type parameters
 #    These work when create_agent has NO context_schema or response_format
@@ -78,6 +87,7 @@ class SummaryResult(BaseModel):
 class BackwardsCompatibleMiddleware(AgentMiddleware):
     """Middleware that doesn't specify type parameters - backwards compatible."""
 
+    @override
     def before_model(self, state: AgentState[Any], runtime: Runtime[None]) -> dict[str, Any] | None:
         return None
 
@@ -106,6 +116,7 @@ def backwards_compatible_decorator(
     state: AgentState[Any], runtime: Runtime[None]
 ) -> dict[str, Any] | None:
     """Decorator middleware without explicit type parameters."""
+    _ = (state, runtime)
     return None
 
 
@@ -116,6 +127,7 @@ def backwards_compatible_decorator(
 class UserContextMiddleware(AgentMiddleware[AgentState[Any], UserContext, Any]):
     """Middleware with correctly specified UserContext."""
 
+    @override
     def before_model(
         self, state: AgentState[Any], runtime: Runtime[UserContext]
     ) -> dict[str, Any] | None:
@@ -250,6 +262,61 @@ def test_create_agent_no_context_schema(fake_model: GenericFakeChatModel) -> Non
     assert agent is not None
 
 
+def test_create_agent_custom_state_without_response_format(
+    fake_model: GenericFakeChatModel,
+) -> None:
+    """Custom state without response_format should not infer dict structured output."""
+    agent = create_agent(
+        model=fake_model,
+        state_schema=CustomAgentState,
+    )
+
+    if TYPE_CHECKING:
+        assert_type(
+            agent,
+            CompiledStateGraph[AgentState[Any], None, InputAgentState, OutputAgentState[Any]],
+        )
+
+    assert agent is not None
+
+
+def test_create_agent_dict_response_format(fake_model: GenericFakeChatModel) -> None:
+    """A raw-dict `response_format` infers an untyped `dict` structured response."""
+    json_schema: dict[str, Any] = {"type": "json_schema", "schema": {}}
+    agent = create_agent(model=fake_model, response_format=json_schema)
+
+    if TYPE_CHECKING:
+        assert_type(
+            agent,
+            CompiledStateGraph[
+                AgentState[dict[str, Any]],
+                None,
+                InputAgentState,
+                OutputAgentState[dict[str, Any]],
+            ],
+        )
+
+    assert agent is not None
+
+
+def test_create_agent_typed_response_format(fake_model: GenericFakeChatModel) -> None:
+    """A schema-typed `response_format` infers a matching `ResponseT`."""
+    agent = create_agent(model=fake_model, response_format=AnalysisResult)
+
+    if TYPE_CHECKING:
+        assert_type(
+            agent,
+            CompiledStateGraph[
+                AgentState[AnalysisResult],
+                None,
+                InputAgentState,
+                OutputAgentState[AnalysisResult],
+            ],
+        )
+
+    assert agent is not None
+
+
 def test_create_agent_with_user_context(fake_model: GenericFakeChatModel) -> None:
     """Typed: context_schema=UserContext requires matching middleware."""
     agent: CompiledStateGraph[Any, UserContext, Any, Any] = create_agent(
@@ -316,6 +383,7 @@ def test_create_agent_fully_typed(fake_model: GenericFakeChatModel) -> None:
 class AsyncUserContextMiddleware(AgentMiddleware[AgentState[Any], UserContext, Any]):
     """Async middleware with correctly typed ContextT."""
 
+    @override
     async def abefore_model(
         self, state: AgentState[Any], runtime: Runtime[UserContext]
     ) -> dict[str, Any] | None:

@@ -3,6 +3,7 @@
 from langchain_openrouter import __all__
 
 EXPECTED_ALL = [
+    "__version__",
     "ChatOpenRouter",
 ]
 

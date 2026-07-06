@@ -31,11 +31,9 @@ from langchain_openrouter.chat_models import (
     _convert_video_block_to_openrouter,
     _create_usage_metadata,
     _format_message_content,
-    _has_file_content_blocks,
-    _wrap_messages_for_sdk,
 )
 
-MODEL_NAME = "openai/gpt-4o-mini"
+MODEL_NAME = "openai/gpt-5.5"
 
 
 def _make_model(**kwargs: Any) -> ChatOpenRouter:
@@ -146,6 +144,39 @@ _STREAM_CHUNKS: list[dict[str, Any]] = [
     },
 ]
 
+_DUPLICATE_FINISH_STREAM_CHUNKS: list[dict[str, Any]] = [
+    {
+        "choices": [{"delta": {"role": "assistant", "content": "Hello"}, "index": 0}],
+        "model": MODEL_NAME,
+        "object": "chat.completion.chunk",
+        "created": 1700000000.0,
+        "id": "gen-stream1",
+    },
+    {
+        "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+        "model": MODEL_NAME,
+        "object": "chat.completion.chunk",
+        "created": 1700000000.0,
+        "id": "gen-stream1",
+    },
+    {
+        "choices": [
+            {
+                "delta": {},
+                "finish_reason": "stop",
+                "native_finish_reason": "end_turn",
+                "index": 0,
+            }
+        ],
+        "usage": {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7},
+        "model": MODEL_NAME,
+        "object": "chat.completion.chunk",
+        "created": 1700000000.0,
+        "id": "gen-stream1",
+        "system_fingerprint": "fp_duplicate",
+    },
+]
+
 
 def _make_sdk_response(response_dict: dict[str, Any]) -> MagicMock:
     """Build a MagicMock that behaves like an SDK ChatResponse."""
@@ -154,11 +185,34 @@ def _make_sdk_response(response_dict: dict[str, Any]) -> MagicMock:
     return mock
 
 
+def _assert_duplicate_finish_result(result: Any) -> None:
+    generation = result.generations[0][0]
+    assert generation.text == "Hello"
+    assert generation.generation_info == {
+        "finish_reason": "stop",
+        "model_name": MODEL_NAME,
+        "id": "gen-stream1",
+        "created": 1700000000,
+        "object": "chat.completion.chunk",
+        "model_provider": "openrouter",
+        "system_fingerprint": "fp_duplicate",
+        "native_finish_reason": "end_turn",
+    }
+    assert generation.message.response_metadata == generation.generation_info
+    assert generation.message.usage_metadata == {
+        "input_tokens": 5,
+        "output_tokens": 2,
+        "total_tokens": 7,
+    }
+
+
 class _MockSyncStream:
     """Synchronous iterator that mimics the SDK EventStream."""
 
     def __init__(self, chunks: list[dict[str, Any]]) -> None:
-        self._chunks = chunks
+        # Copy so `__next__`'s `pop(0)` never drains a caller-supplied list
+        # (e.g. a shared module-level fixture), mirroring `_MockAsyncStream`.
+        self._chunks = list(chunks)
 
     def __iter__(self) -> _MockSyncStream:
         return self
@@ -273,6 +327,14 @@ class TestChatOpenRouterInstantiation:
         model = _make_model(stop_sequences=["END", "STOP"])
         ls_params = model._get_ls_params()
         assert ls_params["ls_stop"] == ["END", "STOP"]
+
+    def test_metadata_versions(self) -> None:
+        """Test that metadata reports the correct version info."""
+        model = _make_model()
+        assert model.metadata is not None
+        versions = model.metadata["lc_versions"]
+        assert "langchain-core" in versions
+        assert "langchain-openrouter" in versions
 
     def test_client_created(self) -> None:
         """Test that OpenRouter SDK client is created."""
@@ -446,6 +508,179 @@ class TestChatOpenRouterInstantiation:
             assert "client" not in call_kwargs
             assert "async_client" not in call_kwargs
 
+    def test_default_headers_passed_to_client(self) -> None:
+        """Test that `default_headers` are forwarded to the httpx clients.
+
+        Before this field existed, setting `default_headers` had no effect on
+        the HTTP layer: `build_extra` diverted the unrecognized parameter into
+        `model_kwargs` (with a "not default parameter" warning), so the header
+        never reached the outbound request.
+        """
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                default_headers={"x-grok-conv-id": "session-abc-123"},
+            )
+            call_kwargs = mock_cls.call_args[1]
+            # Custom httpx clients are created and the header is set on both.
+            assert "client" in call_kwargs
+            assert "async_client" in call_kwargs
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["x-grok-conv-id"] == "session-abc-123"
+            async_headers = call_kwargs["async_client"].headers
+            assert async_headers["x-grok-conv-id"] == "session-abc-123"
+
+    def test_default_headers_coexist_with_app_attribution(self) -> None:
+        """Test that `default_headers` merges with built-in attribution headers."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url="https://myapp.com",
+                app_title="My App",
+                default_headers={
+                    "x-grok-conv-id": "session-xyz",
+                    "x-custom-trace-id": "trace-001",
+                },
+            )
+            call_kwargs = mock_cls.call_args[1]
+            sync_headers = call_kwargs["client"].headers
+            # Built-in attribution preserved
+            assert sync_headers["HTTP-Referer"] == "https://myapp.com"
+            assert sync_headers["X-Title"] == "My App"
+            # User-supplied headers also present
+            assert sync_headers["x-grok-conv-id"] == "session-xyz"
+            assert sync_headers["x-custom-trace-id"] == "trace-001"
+
+    def test_default_headers_override_app_attribution(self) -> None:
+        """Test that `default_headers` takes precedence over colliding built-in keys."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_title="Default Title",
+                default_headers={"X-Title": "Override Title"},
+            )
+            call_kwargs = mock_cls.call_args[1]
+            sync_headers = call_kwargs["client"].headers
+            # default_headers wins over the built-in app_title-derived value
+            assert sync_headers["X-Title"] == "Override Title"
+
+    def test_default_headers_none_no_custom_headers(self) -> None:
+        """Test that `default_headers=None` doesn't interfere with default behavior."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                default_headers=None,
+            )
+            call_kwargs = mock_cls.call_args[1]
+            # Default app-attribution headers still present
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["HTTP-Referer"] == "https://docs.langchain.com"
+            assert sync_headers["X-Title"] == "LangChain"
+            # No spurious extra headers
+            assert "x-grok-conv-id" not in sync_headers
+
+    def test_default_headers_sole_source_creates_client(self) -> None:
+        """`default_headers` alone (no app attribution) still creates httpx clients.
+
+        Guards against a regression where the `if extra_headers:` check runs
+        before `default_headers` is merged in — the header would then be
+        dropped and no custom client created.
+        """
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url=None,
+                app_title=None,
+                app_categories=None,
+                default_headers={"x-grok-conv-id": "session-solo"},
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert "client" in call_kwargs
+            assert "async_client" in call_kwargs
+            assert call_kwargs["client"].headers["x-grok-conv-id"] == "session-solo"
+            assert (
+                call_kwargs["async_client"].headers["x-grok-conv-id"] == "session-solo"
+            )
+
+    def test_default_headers_override_app_categories(self) -> None:
+        """`default_headers` can override the built-in `X-OpenRouter-Categories`."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_categories=["programming", "translation"],
+                default_headers={"X-OpenRouter-Categories": "custom-category"},
+            )
+            call_kwargs = mock_cls.call_args[1]
+            sync_headers = call_kwargs["client"].headers
+            assert sync_headers["X-OpenRouter-Categories"] == "custom-category"
+
+    def test_default_headers_empty_dict_no_custom_client(self) -> None:
+        """An empty `default_headers` dict behaves like `None` (no custom client)."""
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url=None,
+                app_title=None,
+                app_categories=None,
+                default_headers={},
+            )
+            call_kwargs = mock_cls.call_args[1]
+            assert "client" not in call_kwargs
+            assert "async_client" not in call_kwargs
+
+    def test_default_headers_override_is_case_insensitive(self) -> None:
+        """A case-variant user header overrides the built-in, not doubles it.
+
+        HTTP header names are case-insensitive, so `default_headers` keyed with
+        different casing than a built-in attribution header (`http-referer` vs
+        `HTTP-Referer`) must replace it rather than send both values.
+        """
+        with patch("openrouter.OpenRouter") as mock_cls:
+            mock_cls.return_value = MagicMock()
+            ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                app_url="https://builtin.example",
+                default_headers={"http-referer": "https://override.example"},
+            )
+            sync_headers = mock_cls.call_args[1]["client"].headers
+            # httpx headers are case-insensitive: the override value wins under
+            # either spelling, with no comma-joined doubling.
+            assert sync_headers["HTTP-Referer"] == "https://override.example"
+            assert sync_headers["http-referer"] == "https://override.example"
+            assert "," not in sync_headers["HTTP-Referer"]
+
+    def test_default_headers_not_swept_into_model_kwargs(self) -> None:
+        """`default_headers` is a first-class field, not extra `model_kwargs`.
+
+        Guards the motivating regression: `build_extra` must recognize
+        `default_headers`, leave it out of `model_kwargs`, and not emit the
+        "not default parameter" warning that unrecognized kwargs trigger.
+        """
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            model = ChatOpenRouter(
+                model=MODEL_NAME,
+                api_key=SecretStr("test-key"),
+                default_headers={"x-grok-conv-id": "session-abc-123"},
+            )
+        assert model.model_kwargs == {}
+        assert not any("not default parameter" in str(w.message) for w in caught)
+
     def test_reasoning_in_params(self) -> None:
         """Test that `reasoning` is included in default params."""
         model = _make_model(reasoning={"effort": "high"})
@@ -492,6 +727,7 @@ class TestSerialization:
         """Test that ChatOpenRouter declares itself as serializable."""
         assert ChatOpenRouter.is_lc_serializable() is True
 
+    @pytest.mark.filterwarnings("ignore:The function `load` is in beta")
     def test_dumpd_load_roundtrip(self) -> None:
         """Test that dumpd/load round-trip preserves model config."""
         model = _make_model(temperature=0.7, max_tokens=100)
@@ -513,6 +749,33 @@ class TestSerialization:
         model = _make_model(api_key=SecretStr("super-secret-key"))
         serialized = dumps(model)
         assert "super-secret-key" not in serialized
+
+    def test_dumpd_excludes_default_headers(self) -> None:
+        """Test that default_headers are excluded from serialized kwargs."""
+        model = _make_model(
+            default_headers={
+                "Authorization": "Bearer provider-token",
+                "x-grok-conv-id": "session-abc-123",
+            }
+        )
+
+        serialized = dumpd(model)
+
+        assert "default_headers" not in serialized["kwargs"]
+
+    def test_dumps_does_not_leak_default_headers(self) -> None:
+        """Test that dumps output does not contain default header values."""
+        model = _make_model(
+            default_headers={
+                "Authorization": "Bearer provider-token",
+                "x-grok-conv-id": "session-abc-123",
+            }
+        )
+
+        serialized = dumps(model)
+
+        assert "provider-token" not in serialized
+        assert "session-abc-123" not in serialized
 
 
 # ===========================================================================
@@ -815,6 +1078,28 @@ class TestRequestPayload:
         assert tools[0]["function"]["name"] == "GetWeather"
         assert "parameters" in tools[0]["function"]
 
+    def test_tool_cache_control_preserved_in_payload(self) -> None:
+        """Test that top-level `cache_control` on a tool dict is preserved."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_TOOL_RESPONSE_DICT)
+
+        tool = {
+            "type": "function",
+            "function": {
+                "name": "GetWeather",
+                "description": "Get the weather.",
+                "parameters": {"type": "object", "properties": {}},
+            },
+            "cache_control": {"type": "ephemeral"},
+        }
+        bound = model.bind_tools([tool])
+        bound.invoke("What's the weather?")
+        call_kwargs = model.client.chat.send.call_args[1]
+        tools = call_kwargs["tools"]
+        assert len(tools) == 1
+        assert tools[0]["cache_control"] == {"type": "ephemeral"}
+
     def test_openrouter_params_in_payload(self) -> None:
         """Test that OpenRouter-specific params appear in the SDK call."""
         model = _make_model(
@@ -1035,6 +1320,20 @@ class TestBindTools:
         tools = bound.kwargs["tools"]
         assert "strict" not in tools[0]["function"]
 
+    def test_bind_tools_parallel_tool_calls_forwarded(self) -> None:
+        """Test that parallel_tool_calls is forwarded to the request kwargs."""
+        model = _make_model()
+        bound = model.bind_tools([GetWeather], parallel_tool_calls=False)
+        assert isinstance(bound, RunnableBinding)
+        assert bound.kwargs["parallel_tool_calls"] is False
+
+    def test_bind_tools_parallel_tool_calls_none_omits_key(self) -> None:
+        """Test that parallel_tool_calls=None does not set the key in kwargs."""
+        model = _make_model()
+        bound = model.bind_tools([GetWeather])
+        assert isinstance(bound, RunnableBinding)
+        assert "parallel_tool_calls" not in bound.kwargs
+
 
 # ===========================================================================
 # with_structured_output tests
@@ -1244,6 +1543,44 @@ class TestMessageConversion:
         details = [
             {"type": "reasoning.text", "text": "First thought", "index": 0},
             {"type": "reasoning.text", "text": "Second thought", "index": 1},
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == details
+
+    def test_ai_message_reasoning_details_strips_responses_ids(self) -> None:
+        """OpenAI Responses `rs_*` item IDs are stripped before replay."""
+        response_id = "rs_053a05e24b0da75e0169fa358ea9fc81908b18aff8157798c1"
+        details = [
+            {
+                "type": "reasoning.text",
+                "id": response_id,
+                "text": "step-by-step",
+                "index": 0,
+            }
+        ]
+        msg = AIMessage(
+            content="Answer",
+            additional_kwargs={"reasoning_details": details},
+        )
+        result = _convert_message_to_dict(msg)
+        assert result["reasoning_details"] == [
+            {"type": "reasoning.text", "text": "step-by-step", "index": 0}
+        ]
+        assert response_id.startswith("rs_")
+        assert details[0]["id"] == response_id
+
+    def test_ai_message_reasoning_details_preserves_non_responses_ids(self) -> None:
+        """Non-Responses IDs are preserved in reasoning details."""
+        details = [
+            {
+                "type": "reasoning.text",
+                "id": "reasoning_abc123",
+                "text": "step-by-step",
+            }
         ]
         msg = AIMessage(
             content="Answer",
@@ -1625,11 +1962,11 @@ class TestCreateChatResult:
         model = _make_model()
         response = {
             **_SIMPLE_RESPONSE_DICT,
-            "model": "openai/gpt-4o",
+            "model": MODEL_NAME,
         }
         result = model._create_chat_result(response)
         assert result.llm_output is not None
-        assert result.llm_output["model_name"] == "openai/gpt-4o"
+        assert result.llm_output["model_name"] == MODEL_NAME
 
     def test_system_fingerprint_in_metadata(self) -> None:
         """Test that system_fingerprint is included in response_metadata."""
@@ -2629,7 +2966,7 @@ class TestFormatMessageContent:
         assert result[0]["video_url"]["url"].startswith("data:video/mp4;base64,")
 
     def test_video_base64_source_type_format(self) -> None:
-        """Test video block using ``source_type`` + ``data`` keys."""
+        """Test video block using `source_type` + `data` keys."""
         block: dict[str, Any] = {
             "type": "video",
             "source_type": "base64",
@@ -2704,7 +3041,7 @@ class TestFormatMessageContent:
         }
 
     def test_file_base64_source_type_format(self) -> None:
-        """Test file block using ``source_type`` + ``data`` keys."""
+        """Test file block using `source_type` + `data` keys."""
         block: dict[str, Any] = {
             "type": "file",
             "source_type": "base64",
@@ -2772,51 +3109,19 @@ class TestFormatMessageContent:
         }
 
 
-class TestWrapMessagesForSdk:
-    """Tests for ``_wrap_messages_for_sdk`` SDK validation bypass."""
+class TestSdkFileContentValidation:
+    """Verify the OpenRouter SDK natively validates `file` content parts.
 
-    def test_no_file_blocks_returns_dicts(self) -> None:
-        """Messages without file blocks should be returned as plain dicts."""
-        msgs: list[dict[str, Any]] = [
-            {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there"},
-        ]
-        result = _wrap_messages_for_sdk(msgs)
-        # Should be the exact same list object (no wrapping needed)
-        assert result is msgs
+    The minimum `openrouter` floor is `>=0.9.2`, where `file` was added to the
+    `ChatContentItems` discriminated union. These tests guard against
+    regressions if the floor is ever lowered below that fix.
+    """
 
-    def test_has_file_content_blocks_detection(self) -> None:
-        """Test ``_has_file_content_blocks`` detects file blocks correctly."""
-        assert not _has_file_content_blocks([{"role": "user", "content": "plain text"}])
-        assert not _has_file_content_blocks(
-            [
-                {
-                    "role": "user",
-                    "content": [{"type": "text", "text": "hi"}],
-                }
-            ]
-        )
-        assert _has_file_content_blocks(
-            [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "hi"},
-                        {
-                            "type": "file",
-                            "file": {"file_data": "https://example.com/a.pdf"},
-                        },
-                    ],
-                }
-            ]
-        )
-
-    def test_wraps_as_pydantic_models(self) -> None:
-        """File-containing messages should be wrapped as SDK Pydantic models."""
+    def test_file_content_part_validates(self) -> None:
+        """A `file` content part validates and serializes to the right payload."""
         from openrouter import components  # noqa: PLC0415
 
-        msgs: list[dict[str, Any]] = [
-            {"role": "system", "content": "You are helpful."},
+        msg = components.ChatUserMessage.model_validate(
             {
                 "role": "user",
                 "content": [
@@ -2824,77 +3129,22 @@ class TestWrapMessagesForSdk:
                     {
                         "type": "file",
                         "file": {
-                            "file_data": "https://example.com/doc.pdf",
+                            "file_data": "data:application/pdf;base64,abc",
                             "filename": "doc.pdf",
                         },
                     },
                 ],
-            },
-        ]
-        result = _wrap_messages_for_sdk(msgs)
-        assert len(result) == 2
-        assert isinstance(result[0], components.ChatSystemMessage)
-        assert isinstance(result[1], components.ChatUserMessage)
-
-    def test_wrapped_serializes_correctly(self) -> None:
-        """Wrapped models should serialize to the correct JSON payload."""
-        import warnings  # noqa: PLC0415
-
-        msgs: list[dict[str, Any]] = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "Read this."},
-                    {
-                        "type": "file",
-                        "file": {"file_data": "data:application/pdf;base64,abc"},
-                    },
-                ],
-            },
-        ]
-        result = _wrap_messages_for_sdk(msgs)
-        wrapped_msg = result[0]
-        assert hasattr(wrapped_msg, "model_dump")
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            dumped = wrapped_msg.model_dump(by_alias=True, exclude_none=True)
-        assert dumped["role"] == "user"
-        assert dumped["content"][0] == {"type": "text", "text": "Read this."}
+            }
+        )
+        dumped = msg.model_dump(by_alias=True, exclude_none=True)
+        assert dumped["content"][0] == {"type": "text", "text": "Summarize this."}
         assert dumped["content"][1] == {
             "type": "file",
-            "file": {"file_data": "data:application/pdf;base64,abc"},
+            "file": {
+                "file_data": "data:application/pdf;base64,abc",
+                "filename": "doc.pdf",
+            },
         }
-
-    def test_all_roles_wrapped(self) -> None:
-        """All standard roles should be wrapped correctly."""
-        from openrouter import components  # noqa: PLC0415
-
-        msgs: list[dict[str, Any]] = [
-            {"role": "system", "content": "System prompt."},
-            {
-                "role": "user",
-                "content": [
-                    {"type": "file", "file": {"file_data": "https://x.com/f.pdf"}},
-                ],
-            },
-            {
-                "role": "assistant",
-                "content": "Summary here.",
-                "tool_calls": [
-                    {
-                        "id": "c1",
-                        "type": "function",
-                        "function": {"name": "fn", "arguments": "{}"},
-                    }
-                ],
-            },
-            {"role": "tool", "content": "result", "tool_call_id": "c1"},
-        ]
-        result = _wrap_messages_for_sdk(msgs)
-        assert isinstance(result[0], components.ChatSystemMessage)
-        assert isinstance(result[1], components.ChatUserMessage)
-        assert isinstance(result[2], components.ChatAssistantMessage)
-        assert isinstance(result[3], components.ChatToolMessage)
 
 
 # ===========================================================================
@@ -3341,6 +3591,83 @@ class TestStreamUsage:
         assert usage["input_tokens"] == 10
         assert usage["output_tokens"] == 5
         assert usage["total_tokens"] == 15
+
+    @pytest.mark.parametrize("stream_usage", [True, False])
+    def test_generate_duplicate_finish_chunks_deduplicates_generation_info(
+        self, stream_usage: Literal[True, False]
+    ) -> None:
+        """Test duplicate finish chunks do not concatenate metadata."""
+        model = _make_model(streaming=True, stream_usage=stream_usage)
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _MockSyncStream(
+            _DUPLICATE_FINISH_STREAM_CHUNKS
+        )
+
+        result = model.generate([[HumanMessage(content="Hello")]])
+
+        _assert_duplicate_finish_result(result)
+
+    @pytest.mark.parametrize("stream_usage", [True, False])
+    async def test_agenerate_duplicate_finish_chunks_deduplicates_generation_info(
+        self, stream_usage: Literal[True, False]
+    ) -> None:
+        """Test async duplicate finish chunks do not concatenate metadata."""
+        model = _make_model(streaming=True, stream_usage=stream_usage)
+        model.client = MagicMock()
+        model.client.chat.send_async = AsyncMock(
+            return_value=_MockAsyncStream(_DUPLICATE_FINISH_STREAM_CHUNKS)
+        )
+
+        result = await model.agenerate([[HumanMessage(content="Hello")]])
+
+        _assert_duplicate_finish_result(result)
+
+    def test_stream_differing_finish_reasons_keeps_first(self) -> None:
+        """First finish reason wins across repeated terminal chunks.
+
+        OpenRouter can emit several chunks bearing a `finish_reason`. Later
+        terminal chunks should fill only missing metadata fields, so a differing
+        later reason must not surface in any emitted chunk.
+        """
+        finish_chunk: dict[str, Any] = {
+            "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+            "model": MODEL_NAME,
+            "object": "chat.completion.chunk",
+            "created": 1700000000.0,
+            "id": "gen-stream1",
+        }
+        chunks: list[dict[str, Any]] = [
+            {
+                "choices": [
+                    {"delta": {"role": "assistant", "content": "Hi"}, "index": 0}
+                ],
+                "model": MODEL_NAME,
+                "object": "chat.completion.chunk",
+                "created": 1700000000.0,
+                "id": "gen-stream1",
+            },
+            finish_chunk,
+            {
+                **finish_chunk,
+                "choices": [{"delta": {}, "finish_reason": "length", "index": 0}],
+            },
+            {
+                **finish_chunk,
+                "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+            },
+        ]
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _MockSyncStream(chunks)
+
+        emitted = list(model.stream("Hi"))
+
+        finish_reasons = [
+            c.response_metadata["finish_reason"]
+            for c in emitted
+            if "finish_reason" in c.response_metadata
+        ]
+        assert finish_reasons == ["stop"]
 
     async def test_astream_options_passed_by_default(self) -> None:
         """Test that async stream sends stream_options by default."""

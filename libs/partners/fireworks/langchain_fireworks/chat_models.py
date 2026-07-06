@@ -100,6 +100,7 @@ from pydantic import (
 from typing_extensions import Self
 
 from langchain_fireworks._compat import _convert_from_v1_to_chat_completions
+from langchain_fireworks._version import __version__
 from langchain_fireworks.data._profiles import _PROFILES
 
 logger = logging.getLogger(__name__)
@@ -663,8 +664,27 @@ class ChatFireworks(BaseChatModel):
         ```python
         from langchain_fireworks.chat_models import ChatFireworks
 
-        fireworks = ChatFireworks(model_name="accounts/fireworks/models/gpt-oss-120b")
+        model = ChatFireworks(model_name="accounts/fireworks/models/gpt-oss-120b")
         ```
+
+    Fireworks request headers can be passed with `extra_headers`. For prompt
+    caching, `x-session-affinity` pins requests to a replica so related calls can
+    reuse the same prompt-cache session:
+
+    ```python
+    model.invoke(
+        "Hello",
+        extra_headers={"x-session-affinity": "user-42"},
+    )
+    ```
+
+    The Fireworks SDK also accepts a typed `prompt_cache_key` field (passed as a
+    regular keyword argument), which it treats as the preferred alternative to
+    the raw `x-session-affinity` header:
+
+    ```python
+    model.invoke("Hello", prompt_cache_key="user-42")
+    ```
     """
 
     @property
@@ -826,6 +846,12 @@ class ChatFireworks(BaseChatModel):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
+
+    @model_validator(mode="after")
+    def _set_fireworks_chat_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-fireworks", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:

@@ -36,7 +36,7 @@ FormatOutputType = TypeVar("FormatOutputType")
 
 
 class BasePromptTemplate(
-    RunnableSerializable[dict, PromptValue], ABC, Generic[FormatOutputType]
+    RunnableSerializable[dict[str, Any], PromptValue], ABC, Generic[FormatOutputType]
 ):
     """Base class for all prompt templates, returning a prompt."""
 
@@ -58,7 +58,10 @@ class BasePromptTemplate(
     If not provided, all variables are assumed to be strings.
     """
 
-    output_parser: BaseOutputParser | None = None
+    # Ideally we would type output_parser as BaseOutputParser[Any]
+    # but that makes Pydantic fail (Pydantic tries to instantiate BaseOutputParser
+    # instead of using the provided output_parser...)
+    output_parser: BaseOutputParser | None = None  # type: ignore[type-arg]
     """How to parse the output of calling an LLM on this formatted prompt."""
 
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)
@@ -155,7 +158,7 @@ class BasePromptTemplate(
             field_definitions={**required_input_variables, **optional_input_variables},
         )
 
-    def _validate_input(self, inner_input: Any) -> builtins.dict:
+    def _validate_input(self, inner_input: Any) -> builtins.dict[str, Any]:
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
@@ -192,22 +195,23 @@ class BasePromptTemplate(
         return inner_input_
 
     def _format_prompt_with_error_handling(
-        self,
-        inner_input: builtins.dict,
+        self, inner_input: builtins.dict[str, Any]
     ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
         return self.format_prompt(**inner_input_)
 
     async def _aformat_prompt_with_error_handling(
-        self,
-        inner_input: builtins.dict,
+        self, inner_input: builtins.dict[str, Any]
     ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
         return await self.aformat_prompt(**inner_input_)
 
     @override
     def invoke(
-        self, input: builtins.dict, config: RunnableConfig | None = None, **kwargs: Any
+        self,
+        input: builtins.dict[str, Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
     ) -> PromptValue:
         """Invoke the prompt.
 
@@ -233,7 +237,10 @@ class BasePromptTemplate(
 
     @override
     async def ainvoke(
-        self, input: builtins.dict, config: RunnableConfig | None = None, **kwargs: Any
+        self,
+        input: builtins.dict[str, Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
     ) -> PromptValue:
         """Async invoke the prompt.
 
@@ -279,7 +286,9 @@ class BasePromptTemplate(
         """
         return self.format_prompt(**kwargs)
 
-    def partial(self, **kwargs: str | Callable[[], str]) -> BasePromptTemplate:
+    def partial(
+        self, **kwargs: str | Callable[[], str]
+    ) -> BasePromptTemplate[FormatOutputType]:
         """Return a partial of the prompt template.
 
         Args:
@@ -420,7 +429,9 @@ class BasePromptTemplate(
             raise ValueError(msg)
 
 
-def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> dict:
+def _get_document_info(
+    doc: Document, prompt: BasePromptTemplate[str]
+) -> dict[str, Any]:
     base_info = {"page_content": doc.page_content, **doc.metadata}
     missing_metadata = set(prompt.input_variables).difference(base_info)
     if len(missing_metadata) > 0:

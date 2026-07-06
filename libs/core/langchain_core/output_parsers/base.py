@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import builtins  # noqa: TC003
+import builtins
 import contextlib
 from abc import ABC, abstractmethod
 from typing import (
@@ -23,6 +23,8 @@ from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializa
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
+    import builtins
+
     from langchain_core.prompt_values import PromptValue
 
 T = TypeVar("T")
@@ -70,7 +72,7 @@ class BaseLLMOutputParser(ABC, Generic[T]):
 
 
 class BaseGenerationOutputParser(
-    BaseLLMOutputParser, RunnableSerializable[LanguageModelOutput, T]
+    BaseLLMOutputParser[T], RunnableSerializable[LanguageModelOutput, T]
 ):
     """Base class to parse the output of an LLM call."""
 
@@ -136,7 +138,7 @@ class BaseGenerationOutputParser(
 
 
 class BaseOutputParser(
-    BaseLLMOutputParser, RunnableSerializable[LanguageModelOutput, T]
+    BaseLLMOutputParser[T], RunnableSerializable[LanguageModelOutput, T]
 ):
     """Base class to parse the output of an LLM call.
 

@@ -14,7 +14,13 @@ import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
 from langchain_core.exceptions import ContextOverflowError
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
@@ -23,6 +29,7 @@ from pydantic import BaseModel, Field, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
+from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
     _TOOL_CALL_ID_PATTERN,
     _create_usage_metadata,
@@ -42,19 +49,22 @@ MODEL_NAME = "claude-sonnet-4-5-20250929"
 
 def test_initialization() -> None:
     """Test chat model initialization."""
-    for model in [
-        ChatAnthropic(model_name=MODEL_NAME, api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
-        ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
-            model=MODEL_NAME,
-            anthropic_api_key="xyz",
-            default_request_timeout=2,
-            base_url="https://api.anthropic.com",
-        ),
-    ]:
-        assert model.model == MODEL_NAME
-        assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
-        assert model.default_request_timeout == 2.0
-        assert model.anthropic_api_url == "https://api.anthropic.com"
+    with patch.dict(os.environ, {"ANTHROPIC_API_URL": "https://api.anthropic.com"}):
+        for model in [
+            ChatAnthropic(model_name=MODEL_NAME, api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
+            ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
+                model=MODEL_NAME,
+                anthropic_api_key="xyz",
+                default_request_timeout=2,
+                base_url="https://api.anthropic.com",
+            ),
+        ]:
+            assert model.model == MODEL_NAME
+            assert (
+                cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
+            )
+            assert model.default_request_timeout == 2.0
+            assert model.anthropic_api_url == "https://api.anthropic.com"
 
 
 def test_user_agent_header_in_client_params() -> None:
@@ -149,9 +159,9 @@ def test_set_default_max_tokens() -> None:
     llm = ChatAnthropic(model="claude-3-7-sonnet-20250219", anthropic_api_key="test")
     assert llm.max_tokens == 64000
 
-    # Test claude-3-5-haiku models
+    # Test claude-3-5-haiku models (profile removed, should fall back to 4096)
     llm = ChatAnthropic(model="claude-3-5-haiku-20241022", anthropic_api_key="test")
-    assert llm.max_tokens == 8192
+    assert llm.max_tokens == 4096
 
     # Test claude-3-haiku models (should default to 4096)
     llm = ChatAnthropic(model="claude-3-haiku-20240307", anthropic_api_key="test")
@@ -187,9 +197,23 @@ def test_anthropic_model_kwargs() -> None:
 @pytest.mark.requires("anthropic")
 def test_anthropic_fields_in_model_kwargs() -> None:
     """Test that for backwards compatibility fields can be passed in as model_kwargs."""
-    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "Parameters {'max_tokens_to_sample'} should be specified explicitly. "
+            "Instead they were passed in as part of `model_kwargs` parameter."
+        ),
+    ):
+        llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
-    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
+    with pytest.warns(
+        UserWarning,
+        match=(
+            "Parameters {'max_tokens'} should be specified explicitly. Instead they "
+            "were passed in as part of `model_kwargs` parameter."
+        ),
+    ):
+        llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
 
 
@@ -737,7 +761,7 @@ def test__format_messages_with_tool_calls() -> None:
     assert expected == actual
 
     # Check handling of empty AIMessage
-    empty_contents: list[str | list[str | dict]] = ["", []]
+    empty_contents: list[str | list[str | dict[str, Any]]] = ["", []]
     for empty_content in empty_contents:
         ## Permit message in final position
         _, anthropic_messages = _format_messages([human, AIMessage(empty_content)])
@@ -2114,6 +2138,8 @@ def test_anthropic_model_params() -> None:
         "ls_max_tokens": 64000,
         "ls_temperature": None,
     }
+    assert llm.metadata is not None
+    assert llm.metadata["lc_versions"]["langchain-anthropic"] == __version__
 
     ls_params = llm._get_ls_params(model=MODEL_NAME)
     assert ls_params.get("ls_model_name") == MODEL_NAME
@@ -2190,6 +2216,200 @@ def test_streaming_cache_token_reporting() -> None:
     assert delta_chunk.usage_metadata["input_tokens"] == 135
     assert delta_chunk.usage_metadata["output_tokens"] == 50
     assert delta_chunk.usage_metadata["total_tokens"] == 185
+
+
+def _aggregate_anthropic_events(
+    llm: ChatAnthropic,
+    events: list[Any],
+    *,
+    coerce_content_to_string: bool,
+) -> AIMessageChunk | None:
+    """Drive the handler over `events` and sum chunks like `_stream` does."""
+    block_start_event = None
+    aggregate: AIMessageChunk | None = None
+    for event in events:
+        chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+            event,
+            stream_usage=True,
+            coerce_content_to_string=coerce_content_to_string,
+            block_start_event=block_start_event,
+        )
+        if chunk is not None:
+            aggregate = chunk if aggregate is None else aggregate + chunk
+    return aggregate
+
+
+def test_text_content_block_start_carries_initial_text() -> None:
+    """Regression test: text on `content_block_start` must not be dropped.
+
+    Anthropic sometimes places the opening text of a text block directly on the
+    `content_block_start` event (rather than in a following `text_delta`),
+    most often on the assistant turn that follows a tool result. The handler
+    previously only built a chunk on `content_block_start` for tool / document
+    / redacted_thinking blocks, so the leading text was silently dropped from the
+    aggregated message that gets persisted.
+    """
+    from anthropic.types import (
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageStartEvent,
+        TextDelta,
+    )
+
+    msg = Message(
+        id="msg_repro",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+    events = [
+        RawMessageStartEvent(message=msg, type="message_start"),
+        # The first text rides the START event; the rest arrives as a delta.
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="Here", type="text"),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="'s the answer.", type="text_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+    ]
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    # String content path (no tools / thinking).
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=True)
+    assert aggregate is not None
+    assert aggregate.text == "Here's the answer."
+
+    # Structured content path (e.g. tools / thinking enabled elsewhere).
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=False)
+    assert aggregate is not None
+    assert aggregate.text == "Here's the answer."
+    # The start-event block and the following delta must coalesce into a single
+    # text block that carries the block `index` and no spurious `citations`.
+    assert isinstance(aggregate.content, list)
+    text_blocks = [
+        block
+        for block in aggregate.content
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    assert len(text_blocks) == 1
+    assert text_blocks[0]["index"] == 0
+    assert "citations" not in text_blocks[0]
+
+
+def test_empty_text_content_block_start_emits_no_chunk() -> None:
+    """An empty `TextBlock` start must not change behavior (no spurious chunk)."""
+    from anthropic.types import RawContentBlockStartEvent
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="", type="text"),
+            index=0,
+            type="content_block_start",
+        ),
+        stream_usage=True,
+        coerce_content_to_string=True,
+        block_start_event=None,
+    )
+    assert chunk is None
+    # The block is still tracked so subsequent deltas resolve against it.
+    assert block_start_event is not None
+
+
+def test_thinking_content_block_start_carries_initial_thinking() -> None:
+    """Regression test: thinking/signature on `content_block_start` must survive.
+
+    As with text blocks, Anthropic can place a thinking block's opening
+    `thinking` content (and its `signature`) directly on the
+    `content_block_start` event rather than in a following `thinking_delta` /
+    `signature_delta`. The handler previously only built a chunk on
+    `content_block_start` for tool / document / redacted_thinking blocks, so the
+    leading thinking content was silently dropped from the aggregated message.
+    """
+    from anthropic.types import (
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageStartEvent,
+        ThinkingBlock,
+        ThinkingDelta,
+    )
+
+    msg = Message(
+        id="msg_repro",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+    events = [
+        RawMessageStartEvent(message=msg, type="message_start"),
+        # The opening thinking + signature ride the START event.
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(
+                thinking="Let me ", signature="sig123", type="thinking"
+            ),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="think about it.", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+    ]
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    # Thinking is only represented in the structured-content path.
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=False)
+    assert aggregate is not None
+    assert isinstance(aggregate.content, list)
+    thinking_blocks = [
+        block
+        for block in aggregate.content
+        if isinstance(block, dict) and block.get("type") == "thinking"
+    ]
+    assert len(thinking_blocks) == 1
+    # The leading thinking from the start event merges with the following delta,
+    # and the signature carried on the start event is preserved.
+    assert thinking_blocks[0]["thinking"] == "Let me think about it."
+    assert thinking_blocks[0]["signature"] == "sig123"
+
+
+def test_empty_thinking_content_block_start_emits_no_chunk() -> None:
+    """An empty `ThinkingBlock` start must not emit a spurious chunk."""
+    from anthropic.types import RawContentBlockStartEvent, ThinkingBlock
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(thinking="", signature="", type="thinking"),
+            index=0,
+            type="content_block_start",
+        ),
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=None,
+    )
+    assert chunk is None
+    # The block is still tracked so subsequent deltas resolve against it.
+    assert block_start_event is not None
 
 
 def test_strict_tool_use() -> None:

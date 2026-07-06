@@ -24,29 +24,8 @@ from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
 
-    from bs4.element import ResultSet
-
-try:
-    import nltk
-
-    _HAS_NLTK = True
-except ImportError:
-    _HAS_NLTK = False
-
-try:
     from bs4 import BeautifulSoup, Tag
-    from bs4.element import NavigableString, PageElement
-
-    _HAS_BS4 = True
-except ImportError:
-    _HAS_BS4 = False
-
-try:
-    from lxml import etree
-
-    _HAS_LXML = True
-except ImportError:
-    _HAS_LXML = False
+    from bs4.element import NavigableString, PageElement, ResultSet
 
 
 class ElementType(TypedDict):
@@ -56,6 +35,35 @@ class ElementType(TypedDict):
     xpath: str
     content: str
     metadata: dict[str, str]
+
+
+def _import_bs4(
+    *, import_error_message: str
+) -> tuple[type[BeautifulSoup], type[Tag], type[NavigableString]]:
+    try:
+        from bs4 import BeautifulSoup, Tag  # noqa: PLC0415
+        from bs4.element import NavigableString  # noqa: PLC0415
+    except ImportError as err:
+        raise ImportError(import_error_message) from err
+    return BeautifulSoup, Tag, NavigableString
+
+
+def _import_lxml_etree() -> object:
+    try:
+        from lxml import etree  # noqa: PLC0415
+    except ImportError as err:
+        msg = "Unable to import lxml, please install with `pip install lxml`."
+        raise ImportError(msg) from err
+    return etree
+
+
+def _import_nltk() -> object:
+    try:
+        import nltk  # noqa: PLC0415
+    except ImportError as err:
+        msg = "Could not import nltk. Please install it with 'pip install nltk'."
+        raise ImportError(msg) from err
+    return nltk
 
 
 # Unfortunately, BeautifulSoup doesn't define overloads for Tag.find_all.
@@ -257,13 +265,13 @@ class HTMLHeaderTextSplitter:
         Raises:
             ImportError: If BeautifulSoup is not installed.
         """
-        if not _HAS_BS4:
-            msg = (
+        beautiful_soup, tag_cls, _ = _import_bs4(
+            import_error_message=(
                 "Unable to import BeautifulSoup. Please install via `pip install bs4`."
             )
-            raise ImportError(msg)
+        )
 
-        soup = BeautifulSoup(html_content, "html.parser")
+        soup = beautiful_soup(html_content, "html.parser")
         body = soup.body or soup
 
         # Dictionary of active headers:
@@ -292,7 +300,7 @@ class HTMLHeaderTextSplitter:
             children = list(node.children)
 
             stack.extend(
-                child for child in reversed(children) if isinstance(child, Tag)
+                child for child in reversed(children) if isinstance(child, tag_cls)
             )
 
             tag = getattr(node, "name", None)
@@ -465,13 +473,14 @@ class HTMLSectionSplitter:
         Raises:
             ImportError: If BeautifulSoup is not installed.
         """
-        if not _HAS_BS4:
-            msg = "Unable to import BeautifulSoup/PageElement, \
-                    please install with `pip install \
-                    bs4`."
-            raise ImportError(msg)
+        beautiful_soup, _, _ = _import_bs4(
+            import_error_message=(
+                "Unable to import BeautifulSoup/PageElement, "
+                "please install with `pip install bs4`."
+            )
+        )
 
-        soup = BeautifulSoup(html_doc, "html.parser")
+        soup = beautiful_soup(html_doc, "html.parser")
         header_names = list(self.headers_to_split_on.keys())
         sections: list[dict[str, str | None]] = []
 
@@ -520,9 +529,7 @@ class HTMLSectionSplitter:
         Raises:
             ImportError: If the `lxml` library is not installed.
         """
-        if not _HAS_LXML:
-            msg = "Unable to import lxml, please install with `pip install lxml`."
-            raise ImportError(msg)
+        etree = cast("Any", _import_lxml_etree())
         # use lxml library to parse html document and return xml ElementTree
         # Create secure parsers to prevent XXE attacks
         html_parser = etree.HTMLParser(no_network=True)
@@ -532,8 +539,7 @@ class HTMLSectionSplitter:
 
         # Apply XSLT access control to prevent file/network access
         # DENY_ALL is a predefined access control that blocks all file/network access
-        # Type ignore needed due to incomplete lxml type stubs
-        ac = etree.XSLTAccessControl.DENY_ALL  # type: ignore[attr-defined]
+        ac = etree.XSLTAccessControl.DENY_ALL
 
         tree = etree.parse(StringIO(html_content), html_parser)
         xslt_tree = etree.parse(self.xslt_path, xslt_parser)
@@ -670,12 +676,12 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             ImportError: If BeautifulSoup or NLTK (when stopword removal is enabled)
                 is not installed.
         """
-        if not _HAS_BS4:
-            msg = (
+        _import_bs4(
+            import_error_message=(
                 "Could not import BeautifulSoup. "
                 "Please install it with 'pip install bs4'."
             )
-            raise ImportError(msg)
+        )
 
         self._headers_to_split_on = sorted(headers_to_split_on)
         self._max_chunk_size = max_chunk_size
@@ -718,11 +724,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             )
 
         if self._stopword_removal:
-            if not _HAS_NLTK:
-                msg = (
-                    "Could not import nltk. Please install it with 'pip install nltk'."
-                )
-                raise ImportError(msg)
+            nltk = cast("Any", _import_nltk())
             nltk.download("stopwords")
             self._stopwords = set(nltk.corpus.stopwords.words(self._stopword_lang))
 
@@ -735,7 +737,13 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         Returns:
             A list of `Document` objects containing the split content.
         """
-        soup = BeautifulSoup(text, "html.parser")
+        beautiful_soup, _, _ = _import_bs4(
+            import_error_message=(
+                "Could not import BeautifulSoup. "
+                "Please install it with 'pip install bs4'."
+            )
+        )
+        soup = beautiful_soup(text, "html.parser")
 
         self._process_media(soup)
 
@@ -813,13 +821,19 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         Args:
             soup: Parsed HTML content using BeautifulSoup.
         """
+        _, _, navigable_string = _import_bs4(
+            import_error_message=(
+                "Could not import BeautifulSoup. "
+                "Please install it with 'pip install bs4'."
+            )
+        )
         for a_tag in _find_all_tags(soup, name="a"):
             a_href = a_tag.get("href", "")
             a_text = a_tag.get_text(strip=True)
             markdown_link = f"[{a_text}]({a_href})"
             wrapper = soup.new_tag("link-wrapper")
             wrapper.string = markdown_link
-            a_tag.replace_with(NavigableString(markdown_link))
+            a_tag.replace_with(navigable_string(markdown_link))
 
     def _filter_tags(self, soup: BeautifulSoup) -> None:
         """Filters the HTML content based on the allowlist and denylist tags.
@@ -866,6 +880,12 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         Returns:
             A list of `Document` objects containing the split content.
         """
+        _, tag_cls, _ = _import_bs4(
+            import_error_message=(
+                "Could not import BeautifulSoup. "
+                "Please install it with 'pip install bs4'."
+            )
+        )
         documents: list[Document] = []
         current_headers: dict[str, str] = {}
         current_content: list[str] = []
@@ -881,24 +901,26 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 element: The HTML element to process.
 
             Returns:
-                The processed text of the element.
+                The processed text of the element, or an empty string for
+                    elements with no extractable text.
             """
-            element = cast("Tag | NavigableString", element)
-            if element.name in self._custom_handlers:
-                return self._custom_handlers[element.name](element)
+            if isinstance(element, tag_cls):
+                if element.name in self._custom_handlers:
+                    return self._custom_handlers[element.name](element)
 
-            text = ""
-
-            if element.name is not None:
+                text = ""
                 for child in element.children:
                     child_text = _get_element_text(child).strip()
                     if text and child_text:
                         text += " "
                     text += child_text
-            elif element.string:
-                text += element.string
 
-            return self._normalize_and_clean_text(text)
+                return self._normalize_and_clean_text(text)
+
+            if hasattr(element, "string") and isinstance(element.string, str):
+                return self._normalize_and_clean_text(element.string)
+
+            return ""
 
         elements = _find_all_tags(soup, recursive=False)
 

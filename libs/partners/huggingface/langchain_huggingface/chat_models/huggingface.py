@@ -69,6 +69,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
+from langchain_huggingface._version import __version__
 from langchain_huggingface.data._profiles import _PROFILES
 from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
@@ -579,6 +580,12 @@ class ChatHuggingFace(BaseChatModel):
             and isinstance(self.llm.model_kwargs, dict)
         ):
             self.model_kwargs = self.llm.model_kwargs.copy()
+
+    @model_validator(mode="after")
+    def _set_huggingface_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-huggingface", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_llm(self) -> Self:

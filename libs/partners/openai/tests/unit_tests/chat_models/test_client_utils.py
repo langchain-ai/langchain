@@ -22,6 +22,7 @@ from langchain_openai.chat_models import _client_utils
 
 SOL_SOCKET = socket.SOL_SOCKET
 SO_KEEPALIVE = socket.SO_KEEPALIVE
+OPENAI_TEST_MODEL = "gpt-5.5"
 
 
 @pytest.fixture(autouse=True)
@@ -183,21 +184,21 @@ def test_http_socket_options_none_vs_empty_tuple_vs_populated(
     )
 
     # (1) Unset -> None -> env-driven defaults (non-empty on linux/darwin CI).
-    ChatOpenAI(model="gpt-4o")
+    ChatOpenAI(model=OPENAI_TEST_MODEL)
     assert recorded, "expected a default-client build"
     _, _, opts1 = recorded[-1]
     assert isinstance(opts1, tuple)
 
     # (2) Explicit empty tuple -> ().
     recorded.clear()
-    ChatOpenAI(model="gpt-4o", http_socket_options=())
+    ChatOpenAI(model=OPENAI_TEST_MODEL, http_socket_options=())
     assert recorded
     assert all(opts == () for _, _, opts in recorded)
 
     # (3) Populated sequence -> verbatim passthrough (not filtered).
     recorded.clear()
     ChatOpenAI(
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         http_socket_options=[(SOL_SOCKET, SO_KEEPALIVE, 1)],
     )
     assert recorded
@@ -236,7 +237,7 @@ def test_openai_proxy_branch_applies_socket_options(
     )
 
     ChatOpenAI(
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         openai_proxy="http://proxy.example.com:3128",
         http_socket_options=[(SOL_SOCKET, SO_KEEPALIVE, 1)],
     )
@@ -280,7 +281,7 @@ def test_user_supplied_http_async_client_untouched(
     user_sync_client = httpx.Client()
 
     model = ChatOpenAI(
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         http_client=user_sync_client,
         http_async_client=user_client,
         http_socket_options=[(SOL_SOCKET, SO_KEEPALIVE, 1)],
@@ -321,7 +322,7 @@ def test_default_path_opt_out_is_strict_noop(
     monkeypatch.setattr(_client_utils._SyncHttpxClientWrapper, "__init__", sync_spy)
     monkeypatch.setattr(_client_utils._AsyncHttpxClientWrapper, "__init__", async_spy)
 
-    ChatOpenAI(model="gpt-4o")
+    ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     assert recorded_sync, "expected the sync default client to be built"
     assert "transport" not in recorded_sync[-1]
@@ -345,7 +346,7 @@ def test_invalid_env_values_degrade_safely(monkeypatch: pytest.MonkeyPatch) -> N
     assert (SOL_SOCKET, SO_KEEPALIVE, 1) in opts
 
     # Instantiating a model doesn't raise.
-    ChatOpenAI(model="gpt-4o")
+    ChatOpenAI(model=OPENAI_TEST_MODEL)
 
 
 def test_invalid_stream_chunk_timeout_env_degrades_safely(
@@ -353,7 +354,7 @@ def test_invalid_stream_chunk_timeout_env_degrades_safely(
 ) -> None:
     """Garbage in LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S must not crash init."""
     monkeypatch.setenv("LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S", "not-a-float")
-    model = ChatOpenAI(model="gpt-4o")
+    model = ChatOpenAI(model=OPENAI_TEST_MODEL)
     assert model.stream_chunk_timeout == 120.0
 
 

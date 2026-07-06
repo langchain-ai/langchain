@@ -140,7 +140,7 @@ def _sweep_chunk_store(
         extras = {
             k: v
             for k, v in chunk.items()
-            if k not in ("type", "id", "name", "args") and v is not None
+            if k not in {"type", "id", "name", "args"} and v is not None
         }
         final_block = finalize_tool_call_chunk(
             raw_args=chunk.get("args"),
@@ -647,7 +647,7 @@ class _ChatModelStreamBase:
                 tcc = cast("ToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = tcc.get("index", len(self._tool_call_chunks))
+                    idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
                 _merge_block_delta_into_store(self._tool_call_chunks, idx, dict(tcc))
                 chunk_block: ToolCallChunk = {
                     "type": "tool_call_chunk",
@@ -662,7 +662,7 @@ class _ChatModelStreamBase:
                 stcc = cast("ServerToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = len(self._server_tool_call_chunks)
+                    idx = len(self._server_tool_call_chunks)  # type: ignore[unreachable]
                 _merge_block_delta_into_store(
                     self._server_tool_call_chunks,
                     idx,
@@ -677,7 +677,7 @@ class _ChatModelStreamBase:
                 tcc = cast("ToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = tcc.get("index", len(self._tool_call_chunks))
+                    idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
                 _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
                 legacy_chunk_block: ToolCallChunk = {
                     "type": "tool_call_chunk",
@@ -692,7 +692,7 @@ class _ChatModelStreamBase:
                 stcc = cast("ServerToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = len(self._server_tool_call_chunks)
+                    idx = len(self._server_tool_call_chunks)  # type: ignore[unreachable]
                 _merge_chunk_into_store(
                     self._server_tool_call_chunks,
                     idx,
@@ -715,7 +715,7 @@ class _ChatModelStreamBase:
             tcc = cast("ToolCallChunk", block)
             idx = data.get("index")
             if idx is None:
-                idx = tcc.get("index", len(self._tool_call_chunks))
+                idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
             _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
             fallback_chunk_block: ToolCallChunk = {
                 "type": "tool_call_chunk",
@@ -864,7 +864,7 @@ class _ChatModelStreamBase:
             if idx is not None and idx in self._server_tool_call_chunks:
                 del self._server_tool_call_chunks[idx]
             finalized = itc
-        elif btype in (
+        elif btype in {
             "server_tool_call",
             "server_tool_result",
             "image",
@@ -872,7 +872,7 @@ class _ChatModelStreamBase:
             "video",
             "file",
             "non_standard",
-        ):
+        }:
             if btype == "server_tool_call" and idx is not None:
                 self._server_tool_call_chunks.pop(idx, None)
             finalized = cast("FinalizedContentBlock", block)
@@ -888,7 +888,7 @@ class _ChatModelStreamBase:
             # `tool_call` / `invalid_tool_call` blocks are excluded: v1
             # finalization drops `index` on them so further deltas
             # cannot clobber already-parsed args, and v2 mirrors that.
-            if btype not in ("tool_call", "invalid_tool_call"):
+            if btype not in {"tool_call", "invalid_tool_call"}:
                 finalized.setdefault("index", idx)
             self._blocks[idx] = finalized
 

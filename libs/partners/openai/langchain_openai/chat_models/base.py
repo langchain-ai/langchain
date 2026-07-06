@@ -130,6 +130,7 @@ from pydantic import (
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
+from langchain_openai._version import __version__
 from langchain_openai.chat_models._client_utils import (
     _astream_with_chunk_timeout,
     _build_proxied_async_httpx_client,
@@ -192,6 +193,7 @@ WellKnownTools = (
     "mcp",
     "image_generation",
     "tool_search",
+    "apply_patch",
 )
 
 
@@ -1136,6 +1138,20 @@ class BaseChatOpenAI(BaseChatModel):
         return values
 
     @model_validator(mode="after")
+    def _set_openai_chat_version(self) -> Self:
+        """Set package version in metadata.
+
+        Note: Subclasses that inherit from `BaseChatOpenAI` (e.g.
+        `ChatDeepSeek`, `ChatXAI`) must use a **unique** validator name
+        (e.g. `_set_deepseek_version`) instead of overriding this one. Pydantic
+        replaces same-named `model_validator` methods rather than chaining them,
+        so reusing `_set_openai_chat_version` would silently drop the parent's
+        `langchain-openai` version entry.
+        """
+        self._add_version("langchain-openai", __version__)
+        return self
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         if self.n is not None and self.n < 1:
@@ -1356,8 +1372,14 @@ class BaseChatOpenAI(BaseChatModel):
                 message=default_chunk_class(content="", usage_metadata=usage_metadata),
                 generation_info=base_generation_info,
             )
+            # Keep content as "" (the default) rather than converting to [].
+            # Chat Completions content deltas are normalized to strings in
+            # _convert_delta_to_message_chunk. Starting with [] causes
+            # merge_content to silently drop string content (empty list is
+            # falsy, so no merge branch applies). The empty list also triggers
+            # the content_blocks isinstance(list) short-circuit, which would
+            # return [] and miss tool_call_chunks.
             if self.output_version == "v1":
-                generation_chunk.message.content = []
                 generation_chunk.message.response_metadata["output_version"] = "v1"
 
             return generation_chunk
@@ -1388,6 +1410,9 @@ class BaseChatOpenAI(BaseChatModel):
             message_chunk.usage_metadata = usage_metadata
 
         message_chunk.response_metadata["model_provider"] = "openai"
+        # Propagate output_version so content_blocks can detect v1 mode.
+        if self.output_version == "v1":
+            message_chunk.response_metadata["output_version"] = "v1"
         return ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
         )
@@ -2035,7 +2060,7 @@ class BaseChatOpenAI(BaseChatModel):
         *,
         allow_fetching_images: bool = True,
     ) -> int:
-        """Calculate num tokens for `gpt-3.5-turbo` and `gpt-4` with `tiktoken` package.
+        """Calculate num tokens for supported OpenAI chat models.
 
         !!! warning
             You must have the `pillow` installed if you want to count image tokens if
@@ -2168,6 +2193,12 @@ class BaseChatOpenAI(BaseChatModel):
         """  # noqa: E501
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
+        # When response_format is provided via the Chat Completions API, OpenAI
+        # requires all function tools to be strict. Default strict=True unless
+        # the caller explicitly passed strict=False. The Responses API does not
+        # require this.
+        if response_format and strict is not False and not self.use_responses_api:
+            strict = True
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
@@ -2652,7 +2683,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     "prompt_tokens": 31,
                     "total_tokens": 36,
                 },
-                "model_name": "gpt-4o",
+                "model_name": "gpt-4.1-mini",
                 "system_fingerprint": "fp_43dfabdef1",
                 "finish_reason": "stop",
                 "logprobs": None,
@@ -2732,7 +2763,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     "prompt_tokens": 31,
                     "total_tokens": 36,
                 },
-                "model_name": "gpt-4o",
+                "model_name": "gpt-4.1-mini",
                 "system_fingerprint": "fp_43dfabdef1",
                 "finish_reason": "stop",
                 "logprobs": None,
@@ -3149,7 +3180,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "prompt_tokens": 28,
                 "total_tokens": 33,
             },
-            "model_name": "gpt-4o",
+            "model_name": "gpt-4.1-mini",
             "system_fingerprint": "fp_319be4768e",
             "finish_reason": "stop",
             "logprobs": None,
@@ -4137,6 +4168,9 @@ def _construct_responses_api_payload(
             payload["max_output_tokens"] = payload.pop(legacy_token_param)
     if "reasoning_effort" in payload and "reasoning" not in payload:
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
+    # Responses API has no `stop` parameter (Chat Completions does); drop it to
+    # avoid request rejection.
+    payload.pop("stop", None)
 
     # Remove temperature parameter for models that don't support it in responses API
     # gpt-5-chat supports temperature, and gpt-5 models with reasoning.effort='none'
@@ -4149,7 +4183,9 @@ def _construct_responses_api_payload(
     ):
         payload.pop("temperature", None)
 
-    payload["input"] = _construct_responses_api_input(messages)
+    payload["input"] = _construct_responses_api_input(
+        messages, store=payload.get("store")
+    )
     if tools := payload.pop("tools", None):
         new_tools: list = []
         for tool in tools:
@@ -4381,8 +4417,29 @@ def _pop_index_and_sub_index(block: dict) -> dict:
     return new_block
 
 
-def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
-    """Construct the input for the OpenAI Responses API."""
+def _construct_responses_api_input(
+    messages: Sequence[BaseMessage], *, store: bool | None = None
+) -> list:
+    """Construct the input for the OpenAI Responses API.
+
+    Args:
+        messages: Conversation history to serialize into Responses API input items.
+        store: Mirrors the request's `store` flag, controlling stateless-replay
+            behavior.
+
+            When `False`, the server does not persist response items, so
+            previously returned item IDs cannot be resolved on the next turn.
+            Assistant message IDs (`msg_*`) are therefore omitted and reasoning
+            blocks are dropped unless they carry `encrypted_content` (which can be
+            replayed without server-side storage).
+
+            When `True` or `None` (the default, matching the server's
+            stored-by-default behavior), item IDs and reasoning blocks
+            are preserved.
+
+    Returns:
+        A list of Responses API input items derived from `messages`.
+    """
     input_ = []
     for lc_msg in messages:
         if isinstance(lc_msg, AIMessage):
@@ -4471,13 +4528,16 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                     "type": "message",
                                     "content": [new_block],
                                     "role": "assistant",
-                                    "id": msg_id,
                                 }
+                                if store is not False:
+                                    new_item["id"] = msg_id
                                 if phase is not None:
                                     new_item["phase"] = phase
                                 input_.append(new_item)
+                        elif block_type == "reasoning":
+                            if store is not False or "encrypted_content" in block:
+                                input_.append(_pop_index_and_sub_index(block))
                         elif block_type in (
-                            "reasoning",
                             "compaction",
                             "web_search_call",
                             "file_search_call",
@@ -4490,13 +4550,23 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             "mcp_approval_request",
                             "tool_search_call",
                             "tool_search_output",
+                            "apply_patch_call",
+                            "apply_patch_call_output",
                         ):
                             input_.append(_pop_index_and_sub_index(block))
                         elif block_type == "image_generation_call":
                             # A previous image generation call can be referenced by ID
-                            input_.append(
-                                {"type": "image_generation_call", "id": block["id"]}
-                            )
+                            if store is not False:
+                                input_.append(
+                                    {"type": "image_generation_call", "id": block["id"]}
+                                )
+                            else:
+                                # ID-only references require stored server state. For
+                                # stateless requests, replay full items and drop bare
+                                # references that the backend cannot resolve.
+                                image_generation_call = _pop_index_and_sub_index(block)
+                                if set(image_generation_call) - {"type", "id"}:
+                                    input_.append(image_generation_call)
                         else:
                             pass
             elif isinstance(msg.get("content"), str):
@@ -4535,7 +4605,11 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
         elif msg["role"] in ("user", "system", "developer"):
             if isinstance(msg["content"], list):
                 new_blocks = []
-                non_message_item_types = ("mcp_approval_response", "tool_search_output")
+                non_message_item_types = (
+                    "mcp_approval_response",
+                    "tool_search_output",
+                    "apply_patch_call_output",
+                )
                 for block in msg["content"]:
                     if block["type"] in ("text", "image_url", "file"):
                         new_blocks.append(
@@ -4704,6 +4778,8 @@ def _construct_lc_result_from_responses_api(
             "image_generation_call",
             "tool_search_call",
             "tool_search_output",
+            "apply_patch_call",
+            "apply_patch_call_output",
         ):
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
 
@@ -4958,6 +5034,8 @@ def _convert_responses_chunk_to_generation_chunk(
         "image_generation_call",
         "tool_search_call",
         "tool_search_output",
+        "apply_patch_call",
+        "apply_patch_call_output",
     ):
         _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")
