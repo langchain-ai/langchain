@@ -560,7 +560,7 @@ def test_kill_process_avoids_group_kill_for_shared_process_group(
     session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
     process = Mock()
     process.pid = 1234
-    session._process = process  # type: ignore[assignment]
+    session._process = process
 
     killpg_mock = Mock()
 
@@ -585,7 +585,7 @@ def test_kill_process_uses_group_kill_for_dedicated_process_group(
     session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
     process = Mock()
     process.pid = 5678
-    session._process = process  # type: ignore[assignment]
+    session._process = process
 
     killpg_mock = Mock()
 
@@ -610,7 +610,7 @@ def test_kill_process_returns_early_when_process_already_gone(
     session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
     process = Mock()
     process.pid = 1111
-    session._process = process  # type: ignore[assignment]
+    session._process = process
 
     killpg_mock = Mock()
     monkeypatch.setattr(os, "killpg", killpg_mock, raising=False)
@@ -630,7 +630,7 @@ def test_kill_process_falls_back_when_group_kill_raises_oserror(
     session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
     process = Mock()
     process.pid = 4321
-    session._process = process  # type: ignore[assignment]
+    session._process = process
 
     killpg_mock = Mock(side_effect=PermissionError("operation not permitted"))
 
@@ -658,7 +658,7 @@ def test_kill_process_swallows_and_logs_direct_kill_oserror(
     process = Mock()
     process.pid = 7777
     process.kill.side_effect = PermissionError("operation not permitted")
-    session._process = process  # type: ignore[assignment]
+    session._process = process
 
     # Shared process group -> skip killpg and go straight to the direct kill.
     monkeypatch.setattr(os, "killpg", Mock(), raising=False)
@@ -679,7 +679,7 @@ def test_kill_process_uses_direct_kill_without_killpg(
     session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
     process = Mock()
     process.pid = 2222
-    session._process = process  # type: ignore[assignment]
+    session._process = process
 
     monkeypatch.delattr(os, "killpg", raising=False)
 
