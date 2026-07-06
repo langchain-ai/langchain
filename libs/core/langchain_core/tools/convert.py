@@ -11,6 +11,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools.base import ArgsSchema, BaseTool
 from langchain_core.tools.simple import Tool
 from langchain_core.tools.structured import StructuredTool
+from langchain_core.utils.pydantic import TypeBaseModel
 
 
 @overload
@@ -24,13 +25,13 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
-) -> Callable[[Callable | Runnable], BaseTool]: ...
+) -> Callable[[Callable[..., Any] | Runnable[Any, Any]], BaseTool]: ...
 
 
 @overload
 def tool(
     name_or_callable: str,
-    runnable: Runnable,
+    runnable: Runnable[Any, Any],
     *,
     description: str | None = None,
     return_direct: bool = False,
@@ -45,7 +46,7 @@ def tool(
 
 @overload
 def tool(
-    name_or_callable: Callable,
+    name_or_callable: Callable[..., Any],
     *,
     description: str | None = None,
     return_direct: bool = False,
@@ -70,12 +71,12 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
-) -> Callable[[Callable | Runnable], BaseTool]: ...
+) -> Callable[[Callable[..., Any] | Runnable[Any, Any]], BaseTool]: ...
 
 
 def tool(
-    name_or_callable: str | Callable | None = None,
-    runnable: Runnable | None = None,
+    name_or_callable: str | Callable[..., Any] | None = None,
+    runnable: Runnable[Any, Any] | None = None,
     *args: Any,
     description: str | None = None,
     return_direct: bool = False,
@@ -85,7 +86,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
     extras: dict[str, Any] | None = None,
-) -> BaseTool | Callable[[Callable | Runnable], BaseTool]:
+) -> BaseTool | Callable[[Callable[..., Any] | Runnable[Any, Any]], BaseTool]:
     """Convert Python functions and `Runnables` to LangChain tools.
 
     Can be used as a decorator with or without arguments to create tools from functions.
@@ -258,7 +259,7 @@ def tool(
 
     def _create_tool_factory(
         tool_name: str,
-    ) -> Callable[[Callable | Runnable], BaseTool]:
+    ) -> Callable[[Callable[..., Any] | Runnable[Any, Any]], BaseTool]:
         """Create a decorator that takes a callable and returns a tool.
 
         Args:
@@ -268,12 +269,14 @@ def tool(
             A function that takes a callable or `Runnable` and returns a tool.
         """
 
-        def _tool_factory(dec_func: Callable | Runnable) -> BaseTool:
+        def _tool_factory(
+            dec_func: Callable[..., Any] | Runnable[Any, Any],
+        ) -> BaseTool:
             tool_description = description
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
 
-                if runnable.input_schema.model_json_schema().get("type") != "object":
+                if runnable.get_input_jsonschema().get("type") != "object":
                     msg = "Runnable must have an object schema."
                     raise ValueError(msg)
 
@@ -381,7 +384,7 @@ def tool(
     # @tool(parse_docstring=True)
     # def my_tool():
     #    pass
-    def _partial(func: Callable | Runnable) -> BaseTool:
+    def _partial(func: Callable[..., Any] | Runnable[Any, Any]) -> BaseTool:
         """Partial function that takes a `Callable` and returns a tool."""
         name_ = func.get_name() if isinstance(func, Runnable) else func.__name__
         tool_factory = _create_tool_factory(name_)
@@ -390,14 +393,14 @@ def tool(
     return _partial
 
 
-def _get_description_from_runnable(runnable: Runnable) -> str:
+def _get_description_from_runnable(runnable: Runnable[Any, Any]) -> str:
     """Generate a placeholder description of a `Runnable`."""
-    input_schema = runnable.input_schema.model_json_schema()
+    input_schema = runnable.get_input_jsonschema()
     return f"Takes {input_schema}."
 
 
 def _get_schema_from_runnable_and_arg_types(
-    runnable: Runnable,
+    runnable: Runnable[Any, Any],
     name: str,
     arg_types: dict[str, type] | None = None,
 ) -> type[BaseModel]:
@@ -417,8 +420,8 @@ def _get_schema_from_runnable_and_arg_types(
 
 
 def convert_runnable_to_tool(
-    runnable: Runnable,
-    args_schema: type[BaseModel] | None = None,
+    runnable: Runnable[Any, Any],
+    args_schema: TypeBaseModel | None = None,
     *,
     name: str | None = None,
     description: str | None = None,
@@ -441,7 +444,7 @@ def convert_runnable_to_tool(
     description = description or _get_description_from_runnable(runnable)
     name = name or runnable.get_name()
 
-    schema = runnable.input_schema.model_json_schema()
+    schema = runnable.get_input_jsonschema()
     if schema.get("type") == "string":
         return Tool(
             name=name,

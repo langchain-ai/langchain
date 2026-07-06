@@ -51,9 +51,9 @@ def validate_safe_url(
 
     Args:
         url: The URL to validate (string or Pydantic HttpUrl).
-        allow_private: If ``True``, allows private IPs and localhost (for development).
+        allow_private: If `True`, allows private IPs and localhost (for development).
                       Cloud metadata endpoints are ALWAYS blocked.
-        allow_http: If ``True``, allows both HTTP and HTTPS.  If ``False``, only HTTPS.
+        allow_http: If `True`, allows both HTTP and HTTPS.  If `False`, only HTTPS.
 
     Returns:
         The validated URL as a string.

@@ -7,6 +7,7 @@ import httpx
 
 from langchain_core._security._exceptions import SSRFBlockedError
 from langchain_core._security._policy import (
+    DEFAULT_SSRF_POLICY,
     SSRFPolicy,
     _effective_allowed_hosts,
     validate_resolved_ip,
@@ -31,20 +32,20 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
     """httpx async transport that validates DNS results against an SSRF policy.
 
     For every outgoing request the transport:
-    1. Checks the URL scheme against ``policy.allowed_schemes``.
+    1. Checks the URL scheme against `policy.allowed_schemes`.
     2. Validates the hostname against blocked patterns.
     3. Resolves DNS and validates **all** returned IPs.
     4. Rewrites the request to connect to the first valid IP while
-       preserving the original ``Host`` header and TLS SNI hostname.
+       preserving the original `Host` header and TLS SNI hostname.
 
-    Redirects are re-validated on each hop because ``follow_redirects``
-    is set on the *client*, causing ``handle_async_request`` to be called
+    Redirects are re-validated on each hop because `follow_redirects`
+    is set on the *client*, causing `handle_async_request` to be called
     again for each redirect target.
     """
 
     def __init__(
         self,
-        policy: SSRFPolicy = SSRFPolicy(),
+        policy: SSRFPolicy = DEFAULT_SSRF_POLICY,
         **transport_kwargs: object,
     ) -> None:
         self._policy = policy
@@ -62,10 +63,7 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
         scheme = request.url.scheme.lower()
 
         # 1-3. Scheme, hostname, and pattern checks (reuse sync validator).
-        try:
-            validate_url_sync(str(request.url), self._policy)
-        except SSRFBlockedError:
-            raise
+        validate_url_sync(str(request.url), self._policy)
 
         # Allowed-hosts bypass - skip DNS/IP validation entirely.
         allowed = {h.lower() for h in _effective_allowed_hosts(self._policy)}
@@ -82,10 +80,12 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
                 type=socket.SOCK_STREAM,
             )
         except socket.gaierror as exc:
-            raise SSRFBlockedError("DNS resolution failed") from exc
+            msg = "DNS resolution failed"
+            raise SSRFBlockedError(msg) from exc
 
         if not addrinfo:
-            raise SSRFBlockedError("DNS resolution returned no results")
+            msg = "DNS resolution returned no results"
+            raise SSRFBlockedError(msg)
 
         # 5. Validate ALL resolved IPs - any blocked means reject.
         for _family, _type, _proto, _canonname, sockaddr in addrinfo:
@@ -135,7 +135,7 @@ class SSRFSafeSyncTransport(httpx.BaseTransport):
 
     def __init__(
         self,
-        policy: SSRFPolicy = SSRFPolicy(),
+        policy: SSRFPolicy = DEFAULT_SSRF_POLICY,
         **transport_kwargs: object,
     ) -> None:
         self._policy = policy
@@ -162,10 +162,12 @@ class SSRFSafeSyncTransport(httpx.BaseTransport):
                 type=socket.SOCK_STREAM,
             )
         except socket.gaierror as exc:
-            raise SSRFBlockedError("DNS resolution failed") from exc
+            msg = "DNS resolution failed"
+            raise SSRFBlockedError(msg) from exc
 
         if not addrinfo:
-            raise SSRFBlockedError("DNS resolution returned no results")
+            msg = "DNS resolution returned no results"
+            raise SSRFBlockedError(msg)
 
         for _family, _type, _proto, _canonname, sockaddr in addrinfo:
             ip_str: str = sockaddr[0]  # type: ignore[assignment]
@@ -198,7 +200,7 @@ class SSRFSafeSyncTransport(httpx.BaseTransport):
 
 
 def ssrf_safe_client(
-    policy: SSRFPolicy = SSRFPolicy(),
+    policy: SSRFPolicy = DEFAULT_SSRF_POLICY,
     **kwargs: object,
 ) -> httpx.Client:
     """Create an `httpx.Client` with SSRF protection."""
@@ -222,15 +224,15 @@ def ssrf_safe_client(
 
 
 def ssrf_safe_async_client(
-    policy: SSRFPolicy = SSRFPolicy(),
+    policy: SSRFPolicy = DEFAULT_SSRF_POLICY,
     **kwargs: object,
 ) -> httpx.AsyncClient:
-    """Create an ``httpx.AsyncClient`` with SSRF protection.
+    """Create an `httpx.AsyncClient` with SSRF protection.
 
-    Drop-in replacement for ``httpx.AsyncClient(...)`` - callers just swap
-    the constructor call.  Transport-specific kwargs (``verify``, ``cert``,
-    ``retries``, etc.) are forwarded to the inner ``AsyncHTTPTransport``;
-    everything else goes to the ``AsyncClient``.
+    Drop-in replacement for `httpx.AsyncClient(...)` - callers just swap
+    the constructor call.  Transport-specific kwargs (`verify`, `cert`,
+    `retries`, etc.) are forwarded to the inner `AsyncHTTPTransport`;
+    everything else goes to the `AsyncClient`.
     """
     transport_kwargs: dict[str, object] = {}
     client_kwargs: dict[str, object] = {}

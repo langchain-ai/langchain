@@ -26,7 +26,7 @@ def _fake_addrinfo_v6(ip: str, port: int = 80) -> list[Any]:
     return [(socket.AF_INET6, socket.SOCK_STREAM, 6, "", (ip, port, 0, 0))]
 
 
-def _ok_response(request: httpx.Request) -> httpx.Response:
+def _ok_response(_request: httpx.Request) -> httpx.Response:
     return httpx.Response(200, text="ok")
 
 
@@ -191,6 +191,46 @@ def test_k8s_still_blocked_when_private_ips_allowed() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Cloud metadata: link-local range and restored IPs blocked even with
+# block_private_ips=False (regression test for dropped ranges/IPs)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "ip",
+    [
+        "169.254.169.254",
+        "169.254.170.2",
+        "169.254.170.23",  # AWS EKS Pod Identity Agent
+        "100.100.100.200",
+        "fd00:ec2::254",
+        "fd00:ec2::23",  # AWS EKS Pod Identity Agent (IPv6)
+        "fe80::a9fe:a9fe",  # OpenStack Nova metadata
+    ],
+)
+def test_cloud_metadata_ips_blocked_when_private_ips_allowed(ip: str) -> None:
+    policy = SSRFPolicy(block_private_ips=False)
+    with pytest.raises(SSRFBlockedError, match="cloud metadata endpoint"):
+        validate_resolved_ip(ip, policy)
+
+
+@pytest.mark.parametrize(
+    "ip",
+    [
+        "169.254.1.2",
+        "169.254.255.254",
+        "169.254.42.99",
+    ],
+)
+def test_link_local_range_blocked_as_cloud_metadata_when_private_ips_allowed(
+    ip: str,
+) -> None:
+    policy = SSRFPolicy(block_private_ips=False)
+    with pytest.raises(SSRFBlockedError, match="cloud metadata endpoint"):
+        validate_resolved_ip(ip, policy)
+
+
+# ---------------------------------------------------------------------------
 # Transport: redirect to private IP blocked
 # ---------------------------------------------------------------------------
 
@@ -199,7 +239,7 @@ def test_k8s_still_blocked_when_private_ips_allowed() -> None:
 async def test_redirect_to_private_ip_blocked(monkeypatch: Any) -> None:
     call_count = 0
 
-    def _routing_addrinfo(*args: Any, **kwargs: Any) -> list[Any]:
+    def _routing_addrinfo(*_args: Any, **_kwargs: Any) -> list[Any]:
         nonlocal call_count
         call_count += 1
         if call_count == 1:
@@ -208,7 +248,7 @@ async def test_redirect_to_private_ip_blocked(monkeypatch: Any) -> None:
 
     monkeypatch.setattr(socket, "getaddrinfo", _routing_addrinfo)
 
-    def _redirect_responder(request: httpx.Request) -> httpx.Response:
+    def _redirect_responder(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             302,
             headers={"Location": "http://evil.com/pwned"},
@@ -239,7 +279,7 @@ async def test_ipv6_mapped_ipv4_blocked(monkeypatch: Any) -> None:
     monkeypatch.setattr(
         socket,
         "getaddrinfo",
-        lambda *a, **kw: _fake_addrinfo_v6("::ffff:127.0.0.1"),
+        lambda *_, **__: _fake_addrinfo_v6("::ffff:127.0.0.1"),
     )
 
     transport = SSRFSafeTransport()
@@ -261,7 +301,7 @@ async def test_unresolvable_host_blocked(monkeypatch: Any) -> None:
     monkeypatch.setattr(
         socket,
         "getaddrinfo",
-        lambda *a, **kw: (_ for _ in ()).throw(
+        lambda *_, **__: (_ for _ in ()).throw(
             socket.gaierror("Name or service not known")
         ),
     )
@@ -348,7 +388,7 @@ def test_sync_transport_blocks_private_resolution() -> None:
 def test_sync_transport_redirect_to_private_blocked(monkeypatch: Any) -> None:
     call_count = 0
 
-    def _routing_addrinfo(*args: Any, **kwargs: Any) -> list[Any]:
+    def _routing_addrinfo(*_args: Any, **__kwargs: Any) -> list[Any]:
         nonlocal call_count
         call_count += 1
         if call_count == 1:
@@ -357,7 +397,7 @@ def test_sync_transport_redirect_to_private_blocked(monkeypatch: Any) -> None:
 
     monkeypatch.setattr(socket, "getaddrinfo", _routing_addrinfo)
 
-    def _redirect_responder(request: httpx.Request) -> httpx.Response:
+    def _redirect_responder(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             302,
             headers={"Location": "http://evil.com/pwned"},

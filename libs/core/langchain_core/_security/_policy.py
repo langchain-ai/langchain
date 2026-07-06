@@ -50,11 +50,21 @@ _BLOCKED_IPV6_NETWORKS: tuple[ipaddress.IPv6Network, ...] = tuple(
 
 _CLOUD_METADATA_IPS: frozenset[str] = frozenset(
     {
-        "169.254.169.254",
-        "169.254.170.2",
-        "100.100.100.200",
-        "fd00:ec2::254",
+        "169.254.169.254",  # AWS, GCP, Azure, DigitalOcean, Oracle Cloud
+        "169.254.170.2",  # AWS ECS task metadata
+        "169.254.170.23",  # AWS EKS Pod Identity Agent
+        "100.100.100.200",  # Alibaba Cloud metadata
+        "fd00:ec2::254",  # AWS EC2 IMDSv2 over IPv6 (Nitro instances)
+        "fd00:ec2::23",  # AWS EKS Pod Identity Agent (IPv6)
+        "fe80::a9fe:a9fe",  # OpenStack Nova metadata (IPv6 link-local)
     }
+)
+
+# Network ranges that are always blocked when block_cloud_metadata=True,
+# independent of block_private_ips.  The entire link-local range is used by
+# cloud metadata services across providers.
+_CLOUD_METADATA_NETWORKS: tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...] = (
+    ipaddress.IPv4Network("169.254.0.0/16"),
 )
 
 _CLOUD_METADATA_HOSTNAMES: frozenset[str] = frozenset(
@@ -104,6 +114,9 @@ class SSRFPolicy:
     ] = ()
 
 
+DEFAULT_SSRF_POLICY = SSRFPolicy()
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -134,19 +147,19 @@ def _ip_in_blocked_networks(
     # @functools.lru_cache (key on (addr, id(policy))).
     if isinstance(addr, ipaddress.IPv4Address):
         if policy.block_private_ips:
-            for net in _BLOCKED_IPV4_NETWORKS:
-                if addr in net:
+            for blocked_ipv4_net in _BLOCKED_IPV4_NETWORKS:
+                if addr in blocked_ipv4_net:
                     return "private IP range"
-        for net in policy.additional_blocked_cidrs:  # type: ignore[assignment]
-            if isinstance(net, ipaddress.IPv4Network) and addr in net:
+        for blocked_cidr in policy.additional_blocked_cidrs:
+            if isinstance(blocked_cidr, ipaddress.IPv4Network) and addr in blocked_cidr:
                 return "blocked CIDR"
     else:
         if policy.block_private_ips:
-            for net in _BLOCKED_IPV6_NETWORKS:  # type: ignore[assignment]
-                if addr in net:
+            for blocked_ipv6_net in _BLOCKED_IPV6_NETWORKS:
+                if addr in blocked_ipv6_net:
                     return "private IP range"
-        for net in policy.additional_blocked_cidrs:  # type: ignore[assignment]
-            if isinstance(net, ipaddress.IPv6Network) and addr in net:
+        for blocked_cidr in policy.additional_blocked_cidrs:
+            if isinstance(blocked_cidr, ipaddress.IPv6Network) and addr in blocked_cidr:
                 return "blocked CIDR"
 
     # Loopback check — independent of block_private_ips so that
@@ -160,9 +173,15 @@ def _ip_in_blocked_networks(
         if isinstance(addr, ipaddress.IPv6Address) and addr == _LOOPBACK_IPV6:
             return "localhost address"
 
-    # Cloud metadata IP check
-    if policy.block_cloud_metadata and str(addr) in _CLOUD_METADATA_IPS:
-        return "cloud metadata endpoint"
+    # Cloud metadata check — IP set *and* network ranges (e.g. 169.254.0.0/16).
+    # Independent of block_private_ips so that allow_private=True still blocks
+    # cloud metadata endpoints.
+    if policy.block_cloud_metadata:
+        if str(addr) in _CLOUD_METADATA_IPS:
+            return "cloud metadata endpoint"
+        for net in _CLOUD_METADATA_NETWORKS:
+            if addr in net:
+                return "cloud metadata endpoint"
 
     return None
 
@@ -180,7 +199,8 @@ def validate_resolved_ip(ip_str: str, policy: SSRFPolicy) -> None:
     try:
         addr = ipaddress.ip_address(ip_str)
     except ValueError as exc:
-        raise SSRFBlockedError("invalid IP address") from exc
+        msg = "invalid IP address"
+        raise SSRFBlockedError(msg) from exc
 
     if isinstance(addr, ipaddress.IPv6Address):
         inner = _extract_embedded_ipv4(addr)
@@ -200,13 +220,16 @@ def validate_hostname(hostname: str, policy: SSRFPolicy) -> None:
     lower = hostname.lower()
 
     if policy.block_localhost and lower in _LOCALHOST_NAMES:
-        raise SSRFBlockedError("localhost address")
+        msg = "localhost address"
+        raise SSRFBlockedError(msg)
 
     if policy.block_cloud_metadata and lower in _CLOUD_METADATA_HOSTNAMES:
-        raise SSRFBlockedError("cloud metadata endpoint")
+        msg = "cloud metadata endpoint"
+        raise SSRFBlockedError(msg)
 
     if policy.block_k8s_internal and lower.endswith(_K8S_SUFFIX):
-        raise SSRFBlockedError("Kubernetes internal DNS")
+        msg = "Kubernetes internal DNS"
+        raise SSRFBlockedError(msg)
 
 
 def _effective_allowed_hosts(policy: SSRFPolicy) -> frozenset[str]:
@@ -219,11 +242,11 @@ def _effective_allowed_hosts(policy: SSRFPolicy) -> frozenset[str]:
     return policy.allowed_hosts
 
 
-async def validate_url(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
+async def validate_url(url: str, policy: SSRFPolicy = DEFAULT_SSRF_POLICY) -> None:
     """Validate a URL against the SSRF policy, including DNS resolution.
 
     This is the primary entry-point for async code paths. It delegates
-    scheme/hostname/allowed-hosts checks to ``validate_url_sync``, then
+    scheme/hostname/allowed-hosts checks to `validate_url_sync`, then
     resolves DNS and validates every resolved IP.
 
     Raises:
@@ -252,11 +275,11 @@ async def validate_url(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
         validate_resolved_ip(str(sockaddr[0]), policy)
 
 
-def validate_url_sync(url: str, policy: SSRFPolicy = SSRFPolicy()) -> None:
+def validate_url_sync(url: str, policy: SSRFPolicy = DEFAULT_SSRF_POLICY) -> None:
     """Synchronous URL validation (no DNS resolution).
 
     Suitable for Pydantic validators and other sync contexts. Checks scheme
-    and hostname patterns only - use ``validate_url`` for full DNS-aware checking.
+    and hostname patterns only - use `validate_url` for full DNS-aware checking.
 
     Raises:
         SSRFBlockedError: If the URL violates the policy.

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from langchain_anthropic._client_utils import (
+    _AsyncHttpxClientWrapper,
     _get_default_async_httpx_client,
     _get_default_httpx_client,
+    _SyncHttpxClientWrapper,
 )
 
 
@@ -60,3 +62,17 @@ def test_client_proxy_none_value() -> None:
     # Both should be created successfully with None proxy
     assert sync_client is not None
     assert async_client is not None
+
+
+def test_sync_client_wrapper_del_handles_uninitialized_client() -> None:
+    """Test sync wrapper finalizer handles clients without initialized state."""
+    client = _SyncHttpxClientWrapper.__new__(_SyncHttpxClientWrapper)
+
+    client.__del__()
+
+
+async def test_async_client_wrapper_del_handles_uninitialized_client() -> None:
+    """Test async wrapper finalizer handles clients without initialized state."""
+    client = _AsyncHttpxClientWrapper.__new__(_AsyncHttpxClientWrapper)
+
+    client.__del__()

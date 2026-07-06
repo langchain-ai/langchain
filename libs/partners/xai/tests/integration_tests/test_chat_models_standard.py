@@ -38,6 +38,29 @@ class TestXAIStandard(ChatModelIntegrationTests):
             "rate_limiter": rate_limiter,
         }
 
+    @pytest.mark.parametrize(
+        "model",
+        [
+            {},
+            pytest.param(
+                {"output_version": "v1"},
+                marks=pytest.mark.xfail(
+                    strict=True,
+                    reason=(
+                        "xAI v1 streaming aggregate does not surface tool_call "
+                        "content block; tool calls are only available via "
+                        "`.tool_calls`."
+                    ),
+                ),
+            ),
+        ],
+        indirect=True,
+    )
+    @override
+    def test_tool_calling(self, model: BaseChatModel) -> None:
+        """Parametrize across default and `v1` output versions; `v1` is xfailed."""
+        super().test_tool_calling(model)
+
     @pytest.mark.xfail(
         reason="Default model does not support stop sequences, using grok-3 instead"
     )

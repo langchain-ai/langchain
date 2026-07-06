@@ -12,6 +12,7 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import LLMToolEmulator
@@ -44,6 +45,7 @@ class FakeModel(GenericFakeChatModel):
 
     tool_style: Literal["openai", "anthropic"] = "openai"
 
+    @override
     def bind_tools(
         self,
         tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
@@ -88,6 +90,7 @@ class FakeEmulatorModel(BaseChatModel):
     responses: Sequence[str] = ("Emulated response",)
     response_index: int = 0
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -99,6 +102,7 @@ class FakeEmulatorModel(BaseChatModel):
         self.response_index += 1
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=response))])
 
+    @override
     async def _agenerate(
         self,
         messages: list[BaseMessage],

@@ -73,29 +73,80 @@ make format
 uv run --group lint mypy .
 ```
 
+#### Environment and dependency management
+
+Use `uv` for all environment and dependency operations in this monorepo. Do not invoke `pip`, `poetry`, or `conda` directly.
+
+- Let `uv` manage the interpreter and virtual environments — `uv sync` and `uv run` operate without manual `source .venv/bin/activate`. Do not create ad-hoc virtual environments outside the package directory.
+- Each package targets its own supported Python range via its `pyproject.toml`; do not pin a global Python version. If you need an interpreter explicitly, defer to the package's `requires-python` rather than assuming system Python.
+- Install dependencies explicitly through `uv sync` (optionally `--group <name>` / `--all-groups`); never let them install implicitly.
+- Don't mix environments within a session, and don't add new dependencies unless strictly required — when you do, justify them (recent releases/commits, adoption).
+
 #### Key config files
 
 - pyproject.toml: Main workspace configuration with dependency groups
 - uv.lock: Locked dependencies for reproducible builds
 - Makefile: Development tasks
 
-#### Commit standards
+#### PR and commit titles
 
-Suggest PR titles that follow Conventional Commits format. Refer to .github/workflows/pr_lint for allowed types and scopes. Note that all commit/PR titles should be in lowercase with the exception of proper nouns/named entities. All PR titles should include a scope with no exceptions. For example:
+Follow Conventional Commits. See `.github/workflows/pr_lint.yml` for allowed types and scopes. All titles must include a scope with no exceptions — even for the main `langchain` package.
+
+- Start the text after `type(scope):` with a lowercase letter, unless the first word is a proper noun (e.g. `Azure`, `GitHub`, `OpenAI`) or a named entity (class, function, method, parameter, or variable name).
+- Wrap named entities in backticks so they render as code. Proper nouns are left unadorned.
+- Keep titles short and descriptive — save detail for the body.
+
+Examples:
 
 ```txt
 feat(langchain): add new chat completion feature
 fix(core): resolve type hinting issue in vector store
 chore(anthropic): update infrastructure dependencies
+feat(langchain): `ls_agent_type` tag on `create_agent` calls
+fix(openai): infer Azure chat profiles from model name
 ```
 
-Note how `feat(langchain)` includes a scope even though it is the main package and name of the repo.
+#### Branch naming
 
-#### Pull request guidelines
+Branches should be prefixed `<github-username>/<scope>/<short-description>`:
 
-- Always add a disclaimer to the PR description mentioning how AI agents are involved with the contribution.
-- Describe the "why" of the changes, why the proposed solution is the right one. Limit prose.
-- Highlight areas of the proposed changes that require careful review.
+- `<github-username>` — the author's GitHub login (e.g. `mdrxy`).
+- `<scope>` — the same scope used in the Conventional Commit title (`core`, `langchain`, partner name, `infra`, `docs`, etc.).
+- `<short-description>` — kebab-case, brief, no trailing slash.
+
+Examples:
+
+```txt
+mdrxy/anthropic/normalize-tool-call-ids
+mdrxy/core/vector-store-type-hints
+mdrxy/infra/agents-md-branch
+```
+
+#### PR descriptions
+
+The description *is* the summary — do not add a `# Summary` header.
+
+- When the PR closes an issue, lead with the closing keyword on its own line at the very top, followed by a horizontal rule and then the body:
+
+  ```txt
+  Closes #123
+
+  ---
+
+  <rest of description>
+  ```
+
+  Only `Closes`, `Fixes`, and `Resolves` auto-close the referenced issue on merge. `Related:` or similar labels are informational and do not close anything.
+
+- Explain the *why*: who benefits, what problem they had, and how this solves it. Prefer a simple user story over a long summary.
+- Write for readers who may be unfamiliar with this area of the codebase. Avoid insider shorthand and prefer language that is friendly to public viewers — this aids interpretability.
+- Do **not** cite line numbers; they go stale as soon as the file changes.
+- Rarely include full file paths or filenames. Reference the affected symbol, class, or subsystem by name instead.
+- Wrap class, function, method, parameter, and variable names in backticks.
+- For net new features or behavior-changing bugfixes, PR descriptions should include a `## Release note` section that states the user-visible change in release-note-ready language.
+- Skip dedicated "Test plan" or "Testing" sections in most cases. Mention tests only when coverage is non-obvious, risky, or otherwise notable.
+- Call out areas of the change that require careful review.
+- Add a brief disclaimer noting AI-agent involvement in the contribution.
 
 ## Core development principles
 
@@ -231,7 +282,37 @@ The `echo y |` pipe is required when `--data-dir` is outside the `libs/model-pro
 
 ### Release process
 
-Releases are triggered manually via `.github/workflows/_release.yml` with `working-directory` and `release-version` inputs.
+Each partner package is released independently. The full flow is:
+
+1. **Version bump PR.** Create a PR that bumps three files by one line each:
+   - `langchain_<partner>/_version.py` — `__version__`
+   - `pyproject.toml` — `version`
+   - `uv.lock` — regenerate with `uv lock` from the package directory; keep only the package-version line if `uv lock` touches unrelated entries
+
+   Title follows Conventional Commits: `release(<partner>): <version>` (e.g. `release(openrouter): 0.2.6`). Use the branch name `release/<partner>-<version>`.
+
+   Patch vs. minor bump follows in-repo precedent: within a `0.x` series, fixes and additive features get a patch bump (e.g. `session_id` field → 0.2.1→0.2.2, `parallel_tool_calls` → 0.2.3→0.2.4).
+
+2. **Merge the PR** to `master`.
+
+3. **Trigger the release workflow.** Run `gh workflow run` against the "🚀 Package Release" workflow (`_release.yml`, file ID `63880841`):
+
+   ```bash
+   gh workflow run 63880841 --repo langchain-ai/langchain \
+     -f working-directory=<partner> -f release-version=<version>
+   ```
+
+   `working-directory` is the short partner name from the workflow's dropdown (e.g. `openrouter`, not `libs/partners/openrouter`).
+
+4. **The workflow handles everything else automatically** — do **not** create a GitHub release or tag manually. The `mark-release` job (using `ncipollo/release-action`) creates the GitHub release, tag, and release notes after PyPI publish succeeds. The release notes body is auto-generated from commit history between the previous tag and HEAD.
+
+   Monitor the run:
+
+   ```bash
+   gh run view <run-id> --repo langchain-ai/langchain
+   ```
+
+   The full job chain is: build → release-notes → pre-release-checks → TestPyPI publish → PyPI publish → tag GitHub release.
 
 ### PR labeling and linting
 
@@ -243,6 +324,22 @@ Releases are triggered manually via `.github/workflows/_release.yml` with `worki
 - `.github/workflows/pr_labeler_backfill.yml` – Manual backfill of PR labels on open PRs
 - `.github/workflows/auto-label-by-package.yml` – Issue labeling by package
 - `.github/workflows/tag-external-issues.yml` – Issue external/internal classification
+
+### Integration test tracing (LangSmith)
+
+Scheduled and manually dispatched integration tests (`integration_tests.yml`) trace every run to LangSmith so failures link back to the originating Actions run. (`_release.yml` runs integration tests too, but does not currently configure LangSmith tracing.)
+
+**Env vars set by CI:**
+
+- `LANGSMITH_API_KEY` — authenticates to LangSmith (repo secret, scoped to the "Scheduled testing" GitHub environment in `integration_tests.yml`).
+- `LANGSMITH_TRACING: "true"` — enables tracing for the test process.
+- `LANGSMITH_PROJECT` — the project traces are sent to. Defaults to `scheduled-testing-py` via a repo variable override: `${{ vars.LANGSMITH_PROJECT || 'scheduled-testing-py' }}`. To change the project, set the `LANGSMITH_PROJECT` repository variable in GitHub settings — do not hardcode it in the workflow.
+- `LANGSMITH_TAGS` — comma-separated tags identifying the run: `github-actions`, the matrix working directory (e.g. `libs/partners/openai`), the Python version, and the commit SHA.
+- `LANGSMITH_METADATA` — a JSON object built by the "Build LangSmith Metadata" step, containing `github_sha`, `github_run_id`, `github_run_attempt`, `github_run_url`, `github_workflow`, `github_event`, `github_ref`, `working_directory`, and `python_version`.
+
+**The tracing bridge plugin:** The LangSmith SDK does not natively read `LANGSMITH_TAGS` or `LANGSMITH_METADATA` from the environment. The pytest plugin at `libs/standard-tests/langchain_tests/_langsmith_plugin.py` bridges that gap by entering `langsmith.run_helpers.tracing_context` for the duration of the test session. It only activates when `GITHUB_ACTIONS=true`, so local development is unaffected. Auto-discovered via the `pytest11` entry point in any package that depends on `langchain-tests`.
+
+**Unit test isolation:** Unit tests must never make network calls or send traces. The `make test` target in the `libs/core` Makefile uses `env -u` to unset the tracing vars (`LANGCHAIN_TRACING_V2`, `LANGCHAIN_API_KEY`, `LANGSMITH_API_KEY`, `LANGSMITH_TRACING`, `LANGCHAIN_PROJECT`) before running pytest. Additionally, `libs/core/tests/unit_tests/runnables/conftest.py` has a session-scoped autouse fixture that explicitly disables tracing for runnable unit tests, restoring the original environment afterward.
 
 ### Adding a new partner to CI
 

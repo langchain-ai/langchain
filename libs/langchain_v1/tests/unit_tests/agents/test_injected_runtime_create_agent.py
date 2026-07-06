@@ -22,9 +22,10 @@ from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import InjectedStore
 from langgraph.store.memory import InMemoryStore
+from typing_extensions import override
 
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, InputAgentState
 from langchain.tools import InjectedState, ToolRuntime
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -302,6 +303,9 @@ def test_tool_runtime_with_custom_state() -> None:
     class CustomState(AgentState[Any]):
         custom_field: str
 
+    class CustomInputState(InputAgentState):
+        custom_field: str
+
     runtime_state = {}
 
     @tool
@@ -326,10 +330,10 @@ def test_tool_runtime_with_custom_state() -> None:
     )
 
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Test custom state")],
-            "custom_field": "custom_value",
-        }
+        CustomInputState(
+            messages=[HumanMessage("Test custom state")],
+            custom_field="custom_value",
+        )
     )
 
     # Verify custom field was accessible
@@ -443,6 +447,7 @@ def test_tool_runtime_error_handling() -> None:
     @tool
     def safe_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool that handles errors safely."""
+        assert isinstance(runtime, ToolRuntime)
         try:
             if x == 0:
                 return "Error: Cannot process zero"
@@ -481,10 +486,12 @@ def test_tool_runtime_with_middleware() -> None:
     runtime_calls = []
 
     class TestMiddleware(AgentMiddleware):
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append("before_model")
             return {}
 
+        @override
         def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append("after_model")
             return {}
@@ -618,6 +625,10 @@ def test_combined_injected_state_runtime_store() -> None:
         user_id: str
         session_id: str
 
+    class CustomInputState(InputAgentState):
+        user_id: str
+        session_id: str
+
     # Define explicit args schema that only includes LLM-controlled parameters
     weather_schema = {
         "type": "object",
@@ -688,11 +699,11 @@ def test_combined_injected_state_runtime_store() -> None:
 
     # Invoke with custom state fields
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("What's the weather like?")],
-            "user_id": "user_42",
-            "session_id": "session_abc123",
-        }
+        CustomInputState(
+            messages=[HumanMessage("What's the weather like?")],
+            user_id="user_42",
+            session_id="session_abc123",
+        )
     )
 
     # Verify tool executed successfully
@@ -733,6 +744,10 @@ async def test_combined_injected_state_runtime_store_async() -> None:
 
     # Custom state schema
     class CustomState(AgentState[Any]):
+        api_key: str
+        request_id: str
+
+    class CustomInputState(InputAgentState):
         api_key: str
         request_id: str
 
@@ -815,11 +830,11 @@ async def test_combined_injected_state_runtime_store_async() -> None:
 
     # Invoke async
     result = await agent.ainvoke(
-        {
-            "messages": [HumanMessage("Search for something")],
-            "api_key": "sk-test-key-xyz",
-            "request_id": "req_999",
-        }
+        CustomInputState(
+            messages=[HumanMessage("Search for something")],
+            api_key="sk-test-key-xyz",
+            request_id="req_999",
+        )
     )
 
     # Verify tool executed successfully

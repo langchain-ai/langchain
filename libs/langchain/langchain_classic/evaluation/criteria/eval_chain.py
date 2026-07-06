@@ -205,7 +205,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     >>> from langchain_openai import ChatOpenAI
     >>> from langchain_classic.evaluation.criteria import LabeledCriteriaEvalChain
-    >>> model = ChatOpenAI(model="gpt-4", temperature=0)
+    >>> model = ChatOpenAI(model="gpt-5.5", temperature=0)
     >>> criteria = "correctness"
     >>> evaluator = LabeledCriteriaEvalChain.from_llm(
     ...     llm=model,

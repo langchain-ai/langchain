@@ -22,7 +22,7 @@ body:
   - type: checkboxes
     id: checks
     attributes:
-      label: Checked other resources
+      label: Submission checklist
       description: Please confirm and check all the following options.
       options:
         - label: This is a bug, not a usage question.

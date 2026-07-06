@@ -24,6 +24,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
     ToolMessage,
+    message_chunk_to_message,
 )
 from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
@@ -35,8 +36,14 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
+from openai.types.responses import (
+    ResponseApplyPatchToolCall,
+    ResponseApplyPatchToolCallOutput,
+    ResponseOutputMessage,
+    ResponseReasoningItem,
+)
 from openai.types.responses.response import IncompleteDetails, Response
+from openai.types.responses.response_apply_patch_tool_call import OperationCreateFile
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
     ResponseFileSearchToolCall,
@@ -71,6 +78,7 @@ from langchain_openai.chat_models.base import (
     _construct_responses_api_input,
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _convert_responses_chunk_to_generation_chunk,
     _convert_to_openai_response_format,
     _create_usage_metadata,
     _create_usage_metadata_responses,
@@ -81,6 +89,9 @@ from langchain_openai.chat_models.base import (
     _oai_structured_outputs_parser,
     _resize,
 )
+
+OPENAI_TEST_MODEL = "gpt-5.5"
+OPENAI_TEMPERATURE_CAPABLE_TEST_MODEL = "gpt-4o-mini"
 
 
 def test_openai_model_param() -> None:
@@ -105,30 +116,30 @@ def test_streaming_attribute_should_stream(async_api: bool) -> None:
 
 def test_openai_client_caching() -> None:
     """Test that the OpenAI client is cached."""
-    llm1 = ChatOpenAI(model="gpt-4.1-mini")
-    llm2 = ChatOpenAI(model="gpt-4.1-mini")
+    llm1 = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    llm2 = ChatOpenAI(model=OPENAI_TEST_MODEL)
     assert llm1.root_client._client is llm2.root_client._client
 
-    llm3 = ChatOpenAI(model="gpt-4.1-mini", base_url="foo")
+    llm3 = ChatOpenAI(model=OPENAI_TEST_MODEL, base_url="foo")
     assert llm1.root_client._client is not llm3.root_client._client
 
-    llm4 = ChatOpenAI(model="gpt-4.1-mini", timeout=None)
+    llm4 = ChatOpenAI(model=OPENAI_TEST_MODEL, timeout=None)
     assert llm1.root_client._client is llm4.root_client._client
 
-    llm5 = ChatOpenAI(model="gpt-4.1-mini", timeout=3)
+    llm5 = ChatOpenAI(model=OPENAI_TEST_MODEL, timeout=3)
     assert llm1.root_client._client is not llm5.root_client._client
 
     llm6 = ChatOpenAI(
-        model="gpt-4.1-mini", timeout=httpx.Timeout(timeout=60.0, connect=5.0)
+        model=OPENAI_TEST_MODEL, timeout=httpx.Timeout(timeout=60.0, connect=5.0)
     )
     assert llm1.root_client._client is not llm6.root_client._client
 
-    llm7 = ChatOpenAI(model="gpt-4.1-mini", timeout=(5, 1))
+    llm7 = ChatOpenAI(model=OPENAI_TEST_MODEL, timeout=(5, 1))
     assert llm1.root_client._client is not llm7.root_client._client
 
 
 def test_profile() -> None:
-    model = ChatOpenAI(model="gpt-4")
+    model = ChatOpenAI(model="gpt-5.2-pro")
     assert model.profile
     assert not model.profile["structured_output"]
 
@@ -153,13 +164,6 @@ def test_profile() -> None:
     # Test overrides for gpt-5 input tokens
     model = ChatOpenAI(model="gpt-5")
     assert model.profile["max_input_tokens"] == 272_000
-
-
-def test_openai_o1_temperature() -> None:
-    llm = ChatOpenAI(model="o1-preview")
-    assert llm.temperature == 1
-    llm = ChatOpenAI(model_name="o1-mini")  # type: ignore[call-arg]
-    assert llm.temperature == 1
 
 
 def test_function_message_dict_to_function_message() -> None:
@@ -524,12 +528,12 @@ def test_deepseek_stream(mock_deepseek_completion: list) -> None:
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
 
 
-OPENAI_STREAM_DATA = """{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"usage":null}
-{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"我是"},"logprobs":null,"finish_reason":null}],"usage":null}
-{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"助手"},"logprobs":null,"finish_reason":null}],"usage":null}
-{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"。"},"logprobs":null,"finish_reason":null}],"usage":null}
-{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null}
-{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_18cc0f1fa0","choices":[],"usage":{"prompt_tokens":14,"completion_tokens":3,"total_tokens":17}}
+OPENAI_STREAM_DATA = """{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"我是"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"助手"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"。"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[],"usage":{"prompt_tokens":14,"completion_tokens":3,"total_tokens":17}}
 [DONE]"""  # noqa: E501
 
 
@@ -545,8 +549,8 @@ def mock_openai_completion() -> list[dict]:
 
 
 async def test_openai_astream(mock_openai_completion: list) -> None:
-    llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name)
+    llm_name = OPENAI_TEST_MODEL
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
     assert llm.stream_usage
     mock_client = AsyncMock()
 
@@ -570,8 +574,8 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
 
 
 def test_openai_stream(mock_openai_completion: list) -> None:
-    llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name)
+    llm_name = OPENAI_TEST_MODEL
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
     assert llm.stream_usage
     mock_client = MagicMock()
 
@@ -616,13 +620,35 @@ def test_openai_stream(mock_openai_completion: list) -> None:
         assert "stream_options" not in call_kwargs[-1]
 
 
+def test_openai_stream_events_v3_lifecycle(mock_openai_completion: list) -> None:
+    """`stream_events(version="v3")` on chat completions emits a valid lifecycle."""
+    from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(mock_openai_completion)
+
+    mock_client.create = mock_create
+    with patch.object(llm, "client", mock_client):
+        events = list(llm.stream_events("你的名字叫什么？只回答名字", version="v3"))
+
+    assert_valid_event_stream(events)
+    # At minimum, a text block with the accumulated answer.
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    assert len(finishes) >= 1
+    text_finishes = [f for f in finishes if f["content"]["type"] == "text"]
+    assert len(text_finishes) == 1
+
+
 @pytest.fixture
 def mock_completion() -> dict:
     return {
         "id": "chatcmpl-7fcZavknQda3SQ",
         "object": "chat.completion",
         "created": 1689989000,
-        "model": "gpt-3.5-turbo-0613",
+        "model": OPENAI_TEST_MODEL,
         "choices": [
             {
                 "index": 0,
@@ -690,12 +716,10 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
 @pytest.mark.parametrize(
     "model",
     [
-        "gpt-3.5-turbo",
-        "gpt-4",
-        "gpt-3.5-0125",
-        "gpt-4-0125-preview",
-        "gpt-4-turbo-preview",
-        "gpt-4-vision-preview",
+        OPENAI_TEST_MODEL,
+        "gpt-5-nano",
+        "o3",
+        "gpt-5.2",
     ],
 )
 def test__get_encoding_model(model: str) -> None:
@@ -723,7 +747,7 @@ def test_openai_invoke_name(mock_client: MagicMock) -> None:
 
 def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
     # Test that we ignore function calls if tool_calls are present
-    llm = ChatOpenAI(model="gpt-4.1-mini")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     tool_call_message = AIMessage(
         content="",
         additional_kwargs={
@@ -913,10 +937,41 @@ class MakeASandwich(BaseModel):
 @pytest.mark.parametrize("strict", [True, False, None])
 def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
     """Test passing in manually construct tool call message."""
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
     llm.bind_tools(
         tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice, strict=strict
     )
+
+
+def test_bind_tools_response_format_defaults_strict() -> None:
+    """Test that strict defaults to True when response_format is provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(
+        tools=[GenerateUsername],
+        response_format=MakeASandwich,
+    )
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert tools[0]["function"]["strict"] is True
+
+
+def test_bind_tools_response_format_respects_strict_false() -> None:
+    """Test that strict=False is respected even when response_format is provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(
+        tools=[GenerateUsername],
+        response_format=MakeASandwich,
+        strict=False,
+    )
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert tools[0]["function"]["strict"] is False
+
+
+def test_bind_tools_no_response_format_keeps_strict_none() -> None:
+    """Test that strict stays None when response_format is not provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(tools=[GenerateUsername])
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert "strict" not in tools[0]["function"]
 
 
 @pytest.mark.parametrize(
@@ -934,14 +989,14 @@ def test_with_structured_output(
     """Test passing in manually construct tool call message."""
     if method == "json_mode":
         strict = None
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
     llm.with_structured_output(
         schema, method=method, strict=strict, include_raw=include_raw
     )
 
 
 def test_get_num_tokens_from_messages() -> None:
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     messages = [
         SystemMessage("you're a good assistant"),
         HumanMessage("how are you"),
@@ -1053,7 +1108,7 @@ class Foo(BaseModel):
 def test_schema_from_with_structured_output(schema: type) -> None:
     """Test schema from with_structured_output."""
 
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     structured_llm = llm.with_structured_output(
         schema, method="json_schema", strict=True
@@ -1065,7 +1120,8 @@ def test_schema_from_with_structured_output(schema: type) -> None:
         "title": schema.__name__,
         "type": "object",
     }
-    actual = structured_llm.get_output_schema().model_json_schema()
+    output_schema = cast("type[BaseModel]", structured_llm.get_output_schema())
+    actual = output_schema.model_json_schema()
     assert actual == expected
 
 
@@ -1175,7 +1231,7 @@ def test_structured_output_strict(
 ) -> None:
     """Test to verify structured output with strict=True."""
 
-    llm = ChatOpenAI(model="gpt-4o-2024-08-06")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     class Joke(BaseModel):
         """Joke to tell user."""
@@ -1191,7 +1247,7 @@ def test_structured_output_strict(
 def test_nested_structured_output_strict() -> None:
     """Test to verify structured output with strict=True for nested object."""
 
-    llm = ChatOpenAI(model="gpt-4o-2024-08-06")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     class SelfEvaluation(TypedDict):
         score: int
@@ -1208,7 +1264,7 @@ def test_nested_structured_output_strict() -> None:
 
 
 def test__get_request_payload() -> None:
-    llm = ChatOpenAI(model="gpt-4o-2024-08-06")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     messages: list = [
         SystemMessage("hello"),
         SystemMessage("bye", additional_kwargs={"__openai_role__": "developer"}),
@@ -1224,14 +1280,14 @@ def test__get_request_payload() -> None:
             {"role": "user", "content": "how are you"},
             {"role": "user", "content": [{"type": "text", "text": "feeling today"}]},
         ],
-        "model": "gpt-4o-2024-08-06",
+        "model": OPENAI_TEST_MODEL,
         "stream": False,
     }
     payload = llm._get_request_payload(messages)
     assert payload == expected
 
     # Test we coerce to developer role for o-series models
-    llm = ChatOpenAI(model="o3-mini")
+    llm = ChatOpenAI(model="o3")
     payload = llm._get_request_payload(messages)
     expected = {
         "messages": [
@@ -1241,7 +1297,7 @@ def test__get_request_payload() -> None:
             {"role": "user", "content": "how are you"},
             {"role": "user", "content": [{"type": "text", "text": "feeling today"}]},
         ],
-        "model": "o3-mini",
+        "model": "o3",
         "stream": False,
     }
     assert payload == expected
@@ -1274,7 +1330,7 @@ def test__get_request_payload() -> None:
                 "content": [{"type": "text", "text": "thoughtful response"}],
             },
         ],
-        "model": "o3-mini",
+        "model": "o3",
         "stream": False,
     }
     payload = llm._get_request_payload(reasoning_messages)
@@ -1301,7 +1357,7 @@ def test_sanitize_chat_completions_text_blocks() -> None:
 def test_init_o1() -> None:
     with warnings.catch_warnings(record=True) as record:
         warnings.simplefilter("error")  # Treat warnings as errors
-        ChatOpenAI(model="o1", reasoning_effort="medium")
+        ChatOpenAI(model=OPENAI_TEST_MODEL, reasoning_effort="medium")
 
     assert len(record) == 0
 
@@ -1357,9 +1413,251 @@ def test_minimal_reasoning_effort_payload(
             assert payload["max_completion_tokens"] == 100
 
 
+@pytest.mark.parametrize("via_invoke", [False, True])
+def test_responses_api_payload_excludes_stop(via_invoke: bool) -> None:
+    """The Responses API rejects `stop`, so it must be dropped from the payload.
+
+    Covers `stop` supplied both at construction time and at invoke time, since
+    they reach the payload through different code paths.
+    """
+    if via_invoke:
+        llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+        payload = llm._get_request_payload(
+            [HumanMessage(content="Hello")], stop=["END"]
+        )
+    else:
+        llm = ChatOpenAI(  # type: ignore[call-arg]
+            model=OPENAI_TEST_MODEL, stop=["END"], use_responses_api=True
+        )
+        payload = llm._get_request_payload([HumanMessage(content="Hello")])
+
+    assert "stop" not in payload
+
+
+def test_chat_completions_payload_includes_stop() -> None:
+    """`stop` must be preserved for the Chat Completions API, which supports it.
+
+    Guards against an over-broad change dropping `stop` outside the Responses API.
+    """
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, stop=["END"])  # type: ignore[call-arg]
+
+    payload = llm._get_request_payload([HumanMessage(content="Hello")])
+
+    assert payload["stop"] == ["END"]
+
+
 def test_output_version_compat() -> None:
     llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
     assert llm._use_responses_api({}) is True
+
+
+def test_convert_chunk_to_generation_chunk_v1_keeps_string_content() -> None:
+    """v1 streaming keeps content as '' (not []) and stamps output_version.
+
+    Covers both the usage-only (empty-choices) chunk and a content-bearing
+    chunk carrying a tool-call delta; the latter pins the per-content-chunk
+    `output_version` propagation.
+    """
+    llm = ChatOpenAI(model="gpt-4o", output_version="v1")
+
+    # Empty-choices chunk (usage-only)
+    empty_chunk: dict[str, Any] = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "gpt-4o",
+        "choices": [],
+        "usage": {"prompt_tokens": 5, "completion_tokens": 3, "total_tokens": 8},
+    }
+    gen = llm._convert_chunk_to_generation_chunk(empty_chunk, AIMessageChunk, None)
+    assert gen is not None
+    assert gen.message.content == ""  # NOT []
+    assert gen.message.response_metadata.get("output_version") == "v1"
+
+    # Content-bearing chunk with tool_call delta
+    tool_chunk: dict[str, Any] = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "gpt-4o",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "index": 0,
+                            "id": "call_abc",
+                            "function": {"name": "get_weather", "arguments": ""},
+                        }
+                    ],
+                },
+                "logprobs": None,
+                "finish_reason": None,
+            }
+        ],
+        "usage": None,
+    }
+    gen = llm._convert_chunk_to_generation_chunk(tool_chunk, AIMessageChunk, None)
+    assert gen is not None
+    assert isinstance(gen.message.content, str)
+    assert gen.message.response_metadata.get("output_version") == "v1"
+    assert gen.message.response_metadata.get("model_provider") == "openai"
+
+
+def test_v1_streaming_tool_calls_in_content_blocks() -> None:
+    """End-to-end: streaming chunks with tool calls produce correct content_blocks."""
+    stream_chunks: list[dict[str, Any]] = [
+        # Initial empty-choices chunk
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": ""},
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Text token streamed before the tool call
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"content": "Let me check the weather."},
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Tool call start
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "id": "call_abc",
+                                "function": {
+                                    "name": "get_weather",
+                                    "arguments": '{"loc',
+                                },
+                            }
+                        ]
+                    },
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Tool call args continuation
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "function": {"arguments": 'ation": "SF"}'},
+                            }
+                        ]
+                    },
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Finish
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {},
+                    "logprobs": None,
+                    "finish_reason": "tool_calls",
+                }
+            ],
+            "usage": None,
+        },
+        # Usage chunk
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+            },
+        },
+    ]
+
+    llm = ChatOpenAI(model="gpt-4o", output_version="v1")
+
+    aggregated: AIMessageChunk | None = None
+    for raw_chunk in stream_chunks:
+        gen = llm._convert_chunk_to_generation_chunk(raw_chunk, AIMessageChunk, None)
+        if gen is None:
+            continue
+        chunk = cast(AIMessageChunk, gen.message)
+        aggregated = chunk if aggregated is None else aggregated + chunk
+
+    assert aggregated is not None
+    # Tool calls should be present
+    assert len(aggregated.tool_call_chunks) == 1
+    assert aggregated.tool_call_chunks[0]["name"] == "get_weather"
+
+    # While still a chunk, content_blocks should include both the streamed text
+    # and the in-progress tool_call_chunk (text deltas must survive alongside
+    # tool calls through the merge).
+    blocks = aggregated.content_blocks
+    block_types = {b["type"] for b in blocks}
+    assert "tool_call_chunk" in block_types
+    assert "text" in block_types
+
+    # Once finalized into a non-chunk AIMessage, the in-progress tool_call_chunk
+    # resolves to a normalized v1 `tool_call` block with parsed args. This is
+    # the cross-provider view downstream consumers code against.
+    final = message_chunk_to_message(aggregated)
+    final_blocks = final.content_blocks
+    assert {"type": "text", "text": "Let me check the weather."} in final_blocks
+    assert {
+        "type": "tool_call",
+        "name": "get_weather",
+        "args": {"location": "SF"},
+        "id": "call_abc",
+    } in final_blocks
 
 
 def test_verbosity_parameter_payload() -> None:
@@ -1372,14 +1670,14 @@ def test_verbosity_parameter_payload() -> None:
     assert payload["text"]["verbosity"] == "high"
 
 
-def test_structured_output_old_model() -> None:
+def test_structured_output_legacy_model() -> None:
     class Output(TypedDict):
         """output."""
 
         foo: str
 
     with pytest.warns(match="Cannot use method='json_schema'"):
-        llm = ChatOpenAI(model="gpt-4").with_structured_output(Output)
+        llm = ChatOpenAI(model="gpt-3-legacy").with_structured_output(Output)
     # assert tool calling was used instead of json_schema
     assert "tools" in llm.steps[0].kwargs  # type: ignore
     assert "response_format" not in llm.steps[0].kwargs  # type: ignore
@@ -1422,7 +1720,7 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
         id: str = "chatcmpl-1"
         object: str = "chat.completion"
         created: int = 0
-        model: str = "gpt-4o-mini"
+        model: str = OPENAI_TEST_MODEL
         choices: list[MockChoice]
         usage: dict[str, int] | None = None
 
@@ -1436,7 +1734,7 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
         usage={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
     )
 
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     with warnings.catch_warnings(record=True) as caught_warnings:
         warnings.simplefilter("always")
         result = llm._create_chat_result(response)
@@ -1471,7 +1769,7 @@ def test__construct_lc_result_from_responses_api_error_handling() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         error=ResponseError(message="Test error", code="server_error"),
         parallel_tool_calls=True,
@@ -1491,7 +1789,7 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1534,7 +1832,10 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     assert result.generations[0].message.usage_metadata["output_tokens"] == 3
     assert result.generations[0].message.usage_metadata["total_tokens"] == 13
     assert result.generations[0].message.response_metadata["id"] == "resp_123"
-    assert result.generations[0].message.response_metadata["model_name"] == "gpt-4o"
+    assert (
+        result.generations[0].message.response_metadata["model_name"]
+        == OPENAI_TEST_MODEL
+    )
 
     # responses/v1
     result = _construct_lc_result_from_responses_api(response)
@@ -1550,7 +1851,7 @@ def test__construct_lc_result_from_responses_api_multiple_text_blocks() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1587,7 +1888,7 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1655,7 +1956,7 @@ def test__construct_lc_result_from_responses_api_refusal_response() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1698,7 +1999,7 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1751,7 +2052,7 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1788,7 +2089,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1876,7 +2177,7 @@ def test__construct_lc_result_from_responses_api_no_usage_metadata() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1902,6 +2203,178 @@ def test__construct_lc_result_from_responses_api_no_usage_metadata() -> None:
     assert cast(AIMessage, result.generations[0].message).usage_metadata is None
 
 
+def test__construct_lc_result_from_responses_api_apply_patch_response() -> None:
+    """Test a response with apply_patch output."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseApplyPatchToolCall(
+                id="apply_patch_123",
+                type="apply_patch_call",
+                call_id="call_123",
+                operation=OperationCreateFile(
+                    type="create_file",
+                    path="hello.txt",
+                    diff="+hello\n",
+                ),
+                status="completed",
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    message = cast(AIMessage, result.generations[0].message)
+    assert message.content == [
+        {
+            "type": "apply_patch_call",
+            "id": "apply_patch_123",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\n",
+            },
+            "status": "completed",
+        }
+    ]
+    assert message.tool_calls == []
+    assert message.invalid_tool_calls == []
+
+
+def test__construct_lc_result_from_responses_api_apply_patch_call_output() -> None:
+    """Test a response with apply_patch_call_output output."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseApplyPatchToolCallOutput(
+                id="apply_patch_output_123",
+                type="apply_patch_call_output",
+                call_id="call_123",
+                status="completed",
+                output="Created hello.txt",
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    message = result.generations[0].message
+    assert message.content == [
+        {
+            "type": "apply_patch_call_output",
+            "id": "apply_patch_output_123",
+            "call_id": "call_123",
+            "status": "completed",
+            "output": "Created hello.txt",
+        }
+    ]
+
+
+def test__construct_responses_api_input_apply_patch_round_trip() -> None:
+    """Test apply_patch content blocks are preserved when sent back as input."""
+    messages = [
+        AIMessage(
+            content=[
+                {
+                    "type": "apply_patch_call",
+                    "call_id": "call_123",
+                    "operation": {
+                        "type": "create_file",
+                        "path": "hello.txt",
+                        "diff": "+hello\\n",
+                    },
+                    "status": "completed",
+                }
+            ]
+        ),
+        HumanMessage(
+            content=[
+                {
+                    "type": "apply_patch_call_output",
+                    "call_id": "call_123",
+                    "status": "completed",
+                    "output": "Created hello.txt",
+                }
+            ]
+        ),
+    ]
+
+    result = _construct_responses_api_input(messages)
+
+    assert result == [
+        {
+            "type": "apply_patch_call",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\\n",
+            },
+            "status": "completed",
+        },
+        {
+            "type": "apply_patch_call_output",
+            "call_id": "call_123",
+            "status": "completed",
+            "output": "Created hello.txt",
+        },
+    ]
+
+
+def test__convert_responses_chunk_to_generation_chunk_apply_patch_response() -> None:
+    """Test streamed apply_patch output item is preserved in message chunks."""
+    chunk = MagicMock()
+    chunk.type = "response.output_item.done"
+    chunk.output_index = 0
+    chunk.item = ResponseApplyPatchToolCall(
+        id="apply_patch_123",
+        type="apply_patch_call",
+        call_id="call_123",
+        operation=OperationCreateFile(
+            type="create_file",
+            path="hello.txt",
+            diff="+hello\n",
+        ),
+        status="completed",
+    )
+
+    _, _, _, generation_chunk = _convert_responses_chunk_to_generation_chunk(
+        chunk,
+        current_index=-1,
+        current_output_index=-1,
+        current_sub_index=-1,
+    )
+
+    assert generation_chunk is not None
+    assert generation_chunk.message.content == [
+        {
+            "type": "apply_patch_call",
+            "id": "apply_patch_123",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\n",
+            },
+            "status": "completed",
+            "index": 0,
+        }
+    ]
+
+
 def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     """Test a response with web search output."""
     from openai.types.responses.response_function_web_search import (
@@ -1911,7 +2384,7 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -1961,7 +2434,7 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -2053,7 +2526,7 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
     response = Response(
         id="resp_123",
         created_at=1234567890,
-        model="gpt-4o",
+        model=OPENAI_TEST_MODEL,
         object="response",
         parallel_tool_calls=True,
         tools=[],
@@ -2298,6 +2771,103 @@ def test__construct_responses_api_input_human_message_with_image_url_conversion(
     assert result[0]["content"][1]["detail"] == "high"
 
 
+def test__construct_responses_api_input_store_false_replays_stateless_history() -> None:
+    ai_message = AIMessage(
+        content=[
+            {"type": "reasoning", "id": "rs_123", "summary": []},
+            {
+                "type": "reasoning",
+                "id": "rs_456",
+                "summary": [],
+                "encrypted_content": "",
+            },
+            {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+        ],
+        response_metadata={"id": "resp_123"},
+    )
+
+    result = _construct_responses_api_input([ai_message], store=False)
+
+    assert result == [
+        {
+            "type": "reasoning",
+            "id": "rs_456",
+            "summary": [],
+            "encrypted_content": "",
+        },
+        {
+            "type": "message",
+            "content": [
+                {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+            ],
+            "role": "assistant",
+        },
+    ]
+
+
+@pytest.mark.parametrize("store", [None, True])
+def test__construct_responses_api_input_store_enabled_keeps_item_ids(
+    store: bool | None,
+) -> None:
+    ai_message = AIMessage(
+        content=[
+            {"type": "reasoning", "id": "rs_123", "summary": []},
+            {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+        ],
+        response_metadata={"id": "resp_123"},
+    )
+
+    result = _construct_responses_api_input([ai_message], store=store)
+
+    assert result == [
+        {"type": "reasoning", "id": "rs_123", "summary": []},
+        {
+            "type": "message",
+            "content": [
+                {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+            ],
+            "role": "assistant",
+            "id": "msg_123",
+        },
+    ]
+
+
+def test__construct_responses_api_input_store_false_keeps_full_tool_call_items() -> (
+    None
+):
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "function_call",
+                "name": "get_weather",
+                "arguments": '{"location": "San Francisco"}',
+                "call_id": "call_123",
+                "id": "fc_456",
+            }
+        ],
+        tool_calls=[
+            {
+                "id": "call_123",
+                "name": "get_weather",
+                "args": {"location": "San Francisco"},
+                "type": "tool_call",
+            }
+        ],
+    )
+
+    result = _construct_responses_api_input([ai_message], store=False)
+
+    assert result == [
+        {
+            "type": "function_call",
+            "name": "get_weather",
+            "arguments": '{"location": "San Francisco"}',
+            "call_id": "call_123",
+            "id": "fc_456",
+        }
+    ]
+
+
 def test__construct_responses_api_input_ai_message_with_tool_calls() -> None:
     """Test that AI messages with tool calls are properly converted."""
     tool_calls = [
@@ -2529,7 +3099,7 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert messages_copy == messages
 
     # Test dict messages
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
     message_dicts: list = [
         {"role": "developer", "content": "This is a developer message."},
         {
@@ -2571,7 +3141,7 @@ def test__construct_responses_api_input_message_type_on_all_roles() -> None:
         )
 
     # Also test developer messages via dict input
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
     payload = llm._get_request_payload(
         [{"role": "developer", "content": "Translate English to Italian"}]
     )
@@ -2582,7 +3152,7 @@ def test__construct_responses_api_input_message_type_on_all_roles() -> None:
 
 
 def test_service_tier() -> None:
-    llm = ChatOpenAI(model="o4-mini", service_tier="flex")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, service_tier="flex")
     payload = llm._get_request_payload([HumanMessage("Hello")])
     assert payload["service_tier"] == "flex"
 
@@ -2603,7 +3173,7 @@ class FakeTracer(BaseTracer):
 def test_mcp_tracing() -> None:
     # Test we exclude sensitive information from traces
     llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+        model=OPENAI_TEST_MODEL, use_responses_api=True, output_version="responses/v1"
     )
 
     tracer = FakeTracer()
@@ -2614,7 +3184,7 @@ def test_mcp_tracing() -> None:
         mock_raw_response.parse.return_value = Response(
             id="resp_123",
             created_at=1234567890,
-            model="o4-mini",
+            model=OPENAI_TEST_MODEL,
             object="response",
             parallel_tool_calls=True,
             tools=[],
@@ -2723,6 +3293,57 @@ def test_compat_responses_v03() -> None:
     message_v03_output = _convert_to_v03_ai_message(message)
     assert message_v03_output == message_v03
     assert message_v03_output is not message_v03
+
+
+def test_compat_responses_v03_apply_patch_tool_outputs() -> None:
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "Done.", "id": "msg_123"},
+            {
+                "type": "apply_patch_call",
+                "id": "apply_patch_123",
+                "call_id": "call_123",
+                "operation": {
+                    "type": "create_file",
+                    "path": "hello.txt",
+                    "diff": "+hello\n",
+                },
+                "status": "completed",
+            },
+            {
+                "type": "apply_patch_call_output",
+                "id": "apply_patch_output_123",
+                "call_id": "call_123",
+                "status": "completed",
+                "output": "Created hello.txt",
+            },
+        ],
+        id="resp_123",
+    )
+
+    message_v03_output = _convert_to_v03_ai_message(message)
+
+    assert message_v03_output.content == [{"type": "text", "text": "Done."}]
+    assert message_v03_output.additional_kwargs["tool_outputs"] == [
+        {
+            "type": "apply_patch_call",
+            "id": "apply_patch_123",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\n",
+            },
+            "status": "completed",
+        },
+        {
+            "type": "apply_patch_call_output",
+            "id": "apply_patch_output_123",
+            "call_id": "call_123",
+            "status": "completed",
+            "output": "Created hello.txt",
+        },
+    ]
 
 
 @pytest.mark.parametrize(
@@ -3052,7 +3673,7 @@ def test_get_last_messages_with_mixed_response_metadata() -> None:
 def test_get_request_payload_use_previous_response_id() -> None:
     # Default - don't use previous_response ID
     llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+        model=OPENAI_TEST_MODEL, use_responses_api=True, output_version="responses/v1"
     )
     messages = [
         HumanMessage("Hello"),
@@ -3065,7 +3686,7 @@ def test_get_request_payload_use_previous_response_id() -> None:
 
     # Use previous response ID
     llm = ChatOpenAI(
-        model="o4-mini",
+        model=OPENAI_TEST_MODEL,
         # Specifying use_previous_response_id automatically engages Responses API
         use_previous_response_id=True,
     )
@@ -3182,7 +3803,7 @@ def test_lc_tool_call_to_openai_tool_call_unicode() -> None:
 def test_extra_body_parameter() -> None:
     """Test that extra_body parameter is properly included in request payload."""
     llm = ChatOpenAI(
-        model="gpt-4o-mini",
+        model=OPENAI_TEST_MODEL,
         api_key=SecretStr(
             "test-api-key"
         ),  # Set a fake API key to avoid validation error
@@ -3201,7 +3822,7 @@ def test_extra_body_parameter() -> None:
 def test_extra_body_with_model_kwargs() -> None:
     """Test that extra_body and model_kwargs work together correctly."""
     llm = ChatOpenAI(
-        model="gpt-4o-mini",
+        model=OPENAI_TEMPERATURE_CAPABLE_TEST_MODEL,
         api_key=SecretStr(
             "test-api-key"
         ),  # Set a fake API key to avoid validation error
@@ -3268,7 +3889,7 @@ def test_structured_output_verbosity(
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_gpt_5_temperature(use_responses_api: bool) -> None:
     llm = ChatOpenAI(
-        model="gpt-5-nano", temperature=0.5, use_responses_api=use_responses_api
+        model=OPENAI_TEST_MODEL, temperature=0.5, use_responses_api=use_responses_api
     )
 
     messages = [HumanMessage(content="Hello")]
@@ -3383,12 +4004,12 @@ def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5.4-pro-2026-03-05")
     # Codex models: Responses API only
     assert _model_prefers_responses_api("gpt-5.3-codex")
-    assert _model_prefers_responses_api("gpt-5.2-codex")
-    assert _model_prefers_responses_api("gpt-5.1-codex")
-    assert _model_prefers_responses_api("gpt-5.1-codex-max")
-    assert _model_prefers_responses_api("gpt-5.1-codex-mini")
-    assert _model_prefers_responses_api("gpt-5-codex")
-    assert _model_prefers_responses_api("codex-mini-latest")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
     # These should not match
     assert not _model_prefers_responses_api("gpt-5")
     assert not _model_prefers_responses_api("gpt-5.1")
@@ -3575,6 +4196,33 @@ async def test_context_overflow_error_stream_async_responses_api() -> None:
     assert "exceeds the context window" in str(exc_info.value)
 
 
+def test_context_overflow_error_prompt_too_long() -> None:
+    """Test context overflow error triggered by 'prompt is too long' message."""
+    error_body = {
+        "error": {
+            "message": "prompt is too long: 300000 tokens > 200000 maximum",
+            "type": "invalid_request_error",
+            "param": "messages",
+            "code": "invalid_request_error",
+        }
+    }
+    bad_request_error = openai.BadRequestError(
+        message=error_body["error"]["message"],
+        response=MagicMock(status_code=400),
+        body=error_body,
+    )
+    llm = ChatOpenAI()
+
+    with (  # noqa: PT012
+        patch.object(llm.client, "with_raw_response") as mock_client,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_client.create.side_effect = bad_request_error
+        llm.invoke([HumanMessage(content="test")])
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
 def test_context_overflow_error_backwards_compatibility() -> None:
     """Test that ContextOverflowError can be caught as BadRequestError."""
     llm = ChatOpenAI()
@@ -3589,6 +4237,15 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatOpenAI()
+    assert llm.metadata is not None
+    versions = llm.metadata["lc_versions"]
+    assert "langchain-core" in versions
+    assert "langchain-openai" in versions
 
 
 def test_get_request_payload_responses_api_input_file_blocks_passthrough() -> None:
@@ -3646,9 +4303,21 @@ def test_get_request_payload_responses_api_input_file_blocks_passthrough() -> No
     ]
 
 
+def test_apply_patch_passthrough() -> None:
+    """Test that apply_patch dict is passed through as a built-in tool."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test-api-key"))
+    bound = llm.bind_tools([{"type": "apply_patch"}])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert {"type": "apply_patch"} in payload["tools"]
+    assert "input" in payload
+
+
 def test_tool_search_passthrough() -> None:
     """Test that tool_search dict is passed through as a built-in tool."""
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     tool_search = {"type": "tool_search"}
     bound = llm.bind_tools([tool_search])
     payload = bound._get_request_payload(  # type: ignore[attr-defined]
@@ -3668,7 +4337,7 @@ def test_tool_search_with_defer_loading_extras() -> None:
         """Get weather for a location."""
         return f"Weather in {location}"
 
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     bound = llm.bind_tools([get_weather, {"type": "tool_search"}])
     payload = bound._get_request_payload(  # type: ignore[attr-defined]
         "test",
@@ -3686,7 +4355,7 @@ def test_tool_search_with_defer_loading_extras() -> None:
 
 def test_namespace_passthrough() -> None:
     """Test that namespace tool dicts are passed through unchanged."""
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     namespace_tool = {
         "type": "namespace",
         "name": "crm",
@@ -3727,7 +4396,7 @@ def test_defer_loading_in_responses_api_payload() -> None:
 
     messages: list = []
     payload = {
-        "model": "gpt-4o",
+        "model": OPENAI_TEST_MODEL,
         "tools": [
             {
                 "type": "function",

@@ -814,6 +814,15 @@ def test_chat_ollama_ignores_strict_arg() -> None:
         assert "strict" not in call_kwargs
 
 
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatOllama(model=MODEL_NAME)
+    assert llm.metadata is not None
+    versions = llm.metadata["lc_versions"]
+    assert "langchain-core" in versions
+    assert "langchain-ollama" in versions
+
+
 def test_chat_ollama_supports_response_format_json_schema() -> None:
     """Test that ChatOllama correctly maps json_schema response_format to format."""
     with patch("langchain_ollama.chat_models.Client") as mock_client_class:
@@ -1137,3 +1146,30 @@ def test_non_ai_message_reasoning_content_ignored() -> None:
     ]
     ollama_messages = llm._convert_messages_to_ollama_messages(messages)
     assert "thinking" not in ollama_messages[0]
+
+
+def test_multimodal_message_content_has_no_leading_newline() -> None:
+    """Test that multimodal text content does not start with a newline."""
+    message = HumanMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "Extract all text from this image.",
+            },
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": (
+                        "data:image/png;base64,"
+                        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+                    )
+                },
+            },
+        ]
+    )
+
+    model = ChatOllama(model="any")
+
+    ollama_messages = model._convert_messages_to_ollama_messages([message])
+
+    assert ollama_messages[0]["content"] == "Extract all text from this image."

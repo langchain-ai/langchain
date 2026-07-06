@@ -242,8 +242,42 @@ def _get_configs_for_multi_dirs(
     ]
 
 
+def _get_changed_files(args: list[str]) -> list[str]:
+    """Parse changed files from command-line arguments.
+
+    Args:
+        args: Either a legacy list of filename arguments or a single JSON array
+            produced by `Ana06/get-changed-files` with `format: json`.
+
+    Returns:
+        List of changed files.
+
+    Raises:
+        ValueError: If a single argument looks like JSON but is not a string array.
+    """
+    if len(args) != 1:
+        return args
+
+    value = args[0].strip()
+    if not value.startswith("[") or not value.endswith("]"):
+        return args
+
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as e:
+        msg = "Expected changed files JSON to be a list of strings."
+        raise ValueError(msg) from e
+
+    if not isinstance(parsed, list) or not all(
+        isinstance(file, str) for file in parsed
+    ):
+        msg = "Expected changed files JSON to be a list of strings."
+        raise ValueError(msg)
+    return parsed
+
+
 if __name__ == "__main__":
-    files = sys.argv[1:]
+    files = _get_changed_files(sys.argv[1:])
 
     dirs_to_run: Dict[str, set] = {
         "lint": set(),
@@ -316,8 +350,13 @@ if __name__ == "__main__":
                 if not filename.startswith(".")
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
-                # Skip codspeed for partners without benchmarks or in IGNORED_PARTNERS
-                if partner_dir not in IGNORED_PARTNERS:
+                # Only add to codspeed if the partner has benchmarks and is not ignored
+                if (
+                    partner_dir not in IGNORED_PARTNERS
+                    and os.path.isdir(
+                        f"libs/partners/{partner_dir}/tests/benchmarks"
+                    )
+                ):
                     dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
         elif file.startswith("libs/"):

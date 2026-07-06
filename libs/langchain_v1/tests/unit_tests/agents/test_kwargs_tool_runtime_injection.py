@@ -16,8 +16,8 @@ class ArgsSchema(BaseModel):
     """Args schema with config and runtime fields."""
 
     query: str = Field(description="The query")
-    config: dict | None = Field(default=None)
-    runtime: dict | None = Field(default=None)
+    config: dict[str, Any] | None = Field(default=None)
+    runtime: dict[str, Any] | None = Field(default=None)
 
 
 def test_config_and_runtime_not_injected_to_kwargs() -> None:
