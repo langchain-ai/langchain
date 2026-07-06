@@ -1,0 +1,38 @@
+libs/text-splitters/tests/unit_tests/test_text_splitters.py
+  s_c5254eba76c925::t_20e8820cd5a11d 58-65,69-88,90-95,97-98,100-145
+  s_c5254eba76c925::t_75faa6c51ec128 146-148
+libs/text-splitters/langchain_text_splitters/spacy.py
+  s_c5254eba76c925::t_eb49fe4090d249 13
+  s_c5254eba76c925::t_c7cf25de3571ed 60,62
+libs/text-splitters/langchain_text_splitters/html.py
+  s_c5254eba76c925::t_bb2ba0f0355b59 46-47
+  s_c5254eba76c925::t_556dfe6fafc32e 54,56
+  s_c5254eba76c925::t_4a1853b2dd7e63 63,65
+libs/text-splitters/langchain_text_splitters/base.py
+  s_c5254eba76c925::t_f9c9b1b3671171 35,41
+  s_c5254eba76c925::t_abe59905e7ff6e 50,55
+  s_c5254eba76c925::t_25be0fcb1a19bf 353,359
+libs/text-splitters/langchain_text_splitters/nltk.py
+  s_c5254eba76c925::t_49d29324dd28e4 45,47
+libs/text-splitters/langchain_text_splitters/sentence_transformers.py
+  s_c5254eba76c925::t_8ccdefe36eaf1d 37
+  s_c5254eba76c925::t_9d95b87475695f 44,50
+libs/text-splitters/langchain_text_splitters/konlpy.py
+  s_c5254eba76c925::t_6b038191baa9a7 35,39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6cda8df394a48a739e1eab2654e2d15b81cd00b6",
+  "prompts": {},
+  "sessions": {
+    "s_c5254eba76c925": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1263ccd0-36ca-4e62-a5a2-6ef8234c6635",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}
