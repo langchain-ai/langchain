@@ -1,0 +1,34 @@
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_shell_execution_policies.py
+  s_ab7accc8c071a3::t_3e2dd83599aec2 415-417,421-422,433-436,438
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_shell_tool.py
+  s_9b6e9745e4b2fc::t_5187382c238041 591-595,597
+  s_9b6e9745e4b2fc::t_972134eb86b0d7 566-570,572
+  s_9b6e9745e4b2fc::t_ada3549e72d56a 636-640,642
+  s_9b6e9745e4b2fc::t_04a8bb5b01098a 653-674
+libs/langchain_v1/langchain/agents/middleware/shell_tool.py
+  s_9b6e9745e4b2fc::t_9d74ae4daa115a 412-413,421,428,430-439
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8594717a36476e176bcb1967f590c1a5899a1e9c",
+  "prompts": {},
+  "sessions": {
+    "s_9b6e9745e4b2fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b98b7fc0-1f9c-4af3-9846-1a5feadecc45",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    },
+    "s_ab7accc8c071a3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3540-e2a0-7d93-bfde-ed12f04c36a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
