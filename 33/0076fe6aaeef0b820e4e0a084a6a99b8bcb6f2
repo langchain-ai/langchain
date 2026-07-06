@@ -1,0 +1,35 @@
+libs/text-splitters/langchain_text_splitters/sentence_transformers.py
+  s_a8dc273bc56447::t_b3b04378447735 39,50
+  s_a8dc273bc56447::t_fb5c53428dcfdd 5
+  s_a8dc273bc56447::t_243cf9369a6847 40
+libs/text-splitters/langchain_text_splitters/base.py
+  s_a8dc273bc56447::t_1f869b010cf7dd 15
+  s_a8dc273bc56447::t_fb0c2acd53febb 362
+  s_a8dc273bc56447::t_83b7d41a62c4e2 227,363-369
+  s_a8dc273bc56447::t_243cf9369a6847 32-42,45-56,224,226,260,327-329,335
+  s_a8dc273bc56447::t_a8e061a5d2a30f 25,27,29
+libs/text-splitters/langchain_text_splitters/spacy.py
+  s_a8dc273bc56447::t_fb5c53428dcfdd 5
+  s_a8dc273bc56447::t_243cf9369a6847 6,57-58,63
+libs/text-splitters/langchain_text_splitters/html.py
+  s_a8dc273bc56447::t_83b7d41a62c4e2 533
+  s_a8dc273bc56447::t_243cf9369a6847 29,52,61,259,265,294,467,474,523,718,731,737,815,827
+  s_a8dc273bc56447::t_93c7c7831ca4db 41-51,53-59,62-69,260,263,468-472,670-671,675,732-736,816-820
+  s_a8dc273bc56447::t_97b0cf2fc29ca0 60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "330076fe6aaeef0b820e4e0a084a6a99b8bcb6f2",
+  "prompts": {},
+  "sessions": {
+    "s_a8dc273bc56447": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f33f4-2e26-71c3-b0ec-50fab7f8ad9e",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
