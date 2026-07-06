@@ -1,0 +1,20 @@
+libs/core/langchain_core/output_parsers/xml.py
+  s_7d627d384c2191::t_a9a1e2d1ebbae1 67-68
+  s_7d627d384c2191::t_eb0b60490a33dd 218-219
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "2c741d411916f18aad34dfeab2db687690ad6566",
+  "prompts": {},
+  "sessions": {
+    "s_7d627d384c2191": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b4152b3b-8d44-46ff-9fe4-2b45f458d261",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
