@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from importlib import import_module
 from typing import Any, cast
 
 from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on_tokens
@@ -35,10 +36,8 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
         try:
-            # Type ignores needed: sentence-transformers doesn't support Python 3.14.
-            from sentence_transformers import (  # type: ignore[import-not-found, unused-ignore]  # noqa: PLC0415
-                SentenceTransformer,
-            )
+            sentence_transformers = cast("Any", import_module("sentence_transformers"))
+            sentence_transformer_cls = sentence_transformers.SentenceTransformer
         except ImportError:
             msg = (
                 "Could not import sentence_transformers python package. "
@@ -48,7 +47,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             raise ImportError(msg) from None
 
         self.model_name = model_name
-        self._model = SentenceTransformer(self.model_name, **(model_kwargs or {}))
+        self._model = sentence_transformer_cls(self.model_name, **(model_kwargs or {}))
         self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 

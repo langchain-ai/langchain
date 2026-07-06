@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from importlib import import_module
+from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import override
 
@@ -53,16 +54,13 @@ def _make_spacy_pipeline_for_splitting(
     pipeline: str, *, max_length: int = 1_000_000
 ) -> Language:
     try:
-        # Type ignores needed as long as spacy doesn't support Python 3.14.
-        import spacy  # type: ignore[import-not-found, unused-ignore]  # noqa: PLC0415
-        from spacy.lang.en import (  # type: ignore[import-not-found, unused-ignore]  # noqa: PLC0415
-            English,
-        )
+        spacy = cast("Any", import_module("spacy"))
+        english_cls = cast("Any", import_module("spacy.lang.en")).English
     except ImportError:
         msg = "Spacy is not installed, please install it with `pip install spacy`."
         raise ImportError(msg) from None
     if pipeline == "sentencizer":
-        sentencizer: Language = English()
+        sentencizer: Language = english_cls()
         sentencizer.add_pipe("sentencizer")
     else:
         sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])
