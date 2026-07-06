@@ -95,7 +95,7 @@ jobs:
           EXCLUDE: ${{ github.event.inputs.exclude || '' }}
         run: |
           # echo "matrix=..." where matrix is a json formatted str with keys python-version and working-directory
-          # python-version defaults to 3.10 and 3.13, overridden to [PYTHON_VERSION_OVERRIDE] if set
+          # python-version defaults to 3.10 and 3.14, overridden to [PYTHON_VERSION_OVERRIDE] if set
           # working-directory priority: override string > dropdown choice > DEFAULT_LIBS
           python_version='["3.10", "3.14"]'
           python_version_min_3_11='["3.11", "3.14"]'
@@ -161,7 +161,7 @@ jobs:
     # Serialize same-package shards across workflow runs so a per-package
     # manual dispatch doesn't race the scheduled "all libs" run against the
     # same live API credentials. Keyed per (working-directory, python-version)
-    # so the 3.10/3.13 matrix legs within one run still execute in parallel.
+    # so the 3.10/3.14 matrix legs within one run still execute in parallel.
     concurrency:
       group: integration-tests-${{ matrix.working-directory }}-${{ matrix.python-version }}
       cancel-in-progress: false
