@@ -2,20 +2,12 @@
 
 from __future__ import annotations
 
+from importlib import import_module
 from typing import Any, cast
 
 from typing_extensions import override
 
 from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on_tokens
-
-try:
-    from sentence_transformers import (
-        SentenceTransformer,
-    )
-
-    _HAS_SENTENCE_TRANSFORMERS = True
-except ImportError:
-    _HAS_SENTENCE_TRANSFORMERS = False
 
 
 class SentenceTransformersTokenTextSplitter(TextSplitter):
@@ -42,19 +34,23 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
         Raises:
             ImportError: If the `sentence_transformers` package is not installed.
+            ValueError: If `tokens_per_chunk` exceeds the model's maximum token limit.
         """
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
-        if not _HAS_SENTENCE_TRANSFORMERS:
+        try:
+            sentence_transformers = cast("Any", import_module("sentence_transformers"))
+            sentence_transformer_cls = sentence_transformers.SentenceTransformer
+        except ImportError as err:
             msg = (
                 "Could not import sentence_transformers python package. "
                 "This is needed in order to use SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install sentence-transformers`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from err
 
         self.model_name = model_name
-        self._model = SentenceTransformer(self.model_name, **(model_kwargs or {}))
+        self._model = sentence_transformer_cls(self.model_name, **(model_kwargs or {}))
         self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 

@@ -11,13 +11,6 @@ from langchain_text_splitters.base import TextSplitter
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-try:
-    import nltk
-
-    _HAS_NLTK = True
-except ImportError:
-    _HAS_NLTK = False
-
 
 class NLTKTextSplitter(TextSplitter):
     """Splitting text using NLTK package."""
@@ -47,9 +40,11 @@ class NLTKTextSplitter(TextSplitter):
         if use_span_tokenize and self._separator:
             msg = "When use_span_tokenize is True, separator should be ''"
             raise ValueError(msg)
-        if not _HAS_NLTK:
+        try:
+            import nltk  # noqa: PLC0415,F401
+        except ImportError as err:
             msg = "NLTK is not installed, please install it with `pip install nltk`."
-            raise ImportError(msg)
+            raise ImportError(msg) from err
         if use_span_tokenize:
             self._tokenizer = self._span_tokenizer(language)
         else:
@@ -57,10 +52,14 @@ class NLTKTextSplitter(TextSplitter):
 
     @staticmethod
     def _sent_tokenizer(language: str) -> Callable[[str], list[str]]:
+        import nltk  # noqa: PLC0415
+
         return lambda text: nltk.tokenize.sent_tokenize(text, language)
 
     @staticmethod
     def _span_tokenizer(language: str) -> Callable[[str], list[str]]:
+        import nltk  # noqa: PLC0415
+
         tokenizer = nltk.tokenize._get_punkt_tokenizer(language)  # noqa: SLF001
 
         def _tokenize(text: str) -> list[str]:

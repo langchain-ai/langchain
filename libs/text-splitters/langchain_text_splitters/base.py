@@ -12,6 +12,7 @@ from typing import (
     Any,
     Literal,
     TypeVar,
+    cast,
 )
 
 from langchain_core.documents import BaseDocumentTransformer, Document
@@ -21,24 +22,38 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Collection, Iterable, Sequence
     from collections.abc import Set as AbstractSet
 
-
-try:
-    import tiktoken
-
-    _HAS_TIKTOKEN = True
-except ImportError:
-    _HAS_TIKTOKEN = False
-
-try:
     from transformers.tokenization_utils_base import PreTrainedTokenizerBase
-
-    _HAS_TRANSFORMERS = True
-except ImportError:
-    _HAS_TRANSFORMERS = False
 
 logger = logging.getLogger(__name__)
 
 TS = TypeVar("TS", bound="TextSplitter")
+
+
+def _import_tiktoken() -> object:
+    try:
+        import tiktoken  # noqa: PLC0415
+    except ImportError as err:
+        msg = (
+            "Could not import tiktoken python package. "
+            "This is needed in order to calculate max_tokens_for_prompt. "
+            "Please install it with `pip install tiktoken`."
+        )
+        raise ImportError(msg) from err
+    return tiktoken
+
+
+def _import_pretrained_tokenizer_base() -> type[PreTrainedTokenizerBase]:
+    try:
+        from transformers.tokenization_utils_base import (  # noqa: PLC0415
+            PreTrainedTokenizerBase,
+        )
+    except ImportError as err:
+        msg = (
+            "Could not import transformers python package. "
+            "Please install it with `pip install transformers`."
+        )
+        raise ValueError(msg) from err
+    return PreTrainedTokenizerBase
 
 
 class TextSplitter(BaseDocumentTransformer, ABC):
@@ -206,14 +221,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             An instance of `TextSplitter` using the Hugging Face tokenizer for length
                 calculation.
         """
-        if not _HAS_TRANSFORMERS:
-            msg = (
-                "Could not import transformers python package. "
-                "Please install it with `pip install transformers`."
-            )
-            raise ValueError(msg)
+        pretrained_tokenizer_base = _import_pretrained_tokenizer_base()
 
-        if not isinstance(tokenizer, PreTrainedTokenizerBase):
+        if not isinstance(tokenizer, pretrained_tokenizer_base):
             msg = "Tokenizer received was not an instance of PreTrainedTokenizerBase"
             raise ValueError(msg)  # noqa: TRY004
 
@@ -250,13 +260,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """
         if allowed_special is None:
             allowed_special = set()
-        if not _HAS_TIKTOKEN:
-            msg = (
-                "Could not import tiktoken python package. "
-                "This is needed in order to calculate max_tokens_for_prompt. "
-                "Please install it with `pip install tiktoken`."
-            )
-            raise ImportError(msg)
+        tiktoken = cast("Any", _import_tiktoken())
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -344,13 +348,15 @@ class TokenTextSplitter(TextSplitter):
         if allowed_special is None:
             allowed_special = set()
         super().__init__(**kwargs)
-        if not _HAS_TIKTOKEN:
+        try:
+            tiktoken = cast("Any", _import_tiktoken())
+        except ImportError as err:
             msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
                 "Please install it with `pip install tiktoken`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from err
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -419,10 +425,14 @@ class TokenTextSplitter(TextSplitter):
         """
 
         def _encode(_text: str) -> list[int]:
-            return self._tokenizer.encode(
-                _text,
-                allowed_special=self._allowed_special,
-                disallowed_special=self._disallowed_special,
+            # `tiktoken` is lazy-imported, so mypy cannot infer the encoder return.
+            return cast(
+                "list[int]",
+                self._tokenizer.encode(
+                    _text,
+                    allowed_special=self._allowed_special,
+                    disallowed_special=self._disallowed_special,
+                ),
             )
 
         tokenizer = Tokenizer(
