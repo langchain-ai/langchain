@@ -406,12 +406,24 @@ class ShellSession:
             try:
                 child_pgid = os.getpgid(self._process.pid)
                 # Only send a group kill when the child has a dedicated process group.
-                # If the child shares our group, killpg would terminate the caller too.
+                # If the child shares our group, killpg would terminate the caller too,
+                # so fall through to the direct kill below. That direct kill reaps only
+                # the immediate child, so any descendants it spawned may be orphaned.
+                # This applies to create_process_group=False and the Codex/Docker sandbox
+                # policies, which run the shell in the caller's process group.
                 if child_pgid != os.getpgrp():
                     os.killpg(child_pgid, signal.SIGKILL)
                     return
             except ProcessLookupError:
+                # Process already gone; nothing left to kill.
                 return
+            except OSError:
+                # e.g. EPERM while querying or signalling the group. Don't leak the
+                # child silently; fall through to a direct kill.
+                LOGGER.warning(
+                    "Group kill failed; falling back to direct kill.",
+                    exc_info=True,
+                )
 
         with contextlib.suppress(ProcessLookupError):
             self._process.kill()
