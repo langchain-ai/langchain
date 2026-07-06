@@ -147,30 +147,29 @@ def _get_content_from_inputs(inputs: Any, content_key: Sequence[str]) -> Any:
         The extracted content value.
 
     Raises:
-        KeyError: If a key in `content_key` is missing, or an intermediate value
-            along the path is not a mapping.
+        ValueError: If a key in `content_key` is missing, or a value along the path
+            (including `inputs` itself) is not a mapping.
     """
     content = inputs
     full_path = ".".join(content_key)
-    traversed_keys: list[str] = []
 
-    for key in content_key:
+    for i, key in enumerate(content_key):
+        current_path = ".".join(content_key[:i]) or "<root>"
         if not isinstance(content, Mapping):
-            current_path = ".".join(traversed_keys) or "<root>"
             msg = (
                 f"Could not resolve content_key {full_path!r}: expected a mapping at "
                 f"{current_path!r}, but found {type(content).__name__}."
             )
-            raise KeyError(msg)
+            # A too-deep `content_key` is an invalid-argument error, not a runtime
+            # type bug, so it is unified with the missing-key case as `ValueError`.
+            raise ValueError(msg)  # noqa: TRY004
         if key not in content:
-            current_path = ".".join(traversed_keys) or "<root>"
             msg = (
                 f"Could not resolve content_key {full_path!r}: missing key {key!r} "
                 f"under {current_path!r}."
             )
-            raise KeyError(msg)
+            raise ValueError(msg)
         content = content[key]
-        traversed_keys.append(key)
 
     return content
 
