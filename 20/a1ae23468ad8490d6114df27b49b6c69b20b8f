@@ -1,0 +1,29 @@
+libs/core/langchain_core/document_loaders/langsmith.py
+  s_a3d9632f80da57::t_007bff8e1d24ce 150
+  s_a3d9632f80da57::t_0e99faab827df1 151,156-157
+  s_a3d9632f80da57::t_8f4f721a4ac750 171
+  s_a3d9632f80da57::t_37116181b3cbd1 163-165
+libs/core/tests/unit_tests/document_loaders/test_langsmith.py
+  s_a3d9632f80da57::t_0ae4d8d8055079 105
+  s_a3d9632f80da57::t_77c458c14fd8d4 4,11
+  s_a3d9632f80da57::t_94cb0ceb293292 104,106-108,110-156,158
+  s_a3d9632f80da57::t_66a20835e209ca 157
+libs/core/uv.lock
+  s_a3d9632f80da57::t_fe7c933aaf2d78 493,655-665,687-697,709,1225-1227,1229-1230
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "20a1ae23468ad8490d6114df27b49b6c69b20b8f",
+  "prompts": {},
+  "sessions": {
+    "s_a3d9632f80da57": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "533e6700-299f-424d-91c5-54e22f672b7b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
