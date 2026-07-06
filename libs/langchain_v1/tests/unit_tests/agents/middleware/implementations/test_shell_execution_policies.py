@@ -412,12 +412,14 @@ def test_docker_policy_resolve_missing_binary(monkeypatch: pytest.MonkeyPatch) -
 def test_all_policies_use_dedicated_process_group(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """Policies that do not expose a process-group override must always spawn
-    with start_new_session=True so that ShellSession._kill_process can safely
+    """Policies without a process-group override must spawn a new session.
+
+    They must use start_new_session=True so that ShellSession._kill_process can safely
     killpg the entire subprocess tree on timeout without risking the caller's
     process group. HostExecutionPolicy(create_process_group=False) is the only
     case where a shared group is intentional, and _kill_process guards against
-    that via its getpgid/getpgrp check."""
+    that via its getpgid/getpgrp check.
+    """
     monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/fake")
 
     for policy in [
@@ -428,9 +430,12 @@ def test_all_policies_use_dedicated_process_group(
         captured: dict[str, Any] = {}
 
         def fake_launch(
-            *_args: Any, start_new_session: bool, **_kwargs: Any
+            *_args: Any,
+            start_new_session: bool,
+            _captured: dict[str, Any] = captured,
+            **_kwargs: Any,
         ) -> subprocess.Popen[str]:
-            captured["start_new_session"] = start_new_session
+            _captured["start_new_session"] = start_new_session
             return Mock(spec=subprocess.Popen, pid=9999)
 
         monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)

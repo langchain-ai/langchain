@@ -409,8 +409,8 @@ class ShellSession:
                 # If the child shares our group, killpg would terminate the caller too,
                 # so fall through to the direct kill below. That direct kill reaps only
                 # the immediate child, so any descendants it spawned may be orphaned.
-                # This applies to create_process_group=False and the Codex/Docker sandbox
-                # policies, which run the shell in the caller's process group.
+                # This applies to HostExecutionPolicy(create_process_group=False), the
+                # only policy that runs the shell in the caller's process group.
                 if child_pgid != os.getpgrp():
                     os.killpg(child_pgid, signal.SIGKILL)
                     return
@@ -418,15 +418,25 @@ class ShellSession:
                 # Process already gone; nothing left to kill.
                 return
             except OSError:
-                # e.g. EPERM while querying or signalling the group. Don't leak the
+                # e.g. EPERM while querying or signaling the group. Don't leak the
                 # child silently; fall through to a direct kill.
                 LOGGER.warning(
                     "Group kill failed; falling back to direct kill.",
                     exc_info=True,
                 )
 
-        with contextlib.suppress(ProcessLookupError):
+        try:
             self._process.kill()
+        except ProcessLookupError:
+            # Process exited between the check above and this kill; nothing to do.
+            pass
+        except OSError:
+            # The fallback kill can hit the same condition (e.g. EPERM) that routed us
+            # here. Log rather than let it escape the session shutdown path.
+            LOGGER.warning(
+                "Direct kill failed.",
+                exc_info=True,
+            )
 
     def _enqueue_stream(self, stream: Any, label: str) -> None:
         for line in iter(stream.readline, ""):

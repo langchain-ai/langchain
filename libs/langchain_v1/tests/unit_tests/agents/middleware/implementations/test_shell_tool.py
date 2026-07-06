@@ -563,8 +563,13 @@ def test_kill_process_avoids_group_kill_for_shared_process_group(
     session._process = process  # type: ignore[assignment]
 
     killpg_mock = Mock()
+
+    def fake_getpgid(pid: int) -> int:
+        assert pid == process.pid, "getpgid must be queried with the child's pid"
+        return 1000
+
     monkeypatch.setattr(os, "killpg", killpg_mock, raising=False)
-    monkeypatch.setattr(os, "getpgid", lambda _pid: 1000, raising=False)
+    monkeypatch.setattr(os, "getpgid", fake_getpgid, raising=False)
     monkeypatch.setattr(os, "getpgrp", lambda: 1000, raising=False)
 
     session._kill_process()
@@ -583,8 +588,13 @@ def test_kill_process_uses_group_kill_for_dedicated_process_group(
     session._process = process  # type: ignore[assignment]
 
     killpg_mock = Mock()
+
+    def fake_getpgid(pid: int) -> int:
+        assert pid == process.pid, "getpgid must be queried with the child's pid"
+        return 2000
+
     monkeypatch.setattr(os, "killpg", killpg_mock, raising=False)
-    monkeypatch.setattr(os, "getpgid", lambda _pid: 2000, raising=False)
+    monkeypatch.setattr(os, "getpgid", fake_getpgid, raising=False)
     monkeypatch.setattr(os, "getpgrp", lambda: 1000, raising=False)
 
     session._kill_process()
@@ -623,8 +633,13 @@ def test_kill_process_falls_back_when_group_kill_raises_oserror(
     session._process = process  # type: ignore[assignment]
 
     killpg_mock = Mock(side_effect=PermissionError("operation not permitted"))
+
+    def fake_getpgid(pid: int) -> int:
+        assert pid == process.pid, "getpgid must be queried with the child's pid"
+        return 2000
+
     monkeypatch.setattr(os, "killpg", killpg_mock, raising=False)
-    monkeypatch.setattr(os, "getpgid", lambda _pid: 2000, raising=False)
+    monkeypatch.setattr(os, "getpgid", fake_getpgid, raising=False)
     monkeypatch.setattr(os, "getpgrp", lambda: 1000, raising=False)
 
     with caplog.at_level(logging.WARNING):
@@ -633,6 +648,28 @@ def test_kill_process_falls_back_when_group_kill_raises_oserror(
     killpg_mock.assert_called_once_with(2000, signal.SIGKILL)
     process.kill.assert_called_once_with()
     assert "falling back to direct kill" in caplog.text.lower()
+
+
+def test_kill_process_swallows_and_logs_direct_kill_oserror(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Log, don't raise, when the fallback direct kill itself fails with an OSError."""
+    session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
+    process = Mock()
+    process.pid = 7777
+    process.kill.side_effect = PermissionError("operation not permitted")
+    session._process = process  # type: ignore[assignment]
+
+    # Shared process group -> skip killpg and go straight to the direct kill.
+    monkeypatch.setattr(os, "killpg", Mock(), raising=False)
+    monkeypatch.setattr(os, "getpgid", lambda _pid: 1000, raising=False)
+    monkeypatch.setattr(os, "getpgrp", lambda: 1000, raising=False)
+
+    with caplog.at_level(logging.WARNING):
+        session._kill_process()  # must not propagate the PermissionError
+
+    process.kill.assert_called_once_with()
+    assert "direct kill failed" in caplog.text.lower()
 
 
 def test_kill_process_uses_direct_kill_without_killpg(
