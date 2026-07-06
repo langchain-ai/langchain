@@ -1,0 +1,20 @@
+.github/workflows/integration_tests.yml
+  s_37e3b1fb7f3e35::t_844318876866e4 98
+  s_37e3b1fb7f3e35::t_bcd8eca4a6aecc 164
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "35280ef5a4e37953acc7788c24cb69e8fffed1fc",
+  "prompts": {},
+  "sessions": {
+    "s_37e3b1fb7f3e35": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6356a7d7-d02a-4bda-87a2-eacca65699b2",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Mason Daugherty <github@mdrxy.com>"
+    }
+  }
+}
