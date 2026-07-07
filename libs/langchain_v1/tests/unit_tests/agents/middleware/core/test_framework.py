@@ -9,6 +9,7 @@ from langchain_core.tools import InjectedToolCallId, tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.runtime import Runtime
+from langgraph.types import Command
 from pydantic import BaseModel, Field
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
@@ -18,6 +19,7 @@ from langchain.agents.middleware import InputAgentState
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ExtendedModelResponse,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
@@ -361,6 +363,49 @@ def test_tools_to_model_edge_with_structured_and_regular_tool_calls() -> None:
     assert hasattr(result["structured_response"], "temperature")
     assert result["structured_response"].temperature == 72.0
     assert result["structured_response"].condition == "sunny"
+
+
+def test_wrap_model_call_artificial_tool_messages_require_model_destination() -> None:
+    """Fail early when artificial tool messages can route to a missing destination."""
+
+    class InjectToolMessageMiddleware(AgentMiddleware):
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
+            response = handler(request)
+            ai_message = response.result[0]
+            if isinstance(ai_message, AIMessage) and ai_message.tool_calls:
+                synthetic_tool_messages = [
+                    ToolMessage(
+                        content="cached",
+                        tool_call_id=tool_call["id"],
+                        name=tool_call["name"],
+                    )
+                    for tool_call in ai_message.tool_calls
+                ]
+                return ExtendedModelResponse(
+                    model_response=response,
+                    command=Command(update={"messages": synthetic_tool_messages}),
+                )
+            return response
+
+    @tool
+    def my_tool(value: str) -> str:
+        """A simple tool."""
+        return value
+
+    with pytest.raises(ValueError, match="path map lacks a 'model' destination"):
+        create_agent(
+            model=FakeToolCallingModel(
+                tool_calls=[
+                    [ToolCall(id="1", name="my_tool", args={"value": "cached"})],
+                ],
+            ),
+            tools=[my_tool],
+            middleware=[InjectToolMessageMiddleware()],
+        )
 
 
 def test_public_private_state_for_custom_middleware() -> None:

@@ -1652,6 +1652,15 @@ def create_agent(
         model_to_tools_destinations = ["tools", exit_node]
         if response_format or loop_exit_node != "model":
             model_to_tools_destinations.append(loop_entry_node)
+        if (
+            middleware_w_wrap_model_call
+            and loop_entry_node not in model_to_tools_destinations
+        ):
+            msg = (
+                "wrap_model_call middleware can inject artificial tool messages, "
+                f"but the model-to-tools path map lacks a {loop_entry_node!r} destination."
+            )
+            raise ValueError(msg)
 
         graph.add_conditional_edges(
             loop_exit_node,
