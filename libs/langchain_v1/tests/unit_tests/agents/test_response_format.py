@@ -11,7 +11,8 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableConfig
+from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict, override
 
@@ -71,6 +72,10 @@ weather_json_schema = {
 class LocationResponse(BaseModel):
     city: str = Field(description="The city name")
     country: str = Field(description="The country name")
+
+
+class Answer(BaseModel):
+    text: str
 
 
 class LocationTypedDict(TypedDict):
@@ -563,6 +568,50 @@ class TestResponseFormatAsToolStrategy:
         # HumanMessage, AIMessage, ToolMessage, AIMessage, ToolMessage
         assert len(response["messages"]) == 5
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
+    def test_checkpointer_clears_stale_structured_response_on_retry(self) -> None:
+        class ToolCallingGenericFakeChatModel(GenericFakeChatModel):
+            @override
+            def bind_tools(
+                self,
+                tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+                *,
+                tool_choice: str | None = None,
+                **kwargs: Any,
+            ) -> Runnable[LanguageModelInput, AIMessage]:
+                return self.bind(tools=tools, tool_choice=tool_choice, **kwargs)
+
+        model = ToolCallingGenericFakeChatModel(
+            messages=iter(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[{"name": "Answer", "args": {"text": "Hi"}, "id": "call_1"}],
+                    ),
+                    AIMessage(
+                        content="",
+                        tool_calls=[{"name": "Answer", "args": {"text": 2}, "id": "call_2"}],
+                    ),
+                    AIMessage(
+                        content="",
+                        tool_calls=[{"name": "Answer", "args": {"text": "Bye"}, "id": "call_3"}],
+                    ),
+                ]
+            )
+        )
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(schema=Answer, handle_errors=True),
+            checkpointer=InMemorySaver(),
+        )
+        config: RunnableConfig = {"configurable": {"thread_id": "thread_36957"}}
+
+        response1 = agent.invoke({"messages": [HumanMessage("Hi")]}, config)
+        response2 = agent.invoke({"messages": [HumanMessage("Bye")]}, config)
+
+        assert response1["structured_response"].text == "Hi"
+        assert response2["structured_response"].text == "Bye"
 
     def test_retry_with_custom_function(self) -> None:
         """Test retry with custom message generation."""
