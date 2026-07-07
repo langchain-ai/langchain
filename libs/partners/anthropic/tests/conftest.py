@@ -25,6 +25,10 @@ def vcr_config() -> dict:
     config["before_record_response"] = remove_response_headers
     config["serializer"] = "yaml.gz"
     config["path_transformer"] = VCR.ensure_suffix(".yaml.gz")
+    config["ignore_hosts"] = [
+        *config.get("ignore_hosts", []),
+        "api.smith.langchain.com",
+    ]
 
     return config
 

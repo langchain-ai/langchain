@@ -1,6 +1,6 @@
 from langchain_mistralai import __all__
 
-EXPECTED_ALL = ["ChatMistralAI", "MistralAIEmbeddings"]
+EXPECTED_ALL = ["__version__", "ChatMistralAI", "MistralAIEmbeddings"]
 
 
 def test_all_imports() -> None:

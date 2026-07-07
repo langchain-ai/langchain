@@ -363,10 +363,9 @@ class _SyncHttpxClientWrapper(openai.DefaultHttpxClient):
     """Borrowed from openai._base_client."""
 
     def __del__(self) -> None:
-        if self.is_closed:
-            return
-
         try:
+            if self.is_closed:
+                return
             self.close()
         except Exception:  # noqa: S110
             pass
@@ -376,10 +375,9 @@ class _AsyncHttpxClientWrapper(openai.DefaultAsyncHttpxClient):
     """Borrowed from openai._base_client."""
 
     def __del__(self) -> None:
-        if self.is_closed:
-            return
-
         try:
+            if self.is_closed:
+                return
             # TODO(someday): support non asyncio runtimes here
             asyncio.get_running_loop().create_task(self.aclose())
         except Exception:  # noqa: S110
@@ -552,7 +550,7 @@ def _resolve_sync_and_async_api_keys(
             sync_api_key_value = cast(Callable, api_key)
 
             async def async_api_key_wrapper() -> str:
-                return await asyncio.get_event_loop().run_in_executor(
+                return await asyncio.get_running_loop().run_in_executor(
                     None, cast(Callable, api_key)
                 )
 

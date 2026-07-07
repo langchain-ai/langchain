@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import builtins  # noqa: TC003
+import builtins
 import contextlib
 import json
 from abc import ABC, abstractmethod
-from collections.abc import Mapping  # noqa: TC003
+from collections.abc import Callable, Mapping
 from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
@@ -15,22 +15,20 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
-from langchain_core._api import deprecated
+from langchain_core._api import deprecated, suppress_langchain_deprecation_warning
 from langchain_core.exceptions import ErrorCode, create_message
 from langchain_core.load import dumpd
-from langchain_core.output_parsers.base import BaseOutputParser  # noqa: TC001
+from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
     PromptValue,
     StringPromptValue,
 )
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
-from langchain_core.runnables.config import ensure_config
+from langchain_core.runnables.base import RunnableSerializable
+from langchain_core.runnables.config import RunnableConfig, ensure_config
 from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from langchain_core.documents import Document
 
 
@@ -38,7 +36,7 @@ FormatOutputType = TypeVar("FormatOutputType")
 
 
 class BasePromptTemplate(
-    RunnableSerializable[dict, PromptValue], ABC, Generic[FormatOutputType]
+    RunnableSerializable[dict[str, Any], PromptValue], ABC, Generic[FormatOutputType]
 ):
     """Base class for all prompt templates, returning a prompt."""
 
@@ -60,7 +58,10 @@ class BasePromptTemplate(
     If not provided, all variables are assumed to be strings.
     """
 
-    output_parser: BaseOutputParser | None = None
+    # Ideally we would type output_parser as BaseOutputParser[Any]
+    # but that makes Pydantic fail (Pydantic tries to instantiate BaseOutputParser
+    # instead of using the provided output_parser...)
+    output_parser: BaseOutputParser | None = None  # type: ignore[type-arg]
     """How to parse the output of calling an LLM on this formatted prompt."""
 
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)
@@ -123,11 +124,11 @@ class BasePromptTemplate(
     )
 
     @cached_property
-    def _serialized(self) -> dict[str, Any]:
+    def _serialized(self) -> builtins.dict[str, Any]:
         # self is always a Serializable object in this case, thus the result is
         # guaranteed to be a dict since dumpd uses the default callback, which uses
         # obj.to_json which always returns TypedDict subclasses
-        return cast("dict[str, Any]", dumpd(self))
+        return cast("builtins.dict[str, Any]", dumpd(self))
 
     @property
     @override
@@ -157,7 +158,7 @@ class BasePromptTemplate(
             field_definitions={**required_input_variables, **optional_input_variables},
         )
 
-    def _validate_input(self, inner_input: Any) -> dict:
+    def _validate_input(self, inner_input: Any) -> builtins.dict[str, Any]:
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
@@ -193,19 +194,24 @@ class BasePromptTemplate(
             )
         return inner_input_
 
-    def _format_prompt_with_error_handling(self, inner_input: dict) -> PromptValue:
+    def _format_prompt_with_error_handling(
+        self, inner_input: builtins.dict[str, Any]
+    ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
         return self.format_prompt(**inner_input_)
 
     async def _aformat_prompt_with_error_handling(
-        self, inner_input: dict
+        self, inner_input: builtins.dict[str, Any]
     ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
         return await self.aformat_prompt(**inner_input_)
 
     @override
     def invoke(
-        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
+        self,
+        input: builtins.dict[str, Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
     ) -> PromptValue:
         """Invoke the prompt.
 
@@ -231,7 +237,10 @@ class BasePromptTemplate(
 
     @override
     async def ainvoke(
-        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
+        self,
+        input: builtins.dict[str, Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
     ) -> PromptValue:
         """Async invoke the prompt.
 
@@ -277,7 +286,9 @@ class BasePromptTemplate(
         """
         return self.format_prompt(**kwargs)
 
-    def partial(self, **kwargs: str | Callable[[], str]) -> BasePromptTemplate:
+    def partial(
+        self, **kwargs: str | Callable[[], str]
+    ) -> BasePromptTemplate[FormatOutputType]:
         """Return a partial of the prompt template.
 
         Args:
@@ -293,7 +304,9 @@ class BasePromptTemplate(
         prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
         return type(self)(**prompt_dict)
 
-    def _merge_partial_and_user_variables(self, **kwargs: Any) -> dict[str, Any]:
+    def _merge_partial_and_user_variables(
+        self, **kwargs: Any
+    ) -> builtins.dict[str, Any]:
         # Get partial params:
         partial_kwargs = {
             k: v if not callable(v) else v() for k, v in self.partial_variables.items()
@@ -337,8 +350,17 @@ class BasePromptTemplate(
         """Return the prompt type key."""
         raise NotImplementedError
 
-    def dict(self, **kwargs: Any) -> dict:
-        """Return dictionary representation of prompt.
+    @deprecated("1.4.2", alternative="asdict", removal="2.0.0")
+    @override
+    def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
+        """DEPRECATED - use `asdict()` instead.
+
+        Return a dictionary representation of the prompt.
+        """
+        return self.asdict(**kwargs)
+
+    def asdict(self, **kwargs: Any) -> builtins.dict[str, Any]:
+        """Return a dictionary representation of the prompt.
 
         Args:
             **kwargs: Any additional arguments to pass to the dictionary.
@@ -350,6 +372,11 @@ class BasePromptTemplate(
         with contextlib.suppress(NotImplementedError):
             prompt_dict["_type"] = self._prompt_type
         return prompt_dict
+
+    def _dict_for_compat(self) -> builtins.dict[str, Any]:
+        """Return the prompt dictionary while preserving deprecated overrides."""
+        with suppress_langchain_deprecation_warning():
+            return self.dict()
 
     @deprecated(
         since="1.2.21",
@@ -377,8 +404,9 @@ class BasePromptTemplate(
             msg = "Cannot save prompt with partial variables."
             raise ValueError(msg)
 
-        # Fetch dictionary to save
-        prompt_dict = self.dict()
+        # Fetch dictionary to save. Preserve deprecated `dict()` overrides until
+        # `dict()` is removed.
+        prompt_dict = self._dict_for_compat()
         if "_type" not in prompt_dict:
             msg = f"Prompt {self} does not support saving."
             raise NotImplementedError(msg)
@@ -401,7 +429,9 @@ class BasePromptTemplate(
             raise ValueError(msg)
 
 
-def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> dict:
+def _get_document_info(
+    doc: Document, prompt: BasePromptTemplate[str]
+) -> dict[str, Any]:
     base_info = {"page_content": doc.page_content, **doc.metadata}
     missing_metadata = set(prompt.input_variables).difference(base_info)
     if len(missing_metadata) > 0:

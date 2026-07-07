@@ -22,6 +22,7 @@
       'request_timeout': 60.0,
       'stop': list([
       ]),
+      'stream_usage': True,
       'temperature': 0.0,
     }),
     'lc': 1,

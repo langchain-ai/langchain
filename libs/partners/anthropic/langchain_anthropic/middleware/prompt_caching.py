@@ -39,14 +39,17 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
 
     Requires both `langchain` and `langchain-anthropic` packages to be installed.
 
-    Applies cache control breakpoints to:
+    The middleware tags stable agent content and passes `cache_control` through
+    `model_settings`:
 
     - **System message**: Tags the last content block of the system message
-      with `cache_control` so static system prompt content is cached.
-    - **Tools**: Tags all tool definitions with `cache_control` so tool
-      schemas are cached across turns.
-    - **Last cacheable block**: Tags last cacheable block of message sequence using
-      Anthropic's automatic caching feature.
+        with `cache_control` so static system prompt content is cached.
+    - **Tools**: Tags the last tool definition with `cache_control`. Because
+        tool definitions are sent as one contiguous block, a single trailing
+        breakpoint caches the entire tool set across turns.
+    - **`model_settings`**: Passes `cache_control` to the chat model. The chat
+        model/provider then applies the correct message-tail and
+        provider-specific behavior at request time.
 
     Learn more about Anthropic prompt caching
     [here](https://platform.claude.com/docs/en/build-with-claude/prompt-caching).
@@ -128,6 +131,10 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         overrides: dict[str, Any] = {}
         cache_control = self._cache_control
 
+        # Always set top-level `cache_control` on model settings. The Anthropic
+        # chat model translates the kwarg to the correct wire format for the
+        # active transport: direct API receives it as-is, while Bedrock has it
+        # expanded into a block-level breakpoint by `_get_request_payload`.
         overrides["model_settings"] = {
             **request.model_settings,
             "cache_control": cache_control,

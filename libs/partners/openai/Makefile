@@ -25,7 +25,7 @@ test tests:
 	TIKTOKEN_CACHE_DIR=tiktoken_cache uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest -v --tb=short -n auto $(TEST_FILE)
+	uv run --group test --group test_integration pytest -v --tb=short -n auto --benchmark-disable $(TEST_FILE)
 
 # Run VCR cassette-backed integration tests in playback-only mode (no API keys needed).
 # Catches stale cassettes caused by test input changes without re-recording.
@@ -72,6 +72,9 @@ format format_diff:
 check_imports: $(shell find langchain_openai -name '*.py')
 	$(UV_RUN_LINT) python ./scripts/check_imports.py $^
 
+check_version:
+	uv run python ./scripts/check_version.py
+
 ######################
 # HELP
 ######################
@@ -79,6 +82,7 @@ check_imports: $(shell find langchain_openai -name '*.py')
 help:
 	@echo '----'
 	@echo 'check_imports				- check imports'
+	@echo 'check_version                - validate version consistency'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
 	@echo 'type                         - run type checking'

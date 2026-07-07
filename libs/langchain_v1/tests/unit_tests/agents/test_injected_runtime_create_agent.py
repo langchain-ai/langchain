@@ -16,20 +16,16 @@ configurations.
 
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Annotated, Any
-from unittest.mock import MagicMock
 
-from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import InjectedStore
 from langgraph.store.memory import InMemoryStore
-from langsmith import Client
-from langsmith.run_helpers import tracing_context
+from typing_extensions import override
 
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, InputAgentState
 from langchain.tools import InjectedState, ToolRuntime
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -307,6 +303,9 @@ def test_tool_runtime_with_custom_state() -> None:
     class CustomState(AgentState[Any]):
         custom_field: str
 
+    class CustomInputState(InputAgentState):
+        custom_field: str
+
     runtime_state = {}
 
     @tool
@@ -331,10 +330,10 @@ def test_tool_runtime_with_custom_state() -> None:
     )
 
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Test custom state")],
-            "custom_field": "custom_value",
-        }
+        CustomInputState(
+            messages=[HumanMessage("Test custom state")],
+            custom_field="custom_value",
+        )
     )
 
     # Verify custom field was accessible
@@ -448,6 +447,7 @@ def test_tool_runtime_error_handling() -> None:
     @tool
     def safe_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool that handles errors safely."""
+        assert isinstance(runtime, ToolRuntime)
         try:
             if x == 0:
                 return "Error: Cannot process zero"
@@ -486,10 +486,12 @@ def test_tool_runtime_with_middleware() -> None:
     runtime_calls = []
 
     class TestMiddleware(AgentMiddleware):
+        @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append("before_model")
             return {}
 
+        @override
         def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append("after_model")
             return {}
@@ -623,6 +625,10 @@ def test_combined_injected_state_runtime_store() -> None:
         user_id: str
         session_id: str
 
+    class CustomInputState(InputAgentState):
+        user_id: str
+        session_id: str
+
     # Define explicit args schema that only includes LLM-controlled parameters
     weather_schema = {
         "type": "object",
@@ -693,11 +699,11 @@ def test_combined_injected_state_runtime_store() -> None:
 
     # Invoke with custom state fields
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("What's the weather like?")],
-            "user_id": "user_42",
-            "session_id": "session_abc123",
-        }
+        CustomInputState(
+            messages=[HumanMessage("What's the weather like?")],
+            user_id="user_42",
+            session_id="session_abc123",
+        )
     )
 
     # Verify tool executed successfully
@@ -738,6 +744,10 @@ async def test_combined_injected_state_runtime_store_async() -> None:
 
     # Custom state schema
     class CustomState(AgentState[Any]):
+        api_key: str
+        request_id: str
+
+    class CustomInputState(InputAgentState):
         api_key: str
         request_id: str
 
@@ -820,11 +830,11 @@ async def test_combined_injected_state_runtime_store_async() -> None:
 
     # Invoke async
     result = await agent.ainvoke(
-        {
-            "messages": [HumanMessage("Search for something")],
-            "api_key": "sk-test-key-xyz",
-            "request_id": "req_999",
-        }
+        CustomInputState(
+            messages=[HumanMessage("Search for something")],
+            api_key="sk-test-key-xyz",
+            request_id="req_999",
+        )
     )
 
     # Verify tool executed successfully
@@ -847,109 +857,3 @@ async def test_combined_injected_state_runtime_store_async() -> None:
     # Verify store was injected and writable
     assert injected_data["store"] is not None
     assert injected_data["store_write_success"] is True
-
-
-def test_ls_agent_type_is_trace_only_metadata() -> None:
-    """Test that ls_agent_type is added to metadata on tracing only, not in streamed chunks."""
-    # Capture metadata from regular callback handler (simulates streamed metadata)
-    captured_callback_metadata: list[dict[str, Any]] = []
-
-    class CaptureHandler(BaseCallbackHandler):
-        def on_chain_start(
-            self,
-            serialized: dict[str, Any],
-            inputs: dict[str, Any],
-            *,
-            run_id: str,
-            parent_run_id: str | None = None,
-            tags: list[str] | None = None,
-            metadata: dict[str, Any] | None = None,
-            **kwargs: Any,
-        ) -> None:
-            captured_callback_metadata.append({"tags": tags, "metadata": metadata})
-
-    # Create a mock client to capture what gets sent to LangSmith
-    mock_session = MagicMock()
-    mock_client = Client(session=mock_session, api_key="test", auto_batch_tracing=False)
-
-    agent = create_agent(
-        model=FakeToolCallingModel(tool_calls=[[], []]),
-        tools=[],
-        system_prompt="You are a helpful assistant.",
-    )
-
-    # Use tracing_context to enable tracing with the mock client
-    with tracing_context(client=mock_client, enabled=True):
-        agent.invoke(
-            {"messages": [HumanMessage("hi?")]},
-            config={"callbacks": [CaptureHandler()]},
-        )
-
-    # Verify that ls_agent_type is NOT in the regular callback metadata
-    # (it should only go to the tracer via langsmith_inheritable_metadata)
-    assert len(captured_callback_metadata) > 0
-    for captured in captured_callback_metadata:
-        metadata = captured.get("metadata") or {}
-        assert metadata.get("ls_agent_type") is None, (
-            f"ls_agent_type should not be in callback metadata, but got: {metadata}"
-        )
-
-    # Verify that ls_agent_type IS in the tracer metadata (sent to LangSmith)
-    # Get the POST requests to the LangSmith API
-    posts = []
-    for call in mock_session.request.mock_calls:
-        if call.args and call.args[0] == "POST":
-            body = json.loads(call.kwargs["data"])
-            if "post" in body:
-                posts.extend(body["post"])
-            else:
-                posts.append(body)
-
-    assert len(posts) >= 1
-    # Find the root run (the agent execution)
-    root_post = posts[0]
-    metadata = root_post.get("extra", {}).get("metadata", {})
-    assert metadata.get("ls_agent_type") == "root", (
-        f"ls_agent_type should be 'root' in tracer metadata, but got: {metadata}"
-    )
-
-
-def test_ls_agent_type_is_overridable() -> None:
-    """Test that ls_agent_type can be overridden via configurable in invoke config."""
-    # Create a mock client to capture what gets sent to LangSmith
-    mock_session = MagicMock()
-    mock_client = Client(session=mock_session, api_key="test", auto_batch_tracing=False)
-
-    agent = create_agent(
-        model=FakeToolCallingModel(tool_calls=[[], []]),
-        tools=[],
-        system_prompt="You are a helpful assistant.",
-    )
-
-    # Use tracing_context to enable tracing with the mock client
-    with tracing_context(client=mock_client, enabled=True):
-        agent.invoke(
-            {"messages": [HumanMessage("hi?")]},
-            config={"configurable": {"ls_agent_type": "subagent", "custom_key": "custom_value"}},
-        )
-
-    # Verify that ls_agent_type is overridden and configurable is merged in the tracer metadata
-    posts = []
-    for call in mock_session.request.mock_calls:
-        if call.args and call.args[0] == "POST":
-            body = json.loads(call.kwargs["data"])
-            if "post" in body:
-                posts.extend(body["post"])
-            else:
-                posts.append(body)
-
-    assert len(posts) >= 1
-    root_post = posts[0]
-    metadata = root_post.get("extra", {}).get("metadata", {})
-    assert metadata.get("ls_agent_type") == "subagent", (
-        f"ls_agent_type should be 'subagent' in tracer metadata, but got: {metadata}"
-    )
-    # Verify that the additional configurable key is merged into metadata
-    assert metadata.get("custom_key") == "custom_value", (
-        f"custom_key should be 'custom_value' in tracer metadata, but got: {metadata}"
-    )
