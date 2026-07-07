@@ -152,6 +152,7 @@ Some tool types require specific beta headers to be enabled.
 """
 
 _BUILTIN_TOOL_PREFIXES = [
+    "advisor_",
     "text_editor_",
     "computer_",
     "bash_",

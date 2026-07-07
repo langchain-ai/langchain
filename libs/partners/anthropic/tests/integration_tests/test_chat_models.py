@@ -2714,3 +2714,23 @@ def test_streaming_tool_call_v1_v2_parity() -> None:
     assert v2_finish is not None
     assert any(k in v1_finish for k in ("tool_use", "tool_calls", "stop"))
     assert any(k in v2_finish for k in ("tool_use", "tool_calls", "stop"))
+
+def test_advisor_tool_is_builtin_and_passed_through_38644() -> None:
+    """Regression for langchain-ai/langchain#38644.
+
+    Anthropic advisor_* server-side tools are native provider tools, not
+    OpenAI/function-style schemas. They must be passed through unchanged and
+    must not be routed through convert_to_anthropic_tool(), which expects a
+    "parameters" key.
+    """
+    from langchain_anthropic.chat_models import _is_builtin_tool
+
+    advisor_tool = {
+        "type": "advisor_20260301",
+        "name": "advisor",
+        "model": "claude-sonnet-4-6",
+        "max_uses": 3,
+        "max_tokens": 1024,
+    }
+
+    assert _is_builtin_tool(advisor_tool)
