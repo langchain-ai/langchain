@@ -1653,6 +1653,15 @@ def create_agent(
         if response_format or loop_exit_node != "model":
             model_to_tools_destinations.append(loop_entry_node)
 
+
+        # Ensure the conditional-edge path map covers every label the
+        # model_to_tools router can return.
+        #
+        # Invariant:
+        # RouterReturnSet must be a subset of SupportedPathMapKeys.
+        if loop_entry_node not in model_to_tools_destinations:
+            model_to_tools_destinations.append(loop_entry_node)
+
         graph.add_conditional_edges(
             loop_exit_node,
             RunnableCallable(
