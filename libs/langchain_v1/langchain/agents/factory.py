@@ -428,6 +428,7 @@ def _resolve_schemas(schemas: list[type]) -> tuple[type, type, type]:
     same field is declared by multiple schemas.  Duplicates are harmless — a type
     that appears more than once is processed at its last position.
     """
+    schemas = list(reversed(dict.fromkeys(reversed(schemas))))
     schema_hints = {schema: _get_schema_type_hints(schema) for schema in schemas}
     return (
         _resolve_schema(schema_hints, "StateSchema", None),
