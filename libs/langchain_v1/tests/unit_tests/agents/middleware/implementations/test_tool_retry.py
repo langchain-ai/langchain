@@ -1035,16 +1035,18 @@ def test_tool_retry_does_not_swallow_interrupt() -> None:
         middleware=[ToolRetryMiddleware(max_retries=2, initial_delay=0.01, jitter=False)],
         checkpointer=InMemorySaver(),
     )
-    config = {"configurable": {"thread_id": "test"}}
 
-    result = agent.invoke({"messages": [HumanMessage("Use interrupting tool")]}, config)
+    result = agent.invoke(
+        {"messages": [HumanMessage("Use interrupting tool")]},
+        {"configurable": {"thread_id": "test"}},
+    )
 
     # The interrupt must bubble up, not be retried and swallowed into an error message.
     assert "__interrupt__" in result
     assert [m for m in result["messages"] if isinstance(m, ToolMessage)] == []
 
     # Resuming completes normally.
-    final = agent.invoke(Command(resume="approved"), config)
+    final = agent.invoke(Command(resume="approved"), {"configurable": {"thread_id": "test"}})
     assert "__interrupt__" not in final
     tool_messages = [m for m in final["messages"] if isinstance(m, ToolMessage)]
     assert len(tool_messages) == 1
@@ -1057,7 +1059,7 @@ def test_tool_retry_reraises_graph_bubble_up() -> None:
 
     calls = 0
 
-    def handler(request: ToolCallRequest) -> ToolMessage:
+    def handler(request: ToolCallRequest) -> ToolMessage:  # noqa: ARG001
         nonlocal calls
         calls += 1
         raise ParentCommand(Command(goto="some_node"))
