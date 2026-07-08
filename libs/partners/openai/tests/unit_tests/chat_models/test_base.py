@@ -1733,7 +1733,7 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
     )
     response = parse_chat_completion(
         response_format=ModelOutput,
-        input_tools=openai.NOT_GIVEN,
+        input_tools=openai.omit,
         chat_completion=raw_response,
     )
 
@@ -1794,7 +1794,7 @@ def test__construct_lc_result_from_responses_api_avoids_parsed_dump_warning() ->
     )
     parsed_response = parse_response(
         text_format=DocumentScoreResult,
-        input_tools=openai.NOT_GIVEN,
+        input_tools=openai.omit,
         response=raw_response,
     )
 

@@ -318,7 +318,7 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
     )
     parsed_response = parse_chat_completion(
         response_format=ModelOutput,
-        input_tools=openai.NOT_GIVEN,
+        input_tools=openai.omit,
         chat_completion=raw_response,
     )
 
