@@ -2099,6 +2099,34 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
     assert output == expected_output
 
 
+def test_experimental_markdown_syntax_text_splitter_crlf() -> None:
+    """CRLF line endings must split on horizontal rules and not leak ``\\r``.
+
+    Regression test: with Windows-style ``\\r\\n`` newlines the experimental
+    splitter failed to split on ``---``/``***`` rules and kept a trailing
+    carriage return in header metadata values.
+    """
+    text = (
+        "# Header 1\r\n"
+        "\r\n"
+        "Some text before the rule.\r\n"
+        "\r\n"
+        "---\r\n"
+        "\r\n"
+        "Text after the rule.\r\n"
+    )
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter(
+        headers_to_split_on=[("#", "Header 1")], strip_headers=True
+    )
+    output = markdown_splitter.split_text(text)
+
+    assert len(output) == 2
+    assert output[0].page_content == "\nSome text before the rule.\n\n"
+    assert output[0].metadata == {"Header 1": "Header 1"}
+    assert output[1].page_content == "\nText after the rule.\n"
+    assert output[1].metadata == {"Header 1": "Header 1"}
+
+
 EXPERIMENTAL_MARKDOWN_DOCUMENTS = [
     (
         "# My Header 1 From Document 1\n"

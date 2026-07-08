@@ -392,7 +392,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         raw_lines = text.splitlines(keepends=True)
 
         while raw_lines:
-            raw_line = raw_lines.pop(0)
+            raw_line = raw_lines.pop(0).replace("\r\n", "\n")
             header_match = self._match_header(raw_line)
             code_match = self._match_code(raw_line)
             horz_match = self._match_horz(raw_line)
