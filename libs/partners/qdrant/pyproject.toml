@@ -24,7 +24,7 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "qdrant-client>=1.15.1,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
-    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-core>=1.4.7,<2.0.0",
 ]
 
 [project.urls]
@@ -39,7 +39,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.optional-dependencies]
 fastembed = [
-    "fastembed>=0.3.3,<1.0.0; python_version < \"3.13\" and python_version >= \"3.9\"",
+    "fastembed>=0.8.0,<1.0.0; python_version < \"3.13\" and python_version >= \"3.9\"",
 ]
 
 [dependency-groups]
@@ -54,23 +54,17 @@ test = [
     "freezegun>=1.2.2,<2.0.0",
     "syrupy>=5.0.0,<6.0.0",
     "requests>=2.31.0,<3.0.0",
-    "langchain-core>=1.4.0,<2.0.0",
     "langchain-tests>=1.1.9,<2.0.0",
 ]
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
-dev = ["langchain-core>=1.4.0,<2.0.0"]
+dev = []
 typing = [
-    "mypy>=1.10.0,<2.0.0",
+    "mypy>=2.1.0,<2.2.0",
     "simsimd>=6.0.0,<7.0.0",
-    "langchain-core>=1.4.0,<2.0.0"
 ]
 
-# CVE-2026-25990: pillow < 12.1.1 is vulnerable to out-of-bounds write when loading PSD images.
-# fastembed 0.7.x caps pillow<12.0. Override to pull in the fix for the lockfile.
-# Remove this override once fastembed releases a version that allows pillow>=12.1.1.
 [tool.uv]
-override-dependencies = ["pillow>=12.1.1"]
 constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
 
 [tool.uv.sources]

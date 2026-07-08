@@ -10,12 +10,13 @@ from typing import TYPE_CHECKING, Annotated, Any, get_args, get_type_hints
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from typing_extensions import NotRequired, Required
+from typing_extensions import NotRequired, Required, override
 
 from langchain.agents import create_agent, factory
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    InputAgentState,
     PrivateStateAttr,
 )
 
@@ -40,6 +41,9 @@ def test_state_schema_single_custom_field() -> None:
     class CustomState(AgentState[Any]):
         custom_field: str
 
+    class CustomInputState(InputAgentState):
+        custom_field: str
+
     agent = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[[{"args": {"x": 1}, "id": "call_1", "name": "simple_tool"}], []]
@@ -48,7 +52,9 @@ def test_state_schema_single_custom_field() -> None:
         state_schema=CustomState,
     )
 
-    result = agent.invoke({"messages": [HumanMessage("Test")], "custom_field": "test_value"})
+    result = agent.invoke(
+        CustomInputState(messages=[HumanMessage("Test")], custom_field="test_value")
+    )
 
     assert result["custom_field"] == "test_value"
     assert len(result["messages"]) == 4
@@ -62,6 +68,11 @@ def test_state_schema_multiple_custom_fields() -> None:
         session_id: str
         context: str
 
+    class CustomInputState(InputAgentState):
+        user_id: str
+        session_id: str
+        context: str
+
     agent = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[[{"args": {"x": 1}, "id": "call_1", "name": "simple_tool"}], []]
@@ -71,12 +82,12 @@ def test_state_schema_multiple_custom_fields() -> None:
     )
 
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Test")],
-            "user_id": "user_123",
-            "session_id": "session_456",
-            "context": "test_ctx",
-        }
+        CustomInputState(
+            messages=[HumanMessage("Test")],
+            user_id="user_123",
+            session_id="session_456",
+            context="test_ctx",
+        )
     )
 
     assert result["user_id"] == "user_123"
@@ -89,6 +100,9 @@ def test_state_schema_with_tool_runtime() -> None:
     """Test that custom state fields are accessible via ToolRuntime."""
 
     class ExtendedState(AgentState[Any]):
+        counter: int
+
+    class ExtendedInputState(InputAgentState):
         counter: int
 
     runtime_data = {}
@@ -107,7 +121,7 @@ def test_state_schema_with_tool_runtime() -> None:
         state_schema=ExtendedState,
     )
 
-    result = agent.invoke({"messages": [HumanMessage("Test")], "counter": 5})
+    result = agent.invoke(ExtendedInputState(messages=[HumanMessage("Test")], counter=5))
 
     assert runtime_data["counter"] == 5
     assert "Counter is 5" in result["messages"][2].content
@@ -122,11 +136,16 @@ def test_state_schema_with_middleware() -> None:
     class MiddlewareState(AgentState[Any]):
         middleware_data: str
 
+    class UserAndMiddlewareInputState(InputAgentState):
+        user_name: str
+        middleware_data: str
+
     middleware_calls = []
 
     class TestMiddleware(AgentMiddleware[MiddlewareState, None]):
         state_schema = MiddlewareState
 
+        @override
         def before_model(self, state: MiddlewareState, runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append(state["middleware_data"])
             return {}
@@ -141,11 +160,11 @@ def test_state_schema_with_middleware() -> None:
     )
 
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Test")],
-            "user_name": "Alice",
-            "middleware_data": "test_data",
-        }
+        UserAndMiddlewareInputState(
+            messages=[HumanMessage("Test")],
+            user_name="Alice",
+            middleware_data="test_data",
+        )
     )
 
     assert result["user_name"] == "Alice"
@@ -175,6 +194,9 @@ async def test_state_schema_async() -> None:
     class AsyncState(AgentState[Any]):
         async_field: str
 
+    class AsyncInputState(InputAgentState):
+        async_field: str
+
     @tool
     async def async_tool(x: int) -> str:
         """Async tool."""
@@ -189,10 +211,10 @@ async def test_state_schema_async() -> None:
     )
 
     result = await agent.ainvoke(
-        {
-            "messages": [HumanMessage("Test async")],
-            "async_field": "async_value",
-        }
+        AsyncInputState(
+            messages=[HumanMessage("Test async")],
+            async_field="async_value",
+        )
     )
 
     assert result["async_field"] == "async_value"
@@ -209,6 +231,10 @@ def test_state_schema_with_private_state_field() -> None:
     """
 
     class StateWithPrivateField(AgentState[Any]):
+        public_field: str
+        private_field: Annotated[str, PrivateStateAttr]
+
+    class InputStateWithPrivateField(InputAgentState):
         public_field: str
         private_field: Annotated[str, PrivateStateAttr]
 
@@ -233,11 +259,11 @@ def test_state_schema_with_private_state_field() -> None:
 
     # Invoke the agent with BOTH public and private fields
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Test private state")],
-            "public_field": "public_value",
-            "private_field": "private_value",  # This should be filtered out
-        }
+        InputStateWithPrivateField(
+            messages=[HumanMessage("Test private state")],
+            public_field="public_value",
+            private_field="private_value",  # This should be filtered out
+        )
     )
 
     # Assert that public_field is preserved in the result
