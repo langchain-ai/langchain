@@ -36,6 +36,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from openai.types.responses import (
     ResponseApplyPatchToolCall,
     ResponseApplyPatchToolCallOutput,
@@ -1752,6 +1753,13 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
     )
 
 
+@pytest.mark.skipif(
+    (PYDANTIC_VERSION.major, PYDANTIC_VERSION.minor) < (2, 8),
+    reason=(
+        "Serializing the generic `ParsedResponse` raises a `MockValSer` TypeError on "
+        "pydantic<2.8, independent of the warning under test."
+    ),
+)
 def test__construct_lc_result_from_responses_api_avoids_parsed_dump_warning() -> None:
     """Responses API structured output must not emit serializer warnings.
 
