@@ -1761,7 +1761,8 @@ class BaseChatOpenAI(BaseChatModel):
             # `parsed` may hold arbitrary Pydantic models from structured output.
             # Exclude it from this dump and copy it from the typed response below.
             else response.model_dump(
-                exclude={"choices": {"__all__": {"message": {"parsed"}}}}
+                exclude={"choices": {"__all__": {"message": {"parsed"}}}},
+                warnings=False,
             )
         )
         # Sometimes the AI Model calling will get error, we should raise it (this is
@@ -4669,7 +4670,10 @@ def _construct_lc_result_from_responses_api(
 
     response_metadata = {
         k: v
-        for k, v in response.model_dump(exclude_none=True, mode="json").items()
+        # warnings=False due to https://github.com/openai/openai-python/issues/2872
+        for k, v in response.model_dump(
+            exclude_none=True, mode="json", warnings=False
+        ).items()
         if k
         in (
             "created_at",
