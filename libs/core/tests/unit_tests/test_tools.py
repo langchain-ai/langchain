@@ -23,7 +23,7 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, RootModel, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -2272,6 +2272,58 @@ def test_convert_runnable_to_tool_v1_input_schema() -> None:
     tool = convert_runnable_to_tool(V1InputRunnable())
 
     assert set(tool.args) == {"a"}
+
+
+def test_convert_runnable_to_tool_typed_dict_input() -> None:
+    """`convert_runnable_to_tool` unwraps RootModel[TypedDict] for proper schema.
+
+    Regression test: when a Runnable's input_schema is a RootModel wrapping a
+    TypedDict (e.g. from a StateGraph with TypedDict input), the tool schema
+    should not have a nested "root" property. The TypedDict fields should be
+    promoted to top-level fields.
+    """
+
+    class InputState(TypedDict):
+        foo: str
+        bar: str
+
+    class PassthroughRunnable(Runnable[Any, Any]):
+        @override
+        def invoke(
+            self,
+            input: Any,
+            config: RunnableConfig | None = None,
+            **kwargs: Any,
+        ) -> Any:
+            return input
+
+        @override
+        def get_input_schema(
+            self, config: RunnableConfig | None = None
+        ) -> TypeBaseModel:
+            return create_model_v2("PassthroughInput", root=InputState)
+
+    tool = convert_runnable_to_tool(PassthroughRunnable())
+
+    # The args_schema should be a plain Pydantic model with foo and bar as
+    # top-level fields, NOT a RootModel with a single "root" field.
+    args_schema = tool.args_schema
+    assert args_schema is not None
+    assert isinstance(args_schema, type)
+    assert issubclass(args_schema, BaseModel)
+    assert not issubclass(args_schema, RootModel)
+    assert set(args_schema.model_fields.keys()) == {"foo", "bar"}
+
+    # The OpenAI tool schema should have foo and bar at the top level.
+    oai_schema = convert_to_openai_tool(tool)
+    params = oai_schema["function"]["parameters"]
+    assert "root" not in params.get("properties", {})
+    assert "foo" in params["properties"]
+    assert "bar" in params["properties"]
+
+    # invoke should accept the flat dict directly.
+    result = tool.invoke({"foo": "hello", "bar": "world"})
+    assert result == {"foo": "hello", "bar": "world"}
 
 
 @pytest.mark.parametrize("pydantic_model", TEST_MODELS)
