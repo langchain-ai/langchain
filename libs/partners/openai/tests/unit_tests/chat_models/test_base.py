@@ -1090,6 +1090,26 @@ def test_get_num_tokens_from_messages() -> None:
     assert actual
 
 
+@pytest.mark.parametrize(
+    "model", ["o1", "o1-preview", "o1-mini", "o3", "o3-mini", "o4-mini"]
+)
+def test_get_num_tokens_from_messages_o_series(model: str) -> None:
+    """o-series models use the same message token format as gpt-4/gpt-5.
+
+    Regression test: these raised NotImplementedError.
+    """
+    llm = ChatOpenAI(model=model)
+    messages = [
+        SystemMessage("you're a good assistant"),
+        HumanMessage("how are you"),
+    ]
+    actual = llm.get_num_tokens_from_messages(messages)
+    expected = ChatOpenAI(model=OPENAI_TEST_MODEL).get_num_tokens_from_messages(
+        messages
+    )
+    assert actual == expected
+
+
 class Foo(BaseModel):
     bar: int
 
