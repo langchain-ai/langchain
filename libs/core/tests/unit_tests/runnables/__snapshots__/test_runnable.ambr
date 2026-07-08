@@ -1459,7 +1459,7 @@
           "fake",
           "FakeListLLM"
         ],
-        "repr": "FakeListLLM(metadata={'lc_versions': {'langchain-core': '1.4.8'}}, responses=['foo', 'bar'])",
+        "repr": "FakeListLLM(metadata={'lc_versions': {'langchain-core': '1.4.9'}}, responses=['foo', 'bar'])",
         "name": "FakeListLLM"
       }
     },
