@@ -1053,6 +1053,45 @@ def test_tool_retry_does_not_swallow_interrupt() -> None:
     assert "Human said: approved" in tool_messages[0].content
 
 
+def test_tool_retry_parallel_interrupt_with_successful_sibling() -> None:
+    """In a parallel batch, one tool's interrupt bubbles up while a sibling succeeds."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="interrupting_tool", args={"value": "a"}, id="1"),
+                ToolCall(name="working_tool", args={"value": "b"}, id="2"),
+            ],
+            [],
+        ]
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[interrupting_tool, working_tool],
+        middleware=[ToolRetryMiddleware(max_retries=2, initial_delay=0.01, jitter=False)],
+        checkpointer=InMemorySaver(),
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Use both tools")]},
+        {"configurable": {"thread_id": "test"}},
+    )
+
+    # The interrupt bubbles up; the sibling still executes and is checkpointed.
+    assert "__interrupt__" in result
+    tool_messages = {m.tool_call_id: m for m in result["messages"] if isinstance(m, ToolMessage)}
+    assert "1" not in tool_messages  # interrupted tool has no result yet
+    assert tool_messages["2"].content == "Success: b"
+    assert tool_messages["2"].status != "error"
+
+    # Resuming completes the interrupted tool without re-running the sibling.
+    final = agent.invoke(Command(resume="approved"), {"configurable": {"thread_id": "test"}})
+    assert "__interrupt__" not in final
+    final_messages = {m.tool_call_id: m for m in final["messages"] if isinstance(m, ToolMessage)}
+    assert final_messages["1"].content == "Human said: approved"
+    assert final_messages["2"].content == "Success: b"
+
+
 def test_tool_retry_reraises_graph_bubble_up() -> None:
     """GraphBubbleUp signals (e.g. ParentCommand) must propagate, not be retried."""
     middleware = ToolRetryMiddleware(max_retries=3, initial_delay=0.01, jitter=False)
