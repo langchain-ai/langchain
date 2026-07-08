@@ -4,7 +4,8 @@ import inspect
 from collections.abc import Callable
 from typing import Any, Literal, cast, get_type_hints, overload
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, RootModel, create_model
+from typing_extensions import is_typeddict
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import Runnable
@@ -469,6 +470,30 @@ def convert_runnable_to_tool(
         args_schema = _get_schema_from_runnable_and_arg_types(
             runnable, name, arg_types=arg_types
         )
+
+    # If the input schema is a RootModel wrapping a TypedDict and the
+    # resulting args_schema is empty (e.g. because InputType is typing.Any),
+    # unwrap the RootModel and convert the TypedDict to a proper Pydantic
+    # model. RootModel wrapping causes the OpenAI tool schema to have a
+    # nested "root" property, which breaks tool call validation.
+    input_schema = runnable.input_schema
+    if isinstance(input_schema, type) and RootModel in input_schema.__mro__:
+        fields = getattr(input_schema, "model_fields", {})
+        if "root" in fields and is_typeddict(fields["root"].annotation):
+            td = fields["root"].annotation
+            td_hints = get_type_hints(td)
+            td_fields = {key: (hint, Field(...)) for key, hint in td_hints.items()}
+            has_empty_fields = (
+                not getattr(args_schema, "model_fields", None)
+                if isinstance(args_schema, type)
+                else True
+            )
+            if has_empty_fields:
+                td_name: str = getattr(td, "__name__", "model")
+                args_schema = cast(
+                    "type[BaseModel]",
+                    create_model(td_name, **td_fields),  # type: ignore[call-overload]
+                )
 
     return StructuredTool.from_function(
         name=name,
