@@ -822,6 +822,7 @@ def create_agent(
     name: str | None = None,
     cache: BaseCache[Any] | None = None,
     transformers: Sequence[TransformerFactory] | None = None,
+    tool_choice: str | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
 ]:
@@ -1385,7 +1386,13 @@ def create_agent(
                     raise ValueError(msg)
 
             # Force tool use if we have structured output tools
-            tool_choice = "any" if structured_output_tools else request.tool_choice
+            # Allow user to override tool_choice for compatibility with APIs like dashscope
+            if request.tool_choice is not None:
+                tool_choice = request.tool_choice
+            elif structured_output_tools:
+                tool_choice = "any"
+            else:
+                tool_choice = request.tool_choice
             return (
                 request.model.bind_tools(
                     final_tools, tool_choice=tool_choice, **request.model_settings
@@ -1438,7 +1445,7 @@ def create_agent(
             system_message=system_message,
             response_format=initial_response_format,
             messages=state["messages"],
-            tool_choice=None,
+            tool_choice=tool_choice,
             state=state,
             runtime=runtime,
         )
