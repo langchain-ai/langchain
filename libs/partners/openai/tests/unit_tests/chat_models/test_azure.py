@@ -1,11 +1,13 @@
 """Test Azure OpenAI Chat API wrapper."""
 
 import os
+import warnings
 from unittest import mock
 
+import openai
 import pytest
 from langchain_core.messages import HumanMessage
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 from typing_extensions import TypedDict
 
 from langchain_openai import AzureChatOpenAI
@@ -282,3 +284,59 @@ def test_metadata_versions() -> None:
     versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-openai" in versions
+
+
+def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
+    """Azure structured output must not emit a serializer warning.
+
+    `AzureChatOpenAI._create_chat_result` re-dumps the response to read content-filter
+    metadata; with structured output the SDK's `parsed` field holds a model that
+    doesn't match its declared type (openai/openai-python#2872).
+    """
+    from openai.lib._parsing._completions import parse_chat_completion
+    from openai.types.chat import ChatCompletion
+    from openai.types.chat.chat_completion import Choice
+    from openai.types.chat.chat_completion_message import ChatCompletionMessage
+
+    class ModelOutput(BaseModel):
+        output: str
+
+    raw_response = ChatCompletion(
+        id="chatcmpl-1",
+        object="chat.completion",
+        created=0,
+        model="gpt-4o-mini",
+        choices=[
+            Choice(
+                index=0,
+                finish_reason="stop",
+                message=ChatCompletionMessage(
+                    role="assistant", content='{"output": "Paris"}'
+                ),
+            )
+        ],
+    )
+    parsed_response = parse_chat_completion(
+        response_format=ModelOutput,
+        input_tools=openai.NOT_GIVEN,
+        chat_completion=raw_response,
+    )
+
+    llm = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+        api_key=SecretStr("test"),
+    )
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        result = llm._create_chat_result(parsed_response)
+
+    warning_messages = [str(warning.message) for warning in caught_warnings]
+    assert not any(
+        "PydanticSerializationUnexpectedValue" in message
+        for message in warning_messages
+    )
+    assert result.generations[0].message.additional_kwargs["parsed"] == ModelOutput(
+        output="Paris"
+    )
