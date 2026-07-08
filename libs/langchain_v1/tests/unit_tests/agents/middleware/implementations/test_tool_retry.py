@@ -8,8 +8,9 @@ import pytest
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.errors import ParentCommand
 from langgraph.prebuilt.tool_node import ToolCallRequest
-from langgraph.types import Command
+from langgraph.types import Command, interrupt
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
@@ -29,6 +30,13 @@ def failing_tool(value: str) -> str:
     """Tool that always fails."""
     msg = f"Failed: {value}"
     raise ValueError(msg)
+
+
+@tool
+def interrupting_tool(value: str) -> str:
+    """Tool that pauses for human input."""
+    answer = interrupt(f"Approve {value}?")
+    return f"Human said: {answer}"
 
 
 class TemporaryFailureTool:
@@ -1010,3 +1018,58 @@ def test_tool_retry_deprecated_return_message_behavior() -> None:
     assert "3 attempts" in tool_messages[0].content
     assert "ValueError" in tool_messages[0].content
     assert tool_messages[0].status == "error"
+
+
+def test_tool_retry_does_not_swallow_interrupt() -> None:
+    """A tool that calls interrupt() must surface the interrupt, not retry it."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="interrupting_tool", args={"value": "test"}, id="1")],
+            [],
+        ]
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[interrupting_tool],
+        middleware=[ToolRetryMiddleware(max_retries=2, initial_delay=0.01, jitter=False)],
+        checkpointer=InMemorySaver(),
+    )
+    config = {"configurable": {"thread_id": "test"}}
+
+    result = agent.invoke({"messages": [HumanMessage("Use interrupting tool")]}, config)
+
+    # The interrupt must bubble up, not be retried and swallowed into an error message.
+    assert "__interrupt__" in result
+    assert [m for m in result["messages"] if isinstance(m, ToolMessage)] == []
+
+    # Resuming completes normally.
+    final = agent.invoke(Command(resume="approved"), config)
+    assert "__interrupt__" not in final
+    tool_messages = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert "Human said: approved" in tool_messages[0].content
+
+
+def test_tool_retry_reraises_graph_bubble_up() -> None:
+    """GraphBubbleUp signals (e.g. ParentCommand) must propagate, not be retried."""
+    middleware = ToolRetryMiddleware(max_retries=3, initial_delay=0.01, jitter=False)
+
+    calls = 0
+
+    def handler(request: ToolCallRequest) -> ToolMessage:
+        nonlocal calls
+        calls += 1
+        raise ParentCommand(Command(goto="some_node"))
+
+    request = ToolCallRequest(
+        tool_call=ToolCall(name="working_tool", args={"value": "x"}, id="1"),
+        tool=working_tool,
+        state={"messages": []},
+        runtime=None,  # type: ignore[arg-type]
+    )
+
+    with pytest.raises(ParentCommand):
+        middleware.wrap_tool_call(request, handler)
+
+    assert calls == 1  # bubbled up on first raise, not retried
