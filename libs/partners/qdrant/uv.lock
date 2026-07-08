@@ -16,7 +16,6 @@ resolution-markers = [
 
 [manifest]
 constraints = [{ name = "pygments", specifier = ">=2.20.0" }]
-overrides = [{ name = "pillow", specifier = ">=12.1.1" }]
 
 [[package]]
 name = "annotated-types"
@@ -290,7 +289,7 @@ wheels = [
 
 [[package]]
 name = "fastembed"
-version = "0.7.3"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "huggingface-hub", marker = "python_full_version < '3.13'" },
@@ -305,9 +304,9 @@ dependencies = [
     { name = "tokenizers", marker = "python_full_version < '3.13'" },
     { name = "tqdm", marker = "python_full_version < '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/65/f6/e8d3d9d487f95b698c9ff0d04d4e050d8fca9fa4cba58cff60fd519d1976/fastembed-0.7.3.tar.gz", hash = "sha256:04e95eb5ccc706513166c23bf8e5429ed160c5783b7b11514431a77624d480a5", size = 66561, upload-time = "2025-08-29T11:19:46.521Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/26/25/58865e36b6e8a9a0d0ff905b5601aa30db97956327c0df42ec4ed6accc21/fastembed-0.8.0.tar.gz", hash = "sha256:75966edfa8b006ee78514c726bd7f6a50721dadc89305279052be9db72fd53e8", size = 75115, upload-time = "2026-03-23T16:34:41.699Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/19/38/447aabefddda026c3b65b3b9f1fec48ab78b648441e3e530bf8d78b26bdf/fastembed-0.7.3-py3-none-any.whl", hash = "sha256:a377b57843abd773318042960be39f1aef29827530acb98b035a554742a85cdf", size = 105322, upload-time = "2025-08-29T11:19:45.4Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/e8/26b7d78bb8972498c467ca34cb12ee2e60d26ba5eae6d8443189a1af37a5/fastembed-0.8.0-py3-none-any.whl", hash = "sha256:40bee672657574a1009e35ec50030a55f2b426842cb011845379817641bbbbd0", size = 116572, upload-time = "2026-03-23T16:34:40.69Z" },
 ]
 
 [[package]]
@@ -681,7 +680,7 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastembed", marker = "python_full_version >= '3.9' and python_full_version < '3.13' and extra == 'fastembed'", specifier = ">=0.3.3,<1.0.0" },
+    { name = "fastembed", marker = "python_full_version >= '3.9' and python_full_version < '3.13' and extra == 'fastembed'", specifier = ">=0.8.0,<1.0.0" },
     { name = "langchain-core", editable = "../../core" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
     { name = "qdrant-client", specifier = ">=1.15.1,<2.0.0" },
