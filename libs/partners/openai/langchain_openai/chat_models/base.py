@@ -4670,7 +4670,10 @@ def _construct_lc_result_from_responses_api(
 
     response_metadata = {
         k: v
-        for k, v in response.model_dump(exclude_none=True, mode="json").items()
+        # warnings=False due to https://github.com/openai/openai-python/issues/2872
+        for k, v in response.model_dump(
+            exclude_none=True, mode="json", warnings=False
+        ).items()
         if k
         in (
             "created_at",
