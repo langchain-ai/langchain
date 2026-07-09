@@ -4505,18 +4505,18 @@ def test_defer_loading_in_responses_api_payload() -> None:
 
 def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
-    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key="test")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
     assert llm.openai_api_base == "https://gateway.smith.langchain.com/openai/v1"
     assert llm.stream_usage is True
 
 
 def test_langsmith_gateway_false(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
-    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key="test")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
     assert llm.openai_api_base is None
 
 
 def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
-    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key="test")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
     assert llm.openai_api_base is None
