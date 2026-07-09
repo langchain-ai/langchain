@@ -3342,15 +3342,14 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
-        Each request can write up to four breakpoints to the cache: in
-        `"implicit"` mode up to three explicit breakpoints (OpenAI adds one
-        implicit breakpoint on the latest message), and in `"explicit"` mode up
-        to four explicit breakpoints. For reads, OpenAI considers up to the
-        latest 80 breakpoints in the conversation.
+        OpenAI limits how many breakpoints can write to the cache in a single
+        request. In `"implicit"` mode, the implicit breakpoint on the latest
+        message uses one write slot, so up to three explicit breakpoints can
+        write. In `"explicit"` mode, up to four explicit breakpoints can write.
+        For reads, OpenAI considers up to the latest 50 breakpoints.
 
-        `prompt_cache_retention` is a deprecated way to request extended cache
-        retention (OpenAI recommends `prompt_cache_options` with a `ttl`
-        instead). See OpenAI's
+        For models before the GPT-5.6 family that support legacy prompt cache
+        retention, pass `prompt_cache_retention`. See OpenAI's
         [prompt caching docs](https://platform.openai.com/docs/guides/prompt-caching)
         for the current model support list and retention semantics.
 
