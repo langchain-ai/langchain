@@ -1,18 +1,22 @@
 """Unit tests for file search middleware."""
 
 import os
+import subprocess
+import time
 from pathlib import Path
 from typing import Any
 
 import pytest
 from langchain_core.tools import StructuredTool
 
-from langchain.agents.middleware.file_search import (
-    FilesystemFileSearchMiddleware,
+from langchain.agents.middleware._file_search_worker import (
     _expand_include_patterns,
-    _is_valid_include_pattern,
     _is_within_root,
     _match_include_pattern,
+)
+from langchain.agents.middleware.file_search import (
+    FilesystemFileSearchMiddleware,
+    _is_valid_include_pattern,
 )
 
 
@@ -553,6 +557,69 @@ class TestMatchIncludePattern:
     def test_match_pattern_invalid_expansion(self) -> None:
         """Test matching with pattern that cannot be expanded returns False."""
         assert not _match_include_pattern("test.py", "*.{}")
+
+
+class TestPythonSearchTimeout:
+    """Tests for the wall-clock timeout on the Python fallback search."""
+
+    def test_redos_pattern_is_cut_off(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A catastrophically backtracking regex must be killed, not hang."""
+        # `(a+)+$` against a long run of `a`s with a non-matching tail forces
+        # exponential backtracking in `re`, which can take a very long time
+        # without a timeout.
+        (tmp_path / "test.txt").write_text("a" * 40 + "!\n", encoding="utf-8")
+
+        # Shorten the timeout so the test stays fast.
+        monkeypatch.setattr("langchain.agents.middleware.file_search._SEARCH_TIMEOUT_SECONDS", 2)
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        start = time.monotonic()
+        result = middleware.grep_search.func(pattern="(a+)+$")
+        elapsed = time.monotonic() - start
+
+        assert result == "No matches found"
+        # Generous bound: proves the worker was killed at the timeout rather
+        # than left to backtrack to completion.
+        assert elapsed < 30
+
+    def test_python_search_timeout_returns_empty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`_python_search` must return no results when the worker times out."""
+        (tmp_path / "test.txt").write_text("hello\n", encoding="utf-8")
+
+        def fake_run(*args: Any, **kwargs: Any) -> Any:
+            raise subprocess.TimeoutExpired(cmd=args[0], timeout=kwargs["timeout"])
+
+        monkeypatch.setattr("langchain.agents.middleware.file_search.subprocess.run", fake_run)
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert middleware._python_search("hello", "/", None) == {}
+
+    def test_python_search_worker_failure_returns_empty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A worker exiting nonzero must yield no results, not an error."""
+        (tmp_path / "test.txt").write_text("hello\n", encoding="utf-8")
+
+        class DummyResult:
+            returncode = 1
+            stdout = ""
+
+        def fake_run(*_args: Any, **_kwargs: Any) -> DummyResult:
+            return DummyResult()
+
+        monkeypatch.setattr("langchain.agents.middleware.file_search.subprocess.run", fake_run)
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert middleware._python_search("hello", "/", None) == {}
 
 
 class TestGrepEdgeCases:

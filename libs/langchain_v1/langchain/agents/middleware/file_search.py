@@ -9,9 +9,9 @@ from __future__ import annotations
 import fnmatch
 import json
 import operator
-import os
 import re
 import subprocess
+import sys
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,60 +19,14 @@ from typing import Literal
 
 from langchain_core.tools import tool
 
+from langchain.agents.middleware._file_search_worker import (
+    _expand_include_patterns,
+    _is_within_root,
+)
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 
-
-def _is_within_root(candidate: Path, root: Path) -> bool:
-    """Return True iff `candidate` resolves to a path inside `root` (symlinks resolved).
-
-    Args:
-        candidate: The path to check. It is resolved (following symlinks and
-            normalizing `..`) before the containment check.
-        root: The allowed root directory. Also resolved before comparison.
-
-    Returns:
-        `True` if the fully resolved `candidate` lies inside the resolved `root`,
-        using path-segment boundaries; `False` otherwise (including on resolution
-        errors).
-    """
-    try:
-        return candidate.resolve().is_relative_to(root.resolve())
-    except (OSError, ValueError):
-        return False
-
-
-def _expand_include_patterns(pattern: str) -> list[str] | None:
-    """Expand brace patterns like `*.{py,pyi}` into a list of globs."""
-    if "}" in pattern and "{" not in pattern:
-        return None
-
-    expanded: list[str] = []
-
-    def _expand(current: str) -> None:
-        start = current.find("{")
-        if start == -1:
-            expanded.append(current)
-            return
-
-        end = current.find("}", start)
-        if end == -1:
-            raise ValueError
-
-        prefix = current[:start]
-        suffix = current[end + 1 :]
-        inner = current[start + 1 : end]
-        if not inner:
-            raise ValueError
-
-        for option in inner.split(","):
-            _expand(prefix + option + suffix)
-
-    try:
-        _expand(pattern)
-    except ValueError:
-        return None
-
-    return expanded
+_SEARCH_TIMEOUT_SECONDS = 30
+_PYTHON_SEARCH_WORKER_PATH = Path(__file__).with_name("_file_search_worker.py")
 
 
 def _is_valid_include_pattern(pattern: str) -> bool:
@@ -94,15 +48,6 @@ def _is_valid_include_pattern(pattern: str) -> bool:
         return False
 
     return True
-
-
-def _match_include_pattern(basename: str, pattern: str) -> bool:
-    """Return True if the basename matches the include pattern."""
-    expanded = _expand_include_patterns(pattern)
-    if not expanded:
-        return False
-
-    return any(fnmatch.fnmatch(basename, candidate) for candidate in expanded)
 
 
 class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
@@ -315,7 +260,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=30,
+                timeout=_SEARCH_TIMEOUT_SECONDS,
                 check=False,
             )
         except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -349,7 +294,14 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
     def _python_search(
         self, pattern: str, base_path: str, include: str | None
     ) -> dict[str, list[tuple[int, str]]]:
-        """Search using Python regex (fallback)."""
+        """Search using Python regex (fallback).
+
+        The search itself runs in a worker subprocess (`_file_search_worker.py`)
+        bounded by a wall-clock timeout, because a user-controlled regex can
+        trigger catastrophic backtracking (ReDoS) in `re` that cannot be
+        interrupted in-process. On timeout the worker is killed and no results
+        are returned.
+        """
         try:
             base_full = self._validate_and_resolve_path(base_path)
         except ValueError:
@@ -358,45 +310,45 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         if not base_full.exists():
             return {}
 
-        regex = re.compile(pattern)
-        results: dict[str, list[tuple[int, str]]] = {}
+        request = json.dumps(
+            {
+                "pattern": pattern,
+                "base_path": str(base_full),
+                "root_path": str(self.root_path),
+                "include": include,
+                "max_file_size_bytes": self.max_file_size_bytes,
+            }
+        )
 
-        # Walk directory tree without following symlinked directories so traversal
-        # cannot leave the root via a symlinked subdirectory.
-        for walk_root, _dirs, files in os.walk(base_full, followlinks=False):
-            for name in files:
-                file_path = Path(walk_root) / name
+        # `-I` (isolated mode) is required: it keeps the worker's directory off
+        # `sys.path`, where the sibling `types.py` module would shadow the
+        # stdlib `types` module and break the child's stdlib imports.
+        try:
+            result = subprocess.run(  # noqa: S603
+                [sys.executable, "-I", str(_PYTHON_SEARCH_WORKER_PATH)],
+                input=request,
+                capture_output=True,
+                text=True,
+                timeout=_SEARCH_TIMEOUT_SECONDS,
+                check=False,
+            )
+        except (subprocess.TimeoutExpired, OSError):
+            # `subprocess.run` kills the worker on timeout, so a runaway regex
+            # cannot outlive this call.
+            return {}
 
-                # Re-check containment after resolving so an in-root symlinked file
-                # pointing outside the root is never read.
-                if not _is_within_root(file_path, self.root_path):
-                    continue
+        if result.returncode != 0:
+            return {}
 
-                if not file_path.is_file():
-                    continue
+        try:
+            raw = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            return {}
 
-                # Check include filter
-                if include and not _match_include_pattern(file_path.name, include):
-                    continue
-
-                # Skip files that are too large
-                if file_path.stat().st_size > self.max_file_size_bytes:
-                    continue
-
-                try:
-                    content = file_path.read_text()
-                except (UnicodeDecodeError, PermissionError):
-                    continue
-
-                # Search content
-                for line_num, line in enumerate(content.splitlines(), 1):
-                    if regex.search(line):
-                        virtual_path = "/" + str(file_path.relative_to(self.root_path))
-                        if virtual_path not in results:
-                            results[virtual_path] = []
-                        results[virtual_path].append((line_num, line))
-
-        return results
+        return {
+            path: [(line_num, line_text) for line_num, line_text in matches]
+            for path, matches in raw.items()
+        }
 
     @staticmethod
     def _format_grep_results(
