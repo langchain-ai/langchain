@@ -44,7 +44,7 @@ concurrency:
 
 jobs:
   tag-external:
-    if: github.event_name != 'workflow_dispatch'
+    if: github.repository_owner == 'langchain-ai' && github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -112,7 +112,7 @@ jobs:
             console.log(`Added '${label}' label to issue #${issue_number}`);
 
   backfill:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.repository_owner == 'langchain-ai' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read

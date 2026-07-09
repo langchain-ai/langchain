@@ -63,8 +63,9 @@ class _StreamingParser:
             if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
-                    "Please install it to use the defusedxml parser."
-                    "You can install it with `pip install defusedxml` "
+                    "Please install it to use the defusedxml parser. "
+                    "You can install it with `pip install defusedxml`. "
+                    "See https://github.com/tiran/defusedxml for more details"
                 )
                 raise ImportError(msg)
             parser_ = XMLParser(target=TreeBuilder())
@@ -214,8 +215,8 @@ class XMLOutputParser(BaseTransformOutputParser[dict[str, Any]]):
 
         Raises:
             OutputParserException: If the XML is not well-formed.
-            ImportError: If defus`edxml is not installed and the `defusedxml` parser is
-                requested.
+            ImportError: If `defusedxml` is not installed and the `defusedxml` parser
+                is requested.
         """
         # Try to find XML string within triple backticks
         # Imports are temporarily placed here to avoid issue with caching on CI
@@ -224,8 +225,8 @@ class XMLOutputParser(BaseTransformOutputParser[dict[str, Any]]):
             if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
-                    "Please install it to use the defusedxml parser."
-                    "You can install it with `pip install defusedxml`"
+                    "Please install it to use the defusedxml parser. "
+                    "You can install it with `pip install defusedxml`. "
                     "See https://github.com/tiran/defusedxml for more details"
                 )
                 raise ImportError(msg)

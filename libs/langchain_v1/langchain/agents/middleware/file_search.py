@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import fnmatch
 import json
+import operator
 import os
 import re
 import subprocess
@@ -201,7 +202,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             if not matching:
                 return "No files found"
 
-            matching.sort(key=lambda item: item[1], reverse=True)
+            matching.sort(key=operator.itemgetter(1), reverse=True)
             file_paths = [p for p, _ in matching]
             return "\n".join(file_paths)
 

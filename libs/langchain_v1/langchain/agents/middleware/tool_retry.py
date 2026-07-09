@@ -8,6 +8,7 @@ import warnings
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import ToolMessage
+from langgraph.errors import GraphBubbleUp
 
 from langchain.agents.middleware._retry import (
     OnFailure,
@@ -314,6 +315,10 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         for attempt in range(self.max_retries + 1):
             try:
                 return handler(request)
+            except GraphBubbleUp:
+                # Control-flow signals (interrupts, parent commands) must
+                # propagate, not be retried or converted to error messages.
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
@@ -372,6 +377,10 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         for attempt in range(self.max_retries + 1):
             try:
                 return await handler(request)
+            except GraphBubbleUp:
+                # Control-flow signals (interrupts, parent commands) must
+                # propagate, not be retried or converted to error messages.
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 

@@ -853,7 +853,12 @@ def test_exception_handling_callable_message_content_blocks() -> None:
 
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = tool_.invoke(
-        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+        {
+            "type": "tool_call",
+            "args": {},
+            "name": "exception",
+            "id": "call_1",
+        }
     )
 
     assert isinstance(actual, ToolMessage)
@@ -870,7 +875,12 @@ def test_exception_handling_callable_message_content_blocks_sequence() -> None:
 
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = tool_.invoke(
-        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+        {
+            "type": "tool_call",
+            "args": {},
+            "name": "exception",
+            "id": "call_1",
+        }
     )
 
     assert isinstance(actual, ToolMessage)
@@ -887,7 +897,12 @@ def test_exception_handling_callable_invalid_blocks_stringified() -> None:
 
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = tool_.invoke(
-        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+        {
+            "type": "tool_call",
+            "args": {},
+            "name": "exception",
+            "id": "call_1",
+        }
     )
 
     assert isinstance(actual, ToolMessage)
@@ -935,7 +950,12 @@ async def test_async_exception_handling_callable_message_content_blocks() -> Non
 
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = await tool_.ainvoke(
-        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+        {
+            "type": "tool_call",
+            "args": {},
+            "name": "exception",
+            "id": "call_1",
+        }
     )
 
     assert isinstance(actual, ToolMessage)
@@ -954,7 +974,12 @@ async def test_async_exception_handling_callable_message_content_blocks_sequence
 
     tool_ = _FakeExceptionTool(handle_tool_error=handling)
     actual = await tool_.ainvoke(
-        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+        {
+            "type": "tool_call",
+            "args": {},
+            "name": "exception",
+            "id": "call_1",
+        }
     )
 
     assert isinstance(actual, ToolMessage)
@@ -3928,7 +3953,12 @@ def test_tool_invoke_returns_list_of_mixin() -> None:
         ]
 
     result = multi.invoke(
-        {"type": "tool_call", "args": {"x": 3}, "name": "multi", "id": "outer"}
+        {
+            "type": "tool_call",
+            "args": {"x": 3},
+            "name": "multi",
+            "id": "outer",
+        }
     )
     assert isinstance(result, list)
     assert len(result) == 3

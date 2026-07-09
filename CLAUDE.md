@@ -282,7 +282,37 @@ The `echo y |` pipe is required when `--data-dir` is outside the `libs/model-pro
 
 ### Release process
 
-Releases are triggered manually via `.github/workflows/_release.yml` with `working-directory` and `release-version` inputs.
+Each partner package is released independently. The full flow is:
+
+1. **Version bump PR.** Create a PR that bumps three files by one line each:
+   - `langchain_<partner>/_version.py` — `__version__`
+   - `pyproject.toml` — `version`
+   - `uv.lock` — run `uv lock` from the package directory. If the diff includes unrelated changes (e.g. environment-dependent marker lines from a different local Python version), revert them and keep only the `version = "..."` line for the package being released
+
+   Title follows Conventional Commits: `release(<partner>): <version>` (e.g. `release(openrouter): 0.2.6`). Use the branch name `release/<partner>-<version>`.
+
+   Patch vs. minor bump follows in-repo precedent: within a `0.x` series, fixes and additive features get a patch bump (e.g. `session_id` field → 0.2.1→0.2.2, `parallel_tool_calls` → 0.2.3→0.2.4).
+
+2. **Merge the PR** to `master`.
+
+3. **Trigger the release workflow.** Run `gh workflow run` against the "🚀 Package Release" workflow (`_release.yml`, file ID `63880841`):
+
+   ```bash
+   gh workflow run 63880841 --repo langchain-ai/langchain \
+     -f working-directory=<partner> -f release-version=<version>
+   ```
+
+   `working-directory` is the short partner name from the workflow's dropdown (e.g. `openrouter`, not `libs/partners/openrouter`).
+
+4. **The workflow handles everything else automatically** — do **not** create a GitHub release or tag manually. The `mark-release` job (using `ncipollo/release-action`) creates the GitHub release, tag, and release notes after PyPI publish succeeds. The release notes body is auto-generated from commit history between the previous tag and HEAD.
+
+   Monitor the run:
+
+   ```bash
+   gh run view <run-id> --repo langchain-ai/langchain
+   ```
+
+   The full job chain is: build → release-notes → pre-release-checks → TestPyPI publish → PyPI publish → tag GitHub release.
 
 ### PR labeling and linting
 
@@ -294,6 +324,22 @@ Releases are triggered manually via `.github/workflows/_release.yml` with `worki
 - `.github/workflows/pr_labeler_backfill.yml` – Manual backfill of PR labels on open PRs
 - `.github/workflows/auto-label-by-package.yml` – Issue labeling by package
 - `.github/workflows/tag-external-issues.yml` – Issue external/internal classification
+
+### Integration test tracing (LangSmith)
+
+Scheduled and manually dispatched integration tests (`integration_tests.yml`) trace every run to LangSmith so failures link back to the originating Actions run. (`_release.yml` runs integration tests too, but does not currently configure LangSmith tracing.)
+
+**Env vars set by CI:**
+
+- `LANGSMITH_API_KEY` — authenticates to LangSmith (repo secret, scoped to the "Scheduled testing" GitHub environment in `integration_tests.yml`).
+- `LANGSMITH_TRACING: "true"` — enables tracing for the test process.
+- `LANGSMITH_PROJECT` — the project traces are sent to. Defaults to `scheduled-testing-py` via a repo variable override: `${{ vars.LANGSMITH_PROJECT || 'scheduled-testing-py' }}`. To change the project, set the `LANGSMITH_PROJECT` repository variable in GitHub settings — do not hardcode it in the workflow.
+- `LANGSMITH_TAGS` — comma-separated tags identifying the run: `github-actions`, the matrix working directory (e.g. `libs/partners/openai`), the Python version, and the commit SHA.
+- `LANGSMITH_METADATA` — a JSON object built by the "Build LangSmith Metadata" step, containing `github_sha`, `github_run_id`, `github_run_attempt`, `github_run_url`, `github_workflow`, `github_event`, `github_ref`, `working_directory`, and `python_version`.
+
+**The tracing bridge plugin:** The LangSmith SDK does not natively read `LANGSMITH_TAGS` or `LANGSMITH_METADATA` from the environment. The pytest plugin at `libs/standard-tests/langchain_tests/_langsmith_plugin.py` bridges that gap by entering `langsmith.run_helpers.tracing_context` for the duration of the test session. It only activates when `GITHUB_ACTIONS=true`, so local development is unaffected. Auto-discovered via the `pytest11` entry point in any package that depends on `langchain-tests`.
+
+**Unit test isolation:** Unit tests must never make network calls or send traces. The `make test` target in the `libs/core` Makefile uses `env -u` to unset the tracing vars (`LANGCHAIN_TRACING_V2`, `LANGCHAIN_API_KEY`, `LANGSMITH_API_KEY`, `LANGSMITH_TRACING`, `LANGCHAIN_PROJECT`) before running pytest. Additionally, `libs/core/tests/unit_tests/runnables/conftest.py` has a session-scoped autouse fixture that explicitly disables tracing for runnable unit tests, restoring the original environment afterward.
 
 ### Adding a new partner to CI
 
