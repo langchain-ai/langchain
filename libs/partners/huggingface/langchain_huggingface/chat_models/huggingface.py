@@ -1111,7 +1111,7 @@ class ChatHuggingFace(BaseChatModel):
                 - A JSON Schema,
                 - A `TypedDict` class
 
-                Pydantic class is currently supported.
+                Pydantic classes are not currently supported with `function_calling`; use a JSON schema/dict or a JSON mode instead.
 
             method: The method for steering model generation, one of:
 
