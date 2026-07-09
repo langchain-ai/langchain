@@ -1848,6 +1848,66 @@ Content under custom header 2.
     assert output == expected_output
 
 
+def test_md_header_text_splitter_custom_headers_preserve() -> None:
+    """Test custom headers with strip_headers=False preserve header lines.
+
+    The nested-header merge path in aggregate_lines_to_chunks previously
+    only recognized ``#``-style headers via a hardcoded ``[0] == "#"`` check.
+    Custom patterns like ``**Header**`` were never merged, causing the parent
+    header to become a header-only chunk instead of staying with its children.
+    """
+    markdown_document = "**Chapter 1**\n***Section 1***\nBody.\n"
+
+    headers_to_split_on = [
+        ("**", "H1"),
+        ("***", "H2"),
+    ]
+    custom_header_patterns = {"**": 1, "***": 2}
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        custom_header_patterns=custom_header_patterns,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    # Nested custom headers should merge into a single chunk, like standard # headers
+    assert len(output) == 1
+    assert output[0].metadata == {"H1": "Chapter 1", "H2": "Section 1"}
+    assert "**Chapter 1**" in output[0].page_content
+    assert "***Section 1***" in output[0].page_content
+    assert "Body." in output[0].page_content
+
+
+def test_md_header_text_splitter_mixed_headers_preserve() -> None:
+    """Test mixed standard + custom headers with strip_headers=False.
+
+    Verifies that the nested-header merge recognizes custom patterns
+    alongside standard ``#`` headers when preserving headers in output.
+    """
+    markdown_document = "# H1\n**Custom H2**\nContent.\n"
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("**", "Custom Header"),
+    ]
+    custom_header_patterns = {"**": 2}
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        custom_header_patterns=custom_header_patterns,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    # Standard H1 with nested custom H2 should merge into one chunk
+    assert len(output) == 1
+    assert output[0].metadata == {"Header 1": "H1", "Custom Header": "Custom H2"}
+    assert "# H1" in output[0].page_content
+    assert "**Custom H2**" in output[0].page_content
+    assert "Content." in output[0].page_content
+
+
 EXPERIMENTAL_MARKDOWN_DOCUMENT = (
     "# My Header 1\n"
     "Content for header 1\n"

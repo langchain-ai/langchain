@@ -85,6 +85,21 @@ class MarkdownHeaderTextSplitter:
                 return True
         return False
 
+    def _match_header_sep(self, line: str) -> tuple[str, str] | None:
+        """Return (sep, name) if line matches a recognized header, else None."""
+        for sep, name in self.headers_to_split_on:
+            if line.startswith(sep) and (
+                len(line) == len(sep) or line[len(sep)] == " "
+            ):
+                return sep, name
+            if self._is_custom_header(line, sep):
+                return sep, name
+        return None
+
+    def _is_header_line(self, line: str) -> bool:
+        """Check if a line is a recognized header (standard or custom)."""
+        return self._match_header_sep(line) is not None
+
     def aggregate_lines_to_chunks(self, lines: list[LineType]) -> list[Document]:
         """Combine lines with common metadata into chunks.
 
@@ -110,7 +125,9 @@ class MarkdownHeaderTextSplitter:
                 and aggregated_chunks[-1]["metadata"] != line["metadata"]
                 # may be issues if other metadata is present
                 and len(aggregated_chunks[-1]["metadata"]) < len(line["metadata"])
-                and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
+                and self._is_header_line(
+                    aggregated_chunks[-1]["content"].split("\n")[-1]
+                )
                 and not self.strip_headers
             ):
                 # If the last line in the aggregated list
@@ -181,73 +198,64 @@ class MarkdownHeaderTextSplitter:
                 current_content.append(stripped_line)
                 continue
 
-            # Check each line against each of the header types (e.g., #, ##)
-            for sep, name in self.headers_to_split_on:
-                is_standard_header = stripped_line.startswith(sep) and (
-                    # Header with no text OR header is followed by space
-                    # Both are valid conditions that sep is being used a header
-                    len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
-                )
-                is_custom_header = self._is_custom_header(stripped_line, sep)
+            # Check if the line matches any recognized header pattern
+            match = self._match_header_sep(stripped_line)
+            if match:
+                sep, name = match
+                # Ensure we are tracking the header as metadata
+                if name is not None:
+                    # Get the current header level
+                    if sep in self.custom_header_patterns:
+                        current_header_level = self.custom_header_patterns[sep]
+                    else:
+                        current_header_level = sep.count("#")
 
-                # Check if line matches either standard or custom header pattern
-                if is_standard_header or is_custom_header:
-                    # Ensure we are tracking the header as metadata
-                    if name is not None:
-                        # Get the current header level
-                        if sep in self.custom_header_patterns:
-                            current_header_level = self.custom_header_patterns[sep]
-                        else:
-                            current_header_level = sep.count("#")
+                    # Pop out headers of lower or same level from the stack
+                    while (
+                        header_stack
+                        and header_stack[-1]["level"] >= current_header_level
+                    ):
+                        # We have encountered a new header
+                        # at the same or higher level
+                        popped_header = header_stack.pop()
+                        # Clear the metadata for the
+                        # popped header in initial_metadata
+                        if popped_header["name"] in initial_metadata:
+                            initial_metadata.pop(popped_header["name"])
 
-                        # Pop out headers of lower or same level from the stack
-                        while (
-                            header_stack
-                            and header_stack[-1]["level"] >= current_header_level
-                        ):
-                            # We have encountered a new header
-                            # at the same or higher level
-                            popped_header = header_stack.pop()
-                            # Clear the metadata for the
-                            # popped header in initial_metadata
-                            if popped_header["name"] in initial_metadata:
-                                initial_metadata.pop(popped_header["name"])
+                    # Push the current header to the stack
+                    # Extract header text based on header type
+                    if self._is_custom_header(stripped_line, sep):
+                        # For custom headers like **Header**, extract text
+                        # between patterns
+                        header_text = stripped_line[len(sep) : -len(sep)].strip()
+                    else:
+                        # For standard headers like # Header, extract text
+                        # after the separator
+                        header_text = stripped_line[len(sep) :].strip()
 
-                        # Push the current header to the stack
-                        # Extract header text based on header type
-                        if is_custom_header:
-                            # For custom headers like **Header**, extract text
-                            # between patterns
-                            header_text = stripped_line[len(sep) : -len(sep)].strip()
-                        else:
-                            # For standard headers like # Header, extract text
-                            # after the separator
-                            header_text = stripped_line[len(sep) :].strip()
+                    header: HeaderType = {
+                        "level": current_header_level,
+                        "name": name,
+                        "data": header_text,
+                    }
+                    header_stack.append(header)
+                    # Update initial_metadata with the current header
+                    initial_metadata[name] = header["data"]
 
-                        header: HeaderType = {
-                            "level": current_header_level,
-                            "name": name,
-                            "data": header_text,
+                # Add the previous line to the lines_with_metadata
+                # only if current_content is not empty
+                if current_content:
+                    lines_with_metadata.append(
+                        {
+                            "content": "\n".join(current_content),
+                            "metadata": current_metadata.copy(),
                         }
-                        header_stack.append(header)
-                        # Update initial_metadata with the current header
-                        initial_metadata[name] = header["data"]
+                    )
+                    current_content.clear()
 
-                    # Add the previous line to the lines_with_metadata
-                    # only if current_content is not empty
-                    if current_content:
-                        lines_with_metadata.append(
-                            {
-                                "content": "\n".join(current_content),
-                                "metadata": current_metadata.copy(),
-                            }
-                        )
-                        current_content.clear()
-
-                    if not self.strip_headers:
-                        current_content.append(stripped_line)
-
-                    break
+                if not self.strip_headers:
+                    current_content.append(stripped_line)
             else:
                 if stripped_line:
                     current_content.append(stripped_line)
