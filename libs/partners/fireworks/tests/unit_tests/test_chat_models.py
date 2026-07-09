@@ -36,6 +36,7 @@ from langchain_fireworks.chat_models import (
     _convert_message_to_dict,
     _format_message_content,
     _sanitize_chat_completions_content,
+    _update_token_usage,
     _usage_to_metadata,
 )
 
@@ -1066,6 +1067,153 @@ class TestUsageToMetadata:
         result = _usage_to_metadata({})
         assert result == {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
 
+    def test_explicit_none_fields_coerced_to_zero(self) -> None:
+        """Provider may send explicit `None` values; coerce them to `0`.
+
+        Guards the `or`-based fallbacks against a `.get(key, default)` regression,
+        which would preserve `None` for a present-but-null key.
+        """
+        result = _usage_to_metadata(
+            {
+                "prompt_tokens": None,
+                "completion_tokens": None,
+                "total_tokens": None,
+            }
+        )
+        assert result == {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
+
+    def test_total_tokens_falls_back_to_sum_when_none(self) -> None:
+        """A null `total_tokens` falls back to `input + output`."""
+        result = _usage_to_metadata(
+            {"prompt_tokens": 7, "completion_tokens": 3, "total_tokens": None}
+        )
+        assert result == {"input_tokens": 7, "output_tokens": 3, "total_tokens": 10}
+
+    def test_cached_prompt_tokens_mapped_to_cache_read(self) -> None:
+        result = _usage_to_metadata(
+            {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+                "prompt_tokens_details": {"cached_tokens": 7},
+            }
+        )
+        assert result == {
+            "input_tokens": 10,
+            "output_tokens": 5,
+            "total_tokens": 15,
+            "input_token_details": {"cache_read": 7},
+        }
+
+
+class TestCombineLLMOutputs:
+    """Tests for combining raw provider token usage across generations."""
+
+    def test_combines_nested_token_usage(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                {
+                    "token_usage": {
+                        "prompt_tokens": 32,
+                        "completion_tokens": 51,
+                        "total_tokens": 83,
+                        "prompt_tokens_details": {"cached_tokens": 0},
+                    },
+                    "system_fingerprint": "fp-1",
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens": 44341,
+                        "completion_tokens": 10,
+                        "total_tokens": 44351,
+                        "prompt_tokens_details": {"cached_tokens": 41518},
+                    },
+                },
+            ]
+        )
+        assert result == {
+            "token_usage": {
+                "prompt_tokens": 44373,
+                "completion_tokens": 61,
+                "total_tokens": 44434,
+                "prompt_tokens_details": {"cached_tokens": 41518},
+            },
+            "model_name": MODEL_NAME,
+            "system_fingerprint": "fp-1",
+        }
+
+    def test_preserves_prior_nested_token_usage_keys(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {
+                            "audio_tokens": 4,
+                            "cached_tokens": 8,
+                        },
+                    },
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {
+                            "audio_tokens": 6,
+                        },
+                    },
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {
+                            "cached_tokens": None,
+                        },
+                    },
+                },
+            ]
+        )
+
+        assert result["token_usage"] == {
+            "prompt_tokens_details": {
+                "audio_tokens": 10,
+                "cached_tokens": 8,
+            },
+        }
+
+    def test_skips_none_token_usage_values(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                {"token_usage": {"prompt_tokens_details": None}},
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {"cached_tokens": 8},
+                    }
+                },
+            ]
+        )
+        assert result["token_usage"] == {"prompt_tokens_details": {"cached_tokens": 8}}
+
+
+class TestUpdateTokenUsage:
+    """Tests for the recursive `_update_token_usage` merge helper.
+
+    The type-mismatch and unexpected-type branches are unreachable with today's
+    stable Fireworks payloads, so they are exercised directly here to lock in the
+    deliberate loud-failure behavior.
+    """
+
+    def test_int_accumulator_with_dict_value_raises(self) -> None:
+        with pytest.raises(ValueError, match="Got different types for token usage"):
+            _update_token_usage(5, {"cached_tokens": 1})
+
+    def test_dict_accumulator_with_int_value_raises(self) -> None:
+        with pytest.raises(ValueError, match="Got different types for token usage"):
+            _update_token_usage({"cached_tokens": 1}, 5)
+
+    def test_unexpected_value_type_raises(self) -> None:
+        with pytest.raises(ValueError, match="Unexpected type for token usage"):
+            _update_token_usage(0, 1.5)  # type: ignore[arg-type]
+
 
 class TestConvertChunkToMessageChunk:
     """Tests for `_convert_chunk_to_message_chunk` empty-choices handling."""
@@ -1106,6 +1254,56 @@ class TestConvertChunkToMessageChunk:
             "input_tokens": 1,
             "output_tokens": 2,
             "total_tokens": 3,
+        }
+
+    def test_usage_chunk_maps_cached_prompt_tokens(self) -> None:
+        chunk = {
+            "choices": [],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 2,
+                "total_tokens": 12,
+                "prompt_tokens_details": {"cached_tokens": 6},
+            },
+        }
+        result = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+        assert isinstance(result, AIMessageChunk)
+        assert result.usage_metadata == {
+            "input_tokens": 10,
+            "output_tokens": 2,
+            "total_tokens": 12,
+            "input_token_details": {"cache_read": 6},
+        }
+
+
+class TestCreateChatResult:
+    """Tests for converting Fireworks responses into chat generations."""
+
+    def test_maps_cached_prompt_tokens_to_message_usage_metadata(self) -> None:
+        model = _make_model()
+        chat_result = model._create_chat_result(
+            {
+                "choices": [
+                    {
+                        "message": {"role": "assistant", "content": "ok"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 20,
+                    "completion_tokens": 3,
+                    "total_tokens": 23,
+                    "prompt_tokens_details": {"cached_tokens": 11},
+                },
+            }
+        )
+        message = chat_result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata == {
+            "input_tokens": 20,
+            "output_tokens": 3,
+            "total_tokens": 23,
+            "input_token_details": {"cache_read": 11},
         }
 
 
