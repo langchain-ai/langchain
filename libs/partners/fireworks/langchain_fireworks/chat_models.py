@@ -964,7 +964,16 @@ class ChatFireworks(BaseChatModel):
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        if isinstance(v, dict) and isinstance(
+                            overall_token_usage[k], dict
+                        ):
+                            overall_token_usage[k].update(v)
+                        elif isinstance(v, (int, float)) and isinstance(
+                            overall_token_usage[k], (int, float)
+                        ):
+                            overall_token_usage[k] += v
+                        else:
+                            overall_token_usage[k] = v
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
