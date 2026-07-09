@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import Any, Literal, cast, get_type_hints, overload
 
 from pydantic import BaseModel, Field, create_model
+from typing_extensions import is_typeddict
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import Runnable
@@ -459,10 +460,15 @@ def convert_runnable_to_tool(
     def invoke_wrapper(callbacks: Callbacks | None = None, **kwargs: Any) -> Any:
         return runnable.invoke(kwargs, config={"callbacks": callbacks})
 
+    is_typed_dict = (
+        is_typeddict(runnable.InputType) if hasattr(runnable, "InputType") else False
+    )
+
     if (
         arg_types is None
         and schema.get("type") == "object"
         and schema.get("properties")
+        and not is_typed_dict
     ):
         args_schema = runnable.input_schema
     else:
