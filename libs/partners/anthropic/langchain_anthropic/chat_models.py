@@ -8,7 +8,9 @@ import hashlib
 import json
 import re
 import warnings
-from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+import inspect
+import asyncio
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
 from typing import Any, Final, Literal, cast
@@ -956,11 +958,20 @@ class ChatAnthropic(BaseChatModel):
     `ANTHROPIC_API_URL` and if that is not set, `ANTHROPIC_BASE_URL`.
     """
 
-    anthropic_api_key: SecretStr = Field(
+    anthropic_api_key: (
+        SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
+    ) = Field(
         alias="api_key",
-        default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
+        default_factory=secret_from_env("ANTHROPIC_API_KEY", default=None),
     )
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
+
+    auth_token_provider: (
+        Callable[[], str] | Callable[[], Awaitable[str]] | None
+    ) = None
+    """Provider function for an authorization token (e.g., for Azure Entra ID).
+    If provided, the resolved token will be sent in the `Authorization: Bearer` header.
+    """
 
     anthropic_proxy: str | None = Field(
         default_factory=from_env("ANTHROPIC_PROXY", default=None)
@@ -1189,8 +1200,17 @@ class ChatAnthropic(BaseChatModel):
         if self.default_headers:
             default_headers.update(self.default_headers)
 
+        if isinstance(self.anthropic_api_key, SecretStr):
+            api_key = self.anthropic_api_key.get_secret_value()
+        elif isinstance(self.anthropic_api_key, str):
+            api_key = self.anthropic_api_key
+        elif self.anthropic_api_key is None and self.auth_token_provider is None:
+            api_key = None
+        else:
+            api_key = "dummy-api-key-for-deferred-resolution"
+
         client_params: dict[str, Any] = {
-            "api_key": self.anthropic_api_key.get_secret_value(),
+            "api_key": api_key,
             "base_url": self.anthropic_api_url,
             "max_retries": self.max_retries,
             "default_headers": default_headers,
@@ -1427,12 +1447,71 @@ class ChatAnthropic(BaseChatModel):
 
         return {k: v for k, v in payload.items() if v is not None}
 
+    def _resolve_auth_headers(self) -> dict[str, str]:
+        if self.auth_token_provider is not None:
+            token = self.auth_token_provider()
+            if inspect.isawaitable(token):
+                try:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    loop = None
+                if loop and loop.is_running():
+                    raise RuntimeError(
+                        "Cannot use async auth_token_provider in sync methods when an event loop is running. "
+                        "Use the async methods (e.g. ainvoke, astream) instead."
+                    )
+                token = asyncio.run(token)
+            return {"Authorization": f"Bearer {token}"}
+        elif self.anthropic_api_key is not None:
+            if isinstance(self.anthropic_api_key, SecretStr):
+                return {"x-api-key": self.anthropic_api_key.get_secret_value()}
+            elif isinstance(self.anthropic_api_key, str):
+                return {"x-api-key": self.anthropic_api_key}
+            else:
+                key = self.anthropic_api_key()
+                if inspect.isawaitable(key):
+                    try:
+                        loop = asyncio.get_running_loop()
+                    except RuntimeError:
+                        loop = None
+                    if loop and loop.is_running():
+                        raise RuntimeError(
+                            "Cannot use async api_key callable in sync methods when an event loop is running."
+                        )
+                    key = asyncio.run(key)
+                return {"x-api-key": key}
+        return {}
+
+    async def _aresolve_auth_headers(self) -> dict[str, str]:
+        if self.auth_token_provider is not None:
+            token = self.auth_token_provider()
+            if inspect.isawaitable(token):
+                token = await token
+            return {"Authorization": f"Bearer {token}"}
+        elif self.anthropic_api_key is not None:
+            if isinstance(self.anthropic_api_key, SecretStr):
+                return {"x-api-key": self.anthropic_api_key.get_secret_value()}
+            elif isinstance(self.anthropic_api_key, str):
+                return {"x-api-key": self.anthropic_api_key}
+            else:
+                key = self.anthropic_api_key()
+                if inspect.isawaitable(key):
+                    key = await key
+                return {"x-api-key": key}
+        return {}
+
     def _create(self, payload: dict) -> Any:
+        auth_headers = self._resolve_auth_headers()
+        if auth_headers:
+            payload["extra_headers"] = {**payload.get("extra_headers", {}), **auth_headers}
         if "betas" in payload:
             return self._client.beta.messages.create(**payload)
         return self._client.messages.create(**payload)
 
     async def _acreate(self, payload: dict) -> Any:
+        auth_headers = await self._aresolve_auth_headers()
+        if auth_headers:
+            payload["extra_headers"] = {**payload.get("extra_headers", {}), **auth_headers}
         if "betas" in payload:
             return await self._async_client.beta.messages.create(**payload)
         return await self._async_client.messages.create(**payload)
