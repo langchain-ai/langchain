@@ -227,12 +227,14 @@ class Fireworks(LLM):
                 msg = f"Fireworks Server: Error {response.status}"
                 raise Exception(msg)
             if response.status >= 400:
-                msg = f"Fireworks received an invalid payload: {response.text}"
+                error_text = await response.text()
+                msg = f"Fireworks received an invalid payload: {error_text}"
                 raise ValueError(msg)
             if response.status != 200:
+                error_text = await response.text()
                 msg = (
                     f"Fireworks returned an unexpected response with status "
-                    f"{response.status}: {response.text}"
+                    f"{response.status}: {error_text}"
                 )
                 raise Exception(msg)
 

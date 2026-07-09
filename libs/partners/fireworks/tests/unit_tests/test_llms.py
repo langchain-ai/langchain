@@ -1,9 +1,12 @@
 """Test Fireworks LLM."""
 
 from typing import cast
+from unittest.mock import patch
 
+import pytest
 from pydantic import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
+from typing_extensions import Self
 
 from langchain_fireworks import Fireworks
 
@@ -97,3 +100,59 @@ def test_fireworks_model_params() -> None:
         "ls_max_tokens": 10,
         "ls_temperature": 0.1,
     }
+
+
+class _FakeAsyncResponse:
+    """Minimal stand-in for an `aiohttp.ClientResponse` used as an async CM."""
+
+    def __init__(self, status: int, body: str) -> None:
+        self.status = status
+        self._body = body
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, *args: object) -> bool:
+        return False
+
+    async def text(self) -> str:
+        return self._body
+
+    async def json(self) -> dict:
+        return {}
+
+
+class _FakeAsyncSession:
+    """Minimal stand-in for an `aiohttp.ClientSession` used as an async CM."""
+
+    def __init__(self, response: _FakeAsyncResponse) -> None:
+        self._response = response
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, *args: object) -> bool:
+        return False
+
+    def post(self, *args: object, **kwargs: object) -> _FakeAsyncResponse:
+        return self._response
+
+
+async def test_fireworks_acall_error_surfaces_response_body() -> None:
+    """Async error paths should include the API response body, not a coroutine repr.
+
+    On an `aiohttp` response, `.text` is a coroutine method, not a property (as it is
+    on a `requests` response), so `_acall` must `await` it. Regression test: the raised
+    error must contain the real API message, not `<bound method ...>`.
+    """
+    response = _FakeAsyncResponse(status=400, body="model does not exist")
+    llm = Fireworks(model="foo", api_key="secret-api-key")  # type: ignore[arg-type]
+    with (
+        patch(
+            "langchain_fireworks.llms.ClientSession",
+            return_value=_FakeAsyncSession(response),
+        ),
+        pytest.raises(ValueError, match="model does not exist") as exc_info,
+    ):
+        await llm._acall("hi")
+    assert "bound method" not in str(exc_info.value)
