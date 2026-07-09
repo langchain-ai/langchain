@@ -1,6 +1,7 @@
 """Test Groq Chat API wrapper."""
 
 import json
+import logging
 import os
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -25,6 +26,7 @@ from langchain_groq.chat_models import (
     _convert_dict_to_message,
     _create_usage_metadata,
     _format_message_content,
+    _update_token_usage,
 )
 
 if "GROQ_API_KEY" not in os.environ:
@@ -1115,6 +1117,61 @@ def test_combine_llm_outputs_does_not_mutate_inputs() -> None:
     assert first_details == {"cached_tokens": 80}
     assert result["token_usage"]["input_tokens_details"] is not first_details
     assert result["token_usage"]["input_tokens_details"] == {"cached_tokens": 230}
+
+
+def test_combine_llm_outputs_preserves_prior_nested_keys() -> None:
+    """Nested keys absent from a later output survive the merge."""
+    llm = ChatGroq(model="test-model")
+    llm_outputs: list[dict[str, Any] | None] = [
+        {
+            "token_usage": {
+                "input_tokens_details": {"cached_tokens": 5, "audio_tokens": 2},
+            },
+            "model_name": "test-model",
+        },
+        {
+            "token_usage": {"input_tokens_details": {"cached_tokens": 3}},
+            "model_name": "test-model",
+        },
+    ]
+
+    result = llm._combine_llm_outputs(llm_outputs)
+
+    assert result["token_usage"]["input_tokens_details"] == {
+        "cached_tokens": 8,
+        "audio_tokens": 2,
+    }
+
+
+def test_update_token_usage_first_seen_nested_dict_merges() -> None:
+    """A first-seen nested `dict` node seeds as a dict instead of raising."""
+    result = _update_token_usage(
+        {"details": {"a": 1}},
+        {"details": {"a": 2, "nested": {"b": 3}}},
+    )
+    assert result == {"details": {"a": 3, "nested": {"b": 3}}}
+
+
+@pytest.mark.parametrize(
+    ("overall", "new"),
+    [
+        pytest.param(5, {"cached_tokens": 1}, id="number-accumulator-dict-value"),
+        pytest.param({"cached_tokens": 1}, 5, id="dict-accumulator-number-value"),
+    ],
+)
+def test_update_token_usage_mismatched_types_raise(overall: Any, new: Any) -> None:
+    with pytest.raises(TypeError, match="Got different types for token usage"):
+        _update_token_usage(overall, new)
+
+
+def test_update_token_usage_unexpected_leaf_warns_and_passes_through(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Floats are valid Groq leaves; a truly unexpected type logs, not crashes."""
+    with caplog.at_level(logging.WARNING):
+        result = _update_token_usage(0, "oops")  # type: ignore[arg-type]
+    assert result == "oops"
+    assert "Unexpected type for token usage" in caplog.text
 
 
 def test_profile() -> None:
