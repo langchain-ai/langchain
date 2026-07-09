@@ -21,6 +21,9 @@ from langchain_core.tools import tool
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 
+_MAX_REGEX_PATTERN_LENGTH = 1000
+_MAX_REGEX_LINE_LENGTH = 10000
+
 
 def _is_within_root(candidate: Path, root: Path) -> bool:
     """Return True iff `candidate` resolves to a path inside `root` (symlinks resolved).
@@ -358,7 +361,13 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         if not base_full.exists():
             return {}
 
-        regex = re.compile(pattern)
+        if len(pattern) > _MAX_REGEX_PATTERN_LENGTH:
+            return {}
+
+        try:
+            regex = re.compile(pattern)
+        except re.error:
+            return {}
         results: dict[str, list[tuple[int, str]]] = {}
 
         # Walk directory tree without following symlinked directories so traversal
@@ -390,6 +399,8 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
 
                 # Search content
                 for line_num, line in enumerate(content.splitlines(), 1):
+                    if len(line) > _MAX_REGEX_LINE_LENGTH:
+                        continue
                     if regex.search(line):
                         virtual_path = "/" + str(file_path.relative_to(self.root_path))
                         if virtual_path not in results:
