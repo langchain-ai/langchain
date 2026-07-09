@@ -768,18 +768,23 @@ class ChatFireworks(BaseChatModel):
 
     fireworks_api_key: SecretStr = Field(
         alias="api_key",
-        default_factory=secret_from_env(
-            "FIREWORKS_API_KEY",
-            error_message=(
-                "You must specify an api key. "
-                "You can pass it an argument as `api_key=...` or "
-                "set the environment variable `FIREWORKS_API_KEY`."
-            ),
+        default_factory=lambda: SecretStr(
+            os.getenv("LANGSMITH_GATEWAY_API_KEY")
+            or secret_from_env(
+                "FIREWORKS_API_KEY",
+                error_message=(
+                    "You must specify an api key. "
+                    "You can pass it an argument as `api_key=...` or "
+                    "set the environment variable `FIREWORKS_API_KEY`."
+                ),
+            )().get_secret_value()
         ),
     )
     """Fireworks API key.
 
     Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
+
+    If `LANGSMITH_GATEWAY_API_KEY` is set, it takes precedence.
     """
 
     fireworks_api_base: str | None = Field(

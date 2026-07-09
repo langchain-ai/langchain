@@ -974,9 +974,15 @@ class ChatAnthropic(BaseChatModel):
 
     anthropic_api_key: SecretStr = Field(
         alias="api_key",
-        default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
+        default_factory=lambda: SecretStr(
+            os.getenv("LANGSMITH_GATEWAY_API_KEY")
+            or secret_from_env("ANTHROPIC_API_KEY", default="")().get_secret_value()
+        ),
     )
-    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided.
+
+    If `LANGSMITH_GATEWAY_API_KEY` is set, it takes precedence.
+    """
 
     anthropic_proxy: str | None = Field(
         default_factory=from_env("ANTHROPIC_PROXY", default=None)

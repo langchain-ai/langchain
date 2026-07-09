@@ -1212,6 +1212,11 @@ class BaseChatOpenAI(BaseChatModel):
         sync_api_key_value: str | Callable[[], str] | None = None
         async_api_key_value: str | Callable[[], Awaitable[str]] | None = None
 
+        if self.openai_api_key is None:
+            gateway_api_key = os.getenv("LANGSMITH_GATEWAY_API_KEY")
+            if gateway_api_key is not None:
+                self.openai_api_key = SecretStr(gateway_api_key)
+
         if self.openai_api_key is not None:
             # Because OpenAI and AsyncOpenAI clients support either sync or async
             # callables for the API key, we need to resolve separate values here.

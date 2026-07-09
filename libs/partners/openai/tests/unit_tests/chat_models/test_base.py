@@ -4520,3 +4520,12 @@ def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
     assert llm.openai_api_base is None
+
+
+def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "gateway-key"
