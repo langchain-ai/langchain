@@ -4501,3 +4501,22 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key="test")
+    assert llm.openai_api_base == "https://gateway.smith.langchain.com/openai/v1"
+    assert llm.stream_usage is True
+
+
+def test_langsmith_gateway_false(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key="test")
+    assert llm.openai_api_base is None
+
+
+def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key="test")
+    assert llm.openai_api_base is None

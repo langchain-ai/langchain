@@ -1591,3 +1591,23 @@ def test_request_timeout_tuple_normalized_to_httpx_timeout(
     assert forwarded.connect == 5.0
     assert forwarded.read == 30.0
     assert async_mock.call_args.kwargs["timeout"] == forwarded
+
+
+def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://gateway.smith.langchain.com/fireworks"
+
+
+def test_langsmith_gateway_false(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
+    llm = _make_model()
+    assert llm.fireworks_api_base is None
+
+
+def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
+    llm = _make_model()
+    assert llm.fireworks_api_base is None

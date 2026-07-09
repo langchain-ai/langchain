@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import os
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -107,6 +108,17 @@ logger = logging.getLogger(__name__)
 
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+_LANGSMITH_GATEWAY_DEFAULT_URL = "https://gateway.smith.langchain.com/fireworks"
+
+
+def _resolve_gateway_base_url() -> str | None:
+    raw = os.getenv("LANGSMITH_GATEWAY")
+    if raw is None or raw.lower() in ("false", "0", "no"):
+        return None
+    if raw.lower() in ("true", "1", "yes"):
+        return _LANGSMITH_GATEWAY_DEFAULT_URL
+    return raw
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -771,10 +783,14 @@ class ChatFireworks(BaseChatModel):
     """
 
     fireworks_api_base: str | None = Field(
-        alias="base_url", default_factory=from_env("FIREWORKS_API_BASE", default=None)
+        alias="base_url",
+        default_factory=lambda: _resolve_gateway_base_url()
+        or from_env("FIREWORKS_API_BASE", default=None)(),
     )
     """Base URL path for API requests, leave blank if not using a proxy or service
     emulator.
+
+    If `LANGSMITH_GATEWAY` is set, it takes precedence over `FIREWORKS_API_BASE`.
     """
 
     request_timeout: float | tuple[float, float] | Any | None = Field(

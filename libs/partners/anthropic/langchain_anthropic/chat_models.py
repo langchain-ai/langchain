@@ -6,6 +6,7 @@ import copy
 import datetime
 import hashlib
 import json
+import os
 import re
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
@@ -75,6 +76,18 @@ _message_type_lookups = {
 }
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
+
+_LANGSMITH_GATEWAY_DEFAULT_URL = "https://gateway.smith.langchain.com/anthropic"
+
+
+def _resolve_gateway_base_url() -> str | None:
+    raw = os.getenv("LANGSMITH_GATEWAY")
+    if raw is None or raw.lower() in ("false", "0", "no"):
+        return None
+    if raw.lower() in ("true", "1", "yes"):
+        return _LANGSMITH_GATEWAY_DEFAULT_URL
+    return raw
+
 
 _USER_AGENT: Final[str] = f"langchain-anthropic/{__version__}"
 
@@ -945,15 +958,18 @@ class ChatAnthropic(BaseChatModel):
 
     anthropic_api_url: str | None = Field(
         alias="base_url",
-        default_factory=from_env(
+        default_factory=lambda: _resolve_gateway_base_url()
+        or from_env(
             ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
             default="https://api.anthropic.com",
-        ),
+        )(),
     )
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value first from
     `ANTHROPIC_API_URL` and if that is not set, `ANTHROPIC_BASE_URL`.
+
+    If `LANGSMITH_GATEWAY` is set, it takes precedence over both env vars.
     """
 
     anthropic_api_key: SecretStr = Field(

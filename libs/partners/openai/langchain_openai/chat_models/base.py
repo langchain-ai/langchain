@@ -178,6 +178,17 @@ def _get_ssrf_safe_client() -> httpx.Client:
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
+_LANGSMITH_GATEWAY_DEFAULT_URL = "https://gateway.smith.langchain.com/openai/v1"
+
+
+def _resolve_gateway_base_url() -> str | None:
+    raw = os.getenv("LANGSMITH_GATEWAY")
+    if raw is None or raw.lower() in ("false", "0", "no"):
+        return None
+    if raw.lower() in ("true", "1", "yes"):
+        return _LANGSMITH_GATEWAY_DEFAULT_URL
+    return raw
+
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
@@ -1167,26 +1178,33 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
+        _gateway_base_url = _resolve_gateway_base_url()
+        _base_url_from_gateway = False
+        if self.openai_api_base is None:
+            if _gateway_base_url is not None:
+                self.openai_api_base = _gateway_base_url
+                _base_url_from_gateway = True
+            else:
+                self.openai_api_base = os.getenv("OPENAI_API_BASE")
 
-        # Enable stream_usage by default if using default base URL and client
-        if (
-            all(
-                getattr(self, key, None) is None
-                for key in (
-                    "stream_usage",
-                    "openai_proxy",
-                    "openai_api_base",
-                    "base_url",
-                    "client",
-                    "root_client",
-                    "async_client",
-                    "root_async_client",
-                    "http_client",
-                    "http_async_client",
-                )
+        # Enable stream_usage by default if using default base URL and client,
+        # or when the base URL was set by the LangSmith gateway (which proxies
+        # to OpenAI and supports streaming token usage).
+        if all(
+            getattr(self, key, None) is None
+            for key in (
+                "stream_usage",
+                "openai_proxy",
+                "client",
+                "root_client",
+                "async_client",
+                "root_async_client",
+                "http_client",
+                "http_async_client",
             )
-            and "OPENAI_BASE_URL" not in os.environ
+        ) and (
+            _base_url_from_gateway
+            or (self.openai_api_base is None and "OPENAI_BASE_URL" not in os.environ)
         ):
             self.stream_usage = True
 
