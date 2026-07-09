@@ -138,6 +138,32 @@ def test_validate_model_on_init(mock_validate_model: Any) -> None:
     mock_validate_model.assert_not_called()
 
 
+def test_max_retries_is_a_constructor_field() -> None:
+    """Test that `max_retries` is retained as a first-class model field."""
+    assert "max_retries" in ChatOllama.model_fields
+
+    with (
+        patch("langchain_ollama.chat_models.httpx.HTTPTransport") as mock_transport,
+        patch("langchain_ollama.chat_models.httpx.AsyncHTTPTransport") as mock_async_transport,
+        patch("langchain_ollama.chat_models.Client") as mock_client_class,
+        patch("langchain_ollama.chat_models.AsyncClient") as mock_async_client_class,
+    ):
+        sync_transport = MagicMock(name="sync_transport")
+        async_transport = MagicMock(name="async_transport")
+        mock_transport.return_value = sync_transport
+        mock_async_transport.return_value = async_transport
+        mock_client_class.return_value = MagicMock()
+        mock_async_client_class.return_value = AsyncMock()
+
+        llm = ChatOllama(model=MODEL_NAME, max_retries=3)
+
+        assert llm.max_retries == 3
+        mock_transport.assert_called_once_with(retries=3)
+        mock_async_transport.assert_called_once_with(retries=3)
+        assert mock_client_class.call_args.kwargs["transport"] is sync_transport
+        assert mock_async_client_class.call_args.kwargs["transport"] is async_transport
+
+
 @pytest.mark.parametrize(
     ("input_string", "expected_output"),
     [

@@ -50,6 +50,7 @@ from operator import itemgetter
 from typing import Any, Literal, cast
 from uuid import uuid4
 
+import httpx
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
 from langchain_core.exceptions import OutputParserException
@@ -737,6 +738,13 @@ class ChatOllama(BaseChatModel):
     For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#client).
     """
 
+    max_retries: int | None = None
+    """Maximum number of retries for client requests.
+
+    Applies to the underlying HTTP transport used by both the sync and async
+    Ollama clients. Set to `0` or `None` to disable retries.
+    """
+
     _client: Client = PrivateAttr()
     """The client to use for making requests."""
 
@@ -950,9 +958,21 @@ class ChatOllama(BaseChatModel):
         if self.sync_client_kwargs:
             sync_client_kwargs = {**sync_client_kwargs, **self.sync_client_kwargs}
 
+        if self.max_retries is not None and "transport" not in sync_client_kwargs:
+            sync_client_kwargs = {
+                **sync_client_kwargs,
+                "transport": httpx.HTTPTransport(retries=self.max_retries),
+            }
+
         async_client_kwargs = client_kwargs
         if self.async_client_kwargs:
             async_client_kwargs = {**async_client_kwargs, **self.async_client_kwargs}
+
+        if self.max_retries is not None and "transport" not in async_client_kwargs:
+            async_client_kwargs = {
+                **async_client_kwargs,
+                "transport": httpx.AsyncHTTPTransport(retries=self.max_retries),
+            }
 
         self._client = Client(host=cleaned_url, **sync_client_kwargs)
         self._async_client = AsyncClient(host=cleaned_url, **async_client_kwargs)
