@@ -769,7 +769,11 @@ class ChatFireworks(BaseChatModel):
     fireworks_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=lambda: SecretStr(
-            os.getenv("LANGSMITH_GATEWAY_API_KEY")
+            (
+                os.getenv("LANGSMITH_GATEWAY_API_KEY")
+                if _resolve_gateway_base_url() is not None
+                else None
+            )
             or secret_from_env(
                 "FIREWORKS_API_KEY",
                 error_message=(
@@ -784,7 +788,7 @@ class ChatFireworks(BaseChatModel):
 
     Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
 
-    If `LANGSMITH_GATEWAY_API_KEY` is set, it takes precedence.
+    If `LANGSMITH_GATEWAY` is enabled, `LANGSMITH_GATEWAY_API_KEY` takes precedence.
     """
 
     fireworks_api_base: str | None = Field(

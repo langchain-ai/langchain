@@ -1619,3 +1619,13 @@ def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("FIREWORKS_API_KEY", raising=False)
     llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
     assert llm.fireworks_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_api_key_not_used_without_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "provider-key"
