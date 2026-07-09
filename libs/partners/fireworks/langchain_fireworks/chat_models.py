@@ -11,6 +11,7 @@ from typing import (
     Any,
     Literal,
     NoReturn,
+    TypeAlias,
     cast,
 )
 
@@ -406,25 +407,39 @@ def _usage_to_metadata(usage: Mapping[str, Any]) -> UsageMetadata:
     }
     cached_tokens = (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
     if cached_tokens is not None:
-        usage_metadata["input_token_details"] = {"cache_read": int(cached_tokens)}
+        usage_metadata["input_token_details"] = {"cache_read": cached_tokens}
     return usage_metadata
 
 
+TokenUsageTree: TypeAlias = "int | dict[str, TokenUsageTree]"
+"""Raw provider token usage: a tree of `int` leaves and nested `dict` nodes
+(e.g. `prompt_tokens_details`).
+
+Modeled as a recursive alias so the merge helper's signature carries the shape
+rather than leaving it to `Any`.
+"""
+
+
 def _update_token_usage(
-    overall_token_usage: int | dict[str, Any], new_usage: int | dict[str, Any]
-) -> int | dict[str, Any]:
+    overall_token_usage: TokenUsageTree, new_usage: TokenUsageTree
+) -> TokenUsageTree:
     """Recursively merge raw provider token usage across generations.
 
     Token usage is a tree of `int` leaves (summed) and `dict` nodes such as
-    `prompt_tokens_details` (merged key-by-key). A type mismatch between the
-    accumulator and the incoming value indicates malformed provider data and is
-    raised loudly rather than silently coerced.
+    `prompt_tokens_details` (merged key-by-key, skipping `None` values).
+
+    A type mismatch between the accumulator and the incoming value (e.g. an
+    `int` on one side and a `dict` on the other) indicates malformed provider
+    data and is raised rather than silently coerced. An entirely unexpected
+    leaf type (neither `int` nor `dict`) is logged and passed through, so a
+    telemetry anomaly degrades gracefully instead of failing the response.
     """
     if isinstance(new_usage, int):
         if not isinstance(overall_token_usage, int):
             msg = (
                 "Got different types for token usage: "
-                f"{type(new_usage)} and {type(overall_token_usage)}"
+                f"{new_usage!r} ({type(new_usage).__name__}) and "
+                f"{overall_token_usage!r} ({type(overall_token_usage).__name__})"
             )
             raise ValueError(msg)
         return overall_token_usage + new_usage
@@ -432,18 +447,22 @@ def _update_token_usage(
         if not isinstance(overall_token_usage, dict):
             msg = (
                 "Got different types for token usage: "
-                f"{type(new_usage)} and {type(overall_token_usage)}"
+                f"{new_usage!r} ({type(new_usage).__name__}) and "
+                f"{overall_token_usage!r} ({type(overall_token_usage).__name__})"
             )
             raise ValueError(msg)
         updated_token_usage = dict(overall_token_usage)
         for key, value in new_usage.items():
             if value is not None:
+                # Seed a first-seen key with an empty node of the same kind so a
+                # nested `dict` value merges rather than colliding with an `int`.
+                default: TokenUsageTree = {} if isinstance(value, dict) else 0
                 updated_token_usage[key] = _update_token_usage(
-                    overall_token_usage.get(key, 0), value
+                    overall_token_usage.get(key, default), value
                 )
         return updated_token_usage
-    msg = f"Unexpected type for token usage: {type(new_usage)}"
-    raise ValueError(msg)
+    logger.warning("Unexpected type for token usage: %s", type(new_usage).__name__)
+    return new_usage
 
 
 def _convert_chunk_to_message_chunk(
@@ -1001,7 +1020,7 @@ class ChatFireworks(BaseChatModel):
             if output is None:
                 # Happens in streaming
                 continue
-            token_usage = output["token_usage"]
+            token_usage = output.get("token_usage")
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if v is None:

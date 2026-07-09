@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any
 from unittest.mock import MagicMock
@@ -1105,6 +1106,31 @@ class TestUsageToMetadata:
             "input_token_details": {"cache_read": 7},
         }
 
+    def test_cached_tokens_zero_preserved(self) -> None:
+        """A genuine `0` cache hit is reported, not dropped.
+
+        Guards the `is not None` check against a truthiness (`if cached_tokens:`)
+        regression that would silently omit `cache_read` for a real zero.
+        """
+        result = _usage_to_metadata(
+            {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+                "prompt_tokens_details": {"cached_tokens": 0},
+            }
+        )
+        assert result["input_token_details"] == {"cache_read": 0}
+
+    def test_prompt_tokens_details_without_cached_tokens_omits_detail(self) -> None:
+        """A details dict lacking (or nulling) `cached_tokens` adds no detail."""
+        assert "input_token_details" not in _usage_to_metadata(
+            {"prompt_tokens": 5, "prompt_tokens_details": {}}
+        )
+        assert "input_token_details" not in _usage_to_metadata(
+            {"prompt_tokens": 5, "prompt_tokens_details": {"cached_tokens": None}}
+        )
+
 
 class TestCombineLLMOutputs:
     """Tests for combining raw provider token usage across generations."""
@@ -1193,13 +1219,22 @@ class TestCombineLLMOutputs:
         )
         assert result["token_usage"] == {"prompt_tokens_details": {"cached_tokens": 8}}
 
+    def test_skips_none_streaming_outputs(self) -> None:
+        """`None` entries (produced during streaming) are skipped, not dereferenced."""
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [None, {"token_usage": {"prompt_tokens": 5, "total_tokens": 5}}, None]
+        )
+        assert result["token_usage"] == {"prompt_tokens": 5, "total_tokens": 5}
+
 
 class TestUpdateTokenUsage:
     """Tests for the recursive `_update_token_usage` merge helper.
 
     The type-mismatch and unexpected-type branches are unreachable with today's
     stable Fireworks payloads, so they are exercised directly here to lock in the
-    deliberate loud-failure behavior.
+    behavior: mismatches raise, while a wholly unexpected leaf type is logged and
+    passed through rather than failing the response.
     """
 
     def test_int_accumulator_with_dict_value_raises(self) -> None:
@@ -1210,9 +1245,21 @@ class TestUpdateTokenUsage:
         with pytest.raises(ValueError, match="Got different types for token usage"):
             _update_token_usage({"cached_tokens": 1}, 5)
 
-    def test_unexpected_value_type_raises(self) -> None:
-        with pytest.raises(ValueError, match="Unexpected type for token usage"):
-            _update_token_usage(0, 1.5)  # type: ignore[arg-type]
+    def test_unexpected_value_type_warns_and_passes_through(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        with caplog.at_level(logging.WARNING):
+            result = _update_token_usage(0, 1.5)  # type: ignore[arg-type]
+        assert result == 1.5
+        assert "Unexpected type for token usage" in caplog.text
+
+    def test_first_seen_nested_dict_value_merges(self) -> None:
+        """A first-seen nested `dict` node seeds as a dict instead of raising."""
+        result = _update_token_usage(
+            {"details": {"a": 1}},
+            {"details": {"a": 2, "nested": {"b": 3}}},
+        )
+        assert result == {"details": {"a": 3, "nested": {"b": 3}}}
 
 
 class TestConvertChunkToMessageChunk:
