@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
@@ -25,6 +27,10 @@ if TYPE_CHECKING:
 
 def _fake_runtime() -> Runtime:
     return cast("Runtime", object())
+
+
+def _fake_tool_runtime(tool_call_id: str = "test_call") -> Any:
+    return cast("Any", SimpleNamespace(tool_call_id=tool_call_id))
 
 
 def _make_request(system_prompt: str | None = None) -> ModelRequest:
@@ -56,6 +62,14 @@ def test_todo_middleware_initialization() -> None:
     assert middleware.tools[0].name == "write_todos"
 
 
+def test_todo_middleware_without_todos_file_keeps_default_behavior() -> None:
+    """Test that default behavior stays unchanged when persistence is omitted."""
+    middleware = TodoListMiddleware()
+
+    assert middleware.todos_file is None
+    assert middleware.before_model({"messages": []}, _fake_runtime()) is None
+
+
 def test_has_write_todos_tool() -> None:
     """Test that middleware registers the write_todos tool."""
     middleware = TodoListMiddleware()
@@ -77,6 +91,42 @@ def test_todo_middleware_default_prompts() -> None:
     assert len(middleware.tools) == 1
     tool = middleware.tools[0]
     assert tool.description == WRITE_TODOS_TOOL_DESCRIPTION
+
+
+def test_todo_middleware_loads_todos_from_existing_json_file(tmp_path) -> None:
+    """Test that persisted todos are loaded when the file already exists."""
+    todos = [{"content": "Task 1", "status": "pending"}]
+    todos_file = tmp_path / "todos.json"
+    todos_file.write_text(json.dumps(todos), encoding="utf-8")
+
+    middleware = TodoListMiddleware(todos_file=todos_file)
+
+    assert middleware.before_model({"messages": []}, _fake_runtime()) == {"todos": todos}
+
+
+def test_todo_middleware_initializes_empty_list_when_file_missing(tmp_path) -> None:
+    """Test that opt-in persistence initializes an empty todo list when no file exists."""
+    todos_file = tmp_path / "missing" / "todos.json"
+    middleware = TodoListMiddleware(todos_file=todos_file)
+
+    assert middleware.before_model({"messages": []}, _fake_runtime()) == {"todos": []}
+
+
+def test_todo_middleware_state_takes_precedence_over_file(tmp_path) -> None:
+    """Test that existing state todos are not overwritten by persisted data."""
+    todos_file = tmp_path / "todos.json"
+    todos_file.write_text(
+        json.dumps([{"content": "Persisted task", "status": "pending"}]), encoding="utf-8"
+    )
+    middleware = TodoListMiddleware(todos_file=todos_file)
+
+    assert (
+        middleware.before_model(
+            {"messages": [], "todos": [{"content": "State task", "status": "completed"}]},
+            _fake_runtime(),
+        )
+        is None
+    )
 
 
 def test_adds_system_prompt_when_none_exists() -> None:
@@ -342,6 +392,31 @@ def test_todo_middleware_write_todos_tool_execution(
     result = write_todos.invoke(tool_call)
     assert result.update["todos"] == todos
     assert result.update["messages"][0].content == expected_message
+
+
+def test_todo_middleware_persists_written_todos_to_json_file(tmp_path) -> None:
+    """Test that middleware-backed writes are persisted as JSON."""
+    todos_file = tmp_path / "nested" / "todos.json"
+    middleware = TodoListMiddleware(todos_file=todos_file)
+    todos = [{"content": "Task 1", "status": "in_progress"}]
+
+    result = middleware._write_todos(_fake_tool_runtime(), todos)
+
+    assert result.update["todos"] == todos
+    assert todos_file.exists()
+    assert json.loads(todos_file.read_text(encoding="utf-8")) == todos
+
+
+def test_todo_middleware_persistence_survives_new_instances(tmp_path) -> None:
+    """Test that one middleware instance can persist todos for another instance."""
+    todos_file = tmp_path / "todos.json"
+    first_middleware = TodoListMiddleware(todos_file=todos_file)
+    todos = [{"content": "Task 1", "status": "completed"}]
+
+    first_middleware._write_todos(_fake_tool_runtime("first"), todos)
+
+    second_middleware = TodoListMiddleware(todos_file=todos_file)
+    assert second_middleware.before_model({"messages": []}, _fake_runtime()) == {"todos": todos}
 
 
 @pytest.mark.parametrize(
