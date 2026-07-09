@@ -2408,6 +2408,120 @@ def test_empty_thinking_content_block_start_emits_no_chunk() -> None:
     assert block_start_event is not None
 
 
+def test_signature_delta_preserves_empty_thinking_field() -> None:
+    """A `signature_delta` chunk must include `thinking` even when empty.
+
+    When an empty adaptive-thinking block streams only a signature_delta
+    (no thinking_delta), the aggregated block must still carry the required
+    `thinking` key so the message round-trips to the API without a 400 error.
+    """
+    from anthropic.types import (
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        SignatureDelta,
+        ThinkingBlock,
+    )
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    # Step 1: process the empty content_block_start (no chunk emitted).
+    chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(thinking="", signature="", type="thinking"),
+            index=0,
+            type="content_block_start",
+        ),
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=None,
+    )
+    assert chunk is None
+    assert block_start_event is not None
+
+    # Step 2: process the signature_delta with the tracked start event.
+    chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        RawContentBlockDeltaEvent(
+            delta=SignatureDelta(signature="sig_abc", type="signature_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        stream_usage=True,
+        coerce_content_to_string=False,
+        block_start_event=block_start_event,
+    )
+    assert chunk is not None
+    assert isinstance(chunk.content, list)
+    assert len(chunk.content) == 1
+    block = chunk.content[0]
+    assert isinstance(block, dict)
+    assert block.get("type") == "thinking"
+    assert block.get("thinking") == ""
+    assert block.get("signature") == "sig_abc"
+
+
+def test_thinking_delta_preserves_thinking_field() -> None:
+    """A `thinking_delta` with text is unaffected by the empty-thinking fix.
+
+    The trailing empty string from a signature_delta must not clobber
+    thinking text already accumulated from earlier thinking_delta chunks.
+    """
+    from anthropic.types import (
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageStartEvent,
+        SignatureDelta,
+        ThinkingBlock,
+        ThinkingDelta,
+    )
+
+    msg = Message(
+        id="msg_thinking",
+        content=[],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason=None,
+        stop_sequence=None,
+        usage=Usage(input_tokens=10, output_tokens=0),
+        type="message",
+    )
+    events: list = [
+        RawMessageStartEvent(message=msg, type="message_start"),
+        RawContentBlockStartEvent(
+            content_block=ThinkingBlock(thinking="", signature="", type="thinking"),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="Let me ", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=ThinkingDelta(thinking="think.", type="thinking_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=SignatureDelta(signature="sig_xyz", type="signature_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+    ]
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=False)
+    assert aggregate is not None
+    assert isinstance(aggregate.content, list)
+    thinking_blocks = [
+        b for b in aggregate.content if isinstance(b, dict) and b.get("type") == "thinking"
+    ]
+    assert len(thinking_blocks) == 1
+    assert thinking_blocks[0]["thinking"] == "Let me think."
+    assert thinking_blocks[0]["signature"] == "sig_xyz"
+
+
 def test_strict_tool_use() -> None:
     model = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
