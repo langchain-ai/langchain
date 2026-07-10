@@ -3317,6 +3317,10 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         response = model.invoke(messages, prompt_cache_key=cache_key)
         ```
 
+        The default `"implicit"` mode keeps OpenAI's automatic breakpoint and
+        also uses explicit breakpoints. The `"explicit"` mode uses only the
+        breakpoints you provide.
+
         For models that support explicit cache breakpoints, pass
         request-level cache options and mark supported content blocks
         with `prompt_cache_breakpoint`:
@@ -3342,6 +3346,17 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
+        Set `prompt_cache_options` per invocation, as above, or persist it on
+        the model using `model_kwargs`:
+
+        ```python
+        model = ChatOpenAI(
+            model="gpt-5.6-sol",
+            model_kwargs={"prompt_cache_options": {"mode": "explicit", "ttl": "30m"}},
+        )
+        ```
+
+        `prompt_cache_options["mode"]` can be `"implicit"` or `"explicit"`.
         OpenAI limits how many breakpoints can write to the cache in a single
         request. In `"implicit"` mode, the implicit breakpoint on the latest
         message uses one write slot, so up to three explicit breakpoints can
