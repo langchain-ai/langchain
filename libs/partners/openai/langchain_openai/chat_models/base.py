@@ -1406,6 +1406,22 @@ class BaseChatOpenAI(BaseChatModel):
         if logprobs:
             generation_info["logprobs"] = logprobs
 
+        # Surface `reasoning_content` (and the OpenRouter-style `reasoning` alias) from
+        # the streaming delta onto additional_kwargs so downstream consumers can read
+        # the chain-of-thought text. Many reasoning models (GLM-5, DeepSeek, etc.)
+        # expose this on their OpenAI-compatible streaming endpoint. Without this
+        # pass-through the upper layer only sees the final answer and the thinking
+        # text is dropped on the floor.
+        if isinstance(message_chunk, AIMessageChunk):
+            delta = choice.get("delta") or {}
+            reasoning_content = delta.get("reasoning_content")
+            if reasoning_content is None:
+                # OpenRouter routes both DeepSeek and other reasoning models through
+                # its OpenAI-compatible API using the `reasoning` key.
+                reasoning_content = delta.get("reasoning")
+            if reasoning_content is not None:
+                message_chunk.additional_kwargs["reasoning_content"] = reasoning_content
+
         if usage_metadata and isinstance(message_chunk, AIMessageChunk):
             message_chunk.usage_metadata = usage_metadata
 

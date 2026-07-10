@@ -1508,6 +1508,101 @@ def test_convert_chunk_to_generation_chunk_v1_keeps_string_content() -> None:
     assert gen.message.response_metadata.get("model_provider") == "openai"
 
 
+def test_convert_chunk_to_generation_chunk_surfaces_reasoning_content() -> None:
+    """OpenAI-compatible streaming endpoints (GLM-5, DeepSeek, etc.) carry the
+    chain-of-thought text on `choices[0].delta.reasoning_content`. Surface it
+    via `additional_kwargs["reasoning_content"]` so downstream consumers can
+    read the reasoning alongside the streamed answer."""
+
+    llm = ChatOpenAI(model="gpt-4o")
+
+    chunk: dict[str, Any] = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "gpt-4o",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {
+                    "role": "assistant",
+                    "content": "",
+                    "reasoning_content": "Let me think about this...",
+                },
+                "logprobs": None,
+                "finish_reason": None,
+            }
+        ],
+        "usage": None,
+    }
+    gen = llm._convert_chunk_to_generation_chunk(chunk, AIMessageChunk, None)
+    assert gen is not None
+    assert (
+        gen.message.additional_kwargs.get("reasoning_content")
+        == "Let me think about this..."
+    )
+
+
+def test_convert_chunk_to_generation_chunk_falls_back_to_reasoning_alias() -> None:
+    """OpenRouter routes DeepSeek and other reasoning models through its
+    OpenAI-compatible API using the `reasoning` key instead of
+    `reasoning_content`. The OpenAI integration should still surface the
+    chain-of-thought text under the canonical `reasoning_content` key."""
+
+    llm = ChatOpenAI(model="gpt-4o")
+
+    chunk: dict[str, Any] = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "gpt-4o",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {
+                    "role": "assistant",
+                    "content": "",
+                    "reasoning": "Reasoning under the OpenRouter `reasoning` alias.",
+                },
+                "logprobs": None,
+                "finish_reason": None,
+            }
+        ],
+        "usage": None,
+    }
+    gen = llm._convert_chunk_to_generation_chunk(chunk, AIMessageChunk, None)
+    assert gen is not None
+    assert gen.message.additional_kwargs.get("reasoning_content") == (
+        "Reasoning under the OpenRouter `reasoning` alias."
+    )
+
+
+def test_convert_chunk_to_generation_chunk_no_reasoning_content_unchanged() -> None:
+    """A chunk without reasoning fields should leave additional_kwargs untouched
+    (no spurious empty string)."""
+
+    llm = ChatOpenAI(model="gpt-4o")
+
+    chunk: dict[str, Any] = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "gpt-4o",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {"role": "assistant", "content": "hi"},
+                "logprobs": None,
+                "finish_reason": None,
+            }
+        ],
+        "usage": None,
+    }
+    gen = llm._convert_chunk_to_generation_chunk(chunk, AIMessageChunk, None)
+    assert gen is not None
+    assert "reasoning_content" not in gen.message.additional_kwargs
+
+
 def test_v1_streaming_tool_calls_in_content_blocks() -> None:
     """End-to-end: streaming chunks with tool calls produce correct content_blocks."""
     stream_chunks: list[dict[str, Any]] = [
