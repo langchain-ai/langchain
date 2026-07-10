@@ -8,7 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
-from langchain.chat_models import __all__, init_chat_model
+from langchain.chat_models import __all__, get_provider_package, init_chat_model
 from langchain.chat_models.base import _BUILTIN_PROVIDERS, _attempt_infer_model_provider
 
 if TYPE_CHECKING:
@@ -19,6 +19,7 @@ OPENAI_TEST_MODEL = "gpt-5.5"
 EXPECTED_ALL = [
     "init_chat_model",
     "BaseChatModel",
+    "get_provider_package",
 ]
 
 
@@ -74,6 +75,28 @@ def test_init_unknown_provider() -> None:
 def test_supported_providers_is_sorted() -> None:
     """Test that supported providers are sorted alphabetically."""
     assert list(_BUILTIN_PROVIDERS) == sorted(_BUILTIN_PROVIDERS.keys())
+
+
+def test_get_provider_package() -> None:
+    """The accessor returns the pip package name for a provider."""
+    assert get_provider_package("openai") == "langchain-openai"
+    assert get_provider_package("anthropic") == "langchain-anthropic"
+    # Submodule import paths resolve to the top-level distribution.
+    assert get_provider_package("azure_ai") == "langchain-azure-ai"
+    assert get_provider_package("nvidia") == "langchain-nvidia-ai-endpoints"
+
+
+def test_get_provider_package_matches_registry() -> None:
+    """Every provider resolves to a derived name unless a pypi_name is set."""
+    for provider, spec in _BUILTIN_PROVIDERS.items():
+        expected = spec.pypi_name or spec.module.split(".", 1)[0].replace("_", "-")
+        assert get_provider_package(provider) == expected
+
+
+def test_get_provider_package_unknown() -> None:
+    """Unknown providers raise a helpful error."""
+    with pytest.raises(ValueError, match="Unsupported provider='bar'"):
+        get_provider_package("bar")
 
 
 @pytest.mark.parametrize(

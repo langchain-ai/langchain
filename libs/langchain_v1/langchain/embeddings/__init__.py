@@ -10,9 +10,10 @@
 
 from langchain_core.embeddings import Embeddings
 
-from langchain.embeddings.base import init_embeddings
+from langchain.embeddings.base import get_provider_package, init_embeddings
 
 __all__ = [
     "Embeddings",
+    "get_provider_package",
     "init_embeddings",
 ]
