@@ -2515,7 +2515,9 @@ def test_thinking_delta_preserves_thinking_field() -> None:
     assert aggregate is not None
     assert isinstance(aggregate.content, list)
     thinking_blocks = [
-        b for b in aggregate.content if isinstance(b, dict) and b.get("type") == "thinking"
+        b
+        for b in aggregate.content
+        if isinstance(b, dict) and b.get("type") == "thinking"
     ]
     assert len(thinking_blocks) == 1
     assert thinking_blocks[0]["thinking"] == "Let me think."
