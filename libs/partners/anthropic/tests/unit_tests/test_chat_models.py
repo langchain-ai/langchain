@@ -2689,6 +2689,33 @@ def test_tool_search_is_builtin_tool() -> None:
     assert not _is_builtin_tool(regular_tool)
 
 
+def test_advisor_is_builtin_tool() -> None:
+    """Test that advisor_ tools are recognized as built-in and pass through bind_tools.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38644.
+    advisor_20260301 (Anthropic Advisor native tool) was missing from
+    _BUILTIN_TOOL_PREFIXES, causing bind_tools() to route it through
+    convert_to_anthropic_tool() which crashed with KeyError: 'parameters'.
+    """
+    advisor_tool = {
+        "type": "advisor_20260301",
+        "name": "advisor",
+        "model": MODEL_NAME,
+        "max_uses": 3,
+        "max_tokens": 1024,
+    }
+    assert _is_builtin_tool(advisor_tool)
+
+    # bind_tools() must pass the advisor tool through unchanged, not raise KeyError
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    bound = model.bind_tools([advisor_tool])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        [HumanMessage("hello")],
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert advisor_tool in payload["tools"]
+
+
 def test_tool_search_beta_headers() -> None:
     """Test that tool search tools auto-append the correct beta headers."""
     # Test regex variant
