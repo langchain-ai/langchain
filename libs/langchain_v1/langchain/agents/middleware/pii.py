@@ -583,10 +583,27 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
 
             detector: Custom detector function or regex pattern.
 
-                * If `Callable`: Function that takes content string and returns
-                    list of `PIIMatch` objects
+                * If `Callable`: Function that takes a content string and returns
+                    a list of :class:`PIIMatch` objects. Each ``PIIMatch`` must have
+                    ``type`` (str), ``value`` (str), ``start`` (int), and ``end`` (int)
+                    fields. Example::
+
+                        import re
+                        from langchain.agents.middleware import PIIMatch
+
+                        def detect_ssn(content: str) -> list[PIIMatch]:
+                            return [
+                                PIIMatch(
+                                    type="ssn",
+                                    value=m.group(),
+                                    start=m.start(),
+                                    end=m.end(),
+                                )
+                                for m in re.finditer(r"\\d{3}-\\d{2}-\\d{4}", content)
+                            ]
+
                 * If `str`: Regex pattern to match PII
-                * If `None`: Uses built-in detector for the `pii_type`
+                * If `None`: Uses built-in detector for the ``pii_type``
             apply_to_input: Whether to check user messages before model call.
             apply_to_output: Whether to check AI messages after model call.
 

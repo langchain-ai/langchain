@@ -35,6 +35,37 @@ from langchain.agents.middleware.pii import (
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 # ============================================================================
+# Public API Export Tests
+# ============================================================================
+
+
+class TestPublicAPIExports:
+    """Verify that PIIMatch and related types are importable from the public module."""
+
+    def test_piimatch_importable_from_public_module(self) -> None:
+        """PIIMatch must be importable from langchain.agents.middleware (issue #38718)."""
+        from langchain.agents.middleware import PIIMatch  # noqa: F401
+
+        assert PIIMatch is not None
+
+    def test_piimatch_has_required_fields(self) -> None:
+        """PIIMatch TypedDict must have type, value, start, end fields."""
+        import re
+
+        from langchain.agents.middleware import PIIMatch
+
+        matches = [
+            PIIMatch(type="test", value=m.group(), start=m.start(), end=m.end())
+            for m in re.finditer(r"\d+", "foo 123 bar 456")
+        ]
+        assert len(matches) == 2
+        assert matches[0]["type"] == "test"
+        assert matches[0]["value"] == "123"
+        assert matches[0]["start"] == 4
+        assert matches[0]["end"] == 7
+
+
+# ============================================================================
 # Detection Function Tests
 # ============================================================================
 
