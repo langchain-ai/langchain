@@ -264,10 +264,30 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
+def _apply_prompt_cache_breakpoint(
+    source_block: dict[str, Any], formatted_block: dict[str, Any]
+) -> dict[str, Any]:
+    """Apply an OpenAI prompt cache breakpoint to a formatted content block.
+
+    A breakpoint set directly on the block takes precedence over one nested in
+    `extras`. Membership (not truthiness) decides whether to copy it, so a
+    present-but-falsy value (e.g. `None`) is still preserved.
+    """
+    if "prompt_cache_breakpoint" in source_block:
+        formatted_block["prompt_cache_breakpoint"] = source_block[
+            "prompt_cache_breakpoint"
+        ]
+    elif isinstance(extras := source_block.get("extras"), dict) and (
+        "prompt_cache_breakpoint" in extras
+    ):
+        formatted_block["prompt_cache_breakpoint"] = extras["prompt_cache_breakpoint"]
+    return formatted_block
+
+
 def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[dict]:
     """Sanitize content for chat/completions API.
 
-    For list content, filters text blocks to only keep 'type' and 'text' keys.
+    For list content, filters text blocks to only keep supported keys.
     """
     if isinstance(content, list):
         sanitized = []
@@ -277,7 +297,12 @@ def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[
                 and block.get("type") == "text"
                 and "text" in block
             ):
-                sanitized.append({"type": "text", "text": block["text"]})
+                sanitized_block = {"type": "text", "text": block["text"]}
+                if "prompt_cache_breakpoint" in block:
+                    sanitized_block["prompt_cache_breakpoint"] = block[
+                        "prompt_cache_breakpoint"
+                    ]
+                sanitized.append(sanitized_block)
             else:
                 sanitized.append(block)
         return sanitized
@@ -313,7 +338,21 @@ def _format_message_content(
                 # image generation calls)
                 and not (api == "responses" and str(role).lower().startswith("ai"))
             ):
-                formatted_content.append(convert_to_openai_data_block(block, api=api))
+                formatted_block = convert_to_openai_data_block(block, api=api)
+                formatted_content.append(
+                    _apply_prompt_cache_breakpoint(block, formatted_block)
+                )
+            elif (
+                isinstance(block, dict)
+                and block.get("type") == "text"
+                and "text" in block
+                and isinstance(extras := block.get("extras"), dict)
+                and "prompt_cache_breakpoint" in extras
+            ):
+                formatted_block = {"type": "text", "text": block["text"]}
+                formatted_content.append(
+                    _apply_prompt_cache_breakpoint(block, formatted_block)
+                )
             # Anthropic image blocks
             elif (
                 isinstance(block, dict)
@@ -984,6 +1023,12 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in `langchain-openai` 0.3.24"
     """
 
+    prompt_cache_options: dict[str, Any] | None = None
+    """Options controlling OpenAI prompt cache behavior.
+
+    !!! version-added "Added in `langchain-openai` 1.3.5"
+    """
+
     service_tier: str | None = None
     """Latency tier for request.
 
@@ -1309,6 +1354,7 @@ class BaseChatOpenAI(BaseChatModel):
             "verbosity": self.verbosity,
             "context_management": self.context_management,
             "include": self.include,
+            "prompt_cache_options": self.prompt_cache_options,
             "service_tier": self.service_tier,
             "truncation": self.truncation,
             "store": self.store,
@@ -3297,8 +3343,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     ??? info "Prompt caching optimization"
 
-        For high-volume applications with repetitive prompts, use `prompt_cache_key`
-        per-invocation to improve cache hit rates and reduce costs:
+        OpenAI prompt caching is automatic for eligible prompts. For high-volume
+        applications with repetitive prompts, use `prompt_cache_key`
+        per invocation to improve cache hit rates and reduce costs:
 
         ```python
         model = ChatOpenAI(model="...")
@@ -3316,9 +3363,69 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         response = model.invoke(messages, prompt_cache_key=cache_key)
         ```
 
-        Cache keys help ensure requests with the same prompt prefix are routed to
-        machines with existing cache, providing cost reduction and latency improvement on
-        cached tokens.
+        The default `"implicit"` mode keeps OpenAI's automatic breakpoint and
+        also uses explicit breakpoints. The `"explicit"` mode uses only the
+        breakpoints you provide.
+
+        For models that support explicit cache breakpoints, pass
+        request-level cache options and mark supported content blocks
+        with `prompt_cache_breakpoint`:
+
+        ```python
+        model = ChatOpenAI(model="gpt-5.6-sol")
+        response = model.invoke(
+            [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Stable instructions and examples...",
+                            "prompt_cache_breakpoint": {"mode": "explicit"},
+                        }
+                    ],
+                },
+                {"role": "user", "content": "Current request"},
+            ],
+            prompt_cache_key="tenant:acme:support-v1",
+            prompt_cache_options={"mode": "explicit", "ttl": "30m"},
+        )
+        ```
+
+        Set `prompt_cache_options` per invocation, as above, or persist it on
+        the model:
+
+        ```python
+        model = ChatOpenAI(
+            model="gpt-5.6-sol",
+            prompt_cache_options={"mode": "explicit", "ttl": "30m"},
+        )
+        ```
+
+        `prompt_cache_options["mode"]` can be `"implicit"` or `"explicit"`.
+        OpenAI limits how many breakpoints can write to the cache in a single
+        request. In `"implicit"` mode, the implicit breakpoint on the latest
+        message uses one write slot, so up to three explicit breakpoints can
+        write. In `"explicit"` mode, up to four explicit breakpoints can write.
+        For reads, OpenAI considers up to the latest 50 breakpoints.
+
+        For models before the GPT-5.6 family that support legacy prompt cache
+        retention, pass `prompt_cache_retention`. See OpenAI's
+        [prompt caching docs](https://platform.openai.com/docs/guides/prompt-caching)
+        for the current model support list and retention semantics.
+
+        ```python
+        response = model.invoke(messages, prompt_cache_retention="24h")
+        ```
+
+        Cache keys help ensure requests with the same prompt prefix are routed
+        to machines with existing cache, providing cost reduction and
+        latency improvement on cached tokens. Cache reads are available as
+        `response.usage_metadata["input_token_details"]["cache_read"]`; cache
+        writes are available as `"cache_creation"` when the OpenAI response
+        includes `cache_write_tokens`. On the `"priority"` and `"flex"`
+        service tiers these keys are prefixed with the tier name
+        (e.g. `"priority_cache_read"`).
     """  # noqa: E501
 
     max_tokens: int | None = Field(default=None, alias="max_completion_tokens")
@@ -4037,13 +4144,13 @@ def _create_usage_metadata(
     if service_tier not in {"priority", "flex"}:
         service_tier = None
     service_tier_prefix = f"{service_tier}_" if service_tier else ""
+    prompt_tokens_details = oai_token_usage.get("prompt_tokens_details") or {}
     input_token_details: dict = {
-        "audio": (oai_token_usage.get("prompt_tokens_details") or {}).get(
-            "audio_tokens"
+        "audio": prompt_tokens_details.get("audio_tokens"),
+        f"{service_tier_prefix}cache_read": prompt_tokens_details.get("cached_tokens"),
+        f"{service_tier_prefix}cache_creation": prompt_tokens_details.get(
+            "cache_write_tokens"
         ),
-        f"{service_tier_prefix}cache_read": (
-            oai_token_usage.get("prompt_tokens_details") or {}
-        ).get("cached_tokens"),
     }
     output_token_details: dict = {
         "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
@@ -4054,13 +4161,13 @@ def _create_usage_metadata(
         ).get("reasoning_tokens"),
     }
     if service_tier is not None:
-        # Avoid counting cache and reasoning tokens towards the service tier token
-        # counts, since service tier tokens are already priced differently
-        input_token_details[service_tier] = input_tokens - input_token_details.get(
-            f"{service_tier_prefix}cache_read", 0
+        # Avoid counting cache-read and reasoning tokens towards the service tier
+        # token counts, since service tier tokens are already priced differently
+        input_token_details[service_tier] = input_tokens - (
+            input_token_details.get(f"{service_tier_prefix}cache_read", 0) or 0
         )
-        output_token_details[service_tier] = output_tokens - output_token_details.get(
-            f"{service_tier_prefix}reasoning", 0
+        output_token_details[service_tier] = output_tokens - (
+            output_token_details.get(f"{service_tier_prefix}reasoning", 0) or 0
         )
     return UsageMetadata(
         input_tokens=input_tokens,
@@ -4078,9 +4185,12 @@ def _create_usage_metadata(
 def _create_usage_metadata_responses(
     oai_token_usage: dict, service_tier: str | None = None
 ) -> UsageMetadata:
-    input_tokens = oai_token_usage.get("input_tokens", 0)
-    output_tokens = oai_token_usage.get("output_tokens", 0)
-    total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
+    _input = oai_token_usage.get("input_tokens")
+    input_tokens = _input if _input is not None else 0
+    _output = oai_token_usage.get("output_tokens")
+    output_tokens = _output if _output is not None else 0
+    _total = oai_token_usage.get("total_tokens")
+    total_tokens = _total if _total is not None else input_tokens + output_tokens
     if service_tier not in {"priority", "flex"}:
         service_tier = None
     service_tier_prefix = f"{service_tier}_" if service_tier else ""
@@ -4089,19 +4199,21 @@ def _create_usage_metadata_responses(
             oai_token_usage.get("output_tokens_details") or {}
         ).get("reasoning_tokens")
     }
+    input_tokens_details = oai_token_usage.get("input_tokens_details") or {}
     input_token_details: dict = {
-        f"{service_tier_prefix}cache_read": (
-            oai_token_usage.get("input_tokens_details") or {}
-        ).get("cached_tokens")
+        f"{service_tier_prefix}cache_read": input_tokens_details.get("cached_tokens"),
+        f"{service_tier_prefix}cache_creation": input_tokens_details.get(
+            "cache_write_tokens"
+        ),
     }
     if service_tier is not None:
-        # Avoid counting cache and reasoning tokens towards the service tier token
-        # counts, since service tier tokens are already priced differently
-        output_token_details[service_tier] = output_tokens - output_token_details.get(
-            f"{service_tier_prefix}reasoning", 0
+        # Avoid counting cache-read and reasoning tokens towards the service tier
+        # token counts, since service tier tokens are already priced differently
+        output_token_details[service_tier] = output_tokens - (
+            output_token_details.get(f"{service_tier_prefix}reasoning", 0) or 0
         )
-        input_token_details[service_tier] = input_tokens - input_token_details.get(
-            f"{service_tier_prefix}cache_read", 0
+        input_token_details[service_tier] = input_tokens - (
+            input_token_details.get(f"{service_tier_prefix}cache_read", 0) or 0
         )
     return UsageMetadata(
         input_tokens=input_tokens,
@@ -4301,19 +4413,27 @@ def _convert_chat_completions_blocks_to_responses(
     if block["type"] == "text":
         # chat api: {"type": "text", "text": "..."}
         # responses api: {"type": "input_text", "text": "..."}
-        return {"type": "input_text", "text": block["text"]}
+        new_block = {"type": "input_text", "text": block["text"]}
+        if "prompt_cache_breakpoint" in block:
+            new_block["prompt_cache_breakpoint"] = block["prompt_cache_breakpoint"]
+        return new_block
     if block["type"] == "image_url":
         # chat api: {"type": "image_url", "image_url": {"url": "...", "detail": "..."}}  # noqa: E501
-        # responses api: {"type": "image_url", "image_url": "...", "detail": "...", "file_id": "..."}  # noqa: E501
+        # responses api: {"type": "input_image", "image_url": "...", "detail": "..."}  # noqa: E501
         new_block = {
             "type": "input_image",
             "image_url": block["image_url"]["url"],
         }
         if block["image_url"].get("detail"):
             new_block["detail"] = block["image_url"]["detail"]
+        if "prompt_cache_breakpoint" in block:
+            new_block["prompt_cache_breakpoint"] = block["prompt_cache_breakpoint"]
         return new_block
     if block["type"] == "file":
-        return {"type": "input_file", **block["file"]}
+        new_block = {"type": "input_file", **block["file"]}
+        if "prompt_cache_breakpoint" in block:
+            new_block["prompt_cache_breakpoint"] = block["prompt_cache_breakpoint"]
+        return new_block
     return block
 
 
@@ -4841,13 +4961,6 @@ def _coerce_chunk_response(resp: Any) -> Any:
     # dict `response` items on stream events have been observed in the wild
     if isinstance(resp, dict):
         from openai.types.responses import Response
-
-        # Known mismatch: API emits `prompt_cache_retention="in_memory"` while
-        # older `openai` packages declare only `"in-memory"` in the Literal
-        # (openai-python#2883). Pre-normalize so validation succeeds on
-        # currently-released SDK versions.
-        if resp.get("prompt_cache_retention") == "in_memory":
-            resp = {**resp, "prompt_cache_retention": "in-memory"}
 
         try:
             return Response.model_validate(resp)
