@@ -831,9 +831,9 @@ class ChildTool(BaseTool):
                 )
                 raise NotImplementedError(msg)
 
-            # Include fields from tool_input, plus fields with explicit defaults.
-            # This applies Pydantic defaults (like Field(default=1)) while excluding
-            # synthetic "args"/"kwargs" fields that Pydantic creates for *args/**kwargs.
+            # Include fields provided in the input, fields populated through Pydantic
+            # validation aliases, and fields with explicit defaults. Exclude synthetic
+            # "args"/"kwargs" fields that Pydantic creates for *args/**kwargs.
             field_info = get_fields(input_args)
             validated_input = {}
             for k in result_dict:
@@ -841,18 +841,10 @@ class ChildTool(BaseTool):
                     # Field was provided in input - include it (validated)
                     validated_input[k] = getattr(result, k)
                 elif k in field_info and k not in {"args", "kwargs"}:
-                    # Check if field has an explicit default defined in the schema.
-                    # Exclude "args"/"kwargs" as these are synthetic fields for variadic
-                    # parameters that should not be passed as keyword arguments.
-                    fi = field_info[k]
-                    # Pydantic v2 uses is_required() method, v1 uses required attribute
-                    has_default = (
-                        not fi.is_required()
-                        if hasattr(fi, "is_required")
-                        else not getattr(fi, "required", True)
-                    )
-                    if has_default:
-                        validated_input[k] = getattr(result, k)
+                    # Field was populated by the schema, e.g. via validation_alias
+                    # or an explicit default. Include real schema fields after
+                    # validation while still excluding synthetic variadic fields.
+                    validated_input[k] = getattr(result, k)
 
             for k in self._injected_args_keys:
                 if k in tool_input:

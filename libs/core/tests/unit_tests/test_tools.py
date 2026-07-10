@@ -23,7 +23,7 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -241,6 +241,23 @@ def test_decorator_with_specified_schema() -> None:
 
     assert isinstance(tool_func, BaseTool)
     assert tool_func.args_schema == _MockSchema
+
+
+def test_decorator_with_schema_validation_alias() -> None:
+    """Test that schema validation aliases are passed to the tool function."""
+
+    class _AliasedSchema(BaseModel):
+        model_config = ConfigDict(populate_by_name=True)
+
+        query_text: str = Field(validation_alias=AliasChoices("query_text", "query"))
+
+    @tool(args_schema=_AliasedSchema)
+    def tool_func(query_text: str) -> str:
+        """Return the aliased argument directly."""
+        return query_text
+
+    assert tool_func.invoke({"query_text": "canonical"}) == "canonical"
+    assert tool_func.invoke({"query": "alias"}) == "alias"
 
 
 @pytest.mark.skipif(
