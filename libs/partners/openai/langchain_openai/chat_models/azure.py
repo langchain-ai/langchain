@@ -771,7 +771,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         chat_result = super()._create_chat_result(response, generation_info)
 
         if not isinstance(response, dict):
-            response = response.model_dump()
+            # warnings=False due to https://github.com/openai/openai-python/issues/2872
+            response = response.model_dump(warnings=False)
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 msg = (

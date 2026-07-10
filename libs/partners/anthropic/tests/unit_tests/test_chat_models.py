@@ -147,21 +147,17 @@ def test_set_default_max_tokens() -> None:
     llm = ChatAnthropic(model="claude-sonnet-4-5-20250929", anthropic_api_key="test")
     assert llm.max_tokens == 64000
 
-    # Test claude-opus-4 models
-    llm = ChatAnthropic(model="claude-opus-4-20250514", anthropic_api_key="test")
+    # Test claude-opus-4-1 models
+    llm = ChatAnthropic(model="claude-opus-4-1-20250805", anthropic_api_key="test")
     assert llm.max_tokens == 32000
 
-    # Test claude-sonnet-4 models
-    llm = ChatAnthropic(model="claude-sonnet-4-20250514", anthropic_api_key="test")
+    # Test claude-haiku-4-5 models
+    llm = ChatAnthropic(model="claude-haiku-4-5-20251001", anthropic_api_key="test")
     assert llm.max_tokens == 64000
 
-    # Test claude-3-7-sonnet models
-    llm = ChatAnthropic(model="claude-3-7-sonnet-20250219", anthropic_api_key="test")
-    assert llm.max_tokens == 64000
-
-    # Test claude-3-5-haiku models
+    # Test claude-3-5-haiku models (profile removed, should fall back to 4096)
     llm = ChatAnthropic(model="claude-3-5-haiku-20241022", anthropic_api_key="test")
-    assert llm.max_tokens == 8192
+    assert llm.max_tokens == 4096
 
     # Test claude-3-haiku models (should default to 4096)
     llm = ChatAnthropic(model="claude-3-haiku-20240307", anthropic_api_key="test")
@@ -2831,7 +2827,7 @@ def test_auto_append_betas_for_mcp_servers() -> None:
 
 
 def test_profile() -> None:
-    model = ChatAnthropic(model="claude-sonnet-4-20250514")
+    model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
     assert model.profile
     assert not model.profile["structured_output"]
 
@@ -2857,7 +2853,7 @@ def test_profile() -> None:
 def test_profile_1m_context_beta() -> None:
     model = ChatAnthropic(model="claude-sonnet-4-5")
     assert model.profile
-    assert model.profile["max_input_tokens"] == 200000
+    assert model.profile["max_input_tokens"] == 1000000
 
     model = ChatAnthropic(model="claude-sonnet-4-5", betas=["context-1m-2025-08-07"])
     assert model.profile
@@ -2868,7 +2864,7 @@ def test_profile_1m_context_beta() -> None:
         betas=["token-efficient-tools-2025-02-19"],
     )
     assert model.profile
-    assert model.profile["max_input_tokens"] == 200000
+    assert model.profile["max_input_tokens"] == 1000000
 
 
 async def test_model_profile_not_blocking() -> None:

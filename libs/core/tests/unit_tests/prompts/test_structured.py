@@ -21,7 +21,7 @@ def _fake_runnable(
     if isclass(schema) and issubclass(schema, BaseModel):
         return schema(name="yo", value=value)
     params = cast("dict[str, Any]", schema)["parameters"]
-    return {k: 1 if k != "value" else value for k, v in params.items()}
+    return {k: 1 if k != "value" else value for k in params}
 
 
 class FakeStructuredChatModel(FakeListChatModel):

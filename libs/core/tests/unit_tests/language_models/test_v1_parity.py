@@ -46,7 +46,7 @@ class _ScriptedChunkModel(BaseChatModel):
     def _merged(self) -> AIMessageChunk:
         merged = self.scripted_chunks[0]
         for c in self.scripted_chunks[1:]:
-            merged = merged + c
+            merged += c
         return merged
 
     @override
@@ -117,7 +117,7 @@ def _collect_v1_message(model: BaseChatModel, input_text: str) -> AIMessage:
         raise RuntimeError(msg)
     merged = chunks[0]
     for c in chunks[1:]:
-        merged = merged + c
+        merged += c
     return AIMessage(
         content=merged.content,
         id=merged.id,
