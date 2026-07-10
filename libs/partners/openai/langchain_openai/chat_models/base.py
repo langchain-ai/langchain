@@ -4115,12 +4115,10 @@ def _create_usage_metadata(
         ).get("reasoning_tokens"),
     }
     if service_tier is not None:
-        # Avoid counting cache and reasoning tokens towards the service tier token
-        # counts, since service tier tokens are already priced differently
-        input_token_details[service_tier] = (
-            input_tokens
-            - (input_token_details.get(f"{service_tier_prefix}cache_read", 0) or 0)
-            - (input_token_details.get(f"{service_tier_prefix}cache_creation", 0) or 0)
+        # Avoid counting cache-read and reasoning tokens towards the service tier
+        # token counts, since service tier tokens are already priced differently
+        input_token_details[service_tier] = input_tokens - (
+            input_token_details.get(f"{service_tier_prefix}cache_read", 0) or 0
         )
         output_token_details[service_tier] = output_tokens - (
             output_token_details.get(f"{service_tier_prefix}reasoning", 0) or 0
@@ -4163,15 +4161,13 @@ def _create_usage_metadata_responses(
         ),
     }
     if service_tier is not None:
-        # Avoid counting cache and reasoning tokens towards the service tier token
-        # counts, since service tier tokens are already priced differently
+        # Avoid counting cache-read and reasoning tokens towards the service tier
+        # token counts, since service tier tokens are already priced differently
         output_token_details[service_tier] = output_tokens - (
             output_token_details.get(f"{service_tier_prefix}reasoning", 0) or 0
         )
-        input_token_details[service_tier] = (
-            input_tokens
-            - (input_token_details.get(f"{service_tier_prefix}cache_read", 0) or 0)
-            - (input_token_details.get(f"{service_tier_prefix}cache_creation", 0) or 0)
+        input_token_details[service_tier] = input_tokens - (
+            input_token_details.get(f"{service_tier_prefix}cache_read", 0) or 0
         )
     return UsageMetadata(
         input_tokens=input_tokens,

@@ -1203,20 +1203,23 @@ def test__create_usage_metadata_cache_tokens_zero_retained() -> None:
     }
 
 
-def test__create_usage_metadata_service_tier_excludes_cache_tokens() -> None:
-    """Priority/flex tier counts exclude both cache read and cache write tokens."""
+def test__create_usage_metadata_service_tier_excludes_cache_read_tokens() -> None:
+    """Tier counts exclude cache reads but not overlapping cache writes."""
     usage_metadata = {
         "completion_tokens": 50,
-        "prompt_tokens_details": {"cached_tokens": 50, "cache_write_tokens": 25},
+        "prompt_tokens_details": {
+            "cached_tokens": 256,
+            "cache_write_tokens": 3072,
+        },
         "completion_tokens_details": {"reasoning_tokens": 10},
-        "prompt_tokens": 100,
-        "total_tokens": 150,
+        "prompt_tokens": 2304,
+        "total_tokens": 2354,
     }
     result = _create_usage_metadata(usage_metadata, service_tier="priority")
     assert result["input_token_details"] == {
-        "priority_cache_read": 50,
-        "priority_cache_creation": 25,
-        "priority": 25,  # 100 - 50 (read) - 25 (creation)
+        "priority_cache_read": 256,
+        "priority_cache_creation": 3072,
+        "priority": 2048,
     }
     assert result["output_token_details"] == {
         "priority_reasoning": 10,
@@ -1277,22 +1280,25 @@ def test__create_usage_metadata_responses_cache_write_tokens() -> None:
     )
 
 
-def test__create_usage_metadata_responses_service_tier_excludes_cache_tokens() -> None:
-    """Priority/flex tier counts exclude both cache read and cache write tokens."""
+def test__create_usage_metadata_responses_service_tier_cache_write_overlap() -> None:
+    """Tier counts exclude cache reads but not overlapping cache writes."""
     response_usage_metadata = {
-        "input_tokens": 100,
-        "input_tokens_details": {"cached_tokens": 50, "cache_write_tokens": 25},
+        "input_tokens": 2304,
+        "input_tokens_details": {
+            "cached_tokens": 256,
+            "cache_write_tokens": 3072,
+        },
         "output_tokens": 50,
         "output_tokens_details": {"reasoning_tokens": 10},
-        "total_tokens": 150,
+        "total_tokens": 2354,
     }
     result = _create_usage_metadata_responses(
         response_usage_metadata, service_tier="flex"
     )
     assert result["input_token_details"] == {
-        "flex_cache_read": 50,
-        "flex_cache_creation": 25,
-        "flex": 25,  # 100 - 50 (read) - 25 (creation)
+        "flex_cache_read": 256,
+        "flex_cache_creation": 3072,
+        "flex": 2048,
     }
     assert result["output_token_details"] == {
         "flex_reasoning": 10,
