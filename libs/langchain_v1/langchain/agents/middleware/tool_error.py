@@ -54,10 +54,15 @@ class ToolErrorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
     placed *inner* and configured with `on_failure="error"` so exceptions reach this
     middleware.
 
+    This middleware only sees exceptions raised by tool *execution*. Argument-binding
+    and validation errors are handled upstream by `ToolNode` (converted to an error
+    `ToolMessage` before the tool runs), so they do not pass through `catch` or
+    `on_error` and are not sanitized by `on_error`.
+
     Guidance on what to `catch`:
 
     - **Catch** (return to the model): anticipated, model-actionable, non-sensitive
-        errors — e.g. validation errors or tool-domain errors the model can correct.
+        errors raised by the tool — e.g. tool-domain errors the model can correct.
     - **Do not catch** (let propagate): programming bugs, auth/permission errors, and
         anything whose message may carry secrets or internal infrastructure detail.
 
