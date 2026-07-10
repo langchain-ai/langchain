@@ -4,7 +4,8 @@ import inspect
 from collections.abc import Callable
 from typing import Any, Literal, cast, get_type_hints, overload
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, RootModel, create_model
+from typing_extensions import is_typeddict
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import Runnable
@@ -459,16 +460,35 @@ def convert_runnable_to_tool(
     def invoke_wrapper(callbacks: Callbacks | None = None, **kwargs: Any) -> Any:
         return runnable.invoke(kwargs, config={"callbacks": callbacks})
 
+    # If the input schema is a RootModel wrapping a TypedDict, unwrap it.
+    # RootModel wrapping causes the OpenAI tool schema to have a nested
+    # "root" property, which breaks tool call validation.
+    input_schema = runnable.input_schema
     if (
-        arg_types is None
-        and schema.get("type") == "object"
-        and schema.get("properties")
+        args_schema is None
+        and isinstance(input_schema, type)
+        and issubclass(input_schema, RootModel)
     ):
-        args_schema = runnable.input_schema
-    else:
-        args_schema = _get_schema_from_runnable_and_arg_types(
-            runnable, name, arg_types=arg_types
-        )
+        fields = getattr(input_schema, "model_fields", {})
+        if "root" in fields and is_typeddict(fields["root"].annotation):
+            td = fields["root"].annotation
+            td_hints = get_type_hints(td)
+            td_fields = {key: (hint, Field(...)) for key, hint in td_hints.items()}
+            args_schema = cast(
+                "type[BaseModel]",
+                create_model(name, **td_fields),
+            )
+    if args_schema is None:
+        if (
+            arg_types is None
+            and schema.get("type") == "object"
+            and schema.get("properties")
+        ):
+            args_schema = input_schema
+        else:
+            args_schema = _get_schema_from_runnable_and_arg_types(
+                runnable, name, arg_types=arg_types
+            )
 
     return StructuredTool.from_function(
         name=name,
