@@ -1,6 +1,6 @@
 """Unit tests for prompt_cache_key parameter."""
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 
 from langchain_openai import ChatOpenAI
 
@@ -160,6 +160,33 @@ def test_prompt_cache_breakpoint_chat_completions_text_block() -> None:
     assert payload["messages"][0]["content"][0]["prompt_cache_breakpoint"] == {
         "mode": "explicit"
     }
+
+
+def test_prompt_cache_breakpoint_chat_completions_tool_message() -> None:
+    """A cache breakpoint on a tool result text block is preserved."""
+    chat = ChatOpenAI(model="gpt-5.5", max_completion_tokens=10)
+    messages = [
+        ToolMessage(
+            tool_call_id="call_123",
+            content=[
+                {
+                    "type": "text",
+                    "text": "Stable tool result",
+                    "prompt_cache_breakpoint": {"mode": "explicit"},
+                }
+            ],
+        )
+    ]
+
+    payload = chat._get_request_payload(messages)
+
+    assert payload["messages"][0]["content"] == [
+        {
+            "type": "text",
+            "text": "Stable tool result",
+            "prompt_cache_breakpoint": {"mode": "explicit"},
+        }
+    ]
 
 
 def test_prompt_cache_breakpoint_responses_api_converted_blocks() -> None:

@@ -267,7 +267,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[dict]:
     """Sanitize content for chat/completions API.
 
-    For list content, filters text blocks to only keep 'type' and 'text' keys.
+    For list content, filters text blocks to only keep supported keys.
     """
     if isinstance(content, list):
         sanitized = []
@@ -277,7 +277,12 @@ def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[
                 and block.get("type") == "text"
                 and "text" in block
             ):
-                sanitized.append({"type": "text", "text": block["text"]})
+                sanitized_block = {"type": "text", "text": block["text"]}
+                if "prompt_cache_breakpoint" in block:
+                    sanitized_block["prompt_cache_breakpoint"] = block[
+                        "prompt_cache_breakpoint"
+                    ]
+                sanitized.append(sanitized_block)
             else:
                 sanitized.append(block)
         return sanitized
