@@ -6,6 +6,7 @@ from langchain.embeddings.base import (
     _BUILTIN_PROVIDERS,
     _infer_model_and_provider,
     _parse_model_string,
+    get_provider_package,
 )
 
 
@@ -110,3 +111,22 @@ def test_supported_providers_package_names(provider: str) -> None:
 
 def test_is_sorted() -> None:
     assert list(_BUILTIN_PROVIDERS) == sorted(_BUILTIN_PROVIDERS.keys())
+
+
+def test_get_provider_package() -> None:
+    """The accessor returns the pip package name for a provider."""
+    assert get_provider_package("openai") == "langchain-openai"
+    assert get_provider_package("azure_ai") == "langchain-azure-ai"
+
+
+def test_get_provider_package_matches_registry() -> None:
+    """Every provider resolves to a derived name unless a pypi_name is set."""
+    for provider, spec in _BUILTIN_PROVIDERS.items():
+        expected = spec.pypi_name or spec.module.split(".", 1)[0].replace("_", "-")
+        assert get_provider_package(provider) == expected
+
+
+def test_get_provider_package_unknown() -> None:
+    """Unknown providers raise a helpful error."""
+    with pytest.raises(ValueError, match="Unsupported provider='bar'"):
+        get_provider_package("bar")

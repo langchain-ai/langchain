@@ -9,6 +9,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    NamedTuple,
     TypeAlias,
     cast,
     overload,
@@ -35,56 +36,87 @@ def _call(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
     return cls(**kwargs)
 
 
-_BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
-    "anthropic": ("langchain_anthropic", "ChatAnthropic", _call),
-    "anthropic_bedrock": ("langchain_aws", "ChatAnthropicBedrock", _call),
-    "azure_ai": ("langchain_azure_ai.chat_models", "AzureAIOpenAIApiChatModel", _call),
-    "azure_openai": ("langchain_openai", "AzureChatOpenAI", _call),
-    "baseten": ("langchain_baseten", "ChatBaseten", _call),
-    "bedrock": ("langchain_aws", "ChatBedrock", _call),
-    "bedrock_converse": ("langchain_aws", "ChatBedrockConverse", _call),
-    "cohere": ("langchain_cohere", "ChatCohere", _call),
-    "deepseek": ("langchain_deepseek", "ChatDeepSeek", _call),
-    "fireworks": ("langchain_fireworks", "ChatFireworks", _call),
-    "google_anthropic_vertex": (
+class _ProviderSpec(NamedTuple):
+    """Import configuration for a built-in chat model provider.
+
+    This is a `NamedTuple` for backwards compatibility with the previous
+    `(module, class_name, creator)` tuple: the first three fields keep their
+    positions, so existing positional indexing (e.g. `spec[0]`) and iteration
+    continue to work.
+    """
+
+    module: str
+    """Python module path containing the chat model class.
+
+    May be a submodule (e.g. `'langchain_azure_ai.chat_models'`) when the class is
+    not exported from the package root.
+    """
+    class_name: str
+    """Name of the chat model class to import."""
+    creator: Callable[..., BaseChatModel]
+    """Callable that instantiates the class with provided kwargs."""
+    pypi_name: str | None = None
+    """PyPI distribution name, set only when it differs from the derived default.
+
+    When `None`, `package` derives the name from `module` (the first module
+    segment with underscores replaced by hyphens), which holds for every LangChain
+    integration package. Set this explicitly for providers whose import module and
+    PyPI distribution name diverge.
+    """
+
+    @property
+    def package(self) -> str:
+        """PyPI distribution name that provides this provider's integration."""
+        if self.pypi_name is not None:
+            return self.pypi_name
+        return self.module.split(".", maxsplit=1)[0].replace("_", "-")
+
+
+_BUILTIN_PROVIDERS: dict[str, _ProviderSpec] = {
+    "anthropic": _ProviderSpec("langchain_anthropic", "ChatAnthropic", _call),
+    "anthropic_bedrock": _ProviderSpec("langchain_aws", "ChatAnthropicBedrock", _call),
+    "azure_ai": _ProviderSpec("langchain_azure_ai.chat_models", "AzureAIOpenAIApiChatModel", _call),
+    "azure_openai": _ProviderSpec("langchain_openai", "AzureChatOpenAI", _call),
+    "baseten": _ProviderSpec("langchain_baseten", "ChatBaseten", _call),
+    "bedrock": _ProviderSpec("langchain_aws", "ChatBedrock", _call),
+    "bedrock_converse": _ProviderSpec("langchain_aws", "ChatBedrockConverse", _call),
+    "cohere": _ProviderSpec("langchain_cohere", "ChatCohere", _call),
+    "deepseek": _ProviderSpec("langchain_deepseek", "ChatDeepSeek", _call),
+    "fireworks": _ProviderSpec("langchain_fireworks", "ChatFireworks", _call),
+    "google_anthropic_vertex": _ProviderSpec(
         "langchain_google_vertexai.model_garden",
         "ChatAnthropicVertex",
         _call,
     ),
-    "google_genai": ("langchain_google_genai", "ChatGoogleGenerativeAI", _call),
-    "google_vertexai": ("langchain_google_vertexai", "ChatVertexAI", _call),
-    "groq": ("langchain_groq", "ChatGroq", _call),
-    "huggingface": (
+    "google_genai": _ProviderSpec("langchain_google_genai", "ChatGoogleGenerativeAI", _call),
+    "google_vertexai": _ProviderSpec("langchain_google_vertexai", "ChatVertexAI", _call),
+    "groq": _ProviderSpec("langchain_groq", "ChatGroq", _call),
+    "huggingface": _ProviderSpec(
         "langchain_huggingface",
         "ChatHuggingFace",
         lambda cls, model, **kwargs: cls.from_model_id(model_id=model, **kwargs),
     ),
-    "ibm": (
+    "ibm": _ProviderSpec(
         "langchain_ibm",
         "ChatWatsonx",
         lambda cls, model, **kwargs: cls(model_id=model, **kwargs),
     ),
-    "litellm": ("langchain_litellm", "ChatLiteLLM", _call),
-    "mistralai": ("langchain_mistralai", "ChatMistralAI", _call),
-    "nvidia": ("langchain_nvidia_ai_endpoints", "ChatNVIDIA", _call),
-    "ollama": ("langchain_ollama", "ChatOllama", _call),
-    "openai": ("langchain_openai", "ChatOpenAI", _call),
-    "openrouter": ("langchain_openrouter", "ChatOpenRouter", _call),
-    "perplexity": ("langchain_perplexity", "ChatPerplexity", _call),
-    "together": ("langchain_together", "ChatTogether", _call),
-    "upstage": ("langchain_upstage", "ChatUpstage", _call),
-    "xai": ("langchain_xai", "ChatXAI", _call),
+    "litellm": _ProviderSpec("langchain_litellm", "ChatLiteLLM", _call),
+    "mistralai": _ProviderSpec("langchain_mistralai", "ChatMistralAI", _call),
+    "nvidia": _ProviderSpec("langchain_nvidia_ai_endpoints", "ChatNVIDIA", _call),
+    "ollama": _ProviderSpec("langchain_ollama", "ChatOllama", _call),
+    "openai": _ProviderSpec("langchain_openai", "ChatOpenAI", _call),
+    "openrouter": _ProviderSpec("langchain_openrouter", "ChatOpenRouter", _call),
+    "perplexity": _ProviderSpec("langchain_perplexity", "ChatPerplexity", _call),
+    "together": _ProviderSpec("langchain_together", "ChatTogether", _call),
+    "upstage": _ProviderSpec("langchain_upstage", "ChatUpstage", _call),
+    "xai": _ProviderSpec("langchain_xai", "ChatXAI", _call),
 }
 """Registry mapping provider names to their import configuration.
 
-Each entry maps a provider key to a tuple of:
-
-- `module_path`: The Python module path containing the chat model class.
-
-    This may be a submodule (e.g., `'langchain_azure_ai.chat_models'`) if the class is
-    not exported from the package root.
-- `class_name`: The name of the chat model class to import.
-- `creator_func`: A callable that instantiates the class with provided kwargs.
+Each entry maps a provider key to a `_ProviderSpec`, holding the import module
+path, the chat model class name, a callable that instantiates it, and an optional
+explicit PyPI distribution name (see `_ProviderSpec.package`).
 
 !!! note
 
@@ -100,12 +132,41 @@ Each entry maps a provider key to a tuple of:
 """
 
 
-def _import_module(module: str, class_name: str) -> ModuleType:
+def get_provider_package(provider: str) -> str:
+    """Return the PyPI package that provides a built-in provider's integration.
+
+    Use this to map a provider key (e.g. `'openai'`) to the pip-installable
+    distribution name (e.g. `'langchain-openai'`) without hard-coding the mapping
+    or re-deriving it from module paths.
+
+    Args:
+        provider: A built-in provider key, as accepted by `init_chat_model`'s
+            `model_provider` argument (e.g. `'openai'`, `'anthropic'`).
+
+    Returns:
+        The pip-installable distribution name for the provider's integration.
+
+    Raises:
+        ValueError: If `provider` is not a built-in provider.
+    """
+    try:
+        spec = _BUILTIN_PROVIDERS[provider]
+    except KeyError:
+        supported = ", ".join(sorted(_BUILTIN_PROVIDERS))
+        msg = f"Unsupported {provider=}.\n\nSupported model providers are: {supported}"
+        raise ValueError(msg) from None
+    return spec.package
+
+
+def _import_module(module: str, class_name: str, package: str | None = None) -> ModuleType:
     """Import a module by name.
 
     Args:
         module: The fully qualified module name to import (e.g., `'langchain_openai'`).
         class_name: The name of the class being imported, used for error messages.
+        package: The pip package that provides `module`, used in the install hint.
+            When `None`, it is derived from `module` (first segment, underscores
+            replaced by hyphens).
 
     Returns:
         The imported module.
@@ -117,9 +178,8 @@ def _import_module(module: str, class_name: str) -> ModuleType:
     try:
         return importlib.import_module(module)
     except ImportError as e:
-        # Extract package name from module path (e.g., "langchain_azure_ai.chat_models"
-        # becomes "langchain-azure-ai")
-        pkg = module.split(".", maxsplit=1)[0].replace("_", "-")
+        # e.g. "langchain_azure_ai.chat_models" becomes "langchain-azure-ai"
+        pkg = package or module.split(".", maxsplit=1)[0].replace("_", "-")
         msg = (
             f"Initializing {class_name} requires the {pkg} package. Please install it "
             f"with `pip install {pkg}`"
@@ -153,22 +213,22 @@ def _get_chat_model_creator(
         msg = f"Unsupported {provider=}.\n\nSupported model providers are: {supported}"
         raise ValueError(msg)
 
-    pkg, class_name, creator_func = _BUILTIN_PROVIDERS[provider]
+    spec = _BUILTIN_PROVIDERS[provider]
     try:
-        module = _import_module(pkg, class_name)
+        module = _import_module(spec.module, spec.class_name, spec.package)
     except ImportError as e:
         if provider != "ollama":
             raise
         # For backwards compatibility
         try:
-            module = _import_module("langchain_community.chat_models", class_name)
+            module = _import_module("langchain_community.chat_models", spec.class_name)
         except ImportError:
             # If both langchain-ollama and langchain-community aren't available,
             # raise an error related to langchain-ollama
             raise e from None
 
-    cls = getattr(module, class_name)
-    return functools.partial(creator_func, cls=cls)
+    cls = getattr(module, spec.class_name)
+    return functools.partial(spec.creator, cls=cls)
 
 
 @overload

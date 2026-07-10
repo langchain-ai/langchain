@@ -3,7 +3,7 @@
 import functools
 import importlib
 from collections.abc import Callable
-from typing import Any
+from typing import Any, NamedTuple
 
 from langchain_core.embeddings import Embeddings
 
@@ -12,33 +12,65 @@ def _call(cls: type[Embeddings], **kwargs: Any) -> Embeddings:
     return cls(**kwargs)
 
 
-_BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., Embeddings]]] = {
-    "azure_ai": ("langchain_azure_ai.embeddings", "AzureAIOpenAIApiEmbeddingsModel", _call),
-    "azure_openai": ("langchain_openai", "AzureOpenAIEmbeddings", _call),
-    "bedrock": (
+class _ProviderSpec(NamedTuple):
+    """Import configuration for a built-in embeddings provider.
+
+    This is a `NamedTuple` for backwards compatibility with the previous
+    `(module, class_name, creator)` tuple: the first three fields keep their
+    positions, so existing positional indexing (e.g. `spec[0]`) and iteration
+    continue to work.
+    """
+
+    module: str
+    """Python module path containing the embeddings class."""
+    class_name: str
+    """Name of the embeddings class to import."""
+    creator: Callable[..., Embeddings]
+    """Callable that instantiates the class with provided kwargs."""
+    pypi_name: str | None = None
+    """PyPI distribution name, set only when it differs from the derived default.
+
+    When `None`, `package` derives the name from `module` (the first module
+    segment with underscores replaced by hyphens), which holds for every LangChain
+    integration package. Set this explicitly for providers whose import module and
+    PyPI distribution name diverge.
+    """
+
+    @property
+    def package(self) -> str:
+        """PyPI distribution name that provides this provider's integration."""
+        if self.pypi_name is not None:
+            return self.pypi_name
+        return self.module.split(".", maxsplit=1)[0].replace("_", "-")
+
+
+_BUILTIN_PROVIDERS: dict[str, _ProviderSpec] = {
+    "azure_ai": _ProviderSpec(
+        "langchain_azure_ai.embeddings", "AzureAIOpenAIApiEmbeddingsModel", _call
+    ),
+    "azure_openai": _ProviderSpec("langchain_openai", "AzureOpenAIEmbeddings", _call),
+    "bedrock": _ProviderSpec(
         "langchain_aws",
         "BedrockEmbeddings",
         lambda cls, model, **kwargs: cls(model_id=model, **kwargs),
     ),
-    "cohere": ("langchain_cohere", "CohereEmbeddings", _call),
-    "google_genai": ("langchain_google_genai", "GoogleGenerativeAIEmbeddings", _call),
-    "google_vertexai": ("langchain_google_vertexai", "VertexAIEmbeddings", _call),
-    "huggingface": (
+    "cohere": _ProviderSpec("langchain_cohere", "CohereEmbeddings", _call),
+    "google_genai": _ProviderSpec("langchain_google_genai", "GoogleGenerativeAIEmbeddings", _call),
+    "google_vertexai": _ProviderSpec("langchain_google_vertexai", "VertexAIEmbeddings", _call),
+    "huggingface": _ProviderSpec(
         "langchain_huggingface",
         "HuggingFaceEmbeddings",
         lambda cls, model, **kwargs: cls(model_name=model, **kwargs),
     ),
-    "mistralai": ("langchain_mistralai", "MistralAIEmbeddings", _call),
-    "ollama": ("langchain_ollama", "OllamaEmbeddings", _call),
-    "openai": ("langchain_openai", "OpenAIEmbeddings", _call),
+    "mistralai": _ProviderSpec("langchain_mistralai", "MistralAIEmbeddings", _call),
+    "ollama": _ProviderSpec("langchain_ollama", "OllamaEmbeddings", _call),
+    "openai": _ProviderSpec("langchain_openai", "OpenAIEmbeddings", _call),
 }
 """Registry mapping provider names to their import configuration.
 
-Each entry maps a provider key to a tuple of:
-
-- `module_path`: The Python module path containing the embeddings class.
-- `class_name`: The name of the embeddings class to import.
-- `creator_func`: A callable that instantiates the class with provided kwargs.
+Each entry maps a provider key to a `_ProviderSpec`, holding the import module
+path, the embeddings class name, a callable that instantiates it, and an optional
+explicit PyPI distribution name (see `_ProviderSpec.package`).
 
 !!! note
 
@@ -81,23 +113,47 @@ def _get_embeddings_class_creator(provider: str) -> Callable[..., Embeddings]:
         )
         raise ValueError(msg)
 
-    module_name, class_name, creator_func = _BUILTIN_PROVIDERS[provider]
+    spec = _BUILTIN_PROVIDERS[provider]
     try:
-        module = importlib.import_module(module_name)
+        module = importlib.import_module(spec.module)
     except ImportError as e:
-        pkg = module_name.split(".", maxsplit=1)[0].replace("_", "-")
+        pkg = spec.package
         msg = f"Could not import {pkg} python package. Please install it with `pip install {pkg}`"
         raise ImportError(msg) from e
 
-    cls = getattr(module, class_name)
-    return functools.partial(creator_func, cls=cls)
+    cls = getattr(module, spec.class_name)
+    return functools.partial(spec.creator, cls=cls)
+
+
+def get_provider_package(provider: str) -> str:
+    """Return the PyPI package that provides a built-in provider's integration.
+
+    Use this to map a provider key (e.g. `'openai'`) to the pip-installable
+    distribution name (e.g. `'langchain-openai'`) without hard-coding the mapping
+    or re-deriving it from module paths.
+
+    Args:
+        provider: A built-in provider key, as accepted by `init_embeddings`'s
+            `provider` argument (e.g. `'openai'`, `'cohere'`).
+
+    Returns:
+        The pip-installable distribution name for the provider's integration.
+
+    Raises:
+        ValueError: If `provider` is not a built-in provider.
+    """
+    try:
+        spec = _BUILTIN_PROVIDERS[provider]
+    except KeyError:
+        supported = ", ".join(sorted(_BUILTIN_PROVIDERS))
+        msg = f"Unsupported {provider=}.\n\nSupported model providers are: {supported}"
+        raise ValueError(msg) from None
+    return spec.package
 
 
 def _get_provider_list() -> str:
     """Get formatted list of providers and their packages."""
-    return "\n".join(
-        f"  - {p}: {pkg[0].replace('_', '-')}" for p, pkg in _BUILTIN_PROVIDERS.items()
-    )
+    return "\n".join(f"  - {p}: {spec.package}" for p, spec in _BUILTIN_PROVIDERS.items())
 
 
 def _parse_model_string(model_name: str) -> tuple[str, str]:
