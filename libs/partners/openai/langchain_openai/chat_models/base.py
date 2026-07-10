@@ -2039,7 +2039,9 @@ class BaseChatOpenAI(BaseChatModel):
         except KeyError:
             model_lower = model.lower()
             encoder = "cl100k_base"
-            if model_lower.startswith(("gpt-4o", "gpt-4.1", "gpt-5")):
+            if model_lower.startswith(("gpt-4o", "gpt-4.1", "gpt-5")) or (
+                len(model_lower) > 1 and model_lower[0] == "o" and model_lower[1].isdigit()
+            ):
                 encoder = "o200k_base"
             encoding = tiktoken.get_encoding(encoder)
         return model, encoding
@@ -2090,7 +2092,14 @@ class BaseChatOpenAI(BaseChatModel):
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith(("gpt-3.5-turbo", "gpt-4", "gpt-5")):
+        elif model.startswith(("gpt-3.5-turbo", "gpt-4", "gpt-5")) or (
+            len(model) > 1 and model[0] == "o" and model[1].isdigit()
+        ):
+            # o-series reasoning models (o1, o3, o4, ...) use the same "every
+            # message follows <im_start>{role/name}\n{content}<im_end>\n" format
+            # as gpt-3.5-turbo+.  These are approximations; OpenAI has not
+            # published exact token-counting formulas for reasoning models, which
+            # do not support the system role or the name key.
             tokens_per_message = 3
             tokens_per_name = 1
         else:

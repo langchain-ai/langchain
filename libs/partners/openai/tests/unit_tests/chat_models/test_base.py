@@ -719,7 +719,12 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
     [
         OPENAI_TEST_MODEL,
         "gpt-5-nano",
+        "o1",
+        "o1-preview",
+        "o1-mini",
         "o3",
+        "o3-mini",
+        "o3-pro",
         "gpt-5.2",
     ],
 )
@@ -1089,6 +1094,26 @@ def test_get_num_tokens_from_messages() -> None:
     ]
     actual = llm.get_num_tokens_from_messages(messages)
     assert actual
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        "o1",
+        "o1-preview",
+        "o1-mini",
+        "o3",
+        "o3-mini",
+        "o3-pro",
+    ],
+)
+def test_get_num_tokens_from_messages_o_series(model: str) -> None:
+    """o-series reasoning models should not raise NotImplementedError."""
+    llm = ChatOpenAI(model=model)
+    messages = [HumanMessage(content="hello")]
+    result = llm.get_num_tokens_from_messages(messages)
+    assert isinstance(result, int)
+    assert result > 0
 
 
 class Foo(BaseModel):
