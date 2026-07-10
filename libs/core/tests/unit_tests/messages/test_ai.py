@@ -576,3 +576,107 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_streaming_tool_call_empty_args_not_fired_prematurely() -> None:
+    """Empty args on an intermediate chunk should NOT create a tool call."""
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="get_weather", args="", id="call_abc", index=0
+            )
+        ],
+    )
+    assert chunk.tool_calls == []
+
+
+def test_streaming_tool_call_empty_args_fires_at_stream_end() -> None:
+    """Empty args on the last chunk means a zero-arg tool; tool call should be created."""
+    chunk = AIMessageChunk(
+        content="Done.",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="get_status", args="", id="call_xyz", index=0
+            )
+        ],
+        chunk_position="last",
+    )
+    assert chunk.tool_calls == [
+        {"name": "get_status", "args": {}, "id": "call_xyz", "type": "tool_call"}
+    ]
+
+
+def test_streaming_tool_call_none_args_still_defaults_to_empty_dict() -> None:
+    """args=None (field never sent) should still resolve to {} immediately."""
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="no_args_tool", args=None, id="call_none", index=0
+            )
+        ],
+    )
+    assert chunk.tool_calls == [
+        {
+            "name": "no_args_tool",
+            "args": {},
+            "id": "call_none",
+            "type": "tool_call",
+        }
+    ]
+
+
+def test_streaming_tool_call_malformed_args_not_converted_to_empty_dict() -> None:
+    """Non-empty, non-parseable args should go to invalid_tool_calls, never silently become {}."""
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="bad_tool", args="not-json", id="call_bad", index=0
+            )
+        ],
+    )
+    assert chunk.tool_calls == []
+    assert len(chunk.invalid_tool_calls) == 1
+    assert chunk.invalid_tool_calls[0]["args"] == "not-json"
+
+
+def test_streaming_tool_call_partial_json_still_progressively_parses() -> None:
+    """Partial JSON args should still progressively parse into tool_calls."""
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="get_weather",
+                args='{"location": "Tokyo"',
+                id="call_partial",
+                index=0,
+            )
+        ],
+    )
+    assert chunk.tool_calls == [
+        {
+            "name": "get_weather",
+            "args": {"location": "Tokyo"},
+            "id": "call_partial",
+            "type": "tool_call",
+        }
+    ]
+
+
+def test_streaming_tool_call_mixed_chunks_empty_skipped_partial_parsed() -> None:
+    """Mixed chunks: empty-args chunks are skipped, partial-json chunks still parsed."""
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name="t1", args="", id="id1", index=0),
+            create_tool_call_chunk(
+                name="t2", args='{"x": 1}', id="id2", index=1
+            ),
+        ],
+    )
+    assert len(chunk.tool_calls) == 1
+    assert chunk.tool_calls[0]["name"] == "t2"
+    assert chunk.tool_calls[0]["id"] == "id2"
+    assert chunk.tool_calls[0]["args"] == {"x": 1}
