@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
@@ -21,8 +22,14 @@ if TYPE_CHECKING:
 Catch = tuple[type[Exception], ...] | Callable[[Exception], bool]
 """Exceptions to catch: a tuple of exception types, or a predicate ``(exc) -> bool``."""
 
-OnError = Callable[[Exception, "ToolCallRequest"], "str | list[str | dict[Any, Any]]"]
-"""Formatter for a caught exception, returning `ToolMessage` content."""
+OnError = Callable[
+    [Exception, "ToolCallRequest"],
+    "str | list[str | dict[Any, Any]] | Awaitable[str | list[str | dict[Any, Any]]]",
+]
+"""Handler for a caught exception, returning `ToolMessage` content.
+
+May be sync or async. An async `on_error` requires async execution (`ainvoke`/`astream`).
+"""
 
 
 def _should_catch(exc: Exception, catch: Catch) -> bool:
@@ -130,6 +137,31 @@ class ToolErrorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         """
         return f"Tool '{tool_name}' failed with {type(exc).__name__}."
 
+    def _sync_content(
+        self, exc: Exception, request: ToolCallRequest, tool_name: str
+    ) -> str | list[str | dict[Any, Any]]:
+        """Resolve the error message content in a sync context."""
+        if self.on_error is None:
+            return self._format_error(tool_name, exc)
+        result = self.on_error(exc, request)
+        if inspect.isawaitable(result):
+            if inspect.iscoroutine(result):
+                result.close()
+            msg = "async on_error requires async execution (ainvoke or astream)"
+            raise TypeError(msg)
+        return result
+
+    async def _async_content(
+        self, exc: Exception, request: ToolCallRequest, tool_name: str
+    ) -> str | list[str | dict[Any, Any]]:
+        """Resolve the error message content in an async context."""
+        if self.on_error is None:
+            return self._format_error(tool_name, exc)
+        result = self.on_error(exc, request)
+        if inspect.isawaitable(result):
+            return await result
+        return result
+
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
@@ -157,13 +189,8 @@ class ToolErrorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         except Exception as exc:
             if not _should_catch(exc, self.catch):
                 raise
-            content = (
-                self.on_error(exc, request)
-                if self.on_error is not None
-                else self._format_error(tool_name, exc)
-            )
             return ToolMessage(
-                content=content,
+                content=self._sync_content(exc, request, tool_name),
                 tool_call_id=request.tool_call["id"],
                 name=tool_name,
                 status="error",
@@ -188,13 +215,8 @@ class ToolErrorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         except Exception as exc:
             if not _should_catch(exc, self.catch):
                 raise
-            content = (
-                self.on_error(exc, request)
-                if self.on_error is not None
-                else self._format_error(tool_name, exc)
-            )
             return ToolMessage(
-                content=content,
+                content=await self._async_content(exc, request, tool_name),
                 tool_call_id=request.tool_call["id"],
                 name=tool_name,
                 status="error",

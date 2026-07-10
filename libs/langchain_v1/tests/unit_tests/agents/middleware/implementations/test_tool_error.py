@@ -3,6 +3,7 @@
 import pytest
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
+from langgraph.prebuilt.tool_node import ToolCallRequest
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware import ToolErrorMiddleware
@@ -54,3 +55,50 @@ def test_tool_error_uncaught_propagates() -> None:
 
     with pytest.raises(ValueError, match="secret detail"):
         agent.invoke({"messages": [HumanMessage("go")]})
+
+
+def test_tool_error_on_error_formats_content() -> None:
+    """`on_error` sets the ToolMessage content and can use the tool call context."""
+
+    def on_error(exc: Exception, request: ToolCallRequest) -> str:
+        return (
+            f"`{request.tool_call['name']}` raised {type(exc).__name__} for "
+            f"{request.tool_call['args']}; fix the arguments and retry."
+        )
+
+    agent = create_agent(
+        model=_model(),
+        tools=[failing_tool],
+        middleware=[ToolErrorMiddleware(catch=(ValueError,), on_error=on_error)],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("go")]})
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].status == "error"
+    assert tool_messages[0].content == (
+        "`failing_tool` raised ValueError for {'value': 'x'}; fix the arguments and retry."
+    )
+    # Custom formatter controls disclosure — the raw exception message is not leaked.
+    assert "secret detail" not in tool_messages[0].content
+
+
+async def test_tool_error_async_on_error() -> None:
+    """An async `on_error` is awaited under async execution."""
+
+    async def on_error(exc: Exception, request: ToolCallRequest) -> str:
+        return f"async handled `{request.tool_call['name']}`: {type(exc).__name__}"
+
+    agent = create_agent(
+        model=_model(),
+        tools=[failing_tool],
+        middleware=[ToolErrorMiddleware(catch=(ValueError,), on_error=on_error)],
+    )
+
+    result = await agent.ainvoke({"messages": [HumanMessage("go")]})
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].status == "error"
+    assert tool_messages[0].content == "async handled `failing_tool`: ValueError"
