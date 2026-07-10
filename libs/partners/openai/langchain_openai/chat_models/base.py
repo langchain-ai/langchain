@@ -264,6 +264,26 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
+def _apply_prompt_cache_breakpoint(
+    source_block: dict[str, Any], formatted_block: dict[str, Any]
+) -> dict[str, Any]:
+    """Apply an OpenAI prompt cache breakpoint to a formatted content block.
+
+    A breakpoint set directly on the block takes precedence over one nested in
+    `extras`. Membership (not truthiness) decides whether to copy it, so a
+    present-but-falsy value (e.g. `None`) is still preserved.
+    """
+    if "prompt_cache_breakpoint" in source_block:
+        formatted_block["prompt_cache_breakpoint"] = source_block[
+            "prompt_cache_breakpoint"
+        ]
+    elif isinstance(extras := source_block.get("extras"), dict) and (
+        "prompt_cache_breakpoint" in extras
+    ):
+        formatted_block["prompt_cache_breakpoint"] = extras["prompt_cache_breakpoint"]
+    return formatted_block
+
+
 def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[dict]:
     """Sanitize content for chat/completions API.
 
@@ -318,7 +338,21 @@ def _format_message_content(
                 # image generation calls)
                 and not (api == "responses" and str(role).lower().startswith("ai"))
             ):
-                formatted_content.append(convert_to_openai_data_block(block, api=api))
+                formatted_block = convert_to_openai_data_block(block, api=api)
+                formatted_content.append(
+                    _apply_prompt_cache_breakpoint(block, formatted_block)
+                )
+            elif (
+                isinstance(block, dict)
+                and block.get("type") == "text"
+                and "text" in block
+                and isinstance(extras := block.get("extras"), dict)
+                and "prompt_cache_breakpoint" in extras
+            ):
+                formatted_block = {"type": "text", "text": block["text"]}
+                formatted_content.append(
+                    _apply_prompt_cache_breakpoint(block, formatted_block)
+                )
             # Anthropic image blocks
             elif (
                 isinstance(block, dict)
@@ -989,6 +1023,12 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in `langchain-openai` 0.3.24"
     """
 
+    prompt_cache_options: dict[str, Any] | None = None
+    """Options controlling OpenAI prompt cache behavior.
+
+    !!! version-added "Added in `langchain-openai` 1.3.5"
+    """
+
     service_tier: str | None = None
     """Latency tier for request.
 
@@ -1314,6 +1354,7 @@ class BaseChatOpenAI(BaseChatModel):
             "verbosity": self.verbosity,
             "context_management": self.context_management,
             "include": self.include,
+            "prompt_cache_options": self.prompt_cache_options,
             "service_tier": self.service_tier,
             "truncation": self.truncation,
             "store": self.store,
@@ -3352,12 +3393,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```
 
         Set `prompt_cache_options` per invocation, as above, or persist it on
-        the model using `model_kwargs`:
+        the model:
 
         ```python
         model = ChatOpenAI(
             model="gpt-5.6-sol",
-            model_kwargs={"prompt_cache_options": {"mode": "explicit", "ttl": "30m"}},
+            prompt_cache_options={"mode": "explicit", "ttl": "30m"},
         )
         ```
 
