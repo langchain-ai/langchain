@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import Any, Literal, cast, get_type_hints, overload
 
 from pydantic import BaseModel, Field, create_model
+from typing_extensions import is_typeddict
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import Runnable
@@ -419,6 +420,17 @@ def _get_schema_from_runnable_and_arg_types(
     return cast("type[BaseModel]", create_model(name, **fields))  # type: ignore[call-overload]
 
 
+def _is_root_model_wrapping_typed_dict(schema: TypeBaseModel) -> bool:
+    """Check whether a Pydantic v2 RootModel wraps a TypedDict input."""
+    if not isinstance(schema, type) or not issubclass(schema, BaseModel):
+        return False
+    if not getattr(schema, "__pydantic_root_model__", False):
+        return False
+
+    root_field = schema.model_fields.get("root")
+    return root_field is not None and is_typeddict(root_field.annotation)
+
+
 def convert_runnable_to_tool(
     runnable: Runnable[Any, Any],
     args_schema: TypeBaseModel | None = None,
@@ -464,7 +476,11 @@ def convert_runnable_to_tool(
         and schema.get("type") == "object"
         and schema.get("properties")
     ):
-        args_schema = runnable.input_schema
+        input_schema = runnable.input_schema
+        if _is_root_model_wrapping_typed_dict(input_schema):
+            args_schema = _get_schema_from_runnable_and_arg_types(runnable, name)
+        else:
+            args_schema = input_schema
     else:
         args_schema = _get_schema_from_runnable_and_arg_types(
             runnable, name, arg_types=arg_types

@@ -1758,6 +1758,59 @@ def test_convert_from_runnable_dict() -> None:
     assert result == "6"
 
 
+def test_convert_runnable_to_tool_unwraps_root_model_typed_dict() -> None:
+    """RootModel-wrapped TypedDict input should produce flat tool arguments."""
+
+    class InputState(TypedDict):
+        foo: str
+        bar: str
+
+    class RootTypedDictRunnable(Runnable[InputState, dict[str, str]]):
+        @override
+        def get_input_schema(
+            self, config: RunnableConfig | None = None
+        ) -> TypeBaseModel:
+            return create_model_v2("RootTypedDictInput", root=InputState)
+
+        @override
+        def get_input_jsonschema(
+            self, config: RunnableConfig | None = None
+        ) -> dict[str, Any]:
+            return {
+                "type": "object",
+                "properties": {
+                    "foo": {"type": "string"},
+                    "bar": {"type": "string"},
+                },
+                "required": ["foo", "bar"],
+            }
+
+        @override
+        def invoke(
+            self,
+            input: InputState,
+            config: RunnableConfig | None = None,
+            **kwargs: Any,
+        ) -> dict[str, str]:
+            return dict(input)
+
+    as_tool = convert_runnable_to_tool(
+        RootTypedDictRunnable(),
+        name="my_tool",
+        description="Example tool.",
+    )
+
+    assert set(as_tool.args) == {"foo", "bar"}
+
+    openai_tool = convert_to_openai_tool(as_tool)
+    parameters = openai_tool["function"]["parameters"]
+    assert "root" not in parameters["properties"]
+    assert set(parameters["properties"]) == {"foo", "bar"}
+
+    result = as_tool.invoke({"foo": "hello", "bar": "world"})
+    assert result == {"foo": "hello", "bar": "world"}
+
+
 def test_convert_from_runnable_other() -> None:
     # String input
     def f(x: str) -> str:
