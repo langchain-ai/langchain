@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         print_text,
     )
     from langchain_core.utils.iter import batch_iterate
+    from langchain_core.utils.langsmith_gateway import LangSmithGatewayOAuth
     from langchain_core.utils.pydantic import pre_init
     from langchain_core.utils.strings import (
         comma_list,
@@ -42,6 +43,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = (
+    "LangSmithGatewayOAuth",
     "StrictFormatter",
     "abatch_iterate",
     "batch_iterate",
@@ -72,6 +74,7 @@ __all__ = (
 
 _dynamic_imports = {
     "image": "__module__",
+    "LangSmithGatewayOAuth": "langsmith_gateway",
     "abatch_iterate": "aiter",
     "get_from_dict_or_env": "env",
     "get_from_env": "env",

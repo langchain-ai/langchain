@@ -88,6 +88,7 @@ from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
+from langchain_core.utils.langsmith_gateway import LangSmithGatewayOAuth
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import (
@@ -802,6 +803,16 @@ class ChatFireworks(BaseChatModel):
     If `LANGSMITH_GATEWAY` is set, it takes precedence over `FIREWORKS_API_BASE`.
     """
 
+    langsmith_gateway_oauth_token: SecretStr | None = Field(
+        default_factory=secret_from_env("LANGSMITH_GATEWAY_OAUTH_TOKEN", default=None),
+        exclude=True,
+    )
+    """OAuth token used to authenticate this client to LangSmith Gateway.
+
+    When set, the token is sent as an `Authorization` bearer credential and is
+    never passed to Fireworks as an API key.
+    """
+
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
@@ -902,19 +913,31 @@ class ChatFireworks(BaseChatModel):
         # so the LangChain `run_manager` sees each attempt. Suppress the
         # SDK's built-in retry layer to avoid double-retrying.
         if not self.client:
+            http_client = (
+                httpx.Client(auth=LangSmithGatewayOAuth(token.get_secret_value()))
+                if (token := self.langsmith_gateway_oauth_token) is not None
+                else None
+            )
             self._sdk_client = Fireworks(
                 api_key=api_key,
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=0,
+                http_client=http_client,
             )
             self.client = self._sdk_client.chat.completions
         if not self.async_client:
+            http_async_client = (
+                httpx.AsyncClient(auth=LangSmithGatewayOAuth(token.get_secret_value()))
+                if (token := self.langsmith_gateway_oauth_token) is not None
+                else None
+            )
             self._async_sdk_client = AsyncFireworks(
                 api_key=api_key,
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=0,
+                http_client=http_async_client,
             )
             self.async_client = self._async_sdk_client.chat.completions
         return self

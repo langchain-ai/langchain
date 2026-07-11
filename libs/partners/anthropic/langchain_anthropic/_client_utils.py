@@ -14,6 +14,7 @@ from functools import lru_cache
 from typing import Any
 
 import anthropic
+from langchain_core.utils.langsmith_gateway import LangSmithGatewayOAuth
 
 _NOT_GIVEN: Any = object()
 
@@ -49,6 +50,7 @@ def _get_default_httpx_client(
     base_url: str | None,
     timeout: Any = _NOT_GIVEN,
     anthropic_proxy: str | None = None,
+    auth: LangSmithGatewayOAuth | None = None,
 ) -> _SyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
@@ -59,6 +61,8 @@ def _get_default_httpx_client(
         kwargs["timeout"] = timeout
     if anthropic_proxy is not None:
         kwargs["proxy"] = anthropic_proxy
+    if auth is not None:
+        kwargs["auth"] = auth
     return _SyncHttpxClientWrapper(**kwargs)
 
 
@@ -68,6 +72,7 @@ def _get_default_async_httpx_client(
     base_url: str | None,
     timeout: Any = _NOT_GIVEN,
     anthropic_proxy: str | None = None,
+    auth: LangSmithGatewayOAuth | None = None,
 ) -> _AsyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
@@ -78,4 +83,6 @@ def _get_default_async_httpx_client(
         kwargs["timeout"] = timeout
     if anthropic_proxy is not None:
         kwargs["proxy"] = anthropic_proxy
+    if auth is not None:
+        kwargs["auth"] = auth
     return _AsyncHttpxClientWrapper(**kwargs)

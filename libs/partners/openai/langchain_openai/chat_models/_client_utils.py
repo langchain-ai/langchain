@@ -24,6 +24,7 @@ from typing import Any, TypeVar, cast
 
 import httpx
 import openai
+from langchain_core.utils.langsmith_gateway import LangSmithGatewayOAuth
 from pydantic import SecretStr
 
 logger = logging.getLogger(__name__)
@@ -499,11 +500,19 @@ def _get_default_httpx_client(
     base_url: str | None,
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    auth: LangSmithGatewayOAuth | None = None,
 ) -> _SyncHttpxClientWrapper:
     """Get default httpx client.
 
     Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
     """
+    if auth is not None:
+        return _SyncHttpxClientWrapper(
+            base_url=base_url,
+            timeout=timeout,
+            transport=httpx.HTTPTransport(socket_options=socket_options),
+            auth=auth,
+        )
     try:
         hash(timeout)
     except TypeError:
@@ -516,11 +525,19 @@ def _get_default_async_httpx_client(
     base_url: str | None,
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    auth: LangSmithGatewayOAuth | None = None,
 ) -> _AsyncHttpxClientWrapper:
     """Get default httpx client.
 
     Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
     """
+    if auth is not None:
+        return _AsyncHttpxClientWrapper(
+            base_url=base_url,
+            timeout=timeout,
+            transport=httpx.AsyncHTTPTransport(socket_options=socket_options),
+            auth=auth,
+        )
     try:
         hash(timeout)
     except TypeError:
