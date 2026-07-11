@@ -2136,7 +2136,7 @@ class BaseChatOpenAI(BaseChatModel):
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith(("gpt-3.5-turbo", "gpt-4", "gpt-5")):
+        elif model.startswith(("gpt-3.5-turbo", "gpt-4", "gpt-5", "o1", "o3", "o4")):
             tokens_per_message = 3
             tokens_per_name = 1
         else:

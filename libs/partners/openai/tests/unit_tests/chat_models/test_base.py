@@ -1091,6 +1091,40 @@ def test_get_num_tokens_from_messages() -> None:
     assert actual
 
 
+@pytest.mark.parametrize(
+    "model",
+    ["o1", "o1-preview", "o1-mini", "o3", "o3-mini", "o3-pro", "o4-mini"],
+)
+def test_get_num_tokens_from_messages_o_series(model: str) -> None:
+    """o-series reasoning models use the same message-overhead accounting as
+    gpt-4/gpt-5 chat models (3 tokens/message, 1 token/name).
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38700:
+    these previously raised NotImplementedError because the model-prefix
+    check only recognized "gpt-3.5-turbo", "gpt-4", and "gpt-5".
+    """
+    llm = ChatOpenAI(model=model)
+    messages = [
+        SystemMessage("you're a good assistant"),
+        HumanMessage("how are you"),
+    ]
+    actual = llm.get_num_tokens_from_messages(messages)
+    expected = ChatOpenAI(model=OPENAI_TEST_MODEL).get_num_tokens_from_messages(
+        messages
+    )
+    assert actual == expected
+
+
+def test_get_num_tokens_from_messages_unsupported_model_still_raises() -> None:
+    """The fix for o-series models must not silently broaden the match to
+    arbitrary/unknown model families -- unsupported models should still
+    raise NotImplementedError with a helpful message."""
+    llm = ChatOpenAI(model="some-future-unsupported-model")
+    messages = [HumanMessage("hi")]
+    with pytest.raises(NotImplementedError, match="not presently implemented"):
+        llm.get_num_tokens_from_messages(messages)
+
+
 class Foo(BaseModel):
     bar: int
 
