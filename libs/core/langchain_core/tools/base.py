@@ -845,14 +845,27 @@ class ChildTool(BaseTool):
                     # Exclude "args"/"kwargs" as these are synthetic fields for variadic
                     # parameters that should not be passed as keyword arguments.
                     fi = field_info[k]
-                    # Pydantic v2 uses is_required() method, v1 uses required attribute
-                    has_default = (
-                        not fi.is_required()
-                        if hasattr(fi, "is_required")
-                        else not getattr(fi, "required", True)
+                    # Check if the field has a validation_alias (Pydantic v2) or
+                    # alias (Pydantic v1) that is present in tool_input. This
+                    # handles required fields whose alias was used in the input
+                    # but whose Python field name differs from the input key.
+                    alias = (
+                        fi.validation_alias
+                        if hasattr(fi, "validation_alias") and isinstance(fi.validation_alias, str)
+                        else getattr(fi, "alias", None)
                     )
-                    if has_default:
+                    if alias and alias in tool_input:
+                        # Field was provided via its alias - include it (validated)
                         validated_input[k] = getattr(result, k)
+                    else:
+                        # Pydantic v2 uses is_required() method, v1 uses required attribute
+                        has_default = (
+                            not fi.is_required()
+                            if hasattr(fi, "is_required")
+                            else not getattr(fi, "required", True)
+                        )
+                        if has_default:
+                            validated_input[k] = getattr(result, k)
 
             for k in self._injected_args_keys:
                 if k in tool_input:

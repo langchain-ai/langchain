@@ -25,6 +25,7 @@ from typing import (
 import pytest
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import Field as FieldV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
 
@@ -4063,3 +4064,86 @@ def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> Non
     new_schema = new_cls.model_json_schema()
     assert new_schema is not old_schema
     assert new_schema["description"] == "New description for cache test."
+
+
+def test_tool_parse_input_with_validation_alias() -> None:
+    """Required fields resolved via validation_alias must not be silently dropped.
+
+    When args_schema uses Field(validation_alias=...), _parse_input must correctly
+    map the alias key in tool_input to the Python field name.
+    """
+    # Pydantic v2 — Field(validation_alias=...)
+    class _AliasSchemaV2(BaseModel):
+        actual_name: str = Field(validation_alias="input_name")  # type: ignore[assignment]
+
+    @tool(args_schema=_AliasSchemaV2)
+    def _alias_tool_v2(actual_name: str) -> str:
+        """Tool with validation_alias."""
+        return actual_name
+
+    result = _alias_tool_v2.invoke({"input_name": "test_value"})
+    assert result == "test_value", (
+        f"Expected 'test_value', got {result!r}. "
+        "Required field with validation_alias was silently dropped."
+    )
+
+    # Pydantic v2 — Field(alias=...) (also covers the alias attribute path)
+    class _AliasSchemaV2b(BaseModel):
+        actual_name: str = Field(alias="input_name")  # type: ignore[assignment]
+
+    @tool(args_schema=_AliasSchemaV2b)
+    def _alias_tool_v2b(actual_name: str) -> str:
+        """Tool with alias."""
+        return actual_name
+
+    result = _alias_tool_v2b.invoke({"input_name": "test_value"})
+    assert result == "test_value", (
+        f"Expected 'test_value', got {result!r}. "
+        "Required field with alias was silently dropped."
+    )
+
+    # Normal (non-aliased) required field still works
+    class _NoAliasSchema(BaseModel):
+        name: str
+
+    @tool(args_schema=_NoAliasSchema)
+    def _no_alias_tool(name: str) -> str:
+        """Tool without alias."""
+        return name
+
+    result = _no_alias_tool.invoke({"name": "test_value"})
+    assert result == "test_value"
+
+    # Normal field still fails when required field is missing
+    with pytest.raises(ValidationError):
+        _no_alias_tool.invoke({})
+
+    # Pydantic v1 — Field(alias=...)
+    class _AliasSchemaV1(BaseModelV1):
+        actual_name: str = FieldV1(alias="input_name")  # type: ignore[assignment]
+
+    @tool(args_schema=_AliasSchemaV1)
+    def _alias_tool_v1(actual_name: str) -> str:
+        """Tool with Pydantic v1 alias."""
+        return actual_name
+
+    result = _alias_tool_v1.invoke({"input_name": "test_value"})
+    assert result == "test_value", (
+        f"Expected 'test_value', got {result!r}. "
+        "Required field with Pydantic v1 alias was silently dropped."
+    )
+
+    # Pydantic v1 — no alias still works
+    class _NoAliasSchemaV1(BaseModelV1):
+        name: str
+
+    @tool(args_schema=_NoAliasSchemaV1)
+    def _no_alias_tool_v1(name: str) -> str:
+        """Tool without alias."""
+        return name
+
+    result = _no_alias_tool_v1.invoke({"name": "test_value"})
+    assert result == "test_value"
+
+    with pytest.raises(ValidationErrorV1):
+        _no_alias_tool_v1.invoke({})
