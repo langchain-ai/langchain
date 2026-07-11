@@ -1567,6 +1567,22 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     }
 
 
+def test_anthropic_bind_tools_tool_choice_no_mutation() -> None:
+    """Test that bind_tools does not mutate the caller's tool_choice dict."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool_choice = {"type": "tool", "name": "GetWeather"}
+    original = tool_choice.copy()
+    chat_model.bind_tools(
+        [GetWeather],
+        tool_choice=tool_choice,
+        parallel_tool_calls=False,
+    )
+    assert tool_choice == original, f"tool_choice was mutated: {tool_choice}"
+
+
 def test_fine_grained_tool_streaming_beta() -> None:
     """Test that fine-grained tool streaming beta can be enabled."""
     # Test with betas parameter at initialization
