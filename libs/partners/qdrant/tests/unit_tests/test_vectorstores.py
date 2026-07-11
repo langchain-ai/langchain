@@ -29,7 +29,7 @@ class MockEmbeddings(Embeddings):
         return [1.0, 2.0, 3.0]
 
 
-def _embedding_function(text: str) -> list[float]:
+def _embedding_function(_text: str) -> list[float]:
     """Callable embedding function for deprecated Qdrant class."""
     return [1.0, 2.0, 3.0]
 
@@ -38,7 +38,7 @@ class TestAddDocumentsWithCustomIds:
     """Test that adding documents with custom IDs works correctly."""
 
     @pytest.fixture
-    def client(self):
+    def client(self) -> tuple[QdrantClient, str]:
         """Create a QdrantClient with an in-memory collection."""
         client = QdrantClient(location=":memory:")
         collection_name = f"test_custom_ids_{uuid.uuid4().hex}"
@@ -49,7 +49,7 @@ class TestAddDocumentsWithCustomIds:
         return client, collection_name
 
     @pytest.fixture
-    def deprecated_collection(self):
+    def deprecated_collection(self) -> tuple[QdrantClient, str]:
         """Create a QdrantClient with a collection for the deprecated Qdrant class."""
         client = QdrantClient(location=":memory:")
         collection_name = f"test_deprecated_{uuid.uuid4().hex}"
@@ -61,7 +61,7 @@ class TestAddDocumentsWithCustomIds:
 
     @pytest.mark.asyncio
     async def test_qdrant_vectorstore_aadd_documents_with_custom_ids(
-        self, client
+        self, client: tuple[QdrantClient, str]
     ) -> None:
         """Test QdrantVectorStore.aadd_documents with custom ids kwarg.
 
@@ -89,7 +89,7 @@ class TestAddDocumentsWithCustomIds:
 
     @pytest.mark.asyncio
     async def test_qdrant_vectorstore_aadd_documents_without_custom_ids(
-        self, client
+        self, client: tuple[QdrantClient, str]
     ) -> None:
         """Test that aadd_documents still works without custom ids."""
         qclient, collection_name = client
@@ -110,7 +110,7 @@ class TestAddDocumentsWithCustomIds:
 
     @pytest.mark.asyncio
     async def test_qdrant_vectorstore_add_documents_sync_with_custom_ids(
-        self, client
+        self, client: tuple[QdrantClient, str]
     ) -> None:
         """Test sync add_documents with custom ids kwarg.
 
@@ -136,7 +136,7 @@ class TestAddDocumentsWithCustomIds:
 
     @pytest.mark.asyncio
     async def test_qdrant_deprecated_class_aadd_documents_with_custom_ids(
-        self, deprecated_collection
+        self, deprecated_collection: tuple[QdrantClient, str]
     ) -> None:
         """Test deprecated Qdrant class aadd_documents with custom ids.
 
@@ -162,7 +162,7 @@ class TestAddDocumentsWithCustomIds:
         assert result_ids == custom_ids
 
     def test_qdrant_deprecated_class_add_documents_sync_with_custom_ids(
-        self, deprecated_collection
+        self, deprecated_collection: tuple[QdrantClient, str]
     ) -> None:
         """Test deprecated Qdrant class sync add_documents with custom ids.
 
