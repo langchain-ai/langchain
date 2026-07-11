@@ -1,10 +1,13 @@
 """Tests for LangSmith Gateway URL configuration."""
 
+from typing import get_type_hints
+
 import pytest
 
 from langchain_core.utils.gateway import (
     LANGSMITH_GATEWAY_PROVIDERS,
     LANGSMITH_GATEWAY_URL,
+    GatewayProviderConfig,
     resolve_langsmith_gateway_url,
 )
 
@@ -93,3 +96,36 @@ def test_langsmith_gateway_provider_matrix() -> None:
         },
         "openai": {"path": "/openai/v1", "oauth": True, "static_key": True},
     }
+
+
+@pytest.mark.parametrize(
+    ("provider", "url", "expected_url"),
+    [
+        (
+            "openai",
+            "https://gateway.example.com?api-version=1#gateway",
+            "https://gateway.example.com/openai/v1?api-version=1#gateway",
+        ),
+        (
+            "openai",
+            "https://gateway.example.com/openai/v1?api-version=1#gateway",
+            "https://gateway.example.com/openai/v1?api-version=1#gateway",
+        ),
+    ],
+)
+def test_resolve_langsmith_gateway_url_preserves_query_and_fragment(
+    monkeypatch: pytest.MonkeyPatch,
+    provider: str,
+    url: str,
+    expected_url: str,
+) -> None:
+    """Provider paths are added before URL query and fragment components."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY", url)
+
+    assert resolve_langsmith_gateway_url(provider) == expected_url  # type: ignore[arg-type]
+
+
+def test_gateway_provider_config_runtime_type_metadata() -> None:
+    """The public provider configuration retains optional-key metadata at runtime."""
+    assert GatewayProviderConfig.__optional_keys__ == {"notes"}
+    assert get_type_hints(GatewayProviderConfig)["notes"] is str

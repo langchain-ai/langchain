@@ -1,15 +1,11 @@
 """Shared configuration for LangSmith Gateway provider endpoints."""
 
-from __future__ import annotations
-
 import os
-from typing import TYPE_CHECKING, Final, Literal, TypedDict
+from collections.abc import Mapping
+from typing import Final, Literal, TypedDict
+from urllib.parse import urlsplit, urlunsplit
 
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-
-    from typing_extensions import NotRequired
-
+from typing_extensions import NotRequired
 
 GatewayProvider = Literal["anthropic", "fireworks", "google_genai", "openai"]
 
@@ -50,6 +46,16 @@ _DISABLED_GATEWAY_VALUES: Final = frozenset({"false", "0", "no"})
 _ENABLED_GATEWAY_VALUES: Final = frozenset({"true", "1", "yes"})
 
 
+def _append_gateway_provider_path(url: str, provider_path: str) -> str:
+    """Append a provider path without changing a URL's query or fragment."""
+    parsed_url = urlsplit(url)
+    if parsed_url.path.rstrip("/").endswith(provider_path):
+        return url
+    return urlunsplit(
+        parsed_url._replace(path=f"{parsed_url.path.rstrip('/')}{provider_path}")
+    )
+
+
 def resolve_langsmith_gateway_url(provider: GatewayProvider) -> str | None:
     """Resolve the configured LangSmith Gateway URL for a provider.
 
@@ -78,11 +84,6 @@ def resolve_langsmith_gateway_url(provider: GatewayProvider) -> str | None:
 
     provider_path = provider_config["path"]
     if raw_url.lower() not in _ENABLED_GATEWAY_VALUES:
-        if raw_url.rstrip("/").endswith(provider_path):
-            return raw_url
-        return f"{raw_url.rstrip('/')}{provider_path}"
+        return _append_gateway_provider_path(raw_url, provider_path)
 
-    gateway_url = LANGSMITH_GATEWAY_URL
-    if gateway_url.endswith(provider_path):
-        return gateway_url
-    return f"{gateway_url}{provider_path}"
+    return _append_gateway_provider_path(LANGSMITH_GATEWAY_URL, provider_path)
