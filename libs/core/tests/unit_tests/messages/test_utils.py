@@ -84,6 +84,19 @@ def test_merge_message_runs_response_metadata() -> None:
     assert messages[1].response_metadata == {"input_tokens": 2}
 
 
+def test_merge_message_runs_does_not_mutate_original_metadata() -> None:
+    """Regression test: merge_message_runs should not mutate caller's messages."""
+    msg1 = AIMessage("Hello", id="1", response_metadata={"foo": "bar"})
+    msg2 = AIMessage(" World", id="2", response_metadata={"baz": "qux"})
+    original_meta_1 = msg1.response_metadata.copy()
+    original_meta_2 = msg2.response_metadata.copy()
+
+    merge_message_runs([msg1, msg2])
+
+    assert msg1.response_metadata == original_meta_1
+    assert msg2.response_metadata == original_meta_2
+
+
 def test_merge_message_runs_content() -> None:
     messages = [
         AIMessage("foo", id="1"),
@@ -1355,6 +1368,32 @@ def test_convert_to_openai_messages_developer() -> None:
     ]
     result = convert_to_openai_messages(messages)
     assert result == [{"role": "developer", "content": "a"}] * 2
+
+
+def test_convert_to_openai_messages_does_not_mutate_original() -> None:
+    """Regression test: convert_to_openai_messages should not mutate caller's messages."""
+    msg = HumanMessage(
+        content=[
+            {
+                "type": "file",
+                "file": {"file_data": "base64data", "filename": None},
+            }
+        ]
+    )
+    original_content = [block.copy() if isinstance(block, dict) else block for block in msg.content]  # type: ignore[union-attr]
+
+    convert_to_openai_messages([msg])
+
+    # Original should not have been mutated
+    restored = [
+        {k: (v.copy() if isinstance(v, dict) else v) for k, v in block.items()}
+        if isinstance(block, dict)
+        else block
+        for block in original_content
+    ]
+    assert restored == [
+        {"file": {"file_data": "base64data", "filename": None}}
+    ], "Original message content was mutated!"
 
 
 def test_convert_to_openai_messages_multimodal() -> None:
