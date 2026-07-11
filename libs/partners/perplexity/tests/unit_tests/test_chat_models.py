@@ -1,6 +1,6 @@
 import json
 from typing import Any, cast
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -157,6 +157,102 @@ def test_perplexity_stream_includes_videos_and_reasoning(mocker: MockerFixture) 
         first_chunk.additional_kwargs["reasoning_steps"][0]["thought"]
         == "I should search"
     )
+
+
+def _search_context_size_chunks() -> list[dict[str, Any]]:
+    """Streamed chunks carrying aggregate usage, as the Perplexity API sends them.
+
+    Each usage payload repeats `search_context_size`; only the first should be
+    surfaced in `generation_info` so that merging chunks does not concatenate
+    the value (e.g. `'low' + 'low' == 'lowlow'` via `merge_dicts`).
+    """
+    return [
+        {
+            "choices": [{"delta": {"content": "Hello"}, "finish_reason": None}],
+            "usage": {
+                "prompt_tokens": 5,
+                "completion_tokens": 1,
+                "total_tokens": 6,
+                "search_context_size": "low",
+            },
+            "model": "sonar",
+        },
+        {
+            "choices": [{"delta": {"content": " world"}, "finish_reason": None}],
+            "usage": {
+                "prompt_tokens": 5,
+                "completion_tokens": 2,
+                "total_tokens": 7,
+                "search_context_size": "low",
+            },
+            "model": "sonar",
+        },
+        {
+            "choices": [{"delta": {}, "finish_reason": "stop"}],
+            "usage": {
+                "prompt_tokens": 5,
+                "completion_tokens": 3,
+                "total_tokens": 8,
+                "num_search_queries": 2,
+                "search_context_size": "low",
+            },
+            "model": "sonar",
+        },
+    ]
+
+
+def _assert_search_context_size_once(chunks_list: list[BaseMessage]) -> None:
+    occurrences = [
+        chunk.response_metadata["search_context_size"]
+        for chunk in chunks_list
+        if "search_context_size" in chunk.response_metadata
+    ]
+    assert occurrences == ["low"]
+
+    full: BaseMessage | None = None
+    for chunk in chunks_list:
+        full = chunk if full is None else cast(BaseMessage, full + chunk)
+    assert full is not None
+    assert full.response_metadata["search_context_size"] == "low"
+    assert full.response_metadata["num_search_queries"] == 2
+
+
+def test_perplexity_stream_search_context_size_added_once(
+    mocker: MockerFixture,
+) -> None:
+    """`search_context_size` appears on one chunk only, so merging keeps `'low'`."""
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
+    mock_stream = MagicMock()
+    mock_stream.__iter__.return_value = _search_context_size_chunks()
+    mocker.patch.object(llm.client.chat.completions, "create", return_value=mock_stream)
+
+    _assert_search_context_size_once(list(llm.stream("test")))
+
+
+async def test_perplexity_astream_search_context_size_added_once() -> None:
+    """Async counterpart: without the once-per-stream guard, every usage-bearing
+    chunk carried `search_context_size` and merging produced `'lowlowlow'`.
+    """
+    llm = ChatPerplexity(model="test", timeout=30, api_key="test", verbose=True)
+
+    class _AsyncIter:
+        def __init__(self, items: list[Any]) -> None:
+            self._items = list(items)
+
+        def __aiter__(self) -> "_AsyncIter":
+            return self
+
+        async def __anext__(self) -> Any:
+            if not self._items:
+                raise StopAsyncIteration
+            return self._items.pop(0)
+
+    llm.async_client = MagicMock()
+    llm.async_client.chat.completions.create = AsyncMock(
+        return_value=_AsyncIter(_search_context_size_chunks())
+    )
+
+    _assert_search_context_size_once([chunk async for chunk in llm.astream("test")])
 
 
 def test_create_usage_metadata_basic() -> None:

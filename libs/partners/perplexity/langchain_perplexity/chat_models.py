@@ -1299,6 +1299,7 @@ class ChatPerplexity(BaseChatModel):
 
         added_model_name: bool = False
         added_search_queries: bool = False
+        added_search_context_size: bool = False
         async for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1322,8 +1323,10 @@ class ChatPerplexity(BaseChatModel):
                     if not added_search_queries:
                         generation_info["num_search_queries"] = num_search_queries
                         added_search_queries = True
-                if search_context_size := total_usage.get("search_context_size"):
-                    generation_info["search_context_size"] = search_context_size
+                if not added_search_context_size:
+                    if search_context_size := total_usage.get("search_context_size"):
+                        generation_info["search_context_size"] = search_context_size
+                        added_search_context_size = True
 
             choices = chunk.get("choices") or []
             if len(choices) == 0:
