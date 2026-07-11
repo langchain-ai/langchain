@@ -3,6 +3,7 @@
 from typing import get_type_hints
 
 import pytest
+from typing_extensions import NotRequired
 
 from langchain_core.utils.gateway import (
     LANGSMITH_GATEWAY_PROVIDERS,
@@ -128,4 +129,6 @@ def test_resolve_langsmith_gateway_url_preserves_query_and_fragment(
 def test_gateway_provider_config_runtime_type_metadata() -> None:
     """The public provider configuration retains optional-key metadata at runtime."""
     assert GatewayProviderConfig.__optional_keys__ == {"notes"}
-    assert get_type_hints(GatewayProviderConfig)["notes"] is str
+    assert get_type_hints(GatewayProviderConfig, include_extras=True)[
+        "notes"
+    ] == NotRequired[str]
