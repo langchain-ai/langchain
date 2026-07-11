@@ -54,6 +54,7 @@ from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
+from langchain_core.utils.gateway import resolve_langsmith_gateway_url
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
@@ -76,18 +77,6 @@ _message_type_lookups = {
 }
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
-
-_LANGSMITH_GATEWAY_DEFAULT_URL = "https://gateway.smith.langchain.com/anthropic"
-
-
-def _resolve_gateway_base_url() -> str | None:
-    raw = os.getenv("LANGSMITH_GATEWAY")
-    if raw is None or raw.lower() in ("false", "0", "no"):
-        return None
-    if raw.lower() in ("true", "1", "yes"):
-        return _LANGSMITH_GATEWAY_DEFAULT_URL
-    return raw
-
 
 _USER_AGENT: Final[str] = f"langchain-anthropic/{__version__}"
 
@@ -958,11 +947,13 @@ class ChatAnthropic(BaseChatModel):
 
     anthropic_api_url: str | None = Field(
         alias="base_url",
-        default_factory=lambda: _resolve_gateway_base_url()
-        or from_env(
-            ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
-            default="https://api.anthropic.com",
-        )(),
+        default_factory=lambda: (
+            resolve_langsmith_gateway_url("anthropic")
+            or from_env(
+                ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
+                default="https://api.anthropic.com",
+            )()
+        ),
     )
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
@@ -977,7 +968,7 @@ class ChatAnthropic(BaseChatModel):
         default_factory=lambda: SecretStr(
             (
                 os.getenv("LANGSMITH_GATEWAY_API_KEY")
-                if _resolve_gateway_base_url() is not None
+                if resolve_langsmith_gateway_url("anthropic") is not None
                 else None
             )
             or secret_from_env("ANTHROPIC_API_KEY", default="")().get_secret_value()

@@ -112,6 +112,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
+from langchain_core.utils.gateway import resolve_langsmith_gateway_url
 from langchain_core.utils.pydantic import (
     PydanticBaseModel,
     TypeBaseModel,
@@ -177,17 +178,6 @@ def _get_ssrf_safe_client() -> httpx.Client:
 
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
-
-_LANGSMITH_GATEWAY_DEFAULT_URL = "https://gateway.smith.langchain.com/openai/v1"
-
-
-def _resolve_gateway_base_url() -> str | None:
-    raw = os.getenv("LANGSMITH_GATEWAY")
-    if raw is None or raw.lower() in ("false", "0", "no"):
-        return None
-    if raw.lower() in ("true", "1", "yes"):
-        return _LANGSMITH_GATEWAY_DEFAULT_URL
-    return raw
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -1178,7 +1168,7 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        _gateway_base_url = _resolve_gateway_base_url()
+        _gateway_base_url = resolve_langsmith_gateway_url("openai")
         _base_url_from_gateway = False
         if self.openai_api_base is None:
             if _gateway_base_url is not None:

@@ -88,6 +88,7 @@ from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
+from langchain_core.utils.gateway import resolve_langsmith_gateway_url
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import (
@@ -108,17 +109,6 @@ logger = logging.getLogger(__name__)
 
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
-
-_LANGSMITH_GATEWAY_DEFAULT_URL = "https://gateway.smith.langchain.com/fireworks"
-
-
-def _resolve_gateway_base_url() -> str | None:
-    raw = os.getenv("LANGSMITH_GATEWAY")
-    if raw is None or raw.lower() in ("false", "0", "no"):
-        return None
-    if raw.lower() in ("true", "1", "yes"):
-        return _LANGSMITH_GATEWAY_DEFAULT_URL
-    return raw
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -771,7 +761,7 @@ class ChatFireworks(BaseChatModel):
         default_factory=lambda: SecretStr(
             (
                 os.getenv("LANGSMITH_GATEWAY_API_KEY")
-                if _resolve_gateway_base_url() is not None
+                if resolve_langsmith_gateway_url("fireworks") is not None
                 else None
             )
             or secret_from_env(
@@ -793,8 +783,10 @@ class ChatFireworks(BaseChatModel):
 
     fireworks_api_base: str | None = Field(
         alias="base_url",
-        default_factory=lambda: _resolve_gateway_base_url()
-        or from_env("FIREWORKS_API_BASE", default=None)(),
+        default_factory=lambda: (
+            resolve_langsmith_gateway_url("fireworks")
+            or from_env("FIREWORKS_API_BASE", default=None)()
+        ),
     )
     """Base URL path for API requests, leave blank if not using a proxy or service
     emulator.
