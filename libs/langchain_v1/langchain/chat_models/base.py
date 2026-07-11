@@ -72,6 +72,7 @@ _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
     "openai": ("langchain_openai", "ChatOpenAI", _call),
     "openrouter": ("langchain_openrouter", "ChatOpenRouter", _call),
     "perplexity": ("langchain_perplexity", "ChatPerplexity", _call),
+    "requesty": ("langchain_requesty", "ChatRequesty", _call),
     "together": ("langchain_together", "ChatTogether", _call),
     "upstage": ("langchain_upstage", "ChatUpstage", _call),
     "xai": ("langchain_xai", "ChatXAI", _call),
@@ -305,6 +306,7 @@ def init_chat_model(
             - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
             - `openrouter`              -> [`langchain-openrouter`](https://docs.langchain.com/oss/python/integrations/providers/openrouter)
             - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
+            - `requesty`                -> [`langchain-requesty`](https://docs.langchain.com/oss/python/integrations/providers/requesty)
             - `upstage`                 -> [`langchain-upstage`](https://docs.langchain.com/oss/python/integrations/providers/upstage)
             - `baseten`                 -> [`langchain-baseten`](https://docs.langchain.com/oss/python/integrations/providers/baseten)
             - `litellm`                 -> [`langchain-litellm`](https://docs.langchain.com/oss/python/integrations/providers/litellm)

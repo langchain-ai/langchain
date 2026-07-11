@@ -1,0 +1,46 @@
+# langchain-requesty
+
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-requesty?label=%20)](https://pypi.org/project/langchain-requesty/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-requesty)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-requesty)](https://pypistats.org/packages/langchain-requesty)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchain_oss.svg?style=social&label=Follow%20%40LangChain)](https://x.com/langchain_oss)
+
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+
+## Quick Install
+
+```bash
+uv add langchain-requesty
+```
+
+## 🤔 What is this?
+
+This package contains the LangChain integration with [Requesty](https://requesty.ai), an OpenAI-compatible LLM gateway that routes to models from many providers (OpenAI, Anthropic, Google, DeepSeek, and more) through a single endpoint using `provider/model` naming.
+
+```python
+from langchain_requesty import ChatRequesty
+
+model = ChatRequesty(model="openai/gpt-4o-mini")
+model.invoke("Hello, world!")
+```
+
+Set the `REQUESTY_API_KEY` environment variable with a key from [app.requesty.ai/api-keys](https://app.requesty.ai/api-keys).
+
+## 📖 Documentation
+
+For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_requesty/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/requesty).
+
+## 📕 Releases & Versioning
+
+See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
+
+## 💁 Contributing
+
+As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
+
+For detailed information on how to contribute, see the [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview).
+
+## Resources
+
+- [LangChain Academy](https://academy.langchain.com/) — comprehensive, free courses on LangChain libraries and products, made by the LangChain team
+- [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) — community guidelines and standards
