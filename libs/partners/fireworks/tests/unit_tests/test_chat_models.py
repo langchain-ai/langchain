@@ -1629,3 +1629,36 @@ def test_langsmith_gateway_api_key_not_used_without_gateway(
     monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
     llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
     assert llm.fireworks_api_key.get_secret_value() == "provider-key"
+
+
+def test_langsmith_gateway_oauth_uses_placeholder_api_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_OAUTH_TOKEN", "oauth-token")
+    monkeypatch.delenv("LANGSMITH_GATEWAY_API_KEY", raising=False)
+    monkeypatch.delenv("FIREWORKS_API_KEY", raising=False)
+
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    assert llm.fireworks_api_key.get_secret_value() == "langsmith-gateway-oauth"
+    oauth_client = llm._gateway_oauth_http_client()
+    assert oauth_client is not None
+    oauth_client.close()
+    llm.close()
+
+
+def test_langsmith_gateway_oauth_is_not_used_for_custom_base_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_OAUTH_TOKEN", "oauth-token")
+
+    llm = ChatFireworks(
+        model=MODEL_NAME,
+        api_key="provider-key",  # type: ignore[arg-type]
+        base_url="https://api.fireworks.ai/inference/v1",
+    )
+
+    assert llm._gateway_oauth_http_client() is None
+    llm.close()

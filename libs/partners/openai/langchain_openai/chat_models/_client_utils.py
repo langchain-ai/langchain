@@ -507,12 +507,14 @@ def _get_default_httpx_client(
     Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
     """
     if auth is not None:
-        return _SyncHttpxClientWrapper(
-            base_url=base_url,
-            timeout=timeout,
-            transport=httpx.HTTPTransport(socket_options=socket_options),
-            auth=auth,
-        )
+        kwargs: dict[str, Any] = {
+            "base_url": base_url,
+            "timeout": timeout,
+            "auth": auth,
+        }
+        if socket_options:
+            kwargs["transport"] = httpx.HTTPTransport(socket_options=socket_options)
+        return _SyncHttpxClientWrapper(**kwargs)
     try:
         hash(timeout)
     except TypeError:
@@ -532,12 +534,16 @@ def _get_default_async_httpx_client(
     Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
     """
     if auth is not None:
-        return _AsyncHttpxClientWrapper(
-            base_url=base_url,
-            timeout=timeout,
-            transport=httpx.AsyncHTTPTransport(socket_options=socket_options),
-            auth=auth,
-        )
+        kwargs: dict[str, Any] = {
+            "base_url": base_url,
+            "timeout": timeout,
+            "auth": auth,
+        }
+        if socket_options:
+            kwargs["transport"] = httpx.AsyncHTTPTransport(
+                socket_options=socket_options
+            )
+        return _AsyncHttpxClientWrapper(**kwargs)
     try:
         hash(timeout)
     except TypeError:

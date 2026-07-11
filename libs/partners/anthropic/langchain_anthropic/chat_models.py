@@ -959,11 +959,13 @@ class ChatAnthropic(BaseChatModel):
 
     anthropic_api_url: str | None = Field(
         alias="base_url",
-        default_factory=lambda: _resolve_gateway_base_url()
-        or from_env(
-            ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
-            default="https://api.anthropic.com",
-        )(),
+        default_factory=lambda: (
+            _resolve_gateway_base_url()
+            or from_env(
+                ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
+                default="https://api.anthropic.com",
+            )()
+        ),
     )
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
@@ -979,6 +981,12 @@ class ChatAnthropic(BaseChatModel):
             (
                 os.getenv("LANGSMITH_GATEWAY_API_KEY")
                 if _resolve_gateway_base_url() is not None
+                else None
+            )
+            or (
+                "langsmith-gateway-oauth"
+                if _resolve_gateway_base_url() is not None
+                and os.getenv("LANGSMITH_GATEWAY_OAUTH_TOKEN") is not None
                 else None
             )
             or secret_from_env("ANTHROPIC_API_KEY", default="")().get_secret_value()
@@ -1242,7 +1250,10 @@ class ChatAnthropic(BaseChatModel):
 
     @property
     def _gateway_oauth_auth(self) -> LangSmithGatewayOAuth | None:
-        if self.langsmith_gateway_oauth_token is None:
+        if (
+            self.langsmith_gateway_oauth_token is None
+            or self.anthropic_api_url != _resolve_gateway_base_url()
+        ):
             return None
         return LangSmithGatewayOAuth(
             self.langsmith_gateway_oauth_token.get_secret_value()

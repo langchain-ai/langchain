@@ -775,6 +775,12 @@ class ChatFireworks(BaseChatModel):
                 if _resolve_gateway_base_url() is not None
                 else None
             )
+            or (
+                "langsmith-gateway-oauth"
+                if _resolve_gateway_base_url() is not None
+                and os.getenv("LANGSMITH_GATEWAY_OAUTH_TOKEN") is not None
+                else None
+            )
             or secret_from_env(
                 "FIREWORKS_API_KEY",
                 error_message=(
@@ -794,8 +800,10 @@ class ChatFireworks(BaseChatModel):
 
     fireworks_api_base: str | None = Field(
         alias="base_url",
-        default_factory=lambda: _resolve_gateway_base_url()
-        or from_env("FIREWORKS_API_BASE", default=None)(),
+        default_factory=lambda: (
+            _resolve_gateway_base_url()
+            or from_env("FIREWORKS_API_BASE", default=None)()
+        ),
     )
     """Base URL path for API requests, leave blank if not using a proxy or service
     emulator.
@@ -913,11 +921,7 @@ class ChatFireworks(BaseChatModel):
         # so the LangChain `run_manager` sees each attempt. Suppress the
         # SDK's built-in retry layer to avoid double-retrying.
         if not self.client:
-            http_client = (
-                httpx.Client(auth=LangSmithGatewayOAuth(token.get_secret_value()))
-                if (token := self.langsmith_gateway_oauth_token) is not None
-                else None
-            )
+            http_client = self._gateway_oauth_http_client()
             self._sdk_client = Fireworks(
                 api_key=api_key,
                 base_url=base_url,
@@ -927,11 +931,7 @@ class ChatFireworks(BaseChatModel):
             )
             self.client = self._sdk_client.chat.completions
         if not self.async_client:
-            http_async_client = (
-                httpx.AsyncClient(auth=LangSmithGatewayOAuth(token.get_secret_value()))
-                if (token := self.langsmith_gateway_oauth_token) is not None
-                else None
-            )
+            http_async_client = self._gateway_oauth_async_http_client()
             self._async_sdk_client = AsyncFireworks(
                 api_key=api_key,
                 base_url=base_url,
@@ -941,6 +941,36 @@ class ChatFireworks(BaseChatModel):
             )
             self.async_client = self._async_sdk_client.chat.completions
         return self
+
+    def _is_langsmith_gateway(self) -> bool:
+        """Return whether this instance is configured to use LangSmith Gateway."""
+        return self.fireworks_api_base == _resolve_gateway_base_url()
+
+    def _gateway_oauth_http_client(self) -> httpx.Client | None:
+        """Build a synchronous OAuth client when Gateway OAuth is enabled."""
+        if (
+            self.langsmith_gateway_oauth_token is None
+            or not self._is_langsmith_gateway()
+        ):
+            return None
+        return httpx.Client(
+            auth=LangSmithGatewayOAuth(
+                self.langsmith_gateway_oauth_token.get_secret_value()
+            )
+        )
+
+    def _gateway_oauth_async_http_client(self) -> httpx.AsyncClient | None:
+        """Build an asynchronous OAuth client when Gateway OAuth is enabled."""
+        if (
+            self.langsmith_gateway_oauth_token is None
+            or not self._is_langsmith_gateway()
+        ):
+            return None
+        return httpx.AsyncClient(
+            auth=LangSmithGatewayOAuth(
+                self.langsmith_gateway_oauth_token.get_secret_value()
+            )
+        )
 
     def close(self) -> None:
         """Close the underlying sync HTTP client.

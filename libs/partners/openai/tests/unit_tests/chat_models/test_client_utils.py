@@ -16,6 +16,7 @@ from typing import Any
 
 import httpx
 import pytest
+from langchain_core.utils.langsmith_gateway import LangSmithGatewayOAuth
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models import _client_utils
@@ -457,6 +458,36 @@ def test_build_proxied_async_httpx_client_opt_out_returns_plain_client() -> None
         socket_options=(),
     )
     assert isinstance(client, httpx.AsyncClient)
+
+
+@pytest.mark.parametrize("is_async", [False, True])
+def test_gateway_oauth_preserves_proxy_discovery_without_socket_options(
+    monkeypatch: pytest.MonkeyPatch,
+    is_async: bool,
+) -> None:
+    """OAuth clients omit a transport when proxy discovery must remain enabled."""
+    captured: dict[str, Any] = {}
+
+    def wrapper(**kwargs: Any) -> object:
+        captured.update(kwargs)
+        return object()
+
+    wrapper_name = "_AsyncHttpxClientWrapper" if is_async else "_SyncHttpxClientWrapper"
+    monkeypatch.setattr(_client_utils, wrapper_name, wrapper)
+    get_client = (
+        _client_utils._get_default_async_httpx_client
+        if is_async
+        else _client_utils._get_default_httpx_client
+    )
+
+    get_client(
+        base_url="https://gateway.smith.langchain.com/openai/v1",
+        timeout=None,
+        auth=LangSmithGatewayOAuth("oauth-token"),
+    )
+
+    assert captured["auth"].__class__ is LangSmithGatewayOAuth
+    assert "transport" not in captured
 
 
 def test_build_proxied_async_httpx_client_wraps_transport() -> None:

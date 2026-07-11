@@ -1245,12 +1245,13 @@ class BaseChatOpenAI(BaseChatModel):
         if self.max_retries is not None:
             client_params["max_retries"] = self.max_retries
         gateway_oauth_auth = (
-            LangSmithGatewayOAuth(
-                self.langsmith_gateway_oauth_token.get_secret_value()
-            )
-            if self.langsmith_gateway_oauth_token is not None
+            LangSmithGatewayOAuth(self.langsmith_gateway_oauth_token.get_secret_value())
+            if self.langsmith_gateway_oauth_token is not None and _base_url_from_gateway
             else None
         )
+        if gateway_oauth_auth is not None and sync_api_key_value is None:
+            sync_api_key_value = "langsmith-gateway-oauth"
+            async_api_key_value = "langsmith-gateway-oauth"
 
         if self.openai_proxy and (self.http_client or self.http_async_client):
             openai_proxy = self.openai_proxy
@@ -1292,14 +1293,23 @@ class BaseChatOpenAI(BaseChatModel):
                         verify=global_ssl_context,
                         socket_options=resolved_socket_options,
                     )
-                sync_specific = {
-                    "http_client": self.http_client
-                    or _get_default_httpx_client(
+                if self.http_client:
+                    default_http_client = self.http_client
+                elif gateway_oauth_auth is not None:
+                    default_http_client = _get_default_httpx_client(
                         self.openai_api_base,
                         self.request_timeout,
                         resolved_socket_options,
-                        gateway_oauth_auth,
-                    ),
+                        auth=gateway_oauth_auth,
+                    )
+                else:
+                    default_http_client = _get_default_httpx_client(
+                        self.openai_api_base,
+                        self.request_timeout,
+                        resolved_socket_options,
+                    )
+                sync_specific = {
+                    "http_client": default_http_client,
                     "api_key": sync_api_key_value,
                 }
                 self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
@@ -1311,14 +1321,23 @@ class BaseChatOpenAI(BaseChatModel):
                     verify=global_ssl_context,
                     socket_options=resolved_socket_options,
                 )
+            if self.http_async_client:
+                default_async_http_client = self.http_async_client
+            elif gateway_oauth_auth is not None:
+                default_async_http_client = _get_default_async_httpx_client(
+                    self.openai_api_base,
+                    self.request_timeout,
+                    resolved_socket_options,
+                    auth=gateway_oauth_auth,
+                )
+            else:
+                default_async_http_client = _get_default_async_httpx_client(
+                    self.openai_api_base,
+                    self.request_timeout,
+                    resolved_socket_options,
+                )
             async_specific = {
-                "http_client": self.http_async_client
-                    or _get_default_async_httpx_client(
-                        self.openai_api_base,
-                        self.request_timeout,
-                        resolved_socket_options,
-                        gateway_oauth_auth,
-                ),
+                "http_client": default_async_http_client,
                 "api_key": async_api_key_value,
             }
             self.root_async_client = openai.AsyncOpenAI(
