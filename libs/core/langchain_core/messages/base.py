@@ -401,7 +401,7 @@ def merge_content(
         elif content == "":
             pass
         # Otherwise, add the second content as a new element of the list
-        elif merged:
+        else:
             merged.append(content)
     return merged
 

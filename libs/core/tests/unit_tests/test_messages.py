@@ -1090,6 +1090,13 @@ def test_tool_message_str() -> None:
             [[{"index": 0, "text": "bar"}]],
             [{"text": "foo"}, {"index": 0, "text": "bar"}],
         ),
+        # A non-empty string must be appended even when the accumulator list is
+        # empty; previously `elif merged:` dropped it because `[]` is falsy.
+        ([], ["bar"], ["bar"]),
+        ([], ["bar", "baz"], ["barbaz"]),
+        # Regression guard: a non-empty accumulator whose last element is not a
+        # string still appends (the fix only changes the empty-accumulator case).
+        ([{"text": "foo"}], ["bar"], [{"text": "foo"}, "bar"]),
     ],
 )
 def test_merge_content(
