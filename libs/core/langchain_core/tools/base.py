@@ -841,18 +841,7 @@ class ChildTool(BaseTool):
                     # Field was provided in input - include it (validated)
                     validated_input[k] = getattr(result, k)
                 elif k in field_info and k not in {"args", "kwargs"}:
-                    # Check if field has an explicit default defined in the schema.
-                    # Exclude "args"/"kwargs" as these are synthetic fields for variadic
-                    # parameters that should not be passed as keyword arguments.
-                    fi = field_info[k]
-                    # Pydantic v2 uses is_required() method, v1 uses required attribute
-                    has_default = (
-                        not fi.is_required()
-                        if hasattr(fi, "is_required")
-                        else not getattr(fi, "required", True)
-                    )
-                    if has_default:
-                        validated_input[k] = getattr(result, k)
+                    validated_input[k] = getattr(result, k)
 
             for k in self._injected_args_keys:
                 if k in tool_input:

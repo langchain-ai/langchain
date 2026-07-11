@@ -23,7 +23,7 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -1206,6 +1206,34 @@ def test_tool_invoke_optional_args(
     else:
         with pytest.raises(ValidationError):
             foo.invoke(inputs)
+
+
+def test_tool_validation_alias_preserved() -> None:
+    class MyToolInput(BaseModel):
+        model_config = ConfigDict(populate_by_name=True)
+
+        query_text: str = Field(
+            description="The user query.",
+            validation_alias=AliasChoices("query_text", "query"),
+        )
+
+    @tool(args_schema=MyToolInput)
+    def my_tool(query_text: str = None) -> str:  # type: ignore
+        """A simple tool."""
+        return f"query_text={query_text}"
+        """A simple tool."""
+        return query_text
+
+    result = my_tool.invoke(
+        {
+            "type": "tool_call",
+            "name": "my_tool",
+            "id": "1",
+            "args": {"query": "hello"},
+        }
+    )
+
+    assert result.content == "query_text=hello"
 
 
 def test_tool_pass_context() -> None:
