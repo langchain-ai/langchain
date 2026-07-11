@@ -2,10 +2,10 @@
 
 import os
 from collections.abc import Mapping
-from typing import Final, Literal, TypedDict
+from typing import Final, Literal
 from urllib.parse import urlsplit, urlunsplit
 
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, TypedDict
 
 GatewayProvider = Literal["anthropic", "fireworks", "google_genai", "openai"]
 
