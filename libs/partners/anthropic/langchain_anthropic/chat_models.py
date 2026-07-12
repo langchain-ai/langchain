@@ -78,6 +78,11 @@ _message_type_lookups = {
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
 _LANGSMITH_GATEWAY_DEFAULT_URL = "https://gateway.smith.langchain.com/anthropic"
+_LANGSMITH_GATEWAY_API_KEY_ENV_VARS = (
+    "LANGSMITH_GATEWAY_API_KEY",
+    "LANGSMITH_API_KEY",
+    "LANGCHAIN_API_KEY",
+)
 
 
 def _resolve_gateway_base_url() -> str | None:
@@ -87,6 +92,10 @@ def _resolve_gateway_base_url() -> str | None:
     if raw.lower() in ("true", "1", "yes"):
         return _LANGSMITH_GATEWAY_DEFAULT_URL
     return raw
+
+
+def _resolve_gateway_api_key() -> SecretStr | None:
+    return secret_from_env(_LANGSMITH_GATEWAY_API_KEY_ENV_VARS, default=None)()
 
 
 _USER_AGENT: Final[str] = f"langchain-anthropic/{__version__}"
@@ -974,18 +983,17 @@ class ChatAnthropic(BaseChatModel):
 
     anthropic_api_key: SecretStr = Field(
         alias="api_key",
-        default_factory=lambda: SecretStr(
-            (
-                os.getenv("LANGSMITH_GATEWAY_API_KEY")
-                if _resolve_gateway_base_url() is not None
-                else None
-            )
-            or secret_from_env("ANTHROPIC_API_KEY", default="")().get_secret_value()
-        ),
+        default_factory=lambda: (
+            _resolve_gateway_api_key()
+            if _resolve_gateway_base_url() is not None
+            else None
+        )
+        or secret_from_env("ANTHROPIC_API_KEY", default="")(),
     )
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided.
 
-    If `LANGSMITH_GATEWAY` is enabled, `LANGSMITH_GATEWAY_API_KEY` takes precedence.
+    If `LANGSMITH_GATEWAY` is enabled, `LANGSMITH_GATEWAY_API_KEY`,
+    `LANGSMITH_API_KEY`, and `LANGCHAIN_API_KEY` take precedence.
     """
 
     anthropic_proxy: str | None = Field(
