@@ -9,8 +9,10 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.output_parsers.openai_tools import PydanticToolsParser
 from langchain_core.outputs import ChatResult
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -222,6 +224,30 @@ def test_bind_tools(chat_hugging_face: Any) -> None:
         _, kwargs = mock_super_bind.call_args
         assert kwargs["tools"] == tools
         assert kwargs["tool_choice"] == "auto"
+
+
+def test_with_structured_output_pydantic_function_calling(
+    chat_hugging_face: Any,
+) -> None:
+    """Pydantic schemas should be supported for the default `function_calling` method.
+
+    They should be parsed with `PydanticToolsParser` rather than raising
+    `NotImplementedError`.
+    """
+
+    class Person(BaseModel):
+        name: str
+
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.convert_to_openai_tool",
+        return_value={"type": "function", "function": {"name": "Person"}},
+    ):
+        runnable = chat_hugging_face.with_structured_output(Person)
+
+    output_parser = runnable.steps[-1]
+    assert isinstance(output_parser, PydanticToolsParser)
+    assert output_parser.tools == [Person]
+    assert output_parser.first_tool_only is True
 
 
 def test_property_inheritance_integration(chat_hugging_face: Any) -> None:
