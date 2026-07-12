@@ -179,6 +179,11 @@ def _get_ssrf_safe_client() -> httpx.Client:
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
 _LANGSMITH_GATEWAY_DEFAULT_URL = "https://gateway.smith.langchain.com/openai/v1"
+_LANGSMITH_GATEWAY_API_KEY_ENV_VARS = (
+    "LANGSMITH_GATEWAY_API_KEY",
+    "LANGSMITH_API_KEY",
+    "LANGCHAIN_API_KEY",
+)
 
 
 def _resolve_gateway_base_url() -> str | None:
@@ -188,6 +193,10 @@ def _resolve_gateway_base_url() -> str | None:
     if raw.lower() in ("true", "1", "yes"):
         return _LANGSMITH_GATEWAY_DEFAULT_URL
     return raw
+
+
+def _resolve_gateway_api_key() -> SecretStr | None:
+    return secret_from_env(_LANGSMITH_GATEWAY_API_KEY_ENV_VARS, default=None)()
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -1212,10 +1221,11 @@ class BaseChatOpenAI(BaseChatModel):
         sync_api_key_value: str | Callable[[], str] | None = None
         async_api_key_value: str | Callable[[], Awaitable[str]] | None = None
 
-        if self.openai_api_key is None and _base_url_from_gateway:
-            gateway_api_key = os.getenv("LANGSMITH_GATEWAY_API_KEY")
+        explicit_api_key = bool({"api_key", "openai_api_key"} & self.model_fields_set)
+        if _base_url_from_gateway and not explicit_api_key:
+            gateway_api_key = _resolve_gateway_api_key()
             if gateway_api_key is not None:
-                self.openai_api_key = SecretStr(gateway_api_key)
+                self.openai_api_key = gateway_api_key
 
         if self.openai_api_key is not None:
             # Because OpenAI and AsyncOpenAI clients support either sync or async

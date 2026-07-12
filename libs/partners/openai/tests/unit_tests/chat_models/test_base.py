@@ -4531,6 +4531,50 @@ def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     assert llm.openai_api_key.get_secret_value() == "gateway-key"
 
 
+@pytest.mark.parametrize(
+    ("env_var", "expected"),
+    [
+        ("LANGSMITH_API_KEY", "langsmith-key"),
+        ("LANGCHAIN_API_KEY", "langchain-key"),
+    ],
+)
+def test_langsmith_gateway_api_key_langsmith_fallbacks(
+    monkeypatch: pytest.MonkeyPatch, env_var: str, expected: str
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.delenv("LANGSMITH_GATEWAY_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_API_KEY", raising=False)
+    monkeypatch.delenv("LANGCHAIN_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv(env_var, expected)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == expected
+
+
+def test_langsmith_gateway_api_key_precedence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("LANGSMITH_API_KEY", "langsmith-key")
+    monkeypatch.setenv("LANGCHAIN_API_KEY", "langchain-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_explicit_api_key_takes_precedence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key="explicit-key")
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "explicit-key"
+
+
 def test_langsmith_gateway_api_key_not_used_without_gateway(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

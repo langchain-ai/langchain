@@ -1621,6 +1621,47 @@ def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     assert llm.fireworks_api_key.get_secret_value() == "gateway-key"
 
 
+@pytest.mark.parametrize(
+    ("env_var", "expected"),
+    [
+        ("LANGSMITH_API_KEY", "langsmith-key"),
+        ("LANGCHAIN_API_KEY", "langchain-key"),
+    ],
+)
+def test_langsmith_gateway_api_key_langsmith_fallbacks(
+    monkeypatch: pytest.MonkeyPatch, env_var: str, expected: str
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.delenv("LANGSMITH_GATEWAY_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_API_KEY", raising=False)
+    monkeypatch.delenv("LANGCHAIN_API_KEY", raising=False)
+    monkeypatch.delenv("FIREWORKS_API_KEY", raising=False)
+    monkeypatch.setenv(env_var, expected)
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == expected
+
+
+def test_langsmith_gateway_api_key_precedence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("LANGSMITH_API_KEY", "langsmith-key")
+    monkeypatch.setenv("LANGCHAIN_API_KEY", "langchain-key")
+    monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_explicit_api_key_takes_precedence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    llm = ChatFireworks(model=MODEL_NAME, api_key="explicit-key")  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "explicit-key"
+
+
 def test_langsmith_gateway_api_key_not_used_without_gateway(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
