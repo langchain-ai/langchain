@@ -25,6 +25,8 @@ from typing import (
 
 import typing_extensions
 from pydantic import (
+    AliasChoices,
+    AliasPath,
     BaseModel,
     ConfigDict,
     Field,
@@ -831,17 +833,19 @@ class ChildTool(BaseTool):
                 )
                 raise NotImplementedError(msg)
 
-            # Include fields from tool_input, plus fields with explicit defaults.
-            # This applies Pydantic defaults (like Field(default=1)) while excluding
+            # Include fields from tool_input, plus fields with explicit defaults,
+            # plus fields that were resolved via a `validation_alias`/`alias` (e.g.
+            # `AliasChoices`) present in the raw tool input. This applies Pydantic
+            # defaults (like Field(default=1)) and alias resolution while excluding
             # synthetic "args"/"kwargs" fields that Pydantic creates for *args/**kwargs.
             field_info = get_fields(input_args)
+            tool_input_keys = set(tool_input)
             validated_input = {}
             for k in result_dict:
                 if k in tool_input:
                     # Field was provided in input - include it (validated)
                     validated_input[k] = getattr(result, k)
                 elif k in field_info and k not in {"args", "kwargs"}:
-                    # Check if field has an explicit default defined in the schema.
                     # Exclude "args"/"kwargs" as these are synthetic fields for variadic
                     # parameters that should not be passed as keyword arguments.
                     fi = field_info[k]
@@ -851,7 +855,14 @@ class ChildTool(BaseTool):
                         if hasattr(fi, "is_required")
                         else not getattr(fi, "required", True)
                     )
-                    if has_default:
+                    # A field with no default can still be legitimately populated if
+                    # the raw input used one of the field's aliases (e.g. the LLM
+                    # sent "query" for a field named "query_text" with
+                    # validation_alias=AliasChoices("query_text", "query")). Without
+                    # this check, such required-but-aliased fields would be silently
+                    # dropped even though Pydantic validated them successfully.
+                    resolved_via_alias = bool(_field_alias_keys(fi) & tool_input_keys)
+                    if has_default or resolved_via_alias:
                         validated_input[k] = getattr(result, k)
 
             for k in self._injected_args_keys:
@@ -1560,6 +1571,39 @@ def _is_directly_injected_arg_type(type_: Any) -> bool:
         and isinstance(origin, type)
         and issubclass(origin, _DirectlyInjectedToolArg)
     )
+
+
+def _field_alias_keys(fi: Any) -> set[str]:
+    """Collect the top-level alias keys a field can be populated from.
+
+    Handles Pydantic v2 ``validation_alias`` (``str``, `AliasChoices`, or
+    `AliasPath`) as well as the plain ``alias`` attribute shared by v1 and v2
+    field info objects.
+
+    Args:
+        fi: A Pydantic v1 or v2 field info object.
+
+    Returns:
+        The set of string keys (top-level, i.e. the first path segment for
+        `AliasPath`) that could have populated this field.
+    """
+    keys: set[str] = set()
+
+    def _add_from(alias_source: Any) -> None:
+        if alias_source is None:
+            return
+        if isinstance(alias_source, str):
+            keys.add(alias_source)
+        elif isinstance(alias_source, AliasPath):
+            if alias_source.path and isinstance(alias_source.path[0], str):
+                keys.add(alias_source.path[0])
+        elif isinstance(alias_source, AliasChoices):
+            for choice in alias_source.choices:
+                _add_from(choice)
+
+    _add_from(getattr(fi, "validation_alias", None))
+    _add_from(getattr(fi, "alias", None))
+    return keys
 
 
 def _is_injected_arg_type(

@@ -23,7 +23,7 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -3869,6 +3869,78 @@ def test_tool_args_schema_falsy_defaults() -> None:
     # Invoke with only required argument - falsy defaults should be applied
     result = config_tool.invoke({"name": "test"})
     assert result == "name=test, enabled=False, count=0, prefix=''"
+
+
+def test_tool_args_schema_validation_alias() -> None:
+    """Required fields resolved via `validation_alias` should not be dropped.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38780.
+    Previously, `_parse_input` only kept a required field whose key matched the
+    raw tool input exactly. If the raw input instead used one of the field's
+    aliases (via `AliasChoices` or a plain `alias`), the value validated fine on
+    the Pydantic model but was silently dropped when reconstructing the dict
+    passed to the tool function, so the function received its own default
+    (often `None`) instead of the real value.
+    """
+
+    class SearchArgs(BaseModel):
+        """Schema accepting either the canonical key or a legacy alias."""
+
+        model_config = ConfigDict(populate_by_name=True)
+
+        query_text: str = Field(
+            description="The search query.",
+            validation_alias=AliasChoices("query_text", "query"),
+        )
+
+    @tool(args_schema=SearchArgs)
+    def search_tool(query_text: str | None = None) -> str:
+        """Search for something."""
+        return f"query_text={query_text}"
+
+    # Canonical key still works.
+    result = search_tool.invoke(
+        {
+            "name": "search_tool",
+            "args": {"query_text": "hello"},
+            "id": "1",
+            "type": "tool_call",
+        }
+    )
+    assert result.content == "query_text=hello"
+
+    # Aliased key must resolve to the same field instead of being dropped.
+    result = search_tool.invoke(
+        {
+            "name": "search_tool",
+            "args": {"query": "hello"},
+            "id": "2",
+            "type": "tool_call",
+        }
+    )
+    assert result.content == "query_text=hello"
+
+    class LegacyAliasArgs(BaseModel):
+        """Schema using a plain (non-`AliasChoices`) alias."""
+
+        model_config = ConfigDict(populate_by_name=True)
+
+        query_text: str = Field(description="The search query.", alias="query")
+
+    @tool(args_schema=LegacyAliasArgs)
+    def legacy_search_tool(query_text: str | None = None) -> str:
+        """Search for something using a plain alias."""
+        return f"query_text={query_text}"
+
+    result = legacy_search_tool.invoke(
+        {
+            "name": "legacy_search_tool",
+            "args": {"query": "world"},
+            "id": "3",
+            "type": "tool_call",
+        }
+    )
+    assert result.content == "query_text=world"
 
 
 def test_tool_default_factory_not_required() -> None:
