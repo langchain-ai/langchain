@@ -307,15 +307,6 @@ def create_schema_from_function(
     # If qualified name has a ".", then it likely belongs in a class namespace
     in_class = bool(func.__qualname__ and "." in func.__qualname__)
 
-    has_args = False
-    has_kwargs = False
-
-    for param in sig.parameters.values():
-        if param.kind == param.VAR_POSITIONAL:
-            has_args = True
-        elif param.kind == param.VAR_KEYWORD:
-            has_kwargs = True
-
     inferred_model = validated.model
 
     if filter_args:
@@ -342,9 +333,9 @@ def create_schema_from_function(
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = []
     for field in get_fields(inferred_model):
-        if not has_args and field == "args":
+        if field == "args":
             continue
-        if not has_kwargs and field == "kwargs":
+        if field == "kwargs":
             continue
 
         if field == "v__duplicate_kwargs":  # Internal pydantic field

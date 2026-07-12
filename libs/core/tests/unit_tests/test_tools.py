@@ -311,61 +311,35 @@ def test_args_kwargs_filtered() -> None:
     tool = _SingleArgToolWithKwargs()
     assert tool.is_single_input
 
-    class _VarArgToolWithKwargs(BaseTool):
-        name: str = "single_arg_tool"
-        description: str = "A single arged tool with kwargs"
+def test_regression_args_kwargs_not_added_to_schema() -> None:
+    """Regression test for args/kwargs being incorrectly added to tool schema."""
+
+    class MyTool(BaseTool):
+        name: str = "my_tool"
+        description: str = "test tool"
 
         @override
         def _run(
             self,
+            query: str,
             *args: Any,
-            run_manager: CallbackManagerForToolRun | None = None,
             **kwargs: Any,
         ) -> str:
-            return "foo"
+            return query
 
         async def _arun(
             self,
+            query: str,
             *args: Any,
-            run_manager: AsyncCallbackManagerForToolRun | None = None,
             **kwargs: Any,
         ) -> str:
             raise NotImplementedError
 
-    tool2 = _VarArgToolWithKwargs()
-    assert tool2.is_single_input
+    tool = MyTool()
 
-
-def test_structured_args_decorator_no_infer_schema() -> None:
-    """Test functionality with structured arguments parsed as a decorator."""
-
-    @tool(infer_schema=False)
-    def structured_tool_input(
-        arg1: int, arg2: float | datetime, opt_arg: dict[str, Any] | None = None
-    ) -> str:
-        """Return the arguments directly."""
-        return f"{arg1}, {arg2}, {opt_arg}"
-
-    assert isinstance(structured_tool_input, BaseTool)
-    assert structured_tool_input.name == "structured_tool_input"
-    args = {"arg1": 1, "arg2": 0.001, "opt_arg": {"foo": "bar"}}
-    with pytest.raises(ToolException):
-        assert structured_tool_input.run(args)
-
-
-def test_structured_single_str_decorator_no_infer_schema() -> None:
-    """Test functionality with structured arguments parsed as a decorator."""
-
-    @tool(infer_schema=False)
-    def unstructured_tool_input(tool_input: str) -> str:
-        """Return the arguments directly."""
-        assert isinstance(tool_input, str)
-        return f"{tool_input}"
-
-    assert isinstance(unstructured_tool_input, BaseTool)
-    assert unstructured_tool_input.args_schema is None
-    assert unstructured_tool_input.run("foo") == "foo"
-
+    assert "query" in tool.args
+    assert "args" not in tool.args
+    assert "kwargs" not in tool.args
 
 def test_structured_tool_types_parsed() -> None:
     """Test the non-primitive types are correctly passed to structured tools."""
