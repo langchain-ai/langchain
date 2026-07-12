@@ -1483,6 +1483,25 @@ def test__format_messages_with_multiple_system() -> None:
     assert expected_system == actual_system
     assert expected_messages == actual_messages
 
+def test__format_messages_with_non_consecutive_system() -> None:
+    messages = [
+        SystemMessage("You are helpful"),
+        HumanMessage("Hello"),
+        SystemMessage("Use bullet points"),
+    ]
+
+    system, formatted_messages = _format_messages(messages)
+
+    assert system == "You are helpful"
+
+    assert formatted_messages == [
+        {"role": "user", "content": "Hello"},
+        {
+            "role": "system",
+            "content": "Use bullet points",
+        },
+    ]
+
 
 def test_anthropic_api_key_is_secret_string() -> None:
     """Test that the API key is stored as a SecretStr."""

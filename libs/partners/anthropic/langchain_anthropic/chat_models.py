@@ -72,6 +72,7 @@ _message_type_lookups = {
     "ai": "assistant",
     "AIMessageChunk": "assistant",
     "HumanMessageChunk": "user",
+    "system": "system",
 }
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
@@ -482,21 +483,21 @@ def _format_messages(
     merged_messages = _merge_messages(messages)
     for _i, message in enumerate(merged_messages):
         if message.type == "system":
-            if system is not None:
-                msg = "Received multiple non-consecutive system messages."
-                raise ValueError(msg)
-            if isinstance(message.content, list):
-                system = [
-                    (
-                        block
-                        if isinstance(block, dict)
-                        else {"type": "text", "text": block}
-                    )
-                    for block in message.content
-                ]
-            else:
-                system = message.content
-            continue
+            if system is None:
+                # msg = "Received multiple non-consecutive system messages."
+                # raise ValueError(msg)
+                if isinstance(message.content, list):
+                    system = [
+                        (
+                            block
+                            if isinstance(block, dict)
+                            else {"type": "text", "text": block}
+                        )
+                        for block in message.content
+                    ]
+                else:
+                    system = message.content
+                continue
 
         role = _message_type_lookups[message.type]
         content: str | list
