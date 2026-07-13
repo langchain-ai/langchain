@@ -494,6 +494,12 @@ def _convert_delta_to_message_chunk(
         except KeyError:
             pass
 
+    if reasoning_content := (
+        _dict.get("reasoning_content")
+        or _dict.get("reasoning")
+    ):
+        additional_kwargs["reasoning_content"] = reasoning_content
+
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)
     if role == "assistant" or default_class == AIMessageChunk:
@@ -517,6 +523,8 @@ def _convert_delta_to_message_chunk(
         return ToolMessageChunk(
             content=content, tool_call_id=_dict["tool_call_id"], id=id_
         )
+
+
     if role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role, id=id_)
     return default_class(content=content, id=id_)  # type: ignore[call-arg]
