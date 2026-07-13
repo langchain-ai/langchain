@@ -1566,6 +1566,15 @@ def test_anthropic_bind_tools_tool_choice() -> None:
         "type": "any",
     }
 
+    # Verify tool_choice dictionary is not mutated when parallel_tool_calls=False
+    tool_choice_dict = {"type": "tool", "name": "GetWeather"}
+    chat_model.bind_tools(
+        [GetWeather],
+        tool_choice=tool_choice_dict,
+        parallel_tool_calls=False,
+    )
+    assert tool_choice_dict == {"type": "tool", "name": "GetWeather"}
+
 
 def test_fine_grained_tool_streaming_beta() -> None:
     """Test that fine-grained tool streaming beta can be enabled."""
