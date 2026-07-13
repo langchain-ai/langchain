@@ -26,12 +26,16 @@ def _model() -> FakeToolCallingModel:
     )
 
 
-def test_tool_error_caught_returns_tool_message() -> None:
-    """A caught exception becomes an error ToolMessage; default omits the raw message."""
+def test_tool_error_handled_returns_tool_message() -> None:
+    """`on_error` content is returned as an error ToolMessage and controls disclosure."""
+
+    def on_error(exc: Exception, request: ToolCallRequest) -> str | None:
+        return f"`{request.tool_call['name']}` failed with {type(exc).__name__}."
+
     agent = create_agent(
         model=_model(),
         tools=[failing_tool],
-        middleware=[ToolErrorMiddleware(catch=(ValueError,))],
+        middleware=[ToolErrorMiddleware(on_error)],
     )
 
     result = agent.invoke({"messages": [HumanMessage("go")]})
@@ -40,60 +44,39 @@ def test_tool_error_caught_returns_tool_message() -> None:
     assert len(tool_messages) == 1
     assert tool_messages[0].status == "error"
     assert tool_messages[0].name == "failing_tool"
-    assert "ValueError" in tool_messages[0].content
-    # Default formatter must not leak the raw exception message.
+    assert tool_messages[0].content == "`failing_tool` failed with ValueError."
+    # on_error controls disclosure — the raw exception message is not leaked.
     assert "secret detail" not in tool_messages[0].content
 
 
-def test_tool_error_uncaught_propagates() -> None:
-    """An exception not listed in `catch` propagates out of the agent."""
+def test_tool_error_none_propagates() -> None:
+    """Returning `None` from `on_error` lets the exception propagate."""
+
+    def on_error(exc: Exception, _request: ToolCallRequest) -> str | None:
+        if isinstance(exc, KeyError):
+            return "handled"
+        return None  # ValueError is not handled -> propagates
+
     agent = create_agent(
         model=_model(),
         tools=[failing_tool],
-        middleware=[ToolErrorMiddleware(catch=(KeyError,))],
+        middleware=[ToolErrorMiddleware(on_error)],
     )
 
     with pytest.raises(ValueError, match="secret detail"):
         agent.invoke({"messages": [HumanMessage("go")]})
 
 
-def test_tool_error_on_error_formats_content() -> None:
-    """`on_error` sets the ToolMessage content and can use the tool call context."""
+async def test_tool_error_async_only() -> None:
+    """`aon_error` alone (no `on_error`) handles errors on the async path."""
 
-    def on_error(exc: Exception, request: ToolCallRequest) -> str:
-        return (
-            f"`{request.tool_call['name']}` raised {type(exc).__name__} for "
-            f"{request.tool_call['args']}; fix the arguments and retry."
-        )
-
-    agent = create_agent(
-        model=_model(),
-        tools=[failing_tool],
-        middleware=[ToolErrorMiddleware(catch=(ValueError,), on_error=on_error)],
-    )
-
-    result = agent.invoke({"messages": [HumanMessage("go")]})
-
-    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
-    assert len(tool_messages) == 1
-    assert tool_messages[0].status == "error"
-    assert tool_messages[0].content == (
-        "`failing_tool` raised ValueError for {'value': 'x'}; fix the arguments and retry."
-    )
-    # Custom formatter controls disclosure — the raw exception message is not leaked.
-    assert "secret detail" not in tool_messages[0].content
-
-
-async def test_tool_error_async_on_error() -> None:
-    """An async `on_error` is awaited under async execution."""
-
-    async def on_error(exc: Exception, request: ToolCallRequest) -> str:
+    async def aon_error(exc: Exception, request: ToolCallRequest) -> str | None:
         return f"async handled `{request.tool_call['name']}`: {type(exc).__name__}"
 
     agent = create_agent(
         model=_model(),
         tools=[failing_tool],
-        middleware=[ToolErrorMiddleware(catch=(ValueError,), on_error=on_error)],
+        middleware=[ToolErrorMiddleware(aon_error=aon_error)],
     )
 
     result = await agent.ainvoke({"messages": [HumanMessage("go")]})
@@ -102,3 +85,9 @@ async def test_tool_error_async_on_error() -> None:
     assert len(tool_messages) == 1
     assert tool_messages[0].status == "error"
     assert tool_messages[0].content == "async handled `failing_tool`: ValueError"
+
+
+def test_tool_error_requires_a_handler() -> None:
+    """At least one of `on_error`/`aon_error` must be provided."""
+    with pytest.raises(ValueError, match="on_error"):
+        ToolErrorMiddleware()

@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import inspect
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from langchain_core.messages import ToolMessage
 from langgraph.errors import GraphBubbleUp
@@ -12,43 +10,43 @@ from langgraph.errors import GraphBubbleUp
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
+    from collections.abc import Awaitable, Callable
 
+    from langchain_core.messages import ContentBlock
     from langgraph.types import Command
 
     from langchain.agents.middleware.types import ToolCallRequest
     from langchain.tools import BaseTool
 
-Catch = tuple[type[Exception], ...] | Callable[[Exception], bool]
-"""Exceptions to catch: a tuple of exception types, or a predicate ``(exc) -> bool``."""
+    OnError = Callable[[Exception, ToolCallRequest], str | list[ContentBlock] | None]
+    """Sync handler: return content to surface the error as a `ToolMessage`; return
+    `None` (or nothing) to let the exception propagate."""
 
-OnError = Callable[
-    [Exception, "ToolCallRequest"],
-    "str | list[str | dict[Any, Any]] | Awaitable[str | list[str | dict[Any, Any]]]",
-]
-"""Handler for a caught exception, returning `ToolMessage` content.
-
-May be sync or async. An async `on_error` requires async execution (`ainvoke`/`astream`).
-"""
-
-
-def _should_catch(exc: Exception, catch: Catch) -> bool:
-    """Return whether `exc` should be caught and returned to the model."""
-    if isinstance(catch, tuple):
-        return isinstance(exc, catch)
-    return bool(catch(exc))
+    AOnError = Callable[[Exception, ToolCallRequest], Awaitable[str | list[ContentBlock] | None]]
+    """Async handler: return content to surface the error as a `ToolMessage`; return
+    `None` (or nothing) to let the exception propagate."""
 
 
 class ToolErrorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
-    """Return tool-execution exceptions to the model as error `ToolMessage`s.
+    """Return selected tool-execution exceptions to the model as error `ToolMessage`s.
 
-    Only the exceptions named in `catch` are converted into a
-    `ToolMessage(status="error")`; any other exception propagates and halts the run.
-    Langgraph control-flow signals (interrupts, parent commands) always propagate.
+    `on_error` is called for each exception raised by tool execution. Return content
+    (a `str` or a list of content blocks) to convert the exception into a
+    `ToolMessage(status="error")`; return `None` — or simply don't return — to let the
+    exception propagate (halting the run). Handling is therefore opt-in — exceptions you
+    do not return content for propagate unchanged, so arbitrary internal exceptions are
+    never serialized to the model or end user unless you choose to surface them.
 
-    `catch` is required: there is intentionally no catch-all default, so arbitrary
-    internal exceptions are not serialized to the model or end user. Use `on_error`
-    to control (and sanitize) exactly what content the model sees.
+    Langgraph control-flow signals (interrupts, parent commands) always propagate and
+    never reach `on_error`.
+
+    Prefer returning content that names the exception type over the raw exception message,
+    which may carry sensitive or internal detail.
+
+    Provide at least one of `on_error` or `aon_error`. `aon_error` handles errors on the
+    async execution path (falling back to `on_error` when omitted); the sync path only
+    ever calls `on_error`. For async-only usage, pass `aon_error` alone — running such a
+    middleware on the sync path raises, since the async handler cannot be awaited there.
 
     This middleware does not retry. For retries, compose with `ToolRetryMiddleware`
     placed *inner* and configured with `on_failure="error"` so exceptions reach this
@@ -56,67 +54,57 @@ class ToolErrorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
 
     This middleware only sees exceptions raised by tool *execution*. Argument-binding
     and validation errors are handled upstream by `ToolNode` (converted to an error
-    `ToolMessage` before the tool runs), so they do not pass through `catch` or
-    `on_error` and are not sanitized by `on_error`.
+    `ToolMessage` before the tool runs), so they do not reach `on_error`.
 
-    Guidance on what to `catch`:
-
-    - **Catch** (return to the model): anticipated, model-actionable, non-sensitive
-        errors raised by the tool — e.g. tool-domain errors the model can correct.
-    - **Do not catch** (let propagate): programming bugs, auth/permission errors, and
-        anything whose message may carry secrets or internal infrastructure detail.
-
-    Examples:
-        !!! example "Catch a specific tool error"
-
-            ```python
-            from langchain.agents import create_agent
-            from langchain.agents.middleware import ToolErrorMiddleware
-
-            agent = create_agent(
-                model,
-                tools=[search_tool],
-                middleware=[ToolErrorMiddleware(catch=(ValueError,))],
-            )
-            ```
-
-        !!! example "Custom, sanitized error message"
-
-            ```python
-            def on_error(exc: Exception, request: ToolCallRequest) -> str:
-                name = request.tool_call["name"]
-                return f"`{name}` failed with invalid input. Check the arguments and retry."
+    Example:
+        ```python
+        from langchain.agents import create_agent
+        from langchain.agents.middleware import ToolErrorMiddleware
 
 
-            ToolErrorMiddleware(catch=(ValueError,), on_error=on_error)
-            ```
+        def on_error(exc: Exception, request: ToolCallRequest) -> str | None:
+            if isinstance(exc, ValueError):
+                return f"`{request.tool_call['name']}` failed; fix the input and retry."
+            return None  # propagate everything else
+
+
+        agent = create_agent(model, tools=[...], middleware=[ToolErrorMiddleware(on_error)])
+        ```
     """
 
     def __init__(
         self,
-        catch: Catch,
-        *,
         on_error: OnError | None = None,
+        *,
+        aon_error: AOnError | None = None,
         tools: list[BaseTool | str] | None = None,
     ) -> None:
         """Initialize `ToolErrorMiddleware`.
 
         Args:
-            catch: Exceptions to convert into an error `ToolMessage`. Either a tuple of
-                exception types, or a predicate `(exc) -> bool`. Exceptions that are not
-                caught propagate (halting the run).
-            on_error: Optional formatter for the `ToolMessage` content. Receives the
-                exception and the tool call request (tool name, args, call id). Defaults
-                to a conservative prose message. May return a string or a list of
-                content blocks.
-            tools: Optional list of tools or tool names to apply handling to. Can be a
-                list of `BaseTool` instances or tool name strings. If `None`, applies to
-                all tools.
+            on_error: Handler called for each exception raised by tool execution. Return
+                content (`str` or list of content blocks) to convert the exception into an
+                error `ToolMessage`. Return `None` — or simply don't return — to let the
+                exception propagate. Falling through without a return therefore re-raises,
+                so handle only the exceptions you mean to. Receives the exception and the
+                tool call request (tool name, args, call id). Used on the sync path and,
+                unless `aon_error` is given, on the async path.
+            aon_error: Optional async handler, used on the async execution path. Falls back
+                to `on_error` when not provided.
+            tools: Optional list of tools or tool names to apply handling to. If `None`,
+                applies to all tools.
+
+        Raises:
+            ValueError: If neither `on_error` nor `aon_error` is provided.
         """
         super().__init__()
 
-        self.catch = catch
+        if on_error is None and aon_error is None:
+            msg = "ToolErrorMiddleware requires `on_error` and/or `aon_error`."
+            raise ValueError(msg)
+
         self.on_error = on_error
+        self.aon_error = aon_error
 
         # Extract tool names from BaseTool instances or strings
         self._tool_filter: list[str] | None
@@ -133,46 +121,12 @@ class ToolErrorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
             return True
         return tool_name in self._tool_filter
 
-    @staticmethod
-    def _format_error(tool_name: str, exc: Exception) -> str:
-        """Default formatter for a caught exception.
-
-        Names the exception type but omits its message, which may contain sensitive
-        or internal detail. Provide `on_error` to include a sanitized message.
-        """
-        return f"Tool '{tool_name}' failed with {type(exc).__name__}."
-
-    def _sync_content(
-        self, exc: Exception, request: ToolCallRequest, tool_name: str
-    ) -> str | list[str | dict[Any, Any]]:
-        """Resolve the error message content in a sync context."""
-        if self.on_error is None:
-            return self._format_error(tool_name, exc)
-        result = self.on_error(exc, request)
-        if inspect.isawaitable(result):
-            if inspect.iscoroutine(result):
-                result.close()
-            msg = "async on_error requires async execution (ainvoke or astream)"
-            raise TypeError(msg)
-        return result
-
-    async def _async_content(
-        self, exc: Exception, request: ToolCallRequest, tool_name: str
-    ) -> str | list[str | dict[Any, Any]]:
-        """Resolve the error message content in an async context."""
-        if self.on_error is None:
-            return self._format_error(tool_name, exc)
-        result = self.on_error(exc, request)
-        if inspect.isawaitable(result):
-            return await result
-        return result
-
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
     ) -> ToolMessage | Command[Any]:
-        """Intercept tool execution and convert caught exceptions to error messages.
+        """Intercept tool execution and convert handled exceptions to error messages.
 
         Args:
             request: Tool call request with call dict, `BaseTool`, state, and runtime.
@@ -192,10 +146,18 @@ class ToolErrorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
             # Control-flow signals (interrupts, parent commands) must propagate.
             raise
         except Exception as exc:
-            if not _should_catch(exc, self.catch):
+            if self.on_error is None:
+                # Async-only config (aon_error) cannot be awaited on the sync path.
+                msg = (
+                    "ToolErrorMiddleware has no sync `on_error`; run async "
+                    "(ainvoke/astream) or provide `on_error`."
+                )
+                raise RuntimeError(msg) from exc
+            content = self.on_error(exc, request)
+            if content is None:
                 raise
             return ToolMessage(
-                content=self._sync_content(exc, request, tool_name),
+                content=cast("str | list[str | dict[Any, Any]]", content),
                 tool_call_id=request.tool_call["id"],
                 name=tool_name,
                 status="error",
@@ -206,7 +168,11 @@ class ToolErrorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
     ) -> ToolMessage | Command[Any]:
-        """Async version of `wrap_tool_call`."""
+        """Async version of `wrap_tool_call`.
+
+        Uses `aon_error` if provided, otherwise the sync `on_error`. The sync path never
+        awaits.
+        """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
         if not self._should_handle_tool(tool_name):
@@ -218,10 +184,16 @@ class ToolErrorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
             # Control-flow signals (interrupts, parent commands) must propagate.
             raise
         except Exception as exc:
-            if not _should_catch(exc, self.catch):
+            if self.aon_error is not None:
+                content = await self.aon_error(exc, request)
+            elif self.on_error is not None:
+                content = self.on_error(exc, request)
+            else:  # pragma: no cover - __init__ guarantees at least one handler
+                raise
+            if content is None:
                 raise
             return ToolMessage(
-                content=await self._async_content(exc, request, tool_name),
+                content=cast("str | list[str | dict[Any, Any]]", content),
                 tool_call_id=request.tool_call["id"],
                 name=tool_name,
                 status="error",
