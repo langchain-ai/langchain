@@ -12,6 +12,7 @@ from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddlewar
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
+from langchain.agents.middleware._redaction import PIIMatch
 from langchain.agents.middleware.provider_tool_search import ProviderToolSearchMiddleware
 from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
@@ -70,6 +71,7 @@ __all__ = [
     "OutputAgentState",
     "PIIDetectionError",
     "PIIMiddleware",
+    "PIIMatch",
     "ProviderToolSearchMiddleware",
     "RedactionRule",
     "Runtime",
