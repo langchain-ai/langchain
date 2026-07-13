@@ -1039,7 +1039,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.4.8"
+version = "1.4.9"
 source = { editable = "." }
 dependencies = [
     { name = "jsonpatch" },
@@ -1221,10 +1221,13 @@ test-integration = [
     { name = "transformers", specifier = ">=4.51.3,<6.0.0" },
 ]
 typing = [
-    { name = "beautifulsoup4", specifier = ">=4.13.5,<5.0.0" },
     { name = "lxml-stubs", specifier = ">=0.5.1,<1.0.0" },
-    { name = "mypy", specifier = ">=2.1.0,<2.2.0" },
+    { name = "nltk", specifier = ">=3.9.1,<4.0.0" },
+    { name = "sentence-transformers", specifier = ">=5.3.0,<6.0.0" },
+    { name = "spacy", specifier = ">=3.8.13,<4.0.0" },
     { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
+    { name = "transformers", specifier = ">=4.51.3,<6.0.0" },
+    { name = "ty", specifier = ">=0.0.56,<0.1.0" },
     { name = "types-requests", specifier = ">=2.31.0.20240218,<3.0.0.0" },
 ]
 

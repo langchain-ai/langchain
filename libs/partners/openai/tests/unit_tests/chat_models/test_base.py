@@ -36,6 +36,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from openai.types.responses import (
     ResponseApplyPatchToolCall,
     ResponseApplyPatchToolCallOutput,
@@ -1156,6 +1157,90 @@ def test__create_usage_metadata_zero_total_tokens() -> None:
     assert result["total_tokens"] == 0
 
 
+def test__create_usage_metadata_cache_write_tokens() -> None:
+    """`cache_write_tokens` is surfaced under the standard `cache_creation` key."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        # OpenAI's `cache_write_tokens` maps to core's `cache_creation`
+        "prompt_tokens_details": {"cached_tokens": 50, "cache_write_tokens": 25},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {
+        "cache_read": 50,
+        "cache_creation": 25,
+    }
+
+
+def test__create_usage_metadata_cache_read_only() -> None:
+    """Responses without `cache_write_tokens` emit no `cache_creation` key."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": {"cached_tokens": 50},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {"cache_read": 50}
+
+
+def test__create_usage_metadata_cache_tokens_zero_retained() -> None:
+    """Explicit zero cache counts are retained (filtered on `None`, not falsiness)."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {
+        "cache_read": 0,
+        "cache_creation": 0,
+    }
+
+
+def test__create_usage_metadata_service_tier_excludes_cache_read_tokens() -> None:
+    """Tier counts exclude cache reads but not overlapping cache writes."""
+    usage_metadata = {
+        "completion_tokens": 50,
+        "prompt_tokens_details": {
+            "cached_tokens": 256,
+            "cache_write_tokens": 3072,
+        },
+        "completion_tokens_details": {"reasoning_tokens": 10},
+        "prompt_tokens": 2304,
+        "total_tokens": 2354,
+    }
+    result = _create_usage_metadata(usage_metadata, service_tier="priority")
+    assert result["input_token_details"] == {
+        "priority_cache_read": 256,
+        "priority_cache_creation": 3072,
+        "priority": 2048,
+    }
+    assert result["output_token_details"] == {
+        "priority_reasoning": 10,
+        "priority": 40,  # 50 - 10 (reasoning)
+    }
+
+
+def test__create_usage_metadata_service_tier_without_detail_fields() -> None:
+    """Tier arithmetic tolerates missing cache/reasoning fields (no TypeError)."""
+    usage_metadata = {
+        "completion_tokens": 50,
+        "prompt_tokens_details": None,
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata(usage_metadata, service_tier="flex")
+    assert result["input_token_details"] == {"flex": 100}
+    assert result["output_token_details"] == {"flex": 50}
+
+
 def test__create_usage_metadata_responses() -> None:
     response_usage_metadata = {
         "input_tokens": 100,
@@ -1173,6 +1258,68 @@ def test__create_usage_metadata_responses() -> None:
         input_token_details={"cache_read": 50},
         output_token_details={"reasoning": 10},
     )
+
+
+def test__create_usage_metadata_responses_cache_write_tokens() -> None:
+    """Responses usage maps `cache_write_tokens` to the `cache_creation` key."""
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": {"cached_tokens": 50, "cache_write_tokens": 25},
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10},
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(response_usage_metadata)
+
+    assert result == UsageMetadata(
+        output_tokens=50,
+        input_tokens=100,
+        total_tokens=150,
+        input_token_details={"cache_read": 50, "cache_creation": 25},
+        output_token_details={"reasoning": 10},
+    )
+
+
+def test__create_usage_metadata_responses_service_tier_cache_write_overlap() -> None:
+    """Tier counts exclude cache reads but not overlapping cache writes."""
+    response_usage_metadata = {
+        "input_tokens": 2304,
+        "input_tokens_details": {
+            "cached_tokens": 256,
+            "cache_write_tokens": 3072,
+        },
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10},
+        "total_tokens": 2354,
+    }
+    result = _create_usage_metadata_responses(
+        response_usage_metadata, service_tier="flex"
+    )
+    assert result["input_token_details"] == {
+        "flex_cache_read": 256,
+        "flex_cache_creation": 3072,
+        "flex": 2048,
+    }
+    assert result["output_token_details"] == {
+        "flex_reasoning": 10,
+        "flex": 40,  # 50 - 10 (reasoning)
+    }
+
+
+def test__create_usage_metadata_responses_service_tier_without_detail_fields() -> None:
+    """Tier arithmetic tolerates missing cache/reasoning fields (no TypeError)."""
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": None,
+        "output_tokens": 50,
+        "output_tokens_details": None,
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(
+        response_usage_metadata, service_tier="priority"
+    )
+    assert result["input_token_details"] == {"priority": 100}
+    assert result["output_token_details"] == {"priority": 50}
 
 
 def test__resize_caps_dimensions_preserving_ratio() -> None:
@@ -1702,36 +1849,39 @@ def test_structured_outputs_parser() -> None:
 
 
 def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
+    """Chat Completions structured output must not emit a serializer warning.
+
+    Built via the SDK's own `parse_chat_completion` (the path
+    `client.beta.chat.completions.parse(...)` uses) so the test exercises the real
+    `ParsedChatCompletion` typing (openai/openai-python#2872).
+    """
+    from openai.lib._parsing._completions import parse_chat_completion
+    from openai.types.chat import ChatCompletion
+    from openai.types.chat.chat_completion import Choice
+    from openai.types.chat.chat_completion_message import ChatCompletionMessage
+
     class ModelOutput(BaseModel):
         output: str
 
-    class MockParsedMessage(openai.BaseModel):
-        role: Literal["assistant"] = "assistant"
-        content: str = '{"output": "Paris"}'
-        parsed: None = None
-        refusal: str | None = None
-
-    class MockChoice(openai.BaseModel):
-        index: int = 0
-        finish_reason: Literal["stop"] = "stop"
-        message: MockParsedMessage
-
-    class MockChatCompletion(openai.BaseModel):
-        id: str = "chatcmpl-1"
-        object: str = "chat.completion"
-        created: int = 0
-        model: str = OPENAI_TEST_MODEL
-        choices: list[MockChoice]
-        usage: dict[str, int] | None = None
-
-    parsed_response = ModelOutput(output="Paris")
-    response = MockChatCompletion.model_construct(
+    raw_response = ChatCompletion(
+        id="chatcmpl-1",
+        object="chat.completion",
+        created=0,
+        model=OPENAI_TEST_MODEL,
         choices=[
-            MockChoice.model_construct(
-                message=MockParsedMessage.model_construct(parsed=parsed_response)
+            Choice(
+                index=0,
+                finish_reason="stop",
+                message=ChatCompletionMessage(
+                    role="assistant", content='{"output": "Paris"}'
+                ),
             )
         ],
-        usage={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+    )
+    response = parse_chat_completion(
+        response_format=ModelOutput,
+        input_tools=openai.omit,
+        chat_completion=raw_response,
     )
 
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
@@ -1740,8 +1890,82 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
         result = llm._create_chat_result(response)
 
     warning_messages = [str(warning.message) for warning in caught_warnings]
-    assert not any("field_name='parsed'" in message for message in warning_messages)
-    assert result.generations[0].message.additional_kwargs["parsed"] == parsed_response
+    assert not any(
+        "PydanticSerializationUnexpectedValue" in message
+        for message in warning_messages
+    )
+    assert result.generations[0].message.additional_kwargs["parsed"] == ModelOutput(
+        output="Paris"
+    )
+
+
+@pytest.mark.skipif(
+    (PYDANTIC_VERSION.major, PYDANTIC_VERSION.minor) < (2, 8),
+    reason=(
+        "Serializing the generic `ParsedResponse` raises a `MockValSer` TypeError on "
+        "pydantic<2.8, independent of the warning under test."
+    ),
+)
+def test__construct_lc_result_from_responses_api_avoids_parsed_dump_warning() -> None:
+    """Responses API structured output must not emit serializer warnings.
+
+    With `use_responses_api=True` and structured output, the SDK returns a
+    `ParsedResponse` whose output items don't match their declared field/union types.
+    Dumping it for response metadata previously emitted a spurious
+    `PydanticSerializationUnexpectedValue` warning (openai/openai-python#2872).
+    """
+    from openai.lib._parsing._responses import parse_response
+
+    class DocumentScoreResult(BaseModel):
+        reasoning: str
+        relevance_score: int
+
+    # Build the object the way `client.responses.parse(text_format=...)` does, so the
+    # test exercises the real `ParsedResponse` typing rather than a hand-rolled mock.
+    raw_response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                status="completed",
+                role="assistant",
+                content=[
+                    ResponseOutputText(
+                        type="output_text",
+                        text='{"reasoning": "relevant", "relevance_score": 1}',
+                        annotations=[],
+                    )
+                ],
+            )
+        ],
+    )
+    parsed_response = parse_response(
+        text_format=DocumentScoreResult,
+        input_tools=openai.omit,
+        response=raw_response,
+    )
+
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        result = _construct_lc_result_from_responses_api(
+            parsed_response, schema=DocumentScoreResult
+        )
+
+    warning_messages = [str(warning.message) for warning in caught_warnings]
+    assert not any(
+        "PydanticSerializationUnexpectedValue" in message
+        for message in warning_messages
+    )
+    assert result.generations[0].message.additional_kwargs[
+        "parsed"
+    ] == DocumentScoreResult(reasoning="relevant", relevance_score=1)
 
 
 def test_structured_outputs_parser_valid_falsy_response() -> None:
@@ -1811,7 +2035,9 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
             input_tokens=10,
             output_tokens=3,
             total_tokens=13,
-            input_tokens_details=InputTokensDetails(cached_tokens=0),
+            input_tokens_details=InputTokensDetails(
+                cache_write_tokens=0, cached_tokens=0
+            ),
             output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
         ),
     )

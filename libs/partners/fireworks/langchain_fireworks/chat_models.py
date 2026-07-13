@@ -11,6 +11,7 @@ from typing import (
     Any,
     Literal,
     NoReturn,
+    TypeAlias,
     cast,
 )
 
@@ -58,6 +59,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    UsageMetadata,
     is_data_content_block,
 )
 from langchain_core.messages.block_translators.openai import (
@@ -395,14 +397,72 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _usage_to_metadata(usage: Mapping[str, Any]) -> dict[str, int]:
-    input_tokens = usage.get("prompt_tokens", 0)
-    output_tokens = usage.get("completion_tokens", 0)
-    return {
+def _usage_to_metadata(usage: Mapping[str, Any]) -> UsageMetadata:
+    input_tokens = usage.get("prompt_tokens") or 0
+    output_tokens = usage.get("completion_tokens") or 0
+    usage_metadata: UsageMetadata = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
-        "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
+        "total_tokens": usage.get("total_tokens") or input_tokens + output_tokens,
     }
+    cached_tokens = (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
+    if cached_tokens is not None:
+        usage_metadata["input_token_details"] = {"cache_read": cached_tokens}
+    return usage_metadata
+
+
+TokenUsageTree: TypeAlias = "int | dict[str, TokenUsageTree]"
+"""Raw provider token usage: a tree of `int` leaves and nested `dict` nodes
+(e.g. `prompt_tokens_details`).
+
+Modeled as a recursive alias so the merge helper's signature carries the shape
+rather than leaving it to `Any`.
+"""
+
+
+def _update_token_usage(
+    overall_token_usage: TokenUsageTree, new_usage: TokenUsageTree
+) -> TokenUsageTree:
+    """Recursively merge raw provider token usage across generations.
+
+    Token usage is a tree of `int` leaves (summed) and `dict` nodes such as
+    `prompt_tokens_details` (merged key-by-key, skipping `None` values).
+
+    A type mismatch between the accumulator and the incoming value (e.g. an
+    `int` on one side and a `dict` on the other) indicates malformed provider
+    data and is raised rather than silently coerced. An entirely unexpected
+    leaf type (neither `int` nor `dict`) is logged and passed through, so a
+    telemetry anomaly degrades gracefully instead of failing the response.
+    """
+    if isinstance(new_usage, int):
+        if not isinstance(overall_token_usage, int):
+            msg = (
+                "Got different types for token usage: "
+                f"{new_usage!r} ({type(new_usage).__name__}) and "
+                f"{overall_token_usage!r} ({type(overall_token_usage).__name__})"
+            )
+            raise ValueError(msg)
+        return overall_token_usage + new_usage
+    if isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            msg = (
+                "Got different types for token usage: "
+                f"{new_usage!r} ({type(new_usage).__name__}) and "
+                f"{overall_token_usage!r} ({type(overall_token_usage).__name__})"
+            )
+            raise ValueError(msg)
+        updated_token_usage = dict(overall_token_usage)
+        for key, value in new_usage.items():
+            if value is not None:
+                # Seed a first-seen key with an empty node of the same kind so a
+                # nested `dict` value merges rather than colliding with an `int`.
+                default: TokenUsageTree = {} if isinstance(value, dict) else 0
+                updated_token_usage[key] = _update_token_usage(
+                    overall_token_usage.get(key, default), value
+                )
+        return updated_token_usage
+    logger.warning("Unexpected type for token usage: %s", type(new_usage).__name__)
+    return new_usage
 
 
 def _convert_chunk_to_message_chunk(
@@ -423,7 +483,7 @@ def _convert_chunk_to_message_chunk(
         usage_metadata = _usage_to_metadata(usage) if usage else None
         return AIMessageChunk(
             content="",
-            usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            usage_metadata=usage_metadata,
             response_metadata=response_metadata,
         )
     choice = choices[0]
@@ -458,7 +518,7 @@ def _convert_chunk_to_message_chunk(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,
-            usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            usage_metadata=usage_metadata,
             response_metadata=response_metadata,
         )
     if role == "system" or default_class == SystemMessageChunk:
@@ -960,11 +1020,15 @@ class ChatFireworks(BaseChatModel):
             if output is None:
                 # Happens in streaming
                 continue
-            token_usage = output["token_usage"]
+            token_usage = output.get("token_usage")
             if token_usage is not None:
                 for k, v in token_usage.items():
+                    if v is None:
+                        continue
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
@@ -1064,11 +1128,7 @@ class ChatFireworks(BaseChatModel):
             message = _convert_dict_to_message(res["message"])
             if isinstance(message, AIMessage):
                 if token_usage:
-                    message.usage_metadata = {
-                        "input_tokens": token_usage.get("prompt_tokens", 0),
-                        "output_tokens": token_usage.get("completion_tokens", 0),
-                        "total_tokens": token_usage.get("total_tokens", 0),
-                    }
+                    message.usage_metadata = _usage_to_metadata(token_usage)
                     message.response_metadata["model_provider"] = "fireworks"
                     message.response_metadata["model_name"] = self.model_name
                 if service_tier:

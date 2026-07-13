@@ -147,21 +147,17 @@ def test_set_default_max_tokens() -> None:
     llm = ChatAnthropic(model="claude-sonnet-4-5-20250929", anthropic_api_key="test")
     assert llm.max_tokens == 64000
 
-    # Test claude-opus-4 models
-    llm = ChatAnthropic(model="claude-opus-4-20250514", anthropic_api_key="test")
+    # Test claude-opus-4-1 models
+    llm = ChatAnthropic(model="claude-opus-4-1-20250805", anthropic_api_key="test")
     assert llm.max_tokens == 32000
 
-    # Test claude-sonnet-4 models
-    llm = ChatAnthropic(model="claude-sonnet-4-20250514", anthropic_api_key="test")
+    # Test claude-haiku-4-5 models
+    llm = ChatAnthropic(model="claude-haiku-4-5-20251001", anthropic_api_key="test")
     assert llm.max_tokens == 64000
 
-    # Test claude-3-7-sonnet models
-    llm = ChatAnthropic(model="claude-3-7-sonnet-20250219", anthropic_api_key="test")
-    assert llm.max_tokens == 64000
-
-    # Test claude-3-5-haiku models
+    # Test claude-3-5-haiku models (profile removed, should fall back to 4096)
     llm = ChatAnthropic(model="claude-3-5-haiku-20241022", anthropic_api_key="test")
-    assert llm.max_tokens == 8192
+    assert llm.max_tokens == 4096
 
     # Test claude-3-haiku models (should default to 4096)
     llm = ChatAnthropic(model="claude-3-haiku-20240307", anthropic_api_key="test")
@@ -2598,6 +2594,33 @@ def test_tool_search_is_builtin_tool() -> None:
     assert not _is_builtin_tool(regular_tool)
 
 
+def test_advisor_is_builtin_tool() -> None:
+    """Test that advisor_ tools are recognized as built-in and pass through bind_tools.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38644.
+    advisor_20260301 (Anthropic Advisor native tool) was missing from
+    _BUILTIN_TOOL_PREFIXES, causing bind_tools() to route it through
+    convert_to_anthropic_tool() which crashed with KeyError: 'parameters'.
+    """
+    advisor_tool = {
+        "type": "advisor_20260301",
+        "name": "advisor",
+        "model": MODEL_NAME,
+        "max_uses": 3,
+        "max_tokens": 1024,
+    }
+    assert _is_builtin_tool(advisor_tool)
+
+    # bind_tools() must pass the advisor tool through unchanged, not raise KeyError
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    bound = model.bind_tools([advisor_tool])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        [HumanMessage("hello")],
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert advisor_tool in payload["tools"]
+
+
 def test_tool_search_beta_headers() -> None:
     """Test that tool search tools auto-append the correct beta headers."""
     # Test regex variant
@@ -2823,7 +2846,7 @@ def test_auto_append_betas_for_mcp_servers() -> None:
 
 
 def test_profile() -> None:
-    model = ChatAnthropic(model="claude-sonnet-4-20250514")
+    model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
     assert model.profile
     assert not model.profile["structured_output"]
 
@@ -2849,7 +2872,7 @@ def test_profile() -> None:
 def test_profile_1m_context_beta() -> None:
     model = ChatAnthropic(model="claude-sonnet-4-5")
     assert model.profile
-    assert model.profile["max_input_tokens"] == 200000
+    assert model.profile["max_input_tokens"] == 1000000
 
     model = ChatAnthropic(model="claude-sonnet-4-5", betas=["context-1m-2025-08-07"])
     assert model.profile
@@ -2860,7 +2883,7 @@ def test_profile_1m_context_beta() -> None:
         betas=["token-efficient-tools-2025-02-19"],
     )
     assert model.profile
-    assert model.profile["max_input_tokens"] == 200000
+    assert model.profile["max_input_tokens"] == 1000000
 
 
 async def test_model_profile_not_blocking() -> None:

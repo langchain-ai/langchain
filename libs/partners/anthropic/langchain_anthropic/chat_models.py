@@ -162,6 +162,7 @@ _BUILTIN_TOOL_PREFIXES = [
     "mcp_toolset",
     "memory_",
     "tool_search_",
+    "advisor_",
 ]
 
 _ANTHROPIC_EXTRA_FIELDS: set[str] = {

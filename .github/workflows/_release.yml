@@ -141,7 +141,7 @@ jobs:
   # Runs in isolated environment with minimal permissions for security
   build:
     name: 📦 Build distribution
-    if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
+    if: github.repository_owner == 'langchain-ai' && (github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release)
     environment: Release
     runs-on: ubuntu-latest
     permissions:

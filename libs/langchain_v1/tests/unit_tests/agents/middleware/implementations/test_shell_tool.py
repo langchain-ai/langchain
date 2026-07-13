@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import gc
+import logging
+import os
+import signal
 import tempfile
 import time
 from pathlib import Path
 from typing import Any, cast
+from unittest.mock import Mock
 
 import pytest
 from langchain_core.messages import ToolMessage
@@ -14,6 +18,7 @@ from langgraph.runtime import Runtime
 from langchain.agents.middleware.shell_tool import (
     HostExecutionPolicy,
     RedactionRule,
+    ShellSession,
     ShellToolMiddleware,
     ShellToolState,
     _SessionResources,
@@ -546,3 +551,146 @@ def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
 
     # Clean up
     resources1.finalizer()
+
+
+def test_kill_process_avoids_group_kill_for_shared_process_group(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Avoid `killpg` when child shares the caller process group."""
+    session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
+    process = Mock()
+    process.pid = 1234
+    session._process = process
+
+    killpg_mock = Mock()
+
+    def fake_getpgid(pid: int) -> int:
+        assert pid == process.pid, "getpgid must be queried with the child's pid"
+        return 1000
+
+    monkeypatch.setattr(os, "killpg", killpg_mock, raising=False)
+    monkeypatch.setattr(os, "getpgid", fake_getpgid, raising=False)
+    monkeypatch.setattr(os, "getpgrp", lambda: 1000, raising=False)
+
+    session._kill_process()
+
+    killpg_mock.assert_not_called()
+    process.kill.assert_called_once_with()
+
+
+def test_kill_process_uses_group_kill_for_dedicated_process_group(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Keep process-group kill behavior when child runs in a separate group."""
+    session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
+    process = Mock()
+    process.pid = 5678
+    session._process = process
+
+    killpg_mock = Mock()
+
+    def fake_getpgid(pid: int) -> int:
+        assert pid == process.pid, "getpgid must be queried with the child's pid"
+        return 2000
+
+    monkeypatch.setattr(os, "killpg", killpg_mock, raising=False)
+    monkeypatch.setattr(os, "getpgid", fake_getpgid, raising=False)
+    monkeypatch.setattr(os, "getpgrp", lambda: 1000, raising=False)
+
+    session._kill_process()
+
+    killpg_mock.assert_called_once_with(2000, signal.SIGKILL)
+    process.kill.assert_not_called()
+
+
+def test_kill_process_returns_early_when_process_already_gone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Return without a direct kill when the process is already gone."""
+    session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
+    process = Mock()
+    process.pid = 1111
+    session._process = process
+
+    killpg_mock = Mock()
+    monkeypatch.setattr(os, "killpg", killpg_mock, raising=False)
+    monkeypatch.setattr(os, "getpgid", Mock(side_effect=ProcessLookupError), raising=False)
+    monkeypatch.setattr(os, "getpgrp", lambda: 1000, raising=False)
+
+    session._kill_process()
+
+    killpg_mock.assert_not_called()
+    process.kill.assert_not_called()
+
+
+def test_kill_process_falls_back_when_group_kill_raises_oserror(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Fall back to a direct kill (and log) when the group kill raises an OSError."""
+    session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
+    process = Mock()
+    process.pid = 4321
+    session._process = process
+
+    killpg_mock = Mock(side_effect=PermissionError("operation not permitted"))
+
+    def fake_getpgid(pid: int) -> int:
+        assert pid == process.pid, "getpgid must be queried with the child's pid"
+        return 2000
+
+    monkeypatch.setattr(os, "killpg", killpg_mock, raising=False)
+    monkeypatch.setattr(os, "getpgid", fake_getpgid, raising=False)
+    monkeypatch.setattr(os, "getpgrp", lambda: 1000, raising=False)
+
+    with caplog.at_level(logging.WARNING):
+        session._kill_process()
+
+    killpg_mock.assert_called_once_with(2000, signal.SIGKILL)
+    process.kill.assert_called_once_with()
+    assert "falling back to direct kill" in caplog.text.lower()
+
+
+def test_kill_process_swallows_and_logs_direct_kill_oserror(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Log, don't raise, when the fallback direct kill itself fails with an OSError."""
+    session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
+    process = Mock()
+    process.pid = 7777
+    process.kill.side_effect = PermissionError("operation not permitted")
+    session._process = process
+
+    # Shared process group -> skip killpg and go straight to the direct kill.
+    monkeypatch.setattr(os, "killpg", Mock(), raising=False)
+    monkeypatch.setattr(os, "getpgid", lambda _pid: 1000, raising=False)
+    monkeypatch.setattr(os, "getpgrp", lambda: 1000, raising=False)
+
+    with caplog.at_level(logging.WARNING):
+        session._kill_process()  # must not propagate the PermissionError
+
+    process.kill.assert_called_once_with()
+    assert "direct kill failed" in caplog.text.lower()
+
+
+def test_kill_process_uses_direct_kill_without_killpg(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Use a direct kill on platforms without `os.killpg` (e.g. Windows)."""
+    session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
+    process = Mock()
+    process.pid = 2222
+    session._process = process
+
+    monkeypatch.delattr(os, "killpg", raising=False)
+
+    session._kill_process()
+
+    process.kill.assert_called_once_with()
+
+
+def test_kill_process_noop_without_active_process(tmp_path: Path) -> None:
+    """Do nothing when there is no active process to kill."""
+    session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
+
+    # No process has been started; this must not raise.
+    session._kill_process()
