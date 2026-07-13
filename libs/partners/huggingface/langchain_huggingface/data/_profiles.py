@@ -908,7 +908,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "text_inputs": True,
         "image_inputs": True,
         "audio_inputs": False,
-        "video_inputs": False,
+        "video_inputs": True,
         "text_outputs": True,
         "image_outputs": False,
         "audio_outputs": False,
