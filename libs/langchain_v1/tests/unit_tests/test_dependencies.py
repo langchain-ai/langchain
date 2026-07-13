@@ -32,6 +32,7 @@ def test_required_dependencies(uv_conf: Mapping[str, Any]) -> None:
 
     assert sorted(required_dependencies) == sorted(
         [
+            "jsonschema",
             "langchain-core",
             "langgraph",
             "pydantic",

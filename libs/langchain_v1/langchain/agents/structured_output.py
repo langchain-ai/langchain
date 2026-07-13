@@ -17,6 +17,7 @@ from typing import (
     get_origin,
 )
 
+from jsonschema.validators import validator_for
 from langchain_core.tools import BaseTool, StructuredTool
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self, is_typeddict
@@ -74,26 +75,55 @@ class StructuredOutputValidationError(StructuredOutputError):
         super().__init__(f"Failed to parse structured output for tool '{tool_name}': {source}.")
 
 
+def _validate_json_schema(schema: dict[str, Any], data: dict[str, Any]) -> dict[str, Any]:
+    """Validate data against a raw JSON schema dict, returning it unchanged on success.
+
+    Args:
+        schema: The JSON schema to validate against.
+        data: The data to validate.
+
+    Returns:
+        The validated data, unchanged.
+
+    Raises:
+        ValueError: If the data does not conform to the schema.
+    """
+    # `validator_for` honors an explicit `$schema` key and falls back to the latest
+    # supported draft. The schema itself is deliberately not checked (`check_schema`):
+    # schemas already accepted by providers must not start failing here.
+    validator_cls = validator_for(schema)
+    try:
+        validator_cls(schema).validate(data)
+    except Exception as e:
+        schema_name = schema.get("title", "response_format")
+        msg = f"Failed to parse data to {schema_name}: {e}"
+        raise ValueError(msg) from e
+    return data
+
+
 def _parse_with_schema(
     schema: type[SchemaT] | dict[str, Any], schema_kind: SchemaKind, data: dict[str, Any]
 ) -> SchemaT | dict[str, Any]:
-    """Parse data using for any supported schema type.
+    """Parse data with any supported schema type.
 
     Args:
-        schema: The schema type (Pydantic model, `dataclass`, or `TypedDict`)
+        schema: The schema (Pydantic model, `dataclass`, `TypedDict`, or JSON schema
+            dict)
         schema_kind: One of `'pydantic'`, `'dataclass'`, `'typeddict'`, or
             `'json_schema'`
         data: The data to parse
 
     Returns:
-        The parsed instance according to the schema type
+        The parsed instance according to the schema type. For `'json_schema'`, the
+        data dict is validated against the JSON schema and returned as-is.
 
     Raises:
-        ValueError: If parsing fails
+        ValueError: If parsing or JSON schema validation fails
     """
-    if schema_kind == "json_schema":
-        # Raw JSON schema has no corresponding Python type to instantiate.
-        return data
+    if schema_kind == "json_schema" and isinstance(schema, dict):
+        # A raw JSON schema has no Python type to instantiate; validate and return
+        # the dict so schema violations surface exactly like the typed branches.
+        return _validate_json_schema(schema, data)
     try:
         adapter = TypeAdapter[SchemaT](schema)
         return adapter.validate_python(data)
@@ -219,6 +249,9 @@ class ToolStrategy(Generic[SchemaT]):
         message
     - `Callable[[Exception], str]`: Custom function that returns error message
     - `False`: No retry, let exceptions propagate
+
+    Validation failures surface as `StructuredOutputValidationError` for every schema
+    kind, including raw JSON schema dicts (validated with `jsonschema`).
     """
 
     def __init__(
@@ -355,7 +388,8 @@ class OutputToolBinding(Generic[SchemaT]):
             The parsed response according to the schema type
 
         Raises:
-            ValueError: If parsing fails
+            ValueError: If parsing fails, including JSON schema validation failures
+                for dict schemas
         """
         return _parse_with_schema(self.schema, self.schema_kind, tool_args)
 
@@ -402,7 +436,8 @@ class ProviderStrategyBinding(Generic[SchemaT]):
             The parsed response according to the schema
 
         Raises:
-            ValueError: If text extraction, JSON parsing or schema validation fails
+            ValueError: If text extraction, JSON parsing or schema validation
+                (including JSON schema validation for dict schemas) fails
         """
         # Extract text content from AIMessage and parse as JSON
         raw_text = self._extract_text_content_from_message(response)

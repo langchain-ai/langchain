@@ -28,6 +28,7 @@ from langchain.agents.structured_output import (
     ProviderStrategy,
     StructuredOutputValidationError,
     ToolStrategy,
+    _parse_with_schema,
 )
 from langchain.messages import AIMessage
 from langchain.tools import BaseTool, tool
@@ -86,6 +87,20 @@ location_json_schema = {
     },
     "title": "location_schema",
     "required": ["city", "country"],
+}
+
+
+nested_json_schema = {
+    "type": "object",
+    "properties": {
+        "forecast": {
+            "type": "object",
+            "properties": {"temperature": {"type": "number"}},
+            "required": ["temperature"],
+        },
+    },
+    "title": "forecast_schema",
+    "required": ["forecast"],
 }
 
 
@@ -684,6 +699,190 @@ class TestResponseFormatAsToolStrategy:
         ):
             agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
+    def test_json_schema_validation_error_without_retry(self) -> None:
+        """Test that schema-violating output raises for raw JSON schema dicts."""
+        tool_calls = [
+            [
+                {
+                    "name": "weather_schema",
+                    "id": "1",
+                    "args": {"temperature": "hot", "condition": 5},
+                },
+            ],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                weather_json_schema,
+                handle_errors=False,
+            ),
+        )
+
+        with pytest.raises(
+            StructuredOutputValidationError,
+            match=r".*weather_schema.*",
+        ):
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    def test_json_schema_validation_error_with_retry(self) -> None:
+        """Test that retry handles JSON schema validation errors for dict schemas."""
+        tool_calls = [
+            [
+                {
+                    "name": "weather_schema",
+                    "id": "1",
+                    "args": {"temperature": "hot", "condition": 5},
+                },
+            ],
+            [
+                {
+                    "name": "weather_schema",
+                    "id": "2",
+                    "args": WEATHER_DATA,
+                },
+            ],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                weather_json_schema,
+                handle_errors=(StructuredOutputValidationError,),
+            ),
+        )
+
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        # HumanMessage, AIMessage, ToolMessage, AIMessage, ToolMessage
+        assert len(response["messages"]) == 5
+        assert response["structured_response"] == EXPECTED_WEATHER_DICT
+
+    def test_json_schema_missing_required_field(self) -> None:
+        """Test that a missing required field raises for raw JSON schema dicts."""
+        tool_calls = [
+            [
+                {
+                    "name": "weather_schema",
+                    "id": "1",
+                    "args": {"temperature": 75.0},
+                },
+            ],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                weather_json_schema,
+                handle_errors=False,
+            ),
+        )
+
+        with pytest.raises(
+            StructuredOutputValidationError,
+            match=r".*weather_schema.*",
+        ):
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    def test_json_schema_nested_violation(self) -> None:
+        """Test that nested schema violations raise for raw JSON schema dicts."""
+        tool_calls = [
+            [
+                {
+                    "name": "forecast_schema",
+                    "id": "1",
+                    "args": {"forecast": {"temperature": "warm"}},
+                },
+            ],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                nested_json_schema,
+                handle_errors=False,
+            ),
+        )
+
+        with pytest.raises(
+            StructuredOutputValidationError,
+            match=r".*forecast_schema.*",
+        ):
+            agent.invoke({"messages": [HumanMessage("What's the forecast?")]})
+
+    def test_json_schema_extra_keys_still_pass(self) -> None:
+        """Test that extra keys pass when the schema does not restrict them.
+
+        Back-compat guard: JSON Schema permits additional properties by default, so
+        outputs with extra keys must keep flowing through unchanged.
+        """
+        args_with_extra = {**WEATHER_DATA, "extra": "x"}
+        tool_calls = [
+            [
+                {
+                    "name": "weather_schema",
+                    "id": "1",
+                    "args": args_with_extra,
+                },
+            ],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                weather_json_schema,
+                handle_errors=False,
+            ),
+        )
+
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert response["structured_response"] == args_with_extra
+
+    def test_union_of_json_schemas_validation_error(self) -> None:
+        """Test that each variant of a JSON schema union is validated independently."""
+        tool_calls = [
+            [
+                {
+                    "name": "location_schema",
+                    "id": "1",
+                    "args": WEATHER_DATA,
+                },
+            ],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                {"oneOf": [weather_json_schema, location_json_schema]},
+                handle_errors=False,
+            ),
+        )
+
+        with pytest.raises(
+            StructuredOutputValidationError,
+            match=r".*location_schema.*",
+        ):
+            agent.invoke({"messages": [HumanMessage("Where am I?")]})
+
 
 class TestResponseFormatAsProviderStrategy:
     def test_pydantic_model(self) -> None:
@@ -785,6 +984,58 @@ class TestResponseFormatAsProviderStrategy:
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
         assert len(response["messages"]) == 4
+
+    def test_json_schema_validation_error(self) -> None:
+        """Test that schema-violating provider output raises for raw JSON schema dicts."""
+        tool_calls = [
+            [{"args": {}, "id": "1", "name": "get_weather"}],
+        ]
+
+        model = FakeToolCallingModel(
+            tool_calls=tool_calls,
+            structured_response={"temperature": "hot", "condition": 5},
+        )
+
+        agent = create_agent(
+            model, [get_weather], response_format=ProviderStrategy(weather_json_schema)
+        )
+
+        with pytest.raises(
+            StructuredOutputValidationError,
+            match=r".*weather_schema.*",
+        ):
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+
+class TestParseWithSchemaJsonSchema:
+    """Direct tests for `_parse_with_schema` with raw JSON schema dicts."""
+
+    def test_valid_data_returned_unchanged(self) -> None:
+        """Test that conforming data is returned as the same plain dict."""
+        result = _parse_with_schema(weather_json_schema, "json_schema", WEATHER_DATA)
+
+        assert result == WEATHER_DATA
+
+    def test_invalid_data_raises_value_error(self) -> None:
+        """Test that non-conforming data raises the shared `ValueError` shape."""
+        with pytest.raises(ValueError, match=r"Failed to parse data to weather_schema"):
+            _parse_with_schema(
+                weather_json_schema,
+                "json_schema",
+                {"temperature": "hot", "condition": 5},
+            )
+
+    def test_explicit_schema_draft_is_honored(self) -> None:
+        """Test that a schema declaring an explicit draft still validates."""
+        draft7_schema = {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            **weather_json_schema,
+        }
+
+        assert _parse_with_schema(draft7_schema, "json_schema", WEATHER_DATA) == WEATHER_DATA
+
+        with pytest.raises(ValueError, match=r"Failed to parse data to weather_schema"):
+            _parse_with_schema(draft7_schema, "json_schema", {"temperature": "hot"})
 
 
 class TestDynamicModelWithResponseFormat:
