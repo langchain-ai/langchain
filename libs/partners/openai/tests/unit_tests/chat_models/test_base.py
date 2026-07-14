@@ -1157,6 +1157,90 @@ def test__create_usage_metadata_zero_total_tokens() -> None:
     assert result["total_tokens"] == 0
 
 
+def test__create_usage_metadata_cache_write_tokens() -> None:
+    """`cache_write_tokens` is surfaced under the standard `cache_creation` key."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        # OpenAI's `cache_write_tokens` maps to core's `cache_creation`
+        "prompt_tokens_details": {"cached_tokens": 50, "cache_write_tokens": 25},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {
+        "cache_read": 50,
+        "cache_creation": 25,
+    }
+
+
+def test__create_usage_metadata_cache_read_only() -> None:
+    """Responses without `cache_write_tokens` emit no `cache_creation` key."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": {"cached_tokens": 50},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {"cache_read": 50}
+
+
+def test__create_usage_metadata_cache_tokens_zero_retained() -> None:
+    """Explicit zero cache counts are retained (filtered on `None`, not falsiness)."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {
+        "cache_read": 0,
+        "cache_creation": 0,
+    }
+
+
+def test__create_usage_metadata_service_tier_excludes_cache_read_tokens() -> None:
+    """Tier counts exclude cache reads but not overlapping cache writes."""
+    usage_metadata = {
+        "completion_tokens": 50,
+        "prompt_tokens_details": {
+            "cached_tokens": 256,
+            "cache_write_tokens": 3072,
+        },
+        "completion_tokens_details": {"reasoning_tokens": 10},
+        "prompt_tokens": 2304,
+        "total_tokens": 2354,
+    }
+    result = _create_usage_metadata(usage_metadata, service_tier="priority")
+    assert result["input_token_details"] == {
+        "priority_cache_read": 256,
+        "priority_cache_creation": 3072,
+        "priority": 2048,
+    }
+    assert result["output_token_details"] == {
+        "priority_reasoning": 10,
+        "priority": 40,  # 50 - 10 (reasoning)
+    }
+
+
+def test__create_usage_metadata_service_tier_without_detail_fields() -> None:
+    """Tier arithmetic tolerates missing cache/reasoning fields (no TypeError)."""
+    usage_metadata = {
+        "completion_tokens": 50,
+        "prompt_tokens_details": None,
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata(usage_metadata, service_tier="flex")
+    assert result["input_token_details"] == {"flex": 100}
+    assert result["output_token_details"] == {"flex": 50}
+
+
 def test__create_usage_metadata_responses() -> None:
     response_usage_metadata = {
         "input_tokens": 100,
@@ -1174,6 +1258,68 @@ def test__create_usage_metadata_responses() -> None:
         input_token_details={"cache_read": 50},
         output_token_details={"reasoning": 10},
     )
+
+
+def test__create_usage_metadata_responses_cache_write_tokens() -> None:
+    """Responses usage maps `cache_write_tokens` to the `cache_creation` key."""
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": {"cached_tokens": 50, "cache_write_tokens": 25},
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10},
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(response_usage_metadata)
+
+    assert result == UsageMetadata(
+        output_tokens=50,
+        input_tokens=100,
+        total_tokens=150,
+        input_token_details={"cache_read": 50, "cache_creation": 25},
+        output_token_details={"reasoning": 10},
+    )
+
+
+def test__create_usage_metadata_responses_service_tier_cache_write_overlap() -> None:
+    """Tier counts exclude cache reads but not overlapping cache writes."""
+    response_usage_metadata = {
+        "input_tokens": 2304,
+        "input_tokens_details": {
+            "cached_tokens": 256,
+            "cache_write_tokens": 3072,
+        },
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10},
+        "total_tokens": 2354,
+    }
+    result = _create_usage_metadata_responses(
+        response_usage_metadata, service_tier="flex"
+    )
+    assert result["input_token_details"] == {
+        "flex_cache_read": 256,
+        "flex_cache_creation": 3072,
+        "flex": 2048,
+    }
+    assert result["output_token_details"] == {
+        "flex_reasoning": 10,
+        "flex": 40,  # 50 - 10 (reasoning)
+    }
+
+
+def test__create_usage_metadata_responses_service_tier_without_detail_fields() -> None:
+    """Tier arithmetic tolerates missing cache/reasoning fields (no TypeError)."""
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": None,
+        "output_tokens": 50,
+        "output_tokens_details": None,
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(
+        response_usage_metadata, service_tier="priority"
+    )
+    assert result["input_token_details"] == {"priority": 100}
+    assert result["output_token_details"] == {"priority": 50}
 
 
 def test__resize_caps_dimensions_preserving_ratio() -> None:
@@ -1889,7 +2035,9 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
             input_tokens=10,
             output_tokens=3,
             total_tokens=13,
-            input_tokens_details=InputTokensDetails(cached_tokens=0),
+            input_tokens_details=InputTokensDetails(
+                cache_write_tokens=0, cached_tokens=0
+            ),
             output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
         ),
     )

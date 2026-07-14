@@ -152,6 +152,7 @@ def test_configurable() -> None:
             "context_management": None,
             "include": None,
             "seed": None,
+            "prompt_cache_options": None,
             "service_tier": None,
             "logprobs": None,
             "top_logprobs": None,

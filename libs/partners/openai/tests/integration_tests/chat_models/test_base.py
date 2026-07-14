@@ -1200,6 +1200,45 @@ def test_prompt_cache_key_usage_methods_integration() -> None:
     assert isinstance(response_model_level.content, str)
 
 
+@pytest.mark.scheduled
+@pytest.mark.flaky(retries=3, delay=1)
+def test_explicit_prompt_cache_breakpoint_invoke() -> None:
+    """Explicit cache breakpoints produce a cache read on a repeated prefix.
+
+    Uses a long, stable prefix marked with a `prompt_cache_breakpoint` and
+    `prompt_cache_options={"mode": "explicit"}`. The first invocation writes the
+    cache and the second should read it back.
+    """
+    chat = ChatOpenAI(
+        model="gpt-5.6-sol",
+        max_completion_tokens=10,
+        prompt_cache_options={"mode": "explicit"},
+    )
+    # A prefix long enough to exceed OpenAI's minimum cacheable prompt length.
+    stable_prefix = "Stable, cacheable instructions and reference material. " * 400
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": stable_prefix,
+                    "prompt_cache_breakpoint": {"mode": "explicit"},
+                },
+                {"type": "text", "text": "Say hello."},
+            ]
+        )
+    ]
+
+    first = chat.invoke(messages)
+    assert isinstance(first, AIMessage)
+
+    second = chat.invoke(messages)
+    assert isinstance(second, AIMessage)
+    assert second.usage_metadata is not None
+    cache_read = second.usage_metadata["input_token_details"].get("cache_read", 0)
+    assert cache_read > 0
+
+
 class BadModel(BaseModel):
     response: str
 
