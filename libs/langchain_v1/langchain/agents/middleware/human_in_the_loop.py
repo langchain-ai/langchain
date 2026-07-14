@@ -255,7 +255,17 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                     resolved_configs[tool_name] = InterruptOnConfig(
                         allowed_decisions=["approve", "edit", "reject", "respond"]
                     )
-            elif tool_config.get("allowed_decisions"):
+            elif isinstance(tool_config, dict):
+                if "allowed_decisions" not in tool_config:
+                    raise ValueError(
+                        f"InterruptOnConfig for tool '{tool_name}' must define "
+                        "'allowed_decisions'."
+                    )
+                allowed_decisions = tool_config["allowed_decisions"]
+                if not allowed_decisions:
+                    raise ValueError(
+                        f"'allowed_decisions' for tool '{tool_name}' cannot be empty."
+                    )
                 resolved_configs[tool_name] = tool_config
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix

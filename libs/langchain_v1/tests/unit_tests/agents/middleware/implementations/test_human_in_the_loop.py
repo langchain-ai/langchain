@@ -1019,3 +1019,73 @@ def test_when_predicate_receives_correct_args() -> None:
     assert req.runtime.state is state
     assert req.runtime.context is runtime.context
     assert req.runtime.store is runtime.store
+
+
+def test_human_in_the_loop_middleware_missing_allowed_decisions() -> None:
+    """Test that missing allowed_decisions raises ValueError."""
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "InterruptOnConfig for tool 'delete_database' must define "
+            "'allowed_decisions'."
+        ),
+    ):
+        HumanInTheLoopMiddleware(
+            interrupt_on={
+                "delete_database": {
+                    "allowed_decision": ["approve"],  # type: ignore[typeddict-unknown-key]
+                }
+            }
+        )
+
+
+def test_human_in_the_loop_middleware_empty_allowed_decisions() -> None:
+    """Test that empty allowed_decisions raises ValueError."""
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "'allowed_decisions' for tool 'delete_database' cannot be empty."
+        ),
+    ):
+        HumanInTheLoopMiddleware(
+            interrupt_on={
+                "delete_database": {
+                    "allowed_decisions": [],
+                }
+            }
+        )
+
+
+def test_human_in_the_loop_middleware_valid_interrupt_config() -> None:
+    """Test that a valid interrupt config is accepted."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "delete_database": {
+                "allowed_decisions": ["approve"],
+            }
+        }
+    )
+
+    assert middleware.interrupt_on == {
+        "delete_database": {
+            "allowed_decisions": ["approve"],
+        }
+    }
+
+
+def test_human_in_the_loop_middleware_when_only_config() -> None:
+    """Test that a when-only config raises ValueError."""
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "InterruptOnConfig for tool 'delete_database' must define "
+            "'allowed_decisions'."
+        ),
+    ):
+        HumanInTheLoopMiddleware(
+            interrupt_on={  # type: ignore[arg-type]
+                "delete_database": {
+                    "when": lambda req: True,
+                }
+            }
+        )
