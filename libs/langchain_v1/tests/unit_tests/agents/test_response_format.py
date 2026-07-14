@@ -684,6 +684,93 @@ class TestResponseFormatAsToolStrategy:
         ):
             agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
+    def test_middleware_tool_choice_override_is_respected(self) -> None:
+        """A middleware-set `tool_choice` should not be silently forced to "any".
+
+        Regression test: `_get_bound_model` used to force `tool_choice="any"`
+        whenever structured output tools were present, even when a middleware had
+        already set a specific `tool_choice` via `wrap_model_call` (e.g. to steer
+        the model toward a particular structured output tool before ending the run).
+        """
+        captured_tool_choices: list[Any] = []
+        original_bind_tools = FakeToolCallingModel.bind_tools
+
+        def spying_bind_tools(
+            self: FakeToolCallingModel,
+            tools: Sequence[Any],
+            *,
+            tool_choice: str | None = None,
+            **kwargs: Any,
+        ) -> Runnable[LanguageModelInput, AIMessage]:
+            captured_tool_choices.append(tool_choice)
+            return original_bind_tools(self, tools, tool_choice=tool_choice, **kwargs)
+
+        class ForceStructuredToolMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ModelCallResult:
+                return handler(
+                    request.override(tool_choice={"type": "tool", "name": "WeatherBaseModel"})
+                )
+
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": WEATHER_DATA,
+                }
+            ],
+        ]
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        with patch.object(FakeToolCallingModel, "bind_tools", spying_bind_tools):
+            agent = create_agent(
+                model,
+                [],
+                middleware=[ForceStructuredToolMiddleware()],
+                response_format=ToolStrategy(WeatherBaseModel),
+            )
+            response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert captured_tool_choices == [{"type": "tool", "name": "WeatherBaseModel"}]
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
+    def test_default_tool_choice_is_any_without_middleware_override(self) -> None:
+        """Without a middleware override, `tool_choice` still defaults to "any"."""
+        captured_tool_choices: list[Any] = []
+        original_bind_tools = FakeToolCallingModel.bind_tools
+
+        def spying_bind_tools(
+            self: FakeToolCallingModel,
+            tools: Sequence[Any],
+            *,
+            tool_choice: str | None = None,
+            **kwargs: Any,
+        ) -> Runnable[LanguageModelInput, AIMessage]:
+            captured_tool_choices.append(tool_choice)
+            return original_bind_tools(self, tools, tool_choice=tool_choice, **kwargs)
+
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": WEATHER_DATA,
+                }
+            ],
+        ]
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        with patch.object(FakeToolCallingModel, "bind_tools", spying_bind_tools):
+            agent = create_agent(model, [], response_format=ToolStrategy(WeatherBaseModel))
+            response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert captured_tool_choices == ["any"]
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
 
 class TestResponseFormatAsProviderStrategy:
     def test_pydantic_model(self) -> None:
