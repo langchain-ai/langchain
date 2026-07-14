@@ -325,7 +325,7 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
                     # Exception is not retryable, re-raise immediately
-                    raise exc
+                    raise
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
@@ -387,7 +387,7 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
                     # Exception is not retryable, re-raise immediately
-                    raise exc
+                    raise
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
