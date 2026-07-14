@@ -430,6 +430,7 @@ def _build_proxied_sync_httpx_client(
     proxy: str,
     verify: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    auth: httpx.Auth | None = None,
 ) -> httpx.Client:
     """httpx.Client for the openai_proxy code path.
 
@@ -437,7 +438,7 @@ def _build_proxied_sync_httpx_client(
     `httpx.Client(proxy=..., verify=...)` with no transport injected.
     """
     if not socket_options:
-        return httpx.Client(proxy=proxy, verify=verify)
+        return httpx.Client(proxy=proxy, verify=verify, auth=auth)
     # Mount under `all://` (not `transport=`) so `Client._mounts` mirrors the
     # shape produced by httpx's own `proxy=` path — a single-entry dict keyed
     # by `URLPattern("all://")`. Callers (and the existing proxy integration
@@ -453,13 +454,14 @@ def _build_proxied_sync_httpx_client(
         socket_options=list(socket_options),
         limits=_DEFAULT_CONNECTION_LIMITS,
     )
-    return httpx.Client(mounts={"all://": transport})
+    return httpx.Client(mounts={"all://": transport}, auth=auth)
 
 
 def _build_proxied_async_httpx_client(
     proxy: str,
     verify: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    auth: httpx.Auth | None = None,
 ) -> httpx.AsyncClient:
     """httpx.AsyncClient for the openai_proxy code path.
 
@@ -468,14 +470,14 @@ def _build_proxied_async_httpx_client(
     rationale.
     """
     if not socket_options:
-        return httpx.AsyncClient(proxy=proxy, verify=verify)
+        return httpx.AsyncClient(proxy=proxy, verify=verify, auth=auth)
     transport = httpx.AsyncHTTPTransport(
         proxy=httpx.Proxy(proxy),
         verify=verify,
         socket_options=list(socket_options),
         limits=_DEFAULT_CONNECTION_LIMITS,
     )
-    return httpx.AsyncClient(mounts={"all://": transport})
+    return httpx.AsyncClient(mounts={"all://": transport}, auth=auth)
 
 
 @lru_cache

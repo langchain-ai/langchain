@@ -1292,6 +1292,7 @@ class BaseChatOpenAI(BaseChatModel):
                         proxy=self.openai_proxy,
                         verify=global_ssl_context,
                         socket_options=resolved_socket_options,
+                        auth=gateway_oauth_auth,
                     )
                 if self.http_client:
                     default_http_client = self.http_client
@@ -1320,6 +1321,7 @@ class BaseChatOpenAI(BaseChatModel):
                     proxy=self.openai_proxy,
                     verify=global_ssl_context,
                     socket_options=resolved_socket_options,
+                    auth=gateway_oauth_auth,
                 )
             if self.http_async_client:
                 default_async_http_client = self.http_async_client
