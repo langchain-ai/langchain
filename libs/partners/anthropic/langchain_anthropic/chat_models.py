@@ -485,8 +485,6 @@ def _format_messages(
     for _i, message in enumerate(merged_messages):
         if message.type == "system":
             if system is None:
-                # msg = "Received multiple non-consecutive system messages."
-                # raise ValueError(msg)
                 if isinstance(message.content, list):
                     system = [
                         (
