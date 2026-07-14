@@ -909,14 +909,19 @@ class ChatPerplexity(BaseChatModel):
             params["web_search_options"] = self.web_search_options.model_dump(
                 exclude_none=True
             )
+        merged = {**params, **self.model_kwargs}
+
+        if "extra_body" in merged and isinstance(merged["extra_body"], dict):
+            merged["extra_body"] = merged["extra_body"].copy()
+
         if self.media_response:
-            if "extra_body" not in params:
-                params["extra_body"] = {}
-            params["extra_body"]["media_response"] = self.media_response.model_dump(
+            if "extra_body" not in merged:
+                merged["extra_body"] = {}
+            merged["extra_body"]["media_response"] = self.media_response.model_dump(
                 exclude_none=True
             )
 
-        return {**params, **self.model_kwargs}
+        return merged
 
     def _convert_message_to_dict(self, message: BaseMessage) -> dict[str, Any]:
         message_dict: dict[str, Any]
@@ -1074,7 +1079,10 @@ class ChatPerplexity(BaseChatModel):
                 payload["tools"] = [_flatten_responses_tool(tool) for tool in value]
                 continue
             if key in _RESPONSES_PASSTHROUGH_KEYS:
-                payload[key] = value
+                if key == "extra_body" and isinstance(value, dict):
+                    payload[key] = value.copy()
+                else:
+                    payload[key] = value
                 continue
             # Unknown / Perplexity-specific keys: route under extra_body so the
             # SDK forwards them to the Agent API without breaking strict typing.

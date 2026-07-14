@@ -345,6 +345,8 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         try:
             return handler(request)
         except Exception as e:
+            if type(e).__name__ in ("GraphInterrupt", "NodeInterrupt"):
+                raise e
             last_exception = e
 
         # Try fallback models — sanitize cache markers only when the fallback
@@ -360,6 +362,8 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             try:
                 return handler(fallback_request.override(model=fallback_model))
             except Exception as e:
+                if type(e).__name__ in ("GraphInterrupt", "NodeInterrupt"):
+                    raise e
                 last_exception = e
                 continue
 
@@ -387,6 +391,8 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         try:
             return await handler(request)
         except Exception as e:
+            if type(e).__name__ in ("GraphInterrupt", "NodeInterrupt"):
+                raise e
             last_exception = e
 
         # Try fallback models — sanitize cache markers only when the fallback
@@ -402,6 +408,8 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             try:
                 return await handler(fallback_request.override(model=fallback_model))
             except Exception as e:
+                if type(e).__name__ in ("GraphInterrupt", "NodeInterrupt"):
+                    raise e
                 last_exception = e
                 continue
 

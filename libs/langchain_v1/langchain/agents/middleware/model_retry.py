@@ -233,6 +233,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
             try:
                 return handler(request)
             except Exception as exc:
+                if type(exc).__name__ in ("GraphInterrupt", "NodeInterrupt"):
+                    raise exc
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
@@ -283,6 +285,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
             try:
                 return await handler(request)
             except Exception as exc:
+                if type(exc).__name__ in ("GraphInterrupt", "NodeInterrupt"):
+                    raise exc
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
