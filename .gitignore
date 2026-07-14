@@ -113,6 +113,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+!.env.example
 .envrc
 *.pem
 *.key
