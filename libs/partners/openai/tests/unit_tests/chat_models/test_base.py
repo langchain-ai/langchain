@@ -4563,7 +4563,7 @@ def test_langsmith_gateway_oauth_is_not_used_for_custom_base_url(
 
     llm = ChatOpenAI(
         model=OPENAI_TEST_MODEL,
-        api_key="provider-key",
+        api_key=SecretStr("provider-key"),
         base_url="https://api.openai.com/v1",
     )
 
