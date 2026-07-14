@@ -18,7 +18,6 @@ resolution-markers = [
 
 [manifest]
 constraints = [
-    { name = "langchain", specifier = ">=1.3.9,<1.3.10" },
     { name = "pygments", specifier = ">=2.20.0" },
     { name = "urllib3", specifier = ">=2.6.3" },
 ]
