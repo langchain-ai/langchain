@@ -5,6 +5,7 @@ import pytest
 
 from langchain_core.runnables.base import RunnableLambda
 from langchain_core.runnables.utils import (
+    AddableDict,
     get_function_nonlocals,
     get_lambda_source,
     indent_lines_after_first,
@@ -73,3 +74,31 @@ def test_nonlocals() -> None:
     assert RunnableLambda(my_func3).deps == [agent]
     assert RunnableLambda(my_func4).deps == [global_agent]
     assert RunnableLambda(func).deps == [nl]
+
+
+def test_addable_dict_add_merges_compatible_types() -> None:
+    """Test that adding `AddableDict`s with compatible types still merges."""
+    left = AddableDict({"count": 1, "text": "foo"})
+    right = AddableDict({"count": 2, "text": "bar"})
+
+    result = left + right
+
+    assert result == {"count": 3, "text": "foobar"}
+
+
+def test_addable_dict_add_raises_on_type_incompatible_merge() -> None:
+    """Test that merging type-incompatible values raises instead of dropping data."""
+    left = AddableDict({"count": 1})
+    right = AddableDict({"count": "some_string"})
+
+    with pytest.raises(TypeError, match="count"):
+        left + right
+
+
+def test_addable_dict_radd_raises_on_type_incompatible_merge() -> None:
+    """Test that `__radd__` also raises instead of silently dropping data."""
+    left = AddableDict({"count": 1})
+    right = AddableDict({"count": "some_string"})
+
+    with pytest.raises(TypeError, match="count"):
+        right.__radd__(left)

@@ -485,8 +485,13 @@ class AddableDict(dict[str, Any]):
             elif other[key] is not None:
                 try:
                     added = chunk[key] + other[key]
-                except TypeError:
-                    added = other[key]
+                except TypeError as e:
+                    msg = (
+                        f"Error while merging chunks for key '{key}': cannot add "
+                        f"value of type {type(chunk[key]).__name__!r} to value of "
+                        f"type {type(other[key]).__name__!r}."
+                    )
+                    raise TypeError(msg) from e
                 chunk[key] = added
         return chunk
 
@@ -506,8 +511,13 @@ class AddableDict(dict[str, Any]):
             elif self[key] is not None:
                 try:
                     added = chunk[key] + self[key]
-                except TypeError:
-                    added = self[key]
+                except TypeError as e:
+                    msg = (
+                        f"Error while merging chunks for key '{key}': cannot add "
+                        f"value of type {type(chunk[key]).__name__!r} to value of "
+                        f"type {type(self[key]).__name__!r}."
+                    )
+                    raise TypeError(msg) from e
                 chunk[key] = added
         return chunk
 
