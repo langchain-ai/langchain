@@ -1,6 +1,7 @@
 from langchain_core.utils import __all__
 
 EXPECTED_ALL = [
+    "LangSmithGatewayOAuth",
     "StrictFormatter",
     "check_package_version",
     "convert_to_secret_str",

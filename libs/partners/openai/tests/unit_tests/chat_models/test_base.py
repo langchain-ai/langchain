@@ -4540,3 +4540,31 @@ def test_langsmith_gateway_api_key_not_used_without_gateway(
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     assert isinstance(llm.openai_api_key, SecretStr)
     assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+def test_langsmith_gateway_oauth_uses_placeholder_api_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_OAUTH_TOKEN", "oauth-token")
+    monkeypatch.delenv("LANGSMITH_GATEWAY_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+
+    assert llm.root_client.api_key == "langsmith-gateway-oauth"
+
+
+def test_langsmith_gateway_oauth_is_not_used_for_custom_base_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_OAUTH_TOKEN", "oauth-token")
+
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key=SecretStr("provider-key"),
+        base_url="https://api.openai.com/v1",
+    )
+
+    assert llm.root_client._client.auth is None

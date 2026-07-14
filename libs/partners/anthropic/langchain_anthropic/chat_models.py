@@ -54,6 +54,7 @@ from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
+from langchain_core.utils.langsmith_gateway import LangSmithGatewayOAuth
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
@@ -958,11 +959,13 @@ class ChatAnthropic(BaseChatModel):
 
     anthropic_api_url: str | None = Field(
         alias="base_url",
-        default_factory=lambda: _resolve_gateway_base_url()
-        or from_env(
-            ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
-            default="https://api.anthropic.com",
-        )(),
+        default_factory=lambda: (
+            _resolve_gateway_base_url()
+            or from_env(
+                ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
+                default="https://api.anthropic.com",
+            )()
+        ),
     )
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
@@ -978,6 +981,12 @@ class ChatAnthropic(BaseChatModel):
             (
                 os.getenv("LANGSMITH_GATEWAY_API_KEY")
                 if _resolve_gateway_base_url() is not None
+                else None
+            )
+            or (
+                "langsmith-gateway-oauth"
+                if _resolve_gateway_base_url() is not None
+                and os.getenv("LANGSMITH_GATEWAY_OAUTH_TOKEN") is not None
                 else None
             )
             or secret_from_env("ANTHROPIC_API_KEY", default="")().get_secret_value()
@@ -999,6 +1008,16 @@ class ChatAnthropic(BaseChatModel):
 
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
+
+    langsmith_gateway_oauth_token: SecretStr | None = Field(
+        default_factory=secret_from_env("LANGSMITH_GATEWAY_OAUTH_TOKEN", default=None),
+        exclude=True,
+    )
+    """OAuth token used to authenticate this client to LangSmith Gateway.
+
+    When set, the token is sent as an `Authorization` bearer credential and is
+    never passed to Anthropic as an API key.
+    """
 
     betas: list[str] | None = None
     """List of beta features to enable. If specified, invocations will be routed
@@ -1229,6 +1248,17 @@ class ChatAnthropic(BaseChatModel):
 
         return client_params
 
+    @property
+    def _gateway_oauth_auth(self) -> LangSmithGatewayOAuth | None:
+        if (
+            self.langsmith_gateway_oauth_token is None
+            or self.anthropic_api_url != _resolve_gateway_base_url()
+        ):
+            return None
+        return LangSmithGatewayOAuth(
+            self.langsmith_gateway_oauth_token.get_secret_value()
+        )
+
     @cached_property
     def _client(self) -> anthropic.Client:
         client_params = self._client_params
@@ -1237,6 +1267,8 @@ class ChatAnthropic(BaseChatModel):
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:
             http_client_params["anthropic_proxy"] = self.anthropic_proxy
+        if (auth := self._gateway_oauth_auth) is not None:
+            http_client_params["auth"] = auth
         http_client = _get_default_httpx_client(**http_client_params)
         params = {
             **client_params,
@@ -1252,6 +1284,8 @@ class ChatAnthropic(BaseChatModel):
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:
             http_client_params["anthropic_proxy"] = self.anthropic_proxy
+        if (auth := self._gateway_oauth_auth) is not None:
+            http_client_params["auth"] = auth
         http_client = _get_default_async_httpx_client(**http_client_params)
         params = {
             **client_params,

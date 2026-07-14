@@ -16,6 +16,7 @@ from typing import Any
 
 import httpx
 import pytest
+from langchain_core.utils.langsmith_gateway import LangSmithGatewayOAuth
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models import _client_utils
@@ -212,9 +213,19 @@ def test_openai_proxy_branch_applies_socket_options(
     """`openai_proxy` path must go through the socket-options-aware proxied helper."""
     recorded: list[dict[str, Any]] = []
 
-    def spy(proxy: str, verify: Any, socket_options: tuple = ()) -> httpx.AsyncClient:
+    def spy(
+        proxy: str,
+        verify: Any,
+        socket_options: tuple = (),
+        auth: httpx.Auth | None = None,
+    ) -> httpx.AsyncClient:
         recorded.append(
-            {"proxy": proxy, "verify": verify, "socket_options": socket_options}
+            {
+                "proxy": proxy,
+                "verify": verify,
+                "socket_options": socket_options,
+                "auth": auth,
+            }
         )
         return httpx.AsyncClient()
 
@@ -225,9 +236,19 @@ def test_openai_proxy_branch_applies_socket_options(
     # Sync branch should also be covered — spy on that too.
     sync_recorded: list[dict[str, Any]] = []
 
-    def sync_spy(proxy: str, verify: Any, socket_options: tuple = ()) -> httpx.Client:
+    def sync_spy(
+        proxy: str,
+        verify: Any,
+        socket_options: tuple = (),
+        auth: httpx.Auth | None = None,
+    ) -> httpx.Client:
         sync_recorded.append(
-            {"proxy": proxy, "verify": verify, "socket_options": socket_options}
+            {
+                "proxy": proxy,
+                "verify": verify,
+                "socket_options": socket_options,
+                "auth": auth,
+            }
         )
         return httpx.Client()
 
@@ -249,6 +270,25 @@ def test_openai_proxy_branch_applies_socket_options(
     assert sync_recorded, "expected sync proxied helper to be called"
     assert sync_recorded[-1]["proxy"] == "http://proxy.example.com:3128"
     assert sync_recorded[-1]["socket_options"] == ((SOL_SOCKET, SO_KEEPALIVE, 1),)
+    assert sync_recorded[-1]["auth"] is None
+    assert recorded[-1]["auth"] is None
+
+
+def test_gateway_oauth_is_applied_to_explicit_proxy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_OAUTH_TOKEN", "oauth-token")
+    monkeypatch.delenv("LANGSMITH_GATEWAY_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        openai_proxy="http://proxy.example.com:3128",
+    )
+
+    assert isinstance(llm.root_client._client.auth, LangSmithGatewayOAuth)
+    assert isinstance(llm.root_async_client._client.auth, LangSmithGatewayOAuth)
 
 
 def test_user_supplied_http_async_client_untouched(
@@ -457,6 +497,36 @@ def test_build_proxied_async_httpx_client_opt_out_returns_plain_client() -> None
         socket_options=(),
     )
     assert isinstance(client, httpx.AsyncClient)
+
+
+@pytest.mark.parametrize("is_async", [False, True])
+def test_gateway_oauth_preserves_proxy_discovery_without_socket_options(
+    monkeypatch: pytest.MonkeyPatch,
+    is_async: bool,
+) -> None:
+    """OAuth clients omit a transport when proxy discovery must remain enabled."""
+    captured: dict[str, Any] = {}
+
+    def wrapper(**kwargs: Any) -> object:
+        captured.update(kwargs)
+        return object()
+
+    wrapper_name = "_AsyncHttpxClientWrapper" if is_async else "_SyncHttpxClientWrapper"
+    monkeypatch.setattr(_client_utils, wrapper_name, wrapper)
+    get_client = (
+        _client_utils._get_default_async_httpx_client
+        if is_async
+        else _client_utils._get_default_httpx_client
+    )
+
+    get_client(
+        base_url="https://gateway.smith.langchain.com/openai/v1",
+        timeout=None,
+        auth=LangSmithGatewayOAuth("oauth-token"),
+    )
+
+    assert captured["auth"].__class__ is LangSmithGatewayOAuth
+    assert "transport" not in captured
 
 
 def test_build_proxied_async_httpx_client_wraps_transport() -> None:

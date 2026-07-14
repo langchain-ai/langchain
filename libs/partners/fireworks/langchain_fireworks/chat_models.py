@@ -88,6 +88,7 @@ from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
+from langchain_core.utils.langsmith_gateway import LangSmithGatewayOAuth
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import (
@@ -774,6 +775,12 @@ class ChatFireworks(BaseChatModel):
                 if _resolve_gateway_base_url() is not None
                 else None
             )
+            or (
+                "langsmith-gateway-oauth"
+                if _resolve_gateway_base_url() is not None
+                and os.getenv("LANGSMITH_GATEWAY_OAUTH_TOKEN") is not None
+                else None
+            )
             or secret_from_env(
                 "FIREWORKS_API_KEY",
                 error_message=(
@@ -793,13 +800,25 @@ class ChatFireworks(BaseChatModel):
 
     fireworks_api_base: str | None = Field(
         alias="base_url",
-        default_factory=lambda: _resolve_gateway_base_url()
-        or from_env("FIREWORKS_API_BASE", default=None)(),
+        default_factory=lambda: (
+            _resolve_gateway_base_url()
+            or from_env("FIREWORKS_API_BASE", default=None)()
+        ),
     )
     """Base URL path for API requests, leave blank if not using a proxy or service
     emulator.
 
     If `LANGSMITH_GATEWAY` is set, it takes precedence over `FIREWORKS_API_BASE`.
+    """
+
+    langsmith_gateway_oauth_token: SecretStr | None = Field(
+        default_factory=secret_from_env("LANGSMITH_GATEWAY_OAUTH_TOKEN", default=None),
+        exclude=True,
+    )
+    """OAuth token used to authenticate this client to LangSmith Gateway.
+
+    When set, the token is sent as an `Authorization` bearer credential and is
+    never passed to Fireworks as an API key.
     """
 
     request_timeout: float | tuple[float, float] | Any | None = Field(
@@ -902,22 +921,56 @@ class ChatFireworks(BaseChatModel):
         # so the LangChain `run_manager` sees each attempt. Suppress the
         # SDK's built-in retry layer to avoid double-retrying.
         if not self.client:
+            http_client = self._gateway_oauth_http_client()
             self._sdk_client = Fireworks(
                 api_key=api_key,
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=0,
+                http_client=http_client,
             )
             self.client = self._sdk_client.chat.completions
         if not self.async_client:
+            http_async_client = self._gateway_oauth_async_http_client()
             self._async_sdk_client = AsyncFireworks(
                 api_key=api_key,
                 base_url=base_url,
                 timeout=timeout,
                 max_retries=0,
+                http_client=http_async_client,
             )
             self.async_client = self._async_sdk_client.chat.completions
         return self
+
+    def _is_langsmith_gateway(self) -> bool:
+        """Return whether this instance is configured to use LangSmith Gateway."""
+        return self.fireworks_api_base == _resolve_gateway_base_url()
+
+    def _gateway_oauth_http_client(self) -> httpx.Client | None:
+        """Build a synchronous OAuth client when Gateway OAuth is enabled."""
+        if (
+            self.langsmith_gateway_oauth_token is None
+            or not self._is_langsmith_gateway()
+        ):
+            return None
+        return httpx.Client(
+            auth=LangSmithGatewayOAuth(
+                self.langsmith_gateway_oauth_token.get_secret_value()
+            )
+        )
+
+    def _gateway_oauth_async_http_client(self) -> httpx.AsyncClient | None:
+        """Build an asynchronous OAuth client when Gateway OAuth is enabled."""
+        if (
+            self.langsmith_gateway_oauth_token is None
+            or not self._is_langsmith_gateway()
+        ):
+            return None
+        return httpx.AsyncClient(
+            auth=LangSmithGatewayOAuth(
+                self.langsmith_gateway_oauth_token.get_secret_value()
+            )
+        )
 
     def close(self) -> None:
         """Close the underlying sync HTTP client.

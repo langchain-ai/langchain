@@ -24,6 +24,7 @@ from typing import Any, TypeVar, cast
 
 import httpx
 import openai
+from langchain_core.utils.langsmith_gateway import LangSmithGatewayOAuth
 from pydantic import SecretStr
 
 logger = logging.getLogger(__name__)
@@ -429,6 +430,7 @@ def _build_proxied_sync_httpx_client(
     proxy: str,
     verify: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    auth: httpx.Auth | None = None,
 ) -> httpx.Client:
     """httpx.Client for the openai_proxy code path.
 
@@ -436,7 +438,7 @@ def _build_proxied_sync_httpx_client(
     `httpx.Client(proxy=..., verify=...)` with no transport injected.
     """
     if not socket_options:
-        return httpx.Client(proxy=proxy, verify=verify)
+        return httpx.Client(proxy=proxy, verify=verify, auth=auth)
     # Mount under `all://` (not `transport=`) so `Client._mounts` mirrors the
     # shape produced by httpx's own `proxy=` path — a single-entry dict keyed
     # by `URLPattern("all://")`. Callers (and the existing proxy integration
@@ -452,13 +454,14 @@ def _build_proxied_sync_httpx_client(
         socket_options=list(socket_options),
         limits=_DEFAULT_CONNECTION_LIMITS,
     )
-    return httpx.Client(mounts={"all://": transport})
+    return httpx.Client(mounts={"all://": transport}, auth=auth)
 
 
 def _build_proxied_async_httpx_client(
     proxy: str,
     verify: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    auth: httpx.Auth | None = None,
 ) -> httpx.AsyncClient:
     """httpx.AsyncClient for the openai_proxy code path.
 
@@ -467,14 +470,14 @@ def _build_proxied_async_httpx_client(
     rationale.
     """
     if not socket_options:
-        return httpx.AsyncClient(proxy=proxy, verify=verify)
+        return httpx.AsyncClient(proxy=proxy, verify=verify, auth=auth)
     transport = httpx.AsyncHTTPTransport(
         proxy=httpx.Proxy(proxy),
         verify=verify,
         socket_options=list(socket_options),
         limits=_DEFAULT_CONNECTION_LIMITS,
     )
-    return httpx.AsyncClient(mounts={"all://": transport})
+    return httpx.AsyncClient(mounts={"all://": transport}, auth=auth)
 
 
 @lru_cache
@@ -499,11 +502,21 @@ def _get_default_httpx_client(
     base_url: str | None,
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    auth: LangSmithGatewayOAuth | None = None,
 ) -> _SyncHttpxClientWrapper:
     """Get default httpx client.
 
     Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
     """
+    if auth is not None:
+        kwargs: dict[str, Any] = {
+            "base_url": base_url,
+            "timeout": timeout,
+            "auth": auth,
+        }
+        if socket_options:
+            kwargs["transport"] = httpx.HTTPTransport(socket_options=socket_options)
+        return _SyncHttpxClientWrapper(**kwargs)
     try:
         hash(timeout)
     except TypeError:
@@ -516,11 +529,23 @@ def _get_default_async_httpx_client(
     base_url: str | None,
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    auth: LangSmithGatewayOAuth | None = None,
 ) -> _AsyncHttpxClientWrapper:
     """Get default httpx client.
 
     Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
     """
+    if auth is not None:
+        kwargs: dict[str, Any] = {
+            "base_url": base_url,
+            "timeout": timeout,
+            "auth": auth,
+        }
+        if socket_options:
+            kwargs["transport"] = httpx.AsyncHTTPTransport(
+                socket_options=socket_options
+            )
+        return _AsyncHttpxClientWrapper(**kwargs)
     try:
         hash(timeout)
     except TypeError:
