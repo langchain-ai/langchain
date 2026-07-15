@@ -910,8 +910,8 @@ class ChatPerplexity(BaseChatModel):
                 exclude_none=True
             )
         if self.media_response:
-            if "extra_body" not in params:
-                params["extra_body"] = {}
+            # Shallow-copy before mutating to avoid modifying the caller's dict.
+            params["extra_body"] = dict(params.get("extra_body") or {})
             params["extra_body"]["media_response"] = self.media_response.model_dump(
                 exclude_none=True
             )
@@ -1074,7 +1074,9 @@ class ChatPerplexity(BaseChatModel):
                 payload["tools"] = [_flatten_responses_tool(tool) for tool in value]
                 continue
             if key in _RESPONSES_PASSTHROUGH_KEYS:
-                payload[key] = value
+                # Shallow-copy extra_body so later mutations (forwarding unknown keys
+                # under extra_body) don't write into the caller's original dict.
+                payload[key] = dict(value) if key == "extra_body" and isinstance(value, dict) else value
                 continue
             # Unknown / Perplexity-specific keys: route under extra_body so the
             # SDK forwards them to the Agent API without breaking strict typing.
