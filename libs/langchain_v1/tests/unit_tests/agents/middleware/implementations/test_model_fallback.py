@@ -11,6 +11,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.tools import BaseTool, tool
+from langgraph.errors import GraphInterrupt
 from typing_extensions import override
 
 from langchain.agents.factory import create_agent
@@ -1067,3 +1068,46 @@ async def test_fallback_sanitizer_error_is_not_masked_async(
 
     with pytest.raises(RuntimeError, match="sanitizer boom"):
         await middleware.awrap_model_call(request, mock_handler)
+
+
+def test_fallback_propagates_graph_interrupt() -> None:
+    """A `GraphInterrupt` propagates instead of walking the fallback chain.
+
+    Regression test for #38837: interrupts (and parent `Command`s) are
+    `GraphBubbleUp`/`Exception` subclasses, so the catch-all treated them as a
+    model failure and pointlessly re-invoked the interrupt once per fallback
+    model. It must escape on the first raise, before any fallback is tried.
+    """
+    fallback_a = GenericFakeChatModel(messages=iter([AIMessage(content="a")]))
+    fallback_b = GenericFakeChatModel(messages=iter([AIMessage(content="b")]))
+    middleware = ModelFallbackMiddleware(fallback_a, fallback_b)
+    request = _make_request()
+
+    calls = {"n": 0}
+
+    def handler(_req: ModelRequest) -> ModelResponse:
+        calls["n"] += 1
+        raise GraphInterrupt
+
+    with pytest.raises(GraphInterrupt):
+        middleware.wrap_model_call(request, handler)
+    assert calls["n"] == 1, f"fallback chain was walked: handler called {calls['n']}x"
+
+
+@pytest.mark.asyncio
+async def test_fallback_propagates_graph_interrupt_async() -> None:
+    """Async path: a `GraphInterrupt` propagates without walking fallbacks (#38837)."""
+    fallback_a = GenericFakeChatModel(messages=iter([AIMessage(content="a")]))
+    fallback_b = GenericFakeChatModel(messages=iter([AIMessage(content="b")]))
+    middleware = ModelFallbackMiddleware(fallback_a, fallback_b)
+    request = _make_request()
+
+    calls = {"n": 0}
+
+    async def handler(_req: ModelRequest) -> ModelResponse:
+        calls["n"] += 1
+        raise GraphInterrupt
+
+    with pytest.raises(GraphInterrupt):
+        await middleware.awrap_model_call(request, handler)
+    assert calls["n"] == 1, f"fallback chain was walked: handler called {calls['n']}x"

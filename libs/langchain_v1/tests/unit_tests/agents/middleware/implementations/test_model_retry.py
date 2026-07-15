@@ -9,6 +9,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.errors import GraphInterrupt
 from pydantic import Field
 from typing_extensions import override
 
@@ -700,3 +701,46 @@ def test_model_retry_multiple_middleware_composition() -> None:
     ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
     assert len(ai_messages) >= 1
     assert "Hello" in ai_messages[-1].content
+
+
+def test_model_retry_propagates_graph_interrupt() -> None:
+    """A `GraphInterrupt` from an inner handler propagates instead of being retried.
+
+    Regression test for #38837: control-flow signals (interrupts, parent
+    `Command`s) are `GraphBubbleUp`/`Exception` subclasses. Catching bare
+    `Exception` retried them `max_retries` times and, with the default
+    `on_failure="continue"`, converted them into a plain `AIMessage` — silently
+    destroying a human-in-the-loop pause. The interrupt must escape on the first
+    raise with no retries.
+    """
+    model = FakeToolCallingModel()
+    request = ModelRequest(model=model, messages=[])
+    retry = ModelRetryMiddleware(max_retries=2, initial_delay=0.0, jitter=False)
+
+    calls = {"n": 0}
+
+    def handler(_req: ModelRequest) -> ModelResponse:
+        calls["n"] += 1
+        raise GraphInterrupt
+
+    with pytest.raises(GraphInterrupt):
+        retry.wrap_model_call(request, handler)
+    assert calls["n"] == 1, f"interrupt was retried: handler called {calls['n']}x"
+
+
+@pytest.mark.asyncio
+async def test_model_retry_async_propagates_graph_interrupt() -> None:
+    """Async path: a `GraphInterrupt` propagates instead of being retried (#38837)."""
+    model = FakeToolCallingModel()
+    request = ModelRequest(model=model, messages=[])
+    retry = ModelRetryMiddleware(max_retries=2, initial_delay=0.0, jitter=False)
+
+    calls = {"n": 0}
+
+    async def handler(_req: ModelRequest) -> ModelResponse:
+        calls["n"] += 1
+        raise GraphInterrupt
+
+    with pytest.raises(GraphInterrupt):
+        await retry.awrap_model_call(request, handler)
+    assert calls["n"] == 1, f"interrupt was retried: handler called {calls['n']}x"

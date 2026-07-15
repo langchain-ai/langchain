@@ -7,6 +7,7 @@ import time
 from typing import TYPE_CHECKING
 
 from langchain_core.messages import AIMessage
+from langgraph.errors import GraphBubbleUp
 
 from langchain.agents.middleware._retry import (
     OnFailure,
@@ -232,6 +233,10 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
         for attempt in range(self.max_retries + 1):
             try:
                 return handler(request)
+            except GraphBubbleUp:
+                # Control-flow signals (interrupts, parent commands) must
+                # propagate, not be retried or converted to error messages.
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
@@ -282,6 +287,10 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
         for attempt in range(self.max_retries + 1):
             try:
                 return await handler(request)
+            except GraphBubbleUp:
+                # Control-flow signals (interrupts, parent commands) must
+                # propagate, not be retried or converted to error messages.
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
