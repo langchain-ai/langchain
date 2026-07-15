@@ -28,6 +28,34 @@ def test_human_in_the_loop_middleware_initialization() -> None:
     assert middleware.description_prefix == "Custom prefix"
 
 
+def test_human_in_the_loop_middleware_typo_key_raises() -> None:
+    """A typo'd key must raise instead of silently disabling the gate (#38838)."""
+    with pytest.raises(ValueError, match=r"delete_database.*unknown key.*allowed_decision"):
+        HumanInTheLoopMiddleware(
+            interrupt_on={"delete_database": {"allowed_decision": ["approve"]}}  # type: ignore[typeddict-unknown-key]
+        )
+
+
+def test_human_in_the_loop_middleware_missing_allowed_decisions_raises() -> None:
+    """A `when`-only config (no `allowed_decisions`) must raise, not auto-approve."""
+    with pytest.raises(ValueError, match=r"delete_database.*allowed_decisions.*non-empty"):
+        HumanInTheLoopMiddleware(
+            interrupt_on={"delete_database": {"when": lambda _req: True}}  # type: ignore[typeddict-item]
+        )
+
+
+def test_human_in_the_loop_middleware_empty_allowed_decisions_raises() -> None:
+    """An empty `allowed_decisions` list must raise instead of being dropped."""
+    with pytest.raises(ValueError, match=r"allowed_decisions.*non-empty"):
+        HumanInTheLoopMiddleware(interrupt_on={"delete_database": {"allowed_decisions": []}})
+
+
+def test_human_in_the_loop_middleware_false_auto_approves() -> None:
+    """`False` still disables interrupts for a tool without raising (unchanged path)."""
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"safe_tool": False})
+    assert middleware.interrupt_on == {}
+
+
 def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     """Test HumanInTheLoopMiddleware when no interrupts are needed."""
     middleware = HumanInTheLoopMiddleware(

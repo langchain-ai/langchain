@@ -213,6 +213,10 @@ class InterruptOnConfig(TypedDict):
     """
 
 
+_INTERRUPT_ON_CONFIG_KEYS = frozenset(InterruptOnConfig.__annotations__)
+"""Valid keys for an `InterruptOnConfig` mapping, derived from the `TypedDict`."""
+
+
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     """Human in the loop middleware."""
 
@@ -255,8 +259,30 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                     resolved_configs[tool_name] = InterruptOnConfig(
                         allowed_decisions=["approve", "edit", "reject", "respond"]
                     )
-            elif tool_config.get("allowed_decisions"):
-                resolved_configs[tool_name] = tool_config
+                # `False` disables interrupts for the tool (documented auto-approve).
+                continue
+
+            # A mapping expresses intent to gate the tool behind a human. Validate
+            # it loudly: a typo'd key or a missing `allowed_decisions` previously
+            # dropped the entry silently, executing a tool the user explicitly
+            # listed for approval with no interrupt, error, or warning (#38838).
+            # For a safety middleware, raising is the correct failure direction.
+            unknown_keys = set(tool_config) - _INTERRUPT_ON_CONFIG_KEYS
+            if unknown_keys:
+                msg = (
+                    f"Invalid `InterruptOnConfig` for tool {tool_name!r}: unknown "
+                    f"key(s) {sorted(unknown_keys)}. Allowed keys: "
+                    f"{sorted(_INTERRUPT_ON_CONFIG_KEYS)}."
+                )
+                raise ValueError(msg)
+            if not tool_config.get("allowed_decisions"):
+                msg = (
+                    f"Invalid `InterruptOnConfig` for tool {tool_name!r}: "
+                    "`allowed_decisions` must be a non-empty list. To auto-approve "
+                    "this tool, set its value to `False` or omit it instead."
+                )
+                raise ValueError(msg)
+            resolved_configs[tool_name] = tool_config
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix
 
