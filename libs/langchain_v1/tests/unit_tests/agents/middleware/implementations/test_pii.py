@@ -2369,3 +2369,9 @@ class TestPIIStreamingEndToEnd:
             "raw PII leaked through a subgraph's content-block-finish snapshot"
         )
         assert seen_redaction, "transformer never fired at the subgraph scope"
+
+
+def test_piimatch_exported_from_public_middleware_package() -> None:
+    from langchain.agents.middleware import PIIMatch as public_piimatch
+
+    assert public_piimatch is PIIMatch
