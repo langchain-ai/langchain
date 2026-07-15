@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import stat
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, cast
@@ -1032,12 +1033,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
     def _handle_delete(self, args: dict, tool_call_id: str | None) -> Command:
         """Handle delete command."""
         path = args["path"]
-        full_path = self._validate_and_resolve_path(path)
-
-        if full_path.is_file():
-            full_path.unlink()
-        elif full_path.is_dir():
-            shutil.rmtree(full_path)
+        self._delete_path(path)
         # If doesn't exist, silently succeed
 
         return Command(
@@ -1051,6 +1047,36 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
                 ]
             }
         )
+
+    def _delete_path(self, path: str) -> None:
+        """Delete `path` without following symlinks outside the configured root."""
+        self._validate_and_resolve_path(path)
+        relative_path = Path(path.lstrip("/"))
+        parent_fd = os.open(self.root_path, os.O_RDONLY | os.O_DIRECTORY)
+
+        try:
+            for part in relative_path.parts[:-1]:
+                child_fd = os.open(
+                    part,
+                    os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                    dir_fd=parent_fd,
+                )
+                os.close(parent_fd)
+                parent_fd = child_fd
+
+            try:
+                file_mode = os.stat(
+                    relative_path.name, dir_fd=parent_fd, follow_symlinks=False
+                ).st_mode
+            except FileNotFoundError:
+                return
+
+            if stat.S_ISDIR(file_mode):
+                shutil.rmtree(relative_path.name, dir_fd=parent_fd)
+            else:
+                os.unlink(relative_path.name, dir_fd=parent_fd)
+        finally:
+            os.close(parent_fd)
 
     def _handle_rename(self, args: dict, tool_call_id: str | None) -> Command:
         """Handle rename command."""

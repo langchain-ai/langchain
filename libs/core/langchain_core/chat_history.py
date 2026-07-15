@@ -50,7 +50,7 @@ class BaseChatMessageHistory(ABC):
     Example:
         ```python
         import json
-        import os
+        from pathlib import Path
         from langchain_core.messages import messages_from_dict, message_to_dict
 
 
@@ -58,11 +58,22 @@ class BaseChatMessageHistory(ABC):
             storage_path: str
             session_id: str
 
+            def _session_path(self) -> Path:
+                root = Path(self.storage_path).resolve()
+                path = (root / self.session_id).resolve()
+                try:
+                    path.relative_to(root)
+                except ValueError:
+                    raise ValueError(
+                        "session_id must not escape storage_path"
+                    ) from None
+                return path
+
             @property
             def messages(self) -> list[BaseMessage]:
                 try:
                     with open(
-                        os.path.join(self.storage_path, self.session_id),
+                        self._session_path(),
                         "r",
                         encoding="utf-8",
                     ) as f:
@@ -76,14 +87,14 @@ class BaseChatMessageHistory(ABC):
                 all_messages.extend(messages)  # Add new messages
 
                 serialized = [message_to_dict(message) for message in all_messages]
-                file_path = os.path.join(self.storage_path, self.session_id)
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                file_path = self._session_path()
+                file_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(serialized, f)
 
             def clear(self) -> None:
-                file_path = os.path.join(self.storage_path, self.session_id)
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                file_path = self._session_path()
+                file_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump([], f)
         ```

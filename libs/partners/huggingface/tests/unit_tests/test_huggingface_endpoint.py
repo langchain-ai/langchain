@@ -4,6 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from langchain_huggingface.embeddings.huggingface_endpoint import (
+    HuggingFaceEndpointEmbeddings,
+)
 from langchain_huggingface.llms.huggingface_endpoint import (
     HuggingFaceEndpoint,
     _is_huggingface_hosted_url,
@@ -76,3 +79,42 @@ def test_huggingface_hosted_endpoint_keeps_api_key(
 
     call_kwargs = mock_inference_client.call_args[1]
     assert call_kwargs.get("api_key") == "hf_xxx"
+
+
+@patch("huggingface_hub.AsyncInferenceClient")
+@patch("huggingface_hub.InferenceClient")
+def test_endpoint_token_is_masked_but_passed_to_client(
+    mock_inference_client: MagicMock,
+    mock_async_client: MagicMock,
+) -> None:
+    """Mask endpoint tokens in model serialization without changing client auth."""
+    mock_inference_client.return_value = MagicMock()
+    mock_async_client.return_value = MagicMock()
+
+    endpoint = HuggingFaceEndpoint(  # type: ignore[call-arg]
+        endpoint_url="https://abc.huggingface.co/inference",
+        huggingfacehub_api_token="hf_xxx",  # noqa: S106
+    )
+
+    assert str(endpoint.huggingfacehub_api_token) == "**********"
+    assert mock_inference_client.call_args[1]["api_key"] == "hf_xxx"
+
+
+@patch("huggingface_hub.AsyncInferenceClient")
+@patch("huggingface_hub.InferenceClient")
+def test_embeddings_token_is_masked_but_passed_to_client(
+    mock_inference_client: MagicMock,
+    mock_async_client: MagicMock,
+) -> None:
+    """Mask embedding tokens in model serialization without changing client auth."""
+    mock_inference_client.return_value = MagicMock()
+    mock_async_client.return_value = MagicMock()
+    token = "hf_xxx"  # noqa: S105
+
+    embeddings = HuggingFaceEndpointEmbeddings(
+        model="sentence-transformers/all-mpnet-base-v2",
+        huggingfacehub_api_token=token,
+    )
+
+    assert str(embeddings.huggingfacehub_api_token) == "**********"
+    assert mock_inference_client.call_args[1]["token"] == token

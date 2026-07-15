@@ -12,6 +12,7 @@ import operator
 import os
 import re
 import subprocess
+import time
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +21,8 @@ from typing import Literal
 from langchain_core.tools import tool
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
+
+SEARCH_TIMEOUT_SECONDS = 30
 
 
 def _is_within_root(candidate: Path, root: Path) -> bool:
@@ -315,7 +318,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=30,
+                timeout=SEARCH_TIMEOUT_SECONDS,
                 check=False,
             )
         except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -360,11 +363,15 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
 
         regex = re.compile(pattern)
         results: dict[str, list[tuple[int, str]]] = {}
+        deadline = time.monotonic() + SEARCH_TIMEOUT_SECONDS
 
         # Walk directory tree without following symlinked directories so traversal
         # cannot leave the root via a symlinked subdirectory.
         for walk_root, _dirs, files in os.walk(base_full, followlinks=False):
             for name in files:
+                if time.monotonic() >= deadline:
+                    return results
+
                 file_path = Path(walk_root) / name
 
                 # Re-check containment after resolving so an in-root symlinked file
@@ -390,6 +397,8 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
 
                 # Search content
                 for line_num, line in enumerate(content.splitlines(), 1):
+                    if time.monotonic() >= deadline:
+                        return results
                     if regex.search(line):
                         virtual_path = "/" + str(file_path.relative_to(self.root_path))
                         if virtual_path not in results:

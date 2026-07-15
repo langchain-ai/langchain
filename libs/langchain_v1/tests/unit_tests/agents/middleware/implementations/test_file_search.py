@@ -138,6 +138,20 @@ class TestFilesystemGrepSearch:
 
         assert result == "No matches found"
 
+    def test_python_fallback_stops_after_timeout(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Bound fallback regex work when ripgrep is unavailable."""
+        (tmp_path / "test.py").write_text("hello\n", encoding="utf-8")
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+        monotonic_values = iter((0.0, 31.0))
+        monkeypatch.setattr(
+            "langchain.agents.middleware.file_search.time.monotonic",
+            lambda: next(monotonic_values),
+        )
+
+        assert middleware._python_search("hello", "/", None) == {}
+
 
 class TestFilesystemGlobSearch:
     """Tests for filesystem-backed glob search."""

@@ -4,8 +4,8 @@ import os
 from typing import Any
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import from_env
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from langchain_core.utils import secret_from_env
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
@@ -53,8 +53,8 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     model_kwargs: dict | None = None
     """Keyword arguments to pass to the model."""
 
-    huggingfacehub_api_token: str | None = Field(
-        default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
+    huggingfacehub_api_token: SecretStr | None = Field(
+        default_factory=secret_from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
     )
 
     model_config = ConfigDict(
@@ -71,8 +71,10 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
                 msg = f"`{field_name}` must be a HuggingFace repo ID, not a URL."
                 raise ValueError(msg)
 
-        huggingfacehub_api_token = self.huggingfacehub_api_token or os.getenv(
-            "HF_TOKEN"
+        huggingfacehub_api_token = (
+            self.huggingfacehub_api_token.get_secret_value()
+            if self.huggingfacehub_api_token
+            else os.getenv("HF_TOKEN")
         )
 
         try:
