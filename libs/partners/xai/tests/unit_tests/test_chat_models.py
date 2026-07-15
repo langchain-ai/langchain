@@ -1,5 +1,6 @@
 import json
 
+import httpx
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
     AIMessage,
@@ -8,6 +9,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_openai.chat_models import _client_utils
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
@@ -217,3 +219,52 @@ def test_metadata_versions() -> None:
     assert "langchain-core" in versions
     assert "langchain-xai" in versions
     assert "langchain-openai" in versions
+
+
+def test_shared_default_httpx_client_across_instances(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Instances reuse one cached transport per side instead of building fresh ones.
+
+    Regression test for the resource waste described in #38839: each `ChatXAI`
+    previously constructed two sync and two async `openai` clients (so two sync
+    and two async `httpx` transports), and never fell back to the shared cached
+    default client the way `ChatOpenAI` does. Mirrors the issue's no-network
+    repro by counting `httpx` client constructions across two instantiations.
+    """
+    # Isolate from any client cached by earlier tests so the count is
+    # deterministic: the first instance is a cache miss, the second a hit.
+    _client_utils._cached_sync_httpx_client.cache_clear()
+    _client_utils._cached_async_httpx_client.cache_clear()
+
+    counts = {"sync": 0, "async": 0}
+    orig_sync = httpx.Client.__init__
+    orig_async = httpx.AsyncClient.__init__
+
+    def counting_sync(self: httpx.Client, *args: object, **kwargs: object) -> None:
+        counts["sync"] += 1
+        orig_sync(self, *args, **kwargs)  # type: ignore[arg-type]
+
+    def counting_async(
+        self: httpx.AsyncClient, *args: object, **kwargs: object
+    ) -> None:
+        counts["async"] += 1
+        orig_async(self, *args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(httpx.Client, "__init__", counting_sync)
+    monkeypatch.setattr(httpx.AsyncClient, "__init__", counting_async)
+
+    first = ChatXAI(model=MODEL_NAME, api_key=SecretStr("test-key"))
+    second = ChatXAI(model=MODEL_NAME, api_key=SecretStr("test-key"))
+
+    # One cached transport per side is built for both instances combined.
+    assert counts["sync"] == 1, f"expected 1 sync transport, built {counts['sync']}"
+    assert counts["async"] == 1, f"expected 1 async transport, built {counts['async']}"
+
+    # Both instances share the same underlying httpx client per side.
+    assert first.root_client._client is second.root_client._client
+    assert first.root_async_client._client is second.root_async_client._client
+
+    # `client` is derived from the single `root_client`, not a second SDK client.
+    assert first.client is first.root_client.chat.completions
+    assert first.async_client is first.root_async_client.chat.completions

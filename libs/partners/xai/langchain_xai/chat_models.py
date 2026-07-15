@@ -8,6 +8,10 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 import openai
 from langchain_core.messages import AIMessageChunk
 from langchain_core.utils import from_env, secret_from_env
+from langchain_openai.chat_models._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+)
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
@@ -540,20 +544,29 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             raise ValueError(msg)
 
         if not (self.client or None):
-            sync_specific: dict = {"http_client": self.http_client}
-            self.client = openai.OpenAI(
-                **client_params, **sync_specific
-            ).chat.completions
+            # Build a single sync SDK client and derive `client` from it (as
+            # `ChatDeepSeek` does) instead of constructing two. Fall back to the
+            # shared, `lru_cache`-backed default httpx client when the user did
+            # not supply one, so instances reuse one transport like `ChatOpenAI`
+            # rather than opening a fresh connection pool each time.
+            sync_specific: dict = {
+                "http_client": self.http_client
+                or _get_default_httpx_client(self.xai_api_base, self.request_timeout),
+            }
             self.root_client = openai.OpenAI(**client_params, **sync_specific)
+            self.client = self.root_client.chat.completions
         if not (self.async_client or None):
-            async_specific: dict = {"http_client": self.http_async_client}
-            self.async_client = openai.AsyncOpenAI(
-                **client_params, **async_specific
-            ).chat.completions
+            async_specific: dict = {
+                "http_client": self.http_async_client
+                or _get_default_async_httpx_client(
+                    self.xai_api_base, self.request_timeout
+                ),
+            }
             self.root_async_client = openai.AsyncOpenAI(
                 **client_params,
                 **async_specific,
             )
+            self.async_client = self.root_async_client.chat.completions
 
         # Enable streaming usage metadata by default
         if self.stream_usage is not False:
