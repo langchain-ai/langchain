@@ -606,12 +606,40 @@ _RESPONSES_API_ONLY_PREFIXES = (
     "gpt-5.4-pro",
     "gpt-5.5-pro",
 )
+_FUNCTION_TOOLS_DEFAULT_TO_RESPONSES_API_MODEL_FAMILIES = ("gpt-5.6",)
+_FUNCTION_TOOLS_WITH_REASONING_REQUIRE_RESPONSES_API_MODEL_FAMILIES = (
+    "gpt-5.4",
+    "gpt-5.5",
+)
 
 
 def _model_prefers_responses_api(model_name: str | None) -> bool:
     if not model_name:
         return False
     return model_name.startswith(_RESPONSES_API_ONLY_PREFIXES) or "codex" in model_name
+
+
+def _model_in_families(model_name: str, families: tuple[str, ...]) -> bool:
+    return any(
+        model_name == family or model_name.startswith(f"{family}-")
+        for family in families
+    )
+
+
+def _model_requires_responses_api_for_function_tools(
+    model_name: str | None, reasoning_effort: str | None
+) -> bool:
+    if not model_name or "-chat" in model_name or reasoning_effort == "none":
+        return False
+    return _model_in_families(
+        model_name, _FUNCTION_TOOLS_DEFAULT_TO_RESPONSES_API_MODEL_FAMILIES
+    ) or (
+        reasoning_effort is not None
+        and _model_in_families(
+            model_name,
+            _FUNCTION_TOOLS_WITH_REASONING_REQUIRE_RESPONSES_API_MODEL_FAMILIES,
+        )
+    )
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -787,11 +815,12 @@ class BaseChatOpenAI(BaseChatModel):
     reasoning_effort: str | None = None
     """Constrains effort on reasoning for reasoning models.
 
-    For use with the Chat Completions API. Reasoning models only.
+    Sent as `reasoning_effort` to the Chat Completions API. When the Responses API
+    is selected, it is converted to `reasoning.effort`.
 
-    Currently supported values are `'minimal'`, `'low'`, `'medium'`, and
-    `'high'`. Reducing reasoning effort can result in faster responses and fewer
-    tokens used on reasoning in a response.
+    Supported values are model-dependent and can include `'none'`, `'minimal'`,
+    `'low'`, `'medium'`, `'high'`, `'xhigh'`, and `'max'`. Reducing reasoning
+    effort can result in faster responses and fewer tokens used on reasoning.
     """
 
     reasoning: dict[str, Any] | None = None
@@ -1090,7 +1119,10 @@ class BaseChatOpenAI(BaseChatModel):
     use_responses_api: bool | None = None
     """Whether to use the Responses API instead of the Chat API.
 
-    If not specified then will be inferred based on invocation params.
+    If not specified, the endpoint is inferred from invocation parameters and model
+    constraints. GPT-5.6 models with function tools use the Responses API unless
+    `reasoning_effort="none"`; GPT-5.4 and GPT-5.5 models do so when a non-`none`
+    reasoning effort is specified. Set to `False` to force the Chat Completions API.
 
     !!! version-added "Added in `langchain-openai` 0.3.9"
     """
@@ -3497,7 +3529,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
         """Route to Chat Completions or Responses API."""
-        if self._use_responses_api({**kwargs, **self.model_kwargs}):
+        if self._use_responses_api({**self._default_params, **kwargs}):
             return super()._stream_responses(*args, **kwargs)
         return super()._stream(*args, **kwargs)
 
@@ -3505,7 +3537,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         self, *args: Any, **kwargs: Any
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Route to Chat Completions or Responses API."""
-        if self._use_responses_api({**kwargs, **self.model_kwargs}):
+        if self._use_responses_api({**self._default_params, **kwargs}):
             async for chunk in super()._astream_responses(*args, **kwargs):
                 yield chunk
         else:
@@ -4233,8 +4265,14 @@ def _is_builtin_tool(tool: dict) -> bool:
 
 
 def _use_responses_api(payload: dict) -> bool:
-    uses_builtin_tools = "tools" in payload and any(
-        _is_builtin_tool(tool) for tool in payload["tools"]
+    tools = payload.get("tools") or []
+    uses_builtin_tools = any(_is_builtin_tool(tool) for tool in tools)
+    uses_function_tools = any(tool.get("type") == "function" for tool in tools)
+    function_tools_require_responses_api = (
+        uses_function_tools
+        and _model_requires_responses_api_for_function_tools(
+            payload.get("model"), payload.get("reasoning_effort")
+        )
     )
     responses_only_args = {
         "context_management",
@@ -4244,7 +4282,11 @@ def _use_responses_api(payload: dict) -> bool:
         "text",
         "truncation",
     }
-    return bool(uses_builtin_tools or responses_only_args.intersection(payload))
+    return bool(
+        uses_builtin_tools
+        or function_tools_require_responses_api
+        or responses_only_args.intersection(payload)
+    )
 
 
 def _get_last_messages(
