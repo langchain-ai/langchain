@@ -1074,10 +1074,21 @@ class ChatPerplexity(BaseChatModel):
                 payload["tools"] = [_flatten_responses_tool(tool) for tool in value]
                 continue
             if key in _RESPONSES_PASSTHROUGH_KEYS:
-                payload[key] = value
+                if key == "extra_body" and isinstance(value, dict):
+                    # Merge into a *copy* of the caller's dict so payload
+                    # construction never mutates caller-owned state (which would
+                    # otherwise leak per-call params into `model_kwargs` and every
+                    # later request). Merging (rather than overwriting) also keeps
+                    # any keys already routed here alive regardless of the order
+                    # `params` is iterated in.
+                    payload["extra_body"] = {**value, **payload.get("extra_body", {})}
+                else:
+                    payload[key] = value
                 continue
             # Unknown / Perplexity-specific keys: route under extra_body so the
             # SDK forwards them to the Agent API without breaking strict typing.
+            # `setdefault` returns the copy built above (or a fresh dict), so the
+            # write below never touches the caller's `extra_body`.
             extra_body = payload.setdefault("extra_body", {})
             if not isinstance(extra_body, dict):
                 msg = (

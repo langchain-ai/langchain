@@ -663,3 +663,52 @@ def test_convert_responses_stream_event_ignores_non_function_items() -> None:
         "item": {"type": "message", "content": "hi"},
     }
     assert _convert_responses_stream_event_to_chunk(event) is None
+
+
+def test_to_responses_payload_does_not_mutate_caller_extra_body() -> None:
+    """Building the payload must not mutate a caller-provided `extra_body` (#38840)."""
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
+    shared = {"country": "US"}
+    payload = llm._to_responses_payload(
+        [], {"extra_body": shared, "search_mode": "academic"}, user_set_keys=set()
+    )
+    # The caller's dict is untouched...
+    assert shared == {"country": "US"}
+    # ...while the payload carries both the caller key and the routed key.
+    assert payload["extra_body"] == {"country": "US", "search_mode": "academic"}
+
+
+def test_to_responses_payload_does_not_leak_into_model_kwargs() -> None:
+    """A per-call param must not become permanent instance state (#38840).
+
+    `extra_body` set at construction lands in `model_kwargs`, and `_default_params`
+    merges `model_kwargs` by reference. Mutating it in place would bake a one-off
+    per-call key into every later request.
+    """
+    llm = ChatPerplexity(
+        model="sonar-pro",
+        api_key="test",
+        use_responses_api=True,
+        extra_body={"country": "US"},
+    )
+    # One call that routes a per-call-only key under extra_body.
+    params = {**llm._default_params, "search_mode": "academic"}
+    llm._to_responses_payload([], params, user_set_keys=set())
+    # The instance state must not have absorbed search_mode.
+    assert llm.model_kwargs == {"extra_body": {"country": "US"}}
+    # A second call without search_mode must not carry it.
+    p2 = llm._to_responses_payload([], dict(llm._default_params), user_set_keys=set())
+    assert p2.get("extra_body") == {"country": "US"}
+
+
+def test_to_responses_payload_routed_keys_survive_before_extra_body() -> None:
+    """Routed keys survive when they precede `extra_body` in iteration order.
+
+    Regression test for the ordering variant of #38840.
+    """
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
+    # search_mode is routed under extra_body *before* the passthrough extra_body
+    # key is reached; it must not be dropped by the passthrough assignment.
+    params = {"search_mode": "academic", "extra_body": {"country": "US"}}
+    payload = llm._to_responses_payload([], params, user_set_keys=set())
+    assert payload["extra_body"] == {"country": "US", "search_mode": "academic"}
