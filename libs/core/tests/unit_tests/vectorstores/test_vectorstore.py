@@ -20,6 +20,84 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
 
+class CustomAaddTextsVectorstore(VectorStore):
+    """A VectorStore that overrides aadd_texts but not aadd_documents.
+
+    This simulates the pattern used by the deprecated Qdrant class
+    (vectorstores.py), where ``aadd_texts`` is overridden but
+    ``aadd_documents`` relies on the base class implementation.
+    """
+
+    def __init__(self) -> None:
+        self.store: dict[str, Document] = {}
+
+    @override
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: list[dict[str, Any]] | None = None,
+        *,
+        ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        if not isinstance(texts, list):
+            texts = list(texts)
+        ids_iter = iter(ids or [])
+
+        ids_ = []
+        metadatas_ = metadatas or [{} for _ in texts]
+
+        for text, metadata in zip(texts, metadatas_, strict=False):
+            next_id = next(ids_iter, None)
+            id_ = next_id or str(uuid.uuid4())
+            self.store[id_] = Document(page_content=text, metadata=metadata, id=id_)
+            ids_.append(id_)
+        return ids_
+
+    @override
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: list[dict[str, Any]] | None = None,
+        ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        if not isinstance(texts, list):
+            texts = list(texts)
+        ids_iter = iter(ids or [])
+
+        ids_ = []
+        metadatas_ = metadatas or [{} for _ in texts]
+
+        for text, metadata in zip(texts, metadatas_, strict=False):
+            next_id = next(ids_iter, None)
+            id_ = next_id or str(uuid.uuid4())
+            self.store[id_] = Document(page_content=text, metadata=metadata, id=id_)
+            ids_.append(id_)
+        return ids_
+
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        return [self.store[id_] for id_ in ids if id_ in self.store]
+
+    @classmethod
+    @override
+    def from_texts(
+        cls,
+        texts: list[str],
+        embedding: Embeddings,
+        metadatas: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
+    ) -> CustomAaddTextsVectorstore:
+        store = CustomAaddTextsVectorstore()
+        store.add_texts(texts, metadatas=metadatas, **kwargs)
+        return store
+
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> list[Document]:
+        raise NotImplementedError
+
+
 class CustomAddTextsVectorstore(VectorStore):
     """A VectorStore that only implements add texts."""
 
@@ -292,3 +370,69 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
     assert await store.aget_by_ids(["6"]) == [Document(id="6", page_content="baz")]
+
+
+# --------------------------------------------------------------------------- #
+# Regression tests for https://github.com/langchain-ai/langchain/issues/32283
+# --------------------------------------------------------------------------- #
+
+
+async def test_aadd_documents_with_explicit_ids_overridden_aadd_texts() -> None:
+    """Regression: aadd_documents with explicit ids must not raise TypeError.
+
+    When a subclass overrides ``aadd_texts`` but not ``aadd_documents``,
+    passing explicit ``ids`` to ``aadd_documents`` previously caused
+    ``TypeError: aadd_texts() got multiple values for keyword argument 'ids'``.
+    This test verifies the fix.
+    """
+    store = CustomAaddTextsVectorstore()
+    documents = [
+        Document(page_content="Hello world"),
+        Document(page_content="Goodbye world"),
+    ]
+    ids = ["doc_1", "doc_2"]
+
+    result = await store.aadd_documents(documents, ids=ids)
+    assert result == ["doc_1", "doc_2"]
+
+    retrieved = await store.aget_by_ids(["doc_1", "doc_2"])
+    assert [d.page_content for d in retrieved] == ["Hello world", "Goodbye world"]
+
+
+async def test_aadd_documents_with_explicit_ids_no_override() -> None:
+    """Regression: aadd_documents with explicit ids without overriding aadd_texts.
+
+    Simulates the QdrantVectorStore pattern: overrides add_texts but
+    not aadd_texts or aadd_documents. The base class falls back to the
+    sync add_documents -> add_texts path.
+    """
+    store = CustomAddTextsVectorstore()
+    documents = [
+        Document(page_content="Hello world"),
+        Document(page_content="Goodbye world"),
+    ]
+    ids = ["doc_1", "doc_2"]
+
+    result = await store.aadd_documents(documents, ids=ids)
+    assert result == ["doc_1", "doc_2"]
+
+    retrieved = await store.aget_by_ids(["doc_1", "doc_2"])
+    assert [d.page_content for d in retrieved] == ["Hello world", "Goodbye world"]
+
+
+async def test_aadd_texts_with_explicit_ids_overridden_aadd_texts() -> None:
+    """Regression: aadd_texts with explicit ids must not raise TypeError.
+
+    Directly calling aadd_texts with explicit ids on a subclass that overrides
+    aadd_texts should work without conflicts between the keyword-only ids
+    parameter and **kwargs.
+    """
+    store = CustomAaddTextsVectorstore()
+
+    result = await store.aadd_texts(
+        ["Hello world", "Goodbye world"], ids=["doc_1", "doc_2"]
+    )
+    assert result == ["doc_1", "doc_2"]
+
+    retrieved = await store.aget_by_ids(["doc_1", "doc_2"])
+    assert [d.page_content for d in retrieved] == ["Hello world", "Goodbye world"]
