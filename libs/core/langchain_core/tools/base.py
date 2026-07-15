@@ -124,6 +124,22 @@ def _get_annotation_description(arg_type: type) -> str | None:
     return None
 
 
+def _get_own_docstring(fn: Callable[..., Any]) -> str | None:
+    """Get the docstring defined directly on the object, without inheriting.
+
+    For Pydantic BaseModel subclasses, ``inspect.getdoc`` inherits docstrings
+    from parent classes.  Pydantic itself sets ``__doc__`` to ``None`` for
+    child classes that don't define their own docstring, so we use that value
+    directly to avoid the inheritance behavior.
+
+    For all other callables we keep using ``inspect.getdoc`` because it also
+    handles de-denting.
+    """
+    if isinstance(fn, type) and is_basemodel_subclass(fn):
+        return fn.__doc__
+    return inspect.getdoc(fn)
+
+
 def _parse_python_function_docstring(
     function: Callable[..., Any],
     annotations: dict[str, Any],
@@ -142,7 +158,7 @@ def _parse_python_function_docstring(
     Returns:
         A tuple containing the function description and argument descriptions.
     """
-    docstring = inspect.getdoc(function)
+    docstring = _get_own_docstring(function)
     return _parse_google_docstring(
         docstring,
         list(annotations),
@@ -190,7 +206,7 @@ def _infer_arg_descriptions(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
         )
     else:
-        description = inspect.getdoc(fn) or ""
+        description = _get_own_docstring(fn) or ""
         arg_descriptions = {}
     if parse_docstring:
         _validate_docstring_args_against_annotations(arg_descriptions, annotations)

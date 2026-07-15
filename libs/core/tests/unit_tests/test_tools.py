@@ -763,11 +763,12 @@ def test_missing_docstring() -> None:
         def search_api(query: str) -> str:
             return "API result"
 
-    @tool
-    class MyTool(BaseModel):
-        foo: str
+    # BaseModel subclasses without their own docstring should also raise
+    with pytest.raises(ValueError, match="Function must have a docstring"):
 
-    assert not MyTool.description  # type: ignore[attr-defined]
+        @tool
+        class MyTool(BaseModel):
+            foo: str
 
 
 def test_create_tool_positional_args() -> None:
