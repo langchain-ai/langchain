@@ -436,18 +436,9 @@ def test_tool_retry_specific_exceptions() -> None:
         msg = f"ValueError: {value}"
         raise ValueError(msg)
 
-    @tool
-    def runtime_error_tool(value: str) -> str:
-        """Tool that raises RuntimeError."""
-        msg = f"RuntimeError: {value}"
-        raise RuntimeError(msg)
-
     model = FakeToolCallingModel(
         tool_calls=[
-            [
-                ToolCall(name="value_error_tool", args={"value": "test1"}, id="1"),
-                ToolCall(name="runtime_error_tool", args={"value": "test2"}, id="2"),
-            ],
+            [ToolCall(name="value_error_tool", args={"value": "test1"}, id="1")],
             [],
         ]
     )
@@ -463,26 +454,63 @@ def test_tool_retry_specific_exceptions() -> None:
 
     agent = create_agent(
         model=model,
-        tools=[value_error_tool, runtime_error_tool],
+        tools=[value_error_tool],
         middleware=[retry],
         checkpointer=InMemorySaver(),
     )
 
     result = agent.invoke(
-        {"messages": [HumanMessage("Use both tools")]},
+        {"messages": [HumanMessage("Use error tool")]},
         {"configurable": {"thread_id": "test"}},
     )
 
     tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
-    assert len(tool_messages) == 2
+    assert len(tool_messages) == 1
 
-    # ValueError should be retried (3 attempts)
-    value_error_msg = next(m for m in tool_messages if m.name == "value_error_tool")
+    # ValueError should be retried (3 attempts) then handled by on_failure
+    value_error_msg = tool_messages[0]
     assert "3 attempts" in value_error_msg.content
 
-    # RuntimeError should fail immediately (1 attempt only)
-    runtime_error_msg = next(m for m in tool_messages if m.name == "runtime_error_tool")
-    assert "1 attempt" in runtime_error_msg.content
+
+def test_tool_retry_non_retryable_exception_reraises() -> None:
+    """Non-retryable exceptions are re-raised even when on_failure='continue'."""
+
+    @tool
+    def runtime_error_tool(value: str) -> str:
+        """Tool that raises RuntimeError."""
+        msg = f"RuntimeError: {value}"
+        raise RuntimeError(msg)
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="runtime_error_tool", args={"value": "test"}, id="1")],
+            [],
+        ]
+    )
+
+    # Only retry ValueError — RuntimeError is not retryable
+    retry = ToolRetryMiddleware(
+        max_retries=2,
+        retry_on=(ValueError,),
+        initial_delay=0.01,
+        jitter=False,
+        on_failure="continue",
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[runtime_error_tool],
+        middleware=[retry],
+        checkpointer=InMemorySaver(),
+    )
+
+    # RuntimeError does not match retry_on, so it is re-raised
+    # even though on_failure="continue"
+    with pytest.raises(RuntimeError, match="RuntimeError: test"):
+        agent.invoke(
+            {"messages": [HumanMessage("Use runtime error tool")]},
+            {"configurable": {"thread_id": "test"}},
+        )
 
 
 def test_tool_retry_custom_exception_filter() -> None:
@@ -539,17 +567,17 @@ def test_tool_retry_custom_exception_filter() -> None:
         checkpointer=InMemorySaver(),
     )
 
-    result = agent.invoke(
-        {"messages": [HumanMessage("Use custom error tool")]},
-        {"configurable": {"thread_id": "test"}},
-    )
+    # First attempt raises retryable error → retried.
+    # Second attempt raises non-retryable error → re-raised (not swallowed),
+    # even though on_failure="continue".
+    with pytest.raises(CustomError, match="Non-retryable error"):
+        agent.invoke(
+            {"messages": [HumanMessage("Use custom error tool")]},
+            {"configurable": {"thread_id": "test"}},
+        )
 
-    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
-    assert len(tool_messages) == 1
-
-    # Should retry once (attempt 1 with retry_me=True), then fail on attempt 2 (retry_me=False)
+    # Should have retried once (attempt 1 retryable, attempt 2 non-retryable)
     assert attempt_count["value"] == 2
-    assert "2 attempts" in tool_messages[0].content
 
 
 def test_tool_retry_backoff_timing() -> None:
