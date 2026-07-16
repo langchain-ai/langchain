@@ -420,12 +420,6 @@ const suggestedLinks = {
       "/v0.1/docs/guides/productionization/safety/hugging_face_prompt_injection/"
     ]
   },
-  "/docs/guides/productionization/safety/layerup_security/": {
-    "canonical": "https://docs.smith.langchain.com/",
-    "alternative": [
-      "/v0.1/docs/guides/productionization/safety/layerup_security/"
-    ]
-  },
   "/docs/guides/productionization/safety/logical_fallacy_chain/": {
     "canonical": "https://docs.smith.langchain.com/",
     "alternative": [
@@ -2701,7 +2695,6 @@ const suggestedLinks = {
   "/docs/guides/privacy/amazon_comprehend_chain/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/amazon_comprehend_chain/"]},
   "/docs/guides/privacy/constitutional_chain/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/constitutional_chain/"]},
   "/docs/guides/privacy/hugging_face_prompt_injection/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/hugging_face_prompt_injection/"]},
-  "/docs/guides/privacy/layerup_security/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/layerup_security/"]},
   "/docs/guides/privacy/logical_fallacy_chain/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/logical_fallacy_chain/"]},
   "/docs/guides/privacy/moderation/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/moderation/"]},
   "/docs/guides/privacy/presidio_data_anonymization/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/presidio_data_anonymization/"]},
@@ -2712,7 +2705,6 @@ const suggestedLinks = {
   "/docs/guides/safety/amazon_comprehend_chain/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/amazon_comprehend_chain/"]},
   "/docs/guides/safety/constitutional_chain/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/constitutional_chain/"]},
   "/docs/guides/safety/hugging_face_prompt_injection/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/hugging_face_prompt_injection/"]},
-  "/docs/guides/safety/layerup_security/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/layerup_security/"]},
   "/docs/guides/safety/logical_fallacy_chain/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/logical_fallacy_chain/"]},
   "/docs/guides/safety/moderation/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/moderation/"]},
   "/docs/guides/safety/presidio_data_anonymization/": {"canonical": "https://docs.smith.langchain.com/", "alternative": ["/v0.1/docs/guides/productionization/safety/presidio_data_anonymization/"]},
