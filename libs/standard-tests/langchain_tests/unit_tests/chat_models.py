@@ -187,6 +187,16 @@ class ChatModelTests(BaseStandardTests):
         return False
 
     @property
+    def supports_reasoning_effort(self) -> bool:
+        """Supports the standard `reasoning_effort` parameter.
+
+        Whether the chat model natively supports `reasoning_effort` as a
+        constructor field and call-time keyword argument, defaults to
+        `False`.
+        """
+        return False
+
+    @property
     def returns_usage_metadata(self) -> bool:
         """Returns usage metadata.
 
@@ -419,6 +429,22 @@ class ChatModelUnitTests(ChatModelTests):
         ```python
         @property
         def supports_json_mode(self) -> bool:
+            return True
+        ```
+
+    ??? info "`supports_reasoning_effort`"
+
+        Boolean property indicating whether the chat model natively supports the
+        standard `reasoning_effort` parameter (constructor field and call-time
+        keyword argument).
+
+        Defaults to `False`.
+
+        See docs for [Reasoning](https://docs.langchain.com/oss/python/langchain/models#reasoning).
+
+        ```python
+        @property
+        def supports_reasoning_effort(self) -> bool:
             return True
         ```
 
@@ -1130,6 +1156,36 @@ class ChatModelUnitTests(ChatModelTests):
             "ls_model_name did not reflect the per-call `model` override; "
             "_get_ls_params should honor kwargs['model']."
         )
+
+    def test_reasoning_effort_param(self) -> None:
+        """Test that `reasoning_effort` is a working standard parameter.
+
+        Test is skipped if the `supports_reasoning_effort` property on the
+        test class is `False`.
+
+        ??? question "Troubleshooting"
+
+            If this test fails, ensure the model class declares a
+            `reasoning_effort` field and reads it from call-time kwargs (not
+            only the constructor field) when building the request payload.
+        """
+        if not self.supports_reasoning_effort:
+            return
+
+        # Construction-time: the field is set and retained on the instance.
+        model = self.chat_model_class(
+            reasoning_effort="low",
+            **self.chat_model_params,
+        )
+        assert getattr(model, "reasoning_effort", None) == "low"
+
+        # Call-time: accepted as a kwarg without raising. The exact resulting
+        # shape is provider-specific (e.g. a literal top-level field for some
+        # providers, nested under a different key for others) and is covered
+        # by each partner package's own tests, not asserted generically here.
+        get_request_payload = getattr(model, "_get_request_payload", None)
+        if get_request_payload is not None:
+            get_request_payload("Test query", reasoning_effort="high")
 
     def test_serdes(self, model: BaseChatModel, snapshot: SnapshotAssertion) -> None:
         """Test serialization and deserialization of the model.
