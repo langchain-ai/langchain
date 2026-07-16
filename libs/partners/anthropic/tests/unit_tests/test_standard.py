@@ -27,6 +27,10 @@ class TestAnthropicStandard(ChatModelUnitTests):
         return {"model": _MODEL, "base_url": "https://api.anthropic.com"}
 
     @property
+    def supports_reasoning_effort(self) -> bool:
+        return True
+
+    @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
         return (
             {

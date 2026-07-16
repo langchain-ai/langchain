@@ -1059,6 +1059,25 @@ class ChatAnthropic(BaseChatModel):
 
         Setting `effort` to `'high'` produces exactly the same behavior as omitting the
         parameter altogether.
+
+    !!! warning "Deprecated"
+
+        `effort` is deprecated and will be removed in `langchain-anthropic` 2.0.0.
+        Use `reasoning_effort` instead.
+    """
+
+    reasoning_effort: Literal["max", "xhigh", "high", "medium", "low"] | None = None
+    """Reasoning effort.
+
+    Configures `output_config.effort`. If `thinking` isn't set explicitly,
+    defaults it to `{"type": "adaptive", "display": "summarized"}`. Can also
+    be passed at call time (for example,
+    `model.invoke(..., reasoning_effort="high")`).
+
+    If both `effort` and `reasoning_effort` are set, `effort` takes precedence,
+    but `effort` is deprecated.
+
+    Example: `reasoning_effort="medium"`
     """
 
     mcp_servers: list[dict[str, Any]] | None = None
@@ -1239,7 +1258,7 @@ class ChatAnthropic(BaseChatModel):
         input_: LanguageModelInput,
         *,
         stop: list[str] | None = None,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> dict:
         """Get the request payload for the Anthropic API."""
         messages = self._convert_input(input_).to_messages()
@@ -1312,25 +1331,54 @@ class ChatAnthropic(BaseChatModel):
             **self.model_kwargs,
             **kwargs,
         }
+        # Captured before `self.thinking` is applied below, so a call-time
+        # `thinking` kwarg counts as "explicitly set" too.
+        thinking_explicitly_set = "thinking" in payload or self.thinking is not None
         if self.thinking is not None:
             payload["thinking"] = self.thinking
         if self.inference_geo is not None:
             payload["inference_geo"] = self.inference_geo
 
         # Handle output_config and effort parameter
-        # Priority: self.effort > kwargs output_config > self.output_config
+        # Priority: self.effort > kwarg `reasoning_effort` > kwarg `output_config`
+        # > self.reasoning_effort > self.output_config
         output_config: dict[str, Any] = {}
         if self.output_config:
             output_config.update(self.output_config)
+        reasoning_effort_applied = False
+        if self.reasoning_effort:
+            output_config["effort"] = self.reasoning_effort
+            reasoning_effort_applied = True
         payload_oc = payload.get("output_config")
         if isinstance(payload_oc, dict):
             output_config.update(payload_oc)
 
+        # `reasoning_effort` isn't an Anthropic API field. Pop it so it never leaks
+        # through as a top-level key.
+        reasoning_effort_override = payload.pop("reasoning_effort", None)
+        if reasoning_effort_override:
+            output_config["effort"] = reasoning_effort_override
+            reasoning_effort_applied = True
+
         if self.effort:
+            warnings.warn(
+                "The `effort` parameter is deprecated and will be removed in "
+                "langchain-anthropic 2.0.0. Use `reasoning_effort` instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             output_config["effort"] = self.effort
+            # Preserve `effort`'s legacy behavior: it never enabled adaptive thinking,
+            # even if it overrides `reasoning_effort`.
+            reasoning_effort_applied = False
 
         if output_config:
             payload["output_config"] = output_config
+
+        # Default adaptive thinking when `reasoning_effort` is set, unless the
+        # caller explicitly provided `thinking`.
+        if reasoning_effort_applied and not thinking_explicitly_set:
+            payload["thinking"] = {"type": "adaptive", "display": "summarized"}
 
         if "response_format" in payload:
             # response_format present when using agents.create_agent's ProviderStrategy

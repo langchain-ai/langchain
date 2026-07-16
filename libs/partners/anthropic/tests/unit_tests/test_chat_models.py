@@ -2902,8 +2902,30 @@ def test_effort_in_output_config_payload() -> None:
     assert model.effort == "medium"
 
     # Test that effort is added to output_config
-    payload = model._get_request_payload("Test query")
+    with pytest.warns(DeprecationWarning, match="`effort`.*deprecated"):
+        payload = model._get_request_payload("Test query")
     assert payload["output_config"]["effort"] == "medium"
+
+
+def test_effort_deprecation_warning() -> None:
+    """Test that `effort` warns it's deprecated in favor of `reasoning_effort`."""
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="high")
+
+    with pytest.warns(
+        DeprecationWarning, match="`effort`.*deprecated.*reasoning_effort"
+    ):
+        model._get_request_payload("Test query")
+
+
+def test_reasoning_effort_does_not_warn() -> None:
+    """Test that the non-deprecated `reasoning_effort` field never warns."""
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", reasoning_effort="high")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        payload = model._get_request_payload("Test query")
+
+    assert payload["output_config"]["effort"] == "high"
 
 
 def test_effort_in_output_config() -> None:
@@ -2927,7 +2949,8 @@ def test_effort_priority() -> None:
     )
 
     # Top-level effort should take precedence in the payload
-    payload = model._get_request_payload("Test query")
+    with pytest.warns(DeprecationWarning, match="`effort`.*deprecated"):
+        payload = model._get_request_payload("Test query")
     assert payload["output_config"]["effort"] == "high"
 
 
@@ -2940,6 +2963,146 @@ def test_output_config_without_effort() -> None:
     )
     payload = model._get_request_payload("Test query")
     assert payload["output_config"] == {"some_future_param": "value"}
+
+
+def test_reasoning_effort_parameter_validation() -> None:
+    """Test that `reasoning_effort` is validated the same as `effort`."""
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", reasoning_effort="high")
+    assert model.reasoning_effort == "high"
+
+    with pytest.raises(ValidationError, match="Input should be"):
+        ChatAnthropic(model="claude-opus-4-5-20251101", reasoning_effort="invalid")  # type: ignore[arg-type]
+
+
+def test_reasoning_effort_in_output_config_payload() -> None:
+    """Test that a construction-time `reasoning_effort` reaches `output_config`."""
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", reasoning_effort="medium")
+
+    payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "medium"
+
+
+def test_reasoning_effort_as_call_time_kwarg() -> None:
+    """Test that `reasoning_effort` also works as a call-time keyword argument.
+
+    This is the standard `reasoning_effort` param shared across chat model
+    integrations, so it must work via `model.invoke(..., reasoning_effort=...)`
+    without requiring it to be set on the model instance.
+    """
+    model = ChatAnthropic(model="claude-opus-4-5-20251101")
+
+    payload = model._get_request_payload("Test query", reasoning_effort="low")
+
+    assert payload["output_config"]["effort"] == "low"
+    # Never leaks through as a stray top-level key -- not a real Anthropic field.
+    assert "reasoning_effort" not in payload
+
+
+def test_reasoning_effort_call_time_kwarg_overrides_construction_time() -> None:
+    """Test that a call-time `reasoning_effort` overrides the instance default."""
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", reasoning_effort="low")
+
+    payload = model._get_request_payload("Test query", reasoning_effort="high")
+
+    assert payload["output_config"]["effort"] == "high"
+
+
+def test_reasoning_effort_yields_to_effort() -> None:
+    """Test that `effort` still takes precedence over `reasoning_effort`.
+
+    `effort` predates `reasoning_effort` and must keep winning so existing
+    behavior for callers already using `effort` doesn't change.
+    """
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="high",
+        reasoning_effort="low",
+    )
+
+    with pytest.warns(DeprecationWarning, match="`effort`.*deprecated"):
+        payload = model._get_request_payload("Test query")
+    assert payload["output_config"]["effort"] == "high"
+
+
+def test_reasoning_effort_defaults_adaptive_thinking() -> None:
+    """Test that `reasoning_effort` also defaults `thinking` to adaptive.
+
+    Mirrors the reasoning-effort behavior previously implemented client-side
+    (pairing the effort level with adaptive thinking), so the model actually
+    reasons harder instead of being told a preference with no active
+    reasoning mode to apply it to.
+    """
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", reasoning_effort="high")
+
+    payload = model._get_request_payload("Test query")
+
+    assert payload["thinking"] == {"type": "adaptive", "display": "summarized"}
+    assert payload["output_config"]["effort"] == "high"
+
+
+def test_reasoning_effort_as_call_time_kwarg_defaults_adaptive_thinking() -> None:
+    """Test that a call-time `reasoning_effort` also defaults `thinking`."""
+    model = ChatAnthropic(model="claude-opus-4-5-20251101")
+
+    payload = model._get_request_payload("Test query", reasoning_effort="high")
+
+    assert payload["thinking"] == {"type": "adaptive", "display": "summarized"}
+
+
+def test_reasoning_effort_preserves_explicit_construction_time_thinking() -> None:
+    """Test that an explicit `thinking` field is not clobbered by `reasoning_effort`."""
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        reasoning_effort="high",
+        thinking={"type": "enabled", "budget_tokens": 10_000},
+    )
+
+    payload = model._get_request_payload("Test query")
+
+    assert payload["thinking"] == {"type": "enabled", "budget_tokens": 10_000}
+
+
+def test_reasoning_effort_preserves_explicit_call_time_thinking() -> None:
+    """Test that a call-time `thinking` kwarg is not clobbered by `reasoning_effort`."""
+    model = ChatAnthropic(model="claude-opus-4-5-20251101")
+
+    payload = model._get_request_payload(
+        "Test query",
+        reasoning_effort="high",
+        thinking={"type": "disabled"},
+    )
+
+    assert payload["thinking"] == {"type": "disabled"}
+
+
+def test_effort_does_not_default_adaptive_thinking() -> None:
+    """Test that the deprecated `effort` field keeps its narrower, pre-existing
+    behavior -- it never enabled adaptive thinking on its own, and must not
+    start doing so now.
+    """
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="high")
+
+    with pytest.warns(DeprecationWarning, match="`effort`.*deprecated"):
+        payload = model._get_request_payload("Test query")
+
+    assert "thinking" not in payload
+
+
+def test_effort_winning_over_reasoning_effort_does_not_default_thinking() -> None:
+    """Test that when the deprecated `effort` wins over `reasoning_effort`,
+    the narrower `effort`-only behavior applies -- `thinking` is not defaulted
+    just because `reasoning_effort` was also set.
+    """
+    model = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        effort="high",
+        reasoning_effort="low",
+    )
+
+    with pytest.warns(DeprecationWarning, match="`effort`.*deprecated"):
+        payload = model._get_request_payload("Test query")
+
+    assert "thinking" not in payload
 
 
 def test_extras_with_defer_loading() -> None:
@@ -3372,7 +3535,8 @@ def test_effort_xhigh() -> None:
     """Test that xhigh effort level is accepted and lands in output_config."""
     model = ChatAnthropic(model="claude-opus-4-6", effort="xhigh")
     assert model.effort == "xhigh"
-    payload = model._get_request_payload("Test query")
+    with pytest.warns(DeprecationWarning, match="`effort`.*deprecated"):
+        payload = model._get_request_payload("Test query")
     assert payload["output_config"]["effort"] == "xhigh"
 
 
