@@ -61,6 +61,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
+        "reasoning_effort_default": "high",
     },
     "grok-4.20-multi-agent-0309": {
         "name": "Grok 4.20 Multi-Agent",
@@ -84,6 +90,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
+        "reasoning_effort_default": "high",
     },
     "grok-4.3": {
         "name": "Grok 4.3",
@@ -107,6 +119,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
+        "reasoning_effort_default": "high",
     },
     "grok-4.5": {
         "name": "Grok 4.5",
@@ -130,6 +148,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
+        "reasoning_effort_default": "high",
     },
     "grok-build-0.1": {
         "name": "Grok Build 0.1",
@@ -153,6 +177,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
+        "reasoning_effort_default": "high",
     },
     "grok-imagine-image": {
         "name": "Grok Imagine Image",
