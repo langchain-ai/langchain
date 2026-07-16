@@ -4340,6 +4340,10 @@ def _construct_responses_api_payload(
         else:
             payload["tool_choice"] = tool_choice
 
+    # Ensure we don't mutate the caller's model_kwargs["text"] in place
+    if isinstance(payload.get("text"), dict):
+        payload["text"] = payload["text"].copy()
+
     # Structured output
     if schema := payload.pop("response_format", None):
         # For pydantic + non-streaming case, we use responses.parse.
