@@ -11,6 +11,8 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.tools import BaseTool, tool
+from langgraph.errors import GraphInterrupt, ParentCommand
+from langgraph.types import Command
 from typing_extensions import override
 
 from langchain.agents.factory import create_agent
@@ -1067,3 +1069,39 @@ async def test_fallback_sanitizer_error_is_not_masked_async(
 
     with pytest.raises(RuntimeError, match="sanitizer boom"):
         await middleware.awrap_model_call(request, mock_handler)
+
+
+def test_fallback_reraises_graph_bubble_up() -> None:
+    """GraphBubbleUp signals (e.g. interrupts) must propagate, not trigger fallbacks."""
+    fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback")]))
+    middleware = ModelFallbackMiddleware(fallback_model)
+
+    calls = 0
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:  # noqa: ARG001
+        nonlocal calls
+        calls += 1
+        raise GraphInterrupt
+
+    with pytest.raises(GraphInterrupt):
+        middleware.wrap_model_call(_make_request(), mock_handler)
+
+    assert calls == 1  # bubbled up on first raise, no fallback attempts
+
+
+async def test_fallback_reraises_graph_bubble_up_async() -> None:
+    """Async: GraphBubbleUp signals (e.g. ParentCommand) must propagate, not trigger fallbacks."""
+    fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback")]))
+    middleware = ModelFallbackMiddleware(fallback_model)
+
+    calls = 0
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:  # noqa: ARG001
+        nonlocal calls
+        calls += 1
+        raise ParentCommand(Command(goto="some_node"))
+
+    with pytest.raises(ParentCommand):
+        await middleware.awrap_model_call(_make_request(), mock_handler)
+
+    assert calls == 1  # bubbled up on first raise, no fallback attempts

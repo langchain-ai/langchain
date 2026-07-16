@@ -19,6 +19,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.tools import BaseTool
+from langgraph.errors import GraphBubbleUp
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -344,6 +345,10 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         last_exception: Exception
         try:
             return handler(request)
+        except GraphBubbleUp:
+            # Control-flow signals (interrupts, parent commands) must
+            # propagate, not trigger fallbacks.
+            raise
         except Exception as e:
             last_exception = e
 
@@ -359,6 +364,9 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             )
             try:
                 return handler(fallback_request.override(model=fallback_model))
+            except GraphBubbleUp:
+                # Control-flow signals must propagate from fallback attempts too.
+                raise
             except Exception as e:
                 last_exception = e
                 continue
@@ -386,6 +394,10 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         last_exception: Exception
         try:
             return await handler(request)
+        except GraphBubbleUp:
+            # Control-flow signals (interrupts, parent commands) must
+            # propagate, not trigger fallbacks.
+            raise
         except Exception as e:
             last_exception = e
 
@@ -401,6 +413,9 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             )
             try:
                 return await handler(fallback_request.override(model=fallback_model))
+            except GraphBubbleUp:
+                # Control-flow signals must propagate from fallback attempts too.
+                raise
             except Exception as e:
                 last_exception = e
                 continue

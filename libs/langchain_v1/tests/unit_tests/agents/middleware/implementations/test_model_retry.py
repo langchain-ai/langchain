@@ -2,13 +2,16 @@
 
 import time
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.errors import GraphInterrupt, ParentCommand
+from langgraph.types import Command, interrupt
 from pydantic import Field
 from typing_extensions import override
 
@@ -16,12 +19,16 @@ from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.types import (
+    AgentState,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
     wrap_model_call,
 )
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from langgraph.runtime import Runtime
 
 
 class TemporaryFailureModel(FakeToolCallingModel):
@@ -700,3 +707,97 @@ def test_model_retry_multiple_middleware_composition() -> None:
     ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
     assert len(ai_messages) >= 1
     assert "Hello" in ai_messages[-1].content
+
+
+def _fake_runtime() -> "Runtime":
+    return cast("Runtime", object())
+
+
+def _make_request() -> ModelRequest:
+    """Create a minimal ModelRequest for testing."""
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="unused")]))
+    return ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=[],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=[]),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+
+def test_model_retry_does_not_retry_interrupt() -> None:
+    """Interrupts raised during the model call pause the agent, not retried."""
+    calls = 0
+
+    @wrap_model_call
+    def approval(
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
+        nonlocal calls
+        calls += 1
+        interrupt("approve model call?")
+        return handler(request)
+
+    retry = ModelRetryMiddleware(max_retries=2, initial_delay=0.01, jitter=False)
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        middleware=[retry, approval],
+        checkpointer=InMemorySaver(),
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Hello")]},
+        {"configurable": {"thread_id": "test"}},
+    )
+
+    # The interrupt bubbles up and pauses the agent instead of being retried
+    # or converted to an error message.
+    assert "__interrupt__" in result
+    assert calls == 1
+
+    # Resuming completes the model call without re-raising.
+    final = agent.invoke(Command(resume="approved"), {"configurable": {"thread_id": "test"}})
+    assert "__interrupt__" not in final
+    ai_messages = [m for m in final["messages"] if isinstance(m, AIMessage)]
+    assert len(ai_messages) >= 1
+
+
+def test_model_retry_reraises_graph_bubble_up() -> None:
+    """GraphBubbleUp signals (e.g. ParentCommand) must propagate, not be retried."""
+    middleware = ModelRetryMiddleware(max_retries=3, initial_delay=0.01, jitter=False)
+
+    calls = 0
+
+    def handler(request: ModelRequest) -> ModelResponse:  # noqa: ARG001
+        nonlocal calls
+        calls += 1
+        raise ParentCommand(Command(goto="some_node"))
+
+    with pytest.raises(ParentCommand):
+        middleware.wrap_model_call(_make_request(), handler)
+
+    assert calls == 1  # bubbled up on first raise, not retried
+
+
+async def test_model_retry_reraises_graph_bubble_up_async() -> None:
+    """Async: GraphBubbleUp signals must propagate, not be retried."""
+    middleware = ModelRetryMiddleware(max_retries=3, initial_delay=0.01, jitter=False)
+
+    calls = 0
+
+    async def handler(request: ModelRequest) -> ModelResponse:  # noqa: ARG001
+        nonlocal calls
+        calls += 1
+        raise GraphInterrupt
+
+    with pytest.raises(GraphInterrupt):
+        await middleware.awrap_model_call(_make_request(), handler)
+
+    assert calls == 1  # bubbled up on first raise, not retried
