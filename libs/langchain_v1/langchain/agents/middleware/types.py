@@ -398,7 +398,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
 
-    trace: bool = True
+    trace: bool = False
     """Whether to record this middleware's messages/state payload in traces.
 
     When `False`, this middleware's hook spans (`wrap_model_call`/`wrap_tool_call`
