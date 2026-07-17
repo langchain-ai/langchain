@@ -3731,3 +3731,329 @@ def test_profile() -> None:
     """Test that the model has a profile."""
     model = _make_model()
     assert model.profile
+
+
+# ===========================================================================
+# Responses API tests
+# ===========================================================================
+
+_SIMPLE_RESPONSES_DICT: dict[str, Any] = {
+    "id": "resp_abc123",
+    "object": "response",
+    "created_at": 1700000000,
+    "model": MODEL_NAME,
+    "status": "completed",
+    "output": [
+        {
+            "type": "message",
+            "id": "msg_abc123",
+            "status": "completed",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "output_text",
+                    "text": "Hello from Responses!",
+                    "annotations": [],
+                }
+            ],
+        }
+    ],
+    "usage": {
+        "input_tokens": 12,
+        "output_tokens": 6,
+        "total_tokens": 18,
+    },
+}
+
+_TOOL_RESPONSES_DICT: dict[str, Any] = {
+    "id": "resp_tool123",
+    "object": "response",
+    "created_at": 1700000000,
+    "model": MODEL_NAME,
+    "status": "completed",
+    "output": [
+        {
+            "type": "function_call",
+            "id": "fc_1",
+            "call_id": "call_1",
+            "name": "GetWeather",
+            "arguments": '{"location": "San Francisco"}',
+            "status": "completed",
+        }
+    ],
+    "usage": {
+        "input_tokens": 20,
+        "output_tokens": 10,
+        "total_tokens": 30,
+    },
+}
+
+_RESPONSES_STREAM_EVENTS: list[dict[str, Any]] = [
+    {
+        "type": "response.created",
+        "response": {
+            "id": "resp_stream1",
+            "object": "response",
+            "status": "in_progress",
+        },
+    },
+    {
+        "type": "response.output_text.delta",
+        "delta": "Hello",
+        "output_index": 0,
+        "content_index": 0,
+    },
+    {
+        "type": "response.output_text.delta",
+        "delta": " world",
+        "output_index": 0,
+        "content_index": 0,
+    },
+    {
+        "type": "response.completed",
+        "response": {
+            "id": "resp_stream1",
+            "object": "response",
+            "status": "completed",
+            "model": MODEL_NAME,
+            "output": [
+                {
+                    "type": "message",
+                    "id": "msg_stream1",
+                    "status": "completed",
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": "Hello world",
+                            "annotations": [],
+                        }
+                    ],
+                }
+            ],
+            "usage": {
+                "input_tokens": 5,
+                "output_tokens": 2,
+                "total_tokens": 7,
+            },
+        },
+    },
+]
+
+
+class TestResponsesApi:
+    """Tests for `use_responses_api=True` on `ChatOpenRouter`."""
+
+    def test_default_still_uses_chat_completions(self) -> None:
+        """Default path must keep calling `client.chat.send`."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(_SIMPLE_RESPONSE_DICT)
+
+        model.invoke("Hello")
+        model.client.chat.send.assert_called_once()
+        model.client.beta.responses.send.assert_not_called()
+
+    def test_invoke_basic(self) -> None:
+        """Responses invoke returns text + usage via `beta.responses.send`."""
+        model = _make_model(use_responses_api=True)
+        model.client = MagicMock()
+        model.client.beta.responses.send.return_value = _make_sdk_response(
+            _SIMPLE_RESPONSES_DICT
+        )
+
+        result = model.invoke("Hello")
+        assert isinstance(result, AIMessage)
+        assert result.content == "Hello from Responses!"
+        assert result.id == "msg_abc123"
+        assert result.response_metadata["id"] == "resp_abc123"
+        assert result.response_metadata["model_provider"] == "openrouter"
+        assert result.usage_metadata is not None
+        assert result.usage_metadata["input_tokens"] == 12
+        assert result.usage_metadata["output_tokens"] == 6
+        model.client.beta.responses.send.assert_called_once()
+        model.client.chat.send.assert_not_called()
+
+    def test_invoke_with_tool_response(self) -> None:
+        """Responses tool calls are parsed onto `AIMessage.tool_calls`."""
+        model = _make_model(use_responses_api=True)
+        model.client = MagicMock()
+        model.client.beta.responses.send.return_value = _make_sdk_response(
+            _TOOL_RESPONSES_DICT
+        )
+
+        result = model.invoke("What's the weather?")
+        assert isinstance(result, AIMessage)
+        assert len(result.tool_calls) == 1
+        assert result.tool_calls[0]["name"] == "GetWeather"
+        assert result.tool_calls[0]["args"] == {"location": "San Francisco"}
+        assert result.tool_calls[0]["id"] == "call_1"
+
+    def test_payload_uses_input_not_messages(self) -> None:
+        """Responses requests must send `input`, not chat `messages`."""
+        model = _make_model(use_responses_api=True)
+        model.client = MagicMock()
+        model.client.beta.responses.send.return_value = _make_sdk_response(
+            _SIMPLE_RESPONSES_DICT
+        )
+
+        model.invoke([HumanMessage(content="Hi")])
+        call_kwargs = model.client.beta.responses.send.call_args[1]
+        assert "messages" not in call_kwargs
+        assert call_kwargs["input"] == [
+            {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "Hi"}],
+            }
+        ]
+
+    def test_max_tokens_mapped_to_max_output_tokens(self) -> None:
+        """`max_tokens` is renamed to `max_output_tokens` for Responses."""
+        model = _make_model(use_responses_api=True, max_tokens=256)
+        model.client = MagicMock()
+        model.client.beta.responses.send.return_value = _make_sdk_response(
+            _SIMPLE_RESPONSES_DICT
+        )
+
+        model.invoke("Hello")
+        call_kwargs = model.client.beta.responses.send.call_args[1]
+        assert call_kwargs["max_output_tokens"] == 256
+        assert "max_tokens" not in call_kwargs
+
+    def test_stop_omitted_from_payload(self) -> None:
+        """Responses API has no `stop` parameter."""
+        model = _make_model(use_responses_api=True, stop_sequences=["END"])
+        model.client = MagicMock()
+        model.client.beta.responses.send.return_value = _make_sdk_response(
+            _SIMPLE_RESPONSES_DICT
+        )
+
+        model.invoke("Hello")
+        call_kwargs = model.client.beta.responses.send.call_args[1]
+        assert "stop" not in call_kwargs
+
+    def test_tools_flattened_to_responses_shape(self) -> None:
+        """Chat Completions-style tools are flattened for Responses."""
+        model = _make_model(use_responses_api=True)
+        model.client = MagicMock()
+        model.client.beta.responses.send.return_value = _make_sdk_response(
+            _SIMPLE_RESPONSES_DICT
+        )
+
+        model.bind_tools([GetWeather]).invoke("Weather?")
+        call_kwargs = model.client.beta.responses.send.call_args[1]
+        assert call_kwargs["tools"] == [
+            {
+                "type": "function",
+                "name": "GetWeather",
+                "description": "Get the current weather in a given location.",
+                "parameters": {
+                    "properties": {
+                        "location": {
+                            "description": "The city and state",
+                            "type": "string",
+                        }
+                    },
+                    "required": ["location"],
+                    "type": "object",
+                },
+            }
+        ]
+
+    def test_multi_turn_includes_assistant_id_and_status(self) -> None:
+        """Prior assistant turns include required `id` and `status`."""
+        model = _make_model(use_responses_api=True)
+        model.client = MagicMock()
+        model.client.beta.responses.send.return_value = _make_sdk_response(
+            _SIMPLE_RESPONSES_DICT
+        )
+
+        model.invoke(
+            [
+                HumanMessage(content="Capital of France?"),
+                AIMessage(
+                    content="Paris",
+                    id="msg_prev",
+                    response_metadata={"message_status": "completed"},
+                ),
+                HumanMessage(content="Population?"),
+            ]
+        )
+        call_kwargs = model.client.beta.responses.send.call_args[1]
+        assistant = next(
+            item for item in call_kwargs["input"] if item.get("role") == "assistant"
+        )
+        assert assistant["id"] == "msg_prev"
+        assert assistant["status"] == "completed"
+        assert assistant["content"] == [
+            {"type": "output_text", "text": "Paris", "annotations": []}
+        ]
+
+    def test_stream_basic(self) -> None:
+        """Responses streaming emits text deltas via `beta.responses.send`."""
+        model = _make_model(use_responses_api=True)
+        model.client = MagicMock()
+        model.client.beta.responses.send.return_value = _MockSyncStream(
+            [dict(c) for c in _RESPONSES_STREAM_EVENTS]
+        )
+
+        chunks = list(model.stream("Hello"))
+        assert len(chunks) > 0
+        assert all(isinstance(c, AIMessageChunk) for c in chunks)
+        full_content = "".join(c.content for c in chunks if isinstance(c.content, str))
+        assert "Hello" in full_content
+        assert "world" in full_content
+        model.client.beta.responses.send.assert_called_once()
+        call_kwargs = model.client.beta.responses.send.call_args[1]
+        assert call_kwargs["stream"] is True
+
+    async def test_ainvoke_basic(self) -> None:
+        """Async Responses invoke uses `send_async`."""
+        model = _make_model(use_responses_api=True)
+        model.client = MagicMock()
+        model.client.beta.responses.send_async = AsyncMock(
+            return_value=_make_sdk_response(_SIMPLE_RESPONSES_DICT)
+        )
+
+        result = await model.ainvoke("Hello")
+        assert isinstance(result, AIMessage)
+        assert result.content == "Hello from Responses!"
+        model.client.beta.responses.send_async.assert_called_once()
+
+    def test_previous_response_id_hard_fails(self) -> None:
+        """`previous_response_id` raises before any SDK call."""
+        model = _make_model(use_responses_api=True)
+        model.client = MagicMock()
+
+        with pytest.raises(ValueError, match="previous_response_id"):
+            model.invoke("Hello", previous_response_id="resp_123")
+        model.client.beta.responses.send.assert_not_called()
+
+    def test_previous_response_id_hard_fails_on_completions_path(self) -> None:
+        """Stateful knobs raise even when Completions mode is selected."""
+        model = _make_model()
+        model.client = MagicMock()
+
+        with pytest.raises(ValueError, match="previous_response_id"):
+            model.invoke("Hello", previous_response_id="resp_123")
+        model.client.chat.send.assert_not_called()
+
+    def test_store_true_hard_fails(self) -> None:
+        """`store=True` raises before any SDK call."""
+        model = _make_model(use_responses_api=True)
+        model.client = MagicMock()
+
+        with pytest.raises(ValueError, match="store"):
+            model.invoke("Hello", store=True)
+        model.client.beta.responses.send.assert_not_called()
+
+    def test_use_previous_response_id_hard_fails_at_construction(self) -> None:
+        """`use_previous_response_id=True` raises at construction."""
+        with pytest.raises(ValueError, match="use_previous_response_id"):
+            _make_model(use_previous_response_id=True)
+
+    def test_identifying_params_include_use_responses_api(self) -> None:
+        """`use_responses_api` is part of identifying params."""
+        model = _make_model(use_responses_api=True)
+        assert model._identifying_params["use_responses_api"] is True

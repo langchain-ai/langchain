@@ -142,6 +142,7 @@ class ChatOpenRouter(BaseChatModel):
         | `trace` | `dict[str, Any] | None` | Trace metadata for broadcasts. |
         | `default_headers` | `Mapping[str, str] | None` | Extra request headers. |
         | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
+        | `use_responses_api` | `bool` | Use OpenRouter's beta Responses API. |
 
     ??? info "Instantiate"
 
@@ -153,8 +154,19 @@ class ChatOpenRouter(BaseChatModel):
             temperature=0,
             # api_key="...",
             # openrouter_provider={"order": ["Anthropic"]},
+            # use_responses_api=True,  # beta Responses API (stateless)
         )
         ```
+
+    !!! warning "Responses API is beta and stateless"
+
+        When `use_responses_api=True`, requests go to OpenRouter's
+        [Responses API](https://openrouter.ai/docs/api/reference/responses/overview).
+        Unlike OpenAI's Responses API, OpenRouter does **not** persist conversation
+        state: `previous_response_id`, `use_previous_response_id`, and `store=True`
+        raise a clear error before any network call. Send the full conversation
+        history on each turn. Use `session_id` for sticky routing / prompt-cache
+        affinity.
 
     See https://openrouter.ai/docs for platform documentation.
     """
@@ -372,6 +384,28 @@ class ChatOpenRouter(BaseChatModel):
     See https://openrouter.ai/docs/guides/features/broadcast/overview
     """
 
+    use_responses_api: bool = False
+    """Whether to use OpenRouter's beta Responses API instead of Chat Completions.
+
+    When `True`, requests are sent via `client.beta.responses.send` with
+    Responses-shaped `input` / tools. Defaults to `False` (Chat Completions).
+
+    OpenRouter's Responses API is **stateless**: full conversation history must
+    still be sent each turn. Stateful parameters (`previous_response_id`,
+    `use_previous_response_id`, `store=True`) are unsupported and raise
+    `ValueError`. Prefer `session_id` for sticky routing / cache affinity.
+
+    See https://openrouter.ai/docs/api/reference/responses/overview
+    """
+
+    use_previous_response_id: bool = False
+    """Accepted for API familiarity with `ChatOpenAI`; always unsupported.
+
+    OpenRouter's Responses API rejects `previous_response_id`. Setting this to
+    `True` raises `ValueError` at construction time. Use `session_id` instead
+    for sticky routing / prompt-cache affinity.
+    """
+
     model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
@@ -480,6 +514,12 @@ class ChatOpenRouter(BaseChatModel):
         if self.n > 1 and self.streaming:
             msg = "n must be 1 when streaming."
             raise ValueError(msg)
+        if self.use_previous_response_id:
+            from langchain_openrouter._responses import (  # noqa: PLC0415
+                _assert_stateless_responses_supported,
+            )
+
+            _assert_stateless_responses_supported({}, use_previous_response_id=True)
 
         if not self.client:
             try:
@@ -530,8 +570,40 @@ class ChatOpenRouter(BaseChatModel):
             "reasoning": self.reasoning,
             "openrouter_provider": self.openrouter_provider,
             "route": self.route,
+            "use_responses_api": self.use_responses_api,
             "model_kwargs": self.model_kwargs,
         }
+
+    def _use_responses_api(self) -> bool:
+        """Return whether to route requests to the Responses API."""
+        return bool(self.use_responses_api)
+
+    def _check_stateless_responses_params(self, params: dict[str, Any]) -> None:
+        """Raise if unsupported stateful Responses parameters are present."""
+        from langchain_openrouter._responses import (  # noqa: PLC0415
+            _assert_stateless_responses_supported,
+        )
+
+        _assert_stateless_responses_supported(
+            params, use_previous_response_id=self.use_previous_response_id
+        )
+
+    def _prepare_responses_request(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Build Responses API kwargs after validating stateful params."""
+        from langchain_openrouter._responses import (  # noqa: PLC0415
+            _construct_responses_api_payload,
+        )
+
+        _, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
+        _strip_internal_kwargs(params)
+        self._check_stateless_responses_params(params)
+        return _construct_responses_api_payload(messages, params)
 
     def _get_ls_params(
         self,
@@ -564,9 +636,20 @@ class ChatOpenRouter(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
+        if self._use_responses_api():
+            from langchain_openrouter._responses import (  # noqa: PLC0415
+                _construct_lc_result_from_responses_api,
+            )
+
+            payload = self._prepare_responses_request(messages, stop, **kwargs)
+            response = self.client.beta.responses.send(**payload)
+            return _construct_lc_result_from_responses_api(
+                response, model_name=self.model_name
+            )
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
+        self._check_stateless_responses_params(params)
         response = self.client.chat.send(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
@@ -582,11 +665,77 @@ class ChatOpenRouter(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await agenerate_from_stream(stream_iter)
+        if self._use_responses_api():
+            from langchain_openrouter._responses import (  # noqa: PLC0415
+                _construct_lc_result_from_responses_api,
+            )
+
+            payload = self._prepare_responses_request(messages, stop, **kwargs)
+            response = await self.client.beta.responses.send_async(**payload)
+            return _construct_lc_result_from_responses_api(
+                response, model_name=self.model_name
+            )
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
+        self._check_stateless_responses_params(params)
         response = await self.client.chat.send_async(messages=message_dicts, **params)
         return self._create_chat_result(response)
+
+    def _stream_responses(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        """Stream via OpenRouter's beta Responses API."""
+        from langchain_openrouter._responses import (  # noqa: PLC0415
+            _convert_responses_chunk_to_generation_chunk,
+        )
+
+        payload = self._prepare_responses_request(
+            messages, stop, **{**kwargs, "stream": True}
+        )
+        for chunk in self.client.beta.responses.send(**payload):
+            generation_chunk = _convert_responses_chunk_to_generation_chunk(
+                chunk, model_name=self.model_name
+            )
+            if generation_chunk is None:
+                continue
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    generation_chunk.text, chunk=generation_chunk
+                )
+            yield generation_chunk
+
+    async def _astream_responses(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Async stream via OpenRouter's beta Responses API."""
+        from langchain_openrouter._responses import (  # noqa: PLC0415
+            _convert_responses_chunk_to_generation_chunk,
+        )
+
+        payload = self._prepare_responses_request(
+            messages, stop, **{**kwargs, "stream": True}
+        )
+        stream = await self.client.beta.responses.send_async(**payload)
+        async for chunk in stream:
+            generation_chunk = _convert_responses_chunk_to_generation_chunk(
+                chunk, model_name=self.model_name
+            )
+            if generation_chunk is None:
+                continue
+            if run_manager:
+                await run_manager.on_llm_new_token(
+                    token=generation_chunk.text, chunk=generation_chunk
+                )
+            yield generation_chunk
 
     def _stream(  # noqa: C901
         self,
@@ -595,11 +744,18 @@ class ChatOpenRouter(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        if self._use_responses_api():
+            yield from self._stream_responses(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return
+
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
+        self._check_stateless_responses_params(params)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         terminal_generation_info: dict[str, Any] = {}
@@ -678,11 +834,19 @@ class ChatOpenRouter(BaseChatModel):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        if self._use_responses_api():
+            async for chunk in self._astream_responses(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            ):
+                yield chunk
+            return
+
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
+        self._check_stateless_responses_params(params)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         terminal_generation_info: dict[str, Any] = {}
