@@ -398,15 +398,15 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
 
-    trace: bool = False
-    """Whether to record this middleware's messages/state payload in traces.
+    trace_inputs: bool = True
+    """Whether to record this middleware's hook inputs in traces.
 
     When `False`, this middleware's hook spans (`wrap_model_call`/`wrap_tool_call`
-    and the `before_*`/`after_*` node hooks) omit the conversation `messages` and
-    `state` from their trace inputs, keeping the span and its timing but dropping
-    the O(n) payload. The messages are still captured on the inner model call
-    span. Set `False` on middleware in long-running agents where re-serializing
-    the growing conversation per hook dominates tracing latency.
+    and the `before_*`/`after_*` node hooks) record empty inputs, dropping the
+    conversation `messages` and `state` payload while keeping the span and its
+    timing. The messages are still captured on the inner model-call span. Set
+    `False` on middleware in long-running agents where re-serializing the growing
+    conversation per hook dominates tracing latency.
     """
 
     transformers: Sequence[TransformerFactory] = ()

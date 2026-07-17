@@ -151,61 +151,14 @@ def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     return filtered
 
 
-_MAX_TRACE_STR = 256
+def _omit_trace_inputs(_inputs: Any) -> dict[str, Any]:
+    """Trace scrubber for hooks with `trace_inputs=False`: record no inputs.
 
-
-def _lean_scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
-    """Wrap-hook `process_inputs` for middleware with `trace=False`.
-
-    Like `_scrub_inputs`, but drops the O(n) payload: `state` is omitted and
-    `messages` is replaced with a count. Both are captured on the inner model
-    call span, so the span stays useful without re-serializing the conversation.
+    Used as `process_inputs` on `traceable` wrap-hook spans and as `trace_inputs`
+    on the `before_*`/`after_*` node runs. Only the trace payload is dropped; the
+    real request/state still flow to the middleware hook unchanged.
     """
-    filtered = inputs.copy()
-    filtered.pop("handler", None)
-    req = filtered.get("request")
-    if isinstance(req, (ModelRequest, ToolCallRequest)):
-        slim: dict[str, Any] = {}
-        for f in fields(req):
-            if f.name in ("runtime", "state"):
-                continue
-            if f.name == "messages":
-                messages = getattr(req, "messages", None)
-                slim["messages"] = (
-                    f"<{len(messages)} messages omitted from trace>"
-                    if isinstance(messages, (list, tuple))
-                    else messages
-                )
-            else:
-                slim[f.name] = getattr(req, f.name)
-        filtered["request"] = slim
-    return filtered
-
-
-def _lean_scrub_state(state: Any) -> Any:
-    """Node-hook `trace_inputs` for middleware with `trace=False`.
-
-    The node input is the agent state. Replace `messages` with a count and
-    summarize other large values with placeholders, keeping small scalars so
-    the span stays identifiable. Bounded: never iterates or copies large values.
-    """
-    if not isinstance(state, dict):
-        return "<state omitted from trace>"
-    slim: dict[str, Any] = {}
-    for key, value in state.items():
-        if key == "messages" and isinstance(value, (list, tuple)):
-            slim[key] = f"<{len(value)} messages omitted from trace>"
-        elif isinstance(value, str):
-            slim[key] = value if len(value) <= _MAX_TRACE_STR else f"<str len={len(value)} omitted>"
-        elif isinstance(value, (int, float, bool)) or value is None:
-            slim[key] = value
-        elif isinstance(value, (list, tuple)):
-            slim[key] = f"<{len(value)} items omitted from trace>"
-        elif isinstance(value, dict):
-            slim[key] = f"<{len(value)} keys omitted from trace>"
-        else:
-            slim[key] = "<omitted from trace>"
-    return slim
+    return {}
 
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
@@ -1077,7 +1030,7 @@ def create_agent(
         wrappers = [
             traceable(
                 name=f"{m.name}.wrap_tool_call",
-                process_inputs=_scrub_inputs if m.trace else _lean_scrub_inputs,
+                process_inputs=_scrub_inputs if m.trace_inputs else _omit_trace_inputs,
             )(m.wrap_tool_call)
             for m in middleware_w_wrap_tool_call
         ]
@@ -1099,7 +1052,7 @@ def create_agent(
         async_wrappers = [
             traceable(
                 name=f"{m.name}.awrap_tool_call",
-                process_inputs=_scrub_inputs if m.trace else _lean_scrub_inputs,
+                process_inputs=_scrub_inputs if m.trace_inputs else _omit_trace_inputs,
             )(m.awrap_tool_call)
             for m in middleware_w_awrap_tool_call
         ]
@@ -1188,7 +1141,7 @@ def create_agent(
         sync_handlers = [
             traceable(
                 name=f"{m.name}.wrap_model_call",
-                process_inputs=_scrub_inputs if m.trace else _lean_scrub_inputs,
+                process_inputs=_scrub_inputs if m.trace_inputs else _omit_trace_inputs,
             )(m.wrap_model_call)
             for m in middleware_w_wrap_model_call
         ]
@@ -1200,7 +1153,7 @@ def create_agent(
         async_handlers = [
             traceable(
                 name=f"{m.name}.awrap_model_call",
-                process_inputs=_scrub_inputs if m.trace else _lean_scrub_inputs,
+                process_inputs=_scrub_inputs if m.trace_inputs else _omit_trace_inputs,
             )(m.awrap_model_call)
             for m in middleware_w_awrap_model_call
         ]
@@ -1589,7 +1542,7 @@ def create_agent(
                 f"{m.name}.before_agent",
                 before_agent_node,
                 input_schema=resolved_state_schema,
-                trace_inputs=None if m.trace else _lean_scrub_state,
+                trace_inputs=None if m.trace_inputs else _omit_trace_inputs,
             )
 
         if (
@@ -1613,7 +1566,7 @@ def create_agent(
                 f"{m.name}.before_model",
                 before_node,
                 input_schema=resolved_state_schema,
-                trace_inputs=None if m.trace else _lean_scrub_state,
+                trace_inputs=None if m.trace_inputs else _omit_trace_inputs,
             )
 
         if (
@@ -1637,7 +1590,7 @@ def create_agent(
                 f"{m.name}.after_model",
                 after_node,
                 input_schema=resolved_state_schema,
-                trace_inputs=None if m.trace else _lean_scrub_state,
+                trace_inputs=None if m.trace_inputs else _omit_trace_inputs,
             )
 
         if (
@@ -1661,7 +1614,7 @@ def create_agent(
                 f"{m.name}.after_agent",
                 after_agent_node,
                 input_schema=resolved_state_schema,
-                trace_inputs=None if m.trace else _lean_scrub_state,
+                trace_inputs=None if m.trace_inputs else _omit_trace_inputs,
             )
 
     # Determine the entry node (runs once at start): before_agent -> before_model -> model
