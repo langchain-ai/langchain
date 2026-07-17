@@ -160,7 +160,6 @@ def test_merge_dicts(
         ),
     ],
 )
-@pytest.mark.xfail(reason="Refactors to make in 0.3")
 def test_merge_dicts_0_3(
     left: dict[str, Any],
     right: dict[str, Any],

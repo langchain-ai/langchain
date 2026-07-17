@@ -43,19 +43,16 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 )
                 raise TypeError(msg)
             elif isinstance(merged[right_k], str):
-                # TODO: Add below special handling for 'type' key in 0.3 and remove
-                # merge_lists 'type' logic.
-                #
-                # if right_k == "type":
-                #     if merged[right_k] == right_v:
-                #         continue
-                #     else:
-                #         raise ValueError(
-                #             "Unable to merge. Two different values seen for special "
-                #             f"key 'type': {merged[right_k]} and {right_v}. 'type' "
-                #             "should either occur once or have the same value across "
-                #             "all dicts."
-                #         )
+                if right_k == "type":
+                    if merged[right_k] == right_v:
+                        continue
+                    msg = (
+                        "Unable to merge. Two different values seen for special "
+                        f"key 'type': {merged[right_k]} and {right_v}. 'type' "
+                        "should either occur once or have the same value across "
+                        "all dicts."
+                    )
+                    raise ValueError(msg)
                 if (right_k == "index" and merged[right_k].startswith("lc_")) or (
                     right_k in {"id", "output_version", "model_provider"}
                     and merged[right_k] == right_v
