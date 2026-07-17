@@ -1082,6 +1082,60 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     assert len(set(ids)) == 2, f"Duplicate tool call IDs found: {ids}"
 
 
+def test_streaming_tool_call_chunks_merge_when_index_is_zero() -> None:
+    """Tool call chunks at index 0 with no provider id must merge into one call.
+
+    Regression test: the index check used truthy evaluation (`not index`),
+    which treated `index=0` the same as a missing index and generated a new
+    random id per chunk, preventing the chunks from merging.
+    """
+    first_chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "tool_calls": [
+                        {
+                            "index": 0,
+                            "function": {"name": "search", "arguments": ""},
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+    second_chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "tool_calls": [
+                        {
+                            "index": 0,
+                            "function": {"arguments": '{"q": "weather"}'},
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+
+    result_1, index, index_type = _convert_chunk_to_message_chunk(
+        first_chunk, AIMessageChunk, -1, "", None
+    )
+    result_2, _, _ = _convert_chunk_to_message_chunk(
+        second_chunk, AIMessageChunk, index, index_type, None
+    )
+
+    assert isinstance(result_1, AIMessageChunk)
+    assert isinstance(result_2, AIMessageChunk)
+    assert result_1.tool_call_chunks[0]["id"] == result_2.tool_call_chunks[0]["id"]
+
+    combined = result_1 + result_2
+    assert isinstance(combined, AIMessageChunk)
+    assert len(combined.tool_calls) == 1
+    assert combined.tool_calls[0]["name"] == "search"
+    assert combined.tool_calls[0]["args"] == {"q": "weather"}
+
+
 def test_profile() -> None:
     model = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
     assert model.profile
