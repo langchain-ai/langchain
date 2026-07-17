@@ -899,7 +899,7 @@ requires-dist = [
 dev = [
     { name = "grandalf", specifier = ">=0.8.0,<1.0.0" },
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
-    { name = "setuptools", specifier = ">=67.6.1,<83.0.0" },
+    { name = "setuptools", specifier = ">=67.6.1,<84.0.0" },
 ]
 lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
 test = [
@@ -972,7 +972,7 @@ requires-dist = [
     { name = "pytest-recording" },
     { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
     { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
-    { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
+    { name = "vcrpy", specifier = ">=8.2.1,<9.0.0" },
 ]
 
 [package.metadata.requires-dev]
