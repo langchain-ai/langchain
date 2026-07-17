@@ -311,15 +311,11 @@ def test_model_retry_specific_exceptions() -> None:
         checkpointer=InMemorySaver(),
     )
 
-    result = agent.invoke(
-        {"messages": [HumanMessage("Hello")]},
-        {"configurable": {"thread_id": "test"}},
-    )
-
-    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
-    assert len(ai_messages) >= 1
-    # RuntimeError should fail immediately (1 attempt only)
-    assert "1 attempt" in ai_messages[-1].content
+    with pytest.raises(RuntimeError, match="Runtime error"):
+        agent.invoke(
+            {"messages": [HumanMessage("Hello")]},
+            {"configurable": {"thread_id": "test"}},
+        )
 
 
 def test_model_retry_custom_exception_filter() -> None:
@@ -389,17 +385,14 @@ def test_model_retry_custom_exception_filter() -> None:
         checkpointer=InMemorySaver(),
     )
 
-    result = agent.invoke(
-        {"messages": [HumanMessage("Hello")]},
-        {"configurable": {"thread_id": "test"}},
-    )
-
-    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
-    assert len(ai_messages) >= 1
+    with pytest.raises(CustomError, match="Non-retryable error"):
+        agent.invoke(
+            {"messages": [HumanMessage("Hello")]},
+            {"configurable": {"thread_id": "test"}},
+        )
 
     # Should retry once (attempt 1 with retry_me=True), then fail on attempt 2 (retry_me=False)
     assert attempt_count["value"] == 2
-    assert "2 attempts" in ai_messages[-1].content
 
 
 def test_model_retry_backoff_timing() -> None:
@@ -700,3 +693,88 @@ def test_model_retry_multiple_middleware_composition() -> None:
     ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
     assert len(ai_messages) >= 1
     assert "Hello" in ai_messages[-1].content
+
+
+def test_model_retry_non_matching_exception_propagates_immediately() -> None:
+    """Non-matching exceptions should propagate immediately, not routed through on_failure."""
+    class CountingRuntimeErrorModel(FakeToolCallingModel):
+        attempt: int = Field(default=0)
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            self.attempt += 1
+            raise RuntimeError("boom")
+
+    model = CountingRuntimeErrorModel()
+    retry = ModelRetryMiddleware(
+        max_retries=3,
+        retry_on=(ValueError,),
+        initial_delay=0.01,
+        jitter=False,
+        on_failure="continue",
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[],
+        middleware=[retry],
+        checkpointer=InMemorySaver(),
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        agent.invoke(
+            {"messages": [HumanMessage("Hello")]},
+            {"configurable": {"thread_id": "test"}},
+        )
+
+    # Should only attempt once since exception is not retryable
+    assert model.attempt == 1
+
+
+@pytest.mark.asyncio
+async def test_model_retry_async_non_matching_exception_propagates_immediately() -> None:
+    """Async: Non-matching exceptions should propagate immediately, not routed through on_failure."""
+    class CountingRuntimeErrorModel(FakeToolCallingModel):
+        attempt: int = Field(default=0)
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            self.attempt += 1
+            raise RuntimeError("boom")
+
+    model = CountingRuntimeErrorModel()
+    retry = ModelRetryMiddleware(
+        max_retries=3,
+        retry_on=(ValueError,),
+        initial_delay=0.01,
+        jitter=False,
+        on_failure="continue",
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[],
+        middleware=[retry],
+        checkpointer=InMemorySaver(),
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        await agent.ainvoke(
+            {"messages": [HumanMessage("Hello")]},
+            {"configurable": {"thread_id": "test"}},
+        )
+
+    # Should only attempt once since exception is not retryable
+    assert model.attempt == 1
