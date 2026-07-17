@@ -21,10 +21,6 @@ class TestFireworksStandard(ChatModelUnitTests):
         }
 
     @property
-    def supports_reasoning_effort(self) -> bool:
-        return True
-
-    @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
         return (
             {
