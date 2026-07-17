@@ -806,6 +806,21 @@ def _is_code_execution_related_block(
     return False
 
 
+def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
+    """Return the reasoning-effort levels declared in a model's profile, if any.
+
+    Defensive against a missing/malformed profile: an absent `profile`, a
+    non-mapping value, or a missing/non-list `reasoning_effort_levels` value is
+    treated as "no levels declared" rather than raising.
+    """
+    if not isinstance(profile, Mapping):
+        return ()
+    levels = profile.get("reasoning_effort_levels")
+    if not isinstance(levels, (list, tuple)):
+        return ()
+    return tuple(levels)
+
+
 def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
     """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
 
@@ -1376,8 +1391,15 @@ class ChatAnthropic(BaseChatModel):
             payload["output_config"] = output_config
 
         # Default adaptive thinking when `reasoning_effort` is set, unless the
-        # caller explicitly provided `thinking`.
-        if reasoning_effort_applied and not thinking_explicitly_set:
+        # caller explicitly provided `thinking`. Gated on `xhigh` support: only
+        # Opus 4.7+/Sonnet 5 accept the adaptive+summarized `thinking` shape —
+        # sending it to an older model (e.g. Opus 4.5, 4.6) is rejected by the
+        # API with "adaptive thinking is not supported on this model".
+        if (
+            reasoning_effort_applied
+            and not thinking_explicitly_set
+            and "xhigh" in _reasoning_effort_levels(self.profile)
+        ):
             payload["thinking"] = {"type": "adaptive", "display": "summarized"}
 
         if "response_format" in payload:

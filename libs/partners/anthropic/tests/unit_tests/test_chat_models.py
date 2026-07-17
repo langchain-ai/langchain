@@ -3030,9 +3030,10 @@ def test_reasoning_effort_defaults_adaptive_thinking() -> None:
     Mirrors the reasoning-effort behavior previously implemented client-side
     (pairing the effort level with adaptive thinking), so the model actually
     reasons harder instead of being told a preference with no active
-    reasoning mode to apply it to.
+    reasoning mode to apply it to. Only models whose profile advertises
+    `xhigh` (Opus 4.7+, Sonnet 5) accept this `thinking` shape.
     """
-    model = ChatAnthropic(model="claude-opus-4-5-20251101", reasoning_effort="high")
+    model = ChatAnthropic(model="claude-opus-4-7", reasoning_effort="high")
 
     payload = model._get_request_payload("Test query")
 
@@ -3042,11 +3043,27 @@ def test_reasoning_effort_defaults_adaptive_thinking() -> None:
 
 def test_reasoning_effort_as_call_time_kwarg_defaults_adaptive_thinking() -> None:
     """Test that a call-time `reasoning_effort` also defaults `thinking`."""
-    model = ChatAnthropic(model="claude-opus-4-5-20251101")
+    model = ChatAnthropic(model="claude-opus-4-7")
 
     payload = model._get_request_payload("Test query", reasoning_effort="high")
 
     assert payload["thinking"] == {"type": "adaptive", "display": "summarized"}
+
+
+def test_reasoning_effort_older_model_does_not_default_thinking() -> None:
+    """Older models must not get an adaptive `thinking` default.
+
+    Regression test: Opus 4.5/4.6 support `reasoning_effort` but reject the
+    adaptive+summarized `thinking` shape with a 400 from the real API
+    ("adaptive thinking is not supported on this model"). Only models whose
+    profile declares `xhigh` support should get the `thinking` default.
+    """
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", reasoning_effort="high")
+
+    payload = model._get_request_payload("Test query")
+
+    assert "thinking" not in payload
+    assert payload["output_config"]["effort"] == "high"
 
 
 def test_reasoning_effort_preserves_explicit_construction_time_thinking() -> None:
