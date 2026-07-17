@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import fnmatch
 import json
+import multiprocessing
 import operator
 import os
 import re
 import subprocess
+import tempfile
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,8 +23,8 @@ from langchain_core.tools import tool
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 
-_MAX_REGEX_PATTERN_LENGTH = 1000
-_MAX_REGEX_LINE_LENGTH = 10000
+_PYTHON_SEARCH_TIMEOUT_SECONDS = 30
+_PYTHON_SEARCH_MATCH_FIELD_COUNT = 2
 
 
 def _is_within_root(candidate: Path, root: Path) -> bool:
@@ -106,6 +108,91 @@ def _match_include_pattern(basename: str, pattern: str) -> bool:
         return False
 
     return any(fnmatch.fnmatch(basename, candidate) for candidate in expanded)
+
+
+def _run_python_search(
+    pattern: str,
+    base_full: Path,
+    root_path: Path,
+    include: str | None,
+    max_file_size_bytes: int,
+) -> dict[str, list[tuple[int, str]]]:
+    """Search using Python regex in the current process."""
+    try:
+        regex = re.compile(pattern)
+    except re.error:
+        return {}
+
+    results: dict[str, list[tuple[int, str]]] = {}
+
+    for walk_root, _dirs, files in os.walk(base_full, followlinks=False):
+        for name in files:
+            file_path = Path(walk_root) / name
+
+            if not _is_within_root(file_path, root_path):
+                continue
+
+            if not file_path.is_file():
+                continue
+
+            if include and not _match_include_pattern(file_path.name, include):
+                continue
+
+            try:
+                if file_path.stat().st_size > max_file_size_bytes:
+                    continue
+            except OSError:
+                continue
+
+            try:
+                content = file_path.read_text()
+            except (OSError, UnicodeDecodeError):
+                continue
+
+            for line_num, line in enumerate(content.splitlines(), 1):
+                if regex.search(line):
+                    virtual_path = "/" + str(file_path.relative_to(root_path))
+                    if virtual_path not in results:
+                        results[virtual_path] = []
+                    results[virtual_path].append((line_num, line))
+
+    return results
+
+
+def _python_search_worker(
+    pattern: str,
+    base_full: Path,
+    root_path: Path,
+    include: str | None,
+    max_file_size_bytes: int,
+    output_path: str,
+) -> None:
+    """Run Python search and write results to disk."""
+    results = _run_python_search(pattern, base_full, root_path, include, max_file_size_bytes)
+    Path(output_path).write_text(json.dumps(results), encoding="utf-8")
+
+
+def _deserialize_python_search_results(value: object) -> dict[str, list[tuple[int, str]]]:
+    """Deserialize JSON search results from a worker process."""
+    if not isinstance(value, dict):
+        return {}
+
+    results: dict[str, list[tuple[int, str]]] = {}
+    for file_path, matches in value.items():
+        if not isinstance(file_path, str) or not isinstance(matches, list):
+            return {}
+
+        parsed_matches: list[tuple[int, str]] = []
+        for match in matches:
+            if not isinstance(match, list) or len(match) != _PYTHON_SEARCH_MATCH_FIELD_COUNT:
+                return {}
+            line_num, line = match
+            if not isinstance(line_num, int) or not isinstance(line, str):
+                return {}
+            parsed_matches.append((line_num, line))
+        results[file_path] = parsed_matches
+
+    return results
 
 
 class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
@@ -361,53 +448,42 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         if not base_full.exists():
             return {}
 
-        if len(pattern) > _MAX_REGEX_PATTERN_LENGTH:
-            return {}
+        with tempfile.NamedTemporaryFile(delete=False) as output_file:
+            output_path = output_file.name
 
+        process = multiprocessing.Process(
+            target=_python_search_worker,
+            args=(
+                pattern,
+                base_full,
+                self.root_path,
+                include,
+                self.max_file_size_bytes,
+                output_path,
+            ),
+        )
         try:
-            regex = re.compile(pattern)
-        except re.error:
-            return {}
-        results: dict[str, list[tuple[int, str]]] = {}
+            process.start()
+            process.join(_PYTHON_SEARCH_TIMEOUT_SECONDS)
+            if process.is_alive():
+                process.terminate()
+                process.join()
+                return {}
 
-        # Walk directory tree without following symlinked directories so traversal
-        # cannot leave the root via a symlinked subdirectory.
-        for walk_root, _dirs, files in os.walk(base_full, followlinks=False):
-            for name in files:
-                file_path = Path(walk_root) / name
+            if process.exitcode != 0:
+                return {}
 
-                # Re-check containment after resolving so an in-root symlinked file
-                # pointing outside the root is never read.
-                if not _is_within_root(file_path, self.root_path):
-                    continue
-
-                if not file_path.is_file():
-                    continue
-
-                # Check include filter
-                if include and not _match_include_pattern(file_path.name, include):
-                    continue
-
-                # Skip files that are too large
-                if file_path.stat().st_size > self.max_file_size_bytes:
-                    continue
-
-                try:
-                    content = file_path.read_text()
-                except (UnicodeDecodeError, PermissionError):
-                    continue
-
-                # Search content
-                for line_num, line in enumerate(content.splitlines(), 1):
-                    if len(line) > _MAX_REGEX_LINE_LENGTH:
-                        continue
-                    if regex.search(line):
-                        virtual_path = "/" + str(file_path.relative_to(self.root_path))
-                        if virtual_path not in results:
-                            results[virtual_path] = []
-                        results[virtual_path].append((line_num, line))
-
-        return results
+            try:
+                raw_results = json.loads(Path(output_path).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                return {}
+            return _deserialize_python_search_results(raw_results)
+        finally:
+            if process.is_alive():
+                process.terminate()
+                process.join()
+            process.close()
+            Path(output_path).unlink(missing_ok=True)
 
     @staticmethod
     def _format_grep_results(
