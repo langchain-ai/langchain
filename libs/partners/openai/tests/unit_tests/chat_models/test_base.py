@@ -1593,6 +1593,41 @@ def test_chat_completions_payload_includes_stop() -> None:
     assert payload["stop"] == ["END"]
 
 
+def test_responses_api_does_not_mutate_caller_model_kwargs_text() -> None:
+    """A structured-output (JSON mode) call must not mutate the caller-owned
+    `model_kwargs["text"]` dict in place.
+
+    Regression test for #38869: `_construct_responses_api_payload` reused the
+    caller's `text` dict reference when merging `response_format`, so one JSON
+    mode call permanently forced `format` into the dict and leaked into later
+    plain calls.
+    """
+    caller_text_opts = {"verbosity": "low"}
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key=SecretStr("test-api-key"),
+        use_responses_api=True,
+        model_kwargs={"text": caller_text_opts},
+    )
+
+    # First call: JSON mode via response_format. This used to write
+    # `format` into caller_text_opts in place.
+    payload_json = llm._get_request_payload(
+        "give me json", response_format={"type": "json_object"}
+    )
+    assert payload_json["text"]["format"] == {"type": "json_object"}
+    # The caller's dict must be untouched.
+    assert caller_text_opts == {"verbosity": "low"}
+    # The model_kwargs on the llm instance must also be untouched.
+    assert llm.model_kwargs["text"] == {"verbosity": "low"}
+
+    # Second call: a plain call with no response_format. It must not carry
+    # the leaked `format` key from the previous structured call.
+    payload_plain = llm._get_request_payload("just chat normally")
+    assert "format" not in payload_plain["text"]
+    assert payload_plain["text"] == {"verbosity": "low"}
+
+
 def test_output_version_compat() -> None:
     llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
     assert llm._use_responses_api({}) is True

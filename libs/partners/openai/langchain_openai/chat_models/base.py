@@ -4340,6 +4340,14 @@ def _construct_responses_api_payload(
         else:
             payload["tool_choice"] = tool_choice
 
+    # `payload["text"]` may be the caller's `model_kwargs["text"]` dict, passed
+    # in by reference. The structured-output and verbosity handling below mutate
+    # it in place (e.g. setting a `format` key), which would corrupt the
+    # caller-owned object across calls. Copy it before mutating so the original
+    # is preserved. See issue #38869.
+    if "text" in payload and isinstance(payload["text"], dict):
+        payload["text"] = {**payload["text"]}
+
     # Structured output
     if schema := payload.pop("response_format", None):
         # For pydantic + non-streaming case, we use responses.parse.
