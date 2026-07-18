@@ -554,6 +554,11 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         for chunk in self.tool_call_chunks:
             try:
+                if chunk["args"] == "":
+                    # Empty string means the provider has not sent any argument
+                    # bytes yet (mid-stream header chunk). Skip until args arrive;
+                    # zero-arg tools send args="{}" which parse_partial_json handles.
+                    continue
                 args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
                 if isinstance(args_, dict):
                     tool_calls.append(

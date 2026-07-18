@@ -211,6 +211,48 @@ def test_init_tool_calls() -> None:
     msg.tool_calls = [{"name": "bar", "args": {"c": "d"}, "id": "def"}]
 
 
+def test_streaming_tool_call_empty_args_not_premature() -> None:
+    """init_tool_calls must not create a tool_call when args is empty string.
+
+    Providers such as OpenRouter and deepseek-v3.2 send the first tool-call
+    chunk with args="" (no argument bytes received yet) before streaming the
+    actual JSON. init_tool_calls previously treated args="" identically to
+    args=None, resolving both to {}, so the tool call was fired before its
+    arguments arrived and downstream tool invocations crashed with
+    ValidationError: Field required.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38682
+    """
+    # First chunk: name + id present, but args is empty (still mid-stream)
+    chunk1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="get_weather", args="", id="call_abc", index=0
+            )
+        ],
+    )
+    # Before the fix, tool_calls would be non-empty here
+    assert chunk1.tool_calls == [], (
+        "tool_calls must be empty when args='' — arguments have not arrived yet"
+    )
+
+    # Second chunk: args arrive
+    chunk2 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name=None, args='{"city": "Paris"}', id=None, index=0
+            )
+        ],
+    )
+    # After accumulation the merged message should have one complete tool call
+    combined = chunk1 + chunk2
+    assert len(combined.tool_calls) == 1
+    assert combined.tool_calls[0]["name"] == "get_weather"
+    assert combined.tool_calls[0]["args"] == {"city": "Paris"}
+
+
 def test_content_blocks() -> None:
     message = AIMessage(
         "",
