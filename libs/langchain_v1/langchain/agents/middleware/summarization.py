@@ -1,5 +1,6 @@
 """Summarization middleware."""
 
+import logging
 import uuid
 import warnings
 from collections.abc import Callable, Iterable, Mapping
@@ -29,6 +30,8 @@ from langchain.agents.middleware.types import AgentMiddleware, AgentState, Conte
 from langchain.chat_models import BaseChatModel, init_chat_model
 
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_SUMMARY_PROMPT = """<role>
 Context Extraction Assistant
@@ -394,6 +397,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
         summary = self._create_summary(messages_to_summarize)
+        if summary is None:
+            # Summary generation failed; preserve the original message history
+            # rather than replacing it with an error string and losing context.
+            return None
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -432,6 +439,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
         summary = await self._acreate_summary(messages_to_summarize)
+        if summary is None:
+            # Summary generation failed; preserve the original message history
+            # rather than replacing it with an error string and losing context.
+            return None
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -795,11 +806,16 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         # orphaned tool responses
         return idx
 
-    def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
+    def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str | None:
         """Generate summary for the given messages.
 
         Args:
             messages_to_summarize: Messages to summarize.
+
+        Returns:
+            The generated summary text, or ``None`` if summary generation
+            failed (so callers can preserve the original message history
+            instead of replacing it with an error string).
         """
         if not messages_to_summarize:
             return "No previous conversation history."
@@ -819,13 +835,23 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             )
             return response.text.strip()
         except Exception as e:
-            return f"Error generating summary: {e!s}"
+            logger.warning(
+                "Failed to generate conversation summary; preserving original "
+                "message history instead of summarizing. Error: %s",
+                e,
+            )
+            return None
 
-    async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
+    async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str | None:
         """Generate summary for the given messages.
 
         Args:
             messages_to_summarize: Messages to summarize.
+
+        Returns:
+            The generated summary text, or ``None`` if summary generation
+            failed (so callers can preserve the original message history
+            instead of replacing it with an error string).
         """
         if not messages_to_summarize:
             return "No previous conversation history."
@@ -845,7 +871,12 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             )
             return response.text.strip()
         except Exception as e:
-            return f"Error generating summary: {e!s}"
+            logger.warning(
+                "Failed to generate conversation summary; preserving original "
+                "message history instead of summarizing. Error: %s",
+                e,
+            )
+            return None
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
         """Trim messages to fit within summary generation limits."""

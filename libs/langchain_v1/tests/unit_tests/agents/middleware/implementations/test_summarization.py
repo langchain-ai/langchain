@@ -242,7 +242,7 @@ def test_summarization_middleware_summary_creation() -> None:
 
     middleware_error = SummarizationMiddleware(model=ErrorModel(), trigger=("tokens", 1000))
     summary = middleware_error._create_summary(messages)
-    assert "Error generating summary: Model error" in summary
+    assert summary is None  # failure returns None so history is preserved (#38867)
 
     # Test we raise warning if max_tokens_before_summary or messages_to_keep is specified
     with pytest.warns(DeprecationWarning, match="max_tokens_before_summary is deprecated"):
@@ -938,7 +938,7 @@ async def test_summarization_middleware_async_error_handling() -> None:
     middleware = SummarizationMiddleware(model=ErrorAsyncModel(), trigger=("messages", 5))
     messages: list[AnyMessage] = [HumanMessage(content="test")]
     summary = await middleware._acreate_summary(messages)
-    assert "Error generating summary: Async model error" in summary
+    assert summary is None  # failure returns None so history is preserved (#38867)
 
 
 def test_summarization_middleware_cutoff_at_boundary() -> None:
@@ -2084,3 +2084,99 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     assert config is not None
     assert "metadata" in config
     assert config["metadata"]["lc_source"] == "summarization"
+
+
+class _AlwaysFailingModel(BaseChatModel):
+    """Chat model whose invoke/ainvoke always raise, simulating a provider outage."""
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        msg = "429 Too Many Requests (simulated)"
+        raise RuntimeError(msg)
+
+    @override
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        msg = "429 Too Many Requests (simulated)"
+        raise RuntimeError(msg)
+
+    @property
+    def _llm_type(self) -> str:
+        return "failing-fake"
+
+
+def _count_messages(messages: Iterable[MessageLikeRepresentation]) -> int:
+    """Token counter that treats each message as one token (test helper)."""
+    return len(list(messages))
+
+
+def test_before_model_preserves_history_when_summary_fails() -> None:
+    """Summarization must not delete the original history when the summary call fails.
+
+    Regression test for #38867: previously, when the summary model raised (e.g. a
+    transient 429), `_create_summary` returned the error string as if it were a
+    valid summary, and `before_model` then replaced the entire conversation with
+    that error text via `RemoveMessage(id=REMOVE_ALL_MESSAGES)`.
+    """
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(),
+        trigger=("messages", 5),
+        keep=("messages", 2),
+        token_counter=_count_messages,
+    )
+    messages: list[AnyMessage] = [
+        msg
+        for i in range(5)
+        for msg in (
+            HumanMessage(content=f"user turn {i}"),
+            AIMessage(content=f"assistant turn {i}"),
+        )
+    ]
+    state = AgentState[Any](messages=messages)
+
+    result = middleware.before_model(state, Runtime())
+
+    # No state update => original history is preserved untouched.
+    assert result is None
+    # The caller's messages are still intact and no RemoveMessage was emitted.
+    assert len(messages) == 10
+    assert not any(isinstance(m, RemoveMessage) for m in messages)
+
+
+async def test_abefore_model_preserves_history_when_summary_fails() -> None:
+    """Async variant: history must be preserved when `_acreate_summary` fails.
+
+    Regression test for #38867.
+    """
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(),
+        trigger=("messages", 5),
+        keep=("messages", 2),
+        token_counter=_count_messages,
+    )
+    messages: list[AnyMessage] = [
+        msg
+        for i in range(5)
+        for msg in (
+            HumanMessage(content=f"user turn {i}"),
+            AIMessage(content=f"assistant turn {i}"),
+        )
+    ]
+    state = AgentState[Any](messages=messages)
+
+    result = await middleware.abefore_model(state, Runtime())
+
+    assert result is None
+    assert len(messages) == 10
+    assert not any(isinstance(m, RemoveMessage) for m in messages)
