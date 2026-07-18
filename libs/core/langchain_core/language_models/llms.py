@@ -182,7 +182,7 @@ def get_prompts(
 
     llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
-        if llm_cache:
+        if llm_cache is not None:
             cache_val = llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
@@ -217,7 +217,7 @@ async def aget_prompts(
     existing_prompts = {}
     llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
-        if llm_cache:
+        if llm_cache is not None:
             cache_val = await llm_cache.alookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
@@ -288,7 +288,7 @@ async def aupdate_cache(
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
-        if llm_cache:
+        if llm_cache is not None:
             await llm_cache.aupdate(prompt, llm_string, result)
     return new_results.llm_output
 

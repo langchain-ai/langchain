@@ -109,3 +109,60 @@ async def test_no_cache_generate_async() -> None:
         assert global_cache._cache == {}
     finally:
         set_llm_cache(None)
+
+
+class SizedCache(BaseCache):
+    """Cache that implements __len__ — common in real-world caching libraries.
+
+    Used to reproduce the bug where get_prompts / aget_prompts tested the cache
+    with a truthiness check (``if llm_cache:``) instead of an identity check
+    (``if llm_cache is not None:``). An empty cache returns len() == 0, which
+    is falsy, so the prompt was silently dropped and generate raised KeyError.
+    """
+
+    def __init__(self) -> None:
+        self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
+
+    def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
+        return self._cache.get((prompt, llm_string))
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        self._cache[prompt, llm_string] = return_val
+
+    @override
+    def clear(self, **kwargs: Any) -> None:
+        self._cache = {}
+
+    def __len__(self) -> int:
+        return len(self._cache)
+
+
+def test_sized_cache_generate_sync() -> None:
+    """generate must not crash when the cache implements __len__ and starts empty.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38440
+    """
+    cache = SizedCache()
+    assert len(cache) == 0  # empty -> falsy -> would trigger the bug
+    llm = FakeListLLM(cache=cache, responses=["foo", "bar"])
+    output = llm.generate(["hello"])
+    assert output.generations[0][0].text == "foo"
+    assert len(cache) == 1
+    # Second call should hit the cache
+    output = llm.generate(["hello"])
+    assert output.generations[0][0].text == "foo"
+
+
+async def test_sized_cache_generate_async() -> None:
+    """agenerate must not crash when the cache implements __len__ and starts empty.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38440
+    """
+    cache = SizedCache()
+    assert len(cache) == 0
+    llm = FakeListLLM(cache=cache, responses=["foo", "bar"])
+    output = await llm.agenerate(["hello"])
+    assert output.generations[0][0].text == "foo"
+    assert len(cache) == 1
+    output = await llm.agenerate(["hello"])
+    assert output.generations[0][0].text == "foo"
