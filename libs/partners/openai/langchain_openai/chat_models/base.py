@@ -4272,6 +4272,26 @@ def _get_last_messages(
     return messages, None
 
 
+def _set_text_payload_field(payload: dict, field: str, value: Any) -> None:
+    """Set ``field`` under the Responses API ``text`` param without mutating the
+    caller's dict.
+
+    ``text`` may have been supplied by the caller via ``model_kwargs={"text": ...}``,
+    in which case ``payload["text"]`` is a reference to the caller's dict. Setting
+    ``payload["text"][field]`` would mutate that dict in place and leak request-
+    specific fields (``format``/``verbosity``) back into the caller's
+    ``model_kwargs`` — a single JSON-mode call would then force JSON mode on every
+    later plain call. Build a fresh ``text`` dict here instead so the caller's
+    object is never touched. See issue #38869.
+    """
+    existing = payload.get("text")
+    if isinstance(existing, dict):
+        new_text = {**existing, field: value}
+    else:
+        new_text = {field: value}
+    payload["text"] = new_text
+
+
 def _construct_responses_api_payload(
     messages: Sequence[BaseMessage], payload: dict
 ) -> dict:
@@ -4354,10 +4374,7 @@ def _construct_responses_api_payload(
             else:
                 schema_dict = schema
             if schema_dict == {"type": "json_object"}:  # JSON mode
-                if "text" in payload and isinstance(payload["text"], dict):
-                    payload["text"]["format"] = {"type": "json_object"}
-                else:
-                    payload["text"] = {"format": {"type": "json_object"}}
+                _set_text_payload_field(payload, "format", {"type": "json_object"})
             elif (
                 (
                     response_format := _convert_to_openai_response_format(
@@ -4368,19 +4385,13 @@ def _construct_responses_api_payload(
                 and (response_format["type"] == "json_schema")
             ):
                 format_value = {"type": "json_schema", **response_format["json_schema"]}
-                if "text" in payload and isinstance(payload["text"], dict):
-                    payload["text"]["format"] = format_value
-                else:
-                    payload["text"] = {"format": format_value}
+                _set_text_payload_field(payload, "format", format_value)
             else:
                 pass
 
     verbosity = payload.pop("verbosity", None)
     if verbosity is not None:
-        if "text" in payload and isinstance(payload["text"], dict):
-            payload["text"]["verbosity"] = verbosity
-        else:
-            payload["text"] = {"verbosity": verbosity}
+        _set_text_payload_field(payload, "verbosity", verbosity)
 
     return payload
 

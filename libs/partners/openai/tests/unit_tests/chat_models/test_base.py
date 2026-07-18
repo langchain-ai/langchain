@@ -4649,3 +4649,66 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_responses_api_text_param_not_mutated_by_json_mode() -> None:
+    """A JSON-mode (or verbosity) call must not mutate the caller's ``text`` dict.
+
+    Regression test for #38869: ``model_kwargs={"text": my_dict}`` is passed by
+    reference into the Responses API payload builder. Before the fix, adding
+    ``text.format`` / ``text.verbosity`` mutated that dict in place, so a single
+    JSON-mode call permanently forced JSON mode on every later plain call.
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    messages: list = []
+
+    caller_text = {"verbosity": "low"}
+    payload = {
+        "model": OPENAI_TEST_MODEL,
+        "response_format": {"type": "json_object"},
+        "text": caller_text,
+    }
+
+    result = _construct_responses_api_payload(messages, payload)
+
+    # The resulting request should carry format under a fresh text dict...
+    assert result["text"]["format"] == {"type": "json_object"}
+    assert result["text"]["verbosity"] == "low"
+    # ...and the caller's dict must be untouched.
+    assert caller_text == {"verbosity": "low"}
+    # The payload dict's "text" entry should no longer be the caller's dict.
+    assert result["text"] is not caller_text
+
+    # A follow-up plain call on the same caller dict stays JSON-free.
+    payload2 = {
+        "model": OPENAI_TEST_MODEL,
+        "text": caller_text,
+    }
+    result2 = _construct_responses_api_payload(messages, payload2)
+    assert "format" not in result2["text"]
+    assert caller_text == {"verbosity": "low"}
+
+
+def test_responses_api_text_param_not_mutated_by_verbosity() -> None:
+    """Setting ``verbosity`` must not mutate the caller's ``text`` dict either.
+
+    Same bug class as the JSON-mode case in #38869, for the verbosity branch.
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    messages: list = []
+
+    caller_text = {"format": {"type": "json_object"}}
+    payload = {
+        "model": OPENAI_TEST_MODEL,
+        "verbosity": "high",
+        "text": caller_text,
+    }
+
+    result = _construct_responses_api_payload(messages, payload)
+
+    assert result["text"]["verbosity"] == "high"
+    assert result["text"]["format"] == {"type": "json_object"}
+    assert caller_text == {"format": {"type": "json_object"}}
+    assert result["text"] is not caller_text
