@@ -260,22 +260,25 @@ class HuggingFacePipeline(BaseLLM):
         ):
             import torch
 
-            cuda_device_count = torch.cuda.device_count()
-            if device < -1 or (device >= cuda_device_count):
+            if hasattr(torch, "accelerator"):
+                accelerator_device_count = torch.accelerator.device_count()
+            else:
+                accelerator_device_count = torch.cuda.device_count()
+            if device < -1 or (device >= accelerator_device_count):
                 msg = (
                     f"Got device=={device}, "
-                    f"device is required to be within [-1, {cuda_device_count})"
+                    f"device is required to be within [-1, {accelerator_device_count})"
                 )
                 raise ValueError(msg)
             if device_map is not None and device < 0:
                 device = None
-            if device is not None and device < 0 and cuda_device_count > 0:
+            if device is not None and device < 0 and accelerator_device_count > 0:
                 logger.warning(
-                    "Device has %d GPUs available. "
-                    "Provide device={deviceId} to `from_model_id` to use available"
-                    "GPUs for execution. deviceId is -1 (default) for CPU and "
-                    "can be a positive integer associated with CUDA device id.",
-                    cuda_device_count,
+                    "Device has %d accelerator(s) available. "
+                    "Provide device={deviceId} to `from_model_id` to use an available "
+                    "accelerator for execution. deviceId is -1 (default) for CPU and "
+                    "can be a positive integer associated with the accelerator device id.",
+                    accelerator_device_count,
                 )
         if device is not None and device_map is not None and backend == "openvino":
             logger.warning("Please set device for OpenVINO through: `model_kwargs`")
