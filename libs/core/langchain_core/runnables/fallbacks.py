@@ -33,6 +33,26 @@ from langchain_core.utils.pydantic import TypeBaseModel
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
 
+# Sentinel returned by `next(stream, _EMPTY)` / the `_anext_or_empty` helper when
+# the primary stream produced no chunks. An empty stream is a legitimate result
+# (see the `stream`/`astream` overrides below) and must not be confused with a
+# failure, so it is represented distinctly from `None`.
+_EMPTY: Any = object()
+
+
+async def _anext_or_empty(stream: AsyncIterator[Any]) -> Any:
+    """Return the next chunk from an async stream, or `_EMPTY` if it is empty.
+
+    `anext(stream)` raises `StopAsyncIteration` on an empty stream. Inside the
+    async `astream` override we must not let that propagate as an error, because
+    an empty upstream stream is a valid (successful) result, not a fallback
+    trigger.
+    """
+    try:
+        return await anext(stream)
+    except StopAsyncIteration:
+        return _EMPTY
+
 
 class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """`Runnable` that can fallback to other `Runnable` objects if it fails.
@@ -486,6 +506,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        chunk: Any = _EMPTY
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -497,7 +518,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         input,
                         **kwargs,
                     )
-                    chunk: Output = context.run(next, stream)
+                    chunk = context.run(next, stream, _EMPTY)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -511,7 +532,16 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             run_manager.on_chain_error(first_error)
             raise first_error
 
-        yield chunk
+        # An empty upstream stream is a valid result (e.g. an LLM that returns
+        # no content, a filtering step, or a moderation-blocked response), not a
+        # failure. Previously `next(stream)` raised `StopIteration` which leaked
+        # out of this generator as `RuntimeError: generator raised StopIteration`
+        # and, when a fallback was configured, caused the empty primary output to
+        # be silently replaced by the fallback. Treat an empty stream as success.
+        if chunk is _EMPTY:
+            run_manager.on_chain_end(None)
+            return
+        yield cast("Output", chunk)
         output: Output | None = chunk
         try:
             for chunk in stream:
@@ -550,6 +580,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        chunk: Any = _EMPTY
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -561,7 +592,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         child_config,
                         **kwargs,
                     )
-                    chunk = await coro_with_context(anext(stream), context)
+                    chunk = await coro_with_context(_anext_or_empty(stream), context)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -575,7 +606,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             await run_manager.on_chain_error(first_error)
             raise first_error
 
-        yield chunk
+        # An empty upstream stream is a valid result, not a failure (see the
+        # matching comment in `stream`). Do not fall back and do not raise.
+        if chunk is _EMPTY:
+            await run_manager.on_chain_end(None)
+            return
+        yield cast("Output", chunk)
         output: Output | None = chunk
         try:
             async for chunk in stream:

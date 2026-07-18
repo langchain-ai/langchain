@@ -288,6 +288,31 @@ def test_fallbacks_stream() -> None:
         list(runnable.stream({}))
 
 
+def _generate_empty(_: Iterator[Any]) -> Iterator[str]:
+    """A legitimate runnable that decides to yield zero chunks."""
+    return
+    yield  # pragma: no cover  # makes this a generator function
+
+
+def test_fallbacks_stream_empty_primary_does_not_fallback() -> None:
+    """An empty primary stream is a valid result, not a failure.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38892:
+    a legitimately empty upstream stream must not be replaced by the fallback
+    and must not raise ``RuntimeError: generator raised StopIteration``.
+    """
+    # With a fallback configured: the empty primary output must be preserved.
+    runnable = RunnableGenerator(_generate_empty).with_fallbacks(
+        [RunnableGenerator(_generate)]
+    )
+    assert list(runnable.stream({})) == []
+
+    # Without any fallback: an empty stream must still be returned cleanly
+    # instead of raising.
+    runnable_no_fallback = RunnableGenerator(_generate_empty).with_fallbacks([])
+    assert list(runnable_no_fallback.stream({})) == []
+
+
 async def _agenerate(_: AsyncIterator[Any]) -> AsyncIterator[str]:
     for c in "foo bar":
         yield c
@@ -316,6 +341,29 @@ async def test_fallbacks_astream() -> None:
     )
     with pytest.raises(ValueError, match="delayed error"):
         _ = [_ async for _ in runnable.astream({})]
+
+
+async def _agenerate_empty(_: AsyncIterator[Any]) -> AsyncIterator[str]:
+    """A legitimate async runnable that decides to yield zero chunks."""
+    return
+    yield  # pragma: no cover  # makes this a generator function
+
+
+async def test_fallbacks_astream_empty_primary_does_not_fallback() -> None:
+    """An empty primary async stream is a valid result, not a failure.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38892:
+    a legitimately empty upstream stream must not be replaced by the fallback.
+    """
+    # With a fallback configured: the empty primary output must be preserved.
+    runnable = RunnableGenerator(_agenerate_empty).with_fallbacks(
+        [RunnableGenerator(_agenerate)]
+    )
+    assert [_ async for _ in runnable.astream({})] == []
+
+    # Without any fallback: an empty stream must still be returned cleanly.
+    runnable_no_fallback = RunnableGenerator(_agenerate_empty).with_fallbacks([])
+    assert [_ async for _ in runnable_no_fallback.astream({})] == []
 
 
 class FakeStructuredOutputModel(BaseChatModel):
