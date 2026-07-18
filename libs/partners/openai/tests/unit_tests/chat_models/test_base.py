@@ -1446,6 +1446,46 @@ def test_chat_completions_payload_includes_stop() -> None:
     assert payload["stop"] == ["END"]
 
 
+def test_responses_api_json_mode_does_not_mutate_caller_text_dict() -> None:
+    """_construct_responses_api_payload must not mutate the caller's text dict.
+
+    When response_format={"type": "json_object"} is passed, the Responses API
+    payload builder writes `format` into payload["text"]. If payload["text"] is
+    the same object as model_kwargs["text"] (or the caller's own dict), that
+    write permanently corrupts instance state and leaks into subsequent calls.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/38869
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    caller_text: dict = {"verbosity": "low"}
+
+    # Simulate the shallow-merge that _get_request_payload does:
+    # payload["text"] is the same object as the caller's dict.
+    payload = {"model": OPENAI_TEST_MODEL, "text": caller_text}
+
+    result = _construct_responses_api_payload(
+        [HumanMessage(content="give me json")],
+        {**payload, "response_format": {"type": "json_object"}},
+    )
+
+    assert result["text"].get("format") == {"type": "json_object"}, (
+        "format should appear in the result payload"
+    )
+    assert "format" not in caller_text, (
+        "_construct_responses_api_payload must not mutate the caller-provided text dict"
+    )
+
+    # A second call WITHOUT response_format must not carry forward the format key.
+    result2 = _construct_responses_api_payload(
+        [HumanMessage(content="just chat")],
+        dict(payload),  # fresh copy of the unchanged caller payload
+    )
+    assert "format" not in (result2.get("text") or {}), (
+        "format from a JSON-mode call must not bleed into a subsequent plain call"
+    )
+
+
 def test_output_version_compat() -> None:
     llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
     assert llm._use_responses_api({}) is True

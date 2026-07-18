@@ -4241,10 +4241,8 @@ def _construct_responses_api_payload(
             else:
                 schema_dict = schema
             if schema_dict == {"type": "json_object"}:  # JSON mode
-                if "text" in payload and isinstance(payload["text"], dict):
-                    payload["text"]["format"] = {"type": "json_object"}
-                else:
-                    payload["text"] = {"format": {"type": "json_object"}}
+                existing = payload.get("text") or {}
+                payload["text"] = {**existing, "format": {"type": "json_object"}}
             elif (
                 (
                     response_format := _convert_to_openai_response_format(
@@ -4255,19 +4253,15 @@ def _construct_responses_api_payload(
                 and (response_format["type"] == "json_schema")
             ):
                 format_value = {"type": "json_schema", **response_format["json_schema"]}
-                if "text" in payload and isinstance(payload["text"], dict):
-                    payload["text"]["format"] = format_value
-                else:
-                    payload["text"] = {"format": format_value}
+                existing = payload.get("text") or {}
+                payload["text"] = {**existing, "format": format_value}
             else:
                 pass
 
     verbosity = payload.pop("verbosity", None)
     if verbosity is not None:
-        if "text" in payload and isinstance(payload["text"], dict):
-            payload["text"]["verbosity"] = verbosity
-        else:
-            payload["text"] = {"verbosity": verbosity}
+        existing = payload.get("text") or {}
+        payload["text"] = {**existing, "verbosity": verbosity}
 
     return payload
 
