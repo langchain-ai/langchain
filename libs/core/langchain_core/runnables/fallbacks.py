@@ -486,6 +486,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        # Sentinel used to distinguish an exhausted (legitimately empty) upstream
+        # stream from a real first chunk. `next(stream)` raises `StopIteration`
+        # when the stream is empty, which is a subclass of `Exception` and would
+        # otherwise be caught by `exceptions_to_handle` and treated as a failure.
+        empty_stream_sentinel: Any = object()
+        chunk: Any = empty_stream_sentinel
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -497,7 +503,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         input,
                         **kwargs,
                     )
-                    chunk: Output = context.run(next, stream)
+                    chunk = context.run(next, stream, empty_stream_sentinel)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -510,6 +516,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         if first_error:
             run_manager.on_chain_error(first_error)
             raise first_error
+
+        # If the chosen runnable produced no chunks at all, the run succeeded
+        # with an empty stream — do not yield anything, but still report a
+        # successful chain end.
+        if chunk is empty_stream_sentinel:
+            run_manager.on_chain_end(None)
+            return
 
         yield chunk
         output: Output | None = chunk
@@ -550,6 +563,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        # Sentinel used to distinguish an exhausted (legitimately empty) upstream
+        # async stream from a real first chunk. `anext(stream)` raises
+        # `StopAsyncIteration` when the stream is empty, which is a subclass of
+        # `Exception` and would otherwise be caught by `exceptions_to_handle`
+        # and treated as a failure.
+        empty_stream_sentinel: Any = object()
+        chunk: Any = empty_stream_sentinel
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -561,7 +581,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         child_config,
                         **kwargs,
                     )
-                    chunk = await coro_with_context(anext(stream), context)
+                    try:
+                        chunk = await coro_with_context(anext(stream), context)
+                    except StopAsyncIteration:
+                        # The upstream stream was empty before any chunk was
+                        # produced. This is a successful (empty) result.
+                        chunk = empty_stream_sentinel
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -574,6 +599,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         if first_error:
             await run_manager.on_chain_error(first_error)
             raise first_error
+
+        # If the chosen runnable produced no chunks at all, the run succeeded
+        # with an empty stream — do not yield anything, but still report a
+        # successful chain end.
+        if chunk is empty_stream_sentinel:
+            await run_manager.on_chain_end(None)
+            return
 
         yield chunk
         output: Output | None = chunk

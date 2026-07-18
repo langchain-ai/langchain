@@ -318,6 +318,52 @@ async def test_fallbacks_astream() -> None:
         _ = [_ async for _ in runnable.astream({})]
 
 
+def _generate_empty(_: Iterator[Any]) -> Iterator[str]:
+    """A legitimate runnable that decides to yield zero chunks."""
+    return
+    yield  # pragma: no cover  # makes this a generator function
+
+
+async def _agenerate_empty(_: AsyncIterator[Any]) -> AsyncIterator[str]:
+    """Async counterpart of `_generate_empty`."""
+    return
+    yield  # pragma: no cover  # makes this a generator function
+
+
+def _generate_fallback_marker(_: Iterator[Any]) -> Iterator[str]:
+    yield "FALLBACK-OUTPUT"
+
+
+async def _agenerate_fallback_marker(_: AsyncIterator[Any]) -> AsyncIterator[str]:
+    yield "FALLBACK-OUTPUT"
+
+
+def test_fallbacks_stream_empty_upstream_does_not_trigger_fallback() -> None:
+    # Regression test for https://github.com/langchain-ai/langchain/issues/38892
+    # A legitimately empty upstream stream must NOT be treated as a failure and
+    # must NOT silently fall through to the fallback.
+    runnable = RunnableGenerator(_generate_empty).with_fallbacks(
+        [RunnableGenerator(_generate_fallback_marker)]
+    )
+    assert list(runnable.stream({})) == []
+
+    # And with no fallback configured at all, an empty stream must succeed
+    # instead of raising `RuntimeError: generator raised StopIteration`.
+    runnable_no_fallback = RunnableGenerator(_generate_empty).with_fallbacks([])
+    assert list(runnable_no_fallback.stream({})) == []
+
+
+async def test_fallbacks_astream_empty_upstream_does_not_trigger_fallback() -> None:
+    # Regression test for https://github.com/langchain-ai/langchain/issues/38892
+    runnable = RunnableGenerator(_agenerate_empty).with_fallbacks(
+        [RunnableGenerator(_agenerate_fallback_marker)]
+    )
+    assert [x async for x in runnable.astream({})] == []
+
+    runnable_no_fallback = RunnableGenerator(_agenerate_empty).with_fallbacks([])
+    assert [x async for x in runnable_no_fallback.astream({})] == []
+
+
 class FakeStructuredOutputModel(BaseChatModel):
     foo: int
 
