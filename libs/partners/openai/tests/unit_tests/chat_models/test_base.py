@@ -4649,3 +4649,33 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_responses_api_payload_does_not_mutate_caller_text_dict() -> None:
+    """Responses API payload construction must not mutate the caller's `text` dict.
+
+    `payload` is shallow-merged from `self.model_kwargs`, so `payload["text"]` is the
+    same dict object the caller passed in. Writing `format`/`verbosity` into it would
+    leak per-call response-format settings into every later plain call on the same
+    instance and corrupt the caller's dict. Regression test for #38869.
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    caller_text: dict[str, Any] = {"verbosity": "low"}
+    messages: list = []
+    payload = {
+        "model": OPENAI_TEST_MODEL,
+        "text": caller_text,
+        "response_format": {"type": "json_object"},
+    }
+    result = _construct_responses_api_payload(messages, payload)
+
+    # Per-call format is applied to the returned payload's `text` ...
+    assert result["text"]["format"] == {"type": "json_object"}
+    assert result["text"]["verbosity"] == "low"
+    # ... but the caller's dict (and the original `payload["text"]` reference) is left
+    # untouched.
+    assert caller_text == {"verbosity": "low"}
+    assert "format" not in caller_text
+    # The returned `text` must be a new dict, not the caller's object.
+    assert result["text"] is not caller_text

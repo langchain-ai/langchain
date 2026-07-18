@@ -4275,6 +4275,16 @@ def _get_last_messages(
 def _construct_responses_api_payload(
     messages: Sequence[BaseMessage], payload: dict
 ) -> dict:
+    # `payload` is shallow-merged from `self.model_kwargs` and per-call kwargs, so
+    # `payload["text"]` is the very same dict object the caller passed in. Below we
+    # write `format` and `verbosity` into that dict, which would otherwise mutate the
+    # caller's dict and the model instance's `model_kwargs` — leaking per-call
+    # response-format settings into every later plain call on the same instance
+    # (https://github.com/langchain-ai/langchain/issues/38869). Copy it once up front
+    # so the writes stay scoped to this payload.
+    if isinstance(payload.get("text"), dict):
+        payload["text"] = {**payload["text"]}
+
     # Rename legacy parameters
     for legacy_token_param in ["max_tokens", "max_completion_tokens"]:
         if legacy_token_param in payload:
