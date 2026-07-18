@@ -2368,4 +2368,13 @@ class TestPIIStreamingEndToEnd:
         assert not seen_email_in_finalized, (
             "raw PII leaked through a subgraph's content-block-finish snapshot"
         )
+
+
+def test_piimatch_exported_from_public_package() -> None:
+    """PIIMatch must be importable from the public langchain.agents.middleware package."""
+    from langchain.agents.middleware import PIIMatch  # noqa: PLC0415
+
+    match = PIIMatch(type="email", value="x@y.com", start=0, end=7)
+    assert match["type"] == "email"
+    assert match["value"] == "x@y.com"
         assert seen_redaction, "transformer never fired at the subgraph scope"
