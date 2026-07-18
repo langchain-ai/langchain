@@ -318,6 +318,49 @@ async def test_fallbacks_astream() -> None:
         _ = [_ async for _ in runnable.astream({})]
 
 
+def _generate_empty(_: Iterator[Any]) -> Iterator[str]:
+    """A runnable that legitimately produces zero chunks."""
+    return
+    yield  # make this a generator function
+
+
+async def _agenerate_empty(_: AsyncIterator[Any]) -> AsyncIterator[str]:
+    """An async runnable that legitimately produces zero chunks."""
+    return
+    yield  # make this an async generator function
+
+
+def test_fallbacks_stream_empty_primary_does_not_fallback() -> None:
+    """A primary that produces an empty stream is a success, not a failure.
+
+    Regression test for #38892: `stream()` peeked the first chunk with a bare
+    `next(stream)`, so an empty upstream stream raised `StopIteration` (which
+    becomes `RuntimeError` under PEP 479 inside the generator) and was
+    misinterpreted as a failure — silently triggering the fallback when one
+    was configured, or surfacing a confusing `RuntimeError` when none was.
+    """
+    # With a fallback configured, the empty primary must NOT be replaced.
+    runnable = RunnableGenerator(_generate_empty).with_fallbacks(
+        [RunnableGenerator(_generate)]
+    )
+    assert list(runnable.stream({})) == []
+
+    # With no fallback configured, an empty stream must not raise.
+    runnable_no_fallback = RunnableGenerator(_generate_empty).with_fallbacks([])
+    assert list(runnable_no_fallback.stream({})) == []
+
+
+async def test_fallbacks_astream_empty_primary_does_not_fallback() -> None:
+    """Async variant of `test_fallbacks_stream_empty_primary_does_not_fallback`."""
+    runnable = RunnableGenerator(_agenerate_empty).with_fallbacks(
+        [RunnableGenerator(_agenerate)]
+    )
+    assert [_ async for _ in runnable.astream({})] == []
+
+    runnable_no_fallback = RunnableGenerator(_agenerate_empty).with_fallbacks([])
+    assert [_ async for _ in runnable_no_fallback.astream({})] == []
+
+
 class FakeStructuredOutputModel(BaseChatModel):
     foo: int
 
