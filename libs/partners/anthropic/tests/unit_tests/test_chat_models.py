@@ -1122,6 +1122,36 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
     assert expected == actual
 
 
+def test__format_messages_preserves_cache_control_on_tool_use() -> None:
+    """cache_control on a tool_use content block must survive _format_messages.
+
+    When both a tool_use content block and a matching tool_calls entry exist,
+    _format_messages prefers the structured tool_calls data for name/input/id
+    but must still carry over any cache_control from the original content block.
+    Regression test for https://github.com/langchain-ai/langchain/issues/38398
+    """
+    human = HumanMessage("weather?")  # type: ignore[misc]
+    ai = AIMessage(  # type: ignore[misc]
+        content=[
+            {"type": "text", "text": "Let me check."},
+            {
+                "type": "tool_use",
+                "id": "toolu_1",
+                "name": "get_weather",
+                "input": {"city": "Paris"},
+                "cache_control": {"type": "ephemeral"},
+            },
+        ],
+        tool_calls=[{"name": "get_weather", "args": {"city": "Paris"}, "id": "toolu_1"}],
+    )
+    _, formatted = _format_messages([human, ai])
+    assistant_content = formatted[-1]["content"]
+    tool_use_block = next(b for b in assistant_content if b["type"] == "tool_use")
+    assert tool_use_block.get("cache_control") == {"type": "ephemeral"}, (
+        "cache_control must be preserved on tool_use blocks during _format_messages"
+    )
+
+
 def test__format_messages_with_cache_control() -> None:
     messages = [
         SystemMessage(

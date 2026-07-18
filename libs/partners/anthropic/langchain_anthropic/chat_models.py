@@ -543,11 +543,13 @@ def _format_messages(
                                 for tc in message.tool_calls
                                 if tc["id"] == block["id"]
                             ]
-                            content.extend(
-                                _lc_tool_calls_to_anthropic_tool_use_blocks(
-                                    overlapping,
-                                ),
+                            built_blocks = _lc_tool_calls_to_anthropic_tool_use_blocks(
+                                overlapping,
                             )
+                            if "cache_control" in block:
+                                for b in built_blocks:
+                                    b["cache_control"] = block["cache_control"]
+                            content.extend(built_blocks)
                         else:
                             if tool_input := block.get("input"):
                                 args = tool_input
