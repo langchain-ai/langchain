@@ -291,7 +291,12 @@ def test_model_retry_succeeds_after_retries() -> None:
 
 
 def test_model_retry_specific_exceptions() -> None:
-    """Test ModelRetryMiddleware only retries specific exception types."""
+    """Test ModelRetryMiddleware only retries specific exception types.
+
+    A non-retryable exception (one that does not match ``retry_on``) is re-raised
+    immediately rather than being converted into an error ``AIMessage``, matching
+    ``ToolRetryMiddleware``'s behavior.
+    """
     # This model will fail with RuntimeError, which we won't retry
     model = AlwaysFailingModel(error_message="Runtime error", error_type=RuntimeError)
 
@@ -311,15 +316,76 @@ def test_model_retry_specific_exceptions() -> None:
         checkpointer=InMemorySaver(),
     )
 
-    result = agent.invoke(
-        {"messages": [HumanMessage("Hello")]},
-        {"configurable": {"thread_id": "test"}},
+    # RuntimeError does not match retry_on, so it is re-raised
+    # even though on_failure="continue"
+    with pytest.raises(RuntimeError, match="Runtime error"):
+        agent.invoke(
+            {"messages": [HumanMessage("Hello")]},
+            {"configurable": {"thread_id": "test"}},
+        )
+
+
+def test_model_retry_non_retryable_exception_reraises_with_on_failure_continue() -> None:
+    """Non-retryable exceptions are re-raised even when on_failure='continue'.
+
+    Mirrors ``test_tool_retry_non_retryable_exception_reraises``: ``on_failure``
+    only applies once retries are exhausted on a retryable exception, so a
+    ``TypeError`` excluded from ``retry_on=(ValueError,)`` propagates unchanged.
+    """
+    # This model fails with TypeError, which we won't retry
+    model = AlwaysFailingModel(error_message="boom", error_type=TypeError)
+
+    # Only retry ValueError
+    retry = ModelRetryMiddleware(
+        max_retries=2,
+        retry_on=(ValueError,),
+        initial_delay=0.01,
+        jitter=False,
+        on_failure="continue",
     )
 
-    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
-    assert len(ai_messages) >= 1
-    # RuntimeError should fail immediately (1 attempt only)
-    assert "1 attempt" in ai_messages[-1].content
+    agent = create_agent(
+        model=model,
+        tools=[],
+        middleware=[retry],
+        checkpointer=InMemorySaver(),
+    )
+
+    # TypeError does not match retry_on, so it is re-raised
+    # even though on_failure="continue"
+    with pytest.raises(TypeError, match="boom"):
+        agent.invoke(
+            {"messages": [HumanMessage("Hello")]},
+            {"configurable": {"thread_id": "test"}},
+        )
+
+
+async def test_model_retry_async_non_retryable_exception_reraises() -> None:
+    """Async path: non-retryable exceptions propagate instead of becoming AIMessage."""
+    # This model fails with TypeError, which we won't retry
+    model = AlwaysFailingModel(error_message="boom async", error_type=TypeError)
+
+    # Only retry ValueError
+    retry = ModelRetryMiddleware(
+        max_retries=2,
+        retry_on=(ValueError,),
+        initial_delay=0.01,
+        jitter=False,
+        on_failure="continue",
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[],
+        middleware=[retry],
+        checkpointer=InMemorySaver(),
+    )
+
+    with pytest.raises(TypeError, match="boom async"):
+        await agent.ainvoke(
+            {"messages": [HumanMessage("Hello")]},
+            {"configurable": {"thread_id": "test"}},
+        )
 
 
 def test_model_retry_custom_exception_filter() -> None:
@@ -389,17 +455,17 @@ def test_model_retry_custom_exception_filter() -> None:
         checkpointer=InMemorySaver(),
     )
 
-    result = agent.invoke(
-        {"messages": [HumanMessage("Hello")]},
-        {"configurable": {"thread_id": "test"}},
-    )
+    # Attempt 1 raises a retryable CustomError (retried); attempt 2 raises a
+    # non-retryable CustomError (retry_me=False), which now propagates instead
+    # of being converted to an error AIMessage.
+    with pytest.raises(CustomError, match="Non-retryable error"):
+        agent.invoke(
+            {"messages": [HumanMessage("Hello")]},
+            {"configurable": {"thread_id": "test"}},
+        )
 
-    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
-    assert len(ai_messages) >= 1
-
-    # Should retry once (attempt 1 with retry_me=True), then fail on attempt 2 (retry_me=False)
+    # Should retry once (attempt 1 with retry_me=True), then propagate on attempt 2
     assert attempt_count["value"] == 2
-    assert "2 attempts" in ai_messages[-1].content
 
 
 def test_model_retry_backoff_timing() -> None:
