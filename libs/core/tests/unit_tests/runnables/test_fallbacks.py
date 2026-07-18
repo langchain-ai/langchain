@@ -288,6 +288,24 @@ def test_fallbacks_stream() -> None:
         list(runnable.stream({}))
 
 
+def _generate_empty(_: Iterator[Any]) -> Iterator[str]:
+    yield from ()
+
+
+def test_fallbacks_stream_empty_primary_does_not_trigger_fallback() -> None:
+    """A legitimately empty primary stream should not be treated as a failure."""
+    runnable = RunnableGenerator(_generate_empty).with_fallbacks(
+        [RunnableGenerator(_generate)]
+    )
+    assert list(runnable.stream({})) == []
+
+
+def test_fallbacks_stream_empty_primary_no_fallback_does_not_raise() -> None:
+    """An empty primary with no fallbacks should yield nothing, not raise."""
+    runnable = RunnableGenerator(_generate_empty).with_fallbacks([])
+    assert list(runnable.stream({})) == []
+
+
 async def _agenerate(_: AsyncIterator[Any]) -> AsyncIterator[str]:
     for c in "foo bar":
         yield c
@@ -316,6 +334,25 @@ async def test_fallbacks_astream() -> None:
     )
     with pytest.raises(ValueError, match="delayed error"):
         _ = [_ async for _ in runnable.astream({})]
+
+
+async def _agenerate_empty(_: AsyncIterator[Any]) -> AsyncIterator[str]:
+    return
+    yield  # type: ignore[unreachable]  # make this an async generator
+
+
+async def test_fallbacks_astream_empty_primary_does_not_trigger_fallback() -> None:
+    """A legitimately empty primary stream should not be treated as a failure."""
+    runnable = RunnableGenerator(_agenerate_empty).with_fallbacks(
+        [RunnableGenerator(_agenerate)]
+    )
+    assert [_ async for _ in runnable.astream({})] == []
+
+
+async def test_fallbacks_astream_empty_primary_no_fallback_does_not_raise() -> None:
+    """An empty primary with no fallbacks should yield nothing, not raise."""
+    runnable = RunnableGenerator(_agenerate_empty).with_fallbacks([])
+    assert [_ async for _ in runnable.astream({})] == []
 
 
 class FakeStructuredOutputModel(BaseChatModel):

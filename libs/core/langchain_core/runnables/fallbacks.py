@@ -486,6 +486,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        _sentinel: Any = object()
+        first_chunk: Output | None = _sentinel  # type: ignore[assignment]
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -497,7 +499,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         input,
                         **kwargs,
                     )
-                    chunk: Output = context.run(next, stream)
+                    first_chunk = context.run(next, stream, _sentinel)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -511,8 +513,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             run_manager.on_chain_error(first_error)
             raise first_error
 
-        yield chunk
-        output: Output | None = chunk
+        output: Output | None = None
+        if first_chunk is not _sentinel:
+            output = cast("Output", first_chunk)
+            yield cast("Output", first_chunk)
         try:
             for chunk in stream:
                 yield chunk
@@ -550,6 +554,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        _sentinel: Any = object()
+        first_chunk: Output | None = _sentinel  # type: ignore[assignment]
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -561,7 +567,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         child_config,
                         **kwargs,
                     )
-                    chunk = await coro_with_context(anext(stream), context)
+                    first_chunk = await coro_with_context(
+                        anext(stream, _sentinel), context
+                    )
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -575,8 +583,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             await run_manager.on_chain_error(first_error)
             raise first_error
 
-        yield chunk
-        output: Output | None = chunk
+        output: Output | None = None
+        if first_chunk is not _sentinel:
+            output = cast("Output", first_chunk)
+            yield cast("Output", first_chunk)
         try:
             async for chunk in stream:
                 yield chunk
