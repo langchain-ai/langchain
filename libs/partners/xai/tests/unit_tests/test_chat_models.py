@@ -217,3 +217,21 @@ def test_metadata_versions() -> None:
     assert "langchain-core" in versions
     assert "langchain-xai" in versions
     assert "langchain-openai" in versions
+
+
+def test_single_openai_client_per_side() -> None:
+    """The bound chat.completions handle shares the root client's transport.
+
+    Regression test for the issue where ``ChatXAI`` constructed two
+    ``openai.OpenAI`` instances (and two ``openai.AsyncOpenAI`` instances) per
+    instantiation, so the bound ``client``/``async_client`` each carried their
+    own httpx transport instead of sharing the root client's. Verify the bound
+    handles are derived from the root clients.
+    """
+    llm = ChatXAI(model=MODEL_NAME)
+    assert llm.root_client is not None
+    assert llm.root_async_client is not None
+    # The bound chat.completions handle must come from the root client so both
+    # fields share one transport per side.
+    assert llm.client is llm.root_client.chat.completions
+    assert llm.async_client is llm.root_async_client.chat.completions
