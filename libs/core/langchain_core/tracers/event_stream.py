@@ -1094,8 +1094,14 @@ async def _astream_events_implementation_v2(
 
             yield event
     except asyncio.CancelledError as exc:
-        # Cancel the task if it's still running
-        task.cancel(exc.args[0] if exc.args else None)
+        # Cancel the task if it's still running.
+        # exc.args[0] may be the cancellation message, but CancelledError
+        # can be raised without args (IndexError) or with a non-string
+        # arg (TypeError), so guard both cases.
+        cancel_msg: str | None = None
+        if exc.args and isinstance(exc.args[0], str):
+            cancel_msg = exc.args[0]
+        task.cancel(cancel_msg)
         raise
     finally:
         # Cancel the task if it's still running
