@@ -1434,7 +1434,7 @@ def create_agent(
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
-            tools=default_tools,
+            tools=list(default_tools),
             system_message=system_message,
             response_format=initial_response_format,
             messages=state["messages"],
@@ -1482,7 +1482,7 @@ def create_agent(
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
-            tools=default_tools,
+            tools=list(default_tools),
             system_message=system_message,
             response_format=initial_response_format,
             messages=state["messages"],

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import logging
 import traceback
 from abc import ABC, abstractmethod
@@ -556,12 +557,28 @@ class _TracerCore(ABC):
         return retrieval_run
 
     def __deepcopy__(self, memo: dict[int, Any] | None = None) -> _TracerCore:
-        """Return self deepcopied."""
-        return self
+        """Return a deep copy with isolated mutable state."""
+        cls = self.__class__
+        obj = cls.__new__(cls)
+        memo[id(self)] = obj
+        for k, v in self.__dict__.items():
+            if k in ("run_map", "order_map"):
+                setattr(obj, k, copy.deepcopy(v, memo))
+            elif k == "_external_run_ids":
+                setattr(obj, k, copy.deepcopy(v, memo))
+            else:
+                setattr(obj, k, copy.copy(v))
+        return obj
 
     def __copy__(self) -> _TracerCore:
-        """Return self copied."""
-        return self
+        """Return a shallow copy with isolated mutable dicts."""
+        cls = self.__class__
+        obj = cls.__new__(cls)
+        obj.__dict__.update(self.__dict__)
+        obj.run_map = self.run_map.copy()
+        obj.order_map = self.order_map.copy()
+        obj._external_run_ids = self._external_run_ids.copy()
+        return obj
 
     def _end_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """End a trace for a run.

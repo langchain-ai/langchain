@@ -289,7 +289,9 @@ def _merge_messages(
 ) -> list[SystemMessage | AIMessage | HumanMessage]:
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
+    last_was_tool = False
     for curr in messages:
+        was_tool = isinstance(curr, ToolMessage)
         if isinstance(curr, ToolMessage):
             if (
                 isinstance(curr.content, list)
@@ -328,16 +330,30 @@ def _merge_messages(
                     [tool_result],
                 )
         last = merged[-1] if merged else None
-        if any(
-            all(isinstance(m, c) for m in (curr, last))
-            for c in (SystemMessage, HumanMessage)
-        ):
-            if isinstance(cast("BaseMessage", last).content, str):
-                new_content: list = [
-                    {"type": "text", "text": cast("BaseMessage", last).content},
-                ]
+        if last is not None and isinstance(curr, HumanMessage) and isinstance(last, HumanMessage):
+            if was_tool and not last_was_tool:
+                merged.append(curr)
             else:
-                new_content = copy.copy(cast("list", cast("BaseMessage", last).content))
+                if isinstance(cast("BaseMessage", last).content, str):
+                    new_content: list = [
+                        {"type": "text", "text": cast("BaseMessage", last).content},
+                    ]
+                else:
+                    new_content = copy.copy(cast("list", cast("BaseMessage", last).content))
+                if isinstance(curr.content, str):
+                    new_content.append({"type": "text", "text": curr.content})
+                else:
+                    new_content.extend(curr.content)
+                merged[-1] = curr.model_copy(update={"content": new_content})
+        elif (
+            last is not None
+            and isinstance(last, SystemMessage)
+            and isinstance(curr, SystemMessage)
+        ):
+            if isinstance(last.content, str):
+                new_content = [{"type": "text", "text": last.content}]
+            else:
+                new_content = copy.copy(cast("list", last.content))
             if isinstance(curr.content, str):
                 new_content.append({"type": "text", "text": curr.content})
             else:
@@ -345,6 +361,10 @@ def _merge_messages(
             merged[-1] = curr.model_copy(update={"content": new_content})
         else:
             merged.append(curr)
+        if isinstance(curr, HumanMessage) or isinstance(curr, SystemMessage):
+            last_was_tool = was_tool
+        else:
+            last_was_tool = False
     return merged
 
 
