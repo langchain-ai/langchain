@@ -486,6 +486,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        # `stream`/`chunk` are bound outside the loop so the type checker can
+        # see they are always assigned before use once the loop exits.
+        stream: Iterator[Output] | None = None
+        chunk: Output | None = None
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -497,7 +501,17 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         input,
                         **kwargs,
                     )
-                    chunk: Output = context.run(next, stream)
+                    chunk = context.run(next, stream)
+            except StopIteration:
+                # The upstream runnable produced a legitimately empty stream.
+                # This is a valid output, not a failure, so do not fall back to
+                # the next runnable and report an empty stream to the caller.
+                # NOTE: must be caught before `exceptions_to_handle`, which
+                # typically includes `Exception` and would otherwise swallow
+                # `StopIteration` (a subclass of `Exception`) and trigger a
+                # spurious fallback.
+                run_manager.on_chain_end(None)
+                return
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -511,10 +525,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             run_manager.on_chain_error(first_error)
             raise first_error
 
-        yield chunk
+        yield chunk  # type: ignore[misc]
         output: Output | None = chunk
         try:
-            for chunk in stream:
+            for chunk in stream:  # type: ignore[union-attr]
                 yield chunk
                 try:
                     output = output + chunk  # type: ignore[operator]
@@ -550,6 +564,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        stream: AsyncIterator[Output] | None = None
+        chunk: Output | None = None
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -562,6 +578,16 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         **kwargs,
                     )
                     chunk = await coro_with_context(anext(stream), context)
+            except StopAsyncIteration:
+                # The upstream runnable produced a legitimately empty stream.
+                # This is a valid output, not a failure, so do not fall back to
+                # the next runnable and report an empty stream to the caller.
+                # NOTE: must be caught before `exceptions_to_handle`, which
+                # typically includes `Exception` and would otherwise swallow
+                # `StopAsyncIteration` (a subclass of `Exception`) and trigger
+                # a spurious fallback.
+                await run_manager.on_chain_end(None)
+                return
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -575,10 +601,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             await run_manager.on_chain_error(first_error)
             raise first_error
 
-        yield chunk
+        yield chunk  # type: ignore[misc]
         output: Output | None = chunk
         try:
-            async for chunk in stream:
+            async for chunk in stream:  # type: ignore[union-attr]
                 yield chunk
                 try:
                     output = output + chunk  # type: ignore[operator]
