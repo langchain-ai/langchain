@@ -318,6 +318,46 @@ async def test_fallbacks_astream() -> None:
         _ = [_ async for _ in runnable.astream({})]
 
 
+def _generate_empty(_: Iterator[Any]) -> Iterator[str]:
+    # A legitimate runnable that decides to yield no chunks at all (e.g. an LLM
+    # returning empty content, a filtering step, a moderation-blocked response).
+    return
+    yield  # makes this a generator function
+
+
+def test_fallbacks_stream_empty_primary_does_not_trigger_fallback() -> None:
+    # An empty primary stream is a valid result, not a failure, so the fallback
+    # must NOT be invoked. See issue #38892.
+    primary = RunnableGenerator(_generate_empty)
+    runnable = primary.with_fallbacks([RunnableGenerator(_generate)])
+    assert list(runnable.stream({})) == []
+
+
+def test_fallbacks_stream_empty_primary_no_fallbacks_returns_empty() -> None:
+    # Without any fallback configured, an empty primary stream must complete
+    # cleanly instead of raising "RuntimeError: generator raised StopIteration".
+    primary = RunnableGenerator(_generate_empty)
+    runnable = primary.with_fallbacks([])
+    assert list(runnable.stream({})) == []
+
+
+async def _agenerate_empty(_: AsyncIterator[Any]) -> AsyncIterator[str]:
+    return
+    yield  # makes this a generator function
+
+
+async def test_fallbacks_astream_empty_primary_does_not_trigger_fallback() -> None:
+    primary = RunnableGenerator(_agenerate_empty)
+    runnable = primary.with_fallbacks([RunnableGenerator(_agenerate)])
+    assert [c async for c in runnable.astream({})] == []
+
+
+async def test_fallbacks_astream_empty_primary_no_fallbacks_returns_empty() -> None:
+    primary = RunnableGenerator(_agenerate_empty)
+    runnable = primary.with_fallbacks([])
+    assert [c async for c in runnable.astream({})] == []
+
+
 class FakeStructuredOutputModel(BaseChatModel):
     foo: int
 

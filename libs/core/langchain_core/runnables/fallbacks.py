@@ -497,7 +497,23 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         input,
                         **kwargs,
                     )
-                    chunk: Output = context.run(next, stream)
+                    try:
+                        chunk: Output = context.run(next, stream)
+                    except StopIteration:
+                        # The primary stream produced no chunks at all, which is a
+                        # valid outcome (e.g. an LLM returning empty content, a
+                        # filtering step, or a moderation-blocked response). This is
+                        # not a failure, so we must neither trigger a fallback nor
+                        # surface an error. Drain the (already exhausted) stream to
+                        # avoid "GeneratorExit"-style ResourceWarnings, fire the
+                        # success callbacks, and return an empty stream. Without this
+                        # guard, `StopIteration` (an `Exception` subclass) is caught by
+                        # `except self.exceptions_to_handle` below and treated as a
+                        # failure, silently substituting a fallback's output for the
+                        # primary's valid empty output.
+                        yield from stream
+                        run_manager.on_chain_end(None)
+                        return
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -561,7 +577,23 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         child_config,
                         **kwargs,
                     )
-                    chunk = await coro_with_context(anext(stream), context)
+                    try:
+                        chunk = await coro_with_context(anext(stream), context)
+                    except StopAsyncIteration:
+                        # The primary stream produced no chunks at all, which is a
+                        # valid outcome (e.g. an LLM returning empty content, a
+                        # filtering step, or a moderation-blocked response). This is
+                        # not a failure, so we must neither trigger a fallback nor
+                        # surface an error. Drain the (already exhausted) stream, fire
+                        # the success callbacks, and return an empty stream. Without
+                        # this guard, `StopAsyncIteration` (an `Exception` subclass) is
+                        # caught by `except self.exceptions_to_handle` below and treated
+                        # as a failure, silently substituting a fallback's output for
+                        # the primary's valid empty output.
+                        async for _remaining in stream:
+                            yield _remaining
+                        await run_manager.on_chain_end(None)
+                        return
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
