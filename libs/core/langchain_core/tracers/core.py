@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import copy
 import logging
+import threading
 import traceback
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
@@ -556,12 +559,29 @@ class _TracerCore(ABC):
         return retrieval_run
 
     def __deepcopy__(self, memo: dict[int, Any] | None = None) -> _TracerCore:
-        """Return self deepcopied."""
-        return self
+        """Return a deep copy of this tracer.
+
+        The default ``__deepcopy__`` inherited from ``BaseModel`` would
+        create a full copy, but ``_TracerCore`` holds mutable run/order
+        maps that must be independently copied to avoid concurrent chain
+        runs corrupting each other's trace data.
+        """
+        cls = self.__class__
+        new_tracer = cls.__new__(cls)
+        new_tracer._schema_format = self._schema_format
+        new_tracer.run_map = {}
+        new_tracer.order_map = {}
+        new_tracer._external_run_ids = {}
+        new_tracer.log_missing_parent = self.log_missing_parent
+        return new_tracer
 
     def __copy__(self) -> _TracerCore:
-        """Return self copied."""
-        return self
+        """Return a shallow copy of this tracer.
+
+        See ``__deepcopy__`` — the same reasoning applies: the run/order
+        maps must be independently allocated.
+        """
+        return copy.deepcopy(self)
 
     def _end_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """End a trace for a run.

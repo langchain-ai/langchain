@@ -1432,9 +1432,11 @@ def create_agent(
 
     def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
         """Sync model request handler with sequential middleware processing."""
+        # Copy default_tools so middleware mutations don't leak across calls.
+        tools_for_request = list(default_tools)
         request = ModelRequest(
             model=model,
-            tools=default_tools,
+            tools=tools_for_request,
             system_message=system_message,
             response_format=initial_response_format,
             messages=state["messages"],
@@ -1480,9 +1482,11 @@ def create_agent(
 
     async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
         """Async model request handler with sequential middleware processing."""
+        # Copy default_tools so middleware mutations don't leak across calls.
+        tools_for_request = list(default_tools)
         request = ModelRequest(
             model=model,
-            tools=default_tools,
+            tools=tools_for_request,
             system_message=system_message,
             response_format=initial_response_format,
             messages=state["messages"],
