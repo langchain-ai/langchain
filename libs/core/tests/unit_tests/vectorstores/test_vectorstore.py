@@ -292,3 +292,31 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
     assert await store.aget_by_ids(["6"]) == [Document(id="6", page_content="baz")]
+
+
+def test_default_add_texts_generator() -> None:
+    """Test default implementation of add_texts with a generator."""
+    store = CustomAddDocumentsVectorstore()
+
+    # Passing a generator
+    texts_gen = (t for t in ["hello", "world"])
+    ids = store.add_texts(texts_gen, ids=["3", "4"])
+    assert ids == ["3", "4"]
+    assert store.get_by_ids(["3", "4"]) == [
+        Document(id="3", page_content="hello"),
+        Document(id="4", page_content="world"),
+    ]
+
+
+async def test_default_aadd_texts_generator() -> None:
+    """Test default implementation of aadd_texts with a generator."""
+    store = CustomAddDocumentsVectorstore()
+
+    # Passing a generator
+    texts_gen = (t for t in ["hello", "world"])
+    ids = await store.aadd_texts(texts_gen, ids=["3", "4"])
+    assert ids == ["3", "4"]
+    assert await store.aget_by_ids(["3", "4"]) == [
+        Document(id="3", page_content="hello"),
+        Document(id="4", page_content="world"),
+    ]
