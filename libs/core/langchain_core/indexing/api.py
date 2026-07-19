@@ -466,6 +466,7 @@ def index(
     num_updated = 0
     num_deleted = 0
     scoped_full_cleanup_source_ids: set[str] = set()
+    incremental_cleanup_source_ids: set[str] = set()
 
     for doc_batch in _batch(batch_size, doc_iterator):
         # Track original batch size before deduplication
@@ -500,6 +501,8 @@ def index(
                     raise ValueError(msg)
                 if cleanup == "scoped_full":
                     scoped_full_cleanup_source_ids.add(source_id)
+                if cleanup == "incremental":
+                    incremental_cleanup_source_ids.add(source_id)
             # Source IDs cannot be None after for loop above.
             source_ids = cast("Sequence[str]", source_ids)
 
@@ -556,29 +559,24 @@ def index(
             time_at_least=index_start_dt,
         )
 
-        # If source IDs are provided, we can do the deletion incrementally!
-        if cleanup == "incremental":
-            # Get the uids of the documents that were not returned by the loader.
-            # mypy isn't good enough to determine that source IDs cannot be None
-            # here due to a check that's happening above, so we check again.
-            for source_id in source_ids:
-                if source_id is None:
-                    msg = (
-                        "source_id cannot be None at this point. "
-                        "Reached unreachable code."
-                    )
-                    raise AssertionError(msg)
+    # If source IDs are provided, we can do the deletion incrementally!
+    # This is done after all batches have been processed (rather than per
+    # batch) so that documents from a later batch sharing a source_id with
+    # an earlier batch aren't mistaken for stale documents and deleted
+    # before they've been indexed in this same run.
+    if cleanup == "incremental" and incremental_cleanup_source_ids:
+        incremental_cleanup_source_ids_ = list(incremental_cleanup_source_ids)
 
-            source_ids_ = cast("Sequence[str]", source_ids)
-
-            while uids_to_delete := record_manager.list_keys(
-                group_ids=source_ids_, before=index_start_dt, limit=cleanup_batch_size
-            ):
-                # Then delete from vector store.
-                _delete(destination, uids_to_delete)
-                # First delete from record store.
-                record_manager.delete_keys(uids_to_delete)
-                num_deleted += len(uids_to_delete)
+        while uids_to_delete := record_manager.list_keys(
+            group_ids=incremental_cleanup_source_ids_,
+            before=index_start_dt,
+            limit=cleanup_batch_size,
+        ):
+            # Then delete from vector store.
+            _delete(destination, uids_to_delete)
+            # First delete from record store.
+            record_manager.delete_keys(uids_to_delete)
+            num_deleted += len(uids_to_delete)
 
     if cleanup == "full" or (
         cleanup == "scoped_full" and scoped_full_cleanup_source_ids
@@ -816,6 +814,7 @@ async def aindex(
     num_updated = 0
     num_deleted = 0
     scoped_full_cleanup_source_ids: set[str] = set()
+    incremental_cleanup_source_ids: set[str] = set()
 
     async for doc_batch in _abatch(batch_size, async_doc_iterator):
         # Track original batch size before deduplication
@@ -850,6 +849,8 @@ async def aindex(
                     raise ValueError(msg)
                 if cleanup == "scoped_full":
                     scoped_full_cleanup_source_ids.add(source_id)
+                if cleanup == "incremental":
+                    incremental_cleanup_source_ids.add(source_id)
             # Source IDs cannot be None after for loop above.
             source_ids = cast("Sequence[str]", source_ids)
 
@@ -905,31 +906,24 @@ async def aindex(
             time_at_least=index_start_dt,
         )
 
-        # If source IDs are provided, we can do the deletion incrementally!
+    # If source IDs are provided, we can do the deletion incrementally!
+    # This is done after all batches have been processed (rather than per
+    # batch) so that documents from a later batch sharing a source_id with
+    # an earlier batch aren't mistaken for stale documents and deleted
+    # before they've been indexed in this same run.
+    if cleanup == "incremental" and incremental_cleanup_source_ids:
+        incremental_cleanup_source_ids_ = list(incremental_cleanup_source_ids)
 
-        if cleanup == "incremental":
-            # Get the uids of the documents that were not returned by the loader.
-
-            # mypy isn't good enough to determine that source IDs cannot be None
-            # here due to a check that's happening above, so we check again.
-            for source_id in source_ids:
-                if source_id is None:
-                    msg = (
-                        "source_id cannot be None at this point. "
-                        "Reached unreachable code."
-                    )
-                    raise AssertionError(msg)
-
-            source_ids_ = cast("Sequence[str]", source_ids)
-
-            while uids_to_delete := await record_manager.alist_keys(
-                group_ids=source_ids_, before=index_start_dt, limit=cleanup_batch_size
-            ):
-                # Then delete from vector store.
-                await _adelete(destination, uids_to_delete)
-                # First delete from record store.
-                await record_manager.adelete_keys(uids_to_delete)
-                num_deleted += len(uids_to_delete)
+        while uids_to_delete := await record_manager.alist_keys(
+            group_ids=incremental_cleanup_source_ids_,
+            before=index_start_dt,
+            limit=cleanup_batch_size,
+        ):
+            # Then delete from vector store.
+            await _adelete(destination, uids_to_delete)
+            # First delete from record store.
+            await record_manager.adelete_keys(uids_to_delete)
+            num_deleted += len(uids_to_delete)
 
     if cleanup == "full" or (
         cleanup == "scoped_full" and scoped_full_cleanup_source_ids
