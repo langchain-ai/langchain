@@ -389,10 +389,6 @@ def _get_key(
             )
             # For every dot separated key
             for child in key.split("."):
-                # Return an empty string if falsy, with two exceptions
-                # 0 should return 0, and False should return False
-                if resolved_scope in (0, False):
-                    return resolved_scope
                 # Move into the scope
                 if isinstance(resolved_scope, dict):
                     try:
