@@ -20,6 +20,7 @@ from langchain.agents.middleware.shell_tool import (
     RedactionRule,
     ShellToolMiddleware,
 )
+from langchain.agents.middleware.deduplicate import DeduplicateToolCallsMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware, TriggerClause
 from langchain.agents.middleware.todo import TodoListMiddleware
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
@@ -90,4 +91,5 @@ __all__ = [
     "hook_config",
     "wrap_model_call",
     "wrap_tool_call",
+    "DeduplicateToolCallsMiddleware"
 ]
