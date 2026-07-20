@@ -4280,11 +4280,7 @@ def _construct_responses_api_payload(
         if legacy_token_param in payload:
             payload["max_output_tokens"] = payload.pop(legacy_token_param)
     if "reasoning_effort" in payload and "reasoning" not in payload:
-        effort = payload.pop("reasoning_effort")
-        # `summary` is configured separately via the `reasoning` param directly
-        # (e.g. `reasoning={"effort": "high", "summary": "auto"}`), not implied
-        # by `reasoning_effort`.
-        payload["reasoning"] = {"effort": effort}
+        payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
     # Responses API has no `stop` parameter (Chat Completions does); drop it to
     # avoid request rejection.
     payload.pop("stop", None)
