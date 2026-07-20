@@ -1547,9 +1547,7 @@ def test_minimal_reasoning_effort_payload(
     # When using responses API, reasoning_effort becomes reasoning.effort
     if use_responses_api:
         assert "reasoning" in payload
-        assert payload["reasoning"]["effort"] == "minimal"
-        # A non-"none" effort also requests a reasoning summary.
-        assert payload["reasoning"]["summary"] == "auto"
+        assert payload["reasoning"] == {"effort": "minimal"}
         # For responses API, tokens param becomes max_output_tokens
         assert payload["max_output_tokens"] == 100
     else:
@@ -4618,33 +4616,19 @@ def test_namespace_passthrough() -> None:
     assert {"type": "tool_search"} in payload["tools"]
 
 
-def test_reasoning_effort_responses_api_includes_summary() -> None:
-    """Test that a non-`none` `reasoning_effort` requests a reasoning summary.
+def test_reasoning_effort_responses_api_maps_to_effort_only() -> None:
+    """Test `reasoning_effort` maps to `reasoning.effort` alone, no `summary`.
 
-    Mirrors the reasoning-effort behavior previously implemented client-side
-    (in `deepagents_code`), which paired the effort level with
-    `summary: "auto"` so the model's reasoning is actually surfaced back,
-    rather than only telling it how hard to think.
+    `summary` is a separate concern, configured via the `reasoning` param
+    directly (e.g. `reasoning={"effort": "high", "summary": "auto"}`) rather
+    than implied by `reasoning_effort`.
     """
     from langchain_openai.chat_models.base import _construct_responses_api_payload
 
     payload = _construct_responses_api_payload([], {"reasoning_effort": "high"})
 
-    assert payload["reasoning"] == {"effort": "high", "summary": "auto"}
+    assert payload["reasoning"] == {"effort": "high"}
     assert "reasoning_effort" not in payload
-
-
-def test_reasoning_effort_none_responses_api_omits_summary() -> None:
-    """Test that `reasoning_effort='none'` requests no summary.
-
-    Reasoning is turned off entirely, so there is nothing to summarize.
-    """
-    from langchain_openai.chat_models.base import _construct_responses_api_payload
-
-    payload = _construct_responses_api_payload([], {"reasoning_effort": "none"})
-
-    assert payload["reasoning"] == {"effort": "none"}
-    assert "summary" not in payload["reasoning"]
 
 
 def test_reasoning_effort_responses_api_preserves_existing_reasoning() -> None:

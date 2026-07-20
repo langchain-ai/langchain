@@ -3,22 +3,6 @@ provider = "xai"
 [overrides]
 tool_call_streaming = true
 
-[overrides."grok-4.5"]
-reasoning_effort_levels = ["low", "medium", "high"]
-reasoning_effort_default = "high"
-
-[overrides."grok-4.20-0309-reasoning"]
-reasoning_effort_levels = ["low", "medium", "high"]
-reasoning_effort_default = "high"
-
-[overrides."grok-4.20-multi-agent-0309"]
-reasoning_effort_levels = ["low", "medium", "high"]
-reasoning_effort_default = "high"
-
 [overrides."grok-4.3"]
-reasoning_effort_levels = ["low", "medium", "high"]
-reasoning_effort_default = "high"
-
-[overrides."grok-build-0.1"]
-reasoning_effort_levels = ["low", "medium", "high"]
-reasoning_effort_default = "high"
+reasoning_effort_levels = ["none", "low", "medium", "high"]
+reasoning_effort_default = "low"

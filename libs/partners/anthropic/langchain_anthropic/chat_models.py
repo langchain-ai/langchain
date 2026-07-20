@@ -1062,26 +1062,10 @@ class ChatAnthropic(BaseChatModel):
     [extended output](https://platform.claude.com/docs/en/api/go/beta/messages/create).
     """
 
-    effort: Literal["max", "xhigh", "high", "medium", "low"] | None = None
-    """Convenience shorthand for `output_config.effort`.
-
-    When set, this value takes precedence over any `effort` key inside
-    `output_config`.
-
-    Example: `effort="medium"`
-
-    !!! note
-
-        Setting `effort` to `'high'` produces exactly the same behavior as omitting the
-        parameter altogether.
-
-    !!! warning "Deprecated"
-
-        `effort` is deprecated and will be removed in `langchain-anthropic` 2.0.0.
-        Use `reasoning_effort` instead.
-    """
-
-    reasoning_effort: Literal["max", "xhigh", "high", "medium", "low"] | None = None
+    reasoning_effort: Literal["max", "xhigh", "high", "medium", "low"] | None = Field(
+        default=None,
+        alias="effort",
+    )
     """Reasoning effort.
 
     Configures `output_config.effort`. If `thinking` isn't set explicitly,
@@ -1089,8 +1073,16 @@ class ChatAnthropic(BaseChatModel):
     be passed at call time (for example,
     `model.invoke(..., reasoning_effort="high")`).
 
-    If both `effort` and `reasoning_effort` are set, `effort` takes precedence,
-    but `effort` is deprecated.
+    !!! note "`effort` alias"
+
+        `effort` is also accepted as an alias for this field, at both
+        construction and call time. If both `effort` and `reasoning_effort` are
+        set, `effort` wins (Pydantic's alias-resolution precedence).
+
+    !!! note
+
+        Setting `reasoning_effort` to `'high'` produces exactly the same behavior
+        as omitting the parameter altogether.
 
     Example: `reasoning_effort="medium"`
     """
@@ -1122,6 +1114,11 @@ class ChatAnthropic(BaseChatModel):
     [data residency](https://platform.claude.com/docs/en/build-with-claude/data-residency)
     docs for more information.
     """
+
+    @property
+    def effort(self) -> Literal["max", "xhigh", "high", "medium", "low"] | None:
+        """Alias for `reasoning_effort`."""
+        return self.reasoning_effort
 
     @property
     def _llm_type(self) -> str:
@@ -1355,7 +1352,7 @@ class ChatAnthropic(BaseChatModel):
             payload["inference_geo"] = self.inference_geo
 
         # Handle output_config and effort parameter
-        # Priority: self.effort > kwarg `reasoning_effort` > kwarg `output_config`
+        # Priority: kwarg `effort`/`reasoning_effort` > kwarg `output_config`
         # > self.reasoning_effort > self.output_config
         output_config: dict[str, Any] = {}
         if self.output_config:
@@ -1368,24 +1365,18 @@ class ChatAnthropic(BaseChatModel):
         if isinstance(payload_oc, dict):
             output_config.update(payload_oc)
 
-        # `reasoning_effort` isn't an Anthropic API field. Pop it so it never leaks
-        # through as a top-level key.
-        reasoning_effort_override = payload.pop("reasoning_effort", None)
+        # Neither `reasoning_effort` nor its `effort` alias are Anthropic API
+        # fields. Pop them so they never leak through as top-level keys.
+        effort_kwarg = payload.pop("effort", None)
+        reasoning_effort_kwarg = payload.pop("reasoning_effort", None)
+        # `effort` wins if both are set at call time, matching the
+        # construction-time alias-resolution precedence (`Field(alias="effort")`).
+        reasoning_effort_override = (
+            effort_kwarg if effort_kwarg is not None else reasoning_effort_kwarg
+        )
         if reasoning_effort_override:
             output_config["effort"] = reasoning_effort_override
             reasoning_effort_applied = True
-
-        if self.effort:
-            warnings.warn(
-                "The `effort` parameter is deprecated and will be removed in "
-                "langchain-anthropic 2.0.0. Use `reasoning_effort` instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            output_config["effort"] = self.effort
-            # Preserve `effort`'s legacy behavior: it never enabled adaptive thinking,
-            # even if it overrides `reasoning_effort`.
-            reasoning_effort_applied = False
 
         if output_config:
             payload["output_config"] = output_config
