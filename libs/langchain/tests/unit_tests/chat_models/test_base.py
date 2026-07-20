@@ -262,7 +262,6 @@ def test_configurable_with_default() -> None:
             "max_tokens": 64000,
             "temperature": None,
             "thinking": None,
-            "effort": None,
             "reasoning_effort": None,
             "top_k": None,
             "top_p": None,
