@@ -28,8 +28,8 @@ DEFAULT_MODEL_NAME = "openai/gpt-oss-20b"
 TOOL_CALLING_MODEL_NAME = "qwen/qwen3.6-27b"
 TOOL_CALLING_MODEL_KWARGS: dict[str, Any] = {"reasoning_effort": "none"}
 
-# gpt-oss doesn't support `reasoning_effort`
-REASONING_MODEL_NAME = "qwen/qwen3-32b"
+# GPT-OSS models don't support `reasoning_format`
+REASONING_MODEL_NAME = "qwen/qwen3.6-27b"
 
 
 #
@@ -278,7 +278,7 @@ def test_reasoning_output_stream() -> None:
 def test_reasoning_effort_none() -> None:
     """Test that no reasoning output is returned if effort is set to none."""
     chat = ChatGroq(
-        model="qwen/qwen3-32b",  # Only qwen3 currently supports reasoning_effort = none
+        model=REASONING_MODEL_NAME,
         reasoning_effort="none",
     )
     message = HumanMessage(content="What is the capital of France?")
