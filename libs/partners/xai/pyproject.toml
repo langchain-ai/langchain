@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "1.2.2"
+version = "1.2.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-openai>=1.1.7,<2.0.0",
