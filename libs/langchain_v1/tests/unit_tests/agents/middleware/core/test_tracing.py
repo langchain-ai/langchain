@@ -19,9 +19,7 @@ class _CaptureInputs(BaseCallbackHandler):
     def __init__(self) -> None:
         self.inputs_by_name: dict[str, Any] = {}
 
-    def on_chain_start(
-        self, serialized: dict[str, Any], inputs: Any, **kwargs: Any
-    ) -> None:
+    def on_chain_start(self, serialized: dict[str, Any], inputs: Any, **kwargs: Any) -> None:
         name = kwargs.get("name") or (serialized or {}).get("name")
         if name is not None:
             self.inputs_by_name.setdefault(name, inputs)
