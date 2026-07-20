@@ -1067,3 +1067,95 @@ async def test_fallback_sanitizer_error_is_not_masked_async(
 
     with pytest.raises(RuntimeError, match="sanitizer boom"):
         await middleware.awrap_model_call(request, mock_handler)
+
+
+def test_lazy_initialization_does_not_instantiate_on_init(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No model should be instantiated during middleware construction."""
+    called = False
+
+    def fake_init(_spec: str) -> BaseChatModel:
+        nonlocal called
+        called = True
+        return GenericFakeChatModel(messages=iter([AIMessage(content="lazy")]))
+
+    monkeypatch.setattr(model_fallback_module, "init_chat_model", fake_init)
+
+    # Constructing the middleware must not call `init_chat_model`.
+    ModelFallbackMiddleware("fake:model")
+    assert not called
+
+
+def test_lazy_initialization_and_caching(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """First access should initialize once; subsequent uses reuse cached model."""
+    call_count = 0
+
+    def fake_init(_spec: str) -> BaseChatModel:
+        nonlocal call_count
+        call_count += 1
+        return GenericFakeChatModel(messages=iter([AIMessage(content=f"inst{call_count}")]))
+
+    monkeypatch.setattr(model_fallback_module, "init_chat_model", fake_init)
+
+    middleware = ModelFallbackMiddleware("fake:model")
+
+    primary_model = GenericFakeChatModel(messages=iter([AIMessage(content="primary")]))
+    request = _make_request().override(model=primary_model)
+
+    attempts: list[ModelRequest] = []
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            msg = "Primary failed"
+            raise ValueError(msg)
+        # The fallback should be an instantiated BaseChatModel
+        assert isinstance(req.model, BaseChatModel)
+        return ModelResponse(result=[AIMessage(content="fallback")])
+
+    response = middleware.wrap_model_call(request, mock_handler)
+    assert isinstance(response, ModelResponse)
+    assert call_count == 1
+
+    # Second overall call should reuse cached instance (no extra init)
+    attempts.clear()
+    response = middleware.wrap_model_call(request, mock_handler)
+    assert call_count == 1
+
+
+def test_passing_basechatmodel_is_reused(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Passing a BaseChatModel instance should bypass initialization entirely."""
+    call_count = 0
+
+    def fake_init(_spec: str) -> BaseChatModel:
+        nonlocal call_count
+        call_count += 1
+        return GenericFakeChatModel(messages=iter([AIMessage(content=f"inst{call_count}")]))
+
+    monkeypatch.setattr(model_fallback_module, "init_chat_model", fake_init)
+
+    instance = GenericFakeChatModel(messages=iter([AIMessage(content="fallback instance")]))
+    middleware = ModelFallbackMiddleware(instance)
+
+    # init_chat_model must not have been called
+    assert call_count == 0
+
+    primary_model = GenericFakeChatModel(messages=iter([AIMessage(content="primary")]))
+    request = _make_request().override(model=primary_model)
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        if req.model is primary_model:
+            msg = "Primary failed"
+            raise ValueError(msg)
+        # Ensure the exact instance passed to middleware is used
+        assert req.model is instance
+        return ModelResponse(result=[AIMessage(content="ok")])
+
+    response = middleware.wrap_model_call(request, mock_handler)
+    assert isinstance(response, ModelResponse)
+    assert call_count == 0

@@ -314,14 +314,43 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         """
         super().__init__()
 
-        # Initialize all fallback models
+        # Store model specifications (strings or instances) and prepare a
+        # per-spec cache for lazy instantiation. Preserve the public `models`
+        # attribute as the list of provided specs so external callers can
+        # introspect fallback order without triggering initialization.
         all_models = (first_model, *additional_models)
-        self.models: list[BaseChatModel] = []
+        self.models: list[str | BaseChatModel] = list(all_models)
+
+        # Internal cache: index -> instantiated BaseChatModel. Pre-populate
+        # entries for any provided `BaseChatModel` instances so they bypass
+        # initialization logic and are reused directly.
+        self._model_cache: list[BaseChatModel | None] = []
         for model in all_models:
             if isinstance(model, str):
-                self.models.append(init_chat_model(model))
+                self._model_cache.append(None)
             else:
-                self.models.append(model)
+                self._model_cache.append(model)
+
+    def _resolve(self, index: int) -> BaseChatModel:
+        """Lazily resolve the model at ``index``.
+
+        Initialize and cache the model on first access.
+
+        Args:
+            index: Index into the original `models` list.
+
+        Returns:
+            An instantiated ``BaseChatModel`` corresponding to the spec.
+        """
+        cached = self._model_cache[index]
+        if cached is not None:
+            return cached
+
+        spec = self.models[index]
+        model = init_chat_model(spec) if isinstance(spec, str) else spec
+
+        self._model_cache[index] = model
+        return model
 
     def wrap_model_call(
         self,
@@ -351,7 +380,8 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         # model cannot accept them (i.e. is not an Anthropic-compatible model).
         # The request is derived outside the try so a sanitizer or `_llm_type`
         # bug surfaces directly instead of being masked as a model failure.
-        for fallback_model in self.models:
+        for idx in range(len(self.models)):
+            fallback_model = self._resolve(idx)
             fallback_request = (
                 request
                 if _supports_anthropic_cache_control(fallback_model)
@@ -393,7 +423,8 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         # model cannot accept them (i.e. is not an Anthropic-compatible model).
         # The request is derived outside the try so a sanitizer or `_llm_type`
         # bug surfaces directly instead of being masked as a model failure.
-        for fallback_model in self.models:
+        for idx in range(len(self.models)):
+            fallback_model = self._resolve(idx)
             fallback_request = (
                 request
                 if _supports_anthropic_cache_control(fallback_model)
