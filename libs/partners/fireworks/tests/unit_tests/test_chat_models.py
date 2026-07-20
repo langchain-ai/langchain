@@ -1524,6 +1524,90 @@ class TestStreamUsage:
         }
 
 
+class TestReasoningEffort:
+    """Tests for the `reasoning_effort` field plumbing."""
+
+    def test_reasoning_effort_omitted_by_default(self) -> None:
+        model = _make_model()
+        assert "reasoning_effort" not in model._default_params
+
+    def test_reasoning_effort_in_default_params_when_set(self) -> None:
+        model = _make_model(reasoning_effort="high")
+        assert model._default_params["reasoning_effort"] == "high"
+
+    def test_reasoning_effort_passed_to_client_when_set(self) -> None:
+        model = _make_model(reasoning_effort="high")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "high"
+
+    def test_reasoning_effort_not_passed_when_unset(self) -> None:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert "reasoning_effort" not in call_kwargs
+
+    def test_reasoning_effort_as_call_time_kwarg(self) -> None:
+        """`reasoning_effort` also works as a call-time keyword argument.
+
+        This is the standard `reasoning_effort` param shared across chat model
+        integrations, so it must work via `model.invoke(..., reasoning_effort=...)`
+        without requiring it to be set on the model instance.
+        """
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello", reasoning_effort="low")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "low"
+
+    def test_reasoning_effort_call_time_kwarg_overrides_construction_time(
+        self,
+    ) -> None:
+        model = _make_model(reasoning_effort="low")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello", reasoning_effort="high")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "high"
+
+
 class TestServiceTier:
     """Tests for the `service_tier` field plumbing."""
 

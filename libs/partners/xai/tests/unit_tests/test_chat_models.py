@@ -130,6 +130,67 @@ def test_non_reasoning_model_payload_keeps_stop() -> None:
     assert payload["stop"] == ["END"]
 
 
+def test_reasoning_effort_moved_to_extra_body() -> None:
+    """`reasoning_effort` (inherited from `BaseChatOpenAI`) must reach xAI's
+    API via `extra_body`, since xAI does not accept it as a top-level field.
+    """
+    llm = ChatXAI(
+        model="grok-3-mini",
+        api_key=SecretStr("test-api-key"),
+        reasoning_effort="high",
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert "reasoning_effort" not in payload
+    assert payload["extra_body"]["reasoning_effort"] == "high"
+
+
+def test_reasoning_effort_as_call_time_kwarg() -> None:
+    """`reasoning_effort` also works as a call-time keyword argument.
+
+    This is the standard `reasoning_effort` param shared across chat model
+    integrations, so it must work via `model.invoke(..., reasoning_effort=...)`
+    without requiring it to be set on the model instance.
+    """
+    llm = ChatXAI(model="grok-3-mini", api_key=SecretStr("test-api-key"))
+
+    payload = llm._get_request_payload("hello", reasoning_effort="low")
+
+    assert "reasoning_effort" not in payload
+    assert payload["extra_body"]["reasoning_effort"] == "low"
+
+
+def test_reasoning_effort_preserves_existing_extra_body() -> None:
+    """Moving `reasoning_effort` into `extra_body` must not drop sibling keys."""
+    llm = ChatXAI(
+        model="grok-3-mini",
+        api_key=SecretStr("test-api-key"),
+        reasoning_effort="high",
+        extra_body={"some_other_field": "value"},
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert payload["extra_body"] == {
+        "some_other_field": "value",
+        "reasoning_effort": "high",
+    }
+
+
+def test_no_reasoning_effort_leaves_extra_body_untouched() -> None:
+    llm = ChatXAI(
+        model="grok-3-mini",
+        api_key=SecretStr("test-api-key"),
+        extra_body={"some_other_field": "value"},
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert payload["extra_body"] == {"some_other_field": "value"}
+    assert "reasoning_effort" not in payload
+
+
 def test_function_dict_to_message_function_message() -> None:
     content = json.dumps({"result": "Example #1"})
     name = "test_function"

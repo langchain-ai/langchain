@@ -1547,7 +1547,7 @@ def test_minimal_reasoning_effort_payload(
     # When using responses API, reasoning_effort becomes reasoning.effort
     if use_responses_api:
         assert "reasoning" in payload
-        assert payload["reasoning"]["effort"] == "minimal"
+        assert payload["reasoning"] == {"effort": "minimal"}
         # For responses API, tokens param becomes max_output_tokens
         assert payload["max_output_tokens"] == 100
     else:
@@ -4614,6 +4614,39 @@ def test_namespace_passthrough() -> None:
     assert ns["name"] == "crm"
     assert ns["tools"][0]["defer_loading"] is True
     assert {"type": "tool_search"} in payload["tools"]
+
+
+def test_reasoning_effort_responses_api_maps_to_effort_only() -> None:
+    """Test `reasoning_effort` maps to `reasoning.effort` alone, no `summary`.
+
+    `summary` is a separate concern, configured via the `reasoning` param
+    directly (e.g. `reasoning={"effort": "high", "summary": "auto"}`) rather
+    than implied by `reasoning_effort`.
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    payload = _construct_responses_api_payload([], {"reasoning_effort": "high"})
+
+    assert payload["reasoning"] == {"effort": "high"}
+    assert "reasoning_effort" not in payload
+
+
+def test_reasoning_effort_responses_api_preserves_existing_reasoning() -> None:
+    """Test that an already-present `reasoning` dict is not overwritten."""
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    payload = _construct_responses_api_payload(
+        [],
+        {
+            "reasoning_effort": "high",
+            "reasoning": {"effort": "low", "summary": "concise"},
+        },
+    )
+
+    assert payload["reasoning"] == {"effort": "low", "summary": "concise"}
+    # The unused `reasoning_effort` kwarg is left untouched in this case, since
+    # the guard requires `"reasoning" not in payload` before popping it.
+    assert payload["reasoning_effort"] == "high"
 
 
 def test_defer_loading_in_responses_api_payload() -> None:

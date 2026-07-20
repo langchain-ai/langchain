@@ -895,6 +895,15 @@ class ChatFireworks(BaseChatModel):
 
     !!! version-added "Added in `langchain-fireworks` 1.3.0"
     """
+    reasoning_effort: str | None = None
+    """Reasoning effort.
+
+    Forwarded as the `reasoning_effort` request field. Supported values vary by
+    model; see the model's `profile.reasoning_effort_levels`.
+
+    Can also be passed at call time, e.g.
+    `model.invoke(..., reasoning_effort="high")`.
+    """
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -994,6 +1003,8 @@ class ChatFireworks(BaseChatModel):
             params["max_tokens"] = self.max_tokens
         if self.service_tier is not None:
             params["service_tier"] = self.service_tier
+        if self.reasoning_effort is not None:
+            params["reasoning_effort"] = self.reasoning_effort
         return params
 
     def _get_ls_params(

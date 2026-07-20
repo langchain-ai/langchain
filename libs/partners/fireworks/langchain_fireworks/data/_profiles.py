@@ -59,6 +59,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": False,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
+        "reasoning_effort_default": "high",
     },
     "accounts/fireworks/models/glm-5p1": {
         "name": "GLM 5.1",
@@ -80,6 +89,11 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": False,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "high",
+            "max",
+        ],
     },
     "accounts/fireworks/models/glm-5p2": {
         "name": "GLM 5.2",
@@ -101,6 +115,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": False,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "high",
+            "max",
+        ],
+        "reasoning_effort_default": "max",
     },
     "accounts/fireworks/models/gpt-oss-120b": {
         "name": "GPT OSS 120B",
@@ -164,6 +184,11 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
     },
     "accounts/fireworks/models/kimi-k2p7-code": {
         "name": "Kimi K2.7 Code",
@@ -185,6 +210,11 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
     },
     "accounts/fireworks/models/minimax-m2p7": {
         "name": "MiniMax-M2.7",
@@ -269,6 +299,11 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": False,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "high",
+            "max",
+        ],
     },
     "accounts/fireworks/routers/glm-5p2-fast": {
         "name": "GLM 5.2 Fast",
@@ -290,6 +325,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": False,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "high",
+            "max",
+        ],
+        "reasoning_effort_default": "max",
     },
     "accounts/fireworks/routers/kimi-k2p6-fast": {
         "name": "Kimi K2.6 Fast",
@@ -311,6 +352,11 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
     },
     "accounts/fireworks/routers/kimi-k2p6-turbo": {
         "name": "Kimi K2.6 Turbo",
@@ -332,6 +378,11 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
     },
     "accounts/fireworks/routers/kimi-k2p7-code-fast": {
         "name": "Kimi K2.7 Code Fast",
@@ -353,5 +404,10 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
     },
 }

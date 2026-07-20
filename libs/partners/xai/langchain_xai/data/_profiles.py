@@ -107,6 +107,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "attachment": True,
         "temperature": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+        ],
+        "reasoning_effort_default": "low",
     },
     "grok-4.5": {
         "name": "Grok 4.5",
