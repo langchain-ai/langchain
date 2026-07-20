@@ -26,7 +26,7 @@ from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
-from langgraph.types import Command, Send
+from langgraph.types import Command, Send, TracePolicy
 from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict, overload
 
@@ -152,13 +152,18 @@ def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
 
 
 def _omit_trace_inputs(_inputs: Any) -> dict[str, Any]:
-    """Trace scrubber for hooks with `trace_inputs=False`: record no inputs.
+    """Trace scrubber for hooks that opt out of input tracing: record no inputs.
 
-    Used as `process_inputs` on `traceable` wrap-hook spans and as `trace_inputs`
-    on the `before_*`/`after_*` node runs. Only the trace payload is dropped; the
-    real request/state still flow to the middleware hook unchanged.
+    Used as `process_inputs` on `traceable` wrap-hook spans and as
+    `TracePolicy(process_inputs=...)` on the `before_*`/`after_*` node runs. Only the
+    trace payload is dropped; the real request/state still flow to the hook unchanged.
     """
     return {}
+
+
+def _should_trace_inputs(middleware: AgentMiddleware[Any, Any]) -> bool:
+    """Whether the middleware opted into recording full hook inputs in traces."""
+    return bool((middleware.tracing or {}).get("inputs", False))
 
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
@@ -1030,7 +1035,7 @@ def create_agent(
         wrappers = [
             traceable(
                 name=f"{m.name}.wrap_tool_call",
-                process_inputs=_scrub_inputs if m.trace_inputs else _omit_trace_inputs,
+                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
             )(m.wrap_tool_call)
             for m in middleware_w_wrap_tool_call
         ]
@@ -1052,7 +1057,7 @@ def create_agent(
         async_wrappers = [
             traceable(
                 name=f"{m.name}.awrap_tool_call",
-                process_inputs=_scrub_inputs if m.trace_inputs else _omit_trace_inputs,
+                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
             )(m.awrap_tool_call)
             for m in middleware_w_awrap_tool_call
         ]
@@ -1141,7 +1146,7 @@ def create_agent(
         sync_handlers = [
             traceable(
                 name=f"{m.name}.wrap_model_call",
-                process_inputs=_scrub_inputs if m.trace_inputs else _omit_trace_inputs,
+                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
             )(m.wrap_model_call)
             for m in middleware_w_wrap_model_call
         ]
@@ -1153,7 +1158,7 @@ def create_agent(
         async_handlers = [
             traceable(
                 name=f"{m.name}.awrap_model_call",
-                process_inputs=_scrub_inputs if m.trace_inputs else _omit_trace_inputs,
+                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
             )(m.awrap_model_call)
             for m in middleware_w_awrap_model_call
         ]
@@ -1542,7 +1547,9 @@ def create_agent(
                 f"{m.name}.before_agent",
                 before_agent_node,
                 input_schema=resolved_state_schema,
-                trace_inputs=None if m.trace_inputs else _omit_trace_inputs,
+                trace_policy=None
+                if _should_trace_inputs(m)
+                else TracePolicy(process_inputs=_omit_trace_inputs),
             )
 
         if (
@@ -1566,7 +1573,9 @@ def create_agent(
                 f"{m.name}.before_model",
                 before_node,
                 input_schema=resolved_state_schema,
-                trace_inputs=None if m.trace_inputs else _omit_trace_inputs,
+                trace_policy=None
+                if _should_trace_inputs(m)
+                else TracePolicy(process_inputs=_omit_trace_inputs),
             )
 
         if (
@@ -1590,7 +1599,9 @@ def create_agent(
                 f"{m.name}.after_model",
                 after_node,
                 input_schema=resolved_state_schema,
-                trace_inputs=None if m.trace_inputs else _omit_trace_inputs,
+                trace_policy=None
+                if _should_trace_inputs(m)
+                else TracePolicy(process_inputs=_omit_trace_inputs),
             )
 
         if (
@@ -1614,7 +1625,9 @@ def create_agent(
                 f"{m.name}.after_agent",
                 after_agent_node,
                 input_schema=resolved_state_schema,
-                trace_inputs=None if m.trace_inputs else _omit_trace_inputs,
+                trace_policy=None
+                if _should_trace_inputs(m)
+                else TracePolicy(process_inputs=_omit_trace_inputs),
             )
 
     # Determine the entry node (runs once at start): before_agent -> before_model -> model
