@@ -128,7 +128,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
             retry_on: Either a tuple of exception types to retry on, or a callable
                 that takes an exception and returns `True` if it should be retried.
 
-                Default is to retry on all exceptions.
+                Default is to retry on all exceptions. Exceptions that do not match
+                are re-raised immediately (not converted to an error message).
             on_failure: Behavior when all retries are exhausted.
 
                 Options:
@@ -237,8 +238,10 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
 
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
-                    # Exception is not retryable, handle failure immediately
-                    return self._handle_failure(exc, attempts_made)
+                    # Exception is not retryable — re-raise immediately so it is
+                    # not converted into an error AIMessage. Matches
+                    # ToolRetryMiddleware after #38845 (#38893).
+                    raise
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
@@ -287,8 +290,10 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
 
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
-                    # Exception is not retryable, handle failure immediately
-                    return self._handle_failure(exc, attempts_made)
+                    # Exception is not retryable — re-raise immediately so it is
+                    # not converted into an error AIMessage. Matches
+                    # ToolRetryMiddleware after #38845 (#38893).
+                    raise
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
