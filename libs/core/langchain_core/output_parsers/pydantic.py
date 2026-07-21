@@ -22,6 +22,38 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     pydantic_object: Annotated[type[TBaseModel], SkipValidation()]
     """The Pydantic model to parse."""
 
+    @staticmethod
+    def _coerce_field_types(obj: Any) -> Any:
+        """Coerce common type mismatches in JSON-parsed objects before Pydantic
+        validation.  LLMs frequently emit lists where a scalar is expected (or
+        vice versa), and this step applies lightweight conversions so that
+        well-known mismatches don't trigger a spurious
+        ``OutputParserException``.
+
+        The conversions are intentionally conservative — only types that are
+        unambiguously representable as the target type are converted.
+        """
+        if not isinstance(obj, dict):
+            return obj
+
+        result: dict[str, Any] = {}
+        for key, value in obj.items():
+            if isinstance(value, list):
+                # list → str: join with newlines
+                if all(isinstance(item, str) for item in value):
+                    result[key] = "\n".join(value)
+                # list → int/float: take first element if single-element list
+                elif len(value) == 1 and isinstance(value[0], (int, float)):
+                    result[key] = value[0]
+                else:
+                    result[key] = value
+            elif isinstance(value, str):
+                # str → list: wrap in single-element list
+                result[key] = value
+            else:
+                result[key] = value
+        return result
+
     def _parse_obj(self, obj: Any) -> TBaseModel:
         try:
             if issubclass(self.pydantic_object, pydantic.BaseModel):
@@ -34,6 +66,16 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             )
             raise OutputParserException(msg)
         except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
+            # Attempt field-level coercion before giving up.
+            coerced = self._coerce_field_types(obj)
+            if coerced is not obj:
+                try:
+                    if issubclass(self.pydantic_object, pydantic.BaseModel):
+                        return self.pydantic_object.model_validate(coerced)
+                    if issubclass(self.pydantic_object, pydantic.v1.BaseModel):
+                        return self.pydantic_object.parse_obj(coerced)
+                except (pydantic.ValidationError, pydantic.v1.ValidationError):
+                    pass  # fall through to original error
             raise self._parser_exception(e, obj) from e
 
     def _parser_exception(
