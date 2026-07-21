@@ -486,6 +486,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        _missing = object()  # sentinel to distinguish empty stream from exception
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -497,7 +498,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         input,
                         **kwargs,
                     )
-                    chunk: Output = context.run(next, stream)
+                    chunk: Output = context.run(next, stream, _missing)
+                    if chunk is _missing:
+                        # Empty stream is a valid outcome, not a failure
+                        first_error = None
+                        break
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -510,6 +515,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         if first_error:
             run_manager.on_chain_error(first_error)
             raise first_error
+
+        if chunk is _missing:
+            # Primary completed with empty stream — yield nothing
+            return
 
         yield chunk
         output: Output | None = chunk
@@ -550,6 +559,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        _missing = object()  # sentinel to distinguish empty stream from exception
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -561,7 +571,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         child_config,
                         **kwargs,
                     )
-                    chunk = await coro_with_context(anext(stream), context)
+                    chunk = await coro_with_context(anext(stream, _missing), context)
+                    if chunk is _missing:
+                        # Empty stream is a valid outcome, not a failure
+                        first_error = None
+                        break
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -574,6 +588,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         if first_error:
             await run_manager.on_chain_error(first_error)
             raise first_error
+
+        if chunk is _missing:
+            # Primary completed with empty stream — yield nothing
+            return
 
         yield chunk
         output: Output | None = chunk
