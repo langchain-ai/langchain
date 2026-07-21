@@ -2669,7 +2669,7 @@ wheels = [
 [[package]]
 name = "langgraph"
 version = "1.2.9"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Flanggraph&branch=cc%2Fprofiling-test-1#2dd4367399de8b246b7bd99c108effb16cdfd9de" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Flanggraph&branch=cc%2Fprofiling-test-1#07baf7c1aa8f00fbc41d21fe479fa971357e5b9a" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -2682,7 +2682,7 @@ dependencies = [
 [[package]]
 name = "langgraph-checkpoint"
 version = "4.1.1"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fcheckpoint&branch=cc%2Fprofiling-test-1#2dd4367399de8b246b7bd99c108effb16cdfd9de" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fcheckpoint&branch=cc%2Fprofiling-test-1#07baf7c1aa8f00fbc41d21fe479fa971357e5b9a" }
 dependencies = [
     { name = "langchain-core" },
     { name = "ormsgpack" },
@@ -2691,7 +2691,7 @@ dependencies = [
 [[package]]
 name = "langgraph-prebuilt"
 version = "1.1.0"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fprebuilt&branch=cc%2Fprofiling-test-1#2dd4367399de8b246b7bd99c108effb16cdfd9de" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fprebuilt&branch=cc%2Fprofiling-test-1#07baf7c1aa8f00fbc41d21fe479fa971357e5b9a" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -2700,7 +2700,7 @@ dependencies = [
 [[package]]
 name = "langgraph-sdk"
 version = "0.4.2"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fsdk-py&branch=cc%2Fprofiling-test-1#2dd4367399de8b246b7bd99c108effb16cdfd9de" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fsdk-py&branch=cc%2Fprofiling-test-1#07baf7c1aa8f00fbc41d21fe479fa971357e5b9a" }
 dependencies = [
     { name = "httpx" },
     { name = "langchain-core" },

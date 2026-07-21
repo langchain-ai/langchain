@@ -393,6 +393,12 @@ class TraceConfig(TypedDict, total=False):
     (hook spans record empty inputs, dropping the conversation/state payload while
     keeping the span and its timing)."""
 
+    hidden: bool
+    """Whether to hide this middleware's hook spans from the trace tree (tagged
+    `langsmith:hidden_middleware`). Defaults to `True`, so middleware hooks don't clutter
+    the trace; set `False` to show them. The spans are still sent; LangSmith omits them
+    from the trace view. This does not affect LangGraph's `stream`/debug output."""
+
 
 class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     """Base middleware class for an agent.
@@ -421,7 +427,8 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     and its timing. This avoids re-serializing the growing conversation on every
     hook, which otherwise dominates tracing latency in long-running agents; the
     messages are still captured on the inner model-call span. Set `{"inputs": True}`
-    to record full hook inputs (e.g. when debugging a specific middleware).
+    to record full hook inputs (e.g. when debugging a specific middleware). Hook spans
+    are also hidden from the trace tree by default; set `{"hidden": False}` to show them.
     """
 
     transformers: Sequence[TransformerFactory] = ()
