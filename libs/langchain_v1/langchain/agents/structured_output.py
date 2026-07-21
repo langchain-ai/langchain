@@ -424,6 +424,12 @@ class ProviderStrategyBinding(Generic[SchemaT]):
     def _extract_text_content_from_message(message: AIMessage) -> str:
         """Extract text content from an `AIMessage`.
 
+        When the message contains multiple text blocks (e.g. OpenAI phased
+        responses with ``commentary`` and ``final_answer`` phases), each block
+        is tried individually (last-to-first) as valid JSON.  Only if none of
+        the blocks parse as standalone JSON does the method fall back to
+        concatenating all text blocks.
+
         Args:
             message: The AI message to extract text from
 
@@ -442,6 +448,18 @@ class ProviderStrategyBinding(Generic[SchemaT]):
                     parts.append(c["content"])
             else:
                 parts.append(str(c))
+        # Try each block individually (last-to-first) as valid JSON.
+        # This handles phased responses where only the final block contains
+        # the structured output.
+        for block in reversed(parts):
+            stripped = block.strip()
+            if stripped.startswith("{") and stripped.endswith("}"):
+                try:
+                    json.loads(stripped)
+                    return stripped
+                except json.JSONDecodeError:
+                    continue
+        # Fall back to concatenation for split JSON.
         return "".join(parts)
 
 
