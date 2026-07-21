@@ -3780,3 +3780,16 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
     message_finish = cast("dict[str, Any]", stream_events[-1])
     assert message_finish["event"] == "message-finish"
     assert message_finish["metadata"]["stop_reason"] == "tool_use"
+
+
+def test_bind_tools_does_not_mutate_tool_choice_dict() -> None:
+    """Verify that bind_tools does not mutate caller's tool_choice dictionary."""
+    model = ChatAnthropic(model="claude-3-5-sonnet-20241022", api_key="test")
+    tool_choice = {"type": "tool", "name": "GetWeather"}
+    tool_choice_original = tool_choice.copy()
+
+    model.bind_tools([], tool_choice=tool_choice, parallel_tool_calls=False)
+
+    assert tool_choice == tool_choice_original
+    assert "disable_parallel_tool_use" not in tool_choice
+
