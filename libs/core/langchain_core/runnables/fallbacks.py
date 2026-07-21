@@ -497,7 +497,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         input,
                         **kwargs,
                     )
-                    chunk: Output = context.run(next, stream)
+                    try:
+                        chunk: Output = context.run(next, stream)
+                    except StopIteration:
+                        # Stream is legitimately empty; no output to yield
+                        # and no fallback should be triggered.
+                        first_error = None
+                        break
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -511,7 +517,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             run_manager.on_chain_error(first_error)
             raise first_error
 
-        yield chunk
+        try:
+            yield chunk
+        except UnboundLocalError:
+            # All runnables produced empty streams; nothing to yield.
+            return
         output: Output | None = chunk
         try:
             for chunk in stream:
@@ -561,7 +571,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         child_config,
                         **kwargs,
                     )
-                    chunk = await coro_with_context(anext(stream), context)
+                    try:
+                        chunk = await coro_with_context(anext(stream), context)
+                    except StopAsyncIteration:
+                        # Stream is legitimately empty; no output to yield
+                        # and no fallback should be triggered.
+                        first_error = None
+                        break
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -575,7 +591,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             await run_manager.on_chain_error(first_error)
             raise first_error
 
-        yield chunk
+        try:
+            yield chunk
+        except UnboundLocalError:
+            # All runnables produced empty streams; nothing to yield.
+            return
         output: Output | None = chunk
         try:
             async for chunk in stream:
