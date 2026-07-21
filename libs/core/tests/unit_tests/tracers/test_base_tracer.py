@@ -12,6 +12,8 @@ import pytest
 from freezegun import freeze_time
 from langsmith import Client, traceable
 
+import copy
+
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import TracerException
 from langchain_core.messages import HumanMessage
@@ -19,6 +21,7 @@ from langchain_core.outputs import LLMResult
 from langchain_core.runnables import chain as as_runnable
 from langchain_core.tracers._compat import pydantic_to_dict
 from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.core import _TracerCore
 from langchain_core.tracers.schemas import Run
 
 SERIALIZED = {"id": ["llm"]}
@@ -677,3 +680,101 @@ def test_traceable_to_tracing() -> None:
         )
     assert result == 5
     assert has_children, "Child run not collected"
+
+
+class ConcreteTracerCore(_TracerCore):
+    """Concrete implementation of _TracerCore for testing."""
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op."""
+
+
+def test_tracer_core_copy_returns_independent_instance() -> None:
+    """copy.copy(_TracerCore) should return a new instance, not self."""
+    tracer = ConcreteTracerCore(_schema_format="original")
+    copied = copy.copy(tracer)
+    assert copied is not tracer
+    assert isinstance(copied, ConcreteTracerCore)
+    assert copied._schema_format == "original"
+
+
+def test_tracer_core_copy_has_independent_dicts() -> None:
+    """Copied tracer should have independent run_map, order_map, _external_run_ids."""
+    tracer = ConcreteTracerCore(_schema_format="original")
+    tracer.run_map["key1"] = None  # type: ignore[index]
+    tracer.order_map["key2"] = None  # type: ignore[index]
+    tracer._external_run_ids["key3"] = 1
+
+    copied = copy.copy(tracer)
+
+    # The copied tracer should have empty dicts, not shared ones
+    assert copied.run_map == {}
+    assert copied.order_map == {}
+    assert copied._external_run_ids == {}
+
+    # Verify independence: mutating the copied tracer doesn't affect the original
+    copied.run_map["key4"] = None  # type: ignore[index]
+    assert "key4" not in tracer.run_map
+
+
+def test_tracer_core_copy_preserves_schema_format() -> None:
+    """Copy should preserve _schema_format."""
+    tracer = ConcreteTracerCore(_schema_format="streaming_events")
+    copied = copy.copy(tracer)
+    assert copied._schema_format == "streaming_events"
+
+
+def test_base_tracer_copy_returns_independent_instance() -> None:
+    """copy.copy(BaseTracer) should return a new instance, not self."""
+    tracer = FakeTracer()
+    copied = copy.copy(tracer)
+    assert copied is not tracer
+    assert isinstance(copied, FakeTracer)
+
+
+def test_base_tracer_copy_has_independent_dicts() -> None:
+    """Copied BaseTracer should have independent run_map, order_map, _external_run_ids."""
+    tracer = FakeTracer()
+    tracer.run_map["key1"] = None  # type: ignore[index]
+    tracer.order_map["key2"] = None  # type: ignore[index]
+    tracer._external_run_ids["key3"] = 1
+
+    copied = copy.copy(tracer)
+
+    assert copied.run_map == {}
+    assert copied.order_map == {}
+    assert copied._external_run_ids == {}
+
+    # Verify independence
+    copied.run_map["key4"] = None  # type: ignore[index]
+    assert "key4" not in tracer.run_map
+
+
+def test_base_tracer_deepcopy_returns_independent_instance() -> None:
+    """copy.deepcopy(BaseTracer) should return a new instance, not self."""
+    tracer = FakeTracer()
+    copied = copy.deepcopy(tracer)
+    assert copied is not tracer
+    assert isinstance(copied, FakeTracer)
+    assert copied.run_map == {}
+    assert copied.order_map == {}
+    assert copied._external_run_ids == {}
+
+
+def test_log_stream_send_returns_false_on_closed_stream() -> None:
+    """LogStreamCallbackHandler.send() should return False when stream is closed."""
+    from langchain_core.tracers.log_stream import LogStreamCallbackHandler
+
+    handler = LogStreamCallbackHandler()
+    handler.send_stream.close()
+    result = handler.send({"type": "test"})
+    assert result is False, "send() should return False on a closed stream"
+
+
+def test_log_stream_send_returns_true_on_open_stream() -> None:
+    """LogStreamCallbackHandler.send() should return True when stream is open."""
+    from langchain_core.tracers.log_stream import LogStreamCallbackHandler
+
+    handler = LogStreamCallbackHandler()
+    result = handler.send({"type": "test"})
+    assert result is True, "send() should return True on an open stream"

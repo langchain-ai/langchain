@@ -556,12 +556,17 @@ class _TracerCore(ABC):
         return retrieval_run
 
     def __deepcopy__(self, memo: dict[int, Any] | None = None) -> _TracerCore:
-        """Return self deepcopied."""
-        return self
+        """Return a deep copy of the tracer with independent run state."""
+        return self.__copy__()
 
     def __copy__(self) -> _TracerCore:
-        """Return self copied."""
-        return self
+        """Return a copy of the tracer with independent run state."""
+        new = object.__new__(self.__class__)
+        new.__dict__ = self.__dict__.copy()
+        new.run_map = {}
+        new.order_map = {}
+        new._external_run_ids = {}
+        return new
 
     def _end_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """End a trace for a run.

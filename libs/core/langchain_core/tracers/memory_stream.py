@@ -34,6 +34,7 @@ class _SendStream(Generic[T]):
         self._reader_loop = reader_loop
         self._queue = queue
         self._done = done
+        self._closed = False
 
     async def send(self, item: T) -> None:
         """Schedule the item to be written to the queue using the original loop.
@@ -54,9 +55,11 @@ class _SendStream(Generic[T]):
             item: The item to write to the queue.
 
         Raises:
-            RuntimeError: If the event loop is already closed when trying to write to
-                the queue.
+            RuntimeError: If the stream is already closed or the event loop is closed.
         """
+        if self._closed:
+            msg = "Cannot send to a closed stream."
+            raise RuntimeError(msg)
         try:
             self._reader_loop.call_soon_threadsafe(self._queue.put_nowait, item)
         except RuntimeError:
@@ -76,6 +79,7 @@ class _SendStream(Generic[T]):
             RuntimeError: If the event loop is already closed when trying to write to
                 the queue.
         """
+        self._closed = True
         try:
             self._reader_loop.call_soon_threadsafe(self._queue.put_nowait, self._done)
         except RuntimeError:

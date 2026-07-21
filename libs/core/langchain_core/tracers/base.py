@@ -540,12 +540,17 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         return retrieval_run
 
     def __deepcopy__(self, memo: dict[int, Any] | None = None) -> BaseTracer:
-        """Return self."""
-        return self
+        """Return a deep copy of the tracer with independent run state."""
+        return self.__copy__()
 
     def __copy__(self) -> BaseTracer:
-        """Return self."""
-        return self
+        """Return a copy of the tracer with independent run state."""
+        new = object.__new__(self.__class__)
+        new.__dict__ = self.__dict__.copy()
+        new.run_map = {}
+        new.order_map = {}
+        new._external_run_ids = {}
+        return new
 
 
 class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):

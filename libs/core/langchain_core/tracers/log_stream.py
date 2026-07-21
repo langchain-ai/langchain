@@ -316,11 +316,10 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler[Any]):
         Returns:
             `True` if the patch was sent successfully, `False` if the stream is closed.
         """
-        # We will likely want to wrap this in try / except at some point
-        # to handle exceptions that might arise at run time.
-        # For now we'll let the exception bubble up, and always return
-        # True on the happy path.
-        self.send_stream.send_nowait(RunLogPatch(*ops))
+        try:
+            self.send_stream.send_nowait(RunLogPatch(*ops))
+        except RuntimeError:
+            return False
         return True
 
     async def tap_output_aiter(

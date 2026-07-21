@@ -3,6 +3,8 @@ import math
 import time
 from collections.abc import AsyncIterator
 
+import pytest
+
 from langchain_core.tracers.memory_stream import _MemoryStream
 
 
@@ -113,21 +115,24 @@ async def test_queue_for_streaming_via_sync_call() -> None:
 
 
 def test_send_to_closed_stream() -> None:
-    """Test that sending to a closed stream doesn't raise an error.
+    """Test that sending to a closed stream raises RuntimeError.
 
-    We may want to handle this in a better way in the future.
+    After close() is called, send_nowait should raise RuntimeError so
+    callers can detect that the stream is no longer accepting data.
     """
     event_loop = asyncio.new_event_loop()
     channel = _MemoryStream[str](event_loop)
     writer = channel.get_send_stream()
-    # send with an open even loop
+    # send with an open event loop
     writer.send_nowait("hello")
     event_loop.close()
     writer.send_nowait("hello")
-    # now close the loop
+    # now close the writer
     event_loop.close()
     writer.close()
-    writer.send_nowait("hello")
+    # send_nowait should raise after close()
+    with pytest.raises(RuntimeError, match="Cannot send to a closed stream"):
+        writer.send_nowait("hello")
 
 
 async def test_closed_stream() -> None:
