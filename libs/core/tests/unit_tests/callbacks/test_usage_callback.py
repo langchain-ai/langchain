@@ -120,3 +120,20 @@ async def test_usage_callback_async() -> None:
     callback = UsageMetadataCallbackHandler()
     _ = await llm.abatch(["Message 1", "Message 2"], config={"callbacks": [callback]})
     assert callback.usage_metadata == {"test_model": total_1_2}
+
+
+def test_usage_callback_clears_on_exception() -> None:
+    """Callback must stop tracking after with-block exits via exception (#38989)."""
+    llm = FakeChatModelWithResponseMetadata(
+        messages=iter(messages), model_name="fake"
+    )
+    try:
+        with get_usage_metadata_callback() as cb:
+            _ = llm.invoke("in block")
+            raise RuntimeError("boom")
+    except RuntimeError:
+        pass
+
+    # Calls after the block must not accumulate into the previous callback.
+    _ = llm.invoke("outside block")
+    assert cb.usage_metadata == {"fake": usage1}
