@@ -394,6 +394,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
         summary = self._create_summary(messages_to_summarize)
+        if summary is None:
+            # Summary generation failed — do NOT delete messages.
+            # The next invocation will retry summarization.
+            return None
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -432,6 +436,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
         summary = await self._acreate_summary(messages_to_summarize)
+        if summary is None:
+            # Summary generation failed — do NOT delete messages.
+            # The next invocation will retry summarization.
+            return None
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -795,7 +803,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         # orphaned tool responses
         return idx
 
-    def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
+    def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str | None:
         """Generate summary for the given messages.
 
         Args:
@@ -819,9 +827,17 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             )
             return response.text.strip()
         except Exception as e:
-            return f"Error generating summary: {e!s}"
+            # Return None to signal failure — the caller must NOT delete
+            # the original messages when no valid summary was produced.
+            # This prevents transient errors (429, timeouts) from
+            # permanently destroying conversation history (#38867).
+            import logging
+            logging.getLogger(__name__).warning(
+                "Summary generation failed; preserving original messages: %s", e
+            )
+            return None
 
-    async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
+    async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str | None:
         """Generate summary for the given messages.
 
         Args:
@@ -845,7 +861,15 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             )
             return response.text.strip()
         except Exception as e:
-            return f"Error generating summary: {e!s}"
+            # Return None to signal failure — the caller must NOT delete
+            # the original messages when no valid summary was produced.
+            # This prevents transient errors (429, timeouts) from
+            # permanently destroying conversation history (#38867).
+            import logging
+            logging.getLogger(__name__).warning(
+                "Summary generation failed; preserving original messages: %s", e
+            )
+            return None
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
         """Trim messages to fit within summary generation limits."""
