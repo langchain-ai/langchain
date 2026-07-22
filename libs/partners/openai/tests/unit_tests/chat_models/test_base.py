@@ -167,6 +167,14 @@ def test_profile() -> None:
     assert model.profile["max_input_tokens"] == 272_000
 
 
+def test_gpt_5_3_chat_latest_profile_has_no_reasoning_effort() -> None:
+    model = ChatOpenAI(model="gpt-5.3-chat-latest")
+
+    assert model.profile
+    assert model.profile["reasoning_output"] is False
+    assert "reasoning_effort_levels" not in model.profile
+
+
 def test_function_message_dict_to_function_message() -> None:
     content = json.dumps({"result": "Example #1"})
     name = "test_function"
