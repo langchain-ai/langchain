@@ -47,7 +47,7 @@ from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
-from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_core.utils.pydantic import model_json_schema as get_model_json_schema
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseLanguageModel
@@ -2274,9 +2274,10 @@ def count_tokens_approximately(
             using the **most recent** AI message that has
             `usage_metadata['total_tokens']`. The scaling factor is:
             `AI_total_tokens / approx_tokens_up_to_that_AI_message`
-        tools: List of tools to include in the token count. Each tool can be either
-            a `BaseTool` instance or a dict representing a tool schema. `BaseTool`
-            instances are converted to OpenAI tool format before counting.
+        tools: List of tools to include in the token count. Each tool can be a
+            `BaseTool` instance, a dict representing a tool schema, or a plain
+            callable. `BaseTool` instances and callables are converted to
+            OpenAI tool format before counting.
 
     Returns:
         Approximate number of tokens in the messages (and tools, if provided).
@@ -2304,7 +2305,24 @@ def count_tokens_approximately(
     if tools:
         tools_chars = 0
         for tool in tools:
-            tool_dict = tool if isinstance(tool, dict) else convert_to_openai_tool(tool)
+            if isinstance(tool, dict):
+                tool_dict = tool
+            else:
+                # tool_call_schema is memoized per instance
+                schema = tool.tool_call_schema
+                if isinstance(schema, dict):
+                    parameters = dict(schema)
+                else:
+                    parameters = dict(get_model_json_schema(schema))
+                # Drop the schema's own `title`/`description` to avoid double-counting:
+                # they're duplicated at the top level.
+                parameters.pop("title", None)
+                parameters.pop("description", None)
+                tool_dict = {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": parameters,
+                }
             tools_chars += len(json.dumps(tool_dict))
         token_count += math.ceil(tools_chars / chars_per_token)
 
