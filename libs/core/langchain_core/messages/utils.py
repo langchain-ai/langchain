@@ -47,7 +47,6 @@ from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
-from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import model_json_schema as get_model_json_schema
 
 if TYPE_CHECKING:
@@ -2245,7 +2244,7 @@ def count_tokens_approximately(
     count_name: bool = True,
     tokens_per_image: int = 85,
     use_usage_metadata_scaling: bool = False,
-    tools: list[BaseTool | dict[str, Any] | Callable[..., Any]] | None = None,
+    tools: list[BaseTool | dict[str, Any]] | None = None,
 ) -> int:
     """Approximate the total number of tokens in messages.
 
@@ -2306,27 +2305,24 @@ def count_tokens_approximately(
     if tools:
         tools_chars = 0
         for tool in tools:
-            # `tool` may be more than the declared `BaseTool | dict` (e.g. a
-            # plain callable or bare BaseModel class
-            tool_: Any = tool
-            if isinstance(tool_, dict):
-                tool_dict = tool_
-            elif hasattr(tool_, "tool_call_schema"):
+            if isinstance(tool, dict):
+                tool_dict = tool
+            else:
                 # tool_call_schema is memoized per instance
-                schema = tool_.tool_call_schema
+                schema = tool.tool_call_schema
                 if isinstance(schema, dict):
                     parameters = dict(schema)
                 else:
                     parameters = dict(get_model_json_schema(schema))
+                # Drop the schema's own `title`/`description` to avoid double-counting:
+                # they're duplicated at the top level.
                 parameters.pop("title", None)
                 parameters.pop("description", None)
                 tool_dict = {
-                    "name": tool_.name,
-                    "description": tool_.description,
+                    "name": tool.name,
+                    "description": tool.description,
                     "parameters": parameters,
                 }
-            else:
-                tool_dict = convert_to_openai_tool(tool_)
             tools_chars += len(json.dumps(tool_dict))
         token_count += math.ceil(tools_chars / chars_per_token)
 
