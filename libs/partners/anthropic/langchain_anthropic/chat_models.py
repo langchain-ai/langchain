@@ -977,18 +977,19 @@ class ChatAnthropic(BaseChatModel):
 
     anthropic_api_url: str | None = Field(
         alias="base_url",
-        default_factory=lambda: _resolve_gateway_base_url()
-        or from_env(
+        default_factory=lambda: from_env(
             ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
-            default="https://api.anthropic.com",
-        )(),
+            default="",
+        )()
+        or _resolve_gateway_base_url()
+        or "https://api.anthropic.com",
     )
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value first from
     `ANTHROPIC_API_URL` and if that is not set, `ANTHROPIC_BASE_URL`.
 
-    If `LANGSMITH_GATEWAY` is set, it takes precedence over both env vars.
+    If `LANGSMITH_GATEWAY` is set, it is used as a fallback after those env vars.
     """
 
     anthropic_api_key: SecretStr = Field(

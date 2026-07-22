@@ -1944,8 +1944,18 @@ def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_langsmith_gateway_custom_url(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "https://my-gateway.example.com/")
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
     llm = _make_model()
     assert llm.fireworks_api_base == "https://my-gateway.example.com/fireworks"
+
+
+def test_langsmith_gateway_provider_env_overrides_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("FIREWORKS_API_BASE", "https://api.fireworks.ai/inference/v1")
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://api.fireworks.ai/inference/v1"
 
 
 def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:

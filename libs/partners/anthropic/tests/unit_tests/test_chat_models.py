@@ -3814,6 +3814,16 @@ def test_langsmith_gateway_custom_url(monkeypatch: pytest.MonkeyPatch) -> None:
     assert llm.anthropic_api_url == "https://my-gateway.example.com/anthropic"
 
 
+def test_langsmith_gateway_provider_env_overrides_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.delenv("ANTHROPIC_API_URL", raising=False)
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="test")
+    assert llm.anthropic_api_url == "https://api.anthropic.com"
+
+
 def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
     monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")

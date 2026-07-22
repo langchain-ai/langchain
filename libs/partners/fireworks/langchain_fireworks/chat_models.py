@@ -856,13 +856,13 @@ class ChatFireworks(BaseChatModel):
 
     fireworks_api_base: str | None = Field(
         alias="base_url",
-        default_factory=lambda: _resolve_gateway_base_url()
-        or from_env("FIREWORKS_API_BASE", default=None)(),
+        default_factory=lambda: from_env("FIREWORKS_API_BASE", default=None)()
+        or _resolve_gateway_base_url(),
     )
     """Base URL path for API requests, leave blank if not using a proxy or service
     emulator.
 
-    If `LANGSMITH_GATEWAY` is set, it takes precedence over `FIREWORKS_API_BASE`.
+    If `LANGSMITH_GATEWAY` is set, it is used as a fallback after `FIREWORKS_API_BASE`.
     """
 
     request_timeout: float | tuple[float, float] | Any | None = Field(

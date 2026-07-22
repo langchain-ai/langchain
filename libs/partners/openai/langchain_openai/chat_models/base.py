@@ -1235,11 +1235,10 @@ class BaseChatOpenAI(BaseChatModel):
         _gateway_base_url = _resolve_gateway_base_url()
         _base_url_from_gateway = False
         if self.openai_api_base is None:
-            if _gateway_base_url is not None:
+            self.openai_api_base = os.getenv("OPENAI_API_BASE")
+            if self.openai_api_base is None and _gateway_base_url is not None:
                 self.openai_api_base = _gateway_base_url
                 _base_url_from_gateway = True
-            else:
-                self.openai_api_base = os.getenv("OPENAI_API_BASE")
 
         # Enable stream_usage by default if using default base URL and client,
         # or when the base URL was set by the LangSmith gateway (which proxies
