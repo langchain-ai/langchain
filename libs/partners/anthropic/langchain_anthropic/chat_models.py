@@ -2392,6 +2392,68 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
     ]
 
 
+def _json_schema_values_equal(left: Any, right: Any) -> bool:
+    """Compare JSON values using JSON Schema equality rules."""
+    if isinstance(left, bool) or isinstance(right, bool):
+        return isinstance(left, bool) and isinstance(right, bool) and left == right
+    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+        return left == right
+    if isinstance(left, dict) and isinstance(right, dict):
+        return left.keys() == right.keys() and all(
+            _json_schema_values_equal(left[key], right[key]) for key in left
+        )
+    if isinstance(left, list) and isinstance(right, list):
+        return len(left) == len(right) and all(
+            _json_schema_values_equal(left_item, right_item)
+            for left_item, right_item in zip(left, right, strict=True)
+        )
+    return type(left) is type(right) and left == right
+
+
+def _replace_consts_with_singleton_enums(
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    """Copy `schema` and replace `const` before Anthropic moves it to descriptions."""
+    rewritten_schema = copy.deepcopy(schema)
+
+    def rewrite(schema_node: dict[str, Any]) -> None:
+        if "const" in schema_node:
+            const_value = schema_node.pop("const")
+            if "enum" in schema_node:
+                enum_values = schema_node["enum"]
+                if not isinstance(enum_values, list) or not any(
+                    _json_schema_values_equal(const_value, enum_value)
+                    for enum_value in enum_values
+                ):
+                    msg = (
+                        "JSON Schema `const` must match one of the values in `enum` "
+                        "when both constraints are present."
+                    )
+                    raise ValueError(msg)
+            schema_node["enum"] = [const_value]
+
+        for keyword in ("$defs", "properties"):
+            nested_schemas = schema_node.get(keyword)
+            if isinstance(nested_schemas, dict):
+                for nested_schema in nested_schemas.values():
+                    if isinstance(nested_schema, dict):
+                        rewrite(nested_schema)
+
+        for keyword in ("allOf", "anyOf", "oneOf"):
+            nested_schemas = schema_node.get(keyword)
+            if isinstance(nested_schemas, list):
+                for nested_schema in nested_schemas:
+                    if isinstance(nested_schema, dict):
+                        rewrite(nested_schema)
+
+        items_schema = schema_node.get("items")
+        if isinstance(items_schema, dict):
+            rewrite(items_schema)
+
+    rewrite(rewritten_schema)
+    return rewritten_schema
+
+
 def _convert_to_anthropic_output_config_format(schema: dict | type) -> dict[str, Any]:
     """Convert JSON schema, Pydantic model, or `TypedDict` into `output_config.format`.
 
@@ -2406,11 +2468,14 @@ def _convert_to_anthropic_output_config_format(schema: dict | type) -> dict[str,
     from anthropic import transform_schema
 
     is_pydantic_class = isinstance(schema, type) and is_basemodel_subclass(schema)
-    if is_pydantic_class or isinstance(schema, dict):
-        json_schema = transform_schema(schema)
+    if is_pydantic_class:
+        json_schema = cast("type[BaseModel]", schema).model_json_schema()
+    elif isinstance(schema, dict):
+        json_schema = schema
     else:
         # TypedDict
-        json_schema = transform_schema(convert_to_json_schema(schema))
+        json_schema = convert_to_json_schema(schema)
+    json_schema = transform_schema(_replace_consts_with_singleton_enums(json_schema))
     return {"type": "json_schema", "schema": json_schema}
 
 

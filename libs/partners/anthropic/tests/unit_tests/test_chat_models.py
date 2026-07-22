@@ -6,13 +6,14 @@ import copy
 import os
 import warnings
 from collections.abc import Callable
-from typing import Any, Literal, cast
+from typing import Annotated, Any, Literal, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
+from langchain.agents.structured_output import ProviderStrategy
 from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import (
     AIMessage,
@@ -2438,16 +2439,137 @@ def test_response_format_with_output_config() -> None:
         "Test query",
         response_format=Person.model_json_schema(),
     )
-    assert "output_config" in payload
-    assert "format" in payload["output_config"]
-    assert payload["output_config"]["format"]["type"] == "json_schema"
-    assert "schema" in payload["output_config"]["format"]
+    assert payload["output_config"]["format"] == {
+        "type": "json_schema",
+        "schema": anthropic.transform_schema(Person.model_json_schema()),
+    }
 
     # No response_format - output_config should not have format
     model = ChatAnthropic(model=MODEL_NAME)
     payload = model._get_request_payload("Test query")
     if "output_config" in payload:
         assert "format" not in payload["output_config"]
+
+
+def test_with_structured_output_preserves_discriminated_union_literals() -> None:
+    class CriterionPass(BaseModel):
+        name: str
+        passed: Literal[True]
+
+    class CriterionFail(BaseModel):
+        name: str
+        passed: Literal[False]
+        gap: str
+
+    class GraderResponse(BaseModel):
+        criteria: list[
+            Annotated[
+                CriterionPass | CriterionFail,
+                Field(discriminator="passed"),
+            ]
+        ]
+
+    model = ChatAnthropic(model=MODEL_NAME)
+    structured_model = model.with_structured_output(
+        GraderResponse,
+        method="json_schema",
+    )
+    bound_model = cast("RunnableBinding", cast("Any", structured_model).first)
+    output_schema = bound_model.kwargs["output_config"]["format"]["schema"]
+
+    criterion_schema = output_schema["properties"]["criteria"]["items"]
+    assert "oneOf" not in criterion_schema
+    assert criterion_schema["anyOf"] == [
+        {"$ref": "#/$defs/CriterionPass"},
+        {"$ref": "#/$defs/CriterionFail"},
+    ]
+
+    pass_schema = output_schema["$defs"]["CriterionPass"]
+    fail_schema = output_schema["$defs"]["CriterionFail"]
+    assert pass_schema["properties"]["passed"] == {
+        "type": "boolean",
+        "enum": [True],
+        "title": "Passed",
+    }
+    assert fail_schema["properties"]["passed"] == {
+        "type": "boolean",
+        "enum": [False],
+        "title": "Passed",
+    }
+    assert fail_schema["required"] == ["name", "passed", "gap"]
+
+
+def test_response_format_preserves_nested_consts_without_mutating_schema() -> None:
+    raw_schema: dict[str, Any] = {
+        "$defs": {
+            "Options": {
+                "type": "object",
+                "properties": {
+                    "enabled": {"type": "boolean", "const": True},
+                },
+                "required": ["enabled"],
+            },
+        },
+        "type": "object",
+        "properties": {
+            "const": {"type": "string"},
+            "status": {
+                "type": "string",
+                "const": "ready",
+                "enum": ["ready", "waiting"],
+            },
+            "values": {
+                "type": "array",
+                "items": {
+                    "oneOf": [
+                        {"type": "string", "const": "alpha"},
+                        {"type": "integer", "const": 1},
+                    ],
+                },
+            },
+        },
+        "required": ["const", "status", "values"],
+    }
+    original_schema = copy.deepcopy(raw_schema)
+    model = ChatAnthropic(model=MODEL_NAME)
+
+    payload = model._get_request_payload(
+        "Test query",
+        **ProviderStrategy(raw_schema).to_model_kwargs(),
+    )
+
+    assert raw_schema == original_schema
+    output_schema = payload["output_config"]["format"]["schema"]
+    assert output_schema["$defs"]["Options"]["properties"]["enabled"] == {
+        "type": "boolean",
+        "enum": [True],
+    }
+    assert output_schema["properties"]["const"] == {"type": "string"}
+    assert output_schema["properties"]["status"] == {
+        "type": "string",
+        "enum": ["ready"],
+    }
+    item_schema = output_schema["properties"]["values"]["items"]
+    assert "oneOf" not in item_schema
+    assert item_schema["anyOf"] == [
+        {"type": "string", "enum": ["alpha"]},
+        {"type": "integer", "enum": [1]},
+    ]
+
+
+def test_response_format_rejects_conflicting_const_and_enum() -> None:
+    model = ChatAnthropic(model=MODEL_NAME)
+    schema = {
+        "type": "string",
+        "const": "ready",
+        "enum": ["waiting"],
+    }
+
+    with pytest.raises(ValueError, match="must match one of the values"):
+        model._get_request_payload(
+            "Test query",
+            **ProviderStrategy(schema).to_model_kwargs(),
+        )
 
 
 def test_strict_tool_use_payload() -> None:
