@@ -29,7 +29,10 @@ from langchain_core.messages.utils import (
     merge_message_runs,
     trim_messages,
 )
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import BaseTool, StructuredTool, tool
+from langchain_core.utils.function_calling import (
+    convert_to_openai_tool as real_convert_to_openai_tool,
+)
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
@@ -2959,6 +2962,92 @@ def test_count_tokens_approximately_with_tools() -> None:
     # Test with empty tools list should equal base count
     count_empty_tools = count_tokens_approximately(messages, tools=[])
     assert count_empty_tools == base_count
+
+
+def test_count_tokens_approximately_basetool_uses_tool_call_schema(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`BaseTool` instances should be counted via `tool_call_schema`.
+
+    `tool_call_schema` is memoized per instance (with its own
+    `model_json_schema` cached too), unlike `convert_to_openai_tool`, which
+    regenerates the schema from scratch on every call. `BaseTool` instances
+    must not go through `convert_to_openai_tool` at all.
+    """
+
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the weather for a location."""
+        return f"Weather in {location}"
+
+    def _fail_if_called(*args: Any, **kwargs: Any) -> Any:  # noqa: ARG001
+        msg = "convert_to_openai_tool should not be called for BaseTool instances"
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(
+        "langchain_core.messages.utils.convert_to_openai_tool", _fail_if_called
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    count_tokens_approximately(messages, tools=[get_weather])
+
+
+def test_count_tokens_approximately_basetool_dict_args_schema() -> None:
+    """`BaseTool.tool_call_schema` can itself already be a plain dict.
+
+    This happens when `args_schema` is given as a raw JSON schema instead of
+    a Pydantic model class -- there's no model class to call
+    `model_json_schema()` on in that case.
+    """
+    schema_dict = {
+        "title": "GetWeatherInput",
+        "type": "object",
+        "properties": {"location": {"type": "string"}},
+        "required": ["location"],
+    }
+    weather_tool = StructuredTool.from_function(
+        func=lambda location: f"Weather in {location}",
+        name="get_weather",
+        description="Get the weather for a location.",
+        args_schema=schema_dict,
+    )
+    assert isinstance(weather_tool.tool_call_schema, dict)
+
+    messages = [HumanMessage(content="Hello")]
+    base_count = count_tokens_approximately(messages)
+    count_with_tool = count_tokens_approximately(messages, tools=[weather_tool])
+    assert count_with_tool > base_count
+
+
+def test_count_tokens_approximately_non_basetool_uses_convert_to_openai_tool(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Dict tool schemas and non-`BaseTool` callables are unaffected.
+
+    Only `BaseTool` instances go through `tool_call_schema`; everything
+    else (already-a-dict, plain callables, `BaseModel` classes, etc.) should
+    still go through `convert_to_openai_tool`, unchanged.
+    """
+    calls = []
+
+    def _spy(*args: Any, **kwargs: Any) -> Any:
+        calls.append(args[0])
+        return real_convert_to_openai_tool(*args, **kwargs)
+
+    monkeypatch.setattr("langchain_core.messages.utils.convert_to_openai_tool", _spy)
+
+    def plain_callable(location: str) -> str:
+        """Get the weather for a location.
+
+        Args:
+            location: The location to get weather for.
+        """
+        return f"Weather in {location}"
+
+    messages = [HumanMessage(content="Hello")]
+    count_tokens_approximately(messages, tools=[plain_callable])
+
+    assert calls == [plain_callable]
 
 
 # ---------------------------------------------------------------------------
