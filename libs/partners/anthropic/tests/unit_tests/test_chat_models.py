@@ -2826,6 +2826,12 @@ def test_auto_append_betas_for_mcp_servers() -> None:
     }
 
 
+def test_claude_opus_4_8_profile_supports_structured_output() -> None:
+    model = ChatAnthropic(model="claude-opus-4-8")
+    assert model.profile
+    assert model.profile["structured_output"] is True
+
+
 def test_profile() -> None:
     model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
     assert model.profile
