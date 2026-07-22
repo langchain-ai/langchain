@@ -73,9 +73,6 @@ reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 [overrides."gpt-5.2-codex"]
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
-[overrides."gpt-5.3-chat-latest"]
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
-
 [overrides."gpt-5.3-codex"]
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 

@@ -875,13 +875,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "reasoning_effort_levels": [
-            "none",
-            "low",
-            "medium",
-            "high",
-            "xhigh",
-        ],
     },
     "gpt-5.3-codex": {
         "name": "GPT-5.3 Codex",
