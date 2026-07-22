@@ -178,7 +178,8 @@ def _get_ssrf_safe_client() -> httpx.Client:
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
-_LANGSMITH_GATEWAY_DEFAULT_URL = "https://gateway.smith.langchain.com/openai/v1"
+_LANGSMITH_GATEWAY_DEFAULT_BASE = "https://gateway.smith.langchain.com"
+_LANGSMITH_GATEWAY_PROVIDER_PATH = "openai/v1"
 
 
 def _resolve_gateway_base_url() -> str | None:
@@ -186,8 +187,10 @@ def _resolve_gateway_base_url() -> str | None:
     if raw is None or raw.lower() in ("false", "0", "no"):
         return None
     if raw.lower() in ("true", "1", "yes"):
-        return _LANGSMITH_GATEWAY_DEFAULT_URL
-    return raw
+        base = _LANGSMITH_GATEWAY_DEFAULT_BASE
+    else:
+        base = raw.rstrip("/")
+    return f"{base}/{_LANGSMITH_GATEWAY_PROVIDER_PATH}"
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:

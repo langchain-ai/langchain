@@ -1942,6 +1942,12 @@ def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     assert llm.fireworks_api_base is None
 
 
+def test_langsmith_gateway_custom_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://my-gateway.example.com/")
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://my-gateway.example.com/fireworks"
+
+
 def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
     monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
