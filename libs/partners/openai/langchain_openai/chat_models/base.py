@@ -4896,14 +4896,20 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.output_text.done":
         _advance(chunk.output_index, chunk.content_index)
-        content.append(
-            {
-                "type": "text",
-                "text": "",
-                "id": chunk.item_id,
-                "index": current_index,
-            }
-        )
+        text_block: dict = {
+            "type": "text",
+            "text": "",
+            "id": chunk.item_id,
+            "index": current_index,
+        }
+        # Attach per-token logprobs to the associated text block, mirroring the
+        # non-streaming path (`_construct_lc_result_from_responses_api`).
+        chunk_logprobs = getattr(chunk, "logprobs", None)
+        if chunk_logprobs:
+            text_block["logprobs"] = [
+                logprob.model_dump() for logprob in chunk_logprobs
+            ]
+        content.append(text_block)
     elif chunk.type == "response.created":
         response = _coerce_chunk_response(chunk.response)
         id = response.id

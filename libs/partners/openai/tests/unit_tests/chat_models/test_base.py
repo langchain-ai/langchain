@@ -71,6 +71,7 @@ from langchain_openai.chat_models.base import (
     _construct_responses_api_input,
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _convert_responses_chunk_to_generation_chunk,
     _convert_to_openai_response_format,
     _create_usage_metadata,
     _create_usage_metadata_responses,
@@ -3987,3 +3988,39 @@ def test___construct_lc_result_from_responses_api_logprobs_multiple_blocks() -> 
     assert text_blocks[0]["logprobs"][0]["token"] == "Hello"  # noqa: S105
     assert len(text_blocks[1]["logprobs"]) == 1
     assert text_blocks[1]["logprobs"][0]["token"] == "world"  # noqa: S105
+
+
+def test__convert_responses_chunk_to_generation_chunk_logprobs() -> None:
+    """Test that streaming attaches logprobs to the associated text block."""
+    from openai.types.responses.response_text_done_event import (
+        Logprob,
+        ResponseTextDoneEvent,
+    )
+
+    chunk = ResponseTextDoneEvent(
+        type="response.output_text.done",
+        item_id="msg_123",
+        output_index=0,
+        content_index=0,
+        sequence_number=0,
+        text="Hello",
+        logprobs=[
+            Logprob(token="Hello", logprob=-0.5, top_logprobs=[]),  # noqa: S106
+        ],
+    )
+    _, _, _, generation_chunk = _convert_responses_chunk_to_generation_chunk(
+        chunk,
+        current_index=0,
+        current_output_index=0,
+        current_sub_index=0,
+    )
+    assert generation_chunk is not None
+    content = generation_chunk.message.content
+    text_blocks = [
+        block
+        for block in content
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    assert len(text_blocks) == 1
+    assert text_blocks[0]["logprobs"][0]["token"] == "Hello"  # noqa: S105
+    assert text_blocks[0]["logprobs"][0]["logprob"] == -0.5
