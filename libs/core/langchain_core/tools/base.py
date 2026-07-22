@@ -347,7 +347,10 @@ def create_schema_from_function(
         if not has_kwargs and field == "kwargs":
             continue
 
-        if field == "v__duplicate_kwargs":  # Internal pydantic field
+        # Internal virtual fields injected by pydantic's `validate_arguments`;
+        # `v__positional_only` is a catch-all for positional-only parameters and
+        # would otherwise leak into the tool schema as a phantom argument.
+        if field in {"v__duplicate_kwargs", "v__positional_only"}:
             continue
 
         if field not in filter_args_:

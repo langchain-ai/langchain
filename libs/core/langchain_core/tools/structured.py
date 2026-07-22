@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 import textwrap
 from collections.abc import Awaitable, Callable
-from inspect import signature
+from inspect import Parameter, signature
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -35,6 +35,42 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
+
+
+def _split_positional_only(
+    func: Callable[..., Any], args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    """Move positional-only parameters from `kwargs` into positional `args`.
+
+    Tool inputs are collected as keyword arguments, but positional-only
+    parameters (PEP 570, e.g. `def f(a, /, b)`) cannot be passed by keyword.
+    Pull them out of `kwargs` in signature order and prepend them to `args` so
+    the wrapped function receives them positionally. Extraction stops at the
+    first positional-only parameter missing from `kwargs`, since a later one
+    cannot fill an earlier positional slot.
+
+    Args:
+        func: The wrapped tool function.
+        args: Positional arguments already destined for `func`.
+        kwargs: Keyword arguments collected from the tool input.
+
+    Returns:
+        The adjusted `(args, kwargs)` pair.
+    """
+    positional_only = [
+        name
+        for name, param in signature(func).parameters.items()
+        if param.kind is Parameter.POSITIONAL_ONLY
+    ]
+    if not positional_only:
+        return args, kwargs
+    extracted: list[Any] = []
+    remaining = dict(kwargs)
+    for name in positional_only:
+        if name not in remaining:
+            break
+        extracted.append(remaining.pop(name))
+    return (*extracted, *args), remaining
 
 
 class StructuredTool(BaseTool):
@@ -94,6 +130,7 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
+            args, kwargs = _split_positional_only(self.func, args, kwargs)
             return self.func(*args, **kwargs)
         msg = "StructuredTool does not support sync invocation."
         raise NotImplementedError(msg)
@@ -121,6 +158,7 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config
+            args, kwargs = _split_positional_only(self.coroutine, args, kwargs)
             return await self.coroutine(*args, **kwargs)
 
         # If self.coroutine is None, then this will delegate to the default

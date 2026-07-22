@@ -4063,3 +4063,60 @@ def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> Non
     new_schema = new_cls.model_json_schema()
     assert new_schema is not old_schema
     assert new_schema["description"] == "New description for cache test."
+
+
+def test_tool_positional_only_param_not_in_schema() -> None:
+    """Positional-only params must not leak a phantom `v__positional_only` field."""
+
+    @tool
+    def add(a: int, /, b: int) -> int:
+        """Add a and b."""
+        return a + b
+
+    assert "v__positional_only" not in add.args
+    assert set(add.args) == {"a", "b"}
+
+
+def test_tool_invoke_with_positional_only_param() -> None:
+    """A tool with a positional-only parameter can be invoked by name."""
+
+    @tool
+    def add(a: int, /, b: int) -> int:
+        """Add a and b."""
+        return a + b
+
+    assert add.invoke({"a": 1, "b": 2}) == 3
+
+
+def test_tool_invoke_with_multiple_positional_only_params() -> None:
+    """Multiple positional-only params, including a defaulted one, bind correctly."""
+
+    @tool
+    def combine(a: int, b: int, /, c: int = 10) -> int:
+        """Sum a, b and c."""
+        return a + b + c
+
+    assert combine.invoke({"a": 1, "b": 2, "c": 3}) == 6
+    assert combine.invoke({"a": 1, "b": 2}) == 13
+
+
+def test_tool_regular_params_unaffected_by_positional_only_handling() -> None:
+    """Tools with only regular parameters keep working unchanged."""
+
+    @tool
+    def add(a: int, b: int) -> int:
+        """Add a and b."""
+        return a + b
+
+    assert add.invoke({"a": 4, "b": 5}) == 9
+
+
+async def test_tool_ainvoke_with_positional_only_param() -> None:
+    """The async path also routes positional-only params positionally."""
+
+    @tool
+    async def add(a: int, /, b: int) -> int:
+        """Add a and b."""
+        return a + b
+
+    assert await add.ainvoke({"a": 7, "b": 8}) == 15
