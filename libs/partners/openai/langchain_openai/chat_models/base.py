@@ -660,7 +660,13 @@ class BaseChatOpenAI(BaseChatModel):
     openai_api_key: (
         SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
     ) = Field(
-        alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
+        alias="api_key",
+        default_factory=lambda: (
+            SecretStr(gateway_key)
+            if (gateway_key := os.getenv("LANGSMITH_GATEWAY_API_KEY"))
+            and _resolve_gateway_base_url() is not None
+            else secret_from_env("OPENAI_API_KEY", default=None)()
+        ),
     )
     """API key to use.
 
@@ -1256,11 +1262,6 @@ class BaseChatOpenAI(BaseChatModel):
         # Resolve API key from SecretStr or Callable
         sync_api_key_value: str | Callable[[], str] | None = None
         async_api_key_value: str | Callable[[], Awaitable[str]] | None = None
-
-        if self.openai_api_key is None and _base_url_from_gateway:
-            gateway_api_key = os.getenv("LANGSMITH_GATEWAY_API_KEY")
-            if gateway_api_key is not None:
-                self.openai_api_key = SecretStr(gateway_api_key)
 
         if self.openai_api_key is not None:
             # Because OpenAI and AsyncOpenAI clients support either sync or async

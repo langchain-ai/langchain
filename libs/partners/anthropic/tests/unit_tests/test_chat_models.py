@@ -3822,3 +3822,13 @@ def test_langsmith_gateway_api_key_not_used_without_gateway(
     monkeypatch.setenv("ANTHROPIC_API_KEY", "provider-key")
     llm = ChatAnthropic(model=MODEL_NAME)
     assert llm.anthropic_api_key.get_secret_value() == "provider-key"
+
+
+def test_langsmith_gateway_api_key_overrides_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "provider-key")
+    llm = ChatAnthropic(model=MODEL_NAME)
+    assert llm.anthropic_api_key.get_secret_value() == "gateway-key"
