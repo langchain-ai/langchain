@@ -2245,7 +2245,7 @@ def count_tokens_approximately(
     count_name: bool = True,
     tokens_per_image: int = 85,
     use_usage_metadata_scaling: bool = False,
-    tools: list[BaseTool | dict[str, Any]] | None = None,
+    tools: list[BaseTool | dict[str, Any] | Callable[..., Any]] | None = None,
 ) -> int:
     """Approximate the total number of tokens in messages.
 
@@ -2275,9 +2275,10 @@ def count_tokens_approximately(
             using the **most recent** AI message that has
             `usage_metadata['total_tokens']`. The scaling factor is:
             `AI_total_tokens / approx_tokens_up_to_that_AI_message`
-        tools: List of tools to include in the token count. Each tool can be either
-            a `BaseTool` instance or a dict representing a tool schema. `BaseTool`
-            instances are converted to OpenAI tool format before counting.
+        tools: List of tools to include in the token count. Each tool can be a
+            `BaseTool` instance, a dict representing a tool schema, or a plain
+            callable. `BaseTool` instances and callables are converted to
+            OpenAI tool format before counting.
 
     Returns:
         Approximate number of tokens in the messages (and tools, if provided).

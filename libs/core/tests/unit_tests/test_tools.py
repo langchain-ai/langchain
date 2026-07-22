@@ -84,7 +84,7 @@ from tests.unit_tests.pydantic_utils import (
 )
 
 try:
-    from langgraph.prebuilt import ToolRuntime  # type: ignore[import-not-found]
+    from langgraph.prebuilt import ToolRuntime
 
     HAS_LANGGRAPH = True
 except ImportError:
