@@ -4233,12 +4233,18 @@ def _construct_responses_api_payload(
         else:
             payload["text"] = {"verbosity": verbosity}
 
+    # In the Responses API, logprobs are requested via `include` rather than a
+    # top-level `logprobs` flag. `top_logprobs` implies logprobs are wanted, so
+    # honor it too (mirroring the Chat Completions API, where `top_logprobs`
+    # requires `logprobs=True`).
     return_logprobs = payload.pop("logprobs", None)
-    if return_logprobs:
-        if "include" in payload:
-            payload["include"].append("message.output_text.logprobs")
-        else:
-            payload["include"] = ["message.output_text.logprobs"]
+    if return_logprobs or payload.get("top_logprobs") is not None:
+        # Copy rather than mutate in place: `include` may be the user-supplied
+        # `self.include` list, which would otherwise grow on every invocation.
+        include = list(payload.get("include") or [])
+        if "message.output_text.logprobs" not in include:
+            include.append("message.output_text.logprobs")
+        payload["include"] = include
 
     return payload
 
@@ -4652,25 +4658,17 @@ def _construct_lc_result_from_responses_api(
                     }
                     if phase is not None:
                         block["phase"] = phase
+                    # Attach per-token logprobs to their associated text block so
+                    # they stay aligned with that block's content (the Responses
+                    # API returns logprobs per output_text item).
+                    content_logprobs = getattr(content, "logprobs", None)
+                    if content_logprobs:
+                        block["logprobs"] = [
+                            logprob.model_dump() for logprob in content_logprobs
+                        ]
                     content_blocks.append(block)
                     if hasattr(content, "parsed"):
                         additional_kwargs["parsed"] = content.parsed
-                    if hasattr(content, "logprobs") and content.logprobs:
-                        if "logprobs" in response_metadata:
-                            # only keep the latest message logprobs
-                            response_metadata["logprobs"]["content"] = [
-                                logprob.model_dump() for logprob in content.logprobs
-                            ]
-                            response_metadata["logprobs"]["refusal"] = (
-                                response_metadata["logprobs"].get("refusal", None)
-                            )
-                        else:
-                            response_metadata["logprobs"] = {
-                                "content": [
-                                    logprob.model_dump() for logprob in content.logprobs
-                                ],
-                                "refusal": None,
-                            }
                 if content.type == "refusal":
                     refusal_block = {
                         "type": "refusal",

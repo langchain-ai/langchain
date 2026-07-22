@@ -3883,10 +3883,107 @@ def test___construct_lc_result_from_responses_api_logprobs() -> None:
     )
 
     chat_result = _construct_lc_result_from_responses_api(response)
-    assert "logprobs" in chat_result.generations[0].message.response_metadata
+    content = chat_result.generations[0].message.content
+    text_blocks = [
+        block
+        for block in content
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    assert len(text_blocks) == 1
+    logprobs = text_blocks[0]["logprobs"]
+    assert len(logprobs) == 4
+    assert logprobs[0]["token"] == "Hello"  # noqa: S105
+    assert logprobs[0]["logprob"] == 8e-06
 
-    metadata = chat_result.generations[0].message.response_metadata
-    assert "content" in metadata["logprobs"]
-    assert len(metadata["logprobs"]["content"]) == 4
-    assert metadata["logprobs"]["content"][0]["token"] == "Hello"  # noqa: S105
-    assert metadata["logprobs"]["content"][0]["logprob"] == 8e-06
+
+def test_logprobs_with_top_logprobs_responses_api_parameter_handling() -> None:
+    """Test that `top_logprobs` alone triggers the logprobs `include` entry."""
+    chat = ChatOpenAI(
+        model="gpt-4o",
+        use_responses_api=True,
+        top_logprobs=5,
+        output_version="responses/v1",
+        max_completion_tokens=10,
+    )
+    messages = [HumanMessage("Hello")]
+    payload = chat._get_request_payload(messages)
+    assert "include" in payload
+    assert "message.output_text.logprobs" in payload["include"]
+
+
+def test_logprobs_responses_api_include_not_mutated_across_calls() -> None:
+    """Test that a user-supplied `include` list is not mutated across invocations."""
+    include = ["reasoning.encrypted_content"]
+    chat = ChatOpenAI(
+        model="gpt-4o",
+        use_responses_api=True,
+        logprobs=True,
+        include=include,
+        output_version="responses/v1",
+        max_completion_tokens=10,
+    )
+    messages = [HumanMessage("Hello")]
+    first = chat._get_request_payload(messages)
+    second = chat._get_request_payload(messages)
+
+    # The instance attribute must be untouched and payloads must not accumulate
+    # duplicate entries across calls.
+    assert include == ["reasoning.encrypted_content"]
+    assert first["include"] == second["include"]
+    assert first["include"].count("message.output_text.logprobs") == 1
+
+
+def test___construct_lc_result_from_responses_api_logprobs_multiple_blocks() -> None:
+    """Test that each output_text block keeps its own logprobs."""
+    from openai.types.responses.response_output_text import Logprob
+
+    def _text_block(msg_id: str, text: str, token: str) -> ResponseOutputMessage:
+        return ResponseOutputMessage(
+            type="message",
+            id=msg_id,
+            content=[
+                ResponseOutputText(
+                    type="output_text",
+                    text=text,
+                    annotations=[],
+                    logprobs=[
+                        Logprob(
+                            token=token,
+                            bytes=list(token.encode()),
+                            logprob=-0.5,
+                            top_logprobs=[],
+                        ),
+                    ],
+                ),
+            ],
+            role="assistant",
+            status="completed",
+        )
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            _text_block("msg_1", "Hello", "Hello"),
+            _text_block("msg_2", " world", "world"),
+        ],
+    )
+
+    chat_result = _construct_lc_result_from_responses_api(response)
+    content = chat_result.generations[0].message.content
+    text_blocks = [
+        block
+        for block in content
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    # Each block carries only its own logprobs; nothing is overwritten or merged.
+    assert len(text_blocks) == 2
+    assert len(text_blocks[0]["logprobs"]) == 1
+    assert text_blocks[0]["logprobs"][0]["token"] == "Hello"  # noqa: S105
+    assert len(text_blocks[1]["logprobs"]) == 1
+    assert text_blocks[1]["logprobs"][0]["token"] == "world"  # noqa: S105
