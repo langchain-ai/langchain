@@ -2087,7 +2087,7 @@ requires-dist = [
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langchain-xai", marker = "extra == 'xai'" },
-    { name = "langgraph", git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Flanggraph&branch=cc%2Fprofiling-test-1" },
+    { name = "langgraph", git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Flanggraph&branch=revert-8403-cc%2Frevert_tool_policy" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
 provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "baseten", "deepseek", "xai", "perplexity", "meta"]
@@ -2669,7 +2669,7 @@ wheels = [
 [[package]]
 name = "langgraph"
 version = "1.2.9"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Flanggraph&branch=cc%2Fprofiling-test-1#07baf7c1aa8f00fbc41d21fe479fa971357e5b9a" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Flanggraph&branch=revert-8403-cc%2Frevert_tool_policy#aa6cf959652da19c961362f2ed2679a51f5bebe4" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -2682,7 +2682,7 @@ dependencies = [
 [[package]]
 name = "langgraph-checkpoint"
 version = "4.1.1"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fcheckpoint&branch=cc%2Fprofiling-test-1#07baf7c1aa8f00fbc41d21fe479fa971357e5b9a" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fcheckpoint&branch=revert-8403-cc%2Frevert_tool_policy#aa6cf959652da19c961362f2ed2679a51f5bebe4" }
 dependencies = [
     { name = "langchain-core" },
     { name = "ormsgpack" },
@@ -2691,7 +2691,7 @@ dependencies = [
 [[package]]
 name = "langgraph-prebuilt"
 version = "1.1.0"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fprebuilt&branch=cc%2Fprofiling-test-1#07baf7c1aa8f00fbc41d21fe479fa971357e5b9a" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fprebuilt&branch=revert-8403-cc%2Frevert_tool_policy#aa6cf959652da19c961362f2ed2679a51f5bebe4" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -2700,7 +2700,7 @@ dependencies = [
 [[package]]
 name = "langgraph-sdk"
 version = "0.4.2"
-source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fsdk-py&branch=cc%2Fprofiling-test-1#07baf7c1aa8f00fbc41d21fe479fa971357e5b9a" }
+source = { git = "https://github.com/langchain-ai/langgraph?subdirectory=libs%2Fsdk-py&branch=revert-8403-cc%2Frevert_tool_policy#aa6cf959652da19c961362f2ed2679a51f5bebe4" }
 dependencies = [
     { name = "httpx" },
     { name = "langchain-core" },

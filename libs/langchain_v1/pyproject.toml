@@ -101,8 +101,8 @@ langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 langchain-anthropic = { path = "../partners/anthropic", editable = true }
-# TEMPORARY: pull langgraph from the cc/profiling-test-1 branch (adds add_node trace_inputs).
-langgraph = { git = "https://github.com/langchain-ai/langgraph", subdirectory = "libs/langgraph", branch = "cc/profiling-test-1" }
+# TEMPORARY: pull langgraph from the revert-8403-cc/revert_tool_policy branch (adds add_node trace_inputs).
+langgraph = { git = "https://github.com/langchain-ai/langgraph", subdirectory = "libs/langgraph", branch = "revert-8403-cc/revert_tool_policy" }
 
 [tool.ruff]
 line-length = 100
