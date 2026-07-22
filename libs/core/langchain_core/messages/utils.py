@@ -2314,11 +2314,12 @@ def count_tokens_approximately(
             elif hasattr(tool_, "tool_call_schema"):
                 # tool_call_schema is memoized per instance
                 schema = tool_.tool_call_schema
-                parameters = (
-                    schema
-                    if isinstance(schema, dict)
-                    else get_model_json_schema(schema)
-                )
+                if isinstance(schema, dict):
+                    parameters = dict(schema)
+                else:
+                    parameters = dict(get_model_json_schema(schema))
+                parameters.pop("title", None)
+                parameters.pop("description", None)
                 tool_dict = {
                     "name": tool_.name,
                     "description": tool_.description,
