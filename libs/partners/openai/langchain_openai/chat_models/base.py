@@ -4172,6 +4172,12 @@ def _construct_responses_api_payload(
     # avoid request rejection.
     payload.pop("stop", None)
 
+    # Defensive copy of caller-owned `text` options. The Responses API route
+    # writes `format` and `verbosity` directly onto this dict below; without a
+    # copy, those writes land in `model_kwargs["text"]` and leak between calls.
+    if isinstance(payload.get("text"), dict):
+        payload["text"] = dict(payload["text"])
+
     # Remove temperature parameter for models that don't support it in responses API
     # gpt-5-chat supports temperature, and gpt-5 models with reasoning.effort='none'
     # also support temperature

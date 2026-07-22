@@ -4423,3 +4423,31 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_responses_api_payload_does_not_mutate_caller_text_dict() -> None:
+    """_construct_responses_api_payload must not mutate caller-owned text dict.
+
+    Regression test for issue #38869: the Responses API route writes ``format`` and
+    ``verbosity`` directly into ``payload["text"]``, but that dict is often the same
+    object the caller passed via ``model_kwargs``.  After one structured-output call
+    the mutation leaks into ``llm.model_kwargs`` and permanently forces JSON mode on
+    later plain calls.
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    my_text_opts = {"verbosity": "low"}
+    payload: dict = {
+        "model": "gpt-4.1",
+        "text": my_text_opts,
+        "response_format": {"type": "json_object"},
+        "stream": False,
+    }
+    result = _construct_responses_api_payload([], payload)
+
+    # The result should contain the format/verbosity…
+    assert result["text"]["format"] == {"type": "json_object"}
+    assert result["text"]["verbosity"] == "low"
+    # …but the caller's original dict must NOT be mutated.
+    assert "format" not in my_text_opts
+    assert my_text_opts == {"verbosity": "low"}
