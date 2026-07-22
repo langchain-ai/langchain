@@ -1321,6 +1321,65 @@ def test_effort_parameter() -> None:
     assert result.usage_metadata["output_tokens"] > 0
 
 
+def test_reasoning_effort_parameter() -> None:
+    """Test that the standard `reasoning_effort` parameter is accepted by the API."""
+    llm = ChatAnthropic(
+        model="claude-opus-4-5-20251101",
+        reasoning_effort="medium",
+        max_tokens=100,
+    )
+
+    result = llm.invoke("Say hello in one sentence")
+
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+    assert "model_name" in result.response_metadata
+    assert result.usage_metadata is not None
+    assert result.usage_metadata["input_tokens"] > 0
+    assert result.usage_metadata["output_tokens"] > 0
+
+
+def test_reasoning_effort_call_time_kwarg() -> None:
+    """Test that `reasoning_effort` is accepted as a call-time kwarg."""
+    llm = ChatAnthropic(model="claude-opus-4-5-20251101", max_tokens=100)
+
+    result = llm.invoke("Say hello in one sentence", reasoning_effort="low")
+
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+    assert result.usage_metadata is not None
+
+
+def test_reasoning_effort_defaults_adaptive_thinking() -> None:
+    """`reasoning_effort` defaults `thinking` to adaptive on models that support it.
+
+    Regression test for a model (Opus 4.7+, Sonnet 5) actually accepting the
+    resulting `{"type": "adaptive", "display": "summarized"}` thinking config,
+    not just that the payload is well-formed locally.
+    """
+    llm = ChatAnthropic(
+        model="claude-opus-4-7",
+        reasoning_effort="xhigh",
+        max_tokens=2_000,
+    )
+
+    # A genuine multi-step problem: adaptive thinking is model-decided, and a
+    # trivial prompt (e.g. "what is 3+4") may not surface a visible `thinking`
+    # block even when accepted, which would make this test flaky.
+    result = llm.invoke(
+        "A farmer has 17 sheep. All but 9 die. Then he buys triple the number "
+        "of remaining sheep, then sells half (rounding down). How many sheep "
+        "does he have now? Show your reasoning step by step."
+    )
+
+    assert isinstance(result.content, list)
+    assert any(
+        isinstance(block, dict) and block.get("type") == "thinking"
+        for block in result.content
+    )
+    assert result.usage_metadata is not None
+
+
 def test_image_tool_calling() -> None:
     """Test tool calling with image inputs."""
 

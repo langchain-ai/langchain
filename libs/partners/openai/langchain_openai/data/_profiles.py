@@ -365,6 +365,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5-chat-latest": {
         "name": "GPT-5 Chat (latest)",
@@ -392,6 +399,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5-codex": {
         "name": "GPT-5-Codex",
@@ -419,6 +433,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5-mini": {
         "name": "GPT-5 Mini",
@@ -446,6 +467,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5-nano": {
         "name": "GPT-5 Nano",
@@ -473,6 +501,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5-pro": {
         "name": "GPT-5 Pro",
@@ -500,6 +535,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.1": {
         "name": "GPT-5.1",
@@ -527,6 +569,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.1-chat-latest": {
         "name": "GPT-5.1 Chat",
@@ -554,6 +603,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.1-codex": {
         "name": "GPT-5.1 Codex",
@@ -581,6 +637,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.1-codex-max": {
         "name": "GPT-5.1 Codex Max",
@@ -608,6 +671,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.1-codex-mini": {
         "name": "GPT-5.1 Codex mini",
@@ -635,6 +705,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.2": {
         "name": "GPT-5.2",
@@ -662,6 +739,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.2-chat-latest": {
         "name": "GPT-5.2 Chat",
@@ -689,6 +773,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.2-codex": {
         "name": "GPT-5.2 Codex",
@@ -716,6 +807,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.2-pro": {
         "name": "GPT-5.2 Pro",
@@ -743,6 +841,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.3-chat-latest": {
         "name": "GPT-5.3 Chat (latest)",
@@ -797,6 +902,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.3-codex-spark": {
         "name": "GPT-5.3 Codex Spark",
@@ -824,6 +936,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.4": {
         "name": "GPT-5.4",
@@ -851,6 +970,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.4-mini": {
         "name": "GPT-5.4 mini",
@@ -878,6 +1004,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.4-nano": {
         "name": "GPT-5.4 nano",
@@ -905,6 +1038,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.4-pro": {
         "name": "GPT-5.4 Pro",
@@ -932,6 +1072,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.5": {
         "name": "GPT-5.5",
@@ -959,6 +1106,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
+        "reasoning_effort_default": "medium",
     },
     "gpt-5.5-pro": {
         "name": "GPT-5.5 Pro",
@@ -986,6 +1141,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
+        "reasoning_effort_default": "medium",
     },
     "gpt-5.6": {
         "name": "GPT-5.6",
@@ -1013,6 +1176,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
+        "reasoning_effort_default": "medium",
     },
     "gpt-5.6-luna": {
         "name": "GPT-5.6 Luna",
@@ -1040,6 +1212,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
+        "reasoning_effort_default": "medium",
     },
     "gpt-5.6-sol": {
         "name": "GPT-5.6 Sol",
@@ -1067,6 +1248,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
+        "reasoning_effort_default": "medium",
     },
     "gpt-5.6-terra": {
         "name": "GPT-5.6 Terra",
@@ -1094,6 +1284,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
+        "reasoning_effort_default": "medium",
     },
     "gpt-image-1": {
         "name": "gpt-image-1",

@@ -2,3 +2,36 @@ provider = "fireworks-ai"
 
 [overrides]
 tool_call_streaming = true
+
+[overrides."accounts/fireworks/models/deepseek-v4-pro"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "high"
+
+[overrides."accounts/fireworks/models/glm-5p1"]
+reasoning_effort_levels = ["none", "high", "max"]
+
+[overrides."accounts/fireworks/models/glm-5p2"]
+reasoning_effort_levels = ["none", "high", "max"]
+reasoning_effort_default = "max"
+
+[overrides."accounts/fireworks/models/kimi-k2p6"]
+reasoning_effort_levels = ["low", "medium", "high"]
+
+[overrides."accounts/fireworks/models/kimi-k2p7-code"]
+reasoning_effort_levels = ["low", "medium", "high"]
+
+[overrides."accounts/fireworks/routers/glm-5p1-fast"]
+reasoning_effort_levels = ["none", "high", "max"]
+
+[overrides."accounts/fireworks/routers/glm-5p2-fast"]
+reasoning_effort_levels = ["none", "high", "max"]
+reasoning_effort_default = "max"
+
+[overrides."accounts/fireworks/routers/kimi-k2p6-fast"]
+reasoning_effort_levels = ["low", "medium", "high"]
+
+[overrides."accounts/fireworks/routers/kimi-k2p6-turbo"]
+reasoning_effort_levels = ["low", "medium", "high"]
+
+[overrides."accounts/fireworks/routers/kimi-k2p7-code-fast"]
+reasoning_effort_levels = ["low", "medium", "high"]

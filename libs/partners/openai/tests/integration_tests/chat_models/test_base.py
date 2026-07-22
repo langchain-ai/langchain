@@ -1072,6 +1072,30 @@ def test_reasoning_model_stream_default_works() -> None:
     assert len(result) > 0
 
 
+def test_reasoning_effort_parameter() -> None:
+    """Test that the standard `reasoning_effort` parameter is accepted by the API."""
+    llm = ChatOpenAI(model="gpt-5-nano", reasoning_effort="low")
+
+    result = llm.invoke("Say hello in one sentence")
+
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+    assert result.usage_metadata is not None
+    assert result.usage_metadata["input_tokens"] > 0
+    assert result.usage_metadata["output_tokens"] > 0
+
+
+def test_reasoning_effort_call_time_kwarg() -> None:
+    """Test that `reasoning_effort` is accepted as a call-time kwarg."""
+    llm = ChatOpenAI(model="gpt-5-nano")
+
+    result = llm.invoke("Say hello in one sentence", reasoning_effort="low")
+
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+    assert result.usage_metadata is not None
+
+
 @pytest.mark.flaky(retries=3, delay=1)
 def test_multi_party_conversation() -> None:
     llm = ChatOpenAI(model="gpt-5-nano")
