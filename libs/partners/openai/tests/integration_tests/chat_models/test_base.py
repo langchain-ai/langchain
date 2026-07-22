@@ -1072,6 +1072,30 @@ def test_reasoning_model_stream_default_works() -> None:
     assert len(result) > 0
 
 
+def test_reasoning_effort_parameter() -> None:
+    """Test that the standard `reasoning_effort` parameter is accepted by the API."""
+    llm = ChatOpenAI(model="gpt-5-nano", reasoning_effort="low")
+
+    result = llm.invoke("Say hello in one sentence")
+
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+    assert result.usage_metadata is not None
+    assert result.usage_metadata["input_tokens"] > 0
+    assert result.usage_metadata["output_tokens"] > 0
+
+
+def test_reasoning_effort_call_time_kwarg() -> None:
+    """Test that `reasoning_effort` is accepted as a call-time kwarg."""
+    llm = ChatOpenAI(model="gpt-5-nano")
+
+    result = llm.invoke("Say hello in one sentence", reasoning_effort="low")
+
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+    assert result.usage_metadata is not None
+
+
 @pytest.mark.flaky(retries=3, delay=1)
 def test_multi_party_conversation() -> None:
     llm = ChatOpenAI(model="gpt-5-nano")
@@ -1198,6 +1222,45 @@ def test_prompt_cache_key_usage_methods_integration() -> None:
     response_model_level = chat_model_level.invoke(messages)
     assert isinstance(response_model_level, AIMessage)
     assert isinstance(response_model_level.content, str)
+
+
+@pytest.mark.scheduled
+@pytest.mark.flaky(retries=3, delay=1)
+def test_explicit_prompt_cache_breakpoint_invoke() -> None:
+    """Explicit cache breakpoints produce a cache read on a repeated prefix.
+
+    Uses a long, stable prefix marked with a `prompt_cache_breakpoint` and
+    `prompt_cache_options={"mode": "explicit"}`. The first invocation writes the
+    cache and the second should read it back.
+    """
+    chat = ChatOpenAI(
+        model="gpt-5.6-sol",
+        max_completion_tokens=10,
+        prompt_cache_options={"mode": "explicit"},
+    )
+    # A prefix long enough to exceed OpenAI's minimum cacheable prompt length.
+    stable_prefix = "Stable, cacheable instructions and reference material. " * 400
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": stable_prefix,
+                    "prompt_cache_breakpoint": {"mode": "explicit"},
+                },
+                {"type": "text", "text": "Say hello."},
+            ]
+        )
+    ]
+
+    first = chat.invoke(messages)
+    assert isinstance(first, AIMessage)
+
+    second = chat.invoke(messages)
+    assert isinstance(second, AIMessage)
+    assert second.usage_metadata is not None
+    cache_read = second.usage_metadata["input_token_details"].get("cache_read", 0)
+    assert cache_read > 0
 
 
 class BadModel(BaseModel):

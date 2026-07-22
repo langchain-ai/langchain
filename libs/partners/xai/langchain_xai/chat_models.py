@@ -586,6 +586,16 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
             if rejects_stop:
                 payload.pop("stop", None)
+
+        # xAI expects `reasoning_effort` in `extra_body`, not as a top-level field.
+        # Move it there so it reaches the API.
+        reasoning_effort = payload.pop("reasoning_effort", None)
+        if reasoning_effort is not None:
+            extra_body = payload.get("extra_body")
+            if not isinstance(extra_body, dict):
+                extra_body = {}
+            payload["extra_body"] = {**extra_body, "reasoning_effort": reasoning_effort}
+
         return payload
 
     def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:

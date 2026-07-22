@@ -195,6 +195,7 @@ def test_configurable() -> None:
             "context_management": None,
             "include": None,
             "seed": None,
+            "prompt_cache_options": None,
             "service_tier": None,
             "logprobs": None,
             "top_logprobs": None,
@@ -303,7 +304,7 @@ def test_configurable_with_default() -> None:
         "bound": {
             "name": None,
             "disable_streaming": False,
-            "effort": None,
+            "reasoning_effort": None,
             "model": "claude-sonnet-4-5-20250929",
             "mcp_servers": None,
             "max_tokens": 64000,

@@ -178,3 +178,33 @@ def test_structured_output_json_schema(schema_type: str) -> None:
         validation_function(chunk)
         chunks.append(chunk)
     assert chunk
+
+
+def test_reasoning_effort_parameter() -> None:
+    """Test that the standard `reasoning_effort` parameter is accepted by the API."""
+    llm = ChatFireworks(
+        model="accounts/fireworks/models/kimi-k2p6",
+        reasoning_effort="high",
+        rate_limiter=rate_limiter,
+    )
+
+    result = llm.invoke("Say hello in one sentence")
+
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+    assert result.usage_metadata is not None
+    assert result.usage_metadata["input_tokens"] > 0
+    assert result.usage_metadata["output_tokens"] > 0
+
+
+def test_reasoning_effort_call_time_kwarg() -> None:
+    """Test that `reasoning_effort` is accepted as a call-time kwarg."""
+    llm = ChatFireworks(
+        model="accounts/fireworks/models/kimi-k2p6", rate_limiter=rate_limiter
+    )
+
+    result = llm.invoke("Say hello in one sentence", reasoning_effort="high")
+
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+    assert result.usage_metadata is not None

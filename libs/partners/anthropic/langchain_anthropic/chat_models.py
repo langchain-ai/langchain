@@ -174,6 +174,7 @@ _BUILTIN_TOOL_PREFIXES = [
     "mcp_toolset",
     "memory_",
     "tool_search_",
+    "advisor_",
 ]
 
 _ANTHROPIC_EXTRA_FIELDS: set[str] = {
@@ -818,6 +819,21 @@ def _is_code_execution_related_block(
     return False
 
 
+def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
+    """Return the reasoning-effort levels declared in a model's profile, if any.
+
+    Defensive against a missing/malformed profile: an absent `profile`, a
+    non-mapping value, or a missing/non-list `reasoning_effort_levels` value is
+    treated as "no levels declared" rather than raising.
+    """
+    if not isinstance(profile, Mapping):
+        return ()
+    levels = profile.get("reasoning_effort_levels")
+    if not isinstance(levels, (list, tuple)):
+        return ()
+    return tuple(levels)
+
+
 def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
     """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
 
@@ -1072,18 +1088,29 @@ class ChatAnthropic(BaseChatModel):
     [extended output](https://platform.claude.com/docs/en/api/go/beta/messages/create).
     """
 
-    effort: Literal["max", "xhigh", "high", "medium", "low"] | None = None
-    """Convenience shorthand for `output_config.effort`.
+    reasoning_effort: Literal["max", "xhigh", "high", "medium", "low"] | None = Field(
+        default=None,
+        alias="effort",
+    )
+    """Reasoning effort.
 
-    When set, this value takes precedence over any `effort` key inside
-    `output_config`.
+    Configures `output_config.effort`. If `thinking` isn't set explicitly,
+    defaults it to `{"type": "adaptive", "display": "summarized"}`. Can also
+    be passed at call time (for example,
+    `model.invoke(..., reasoning_effort="high")`).
 
-    Example: `effort="medium"`
+    !!! note "`effort` alias"
+
+        `effort` is also accepted as an alias for this field, at both
+        construction and call time. If both `effort` and `reasoning_effort` are
+        set, `effort` wins (Pydantic's alias-resolution precedence).
 
     !!! note
 
-        Setting `effort` to `'high'` produces exactly the same behavior as omitting the
-        parameter altogether.
+        Setting `reasoning_effort` to `'high'` produces exactly the same behavior
+        as omitting the parameter altogether.
+
+    Example: `reasoning_effort="medium"`
     """
 
     mcp_servers: list[dict[str, Any]] | None = None
@@ -1113,6 +1140,11 @@ class ChatAnthropic(BaseChatModel):
     [data residency](https://platform.claude.com/docs/en/build-with-claude/data-residency)
     docs for more information.
     """
+
+    @property
+    def effort(self) -> Literal["max", "xhigh", "high", "medium", "low"] | None:
+        """Alias for `reasoning_effort`."""
+        return self.reasoning_effort
 
     @property
     def _llm_type(self) -> str:
@@ -1264,7 +1296,7 @@ class ChatAnthropic(BaseChatModel):
         input_: LanguageModelInput,
         *,
         stop: list[str] | None = None,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> dict:
         """Get the request payload for the Anthropic API."""
         messages = self._convert_input(input_).to_messages()
@@ -1337,25 +1369,55 @@ class ChatAnthropic(BaseChatModel):
             **self.model_kwargs,
             **kwargs,
         }
+        # Captured before `self.thinking` is applied below, so a call-time
+        # `thinking` kwarg counts as "explicitly set" too.
+        thinking_explicitly_set = "thinking" in payload or self.thinking is not None
         if self.thinking is not None:
             payload["thinking"] = self.thinking
         if self.inference_geo is not None:
             payload["inference_geo"] = self.inference_geo
 
         # Handle output_config and effort parameter
-        # Priority: self.effort > kwargs output_config > self.output_config
+        # Priority: kwarg `effort`/`reasoning_effort` > kwarg `output_config`
+        # > self.reasoning_effort > self.output_config
         output_config: dict[str, Any] = {}
         if self.output_config:
             output_config.update(self.output_config)
+        reasoning_effort_applied = False
+        if self.reasoning_effort:
+            output_config["effort"] = self.reasoning_effort
+            reasoning_effort_applied = True
         payload_oc = payload.get("output_config")
         if isinstance(payload_oc, dict):
             output_config.update(payload_oc)
 
-        if self.effort:
-            output_config["effort"] = self.effort
+        # Neither `reasoning_effort` nor its `effort` alias are Anthropic API
+        # fields. Pop them so they never leak through as top-level keys.
+        effort_kwarg = payload.pop("effort", None)
+        reasoning_effort_kwarg = payload.pop("reasoning_effort", None)
+        # `effort` wins if both are set at call time, matching the
+        # construction-time alias-resolution precedence (`Field(alias="effort")`).
+        reasoning_effort_override = (
+            effort_kwarg if effort_kwarg is not None else reasoning_effort_kwarg
+        )
+        if reasoning_effort_override:
+            output_config["effort"] = reasoning_effort_override
+            reasoning_effort_applied = True
 
         if output_config:
             payload["output_config"] = output_config
+
+        # Default adaptive thinking when `reasoning_effort` is set, unless the
+        # caller explicitly provided `thinking`. Gated on `xhigh` support: only
+        # Opus 4.7+/Sonnet 5 accept the adaptive+summarized `thinking` shape —
+        # sending it to an older model (e.g. Opus 4.5, 4.6) is rejected by the
+        # API with "adaptive thinking is not supported on this model".
+        if (
+            reasoning_effort_applied
+            and not thinking_explicitly_set
+            and "xhigh" in _reasoning_effort_levels(self.profile)
+        ):
+            payload["thinking"] = {"type": "adaptive", "display": "summarized"}
 
         if "response_format" in payload:
             # response_format present when using agents.create_agent's ProviderStrategy

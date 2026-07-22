@@ -65,6 +65,7 @@ _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
         lambda cls, model, **kwargs: cls(model_id=model, **kwargs),
     ),
     "litellm": ("langchain_litellm", "ChatLiteLLM", _call),
+    "meta": ("langchain_meta", "ChatMetaModel", _call),
     "mistralai": ("langchain_mistralai", "ChatMistralAI", _call),
     "nvidia": ("langchain_nvidia_ai_endpoints", "ChatNVIDIA", _call),
     "ollama": ("langchain_ollama", "ChatOllama", _call),
@@ -307,6 +308,7 @@ def init_chat_model(
             - `upstage`                 -> [`langchain-upstage`](https://docs.langchain.com/oss/python/integrations/providers/upstage)
             - `baseten`                 -> [`langchain-baseten`](https://docs.langchain.com/oss/python/integrations/providers/baseten)
             - `litellm`                 -> [`langchain-litellm`](https://docs.langchain.com/oss/python/integrations/providers/litellm)
+            - `meta`                    -> [`langchain-meta`](https://pypi.org/project/langchain-meta)
 
         configurable_fields: Which model parameters are configurable at runtime:
 

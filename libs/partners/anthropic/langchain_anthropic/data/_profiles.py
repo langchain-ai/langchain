@@ -173,6 +173,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
+        "reasoning_effort_default": "high",
     },
     "claude-opus-4-5-20251101": {
         "name": "Claude Opus 4.5",
@@ -199,6 +205,12 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+        ],
+        "reasoning_effort_default": "high",
     },
     "claude-opus-4-6": {
         "name": "Claude Opus 4.6",
@@ -225,6 +237,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+            "max",
+        ],
+        "reasoning_effort_default": "high",
     },
     "claude-opus-4-7": {
         "name": "Claude Opus 4.7",
@@ -251,6 +270,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
+        "reasoning_effort_default": "high",
     },
     "claude-opus-4-8": {
         "name": "Claude Opus 4.8",
@@ -277,6 +304,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
+        "reasoning_effort_default": "high",
     },
     "claude-sonnet-4-5": {
         "name": "Claude Sonnet 4.5 (latest)",
@@ -355,6 +390,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+            "max",
+        ],
+        "reasoning_effort_default": "high",
     },
     "claude-sonnet-5": {
         "name": "Claude Sonnet 5",
@@ -381,5 +423,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
+        "reasoning_effort_default": "high",
     },
 }
