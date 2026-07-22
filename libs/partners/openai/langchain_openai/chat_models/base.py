@@ -1441,6 +1441,8 @@ class BaseChatOpenAI(BaseChatModel):
 
         if finish_reason := choice.get("finish_reason"):
             generation_info["finish_reason"] = finish_reason
+            if "stop_reason" in choice:
+                generation_info["stop_reason"] = choice["stop_reason"]
             if model_name := chunk.get("model"):
                 generation_info["model_name"] = model_name
             if system_fingerprint := chunk.get("system_fingerprint"):
@@ -1852,6 +1854,8 @@ class BaseChatOpenAI(BaseChatModel):
                 if res.get("finish_reason") is not None
                 else generation_info.get("finish_reason")
             )
+            if "stop_reason" in res:
+                generation_info["stop_reason"] = res["stop_reason"]
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
             gen = ChatGeneration(message=message, generation_info=generation_info)

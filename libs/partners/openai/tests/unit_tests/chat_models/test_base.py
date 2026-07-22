@@ -621,6 +621,29 @@ def test_openai_stream(mock_openai_completion: list) -> None:
         assert "stream_options" not in call_kwargs[-1]
 
 
+@pytest.mark.parametrize("stop_reason", ["custom stop sequence", 0, None])
+def test_openai_stream_preserves_stop_reason(
+    mock_openai_completion: list[dict], stop_reason: str | int | None
+) -> None:
+    final_choice = next(
+        chunk["choices"][0]
+        for chunk in reversed(mock_openai_completion)
+        if chunk["choices"]
+    )
+    final_choice["stop_reason"] = stop_reason
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    mock_client = MagicMock()
+    mock_client.create.return_value = MockSyncContextManager(mock_openai_completion)
+
+    with patch.object(llm, "client", mock_client):
+        stream = llm.stream("bar")
+        response = next(stream)
+        for chunk in stream:
+            response += chunk
+
+    assert response.response_metadata["stop_reason"] == stop_reason
+
+
 def test_openai_stream_events_v3_lifecycle(mock_openai_completion: list) -> None:
     """`stream_events(version="v3")` on chat completions emits a valid lifecycle."""
     from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
@@ -700,6 +723,25 @@ def test_openai_invoke(mock_client: MagicMock) -> None:
         # headers are not in response_metadata if include_response_headers not set
         assert "headers" not in res.response_metadata
     assert mock_client.with_raw_response.create.called
+
+
+@pytest.mark.parametrize("stop_reason", ["custom stop sequence", 0, None])
+def test_openai_invoke_preserves_stop_reason(
+    mock_client: MagicMock,
+    mock_completion: dict,
+    stop_reason: str | int | None,
+) -> None:
+    mock_completion["choices"][0]["stop_reason"] = stop_reason
+    mock_response = mock_client.with_raw_response.create.return_value
+    mock_response.parse.return_value = openai.types.chat.ChatCompletion.model_validate(
+        mock_completion
+    )
+    llm = ChatOpenAI()
+
+    with patch.object(llm, "client", mock_client):
+        response = llm.invoke("bar")
+
+    assert response.response_metadata["stop_reason"] == stop_reason
 
 
 async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
