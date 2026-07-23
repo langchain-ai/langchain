@@ -108,6 +108,7 @@ from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import _stringify
 from langchain_core.utils import get_pydantic_field_names
+from langchain_core.utils._gateway import _resolve_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -117,7 +118,7 @@ from langchain_core.utils.pydantic import (
     TypeBaseModel,
     is_basemodel_subclass,
 )
-from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs, from_env
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -648,9 +649,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     openai_api_key: (
         SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
-    ) = Field(
-        alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
-    )
+    ) = Field(alias="api_key", default=None)
     """API key to use.
 
     Can be inferred from the `OPENAI_API_KEY` environment variable, or specified
@@ -1212,26 +1211,36 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
+        # Resolve base URL and API key, applying LangSmith gateway settings.
+        _gateway_config = _resolve_gateway_config(
+            base_url=self.openai_api_base,
+            api_key=self.openai_api_key,
+            provider_path="openai/v1",
+            base_url_env="OPENAI_API_BASE",
+            api_key_env="OPENAI_API_KEY",
+        )
+        self.openai_api_base = _gateway_config.base_url
+        self.openai_api_key = _gateway_config.api_key
+        _base_url_from_gateway = _gateway_config.base_url_from_gateway
 
-        # Enable stream_usage by default if using default base URL and client
-        if (
-            all(
-                getattr(self, key, None) is None
-                for key in (
-                    "stream_usage",
-                    "openai_proxy",
-                    "openai_api_base",
-                    "base_url",
-                    "client",
-                    "root_client",
-                    "async_client",
-                    "root_async_client",
-                    "http_client",
-                    "http_async_client",
-                )
+        # Enable stream_usage by default if using default base URL and client,
+        # or when the base URL was set by the LangSmith gateway (which proxies
+        # to OpenAI and supports streaming token usage).
+        if all(
+            getattr(self, key, None) is None
+            for key in (
+                "stream_usage",
+                "openai_proxy",
+                "client",
+                "root_client",
+                "async_client",
+                "root_async_client",
+                "http_client",
+                "http_async_client",
             )
-            and "OPENAI_BASE_URL" not in os.environ
+        ) and (
+            _base_url_from_gateway
+            or (self.openai_api_base is None and "OPENAI_BASE_URL" not in os.environ)
         ):
             self.stream_usage = True
 

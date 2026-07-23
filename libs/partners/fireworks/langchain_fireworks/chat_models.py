@@ -85,12 +85,13 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
+from langchain_core.utils._gateway import _apply_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -814,27 +815,20 @@ class ChatFireworks(BaseChatModel):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
-    fireworks_api_key: SecretStr = Field(
-        alias="api_key",
-        default_factory=secret_from_env(
-            "FIREWORKS_API_KEY",
-            error_message=(
-                "You must specify an api key. "
-                "You can pass it an argument as `api_key=...` or "
-                "set the environment variable `FIREWORKS_API_KEY`."
-            ),
-        ),
-    )
+    fireworks_api_key: SecretStr = Field(default=SecretStr(""), alias="api_key")
     """Fireworks API key.
 
     Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
+
+    If `LANGSMITH_GATEWAY` is enabled and the base URL points at the gateway,
+    `LANGSMITH_GATEWAY_API_KEY` is used instead.
     """
 
-    fireworks_api_base: str | None = Field(
-        alias="base_url", default_factory=from_env("FIREWORKS_API_BASE", default=None)
-    )
+    fireworks_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service
     emulator.
+
+    If `LANGSMITH_GATEWAY` is set, it is used as a fallback after `FIREWORKS_API_BASE`.
     """
 
     request_timeout: float | tuple[float, float] | Any | None = Field(
@@ -915,6 +909,36 @@ class ChatFireworks(BaseChatModel):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _resolve_gateway(cls, values: Any) -> Any:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        An explicit ``base_url``/``api_key`` always wins. Otherwise the base URL
+        falls back to ``FIREWORKS_API_BASE``, then the LangSmith gateway. The
+        gateway key is preferred only when the base URL came from the gateway;
+        for any other endpoint the provider key wins, and the gateway key is a
+        candidate only when the gateway is enabled.
+        """
+        if isinstance(values, dict):
+            config = _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="fireworks_api_base",
+                api_key_field="fireworks_api_key",
+                provider_path="fireworks",
+                base_url_env="FIREWORKS_API_BASE",
+                api_key_env="FIREWORKS_API_KEY",
+            )
+            if config.api_key is None:
+                msg = (
+                    "You must specify an api key. "
+                    "You can pass it an argument as `api_key=...` or "
+                    "set the environment variable `FIREWORKS_API_KEY`."
+                )
+                raise ValueError(msg)
+        return values
 
     @model_validator(mode="after")
     def _set_fireworks_chat_version(self) -> Self:

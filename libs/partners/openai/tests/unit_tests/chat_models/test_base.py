@@ -4690,3 +4690,84 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://gateway.smith.langchain.com/openai/v1"
+    assert llm.stream_usage is True
+
+
+def test_langsmith_gateway_false(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base is None
+
+
+def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base is None
+
+
+def test_langsmith_gateway_custom_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://my-gateway.example.com/")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://my-gateway.example.com/openai/v1"
+
+
+def test_langsmith_gateway_provider_env_overrides_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://api.openai.com/v1"
+
+
+def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_api_key_not_used_without_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+def test_langsmith_gateway_api_key_overrides_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_provider_base_url_uses_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Provider-specific wiring check: base URL overridden away from the gateway
+    # -> provider key wins over the gateway key. Full precedence matrix lives in
+    # core's test_gateway.py.
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert llm.openai_api_base == "https://api.openai.com/v1"
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "provider-key"
