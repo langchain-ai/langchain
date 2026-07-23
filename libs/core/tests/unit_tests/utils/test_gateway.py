@@ -62,7 +62,9 @@ def test_base_url_unset(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_base_url_custom(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "https://eu.gateway.example.com/")
-    assert _resolve_gateway_base_url(_PATH) == "https://eu.gateway.example.com/openai/v1"
+    assert (
+        _resolve_gateway_base_url(_PATH) == "https://eu.gateway.example.com/openai/v1"
+    )
 
 
 # --- api key + base url resolution matrix ---------------------------------
