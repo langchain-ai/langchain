@@ -576,3 +576,27 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_empty_string_args_do_not_materialize_tool_call() -> None:
+    """Fragmented SSE first chunk with args="" must not create tool_calls (#38682)."""
+    from langchain_core.messages import AIMessageChunk
+
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {"name": "get_weather", "args": "", "id": "call_abc", "index": 0}
+        ],
+    )
+    assert chunk.tool_calls == []
+
+    # Final chunk position may still resolve empty args to {}.
+    last = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {"name": "get_weather", "args": "", "id": "call_abc", "index": 0}
+        ],
+        chunk_position="last",
+    )
+    assert len(last.tool_calls) == 1
+    assert last.tool_calls[0]["args"] == {}

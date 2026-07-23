@@ -404,3 +404,47 @@ def test_fallbacks_getattr_runnable_output() -> None:
         for fallback in llm_with_fallbacks_with_tools.fallbacks
     )
     assert llm_with_fallbacks_with_tools.runnable.kwargs["tools"] == []
+
+
+def test_empty_upstream_stream_does_not_trigger_fallback() -> None:
+    """Empty stream is success: must not silently run fallbacks (#38892)."""
+
+    def empty_stream(_input: Any) -> Iterator[str]:
+        return
+        yield  # pragma: no cover
+
+    def fallback_stream(_input: Any) -> Iterator[str]:
+        yield "FALLBACK-OUTPUT"
+
+    chain = RunnableGenerator(empty_stream).with_fallbacks(
+        [RunnableGenerator(fallback_stream)]
+    )
+    assert list(chain.stream({})) == []
+
+
+def test_empty_upstream_stream_without_fallback_returns_empty() -> None:
+    """Empty stream without fallbacks should not raise (#38892)."""
+
+    def empty_stream(_input: Any) -> Iterator[str]:
+        return
+        yield  # pragma: no cover
+
+    chain = RunnableGenerator(empty_stream).with_fallbacks([])
+    assert list(chain.stream({})) == []
+
+
+@pytest.mark.asyncio
+async def test_empty_upstream_astream_does_not_trigger_fallback() -> None:
+    """Async empty stream must not trigger fallbacks (#38892)."""
+
+    async def empty_stream(_input: Any) -> AsyncIterator[str]:
+        if False:  # pragma: no cover
+            yield "x"
+
+    async def fallback_stream(_input: Any) -> AsyncIterator[str]:
+        yield "FALLBACK-OUTPUT"
+
+    chain = RunnableGenerator(empty_stream).with_fallbacks(
+        [RunnableGenerator(fallback_stream)]
+    )
+    assert [c async for c in chain.astream({})] == []

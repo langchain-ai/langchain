@@ -497,7 +497,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         input,
                         **kwargs,
                     )
-                    chunk: Output = context.run(next, stream)
+                    try:
+                        chunk: Output | None = context.run(next, stream)
+                    except StopIteration:
+                        # Empty stream is a valid successful result (e.g. filtered
+                        # content, empty model response). Do not treat as failure
+                        # or trigger fallbacks.
+                        chunk = None
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -510,6 +516,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         if first_error:
             run_manager.on_chain_error(first_error)
             raise first_error
+
+        if chunk is None:
+            run_manager.on_chain_end(None)
+            return
 
         yield chunk
         output: Output | None = chunk
@@ -561,7 +571,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         child_config,
                         **kwargs,
                     )
-                    chunk = await coro_with_context(anext(stream), context)
+                    try:
+                        chunk = await coro_with_context(anext(stream), context)
+                    except StopAsyncIteration:
+                        # Empty async stream is a valid successful result.
+                        chunk = None
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -574,6 +588,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         if first_error:
             await run_manager.on_chain_error(first_error)
             raise first_error
+
+        if chunk is None:
+            await run_manager.on_chain_end(None)
+            return
 
         yield chunk
         output: Output | None = chunk

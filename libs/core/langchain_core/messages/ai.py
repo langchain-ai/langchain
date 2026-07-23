@@ -554,7 +554,20 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         for chunk in self.tool_call_chunks:
             try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
+                raw_args = chunk["args"]
+                # Empty string means the provider is still streaming tool-call
+                # arguments (common with fragmented SSE). Do not materialize a
+                # tool_call with {} until real args or an explicit null arrive.
+                # None / missing still means "no args object yet" -> {}.
+                if raw_args == "":
+                    if self.chunk_position == "last":
+                        args_: object = {}
+                    else:
+                        continue
+                elif raw_args:
+                    args_ = parse_partial_json(raw_args)
+                else:
+                    args_ = {}
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
