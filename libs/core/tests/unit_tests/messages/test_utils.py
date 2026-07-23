@@ -1952,6 +1952,137 @@ def test_get_buffer_string_prefix_custom_separator() -> None:
     assert result == expected
 
 
+def test_get_buffer_string_prefix_plain_string_unchanged() -> None:
+    """Test prefix format leaves plain string content unchanged."""
+    messages = [
+        HumanMessage(content="What does this screenshot show?"),
+        AIMessage(content="It shows the dashboard error state."),
+    ]
+    result = get_buffer_string(messages)
+    expected = (
+        "Human: What does this screenshot show?\n"
+        "AI: It shows the dashboard error state."
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_prefix_image_url_block() -> None:
+    """Test prefix format includes OpenAI-style `image_url` blocks."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What does this screenshot show?"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "https://example.com/screenshot.png"},
+                },
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages)
+    expected = (
+        "Human: What does this screenshot show? "
+        "[image: https://example.com/screenshot.png]"
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_prefix_image_block() -> None:
+    """Test prefix format includes standard image blocks (URL and `file_id`)."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What is in this image?"},
+                {"type": "image", "url": "https://example.com/image.png"},
+            ]
+        ),
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Describe this:"},
+                {"type": "image", "file_id": "file-abc123"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages)
+    expected = (
+        "Human: What is in this image? [image: https://example.com/image.png]\n"
+        "Human: Describe this: [image: file-abc123]"
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_prefix_audio_and_video_blocks() -> None:
+    """Test prefix format includes audio and video blocks."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Transcribe this:"},
+                {"type": "audio", "url": "https://example.com/audio.mp3"},
+                {"type": "video", "url": "https://example.com/video.mp4"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages)
+    expected = (
+        "Human: Transcribe this: "
+        "[audio: https://example.com/audio.mp3] "
+        "[video: https://example.com/video.mp4]"
+    )
+    assert result == expected
+
+
+def test_get_buffer_string_prefix_image_only_block() -> None:
+    """Test prefix format with a multimodal block and no text."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "image", "url": "https://example.com/image.png"},
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages)
+    expected = "Human: [image: https://example.com/image.png]"
+    assert result == expected
+
+
+def test_get_buffer_string_prefix_base64_image_skipped() -> None:
+    """Test prefix format omits base64/data: URL media blocks."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What is this?"},
+                {"type": "image", "base64": "iVBORw0KGgo...", "mime_type": "image/png"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/png;base64,iVBORw0KGgo..."},
+                },
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages)
+    assert result == "Human: What is this?"
+    assert "base64" not in result
+    assert "data:image" not in result
+
+
+def test_get_buffer_string_xml_image_still_included() -> None:
+    """Test XML format still renders image blocks as `<image ... />`."""
+    messages: list[BaseMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What does this screenshot show?"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "https://example.com/screenshot.png"},
+                },
+            ]
+        ),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    assert "What does this screenshot show?" in result
+    assert '<image url="https://example.com/screenshot.png" />' in result
+
+
 def test_get_buffer_string_xml_escaping() -> None:
     """Test XML format properly escapes special characters in content."""
     messages = [
