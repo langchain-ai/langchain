@@ -4382,6 +4382,19 @@ def _construct_responses_api_payload(
         else:
             payload["text"] = {"verbosity": verbosity}
 
+    # In the Responses API, logprobs are requested via `include` rather than a
+    # top-level `logprobs` flag. `top_logprobs` implies logprobs are wanted, so
+    # honor it too (mirroring the Chat Completions API, where `top_logprobs`
+    # requires `logprobs=True`).
+    return_logprobs = payload.pop("logprobs", None)
+    if return_logprobs or payload.get("top_logprobs") is not None:
+        # Copy rather than mutate in place: `include` may be the user-supplied
+        # `self.include` list, which would otherwise grow on every invocation.
+        include = list(payload.get("include") or [])
+        if "message.output_text.logprobs" not in include:
+            include.append("message.output_text.logprobs")
+        payload["include"] = include
+
     return payload
 
 
@@ -4843,6 +4856,14 @@ def _construct_lc_result_from_responses_api(
                     }
                     if phase is not None:
                         block["phase"] = phase
+                    # Attach per-token logprobs to their associated text block so
+                    # they stay aligned with that block's content (the Responses
+                    # API returns logprobs per output_text item).
+                    content_logprobs = getattr(content, "logprobs", None)
+                    if content_logprobs:
+                        block["logprobs"] = [
+                            logprob.model_dump() for logprob in content_logprobs
+                        ]
                     content_blocks.append(block)
                     if hasattr(content, "parsed"):
                         additional_kwargs["parsed"] = content.parsed
@@ -5068,14 +5089,20 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.output_text.done":
         _advance(chunk.output_index, chunk.content_index)
-        content.append(
-            {
-                "type": "text",
-                "text": "",
-                "id": chunk.item_id,
-                "index": current_index,
-            }
-        )
+        text_block: dict = {
+            "type": "text",
+            "text": "",
+            "id": chunk.item_id,
+            "index": current_index,
+        }
+        # Attach per-token logprobs to the associated text block, mirroring the
+        # non-streaming path (`_construct_lc_result_from_responses_api`).
+        chunk_logprobs = getattr(chunk, "logprobs", None)
+        if chunk_logprobs:
+            text_block["logprobs"] = [
+                logprob.model_dump() for logprob in chunk_logprobs
+            ]
+        content.append(text_block)
     elif chunk.type == "response.created":
         response = _coerce_chunk_response(chunk.response)
         id = response.id

@@ -4690,3 +4690,223 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_logprobs_with_responses_api_parameter_handling() -> None:
+    """Test that the `logprobs` parameter is correctly handled with the response api."""
+    from openai.types.responses.response_create_params import (
+        ResponseCreateParamsNonStreaming,
+    )
+
+    chat = ChatOpenAI(
+        model="gpt-4o",
+        use_responses_api=True,
+        logprobs=True,
+        output_version="responses/v1",
+        max_completion_tokens=10,
+    )
+    messages = [HumanMessage("Hello")]
+    payload = chat._get_request_payload(messages)
+    allowed_keys = set(ResponseCreateParamsNonStreaming.__annotations__.keys())
+    payload_keys = set(payload.keys())
+    assert payload_keys.issubset(allowed_keys)
+    assert "include" in payload
+    assert "message.output_text.logprobs" in payload["include"]
+
+
+def test___construct_lc_result_from_responses_api_logprobs() -> None:
+    """Test that the logprobs are correctly parsed from the response api."""
+    from openai.types.responses.response_output_text import Logprob
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text",
+                        text="Hello, world!",
+                        annotations=[],
+                        logprobs=[
+                            Logprob(
+                                token="Hello",  # noqa: S106
+                                bytes=[72, 101, 108, 108, 111],
+                                logprob=8e-06,
+                                top_logprobs=[],
+                            ),
+                            Logprob(
+                                token=",",  # noqa: S106
+                                bytes=[44],
+                                logprob=3.8e-05,
+                                top_logprobs=[],
+                            ),
+                            Logprob(
+                                token="world",  # noqa: S106
+                                bytes=[32, 119, 111, 114, 108, 100],
+                                logprob=-5.3e-05,
+                                top_logprobs=[],
+                            ),
+                            Logprob(
+                                token="!",  # noqa: S106
+                                bytes=[33],
+                                logprob=-8e-06,
+                                top_logprobs=[],
+                            ),
+                        ],
+                    ),
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+    )
+
+    chat_result = _construct_lc_result_from_responses_api(response)
+    content = chat_result.generations[0].message.content
+    text_blocks = [
+        block
+        for block in content
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    assert len(text_blocks) == 1
+    logprobs = text_blocks[0]["logprobs"]
+    assert len(logprobs) == 4
+    assert logprobs[0]["token"] == "Hello"  # noqa: S105
+    assert logprobs[0]["logprob"] == 8e-06
+
+
+def test_logprobs_with_top_logprobs_responses_api_parameter_handling() -> None:
+    """Test that `top_logprobs` alone triggers the logprobs `include` entry."""
+    chat = ChatOpenAI(
+        model="gpt-4o",
+        use_responses_api=True,
+        top_logprobs=5,
+        output_version="responses/v1",
+        max_completion_tokens=10,
+    )
+    messages = [HumanMessage("Hello")]
+    payload = chat._get_request_payload(messages)
+    assert "include" in payload
+    assert "message.output_text.logprobs" in payload["include"]
+
+
+def test_logprobs_responses_api_include_not_mutated_across_calls() -> None:
+    """Test that a user-supplied `include` list is not mutated across invocations."""
+    include = ["reasoning.encrypted_content"]
+    chat = ChatOpenAI(
+        model="gpt-4o",
+        use_responses_api=True,
+        logprobs=True,
+        include=include,
+        output_version="responses/v1",
+        max_completion_tokens=10,
+    )
+    messages = [HumanMessage("Hello")]
+    first = chat._get_request_payload(messages)
+    second = chat._get_request_payload(messages)
+
+    # The instance attribute must be untouched and payloads must not accumulate
+    # duplicate entries across calls.
+    assert include == ["reasoning.encrypted_content"]
+    assert first["include"] == second["include"]
+    assert first["include"].count("message.output_text.logprobs") == 1
+
+
+def test___construct_lc_result_from_responses_api_logprobs_multiple_blocks() -> None:
+    """Test that each output_text block keeps its own logprobs."""
+    from openai.types.responses.response_output_text import Logprob
+
+    def _text_block(msg_id: str, text: str, token: str) -> ResponseOutputMessage:
+        return ResponseOutputMessage(
+            type="message",
+            id=msg_id,
+            content=[
+                ResponseOutputText(
+                    type="output_text",
+                    text=text,
+                    annotations=[],
+                    logprobs=[
+                        Logprob(
+                            token=token,
+                            bytes=list(token.encode()),
+                            logprob=-0.5,
+                            top_logprobs=[],
+                        ),
+                    ],
+                ),
+            ],
+            role="assistant",
+            status="completed",
+        )
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model="gpt-4o",
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            _text_block("msg_1", "Hello", "Hello"),
+            _text_block("msg_2", " world", "world"),
+        ],
+    )
+
+    chat_result = _construct_lc_result_from_responses_api(response)
+    content = chat_result.generations[0].message.content
+    text_blocks = [
+        block
+        for block in content
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    # Each block carries only its own logprobs; nothing is overwritten or merged.
+    assert len(text_blocks) == 2
+    assert len(text_blocks[0]["logprobs"]) == 1
+    assert text_blocks[0]["logprobs"][0]["token"] == "Hello"  # noqa: S105
+    assert len(text_blocks[1]["logprobs"]) == 1
+    assert text_blocks[1]["logprobs"][0]["token"] == "world"  # noqa: S105
+
+
+def test__convert_responses_chunk_to_generation_chunk_logprobs() -> None:
+    """Test that streaming attaches logprobs to the associated text block."""
+    from openai.types.responses.response_text_done_event import (
+        Logprob,
+        ResponseTextDoneEvent,
+    )
+
+    chunk = ResponseTextDoneEvent(
+        type="response.output_text.done",
+        item_id="msg_123",
+        output_index=0,
+        content_index=0,
+        sequence_number=0,
+        text="Hello",
+        logprobs=[
+            Logprob(token="Hello", logprob=-0.5, top_logprobs=[]),  # noqa: S106
+        ],
+    )
+    _, _, _, generation_chunk = _convert_responses_chunk_to_generation_chunk(
+        chunk,
+        current_index=0,
+        current_output_index=0,
+        current_sub_index=0,
+    )
+    assert generation_chunk is not None
+    content = generation_chunk.message.content
+    text_blocks = [
+        block
+        for block in content
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    assert len(text_blocks) == 1
+    assert text_blocks[0]["logprobs"][0]["token"] == "Hello"  # noqa: S105
+    assert text_blocks[0]["logprobs"][0]["logprob"] == -0.5
