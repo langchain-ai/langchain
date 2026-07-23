@@ -4755,3 +4755,19 @@ def test_langsmith_gateway_api_key_overrides_provider_key(
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     assert isinstance(llm.openai_api_key, SecretStr)
     assert llm.openai_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_provider_base_url_uses_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Provider-specific wiring check: base URL overridden away from the gateway
+    # -> provider key wins over the gateway key. Full precedence matrix lives in
+    # core's test_gateway.py.
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert llm.openai_api_base == "https://api.openai.com/v1"
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "provider-key"

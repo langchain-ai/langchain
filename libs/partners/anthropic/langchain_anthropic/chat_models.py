@@ -6,7 +6,6 @@ import copy
 import datetime
 import hashlib
 import json
-import os
 import re
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
@@ -49,7 +48,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
+from langchain_core.utils import from_env, get_pydantic_field_names
+from langchain_core.utils._gateway import _resolve_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -76,21 +76,6 @@ _message_type_lookups = {
 }
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
-
-_LANGSMITH_GATEWAY_DEFAULT_BASE = "https://gateway.smith.langchain.com"
-_LANGSMITH_GATEWAY_PROVIDER_PATH = "anthropic"
-
-
-def _resolve_gateway_base_url() -> str | None:
-    raw = os.getenv("LANGSMITH_GATEWAY")
-    if raw is None or raw.lower() in ("false", "0", "no"):
-        return None
-    if raw.lower() in ("true", "1", "yes"):
-        base = _LANGSMITH_GATEWAY_DEFAULT_BASE
-    else:
-        base = raw.rstrip("/")
-    return f"{base}/{_LANGSMITH_GATEWAY_PROVIDER_PATH}"
-
 
 _USER_AGENT: Final[str] = f"langchain-anthropic/{__version__}"
 
@@ -975,15 +960,7 @@ class ChatAnthropic(BaseChatModel):
     stop_sequences: list[str] | None = Field(None, alias="stop")
     """Default stop sequences."""
 
-    anthropic_api_url: str | None = Field(
-        alias="base_url",
-        default_factory=lambda: from_env(
-            ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
-            default="",
-        )()
-        or _resolve_gateway_base_url()
-        or "https://api.anthropic.com",
-    )
+    anthropic_api_url: str | None = Field(default=None, alias="base_url")
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value first from
@@ -992,20 +969,11 @@ class ChatAnthropic(BaseChatModel):
     If `LANGSMITH_GATEWAY` is set, it is used as a fallback after those env vars.
     """
 
-    anthropic_api_key: SecretStr = Field(
-        alias="api_key",
-        default_factory=lambda: SecretStr(
-            (
-                os.getenv("LANGSMITH_GATEWAY_API_KEY")
-                if _resolve_gateway_base_url() is not None
-                else None
-            )
-            or secret_from_env("ANTHROPIC_API_KEY", default="")().get_secret_value()
-        ),
-    )
+    anthropic_api_key: SecretStr | None = Field(default=None, alias="api_key")
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided.
 
-    If `LANGSMITH_GATEWAY` is enabled, `LANGSMITH_GATEWAY_API_KEY` takes precedence.
+    If `LANGSMITH_GATEWAY` is enabled and the base URL points at the gateway,
+    `LANGSMITH_GATEWAY_API_KEY` is used instead.
     """
 
     anthropic_proxy: str | None = Field(
@@ -1238,6 +1206,30 @@ class ChatAnthropic(BaseChatModel):
         self._add_version("langchain-anthropic", __version__)
         return self
 
+    @model_validator(mode="after")
+    def _resolve_gateway(self) -> Self:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        An explicit ``base_url``/``api_key`` always wins. Otherwise the base URL
+        falls back to ``ANTHROPIC_API_URL``/``ANTHROPIC_BASE_URL``, then the
+        LangSmith gateway, then the Anthropic default. The gateway key is
+        preferred only when the base URL came from the gateway; for any other
+        endpoint the provider key wins, and the gateway key is a candidate only
+        when the gateway is enabled.
+        """
+        config = _resolve_gateway_config(
+            base_url=self.anthropic_api_url,
+            api_key=self.anthropic_api_key,
+            provider_path="anthropic",
+            base_url_env=["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
+            api_key_env="ANTHROPIC_API_KEY",
+            default_base_url="https://api.anthropic.com",
+        )
+        self.anthropic_api_url = config.base_url
+        # Preserve the historical empty-string default when no key is found.
+        self.anthropic_api_key = config.api_key or SecretStr("")
+        return self
+
     def _resolve_model_profile(self) -> ModelProfile | None:
         profile = _get_default_model_profile(self.model) or None
         if profile is not None and self.betas and "context-1m-2025-08-07" in self.betas:
@@ -1252,7 +1244,11 @@ class ChatAnthropic(BaseChatModel):
             default_headers.update(self.default_headers)
 
         client_params: dict[str, Any] = {
-            "api_key": self.anthropic_api_key.get_secret_value(),
+            "api_key": (
+                self.anthropic_api_key.get_secret_value()
+                if self.anthropic_api_key
+                else None
+            ),
             "base_url": self.anthropic_api_url,
             "max_retries": self.max_retries,
             "default_headers": default_headers,

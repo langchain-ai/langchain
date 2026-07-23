@@ -108,6 +108,7 @@ from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import _stringify
 from langchain_core.utils import get_pydantic_field_names
+from langchain_core.utils._gateway import _resolve_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -117,7 +118,7 @@ from langchain_core.utils.pydantic import (
     TypeBaseModel,
     is_basemodel_subclass,
 )
-from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs, from_env
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -177,20 +178,6 @@ def _get_ssrf_safe_client() -> httpx.Client:
 
 
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
-
-_LANGSMITH_GATEWAY_DEFAULT_BASE = "https://gateway.smith.langchain.com"
-_LANGSMITH_GATEWAY_PROVIDER_PATH = "openai/v1"
-
-
-def _resolve_gateway_base_url() -> str | None:
-    raw = os.getenv("LANGSMITH_GATEWAY")
-    if raw is None or raw.lower() in ("false", "0", "no"):
-        return None
-    if raw.lower() in ("true", "1", "yes"):
-        base = _LANGSMITH_GATEWAY_DEFAULT_BASE
-    else:
-        base = raw.rstrip("/")
-    return f"{base}/{_LANGSMITH_GATEWAY_PROVIDER_PATH}"
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -662,15 +649,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     openai_api_key: (
         SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
-    ) = Field(
-        alias="api_key",
-        default_factory=lambda: (
-            SecretStr(gateway_key)
-            if (gateway_key := os.getenv("LANGSMITH_GATEWAY_API_KEY"))
-            and _resolve_gateway_base_url() is not None
-            else secret_from_env("OPENAI_API_KEY", default=None)()
-        ),
-    )
+    ) = Field(alias="api_key", default=None)
     """API key to use.
 
     Can be inferred from the `OPENAI_API_KEY` environment variable, or specified
@@ -1232,13 +1211,17 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        _gateway_base_url = _resolve_gateway_base_url()
-        _base_url_from_gateway = False
-        if self.openai_api_base is None:
-            self.openai_api_base = os.getenv("OPENAI_API_BASE")
-            if self.openai_api_base is None and _gateway_base_url is not None:
-                self.openai_api_base = _gateway_base_url
-                _base_url_from_gateway = True
+        # Resolve base URL and API key, applying LangSmith gateway settings.
+        _gateway_config = _resolve_gateway_config(
+            base_url=self.openai_api_base,
+            api_key=self.openai_api_key,
+            provider_path="openai/v1",
+            base_url_env="OPENAI_API_BASE",
+            api_key_env="OPENAI_API_KEY",
+        )
+        self.openai_api_base = _gateway_config.base_url
+        self.openai_api_key = _gateway_config.api_key
+        _base_url_from_gateway = _gateway_config.base_url_from_gateway
 
         # Enable stream_usage by default if using default base URL and client,
         # or when the base URL was set by the LangSmith gateway (which proxies

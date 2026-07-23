@@ -5,7 +5,6 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
-import os
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -86,12 +85,13 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
+from langchain_core.utils._gateway import _resolve_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -110,20 +110,6 @@ logger = logging.getLogger(__name__)
 
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
-
-_LANGSMITH_GATEWAY_DEFAULT_BASE = "https://gateway.smith.langchain.com"
-_LANGSMITH_GATEWAY_PROVIDER_PATH = "fireworks"
-
-
-def _resolve_gateway_base_url() -> str | None:
-    raw = os.getenv("LANGSMITH_GATEWAY")
-    if raw is None or raw.lower() in ("false", "0", "no"):
-        return None
-    if raw.lower() in ("true", "1", "yes"):
-        base = _LANGSMITH_GATEWAY_DEFAULT_BASE
-    else:
-        base = raw.rstrip("/")
-    return f"{base}/{_LANGSMITH_GATEWAY_PROVIDER_PATH}"
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -829,36 +815,16 @@ class ChatFireworks(BaseChatModel):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
-    fireworks_api_key: SecretStr = Field(
-        alias="api_key",
-        default_factory=lambda: SecretStr(
-            (
-                os.getenv("LANGSMITH_GATEWAY_API_KEY")
-                if _resolve_gateway_base_url() is not None
-                else None
-            )
-            or secret_from_env(
-                "FIREWORKS_API_KEY",
-                error_message=(
-                    "You must specify an api key. "
-                    "You can pass it an argument as `api_key=...` or "
-                    "set the environment variable `FIREWORKS_API_KEY`."
-                ),
-            )().get_secret_value()
-        ),
-    )
+    fireworks_api_key: SecretStr | None = Field(default=None, alias="api_key")
     """Fireworks API key.
 
     Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
 
-    If `LANGSMITH_GATEWAY` is enabled, `LANGSMITH_GATEWAY_API_KEY` takes precedence.
+    If `LANGSMITH_GATEWAY` is enabled and the base URL points at the gateway,
+    `LANGSMITH_GATEWAY_API_KEY` is used instead.
     """
 
-    fireworks_api_base: str | None = Field(
-        alias="base_url",
-        default_factory=lambda: from_env("FIREWORKS_API_BASE", default=None)()
-        or _resolve_gateway_base_url(),
-    )
+    fireworks_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service
     emulator.
 
@@ -958,6 +924,24 @@ class ChatFireworks(BaseChatModel):
             raise ValueError(msg)
         if self.n > 1 and self.streaming:
             msg = "n must be 1 when streaming."
+            raise ValueError(msg)
+
+        # Resolve base URL and API key, applying LangSmith gateway settings.
+        config = _resolve_gateway_config(
+            base_url=self.fireworks_api_base,
+            api_key=self.fireworks_api_key,
+            provider_path="fireworks",
+            base_url_env="FIREWORKS_API_BASE",
+            api_key_env="FIREWORKS_API_KEY",
+        )
+        self.fireworks_api_base = config.base_url
+        self.fireworks_api_key = config.api_key
+        if self.fireworks_api_key is None:
+            msg = (
+                "You must specify an api key. "
+                "You can pass it an argument as `api_key=...` or "
+                "set the environment variable `FIREWORKS_API_KEY`."
+            )
             raise ValueError(msg)
 
         api_key = self.fireworks_api_key.get_secret_value()
