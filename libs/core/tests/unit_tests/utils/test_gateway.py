@@ -1,5 +1,7 @@
 """Tests for LangSmith gateway configuration resolution."""
 
+from typing import Any
+
 import pytest
 from pydantic import SecretStr
 
@@ -29,7 +31,7 @@ def _clear_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _config(**overrides: object) -> GatewayConfig:
-    kwargs: dict = {
+    kwargs: dict[str, Any] = {
         "base_url": None,
         "api_key": None,
         "provider_path": _PATH,
@@ -37,7 +39,7 @@ def _config(**overrides: object) -> GatewayConfig:
         "api_key_env": _KEY_ENV,
     }
     kwargs.update(overrides)
-    return _resolve_gateway_config(**kwargs)  # type: ignore[arg-type]
+    return _resolve_gateway_config(**kwargs)
 
 
 # --- _resolve_gateway_base_url --------------------------------------------
