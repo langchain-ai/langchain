@@ -2123,7 +2123,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.4.8"
+version = "1.5.0"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2294,7 +2294,7 @@ requires-dist = [
 dev = [
     { name = "grandalf", specifier = ">=0.8.0,<1.0.0" },
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
-    { name = "setuptools", specifier = ">=67.6.1,<83.0.0" },
+    { name = "setuptools", specifier = ">=67.6.1,<84.0.0" },
 ]
 lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
 test = [
@@ -2465,7 +2465,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.3.5"
+version = "1.4.0"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
