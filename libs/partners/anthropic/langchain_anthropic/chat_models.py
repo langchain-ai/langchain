@@ -1719,6 +1719,8 @@ class ChatAnthropic(BaseChatModel):
                 content_block = event.delta.model_dump()
                 content_block["index"] = event.index
                 content_block["type"] = "thinking"
+                if event.delta.type == "signature_delta" and "thinking" not in content_block:
+                    content_block["thinking"] = ""
                 message_chunk = AIMessageChunk(content=[content_block])
 
             # Tool input JSON (streaming tool arguments)
