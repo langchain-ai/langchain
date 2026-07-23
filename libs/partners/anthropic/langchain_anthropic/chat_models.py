@@ -49,7 +49,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names
-from langchain_core.utils._gateway import _resolve_gateway_config
+from langchain_core.utils._gateway import _apply_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -969,7 +969,7 @@ class ChatAnthropic(BaseChatModel):
     If `LANGSMITH_GATEWAY` is set, it is used as a fallback after those env vars.
     """
 
-    anthropic_api_key: SecretStr | None = Field(default=None, alias="api_key")
+    anthropic_api_key: SecretStr = Field(default=SecretStr(""), alias="api_key")
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided.
 
     If `LANGSMITH_GATEWAY` is enabled and the base URL points at the gateway,
@@ -1206,8 +1206,9 @@ class ChatAnthropic(BaseChatModel):
         self._add_version("langchain-anthropic", __version__)
         return self
 
-    @model_validator(mode="after")
-    def _resolve_gateway(self) -> Self:
+    @model_validator(mode="before")
+    @classmethod
+    def _resolve_gateway(cls, values: Any) -> Any:
         """Resolve the base URL and API key, applying LangSmith gateway settings.
 
         An explicit ``base_url``/``api_key`` always wins. Otherwise the base URL
@@ -1217,18 +1218,18 @@ class ChatAnthropic(BaseChatModel):
         endpoint the provider key wins, and the gateway key is a candidate only
         when the gateway is enabled.
         """
-        config = _resolve_gateway_config(
-            base_url=self.anthropic_api_url,
-            api_key=self.anthropic_api_key,
-            provider_path="anthropic",
-            base_url_env=["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
-            api_key_env="ANTHROPIC_API_KEY",
-            default_base_url="https://api.anthropic.com",
-        )
-        self.anthropic_api_url = config.base_url
-        # Preserve the historical empty-string default when no key is found.
-        self.anthropic_api_key = config.api_key or SecretStr("")
-        return self
+        if isinstance(values, dict):
+            _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="anthropic_api_url",
+                api_key_field="anthropic_api_key",
+                provider_path="anthropic",
+                base_url_env=["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
+                api_key_env="ANTHROPIC_API_KEY",
+                default_base_url="https://api.anthropic.com",
+            )
+        return values
 
     def _resolve_model_profile(self) -> ModelProfile | None:
         profile = _get_default_model_profile(self.model) or None
@@ -1244,11 +1245,7 @@ class ChatAnthropic(BaseChatModel):
             default_headers.update(self.default_headers)
 
         client_params: dict[str, Any] = {
-            "api_key": (
-                self.anthropic_api_key.get_secret_value()
-                if self.anthropic_api_key
-                else None
-            ),
+            "api_key": self.anthropic_api_key.get_secret_value(),
             "base_url": self.anthropic_api_url,
             "max_retries": self.max_retries,
             "default_headers": default_headers,

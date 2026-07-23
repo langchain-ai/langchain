@@ -3831,7 +3831,6 @@ def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ANTHROPIC_API_URL", raising=False)
     monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
     llm = ChatAnthropic(model=MODEL_NAME)
-    assert llm.anthropic_api_key is not None
     assert llm.anthropic_api_key.get_secret_value() == "gateway-key"
 
 
@@ -3844,7 +3843,6 @@ def test_langsmith_gateway_api_key_not_used_without_gateway(
     monkeypatch.delenv("ANTHROPIC_API_URL", raising=False)
     monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
     llm = ChatAnthropic(model=MODEL_NAME)
-    assert llm.anthropic_api_key is not None
     assert llm.anthropic_api_key.get_secret_value() == "provider-key"
 
 
@@ -3857,7 +3855,6 @@ def test_langsmith_gateway_api_key_overrides_provider_key(
     monkeypatch.delenv("ANTHROPIC_API_URL", raising=False)
     monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
     llm = ChatAnthropic(model=MODEL_NAME)
-    assert llm.anthropic_api_key is not None
     assert llm.anthropic_api_key.get_secret_value() == "gateway-key"
 
 
@@ -3873,5 +3870,4 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
     llm = ChatAnthropic(model=MODEL_NAME)
     assert llm.anthropic_api_url == "https://api.anthropic.com"
-    assert llm.anthropic_api_key is not None
     assert llm.anthropic_api_key.get_secret_value() == "provider-key"

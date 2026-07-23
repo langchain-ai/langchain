@@ -3,10 +3,11 @@
 from typing import Any
 
 import pytest
-from pydantic import SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from langchain_core.utils._gateway import (
     GatewayConfig,
+    _apply_gateway_config,
     _resolve_gateway_base_url,
     _resolve_gateway_config,
 )
@@ -210,3 +211,69 @@ def test_multiple_base_url_env_vars_priority(
     monkeypatch.setenv("SECOND_BASE", "https://second.example.com")
     config = _config(base_url_env=["FIRST_BASE", "SECOND_BASE"])
     assert config.base_url == "https://second.example.com"
+
+
+# --- _apply_gateway_config (before-validator path) ------------------------
+
+
+class _Model(BaseModel):
+    """Stand-in for a provider chat model with aliased fields."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    api_base: str | None = Field(default=None, alias="base_url")
+    api_key: SecretStr = Field(default=SecretStr(""), alias="api_key_alias")
+
+
+def _apply(values: dict[str, Any]) -> tuple[dict[str, Any], GatewayConfig]:
+    config = _apply_gateway_config(
+        values,
+        _Model,
+        base_url_field="api_base",
+        api_key_field="api_key",
+        provider_path="openai/v1",
+        base_url_env=_BASE_ENV,
+        api_key_env=_KEY_ENV,
+    )
+    return values, config
+
+
+def test_apply_writes_resolved_values_by_field_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    values, config = _apply({})
+    assert values["api_base"] == _DEFAULT_GATEWAY
+    assert isinstance(values["api_key"], SecretStr)
+    assert values["api_key"].get_secret_value() == "gateway-key"
+    assert config.base_url_from_gateway is True
+
+
+def test_apply_reads_explicit_via_alias(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Values provided under aliases are consumed and rewritten under field names.
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    values, _ = _apply(
+        {"base_url": "https://explicit.example.com", "api_key_alias": "explicit-key"}
+    )
+    assert "base_url" not in values
+    assert "api_key_alias" not in values
+    assert values["api_base"] == "https://explicit.example.com"
+    assert values["api_key"] == "explicit-key"
+
+
+def test_apply_reads_explicit_via_field_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    values, _ = _apply({"api_base": "https://explicit.example.com"})
+    assert values["api_base"] == "https://explicit.example.com"
+
+
+def test_apply_omits_key_when_unresolved() -> None:
+    # No key anywhere: the field is left unset so its own default applies.
+    values, config = _apply({})
+    assert "api_key" not in values
+    assert config.api_key is None

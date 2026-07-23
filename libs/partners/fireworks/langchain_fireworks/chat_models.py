@@ -85,7 +85,7 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
-from langchain_core.utils._gateway import _resolve_gateway_config
+from langchain_core.utils._gateway import _apply_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -815,7 +815,7 @@ class ChatFireworks(BaseChatModel):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
-    fireworks_api_key: SecretStr | None = Field(default=None, alias="api_key")
+    fireworks_api_key: SecretStr = Field(default=SecretStr(""), alias="api_key")
     """Fireworks API key.
 
     Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
@@ -910,6 +910,36 @@ class ChatFireworks(BaseChatModel):
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _resolve_gateway(cls, values: Any) -> Any:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        An explicit ``base_url``/``api_key`` always wins. Otherwise the base URL
+        falls back to ``FIREWORKS_API_BASE``, then the LangSmith gateway. The
+        gateway key is preferred only when the base URL came from the gateway;
+        for any other endpoint the provider key wins, and the gateway key is a
+        candidate only when the gateway is enabled.
+        """
+        if isinstance(values, dict):
+            config = _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="fireworks_api_base",
+                api_key_field="fireworks_api_key",
+                provider_path="fireworks",
+                base_url_env="FIREWORKS_API_BASE",
+                api_key_env="FIREWORKS_API_KEY",
+            )
+            if config.api_key is None:
+                msg = (
+                    "You must specify an api key. "
+                    "You can pass it an argument as `api_key=...` or "
+                    "set the environment variable `FIREWORKS_API_KEY`."
+                )
+                raise ValueError(msg)
+        return values
+
     @model_validator(mode="after")
     def _set_fireworks_chat_version(self) -> Self:
         """Set package version in metadata."""
@@ -924,24 +954,6 @@ class ChatFireworks(BaseChatModel):
             raise ValueError(msg)
         if self.n > 1 and self.streaming:
             msg = "n must be 1 when streaming."
-            raise ValueError(msg)
-
-        # Resolve base URL and API key, applying LangSmith gateway settings.
-        config = _resolve_gateway_config(
-            base_url=self.fireworks_api_base,
-            api_key=self.fireworks_api_key,
-            provider_path="fireworks",
-            base_url_env="FIREWORKS_API_BASE",
-            api_key_env="FIREWORKS_API_KEY",
-        )
-        self.fireworks_api_base = config.base_url
-        self.fireworks_api_key = config.api_key
-        if self.fireworks_api_key is None:
-            msg = (
-                "You must specify an api key. "
-                "You can pass it an argument as `api_key=...` or "
-                "set the environment variable `FIREWORKS_API_KEY`."
-            )
             raise ValueError(msg)
 
         api_key = self.fireworks_api_key.get_secret_value()
