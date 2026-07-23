@@ -13,6 +13,7 @@ from openai.types.responses import (
     ResponseContentPartAddedEvent,
     ResponseContentPartDoneEvent,
     ResponseCreatedEvent,
+    ResponseFailedEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseFunctionToolCallItem,
@@ -30,6 +31,7 @@ from openai.types.responses import (
     ResponseTextDoneEvent,
 )
 from openai.types.responses.response import Response
+from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_output_text import ResponseOutputText
 from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_reasoning_summary_part_added_event import (
@@ -1158,3 +1160,104 @@ def test_responses_stream_tolerates_unknown_literal_drift() -> None:
             full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.id == "resp_123"
+
+
+def test_responses_stream_failed_event_raises() -> None:
+    """A stream ending with `response.failed` must raise, not return silently.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/39039.
+    Before this fix, `response.failed` fell through the converter's `else`
+    branch and was silently discarded, making a failed stream
+    indistinguishable from a successful completion.
+    """
+    failed_stream = [
+        ResponseCreatedEvent(
+            response=Response(
+                id="resp_fail",
+                created_at=1749734255.0,
+                error=None,
+                incomplete_details=None,
+                instructions=None,
+                metadata={},
+                model=MODEL,
+                object="response",
+                output=[],
+                parallel_tool_calls=True,
+                temperature=1.0,
+                tool_choice="auto",
+                tools=[],
+                top_p=1.0,
+                background=False,
+                max_output_tokens=None,
+                previous_response_id=None,
+                reasoning=Reasoning(
+                    effort="medium", generate_summary=None, summary="detailed"
+                ),
+                service_tier="auto",
+                status="in_progress",
+                text=ResponseTextConfig(format=ResponseFormatText(type="text")),
+                truncation="disabled",
+                usage=None,
+                user=None,
+            ),
+            sequence_number=0,
+            type="response.created",
+        ),
+        ResponseTextDeltaEvent(
+            content_index=0,
+            delta="partial answer",
+            item_id="msg_1",
+            output_index=0,
+            sequence_number=1,
+            type="response.output_text.delta",
+            logprobs=[],
+        ),
+        ResponseFailedEvent(
+            response=Response(
+                id="resp_fail",
+                created_at=1749734255.0,
+                error=ResponseError(
+                    code="server_error",
+                    message="The model failed to generate a response.",
+                ),
+                incomplete_details=None,
+                instructions=None,
+                metadata={},
+                model=MODEL,
+                object="response",
+                output=[],
+                parallel_tool_calls=True,
+                temperature=1.0,
+                tool_choice="auto",
+                tools=[],
+                top_p=1.0,
+                background=False,
+                max_output_tokens=None,
+                previous_response_id=None,
+                reasoning=Reasoning(
+                    effort="medium", generate_summary=None, summary="detailed"
+                ),
+                service_tier="auto",
+                status="failed",
+                text=ResponseTextConfig(format=ResponseFormatText(type="text")),
+                truncation="disabled",
+                usage=None,
+                user=None,
+            ),
+            sequence_number=2,
+            type="response.failed",
+        ),
+    ]
+
+    llm = ChatOpenAI(model=MODEL, api_key="test", use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(failed_stream)
+
+    mock_client.responses.create = mock_create
+
+    with pytest.raises(ValueError, match="server_error"):
+        with patch.object(llm, "root_client", mock_client):
+            for chunk in llm.stream("test"):
+                pass

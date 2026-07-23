@@ -5080,7 +5080,7 @@ def _convert_responses_chunk_to_generation_chunk(
         response = _coerce_chunk_response(chunk.response)
         id = response.id
         response_metadata["id"] = response.id  # Backwards compatibility
-    elif chunk.type in ("response.completed", "response.incomplete"):
+    elif chunk.type in ("response.completed", "response.incomplete", "response.failed"):
         response = _coerce_chunk_response(chunk.response)
         msg = cast(
             AIMessage,
