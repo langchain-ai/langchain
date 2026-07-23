@@ -617,7 +617,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.5.0"
+version = "1.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -690,7 +690,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.4.9"
+version = "1.5.0"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
