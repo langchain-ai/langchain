@@ -6,6 +6,7 @@ EXPECTED_ALL = [
     "EvaluatorCallbackHandler",
     "LangChainTracer",
     "LogStreamCallbackHandler",
+    "make_evaluation_result",
     "Run",
     "RunLog",
     "RunLogPatch",

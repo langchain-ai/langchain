@@ -6,7 +6,10 @@ from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
     from langchain_core.tracers.base import BaseTracer
-    from langchain_core.tracers.evaluation import EvaluatorCallbackHandler
+    from langchain_core.tracers.evaluation import (
+        EvaluatorCallbackHandler,
+        make_evaluation_result,
+    )
     from langchain_core.tracers.langchain import LangChainTracer
     from langchain_core.tracers.log_stream import (
         LogStreamCallbackHandler,
@@ -22,6 +25,7 @@ __all__ = (
     "EvaluatorCallbackHandler",
     "LangChainTracer",
     "LogStreamCallbackHandler",
+    "make_evaluation_result",
     "Run",
     "RunLog",
     "RunLogPatch",
@@ -30,6 +34,7 @@ __all__ = (
 _dynamic_imports = {
     "BaseTracer": "base",
     "EvaluatorCallbackHandler": "evaluation",
+    "make_evaluation_result": "evaluation",
     "LangChainTracer": "langchain",
     "LogStreamCallbackHandler": "log_stream",
     "RunLog": "log_stream",

@@ -11,6 +11,7 @@ from uuid import UUID
 
 import langsmith
 from langsmith.evaluation.evaluator import EvaluationResult, EvaluationResults
+from langsmith.schemas import SCORE_TYPE, VALUE_TYPE
 
 from langchain_core.tracers import langchain as langchain_tracer
 from langchain_core.tracers._compat import run_copy
@@ -26,6 +27,79 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _TRACERS: weakref.WeakSet[EvaluatorCallbackHandler] = weakref.WeakSet()
+
+
+def make_evaluation_result(
+    key: str,
+    *,
+    score: SCORE_TYPE = None,
+    value: VALUE_TYPE = None,
+    comment: str | None = None,
+    correction: dict | None = None,
+    evaluator_info: dict | None = None,
+    feedback_config: dict | None = None,
+    source_run_id: UUID | str | None = None,
+    target_run_id: UUID | str | None = None,
+    metadata: dict | None = None,
+    extra: dict | None = None,
+) -> EvaluationResult:
+    """Create an `EvaluationResult`, preserving all `feedback_config` fields.
+
+    Pydantic silently strips keys that are not declared in `FeedbackConfig` when
+    `feedback_config` is passed directly to the `EvaluationResult` constructor,
+    because the `Union[FeedbackConfig, dict]` annotation causes Pydantic to resolve
+    the value against the `TypedDict` branch first and discard unknown keys.
+
+    This factory constructs the object without `feedback_config`, then assigns it
+    after initialisation so that the raw ``dict`` is stored intact.
+
+    Args:
+        key: The aspect, metric name, or label for this evaluation.
+        score: The numeric score for this evaluation.
+        value: The value for this evaluation, if not numeric.
+        comment: An explanation regarding the evaluation.
+        correction: What the correct value should be, if applicable.
+        evaluator_info: Additional information about the evaluator.
+        feedback_config: The configuration used to generate this feedback.
+            All keys are preserved regardless of whether they appear in
+            `FeedbackConfig`.
+        source_run_id: The ID of the trace of the evaluator itself.
+        target_run_id: The ID of the trace this evaluation is applied to.
+        metadata: Arbitrary metadata attached to the evaluation.
+        extra: Metadata for the evaluator run.
+
+    Returns:
+        An `EvaluationResult` with `feedback_config` stored without stripping.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_core.tracers.evaluation import make_evaluation_result
+
+            result = make_evaluation_result(
+                key="sentiment",
+                value="positive",
+                feedback_config={"threshold": 1.0},
+            )
+            print(result.feedback_config)  # {"threshold": 1.0}
+    """
+    result = EvaluationResult(
+        key=key,
+        score=score,
+        value=value,
+        comment=comment,
+        correction=correction,
+        evaluator_info=evaluator_info or {},
+        source_run_id=source_run_id,
+        target_run_id=target_run_id,
+        metadata=metadata,
+        extra=extra,
+    )
+    if feedback_config is not None:
+        # Assign after __init__ to bypass Pydantic's Union[FeedbackConfig, dict]
+        # resolution, which silently strips keys not declared in FeedbackConfig.
+        result.feedback_config = feedback_config
+    return result
 
 
 def wait_for_all_evaluators() -> None:
