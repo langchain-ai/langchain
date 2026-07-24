@@ -1825,6 +1825,35 @@ def test_verbosity_parameter_payload() -> None:
     assert payload["text"]["verbosity"] == "high"
 
 
+def test_responses_api_does_not_mutate_model_kwargs_text() -> None:
+    """Structured output must not mutate a shared `model_kwargs["text"]` dict.
+
+    Regression for https://github.com/langchain-ai/langchain/issues/38869: the
+    Responses API payload builder merged `format` into `model_kwargs["text"]` in
+    place, so a single structured-output call left every later request stuck in
+    that format.
+    """
+    llm = ChatOpenAI(
+        model="gpt-5",
+        use_responses_api=True,
+        model_kwargs={"text": {"verbosity": "low"}},
+    )
+    messages = [HumanMessage(content="hello")]
+
+    payload = llm._get_request_payload(
+        messages, response_format={"type": "json_object"}
+    )
+
+    assert payload["text"] == {
+        "verbosity": "low",
+        "format": {"type": "json_object"},
+    }
+    assert llm.model_kwargs == {"text": {"verbosity": "low"}}
+
+    later_payload = llm._get_request_payload(messages)
+    assert later_payload["text"] == {"verbosity": "low"}
+
+
 def test_structured_output_legacy_model() -> None:
     class Output(TypedDict):
         """output."""

@@ -4364,7 +4364,10 @@ def _construct_responses_api_payload(
                 schema_dict = schema
             if schema_dict == {"type": "json_object"}:  # JSON mode
                 if "text" in payload and isinstance(payload["text"], dict):
-                    payload["text"]["format"] = {"type": "json_object"}
+                    payload["text"] = {
+                        **payload["text"],
+                        "format": {"type": "json_object"},
+                    }
                 else:
                     payload["text"] = {"format": {"type": "json_object"}}
             elif (
@@ -4378,7 +4381,7 @@ def _construct_responses_api_payload(
             ):
                 format_value = {"type": "json_schema", **response_format["json_schema"]}
                 if "text" in payload and isinstance(payload["text"], dict):
-                    payload["text"]["format"] = format_value
+                    payload["text"] = {**payload["text"], "format": format_value}
                 else:
                     payload["text"] = {"format": format_value}
             else:
@@ -4387,7 +4390,7 @@ def _construct_responses_api_payload(
     verbosity = payload.pop("verbosity", None)
     if verbosity is not None:
         if "text" in payload and isinstance(payload["text"], dict):
-            payload["text"]["verbosity"] = verbosity
+            payload["text"] = {**payload["text"], "verbosity": verbosity}
         else:
             payload["text"] = {"verbosity": verbosity}
 
