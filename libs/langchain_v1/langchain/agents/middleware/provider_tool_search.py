@@ -51,6 +51,7 @@ _SERVER_TOOL_SEARCH_TOOLS: dict[str, _ServerToolSearchSpec] = {
         "name": "tool_search_tool_bm25",
     },
     "openai": {"type": "tool_search"},
+    "azure":  {"type": "tool_search"}
 }
 
 
