@@ -157,19 +157,19 @@ class IndexingException(LangChainException):
 def _calculate_hash(
     text: str, algorithm: Literal["sha1", "sha256", "sha512", "blake2b"]
 ) -> str:
-    """Return a hexadecimal digest of *text* using *algorithm*."""
+    """Return a UUID derived from the digest of *text* using *algorithm*."""
     if algorithm == "sha1":
-        # Calculate the SHA-1 hash and return it as a UUID.
         digest = hashlib.sha1(text.encode("utf-8"), usedforsecurity=False).hexdigest()
-        return str(uuid.uuid5(NAMESPACE_UUID, digest))
-    if algorithm == "blake2b":
-        return hashlib.blake2b(text.encode("utf-8")).hexdigest()
-    if algorithm == "sha256":
-        return hashlib.sha256(text.encode("utf-8")).hexdigest()
-    if algorithm == "sha512":
-        return hashlib.sha512(text.encode("utf-8")).hexdigest()
-    msg = f"Unsupported hashing algorithm: {algorithm}"  # type: ignore[unreachable]
-    raise ValueError(msg)
+    elif algorithm == "blake2b":
+        digest = hashlib.blake2b(text.encode("utf-8")).hexdigest()
+    elif algorithm == "sha256":
+        digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    elif algorithm == "sha512":
+        digest = hashlib.sha512(text.encode("utf-8")).hexdigest()
+    else:
+        msg = f"Unsupported hashing algorithm: {algorithm}"  # type: ignore[unreachable]
+        raise ValueError(msg)
+    return str(uuid.uuid5(NAMESPACE_UUID, digest))
 
 
 def _get_document_with_hash(
@@ -369,6 +369,7 @@ def index(
             record manager. Useful if you are re-indexing with updated embeddings.
         key_encoder: Hashing algorithm to use for hashing the document content and
             metadata. Options include "blake2b", "sha256", and "sha512".
+            All built-in encoders produce UUID-formatted document IDs.
 
             !!! version-added "Added in `langchain-core` 0.3.66"
 
@@ -708,6 +709,7 @@ async def aindex(
             record manager. Useful if you are re-indexing with updated embeddings.
         key_encoder: Hashing algorithm to use for hashing the document content and
             metadata. Options include "blake2b", "sha256", and "sha512".
+            All built-in encoders produce UUID-formatted document IDs.
 
             !!! version-added "Added in `langchain-core` 0.3.66"
 

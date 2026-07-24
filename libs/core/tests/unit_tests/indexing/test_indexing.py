@@ -1,7 +1,9 @@
+import uuid
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 from datetime import datetime, timezone
 from typing import (
     Any,
+    Literal,
 )
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -2961,3 +2963,23 @@ async def test_aindex_with_upsert_kwargs(
         # Check other arguments
         assert kwargs["batch_size"] == 100
         assert kwargs["vector_field"] == "embedding"
+
+
+@pytest.mark.parametrize("key_encoder", ["sha1", "sha256", "sha512", "blake2b"])
+def test_document_ids_are_uuids(
+    key_encoder: Literal["sha1", "sha256", "sha512", "blake2b"],
+) -> None:
+    """Test that every built-in key encoder produces a UUID-formatted document ID."""
+    doc = Document(page_content="hello world", metadata={"source": "doc1.txt"})
+    doc_id = _get_document_with_hash(doc, key_encoder=key_encoder).id
+    assert doc_id is not None
+    assert str(uuid.UUID(doc_id)) == doc_id
+
+
+def test_sha1_document_ids_are_unchanged() -> None:
+    """Test that the `sha1` encoder produces the same IDs as previous versions."""
+    doc = Document(page_content="hello world", metadata={"source": "doc1.txt"})
+    assert (
+        _get_document_with_hash(doc, key_encoder="sha1").id
+        == "91bb7324-3dc0-5dad-8c72-0e48a981c88b"
+    )
