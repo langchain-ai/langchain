@@ -46,6 +46,11 @@ structured_output = true
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "high"
 
+[overrides."claude-opus-5"]
+structured_output = true
+reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "high"
+
 [overrides."claude-sonnet-5"]
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "high"
