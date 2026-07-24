@@ -56,7 +56,8 @@ test = []
 test_integration = []
 lint = ["ruff>=0.15.0,<0.16.0"]
 typing = [
-    "mypy>=2.1.0,<2.2.0",
+    "ty>=0.0.63,<0.1.0",
+    "lxml-stubs>=0.5.1,<1.0.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
 ]
 
@@ -66,19 +67,11 @@ langchain-core = { path = "../core", editable = true }
 [tool.uv]
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
-[tool.mypy]
-plugins = ["pydantic.mypy"]
-strict = true
-enable_error_code = "deprecated"
-warn_unreachable = true
+[tool.ty.rules]
+all = "error"
 
-[[tool.mypy.overrides]]
-module = ["vcr.*",]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["deepagents", "deepagents.*"]
-ignore_missing_imports = true
+[tool.ty.analysis]
+allowed-unresolved-imports = ["deepagents.**"]
 
 [tool.ruff.format]
 docstring-code-format = true
