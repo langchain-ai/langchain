@@ -65,6 +65,7 @@ _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
         lambda cls, model, **kwargs: cls(model_id=model, **kwargs),
     ),
     "litellm": ("langchain_litellm", "ChatLiteLLM", _call),
+    "meta": ("langchain_meta", "ChatMetaModel", _call),
     "mistralai": ("langchain_mistralai", "ChatMistralAI", _call),
     "nvidia": ("langchain_nvidia_ai_endpoints", "ChatNVIDIA", _call),
     "ollama": ("langchain_ollama", "ChatOllama", _call),
@@ -307,6 +308,7 @@ def init_chat_model(
             - `upstage`                 -> [`langchain-upstage`](https://docs.langchain.com/oss/python/integrations/providers/upstage)
             - `baseten`                 -> [`langchain-baseten`](https://docs.langchain.com/oss/python/integrations/providers/baseten)
             - `litellm`                 -> [`langchain-litellm`](https://docs.langchain.com/oss/python/integrations/providers/litellm)
+            - `meta`                    -> [`langchain-meta`](https://pypi.org/project/langchain-meta)
 
         configurable_fields: Which model parameters are configurable at runtime:
 
@@ -1017,17 +1019,37 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             yield x
 
     # Explicitly added to satisfy downstream linters.
+    # `bind_tools` is implemented by concrete models because tool binding is
+    # provider-specific. A configurable model may not have a concrete model instance
+    # yet, since invocation config can choose it later. Save the `bind_tools` tools
+    # and kwargs now. When `_model` later builds the selected provider model, it calls
+    # `selected_model.bind_tools(tools, **kwargs)` and returns that runnable.
+    # Cast so callers still get the public return type.
     def bind_tools(
         self,
         tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
-        return self.__getattr__("bind_tools")(tools, **kwargs)
+        return cast(
+            "Runnable[LanguageModelInput, AIMessage]",
+            self.__getattr__("bind_tools")(tools, **kwargs),
+        )
 
     # Explicitly added to satisfy downstream linters.
+    # `with_structured_output` is implemented by concrete models because structured
+    # output support is provider-specific. A configurable model may not have a
+    # concrete model instance yet, since invocation config can choose it later. Save
+    # the structured-output schema and kwargs now. When `_model` later builds the
+    # selected provider model, it calls
+    # `selected_model.with_structured_output(schema, **kwargs)` and returns that
+    # runnable.
+    # Cast so callers still get the public return type.
     def with_structured_output(
         self,
         schema: dict[str, Any] | type[BaseModel],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, dict[str, Any] | BaseModel]:
-        return self.__getattr__("with_structured_output")(schema, **kwargs)
+        return cast(
+            "Runnable[LanguageModelInput, dict[str, Any] | BaseModel]",
+            self.__getattr__("with_structured_output")(schema, **kwargs),
+        )

@@ -29,7 +29,7 @@ from langchain_core.messages.utils import (
     merge_message_runs,
     trim_messages,
 )
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import BaseTool, StructuredTool, tool
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
@@ -758,13 +758,14 @@ class FakeTokenCountingModel(FakeChatModel):
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
-        tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
+        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool]
+        | None = None,
     ) -> int:
         return dummy_token_counter(messages)
 
 
 def test_convert_to_messages() -> None:
-    message_like: list = [
+    message_like: list[MessageLikeRepresentation] = [
         # BaseMessage
         SystemMessage("1"),
         SystemMessage("1.1", additional_kwargs={"__openai_role__": "developer"}),
@@ -1288,7 +1289,7 @@ def test_convert_to_openai_messages_invalid_block() -> None:
 
 
 def test_handle_openai_responses_blocks() -> None:
-    blocks: str | list[str | dict] = [
+    blocks: str | list[str | dict[str, Any]] = [
         {"type": "reasoning", "id": "1"},
         {
             "type": "function_call",
@@ -2958,6 +2959,33 @@ def test_count_tokens_approximately_with_tools() -> None:
     # Test with empty tools list should equal base count
     count_empty_tools = count_tokens_approximately(messages, tools=[])
     assert count_empty_tools == base_count
+
+
+def test_count_tokens_approximately_basetool_dict_args_schema() -> None:
+    """`BaseTool.tool_call_schema` can itself already be a plain dict.
+
+    This happens when `args_schema` is given as a raw JSON schema instead of
+    a Pydantic model class -- there's no model class to call
+    `model_json_schema()` on in that case.
+    """
+    schema_dict = {
+        "title": "GetWeatherInput",
+        "type": "object",
+        "properties": {"location": {"type": "string"}},
+        "required": ["location"],
+    }
+    weather_tool = StructuredTool.from_function(
+        func=lambda location: f"Weather in {location}",
+        name="get_weather",
+        description="Get the weather for a location.",
+        args_schema=schema_dict,
+    )
+    assert isinstance(weather_tool.tool_call_schema, dict)
+
+    messages = [HumanMessage(content="Hello")]
+    base_count = count_tokens_approximately(messages)
+    count_with_tool = count_tokens_approximately(messages, tools=[weather_tool])
+    assert count_with_tool > base_count
 
 
 # ---------------------------------------------------------------------------

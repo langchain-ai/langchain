@@ -61,7 +61,7 @@ def test_dict_prompt_template_loads_payload_rejects_attribute_access() -> None:
     )
 
     with pytest.raises(ValueError, match="Variable names cannot contain attribute"):
-        loads(payload)
+        loads(payload, allowed_objects=[DictPromptTemplate])
 
 
 def test_dict_prompt_template_dumpd_round_trip_rejects_attribute_access() -> None:
@@ -93,7 +93,7 @@ def test_dict_prompt_template_deserialization_rejects_attribute_access() -> None
     )
 
     with pytest.raises(ValueError, match="Variable names cannot contain attribute"):
-        loads(payload)
+        loads(payload, allowed_objects=[DictPromptTemplate])
 
 
 def test_dict_prompt_template_legacy_deserialization_rejects_attribute_access() -> None:

@@ -8,8 +8,9 @@ import pytest
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.errors import ParentCommand
 from langgraph.prebuilt.tool_node import ToolCallRequest
-from langgraph.types import Command
+from langgraph.types import Command, interrupt
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
@@ -29,6 +30,13 @@ def failing_tool(value: str) -> str:
     """Tool that always fails."""
     msg = f"Failed: {value}"
     raise ValueError(msg)
+
+
+@tool
+def interrupting_tool(value: str) -> str:
+    """Tool that pauses for human input."""
+    answer = interrupt(f"Approve {value}?")
+    return f"Human said: {answer}"
 
 
 class TemporaryFailureTool:
@@ -428,18 +436,9 @@ def test_tool_retry_specific_exceptions() -> None:
         msg = f"ValueError: {value}"
         raise ValueError(msg)
 
-    @tool
-    def runtime_error_tool(value: str) -> str:
-        """Tool that raises RuntimeError."""
-        msg = f"RuntimeError: {value}"
-        raise RuntimeError(msg)
-
     model = FakeToolCallingModel(
         tool_calls=[
-            [
-                ToolCall(name="value_error_tool", args={"value": "test1"}, id="1"),
-                ToolCall(name="runtime_error_tool", args={"value": "test2"}, id="2"),
-            ],
+            [ToolCall(name="value_error_tool", args={"value": "test1"}, id="1")],
             [],
         ]
     )
@@ -455,26 +454,63 @@ def test_tool_retry_specific_exceptions() -> None:
 
     agent = create_agent(
         model=model,
-        tools=[value_error_tool, runtime_error_tool],
+        tools=[value_error_tool],
         middleware=[retry],
         checkpointer=InMemorySaver(),
     )
 
     result = agent.invoke(
-        {"messages": [HumanMessage("Use both tools")]},
+        {"messages": [HumanMessage("Use error tool")]},
         {"configurable": {"thread_id": "test"}},
     )
 
     tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
-    assert len(tool_messages) == 2
+    assert len(tool_messages) == 1
 
-    # ValueError should be retried (3 attempts)
-    value_error_msg = next(m for m in tool_messages if m.name == "value_error_tool")
+    # ValueError should be retried (3 attempts) then handled by on_failure
+    value_error_msg = tool_messages[0]
     assert "3 attempts" in value_error_msg.content
 
-    # RuntimeError should fail immediately (1 attempt only)
-    runtime_error_msg = next(m for m in tool_messages if m.name == "runtime_error_tool")
-    assert "1 attempt" in runtime_error_msg.content
+
+def test_tool_retry_non_retryable_exception_reraises() -> None:
+    """Non-retryable exceptions are re-raised even when on_failure='continue'."""
+
+    @tool
+    def runtime_error_tool(value: str) -> str:
+        """Tool that raises RuntimeError."""
+        msg = f"RuntimeError: {value}"
+        raise RuntimeError(msg)
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="runtime_error_tool", args={"value": "test"}, id="1")],
+            [],
+        ]
+    )
+
+    # Only retry ValueError — RuntimeError is not retryable
+    retry = ToolRetryMiddleware(
+        max_retries=2,
+        retry_on=(ValueError,),
+        initial_delay=0.01,
+        jitter=False,
+        on_failure="continue",
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[runtime_error_tool],
+        middleware=[retry],
+        checkpointer=InMemorySaver(),
+    )
+
+    # RuntimeError does not match retry_on, so it is re-raised
+    # even though on_failure="continue"
+    with pytest.raises(RuntimeError, match="RuntimeError: test"):
+        agent.invoke(
+            {"messages": [HumanMessage("Use runtime error tool")]},
+            {"configurable": {"thread_id": "test"}},
+        )
 
 
 def test_tool_retry_custom_exception_filter() -> None:
@@ -498,6 +534,7 @@ def test_tool_retry_custom_exception_filter() -> None:
     @tool
     def custom_error_tool(val: str) -> str:
         """Tool that raises CustomError."""
+        _ = val
         attempt_count["value"] += 1
         if attempt_count["value"] == 1:
             msg = "Retryable error"
@@ -530,17 +567,17 @@ def test_tool_retry_custom_exception_filter() -> None:
         checkpointer=InMemorySaver(),
     )
 
-    result = agent.invoke(
-        {"messages": [HumanMessage("Use custom error tool")]},
-        {"configurable": {"thread_id": "test"}},
-    )
+    # First attempt raises retryable error → retried.
+    # Second attempt raises non-retryable error → re-raised (not swallowed),
+    # even though on_failure="continue".
+    with pytest.raises(CustomError, match="Non-retryable error"):
+        agent.invoke(
+            {"messages": [HumanMessage("Use custom error tool")]},
+            {"configurable": {"thread_id": "test"}},
+        )
 
-    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
-    assert len(tool_messages) == 1
-
-    # Should retry once (attempt 1 with retry_me=True), then fail on attempt 2 (retry_me=False)
+    # Should have retried once (attempt 1 retryable, attempt 2 non-retryable)
     assert attempt_count["value"] == 2
-    assert "2 attempts" in tool_messages[0].content
 
 
 def test_tool_retry_backoff_timing() -> None:
@@ -1009,3 +1046,99 @@ def test_tool_retry_deprecated_return_message_behavior() -> None:
     assert "3 attempts" in tool_messages[0].content
     assert "ValueError" in tool_messages[0].content
     assert tool_messages[0].status == "error"
+
+
+def test_tool_retry_does_not_swallow_interrupt() -> None:
+    """A tool that calls interrupt() must surface the interrupt, not retry it."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="interrupting_tool", args={"value": "test"}, id="1")],
+            [],
+        ]
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[interrupting_tool],
+        middleware=[ToolRetryMiddleware(max_retries=2, initial_delay=0.01, jitter=False)],
+        checkpointer=InMemorySaver(),
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Use interrupting tool")]},
+        {"configurable": {"thread_id": "test"}},
+    )
+
+    # The interrupt must bubble up, not be retried and swallowed into an error message.
+    assert "__interrupt__" in result
+    assert [m for m in result["messages"] if isinstance(m, ToolMessage)] == []
+
+    # Resuming completes normally.
+    final = agent.invoke(Command(resume="approved"), {"configurable": {"thread_id": "test"}})
+    assert "__interrupt__" not in final
+    tool_messages = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert "Human said: approved" in tool_messages[0].content
+
+
+def test_tool_retry_parallel_interrupt_with_successful_sibling() -> None:
+    """In a parallel batch, one tool's interrupt bubbles up while a sibling succeeds."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="interrupting_tool", args={"value": "a"}, id="1"),
+                ToolCall(name="working_tool", args={"value": "b"}, id="2"),
+            ],
+            [],
+        ]
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[interrupting_tool, working_tool],
+        middleware=[ToolRetryMiddleware(max_retries=2, initial_delay=0.01, jitter=False)],
+        checkpointer=InMemorySaver(),
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Use both tools")]},
+        {"configurable": {"thread_id": "test"}},
+    )
+
+    # The interrupt bubbles up; the sibling still executes and is checkpointed.
+    assert "__interrupt__" in result
+    tool_messages = {m.tool_call_id: m for m in result["messages"] if isinstance(m, ToolMessage)}
+    assert "1" not in tool_messages  # interrupted tool has no result yet
+    assert tool_messages["2"].content == "Success: b"
+    assert tool_messages["2"].status != "error"
+
+    # Resuming completes the interrupted tool without re-running the sibling.
+    final = agent.invoke(Command(resume="approved"), {"configurable": {"thread_id": "test"}})
+    assert "__interrupt__" not in final
+    final_messages = {m.tool_call_id: m for m in final["messages"] if isinstance(m, ToolMessage)}
+    assert final_messages["1"].content == "Human said: approved"
+    assert final_messages["2"].content == "Success: b"
+
+
+def test_tool_retry_reraises_graph_bubble_up() -> None:
+    """GraphBubbleUp signals (e.g. ParentCommand) must propagate, not be retried."""
+    middleware = ToolRetryMiddleware(max_retries=3, initial_delay=0.01, jitter=False)
+
+    calls = 0
+
+    def handler(request: ToolCallRequest) -> ToolMessage:  # noqa: ARG001
+        nonlocal calls
+        calls += 1
+        raise ParentCommand(Command(goto="some_node"))
+
+    request = ToolCallRequest(
+        tool_call=ToolCall(name="working_tool", args={"value": "x"}, id="1"),
+        tool=working_tool,
+        state={"messages": []},
+        runtime=None,  # type: ignore[arg-type]
+    )
+
+    with pytest.raises(ParentCommand):
+        middleware.wrap_tool_call(request, handler)
+
+    assert calls == 1  # bubbled up on first raise, not retried

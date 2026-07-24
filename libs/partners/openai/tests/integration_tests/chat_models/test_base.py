@@ -111,8 +111,10 @@ async def test_callable_api_key_async(monkeypatch: pytest.MonkeyPatch) -> None:
     assert isinstance(async_response, AIMessage)
     assert calls["async"] == 1
 
-    with pytest.raises(ValueError):
-        # We do not create a sync callable from an async one
+    with pytest.raises(ValueError, match="Sync client is not available"):
+        # This intentionally records a failed ChatOpenAI run in scheduled LangSmith
+        # traces: async API-key callables are valid for async methods, but sync
+        # invocation must fail.
         _ = model.invoke("hello")
 
 
@@ -624,7 +626,7 @@ def test_disable_parallel_tool_calling() -> None:
     assert len(result.tool_calls) == 1
 
 
-@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1", "gpt-4", "gpt-5-nano"])
+@pytest.mark.parametrize("model", ["gpt-4o-mini", "gpt-4.1-mini", "gpt-5-nano"])
 def test_openai_structured_output(model: str) -> None:
     class MyModel(BaseModel):
         """A Person"""
@@ -778,7 +780,7 @@ def test_image_token_counting_png() -> None:
 @pytest.mark.parametrize("use_responses_api", [False, True])
 @pytest.mark.parametrize(
     ("model", "method"),
-    [("gpt-4o", "function_calling"), ("gpt-4o-2024-08-06", "json_schema")],
+    [("gpt-4.1-mini", "function_calling"), ("gpt-4.1-mini", "json_schema")],
 )
 def test_structured_output_strict(
     model: str,
@@ -821,7 +823,7 @@ def test_structured_output_strict(
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-@pytest.mark.parametrize(("model", "method"), [("gpt-4o-2024-08-06", "json_schema")])
+@pytest.mark.parametrize(("model", "method"), [("gpt-4.1-mini", "json_schema")])
 def test_nested_structured_output_strict(
     model: str, method: Literal["json_schema"], use_responses_api: bool
 ) -> None:
@@ -991,7 +993,7 @@ def test_prediction_tokens() -> None:
     """
     )
 
-    llm = ChatOpenAI(model="gpt-4.1-nano")
+    llm = ChatOpenAI(model="gpt-4.1-mini")
     query = (
         "Replace the Username property with an Email property. "
         "Respond only with code, and with no markdown formatting."
@@ -1010,18 +1012,18 @@ def test_prediction_tokens() -> None:
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_stream_o_series(use_responses_api: bool) -> None:
+def test_stream_reasoning_model(use_responses_api: bool) -> None:
     list(
-        ChatOpenAI(model="o3-mini", use_responses_api=use_responses_api).stream(
+        ChatOpenAI(model="gpt-5-nano", use_responses_api=use_responses_api).stream(
             "how are you"
         )
     )
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-async def test_astream_o_series(use_responses_api: bool) -> None:
+async def test_astream_reasoning_model(use_responses_api: bool) -> None:
     async for _ in ChatOpenAI(
-        model="o3-mini", use_responses_api=use_responses_api
+        model="gpt-5-nano", use_responses_api=use_responses_api
     ).astream("how are you"):
         pass
 
@@ -1064,35 +1066,34 @@ async def test_astream_response_format() -> None:
     assert parsed.response == parsed_content["response"]
 
 
-@pytest.mark.parametrize("use_responses_api", [False, True])
-@pytest.mark.parametrize("use_max_completion_tokens", [True, False])
-def test_o1(use_max_completion_tokens: bool, use_responses_api: bool) -> None:
-    # o1 models need higher token limits for reasoning
-    o1_token_limit = 1000
-    if use_max_completion_tokens:
-        kwargs: dict = {"max_completion_tokens": o1_token_limit}
-    else:
-        kwargs = {"max_tokens": o1_token_limit}
-    response = ChatOpenAI(
-        model="o1",
-        reasoning_effort="low",
-        use_responses_api=use_responses_api,
-        **kwargs,
-    ).invoke(
-        [
-            {"role": "developer", "content": "respond in all caps"},
-            {"role": "user", "content": "HOW ARE YOU"},
-        ]
-    )
-    assert isinstance(response, AIMessage)
-    assert isinstance(response.text, str)
-    assert response.text.upper() == response.text
-
-
 @pytest.mark.scheduled
-def test_o1_stream_default_works() -> None:
-    result = list(ChatOpenAI(model="o1").stream("say 'hi'"))
+def test_reasoning_model_stream_default_works() -> None:
+    result = list(ChatOpenAI(model="gpt-5-nano").stream("say 'hi'"))
     assert len(result) > 0
+
+
+def test_reasoning_effort_parameter() -> None:
+    """Test that the standard `reasoning_effort` parameter is accepted by the API."""
+    llm = ChatOpenAI(model="gpt-5-nano", reasoning_effort="low")
+
+    result = llm.invoke("Say hello in one sentence")
+
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+    assert result.usage_metadata is not None
+    assert result.usage_metadata["input_tokens"] > 0
+    assert result.usage_metadata["output_tokens"] > 0
+
+
+def test_reasoning_effort_call_time_kwarg() -> None:
+    """Test that `reasoning_effort` is accepted as a call-time kwarg."""
+    llm = ChatOpenAI(model="gpt-5-nano")
+
+    result = llm.invoke("Say hello in one sentence", reasoning_effort="low")
+
+    assert isinstance(result.content, str)
+    assert len(result.content) > 0
+    assert result.usage_metadata is not None
 
 
 @pytest.mark.flaky(retries=3, delay=1)
@@ -1223,6 +1224,45 @@ def test_prompt_cache_key_usage_methods_integration() -> None:
     assert isinstance(response_model_level.content, str)
 
 
+@pytest.mark.scheduled
+@pytest.mark.flaky(retries=3, delay=1)
+def test_explicit_prompt_cache_breakpoint_invoke() -> None:
+    """Explicit cache breakpoints produce a cache read on a repeated prefix.
+
+    Uses a long, stable prefix marked with a `prompt_cache_breakpoint` and
+    `prompt_cache_options={"mode": "explicit"}`. The first invocation writes the
+    cache and the second should read it back.
+    """
+    chat = ChatOpenAI(
+        model="gpt-5.6-sol",
+        max_completion_tokens=10,
+        prompt_cache_options={"mode": "explicit"},
+    )
+    # A prefix long enough to exceed OpenAI's minimum cacheable prompt length.
+    stable_prefix = "Stable, cacheable instructions and reference material. " * 400
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": stable_prefix,
+                    "prompt_cache_breakpoint": {"mode": "explicit"},
+                },
+                {"type": "text", "text": "Say hello."},
+            ]
+        )
+    ]
+
+    first = chat.invoke(messages)
+    assert isinstance(first, AIMessage)
+
+    second = chat.invoke(messages)
+    assert isinstance(second, AIMessage)
+    assert second.usage_metadata is not None
+    cache_read = second.usage_metadata["input_token_details"].get("cache_read", 0)
+    assert cache_read > 0
+
+
 class BadModel(BaseModel):
     response: str
 
@@ -1303,6 +1343,7 @@ def test_streaming_tool_call_v1_v2_parity() -> None:
         model="gpt-4o-mini",
         temperature=0,
         output_version="v1",
+        stream_usage=False,
     )
     with_tool = llm.bind_tools([_Person], tool_choice="_Person")
     prompt = "Extract: Erick is 27 years old."

@@ -26,7 +26,7 @@ def _fake_addrinfo_v6(ip: str, port: int = 80) -> list[Any]:
     return [(socket.AF_INET6, socket.SOCK_STREAM, 6, "", (ip, port, 0, 0))]
 
 
-def _ok_response(request: httpx.Request) -> httpx.Response:
+def _ok_response(_request: httpx.Request) -> httpx.Response:
     return httpx.Response(200, text="ok")
 
 
@@ -239,7 +239,7 @@ def test_link_local_range_blocked_as_cloud_metadata_when_private_ips_allowed(
 async def test_redirect_to_private_ip_blocked(monkeypatch: Any) -> None:
     call_count = 0
 
-    def _routing_addrinfo(*args: Any, **kwargs: Any) -> list[Any]:
+    def _routing_addrinfo(*_args: Any, **_kwargs: Any) -> list[Any]:
         nonlocal call_count
         call_count += 1
         if call_count == 1:
@@ -248,7 +248,7 @@ async def test_redirect_to_private_ip_blocked(monkeypatch: Any) -> None:
 
     monkeypatch.setattr(socket, "getaddrinfo", _routing_addrinfo)
 
-    def _redirect_responder(request: httpx.Request) -> httpx.Response:
+    def _redirect_responder(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             302,
             headers={"Location": "http://evil.com/pwned"},
@@ -279,7 +279,7 @@ async def test_ipv6_mapped_ipv4_blocked(monkeypatch: Any) -> None:
     monkeypatch.setattr(
         socket,
         "getaddrinfo",
-        lambda *a, **kw: _fake_addrinfo_v6("::ffff:127.0.0.1"),
+        lambda *_, **__: _fake_addrinfo_v6("::ffff:127.0.0.1"),
     )
 
     transport = SSRFSafeTransport()
@@ -301,7 +301,7 @@ async def test_unresolvable_host_blocked(monkeypatch: Any) -> None:
     monkeypatch.setattr(
         socket,
         "getaddrinfo",
-        lambda *a, **kw: (_ for _ in ()).throw(
+        lambda *_, **__: (_ for _ in ()).throw(
             socket.gaierror("Name or service not known")
         ),
     )
@@ -388,7 +388,7 @@ def test_sync_transport_blocks_private_resolution() -> None:
 def test_sync_transport_redirect_to_private_blocked(monkeypatch: Any) -> None:
     call_count = 0
 
-    def _routing_addrinfo(*args: Any, **kwargs: Any) -> list[Any]:
+    def _routing_addrinfo(*_args: Any, **__kwargs: Any) -> list[Any]:
         nonlocal call_count
         call_count += 1
         if call_count == 1:
@@ -397,7 +397,7 @@ def test_sync_transport_redirect_to_private_blocked(monkeypatch: Any) -> None:
 
     monkeypatch.setattr(socket, "getaddrinfo", _routing_addrinfo)
 
-    def _redirect_responder(request: httpx.Request) -> httpx.Response:
+    def _redirect_responder(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             302,
             headers={"Location": "http://evil.com/pwned"},

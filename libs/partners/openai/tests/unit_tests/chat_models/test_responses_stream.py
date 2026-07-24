@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
@@ -608,7 +609,9 @@ responses_stream = [
             truncation="disabled",
             usage=ResponseUsage(
                 input_tokens=13,
-                input_tokens_details=InputTokensDetails(cached_tokens=0),
+                input_tokens_details=InputTokensDetails(
+                    cache_write_tokens=0, cached_tokens=0
+                ),
                 output_tokens=71,
                 output_tokens_details=OutputTokensDetails(reasoning_tokens=64),
                 total_tokens=84,
@@ -770,7 +773,7 @@ def test_responses_stream_events_v3_emits_reasoning_lifecycle() -> None:
     (`content-block-start` / `content-block-delta` / `content-block-finish`)
     for every reasoning block observed on the wire, not just text blocks.
     """
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True, output_version="v1")
+    llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True, output_version="v1")
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -1004,7 +1007,9 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
                 truncation="disabled",
                 usage=ResponseUsage(
                     input_tokens=10,
-                    input_tokens_details=InputTokensDetails(cached_tokens=0),
+                    input_tokens_details=InputTokensDetails(
+                        cache_write_tokens=0, cached_tokens=0
+                    ),
                     output_tokens=20,
                     output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
                     total_tokens=30,
@@ -1078,15 +1083,15 @@ def test_responses_stream_tolerates_dict_response_field() -> None:
     ("event_index", "event_type"),
     [(0, ResponseCreatedEvent), (46, ResponseCompletedEvent)],
 )
-def test_responses_stream_normalizes_in_memory_prompt_cache_retention(
-    event_index: int, event_type: type
+def test_responses_stream_validates_in_memory_prompt_cache_retention(
+    event_index: int, event_type: type, caplog: pytest.LogCaptureFixture
 ) -> None:
     """`prompt_cache_retention="in_memory"` from the API must not abort streams.
 
-    The API emits the underscore form while older `openai` packages declare only
-    `"in-memory"` in the Literal (openai-python#2883). `_coerce_chunk_response`
-    should normalize so both the `response.created` and `response.completed`
-    handlers can validate successfully.
+    The OpenAI SDK accepts the underscore form, so both the `response.created`
+    and `response.completed` handlers should validate it via the strict
+    `Response.model_validate` path -- not the non-validating `model_construct`
+    fallback (which would also complete the stream, masking a regression).
     """
     stream = copy.deepcopy(responses_stream)
     target = stream[event_index]
@@ -1105,12 +1110,19 @@ def test_responses_stream_normalizes_in_memory_prompt_cache_retention(
     mock_client.responses.create = mock_create
 
     full: BaseMessageChunk | None = None
-    with patch.object(llm, "root_client", mock_client):
+    with (
+        caplog.at_level(logging.WARNING),
+        patch.object(llm, "root_client", mock_client),
+    ):
         for chunk in llm.stream("test"):
             assert isinstance(chunk, AIMessageChunk)
             full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.id == "resp_123"
+    # `in_memory` must validate cleanly: no fallback to the non-validating
+    # construct. Otherwise this test would pass even if the SDK rejected the
+    # value, giving false confidence in the removed normalization workaround.
+    assert "falling back to non-validating construct" not in caplog.text
     # The completed event drives usage/metadata aggregation, so assert it
     # survived coercion when that branch is exercised.
     if event_type is ResponseCompletedEvent:

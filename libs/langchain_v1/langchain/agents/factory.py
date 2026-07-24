@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import functools
+import importlib
 import itertools
+import re
 from dataclasses import dataclass, field, fields
 from typing import (
     TYPE_CHECKING,
@@ -26,22 +28,23 @@ from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
 from langgraph.types import Command, Send
 from langsmith import traceable
-from typing_extensions import NotRequired, Required, TypedDict
+from typing_extensions import NotRequired, Required, TypedDict, overload
 
+from langchain.agents._subagent_transformer import SubagentTransformer
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
     ExtendedModelResponse,
+    InputAgentState,
     JumpTo,
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
+    OutputAgentState,
     ResponseT,
     StateT_co,
     ToolCallRequest,
-    _InputAgentState,
-    _OutputAgentState,
 )
 from langchain.agents.structured_output import (
     AutoStrategy,
@@ -59,9 +62,9 @@ from langchain.chat_models import init_chat_model
 
 @dataclass
 class _ComposedExtendedModelResponse(Generic[ResponseT]):
-    """Internal result from composed ``wrap_model_call`` middleware.
+    """Internal result from composed `wrap_model_call` middleware.
 
-    Unlike ``ExtendedModelResponse`` (user-facing, single command), this holds the
+    Unlike `ExtendedModelResponse` (user-facing, single command), this holds the
     full list of commands accumulated across all middleware layers during
     composition.
     """
@@ -137,7 +140,7 @@ Option 2: Handle dynamic tools in middleware (for tools created at runtime)
 
 
 def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
-    """Remove ``runtime`` and ``handler`` from trace inputs before sending to LangSmith."""
+    """Remove `runtime` and `handler` from trace inputs before sending to LangSmith."""
     filtered = inputs.copy()
     filtered.pop("handler", None)
     req = filtered.get("request")
@@ -149,13 +152,25 @@ def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
 
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
-    # if model profile data are not available, these models are assumed to support
-    # structured output
-    "grok",
-    "gpt-5",
-    "gpt-4.1",
-    "gpt-4o",
-    "gpt-oss",
+    # If model profile data are not available, model names matching these patterns
+    # are assumed to support provider-native structured output. These are regexes
+    # so matches stay bounded to model-name segments instead of arbitrary substrings.
+    r"(^|[/:.])gpt-4\.1($|[-/:])",
+    r"(^|[/:.])gpt-4o($|[-/:])",
+    r"(^|[/:.])gpt-5($|[-/:])",
+    r"(^|[/:.])gpt-5\.1($|[-/:])",
+    r"(^|[/:.])gpt-5\.2(-\d{4}-\d{2}-\d{2})?($|[/:])",
+    r"(^|[/:.])gpt-5\.2-(chat|codex)($|[-/:])",
+    r"(^|[/:.])gpt-5\.3($|[-/:])",
+    r"(^|[/:.])gpt-5\.4(-\d{4}-\d{2}-\d{2})?($|[/:])",
+    r"(^|[/:.])gpt-5\.4-(mini|nano)($|[-/:])",
+    r"(^|[/:.])gpt-5\.5($|[-/:])",
+    r"(^|[/:.])claude-(fable|mythos)-5(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
+    r"(^|[/:.])claude-haiku-4-5(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
+    r"(^|[/:.])claude-opus-4-(5|6|7|8)(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
+    r"(^|[/:.])claude-sonnet-4-(5|6)(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
+    r"(^|[/:.])grok-4($|[-.:/])",
+    r"(^|[/:.])grok-build($|[-/:])",
 ]
 
 
@@ -164,8 +179,8 @@ def _normalize_to_model_response(
 ) -> ModelResponse:
     """Normalize middleware return value to ModelResponse.
 
-    At inner composition boundaries, ``ExtendedModelResponse`` is unwrapped to its
-    underlying ``ModelResponse`` so that inner middleware always sees ``ModelResponse``
+    At inner composition boundaries, `ExtendedModelResponse` is unwrapped to its
+    underlying `ModelResponse` so that inner middleware always sees `ModelResponse`
     from the handler.
     """
     if isinstance(result, AIMessage):
@@ -191,7 +206,7 @@ def _build_commands(
             composition (inner-first ordering).
 
     Returns:
-        List of ``Command`` objects ready to be returned from a model node.
+        List of `Command` objects ready to be returned from a model node.
     """
     state: dict[str, Any] = {"messages": model_response.result}
 
@@ -220,7 +235,7 @@ def _build_commands(
 def _chain_model_call_handlers(
     handlers: Sequence[_ModelCallHandler[ContextT]],
 ) -> _ComposedModelCallHandler[ContextT] | None:
-    """Compose multiple ``wrap_model_call`` handlers into single middleware stack.
+    """Compose multiple `wrap_model_call` handlers into single middleware stack.
 
     Composes handlers so first in list becomes outermost layer. Each handler receives a
     handler callback to execute inner layers. Commands from each layer are accumulated
@@ -232,8 +247,8 @@ def _chain_model_call_handlers(
             First handler wraps all others.
 
     Returns:
-        Composed handler returning ``_ComposedExtendedModelResponse``,
-        or ``None`` if handlers empty.
+        Composed handler returning `_ComposedExtendedModelResponse`,
+        or `None` if handlers empty.
     """
     if not handlers:
         return None
@@ -312,7 +327,7 @@ def _chain_model_call_handlers(
 def _chain_async_model_call_handlers(
     handlers: Sequence[_AsyncModelCallHandler[ContextT]],
 ) -> _ComposedAsyncModelCallHandler[ContextT] | None:
-    """Compose multiple async ``wrap_model_call`` handlers into single middleware stack.
+    """Compose multiple async `wrap_model_call` handlers into single middleware stack.
 
     Commands from each layer are accumulated into a list (inner-first, then outer)
     without merging.
@@ -323,8 +338,8 @@ def _chain_async_model_call_handlers(
             First handler wraps all others.
 
     Returns:
-        Composed async handler returning ``_ComposedExtendedModelResponse``,
-        or ``None`` if handlers empty.
+        Composed async handler returning `_ComposedExtendedModelResponse`,
+        or `None` if handlers empty.
     """
     if not handlers:
         return None
@@ -453,7 +468,9 @@ def _resolve_schema(
             if not should_omit:
                 all_annotations[field_name] = field_type
 
-    return TypedDict(schema_name, all_annotations)  # type: ignore[operator]
+    # `TypedDict` dynamically creates a class, but type checkers don't infer that
+    # the runtime result satisfies this function's `type` return contract.
+    return cast("type", TypedDict(schema_name, all_annotations))  # type: ignore[operator]
 
 
 def _extract_metadata(type_: type) -> list[Any]:
@@ -492,7 +509,8 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
         and sync_method is not base_sync_method
         and hasattr(sync_method, "__can_jump_to__")
     ):
-        return sync_method.__can_jump_to__
+        # `hasattr` proves the metadata exists at runtime, but not its value type.
+        return cast("list[JumpTo]", sync_method.__can_jump_to__)
 
     # Try async method - only if it's overridden from base class
     async_method = getattr(middleware.__class__, f"a{hook_name}", None)
@@ -501,7 +519,8 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
         and async_method is not base_async_method
         and hasattr(async_method, "__can_jump_to__")
     ):
-        return async_method.__can_jump_to__
+        # `hasattr` proves the metadata exists at runtime, but not its value type.
+        return cast("list[JumpTo]", async_method.__can_jump_to__)
 
     return []
 
@@ -545,10 +564,33 @@ def _supports_provider_strategy(
             return True
 
     return (
-        any(part in model_name.lower() for part in FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT)
+        any(
+            re.search(pattern, model_name.lower())
+            for pattern in FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT
+        )
         if model_name
         else False
     )
+
+
+def _is_openai_compatible_model(model: BaseChatModel) -> bool:
+    """Check if a model inherits from `BaseChatOpenAI`.
+
+    Used to redundantly set `strict=True` on tools when `response_format` is
+    provided, as older versions of `langchain-openai` do not auto-set it.
+    Covers `ChatOpenAI`, `ChatDeepSeek`, `ChatXAI`, etc.
+
+    Args:
+        model: The chat model to check.
+
+    Returns:
+        `True` if the model inherits from `BaseChatOpenAI`, `False` otherwise.
+    """
+    try:
+        base_chat_openai = importlib.import_module("langchain_openai.chat_models.base")
+    except ImportError:
+        return False
+    return isinstance(model, base_chat_openai.BaseChatOpenAI)
 
 
 def _handle_structured_output_error(
@@ -693,6 +735,76 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
+# No `response_format`: there is no structured output, so `ResponseT` resolves to `Any`.
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
+    *,
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
+    response_format: None = None,
+    state_schema: None = None,
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    name: str | None = None,
+    cache: BaseCache[Any] | None = None,
+    transformers: Sequence[TransformerFactory] | None = None,
+) -> CompiledStateGraph[AgentState[Any], ContextT, InputAgentState, OutputAgentState[Any]]: ...
+
+
+# Raw-dict `response_format`: structured output is an untyped `dict[str, Any]`.
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
+    *,
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
+    response_format: dict[str, Any],
+    state_schema: type[AgentState[dict[str, Any]]] | None = None,
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    name: str | None = None,
+    cache: BaseCache[Any] | None = None,
+    transformers: Sequence[TransformerFactory] | None = None,
+) -> CompiledStateGraph[
+    AgentState[dict[str, Any]], ContextT, InputAgentState, OutputAgentState[dict[str, Any]]
+]: ...
+
+
+# Schema-typed `response_format`: `ResponseT` is inferred from the schema/type.
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
+    *,
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
+    response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
+    state_schema: type[AgentState[ResponseT]] | None = None,
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    name: str | None = None,
+    cache: BaseCache[Any] | None = None,
+    transformers: Sequence[TransformerFactory] | None = None,
+) -> CompiledStateGraph[
+    AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
+]: ...
+
+
 def create_agent(
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
@@ -711,7 +823,7 @@ def create_agent(
     cache: BaseCache[Any] | None = None,
     transformers: Sequence[TransformerFactory] | None = None,
 ) -> CompiledStateGraph[
-    AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+    AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
 ]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
@@ -721,7 +833,7 @@ def create_agent(
     Args:
         model: The language model for the agent.
 
-            Can be a string identifier (e.g., `"openai:gpt-4"`) or a direct chat model
+            Can be a string identifier (e.g., `"openai:gpt-5.5"`) or a direct chat model
             instance (e.g., [`ChatOpenAI`][langchain_openai.ChatOpenAI] or other another
             [LangChain chat model](https://docs.langchain.com/oss/python/integrations/chat)).
 
@@ -1045,7 +1157,7 @@ def create_agent(
 
     # create graph, add nodes
     graph: StateGraph[
-        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+        AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
     ] = StateGraph(
         state_schema=resolved_state_schema,
         input_schema=input_schema,
@@ -1243,11 +1355,16 @@ def create_agent(
         # Bind model based on effective response format
         if isinstance(effective_response_format, ProviderStrategy):
             # (Backward compatibility) Use OpenAI format structured output
+            # Redundantly set strict=True on tools for OpenAI-compatible models, as older
+            # versions of langchain-openai do not auto-set it in bind_tools.
             kwargs = effective_response_format.to_model_kwargs()
+            bind_kwargs: dict[str, Any] = {**kwargs, **request.model_settings}
+            if _is_openai_compatible_model(request.model) and not getattr(
+                request.model, "use_responses_api", False
+            ):
+                bind_kwargs["strict"] = True
             return (
-                request.model.bind_tools(
-                    final_tools, strict=True, **kwargs, **request.model_settings
-                ),
+                request.model.bind_tools(final_tools, **bind_kwargs),
                 effective_response_format,
             )
 
@@ -1677,6 +1794,7 @@ def create_agent(
         cache=cache,
         transformers=[
             ToolCallTransformer,
+            SubagentTransformer,
             *middleware_transformers,
             *(transformers or ()),
         ],
@@ -1838,7 +1956,7 @@ def _make_tools_to_model_edge(
 
 def _add_middleware_edge(
     graph: StateGraph[
-        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+        AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]
     ],
     *,
     name: str,

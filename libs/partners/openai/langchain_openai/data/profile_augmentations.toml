@@ -6,6 +6,7 @@ pdf_inputs = true
 pdf_tool_message = true
 image_tool_message = true
 tool_choice = true
+tool_call_streaming = true
 
 [overrides."gpt-3.5-turbo"]
 image_url_inputs = false
@@ -15,42 +16,101 @@ image_tool_message = false
 
 [overrides."gpt-5.1-codex"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.2-pro"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.1-codex-mini"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.2-chat-latest"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.1"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5-nano"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5-codex"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5-mini"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.1-codex-max"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5-chat-latest"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5-pro"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.2"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.1-chat-latest"]
 max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[overrides."gpt-5.2-codex"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[overrides."gpt-5.3-codex"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[overrides."gpt-5.3-codex-spark"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[overrides."gpt-5.4"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[overrides."gpt-5.4-mini"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[overrides."gpt-5.4-nano"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[overrides."gpt-5.4-pro"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[overrides."gpt-5.5"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+reasoning_effort_default = "medium"
+
+[overrides."gpt-5.5-pro"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+reasoning_effort_default = "medium"
+
+[overrides."gpt-5.6"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "medium"
+
+[overrides."gpt-5.6-luna"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "medium"
+
+[overrides."gpt-5.6-sol"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "medium"
+
+[overrides."gpt-5.6-terra"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "medium"

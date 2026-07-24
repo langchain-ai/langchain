@@ -1020,3 +1020,19 @@ async def test_ainvoke_routes_to_responses_when_builtin_tool_in_payload() -> Non
     assert "temperature" not in call_kwargs
     assert "temperature" not in (call_kwargs.get("extra_body") or {})
     chat_create.assert_not_called()
+
+
+def test_convert_responses_to_chat_result_sets_model_name() -> None:
+    """`model_name` mirrors `model` so usage callbacks work on the Responses route."""
+    result = _convert_responses_to_chat_result(_stub_responses_response("hi"))
+    meta = result.generations[0].message.response_metadata
+    assert meta["model_name"] == "sonar-pro"
+    assert meta["model"] == "sonar-pro"
+
+
+def test_responses_completed_event_sets_model_name() -> None:
+    """Streaming `response.completed` also carries `model_name` for usage callbacks."""
+    event = _make_event("response.completed", response=_stub_responses_response("x"))
+    chunk = _convert_responses_stream_event_to_chunk(event)
+    assert chunk is not None
+    assert chunk.message.response_metadata["model_name"] == "sonar-pro"

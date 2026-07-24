@@ -178,7 +178,7 @@ class _EmptyStreamModel(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         del messages, stop, run_manager, kwargs
         if False:
-            yield ChatGenerationChunk(message=AIMessageChunk(content=""))
+            yield ChatGenerationChunk(message=AIMessageChunk(content=""))  # type: ignore[unreachable]
 
     async def _astream(
         self,
@@ -189,7 +189,7 @@ class _EmptyStreamModel(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         del messages, stop, run_manager, kwargs
         if False:
-            yield ChatGenerationChunk(message=AIMessageChunk(content=""))
+            yield ChatGenerationChunk(message=AIMessageChunk(content=""))  # type: ignore[unreachable]
 
 
 class TestCallbacks:
@@ -364,8 +364,8 @@ class TestCancellation:
         """
         model = FakeListChatModel(responses=["abcdefghij"], sleep=0.05)
         stream = await model.astream_events("test", version="v3")
-        aiter_ = stream.text.__aiter__()
-        await aiter_.__anext__()
+        aiter_ = aiter(stream.text)
+        await anext(aiter_)
         task = stream._producer_task
         assert task is not None
 

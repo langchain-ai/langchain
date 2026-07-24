@@ -8,6 +8,7 @@ import warnings
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import ToolMessage
+from langgraph.errors import GraphBubbleUp
 
 from langchain.agents.middleware._retry import (
     OnFailure,
@@ -151,7 +152,8 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
             retry_on: Either a tuple of exception types to retry on, or a callable
                 that takes an exception and returns `True` if it should be retried.
 
-                Default is to retry on all exceptions.
+                Default is to retry on all exceptions. Exceptions that do not match
+                propagate immediately and are not handled by `on_failure`.
             on_failure: Behavior when all retries are exhausted.
 
                 Options:
@@ -314,13 +316,17 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         for attempt in range(self.max_retries + 1):
             try:
                 return handler(request)
+            except GraphBubbleUp:
+                # Control-flow signals (interrupts, parent commands) must
+                # propagate, not be retried or converted to error messages.
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
-                    # Exception is not retryable, handle failure immediately
-                    return self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
+                    # Exception is not retryable, re-raise immediately
+                    raise
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
@@ -372,13 +378,17 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         for attempt in range(self.max_retries + 1):
             try:
                 return await handler(request)
+            except GraphBubbleUp:
+                # Control-flow signals (interrupts, parent commands) must
+                # propagate, not be retried or converted to error messages.
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
-                    # Exception is not retryable, handle failure immediately
-                    return self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
+                    # Exception is not retryable, re-raise immediately
+                    raise
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:

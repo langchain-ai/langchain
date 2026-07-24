@@ -8,8 +8,10 @@ import pytest
 from pydantic import BaseModel
 
 from langchain_core._api.deprecation import (
+    LangChainDeprecationWarning,
     deprecated,
     rename_parameter,
+    suppress_langchain_deprecation_warning,
     warn_deprecated,
 )
 
@@ -128,6 +130,25 @@ class ClassWithDeprecatedMethods:
     def deprecated_property(self) -> str:
         """Original doc."""
         return "This is a deprecated property."
+
+
+def test_suppressed_deprecation_warning_does_not_consume_warning() -> None:
+    """Suppressed calls should not block a later user-visible warning.
+
+    For example, an internal compatibility path may call a deprecated method while
+    saving/loading an object with warnings suppressed. That hidden call should not
+    prevent the user's later direct call from seeing the deprecation warning.
+    """
+
+    @deprecated(since="2.0.0", removal="3.0.0", pending=False)
+    def local_deprecated_function() -> str:
+        return "deprecated"
+
+    with suppress_langchain_deprecation_warning():
+        assert local_deprecated_function() == "deprecated"
+
+    with pytest.warns(LangChainDeprecationWarning):
+        assert local_deprecated_function() == "deprecated"
 
 
 def test_deprecated_function() -> None:
