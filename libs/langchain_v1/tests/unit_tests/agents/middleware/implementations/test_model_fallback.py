@@ -19,6 +19,7 @@ from langchain.agents.middleware.model_fallback import (
     ModelFallbackMiddleware,
     _sanitize_request_for_fallback,
     _supports_anthropic_cache_control,
+    _supports_fireworks_prompt_cache,
 )
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 from tests.unit_tests.agents.model import FakeToolCallingModel
@@ -125,6 +126,31 @@ def _make_request_with_cache_markers(primary_model: BaseChatModel) -> ModelReque
             },
         ],
     )
+
+
+def _make_request_with_fireworks_cache_settings(
+    primary_model: BaseChatModel,
+) -> ModelRequest:
+    """Create a request with Fireworks prompt-cache affinity settings."""
+    return _make_request().override(
+        model=primary_model,
+        model_settings={
+            "temperature": 0.3,
+            "prompt_cache_key": "thread-123",
+            "extra_headers": {
+                "X-Request-ID": "request-123",
+                "X-Session-Affinity": "thread-123",
+            },
+        },
+    )
+
+
+def _assert_fireworks_cache_settings_removed(request: ModelRequest) -> None:
+    """Assert Fireworks affinity is removed while unrelated settings remain."""
+    assert request.model_settings == {
+        "temperature": 0.3,
+        "extra_headers": {"X-Request-ID": "request-123"},
+    }
 
 
 def _assert_request_has_cache_markers(request: ModelRequest) -> None:
@@ -268,6 +294,54 @@ async def test_fallback_sanitizes_cache_markers_async() -> None:
     assert response.result[0].content == "fallback response"
     assert len(attempts) == 2
     _assert_request_has_cache_markers(request)
+
+
+def test_fallback_removes_fireworks_cache_settings_sync() -> None:
+    """A non-Fireworks fallback should not receive Fireworks cache settings."""
+    primary_model = GenericFakeChatModel(messages=iter([]))
+    fallback_model = GenericFakeChatModel(messages=iter([]))
+    middleware = ModelFallbackMiddleware(fallback_model)
+    request = _make_request_with_fireworks_cache_settings(primary_model)
+    attempts: list[ModelRequest] = []
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            msg = "Primary model failed"
+            raise ValueError(msg)
+
+        assert req.model is fallback_model
+        _assert_fireworks_cache_settings_removed(req)
+        return ModelResponse(result=[AIMessage(content="fallback response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert len(attempts) == 2
+    assert request.model_settings["prompt_cache_key"] == "thread-123"
+
+
+async def test_fallback_removes_fireworks_cache_settings_async() -> None:
+    """Async non-Fireworks fallback should not receive Fireworks cache settings."""
+    primary_model = GenericFakeChatModel(messages=iter([]))
+    fallback_model = GenericFakeChatModel(messages=iter([]))
+    middleware = ModelFallbackMiddleware(fallback_model)
+    request = _make_request_with_fireworks_cache_settings(primary_model)
+    attempts: list[ModelRequest] = []
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            msg = "Primary model failed"
+            raise ValueError(msg)
+
+        assert req.model is fallback_model
+        _assert_fireworks_cache_settings_removed(req)
+        return ModelResponse(result=[AIMessage(content="fallback response")])
+
+    await middleware.awrap_model_call(request, mock_handler)
+
+    assert len(attempts) == 2
+    assert request.model_settings["prompt_cache_key"] == "thread-123"
 
 
 def test_sanitize_collapses_emptied_extras_to_none() -> None:
@@ -767,6 +841,14 @@ class _FakeNonStringLlmTypeModel(GenericFakeChatModel):
         return ["anthropic-chat"]  # type: ignore[return-value]
 
 
+class _FakeFireworksModel(GenericFakeChatModel):
+    """Fake model that reports the `ChatFireworks` `_llm_type`."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "fireworks-chat"
+
+
 _ANTHROPIC_COMPATIBLE_FAKES = [
     _FakeAnthropicModel,
     _FakeBedrockAnthropicModel,
@@ -783,6 +865,35 @@ def test_supports_anthropic_cache_control() -> None:
     assert not _supports_anthropic_cache_control(FakeToolCallingModel())
     # A non-string `_llm_type` must be rejected by the guard rather than raising.
     assert not _supports_anthropic_cache_control(_FakeNonStringLlmTypeModel(messages=iter([])))
+
+
+def test_supports_fireworks_prompt_cache() -> None:
+    """`_supports_fireworks_prompt_cache` detects Fireworks models."""
+    assert _supports_fireworks_prompt_cache(_FakeFireworksModel(messages=iter([])))
+    assert not _supports_fireworks_prompt_cache(GenericFakeChatModel(messages=iter([])))
+
+
+def test_fallback_preserves_fireworks_cache_settings_for_fireworks() -> None:
+    """A Fireworks fallback should keep Fireworks prompt-cache affinity settings."""
+    primary_model = _FakeFireworksModel(messages=iter([]))
+    fallback_model = _FakeFireworksModel(messages=iter([]))
+    middleware = ModelFallbackMiddleware(fallback_model)
+    request = _make_request_with_fireworks_cache_settings(primary_model)
+    attempts: list[ModelRequest] = []
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if len(attempts) == 1:
+            msg = "Primary model failed"
+            raise ValueError(msg)
+
+        assert req.model is fallback_model
+        assert req.model_settings == request.model_settings
+        return ModelResponse(result=[AIMessage(content="fallback response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert len(attempts) == 2
 
 
 def test_fallback_preserves_cache_markers_for_anthropic_sync() -> None:
@@ -1010,7 +1121,7 @@ def test_fallback_sanitizer_error_is_not_masked_sync(
     Anthropic fallback succeeds.
     """
 
-    def _boom(_request: ModelRequest) -> ModelRequest:
+    def _boom(_request: ModelRequest, _fallback_model: BaseChatModel | None = None) -> ModelRequest:
         msg = "sanitizer boom"
         raise RuntimeError(msg)
 
@@ -1043,7 +1154,7 @@ async def test_fallback_sanitizer_error_is_not_masked_async(
 ) -> None:
     """Async: a sanitizer bug must surface, not be masked by a later success."""
 
-    def _boom(_request: ModelRequest) -> ModelRequest:
+    def _boom(_request: ModelRequest, _fallback_model: BaseChatModel | None = None) -> ModelRequest:
         msg = "sanitizer boom"
         raise RuntimeError(msg)
 

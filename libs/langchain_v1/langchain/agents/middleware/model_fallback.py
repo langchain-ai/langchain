@@ -1,21 +1,19 @@
 """Model fallback middleware for agents.
 
-When a caching middleware such as `AnthropicPromptCachingMiddleware` wraps this
-middleware from the outside, it applies Anthropic `cache_control` markers to the
-request *before* the fallback loop runs. Those markers are provider-specific and
-cause API errors on non-Anthropic fallback models, so this middleware strips them
-from fallback attempts — but only when the fallback model itself cannot accept
-Anthropic cache markers. When the fallback is another Anthropic model the markers
-are valid and preserve prompt caching, so they are left intact.
+When an outer caching middleware modifies a request, those changes happen before
+the fallback loop runs. Provider-specific cache settings can cause API errors if
+the loop reuses them with a different provider. This middleware therefore strips
+unsupported Anthropic and Fireworks cache settings from each fallback attempt,
+while preserving settings accepted by a same-provider fallback.
 
-The knowledge of the `cache_control` marker is duplicated here (rather than owned
-solely by the Anthropic partner package) because an outer caching middleware
-never re-runs during fallback and therefore cannot clean up after itself.
+This provider knowledge lives here because an outer caching middleware never
+re-runs during fallback and therefore cannot clean up after itself.
 """
 
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.tools import BaseTool
@@ -37,6 +35,9 @@ if TYPE_CHECKING:
     from langchain_core.messages import AIMessage, AnyMessage, SystemMessage
 
 logger = logging.getLogger(__name__)
+
+_FIREWORKS_LLM_TYPE = "fireworks-chat"
+_FIREWORKS_SESSION_AFFINITY_HEADER = "x-session-affinity"
 
 
 def _sanitize_content_blocks(
@@ -108,25 +109,40 @@ def _sanitize_tools(
     return sanitized_tools if changed else tools
 
 
-def _sanitize_request_for_fallback(request: ModelRequest[ContextT]) -> ModelRequest[ContextT]:
-    """Sanitize provider-specific Anthropic cache markers before fallback attempts."""
+def _sanitize_request_for_fallback(
+    request: ModelRequest[ContextT],
+    fallback_model: BaseChatModel | None = None,
+) -> ModelRequest[ContextT]:
+    """Sanitize provider-specific cache settings before a fallback attempt."""
     overrides: dict[str, Any] = {}
+    supports_anthropic_cache = _supports_anthropic_cache_control(fallback_model)
 
-    model_settings, model_settings_changed = _without_cache_control(request.model_settings)
+    model_settings = request.model_settings
+    model_settings_changed = False
+
+    if not supports_anthropic_cache:
+        model_settings, cache_control_changed = _without_cache_control(model_settings)
+        model_settings_changed = model_settings_changed or cache_control_changed
+
+    if not _supports_fireworks_prompt_cache(fallback_model):
+        model_settings, fireworks_cache_changed = _without_fireworks_prompt_cache(model_settings)
+        model_settings_changed = model_settings_changed or fireworks_cache_changed
+
     if model_settings_changed:
         overrides["model_settings"] = model_settings
 
-    system_message = _sanitize_system_message(request.system_message)
-    if system_message is not request.system_message:
-        overrides["system_message"] = system_message
+    if not supports_anthropic_cache:
+        system_message = _sanitize_system_message(request.system_message)
+        if system_message is not request.system_message:
+            overrides["system_message"] = system_message
 
-    messages = _sanitize_messages(request.messages)
-    if messages is not request.messages:
-        overrides["messages"] = messages
+        messages = _sanitize_messages(request.messages)
+        if messages is not request.messages:
+            overrides["messages"] = messages
 
-    tools = _sanitize_tools(request.tools)
-    if tools is not request.tools:
-        overrides["tools"] = tools
+        tools = _sanitize_tools(request.tools)
+        if tools is not request.tools:
+            overrides["tools"] = tools
 
     if not overrides:
         return request
@@ -134,7 +150,7 @@ def _sanitize_request_for_fallback(request: ModelRequest[ContextT]) -> ModelRequ
     # Log only the field names that changed, never request content (may contain
     # prompt data or PII).
     logger.debug(
-        "Stripped Anthropic cache_control markers from %s before fallback attempt",
+        "Stripped provider-specific cache settings from %s before fallback attempt",
         sorted(overrides),
     )
 
@@ -207,6 +223,35 @@ def _without_cache_control(payload: dict[str, Any]) -> tuple[dict[str, Any], boo
     )
 
 
+def _without_fireworks_prompt_cache(
+    model_settings: dict[str, Any],
+) -> tuple[dict[str, Any], bool]:
+    """Return model settings without Fireworks prompt-cache affinity values."""
+    changed = "prompt_cache_key" in model_settings
+    sanitized_settings = {
+        key: value for key, value in model_settings.items() if key != "prompt_cache_key"
+    }
+
+    extra_headers = sanitized_settings.get("extra_headers")
+    if not isinstance(extra_headers, Mapping):
+        return (sanitized_settings, True) if changed else (model_settings, False)
+
+    sanitized_headers = {
+        key: value
+        for key, value in extra_headers.items()
+        if not (isinstance(key, str) and key.lower() == _FIREWORKS_SESSION_AFFINITY_HEADER)
+    }
+    if len(sanitized_headers) == len(extra_headers):
+        return (sanitized_settings, True) if changed else (model_settings, False)
+
+    changed = True
+    if sanitized_headers:
+        sanitized_settings["extra_headers"] = sanitized_headers
+    else:
+        sanitized_settings.pop("extra_headers")
+    return sanitized_settings, changed
+
+
 def _without_cache_control_from_content_block(
     block: dict[str, Any],
 ) -> tuple[dict[str, Any], bool]:
@@ -263,7 +308,7 @@ _ANTHROPIC_LLM_TYPES: frozenset[str] = frozenset(
 )
 
 
-def _supports_anthropic_cache_control(model: BaseChatModel) -> bool:
+def _supports_anthropic_cache_control(model: BaseChatModel | None) -> bool:
     """Return whether `model` accepts Anthropic `cache_control` markers.
 
     Checked via `_llm_type` so the decision is provider-based rather than
@@ -273,6 +318,11 @@ def _supports_anthropic_cache_control(model: BaseChatModel) -> bool:
     """
     llm_type = getattr(model, "_llm_type", None)
     return isinstance(llm_type, str) and llm_type in _ANTHROPIC_LLM_TYPES
+
+
+def _supports_fireworks_prompt_cache(model: BaseChatModel | None) -> bool:
+    """Return whether `model` accepts Fireworks prompt-cache affinity settings."""
+    return getattr(model, "_llm_type", None) == _FIREWORKS_LLM_TYPE
 
 
 class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
@@ -347,16 +397,12 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         except Exception as e:
             last_exception = e
 
-        # Try fallback models — sanitize cache markers only when the fallback
-        # model cannot accept them (i.e. is not an Anthropic-compatible model).
+        # Try fallback models — sanitize provider-specific cache settings that
+        # the selected fallback cannot accept.
         # The request is derived outside the try so a sanitizer or `_llm_type`
         # bug surfaces directly instead of being masked as a model failure.
         for fallback_model in self.models:
-            fallback_request = (
-                request
-                if _supports_anthropic_cache_control(fallback_model)
-                else _sanitize_request_for_fallback(request)
-            )
+            fallback_request = _sanitize_request_for_fallback(request, fallback_model)
             try:
                 return handler(fallback_request.override(model=fallback_model))
             except Exception as e:
@@ -389,16 +435,12 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         except Exception as e:
             last_exception = e
 
-        # Try fallback models — sanitize cache markers only when the fallback
-        # model cannot accept them (i.e. is not an Anthropic-compatible model).
+        # Try fallback models — sanitize provider-specific cache settings that
+        # the selected fallback cannot accept.
         # The request is derived outside the try so a sanitizer or `_llm_type`
         # bug surfaces directly instead of being masked as a model failure.
         for fallback_model in self.models:
-            fallback_request = (
-                request
-                if _supports_anthropic_cache_control(fallback_model)
-                else _sanitize_request_for_fallback(request)
-            )
+            fallback_request = _sanitize_request_for_fallback(request, fallback_model)
             try:
                 return await handler(fallback_request.override(model=fallback_model))
             except Exception as e:
