@@ -3131,9 +3131,7 @@ def test_opus_5_allows_disabled_thinking_at_high_effort() -> None:
         output_config={"effort": "max"},
     )
 
-    payload = model._get_request_payload(
-        "Test query", output_config={"effort": "high"}
-    )
+    payload = model._get_request_payload("Test query", output_config={"effort": "high"})
 
     assert payload["thinking"] == {"type": "disabled"}
     assert payload["output_config"]["effort"] == "high"
