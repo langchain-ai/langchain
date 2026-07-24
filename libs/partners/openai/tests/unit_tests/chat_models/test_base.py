@@ -4228,6 +4228,187 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
     assert "temperature" not in payload
 
 
+def _bind_function_tool(
+    model_name: str,
+    *,
+    reasoning_effort: str | None = None,
+    use_responses_api: bool | None = None,
+) -> RunnableBinding:
+    init_kwargs: dict[str, Any] = {"model": model_name}
+    if reasoning_effort is not None:
+        init_kwargs["reasoning_effort"] = reasoning_effort
+    if use_responses_api is not None:
+        init_kwargs["use_responses_api"] = use_responses_api
+    llm = ChatOpenAI(**init_kwargs)
+    return cast(
+        RunnableBinding,
+        llm.bind_tools(
+            [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_weather",
+                        "description": "Get weather for a location.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {"location": {"type": "string"}},
+                            "required": ["location"],
+                        },
+                    },
+                }
+            ]
+        ),
+    )
+
+
+def _get_function_tool_payload(
+    model_name: str,
+    *,
+    reasoning_effort: str | None = None,
+    use_responses_api: bool | None = None,
+) -> dict[str, Any]:
+    binding = _bind_function_tool(
+        model_name,
+        reasoning_effort=reasoning_effort,
+        use_responses_api=use_responses_api,
+    )
+    bound_llm = cast(ChatOpenAI, binding.bound)
+    return bound_llm._get_request_payload("What is the weather?", **binding.kwargs)
+
+
+@pytest.mark.parametrize(
+    ("model_name", "reasoning_effort"),
+    [
+        ("gpt-5.6", None),
+        ("gpt-5.6-luna", None),
+        ("gpt-5.6-luna", "low"),
+        ("gpt-5.6-terra", None),
+        ("gpt-5.6-sol", None),
+        ("gpt-5.5", "low"),
+        ("gpt-5.4-mini", "low"),
+    ],
+)
+def test_function_tools_infer_responses_api(
+    model_name: str, reasoning_effort: str | None
+) -> None:
+    payload = _get_function_tool_payload(model_name, reasoning_effort=reasoning_effort)
+
+    assert "input" in payload
+    assert "messages" not in payload
+    assert payload["tools"][0]["name"] == "get_weather"
+    assert "function" not in payload["tools"][0]
+    if reasoning_effort is not None:
+        assert payload["reasoning"] == {"effort": reasoning_effort}
+
+
+@pytest.mark.parametrize(
+    ("model_name", "reasoning_effort"),
+    [
+        ("gpt-5", "low"),
+        ("gpt-5.1", "low"),
+        ("gpt-5.2", "low"),
+        ("o3", "low"),
+        ("gpt-5.4", None),
+        ("gpt-5.4", "none"),
+        ("gpt-5.5", None),
+        ("gpt-5.5", "none"),
+        ("gpt-5.6-luna", "none"),
+        ("gpt-5.40", "low"),
+        ("gpt-5.60-luna", None),
+    ],
+)
+def test_function_tools_keep_chat_completions_when_supported(
+    model_name: str, reasoning_effort: str | None
+) -> None:
+    payload = _get_function_tool_payload(model_name, reasoning_effort=reasoning_effort)
+
+    assert "messages" in payload
+    assert "input" not in payload
+    assert payload["tools"][0]["function"]["name"] == "get_weather"
+    if reasoning_effort is not None:
+        assert payload["reasoning_effort"] == reasoning_effort
+
+
+def test_gpt_5_6_without_function_tools_keeps_chat_completions() -> None:
+    payload = ChatOpenAI(
+        model="gpt-5.6-luna", reasoning_effort="low"
+    )._get_request_payload("What is the weather?")
+
+    assert "messages" in payload
+    assert "input" not in payload
+
+
+@pytest.mark.parametrize(
+    ("model_name", "reasoning_effort", "use_responses_api", "request_key"),
+    [
+        ("gpt-5.2", "low", True, "input"),
+        ("gpt-5.6-luna", None, False, "messages"),
+        ("gpt-5.5", "low", False, "messages"),
+    ],
+)
+def test_function_tool_routing_respects_explicit_override(
+    model_name: str,
+    reasoning_effort: str | None,
+    use_responses_api: bool,
+    request_key: str,
+) -> None:
+    payload = _get_function_tool_payload(
+        model_name,
+        reasoning_effort=reasoning_effort,
+        use_responses_api=use_responses_api,
+    )
+
+    assert request_key in payload
+    assert ({"input", "messages"} - {request_key}).isdisjoint(payload)
+
+
+@pytest.mark.parametrize(
+    ("use_responses_api", "expected_responses_api"),
+    [(None, True), (False, False)],
+)
+def test_function_tool_stream_routing_uses_constructor_params(
+    use_responses_api: bool | None, expected_responses_api: bool
+) -> None:
+    binding = _bind_function_tool("gpt-5.6-luna", use_responses_api=use_responses_api)
+    bound_llm = cast(ChatOpenAI, binding.bound)
+
+    with (
+        patch(
+            "langchain_openai.chat_models.base.BaseChatOpenAI._stream_responses",
+            return_value=iter(()),
+        ) as responses_stream,
+        patch(
+            "langchain_openai.chat_models.base.BaseChatOpenAI._stream",
+            return_value=iter(()),
+        ) as chat_stream,
+    ):
+        assert list(bound_llm._stream([], **binding.kwargs)) == []
+
+    assert responses_stream.called is expected_responses_api
+    assert chat_stream.called is not expected_responses_api
+
+
+async def test_function_tool_astream_routing_uses_constructor_params() -> None:
+    binding = _bind_function_tool("gpt-5.6-luna")
+    bound_llm = cast(ChatOpenAI, binding.bound)
+
+    with (
+        patch(
+            "langchain_openai.chat_models.base.BaseChatOpenAI._astream_responses",
+            return_value=MockAsyncContextManager([]),
+        ) as responses_stream,
+        patch(
+            "langchain_openai.chat_models.base.BaseChatOpenAI._astream",
+            return_value=MockAsyncContextManager([]),
+        ) as chat_stream,
+    ):
+        chunks = [chunk async for chunk in bound_llm._astream([], **binding.kwargs)]
+
+    assert chunks == []
+    responses_stream.assert_called_once()
+    chat_stream.assert_not_called()
+
+
 def test_model_prefers_responses_api() -> None:
     # Pro models (with and without date snapshots): Responses API only
     assert _model_prefers_responses_api("gpt-5-pro")
@@ -4248,6 +4429,7 @@ def test_model_prefers_responses_api() -> None:
     assert not _model_prefers_responses_api("gpt-5")
     assert not _model_prefers_responses_api("gpt-5.1")
     assert not _model_prefers_responses_api("gpt-5.4")
+    assert not _model_prefers_responses_api("gpt-5.6-luna")
     assert not _model_prefers_responses_api("o3-pro")
     assert not _model_prefers_responses_api("gpt-4.1")
     assert not _model_prefers_responses_api(None)
