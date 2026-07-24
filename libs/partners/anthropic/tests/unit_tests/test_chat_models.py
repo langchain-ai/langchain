@@ -2826,10 +2826,18 @@ def test_auto_append_betas_for_mcp_servers() -> None:
     }
 
 
-def test_claude_opus_4_8_profile_supports_structured_output() -> None:
-    model = ChatAnthropic(model="claude-opus-4-8")
+def test_claude_opus_5_profile_supports_structured_output() -> None:
+    model = ChatAnthropic(model="claude-opus-5")
     assert model.profile
     assert model.profile["structured_output"] is True
+    assert model.profile["max_input_tokens"] == 1_000_000
+    assert model.profile["reasoning_effort_levels"] == [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+    ]
 
 
 def test_profile() -> None:
@@ -3040,12 +3048,12 @@ def test_reasoning_effort_defaults_adaptive_thinking() -> None:
     reasoning mode to apply it to. Only models whose profile advertises
     `xhigh` (Opus 4.7+, Sonnet 5) accept this `thinking` shape.
     """
-    model = ChatAnthropic(model="claude-opus-4-7", reasoning_effort="high")
+    model = ChatAnthropic(model="claude-opus-5", reasoning_effort="low")
 
     payload = model._get_request_payload("Test query")
 
     assert payload["thinking"] == {"type": "adaptive", "display": "summarized"}
-    assert payload["output_config"]["effort"] == "high"
+    assert payload["output_config"]["effort"] == "low"
 
 
 def test_reasoning_effort_as_call_time_kwarg_defaults_adaptive_thinking() -> None:
@@ -3097,6 +3105,52 @@ def test_reasoning_effort_preserves_explicit_call_time_thinking() -> None:
     )
 
     assert payload["thinking"] == {"type": "disabled"}
+
+
+@pytest.mark.parametrize("effort", ["xhigh", "max"])
+def test_opus_5_rejects_disabled_thinking_at_high_effort(effort: str) -> None:
+    """Opus 5 permits disabled thinking only through `high` effort."""
+    model = ChatAnthropic(
+        model="claude-opus-5",
+        thinking={"type": "disabled"},
+        output_config={"effort": effort},
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"not supported for claude-opus-5.*set effort to `high` or below",
+    ):
+        model._get_request_payload("Test query")
+
+
+def test_opus_5_allows_disabled_thinking_at_high_effort() -> None:
+    """Opus 5 accepts disabled thinking at `high` effort."""
+    model = ChatAnthropic(
+        model="claude-opus-5",
+        thinking={"type": "disabled"},
+        output_config={"effort": "max"},
+    )
+
+    payload = model._get_request_payload(
+        "Test query", output_config={"effort": "high"}
+    )
+
+    assert payload["thinking"] == {"type": "disabled"}
+    assert payload["output_config"]["effort"] == "high"
+
+
+@pytest.mark.parametrize("effort", ["xhigh", "max"])
+def test_opus_5_rejects_call_time_disabled_thinking_at_high_effort(
+    effort: str,
+) -> None:
+    """Preflight validates call-time effort overrides before message conversion."""
+    model = ChatAnthropic(
+        model="claude-opus-5",
+        thinking={"type": "disabled"},
+    )
+
+    with pytest.raises(ValueError, match=r"not supported for claude-opus-5"):
+        model._get_request_payload("Test query", output_config={"effort": effort})
 
 
 def test_effort_also_defaults_adaptive_thinking() -> None:

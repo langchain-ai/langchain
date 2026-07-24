@@ -1358,8 +1358,8 @@ def test_reasoning_effort_defaults_adaptive_thinking() -> None:
     not just that the payload is well-formed locally.
     """
     llm = ChatAnthropic(
-        model="claude-opus-4-7",
-        reasoning_effort="xhigh",
+        model="claude-opus-5",
+        reasoning_effort="low",
         max_tokens=2_000,
     )
 

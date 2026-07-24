@@ -1019,17 +1019,19 @@ class ChatAnthropic(BaseChatModel):
     Examples:
 
     - `#!python {"type": "enabled", "budget_tokens": 10_000}` (pre-4.7 models)
-    - `#!python {"type": "adaptive"}` (Opus 4.6+, Sonnet 5)
-    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+, Sonnet 5)
-    - `#!python {"type": "disabled"}` (Sonnet 5, where adaptive thinking is
-      on by default)
+    - `#!python {"type": "adaptive"}` (Opus 4.6+, Opus 5, Sonnet 5)
+    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+,
+      Opus 5, Sonnet 5)
+    - `#!python {"type": "disabled"}` (Opus 5 and Sonnet 5, where adaptive
+      thinking is on by default)
 
-    !!! note "Claude Opus 4.7+ and Sonnet 5"
+    !!! note "Claude Opus 4.7+, Opus 5, and Sonnet 5"
 
         `budget_tokens` is removed on these models — use `{"type": "adaptive"}`
         with `output_config.effort` to control reasoning effort. The default
         `display` is `"omitted"`; set it to `"summarized"` to receive
-        summarized reasoning in the response.
+        summarized reasoning in the response. On Opus 5, disabled thinking is
+        supported only at `"high"` effort or below.
     """
 
     output_config: dict[str, Any] | None = None
@@ -1288,6 +1290,39 @@ class ChatAnthropic(BaseChatModel):
         }
         return anthropic.AsyncClient(**params)
 
+    def _assert_valid_model_configuration(self, kwargs: Mapping[str, Any]) -> None:
+        """Validate resolved request configuration against model-specific invariants."""
+        request_config = {**self.model_kwargs, **kwargs}
+        thinking = request_config.get("thinking")
+        if self.thinking is not None:
+            thinking = self.thinking
+
+        output_config = dict(self.output_config or {})
+        if self.reasoning_effort:
+            output_config["effort"] = self.reasoning_effort
+        request_output_config = request_config.get("output_config")
+        if isinstance(request_output_config, dict):
+            output_config.update(request_output_config)
+        effort = request_config.get("effort")
+        if effort is None:
+            effort = request_config.get("reasoning_effort")
+        if effort:
+            output_config["effort"] = effort
+
+        if (
+            self.model.startswith("claude-opus-5")
+            and isinstance(thinking, Mapping)
+            and thinking.get("type") == "disabled"
+            and output_config.get("effort") in {"xhigh", "max"}
+        ):
+            msg = (
+                '`thinking={"type": "disabled"}` is not supported for '
+                f"{self.model} with "
+                f"`output_config.effort={output_config['effort']!r}`; use adaptive "
+                "thinking, omit `thinking`, or set effort to `high` or below."
+            )
+            raise ValueError(msg)
+
     def _get_request_payload(
         self,
         input_: LanguageModelInput,
@@ -1296,6 +1331,7 @@ class ChatAnthropic(BaseChatModel):
         **kwargs: Any,
     ) -> dict:
         """Get the request payload for the Anthropic API."""
+        self._assert_valid_model_configuration(kwargs)
         messages = self._convert_input(input_).to_messages()
 
         for idx, message in enumerate(messages):
