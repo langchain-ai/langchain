@@ -3151,6 +3151,19 @@ def test_opus_5_rejects_call_time_disabled_thinking_at_high_effort(
         model._get_request_payload("Test query", output_config={"effort": effort})
 
 
+@pytest.mark.parametrize("effort", ["low", "medium", "high", "xhigh", "max"])
+def test_opus_5_rejects_manual_thinking_at_all_effort_levels(effort: str) -> None:
+    """Opus 5 does not support manual extended thinking."""
+    model = ChatAnthropic(
+        model="claude-opus-5",
+        thinking={"type": "enabled", "budget_tokens": 1_024},
+        output_config={"effort": effort},
+    )
+
+    with pytest.raises(ValueError, match=r"use adaptive thinking"):
+        model._get_request_payload("Test query")
+
+
 def test_effort_also_defaults_adaptive_thinking() -> None:
     """Test that `effort` composes with the adaptive-thinking default too.
 

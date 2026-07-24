@@ -1312,6 +1312,18 @@ class ChatAnthropic(BaseChatModel):
         if (
             self.model.startswith("claude-opus-5")
             and isinstance(thinking, Mapping)
+            and thinking.get("type") == "enabled"
+        ):
+            msg = (
+                '`thinking={"type": "enabled", "budget_tokens": ...}` is not '
+                f"supported for {self.model}; use adaptive thinking and "
+                "`output_config.effort` instead."
+            )
+            raise ValueError(msg)
+
+        if (
+            self.model.startswith("claude-opus-5")
+            and isinstance(thinking, Mapping)
             and thinking.get("type") == "disabled"
             and output_config.get("effort") in {"xhigh", "max"}
         ):
