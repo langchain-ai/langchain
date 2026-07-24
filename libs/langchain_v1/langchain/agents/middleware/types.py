@@ -54,6 +54,7 @@ __all__ = [
     "StateT_co",
     "ToolCallRequest",
     "ToolCallWrapper",
+    "TraceConfig",
     "after_agent",
     "after_model",
     "before_agent",
@@ -380,6 +381,19 @@ class _DefaultAgentState(AgentState[Any]):
     """AgentMiddleware default state."""
 
 
+class TraceConfig(TypedDict, total=False):
+    """Tracing configuration for a middleware's hook spans.
+
+    Passed via `AgentMiddleware.tracing`. `total=False` so new keys can be added
+    without breaking existing configs.
+    """
+
+    inputs: bool
+    """Whether to record this middleware's hook inputs in traces. Defaults to `False`
+    (hook spans record empty inputs, dropping the conversation/state payload while
+    keeping the span and its timing)."""
+
+
 class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     """Base middleware class for an agent.
 
@@ -397,6 +411,18 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
 
     tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
+
+    tracing: TraceConfig | None = None
+    """Tracing configuration for this middleware's hook spans.
+
+    By default (`None` or empty), this middleware's hook spans (`wrap_model_call`/
+    `wrap_tool_call` and the `before_*`/`after_*` node hooks) record empty inputs,
+    dropping the conversation `messages` and `state` payload while keeping the span
+    and its timing. This avoids re-serializing the growing conversation on every
+    hook, which otherwise dominates tracing latency in long-running agents; the
+    messages are still captured on the inner model-call span. Set `{"inputs": True}`
+    to record full hook inputs (e.g. when debugging a specific middleware).
+    """
 
     transformers: Sequence[TransformerFactory] = ()
     """Stream transformer factories registered by the middleware.

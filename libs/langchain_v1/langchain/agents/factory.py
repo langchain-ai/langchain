@@ -26,7 +26,7 @@ from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
-from langgraph.types import Command, Send
+from langgraph.types import Command, Send, TracePolicy
 from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict, overload
 
@@ -149,6 +149,28 @@ def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
             f.name: getattr(req, f.name) for f in fields(req) if f.name != "runtime"
         }
     return filtered
+
+
+def _omit_trace_inputs(_inputs: Any) -> dict[str, Any]:
+    """Trace scrubber for hooks that opt out of input tracing: record no inputs.
+
+    Used as `process_inputs` on `traceable` wrap-hook spans and as
+    `TracePolicy(process_inputs=...)` on the `before_*`/`after_*` node runs. Only the
+    trace payload is dropped; the real request/state still flow to the hook unchanged.
+    """
+    return {}
+
+
+def _should_trace_inputs(middleware: AgentMiddleware[Any, Any]) -> bool:
+    """Whether the middleware opted into recording full hook inputs in traces."""
+    return bool((middleware.tracing or {}).get("inputs", False))
+
+
+def _node_trace_policy(middleware: AgentMiddleware[Any, Any]) -> TracePolicy | None:
+    """Build the `TracePolicy` for a middleware's `before_*`/`after_*` node hooks."""
+    if _should_trace_inputs(middleware):
+        return None
+    return TracePolicy(process_inputs=_omit_trace_inputs)
 
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
@@ -1018,9 +1040,10 @@ def create_agent(
     wrap_tool_call_wrapper = None
     if middleware_w_wrap_tool_call:
         wrappers = [
-            traceable(name=f"{m.name}.wrap_tool_call", process_inputs=_scrub_inputs)(
-                m.wrap_tool_call
-            )
+            traceable(
+                name=f"{m.name}.wrap_tool_call",
+                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
+            )(m.wrap_tool_call)
             for m in middleware_w_wrap_tool_call
         ]
         wrap_tool_call_wrapper = _chain_tool_call_wrappers(wrappers)
@@ -1039,9 +1062,10 @@ def create_agent(
     awrap_tool_call_wrapper = None
     if middleware_w_awrap_tool_call:
         async_wrappers = [
-            traceable(name=f"{m.name}.awrap_tool_call", process_inputs=_scrub_inputs)(
-                m.awrap_tool_call
-            )
+            traceable(
+                name=f"{m.name}.awrap_tool_call",
+                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
+            )(m.awrap_tool_call)
             for m in middleware_w_awrap_tool_call
         ]
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
@@ -1127,9 +1151,10 @@ def create_agent(
     wrap_model_call_handler = None
     if middleware_w_wrap_model_call:
         sync_handlers = [
-            traceable(name=f"{m.name}.wrap_model_call", process_inputs=_scrub_inputs)(
-                m.wrap_model_call
-            )
+            traceable(
+                name=f"{m.name}.wrap_model_call",
+                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
+            )(m.wrap_model_call)
             for m in middleware_w_wrap_model_call
         ]
         wrap_model_call_handler = _chain_model_call_handlers(sync_handlers)
@@ -1138,9 +1163,10 @@ def create_agent(
     awrap_model_call_handler = None
     if middleware_w_awrap_model_call:
         async_handlers = [
-            traceable(name=f"{m.name}.awrap_model_call", process_inputs=_scrub_inputs)(
-                m.awrap_model_call
-            )
+            traceable(
+                name=f"{m.name}.awrap_model_call",
+                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
+            )(m.awrap_model_call)
             for m in middleware_w_awrap_model_call
         ]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
@@ -1525,7 +1551,10 @@ def create_agent(
             )
             before_agent_node = RunnableCallable(sync_before_agent, async_before_agent, trace=False)
             graph.add_node(
-                f"{m.name}.before_agent", before_agent_node, input_schema=resolved_state_schema
+                f"{m.name}.before_agent",
+                before_agent_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m),
             )
 
         if (
@@ -1546,7 +1575,10 @@ def create_agent(
             )
             before_node = RunnableCallable(sync_before, async_before, trace=False)
             graph.add_node(
-                f"{m.name}.before_model", before_node, input_schema=resolved_state_schema
+                f"{m.name}.before_model",
+                before_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m),
             )
 
         if (
@@ -1566,7 +1598,12 @@ def create_agent(
                 else None
             )
             after_node = RunnableCallable(sync_after, async_after, trace=False)
-            graph.add_node(f"{m.name}.after_model", after_node, input_schema=resolved_state_schema)
+            graph.add_node(
+                f"{m.name}.after_model",
+                after_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m),
+            )
 
         if (
             m.__class__.after_agent is not AgentMiddleware.after_agent
@@ -1586,7 +1623,10 @@ def create_agent(
             )
             after_agent_node = RunnableCallable(sync_after_agent, async_after_agent, trace=False)
             graph.add_node(
-                f"{m.name}.after_agent", after_agent_node, input_schema=resolved_state_schema
+                f"{m.name}.after_agent",
+                after_agent_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m),
             )
 
     # Determine the entry node (runs once at start): before_agent -> before_model -> model
