@@ -1632,12 +1632,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke("hi", stop=["you"])
         assert isinstance(result, AIMessage)
 
-        custom_model = self.chat_model_class(
-            **{
-                **self.chat_model_params,
-                "stop": ["you"],
-            }
-        )
+        params: dict[str, Any] = {
+            **self.chat_model_params,
+            "stop": ["you"],
+        }
+        custom_model = self.chat_model_class(**params)
         result = custom_model.invoke("hi")
         assert isinstance(result, AIMessage)
 
@@ -2271,7 +2270,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert issubclass(tool_schema, BaseModel)
         few_shot_messages = tool_example_to_messages(
             "What is 1 + 2",
-            [tool_schema(a=1, b=2)],
+            [tool_schema(a=1, b=2)],  # ty: ignore[pydantic-discarded-extra-argument]
             tool_outputs=[function_result],
             ai_response=function_result,
         )
@@ -2499,9 +2498,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         # but this test validates pydantic.v1.BaseModel support at runtime.
         chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, Joke)  # type: ignore[unreachable]
+        assert isinstance(result, Joke)
 
-        chunk = None  # type: ignore[unreachable]
+        chunk = None
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, Joke)
         assert chunk is not None, "Stream returned no chunks - possible API issue"

@@ -981,13 +981,12 @@ class ChatModelUnitTests(ChatModelTests):
             boolean `streaming` parameter.
 
         """
-        model = self.chat_model_class(
-            **{
-                **self.standard_chat_model_params,
-                **self.chat_model_params,
-                "streaming": True,
-            }
-        )
+        params: dict[str, Any] = {
+            **self.standard_chat_model_params,
+            **self.chat_model_params,
+            "streaming": True,
+        }
+        model = self.chat_model_class(**params)
         assert model is not None
 
     def test_bind_tool_pydantic(
@@ -1029,10 +1028,7 @@ class ChatModelUnitTests(ChatModelTests):
             )
             tools.extend([pydantic_model, model_schema])
 
-        # Doing a mypy ignore here since some of the tools are from pydantic
-        # BaseModel 2 which isn't typed properly yet. This will need to be fixed
-        # so type checking does not become annoying to users.
-        tool_model = model.bind_tools(tools, tool_choice="any")  # type: ignore[arg-type]
+        tool_model = model.bind_tools(tools, tool_choice="any")
         assert isinstance(tool_model, RunnableBinding)
 
     @pytest.mark.parametrize("schema", TEST_PYDANTIC_MODELS)
