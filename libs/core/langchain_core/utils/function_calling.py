@@ -553,9 +553,16 @@ def convert_to_openai_tool(
     !!! warning "Behavior changed in `langchain-core` 0.3.63"
 
         Added support for OpenAI's image generation built-in tool.
+
+    !!! warning "Behavior changed in `langchain-core` 1.5.2"
+
+        For `BaseTool` inputs, converted dicts are now memoized per tool instance
+        (keyed by `strict`). Repeated conversions return the same dict, so
+        mutating it in place is unsupported. The cache is cleared when `name`,
+        `description`, `args_schema`, or `metadata` changes.
     """
     # Import locally to prevent circular import
-    from langchain_core.tools import Tool  # noqa: PLC0415
+    from langchain_core.tools import BaseTool, Tool  # noqa: PLC0415
 
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:
@@ -563,6 +570,12 @@ def convert_to_openai_tool(
         # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
         if (tool.get("type") or "").startswith("web_search_preview"):
             return tool
+
+    if isinstance(tool, BaseTool):
+        cached = tool._openai_tool_schema_memo.get(strict)  # noqa: SLF001
+        if cached is not None:
+            return cached
+
     if isinstance(tool, Tool) and (tool.metadata or {}).get("type") == "custom_tool":
         oai_tool = {
             "type": "custom",
@@ -571,9 +584,15 @@ def convert_to_openai_tool(
         }
         if tool.metadata is not None and "format" in tool.metadata:
             oai_tool["format"] = tool.metadata["format"]
+        if isinstance(tool, BaseTool):
+            tool._openai_tool_schema_memo[strict] = oai_tool  # noqa: SLF001
         return oai_tool
+
     oai_function = convert_to_openai_function(tool, strict=strict)
-    return {"type": "function", "function": oai_function}
+    result = {"type": "function", "function": oai_function}
+    if isinstance(tool, BaseTool):
+        tool._openai_tool_schema_memo[strict] = result  # noqa: SLF001
+    return result
 
 
 def convert_to_json_schema(

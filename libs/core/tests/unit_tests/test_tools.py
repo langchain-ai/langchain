@@ -4063,3 +4063,96 @@ def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> Non
     new_schema = new_cls.model_json_schema()
     assert new_schema is not old_schema
     assert new_schema["description"] == "New description for cache test."
+
+
+def test_convert_to_openai_tool_memoized_across_accesses() -> None:
+    tool_ = _MemoSchemaTool()
+    first = convert_to_openai_tool(tool_)
+    assert convert_to_openai_tool(tool_) is first
+
+
+def test_convert_to_openai_tool_memo_keyed_by_strict() -> None:
+    """`strict=True` and `strict=None` must not share a cache slot."""
+    tool_ = _MemoSchemaTool()
+    unstrict = convert_to_openai_tool(tool_)
+    strict = convert_to_openai_tool(tool_, strict=True)
+    assert strict is not unstrict
+    assert strict["function"].get("strict") is True
+    assert "strict" not in unstrict["function"]
+
+    # Each is independently memoized on repeat access with the same key.
+    assert convert_to_openai_tool(tool_) is unstrict
+    assert convert_to_openai_tool(tool_, strict=True) is strict
+
+
+def test_convert_to_openai_tool_memo_invalidated_on_reassignment() -> None:
+    tool_ = _MemoSchemaTool()
+    first = convert_to_openai_tool(tool_)
+
+    tool_.description = "Updated description for openai-tool cache test."
+    second = convert_to_openai_tool(tool_)
+    assert second is not first
+    assert second["function"]["description"] == (
+        "Updated description for openai-tool cache test."
+    )
+
+
+def test_convert_to_openai_tool_memo_invalidated_on_metadata_reassignment() -> None:
+    """`metadata` feeds the custom-tool branch, so its memo must clear too."""
+    tool_ = _MemoSchemaTool()
+    first = convert_to_openai_tool(tool_)
+
+    tool_.metadata = {"unrelated": "value"}
+    second = convert_to_openai_tool(tool_)
+    assert second is not first
+    assert second == first  # content unchanged, just no longer the same object
+
+
+def test_convert_to_openai_tool_memo_not_stale_after_model_copy() -> None:
+    tool_ = _MemoSchemaTool()
+    original = convert_to_openai_tool(tool_)
+
+    copied = tool_.model_copy(update={"description": "Copied description."})
+    copied_converted = convert_to_openai_tool(copied)
+    assert copied_converted["function"]["description"] == "Copied description."
+
+    # The original keeps its memo and is unaffected by the copy.
+    assert convert_to_openai_tool(tool_) is original
+
+
+def test_convert_to_openai_tool_custom_tool_memoized() -> None:
+    """The metadata-driven custom-tool branch (skips `tool_call_schema`) caches too."""
+    custom_tool = Tool(
+        name="custom_grammar_tool",
+        description="A custom-format tool.",
+        func=lambda x: x,
+        metadata={
+            "type": "custom_tool",
+            "format": {"type": "grammar", "syntax": "lark"},
+        },
+    )
+    first = convert_to_openai_tool(custom_tool)
+    assert first["type"] == "custom"
+    assert convert_to_openai_tool(custom_tool) is first
+
+    custom_tool.metadata = {
+        "type": "custom_tool",
+        "format": {"type": "grammar", "syntax": "regex"},
+    }
+    second = convert_to_openai_tool(custom_tool)
+    assert second is not first
+    assert second["format"]["syntax"] == "regex"
+
+
+def test_convert_to_openai_tool_non_basetool_inputs_unaffected() -> None:
+    """Non-`BaseTool` inputs (e.g. a pydantic class) aren't cached and don't error."""
+
+    class Person(BaseModel):
+        """A person."""
+
+        name: str
+
+    first = convert_to_openai_tool(Person)
+    second = convert_to_openai_tool(Person)
+    assert first == second
+    assert first is not second  # no per-class caching for non-BaseTool inputs

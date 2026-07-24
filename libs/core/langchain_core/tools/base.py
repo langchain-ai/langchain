@@ -394,6 +394,14 @@ _EMPTY_SET: frozenset[str] = frozenset()
 _TOOL_CALL_SCHEMA_FIELDS = frozenset({"name", "description", "args_schema"})
 """Fields the memoized `tool_call_schema` is built from; reassignment clears it."""
 
+_OPENAI_TOOL_SCHEMA_FIELDS = _TOOL_CALL_SCHEMA_FIELDS | {"metadata"}
+"""Fields the memoized `convert_to_openai_tool` result is built from.
+
+Same as `_TOOL_CALL_SCHEMA_FIELDS` plus `metadata`, since OpenAI custom tools
+(`Tool` with `metadata["type"] == "custom_tool"`) build their converted dict
+directly from `metadata` rather than from `tool_call_schema`.
+"""
+
 
 def _patch_json_schema_cache(model_cls: type) -> None:
     """Patch `model_json_schema` (or `schema` for pydantic v1) to cache.
@@ -628,27 +636,46 @@ class ChildTool(BaseTool):
     `__setattr__` and `model_copy`).
     """
 
+    _openai_tool_schema_memo: dict[bool | None, dict[str, Any]] = PrivateAttr(
+        default_factory=dict
+    )
+    """Memoized `convert_to_openai_tool` results, keyed by `strict`.
+
+    Unlike `tool_call_schema`, `convert_to_openai_tool` doesn't cache its schema
+    post-processing (`dereference_refs`/`_rm_titles`). This avoids repeating that
+    work on subsequent conversions (e.g., token counting, repeated `bind_tools`).
+
+    Cleared whenever `name`, `description`, `args_schema`, or `metadata` changes.
+    Like `tool_call_schema`, mutating a cached dict in place is unsupported.
+        """
+
     @override
     def __setattr__(self, name: str, value: Any) -> None:
-        """Clear the tool-call schema memo when an input to it is reassigned."""
+        """Clear the memoized schemas when an input to them is reassigned."""
         super().__setattr__(name, value)
-        if name in _TOOL_CALL_SCHEMA_FIELDS and self.__pydantic_private__ is not None:
+        if self.__pydantic_private__ is None:
+            return
+        if name in _TOOL_CALL_SCHEMA_FIELDS:
             self._tool_call_schema_memo = None
+        if name in _OPENAI_TOOL_SCHEMA_FIELDS:
+            self._openai_tool_schema_memo = {}
 
     @override
     def model_copy(
         self, *, update: Mapping[str, Any] | None = None, deep: bool = False
     ) -> Self:
-        """Copy the tool, clearing the schema memo if `update` affects it.
+        """Copy the tool, clearing memoized schemas if `update` affects them.
 
         `model_copy` writes `update` directly to the copy's `__dict__` without
         going through `__setattr__`, and private attributes (including the
-        memo) carry over to the copy, so the memo is cleared here when the
-        update touches one of the fields the schema is built from.
+        memos) carry over to the copy, so they're cleared here when the
+        update touches one of the fields either schema is built from.
         """
         copied = super().model_copy(update=update, deep=deep)
         if update and not _TOOL_CALL_SCHEMA_FIELDS.isdisjoint(update):
             copied._tool_call_schema_memo = None  # noqa: SLF001
+        if update and not _OPENAI_TOOL_SCHEMA_FIELDS.isdisjoint(update):
+            copied._openai_tool_schema_memo = {}  # noqa: SLF001
         return copied
 
     def __getstate__(self) -> dict[Any, Any]:
