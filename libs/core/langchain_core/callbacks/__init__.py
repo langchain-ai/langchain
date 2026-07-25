@@ -40,6 +40,7 @@ if TYPE_CHECKING:
         dispatch_custom_event,
     )
     from langchain_core.callbacks.stdout import StdOutCallbackHandler
+from langchain_core.callbacks.correctover_callback import CorrectoverCallbackHandler
     from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
     from langchain_core.callbacks.usage import (
         UsageMetadataCallbackHandler,
@@ -75,6 +76,7 @@ __all__ = (
     "RunManager",
     "RunManagerMixin",
     "StdOutCallbackHandler",
+    "CorrectoverCallbackHandler",
     "StreamingStdOutCallbackHandler",
     "ToolManagerMixin",
     "UsageMetadataCallbackHandler",
