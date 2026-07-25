@@ -181,6 +181,11 @@ class EvaluatorCallbackHandler(BaseTracer):
         run: Run,
         source_run_id: UUID | None = None,
     ) -> list[EvaluationResult]:
+        """Log evaluation feedback to LangSmith, including feedback_config.
+
+        ``feedback_config`` is forwarded unchanged; LangSmith owns validation
+        and normalization of its shape (see ``langsmith.FeedbackConfig``).
+        """
         results = self._select_eval_results(evaluator_response)
         for res in results:
             source_info_: dict[str, Any] = {}
@@ -199,6 +204,9 @@ class EvaluatorCallbackHandler(BaseTracer):
                 source_info=source_info_,
                 source_run_id=res.source_run_id or source_run_id,
                 feedback_source_type=langsmith.schemas.FeedbackSourceType.MODEL,
+                # EvaluationResult.feedback_config is FeedbackConfig | dict | None;
+                # create_feedback expects schemas.FeedbackConfig | None.
+                feedback_config=res.feedback_config,  # type: ignore[arg-type]
             )
         return results
 
