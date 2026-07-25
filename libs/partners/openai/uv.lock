@@ -666,7 +666,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.5.0"
+version = "1.5.1"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -697,7 +697,7 @@ requires-dist = [
 dev = [
     { name = "grandalf", specifier = ">=0.8.0,<1.0.0" },
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
-    { name = "setuptools", specifier = ">=67.6.1,<83.0.0" },
+    { name = "setuptools", specifier = ">=67.6.1,<84.0.0" },
 ]
 lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
 test = [
