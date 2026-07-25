@@ -827,7 +827,7 @@ class QdrantVectorStore(VectorStore):
             collection_name=self.collection_name,
             query=models.NearestQuery(
                 nearest=embedding,
-                mmr=models.Mmr(diversity=lambda_mult, candidates_limit=fetch_k),
+                mmr=models.Mmr(diversity=1.0 - lambda_mult, candidates_limit=fetch_k),
             ),
             query_filter=filter,
             search_params=search_params,

@@ -63,7 +63,7 @@ def test_qdrant_mmr_search(
         output,
         [
             Document(page_content="foo", metadata={"page": 0}),
-            Document(page_content="bar", metadata={"page": 1}),
+            Document(page_content="baz", metadata={"page": 2}),
         ],
     )
 
@@ -74,6 +74,34 @@ def test_qdrant_mmr_search(
         output,
         [Document(page_content="baz", metadata={"page": 2})],
     )
+
+@pytest.mark.parametrize("location", qdrant_locations())
+def test_qdrant_mmr_lambda_mult_not_inverted(location: str) -> None:
+    """Regression test for GH issue #39052: lambda_mult=1.0 must favor
+    relevance, lambda_mult=0.0 must favor diversity."""
+    texts = [
+        "foo",
+        "foo foo",
+        "completely unrelated topic about penguins",
+    ]
+    docsearch = QdrantVectorStore.from_texts(
+        texts,
+        ConsistentFakeEmbeddings(),
+        location=location,
+        distance=models.Distance.EUCLID,
+    )
+
+    relevance_output = docsearch.max_marginal_relevance_search(
+        "foo", k=2, fetch_k=3, lambda_mult=1.0
+    )
+    relevance_contents = {doc.page_content for doc in relevance_output}
+    assert relevance_contents == {"foo", "foo foo"}
+
+    diversity_output = docsearch.max_marginal_relevance_search(
+        "foo", k=2, fetch_k=3, lambda_mult=0.0
+    )
+    diversity_contents = {doc.page_content for doc in diversity_output}
+    assert "completely unrelated topic about penguins" in diversity_contents
 
 
 # MMR shouldn't work with only sparse retrieval mode
