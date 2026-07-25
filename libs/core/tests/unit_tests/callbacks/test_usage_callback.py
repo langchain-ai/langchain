@@ -1,3 +1,4 @@
+import contextlib
 from typing import Any
 
 from langchain_core.callbacks import (
@@ -120,3 +121,76 @@ async def test_usage_callback_async() -> None:
     callback = UsageMetadataCallbackHandler()
     _ = await llm.abatch(["Message 1", "Message 2"], config={"callbacks": [callback]})
     assert callback.usage_metadata == {"test_model": total_1_2}
+
+
+def test_usage_callback_stops_tracking_when_block_raises() -> None:
+    """The callback must stop collecting when the `with` block exits via an exception.
+
+    Without a `try`/`finally` the context variable is never cleared, so model calls
+    made after the block keep accumulating into the callback.
+    """
+    messages = [
+        AIMessage("Response 1", usage_metadata=usage1),
+        AIMessage("Response 2", usage_metadata=usage2),
+    ]
+    llm = FakeChatModelWithResponseMetadata(
+        messages=iter(messages), model_name="test_model"
+    )
+
+    with contextlib.suppress(RuntimeError), get_usage_metadata_callback() as cb:
+        _ = llm.invoke("Message 1")
+        msg = "boom"
+        raise RuntimeError(msg)
+
+    _ = llm.invoke("Message 2")
+
+    assert cb.usage_metadata == {"test_model": usage1}
+
+
+async def test_usage_callback_stops_tracking_when_block_raises_async() -> None:
+    """Async variant of the exception-path cleanup check."""
+    messages = [
+        AIMessage("Response 1", usage_metadata=usage1),
+        AIMessage("Response 2", usage_metadata=usage2),
+    ]
+    llm = FakeChatModelWithResponseMetadata(
+        messages=iter(messages), model_name="test_model"
+    )
+
+    with contextlib.suppress(RuntimeError), get_usage_metadata_callback() as cb:
+        _ = await llm.ainvoke("Message 1")
+        msg = "boom"
+        raise RuntimeError(msg)
+
+    _ = await llm.ainvoke("Message 2")
+
+    assert cb.usage_metadata == {"test_model": usage1}
+
+
+def test_nested_usage_callbacks_keep_tracking_in_outer_scope() -> None:
+    """An outer block keeps tracking across and after a nested block.
+
+    Each `get_usage_metadata_callback()` call installs its own context variable, so
+    both handlers are attached while nested: the inner block sees only its own call,
+    and the outer block accounts for everything that happened inside it.
+    """
+    messages = [
+        AIMessage("Response 1", usage_metadata=usage1),
+        AIMessage("Response 2", usage_metadata=usage2),
+        AIMessage("Response 3", usage_metadata=usage3),
+    ]
+    llm = FakeChatModelWithResponseMetadata(
+        messages=iter(messages), model_name="test_model"
+    )
+
+    with get_usage_metadata_callback() as outer:
+        _ = llm.invoke("Message 1")
+        with get_usage_metadata_callback() as inner:
+            _ = llm.invoke("Message 2")
+        # Leaving the nested block must not stop the outer one.
+        _ = llm.invoke("Message 3")
+
+    assert inner.usage_metadata == {"test_model": usage2}
+    assert outer.usage_metadata == {
+        "test_model": add_usage(add_usage(usage1, usage2), usage3)
+    }
