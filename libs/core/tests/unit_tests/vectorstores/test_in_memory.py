@@ -5,9 +5,27 @@ import pytest
 from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_core.embeddings.fake import DeterministicFakeEmbedding
 from langchain_core.vectorstores import InMemoryVectorStore
 from tests.unit_tests.stubs import _any_id_document
+
+
+class _TruncatingEmbedding(Embeddings):
+    """Embedding function that returns one fewer vector than requested."""
+
+    def __init__(self, size: int = 3) -> None:
+        self.size = size
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        vectors = DeterministicFakeEmbedding(size=self.size).embed_documents(texts)
+        return vectors[:-1]
+
+    def embed_query(self, text: str) -> list[float]:
+        return DeterministicFakeEmbedding(size=self.size).embed_query(text)
+
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.embed_documents(texts)
 
 
 class TestInMemoryStandard(VectorStoreIntegrationTests):
@@ -209,8 +227,8 @@ async def test_inmemory_get_by_ids() -> None:
 async def test_inmemory_call_embeddings_async() -> None:
     embeddings_mock = Mock(
         wraps=DeterministicFakeEmbedding(size=3),
-        aembed_documents=AsyncMock(),
-        aembed_query=AsyncMock(),
+        aembed_documents=AsyncMock(return_value=[[0.1, 0.2, 0.3]] * 3),
+        aembed_query=AsyncMock(return_value=[0.1, 0.2, 0.3]),
     )
     store = InMemoryVectorStore(embedding=embeddings_mock)
 
@@ -220,3 +238,29 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+def test_add_documents_raises_on_vector_count_mismatch() -> None:
+    """Test add_documents raises when embed_documents returns too few vectors."""
+    store = InMemoryVectorStore(embedding=_TruncatingEmbedding())
+    documents = [
+        Document(page_content="foo"),
+        Document(page_content="bar"),
+        Document(page_content="baz"),
+    ]
+
+    with pytest.raises(ValueError, match="vectors must be the same length as texts"):
+        store.add_documents(documents)
+
+
+async def test_aadd_documents_raises_on_vector_count_mismatch() -> None:
+    """Test aadd_documents raises when aembed_documents returns too few vectors."""
+    store = InMemoryVectorStore(embedding=_TruncatingEmbedding())
+    documents = [
+        Document(page_content="foo"),
+        Document(page_content="bar"),
+        Document(page_content="baz"),
+    ]
+
+    with pytest.raises(ValueError, match="vectors must be the same length as texts"):
+        await store.aadd_documents(documents)

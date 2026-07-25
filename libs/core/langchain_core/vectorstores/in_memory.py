@@ -201,13 +201,20 @@ class InMemoryVectorStore(VectorStore):
             )
             raise ValueError(msg)
 
+        if len(vectors) != len(texts):
+            msg = (
+                f"vectors must be the same length as texts. "
+                f"Got {len(vectors)} vectors and {len(texts)} texts."
+            )
+            raise ValueError(msg)
+
         id_iterator: Iterator[str | None] = (
             iter(ids) if ids else iter(doc.id for doc in documents)
         )
 
         ids_ = []
 
-        for doc, vector in zip(documents, vectors, strict=False):
+        for doc, vector in zip(documents, vectors, strict=True):
             doc_id = next(id_iterator)
             doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
@@ -234,12 +241,19 @@ class InMemoryVectorStore(VectorStore):
             )
             raise ValueError(msg)
 
+        if len(vectors) != len(texts):
+            msg = (
+                f"vectors must be the same length as texts. "
+                f"Got {len(vectors)} vectors and {len(texts)} texts."
+            )
+            raise ValueError(msg)
+
         id_iterator: Iterator[str | None] = (
             iter(ids) if ids else iter(doc.id for doc in documents)
         )
         ids_: list[str] = []
 
-        for doc, vector in zip(documents, vectors, strict=False):
+        for doc, vector in zip(documents, vectors, strict=True):
             doc_id = next(id_iterator)
             doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
