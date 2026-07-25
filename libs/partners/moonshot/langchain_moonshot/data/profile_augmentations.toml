@@ -1,0 +1,21 @@
+[moonshot-v1-8k]
+[[moonshot-v1-8k.augmentations]]
+type = "CapabilityOverride"
+capability = "max_input_tokens"
+value = 8192
+
+[moonshot-v1-32k]
+[[moonshot-v1-32k.augmentations]]
+type = "CapabilityOverride"
+capability = "max_input_tokens"
+value = 32768
+
+[moonshot-v1-128k]
+[[moonshot-v1-128k.augmentations]]
+type = "CapabilityOverride"
+capability = "max_input_tokens"
+value = 131072
+[[moonshot-v1-128k.augmentations]]
+type = "CapabilityOverride"
+capability = "image_inputs"
+value = true
