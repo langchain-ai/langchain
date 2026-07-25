@@ -61,9 +61,27 @@ def sanitize_for_postgres(text: str, replacement: str = "") -> str:
         The sanitized text with `NUL` bytes removed or replaced.
 
     Example:
-        >>> sanitize_for_postgres("Hello\\x00world")
+        >>> sanitize_for_postgres("Hello\x00world")
         'Helloworld'
-        >>> sanitize_for_postgres("Hello\\x00world", " ")
+        >>> sanitize_for_postgres("Hello\x00world", " ")
         'Hello world'
     """
     return text.replace("\x00", replacement)
+
+
+def truncate_text_middle(text: str, max_length: int) -> str:
+    """Truncate text in the middle with an ellipsis if it exceeds max_length.
+
+    Args:
+        text: The text to truncate.
+        max_length: The maximum allowed length.
+
+    Returns:
+        The truncated text string.
+    """
+    if len(text) <= max_length or max_length <= 3:
+        return text
+    chars_to_show = max_length - 3
+    front_chars = (chars_to_show + 1) // 2
+    back_chars = chars_to_show // 2
+    return f"{text[:front_chars]}...{text[len(text) - back_chars:]}"
