@@ -77,6 +77,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_responses_chunk_to_generation_chunk,
@@ -210,6 +211,36 @@ def test__convert_dict_to_message_ai() -> None:
     assert _convert_message_to_dict(expected_output) == message
 
 
+def test__convert_dict_to_message_ai_with_reasoning_content() -> None:
+    message = {
+        "role": "assistant",
+        "content": "foo",
+        "reasoning_content": "step-by-step",
+    }
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(
+        content="foo",
+        additional_kwargs={"reasoning_content": "step-by-step"},
+    )
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_ai_maps_reasoning_to_reasoning_content() -> None:
+    message = {"role": "assistant", "content": "foo", "reasoning": "step-by-step"}
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(
+        content="foo",
+        additional_kwargs={"reasoning_content": "step-by-step"},
+    )
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == {
+        "role": "assistant",
+        "content": "foo",
+        "reasoning_content": "step-by-step",
+    }
+
+
 def test__convert_dict_to_message_ai_with_name() -> None:
     message = {"role": "assistant", "content": "foo", "name": "test"}
     result = _convert_dict_to_message(message)
@@ -327,6 +358,18 @@ def test__convert_dict_to_message_tool_call() -> None:
         reverted_message_dict["tool_calls"], key=lambda x: x["id"]
     )
     assert reverted_message_dict == message
+
+
+@pytest.mark.parametrize("reasoning_key", ["reasoning_content", "reasoning"])
+def test__convert_delta_to_message_chunk_maps_reasoning_content(
+    reasoning_key: str,
+) -> None:
+    chunk = _convert_delta_to_message_chunk(
+        {"role": "assistant", "content": "foo", reasoning_key: "step-by-step"},
+        AIMessageChunk,
+    )
+    assert isinstance(chunk, AIMessageChunk)
+    assert chunk.additional_kwargs == {"reasoning_content": "step-by-step"}
 
 
 class MockAsyncContextManager:
