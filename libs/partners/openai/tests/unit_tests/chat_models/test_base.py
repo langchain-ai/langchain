@@ -1418,6 +1418,32 @@ def test_nested_structured_output_strict() -> None:
     llm.with_structured_output(JokeWithEvaluation, method="json_schema")
 
 
+def test__get_request_payload_does_not_mutate_text_model_kwargs() -> None:
+    # Regression test for https://github.com/langchain-ai/langchain/issues/38869
+    # The Responses API payload builder must not mutate the caller's
+    # ``model_kwargs["text"]`` dict in place, otherwise structured-output settings
+    # leak into subsequent calls that reuse the same model instance.
+    text_opts = {"verbosity": "low"}
+    llm = ChatOpenAI(
+        model="gpt-4.1",
+        use_responses_api=True,
+        model_kwargs={"text": text_opts},
+    )
+
+    payload1 = llm._get_request_payload(
+        "give me json", response_format={"type": "json_object"}
+    )
+    # the structured-output request still gets the format applied...
+    assert payload1["text"] == {"verbosity": "low", "format": {"type": "json_object"}}
+    # ...but the caller's dict and the model's model_kwargs are untouched.
+    assert text_opts == {"verbosity": "low"}
+    assert llm.model_kwargs["text"] == {"verbosity": "low"}
+
+    # a subsequent plain call must not inherit the previous call's format.
+    payload2 = llm._get_request_payload("just chat normally")
+    assert payload2["text"] == {"verbosity": "low"}
+
+
 def test__get_request_payload() -> None:
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     messages: list = [
