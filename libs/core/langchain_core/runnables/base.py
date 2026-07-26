@@ -662,9 +662,15 @@ class Runnable(ABC, Generic[Input, Output]):
             other: Another `Runnable` or a `Runnable`-like object.
 
         Returns:
-            A new `Runnable`.
+            A new `Runnable`, or `NotImplemented` if `other` is not a
+            `Runnable`-like object, so the interpreter can try
+            `type(other).__ror__`.
         """
-        return RunnableSequence(self, coerce_to_runnable(other))
+        try:
+            coerced_other = coerce_to_runnable(other)
+        except TypeError:
+            return NotImplemented
+        return RunnableSequence(self, coerced_other)
 
     @overload
     def __ror__(
@@ -705,9 +711,15 @@ class Runnable(ABC, Generic[Input, Output]):
             other: Another `Runnable` or a `Runnable`-like object.
 
         Returns:
-            A new `Runnable`.
+            A new `Runnable`, or `NotImplemented` if `other` is not a
+            `Runnable`-like object, so the interpreter can try
+            `type(other).__or__`.
         """
-        return RunnableSequence(coerce_to_runnable(other), self)
+        try:
+            coerced_other = coerce_to_runnable(other)
+        except TypeError:
+            return NotImplemented
+        return RunnableSequence(coerced_other, self)
 
     def pipe(
         self,
