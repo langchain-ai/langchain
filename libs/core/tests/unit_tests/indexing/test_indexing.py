@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 from datetime import datetime, timezone
 from typing import (
@@ -17,6 +18,7 @@ from langchain_core.indexing.api import (
     IndexingException,
     _abatch,
     _batch,
+    _calculate_hash,
     _get_document_with_hash,
 )
 from langchain_core.indexing.in_memory import InMemoryDocumentIndex
@@ -2961,3 +2963,19 @@ async def test_aindex_with_upsert_kwargs(
         # Check other arguments
         assert kwargs["batch_size"] == 100
         assert kwargs["vector_field"] == "embedding"
+
+
+@pytest.mark.parametrize("algorithm", ["sha1", "sha256", "sha512", "blake2b"])
+def test_calculate_hash_returns_valid_uuid(algorithm: str) -> None:
+    """All built-in key encoders must produce valid UUID strings.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/39047:
+    previously only ``sha1`` wrapped its digest in a UUID, while
+    ``sha256``/``sha512``/``blake2b`` returned raw hex digests, which are not
+    valid UUIDs and broke indexing into stores such as Qdrant.
+    """
+    hash_ = _calculate_hash("hello world", algorithm=algorithm)  # type: ignore[arg-type]
+    # Must be parseable as a UUID (raises ValueError otherwise).
+    assert str(uuid.UUID(hash_)) == hash_
+    # Deterministic.
+    assert _calculate_hash("hello world", algorithm=algorithm) == hash_  # type: ignore[arg-type]
