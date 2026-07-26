@@ -1078,8 +1078,8 @@ class ChatPerplexity(BaseChatModel):
                 continue
             # Unknown / Perplexity-specific keys: route under extra_body so the
             # SDK forwards them to the Agent API without breaking strict typing.
-            extra_body = payload.setdefault("extra_body", {})
-            if not isinstance(extra_body, dict):
+            extra_body = payload.get("extra_body")
+            if extra_body is not None and not isinstance(extra_body, dict):
                 msg = (
                     "`extra_body` must be a dict to forward Perplexity-specific "
                     f"parameters to the Responses API, got "
@@ -1087,7 +1087,11 @@ class ChatPerplexity(BaseChatModel):
                     f"user-set key {key!r}."
                 )
                 raise TypeError(msg)
+            # Copy so we never mutate a caller-provided `extra_body` dict in place
+            # (it may be shared via `model_kwargs` and reused across calls).
+            extra_body = dict(extra_body or {})
             extra_body[key] = value
+            payload["extra_body"] = extra_body
         # When the caller selected a preset, defer model selection to it: the
         # Agent API rejects bare Chat-Completions model names like `sonar-pro`
         # outright when `model` is set, even if a preset is also present.

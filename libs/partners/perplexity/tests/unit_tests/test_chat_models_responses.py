@@ -1036,3 +1036,41 @@ def test_responses_completed_event_sets_model_name() -> None:
     chunk = _convert_responses_stream_event_to_chunk(event)
     assert chunk is not None
     assert chunk.message.response_metadata["model_name"] == "sonar-pro"
+
+
+def test_to_responses_payload_does_not_mutate_extra_body() -> None:
+    # Regression test for https://github.com/langchain-ai/langchain/issues/38840
+    # Routing Perplexity-specific keys under `extra_body` must not mutate a
+    # caller-provided `extra_body` dict in place (it may be reused across calls).
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
+
+    shared = {"country": "US"}
+    payload = llm._to_responses_payload(
+        [], {"extra_body": shared, "search_mode": "academic"}, user_set_keys=set()
+    )
+
+    # the payload still forwards the routed key...
+    assert payload["extra_body"] == {"country": "US", "search_mode": "academic"}
+    # ...but the caller's dict is left untouched.
+    assert shared == {"country": "US"}
+
+
+def test_to_responses_payload_does_not_leak_across_calls() -> None:
+    # A routed key from one call must not persist into a later call that reuses
+    # the same instance's `model_kwargs["extra_body"]`.
+    llm = ChatPerplexity(
+        model="sonar-pro",
+        api_key="test",
+        use_responses_api=True,
+        extra_body={"country": "US"},
+    )
+
+    llm._to_responses_payload(
+        [], {**llm._default_params, "search_mode": "academic"}, user_set_keys=set()
+    )
+    assert llm.model_kwargs == {"extra_body": {"country": "US"}}
+
+    payload2 = llm._to_responses_payload(
+        [], dict(llm._default_params), user_set_keys=set()
+    )
+    assert payload2.get("extra_body") == {"country": "US"}
