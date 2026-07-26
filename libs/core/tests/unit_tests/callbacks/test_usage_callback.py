@@ -1,4 +1,7 @@
+from itertools import cycle
 from typing import Any
+
+import pytest
 
 from langchain_core.callbacks import (
     UsageMetadataCallbackHandler,
@@ -120,3 +123,20 @@ async def test_usage_callback_async() -> None:
     callback = UsageMetadataCallbackHandler()
     _ = await llm.abatch(["Message 1", "Message 2"], config={"callbacks": [callback]})
     assert callback.usage_metadata == {"test_model": total_1_2}
+
+
+def test_usage_callback_stops_tracking_after_exception() -> None:
+    # Regression test for https://github.com/langchain-ai/langchain/issues/38989
+    # If the `with` block exits via an exception, the callback must stop tracking
+    # so later model calls are not attributed to the (already-exited) context.
+    llm = FakeChatModelWithResponseMetadata(
+        messages=cycle([AIMessage("Hi", usage_metadata=usage1)]),
+        model_name="test_model",
+    )
+
+    with pytest.raises(RuntimeError), get_usage_metadata_callback() as cb:  # noqa: PT012
+        _ = llm.invoke("in block")  # tracked
+        raise RuntimeError
+
+    _ = llm.invoke("outside block")  # must NOT be tracked
+    assert cb.usage_metadata == {"test_model": usage1}
