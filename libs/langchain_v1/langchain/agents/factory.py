@@ -1403,6 +1403,55 @@ def create_agent(
             )
         return request.model.bind(**request.model_settings), None
 
+    def _coerce_model_output_message(output: Any) -> AIMessage:
+        """Normalize streamed chunks to a concrete AIMessage."""
+        if isinstance(output, AIMessage) and not type(output).__name__.endswith("Chunk"):
+            return output
+        # AIMessageChunk (and sums thereof) expose the same fields; rebuild so
+        # downstream handlers that type-check AIMessage keep working.
+        if isinstance(output, AIMessage):
+            return AIMessage(
+                content=output.content,
+                additional_kwargs=dict(output.additional_kwargs or {}),
+                response_metadata=dict(output.response_metadata or {}),
+                id=getattr(output, "id", None),
+                tool_calls=list(getattr(output, "tool_calls", []) or []),
+                invalid_tool_calls=list(getattr(output, "invalid_tool_calls", []) or []),
+                usage_metadata=getattr(output, "usage_metadata", None),
+                name=getattr(output, "name", None),
+            )
+        msg = f"Model returned unexpected type: {type(output)!r}"
+        raise TypeError(msg)
+
+    def _invoke_model_with_token_streaming(
+        model_: Any, messages: list[Any]
+    ) -> AIMessage:
+        """Invoke model via stream-then-join so token callbacks fire.
+
+        Agent planning needs the full message, but calling `invoke`/`ainvoke`
+        alone skips token-level streaming callbacks (`on_llm_new_token`) even
+        when the underlying chat model has streaming enabled. Accumulate
+        `stream`/`astream` chunks into a single message instead.
+        """
+        output: Any = None
+        for chunk in model_.stream(messages):
+            output = chunk if output is None else output + chunk
+        if output is None:
+            # Some models yield nothing on stream; fall back to a single shot.
+            output = model_.invoke(messages)
+        return _coerce_model_output_message(output)
+
+    async def _ainvoke_model_with_token_streaming(
+        model_: Any, messages: list[Any]
+    ) -> AIMessage:
+        """Async counterpart of `_invoke_model_with_token_streaming`."""
+        output: Any = None
+        async for chunk in model_.astream(messages):
+            output = chunk if output is None else output + chunk
+        if output is None:
+            output = await model_.ainvoke(messages)
+        return _coerce_model_output_message(output)
+
     def _execute_model_sync(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model and return response.
 
@@ -1416,7 +1465,7 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = model_.invoke(messages)
+        output = _invoke_model_with_token_streaming(model_, messages)
         if name:
             output.name = name
 
@@ -1464,7 +1513,7 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = await model_.ainvoke(messages)
+        output = await _ainvoke_model_with_token_streaming(model_, messages)
         if name:
             output.name = name
 
