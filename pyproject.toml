@@ -1,0 +1,27 @@
+[project]
+name = "content-growth-agent"
+version = "0.1.0"
+description = "AI Content Growth Agent: generate social content from YouTube/Instagram URLs using LangChain and OpenAI"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+
+[project.urls]
+"Homepage" = "https://example.com"
+"Repository" = "https://github.com/langchain-ai/langchain"
+
+[project.dependencies]
+python-dotenv = "*"
+langchain = "*"
+openai = "*"
+pydantic = ">=2.2"
+streamlit = "*"
+youtube-transcript-api = "*"
+beautifulsoup4 = "*"
+requests = "*"
+httpx = "*"
+pytest = {version = "*", optional = true}
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"

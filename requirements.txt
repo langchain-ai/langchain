@@ -1,0 +1,10 @@
+python-dotenv
+langchain
+openai
+pydantic
+streamlit
+youtube-transcript-api
+beautifulsoup4
+requests
+httpx
+pytest
