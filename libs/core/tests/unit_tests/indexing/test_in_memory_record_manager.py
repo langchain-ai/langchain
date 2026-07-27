@@ -145,6 +145,27 @@ async def test_aupdate_timestamp(manager: InMemoryRecordManager) -> None:
     ) == ["key1"]
 
 
+def test_update_batch_shares_single_timestamp(manager: InMemoryRecordManager) -> None:
+    """All records in one update() call must share the same updated_at value.
+
+    Previously get_time() was called per key inside the loop, so a batch could
+    end up with slightly different timestamps. See #39087.
+    """
+    call_count = 0
+
+    def increasing_time() -> float:
+        nonlocal call_count
+        call_count += 1
+        # Each call returns a strictly larger timestamp.
+        return float(1_000_000 + call_count)
+
+    with patch.object(manager, "get_time", side_effect=increasing_time):
+        manager.update(["key1", "key2", "key3"])
+
+    timestamps = {record["updated_at"] for record in manager.records.values()}
+    assert timestamps == {1_000_001.0}
+
+
 def test_exists(manager: InMemoryRecordManager) -> None:
     """Test checking if keys exist in the database."""
     # Insert records

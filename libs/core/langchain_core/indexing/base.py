@@ -296,12 +296,17 @@ class InMemoryRecordManager(RecordManager):
         if group_ids and len(keys) != len(group_ids):
             msg = "Length of keys must match length of group_ids"
             raise ValueError(msg)
+        # Snapshot the timestamp once so every record in the batch shares it.
+        # Calling get_time() per key yielded slightly different timestamps and
+        # could drop records from cleanup queries that compare against a single
+        # index_start_dt (see #39087).
+        now = self.get_time()
+        if time_at_least and time_at_least > now:
+            msg = "time_at_least must be in the past"
+            raise ValueError(msg)
         for index, key in enumerate(keys):
             group_id = group_ids[index] if group_ids else None
-            if time_at_least and time_at_least > self.get_time():
-                msg = "time_at_least must be in the past"
-                raise ValueError(msg)
-            self.records[key] = {"group_id": group_id, "updated_at": self.get_time()}
+            self.records[key] = {"group_id": group_id, "updated_at": now}
 
     async def aupdate(
         self,
