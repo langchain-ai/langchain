@@ -47,7 +47,7 @@ from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
-from langchain_core.utils.pydantic import model_json_schema as get_model_json_schema
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseLanguageModel
@@ -2305,24 +2305,9 @@ def count_tokens_approximately(
     if tools:
         tools_chars = 0
         for tool in tools:
-            if isinstance(tool, dict):
-                tool_dict = tool
-            else:
-                # tool_call_schema is memoized per instance
-                schema = tool.tool_call_schema
-                if isinstance(schema, dict):
-                    parameters = dict(schema)
-                else:
-                    parameters = dict(get_model_json_schema(schema))
-                # Drop the schema's own `title`/`description` to avoid double-counting:
-                # they're duplicated at the top level.
-                parameters.pop("title", None)
-                parameters.pop("description", None)
-                tool_dict = {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": parameters,
-                }
+            # convert_to_openai_tool is memoized per tool instance, so repeat
+            # counts (e.g. one per turn) don't redo its schema conversion.
+            tool_dict = tool if isinstance(tool, dict) else convert_to_openai_tool(tool)
             tools_chars += len(json.dumps(tool_dict))
         token_count += math.ceil(tools_chars / chars_per_token)
 
