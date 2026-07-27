@@ -539,6 +539,20 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 self.tool_call_chunks = tool_call_chunks
 
             return self
+        if (
+            len(self.tool_call_chunks) > 1
+            and (raw_tool_calls := merge_lists([], self.tool_call_chunks))
+            and len(raw_tool_calls) != len(self.tool_call_chunks)
+        ):
+            self.tool_call_chunks = [
+                create_tool_call_chunk(
+                    name=rtc.get("name"),
+                    args=rtc.get("args"),
+                    id=rtc.get("id"),
+                    index=rtc.get("index"),
+                )
+                for rtc in raw_tool_calls
+            ]
         tool_calls = []
         invalid_tool_calls = []
 

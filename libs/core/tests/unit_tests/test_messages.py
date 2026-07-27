@@ -985,6 +985,34 @@ def test_merge_tool_calls_parallel_same_index() -> None:
     assert [m["id"] for m in merged] == ["id_a", "id_b", "id_c"]
 
 
+def test_same_index_tool_call_chunks_merge_in_delta() -> None:
+    """Test for #36627: same-index tool call chunks packed in a single delta."""
+    first = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name="search", args="", id="id1", index=0),
+            create_tool_call_chunk(name=None, args="{", id=None, index=0),
+        ],
+    )
+
+    merged = first + AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name=None, args='"query": "bar"}', id=None, index=0)
+        ],
+    )
+
+    assert merged.tool_call_chunks == [
+        create_tool_call_chunk(
+            name="search", args='{"query": "bar"}', id="id1", index=0
+        )
+    ]
+    assert merged.tool_calls == [
+        create_tool_call(name="search", args={"query": "bar"}, id="id1")
+    ]
+    assert merged.invalid_tool_calls == []
+
+
 def test_tool_message_serdes() -> None:
     message = ToolMessage(
         "foo", artifact={"bar": {"baz": 123}}, tool_call_id="1", status="error"
