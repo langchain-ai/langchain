@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import collections
+import copy
 import inspect
 import logging
 import types
@@ -556,10 +557,10 @@ def convert_to_openai_tool(
 
     !!! warning "Behavior changed in `langchain-core` 1.5.2"
 
-        For `BaseTool` inputs, converted dicts are now memoized per tool instance
-        (keyed by `strict`). Repeated conversions return the same dict, so
-        mutating it in place is unsupported. The cache is cleared when `name`,
-        `description`, `args_schema`, or `metadata` changes.
+        For `BaseTool` inputs, conversion results are now memoized per tool
+        instance (keyed by `strict`), avoiding repeated schema post-processing.
+        Each call still returns an independent dict safe to mutate. The cache is
+        cleared when `name`, `description`, `args_schema`, or `metadata` changes.
     """
     # Import locally to prevent circular import
     from langchain_core.tools import BaseTool, Tool  # noqa: PLC0415
@@ -574,7 +575,9 @@ def convert_to_openai_tool(
     if isinstance(tool, BaseTool):
         cached = tool._openai_tool_schema_memo.get(strict)  # noqa: SLF001
         if cached is not None:
-            return cached
+            # Return a copy since callers (e.g. `ChatOpenAI.bind_tools`) mutate the
+            # result in place.
+            return copy.deepcopy(cached)
 
     if isinstance(tool, Tool) and (tool.metadata or {}).get("type") == "custom_tool":
         oai_tool = {
@@ -584,14 +587,15 @@ def convert_to_openai_tool(
         }
         if tool.metadata is not None and "format" in tool.metadata:
             oai_tool["format"] = tool.metadata["format"]
-        if isinstance(tool, BaseTool):
-            tool._openai_tool_schema_memo[strict] = oai_tool  # noqa: SLF001
-        return oai_tool
+        # `Tool` is always a `BaseTool`, so this branch always has a memo to fill.
+        tool._openai_tool_schema_memo[strict] = oai_tool  # noqa: SLF001
+        return copy.deepcopy(oai_tool)
 
     oai_function = convert_to_openai_function(tool, strict=strict)
     result = {"type": "function", "function": oai_function}
     if isinstance(tool, BaseTool):
         tool._openai_tool_schema_memo[strict] = result  # noqa: SLF001
+        return copy.deepcopy(result)
     return result
 
 

@@ -4066,9 +4066,16 @@ def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> Non
 
 
 def test_convert_to_openai_tool_memoized_across_accesses() -> None:
+    """Repeat conversions hit the cache but each call gets an independent dict.
+
+    See `test_convert_to_openai_tool_mutation_does_not_leak` for why identity
+    is deliberately NOT preserved across calls.
+    """
     tool_ = _MemoSchemaTool()
     first = convert_to_openai_tool(tool_)
-    assert convert_to_openai_tool(tool_) is first
+    second = convert_to_openai_tool(tool_)
+    assert second == first
+    assert second is not first
 
 
 def test_convert_to_openai_tool_memo_keyed_by_strict() -> None:
@@ -4076,36 +4083,64 @@ def test_convert_to_openai_tool_memo_keyed_by_strict() -> None:
     tool_ = _MemoSchemaTool()
     unstrict = convert_to_openai_tool(tool_)
     strict = convert_to_openai_tool(tool_, strict=True)
-    assert strict is not unstrict
+    assert strict != unstrict
     assert strict["function"].get("strict") is True
     assert "strict" not in unstrict["function"]
 
     # Each is independently memoized on repeat access with the same key.
-    assert convert_to_openai_tool(tool_) is unstrict
-    assert convert_to_openai_tool(tool_, strict=True) is strict
+    assert convert_to_openai_tool(tool_) == unstrict
+    assert convert_to_openai_tool(tool_, strict=True) == strict
+
+
+def test_convert_to_openai_tool_mutation_does_not_leak() -> None:
+    """A caller mutating its returned dict must not corrupt the shared cache.
+
+    Regression test for cache isolation.
+
+    Callers may mutate the returned dict (e.g. `ChatOpenAI.bind_tools` adds
+    `defer_loading`). Verify those mutations don't leak into the cached schema or
+    subsequent conversions.
+    """
+    tool_ = _MemoSchemaTool()
+    first = convert_to_openai_tool(tool_)
+    first["defer_loading"] = True  # simulates ChatOpenAI.bind_tools's in-place mutation
+
+    second = convert_to_openai_tool(tool_)
+    assert "defer_loading" not in second
 
 
 def test_convert_to_openai_tool_memo_invalidated_on_reassignment() -> None:
     tool_ = _MemoSchemaTool()
     first = convert_to_openai_tool(tool_)
+    assert tool_._openai_tool_schema_memo
 
     tool_.description = "Updated description for openai-tool cache test."
+    # Every call returns a fresh copy, so a new object doesn't prove the cache was
+    # invalidated. Verify the memo itself was cleared.
+    assert not tool_._openai_tool_schema_memo
+
     second = convert_to_openai_tool(tool_)
-    assert second is not first
+    assert second != first
     assert second["function"]["description"] == (
         "Updated description for openai-tool cache test."
     )
 
 
 def test_convert_to_openai_tool_memo_invalidated_on_metadata_reassignment() -> None:
-    """`metadata` feeds the custom-tool branch, so its memo must clear too."""
+    """Regression test for `metadata` cache invalidation.
+
+    Changing `metadata` doesn't affect this tool's output, so verify the memo
+    itself was cleared rather than relying on the returned schema.
+    """
     tool_ = _MemoSchemaTool()
     first = convert_to_openai_tool(tool_)
+    assert tool_._openai_tool_schema_memo
 
     tool_.metadata = {"unrelated": "value"}
+    assert not tool_._openai_tool_schema_memo
+
     second = convert_to_openai_tool(tool_)
-    assert second is not first
-    assert second == first  # content unchanged, just no longer the same object
+    assert second == first  # content unaffected, but it was genuinely recomputed
 
 
 def test_convert_to_openai_tool_memo_not_stale_after_model_copy() -> None:
@@ -4117,7 +4152,7 @@ def test_convert_to_openai_tool_memo_not_stale_after_model_copy() -> None:
     assert copied_converted["function"]["description"] == "Copied description."
 
     # The original keeps its memo and is unaffected by the copy.
-    assert convert_to_openai_tool(tool_) is original
+    assert convert_to_openai_tool(tool_) == original
 
 
 def test_convert_to_openai_tool_custom_tool_memoized() -> None:
@@ -4133,14 +4168,16 @@ def test_convert_to_openai_tool_custom_tool_memoized() -> None:
     )
     first = convert_to_openai_tool(custom_tool)
     assert first["type"] == "custom"
-    assert convert_to_openai_tool(custom_tool) is first
+    assert convert_to_openai_tool(custom_tool) == first
+
+    assert first["format"]["syntax"] == "lark"
 
     custom_tool.metadata = {
         "type": "custom_tool",
         "format": {"type": "grammar", "syntax": "regex"},
     }
     second = convert_to_openai_tool(custom_tool)
-    assert second is not first
+    assert second != first
     assert second["format"]["syntax"] == "regex"
 
 

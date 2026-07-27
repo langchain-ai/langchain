@@ -641,13 +641,16 @@ class ChildTool(BaseTool):
     )
     """Memoized `convert_to_openai_tool` results, keyed by `strict`.
 
-    Unlike `tool_call_schema`, `convert_to_openai_tool` doesn't cache its schema
-    post-processing (`dereference_refs`/`_rm_titles`). This avoids repeating that
-    work on subsequent conversions (e.g., token counting, repeated `bind_tools`).
+    Avoids repeating `convert_to_openai_tool`'s schema post-processing
+    (`dereference_refs`/`_rm_titles`) on subsequent conversions of the same
+    `BaseTool` (e.g. token counting, repeated `bind_tools`).
+
+    The cached result is never returned directly: callers receive a deep copy, so
+    in-place mutations cannot affect other callers.
 
     Cleared whenever `name`, `description`, `args_schema`, or `metadata` changes.
-    Like `tool_call_schema`, mutating a cached dict in place is unsupported.
-        """
+    Like `tool_call_schema`, in-place mutation of those fields is not detected.
+    """
 
     @override
     def __setattr__(self, name: str, value: Any) -> None:
