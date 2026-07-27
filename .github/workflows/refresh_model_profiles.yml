@@ -45,7 +45,7 @@ permissions:
 jobs:
   resolve-providers:
     name: resolve providers
-    if: github.repository_owner == "langchain-ai"
+    if: github.repository_owner == 'langchain-ai'
     runs-on: ubuntu-latest
     outputs:
       providers: ${{ steps.resolve.outputs.providers }}
@@ -57,7 +57,8 @@ jobs:
         env:
           # Scheduled runs have no inputs — default to all providers.
           PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.provider || 'all' }}
-          PROVIDERS_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.providers-override || '' }}
+          # Bracket access required: bare `inputs.providers-override` is parsed as subtraction.
+          PROVIDERS_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs['providers-override'] || '' }}
         run: |
           set -euo pipefail
 
