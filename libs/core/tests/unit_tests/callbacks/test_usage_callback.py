@@ -97,6 +97,48 @@ def test_usage_callback() -> None:
     }
 
 
+def test_usage_callback_stops_tracking_after_context_exit() -> None:
+    """The context manager must stop tracking once the ``with`` block exits.
+
+    Regression test for a leak where calls after the ``with`` block (including
+    when the block raised) were still accumulated into the yielded callback.
+    """
+    llm = FakeChatModelWithResponseMetadata(
+        messages=iter(messages), model_name="test_model"
+    )
+
+    with get_usage_metadata_callback() as cb:
+        _ = llm.invoke("Message 1")
+        assert cb.usage_metadata == {"test_model": usage1}
+
+    # Invocations after the context manager exits must not be tracked.
+    _ = llm.invoke("Message 2")
+    assert cb.usage_metadata == {"test_model": usage1}
+
+
+def test_usage_callback_stops_tracking_after_context_raises() -> None:
+    """Tracking must stop even when the ``with`` block raises."""
+    llm = FakeChatModelWithResponseMetadata(
+        messages=iter(messages), model_name="test_model"
+    )
+
+    boom = RuntimeError("boom")
+    cb = None
+    try:
+        with get_usage_metadata_callback() as cb:
+            _ = llm.invoke("Message 1")
+            raise boom
+    except RuntimeError:
+        pass
+
+    assert cb is not None
+    assert cb.usage_metadata == {"test_model": usage1}
+
+    # Invocations after the block raised must not be tracked.
+    _ = llm.invoke("Message 2")
+    assert cb.usage_metadata == {"test_model": usage1}
+
+
 async def test_usage_callback_async() -> None:
     llm = FakeChatModelWithResponseMetadata(
         messages=iter(messages), model_name="test_model"

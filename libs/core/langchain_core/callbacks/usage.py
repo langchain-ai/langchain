@@ -114,6 +114,8 @@ def get_usage_metadata_callback(
     )
     register_configure_hook(usage_metadata_callback_var, inheritable=True)
     cb = UsageMetadataCallbackHandler()
-    usage_metadata_callback_var.set(cb)
-    yield cb
-    usage_metadata_callback_var.set(None)
+    token = usage_metadata_callback_var.set(cb)
+    try:
+        yield cb
+    finally:
+        usage_metadata_callback_var.reset(token)
