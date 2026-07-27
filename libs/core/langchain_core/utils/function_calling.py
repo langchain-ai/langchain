@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import collections
-import copy
 import inspect
+import json
 import logging
 import types
 import typing
@@ -576,8 +576,10 @@ def convert_to_openai_tool(
         cached = tool._openai_tool_schema_memo.get(strict)  # noqa: SLF001
         if cached is not None:
             # Return a copy since callers (e.g. `ChatOpenAI.bind_tools`) mutate the
-            # result in place.
-            return copy.deepcopy(cached)
+            # result in place. A JSON round-trip is faster than `copy.deepcopy`
+            # for a plain JSON-safe dict like this one (it always is, since it's
+            # built to be sent to the OpenAI API as JSON).
+            return cast("dict[str, Any]", json.loads(json.dumps(cached)))
 
     if isinstance(tool, Tool) and (tool.metadata or {}).get("type") == "custom_tool":
         oai_tool = {
@@ -589,13 +591,13 @@ def convert_to_openai_tool(
             oai_tool["format"] = tool.metadata["format"]
         # `Tool` is always a `BaseTool`, so this branch always has a memo to fill.
         tool._openai_tool_schema_memo[strict] = oai_tool  # noqa: SLF001
-        return copy.deepcopy(oai_tool)
+        return cast("dict[str, Any]", json.loads(json.dumps(oai_tool)))
 
     oai_function = convert_to_openai_function(tool, strict=strict)
     result = {"type": "function", "function": oai_function}
     if isinstance(tool, BaseTool):
         tool._openai_tool_schema_memo[strict] = result  # noqa: SLF001
-        return copy.deepcopy(result)
+        return cast("dict[str, Any]", json.loads(json.dumps(result)))
     return result
 
 
