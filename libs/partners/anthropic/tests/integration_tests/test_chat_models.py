@@ -1353,13 +1353,13 @@ def test_reasoning_effort_call_time_kwarg() -> None:
 def test_reasoning_effort_defaults_adaptive_thinking() -> None:
     """`reasoning_effort` defaults `thinking` to adaptive on models that support it.
 
-    Regression test for a model (Opus 4.7+, Sonnet 5) actually accepting the
+    Regression test for a model (Opus 4.7+, Opus 5, Sonnet 5) actually accepting the
     resulting `{"type": "adaptive", "display": "summarized"}` thinking config,
     not just that the payload is well-formed locally.
     """
     llm = ChatAnthropic(
-        model="claude-opus-4-7",
-        reasoning_effort="xhigh",
+        model="claude-opus-5",
+        reasoning_effort="high",
         max_tokens=2_000,
     )
 
