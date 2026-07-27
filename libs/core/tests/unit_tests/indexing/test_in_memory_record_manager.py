@@ -277,3 +277,37 @@ async def test_adelete_keys(amanager: InMemoryRecordManager) -> None:
     # Check if the deleted keys are no longer in the database
     remaining_keys = await amanager.alist_keys()
     assert remaining_keys == ["key3"]
+
+
+def test_update_batch_shares_single_timestamp(manager: InMemoryRecordManager) -> None:
+    """Regression test for #39087.
+
+    All keys written in a single update() call must share the same timestamp.
+    Previously, get_time() was called once per key inside the loop, so keys
+    inserted at the end of a large batch could receive timestamps later than
+    index_start_dt, preventing them from being cleaned up by the indexer.
+    """
+    timestamps: list[float] = []
+    original_get_time = manager.get_time
+
+    call_count = 0
+
+    def counting_get_time() -> float:
+        nonlocal call_count
+        call_count += 1
+        t = original_get_time()
+        timestamps.append(t)
+        return t
+
+    manager.get_time = counting_get_time  # type: ignore[method-assign]
+
+    keys = [f"key{i}" for i in range(100)]
+    manager.update(keys)
+
+    # get_time() must be called exactly once for the whole batch, not per key.
+    assert call_count == 1, (
+        f"get_time() was called {call_count} times; expected 1 (once per batch)"
+    )
+    # All stored timestamps must be identical.
+    stored = [manager.records[k]["updated_at"] for k in keys]
+    assert len(set(stored)) == 1, "all keys in a batch must share the same timestamp"
