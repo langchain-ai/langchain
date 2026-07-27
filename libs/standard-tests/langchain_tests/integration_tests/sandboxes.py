@@ -1565,7 +1565,7 @@ class SandboxIntegrationTests(BaseStandardTests):
             pytest.skip("Sync tests not supported.")
 
         base_dir = self.sandbox_path("glob_recursive", root_dir=sandbox_test_root)
-        sandbox_backend.execute(  # nosemgrep: sqlalchemy-execute-raw-query  # not SQLAlchemy; args are passed via shlex.join
+        sandbox_backend.execute(  # nosemgrep: sqlalchemy-execute-raw-query,formatted-sql-query  # not SQLAlchemy/SQL; args are passed via shlex.join
             shlex.join(["mkdir", "-p", f"{base_dir}/subdir1", f"{base_dir}/subdir2"])
         )
         sandbox_backend.write(f"{base_dir}/root.txt", "content")
