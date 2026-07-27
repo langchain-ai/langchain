@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from typing import Any
+from urllib.parse import urlparse
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import from_env
@@ -10,6 +11,18 @@ from typing_extensions import Self
 
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)
+
+
+def _is_huggingface_hosted_url(url: str | None) -> bool:
+    """True if url is HF-hosted (huggingface.co or hf.space)."""
+    if not url:
+        return False
+    hostname = (urlparse(url).hostname or "").lower()
+    return (
+        hostname == "huggingface.co"
+        or hostname == "hf.space"
+        or hostname.endswith((".huggingface.co", ".hf.space"))
+    )
 
 
 class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
@@ -39,6 +52,9 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     model: str | None = None
     """Model name to use."""
 
+    endpoint_url: str | None = None
+    """Endpoint URL to use."""
+
     provider: str | None = None
     """Name of the provider to use for inference with the model specified in
         `repo_id`. e.g. "sambanova". if not specified, defaults to HF Inference API.
@@ -65,6 +81,13 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
+        if sum([bool(self.model), bool(self.repo_id), bool(self.endpoint_url)]) > 1:
+            msg = (
+                "Please specify either `model` OR `repo_id` OR `endpoint_url`, "
+                "not more than one."
+            )
+            raise ValueError(msg)
+
         for field_name in ("model", "repo_id"):
             value = getattr(self, field_name)
             if value and value.startswith(("http://", "https://")):
@@ -74,6 +97,8 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         huggingfacehub_api_token = self.huggingfacehub_api_token or os.getenv(
             "HF_TOKEN"
         )
+        if self.endpoint_url and not _is_huggingface_hosted_url(self.endpoint_url):
+            huggingfacehub_api_token = None
 
         try:
             from huggingface_hub import (  # type: ignore[import]
@@ -81,7 +106,10 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
                 InferenceClient,
             )
 
-            if self.model:
+            if self.endpoint_url:
+                self.model = self.endpoint_url
+                self.repo_id = self.endpoint_url
+            elif self.model:
                 self.repo_id = self.model
             elif self.repo_id:
                 self.model = self.repo_id
