@@ -157,19 +157,25 @@ class IndexingException(LangChainException):
 def _calculate_hash(
     text: str, algorithm: Literal["sha1", "sha256", "sha512", "blake2b"]
 ) -> str:
-    """Return a hexadecimal digest of *text* using *algorithm*."""
+    """Return a deterministic UUID derived from *text* using *algorithm*.
+
+    All algorithms wrap their raw digest in ``uuid.uuid5(NAMESPACE_UUID, ...)``
+    so that document IDs are valid UUIDs regardless of the chosen hash. Some
+    vector stores (e.g. Qdrant) require point IDs to be UUIDs, and the raw
+    hex digests produced by blake2b/sha256/sha512 are not UUID-shaped.
+    """
     if algorithm == "sha1":
-        # Calculate the SHA-1 hash and return it as a UUID.
         digest = hashlib.sha1(text.encode("utf-8"), usedforsecurity=False).hexdigest()
-        return str(uuid.uuid5(NAMESPACE_UUID, digest))
-    if algorithm == "blake2b":
-        return hashlib.blake2b(text.encode("utf-8")).hexdigest()
-    if algorithm == "sha256":
-        return hashlib.sha256(text.encode("utf-8")).hexdigest()
-    if algorithm == "sha512":
-        return hashlib.sha512(text.encode("utf-8")).hexdigest()
-    msg = f"Unsupported hashing algorithm: {algorithm}"  # type: ignore[unreachable]
-    raise ValueError(msg)
+    elif algorithm == "blake2b":
+        digest = hashlib.blake2b(text.encode("utf-8")).hexdigest()
+    elif algorithm == "sha256":
+        digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    elif algorithm == "sha512":
+        digest = hashlib.sha512(text.encode("utf-8")).hexdigest()
+    else:
+        msg = f"Unsupported hashing algorithm: {algorithm}"  # type: ignore[unreachable]
+        raise ValueError(msg)
+    return str(uuid.uuid5(NAMESPACE_UUID, digest))
 
 
 def _get_document_with_hash(

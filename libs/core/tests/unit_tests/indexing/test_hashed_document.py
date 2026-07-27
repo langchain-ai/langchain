@@ -1,3 +1,4 @@
+import uuid
 from typing import Literal
 
 from langchain_core.documents import Document
@@ -49,6 +50,23 @@ def test_hashing() -> None:
             document, key_encoder=key_encoder
         )
         assert different_hashed_document.id != hashed_document.id
+
+
+def test_all_key_encoders_produce_uuids() -> None:
+    """Every built-in key encoder must produce a valid UUID string.
+
+    Vector stores like Qdrant validate that point IDs are UUIDs; raw hex
+    digests from sha256/sha512/blake2b are not UUID-shaped and would be
+    rejected at insert time.
+    """
+    document = Document(
+        page_content="Lorem ipsum dolor sit amet", metadata={"key": "value"}
+    )
+    for key_encoder in ("sha1", "sha256", "sha512", "blake2b"):
+        hashed = _get_document_with_hash(document, key_encoder=key_encoder)
+        # Must parse as a UUID (raises ValueError otherwise).
+        parsed = uuid.UUID(hashed.id)
+        assert str(parsed) == hashed.id
 
 
 def test_hashing_custom_key_encoder() -> None:
