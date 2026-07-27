@@ -87,10 +87,18 @@ _LAZY_SPLITTERS: dict[str, str] = {
     "SpacyTextSplitter": "spacy",
 }
 
+# Explicit whitelist of sub-module names that are permitted to be imported
+# dynamically. This prevents arbitrary module names from reaching
+# importlib.import_module() even if _LAZY_SPLITTERS is somehow mutated.
+_ALLOWED_MODULES: frozenset[str] = frozenset(_LAZY_SPLITTERS.values())
+
 
 def __getattr__(attr_name: str) -> object:
     module_name = _LAZY_SPLITTERS.get(attr_name)
     if module_name is not None:
+        if module_name not in _ALLOWED_MODULES:
+            msg = f"Attempted to import disallowed module {module_name!r}"
+            raise ImportError(msg)
         module = import_module(f".{module_name}", __name__)
         result = getattr(module, attr_name)
         globals()[attr_name] = result
