@@ -1604,8 +1604,8 @@ class SandboxIntegrationTests(BaseStandardTests):
             pytest.skip("Sync tests not supported.")
 
         base_dir = self.sandbox_path("glob_dirs", root_dir=sandbox_test_root)
-        sandbox_backend.execute(  # nosemgrep: sqlalchemy-execute-raw-query  # not SQLAlchemy; shell path is sanitized via shlex.quote
-            f"mkdir -p {_quote(base_dir)}/dir1 {_quote(base_dir)}/dir2"
+        sandbox_backend.execute(  # nosemgrep: sqlalchemy-execute-raw-query,formatted-sql-query  # not SQLAlchemy/SQL; args are passed via shlex.join
+            shlex.join(["mkdir", "-p", f"{base_dir}/dir1", f"{base_dir}/dir2"])
         )
         sandbox_backend.write(f"{base_dir}/file.txt", "content")
 
