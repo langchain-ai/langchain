@@ -168,6 +168,17 @@ def test_provider_base_url_uses_provider_key(
     assert config.api_key.get_secret_value() == "provider-key"
 
 
+def test_provider_base_url_does_not_use_langsmith_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_API_KEY", "langsmith-key")
+    monkeypatch.setenv(_BASE_ENV, "https://api.openai.com/v1")
+    config = _config()
+    assert config.base_url == "https://api.openai.com/v1"
+    assert config.api_key is None
+
+
 def test_provider_base_url_falls_back_to_gateway_key(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -108,9 +108,9 @@ def _resolve_gateway_config(
       > ``default_base_url``.
     - **api_key:** explicit ``api_key`` (returned unchanged) > the gateway key if
       the base URL came from the gateway, otherwise the provider key > the other.
-      The gateway key uses ``LANGSMITH_GATEWAY_API_KEY`` with
-      ``LANGSMITH_API_KEY`` as a fallback and is only a candidate when the gateway
-      is enabled.
+      The gateway key uses ``LANGSMITH_GATEWAY_API_KEY`` when the gateway is
+      enabled, with ``LANGSMITH_API_KEY`` as a fallback only when the base URL came
+      from the gateway.
 
     The provenance flip on the key means an ``OPENAI_API_KEY``-style provider key
     is preferred whenever the caller pointed the base URL at a non-gateway
@@ -150,10 +150,12 @@ def _resolve_gateway_config(
         resolved_api_key: Any = api_key
     else:
         gateway_api_key = (
-            _first_env((_LANGSMITH_GATEWAY_API_KEY_ENV, _LANGSMITH_API_KEY_ENV))
+            os.getenv(_LANGSMITH_GATEWAY_API_KEY_ENV)
             if gateway_base_url is not None
             else None
         )
+        if not gateway_api_key and base_url_from_gateway:
+            gateway_api_key = os.getenv(_LANGSMITH_API_KEY_ENV)
         provider_api_key = _first_env(api_key_env)
         chosen = (
             (gateway_api_key or provider_api_key)
