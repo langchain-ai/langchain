@@ -2524,6 +2524,45 @@ def test_thinking_delta_preserves_thinking_field() -> None:
     assert thinking_blocks[0]["signature"] == "sig_xyz"
 
 
+def test_format_messages_backfills_missing_thinking_field() -> None:
+    """Replaying a thinking block missing `thinking` must not 400.
+
+    Thinking blocks persisted before the streaming fix can carry a signature
+    but no `thinking` key. `_format_messages` must restore the canonical empty
+    string so the block round-trips to the API instead of failing with
+    ``400 thinking.thinking: Field required``.
+    """
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    # A corrupted block as produced by the pre-fix streaming path: signature
+    # present, required `thinking` key absent.
+    corrupted = AIMessage(
+        content=[{"type": "thinking", "signature": "sig_abc", "index": 0}]
+    )
+    payload = llm._get_request_payload(
+        [HumanMessage("hi"), corrupted, HumanMessage("continue")]
+    )
+    block = payload["messages"][1]["content"][0]
+    assert block["type"] == "thinking"
+    assert block["thinking"] == ""
+    assert block["signature"] == "sig_abc"
+
+
+def test_format_messages_preserves_nonempty_thinking_field() -> None:
+    """The backfill must not clobber real thinking text on replay."""
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    msg = AIMessage(
+        content=[
+            {"type": "thinking", "thinking": "Let me think.", "signature": "sig_xyz"}
+        ]
+    )
+    payload = llm._get_request_payload([HumanMessage("hi"), msg])
+    block = payload["messages"][1]["content"][0]
+    assert block["thinking"] == "Let me think."
+    assert block["signature"] == "sig_xyz"
+
+
 def test_strict_tool_use() -> None:
     model = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]

@@ -615,14 +615,14 @@ def _format_messages(
                                 formatted_block["citations"] = cleaned_citations
                             content.append(formatted_block)
                     elif block["type"] == "thinking":
-                        content.append(
-                            {
-                                k: v
-                                for k, v in block.items()
-                                if k
-                                in ("type", "thinking", "cache_control", "signature")
-                            },
-                        )
+                        formatted_thinking = {
+                            k: v
+                            for k, v in block.items()
+                            if k in ("type", "thinking", "cache_control", "signature")
+                        }
+                        if "signature" in formatted_thinking:
+                            formatted_thinking.setdefault("thinking", "")
+                        content.append(formatted_thinking)
                     elif block["type"] == "redacted_thinking":
                         content.append(
                             {
