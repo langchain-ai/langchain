@@ -2459,6 +2459,55 @@ def test_get_all_basemodel_annotations_aliases() -> None:
     assert actual == {"a": int, "b": int}
 
 
+class _ForwardRefContainer(BaseModel):
+    """Refers to `_ForwardRefRow` (defined below) via a forward reference."""
+
+    rows: list["_ForwardRefRow"] = []
+
+
+@tool
+def _forward_ref_tool(real_arg: str, container: _ForwardRefContainer) -> str:
+    """A tool whose schema is incomplete at creation time."""
+    return "ok"
+
+
+class _ForwardRefRow(BaseModel):
+    name: str
+
+
+def test_incomplete_args_schema_rebuilt_on_introspection() -> None:
+    """Incomplete `args_schema` is rebuilt instead of silently exposing no args.
+
+    `_forward_ref_tool` was decorated before `_ForwardRefRow` was defined, so its
+    generated `args_schema` was incomplete at creation time.
+    https://github.com/langchain-ai/langchain/issues/39099
+    """
+    assert list(_forward_ref_tool.args) == ["real_arg", "container"]
+
+    params = convert_to_openai_tool(_forward_ref_tool)["function"]["parameters"]
+    assert set(params["properties"]) == {"real_arg", "container"}
+    assert params["required"] == ["real_arg", "container"]
+
+
+def test_unresolvable_args_schema_raises_name_error() -> None:
+    """A genuinely unresolvable `args_schema` fails loudly on introspection.
+
+    This matches the `NameError` raised when the unresolved name appears
+    directly in the tool's signature.
+    """
+
+    class Unresolvable(BaseModel):
+        rows: list["MissingRow"] = []  # noqa: F821
+
+    @tool
+    def unresolvable_tool(real_arg: str, container: Unresolvable) -> str:
+        """A tool whose schema can never be resolved."""
+        return "ok"
+
+    with pytest.raises(NameError, match="MissingRow"):
+        _ = unresolvable_tool.tool_call_schema
+
+
 def test_tool_annotations_preserved() -> None:
     """Test that annotations are preserved when creating a tool."""
 
