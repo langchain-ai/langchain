@@ -1601,10 +1601,33 @@ def get_all_basemodel_annotations(
 
     Returns:
         `dict` of field names to their type annotations.
+
+    Raises:
+        NameError: If the model has unresolved forward references that cannot be
+            resolved by rebuilding the model.
     """
     orig_bases: tuple[type, ...]
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
+        if is_pydantic_v2_subclass(cls) and not cls.__pydantic_complete__:
+            # The model has unresolved forward references (e.g. a nested model
+            # annotated with a type that was not yet defined when the model was
+            # created). An incomplete model degrades `inspect.signature` to
+            # `(**data: Any)`, which would make the introspection below silently
+            # return no annotations and, downstream, make the tool expose no
+            # arguments to the model. Try resolving the references now; if they
+            # are still unresolvable, fail loudly to match the `NameError` raised
+            # when the unresolved name appears directly in a tool's signature.
+            try:
+                cls.model_rebuild()
+            except NameError as exc:
+                msg = (
+                    f"Unable to resolve the type annotations of {cls.__name__!r}:"
+                    f" {exc}. Make sure every referenced type (including forward"
+                    " references in nested models) is defined, or call"
+                    f" `model_rebuild()` on {cls.__name__!r} once it is."
+                )
+                raise NameError(msg) from exc
         fields = get_fields(cls)
         alias_map = {field.alias: name for name, field in fields.items() if field.alias}
 
