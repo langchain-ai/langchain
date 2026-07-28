@@ -63,6 +63,13 @@ def test_base_url_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     assert _resolve_gateway_base_url(_PATH) is None
 
 
+def test_base_url_empty_is_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    # An empty value (e.g. ``export LANGSMITH_GATEWAY=`` or a blank .env entry)
+    # disables the gateway rather than being treated as a custom base URL.
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "")
+    assert _resolve_gateway_base_url(_PATH) is None
+
+
 def test_base_url_custom(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "https://eu.gateway.example.com/")
     assert (
