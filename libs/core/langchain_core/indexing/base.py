@@ -293,15 +293,22 @@ class InMemoryRecordManager(RecordManager):
                 ids.
             ValueError: If time_at_least is in the future.
         """
+
         if group_ids and len(keys) != len(group_ids):
             msg = "Length of keys must match length of group_ids"
             raise ValueError(msg)
+        # Fetch the timestamp once per batch instead of once per key so that
+        # all records written in the same update() call share a single,
+        # consistent timestamp. Calling get_time() per-key allowed the
+        # timestamp to drift across a large batch, which caused
+        # list_keys(before=...) to miss records during cleanup (see #39087).
+        update_time = self.get_time()
+        if time_at_least and time_at_least > update_time:
+            msg = "time_at_least must be in the past"
+            raise ValueError(msg)
         for index, key in enumerate(keys):
             group_id = group_ids[index] if group_ids else None
-            if time_at_least and time_at_least > self.get_time():
-                msg = "time_at_least must be in the past"
-                raise ValueError(msg)
-            self.records[key] = {"group_id": group_id, "updated_at": self.get_time()}
+            self.records[key] = {"group_id": group_id, "updated_at": update_time}
 
     async def aupdate(
         self,

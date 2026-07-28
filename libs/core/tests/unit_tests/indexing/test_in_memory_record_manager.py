@@ -277,3 +277,63 @@ async def test_adelete_keys(amanager: InMemoryRecordManager) -> None:
     # Check if the deleted keys are no longer in the database
     remaining_keys = await amanager.alist_keys()
     assert remaining_keys == ["key3"]
+
+
+def test_update_uses_single_timestamp_for_entire_batch(
+    manager: InMemoryRecordManager,
+) -> None:
+    """Regression test for #39087.
+
+    update() used to call get_time() once per key inside the loop, so
+    records written in the same update() call could end up with different
+    'updated_at' timestamps whenever get_time() drifted between calls.
+    This test simulates that drift and confirms get_time() is only
+    consulted once per update() call, so every key in the batch ends up
+    with the exact same timestamp.
+    """
+    drifting_timestamps = iter(
+        [
+            datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+            datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+            datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        ]
+    )
+
+    with patch.object(
+        manager, "get_time", side_effect=lambda: next(drifting_timestamps)
+    ):
+        manager.update(["key1", "key2", "key3"])
+
+    updated_ats = {
+        manager.records[key]["updated_at"] for key in ["key1", "key2", "key3"]
+    }
+
+    # Before the fix, this would contain three distinct timestamps
+    # (one per get_time() call inside the loop).
+    assert len(updated_ats) == 1
+    assert updated_ats == {datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()}
+
+
+async def test_aupdate_uses_single_timestamp_for_entire_batch(
+    amanager: InMemoryRecordManager,
+) -> None:
+    """Async counterpart of test_update_uses_single_timestamp_for_entire_batch."""
+    drifting_timestamps = iter(
+        [
+            datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+            datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+            datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        ]
+    )
+
+    with patch.object(
+        amanager, "get_time", side_effect=lambda: next(drifting_timestamps)
+    ):
+        await amanager.aupdate(["key1", "key2", "key3"])
+
+    updated_ats = {
+        amanager.records[key]["updated_at"] for key in ["key1", "key2", "key3"]
+    }
+
+    assert len(updated_ats) == 1
+    assert updated_ats == {datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()}
