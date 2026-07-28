@@ -65,7 +65,8 @@ def _resolve_gateway_base_url(provider_path: str) -> str | None:
     base URL:
 
     - ``true`` / ``1`` / ``yes`` -> the default gateway host.
-    - ``false`` / ``0`` / ``no`` / unset -> the gateway is disabled (None).
+    - ``false`` / ``0`` / ``no`` / unset / empty -> the gateway is disabled
+      (None).
     - anything else -> treated as a custom gateway base URL.
 
     The provider-specific path is appended in all enabled cases.
@@ -79,7 +80,7 @@ def _resolve_gateway_base_url(provider_path: str) -> str | None:
         disabled.
     """
     raw = os.getenv(_LANGSMITH_GATEWAY_ENV)
-    if raw is None or raw.lower() in _FALSE_VALUES:
+    if not raw or raw.lower() in _FALSE_VALUES:
         return None
     base = (
         _LANGSMITH_GATEWAY_DEFAULT_BASE
