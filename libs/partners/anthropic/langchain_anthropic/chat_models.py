@@ -490,7 +490,15 @@ def _format_messages(
             if isinstance(message.content, list):
                 system = [
                     (
-                        block
+                        # Allowlist the keys Anthropic accepts on a system text
+                        # block. create_text_block() mints an `id` (e.g.
+                        # "lc_<uuid4>") that the API rejects with
+                        # "system.0.id: Extra inputs are not permitted" (#39100).
+                        {
+                            k: v
+                            for k, v in block.items()
+                            if k in ("type", "text", "cache_control", "citations")
+                        }
                         if isinstance(block, dict)
                         else {"type": "text", "text": block}
                     )

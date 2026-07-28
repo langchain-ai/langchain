@@ -3942,3 +3942,46 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     llm = ChatAnthropic(model=MODEL_NAME)
     assert llm.anthropic_api_url == "https://api.anthropic.com"
     assert llm.anthropic_api_key.get_secret_value() == "provider-key"
+
+
+def test__format_messages_strips_id_from_system_text_blocks() -> None:
+    """Regression test for #39100.
+
+    create_text_block() mints an `id` (e.g. "lc_<uuid4>") on the block. The
+    Anthropic API rejects an `id` on a system text block with
+    "system.0.id: Extra inputs are not permitted", so _format_messages must
+    strip it while keeping the keys the API does accept (cache_control,
+    citations).
+    """
+    from langchain_core.messages.content import create_text_block
+
+    block = create_text_block("You are a helpful assistant.")
+    assert "id" in block  # precondition: the helper mints an id
+
+    system = SystemMessage(content_blocks=[block])  # type: ignore[misc]
+    formatted_system, _ = _format_messages([system, HumanMessage("hi")])  # type: ignore[misc]
+
+    assert isinstance(formatted_system, list)
+    formatted_block = formatted_system[0]
+    assert "id" not in formatted_block
+    assert formatted_block["type"] == "text"
+    assert formatted_block["text"] == "You are a helpful assistant."
+
+
+def test__format_messages_keeps_cache_control_on_system_text_blocks() -> None:
+    """The system block allowlist must preserve cache_control."""
+    system = SystemMessage(  # type: ignore[misc]
+        content_blocks=[
+            {
+                "type": "text",
+                "text": "cached system",
+                "cache_control": {"type": "ephemeral"},
+                "id": "lc_should_be_dropped",
+            }
+        ]
+    )
+    formatted_system, _ = _format_messages([system, HumanMessage("hi")])  # type: ignore[misc]
+
+    formatted_block = formatted_system[0]
+    assert formatted_block["cache_control"] == {"type": "ephemeral"}
+    assert "id" not in formatted_block
