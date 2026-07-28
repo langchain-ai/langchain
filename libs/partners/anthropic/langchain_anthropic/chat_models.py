@@ -627,14 +627,14 @@ def _format_messages(
                         if text.strip():
                             content.append(_format_text_block(block))
                     elif block["type"] == "thinking":
-                        content.append(
-                            {
-                                k: v
-                                for k, v in block.items()
-                                if k
-                                in ("type", "thinking", "cache_control", "signature")
-                            },
-                        )
+                        formatted_thinking = {
+                            k: v
+                            for k, v in block.items()
+                            if k in ("type", "thinking", "cache_control", "signature")
+                        }
+                        if "signature" in formatted_thinking:
+                            formatted_thinking.setdefault("thinking", "")
+                        content.append(formatted_thinking)
                     elif block["type"] == "redacted_thinking":
                         content.append(
                             {
@@ -1801,6 +1801,8 @@ class ChatAnthropic(BaseChatModel):
                 content_block = event.delta.model_dump()
                 content_block["index"] = event.index
                 content_block["type"] = "thinking"
+                if event.delta.type == "signature_delta":
+                    content_block.setdefault("thinking", "")
                 message_chunk = AIMessageChunk(content=[content_block])
 
             # Tool input JSON (streaming tool arguments)
