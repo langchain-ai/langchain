@@ -21,6 +21,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.messages.content import create_text_block
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
@@ -1478,6 +1479,41 @@ def test__format_messages_with_multiple_system() -> None:
     actual_system, actual_messages = _format_messages(messages)
     assert expected_system == actual_system
     assert expected_messages == actual_messages
+
+
+def test__format_messages_system_v1_content_blocks_drop_id() -> None:
+    """System text blocks from `create_text_block` must not leak the `id` field.
+
+    See https://github.com/langchain-ai/langchain/issues/39100
+    """
+    messages = [
+        SystemMessage(content_blocks=[create_text_block("You are helpful.")]),
+        HumanMessage("hi"),
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system == [{"type": "text", "text": "You are helpful."}]
+    assert actual_messages == [{"role": "user", "content": "hi"}]
+
+
+def test__format_messages_system_text_block_preserves_supported_fields() -> None:
+    """Sanitizing system text blocks keeps Anthropic-supported fields."""
+    messages = [
+        SystemMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "foo",
+                    "id": "lc_abc123",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        ),
+        HumanMessage("hi"),
+    ]
+    actual_system, _ = _format_messages(messages)
+    assert actual_system == [
+        {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+    ]
 
 
 def test_anthropic_api_key_is_secret_string() -> None:
