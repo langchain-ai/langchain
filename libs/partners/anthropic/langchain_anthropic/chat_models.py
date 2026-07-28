@@ -475,6 +475,29 @@ def _format_data_content_block(block: dict) -> dict:
     return formatted_block
 
 
+def _format_text_block(block: dict) -> dict:
+    """Narrow a text content block to fields supported by Anthropic's API.
+
+    Drops LangChain-internal fields (e.g. the ``id`` minted by
+    ``create_text_block``) that Anthropic rejects as extra inputs.
+    """
+    formatted_block = {
+        k: v
+        for k, v in block.items()
+        if k in ("type", "text", "cache_control", "citations")
+    }
+    # Clean up citations to remove null file_id fields
+    if formatted_block.get("citations"):
+        cleaned_citations = []
+        for citation in formatted_block["citations"]:
+            cleaned_citation = {
+                k: v for k, v in citation.items() if not (k == "file_id" and v is None)
+            }
+            cleaned_citations.append(cleaned_citation)
+        formatted_block["citations"] = cleaned_citations
+    return formatted_block
+
+
 def _format_messages(
     messages: Sequence[BaseMessage],
 ) -> tuple[str | list[dict] | None, list[dict]]:
@@ -490,7 +513,11 @@ def _format_messages(
             if isinstance(message.content, list):
                 system = [
                     (
-                        block
+                        (
+                            _format_text_block(block)
+                            if block.get("type") == "text"
+                            else block
+                        )
                         if isinstance(block, dict)
                         else {"type": "text", "text": block}
                     )
@@ -598,23 +625,7 @@ def _format_messages(
                         # accepted.
                         # https://github.com/anthropics/anthropic-sdk-python/issues/461
                         if text.strip():
-                            formatted_block = {
-                                k: v
-                                for k, v in block.items()
-                                if k in ("type", "text", "cache_control", "citations")
-                            }
-                            # Clean up citations to remove null file_id fields
-                            if formatted_block.get("citations"):
-                                cleaned_citations = []
-                                for citation in formatted_block["citations"]:
-                                    cleaned_citation = {
-                                        k: v
-                                        for k, v in citation.items()
-                                        if not (k == "file_id" and v is None)
-                                    }
-                                    cleaned_citations.append(cleaned_citation)
-                                formatted_block["citations"] = cleaned_citations
-                            content.append(formatted_block)
+                            content.append(_format_text_block(block))
                     elif block["type"] == "thinking":
                         content.append(
                             {
