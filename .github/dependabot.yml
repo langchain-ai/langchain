@@ -9,6 +9,8 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     groups:
       minor-and-patch:
         patterns:
@@ -29,6 +31,8 @@ updates:
       - "/libs/langchain_v1/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     versioning-strategy: increase
     ignore:
       - dependency-name: "langchain-core"
@@ -69,6 +73,8 @@ updates:
       - "/libs/partners/xai/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     versioning-strategy: increase
     ignore:
       - dependency-name: "langchain-core"
@@ -97,6 +103,8 @@ updates:
       - "/libs/model-profiles/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     versioning-strategy: increase
     ignore:
       - dependency-name: "langchain-core"
