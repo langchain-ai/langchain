@@ -9,6 +9,8 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.errors import ParentCommand
+from langgraph.types import Command
 from pydantic import Field
 from typing_extensions import override
 
@@ -311,15 +313,11 @@ def test_model_retry_specific_exceptions() -> None:
         checkpointer=InMemorySaver(),
     )
 
-    result = agent.invoke(
-        {"messages": [HumanMessage("Hello")]},
-        {"configurable": {"thread_id": "test"}},
-    )
-
-    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
-    assert len(ai_messages) >= 1
-    # RuntimeError should fail immediately (1 attempt only)
-    assert "1 attempt" in ai_messages[-1].content
+    with pytest.raises(RuntimeError, match="Runtime error"):
+        agent.invoke(
+            {"messages": [HumanMessage("Hello")]},
+            {"configurable": {"thread_id": "test"}},
+        )
 
 
 def test_model_retry_custom_exception_filter() -> None:
@@ -389,17 +387,14 @@ def test_model_retry_custom_exception_filter() -> None:
         checkpointer=InMemorySaver(),
     )
 
-    result = agent.invoke(
-        {"messages": [HumanMessage("Hello")]},
-        {"configurable": {"thread_id": "test"}},
-    )
+    with pytest.raises(CustomError, match="Non-retryable error"):
+        agent.invoke(
+            {"messages": [HumanMessage("Hello")]},
+            {"configurable": {"thread_id": "test"}},
+        )
 
-    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
-    assert len(ai_messages) >= 1
-
-    # Should retry once (attempt 1 with retry_me=True), then fail on attempt 2 (retry_me=False)
+    # Should have retried once (attempt 1 retryable, attempt 2 non-retryable)
     assert attempt_count["value"] == 2
-    assert "2 attempts" in ai_messages[-1].content
 
 
 def test_model_retry_backoff_timing() -> None:
@@ -700,3 +695,52 @@ def test_model_retry_multiple_middleware_composition() -> None:
     ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
     assert len(ai_messages) >= 1
     assert "Hello" in ai_messages[-1].content
+
+
+def test_model_retry_reraises_graph_bubble_up() -> None:
+    """GraphBubbleUp signals (e.g. ParentCommand) must propagate, not be retried."""
+    middleware = ModelRetryMiddleware(max_retries=3, initial_delay=0.01, jitter=False)
+
+    calls = 0
+
+    def handler(request: ModelRequest) -> ModelResponse: 
+        nonlocal calls
+        calls += 1
+        raise ParentCommand(Command(goto="some_node"))
+
+    request = ModelRequest(
+        model=FakeToolCallingModel(),
+        messages=[],
+        state={"messages": []},
+        runtime=None,
+    )
+
+    with pytest.raises(ParentCommand):
+        middleware.wrap_model_call(request, handler)
+
+    assert calls == 1
+
+
+@pytest.mark.asyncio
+async def test_model_retry_async_reraises_graph_bubble_up() -> None:
+    """GraphBubbleUp signals (e.g. ParentCommand) must propagate, not be retried (async)."""
+    middleware = ModelRetryMiddleware(max_retries=3, initial_delay=0.01, jitter=False)
+
+    calls = 0
+
+    async def handler(request: ModelRequest) -> ModelResponse:  
+        nonlocal calls
+        calls += 1
+        raise ParentCommand(Command(goto="some_node"))
+
+    request = ModelRequest(
+        model=FakeToolCallingModel(),
+        messages=[],
+        state={"messages": []},
+        runtime=None,
+    )
+
+    with pytest.raises(ParentCommand):
+        await middleware.awrap_model_call(request, handler)
+
+    assert calls == 1
