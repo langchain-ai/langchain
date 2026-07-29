@@ -165,6 +165,8 @@ def _get_pydantic_test_configs(
             core_max_pydantic_minor = package["version"].split(".")[1]
             break
 
+    if ".." in Path(dir_).parts:
+        raise ValueError(f"Invalid directory path: {dir_}")
     with open(f"./{dir_}/uv.lock", "rb") as f:
         dir_uv_lock_data = tomllib.load(f)
 
