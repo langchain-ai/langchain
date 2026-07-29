@@ -1080,7 +1080,7 @@ def test_model_fallback_reraises_graph_bubble_up() -> None:
 
     calls = 0
 
-    def mock_handler(req: ModelRequest) -> ModelResponse: 
+    def mock_handler(req: ModelRequest) -> ModelResponse:  # noqa: ARG001
         nonlocal calls
         calls += 1
         raise ParentCommand(Command(goto="some_node"))
@@ -1101,7 +1101,7 @@ async def test_model_fallback_async_reraises_graph_bubble_up() -> None:
 
     calls = 0
 
-    async def mock_handler(req: ModelRequest) -> ModelResponse:  
+    async def mock_handler(req: ModelRequest) -> ModelResponse:  # noqa: ARG001
         nonlocal calls
         calls += 1
         raise ParentCommand(Command(goto="some_node"))

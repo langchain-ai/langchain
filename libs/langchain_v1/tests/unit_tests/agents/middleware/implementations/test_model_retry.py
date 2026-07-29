@@ -703,7 +703,7 @@ def test_model_retry_reraises_graph_bubble_up() -> None:
 
     calls = 0
 
-    def handler(request: ModelRequest) -> ModelResponse: 
+    def handler(request: ModelRequest) -> ModelResponse:  # noqa: ARG001
         nonlocal calls
         calls += 1
         raise ParentCommand(Command(goto="some_node"))
@@ -728,7 +728,7 @@ async def test_model_retry_async_reraises_graph_bubble_up() -> None:
 
     calls = 0
 
-    async def handler(request: ModelRequest) -> ModelResponse:  
+    async def handler(request: ModelRequest) -> ModelResponse:  # noqa: ARG001
         nonlocal calls
         calls += 1
         raise ParentCommand(Command(goto="some_node"))
