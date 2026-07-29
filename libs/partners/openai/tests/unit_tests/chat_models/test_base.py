@@ -3066,6 +3066,42 @@ def test__construct_responses_api_input_store_enabled_keeps_item_ids(
     ]
 
 
+@pytest.mark.parametrize("store", [None, True])
+def test__construct_responses_api_input_omits_non_msg_ids_for_synthetic_messages(
+    store: bool | None,
+) -> None:
+    """Synthetic AI messages (e.g. from `create_text_block`) use `lc_*` IDs.
+
+    OpenAI's Responses API only accepts assistant message item IDs that start
+    with `msg_`, so we must omit invalid IDs instead of forwarding them.
+    """
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "Paris is the capital of France.",
+                "id": "lc_fdbf5210-33f1-4cb1-90b4-2f5ec390cc83",
+            },
+        ],
+    )
+
+    result = _construct_responses_api_input([ai_message], store=store)
+
+    assert result == [
+        {
+            "type": "message",
+            "content": [
+                {
+                    "type": "output_text",
+                    "text": "Paris is the capital of France.",
+                    "annotations": [],
+                }
+            ],
+            "role": "assistant",
+        },
+    ]
+
+
 def test__construct_responses_api_input_store_false_keeps_full_tool_call_items() -> (
     None
 ):

@@ -4659,7 +4659,11 @@ def _construct_responses_api_input(
                                     "content": [new_block],
                                     "role": "assistant",
                                 }
-                                if store is not False:
+                                if (
+                                    store is not False
+                                    and isinstance(msg_id, str)
+                                    and msg_id.startswith("msg_")
+                                ):
                                     new_item["id"] = msg_id
                                 if phase is not None:
                                     new_item["phase"] = phase
