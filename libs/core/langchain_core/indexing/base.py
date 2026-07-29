@@ -296,12 +296,16 @@ class InMemoryRecordManager(RecordManager):
         if group_ids and len(keys) != len(group_ids):
             msg = "Length of keys must match length of group_ids"
             raise ValueError(msg)
+        # Call get_time() once before the loop to ensure all records in the
+        # batch have the same timestamp. This fixes issue #39087 where
+        # per-document get_time() calls caused timestamp inconsistency.
+        current_time = self.get_time()
+        if time_at_least and time_at_least > current_time:
+            msg = "time_at_least must be in the past"
+            raise ValueError(msg)
         for index, key in enumerate(keys):
             group_id = group_ids[index] if group_ids else None
-            if time_at_least and time_at_least > self.get_time():
-                msg = "time_at_least must be in the past"
-                raise ValueError(msg)
-            self.records[key] = {"group_id": group_id, "updated_at": self.get_time()}
+            self.records[key] = {"group_id": group_id, "updated_at": current_time}
 
     async def aupdate(
         self,
@@ -374,9 +378,9 @@ class InMemoryRecordManager(RecordManager):
         """
         result = []
         for key, data in self.records.items():
-            if before and data["updated_at"] >= before:
+            if before and data["updated_at"] > before:
                 continue
-            if after and data["updated_at"] <= after:
+            if after and data["updated_at"] < after:
                 continue
             if group_ids and data["group_id"] not in group_ids:
                 continue

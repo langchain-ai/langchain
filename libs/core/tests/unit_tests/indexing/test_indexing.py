@@ -22,6 +22,27 @@ from langchain_core.indexing.api import (
 from langchain_core.indexing.in_memory import InMemoryDocumentIndex
 from langchain_core.vectorstores import InMemoryVectorStore, VectorStore
 
+from contextlib import contextmanager
+
+
+
+@contextmanager
+def _mock_get_time(manager: InMemoryRecordManager, base_timestamp: float):
+    """Context manager to mock get_time() with incrementing timestamps.
+    
+    This ensures that within a single indexing run, the timestamp returned
+    by get_time() in update() is strictly greater than index_start_dt.
+    """
+    call_count = [0]
+    
+    def get_time_side_effect() -> float:
+        # Use 1e-6 (microsecond) increment to avoid floating-point precision issues
+        val = base_timestamp + call_count[0] * 1e-6
+        call_count[0] += 1
+        return val
+    
+    with patch.object(manager, "get_time", side_effect=get_time_side_effect):
+        yield
 
 class ToyLoader(BaseLoader):
     """Toy loader that always returns the same documents."""
@@ -165,11 +186,7 @@ def test_index_simple_delete_full(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -183,11 +200,7 @@ def test_index_simple_delete_full(
             "num_updated": 0,
         }
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -212,11 +225,7 @@ def test_index_simple_delete_full(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         indexing_result = index(
             loader,
             record_manager,
@@ -240,11 +249,7 @@ def test_index_simple_delete_full(
         }
 
     # Attempt to index again verify that nothing changes
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -274,11 +279,7 @@ async def test_aindex_simple_delete_full(
         ]
     )
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -292,11 +293,7 @@ async def test_aindex_simple_delete_full(
             "num_updated": 0,
         }
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -321,11 +318,7 @@ async def test_aindex_simple_delete_full(
         ]
     )
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -347,11 +340,7 @@ async def test_aindex_simple_delete_full(
     assert doc_texts == {"mutated document 1", "This is another document."}
 
     # Attempt to index again verify that nothing changes
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -381,11 +370,7 @@ def test_index_delete_full_recovery_after_deletion_failure(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -440,11 +425,7 @@ def test_index_delete_full_recovery_after_deletion_failure(
         "This is another document.",
     }
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp()):
         indexing_result = index(
             loader,
             record_manager,
@@ -482,11 +463,7 @@ async def test_aindex_delete_full_recovery_after_deletion_failure(
         ]
     )
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -541,11 +518,7 @@ async def test_aindex_delete_full_recovery_after_deletion_failure(
         "This is another document.",
     }
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp()):
         indexing_result = await aindex(
             loader,
             arecord_manager,
@@ -693,11 +666,7 @@ def test_index_simple_delete_scoped_full(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -712,11 +681,7 @@ def test_index_simple_delete_scoped_full(
             "num_updated": 0,
         }
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -744,11 +709,7 @@ def test_index_simple_delete_scoped_full(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -774,11 +735,7 @@ def test_index_simple_delete_scoped_full(
         }
 
     # Attempt to index again verify that nothing changes
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 4, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 4, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -819,11 +776,7 @@ async def test_aindex_simple_delete_scoped_full(
         ]
     )
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -838,11 +791,7 @@ async def test_aindex_simple_delete_scoped_full(
             "num_updated": 0,
         }
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -870,11 +819,7 @@ async def test_aindex_simple_delete_scoped_full(
         ]
     )
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -900,11 +845,7 @@ async def test_aindex_simple_delete_scoped_full(
         }
 
     # Attempt to index again verify that nothing changes
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 4, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 4, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -1045,11 +986,7 @@ def test_index_empty_doc_scoped_full(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1064,11 +1001,7 @@ def test_index_empty_doc_scoped_full(
             "num_updated": 0,
         }
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1085,11 +1018,7 @@ def test_index_empty_doc_scoped_full(
 
     loader = ToyLoader(documents=[])
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1130,11 +1059,7 @@ async def test_aindex_empty_doc_scoped_full(
         ]
     )
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -1149,11 +1074,7 @@ async def test_aindex_empty_doc_scoped_full(
             "num_updated": 0,
         }
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -1170,11 +1091,7 @@ async def test_aindex_empty_doc_scoped_full(
 
     loader = ToyLoader(documents=[])
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -1207,11 +1124,7 @@ def test_no_delete(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1227,11 +1140,7 @@ def test_no_delete(
         }
 
     # If we add the same content twice it should be skipped
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1260,11 +1169,7 @@ def test_no_delete(
     )
 
     # Should result in no updates or deletions!
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1297,11 +1202,7 @@ async def test_ano_delete(
         ]
     )
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -1317,11 +1218,7 @@ async def test_ano_delete(
         }
 
     # If we add the same content twice it should be skipped
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -1350,11 +1247,7 @@ async def test_ano_delete(
     )
 
     # Should result in no updates or deletions!
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader,
             arecord_manager,
@@ -1387,11 +1280,7 @@ def test_incremental_delete(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1414,11 +1303,7 @@ def test_incremental_delete(
     assert doc_texts == {"This is another document.", "This is a test document."}
 
     # Attempt to index again verify that nothing changes
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1452,11 +1337,7 @@ def test_incremental_delete(
     )
 
     # Attempt to index again verify that nothing changes
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1500,11 +1381,7 @@ def test_incremental_delete_with_same_source(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1536,11 +1413,7 @@ def test_incremental_delete_with_same_source(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1590,11 +1463,7 @@ def test_incremental_indexing_with_batch_size(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1617,11 +1486,7 @@ def test_incremental_indexing_with_batch_size(
     }
     assert doc_texts == {"1", "2", "3", "4"}
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1670,11 +1535,7 @@ def test_incremental_delete_with_batch_size(
         ]
     )
 
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1698,11 +1559,7 @@ def test_incremental_delete_with_batch_size(
     assert doc_texts == {"1", "2", "3", "4"}
 
     # Attempt to index again verify that nothing changes
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert index(
             loader,
             record_manager,
@@ -1726,11 +1583,7 @@ def test_incremental_delete_with_batch_size(
     assert doc_texts == {"1", "2", "3", "4"}
 
     # Attempt to index again verify that nothing changes
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2022, 1, 3, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2022, 1, 3, tzinfo=timezone.utc).timestamp()):
         # Docs with same content
         docs = [
             Document(
@@ -1765,11 +1618,7 @@ def test_incremental_delete_with_batch_size(
     assert doc_texts == {"1", "2", "3", "4"}
 
     # Attempt to index again verify that nothing changes
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2023, 1, 4, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2023, 1, 4, tzinfo=timezone.utc).timestamp()):
         # Docs with same content
         docs = [
             Document(
@@ -1804,11 +1653,7 @@ def test_incremental_delete_with_batch_size(
     assert doc_texts == {"1", "2", "3", "4"}
 
     # Try to index with changed docs now
-    with patch.object(
-        record_manager,
-        "get_time",
-        return_value=datetime(2024, 1, 5, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(record_manager, datetime(2024, 1, 5, tzinfo=timezone.utc).timestamp()):
         # Docs with same content
         docs = [
             Document(
@@ -1859,11 +1704,7 @@ async def test_aincremental_delete(
         ]
     )
 
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader.lazy_load(),
             arecord_manager,
@@ -1886,11 +1727,7 @@ async def test_aincremental_delete(
     assert doc_texts == {"This is another document.", "This is a test document."}
 
     # Attempt to index again verify that nothing changes
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader.lazy_load(),
             arecord_manager,
@@ -1924,11 +1761,7 @@ async def test_aincremental_delete(
     )
 
     # Attempt to index again verify that nothing changes
-    with patch.object(
-        arecord_manager,
-        "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
-    ):
+    with _mock_get_time(arecord_manager, datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp()):
         assert await aindex(
             loader.lazy_load(),
             arecord_manager,

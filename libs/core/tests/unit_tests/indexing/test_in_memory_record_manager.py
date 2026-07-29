@@ -277,3 +277,94 @@ async def test_adelete_keys(amanager: InMemoryRecordManager) -> None:
     # Check if the deleted keys are no longer in the database
     remaining_keys = await amanager.alist_keys()
     assert remaining_keys == ["key3"]
+
+
+def test_list_keys_boundary_conditions(manager: InMemoryRecordManager) -> None:
+    """Test list_keys boundary conditions for before/after parameters.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/39106
+    list_keys(before=X) should include records with updated_at == X.
+    list_keys(after=X) should include records with updated_at == X.
+    """
+    timestamp = datetime(2021, 1, 5, tzinfo=timezone.utc).timestamp()
+
+    # Insert records at a specific timestamp
+    with patch.object(manager, "get_time", return_value=timestamp):
+        manager.update(["key1", "key2", "key3"])
+
+    # Test before boundary: records with updated_at == before should be included
+    assert sorted(manager.list_keys(before=timestamp)) == [
+        "key1",
+        "key2",
+        "key3",
+    ]
+
+    # Test after boundary: records with updated_at == after should be included
+    assert sorted(manager.list_keys(after=timestamp)) == [
+        "key1",
+        "key2",
+        "key3",
+    ]
+
+    # Test both before and after with same timestamp
+    assert sorted(manager.list_keys(before=timestamp, after=timestamp)) == [
+        "key1",
+        "key2",
+        "key3",
+    ]
+
+
+def test_list_keys_before_boundary_inclusive(
+    manager: InMemoryRecordManager,
+) -> None:
+    """Test that list_keys(before=X) includes records at exactly X.
+
+    This is critical for the indexing API cleanup logic where index_start_dt
+    may equal the updated_at of records due to low-resolution clocks.
+    """
+    t1 = datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()
+    t2 = datetime(2021, 1, 5, tzinfo=timezone.utc).timestamp()
+    t3 = datetime(2021, 1, 10, tzinfo=timezone.utc).timestamp()
+
+    with patch.object(manager, "get_time", return_value=t1):
+        manager.update(["old_key"])
+
+    with patch.object(manager, "get_time", return_value=t2):
+        manager.update(["mid_key"])
+
+    with patch.object(manager, "get_time", return_value=t3):
+        manager.update(["new_key"])
+
+    # list_keys(before=t2) should include keys at t1 and t2 (inclusive)
+    assert sorted(manager.list_keys(before=t2)) == ["mid_key", "old_key"]
+
+    # list_keys(before=t1) should include key at t1 (inclusive)
+    assert manager.list_keys(before=t1) == ["old_key"]
+
+
+async def test_alist_keys_boundary_conditions(
+    amanager: InMemoryRecordManager,
+) -> None:
+    """Test async list_keys boundary conditions for before/after parameters.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/39106
+    """
+    timestamp = datetime(2021, 1, 5, tzinfo=timezone.utc).timestamp()
+
+    # Insert records at a specific timestamp
+    with patch.object(amanager, "get_time", return_value=timestamp):
+        await amanager.aupdate(["key1", "key2", "key3"])
+
+    # Test before boundary: records with updated_at == before should be included
+    assert sorted(await amanager.alist_keys(before=timestamp)) == [
+        "key1",
+        "key2",
+        "key3",
+    ]
+
+    # Test after boundary: records with updated_at == after should be included
+    assert sorted(await amanager.alist_keys(after=timestamp)) == [
+        "key1",
+        "key2",
+        "key3",
+    ]
