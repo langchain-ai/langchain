@@ -25,6 +25,28 @@ async def amanager() -> InMemoryRecordManager:
     return record_manager
 
 
+def test_get_time_is_strictly_increasing(manager: InMemoryRecordManager) -> None:
+    """`get_time` must never return the same timestamp twice.
+
+    `RecordManager` documents the timestamp as monotonically increasing, and
+    `list_keys(before=...)` treats the cutoff as exclusive (`updated_at >=
+    before` is skipped). So records that share a timestamp with a later cutoff
+    are silently skipped by `full` cleanup.
+
+    `time.time()` is patched to a constant here to emulate a coarse clock. Real
+    resolution varies by platform — around 15.6 ms on Windows — so without
+    patching this would pass on Linux and hide the defect.
+    """
+    with patch("time.time", return_value=1234.5):
+        timestamps = [manager.get_time() for _ in range(10)]
+
+    assert timestamps == sorted(timestamps), "timestamps must not go backwards"
+    assert len(set(timestamps)) == len(timestamps), (
+        "get_time() returned duplicate timestamps, so records sharing one can "
+        "escape `before=` cleanup"
+    )
+
+
 def test_update(manager: InMemoryRecordManager) -> None:
     """Test updating records in the database."""
     # no keys should be present in the set

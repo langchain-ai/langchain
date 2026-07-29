@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import abc
+import math
 import time
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, TypedDict
@@ -251,6 +252,8 @@ class InMemoryRecordManager(RecordManager):
         # of {'group_id': group_id, 'updated_at': timestamp}
         self.records: dict[str, _Record] = {}
         self.namespace = namespace
+        # Last timestamp handed out by `get_time()`; see the note there.
+        self._last_time = 0.0
 
     def create_schema(self) -> None:
         """In-memory schema creation is simply ensuring the structure is initialized."""
@@ -260,7 +263,22 @@ class InMemoryRecordManager(RecordManager):
 
     @override
     def get_time(self) -> float:
-        return time.time()
+        """Return a strictly increasing timestamp.
+
+        ``RecordManager`` requires the timestamp to be monotonically increasing,
+        and ``list_keys(before=...)`` treats the cutoff as exclusive
+        (``updated_at >= before`` is skipped). ``time.time()`` has a coarse
+        resolution on some platforms — roughly 15.6 ms on Windows — so
+        consecutive calls can return the same value. Records that end up sharing
+        a timestamp with a later cutoff are then silently skipped by ``full``
+        cleanup, making the number of deleted records depend on where the clock
+        tick happens to fall.
+        """
+        now = time.time()
+        if now <= self._last_time:
+            now = math.nextafter(self._last_time, math.inf)
+        self._last_time = now
+        return now
 
     @override
     async def aget_time(self) -> float:
