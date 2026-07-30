@@ -24,6 +24,7 @@ from langchain.agents.middleware.summarization import SummarizationMiddleware, T
 from langchain.agents.middleware.todo import TodoListMiddleware
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
+from langchain.agents.middleware.tool_error import ToolErrorMiddleware
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.tool_selection import LLMToolSelectorMiddleware
 from langchain.agents.middleware.types import (
@@ -78,6 +79,7 @@ __all__ = [
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
+    "ToolErrorMiddleware",
     "ToolRetryMiddleware",
     "TriggerClause",
     "after_agent",
