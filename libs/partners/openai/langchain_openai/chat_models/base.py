@@ -2045,10 +2045,18 @@ class BaseChatOpenAI(BaseChatModel):
             **self._default_params,
             **kwargs,
         }
-        # Redact headers from built-in remote MCP tool invocations
+        # Redact credentials from built-in remote MCP tool invocations
         if (tools := params.get("tools")) and isinstance(tools, list):
+            sensitive_fields = ("headers", "authorization")
             params["tools"] = [
-                ({**tool, "headers": "**REDACTED**"} if "headers" in tool else tool)
+                {
+                    **tool,
+                    **{
+                        field: "**REDACTED**"
+                        for field in sensitive_fields
+                        if field in tool
+                    },
+                }
                 if isinstance(tool, dict) and tool.get("type") == "mcp"
                 else tool
                 for tool in tools
