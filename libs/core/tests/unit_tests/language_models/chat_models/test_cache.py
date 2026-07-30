@@ -506,6 +506,52 @@ def test_cache_key_ignores_message_id_sync() -> None:
     assert len(local_cache._cache) == 1
 
 
+class SizedCache(BaseCache):
+    """Cache that implements __len__, making an empty instance falsy."""
+
+    def __init__(self) -> None:
+        self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
+
+    def __len__(self) -> int:
+        return len(self._cache)
+
+    def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
+        return self._cache.get((prompt, llm_string))
+
+    def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
+        self._cache[prompt, llm_string] = return_val
+
+    @override
+    def clear(self, **kwargs: Any) -> None:
+        self._cache = {}
+
+
+def test_sized_cache_invoke_sync() -> None:
+    """invoke() must not skip caching when cache implements __len__."""
+    cache = SizedCache()
+    assert len(cache) == 0
+
+    chat_model = FakeListChatModel(cache=cache, responses=["hello", "goodbye"])
+    assert chat_model.invoke("How are you?").content == "hello"
+    assert len(cache) == 1
+
+    assert chat_model.invoke("How are you?").content == "hello"
+    assert len(cache) == 1
+
+
+async def test_sized_cache_invoke_async() -> None:
+    """ainvoke() must not skip caching when cache implements __len__."""
+    cache = SizedCache()
+    assert len(cache) == 0
+
+    chat_model = FakeListChatModel(cache=cache, responses=["hello", "goodbye"])
+    assert (await chat_model.ainvoke("How are you?")).content == "hello"
+    assert len(cache) == 1
+
+    assert (await chat_model.ainvoke("How are you?")).content == "hello"
+    assert len(cache) == 1
+
+
 async def test_cache_key_ignores_message_id_async() -> None:
     """Test that message IDs are stripped from cache keys (async).
 

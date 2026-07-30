@@ -1872,9 +1872,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
-        check_cache = self.cache or self.cache is None
+        check_cache = self.cache is not False
         if check_cache:
-            if llm_cache:
+            if llm_cache is not None:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
                 normalized_messages = [
                     (
@@ -2016,7 +2016,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **result.llm_output,
                 **result.generations[0].message.response_metadata,
             }
-        if check_cache and llm_cache:
+        if check_cache and llm_cache is not None:
             llm_cache.update(prompt, llm_string, result.generations)
         return result
 
@@ -2031,9 +2031,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
-        check_cache = self.cache or self.cache is None
+        check_cache = self.cache is not False
         if check_cache:
-            if llm_cache:
+            if llm_cache is not None:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
                 normalized_messages = [
                     (
@@ -2173,7 +2173,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **result.llm_output,
                 **result.generations[0].message.response_metadata,
             }
-        if check_cache and llm_cache:
+        if check_cache and llm_cache is not None:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
 
