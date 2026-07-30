@@ -101,18 +101,13 @@ def _rm_titles(kv: dict[str, Any], prev_key: str = "") -> dict[str, Any]:
 
     for k, v in kv.items():
         if k == "title":
-            # If the value is a nested dict and part of a property under "properties",
-            # preserve the title but continue recursion
             if isinstance(v, dict) and prev_key == "properties":
                 new_kv[k] = _rm_titles(v, k)
             else:
-                # Otherwise, remove this "title" key
                 continue
         elif isinstance(v, dict):
-            # Recurse into nested dictionaries
             new_kv[k] = _rm_titles(v, k)
         else:
-            # Leave non-dict values untouched
             new_kv[k] = v
 
     return new_kv
@@ -266,13 +261,9 @@ def _convert_any_typed_dicts_to_pydantic(
     if is_typeddict(type_):
         typed_dict = type_
         docstring = inspect.getdoc(typed_dict)
-        # Use get_type_hints to properly resolve forward references and
-        # string annotations in Python 3.14+ (PEP 649 deferred annotations).
-        # include_extras=True preserves Annotated metadata.
         try:
             annotations_ = get_type_hints(typed_dict, include_extras=True)
         except Exception:
-            # Fallback for edge cases where get_type_hints might fail
             annotations_ = typed_dict.__annotations__
         description, arg_descriptions = _parse_google_docstring(
             docstring, list(annotations_)
@@ -356,11 +347,6 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
         "name": tool.name,
         "description": tool.description,
         "parameters": {
-            # This is a hack to get around the fact that some tools
-            # do not expose an args_schema, and expect an argument
-            # which is a string.
-            # And Open AI does not support an array type for the
-            # parameters.
             "properties": {
                 "__arg1": {"title": "__arg1", "type": "string"},
             },
@@ -477,7 +463,6 @@ def convert_to_openai_function(
             raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
-            # All fields must be `required`
             parameters = oai_function.get("parameters")
             if isinstance(parameters, dict):
                 fields = parameters.get("properties")
@@ -486,9 +471,6 @@ def convert_to_openai_function(
                     parameters["required"] = list(fields.keys())
                     oai_function["parameters"] = parameters
 
-            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
-            # set to False if strict is True.
-            # All properties layer needs 'additionalProperties=False'
             oai_function["parameters"] = _recursive_set_additional_properties_false(
                 oai_function["parameters"]
             )
@@ -554,13 +536,11 @@ def convert_to_openai_tool(
 
         Added support for OpenAI's image generation built-in tool.
     """
-    # Import locally to prevent circular import
     from langchain_core.tools import Tool  # noqa: PLC0415
 
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:
             return tool
-        # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
         if (tool.get("type") or "").startswith("web_search_preview"):
             return tool
     if isinstance(tool, Tool) and (tool.metadata or {}).get("type") == "custom_tool":
@@ -653,10 +633,16 @@ def tool_example_to_messages(
             Does not need to be provided.
 
             If not provided, a placeholder value will be inserted.
+
+            If provided, must have the same length as `tool_calls`.
         ai_response: If provided, content for a final `AIMessage`.
 
     Returns:
         A list of messages
+
+    Raises:
+        ValueError: If `tool_outputs` is provided and its length does not match
+            the number of tool calls.
 
     Examples:
         ```python
@@ -716,6 +702,14 @@ def tool_example_to_messages(
     tool_outputs = tool_outputs or ["You have correctly called this tool."] * len(
         openai_tool_calls
     )
+    if len(tool_outputs) != len(openai_tool_calls):
+        msg = (
+            f"Number of tool outputs ({len(tool_outputs)}) does not match "
+            f"number of tool calls ({len(openai_tool_calls)}). "
+            "Either omit `tool_outputs` to use placeholders, or provide "
+            "exactly one output per tool call."
+        )
+        raise ValueError(msg)
     for output, tool_call_dict in zip(tool_outputs, openai_tool_calls, strict=False):
         messages.append(ToolMessage(content=output, tool_call_id=tool_call_dict["id"]))
 
@@ -768,7 +762,6 @@ def _parse_google_docstring(
                 args_block = block
                 break
             if block.startswith(("Returns:", "Example:")):
-                # Don't break in case Args come after
                 past_descriptors = True
             elif not past_descriptors:
                 descriptors.append(block)
@@ -784,13 +777,6 @@ def _parse_google_docstring(
     arg_descriptions: dict[str, str] = {}
     if args_block:
         arg: str | None = None
-        # Base indentation, latched once from the first argument line, lets us
-        # distinguish new argument definitions from continuation lines. This
-        # assumes Google-style uniform indentation of argument names: a line
-        # indented deeper than the first argument is treated as a continuation
-        # (even if it contains a colon), so a more-indented later `name:` line
-        # in a malformed, non-uniformly-indented block folds into the previous
-        # argument rather than starting a new one.
         arg_indent: int | None = None
         for line in args_block.split("\n")[1:]:
             if not line.strip():
@@ -821,20 +807,13 @@ def _recursive_set_additional_properties_false(
     schema: dict[str, Any],
 ) -> dict[str, Any]:
     if isinstance(schema, dict):
-        # Check if 'required' is a key at the current level or if the schema is empty,
-        # in which case additionalProperties still needs to be specified.
         if (
             "required" in schema
             or ("properties" in schema and not schema["properties"])
-            # Since Pydantic 2.11, it will always add `additionalProperties: True`
-            # for arbitrary dictionary schemas
-            # See: https://pydantic.dev/articles/pydantic-v2-11-release#changes
-            # If it is already set to True, we need override it to False
             or "additionalProperties" in schema
         ):
             schema["additionalProperties"] = False
 
-        # Recursively check 'properties' and 'items' if they exist
         if "anyOf" in schema:
             for sub_schema in schema["anyOf"]:
                 _recursive_set_additional_properties_false(sub_schema)
