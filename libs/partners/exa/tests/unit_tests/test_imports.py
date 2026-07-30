@@ -3,6 +3,9 @@
 from langchain_exa import __all__  # type: ignore[import-not-found, import-not-found]
 
 EXPECTED_ALL = [
+    "ExaAgent",
+    "ExaAnswer",
+    "ExaContents",
     "ExaSearchResults",
     "ExaSearchRetriever",
     "HighlightsContentsOptions",

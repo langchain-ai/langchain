@@ -7,9 +7,18 @@ from exa_py.api import (
 
 from langchain_exa._version import __version__
 from langchain_exa.retrievers import ExaSearchRetriever
-from langchain_exa.tools import ExaFindSimilarResults, ExaSearchResults
+from langchain_exa.tools import (
+    ExaAgent,
+    ExaAnswer,
+    ExaContents,
+    ExaFindSimilarResults,
+    ExaSearchResults,
+)
 
 __all__ = [
+    "ExaAgent",
+    "ExaAnswer",
+    "ExaContents",
     "ExaFindSimilarResults",
     "ExaSearchResults",
     "ExaSearchRetriever",

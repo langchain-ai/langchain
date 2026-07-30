@@ -25,3 +25,7 @@ View the [documentation](https://docs.langchain.com/oss/python/integrations/prov
 
 - [LangChain Academy](https://academy.langchain.com/) — comprehensive, free courses on LangChain libraries and products, made by the LangChain team
 - [Code of Conduct](https://github.com/langchain-ai/langchain/?tab=coc-ov-file) — community guidelines and standards
+
+## Exa tools
+
+The package exports first-class `ExaSearchResults`, `ExaContents`, `ExaAnswer`, and `ExaAgent` tools. `ExaContents`, `ExaAnswer`, and `ExaAgent` return snake_case dicts. `ExaFindSimilarResults` is deprecated (Exa's `/findSimilar` is deprecated) and remains only for compatibility — prefer `ExaSearchResults`.
