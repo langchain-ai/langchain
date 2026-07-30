@@ -724,7 +724,7 @@ def test_stream_reasoning_summary(
     )
     message_1 = {
         "role": "user",
-        "content": "What was the third tallest buliding in the year 2000?",
+        "content": "What was the third tallest building in the year 2000?",
     }
     response_1: BaseMessage
     if use_v2_stream:
