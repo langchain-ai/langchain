@@ -4373,3 +4373,62 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_split_json_nested_respects_max_chunk_size() -> None:
+    """Regression test for #39127 (bugs 1 & 2 in _json_split).
+
+    Bug 1: size was measured as _json_size({key: value}), ignoring the
+    overhead added by intermediate nesting keys already present in the path.
+    Bug 2: leaf values were inserted unconditionally in the ``elif current_path``
+    branch without checking whether the insertion would exceed max_chunk_size.
+
+    Both bugs together caused chunks to exceed max_chunk_size for nested JSON.
+    """
+    max_chunk_size = 60
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk_size)
+
+    # The chunk {"container": {"a": {"x": 1, "y": 2, "z": 3}, "b": "test"}}
+    # is 59 characters, just under 60, but the algorithm used to produce it as
+    # a single chunk even when max_chunk_size was smaller (e.g. 50).
+    data: dict[str, Any] = {
+        "container": {
+            "a": {"x": 1, "y": 2, "z": 3},
+            "b": "test",
+        },
+    }
+
+    chunks = splitter.split_json(data)
+
+    for i, chunk in enumerate(chunks):
+        size = len(json.dumps(chunk))
+        assert size <= max_chunk_size, (
+            f"chunk {i} has size {size} which exceeds max_chunk_size={max_chunk_size}"
+        )
+
+
+def test_split_json_nested_leaf_overflow_starts_new_chunk() -> None:
+    """Regression test for #39127 bug 2 (leaf insertion ignores max_chunk_size).
+
+    When the current chunk is already close to max_chunk_size and a leaf value
+    would push it over, _json_split must start a new chunk rather than inserting
+    unconditionally.
+    """
+    max_chunk_size = 50
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk_size)
+
+    # First key fills most of the chunk; second leaf should go to a new chunk.
+    data: dict[str, Any] = {
+        "container": {
+            "a": {"x": 1, "y": 2, "z": 3},
+            "b": "test",
+        },
+    }
+
+    chunks = splitter.split_json(data)
+
+    for i, chunk in enumerate(chunks):
+        size = len(json.dumps(chunk))
+        assert size <= max_chunk_size, (
+            f"chunk {i} has size {size} which exceeds max_chunk_size={max_chunk_size}"
+        )
