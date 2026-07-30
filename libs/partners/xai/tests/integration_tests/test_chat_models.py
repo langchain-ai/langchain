@@ -97,6 +97,17 @@ def test_reasoning(output_version: Literal["", "v1"]) -> None:
     assert followup_2.additional_kwargs["reasoning_content"]
 
 
+def test_reasoning_effort_call_time_kwarg() -> None:
+    """Test that `reasoning_effort` is accepted as a call-time kwarg."""
+    chat_model = ChatXAI(model="grok-3-mini", temperature=0)
+
+    response = chat_model.invoke("What is 3^3?", reasoning_effort="low")
+
+    assert response.content
+    assert response.additional_kwargs["reasoning_content"]
+    assert response.usage_metadata is not None
+
+
 def test_web_search() -> None:
     llm = ChatXAI(model=MODEL_NAME, temperature=0).bind_tools([{"type": "web_search"}])
 
