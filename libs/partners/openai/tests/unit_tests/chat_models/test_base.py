@@ -31,6 +31,7 @@ from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.block_translators.openai import (
     _convert_from_v03_ai_message,
 )
+from langchain_core.messages.content import create_text_block
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
@@ -3064,6 +3065,89 @@ def test__construct_responses_api_input_store_enabled_keeps_item_ids(
             "id": "msg_123",
         },
     ]
+
+
+def test__construct_responses_api_input_strips_lc_id_from_synthetic_message() -> None:
+    """Synthetic AIMessage built with create_text_block() should not leak lc_ IDs.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/39113.
+    create_text_block() auto-generates an id prefixed with 'lc_'. When forwarded
+    to the OpenAI Responses API, this causes a 400 because the API requires
+    message IDs to begin with 'msg_'.
+    """
+    ai_message = AIMessage(
+        content_blocks=[
+            create_text_block("The capital of France is Paris."),
+        ],
+    )
+    # Verify the block has an lc_ prefixed ID (the root cause).
+    assert isinstance(ai_message.content, list)
+    block = ai_message.content[0]
+    assert isinstance(block, dict)
+    assert block["id"].startswith("lc_")
+
+    result = _construct_responses_api_input([ai_message])
+
+    # The lc_ ID must NOT appear on the emitted message item.
+    assert len(result) == 1
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "assistant"
+    assert "id" not in result[0]
+    assert result[0]["content"] == [
+        {
+            "type": "output_text",
+            "text": "The capital of France is Paris.",
+            "annotations": [],
+        }
+    ]
+
+
+def test__construct_responses_api_input_preserves_valid_msg_id() -> None:
+    """Valid msg_ prefixed IDs must still be forwarded to the Responses API."""
+    ai_message = AIMessage(
+        content=[
+            {"type": "text", "text": "Hello!", "id": "msg_abc123"},
+        ],
+        response_metadata={"id": "resp_abc"},
+    )
+
+    result = _construct_responses_api_input([ai_message])
+
+    assert len(result) == 1
+    assert result[0]["id"] == "msg_abc123"
+
+
+def test__construct_responses_api_input_synthetic_conversation_round_trip() -> None:
+    """End-to-end test: synthetic multi-turn conversation with lc_ IDs.
+
+    Reproduces the exact scenario from issue #39113.
+    """
+    messages: list[BaseMessage] = [
+        SystemMessage(
+            content_blocks=[create_text_block("You are a helpful assistant.")]
+        ),
+        HumanMessage(
+            content_blocks=[create_text_block("What is the capital of France?")]
+        ),
+        AIMessage(
+            content_blocks=[create_text_block("The capital of France is Paris.")]
+        ),
+        HumanMessage(content_blocks=[create_text_block("And of Italy?")]),
+    ]
+
+    result = _construct_responses_api_input(messages)
+
+    # Verify no lc_ IDs leaked into any item.
+    for item in result:
+        item_id = item.get("id")
+        assert item_id is None or not item_id.startswith("lc_"), (
+            f"LangChain-internal ID leaked into Responses API input: {item_id}"
+        )
+
+    # The assistant message should not have an 'id' field.
+    assistant_items = [i for i in result if i.get("role") == "assistant"]
+    assert len(assistant_items) == 1
+    assert "id" not in assistant_items[0]
 
 
 def test__construct_responses_api_input_store_false_keeps_full_tool_call_items() -> (
