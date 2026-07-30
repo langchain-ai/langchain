@@ -3380,6 +3380,23 @@ def test_split_json_with_lists() -> None:
     assert len(texts_list) >= len(texts)
 
 
+def test_split_json_length_function() -> None:
+    """Test json text splitter with a custom length function."""
+    data: dict[str, Any] = {
+        "a": "x" * 80,
+        "b": "y" * 80,
+    }
+
+    default_splitter = RecursiveJsonSplitter(max_chunk_size=100)
+    custom_splitter = RecursiveJsonSplitter(
+        max_chunk_size=100,
+        length_function=lambda json_data: len(json_data),
+    )
+
+    assert len(default_splitter.split_json(data)) > 1
+    assert custom_splitter.split_json(data) == [data]
+
+
 def test_split_json_many_calls() -> None:
     x = {"a": 1, "b": 2}
     y = {"c": 3, "d": 4}

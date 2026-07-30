@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
-from typing import Any
+from typing import Any, Callable
 
 from langchain_core.documents import Document
 
@@ -27,7 +27,10 @@ class RecursiveJsonSplitter:
     """
 
     def __init__(
-        self, max_chunk_size: int = 2000, min_chunk_size: int | None = None
+        self,
+        max_chunk_size: int = 2000,
+        min_chunk_size: int | None = None,
+        length_function: Callable[[dict[str, Any]], int] | None = None,
     ) -> None:
         """Initialize the chunk size configuration for text processing.
 
@@ -49,6 +52,7 @@ class RecursiveJsonSplitter:
             if min_chunk_size is not None
             else max(max_chunk_size - 200, 50)
         )
+        self._length_function = length_function or self._json_size
 
     @staticmethod
     def _json_size(data: dict[str, Any]) -> int:
@@ -94,8 +98,8 @@ class RecursiveJsonSplitter:
         if isinstance(data, dict) and data:
             for key, value in data.items():
                 new_path = [*current_path, key]
-                chunk_size = self._json_size(chunks[-1])
-                size = self._json_size({key: value})
+                chunk_size = self._length_function(chunks[-1])
+                size = self._length_function({key: value})
                 remaining = self.max_chunk_size - chunk_size
 
                 if size < remaining:
