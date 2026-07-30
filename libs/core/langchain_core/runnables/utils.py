@@ -407,9 +407,12 @@ def get_lambda_source(func: Callable[..., Any]) -> str | None:
     return visitor.source if visitor.count == 1 else name
 
 
-@lru_cache(maxsize=256)
 def get_function_nonlocals(func: Callable[..., Any]) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
+
+    Bound methods hold a strong reference to their object via `__self__`.
+    Caching them in `@lru_cache` would prevent the object from being garbage
+    collected, causing memory leaks. We skip the cache for bound methods.
 
     Args:
         func: The function to check.
@@ -417,6 +420,17 @@ def get_function_nonlocals(func: Callable[..., Any]) -> list[Any]:
     Returns:
         The nonlocal variables accessed by the function.
     """
+    if inspect.ismethod(func):
+        return _get_function_nonlocals_impl(func)
+    return _get_function_nonlocals_cached(func)
+
+
+@lru_cache(maxsize=256)
+def _get_function_nonlocals_cached(func: Callable[..., Any]) -> list[Any]:
+    return _get_function_nonlocals_impl(func)
+
+
+def _get_function_nonlocals_impl(func: Callable[..., Any]) -> list[Any]:
     try:
         code = inspect.getsource(func)
         tree = ast.parse(textwrap.dedent(code))

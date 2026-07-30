@@ -1,8 +1,11 @@
+import gc
+import weakref
 from collections.abc import Callable
 from typing import Any
 
 import pytest
 
+from langchain_core.runnables import RunnablePassthrough
 from langchain_core.runnables.base import RunnableLambda
 from langchain_core.runnables.utils import (
     get_function_nonlocals,
@@ -73,3 +76,48 @@ def test_nonlocals() -> None:
     assert RunnableLambda(my_func3).deps == [agent]
     assert RunnableLambda(my_func4).deps == [global_agent]
     assert RunnableLambda(func).deps == [nl]
+
+
+def test_bound_method_no_memory_leak() -> None:
+    """Bound methods passed to get_function_nonlocals should not leak.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/30667
+    """
+
+    class MyObject:
+        def call(self, _inputs: dict) -> dict:
+            return {"result": "ok"}
+
+    obj = MyObject()
+    ref = weakref.ref(obj)
+
+    get_function_nonlocals(obj.call)
+
+    del obj
+    gc.collect()
+
+    assert ref() is None, "Object was not garbage collected (memory leak)"
+
+
+def test_bound_method_in_runnable_sequence_no_leak() -> None:
+    """Using a bound method in a RunnableSequence should not leak the object.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/30667
+    """
+
+    class ThingWithRunnable:
+        def __init__(self) -> None:
+            self.data = list(range(1000))
+
+        def call(self, _inputs: dict) -> dict:
+            return {"result": "ok"}
+
+    thing = ThingWithRunnable()
+    ref = weakref.ref(thing)
+
+    (thing.call | RunnablePassthrough()).invoke({})
+
+    del thing
+    gc.collect()
+
+    assert ref() is None, "Object was not garbage collected (memory leak)"
