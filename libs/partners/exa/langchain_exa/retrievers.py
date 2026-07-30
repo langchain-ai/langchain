@@ -70,7 +70,7 @@ class ExaSearchRetriever(BaseRetriever):
     custom query."""
 
     client: Exa = Field(default=None)  # type: ignore[assignment]
-    exa_api_key: SecretStr = Field(default=SecretStr(""))
+    exa_api_key: SecretStr | None = Field(default=None)
     exa_base_url: str | None = None
 
     @model_validator(mode="before")
