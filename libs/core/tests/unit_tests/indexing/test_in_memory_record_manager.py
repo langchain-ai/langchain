@@ -95,6 +95,32 @@ def test_update_timestamp(manager: InMemoryRecordManager) -> None:
     ) == ["key1"]
 
 
+def test_update_multiple_keys_consistent_timestamp(
+    manager: InMemoryRecordManager,
+) -> None:
+    """Test that updating multiple keys uses a single timestamp for all keys.
+
+    Previously, get_time() was called once per key inside the update()
+    loop, causing documents in the same batch to get slightly different
+    timestamps. This led to incomplete cleanup during indexing since
+    list_keys(before=...) could miss some documents.
+    """
+    timestamps = iter(
+        [
+            datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+            datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+            datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        ]
+    )
+    with patch.object(manager, "get_time", side_effect=lambda: next(timestamps)):
+        manager.update(["key1", "key2", "key3"])
+
+    # All records should share the first timestamp value, not one per key
+    expected_ts = datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()
+    for key in ["key1", "key2", "key3"]:
+        assert manager.records[key]["updated_at"] == expected_ts
+
+
 async def test_aupdate_timestamp(manager: InMemoryRecordManager) -> None:
     """Test updating records in the database."""
     # no keys should be present in the set
