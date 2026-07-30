@@ -2953,6 +2953,23 @@ async def test_router_runnable_async() -> None:
     assert result2 == ["4", "2"]
 
 
+async def test_router_runnable_forwards_kwargs() -> None:
+    """Test that every router execution mode forwards keyword arguments."""
+
+    def add_suffix(value: str, *, suffix: str) -> str:
+        return f"{value}{suffix}"
+
+    router = RouterRunnable({"suffix": RunnableLambda(add_suffix)})
+    router_input = {"key": "suffix", "input": "value"}
+
+    assert router.invoke(router_input, suffix="!") == "value!"
+    assert list(router.stream(router_input, suffix="!")) == ["value!"]
+    assert await router.ainvoke(router_input, suffix="!") == "value!"
+    assert [chunk async for chunk in router.astream(router_input, suffix="!")] == [
+        "value!"
+    ]
+
+
 @freeze_time("2023-01-01")
 def test_higher_order_lambda_runnable(
     mocker: MockerFixture, snapshot: SnapshotAssertion

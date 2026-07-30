@@ -114,7 +114,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             raise ValueError(msg)
 
         runnable = self.runnables[key]
-        return runnable.invoke(actual_input, config)
+        return runnable.invoke(actual_input, config, **kwargs)
 
     @override
     async def ainvoke(
@@ -130,7 +130,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             raise ValueError(msg)
 
         runnable = self.runnables[key]
-        return await runnable.ainvoke(actual_input, config)
+        return await runnable.ainvoke(actual_input, config, **kwargs)
 
     @override
     def batch(
@@ -219,7 +219,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             raise ValueError(msg)
 
         runnable = self.runnables[key]
-        yield from runnable.stream(actual_input, config)
+        yield from runnable.stream(actual_input, config, **kwargs)
 
     @override
     async def astream(
@@ -235,5 +235,5 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             raise ValueError(msg)
 
         runnable = self.runnables[key]
-        async for output in runnable.astream(actual_input, config):
+        async for output in runnable.astream(actual_input, config, **kwargs):
             yield output
