@@ -1126,6 +1126,17 @@ class ChatAnthropic(BaseChatModel):
     docs for more information.
     """
 
+    user_profile_id: str | None = None
+    """User profile ID to attribute the request to.
+
+    Use when acting on behalf of a party other than your organization. Setting this
+    automatically enables the required `user-profiles` beta, routing the request
+    through `client.beta.messages.create`.
+
+    Can also be passed at call time, which overrides the value set here (for example,
+    `model.invoke(..., user_profile_id="uprof_...")`).
+    """
+
     @property
     def effort(self) -> Literal["max", "xhigh", "high", "medium", "low"] | None:
         """Alias for `reasoning_effort`."""
@@ -1421,6 +1432,7 @@ class ChatAnthropic(BaseChatModel):
             "betas": self.betas,
             "context_management": self.context_management,
             "mcp_servers": self.mcp_servers,
+            "user_profile_id": self.user_profile_id,
             "system": system,
             **self.model_kwargs,
             **kwargs,
@@ -1563,6 +1575,15 @@ class ChatAnthropic(BaseChatModel):
         resolved_oc = payload.get("output_config")
         if isinstance(resolved_oc, dict) and resolved_oc.get("task_budget"):
             required_beta = "task-budgets-2026-03-13"
+            if payload.get("betas"):
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
+        # Auto-append required beta for user_profile_id
+        if payload.get("user_profile_id"):
+            required_beta = "user-profiles-2026-03-24"
             if payload.get("betas"):
                 if required_beta not in payload["betas"]:
                     payload["betas"] = [*payload["betas"], required_beta]
