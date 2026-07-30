@@ -3447,25 +3447,31 @@ def test_mcp_tracing() -> None:
             "server_label": "deepwiki",
             "server_url": "https://mcp.deepwiki.com/mcp",
             "require_approval": "always",
-            "headers": {"Authorization": "Bearer PLACEHOLDER"},
+            "headers": {"Authorization": "Bearer HEADER_SECRET"},
+            "authorization": "Bearer AUTHORIZATION_SECRET",
         }
     ]
     with patch.object(llm, "root_client", mock_client):
         llm_with_tools = llm.bind_tools(tools)
         _ = llm_with_tools.invoke([input_message], config={"callbacks": [tracer]})
 
-    # Test headers are not traced
+    # Test credentials are not traced
     assert len(tracer.chat_model_start_inputs) == 1
     invocation_params = tracer.chat_model_start_inputs[0]["kwargs"]["invocation_params"]
-    for tool in invocation_params["tools"]:
-        if "headers" in tool:
-            assert tool["headers"] == "**REDACTED**"
-    for substring in ["Authorization", "Bearer", "PLACEHOLDER"]:
+    assert invocation_params["tools"][0]["headers"] == "**REDACTED**"
+    assert invocation_params["tools"][0]["authorization"] == "**REDACTED**"
+    for substring in [
+        "Authorization",
+        "Bearer",
+        "HEADER_SECRET",
+        "AUTHORIZATION_SECRET",
+    ]:
         assert substring not in str(tracer.chat_model_start_inputs)
 
-    # Test headers are correctly propagated to request
+    # Test credentials are correctly propagated to request
     payload = llm_with_tools._get_request_payload([input_message], tools=tools)  # type: ignore[attr-defined]
-    assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"
+    assert payload["tools"][0]["headers"]["Authorization"] == "Bearer HEADER_SECRET"
+    assert payload["tools"][0]["authorization"] == "Bearer AUTHORIZATION_SECRET"
 
 
 def test_compat_responses_v03() -> None:
