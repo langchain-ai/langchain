@@ -486,11 +486,12 @@ class AddableDict(dict[str, Any]):
                 try:
                     added = chunk[key] + other[key]
                 except TypeError as exc:
-                    raise TypeError(
+                    msg = (
                         f"Cannot add incompatible types for key {key!r}: "
                         f"{type(chunk[key]).__name__!r} and "
                         f"{type(other[key]).__name__!r}"
-                    ) from exc
+                    )
+                    raise TypeError(msg) from exc
                 chunk[key] = added
         return chunk
 
@@ -511,11 +512,12 @@ class AddableDict(dict[str, Any]):
                 try:
                     added = chunk[key] + self[key]
                 except TypeError as exc:
-                    raise TypeError(
+                    msg = (
                         f"Cannot add incompatible types for key {key!r}: "
                         f"{type(chunk[key]).__name__!r} and "
                         f"{type(self[key]).__name__!r}"
-                    ) from exc
+                    )
+                    raise TypeError(msg) from exc
                 chunk[key] = added
         return chunk
 
