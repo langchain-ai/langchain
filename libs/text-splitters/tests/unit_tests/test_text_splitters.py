@@ -3333,6 +3333,34 @@ def test_happy_path_splitting_with_duplicate_header_tag() -> None:
     assert docs[3].metadata["Header 1"] == "Foo"
 
 
+def test_recursive_json_splitter_with_length_function() -> None:
+    """Test json text splitter with a custom length function."""
+
+    def custom_length(data: dict[str, Any]) -> int:
+        return len(json.dumps(data)) * 100
+
+    # Max chunk size is 1000.
+    # Empty dict length = 2 * 100 = 200
+    # {"a": 1} length = 8 * 100 = 800
+    # {"b": 2} length = 8 * 100 = 800
+    # First item ("a": 1) will be added to the first chunk because it fits.
+    # Second item ("b": 2) won't fit in the remaining 200, so it will start a new chunk.
+    splitter = RecursiveJsonSplitter(max_chunk_size=1000, length_function=custom_length)
+
+    test_data: dict[str, Any] = {
+        "a": 1,
+        "b": 2,
+    }
+
+    chunks = splitter.split_json(test_data)
+
+    # Without the custom length function, {"a": 1, "b": 2} (length ~16)
+    # would easily fit in a single 1000 max_chunk_size chunk.
+    assert len(chunks) == 2
+    assert chunks[0] == {"a": 1}
+    assert chunks[1] == {"b": 2}
+
+
 def test_split_json() -> None:
     """Test json text splitter."""
     max_chunk = 800
