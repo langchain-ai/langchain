@@ -124,7 +124,17 @@ class RecursiveJsonSplitter:
                     self._json_split(value, new_path, chunks)
         # Handle leaf values and empty dicts
         elif current_path:
-            self._set_nested_dict(chunks[-1], current_path, data)
+            tentative_chunk = copy.deepcopy(chunks[-1])
+            self._set_nested_dict(tentative_chunk, current_path, data)
+            tentative_size = self._length_function(tentative_chunk)
+
+            if tentative_size < self.max_chunk_size:
+                chunks[-1] = tentative_chunk
+            else:
+                # Current chunk is full, start a new one with this leaf
+                new_chunk: dict[str, Any] = {}
+                self._set_nested_dict(new_chunk, current_path, data)
+                chunks.append(new_chunk)
         return chunks
 
     def split_json(

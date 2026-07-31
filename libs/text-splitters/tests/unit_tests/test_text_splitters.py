@@ -4401,3 +4401,24 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_split_json_non_additive_length_function() -> None:
+    """Test json text splitter with a non-additive length function (e.g. tokenizers)."""
+
+    def non_additive_size(data: dict[str, Any]) -> int:
+        """Mock non-additive size function which breaks the additive fit check."""
+        return len(json.dumps(obj=data)) ** 2
+
+    max_chunk_size = 2000
+    splitter = RecursiveJsonSplitter(
+        max_chunk_size=max_chunk_size,
+        min_chunk_size=50,
+        length_function=non_additive_size,
+    )
+    data: dict[str, str] = {f"k{i}": f"v{i}" for i in range(20)}
+    chunks = splitter.split_json(data)
+
+    sizes = [non_additive_size(c) for c in chunks]
+    oversized_chunks = [s for s in sizes if s > max_chunk_size]
+    assert len(oversized_chunks) == 0, f"Oversized chunks: {oversized_chunks}"
