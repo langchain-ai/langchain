@@ -277,3 +277,18 @@ async def test_adelete_keys(amanager: InMemoryRecordManager) -> None:
     # Check if the deleted keys are no longer in the database
     remaining_keys = await amanager.alist_keys()
     assert remaining_keys == ["key3"]
+
+
+def test_in_memory_record_manager_batch_update_consistent_timestamp() -> None:
+    """Ensure all records updated in a single batch share the exact same timestamp."""
+    record_manager = InMemoryRecordManager(namespace="test_namespace")
+    record_manager.create_schema()
+
+    keys = ["key1", "key2", "key3"]
+    record_manager.update(keys)
+
+    records = record_manager.records
+    timestamps = {records[k]["updated_at"] for k in keys}
+
+    # All records in the batch must share 1 unique timestamp
+    assert len(timestamps) == 1
