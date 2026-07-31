@@ -119,7 +119,7 @@ jobs:
           fi
 
       - name: "🐍 Set up Python + uv"
-        uses: astral-sh/setup-uv@0ca8f610542aa7f4acaf39e65cf4eb3c35091883 # v7
+        uses: astral-sh/setup-uv@5a095e7a2014a4212f075830d4f7277575a9d098 # v7
         with:
           version: "0.5.25"
           python-version: "3.12"
