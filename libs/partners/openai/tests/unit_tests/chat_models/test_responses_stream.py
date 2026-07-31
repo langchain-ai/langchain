@@ -13,6 +13,8 @@ from openai.types.responses import (
     ResponseContentPartAddedEvent,
     ResponseContentPartDoneEvent,
     ResponseCreatedEvent,
+    ResponseErrorEvent,
+    ResponseFailedEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseFunctionToolCallItem,
@@ -30,6 +32,7 @@ from openai.types.responses import (
     ResponseTextDoneEvent,
 )
 from openai.types.responses.response import Response
+from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_output_text import ResponseOutputText
 from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_reasoning_summary_part_added_event import (
@@ -1158,3 +1161,85 @@ def test_responses_stream_tolerates_unknown_literal_drift() -> None:
             full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.id == "resp_123"
+
+
+def _in_progress_stream_head() -> ResponseCreatedEvent:
+    """Return a `response.created` event copied from the canonical fixture."""
+    created = copy.deepcopy(responses_stream[0])
+    assert isinstance(created, ResponseCreatedEvent)
+    return created
+
+
+def test_responses_stream_surfaces_response_failed_event() -> None:
+    """A stream ending in `response.failed` must raise, not look successful.
+
+    Regression test for #39039: `response.failed` fell through the converter's
+    final `else` branch and was discarded, so a failed stream was
+    indistinguishable from a completed one and the error never reached the
+    caller.
+    """
+    created = _in_progress_stream_head()
+    failed_response = created.response.model_copy(
+        update={
+            "status": "failed",
+            "error": ResponseError(
+                code="server_error",
+                message="The model failed to generate a response.",
+            ),
+        }
+    )
+    stream = [
+        created,
+        ResponseFailedEvent(
+            response=failed_response, sequence_number=1, type="response.failed"
+        ),
+    ]
+
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    with (
+        patch.object(llm, "root_client", mock_client),
+        pytest.raises(ValueError, match="server_error"),
+    ):
+        for _ in llm.stream("test"):
+            pass
+
+
+def test_responses_stream_surfaces_error_event() -> None:
+    """A top-level `error` event must raise rather than be discarded.
+
+    Unlike `response.failed`, an `error` event carries no `response` object --
+    only `code`, `message` and `param` -- so it cannot be routed through the
+    terminal-response branch and needs handling of its own.
+    """
+    stream = [
+        _in_progress_stream_head(),
+        ResponseErrorEvent(
+            type="error",
+            code="rate_limit_exceeded",
+            message="Rate limit reached for gpt-5.4.",
+            param=None,
+            sequence_number=1,
+        ),
+    ]
+
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    with (
+        patch.object(llm, "root_client", mock_client),
+        pytest.raises(ValueError, match="rate_limit_exceeded"),
+    ):
+        for _ in llm.stream("test"):
+            pass

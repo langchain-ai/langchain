@@ -5097,7 +5097,19 @@ def _convert_responses_chunk_to_generation_chunk(
         response = _coerce_chunk_response(chunk.response)
         id = response.id
         response_metadata["id"] = response.id  # Backwards compatibility
-    elif chunk.type in ("response.completed", "response.incomplete"):
+    elif chunk.type == "error":
+        # An `error` event carries no `response` object -- only `code`, `message`
+        # and `param` -- so it cannot go through the terminal-response branch
+        # below. Without this, the event fell through to the final `else` and was
+        # discarded, leaving a failed stream indistinguishable from a successful
+        # one.
+        msg = f"{chunk.code}: {chunk.message}" if chunk.code else chunk.message
+        raise ValueError(msg)
+    elif chunk.type in (
+        "response.completed",
+        "response.incomplete",
+        "response.failed",
+    ):
         response = _coerce_chunk_response(chunk.response)
         msg = cast(
             AIMessage,
