@@ -138,6 +138,33 @@ def test_structured_prompt_template_format() -> None:
     ]
 
 
+def test_structured_prompt_does_not_mutate_structured_output_kwargs() -> None:
+    schema = {
+        "type": "object",
+        "properties": {"answer": {"type": "string"}},
+    }
+    shared_options = {"method": "json_schema"}
+
+    first = StructuredPrompt.from_messages_and_schema(
+        [("human", "one")],
+        schema,
+        structured_output_kwargs=shared_options,
+        strict=True,
+    )
+    second = StructuredPrompt(
+        [("human", "two")],
+        schema,
+        structured_output_kwargs=shared_options,
+    )
+
+    assert shared_options == {"method": "json_schema"}
+    assert first.structured_output_kwargs == {  # type: ignore[attr-defined]
+        "method": "json_schema",
+        "strict": True,
+    }
+    assert "strict" not in second.structured_output_kwargs
+
+
 def test_structured_prompt_template_empty_vars() -> None:
     with pytest.raises(ChevronError, match="empty tag"):
         StructuredPrompt(
