@@ -32,7 +32,7 @@ jobs:
     if: ${{ github.repository_owner == 'langchain-ai' && !contains(github.event.pull_request.labels.*.name, 'codspeed-ignore') }}
     steps:
       - name: "📋 Checkout Code"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
       - name: "🐍 Setup Python 3.11"
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
@@ -62,7 +62,7 @@ jobs:
         job-configs: ${{ fromJson(needs.build.outputs.codspeed) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
       - name: "📦 Install UV Package Manager"
         uses: astral-sh/setup-uv@0ca8f610542aa7f4acaf39e65cf4eb3c35091883 # v7
