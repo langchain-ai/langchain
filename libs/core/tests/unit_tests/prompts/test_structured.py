@@ -145,3 +145,27 @@ def test_structured_prompt_template_empty_vars() -> None:
             schema={"type": "object", "properties": {}, "title": "foo"},
             template_format="mustache",
         )
+
+
+def test_structured_prompt_does_not_mutate_input_kwargs() -> None:
+    schema = {
+        "type": "object",
+        "properties": {"answer": {"type": "string"}},
+    }
+    shared_options = {"method": "json_schema"}
+
+    StructuredPrompt.from_messages_and_schema(
+        [("human", "one")],
+        schema,
+        structured_output_kwargs=shared_options,
+        strict=True,
+    )
+
+    assert shared_options == {"method": "json_schema"}
+
+    second = StructuredPrompt(
+        [("human", "two")],
+        schema,
+        structured_output_kwargs=shared_options,
+    )
+    assert "strict" not in second.structured_output_kwargs

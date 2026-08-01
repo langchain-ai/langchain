@@ -69,7 +69,11 @@ class StructuredPrompt(ChatPromptTemplate):
                 f"{schema_}"
             )
             raise ValueError(err_msg)
-        structured_output_kwargs = structured_output_kwargs or {}
+        # Create a copy to avoid mutating the caller's original dictionary.
+        if structured_output_kwargs is None:
+            structured_output_kwargs = {}
+        else:
+            structured_output_kwargs = dict(structured_output_kwargs)
         for k in set(kwargs).difference(get_pydantic_field_names(self.__class__)):
             structured_output_kwargs[k] = kwargs.pop(k)
         super().__init__(
