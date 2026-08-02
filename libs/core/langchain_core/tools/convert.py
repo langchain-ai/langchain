@@ -101,6 +101,16 @@ def tool(
             outputs will be serialized if needed.
         - When using with `Runnable`, a string name must be provided.
 
+    !!! warning "Reserved argument names"
+
+        Avoid naming tool arguments `config`, `run_manager`, or `callbacks`. These
+        collide with values LangChain injects into tools at call time. A `config`
+        argument is shadowed by the injected `RunnableConfig`, so the tool fails
+        at call time with `TypeError: ... missing 1 required positional argument:
+        'config'`, while `run_manager` and `callbacks` are silently dropped from
+        the generated schema. To access runtime information (state, context, store,
+        config), add a `ToolRuntime` parameter instead.
+
     Args:
         name_or_callable: Optional name of the tool or the `Callable` to be
             converted to a tool.
