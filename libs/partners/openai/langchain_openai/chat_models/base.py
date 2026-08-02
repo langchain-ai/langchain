@@ -3275,7 +3275,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         `ChatOpenAI` can be used with OpenAI-compatible APIs like
         [LM Studio](https://lmstudio.ai/), [vLLM](https://github.com/vllm-project/vllm),
-        [Ollama](https://ollama.com/), and others.
+        [Ollama](https://ollama.com/), multi-model gateways, and others.
 
         To use custom parameters specific to these providers, use the `extra_body` parameter.
 
@@ -3305,6 +3305,23 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 extra_body={"use_beam_search": True, "best_of": 4},
             )
             ```
+
+        !!! example "Multi-model gateway (e.g. DaoXE)"
+
+            Point `base_url` at any OpenAI-compatible gateway. Use a key and model ID
+            issued by that endpoint (not an official OpenAI key unless the gateway
+            accepts one).
+
+            ```python
+            model = ChatOpenAI(
+                base_url="https://api.daoxe.com/v1",
+                api_key="...",  # key from the gateway
+                model="gpt-4o-mini",  # model ID the gateway serves
+            )
+            ```
+
+            You can also set `OPENAI_API_BASE=https://api.daoxe.com/v1` instead of
+            passing `base_url` explicitly.
 
     ??? info "`model_kwargs` vs `extra_body`"
 
