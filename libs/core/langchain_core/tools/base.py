@@ -331,7 +331,8 @@ def create_schema_from_function(
 
     # Exclude injected args from the schema regardless of whether `filter_args`
     # was provided. Injected args (e.g. `InjectedToolArg`, `ToolRuntime`) are
-    # supplied at runtime and must never be surfaced to the model.
+    # supplied at runtime rather than by the model, so they should not appear in
+    # the generated schema.
     if not include_injected:
         for existing_param in sig.parameters:
             if (

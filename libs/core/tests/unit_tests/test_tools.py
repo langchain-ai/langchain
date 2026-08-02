@@ -2651,13 +2651,13 @@ def test_create_schema_from_function_include_injected_with_filter_args() -> None
 
     Regression test for https://github.com/langchain-ai/langchain/issues/35831:
     the injected-arg filtering was nested inside the `else` branch of the
-    `filter_args` check, so injected args (which may hold secrets or internal
-    context) leaked into the schema exposed to the model.
+    `filter_args` check, so injected args ended up in the generated schema when a
+    caller also supplied `filter_args`.
     """
 
     def my_tool(
         query: str,
-        secret: Annotated[str, InjectedToolArg],
+        injected: Annotated[str, InjectedToolArg],
         runtime: _DirectlyInjectedToolArg,
     ) -> None:
         """Tool with an annotated and a directly injected arg."""
@@ -2670,7 +2670,7 @@ def test_create_schema_from_function_include_injected_with_filter_args() -> None
         include_injected=False,
     )
     properties = model_json_schema(schema)["properties"]
-    assert "secret" not in properties
+    assert "injected" not in properties
     assert "runtime" not in properties
     assert properties == {}
 
@@ -2678,7 +2678,7 @@ def test_create_schema_from_function_include_injected_with_filter_args() -> None
 def test_create_schema_from_function_does_not_mutate_filter_args() -> None:
     """`filter_args` passed by the caller must not be mutated. See #35831."""
 
-    def my_tool(query: str, secret: Annotated[str, InjectedToolArg]) -> None:
+    def my_tool(query: str, injected: Annotated[str, InjectedToolArg]) -> None:
         """Tool with an injected arg."""
 
     filter_args = ["query"]
