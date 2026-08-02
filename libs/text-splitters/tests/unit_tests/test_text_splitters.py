@@ -3504,6 +3504,24 @@ def test_split_json_empty_dict_value_in_large_payload() -> None:
     assert found_empty, "Empty dict value was lost during splitting"
 
 
+def test_split_json_invalid_input_types() -> None:
+    """Test that split_json raises TypeError for invalid non-dict top-level inputs."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=300)
+
+    # List without convert_lists=True should raise TypeError
+    with pytest.raises(TypeError, match="convert_lists=True"):
+        splitter.split_json([{"a": 1}])
+
+    # List with convert_lists=True should succeed
+    res = splitter.split_json([{"a": 1}], convert_lists=True)
+    assert res == [{"0": {"a": 1}}]
+
+    # Non-dict/non-list types should raise TypeError
+    for invalid in ["hello world", 123, True, None]:
+        with pytest.raises(TypeError, match="Unexpected input type"):
+            splitter.split_json(invalid)  # type: ignore[arg-type]
+
+
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.POWERSHELL, chunk_size=60, chunk_overlap=0

@@ -128,6 +128,22 @@ class RecursiveJsonSplitter:
         Returns:
             A list of JSON chunks.
         """
+        if not isinstance(json_data, dict):
+            if isinstance(json_data, list) and convert_lists:
+                pass
+            elif isinstance(json_data, list):
+                msg = (
+                    "Unexpected input type: list. Pass convert_lists=True to "
+                    "split top-level lists."
+                )
+                raise TypeError(msg)
+            else:
+                msg = (
+                    f"Unexpected input type: {type(json_data).__name__}. "
+                    "Expected dict."
+                )
+                raise TypeError(msg)
+
         if convert_lists:
             chunks = self._json_split(self._list_to_dict_preprocessing(json_data))
         else:
