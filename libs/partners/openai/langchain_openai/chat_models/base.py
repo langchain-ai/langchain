@@ -4357,6 +4357,9 @@ def _construct_responses_api_payload(
         else:
             payload["tool_choice"] = tool_choice
 
+    if isinstance(payload.get("text"), dict):
+        payload["text"] = payload["text"].copy()
+
     # Structured output
     if schema := payload.pop("response_format", None):
         # For pydantic + non-streaming case, we use responses.parse.
