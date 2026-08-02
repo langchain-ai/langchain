@@ -3549,6 +3549,77 @@ def test_filter_injected_args_not_in_schema(
     assert "runtime" not in captured
 
 
+def test_base_tool_subclass_injects_directly_injected_runtime() -> None:
+    """Directly injected args on a `BaseTool` subclass `_run` must be injected.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/34558:
+    `BaseTool._injected_args_keys` returned an empty set, so a directly injected
+    arg (e.g. `ToolRuntime`) declared on a subclass `_run` was dropped before
+    `_run` was called, raising `TypeError: _run() missing 1 required positional
+    argument: 'runtime'`.
+    """
+
+    class MultiplyInput(BaseModel):
+        a: int
+        b: int
+
+    captured: dict[str, Any] = {}
+
+    class Multiplier(BaseTool):
+        name: str = "Multiplier"
+        description: str = "Multiply two numbers."
+        args_schema: type[BaseModel] = MultiplyInput
+
+        def _run(self, a: int, b: int, runtime: _CustomRuntime) -> int:
+            captured["runtime"] = runtime
+            return a * b
+
+    tool_ = Multiplier()
+
+    # The directly injected runtime arg is detected from the `_run` signature...
+    assert "runtime" in tool_._injected_args_keys
+    # ...and does not leak into the model-facing schema.
+    tool_call_schema = tool_.tool_call_schema
+    assert not isinstance(tool_call_schema, dict)
+    properties = model_json_schema(tool_call_schema)["properties"]
+    assert "runtime" not in properties
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    result = tool_.invoke({"a": 2, "b": 3, "runtime": runtime})
+    assert result == 6
+    assert captured["runtime"] is runtime
+
+
+async def test_base_tool_subclass_injects_runtime_async_only() -> None:
+    """`_injected_args_keys` falls back to `_arun` for async-only subclasses."""
+
+    class MultiplyInput(BaseModel):
+        a: int
+        b: int
+
+    captured: dict[str, Any] = {}
+
+    class AsyncMultiplier(BaseTool):
+        name: str = "AsyncMultiplier"
+        description: str = "Multiply two numbers."
+        args_schema: type[BaseModel] = MultiplyInput
+
+        def _run(self, *args: Any, **kwargs: Any) -> int:
+            raise NotImplementedError
+
+        async def _arun(self, a: int, b: int, runtime: _CustomRuntime) -> int:
+            captured["runtime"] = runtime
+            return a * b
+
+    tool_ = AsyncMultiplier()
+    assert "runtime" in tool_._injected_args_keys
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    result = await tool_.ainvoke({"a": 2, "b": 3, "runtime": runtime})
+    assert result == 6
+    assert captured["runtime"] is runtime
+
+
 class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
     """Callback handler that captures `tool_call_id` passed to `on_tool_start`.
 

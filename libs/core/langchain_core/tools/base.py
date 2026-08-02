@@ -706,7 +706,20 @@ class ChildTool(BaseTool):
 
     @functools.cached_property
     def _injected_args_keys(self) -> frozenset[str]:
-        # Base implementation doesn't manage injected args
+        # Inspect the tool's `_run` (falling back to `_arun` for async-only
+        # subclasses) for directly injected args like `ToolRuntime` or args
+        # annotated with `InjectedToolArg`. These are supplied at call time
+        # rather than by the model, so they must be excluded from the schema and
+        # re-injected during execution. `StructuredTool` overrides this to
+        # inspect its wrapped `func`/`coroutine` instead.
+        for method in (self._run, self._arun):
+            keys = frozenset(
+                k
+                for k, v in signature(method).parameters.items()
+                if _is_injected_arg_type(v.annotation)
+            )
+            if keys:
+                return keys
         return _EMPTY_SET
 
     # --- Runnable ---
