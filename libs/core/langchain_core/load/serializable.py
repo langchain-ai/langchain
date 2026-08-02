@@ -12,6 +12,7 @@ from typing import (
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
+from pydantic_core import PydanticUndefined
 from typing_extensions import NotRequired, override
 
 logger = logging.getLogger(__name__)
@@ -74,7 +75,18 @@ def _try_neq_default(value: Any, field: FieldInfo) -> bool:
     # Handle edge case: inequality of two objects does not evaluate to a bool (e.g. two
     # Pandas DataFrames).
     try:
-        return bool(field.get_default() != value)
+        default = field.get_default()
+        if default is PydanticUndefined and field.default_factory is not None:
+            # Since pydantic 2.14, `get_default()` returns `PydanticUndefined`
+            # for `default_factory` fields instead of `None`. Resolve the
+            # effective default by calling the factory. Factories that require
+            # validated data raise `TypeError`; treat those as non-default to
+            # preserve existing behavior.
+            try:
+                default = field.get_default(call_default_factory=True)
+            except TypeError:
+                return True
+        return bool(default != value)
     except Exception as _:
         try:
             return all(field.get_default() != value)

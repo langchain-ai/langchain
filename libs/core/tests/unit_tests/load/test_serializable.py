@@ -3,6 +3,7 @@ import json
 import warnings
 from typing import Any
 
+import pydantic
 import pytest
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
@@ -23,6 +24,7 @@ from langchain_core.prompts import (
 )
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.tracers import log_stream
+from langchain_core.utils import from_env
 
 OPENAI_TEST_MODEL = "gpt-5.5"
 
@@ -1174,3 +1176,93 @@ class TestInternalCallSitesUseMessages:
             'allowed_objects="messages"' in source
             or "allowed_objects='messages'" in source
         )
+
+
+class TestDefaultFactorySerialization:
+    """Regression tests for pydantic 2.14 `default_factory` compatibility.
+
+    Since pydantic 2.14 (pydantic/pydantic#13013), `FieldInfo.get_default()`
+    returns `PydanticUndefined` instead of `None` for fields declared with a
+    `default_factory`. `_try_neq_default()` must still treat factory-defaulted
+    fields as "at default" so they stay hidden from reprs, serialized kwargs,
+    and derived cache keys.
+    """
+
+    def test_factory_returning_none_hidden_from_repr(self) -> None:
+        """A field with `default_factory=lambda: None` stays out of the repr."""
+
+        class Model(Serializable):
+            name: str
+            output_version: str | None = Field(default_factory=lambda: None)
+
+        model = Model(name="x")
+        assert repr(model) == "Model(name='x')"
+
+    def test_factory_returning_none_hidden_from_to_json(self) -> None:
+        """A factory-defaulted `None` field stays out of serialized kwargs."""
+
+        class Model(Serializable):
+            name: str
+            output_version: str | None = Field(default_factory=lambda: None)
+
+            @classmethod
+            def is_lc_serializable(cls) -> bool:
+                return True
+
+        model = Model(name="x")
+        assert dumpd(model)["kwargs"] == {"name": "x"}
+
+    def test_env_backed_factory_default_hidden(self) -> None:
+        """An env-backed factory default compares against its effective value.
+
+        `from_env("LC_TEST_...", default="v1")` produces value "v1"; a model at
+        that default must be treated as default. On pydantic >= 2.14 this works
+        because `get_default()` returns `PydanticUndefined` and the factory is
+        called; on pydantic < 2.14 the historical behavior (`get_default()`
+        returns `None`, so a non-`None` factory default shows in the repr) is
+        preserved to avoid changing existing serialized output and cache keys.
+        """
+
+        class Model(Serializable):
+            name: str
+            version: str = Field(
+                default_factory=from_env("_LC_TEST_NONEXISTENT_VAR", default="v1")
+            )
+
+        model = Model(name="x")
+        if pydantic.VERSION.startswith("2.14") or pydantic.VERSION >= "2.14":
+            assert repr(model) == "Model(name='x')"
+        else:
+            assert repr(model) == "Model(name='x', version='v1')"
+
+    def test_explicit_value_overriding_factory_shown(self) -> None:
+        """An explicitly supplied non-default value is still shown."""
+
+        class Model(Serializable):
+            name: str
+            output_version: str | None = Field(default_factory=lambda: None)
+
+        model = Model(name="x", output_version="v2")
+        assert "output_version='v2'" in repr(model)
+
+    def test_static_default_none_still_hidden(self) -> None:
+        """Static `default=None` behavior is unchanged."""
+
+        class Model(Serializable):
+            name: str
+            tag: str | None = None
+
+        model = Model(name="x")
+        assert repr(model) == "Model(name='x')"
+
+    def test_factory_requiring_validated_data_does_not_crash(self) -> None:
+        """A factory taking validated data falls back to non-default safely."""
+
+        class Model(Serializable):
+            name: str = "default-name"
+            derived: str = Field(default_factory=lambda data: data["name"])
+
+        model = Model()
+        # Must not raise; the derived field is at its effective default.
+        assert model.derived == "default-name"
+        repr(model)
