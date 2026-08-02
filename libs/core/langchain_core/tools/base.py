@@ -712,11 +712,19 @@ class ChildTool(BaseTool):
         # rather than by the model, so they must be excluded from the schema and
         # re-injected during execution. `StructuredTool` overrides this to
         # inspect its wrapped `func`/`coroutine` instead.
+        #
+        # Resolve annotations via `get_type_hints` (rather than reading raw
+        # `signature` annotations) so postponed annotations -- e.g. from
+        # `from __future__ import annotations` or quoted forward references --
+        # are recognized. Fall back to the raw annotation per-parameter when a
+        # hint can't be resolved.
         for method in (self._run, self._arun):
+            params = signature(method).parameters
+            hints = _get_type_hints(method, include_extras=True) or {}
             keys = frozenset(
-                k
-                for k, v in signature(method).parameters.items()
-                if _is_injected_arg_type(v.annotation)
+                name
+                for name, param in params.items()
+                if _is_injected_arg_type(hints.get(name, param.annotation))
             )
             if keys:
                 return keys
@@ -1464,11 +1472,15 @@ def _stringify(content: Any) -> str:
         return str(content)
 
 
-def _get_type_hints(func: Callable[..., Any]) -> dict[str, type] | None:
+def _get_type_hints(
+    func: Callable[..., Any], *, include_extras: bool = False
+) -> dict[str, type] | None:
     """Get type hints from a function, handling partial functions.
 
     Args:
         func: The function to get type hints from.
+        include_extras: Whether to preserve `Annotated` metadata in the resolved
+            hints (e.g. to detect `Annotated[..., InjectedToolArg]`).
 
     Returns:
         `dict` of type hints, or `None` if extraction fails.
@@ -1476,7 +1488,7 @@ def _get_type_hints(func: Callable[..., Any]) -> dict[str, type] | None:
     if isinstance(func, functools.partial):
         func = func.func
     try:
-        return get_type_hints(func)
+        return get_type_hints(func, include_extras=include_extras)
     except Exception:
         return None
 
