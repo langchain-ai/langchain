@@ -312,11 +312,15 @@ def test_model_retry_specific_exceptions() -> None:
         checkpointer=InMemorySaver(),
     )
 
-    with pytest.raises(RuntimeError, match="Runtime error"):
-        agent.invoke(
-            {"messages": [HumanMessage("Hello")]},
-            {"configurable": {"thread_id": "test"}},
-        )
+    result = agent.invoke(
+        {"messages": [HumanMessage("Hello")]},
+        {"configurable": {"thread_id": "test"}},
+    )
+
+    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
+    assert len(ai_messages) >= 1
+    # RuntimeError should fail immediately (1 attempt only)
+    assert "1 attempt" in ai_messages[-1].content
 
 
 def test_model_retry_custom_exception_filter() -> None:
@@ -386,13 +390,17 @@ def test_model_retry_custom_exception_filter() -> None:
         checkpointer=InMemorySaver(),
     )
 
-    with pytest.raises(CustomError, match="Non-retryable error"):
-        agent.invoke(
-            {"messages": [HumanMessage("Hello")]},
-            {"configurable": {"thread_id": "test"}},
-        )
+    result = agent.invoke(
+        {"messages": [HumanMessage("Hello")]},
+        {"configurable": {"thread_id": "test"}},
+    )
 
+    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
+    assert len(ai_messages) >= 1
+
+    # Should retry once (attempt 1 with retry_me=True), then fail on attempt 2 (retry_me=False)
     assert attempt_count["value"] == 2
+    assert "2 attempts" in ai_messages[-1].content
 
 
 def test_model_retry_reraises_graph_bubble_up() -> None:
@@ -425,31 +433,6 @@ async def test_model_retry_async_reraises_graph_bubble_up() -> None:
         raise GraphInterrupt
 
     with pytest.raises(GraphInterrupt):
-        await retry.awrap_model_call(request, handler)
-
-    assert calls == 1
-
-
-@pytest.mark.asyncio
-async def test_model_retry_async_reraises_non_retryable_exception() -> None:
-    """Async exceptions excluded by `retry_on` propagate immediately."""
-    retry = ModelRetryMiddleware(
-        max_retries=3,
-        retry_on=(ValueError,),
-        initial_delay=0,
-        jitter=False,
-        on_failure="continue",
-    )
-    calls = 0
-    request = ModelRequest(model=FakeToolCallingModel(), messages=[])
-
-    async def handler(_request: ModelRequest) -> ModelResponse:
-        nonlocal calls
-        calls += 1
-        msg = "not retryable"
-        raise TypeError(msg)
-
-    with pytest.raises(TypeError, match="not retryable"):
         await retry.awrap_model_call(request, handler)
 
     assert calls == 1
