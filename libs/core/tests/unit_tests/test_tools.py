@@ -3592,6 +3592,144 @@ def test_filter_injected_args_not_in_schema(
     assert "runtime" not in captured
 
 
+def test_base_tool_subclass_injects_directly_injected_runtime() -> None:
+    """Directly injected args on a `BaseTool` subclass `_run` must be injected.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/34558:
+    `BaseTool._injected_args_keys` returned an empty set, so a directly injected
+    arg (e.g. `ToolRuntime`) declared on a subclass `_run` was dropped before
+    `_run` was called, raising `TypeError: _run() missing 1 required positional
+    argument: 'runtime'`.
+    """
+
+    class MultiplyInput(BaseModel):
+        a: int
+        b: int
+
+    captured: dict[str, Any] = {}
+
+    class Multiplier(BaseTool):
+        name: str = "Multiplier"
+        description: str = "Multiply two numbers."
+        args_schema: type[BaseModel] = MultiplyInput
+
+        def _run(self, a: int, b: int, runtime: _CustomRuntime) -> int:
+            captured["runtime"] = runtime
+            return a * b
+
+    tool_ = Multiplier()
+
+    # The directly injected runtime arg is detected from the `_run` signature...
+    assert "runtime" in tool_._injected_args_keys
+    # ...and does not leak into the model-facing schema.
+    tool_call_schema = tool_.tool_call_schema
+    assert not isinstance(tool_call_schema, dict)
+    properties = model_json_schema(tool_call_schema)["properties"]
+    assert "runtime" not in properties
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    result = tool_.invoke({"a": 2, "b": 3, "runtime": runtime})
+    assert result == 6
+    assert captured["runtime"] is runtime
+
+
+async def test_base_tool_subclass_injects_runtime_async_only() -> None:
+    """`_injected_args_keys` falls back to `_arun` for async-only subclasses."""
+
+    class MultiplyInput(BaseModel):
+        a: int
+        b: int
+
+    captured: dict[str, Any] = {}
+
+    class AsyncMultiplier(BaseTool):
+        name: str = "AsyncMultiplier"
+        description: str = "Multiply two numbers."
+        args_schema: type[BaseModel] = MultiplyInput
+
+        def _run(self, *args: Any, **kwargs: Any) -> int:
+            raise NotImplementedError
+
+        async def _arun(self, a: int, b: int, runtime: _CustomRuntime) -> int:
+            captured["runtime"] = runtime
+            return a * b
+
+    tool_ = AsyncMultiplier()
+    assert "runtime" in tool_._injected_args_keys
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    result = await tool_.ainvoke({"a": 2, "b": 3, "runtime": runtime})
+    assert result == 6
+    assert captured["runtime"] is runtime
+
+
+def test_base_tool_subclass_injects_postponed_annotation_runtime() -> None:
+    """Postponed / forward-ref annotations for injected args must be resolved.
+
+    `signature()` exposes raw (string) annotations under
+    `from __future__ import annotations` or quoted forward references, which
+    `_is_injected_arg_type` cannot classify. `_injected_args_keys` resolves the
+    hints first, so injection still works. A quoted forward reference reproduces
+    the same string-annotation behavior without a module-wide `__future__`
+    import. Follow-up hardening for #34558.
+    """
+
+    class MultiplyInput(BaseModel):
+        a: int
+        b: int
+
+    captured: dict[str, Any] = {}
+
+    class Multiplier(BaseTool):
+        name: str = "Multiplier"
+        description: str = "Multiply two numbers."
+        args_schema: type[BaseModel] = MultiplyInput
+
+        # Quoted forward reference -> raw string annotation "_CustomRuntime".
+        def _run(self, a: int, b: int, runtime: "_CustomRuntime") -> int:
+            captured["runtime"] = runtime
+            return a * b
+
+    tool_ = Multiplier()
+    assert "runtime" in tool_._injected_args_keys
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    result = tool_.invoke({"a": 2, "b": 3, "runtime": runtime})
+    assert result == 6
+    assert captured["runtime"] is runtime
+
+
+def test_base_tool_subclass_injects_postponed_annotated_arg() -> None:
+    """Postponed `Annotated[..., InjectedToolArg]` args must be resolved too.
+
+    `include_extras=True` when resolving hints preserves the `InjectedToolArg`
+    metadata, so annotated injected args are still detected. Follow-up hardening
+    for #34558.
+    """
+
+    class QueryInput(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    class Echo(BaseTool):
+        name: str = "Echo"
+        description: str = "Echo the query."
+        args_schema: type[BaseModel] = QueryInput
+
+        # Quoted forward reference to a postponed `Annotated` injected arg.
+        def _run(self, query: str, injected: "Annotated[str, InjectedToolArg]") -> str:
+            captured["injected"] = injected
+            return query
+
+    tool_ = Echo()
+    assert "injected" in tool_._injected_args_keys
+
+    result = tool_.invoke({"query": "hi", "injected": "value"})
+    assert result == "hi"
+    assert captured["injected"] == "value"
+
+
 class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
     """Callback handler that captures `tool_call_id` passed to `on_tool_start`.
 
