@@ -1603,6 +1603,25 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     }
 
 
+def test_anthropic_bind_tools_does_not_mutate_tool_choice() -> None:
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool_choice = {"type": "tool", "name": "GetWeather"}
+
+    chat_model_with_tools = chat_model.bind_tools(
+        [GetWeather], tool_choice=tool_choice, parallel_tool_calls=False
+    )
+
+    assert tool_choice == {"type": "tool", "name": "GetWeather"}
+    assert cast("RunnableBinding", chat_model_with_tools).kwargs["tool_choice"] == {
+        "type": "tool",
+        "name": "GetWeather",
+        "disable_parallel_tool_use": True,
+    }
+
+
 def test_fine_grained_tool_streaming_beta() -> None:
     """Test that fine-grained tool streaming beta can be enabled."""
     # Test with betas parameter at initialization
