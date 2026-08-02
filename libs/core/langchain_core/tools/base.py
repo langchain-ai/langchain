@@ -319,7 +319,8 @@ def create_schema_from_function(
     inferred_model = validated.model
 
     if filter_args:
-        filter_args_ = filter_args
+        # Copy to avoid mutating the caller's sequence below.
+        filter_args_ = list(filter_args)
     else:
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
@@ -328,9 +329,15 @@ def create_schema_from_function(
         else:
             filter_args_ = list(FILTERED_ARGS)
 
-        for existing_param in existing_params:
-            if not include_injected and _is_injected_arg_type(
-                sig.parameters[existing_param].annotation
+    # Exclude injected args from the schema regardless of whether `filter_args`
+    # was provided. Injected args (e.g. `InjectedToolArg`, `ToolRuntime`) are
+    # supplied at runtime rather than by the model, so they should not appear in
+    # the generated schema.
+    if not include_injected:
+        for existing_param in sig.parameters:
+            if (
+                _is_injected_arg_type(sig.parameters[existing_param].annotation)
+                and existing_param not in filter_args_
             ):
                 filter_args_.append(existing_param)
 

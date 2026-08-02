@@ -64,6 +64,7 @@ from langchain_core.tools.base import (
     _format_output,
     _is_message_content_block,
     _normalize_message_content,
+    create_schema_from_function,
     get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import (
@@ -2643,6 +2644,48 @@ def test_injected_arg_with_complex_type() -> None:
         return foo.value
 
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"
+
+
+def test_create_schema_from_function_include_injected_with_filter_args() -> None:
+    """`include_injected=False` must be honored even when `filter_args` is passed.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35831:
+    the injected-arg filtering was nested inside the `else` branch of the
+    `filter_args` check, so injected args ended up in the generated schema when a
+    caller also supplied `filter_args`.
+    """
+
+    def my_tool(
+        query: str,
+        injected: Annotated[str, InjectedToolArg],
+        runtime: _DirectlyInjectedToolArg,
+    ) -> None:
+        """Tool with an annotated and a directly injected arg."""
+
+    # filter_args is provided *and* include_injected is False.
+    schema = create_schema_from_function(
+        "MyTool",
+        my_tool,
+        filter_args=["query"],
+        include_injected=False,
+    )
+    properties = model_json_schema(schema)["properties"]
+    assert "injected" not in properties
+    assert "runtime" not in properties
+    assert properties == {}
+
+
+def test_create_schema_from_function_does_not_mutate_filter_args() -> None:
+    """`filter_args` passed by the caller must not be mutated. See #35831."""
+
+    def my_tool(query: str, injected: Annotated[str, InjectedToolArg]) -> None:
+        """Tool with an injected arg."""
+
+    filter_args = ["query"]
+    create_schema_from_function(
+        "MyTool", my_tool, filter_args=filter_args, include_injected=False
+    )
+    assert filter_args == ["query"]
 
 
 @pytest.mark.parametrize("schema_format", ["model", "json_schema"])
