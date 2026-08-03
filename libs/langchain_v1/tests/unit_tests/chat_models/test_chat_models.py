@@ -76,6 +76,15 @@ def test_init_chat_model_langsmith_defaults() -> None:
 
 
 @pytest.mark.requires("langchain_openai")
+@mock.patch.dict(os.environ, {"LANGSMITH_API_KEY": "langsmith-key"}, clear=True)
+def test_init_chat_model_langsmith_api_key_fallback() -> None:
+    model = cast("ChatOpenAI", init_chat_model("langsmith:moonshotai/kimi-k3"))
+
+    assert isinstance(model.openai_api_key, SecretStr)
+    assert model.openai_api_key.get_secret_value() == "langsmith-key"
+
+
+@pytest.mark.requires("langchain_openai")
 @mock.patch.dict(
     os.environ,
     {
