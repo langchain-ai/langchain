@@ -125,7 +125,18 @@ def test_structured_prompt_kwargs() -> None:
     assert chain.invoke({"hello": "there"}) == OutputSchema(name="yo", value=7)  # type: ignore[comparison-overlap]
 
 
-def test_structured_prompt_template_format() -> None:
+def test_structured_prompt_does_not_mutate_kwargs() -> None:
+    structured_output_kwargs = {"method": "json_schema"}
+    StructuredPrompt(
+        [("human", "I'm very structured, how about you?")],
+        {"type": "object"},
+        structured_output_kwargs=structured_output_kwargs,
+        value=7,
+    )
+
+    assert structured_output_kwargs == {"method": "json_schema"}
+
+
     prompt = StructuredPrompt(
         [("human", "hi {{person.name}}")],
         schema={"type": "object", "properties": {}, "title": "foo"},
