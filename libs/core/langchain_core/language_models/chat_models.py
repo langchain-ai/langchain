@@ -737,7 +737,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             )
 
             params = self._get_invocation_params(stop=stop, **kwargs)
-            options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+            options = {
+                "stop": stop,
+                **{key: params[key] for key in kwargs if key in params},
+                **ls_structured_output_format_dict,
+            }
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
                 **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -866,7 +870,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+        options = {
+            "stop": stop,
+            **{key: params[key] for key in kwargs if key in params},
+            **ls_structured_output_format_dict,
+        }
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1001,7 +1009,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+        options = {
+            "stop": stop,
+            **{key: params[key] for key in kwargs if key in params},
+            **ls_structured_output_format_dict,
+        }
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1135,7 +1147,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+        options = {
+            "stop": stop,
+            **{key: params[key] for key in kwargs if key in params},
+            **ls_structured_output_format_dict,
+        }
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),

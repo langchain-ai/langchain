@@ -1074,7 +1074,7 @@ class ChatPerplexity(BaseChatModel):
                 payload["tools"] = [_flatten_responses_tool(tool) for tool in value]
                 continue
             if key in _RESPONSES_PASSTHROUGH_KEYS:
-                payload[key] = value
+                payload[key] = dict(value) if isinstance(value, dict) else value
                 continue
             # Unknown / Perplexity-specific keys: route under extra_body so the
             # SDK forwards them to the Agent API without breaking strict typing.

@@ -1626,6 +1626,25 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     }
 
 
+def test_anthropic_bind_tools_does_not_mutate_tool_choice() -> None:
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool_choice = {"type": "tool", "name": "GetWeather"}
+
+    chat_model_with_tools = chat_model.bind_tools(
+        [GetWeather], tool_choice=tool_choice, parallel_tool_calls=False
+    )
+
+    assert tool_choice == {"type": "tool", "name": "GetWeather"}
+    assert cast("RunnableBinding", chat_model_with_tools).kwargs["tool_choice"] == {
+        "type": "tool",
+        "name": "GetWeather",
+        "disable_parallel_tool_use": True,
+    }
+
+
 def test_fine_grained_tool_streaming_beta() -> None:
     """Test that fine-grained tool streaming beta can be enabled."""
     # Test with betas parameter at initialization
@@ -2180,6 +2199,41 @@ def test_inference_geo_in_payload() -> None:
     input_message = HumanMessage("Hello, world!")
     payload = llm._get_request_payload([input_message])
     assert payload["inference_geo"] == "us"
+
+
+def test_user_profile_id_init_param() -> None:
+    """`user_profile_id` set at construction is included in the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME, user_profile_id="uprof_init")
+    input_message = HumanMessage("Hello, world!")
+    payload = llm._get_request_payload([input_message])
+    assert payload["user_profile_id"] == "uprof_init"
+    # Setting it auto-enables the required beta, routing through beta.messages.create.
+    assert "user-profiles-2026-03-24" in payload["betas"]
+
+
+def test_user_profile_id_runtime_param() -> None:
+    """`user_profile_id` passed at call time is included in the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    input_message = HumanMessage("Hello, world!")
+    payload = llm._get_request_payload([input_message], user_profile_id="uprof_runtime")
+    assert payload["user_profile_id"] == "uprof_runtime"
+    assert "user-profiles-2026-03-24" in payload["betas"]
+
+
+def test_user_profile_id_runtime_overrides_init() -> None:
+    """A call-time `user_profile_id` takes precedence over the init value."""
+    llm = ChatAnthropic(model=MODEL_NAME, user_profile_id="uprof_init")
+    input_message = HumanMessage("Hello, world!")
+    payload = llm._get_request_payload([input_message], user_profile_id="uprof_runtime")
+    assert payload["user_profile_id"] == "uprof_runtime"
+
+
+def test_user_profile_id_absent_by_default() -> None:
+    """When unset, `user_profile_id` is stripped from the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    input_message = HumanMessage("Hello, world!")
+    payload = llm._get_request_payload([input_message])
+    assert "user_profile_id" not in payload
 
 
 def test_anthropic_model_params() -> None:
