@@ -40,7 +40,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 lint = [
-    "ruff>=0.15.0,<0.16.0",
+    "ruff>=0.15.0,<0.17.0",
 ]
 typing = [
     "ty>=0.0.56,<0.1.0",
