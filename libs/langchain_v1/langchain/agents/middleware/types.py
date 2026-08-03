@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import warnings
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field, replace
@@ -24,7 +25,9 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langgraph._internal._constants import CONFIG_KEY_READ, CONFIG_KEY_SEND
 from langgraph.channels.ephemeral_value import EphemeralValue
+from langgraph.config import get_config
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
 from langgraph.runtime import Runtime
@@ -32,13 +35,39 @@ from langgraph.types import Command
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
+from langchain.agents.protocol import (
+    BackendProtocol,
+    DeleteResult,
+    EditResult,
+    FileData,
+    FileDownloadResponse,
+    FileInfo,
+    FileUploadResponse,
+    GlobResult,
+    GrepResult,
+    LsResult,
+    ReadResult,
+    WriteResult,
+)
+
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
+    from langchain_core.runnables import RunnableConfig
     from langchain_core.tools import BaseTool
     from langgraph.stream._mux import TransformerFactory
 
     from langchain.agents.structured_output import ResponseFormat
-
+    from langchain.agents.utils import (
+        _copy_file_data_with_content,
+        _get_backend_read_file_type,
+        _glob_search_files,
+        create_file_data,
+        file_data_to_string,
+        grep_matches_from_files,
+        perform_string_replacement,
+        slice_read_response,
+        update_file_data,
+    )
 __all__ = [
     "AgentMiddleware",
     "AgentState",
@@ -2159,3 +2188,325 @@ def wrap_tool_call(
     if func is not None:
         return decorator(func)
     return decorator
+
+###########################################################################################
+"""`StateBackend`: Store files in LangGraph agent state (ephemeral)."""
+
+class StateBackend(BackendProtocol):
+    """Backend that stores files in agent state (ephemeral).
+
+    Uses LangGraph's state management and checkpointing. Files persist within
+    a conversation thread but not across threads. State is automatically
+    checkpointed after each agent step.
+    Reads and writes go through LangGraph's `CONFIG_KEY_READ` /
+    `CONFIG_KEY_SEND` so that state updates are applied as channel writes
+    to the `files` state key.
+    """
+
+    def __init__(self) -> None:
+        """Initialize StateBackend."""
+
+    # ------------------------------------------------------------------
+    # Internal helpers for reading / writing state via config keys
+    # ------------------------------------------------------------------
+
+    def _get_config(self) -> RunnableConfig:
+        """Return the current LangGraph config, with a clear error if missing."""
+        try:
+            config = get_config()
+        except RuntimeError:
+            msg = (
+                "StateBackend must be used inside a LangGraph graph execution "
+                "(e.g. via create_deep_agent). It cannot read or write state "
+                "outside of a graph context. To pre-populate files, pass them "
+                'on invoke: agent.invoke({"messages": [...], "files": {...}})'
+            )
+            raise RuntimeError(msg) from None
+        configurable = config.get("configurable", {})
+        if CONFIG_KEY_READ not in configurable:
+            msg = (
+                "StateBackend requires CONFIG_KEY_READ / CONFIG_KEY_SEND in "
+                "the LangGraph config. Make sure the backend is used inside "
+                "a graph node or tool, not called directly. To pre-populate "
+                "files, pass them on invoke: "
+                'agent.invoke({"messages": [...], "files": {...}})'
+            )
+            raise RuntimeError(msg)
+        return config
+
+    def _read_files(self) -> dict[str, Any]:
+        """Read the current `files` channel via Pregel internals.
+
+        Uses `CONFIG_KEY_READ` to read state directly — this lets us
+        initialize StateBackend once and fetch state on demand from any
+        graph context (tools, middleware nodes, etc.).
+        `fresh=True` applies any pending task writes through the channel's
+        reducer before returning, giving read-your-writes semantics within
+        a single superstep — e.g. a tool that writes a file and then reads
+        it back, or a code interpreter that issues multiple sub-tool calls
+        inside one eval.
+        """
+        config = self._get_config()
+        read = config["configurable"][CONFIG_KEY_READ]
+        fresh = True
+        return read("files", fresh) or {}
+
+    def _send_files_update(self, update: dict[str, Any]) -> None:
+        """Queue a write to the `files` channel via Pregel internals.
+
+        The whole point of this helper is that callers of `backend.write`
+        / `backend.edit` don't need to know about or manage state updates
+        themselves — the backend handles it internally.
+        Uses `CONFIG_KEY_SEND` to enqueue a partial `files` update
+        directly — same rationale as `_read_files` for initializing
+        StateBackend once and writing from any graph context. `send`
+        takes a list of `(channel, value)` tuples; the `files` channel
+        uses a dict-merge reducer, so we only need to include changed
+        files — unchanged ones are preserved by the reducer.
+        Sends are visible to subsequent `_read_files` calls within the
+        same superstep via `fresh=True`; they are committed to state at
+        the node boundary.
+        """
+        config = self._get_config()
+        send = config["configurable"][CONFIG_KEY_SEND]
+        send([("files", update)])
+
+    def _prepare_for_storage(self, file_data: FileData) -> dict[str, Any]:
+        """Convert FileData to the format used for state storage."""
+        return {**file_data}
+
+    def ls(self, path: str) -> LsResult:
+        """List files and directories in the specified directory (non-recursive).
+
+        Args:
+            path: Absolute path to directory.
+
+        Returns:
+            List of `FileInfo`-like dicts for files and directories directly in the directory.
+                Directories have a trailing `/` in their path and `is_dir=True`.
+        """
+        files = self._read_files()
+        infos: list[FileInfo] = []
+        subdirs: set[str] = set()
+
+        # Normalize path to have trailing slash for proper prefix matching
+        normalized_path = path if path.endswith("/") else path + "/"
+
+        for k, fd in files.items():
+            # Check if file is in the specified directory or a subdirectory
+            if not k.startswith(normalized_path):
+                continue
+
+            # Get the relative path after the directory
+            relative = k[len(normalized_path) :]
+
+            # If relative path contains '/', it's in a subdirectory
+            if "/" in relative:
+                # Extract the immediate subdirectory name
+                subdir_name = relative.split("/")[0]
+                subdirs.add(normalized_path + subdir_name + "/")
+                continue
+
+            # This is a file directly in the current directory
+            size = len(file_data_to_string(fd))
+            infos.append(
+                {
+                    "path": k,
+                    "is_dir": False,
+                    "size": int(size),
+                    "modified_at": fd.get("modified_at", ""),
+                }
+            )
+
+        # Add directories to the results
+        infos.extend(FileInfo(path=subdir, is_dir=True, size=0, modified_at="") for subdir in sorted(subdirs))
+
+        infos.sort(key=lambda x: x.get("path", ""))
+        return LsResult(entries=infos)
+
+    def read(
+        self,
+        file_path: str,
+        offset: int = 0,
+        limit: int = 2000,
+    ) -> ReadResult:
+        """Read file content for the requested line range.
+
+        Args:
+            file_path: Absolute file path.
+            offset: Line offset to start reading from (0-indexed).
+            limit: Maximum number of lines to read.
+
+        Returns:
+            `ReadResult` with raw (unformatted) content for the requested window.
+                Line-number formatting is applied by the middleware.
+        """
+        files = self._read_files()
+        file_data = files.get(file_path)
+
+        if file_data is None:
+            return ReadResult(error=f"File '{file_path}' not found")
+
+        if _get_backend_read_file_type(file_path) != "text":
+            # Normalize legacy `list[str]` content to a string without mutating
+            # the stored file; timestamps and encoding are carried through.
+            return ReadResult(file_data=_copy_file_data_with_content(file_data, file_data_to_string(file_data)))
+
+        return slice_read_response(file_data, offset, limit)
+
+    def write(
+        self,
+        file_path: str,
+        content: str,
+    ) -> WriteResult:
+        """Write content to a file, creating it or overwriting it if it already exists.
+
+        The update is queued directly via `CONFIG_KEY_SEND`.
+        """
+        files = self._read_files()
+
+        existing = files.get(file_path)
+        new_file_data = update_file_data(existing, content) if existing is not None else create_file_data(content)
+        self._send_files_update({file_path: self._prepare_for_storage(new_file_data)})
+        return WriteResult(path=file_path)
+
+    def edit(
+        self,
+        file_path: str,
+        old_string: str,
+        new_string: str,
+        replace_all: bool = False,  # noqa: FBT001, FBT002
+    ) -> EditResult:
+        """Edit a file by replacing string occurrences.
+
+        The update is queued directly via `CONFIG_KEY_SEND`.
+        """
+        files = self._read_files()
+        file_data = files.get(file_path)
+
+        if file_data is None:
+            return EditResult(error=f"Error: File '{file_path}' not found")
+
+        content = file_data_to_string(file_data)
+        result = perform_string_replacement(content, old_string, new_string, replace_all)
+
+        if isinstance(result, str):
+            return EditResult(error=result)
+
+        new_content, occurrences = result
+        new_file_data = update_file_data(file_data, new_content)
+        self._send_files_update({file_path: self._prepare_for_storage(new_file_data)})
+        return EditResult(path=file_path, occurrences=int(occurrences))
+
+    def delete(self, file_path: str) -> DeleteResult:
+        """Delete a file or directory from state.
+
+        Deleting a path removes the exact file at `file_path` plus every nested
+        key under it (the prefix `file_path` + "/"), so a directory is removed
+        recursively. Each removal is queued via `CONFIG_KEY_SEND` as a ``None``
+        value, which the `files` channel reducer interprets as a deletion marker.
+
+        Args:
+            file_path: Path of the file or directory to delete.
+
+        Returns:
+            `DeleteResult` with `file_path` on success, or an error if nothing is
+                stored at or under it.
+        """
+        files = self._read_files()
+
+        base = file_path.rstrip("/")
+        prefix = base + "/"
+        to_delete = [key for key in files if key == base or key.startswith(prefix)]
+        if not to_delete:
+            return DeleteResult(error=f"Error: File '{file_path}' not found")
+
+        self._send_files_update(dict.fromkeys(to_delete, None))
+        return DeleteResult(path=file_path)
+
+    def grep(
+        self,
+        pattern: str,
+        path: str | None = None,
+        glob: str | None = None,
+        *,
+        max_count: int | None = None,
+    ) -> GrepResult:
+        """Search state files for a literal text pattern."""
+        files = self._read_files()
+        return grep_matches_from_files(files, pattern, path if path is not None else "/", glob, max_count=max_count)
+
+    def glob(self, pattern: str, path: str | None = None) -> GlobResult:
+        """Get `FileInfo` for files matching glob pattern."""
+        files = self._read_files()
+        result = _glob_search_files(files, pattern, path)
+        if result == "No files found":
+            return GlobResult(matches=[])
+        paths = result.split("\n")
+        infos: list[FileInfo] = []
+        for p in paths:
+            fd = files.get(p)
+            size = len(file_data_to_string(fd)) if fd else 0
+            infos.append(
+                {
+                    "path": p,
+                    "is_dir": False,
+                    "size": int(size),
+                    "modified_at": fd.get("modified_at", "") if fd else "",
+                }
+            )
+        return GlobResult(matches=infos)
+
+    def upload_files(self, files: list[tuple[str, bytes]]) -> list[FileUploadResponse]:
+        """Upload multiple files to state.
+
+        Args:
+            files: List of `(path, content)` tuples to upload
+
+        Returns:
+            List of `FileUploadResponse` objects, one per input file
+        """
+        existing = self._read_files()
+        responses: list[FileUploadResponse] = []
+        update: dict[str, Any] = {}
+        for path, content in files:
+            try:
+                text = content.decode("utf-8")
+            except UnicodeDecodeError:
+                text = base64.b64encode(content).decode("ascii")
+
+            prev = existing.get(path)
+            file_data = update_file_data(prev, text) if prev else create_file_data(text)
+            update[path] = {**file_data}
+            responses.append(FileUploadResponse(path=path, error=None))
+
+        if update:
+            self._send_files_update(update)
+        return responses
+
+    def download_files(self, paths: list[str]) -> list[FileDownloadResponse]:
+        """Download multiple files from state.
+
+        Args:
+            paths: List of file paths to download
+
+        Returns:
+            List of `FileDownloadResponse` objects, one per input path
+        """
+        state_files = self._read_files()
+        responses: list[FileDownloadResponse] = []
+
+        for path in paths:
+            file_data = state_files.get(path)
+
+            if file_data is None:
+                responses.append(FileDownloadResponse(path=path, content=None, error="file_not_found"))
+                continue
+
+            content_str = file_data_to_string(file_data)
+
+            encoding = file_data.get("encoding", "utf-8")
+            content_bytes = content_str.encode("utf-8") if encoding == "utf-8" else base64.standard_b64decode(content_str)
+            responses.append(FileDownloadResponse(path=path, content=content_bytes, error=None))
+
+        return responses
