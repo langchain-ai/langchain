@@ -243,6 +243,21 @@ def _format_image(url: str) -> dict:
 _TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 """Anthropic requires `tool_use`/`tool_result` IDs to match this pattern."""
 
+_MODELS_WITHOUT_MANUAL_THINKING = (
+    "claude-opus-4-7",
+    "claude-opus-4-8",
+    "claude-opus-5",
+    "claude-sonnet-5",
+    "claude-fable-5",
+    "claude-mythos-5",
+)
+"""Models that removed `thinking={"type": "enabled", "budget_tokens": ...}`.
+
+Manual extended thinking was dropped in Opus 4.7 and stayed dropped in every model
+released after it; those models answer such a request with a 400. Adaptive thinking
+plus `output_config.effort` replaces it.
+"""
+
 
 def _normalize_tool_call_id(tool_call_id: str | None) -> str | None:
     """Map a tool-call ID to an Anthropic-compatible form if needed.
@@ -1332,7 +1347,7 @@ class ChatAnthropic(BaseChatModel):
             output_config["effort"] = effort
 
         if (
-            self.model.startswith("claude-opus-5")
+            self.model.startswith(_MODELS_WITHOUT_MANUAL_THINKING)
             and isinstance(thinking, Mapping)
             and thinking.get("type") == "enabled"
         ):

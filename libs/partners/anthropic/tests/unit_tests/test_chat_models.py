@@ -3409,6 +3409,51 @@ def test_opus_5_rejects_manual_thinking_at_all_effort_levels(effort: str) -> Non
         model._get_request_payload("Test query")
 
 
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "claude-opus-4-7",
+        "claude-opus-4-8",
+        "claude-opus-5",
+        "claude-sonnet-5",
+        "claude-fable-5",
+    ],
+)
+def test_rejects_manual_thinking_on_models_that_removed_it(model_name: str) -> None:
+    """Manual extended thinking was removed in Opus 4.7 and every model after it."""
+    model = ChatAnthropic(
+        model=model_name,
+        thinking={"type": "enabled", "budget_tokens": 1_024},
+    )
+
+    with pytest.raises(ValueError, match=r"use adaptive thinking"):
+        model._get_request_payload("Test query")
+
+
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "claude-opus-4-5-20251101",
+        "claude-opus-4-6",
+        "claude-sonnet-4-6",
+        "claude-sonnet-4-5",
+        "claude-haiku-4-5",
+    ],
+)
+def test_allows_manual_thinking_on_models_that_still_accept_it(
+    model_name: str,
+) -> None:
+    """Guards the other direction: earlier models still take `budget_tokens`."""
+    model = ChatAnthropic(
+        model=model_name,
+        thinking={"type": "enabled", "budget_tokens": 1_024},
+    )
+
+    payload = model._get_request_payload("Test query")
+
+    assert payload["thinking"] == {"type": "enabled", "budget_tokens": 1_024}
+
+
 def test_effort_also_defaults_adaptive_thinking() -> None:
     """Test that `effort` composes with the adaptive-thinking default too.
 
