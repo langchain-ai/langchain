@@ -49,6 +49,7 @@ deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 meta = ["langchain-meta"]
+skills = ["wcmatch>=10.0"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
