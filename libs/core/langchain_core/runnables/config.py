@@ -633,27 +633,18 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         *iterables: Iterable[Any],
         **kwargs: Any,
     ) -> Iterator[T]:
-        """Map a function to multiple iterables.
+        """Map a function over iterables, copying context to each call.
 
         Args:
             fn: The function to map.
             *iterables: The iterables to map over.
-            timeout: The timeout for the map.
-            chunksize: The chunksize for the map.
+            **kwargs: Additional arguments to pass to `ThreadPoolExecutor.map`,
+                such as `timeout` and `chunksize`.
 
         Returns:
-            The iterator for the mapped function.
+            An iterator over the results, in the order the iterables were given.
         """
-        contexts = [copy_context() for _ in range(len(iterables[0]))]  # type: ignore[arg-type]
-
-        def _wrapped_fn(*args: Any) -> T:
-            return contexts.pop().run(fn, *args)
-
-        return super().map(
-            _wrapped_fn,
-            *iterables,
-            **kwargs,
-        )
+        return super().map(fn, *iterables, **kwargs)
 
 
 @contextmanager
