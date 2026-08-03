@@ -153,7 +153,12 @@ def test_reasoning() -> None:
     model = ChatMistralAI(model="magistral-medium-latest", rate_limiter=rate_limiter)  # type: ignore[call-arg]
     input_message = {
         "role": "user",
-        "content": "Hello, my name is Bob.",
+        # Mistral only returns reasoning blocks when the model judges the prompt
+        # to need deliberation. A math word problem triggers this reliably; the
+        # previous trivial greeting ("Hello, my name is Bob") stopped producing
+        # any thinking content provider-side in July 2026.
+        "content": "A train travels 120 km in 1.5 hours, then 80 km in 45 minutes. "
+        "What is its average speed for the whole journey, in km/h?",
     }
     full: AIMessageChunk | None = None
     for chunk in model.stream([input_message]):
@@ -169,7 +174,9 @@ def test_reasoning() -> None:
             assert isinstance(reasoning_block.get("reasoning"), str)
     assert thinking_blocks > 0
 
-    next_message = {"role": "user", "content": "What is my name?"}
+    # Verify a prior assistant message carrying thinking blocks can be sent
+    # back in multi-turn conversation.
+    next_message = {"role": "user", "content": "What was your final answer?"}
     _ = model.invoke([input_message, full, next_message])
 
 
@@ -181,7 +188,9 @@ def test_reasoning_v1() -> None:
     )
     input_message = {
         "role": "user",
-        "content": "Hello, my name is Bob.",
+        # See test_reasoning for why this prompt needs to demand deliberation.
+        "content": "A train travels 120 km in 1.5 hours, then 80 km in 45 minutes. "
+        "What is its average speed for the whole journey, in km/h?",
     }
     full: AIMessageChunk | None = None
     chunks = []
@@ -197,7 +206,7 @@ def test_reasoning_v1() -> None:
             assert isinstance(block.get("reasoning"), str)
     assert reasoning_blocks > 0
 
-    next_message = {"role": "user", "content": "What is my name?"}
+    next_message = {"role": "user", "content": "What was your final answer?"}
     _ = model.invoke([input_message, full, next_message])
 
 
