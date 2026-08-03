@@ -1,8 +1,12 @@
 import asyncio
+import gc
 import math
 import time
+import warnings
 from collections.abc import AsyncIterator
 
+from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
+from langchain_core.tracers.log_stream import LogStreamCallbackHandler
 from langchain_core.tracers.memory_stream import _MemoryStream
 
 
@@ -138,3 +142,38 @@ async def test_closed_stream() -> None:
     await writer.aclose()
 
     assert [chunk async for chunk in reader] == []
+
+
+def test_sync_handler_construction_does_not_leak_event_loop() -> None:
+    """Regression test for `ResourceWarning: unclosed event loop` at GC time.
+
+    When a streaming callback handler is constructed from a synchronous context
+    on Python 3.14+ (where `asyncio.get_event_loop()` raises if no loop is
+    set), the handler falls back to `asyncio.new_event_loop()`. That loop must
+    be closed when the handler is garbage collected; otherwise the loop's
+    `__del__` emits a `ResourceWarning` that can surface inside whatever test
+    happens to be running when GC fires, causing flaky failures such as
+    `test_chat_prompt_template_variable_names`.
+    """
+    # Force the no-current-loop branch regardless of what the surrounding
+    # test session (pytest-asyncio) has set up on this thread.
+    asyncio.set_event_loop(None)
+    try:
+        handler_events = _AstreamEventsCallbackHandler()
+        handler_log = LogStreamCallbackHandler(auto_close=False)
+    finally:
+        asyncio.set_event_loop(None)
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        del handler_events
+        del handler_log
+        gc.collect()
+
+    unclosed_loop_warnings = [
+        w for w in record if "unclosed event loop" in str(w.message)
+    ]
+    assert unclosed_loop_warnings == [], (
+        f"Expected no `unclosed event loop` ResourceWarnings, got: "
+        f"{[str(w.message) for w in unclosed_loop_warnings]}"
+    )

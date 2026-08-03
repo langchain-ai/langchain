@@ -9,11 +9,23 @@ code.
 """
 
 import asyncio
+import contextlib
 from asyncio import AbstractEventLoop, Queue
 from collections.abc import AsyncIterator
 from typing import Any, Generic, TypeVar
 
 T = TypeVar("T")
+
+
+def _close_loop_quietly(loop: AbstractEventLoop) -> None:
+    """Close an event loop, swallowing any errors raised during shutdown.
+
+    Used as a `weakref.finalize` callback for loops that LangChain created
+    internally; closing must never raise because finalizers run at GC time.
+    """
+    if not loop.is_closed():
+        with contextlib.suppress(Exception):
+            loop.close()
 
 
 class _SendStream(Generic[T]):

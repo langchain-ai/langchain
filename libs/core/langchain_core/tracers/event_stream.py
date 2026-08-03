@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import weakref
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -40,7 +41,7 @@ from langchain_core.tracers.log_stream import (
     RunLog,
     _astream_log_implementation,
 )
-from langchain_core.tracers.memory_stream import _MemoryStream
+from langchain_core.tracers.memory_stream import _close_loop_quietly, _MemoryStream
 from langchain_core.utils.aiter import aclosing
 from langchain_core.utils.uuid import uuid7
 
@@ -142,7 +143,13 @@ class _AstreamEventsCallbackHandler(
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
+            # On Python 3.14+ there is no implicit current loop in a sync context,
+            # so we have to create one to back the memory stream. Since nothing
+            # else references this loop, register a finalizer so it is closed
+            # when this handler is garbage collected; otherwise the loop's
+            # `__del__` emits `ResourceWarning: unclosed event loop` at GC time.
             loop = asyncio.new_event_loop()
+            weakref.finalize(self, _close_loop_quietly, loop)
         memory_stream = _MemoryStream[StreamEvent](loop)
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
