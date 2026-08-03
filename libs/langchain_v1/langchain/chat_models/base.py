@@ -18,7 +18,25 @@ from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import AIMessage, AnyMessage
 from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
+from langchain_core.utils._gateway import _apply_gateway_config
 from typing_extensions import override
+
+_LANGSMITH_GATEWAY_DEFAULT_BASE = "https://gateway.smith.langchain.com/v1"
+
+
+def _init_langsmith(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
+    _apply_gateway_config(
+        kwargs,
+        cls,
+        base_url_field="openai_api_base",
+        api_key_field="openai_api_key",
+        provider_path="v1",
+        api_key_env=("LANGSMITH_GATEWAY_API_KEY", "LANGSMITH_API_KEY"),
+        default_base_url=_LANGSMITH_GATEWAY_DEFAULT_BASE,
+    )
+    kwargs["use_responses_api"] = True
+    return cls(**kwargs)
+
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterator, Sequence
@@ -64,6 +82,7 @@ _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
         "ChatWatsonx",
         lambda cls, model, **kwargs: cls(model_id=model, **kwargs),
     ),
+    "langsmith": ("langchain_openai", "ChatOpenAI", _init_langsmith),
     "litellm": ("langchain_litellm", "ChatLiteLLM", _call),
     "meta": ("langchain_meta", "ChatMetaModel", _call),
     "mistralai": ("langchain_mistralai", "ChatMistralAI", _call),
@@ -309,6 +328,7 @@ def init_chat_model(
             - `baseten`                 -> [`langchain-baseten`](https://docs.langchain.com/oss/python/integrations/providers/baseten)
             - `litellm`                 -> [`langchain-litellm`](https://docs.langchain.com/oss/python/integrations/providers/litellm)
             - `meta`                    -> [`langchain-meta`](https://pypi.org/project/langchain-meta)
+            - `langsmith`               -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
 
         configurable_fields: Which model parameters are configurable at runtime:
 
