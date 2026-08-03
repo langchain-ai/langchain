@@ -60,8 +60,8 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "deepseek-v4-flash": {
         "name": "DeepSeek V4 Flash",
-        "release_date": "2026-04-24",
-        "last_updated": "2026-04-24",
+        "release_date": "2026-07-31",
+        "last_updated": "2026-07-31",
         "open_weights": True,
         "max_input_tokens": 1000000,
         "max_output_tokens": 384000,

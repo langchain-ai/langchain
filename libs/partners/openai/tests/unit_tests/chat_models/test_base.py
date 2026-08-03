@@ -1825,6 +1825,22 @@ def test_verbosity_parameter_payload() -> None:
     assert payload["text"]["verbosity"] == "high"
 
 
+def test_responses_payload_does_not_mutate_text_model_kwargs() -> None:
+    text = {"verbosity": "low"}
+    llm = ChatOpenAI(
+        model="gpt-5",
+        api_key=SecretStr("test"),
+        use_responses_api=True,
+        model_kwargs={"text": text},
+    )
+
+    payload = llm._get_request_payload("hello", response_format={"type": "json_object"})
+
+    assert payload["text"]["format"] == {"type": "json_object"}
+    assert text == {"verbosity": "low"}
+    assert llm._get_request_payload("hello")["text"] == {"verbosity": "low"}
+
+
 def test_structured_output_legacy_model() -> None:
     class Output(TypedDict):
         """output."""
@@ -2967,6 +2983,34 @@ def test__construct_responses_api_input_skips_blocks_without_text() -> None:
         "text": "valid output",
         "annotations": [],
     }
+
+
+def test_responses_api_payload_drops_lc_auto_ids() -> None:
+    """LangChain-auto-generated (`lc_`) IDs must not be forwarded to OpenAI.
+
+    The Responses API validates provider-issued message IDs (expects `msg_...`),
+    so synthetic AI messages built from `create_text_block` (which assigns an
+    `lc_`-prefixed ID) previously triggered a 400. See issue #39113.
+    """
+    text_block = types.create_text_block("The capital of France is Paris.")
+    assert text_block["id"].startswith("lc_")
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    payload = llm._get_request_payload([AIMessage(content_blocks=[text_block])])
+
+    input_ = payload["input"]
+    assert len(input_) == 1
+    assert input_[0]["type"] == "message"
+    assert input_[0]["role"] == "assistant"
+    # The `lc_` ID is dropped rather than forwarded to OpenAI.
+    assert "id" not in input_[0]
+    assert input_[0]["content"] == [
+        {
+            "type": "output_text",
+            "text": "The capital of France is Paris.",
+            "annotations": [],
+        }
+    ]
 
 
 def test__construct_responses_api_input_human_message_with_image_url_conversion() -> (
