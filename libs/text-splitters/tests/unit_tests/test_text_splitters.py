@@ -3384,7 +3384,13 @@ def test_split_json() -> None:
     assert output == expected_output
 
 
-def test_split_json_with_lists() -> None:
+def test_split_json_rejects_non_dict_top_level() -> None:
+    splitter = RecursiveJsonSplitter()
+
+    with pytest.raises(TypeError, match="json_data must be a dictionary"):
+        splitter.split_json(["not", "a", "dictionary"])  # type: ignore[arg-type]
+
+
     """Test json text splitter with list conversion."""
     max_chunk = 800
     splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk)
