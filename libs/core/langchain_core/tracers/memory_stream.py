@@ -10,6 +10,7 @@ code.
 
 import asyncio
 import contextlib
+import weakref
 from asyncio import AbstractEventLoop, Queue
 from collections.abc import AsyncIterator
 from typing import Any, Generic, TypeVar
@@ -18,14 +19,51 @@ T = TypeVar("T")
 
 
 def _close_loop_quietly(loop: AbstractEventLoop) -> None:
-    """Close an event loop, swallowing any errors raised during shutdown.
+    """Close an event loop that was created internally, as a finalizer callback.
 
-    Used as a `weakref.finalize` callback for loops that LangChain created
-    internally; closing must never raise because finalizers run at GC time.
+    Errors are suppressed rather than logged. `weakref.finalize` defaults to
+    `atexit=True`, so this can run during interpreter shutdown, where `logging`
+    may already be torn down. Python routes finalizer exceptions to
+    `sys.unraisablehook` rather than propagating them, so suppressing here only
+    avoids dumping a traceback to stderr at a nondeterministic moment, which is
+    the same kind of noise this cleanup exists to remove. If `close()` does
+    fail, the loop's own `__del__` still emits
+    `ResourceWarning: unclosed event loop`, so the leak stays detectable.
+
+    Args:
+        loop: The event loop to close. A running loop is left alone.
     """
-    if not loop.is_closed():
-        with contextlib.suppress(Exception):
-            loop.close()
+    if loop.is_running():
+        # `close()` would raise; leave the `ResourceWarning` as the signal.
+        return
+    with contextlib.suppress(Exception):
+        loop.close()
+
+
+def _get_or_create_loop(owner: object) -> AbstractEventLoop:
+    """Get the current event loop, creating one if this thread has none.
+
+    Args:
+        owner: Object whose lifetime bounds a loop created here. A loop created
+            by this function is closed once `owner` is garbage collected.
+
+    Returns:
+        The event loop to back a `_MemoryStream` with.
+    """
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError:
+        # No loop is set on this thread. That is always the case in a sync
+        # context on Python 3.14+, where `get_event_loop()` no longer creates
+        # one implicitly, and on any version in a non-main thread.
+        #
+        # This loop is ours: unlike one returned by `get_event_loop()`, no
+        # caller owns it, so close it once `owner` dies. Otherwise the loop's
+        # `__del__` emits `ResourceWarning: unclosed event loop` at whatever
+        # nondeterministic point GC happens to run.
+        loop = asyncio.new_event_loop()
+        weakref.finalize(owner, _close_loop_quietly, loop)
+        return loop
 
 
 class _SendStream(Generic[T]):

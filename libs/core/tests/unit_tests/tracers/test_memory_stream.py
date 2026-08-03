@@ -1,13 +1,17 @@
 import asyncio
 import gc
 import math
+import threading
 import time
-import warnings
-from collections.abc import AsyncIterator
+import weakref
+from collections.abc import AsyncIterator, Callable
+from typing import Any, TypeVar
 
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
 from langchain_core.tracers.log_stream import LogStreamCallbackHandler
-from langchain_core.tracers.memory_stream import _MemoryStream
+from langchain_core.tracers.memory_stream import _close_loop_quietly, _MemoryStream
+
+T = TypeVar("T")
 
 
 async def test_same_event_loop() -> None:
@@ -144,36 +148,104 @@ async def test_closed_stream() -> None:
     assert [chunk async for chunk in reader] == []
 
 
-def test_sync_handler_construction_does_not_leak_event_loop() -> None:
+def _run_in_thread(fn: Callable[[], T]) -> T:
+    """Run `fn` in a worker thread and return its result.
+
+    Two reasons for the thread: a worker thread never has an implicit current
+    event loop on any supported Python version, which is what forces the
+    `asyncio.new_event_loop()` fallback in `_get_or_create_loop`; and event loop
+    policy state is thread-local, so any loop set here cannot leak into the rest
+    of the test session and change which branch later tests take.
+    """
+    result: list[T] = []
+    thread = threading.Thread(target=lambda: result.append(fn()))
+    thread.start()
+    thread.join()
+    assert len(result) == 1, "worker thread raised before returning (see stderr)"
+    return result[0]
+
+
+def _make_handlers() -> list[Any]:
+    """Construct one handler of each streaming type from a sync context."""
+    return [_AstreamEventsCallbackHandler(), LogStreamCallbackHandler()]
+
+
+def test_internally_created_event_loop_is_closed() -> None:
     """Regression test for `ResourceWarning: unclosed event loop` at GC time.
 
     When a streaming callback handler is constructed from a synchronous context
-    on Python 3.14+ (where `asyncio.get_event_loop()` raises if no loop is
-    set), the handler falls back to `asyncio.new_event_loop()`. That loop must
-    be closed when the handler is garbage collected; otherwise the loop's
-    `__del__` emits a `ResourceWarning` that can surface inside whatever test
-    happens to be running when GC fires, causing flaky failures such as
-    `test_chat_prompt_template_variable_names`.
-    """
-    # Force the no-current-loop branch regardless of what the surrounding
-    # test session (pytest-asyncio) has set up on this thread.
-    asyncio.set_event_loop(None)
-    try:
-        handler_events = _AstreamEventsCallbackHandler()
-        handler_log = LogStreamCallbackHandler(auto_close=False)
-    finally:
-        asyncio.set_event_loop(None)
+    with no current event loop, it falls back to `asyncio.new_event_loop()`.
+    That loop must be closed once the handler is garbage collected; otherwise
+    the loop's `__del__` emits a `ResourceWarning` at whatever nondeterministic
+    point GC runs. Landing inside a `warnings.catch_warnings(record=True)`
+    block turns the leak into an order-dependent flaky failure.
 
-    with warnings.catch_warnings(record=True) as record:
-        warnings.simplefilter("always")
-        del handler_events
-        del handler_log
+    Asserts the loop is positively closed rather than merely that no warning
+    appeared, so the test cannot pass vacuously if the handler stops being
+    collectible (e.g. via a global registry or a reference cycle).
+    """
+    handlers = _run_in_thread(_make_handlers)
+    loops = [handler.send_stream._reader_loop for handler in handlers]
+    assert len(loops) == 2
+    assert all(not loop.is_closed() for loop in loops)
+
+    refs = [weakref.ref(handler) for handler in handlers]
+    handlers.clear()
+    gc.collect()
+
+    assert all(ref() is None for ref in refs), (
+        "handlers were not collected, so the assertion below would be vacuous"
+    )
+    assert all(loop.is_closed() for loop in loops), (
+        "finalizer did not close the internally created event loop"
+    )
+
+
+def test_caller_owned_event_loop_is_not_closed() -> None:
+    """A loop we did not create must be left alone when the handler is GCed.
+
+    The complement of `test_internally_created_event_loop_is_closed`, and the
+    more dangerous half to get wrong: closing a loop the caller owns would
+    break user code at an arbitrary GC point, silently, since
+    `_close_loop_quietly` suppresses errors.
+    """
+
+    def construct() -> tuple[asyncio.AbstractEventLoop, list[Any]]:
+        caller_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(caller_loop)
+        return caller_loop, _make_handlers()
+
+    caller_loop, handlers = _run_in_thread(construct)
+    try:
+        assert all(
+            handler.send_stream._reader_loop is caller_loop for handler in handlers
+        ), "handlers did not adopt the caller's loop, so this test proves nothing"
+
+        handlers.clear()
         gc.collect()
 
-    unclosed_loop_warnings = [
-        w for w in record if "unclosed event loop" in str(w.message)
-    ]
-    assert unclosed_loop_warnings == [], (
-        f"Expected no `unclosed event loop` ResourceWarnings, got: "
-        f"{[str(w.message) for w in unclosed_loop_warnings]}"
-    )
+        assert not caller_loop.is_closed(), (
+            "a caller-owned event loop must not be closed when the handler that "
+            "borrowed it is garbage collected"
+        )
+    finally:
+        caller_loop.close()
+
+
+def test_close_loop_quietly_leaves_running_loop_open() -> None:
+    """A running loop cannot be closed, so the finalizer must not try."""
+
+    async def close_self_while_running() -> bool:
+        loop = asyncio.get_running_loop()
+        _close_loop_quietly(loop)
+        return loop.is_closed()
+
+    loop = asyncio.new_event_loop()
+    try:
+        assert loop.run_until_complete(close_self_while_running()) is False
+    finally:
+        loop.close()
+
+    # Idempotent on an already-closed loop.
+    _close_loop_quietly(loop)
+    assert loop.is_closed()

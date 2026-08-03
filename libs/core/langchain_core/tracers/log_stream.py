@@ -6,7 +6,6 @@ import asyncio
 import contextlib
 import copy
 import threading
-import weakref
 from collections import defaultdict
 from pprint import pformat
 from typing import (
@@ -27,7 +26,7 @@ from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
-from langchain_core.tracers.memory_stream import _close_loop_quietly, _MemoryStream
+from langchain_core.tracers.memory_stream import _get_or_create_loop, _MemoryStream
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
@@ -288,17 +287,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler[Any]):
         self.exclude_types = exclude_types
         self.exclude_tags = exclude_tags
 
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            # On Python 3.14+ there is no implicit current loop in a sync context,
-            # so we have to create one to back the memory stream. Since nothing
-            # else references this loop, register a finalizer so it is closed
-            # when this handler is garbage collected; otherwise the loop's
-            # `__del__` emits `ResourceWarning: unclosed event loop` at GC time.
-            loop = asyncio.new_event_loop()
-            weakref.finalize(self, _close_loop_quietly, loop)
-        memory_stream = _MemoryStream[RunLogPatch](loop)
+        memory_stream = _MemoryStream[RunLogPatch](_get_or_create_loop(self))
         self.lock = threading.Lock()
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
