@@ -44,8 +44,10 @@ def _get_or_create_loop(owner: object) -> AbstractEventLoop:
     """Get the current event loop, creating one if this thread has none.
 
     Args:
-        owner: Object whose lifetime bounds a loop created here. A loop created
-            by this function is closed once `owner` is garbage collected.
+        owner: Object whose lifetime bounds a loop created here.
+
+            A loop created by this function is closed once `owner` is
+            garbage collected.
 
     Returns:
         The event loop to back a `_MemoryStream` with.
