@@ -8,6 +8,16 @@ from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
 
 
+def _has_all(mapping: dict[str, Any], *keys: str) -> bool:
+    """Whether `mapping` carries every one of `keys`.
+
+    Used to check that a provider-shaped block actually contains the fields its
+    variant requires before converting it, so malformed input falls through to
+    the `non_standard` branch instead of raising `KeyError`.
+    """
+    return all(key in mapping for key in keys)
+
+
 def _populate_extras(
     standard_block: types.ContentBlock, block: dict[str, Any], known_fields: set[str]
 ) -> types.ContentBlock:
@@ -55,40 +65,43 @@ def _convert_to_v1_from_anthropic_input(
         for block in blocks:
             block_type = block.get("type")
 
+            source = block.get("source")
+
             if (
                 block_type == "document"
-                and "source" in block
-                and "type" in block["source"]
+                and isinstance(source, dict)
+                and "type" in source
             ):
-                if block["source"]["type"] == "base64":
+                source_type = source["type"]
+                if source_type == "base64" and _has_all(source, "data", "media_type"):
                     file_block: types.FileContentBlock = {
                         "type": "file",
-                        "base64": block["source"]["data"],
-                        "mime_type": block["source"]["media_type"],
+                        "base64": source["data"],
+                        "mime_type": source["media_type"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "url":
+                elif source_type == "url" and _has_all(source, "url"):
                     file_block = {
                         "type": "file",
-                        "url": block["source"]["url"],
+                        "url": source["url"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "file":
+                elif source_type == "file" and _has_all(source, "file_id"):
                     file_block = {
                         "type": "file",
-                        "id": block["source"]["file_id"],
+                        "id": source["file_id"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "text":
+                elif source_type == "text" and _has_all(source, "data"):
                     plain_text_block: types.PlainTextContentBlock = {
                         "type": "text-plain",
-                        "text": block["source"]["data"],
+                        "text": source["data"],
                         "mime_type": block.get("media_type", "text/plain"),
                     }
                     _populate_extras(plain_text_block, block, {"type", "source"})
@@ -98,31 +111,30 @@ def _convert_to_v1_from_anthropic_input(
                     yield {"type": "non_standard", "value": block}
 
             elif (
-                block_type == "image"
-                and "source" in block
-                and "type" in block["source"]
+                block_type == "image" and isinstance(source, dict) and "type" in source
             ):
-                if block["source"]["type"] == "base64":
+                source_type = source["type"]
+                if source_type == "base64" and _has_all(source, "data", "media_type"):
                     image_block: types.ImageContentBlock = {
                         "type": "image",
-                        "base64": block["source"]["data"],
-                        "mime_type": block["source"]["media_type"],
+                        "base64": source["data"],
+                        "mime_type": source["media_type"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block
 
-                elif block["source"]["type"] == "url":
+                elif source_type == "url" and _has_all(source, "url"):
                     image_block = {
                         "type": "image",
-                        "url": block["source"]["url"],
+                        "url": source["url"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block
 
-                elif block["source"]["type"] == "file":
+                elif source_type == "file" and _has_all(source, "file_id"):
                     image_block = {
                         "type": "image",
-                        "id": block["source"]["file_id"],
+                        "id": source["file_id"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block
@@ -142,7 +154,9 @@ def _convert_to_v1_from_anthropic_input(
 def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
     citation_type = citation.get("type")
 
-    if citation_type == "web_search_result_location":
+    if citation_type == "web_search_result_location" and _has_all(
+        citation, "cited_text", "url"
+    ):
         url_citation: types.Citation = {
             "type": "citation",
             "cited_text": citation["cited_text"],
@@ -164,7 +178,7 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
         "content_block_location",
         "page_location",
         "search_result_location",
-    }:
+    } and _has_all(citation, "cited_text"):
         document_citation: types.Citation = {
             "type": "citation",
             "cited_text": citation["cited_text"],

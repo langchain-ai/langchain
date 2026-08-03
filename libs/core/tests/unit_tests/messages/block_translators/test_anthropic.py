@@ -1,5 +1,18 @@
-from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
+from typing import Any
+
+import pytest
+
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.messages import content as types
+from langchain_core.messages.block_translators.anthropic import (
+    _convert_citation_to_v1,
+)
 
 
 def test_convert_to_v1_from_anthropic() -> None:
@@ -507,3 +520,68 @@ def test_convert_to_v1_from_anthropic_input() -> None:
     ]
 
     assert message.content_blocks == expected
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        # `source.type` present, but the field that variant requires is missing.
+        {"type": "image", "source": {"type": "base64"}},
+        {"type": "image", "source": {"type": "base64", "data": "<data>"}},
+        {"type": "image", "source": {"type": "url"}},
+        {"type": "image", "source": {"type": "file"}},
+        {"type": "document", "source": {"type": "base64"}},
+        {"type": "document", "source": {"type": "base64", "data": "<data>"}},
+        {"type": "document", "source": {"type": "url"}},
+        {"type": "document", "source": {"type": "file"}},
+        {"type": "document", "source": {"type": "text"}},
+        # `source` isn't a mapping at all.
+        {"type": "image", "source": "not-a-mapping"},
+        {"type": "document", "source": 0},
+    ],
+)
+def test_anthropic_input_block_missing_required_field_does_not_raise(
+    block: dict[str, Any],
+) -> None:
+    """Malformed Anthropic-shaped blocks degrade instead of raising `KeyError`.
+
+    `content_blocks` runs the Anthropic input translator over every message,
+    whichever provider produced it, so a block that merely looks Anthropic-shaped
+    must not be able to crash the property.
+    """
+    for message in (
+        HumanMessage(content=[block]),
+        SystemMessage(content=[block]),
+        AIMessage(content=[block]),
+        ToolMessage(content=[block], tool_call_id="call_1"),
+    ):
+        blocks = message.content_blocks
+        assert len(blocks) == 1
+        parsed = blocks[0]
+        # Left verbatim or wrapped as non-standard — either way, nothing is lost.
+        if parsed["type"] == "non_standard":
+            assert parsed["value"] == block
+        else:
+            assert parsed == block
+
+
+@pytest.mark.parametrize(
+    "citation",
+    [
+        {"type": "web_search_result_location"},
+        {"type": "web_search_result_location", "cited_text": "foo"},
+        {"type": "web_search_result_location", "url": "<url>"},
+        {"type": "char_location"},
+        {"type": "content_block_location"},
+        {"type": "page_location"},
+        {"type": "search_result_location"},
+    ],
+)
+def test_anthropic_citation_missing_required_field_does_not_raise(
+    citation: dict[str, Any],
+) -> None:
+    """A citation missing `cited_text` (or `url`) falls back to non-standard."""
+    assert _convert_citation_to_v1(citation) == {
+        "type": "non_standard_annotation",
+        "value": citation,
+    }
