@@ -23,7 +23,17 @@ def test__dict_message_prompt_template_fstring() -> None:
     assert actual == expected
 
 
-def test_deserialize_legacy() -> None:
+def test_dict_prompt_template_preserves_non_string_list_values() -> None:
+    prompt = DictPromptTemplate(
+        template={"content": ["Hello {name}", 42, True, None]},
+        template_format="f-string",
+    )
+
+    assert prompt.format(name="Alice") == {
+        "content": ["Hello Alice", 42, True, None]
+    }
+
+
     ser = {
         "type": "constructor",
         "lc": 1,
