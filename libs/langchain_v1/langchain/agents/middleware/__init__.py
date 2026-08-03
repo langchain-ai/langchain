@@ -20,6 +20,12 @@ from langchain.agents.middleware.shell_tool import (
     RedactionRule,
     ShellToolMiddleware,
 )
+from langchain.agents.middleware.skill import (
+    SkillMetadata,
+    SkillsMiddleware,
+    SkillSource,
+    load_skill_content,
+)
 from langchain.agents.middleware.summarization import SummarizationMiddleware, TriggerClause
 from langchain.agents.middleware.todo import TodoListMiddleware
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
@@ -75,6 +81,9 @@ __all__ = [
     "RedactionRule",
     "Runtime",
     "ShellToolMiddleware",
+    "SkillMetadata",
+    "SkillSource",
+    "SkillsMiddleware",
     "SummarizationMiddleware",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
@@ -88,6 +97,7 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
+    "load_skill_content",
     "wrap_model_call",
     "wrap_tool_call",
 ]
