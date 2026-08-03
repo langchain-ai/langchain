@@ -1,6 +1,6 @@
 import json
 import uuid
-from contextvars import copy_context
+from contextvars import ContextVar, copy_context
 from typing import Any, cast
 
 import pytest
@@ -15,6 +15,7 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_core.runnables import RunnableBinding, RunnablePassthrough
 from langchain_core.runnables.config import (
+    ContextThreadPoolExecutor,
     RunnableConfig,
     _get_langsmith_inheritable_metadata_from_config,
     _merge_metadata_dicts,
@@ -414,3 +415,20 @@ class TestMergeMetadataDicts:
         assert merged["metadata"] == {
             "lc_versions": {"a": "1", "b": "2", "c": "3"},
         }
+
+
+def test_context_thread_pool_executor_map_generator() -> None:
+    var: ContextVar[str] = ContextVar("var", default="default")
+    var.set("parent")
+
+    def values() -> Any:
+        yield from range(3)
+
+    def worker(x: int) -> tuple[int, str]:
+        return x * 2, var.get()
+
+    with ContextThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(worker, values()))
+
+    assert results == [(0, "parent"), (2, "parent"), (4, "parent")]
+
