@@ -4,6 +4,7 @@ import os
 import warnings
 from unittest import mock
 
+import httpx
 import openai
 import pytest
 from langchain_core.messages import HumanMessage
@@ -50,6 +51,59 @@ def test_initialize_more() -> None:
     ls_params = llm._get_ls_params()
     assert ls_params.get("ls_provider") == "azure"
     assert ls_params.get("ls_model_name") == "gpt-35-turbo-0125"
+
+
+def test_azure_client_caching() -> None:
+    """Test that the underlying httpx client is cached and reused."""
+    llm1 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+        api_key=SecretStr("test"),
+    )
+    llm2 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+        api_key=SecretStr("test"),
+    )
+    assert llm1.root_client._client is llm2.root_client._client
+    assert llm1.root_async_client._client is llm2.root_async_client._client
+
+    llm3 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="other-base-url",
+        api_key=SecretStr("test"),
+    )
+    assert llm1.root_client._client is not llm3.root_client._client
+
+    llm4 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+        api_key=SecretStr("test"),
+        timeout=3,
+    )
+    assert llm1.root_client._client is not llm4.root_client._client
+
+    llm5 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+        api_key=SecretStr("test"),
+        timeout=httpx.Timeout(timeout=60.0, connect=5.0),
+    )
+    assert llm1.root_client._client is not llm5.root_client._client
+
+    llm6 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+        api_key=SecretStr("test"),
+        http_client=httpx.Client(),
+    )
+    assert llm1.root_client._client is not llm6.root_client._client
 
 
 def test_profile_resolves_from_model_name() -> None:
