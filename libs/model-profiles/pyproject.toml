@@ -91,6 +91,7 @@ select = [
 ]
 ignore = [
     "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "SLF001",  # Private member access
