@@ -2092,8 +2092,7 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
 
 
 def test_summarization_internal_call_does_not_leak_into_messages_stream_sync() -> None:
-    """End-to-end: `stream_mode="messages"` must not surface summarization tokens.
-    """
+    """End-to-end: `stream_mode="messages"` must not surface summarization tokens."""
     summary_model = GenericFakeChatModel(messages=iter(["LEAKED_SUMMARY_TOKEN"]))
     main_model = GenericFakeChatModel(messages=iter(["Final answer content"]))
 
@@ -2105,7 +2104,7 @@ def test_summarization_internal_call_does_not_leak_into_messages_stream_sync() -
 
     agent = create_agent(model=main_model, middleware=[middleware])
 
-    initial_messages = [
+    initial_messages: list[AnyMessage | dict[str, Any]] = [
         HumanMessage(content="one"),
         HumanMessage(content="two"),
         HumanMessage(content="three"),
@@ -2134,7 +2133,7 @@ async def test_summarization_internal_call_does_not_leak_into_messages_stream_as
 
     agent = create_agent(model=main_model, middleware=[middleware])
 
-    initial_messages = [
+    initial_messages: list[AnyMessage | dict[str, Any]] = [
         HumanMessage(content="one"),
         HumanMessage(content="two"),
         HumanMessage(content="three"),

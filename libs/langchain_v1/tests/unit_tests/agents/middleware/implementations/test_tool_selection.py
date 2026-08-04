@@ -227,8 +227,7 @@ class TestCallbackIsolation:
         assert non_streaming_counter.count == 2
 
     def test_sync_end_to_end_no_leak_in_messages_stream(self) -> None:
-        """End-to-end test that `stream_mode="messages"` doesn't leak internal tokens.
-        """
+        """End-to-end test that `stream_mode="messages"` doesn't leak internal tokens."""
         tool_selection_model = _StreamLeakDetectingModel(
             messages=cycle(
                 [
@@ -855,8 +854,8 @@ class TestEdgeCases:
             model=None,  # type: ignore[arg-type]
             messages=[],
             tools=[get_weather, search_web],
-            state={},
-            runtime=None,  # type: ignore[arg-type]
+            state=None,
+            runtime=None,
         )
 
         modified_request = middleware._process_selection_response(
