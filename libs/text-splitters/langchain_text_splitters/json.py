@@ -129,17 +129,19 @@ class RecursiveJsonSplitter:
             A list of JSON chunks.
 
         Raises:
-            TypeError: If `json_data` is not a dict, unless `convert_lists` is
-                `True` and `json_data` is a list.
+            TypeError: If `json_data` is not a dict and cannot be converted to
+                one. `None` returns an empty list rather than raising. A
+                top-level list is only accepted when `convert_lists` is `True`.
         """
+        is_list_input = isinstance(json_data, list)
+
         if convert_lists:
             json_data = self._list_to_dict_preprocessing(json_data)
 
         if json_data is not None and not isinstance(json_data, dict):
-            msg = (
-                f"json_data must be a dict, got {type(json_data).__name__}. "
-                "Top-level lists can be split by passing convert_lists=True."
-            )
+            msg = f"json_data must be a dict, got {type(json_data).__name__}."
+            if is_list_input and not convert_lists:
+                msg += " Top-level lists can be split by passing convert_lists=True."
             raise TypeError(msg)
 
         chunks = self._json_split(json_data)

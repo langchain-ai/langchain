@@ -3546,6 +3546,23 @@ def test_split_json_none_input_returns_empty_list() -> None:
     assert splitter.split_json(None) == []  # ty: ignore[invalid-argument-type]
 
 
+def test_split_json_none_input_returns_empty_list_with_convert_lists() -> None:
+    """Regression guard: None stays a no-op even when convert_lists=True."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    assert splitter.split_json(None, convert_lists=True) == []  # ty: ignore[invalid-argument-type]
+
+
+def test_split_json_convert_lists_true_non_list_no_misleading_hint() -> None:
+    """The convert_lists=True hint shouldn't appear when it wouldn't help."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    with pytest.raises(TypeError, match="str") as exc_info:
+        splitter.split_json("hello world", convert_lists=True)  # ty: ignore[invalid-argument-type]
+
+    assert "convert_lists" not in str(exc_info.value)
+
+
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.POWERSHELL, chunk_size=60, chunk_overlap=0
