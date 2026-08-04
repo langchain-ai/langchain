@@ -2089,3 +2089,64 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     # Callbacks must be explicitly cleared so internal summarization tokens don't
     # leak into the parent stream.
     assert config["callbacks"] == []
+
+
+def test_summarization_internal_call_does_not_leak_into_messages_stream_sync() -> None:
+    """End-to-end: `stream_mode="messages"` must not surface summarization tokens.
+    """
+    summary_model = GenericFakeChatModel(messages=iter(["LEAKED_SUMMARY_TOKEN"]))
+    main_model = GenericFakeChatModel(messages=iter(["Final answer content"]))
+
+    middleware = SummarizationMiddleware(
+        model=summary_model,
+        trigger=("messages", 3),
+        keep=("messages", 1),
+    )
+
+    agent = create_agent(model=main_model, middleware=[middleware])
+
+    initial_messages = [
+        HumanMessage(content="one"),
+        HumanMessage(content="two"),
+        HumanMessage(content="three"),
+        HumanMessage(content="four"),
+    ]
+
+    collected_text = ""
+    for chunk, _metadata in agent.stream({"messages": initial_messages}, stream_mode="messages"):
+        if isinstance(chunk, AIMessageChunk) and isinstance(chunk.content, str):
+            collected_text += chunk.content
+
+    assert "LEAKED_SUMMARY_TOKEN" not in collected_text
+    assert "Final answer content" in collected_text
+
+
+async def test_summarization_internal_call_does_not_leak_into_messages_stream_async() -> None:
+    """Async counterpart of the sync leak-isolation end-to-end test."""
+    summary_model = GenericFakeChatModel(messages=iter(["LEAKED_SUMMARY_TOKEN"]))
+    main_model = GenericFakeChatModel(messages=iter(["Final answer content"]))
+
+    middleware = SummarizationMiddleware(
+        model=summary_model,
+        trigger=("messages", 3),
+        keep=("messages", 1),
+    )
+
+    agent = create_agent(model=main_model, middleware=[middleware])
+
+    initial_messages = [
+        HumanMessage(content="one"),
+        HumanMessage(content="two"),
+        HumanMessage(content="three"),
+        HumanMessage(content="four"),
+    ]
+
+    collected_text = ""
+    async for chunk, _metadata in agent.astream(
+        {"messages": initial_messages}, stream_mode="messages"
+    ):
+        if isinstance(chunk, AIMessageChunk) and isinstance(chunk.content, str):
+            collected_text += chunk.content
+
+    assert "LEAKED_SUMMARY_TOKEN" not in collected_text
+    assert "Final answer content" in collected_text

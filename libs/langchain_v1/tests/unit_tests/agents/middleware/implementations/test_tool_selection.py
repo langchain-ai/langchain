@@ -1,6 +1,6 @@
 """Unit tests for LLM tool selection middleware."""
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from itertools import cycle
 from typing import Any, Literal
 
@@ -8,7 +8,8 @@ import pytest
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessageChunk, HumanMessage
+from langchain_core.outputs import ChatGenerationChunk
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel
@@ -95,6 +96,25 @@ class FakeModel(GenericFakeChatModel):
                 )
 
         return self.bind(tools=tool_dicts)
+
+
+class _StreamLeakDetectingModel(FakeModel):
+    """Detects whether the streaming code path is used for this model call.
+
+    `BaseChatModel` only routes an `invoke()` call through `_stream()` (instead of
+    `_generate()`) when a streaming callback handler is attached -- exactly the
+    condition isolation is meant to prevent for middleware-internal calls. Real
+    providers would additionally leak partial tool-call JSON in that scenario;
+    `GenericFakeChatModel` doesn't chunk the `tool_calls` field, so this override
+    tracks whether `_stream` ran at all, which is the precise mechanism under test.
+    """
+
+    stream_was_called: bool = False
+
+    @override
+    def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
+        self.stream_was_called = True
+        yield from super()._stream(*args, **kwargs)
 
 
 class _ChatModelStartCounter(BaseCallbackHandler):
@@ -205,6 +225,81 @@ class TestCallbackIsolation:
 
         assert streaming_counter.count == 1
         assert non_streaming_counter.count == 2
+
+    def test_sync_end_to_end_no_leak_in_messages_stream(self) -> None:
+        """End-to-end test that `stream_mode="messages"` doesn't leak internal tokens.
+        """
+        tool_selection_model = _StreamLeakDetectingModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["get_weather"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Final answer content")]))
+        tool_selector = LLMToolSelectorMiddleware(max_tools=1, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        collected_text = ""
+        for chunk, _metadata in agent.stream(
+            {"messages": [HumanMessage("weather in paris")]}, stream_mode="messages"
+        ):
+            if isinstance(chunk, AIMessageChunk) and isinstance(chunk.content, str):
+                collected_text += chunk.content
+
+        assert tool_selection_model.stream_was_called is False
+        assert "Final answer content" in collected_text
+
+    async def test_async_end_to_end_no_leak_in_messages_stream(self) -> None:
+        """Async counterpart of the sync end-to-end leak-isolation test."""
+        tool_selection_model = _StreamLeakDetectingModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["get_weather"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Final answer content")]))
+        tool_selector = LLMToolSelectorMiddleware(max_tools=1, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        collected_text = ""
+        async for chunk, _metadata in agent.astream(
+            {"messages": [HumanMessage("weather in paris")]}, stream_mode="messages"
+        ):
+            if isinstance(chunk, AIMessageChunk) and isinstance(chunk.content, str):
+                collected_text += chunk.content
+
+        assert tool_selection_model.stream_was_called is False
+        assert "Final answer content" in collected_text
 
 
 class TestLLMToolSelectorBasic:
