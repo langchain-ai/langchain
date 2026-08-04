@@ -1,6 +1,6 @@
 import json
 import uuid
-from contextvars import copy_context
+from contextvars import ContextVar, copy_context
 from typing import Any, cast
 
 import pytest
@@ -15,6 +15,7 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_core.runnables import RunnableBinding, RunnablePassthrough
 from langchain_core.runnables.config import (
+    ContextThreadPoolExecutor,
     RunnableConfig,
     _get_langsmith_inheritable_metadata_from_config,
     _merge_metadata_dicts,
@@ -323,6 +324,46 @@ async def test_run_in_executor() -> None:
 
     with pytest.raises(RuntimeError):
         await run_in_executor(None, raises_stop_iter)
+
+
+def test_context_thread_pool_executor_map_with_generator() -> None:
+    """map() should accept unsized iterables like stdlib ThreadPoolExecutor.map.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/39211.
+    """
+    with ContextThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(lambda x: x * 2, (i for i in range(10))))
+
+    assert results == [i * 2 for i in range(10)]
+
+
+def test_context_thread_pool_executor_map_with_multiple_generators() -> None:
+    with ContextThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(lambda a, b: a + b, (i for i in range(5)), (j for j in range(5))))
+
+    assert results == [i + i for i in range(5)]
+
+
+def test_context_thread_pool_executor_map_shortest_iterable_wins() -> None:
+    with ContextThreadPoolExecutor(max_workers=2) as executor:
+        results = list(
+            executor.map(lambda a, b: a + b, (i for i in range(5)), [10, 20])
+        )
+
+    assert results == [10, 21]
+
+
+def test_context_thread_pool_executor_map_copies_context() -> None:
+    ctx_var: ContextVar[int] = ContextVar("map_ctx_var", default=0)
+    ctx_var.set(42)
+
+    def read_ctx(x: int) -> int:
+        return x + ctx_var.get()
+
+    with ContextThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(read_ctx, [1, 2, 3]))
+
+    assert results == [43, 44, 45]
 
 
 class TestMergeMetadataDicts:
