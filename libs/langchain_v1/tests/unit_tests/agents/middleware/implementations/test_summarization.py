@@ -1,3 +1,4 @@
+import sys
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -2120,6 +2121,14 @@ def test_summarization_internal_call_does_not_leak_into_messages_stream_sync() -
     assert "Final answer content" in collected_text
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason="langgraph doesn't propagate per-call callbacks through nested async "
+    "steps before Python 3.11 (ASYNCIO_ACCEPTS_CONTEXT in "
+    "langgraph._internal._runnable), so stream_mode='messages' produces no chunks "
+    "at all in async mode on 3.10 -- independent of this middleware. The sync "
+    "counterpart covers this on every supported Python version.",
+)
 async def test_summarization_internal_call_does_not_leak_into_messages_stream_async() -> None:
     """Async counterpart of the sync leak-isolation end-to-end test."""
     summary_model = GenericFakeChatModel(messages=iter(["LEAKED_SUMMARY_TOKEN"]))

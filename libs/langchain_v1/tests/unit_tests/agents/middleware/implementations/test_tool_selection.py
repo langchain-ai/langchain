@@ -1,5 +1,6 @@
 """Unit tests for LLM tool selection middleware."""
 
+import sys
 from collections.abc import Callable, Iterator, Sequence
 from itertools import cycle
 from typing import Any, Literal
@@ -24,6 +25,15 @@ from langchain.agents.middleware import (
 )
 from langchain.agents.middleware.tool_selection import _create_tool_selection_response
 from langchain.messages import AIMessage
+
+# LangGraph propagates per-invocation callbacks to nested async steps only on
+# Python 3.11+. On 3.10, callbacks don't reach deeply nested model calls, so
+# this async test is skipped; the sync test still provides coverage.
+_requires_async_callback_propagation = pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason="langgraph doesn't propagate per-call callbacks through nested async "
+    "steps before Python 3.11 (ASYNCIO_ACCEPTS_CONTEXT)",
+)
 
 
 @tool
@@ -189,6 +199,7 @@ class TestCallbackIsolation:
         # Plain (e.g. tracer-like) handler: both calls remain observable.
         assert non_streaming_counter.count == 2
 
+    @_requires_async_callback_propagation
     async def test_async_streaming_handler_only_sees_main_call(self) -> None:
         """A streaming-marker handler should only observe the main model call."""
         tool_selection_model = FakeModel(
@@ -263,6 +274,7 @@ class TestCallbackIsolation:
         assert tool_selection_model.stream_was_called is False
         assert "Final answer content" in collected_text
 
+    @_requires_async_callback_propagation
     async def test_async_end_to_end_no_leak_in_messages_stream(self) -> None:
         """Async counterpart of the sync end-to-end leak-isolation test."""
         tool_selection_model = _StreamLeakDetectingModel(
