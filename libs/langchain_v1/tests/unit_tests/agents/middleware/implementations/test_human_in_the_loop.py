@@ -4,15 +4,20 @@ from unittest.mock import patch
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
+from langchain_core.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt.tool_node import ToolRuntime
 from langgraph.runtime import Runtime
+from langgraph.types import Command
 
+from langchain.agents.factory import create_agent
 from langchain.agents.middleware import InterruptOnConfig
 from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
 )
 from langchain.agents.middleware.types import AgentState, ToolCallRequest
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def test_human_in_the_loop_middleware_initialization() -> None:
@@ -206,6 +211,77 @@ def test_human_in_the_loop_middleware_default_rejection_message() -> None:
         assert tool_message.tool_call_id == "1"
 
 
+def _assert_tool_messages_are_paired(messages: list[Any]) -> None:
+    """Assert every `ToolMessage` answers a call declared by the preceding `AIMessage`.
+
+    Model providers (e.g. OpenAI) reject a request where a `ToolMessage`'s
+    `tool_call_id` has no matching entry in the immediately preceding `AIMessage`'s
+    `tool_calls`, that pairing must hold for every model turn, not just the last.
+    """
+    pending_ids: set[str] = set()
+    for message in messages:
+        if isinstance(message, AIMessage):
+            pending_ids = {tc["id"] for tc in message.tool_calls if tc["id"] is not None}
+        elif isinstance(message, ToolMessage):
+            assert message.tool_call_id in pending_ids, (
+                f"ToolMessage {message.tool_call_id!r} has no matching tool call in the "
+                "preceding AIMessage"
+            )
+            pending_ids.discard(message.tool_call_id)
+
+
+def test_human_in_the_loop_middleware_rejected_call_not_executed_and_stays_paired() -> None:
+    """A rejected tool call must never execute, and the message history must stay valid.
+
+    Exercises the real `create_agent` graph (not just the middleware in isolation) to
+    confirm two things at once: the underlying tool is never invoked, and the agent can
+    still take its next model turn afterward which requires every `ToolMessage` to
+    answer a tool call the preceding `AIMessage` actually declared.
+    """
+    calls: list[str] = []
+
+    @tool
+    def risky_tool(value: str) -> str:
+        """A tool that would be dangerous to run without approval."""
+        calls.append(value)
+        return f"Executed: {value}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="risky_tool", args={"value": "test"}, id="1")],
+            [],
+        ]
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[risky_tool],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={"risky_tool": {"allowed_decisions": ["approve", "reject"]}}
+            )
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    interrupted = agent.invoke(
+        {"messages": [HumanMessage("Please run risky_tool")]},
+        {"configurable": {"thread_id": "reject-not-executed"}},
+    )
+    assert "__interrupt__" in interrupted
+
+    final = agent.invoke(
+        Command(resume={"decisions": [{"type": "reject", "message": "denied"}]}),
+        {"configurable": {"thread_id": "reject-not-executed"}},
+    )
+
+    # The graph must complete the next model turn rather than getting stuck or erroring.
+    assert "__interrupt__" not in final
+    # The tool itself must never run.
+    assert calls == []
+    # The message history must remain protocol-valid throughout, including the rejection turn.
+    _assert_tool_messages_are_paired(final["messages"])
+
+
 def test_human_in_the_loop_middleware_single_tool_respond() -> None:
     """Test HumanInTheLoopMiddleware with `respond` decision producing a success ToolMessage."""
     middleware = HumanInTheLoopMiddleware(
@@ -371,12 +447,13 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
         assert (
             len(result["messages"]) == 2
         )  # AI message with accepted tool call + tool message for rejected
-
-        # First message should be the AI message with only the accepted tool call.
-        # The rejected tool call must not survive, or `ToolNode` would execute it anyway.
+        # Keep rejected calls in the `AIMessage` for protocol validity: their
+        # `ToolMessage` must reference a preceding tool call. The graph still prevents
+        # the rejected call from executing.
         updated_ai_message = result["messages"][0]
-        assert len(updated_ai_message.tool_calls) == 1
+        assert len(updated_ai_message.tool_calls) == 2
         assert updated_ai_message.tool_calls[0]["name"] == "get_forecast"  # Accepted
+        assert updated_ai_message.tool_calls[1]["name"] == "get_temperature"  # Rejected, kept
 
         # Second message should be the tool message for the rejected tool call
         tool_message = result["messages"][1]
@@ -922,14 +999,17 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
         assert len(result["messages"]) == 2  # AI message + tool message for rejection
 
         updated_ai_message = result["messages"][0]
-        # tool_b was rejected and must be dropped, or `ToolNode` would execute it anyway
-        assert len(updated_ai_message.tool_calls) == 4
+        # tool_b is still declared on the AIMessage (rejection is handled via the paired
+        # ToolMessage, not by stripping the call -- see
+        # test_human_in_the_loop_middleware_rejected_call_not_executed_and_stays_paired).
+        assert len(updated_ai_message.tool_calls) == 5
 
-        # Verify order for surviving calls: A (auto) -> C (auto) -> D (approved) -> E (auto)
+        # Verify order maintained: A (auto) -> B (rejected) -> C (auto) -> D (approved) -> E (auto)
         assert updated_ai_message.tool_calls[0]["name"] == "tool_a"
-        assert updated_ai_message.tool_calls[1]["name"] == "tool_c"
-        assert updated_ai_message.tool_calls[2]["name"] == "tool_d"
-        assert updated_ai_message.tool_calls[3]["name"] == "tool_e"
+        assert updated_ai_message.tool_calls[1]["name"] == "tool_b"
+        assert updated_ai_message.tool_calls[2]["name"] == "tool_c"
+        assert updated_ai_message.tool_calls[3]["name"] == "tool_d"
+        assert updated_ai_message.tool_calls[4]["name"] == "tool_e"
 
         # Check rejection tool message
         tool_message = result["messages"][1]
