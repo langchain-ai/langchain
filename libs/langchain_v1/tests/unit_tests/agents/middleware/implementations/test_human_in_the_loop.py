@@ -28,6 +28,28 @@ def test_human_in_the_loop_middleware_initialization() -> None:
     assert middleware.description_prefix == "Custom prefix"
 
 
+def test_human_in_the_loop_middleware_rejects_empty_allowed_decisions() -> None:
+    """Test that an empty `allowed_decisions` list raises instead of silently disabling the gate."""
+    with pytest.raises(ValueError, match="test_tool"):
+        HumanInTheLoopMiddleware(interrupt_on={"test_tool": {"allowed_decisions": []}})
+
+
+def test_human_in_the_loop_middleware_rejects_missing_allowed_decisions() -> None:
+    """Test that a config missing `allowed_decisions` (e.g. `when`-only) raises."""
+    with pytest.raises(ValueError, match="test_tool"):
+        HumanInTheLoopMiddleware(
+            interrupt_on={"test_tool": {"when": lambda _req: True}}  # type: ignore[typeddict-item]
+        )
+
+
+def test_human_in_the_loop_middleware_rejects_typoed_key() -> None:
+    """Test that a misspelled `allowed_decisions` key raises instead of being silently dropped."""
+    with pytest.raises(ValueError, match="test_tool"):
+        HumanInTheLoopMiddleware(
+            interrupt_on={"test_tool": {"alowed_decisions": ["approve"]}}  # type: ignore[typeddict-item]
+        )
+
+
 def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     """Test HumanInTheLoopMiddleware when no interrupts are needed."""
     middleware = HumanInTheLoopMiddleware(
@@ -350,11 +372,11 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
             len(result["messages"]) == 2
         )  # AI message with accepted tool call + tool message for rejected
 
-        # First message should be the AI message with both tool calls
+        # First message should be the AI message with only the accepted tool call.
+        # The rejected tool call must not survive, or `ToolNode` would execute it anyway.
         updated_ai_message = result["messages"][0]
-        assert len(updated_ai_message.tool_calls) == 2  # Both tool calls remain
+        assert len(updated_ai_message.tool_calls) == 1
         assert updated_ai_message.tool_calls[0]["name"] == "get_forecast"  # Accepted
-        assert updated_ai_message.tool_calls[1]["name"] == "get_temperature"  # Got response
 
         # Second message should be the tool message for the rejected tool call
         tool_message = result["messages"][1]
@@ -900,15 +922,14 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
         assert len(result["messages"]) == 2  # AI message + tool message for rejection
 
         updated_ai_message = result["messages"][0]
-        # tool_b is still in the list (with rejection handled via tool message)
-        assert len(updated_ai_message.tool_calls) == 5
+        # tool_b was rejected and must be dropped, or `ToolNode` would execute it anyway
+        assert len(updated_ai_message.tool_calls) == 4
 
-        # Verify order maintained: A (auto) -> B (rejected) -> C (auto) -> D (approved) -> E (auto)
+        # Verify order for surviving calls: A (auto) -> C (auto) -> D (approved) -> E (auto)
         assert updated_ai_message.tool_calls[0]["name"] == "tool_a"
-        assert updated_ai_message.tool_calls[1]["name"] == "tool_b"
-        assert updated_ai_message.tool_calls[2]["name"] == "tool_c"
-        assert updated_ai_message.tool_calls[3]["name"] == "tool_d"
-        assert updated_ai_message.tool_calls[4]["name"] == "tool_e"
+        assert updated_ai_message.tool_calls[1]["name"] == "tool_c"
+        assert updated_ai_message.tool_calls[2]["name"] == "tool_d"
+        assert updated_ai_message.tool_calls[3]["name"] == "tool_e"
 
         # Check rejection tool message
         tool_message = result["messages"][1]
