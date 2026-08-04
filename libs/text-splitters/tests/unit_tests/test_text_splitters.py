@@ -3504,6 +3504,48 @@ def test_split_json_empty_dict_value_in_large_payload() -> None:
     assert found_empty, "Empty dict value was lost during splitting"
 
 
+@pytest.mark.parametrize(
+    ("data", "type_name"),
+    [
+        ([{"a": 1}, {"b": 2}], "list"),
+        ("hello world", "str"),
+        (123, "int"),
+        (True, "bool"),
+    ],
+)
+def test_split_json_non_dict_input_raises(data: object, type_name: str) -> None:
+    """Non-dict, non-convertible top-level input raises TypeError, not silent []."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    with pytest.raises(TypeError, match=type_name):
+        splitter.split_json(data)  # ty: ignore[invalid-argument-type]
+
+
+def test_split_json_list_without_convert_lists_error_mentions_escape_hatch() -> None:
+    """The error for a bare list should point users at convert_lists=True."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    with pytest.raises(TypeError, match="convert_lists=True"):
+        splitter.split_json([{"a": 1}, {"b": 2}])  # ty: ignore[invalid-argument-type]
+
+
+def test_split_json_list_with_convert_lists_still_works() -> None:
+    """Regression guard: convert_lists=True must keep working for top-level lists."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    data = [{"a": 1}, {"b": 2}]
+    chunks = splitter.split_json(data, convert_lists=True)  # ty: ignore[invalid-argument-type]
+
+    assert chunks == [{"0": {"a": 1}, "1": {"b": 2}}]
+
+
+def test_split_json_none_input_returns_empty_list() -> None:
+    """Regression guard: None stays a no-op (matches split_json({}) -> [])."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    assert splitter.split_json(None) == []  # ty: ignore[invalid-argument-type]
+
+
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.POWERSHELL, chunk_size=60, chunk_overlap=0
