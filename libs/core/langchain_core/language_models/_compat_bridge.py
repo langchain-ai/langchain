@@ -58,6 +58,7 @@ from langchain_protocol.protocol import (
 
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.utils._merge import merge_dicts
+from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
@@ -527,6 +528,33 @@ def _isolate_usage(usage: UsageInfo | None) -> UsageInfo | None:
 # ---------------------------------------------------------------------------
 
 
+def _streamed_message_id(msg: BaseMessage, message_id: str | None) -> str | None:
+    """Resolve a streaming `message-start` id, preferring the provider's.
+
+    On the streaming path `message_id` is the run-derived placeholder
+    (`lc_run--<run_id>`) that the stream driver assigns at
+    `on_chat_model_start` — before any provider has replied, so it is the only
+    id available at that point. A provider that names its own message should
+    still win: OpenAI's Responses API sends `resp_…` on `response.created`,
+    ahead of the first token, and that is the id the assembled `AIMessage` ends
+    up carrying, because `add_ai_message_chunks` ranks provider ids above
+    `lc_run-*`/`lc_*` ones.
+
+    Applying the same precedence here keeps the streamed protocol id and the
+    resulting message id in agreement. Without it they diverge for the whole
+    stream, so a consumer that addresses a message by the id it was streamed
+    under cannot match it to the persisted message.
+
+    Only the live-chunk paths use this. `message_to_events` replays an already
+    finalized message, where an explicit `message_id` is a caller override and
+    must keep winning.
+    """
+    provider_id = getattr(msg, "id", None)
+    if provider_id and not provider_id.startswith((LC_ID_PREFIX, LC_AUTO_PREFIX)):
+        return provider_id
+    return message_id if message_id is not None else provider_id
+
+
 def _build_message_start(
     msg: BaseMessage,
     message_id: str | None,
@@ -649,7 +677,7 @@ def chunks_to_events(
 
         if not started:
             started = True
-            yield _build_message_start(msg, message_id)
+            yield _build_message_start(msg, _streamed_message_id(msg, message_id))
 
         for key, block in _iter_protocol_blocks(msg):
             if key not in blocks:
@@ -729,7 +757,7 @@ async def achunks_to_events(
 
         if not started:
             started = True
-            yield _build_message_start(msg, message_id)
+            yield _build_message_start(msg, _streamed_message_id(msg, message_id))
 
         for key, block in _iter_protocol_blocks(msg):
             if key not in blocks:

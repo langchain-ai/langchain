@@ -171,6 +171,49 @@ def test_chunks_to_events_text_only() -> None:
     assert "finish_reason" not in _event_metadata(finish)
 
 
+def test_chunks_to_events_prefers_provider_message_id() -> None:
+    """A provider-assigned id wins over the run-derived placeholder.
+
+    The stream driver passes `lc_run--<run_id>` (assigned at
+    `on_chat_model_start`, before the provider replies). OpenAI's Responses API
+    names the message `resp_…` on `response.created`, and that is the id the
+    assembled `AIMessage` keeps, so `message-start` must report it too.
+    """
+    chunks = [
+        ChatGenerationChunk(message=AIMessageChunk(content="Hi", id="resp_abc123")),
+    ]
+
+    events = list(
+        chunks_to_events(iter(chunks), message_id="lc_run--0199-4abc-8def-1234")
+    )
+
+    start = cast("MessageStartData", events[0])
+    assert start["event"] == "message-start"
+    assert start["id"] == "resp_abc123"
+
+
+def test_chunks_to_events_keeps_placeholder_when_provider_gives_no_id() -> None:
+    """Providers that never name the message keep the run-derived placeholder."""
+    chunks = [ChatGenerationChunk(message=AIMessageChunk(content="Hi"))]
+
+    events = list(chunks_to_events(iter(chunks), message_id="lc_run--0199-4abc"))
+
+    start = cast("MessageStartData", events[0])
+    assert start["id"] == "lc_run--0199-4abc"
+
+
+def test_chunks_to_events_placeholder_wins_over_auto_generated_chunk_id() -> None:
+    """An `lc_`-prefixed chunk id is auto-generated, not provider-assigned."""
+    chunks = [
+        ChatGenerationChunk(message=AIMessageChunk(content="Hi", id="lc_generated")),
+    ]
+
+    events = list(chunks_to_events(iter(chunks), message_id="lc_run--0199-4abc"))
+
+    start = cast("MessageStartData", events[0])
+    assert start["id"] == "lc_run--0199-4abc"
+
+
 def test_chunks_to_events_empty_iterator() -> None:
     """No chunks means no events."""
     assert list(chunks_to_events(iter([]))) == []
