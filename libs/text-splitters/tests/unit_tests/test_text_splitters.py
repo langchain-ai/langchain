@@ -3504,6 +3504,42 @@ def test_split_json_empty_dict_value_in_large_payload() -> None:
     assert found_empty, "Empty dict value was lost during splitting"
 
 
+def test_split_json_list_without_convert_lists_raises() -> None:
+    """split_json([]) without convert_lists should raise TypeError."""
+    splitter = RecursiveJsonSplitter()
+    with pytest.raises(TypeError, match="received a list"):
+        splitter.split_json([])
+
+
+def test_split_json_list_with_convert_lists() -> None:
+    """split_json([]) with convert_lists=True should work (returns converted list)."""
+    splitter = RecursiveJsonSplitter()
+    result = splitter.split_json([], convert_lists=True)
+    # Empty list converted to empty dict -> split_json returns []
+    assert result == []
+
+
+def test_split_json_string_raises() -> None:
+    """split_json('hello') should raise TypeError."""
+    splitter = RecursiveJsonSplitter()
+    with pytest.raises(TypeError, match="expected a dict or list"):
+        splitter.split_json("hello")
+
+
+def test_split_json_int_raises() -> None:
+    """split_json(123) should raise TypeError."""
+    splitter = RecursiveJsonSplitter()
+    with pytest.raises(TypeError, match="expected a dict or list"):
+        splitter.split_json(123)
+
+
+def test_split_json_bool_raises() -> None:
+    """split_json(True) should raise TypeError."""
+    splitter = RecursiveJsonSplitter()
+    with pytest.raises(TypeError, match="expected a dict or list"):
+        splitter.split_json(True)
+
+
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.POWERSHELL, chunk_size=60, chunk_overlap=0
