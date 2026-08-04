@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Union
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeGuard, Union
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
+from langchain.agents.middleware._internal_call_config import internal_call_config
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -76,6 +77,18 @@ def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter[Any]:
         tools: Annotated[list[selected_tool_type], Field(description=description)]  # type: ignore[valid-type]
 
     return TypeAdapter(ToolSelectionResponse)
+
+
+def _is_valid_selection_response(response: Any) -> TypeGuard[dict[str, Any]]:
+    """Check whether a structured-output response is a well-formed tool selection.
+
+    Args:
+        response: Raw response from the structured-output model call.
+
+    Returns:
+        `True` if `response` is a dict with a `tools` list, `False` otherwise.
+    """
+    return isinstance(response, dict) and isinstance(response.get("tools"), list)
 
 
 def _render_tool_list(tools: list[BaseTool]) -> str:
@@ -239,7 +252,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
 
-        for tool_name in response["tools"]:
+        for tool_name in response.get("tools", []):
             if tool_name not in valid_tool_names:
                 invalid_tool_selections.append(tool_name)
                 continue
@@ -285,7 +298,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             The model call result.
 
         Raises:
-            AssertionError: If the selection model response is not a dict.
+            ValueError: If the selection model returns a malformed response
+                (missing a `tools` list) twice in a row.
         """
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
@@ -296,17 +310,27 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         schema = type_adapter.json_schema()
         structured_model = selection_request.model.with_structured_output(schema)
 
-        response = structured_model.invoke(
-            [
-                {"role": "system", "content": selection_request.system_message},
-                selection_request.last_user_message,
-            ]
-        )
+        messages: list[BaseMessage | dict[str, Any]] = [
+            {"role": "system", "content": selection_request.system_message},
+            selection_request.last_user_message,
+        ]
+        # Drop only the streaming callback handlers so selection tokens don't leak
+        # into the user-facing stream
+        config = internal_call_config("tool_selection")
 
-        # Response should be a dict since we're passing a schema (not a Pydantic model class)
-        if not isinstance(response, dict):
-            msg = f"Expected dict response, got {type(response)}"
-            raise AssertionError(msg)  # noqa: TRY004
+        response = structured_model.invoke(messages, config=config)
+        if not _is_valid_selection_response(response):
+            # Malformed structured output is usually transient, retry once before
+            # giving up, rather than silently degrading to no/all tools selected.
+            response = structured_model.invoke(messages, config=config)
+            if not _is_valid_selection_response(response):
+                msg = (
+                    "LLMToolSelectorMiddleware: selection model returned a malformed "
+                    f"response after retrying (expected a dict with a 'tools' list): "
+                    f"{response!r}"
+                )
+                raise ValueError(msg)
+
         modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
@@ -327,7 +351,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             The model call result.
 
         Raises:
-            AssertionError: If the selection model response is not a dict.
+            ValueError: If the selection model returns a malformed response
+                (missing a `tools` list) twice in a row.
         """
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
@@ -338,17 +363,27 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         schema = type_adapter.json_schema()
         structured_model = selection_request.model.with_structured_output(schema)
 
-        response = await structured_model.ainvoke(
-            [
-                {"role": "system", "content": selection_request.system_message},
-                selection_request.last_user_message,
-            ]
-        )
+        messages: list[BaseMessage | dict[str, Any]] = [
+            {"role": "system", "content": selection_request.system_message},
+            selection_request.last_user_message,
+        ]
+        # Drop only the streaming callback handlers so selection tokens don't leak
+        # into the user-facing stream
+        config = internal_call_config("tool_selection")
 
-        # Response should be a dict since we're passing a schema (not a Pydantic model class)
-        if not isinstance(response, dict):
-            msg = f"Expected dict response, got {type(response)}"
-            raise AssertionError(msg)  # noqa: TRY004
+        response = await structured_model.ainvoke(messages, config=config)
+        if not _is_valid_selection_response(response):
+            # Malformed structured output is usually transient, retry once before
+            # giving up, rather than silently degrading to no/all tools selected.
+            response = await structured_model.ainvoke(messages, config=config)
+            if not _is_valid_selection_response(response):
+                msg = (
+                    "LLMToolSelectorMiddleware: selection model returned a malformed "
+                    f"response after retrying (expected a dict with a 'tools' list): "
+                    f"{response!r}"
+                )
+                raise ValueError(msg)
+
         modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )

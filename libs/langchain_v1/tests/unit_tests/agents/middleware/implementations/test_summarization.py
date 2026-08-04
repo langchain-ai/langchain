@@ -11,8 +11,10 @@ from langchain_core.language_models.base import (
     LanguageModelInput,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     AnyMessage,
     BaseMessage,
     HumanMessage,
@@ -28,7 +30,7 @@ from langgraph.runtime import Runtime
 from pydantic import Field
 from typing_extensions import override
 
-from langchain.agents import AgentState
+from langchain.agents import AgentState, create_agent
 from langchain.agents.middleware.summarization import (
     ContextSize,
     SummarizationMiddleware,
@@ -2084,3 +2086,6 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     assert config is not None
     assert "metadata" in config
     assert config["metadata"]["lc_source"] == "summarization"
+    # Callbacks must be explicitly cleared so internal summarization tokens don't
+    # leak into the parent stream.
+    assert config["callbacks"] == []

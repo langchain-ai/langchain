@@ -5,6 +5,7 @@ from itertools import cycle
 from typing import Any, Literal
 
 import pytest
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
@@ -94,6 +95,116 @@ class FakeModel(GenericFakeChatModel):
                 )
 
         return self.bind(tools=tool_dicts)
+
+
+class _ChatModelStartCounter(BaseCallbackHandler):
+    """Counts `on_chat_model_start` invocations."""
+
+    def __init__(self) -> None:
+        self.count = 0
+
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> None:  # noqa: ARG002
+        self.count += 1
+
+
+class _StreamingChatModelStartCounter(_ChatModelStartCounter):
+    """Same as `_ChatModelStartCounter`, but structurally a streaming handler.
+
+    Implementing `tap_output_aiter`/`tap_output_iter` satisfies the
+    `runtime_checkable` `_StreamingCallbackHandler` protocol, matching how
+    `stream_mode="messages"`/`astream_events`/`astream_log` handlers are identified.
+    """
+
+    def tap_output_aiter(self, run_id: Any, output: Any) -> Any:  # noqa: ARG002
+        return output
+
+    def tap_output_iter(self, run_id: Any, output: Any) -> Any:  # noqa: ARG002
+        return output
+
+
+class TestCallbackIsolation:
+    """Test that the internal selection call doesn't leak into the parent's stream.
+
+    The internal call should still be traced/observed by non-streaming callbacks
+    (e.g. LangSmith), but must not emit to handlers that would surface its tokens
+    in the user-facing stream.
+    """
+
+    def test_sync_streaming_handler_only_sees_main_call(self) -> None:
+        """A streaming-marker handler should only observe the main model call."""
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["get_weather"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(max_tools=1, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        streaming_counter = _StreamingChatModelStartCounter()
+        non_streaming_counter = _ChatModelStartCounter()
+        agent.invoke(
+            {"messages": [HumanMessage("weather in paris")]},
+            config={"callbacks": [streaming_counter, non_streaming_counter]},
+        )
+
+        # Streaming handler: only the main model call, not the internal selector call.
+        assert streaming_counter.count == 1
+        # Plain (e.g. tracer-like) handler: both calls remain observable.
+        assert non_streaming_counter.count == 2
+
+    async def test_async_streaming_handler_only_sees_main_call(self) -> None:
+        """A streaming-marker handler should only observe the main model call."""
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["get_weather"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(max_tools=1, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        streaming_counter = _StreamingChatModelStartCounter()
+        non_streaming_counter = _ChatModelStartCounter()
+        await agent.ainvoke(
+            {"messages": [HumanMessage("weather in paris")]},
+            config={"callbacks": [streaming_counter, non_streaming_counter]},
+        )
+
+        assert streaming_counter.count == 1
+        assert non_streaming_counter.count == 2
 
 
 class TestLLMToolSelectorBasic:
@@ -641,3 +752,112 @@ class TestEdgeCases:
         """Test that empty tools list raises an error in schema creation."""
         with pytest.raises(AssertionError, match="tools must be non-empty"):
             _create_tool_selection_response([])
+
+    def test_malformed_selection_response_missing_tools_key(self) -> None:
+        """Test that a structured output response missing `tools` doesn't raise `KeyError`."""
+        middleware = LLMToolSelectorMiddleware()
+        request = ModelRequest(
+            model=None,  # type: ignore[arg-type]
+            messages=[],
+            tools=[get_weather, search_web],
+            state={},
+            runtime=None,  # type: ignore[arg-type]
+        )
+
+        modified_request = middleware._process_selection_response(
+            {},  # malformed: missing the expected "tools" key
+            available_tools=[get_weather, search_web],
+            valid_tool_names=["get_weather", "search_web"],
+            request=request,
+        )
+
+        assert modified_request.tools == []
+
+    def test_sync_retries_once_then_succeeds_on_malformed_response(self) -> None:
+        """A single malformed response should be retried and recover on the second try."""
+        tool_selection_model = FakeModel(
+            messages=iter(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "ToolSelectionResponse", "id": "1", "args": {}},
+                        ],
+                    ),
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "2",
+                                "args": {"tools": ["get_weather"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(max_tools=1, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        response = agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert isinstance(response["messages"][-1], AIMessage)
+
+    def test_sync_raises_after_malformed_response_twice(self) -> None:
+        """Two malformed responses in a row should raise a clear `ValueError`."""
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "ToolSelectionResponse", "id": "1", "args": {}},
+                        ],
+                    ),
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(max_tools=1, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        with pytest.raises(ValueError, match="malformed"):
+            agent.invoke({"messages": [HumanMessage("test")]})
+
+    async def test_async_raises_after_malformed_response_twice(self) -> None:
+        """Two malformed responses in a row should raise a clear `ValueError`."""
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "ToolSelectionResponse", "id": "1", "args": {}},
+                        ],
+                    ),
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(max_tools=1, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        with pytest.raises(ValueError, match="malformed"):
+            await agent.ainvoke({"messages": [HumanMessage("test")]})
