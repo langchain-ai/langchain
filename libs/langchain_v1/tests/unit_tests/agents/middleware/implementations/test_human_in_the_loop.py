@@ -38,7 +38,7 @@ def test_human_in_the_loop_middleware_rejects_missing_allowed_decisions() -> Non
     """Test that a config missing `allowed_decisions` (e.g. `when`-only) raises."""
     with pytest.raises(ValueError, match="test_tool"):
         HumanInTheLoopMiddleware(
-            interrupt_on={"test_tool": {"when": lambda _req: True}}  # type: ignore[typeddict-item]
+            interrupt_on={"test_tool": {"when": lambda _req: True}}  # type: ignore[dict-item]
         )
 
 
@@ -46,7 +46,7 @@ def test_human_in_the_loop_middleware_rejects_typoed_key() -> None:
     """Test that a misspelled `allowed_decisions` key raises instead of being silently dropped."""
     with pytest.raises(ValueError, match="test_tool"):
         HumanInTheLoopMiddleware(
-            interrupt_on={"test_tool": {"alowed_decisions": ["approve"]}}  # type: ignore[typeddict-item]
+            interrupt_on={"test_tool": {"alowed_decisions": ["approve"]}}  # type: ignore[dict-item]
         )
 
 
