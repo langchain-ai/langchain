@@ -11,7 +11,7 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableConfig
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import BaseModel, Field, field_validator
 from typing_extensions import TypedDict, override
@@ -720,7 +720,7 @@ class TestResponseFormatAsToolStrategy:
             response_format=ToolStrategy(Answer, handle_errors=True),
             checkpointer=InMemorySaver(),
         )
-        thread = {"configurable": {"thread_id": "test-thread"}}
+        thread: RunnableConfig = {"configurable": {"thread_id": "test-thread"}}
 
         response_1 = agent.invoke({"messages": [HumanMessage("say hi")]}, config=thread)
         response_2 = agent.invoke({"messages": [HumanMessage("say bye")]}, config=thread)
