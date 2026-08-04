@@ -23,6 +23,19 @@ def test__dict_message_prompt_template_fstring() -> None:
     assert actual == expected
 
 
+def test_dict_prompt_template_preserves_and_formats_nested_list_values() -> None:
+    prompt = DictPromptTemplate(
+        template={
+            "content": ["{text}", 1, {"nested": [True, "{text}"]}, [[None, 2]]]
+        },
+        template_format="f-string",
+    )
+
+    assert prompt.format(text="hello") == {
+        "content": ["hello", 1, {"nested": [True, "hello"]}, [[None, 2]]]
+    }
+
+
 def test_deserialize_legacy() -> None:
     ser = {
         "type": "constructor",

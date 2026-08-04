@@ -137,6 +137,10 @@ def _get_input_variables(
                     input_variables += get_template_variables(x, template_format)
                 elif isinstance(x, dict):
                     input_variables += _get_input_variables(x, template_format)
+                elif isinstance(x, (list, tuple)):
+                    input_variables += _get_input_variables(
+                        {"_nested": x}, template_format
+                    )
     return list(set(input_variables))
 
 
@@ -145,12 +149,20 @@ def _insert_input_variables(
     inputs: dict[str, Any],
     template_format: Literal["f-string", "mustache"],
 ) -> dict[str, Any]:
-    formatted: dict[str, Any] = {}
     formatter = DEFAULT_FORMATTER_MAPPING[template_format]
+
+    def format_value(value: Any) -> Any:
+        if isinstance(value, str):
+            return formatter(value, **inputs)
+        if isinstance(value, dict):
+            return _insert_input_variables(value, inputs, template_format)
+        if isinstance(value, (list, tuple)):
+            return type(value)(format_value(item) for item in value)
+        return value
+
+    formatted: dict[str, Any] = {}
     for k, v in template.items():
-        if isinstance(v, str):
-            formatted[k] = formatter(v, **inputs)
-        elif isinstance(v, dict):
+        if isinstance(v, dict):
             if k == "image_url" and "path" in v:
                 msg = (
                     "Specifying image inputs via file path in environments with "
@@ -159,17 +171,7 @@ def _insert_input_variables(
                     "misuse."
                 )
                 warnings.warn(msg, stacklevel=2)
-            formatted[k] = _insert_input_variables(v, inputs, template_format)
-        elif isinstance(v, (list, tuple)):
-            formatted_v: list[str | dict[str, Any]] = []
-            for x in v:
-                if isinstance(x, str):
-                    formatted_v.append(formatter(x, **inputs))
-                elif isinstance(x, dict):
-                    formatted_v.append(
-                        _insert_input_variables(x, inputs, template_format)
-                    )
-            formatted[k] = type(v)(formatted_v)
+            formatted[k] = format_value(v)
         else:
-            formatted[k] = v
+            formatted[k] = format_value(v)
     return formatted
