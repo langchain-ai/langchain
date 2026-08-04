@@ -48,7 +48,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
+from langchain_core.utils import from_env, get_pydantic_field_names
+from langchain_core.utils._gateway import _apply_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -474,6 +475,29 @@ def _format_data_content_block(block: dict) -> dict:
     return formatted_block
 
 
+def _format_text_block(block: dict) -> dict:
+    """Narrow a text content block to fields supported by Anthropic's API.
+
+    Drops LangChain-internal fields (e.g. the ``id`` minted by
+    ``create_text_block``) that Anthropic rejects as extra inputs.
+    """
+    formatted_block = {
+        k: v
+        for k, v in block.items()
+        if k in ("type", "text", "cache_control", "citations")
+    }
+    # Clean up citations to remove null file_id fields
+    if formatted_block.get("citations"):
+        cleaned_citations = []
+        for citation in formatted_block["citations"]:
+            cleaned_citation = {
+                k: v for k, v in citation.items() if not (k == "file_id" and v is None)
+            }
+            cleaned_citations.append(cleaned_citation)
+        formatted_block["citations"] = cleaned_citations
+    return formatted_block
+
+
 def _format_messages(
     messages: Sequence[BaseMessage],
 ) -> tuple[str | list[dict] | None, list[dict]]:
@@ -489,7 +513,11 @@ def _format_messages(
             if isinstance(message.content, list):
                 system = [
                     (
-                        block
+                        (
+                            _format_text_block(block)
+                            if block.get("type") == "text"
+                            else block
+                        )
                         if isinstance(block, dict)
                         else {"type": "text", "text": block}
                     )
@@ -597,32 +625,16 @@ def _format_messages(
                         # accepted.
                         # https://github.com/anthropics/anthropic-sdk-python/issues/461
                         if text.strip():
-                            formatted_block = {
-                                k: v
-                                for k, v in block.items()
-                                if k in ("type", "text", "cache_control", "citations")
-                            }
-                            # Clean up citations to remove null file_id fields
-                            if formatted_block.get("citations"):
-                                cleaned_citations = []
-                                for citation in formatted_block["citations"]:
-                                    cleaned_citation = {
-                                        k: v
-                                        for k, v in citation.items()
-                                        if not (k == "file_id" and v is None)
-                                    }
-                                    cleaned_citations.append(cleaned_citation)
-                                formatted_block["citations"] = cleaned_citations
-                            content.append(formatted_block)
+                            content.append(_format_text_block(block))
                     elif block["type"] == "thinking":
-                        content.append(
-                            {
-                                k: v
-                                for k, v in block.items()
-                                if k
-                                in ("type", "thinking", "cache_control", "signature")
-                            },
-                        )
+                        formatted_thinking = {
+                            k: v
+                            for k, v in block.items()
+                            if k in ("type", "thinking", "cache_control", "signature")
+                        }
+                        if "signature" in formatted_thinking:
+                            formatted_thinking.setdefault("thinking", "")
+                        content.append(formatted_thinking)
                     elif block["type"] == "redacted_thinking":
                         content.append(
                             {
@@ -959,24 +971,21 @@ class ChatAnthropic(BaseChatModel):
     stop_sequences: list[str] | None = Field(None, alias="stop")
     """Default stop sequences."""
 
-    anthropic_api_url: str | None = Field(
-        alias="base_url",
-        default_factory=from_env(
-            ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
-            default="https://api.anthropic.com",
-        ),
-    )
+    anthropic_api_url: str | None = Field(default=None, alias="base_url")
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value first from
     `ANTHROPIC_API_URL` and if that is not set, `ANTHROPIC_BASE_URL`.
+
+    If `LANGSMITH_GATEWAY` is set, it is used as a fallback after those env vars.
     """
 
-    anthropic_api_key: SecretStr = Field(
-        alias="api_key",
-        default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
-    )
-    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
+    anthropic_api_key: SecretStr = Field(default=SecretStr(""), alias="api_key")
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided.
+
+    If `LANGSMITH_GATEWAY` is enabled and the base URL points at the gateway,
+    `LANGSMITH_GATEWAY_API_KEY` is used instead.
+    """
 
     anthropic_proxy: str | None = Field(
         default_factory=from_env("ANTHROPIC_PROXY", default=None)
@@ -1021,17 +1030,19 @@ class ChatAnthropic(BaseChatModel):
     Examples:
 
     - `#!python {"type": "enabled", "budget_tokens": 10_000}` (pre-4.7 models)
-    - `#!python {"type": "adaptive"}` (Opus 4.6+, Sonnet 5)
-    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+, Sonnet 5)
-    - `#!python {"type": "disabled"}` (Sonnet 5, where adaptive thinking is
-      on by default)
+    - `#!python {"type": "adaptive"}` (Opus 4.6+, Opus 5, Sonnet 5)
+    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+,
+      Opus 5, Sonnet 5)
+    - `#!python {"type": "disabled"}` (Opus 5 and Sonnet 5, where adaptive
+      thinking is on by default)
 
-    !!! note "Claude Opus 4.7+ and Sonnet 5"
+    !!! note "Claude Opus 4.7+, Opus 5, and Sonnet 5"
 
         `budget_tokens` is removed on these models — use `{"type": "adaptive"}`
         with `output_config.effort` to control reasoning effort. The default
         `display` is `"omitted"`; set it to `"summarized"` to receive
-        summarized reasoning in the response.
+        summarized reasoning in the response. On Opus 5, disabled thinking is
+        supported only at `"high"` effort or below.
     """
 
     output_config: dict[str, Any] | None = None
@@ -1113,6 +1124,17 @@ class ChatAnthropic(BaseChatModel):
     """Controls where model inference runs. See Anthropic's
     [data residency](https://platform.claude.com/docs/en/build-with-claude/data-residency)
     docs for more information.
+    """
+
+    user_profile_id: str | None = None
+    """User profile ID to attribute the request to.
+
+    Use when acting on behalf of a party other than your organization. Setting this
+    automatically enables the required `user-profiles` beta, routing the request
+    through `client.beta.messages.create`.
+
+    Can also be passed at call time, which overrides the value set here (for example,
+    `model.invoke(..., user_profile_id="uprof_...")`).
     """
 
     @property
@@ -1208,6 +1230,31 @@ class ChatAnthropic(BaseChatModel):
         self._add_version("langchain-anthropic", __version__)
         return self
 
+    @model_validator(mode="before")
+    @classmethod
+    def _resolve_gateway(cls, values: Any) -> Any:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        An explicit ``base_url``/``api_key`` always wins. Otherwise the base URL
+        falls back to ``ANTHROPIC_API_URL``/``ANTHROPIC_BASE_URL``, then the
+        LangSmith gateway, then the Anthropic default. The gateway key is
+        preferred only when the base URL came from the gateway; for any other
+        endpoint the provider key wins, and the gateway key is a candidate only
+        when the gateway is enabled.
+        """
+        if isinstance(values, dict):
+            _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="anthropic_api_url",
+                api_key_field="anthropic_api_key",
+                provider_path="anthropic",
+                base_url_env=["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
+                api_key_env="ANTHROPIC_API_KEY",
+                default_base_url="https://api.anthropic.com",
+            )
+        return values
+
     def _resolve_model_profile(self) -> ModelProfile | None:
         profile = _get_default_model_profile(self.model) or None
         if profile is not None and self.betas and "context-1m-2025-08-07" in self.betas:
@@ -1265,6 +1312,51 @@ class ChatAnthropic(BaseChatModel):
         }
         return anthropic.AsyncClient(**params)
 
+    def _assert_valid_model_configuration(self, kwargs: Mapping[str, Any]) -> None:
+        """Validate resolved request configuration against model-specific invariants."""
+        request_config = {**self.model_kwargs, **kwargs}
+        thinking = request_config.get("thinking")
+        if self.thinking is not None:
+            thinking = self.thinking
+
+        output_config = dict(self.output_config or {})
+        if self.reasoning_effort:
+            output_config["effort"] = self.reasoning_effort
+        request_output_config = request_config.get("output_config")
+        if isinstance(request_output_config, dict):
+            output_config.update(request_output_config)
+        effort = request_config.get("effort")
+        if effort is None:
+            effort = request_config.get("reasoning_effort")
+        if effort:
+            output_config["effort"] = effort
+
+        if (
+            self.model.startswith("claude-opus-5")
+            and isinstance(thinking, Mapping)
+            and thinking.get("type") == "enabled"
+        ):
+            msg = (
+                '`thinking={"type": "enabled", "budget_tokens": ...}` is not '
+                f"supported for {self.model}; use adaptive thinking and "
+                "`output_config.effort` instead."
+            )
+            raise ValueError(msg)
+
+        if (
+            self.model.startswith("claude-opus-5")
+            and isinstance(thinking, Mapping)
+            and thinking.get("type") == "disabled"
+            and output_config.get("effort") in {"xhigh", "max"}
+        ):
+            msg = (
+                '`thinking={"type": "disabled"}` is not supported for '
+                f"{self.model} with "
+                f"`output_config.effort={output_config['effort']!r}`; use adaptive "
+                "thinking, omit `thinking`, or set effort to `high` or below."
+            )
+            raise ValueError(msg)
+
     def _get_request_payload(
         self,
         input_: LanguageModelInput,
@@ -1273,6 +1365,7 @@ class ChatAnthropic(BaseChatModel):
         **kwargs: Any,
     ) -> dict:
         """Get the request payload for the Anthropic API."""
+        self._assert_valid_model_configuration(kwargs)
         messages = self._convert_input(input_).to_messages()
 
         for idx, message in enumerate(messages):
@@ -1339,6 +1432,7 @@ class ChatAnthropic(BaseChatModel):
             "betas": self.betas,
             "context_management": self.context_management,
             "mcp_servers": self.mcp_servers,
+            "user_profile_id": self.user_profile_id,
             "system": system,
             **self.model_kwargs,
             **kwargs,
@@ -1481,6 +1575,15 @@ class ChatAnthropic(BaseChatModel):
         resolved_oc = payload.get("output_config")
         if isinstance(resolved_oc, dict) and resolved_oc.get("task_budget"):
             required_beta = "task-budgets-2026-03-13"
+            if payload.get("betas"):
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
+        # Auto-append required beta for user_profile_id
+        if payload.get("user_profile_id"):
+            required_beta = "user-profiles-2026-03-24"
             if payload.get("betas"):
                 if required_beta not in payload["betas"]:
                     payload["betas"] = [*payload["betas"], required_beta]
@@ -1719,6 +1822,8 @@ class ChatAnthropic(BaseChatModel):
                 content_block = event.delta.model_dump()
                 content_block["index"] = event.index
                 content_block["type"] = "thinking"
+                if event.delta.type == "signature_delta":
+                    content_block.setdefault("thinking", "")
                 message_chunk = AIMessageChunk(content=[content_block])
 
             # Tool input JSON (streaming tool arguments)
@@ -1984,7 +2089,7 @@ class ChatAnthropic(BaseChatModel):
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
-            kwargs["tool_choice"] = tool_choice
+            kwargs["tool_choice"] = tool_choice.copy()
         elif isinstance(tool_choice, str) and tool_choice in ("any", "auto"):
             kwargs["tool_choice"] = {"type": tool_choice}
         elif isinstance(tool_choice, str):

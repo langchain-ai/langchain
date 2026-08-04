@@ -52,7 +52,7 @@ jobs:
     steps:
       # Checks out the BASE branch (safe for pull_request_target — never
       # the PR head). Needed to load .github/scripts/pr-labeler*.
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
       - name: Generate GitHub App token
         if: github.event.action == 'opened'
