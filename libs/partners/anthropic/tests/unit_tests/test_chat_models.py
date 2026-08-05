@@ -1714,7 +1714,7 @@ def _composition_tool(name: str) -> dict:
 
 
 def test_bind_tools_dropped_tool_forced_by_tool_choice_raises() -> None:
-    """A forced `tool_choice` for a dropped tool raises locally, not a 400."""
+    """A dropped forced tool raises locally even when valid tools remain."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model=MODEL_NAME,
         anthropic_api_key="secret-api-key",
@@ -1724,7 +1724,14 @@ def test_bind_tools_dropped_tool_forced_by_tool_choice_raises() -> None:
         pytest.raises(ValueError, match="tool_choice references 'attach'"),
     ):
         chat_model.bind_tools(
-            [_composition_tool("attach")],
+            [
+                {
+                    "name": "search",
+                    "description": "Search.",
+                    "input_schema": {"type": "object", "properties": {}},
+                },
+                _composition_tool("attach"),
+            ],
             tool_choice={"type": "tool", "name": "attach"},
         )
     # Bare-string tool_choice naming the dropped tool raises too.
@@ -1733,6 +1740,25 @@ def test_bind_tools_dropped_tool_forced_by_tool_choice_raises() -> None:
         pytest.raises(ValueError, match="tool_choice references 'attach'"),
     ):
         chat_model.bind_tools([_composition_tool("attach")], tool_choice="attach")
+
+
+def test_bind_tools_unknown_forced_tool_choice_raises() -> None:
+    """An unknown forced tool reports that it was never bound."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    with pytest.raises(ValueError, match="no bound tool has that name"):
+        chat_model.bind_tools(
+            [
+                {
+                    "name": "search",
+                    "description": "Search.",
+                    "input_schema": {"type": "object", "properties": {}},
+                },
+            ],
+            tool_choice="attach",
+        )
 
 
 def test_bind_tools_any_with_all_tools_dropped_raises() -> None:

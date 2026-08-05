@@ -2086,7 +2086,9 @@ class ChatAnthropic(BaseChatModel):
             else convert_to_anthropic_tool(tool, strict=strict)
             for tool in tools
         ]
-        formatted_tools = _drop_unsupported_root_composition_tools(formatted_tools)
+        formatted_tools, dropped_tool_names = _drop_unsupported_root_composition_tools(
+            formatted_tools
+        )
 
         # Reconcile tool_choice with the filtered list: a forced choice for a
         # dropped tool, or "any" with no remaining tools, still produces a 400.
@@ -2106,13 +2108,19 @@ class ChatAnthropic(BaseChatModel):
                     t.get("name") for t in formatted_tools if isinstance(t, Mapping)
                 }
                 if choice_name not in available:
-                    msg = (
-                        f"tool_choice references {choice_name!r}, but that tool "
-                        "was dropped because its input_schema uses a top-level "
-                        "oneOf/anyOf/allOf, which the Anthropic API does not "
-                        "support. Remove the forced tool_choice or fix the "
-                        "tool's schema."
-                    )
+                    if choice_name in dropped_tool_names:
+                        msg = (
+                            f"tool_choice references {choice_name!r}, but that tool "
+                            "was dropped because its input_schema uses a top-level "
+                            "oneOf/anyOf/allOf, which the Anthropic API does not "
+                            "support. Remove the forced tool_choice or fix the "
+                            "tool's schema."
+                        )
+                    else:
+                        msg = (
+                            f"tool_choice references {choice_name!r}, but no bound "
+                            "tool has that name. Choose one of the bound tools."
+                        )
                     raise ValueError(msg)
             elif choice_type == "any" and not formatted_tools:
                 msg = (
@@ -2441,15 +2449,16 @@ _TOP_LEVEL_SCHEMA_COMPOSITION_KEYS = ("oneOf", "anyOf", "allOf")
 
 def _drop_unsupported_root_composition_tools(
     tools: list[Mapping[str, Any] | Callable | BaseTool | AnthropicTool],
-) -> list[Mapping[str, Any] | Callable | BaseTool | AnthropicTool]:
+) -> tuple[list[Mapping[str, Any] | Callable | BaseTool | AnthropicTool], set[str]]:
     """Drop custom tools whose root `input_schema` uses `oneOf`/`anyOf`/`allOf`.
 
     The Anthropic API rejects these at request validation, failing the entire
     request. Built-in (server-side) tools and tools without a root combinator
     are kept unchanged. A [warning][UnsupportedToolSchemaWarning] names each
-    dropped tool.
+    dropped tool. Returns the retained tools and the names of dropped tools.
     """
     kept: list[Mapping[str, Any] | Callable | BaseTool | AnthropicTool] = []
+    dropped_tool_names: set[str] = set()
     for tool in tools:
         input_schema = tool.get("input_schema") if isinstance(tool, Mapping) else None
         dropped_keys = (
@@ -2461,6 +2470,8 @@ def _drop_unsupported_root_composition_tools(
             kept.append(tool)
             continue
         tool_name = tool.get("name") if isinstance(tool, Mapping) else None
+        if isinstance(tool_name, str):
+            dropped_tool_names.add(tool_name)
         warnings.warn(
             f"Dropping tool {tool_name!r}: its input_schema has a "
             f"top-level {'/'.join(dropped_keys)}, which the Anthropic API does "
@@ -2468,7 +2479,7 @@ def _drop_unsupported_root_composition_tools(
             UnsupportedToolSchemaWarning,
             stacklevel=3,
         )
-    return kept
+    return kept, dropped_tool_names
 
 
 def convert_to_anthropic_tool(
