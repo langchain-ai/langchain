@@ -33,6 +33,17 @@ DEFAULT_SYSTEM_PROMPT = (
     "Your goal is to select the most relevant tools for answering the user's query."
 )
 
+OnParsingFailure = Union[Literal["error", "none", "all"], list[str], "Callable[[Any], list[str]]"]
+"""Behavior when the selection model keeps returning a malformed response.
+
+Can be either:
+- `'error'`: Raise a `ValueError` (the default).
+- `'none'`: Select no tools.
+- `'all'`: Select every available tool.
+- A `list[str]` of tool names to fall back to.
+- A callable that takes the last (malformed) response and returns tool names to use.
+"""
+
 
 @dataclass
 class _SelectionRequest:
@@ -139,6 +150,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
         max_tools: int | None = None,
         always_include: list[str] | None = None,
+        max_retries: int = 1,
+        on_parsing_failure: OnParsingFailure = "error",
     ) -> None:
         """Initialize the tool selector.
 
@@ -157,11 +170,35 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             always_include: Tool names to always include regardless of selection.
 
                 These do not count against the `max_tools` limit.
+            max_retries: Maximum number of retry attempts after the initial call if
+                the selection model returns a malformed response (not a dict with a
+                `tools` list).
+
+                Must be `>= 0`.
+            on_parsing_failure: Behavior once `max_retries` is exhausted and the
+                response is still malformed.
+
+                Options:
+
+                - `'error'` (default): Raise a `ValueError`.
+                - `'none'`: Select no tools.
+                - `'all'`: Select every available tool.
+                - A `list[str]` of tool names to fall back to.
+                - A callable that takes the last (malformed) response and returns
+                    the tool names to use.
+
+        Raises:
+            ValueError: If `max_retries < 0`.
         """
         super().__init__()
+        if max_retries < 0:
+            msg = "max_retries must be >= 0"
+            raise ValueError(msg)
         self.system_prompt = system_prompt
         self.max_tools = max_tools
         self.always_include = always_include or []
+        self.max_retries = max_retries
+        self.on_parsing_failure = on_parsing_failure
 
         if isinstance(model, (BaseChatModel, type(None))):
             self.model: BaseChatModel | None = model
@@ -283,6 +320,34 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
         return request.override(tools=[*selected_tools, *provider_tools])
 
+    def _resolve_parsing_failure(self, response: Any, valid_tool_names: list[str]) -> list[str]:
+        """Determine which tool names to use once `max_retries` is exhausted.
+
+        Args:
+            response: The last (still malformed) response from the selection model.
+            valid_tool_names: Tool names available for selection.
+
+        Returns:
+            Tool names to select, per `on_parsing_failure`.
+
+        Raises:
+            ValueError: If `on_parsing_failure == "error"` (the default).
+        """
+        if self.on_parsing_failure == "error":
+            msg = (
+                "LLMToolSelectorMiddleware: selection model returned a malformed "
+                f"response after {self.max_retries} retries (expected a dict with a "
+                f"'tools' list): {response!r}"
+            )
+            raise ValueError(msg)
+        if self.on_parsing_failure == "none":
+            return []
+        if self.on_parsing_failure == "all":
+            return valid_tool_names
+        if callable(self.on_parsing_failure):
+            return self.on_parsing_failure(response)
+        return list(self.on_parsing_failure)
+
     def wrap_model_call(
         self,
         request: ModelRequest[ContextT],
@@ -298,8 +363,9 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             The model call result.
 
         Raises:
-            ValueError: If the selection model returns a malformed response
-                (missing a `tools` list) twice in a row.
+            ValueError: If `on_parsing_failure == "error"` (the default) and the
+                selection model returns a malformed response after `max_retries`
+                retries.
         """
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
@@ -319,21 +385,30 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         config = internal_call_config("tool_selection")
 
         response = structured_model.invoke(messages, config=config)
-        if not _is_valid_selection_response(response):
-            # Malformed structured output is usually transient, retry once before
-            # giving up, rather than silently degrading to no/all tools selected.
+        attempts = 0
+        while not _is_valid_selection_response(response) and attempts < self.max_retries:
+            # Malformed structured output is usually transient, retry before giving
+            # up, rather than silently degrading to no/all tools selected.
             response = structured_model.invoke(messages, config=config)
-            if not _is_valid_selection_response(response):
-                msg = (
-                    "LLMToolSelectorMiddleware: selection model returned a malformed "
-                    f"response after retrying (expected a dict with a 'tools' list): "
-                    f"{response!r}"
-                )
-                raise ValueError(msg)
+            attempts += 1
 
-        modified_request = self._process_selection_response(
-            response, selection_request.available_tools, selection_request.valid_tool_names, request
-        )
+        if _is_valid_selection_response(response):
+            modified_request = self._process_selection_response(
+                response,
+                selection_request.available_tools,
+                selection_request.valid_tool_names,
+                request,
+            )
+        else:
+            fallback_tool_names = self._resolve_parsing_failure(
+                response, selection_request.valid_tool_names
+            )
+            modified_request = self._process_selection_response(
+                {"tools": fallback_tool_names},
+                selection_request.available_tools,
+                selection_request.valid_tool_names,
+                request,
+            )
         return handler(modified_request)
 
     async def awrap_model_call(
@@ -351,8 +426,9 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             The model call result.
 
         Raises:
-            ValueError: If the selection model returns a malformed response
-                (missing a `tools` list) twice in a row.
+            ValueError: If `on_parsing_failure == "error"` (the default) and the
+                selection model returns a malformed response after `max_retries`
+                retries.
         """
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
@@ -372,19 +448,28 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         config = internal_call_config("tool_selection")
 
         response = await structured_model.ainvoke(messages, config=config)
-        if not _is_valid_selection_response(response):
-            # Malformed structured output is usually transient, retry once before
-            # giving up, rather than silently degrading to no/all tools selected.
+        attempts = 0
+        while not _is_valid_selection_response(response) and attempts < self.max_retries:
+            # Malformed structured output is usually transient, retry before giving
+            # up, rather than silently degrading to no/all tools selected.
             response = await structured_model.ainvoke(messages, config=config)
-            if not _is_valid_selection_response(response):
-                msg = (
-                    "LLMToolSelectorMiddleware: selection model returned a malformed "
-                    f"response after retrying (expected a dict with a 'tools' list): "
-                    f"{response!r}"
-                )
-                raise ValueError(msg)
+            attempts += 1
 
-        modified_request = self._process_selection_response(
-            response, selection_request.available_tools, selection_request.valid_tool_names, request
-        )
+        if _is_valid_selection_response(response):
+            modified_request = self._process_selection_response(
+                response,
+                selection_request.available_tools,
+                selection_request.valid_tool_names,
+                request,
+            )
+        else:
+            fallback_tool_names = self._resolve_parsing_failure(
+                response, selection_request.valid_tool_names
+            )
+            modified_request = self._process_selection_response(
+                {"tools": fallback_tool_names},
+                selection_request.available_tools,
+                selection_request.valid_tool_names,
+                request,
+            )
         return await handler(modified_request)

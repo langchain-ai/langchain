@@ -967,3 +967,247 @@ class TestEdgeCases:
 
         with pytest.raises(ValueError, match="malformed"):
             await agent.ainvoke({"messages": [HumanMessage("test")]})
+
+
+def _malformed_response_model(times: int) -> "FakeModel":
+    """A selection model that returns a malformed response `times` times in a row."""
+    malformed = AIMessage(
+        content="", tool_calls=[{"name": "ToolSelectionResponse", "id": "1", "args": {}}]
+    )
+    valid = AIMessage(
+        content="",
+        tool_calls=[
+            {"name": "ToolSelectionResponse", "id": "2", "args": {"tools": ["get_weather"]}}
+        ],
+    )
+    return FakeModel(messages=iter([malformed] * times + [valid]))
+
+
+class TestConfigurableParsingFailure:
+    """Test `max_retries` and `on_parsing_failure` for malformed selection responses."""
+
+    def test_max_retries_rejects_negative(self) -> None:
+        """Test that a negative `max_retries` is rejected at construction."""
+        with pytest.raises(ValueError, match="max_retries must be >= 0"):
+            LLMToolSelectorMiddleware(max_retries=-1)
+
+    def test_max_retries_zero_raises_after_single_malformed_response(self) -> None:
+        """Test that `max_retries=0` doesn't retry before giving up."""
+        tool_selection_model = _malformed_response_model(times=1)
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(max_retries=0, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model, tools=[get_weather, search_web], middleware=[tool_selector]
+        )
+
+        with pytest.raises(ValueError, match="malformed"):
+            agent.invoke({"messages": [HumanMessage("test")]})
+
+    def test_max_retries_exceeding_default_recovers(self) -> None:
+        """Test that raising `max_retries` allows recovery from more failures."""
+        model_requests = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        # Malformed twice in a row -- the default max_retries=1 would give up here.
+        tool_selection_model = _malformed_response_model(times=2)
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(
+            max_tools=1, max_retries=2, model=tool_selection_model
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
+            assert tool_names == ["get_weather"]
+
+    def test_on_parsing_failure_none_selects_no_tools(self) -> None:
+        """Test that `on_parsing_failure='none'` selects no tools once retries are exhausted."""
+        model_requests = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[{"name": "ToolSelectionResponse", "id": "1", "args": {}}],
+                    )
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(
+            on_parsing_failure="none", model=tool_selection_model
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert len(model_requests) > 0
+        for request in model_requests:
+            assert request.tools == []
+
+    def test_on_parsing_failure_all_selects_every_tool(self) -> None:
+        """Test that `on_parsing_failure='all'` selects every available tool."""
+        model_requests = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[{"name": "ToolSelectionResponse", "id": "1", "args": {}}],
+                    )
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(
+            on_parsing_failure="all", model=tool_selection_model
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = set()
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.add(tool_.name)
+            assert tool_names == {"get_weather", "search_web", "calculate"}
+
+    def test_on_parsing_failure_list_falls_back_to_subset(self) -> None:
+        """Test that a `list[str]` fallback selects exactly that subset."""
+        model_requests = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[{"name": "ToolSelectionResponse", "id": "1", "args": {}}],
+                    )
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(
+            on_parsing_failure=["calculate"], model=tool_selection_model
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
+            assert tool_names == ["calculate"]
+
+    def test_on_parsing_failure_callable_receives_response(self) -> None:
+        """Test that a callable fallback receives the malformed response."""
+        received: list[Any] = []
+
+        def fallback(response: Any) -> list[str]:
+            received.append(response)
+            return ["search_web"]
+
+        model_requests = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "ToolSelectionResponse", "id": "1", "args": {"oops": True}}
+                        ],
+                    )
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(
+            on_parsing_failure=fallback, model=tool_selection_model
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
+            assert tool_names == ["search_web"]
+        assert len(received) == 1
+        assert received[0] == {"oops": True}
