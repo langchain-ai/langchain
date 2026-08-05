@@ -2388,6 +2388,37 @@ class ChatAnthropic(BaseChatModel):
         return response.input_tokens
 
 
+_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS = ("oneOf", "anyOf", "allOf")
+
+
+def _drop_top_level_schema_composition(
+    tool_name: str, input_schema: dict[str, Any]
+) -> dict[str, Any]:
+    """Drop `oneOf`/`anyOf`/`allOf` from the root of a tool's `input_schema`.
+
+    The Anthropic API rejects tool schemas carrying these keywords at the top
+    level (nested under `properties` is fine), failing the whole request. MCP
+    servers and root-`Union` Pydantic models can emit such schemas. Rather than
+    attempt a lossy rewrite of the union, we drop the root combinator keys and
+    keep the sibling `type`/`properties`/`description`, so the tool's call
+    shape is unchanged and it accepts a superset of the original inputs.
+    """
+    dropped = [k for k in _TOP_LEVEL_SCHEMA_COMPOSITION_KEYS if k in input_schema]
+    if not dropped:
+        return input_schema
+    warnings.warn(
+        f"Tool {tool_name!r} has a top-level {'/'.join(dropped)} in its "
+        "input_schema, which the Anthropic API does not support. Dropping it; "
+        "the tool will accept a superset of the original inputs.",
+        stacklevel=4,
+    )
+    return {
+        key: value
+        for key, value in input_schema.items()
+        if key not in _TOP_LEVEL_SCHEMA_COMPOSITION_KEYS
+    }
+
+
 def convert_to_anthropic_tool(
     tool: Mapping[str, Any] | type | Callable | BaseTool,
     *,
@@ -2421,11 +2452,16 @@ def convert_to_anthropic_tool(
     ):
         # Anthropic tool format
         anthropic_formatted = AnthropicTool(tool)  # type: ignore[misc]
+        anthropic_formatted["input_schema"] = _drop_top_level_schema_composition(
+            anthropic_formatted["name"], anthropic_formatted["input_schema"]
+        )
     else:
         oai_formatted = convert_to_openai_tool(tool, strict=strict)["function"]
         anthropic_formatted = AnthropicTool(
             name=oai_formatted["name"],
-            input_schema=oai_formatted["parameters"],
+            input_schema=_drop_top_level_schema_composition(
+                oai_formatted["name"], oai_formatted["parameters"]
+            ),
         )
         if "description" in oai_formatted:
             anthropic_formatted["description"] = oai_formatted["description"]

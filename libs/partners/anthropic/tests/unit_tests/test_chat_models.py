@@ -647,6 +647,72 @@ def test_convert_to_anthropic_tool(
         assert actual == expected
 
 
+def test_convert_to_anthropic_tool_drops_top_level_composition() -> None:
+    """Top-level `oneOf`/`anyOf`/`allOf` are dropped from the root input_schema.
+
+    The Anthropic API rejects tool schemas carrying these keywords at the top
+    level. See https://github.com/langchain-ai/langchain/issues/39271.
+    """
+    raw_tool = {
+        "name": "notion_create_attachment",
+        "description": "Create an attachment",
+        "input_schema": {
+            "type": "object",
+            "anyOf": [
+                {
+                    "type": "object",
+                    "properties": {"content": {"type": "string"}},
+                    "required": ["content"],
+                },
+                {
+                    "type": "object",
+                    "properties": {"source_url": {"type": "string"}},
+                    "required": ["source_url"],
+                },
+            ],
+        },
+    }
+    with pytest.warns(UserWarning, match="top-level anyOf"):
+        actual = convert_to_anthropic_tool(raw_tool)
+    assert actual["input_schema"] == {"type": "object"}
+
+
+def test_convert_to_anthropic_tool_keeps_nested_composition() -> None:
+    """Combinators nested under `properties` are valid and left untouched."""
+    raw_tool = {
+        "name": "search",
+        "description": "Search",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "value": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+            },
+            "required": ["value"],
+        },
+    }
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # no warning expected
+        actual = convert_to_anthropic_tool(raw_tool)
+    assert actual["input_schema"] == raw_tool["input_schema"]
+
+
+def test_convert_to_anthropic_tool_no_composition_no_warning() -> None:
+    """A plain object schema is passed through unchanged and without warning."""
+    raw_tool = {
+        "name": "plain",
+        "description": "Plain tool",
+        "input_schema": {
+            "type": "object",
+            "properties": {"a": {"type": "string"}},
+            "required": ["a"],
+        },
+    }
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # no warning expected
+        actual = convert_to_anthropic_tool(raw_tool)
+    assert actual["input_schema"] == raw_tool["input_schema"]
+
+
 def test__format_messages_with_tool_calls() -> None:
     system = SystemMessage("fuzz")  # type: ignore[misc]
     human = HumanMessage("foo")  # type: ignore[misc]
