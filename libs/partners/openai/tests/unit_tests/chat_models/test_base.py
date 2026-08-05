@@ -3802,6 +3802,83 @@ def test_convert_from_v1_to_responses(
     assert message_v1 != result
 
 
+def test_convert_from_v1_to_responses_preserves_reasoning_item_boundaries() -> None:
+    content: list[types.ContentBlock] = [
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "reasoning": "first ",
+            "extras": {
+                "encrypted_content": "encrypted-123",
+                "status": "completed",
+            },
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "reasoning": "second",
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_456",
+            "reasoning": "third",
+            "extras": {
+                "encrypted_content": "encrypted-456",
+                "status": "incomplete",
+            },
+        },
+        {"type": "reasoning", "reasoning": "legacy "},
+        {"type": "reasoning", "reasoning": "reasoning"},
+        {"type": "reasoning", "id": "rs_789", "reasoning": "last"},
+        {
+            "type": "reasoning",
+            "id": "rs_native",
+            "summary": [{"type": "summary_text", "text": "already native"}],
+            "encrypted_content": "encrypted-native",
+        },
+    ]
+
+    result = _convert_from_v1_to_responses(content, [])
+
+    assert result == [
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "summary": [
+                {"type": "summary_text", "text": "first "},
+                {"type": "summary_text", "text": "second"},
+            ],
+            "encrypted_content": "encrypted-123",
+            "status": "completed",
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_456",
+            "summary": [{"type": "summary_text", "text": "third"}],
+            "encrypted_content": "encrypted-456",
+            "status": "incomplete",
+        },
+        {
+            "type": "reasoning",
+            "summary": [
+                {"type": "summary_text", "text": "legacy "},
+                {"type": "summary_text", "text": "reasoning"},
+            ],
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_789",
+            "summary": [{"type": "summary_text", "text": "last"}],
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_native",
+            "summary": [{"type": "summary_text", "text": "already native"}],
+            "encrypted_content": "encrypted-native",
+        },
+    ]
+
+
 def test_convert_from_v1_to_responses_missing_type() -> None:
     """Regression: blocks without 'type' should be skipped, not raise KeyError."""
     content: list = [
