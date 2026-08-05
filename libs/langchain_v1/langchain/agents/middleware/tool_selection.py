@@ -11,7 +11,6 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
-from langchain.agents.middleware._internal_call_config import internal_call_config
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -380,9 +379,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             {"role": "system", "content": selection_request.system_message},
             selection_request.last_user_message,
         ]
-        # Drop only the streaming callback handlers so selection tokens don't leak
-        # into the user-facing stream
-        config = internal_call_config("tool_selection")
+        config = {"metadata": {"lc_source": "tool_selection"}}
 
         response = structured_model.invoke(messages, config=config)
         attempts = 0
@@ -443,9 +440,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             {"role": "system", "content": selection_request.system_message},
             selection_request.last_user_message,
         ]
-        # Drop only the streaming callback handlers so selection tokens don't leak
-        # into the user-facing stream
-        config = internal_call_config("tool_selection")
+        config = {"metadata": {"lc_source": "tool_selection"}}
 
         response = await structured_model.ainvoke(messages, config=config)
         attempts = 0
