@@ -40,19 +40,11 @@ class InternalCallTransformer(StreamTransformer):
     """Keep internal model calls out of `run.messages` and the raw event log.
 
     Registered on every compiled agent and runs before built-in transformers.
-    `messages`-mode events come in two shapes, both handled here:
 
-    - Streamed protocol events (`message-start` / `content-block-*` /
-      `message-finish`): for internal calls, `message-start`'s `role` is
-      rewritten to `"tool"` so `MessagesTransformer` excludes the whole run
-      via its existing tool-result check, and the event is dropped from the
-      raw log.
-    - Whole-`AIMessage` events — the fallback `MessagesTransformer` uses when
-      a chat model doesn't stream (notably, streaming context isn't
-      propagated on Python 3.10) or when a node returns a finalized message
-      as state: for internal calls, the payload is cleared so
-      `MessagesTransformer` has nothing left to route, and the event is
-      dropped from the raw log.
+    Handles both streamed protocol events and whole-`AIMessage` events. For
+    internal calls, it rewrites streamed `message-start` events to a `"tool"`
+    role and clears whole-`AIMessage` payloads so `MessagesTransformer` ignores
+    them, while dropping both from the raw event log.
     """
 
     before_builtins: ClassVar[bool] = True
