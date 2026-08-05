@@ -8,15 +8,17 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langgraph.stream.transformers import MessagesTransformer
 
-from langchain.agents import _internal_call_transformer
-from langchain.agents._internal_call_transformer import (
+from langchain.agents.factory import create_agent
+from langchain.agents.middleware import (
     INTERNAL_CALL_METADATA_KEY,
+    AgentMiddleware,
     InternalCallTransformer,
     internal_call_metadata,
 )
-from langchain.agents.factory import create_agent
+from langchain.agents.middleware import (
+    internal_call_transformer as internal_call_transformer_module,
+)
 from langchain.agents.middleware.summarization import SummarizationMiddleware
-from langchain.agents.middleware.types import AgentMiddleware
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
@@ -148,6 +150,52 @@ def test_internal_call_transformer_deduped_across_middleware() -> None:
     list(run.tool_calls)
 
 
+def test_internal_call_transformer_deduped_alongside_builtins() -> None:
+    """Dedup covers the whole transformer list, not just middleware-supplied ones."""
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        middleware=[
+            _InternalCallMiddleware(
+                GenericFakeChatModel(messages=iter([AIMessage(content="internal")]))
+            )
+        ],
+        # Re-supplying a built-in explicitly should still collapse to one instance.
+        transformers=[InternalCallTransformer],
+    )
+
+    run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+    transformers = run._mux._transformers
+
+    assert sum(isinstance(t, InternalCallTransformer) for t in transformers) == 1
+
+    # Drain to close cleanly.
+    list(run.tool_calls)
+
+
+def test_internal_call_transformer_dedup_accepts_unhashable_factories() -> None:
+    """De-dup must not require transformer factories to be hashable."""
+
+    class _UnhashableFactory:
+        """A callable factory with hashing disabled, like an `eq`-only dataclass."""
+
+        __hash__ = None  # type: ignore[assignment]
+
+        def __call__(self, scope: tuple[str, ...]) -> InternalCallTransformer:
+            return InternalCallTransformer(scope)
+
+    class _UnhashableTransformerMiddleware(AgentMiddleware):
+        transformers = (_UnhashableFactory(),)
+
+    # Must not raise `TypeError: unhashable type`.
+    agent = create_agent(
+        model=FakeToolCallingModel(), tools=[], middleware=[_UnhashableTransformerMiddleware()]
+    )
+
+    run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+    list(run.tool_calls)
+
+
 def test_internal_model_calls_excluded_from_messages_projection_sync() -> None:
     """Sync `stream_events` should also exclude internal middleware calls."""
     main_model = GenericFakeChatModel(messages=iter([AIMessage(content="final answer")]))
@@ -183,14 +231,18 @@ async def test_internal_model_calls_excluded_from_messages_projection() -> None:
         pass
 
 
-async def test_internal_model_calls_excluded_from_raw_event_log() -> None:
-    """Internal calls must not leak into the raw protocol event stream either.
+def test_internal_model_calls_preserved_in_raw_event_log() -> None:
+    """Internal calls stay visible on the raw event log for audit purposes.
 
-    `stream_events(version="v3")` may deliver a chat model's output either as
-    streamed `content-block-delta` protocol events or (e.g. when the runtime
-    doesn't propagate streaming context, as on Python 3.10) as a single
-    whole-`AIMessage` event, so this collects text from both shapes rather
-    than assuming one.
+    Only `run.messages` should exclude internal middleware calls — the raw
+    `stream_events` iterator (and any tracing/observability consumer reading
+    it) should still see everything, including the internal call's tokens.
+
+    Sync `stream_events`, not `astream_events`: on Python 3.10, an internal
+    call made from `wrap_model_call` doesn't reach the `messages` stream mode
+    at all under the async path (streaming context isn't propagated the same
+    way it is on 3.11+), which would make this assertion meaningless there
+    regardless of what this transformer does.
     """
     main_model = GenericFakeChatModel(messages=iter([AIMessage(content="final answer")]))
     internal_model = GenericFakeChatModel(messages=iter([AIMessage(content="internal check")]))
@@ -198,10 +250,10 @@ async def test_internal_model_calls_excluded_from_raw_event_log() -> None:
         model=main_model, tools=[], middleware=[_InternalCallMiddleware(internal_model)]
     )
 
-    run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+    run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
     seen_text: list[str] = []
-    async for event in run:
+    for event in run:
         if event.get("method") != "messages":
             continue
         data = event["params"].get("data")
@@ -216,7 +268,7 @@ async def test_internal_model_calls_excluded_from_raw_event_log() -> None:
             seen_text.append(payload.text)
 
     combined = "".join(seen_text)
-    assert "internal check" not in combined
+    assert "internal check" in combined
     assert "final answer" in combined
 
 
@@ -244,29 +296,39 @@ async def test_internal_whole_message_excluded_from_messages_projection() -> Non
     assert texts == ["hi"]
 
 
-async def test_internal_whole_message_excluded_from_raw_event_log() -> None:
-    """A non-streaming internal call's whole-`AIMessage` event never hits the raw log."""
+def test_internal_whole_message_redacted_but_present_in_raw_event_log() -> None:
+    """A non-streaming internal call's whole-`AIMessage` event stays on the raw log.
+
+    Its content is cleared (there's no way to keep `MessagesTransformer` from
+    routing the very same object into `run.messages` while leaving the
+    original text visible elsewhere), but the event itself — an audit trace
+    that a call happened — is not dropped.
+
+    Sync `stream_events`, not `astream_events`: see
+    `test_internal_model_calls_preserved_in_raw_event_log` for why the async
+    path can't reliably reach the `messages` stream mode on Python 3.10.
+    """
     main_model = FakeToolCallingModel()
     internal_model = FakeToolCallingModel(index=1000)
     agent = create_agent(
         model=main_model, tools=[], middleware=[_InternalWholeMessageMiddleware(internal_model)]
     )
 
-    run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+    run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
-    seen_messages: list[BaseMessage] = []
-    async for event in run:
+    payloads: list[Any] = []
+    for event in run:
         if event.get("method") != "messages":
             continue
         data = event["params"].get("data")
-        if not isinstance(data, tuple) or len(data) != 2:
-            continue
-        payload = data[0]
-        if isinstance(payload, BaseMessage):
-            seen_messages.append(payload)
+        if isinstance(data, tuple) and len(data) == 2:
+            payloads.append(data[0])
 
-    assert len(seen_messages) == 1
-    assert seen_messages[0].text == "hi"
+    # Both the main turn's message and the internal call's (redacted) message
+    # are still on the raw log — neither was silently dropped.
+    assert len(payloads) == 2
+    assert any(isinstance(p, BaseMessage) and p.text == "hi" for p in payloads)
+    assert any(p is None for p in payloads)
 
 
 async def test_caller_supplied_metadata_cannot_forge_internal_marker() -> None:
@@ -277,7 +339,7 @@ async def test_caller_supplied_metadata_cannot_forge_internal_marker() -> None:
     turn's own — so if the marker were a predictable value (e.g. `True`), an
     attacker-controlled caller (or an API layer forwarding user-supplied
     metadata) could set `lc_internal_call` themselves and make the agent's
-    real answer disappear from `run.messages` and the raw event log.
+    real answer disappear from `run.messages`.
     """
     main_model = GenericFakeChatModel(messages=iter([AIMessage(content="final answer")]))
     summarizer_model = GenericFakeChatModel(messages=iter([AIMessage(content="summary")]))
@@ -307,6 +369,6 @@ async def test_caller_supplied_metadata_cannot_forge_internal_marker() -> None:
 
 def test_internal_call_token_is_not_a_predictable_value() -> None:
     """The marker's value must not be something a caller could plausibly guess."""
-    token = _internal_call_transformer._INTERNAL_CALL_TOKEN
+    token = internal_call_transformer_module._INTERNAL_CALL_TOKEN
     assert token not in (True, False, None, "", "true", "internal", INTERNAL_CALL_METADATA_KEY)
     assert len(str(token)) >= 16

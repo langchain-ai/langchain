@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Generic
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, ToolMessage
 
-from langchain.agents._internal_call_transformer import (
+from langchain.agents.middleware.internal_call_transformer import (
     InternalCallTransformer,
     internal_call_metadata,
 )

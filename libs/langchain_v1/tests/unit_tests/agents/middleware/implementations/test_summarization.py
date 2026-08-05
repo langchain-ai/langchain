@@ -30,10 +30,7 @@ from pydantic import Field
 from typing_extensions import override
 
 from langchain.agents import AgentState, create_agent
-from langchain.agents._internal_call_transformer import (
-    INTERNAL_CALL_METADATA_KEY,
-    internal_call_metadata,
-)
+from langchain.agents.middleware import INTERNAL_CALL_METADATA_KEY, internal_call_metadata
 from langchain.agents.middleware.summarization import (
     ContextSize,
     SummarizationMiddleware,

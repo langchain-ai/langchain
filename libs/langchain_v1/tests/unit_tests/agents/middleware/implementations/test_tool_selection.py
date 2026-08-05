@@ -14,14 +14,12 @@ from pydantic import BaseModel, Field
 from typing_extensions import override
 
 from langchain.agents import create_agent
-from langchain.agents._internal_call_transformer import (
-    INTERNAL_CALL_METADATA_KEY,
-    internal_call_metadata,
-)
 from langchain.agents.middleware import (
+    INTERNAL_CALL_METADATA_KEY,
     LLMToolSelectorMiddleware,
     ModelRequest,
     ModelResponse,
+    internal_call_metadata,
     wrap_model_call,
 )
 from langchain.agents.middleware.tool_selection import _create_tool_selection_response

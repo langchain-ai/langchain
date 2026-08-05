@@ -11,7 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
-from langchain.agents._internal_call_transformer import (
+from langchain.agents.middleware.internal_call_transformer import (
     InternalCallTransformer,
     internal_call_metadata,
 )

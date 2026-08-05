@@ -25,7 +25,7 @@ from langgraph.graph.message import (
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
-from langchain.agents._internal_call_transformer import (
+from langchain.agents.middleware.internal_call_transformer import (
     InternalCallTransformer,
     internal_call_metadata,
 )
