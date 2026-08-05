@@ -25,6 +25,7 @@ def _clear_env(monkeypatch: pytest.MonkeyPatch) -> None:
     for var in (
         "LANGSMITH_GATEWAY",
         "LANGSMITH_GATEWAY_API_KEY",
+        "LANGSMITH_API_KEY",
         _BASE_ENV,
         _KEY_ENV,
     ):
@@ -63,6 +64,13 @@ def test_base_url_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     assert _resolve_gateway_base_url(_PATH) is None
 
 
+def test_base_url_empty_is_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    # An empty value (e.g. ``export LANGSMITH_GATEWAY=`` or a blank .env entry)
+    # disables the gateway rather than being treated as a custom base URL.
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "")
+    assert _resolve_gateway_base_url(_PATH) is None
+
+
 def test_base_url_custom(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "https://eu.gateway.example.com/")
     assert (
@@ -80,6 +88,26 @@ def test_gateway_on_with_gateway_key(monkeypatch: pytest.MonkeyPatch) -> None:
     config = _config()
     assert config.base_url == _DEFAULT_GATEWAY
     assert config.base_url_from_gateway is True
+    assert isinstance(config.api_key, SecretStr)
+    assert config.api_key.get_secret_value() == "gateway-key"
+
+
+def test_gateway_on_falls_back_to_langsmith_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_API_KEY", "langsmith-key")
+    config = _config()
+    assert config.base_url == _DEFAULT_GATEWAY
+    assert isinstance(config.api_key, SecretStr)
+    assert config.api_key.get_secret_value() == "langsmith-key"
+
+
+def test_gateway_key_beats_langsmith_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("LANGSMITH_API_KEY", "langsmith-key")
+    config = _config()
     assert isinstance(config.api_key, SecretStr)
     assert config.api_key.get_secret_value() == "gateway-key"
 
@@ -138,6 +166,17 @@ def test_provider_base_url_uses_provider_key(
     assert config.base_url == "https://api.openai.com/v1"
     assert config.base_url_from_gateway is False
     assert config.api_key.get_secret_value() == "provider-key"
+
+
+def test_provider_base_url_does_not_use_langsmith_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_API_KEY", "langsmith-key")
+    monkeypatch.setenv(_BASE_ENV, "https://api.openai.com/v1")
+    config = _config()
+    assert config.base_url == "https://api.openai.com/v1"
+    assert config.api_key is None
 
 
 def test_provider_base_url_falls_back_to_gateway_key(
