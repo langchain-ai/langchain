@@ -24,11 +24,14 @@ from langchain_classic.schema import RUN_KEY
 
 
 def _get_score(text: str) -> tuple[str, int] | None:
-    match = re.search(r"grade:\s*(correct|incorrect)", text.strip(), re.IGNORECASE)
-    if match:
-        if match.group(1).upper() == "CORRECT":
+    matches = re.findall(
+        r"grade:\s*(correct|incorrect)", text.strip(), re.IGNORECASE
+    )
+    if matches:
+        grade = matches[-1].upper()
+        if grade == "CORRECT":
             return "CORRECT", 1
-        if match.group(1).upper() == "INCORRECT":
+        if grade == "INCORRECT":
             return "INCORRECT", 0
     try:
         first_word = (

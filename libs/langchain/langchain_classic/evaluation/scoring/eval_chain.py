@@ -128,12 +128,11 @@ class ScoreStringResultOutputParser(BaseOutputParser[dict]):
             ValueError: If the verdict is invalid.
 
         """
-        match = _FIND_DOUBLE_BRACKETS.search(text)
+        matches = _FIND_DOUBLE_BRACKETS.findall(text)
 
-        if match:
-            verdict = match.group(1)
+        verdict = matches[-1] if matches else None
 
-        if not match or verdict not in [*list("123456789"), "10"]:
+        if not matches or verdict not in [*list("123456789"), "10"]:
             msg = (
                 f"Invalid output: {text}. "
                 "Output must contain a double bracketed string\
