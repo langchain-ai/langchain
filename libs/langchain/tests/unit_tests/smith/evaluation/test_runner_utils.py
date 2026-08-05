@@ -88,6 +88,7 @@ _INVALID_PROMPTS = (
             "https://github.com/langchain-ai/langchain.git",
             "https://github.com/langchain-ai/langchain.git",
         ),
+        ("https://alice%3As3cret%40github.com/org/repo.git", None),
         ("not a remote", None),
         ("https:user:token@github.com/org/repo.git", None),
         ("https:/user:token@github.com/org/repo.git", None),

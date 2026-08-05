@@ -104,9 +104,11 @@ def _sanitize_git_remote_url(remote_url: object) -> str | None:
 
     try:
         parsed = urlsplit(remote_url)
+        host = parsed.hostname
         if (
             parsed.scheme not in _GIT_REMOTE_URL_SCHEMES
-            or parsed.hostname is None
+            or host is None
+            or "%" in host
             or not parsed.path
             or parsed.query
             or parsed.fragment
@@ -116,7 +118,6 @@ def _sanitize_git_remote_url(remote_url: object) -> str | None:
     except ValueError:
         return None
 
-    host = parsed.hostname
     if ":" in host:
         host = f"[{host}]"
     netloc = f"{host}:{port}" if port is not None else host
