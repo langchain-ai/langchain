@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from langchain_core.messages import BaseMessage
 from langgraph.stream import StreamTransformer
 
 if TYPE_CHECKING:
@@ -39,8 +40,19 @@ class InternalCallTransformer(StreamTransformer):
     """Keep internal model calls out of `run.messages` and the raw event log.
 
     Registered on every compiled agent and runs before built-in transformers.
-    For internal calls, it drops the raw event and marks `message-start` as a
-    tool role so `MessagesTransformer` excludes it from `run.messages`.
+    `messages`-mode events come in two shapes, both handled here:
+
+    - Streamed protocol events (`message-start` / `content-block-*` /
+      `message-finish`): for internal calls, `message-start`'s `role` is
+      rewritten to `"tool"` so `MessagesTransformer` excludes the whole run
+      via its existing tool-result check, and the event is dropped from the
+      raw log.
+    - Whole-`AIMessage` events — the fallback `MessagesTransformer` uses when
+      a chat model doesn't stream (notably, streaming context isn't
+      propagated on Python 3.10) or when a node returns a finalized message
+      as state: for internal calls, the payload is cleared so
+      `MessagesTransformer` has nothing left to route, and the event is
+      dropped from the raw log.
     """
 
     before_builtins: ClassVar[bool] = True
@@ -58,17 +70,32 @@ class InternalCallTransformer(StreamTransformer):
         if event["method"] != "messages":
             return True
 
-        payload, metadata = event["params"]["data"]
-        if not (isinstance(payload, dict) and "event" in payload):
-            # Only the streamed protocol-event shape is produced by internal
-            # calls today; whole-`AIMessage` node output is left untouched.
+        params = event["params"]
+        payload, metadata = params["data"]
+        is_internal = bool(metadata and metadata.get(INTERNAL_CALL_METADATA_KEY))
+
+        if isinstance(payload, dict) and "event" in payload:
+            return self._process_protocol_event(payload, metadata, is_internal=is_internal)
+
+        if isinstance(payload, BaseMessage):
+            if is_internal:
+                # `MessagesTransformer`'s whole-message route doesn't consult
+                # metadata, so clear the payload rather than rely on our
+                # return value alone.
+                params["data"] = (None, metadata)
+                return False
             return True
 
+        return True
+
+    def _process_protocol_event(
+        self, payload: dict[str, Any], metadata: dict[str, Any] | None, *, is_internal: bool
+    ) -> bool:
         run_id = str(metadata.get("run_id", "")) if metadata else ""
         event_type = payload.get("event")
 
         if event_type == "message-start":
-            if metadata and metadata.get(INTERNAL_CALL_METADATA_KEY):
+            if is_internal:
                 self._internal_runs.add(run_id)
                 payload["role"] = "tool"
                 return False

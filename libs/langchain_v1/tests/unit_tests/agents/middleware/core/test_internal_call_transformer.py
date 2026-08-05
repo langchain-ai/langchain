@@ -52,6 +52,32 @@ class _InternalCallMiddleware(AgentMiddleware):
         return await handler(request)
 
 
+class _InternalWholeMessageMiddleware(AgentMiddleware):
+    """Calls a non-streaming internal model that surfaces via `on_chain_end`.
+
+    A model with no `_stream`/`_astream` override reports its output as a
+    whole `AIMessage` `messages`-mode event rather than streamed protocol
+    events — the shape `MessagesTransformer` falls back to on Python 3.10,
+    or for any model/provider that doesn't stream.
+    """
+
+    def __init__(self, internal_model: FakeToolCallingModel) -> None:
+        super().__init__()
+        self.internal_model = internal_model
+
+    def before_model(self, state: Any, runtime: Any) -> None:  # noqa: ARG002
+        self.internal_model.invoke(
+            [HumanMessage("internal check")],
+            config={"metadata": internal_call_metadata()},
+        )
+
+    async def abefore_model(self, state: Any, runtime: Any) -> None:  # noqa: ARG002
+        await self.internal_model.ainvoke(
+            [HumanMessage("internal check")],
+            config={"metadata": internal_call_metadata()},
+        )
+
+
 def test_internal_call_transformer_registered_before_messages_transformer() -> None:
     """`InternalCallTransformer` is registered unconditionally, ahead of built-ins."""
     agent = create_agent(model=FakeToolCallingModel(), tools=[])
@@ -142,3 +168,52 @@ async def test_internal_model_calls_excluded_from_raw_event_log() -> None:
     combined = "".join(seen_text)
     assert "internal check" not in combined
     assert "final answer" in combined
+
+
+async def test_internal_whole_message_excluded_from_messages_projection() -> None:
+    """A non-streaming internal call's whole-`AIMessage` event is filtered too."""
+    main_model = FakeToolCallingModel()
+    # Offset so the two fake models don't both mint id="0" (FakeToolCallingModel
+    # ids messages from a per-instance counter starting at 0), which would make
+    # `MessagesTransformer`'s own id-based dedupe hide the main turn regardless
+    # of this transformer.
+    internal_model = FakeToolCallingModel(index=1000)
+    agent = create_agent(
+        model=main_model, tools=[], middleware=[_InternalWholeMessageMiddleware(internal_model)]
+    )
+
+    run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+
+    texts: list[str] = []
+    async for msg in run.messages:
+        text = ""
+        async for chunk in msg.text:
+            text += chunk
+        texts.append(text)
+
+    assert texts == ["hi"]
+
+
+async def test_internal_whole_message_excluded_from_raw_event_log() -> None:
+    """A non-streaming internal call's whole-`AIMessage` event never hits the raw log."""
+    main_model = FakeToolCallingModel()
+    internal_model = FakeToolCallingModel(index=1000)
+    agent = create_agent(
+        model=main_model, tools=[], middleware=[_InternalWholeMessageMiddleware(internal_model)]
+    )
+
+    run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+
+    seen_messages: list[BaseMessage] = []
+    async for event in run:
+        if event.get("method") != "messages":
+            continue
+        data = event["params"].get("data")
+        if not isinstance(data, tuple) or len(data) != 2:
+            continue
+        payload = data[0]
+        if isinstance(payload, BaseMessage):
+            seen_messages.append(payload)
+
+    assert len(seen_messages) == 1
+    assert seen_messages[0].text == "hi"
