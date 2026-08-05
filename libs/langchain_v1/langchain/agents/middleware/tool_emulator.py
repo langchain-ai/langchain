@@ -7,7 +7,10 @@ from typing import TYPE_CHECKING, Any, Generic
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, ToolMessage
 
-from langchain.agents._internal_call_transformer import internal_call_metadata
+from langchain.agents._internal_call_transformer import (
+    InternalCallTransformer,
+    internal_call_metadata,
+)
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT
 from langchain.chat_models.base import init_chat_model
 
@@ -62,6 +65,13 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
             ```python
             middleware = LLMToolEmulator(tools=[get_weather, get_user_location])
             ```
+    """
+
+    transformers = (InternalCallTransformer,)
+    """Keeps the emulation model call's tokens out of `run.messages`.
+
+    Registered only when this middleware is used — see
+    `InternalCallTransformer` for why the call needs tagging and filtering.
     """
 
     def __init__(

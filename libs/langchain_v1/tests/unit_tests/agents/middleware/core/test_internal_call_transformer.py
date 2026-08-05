@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 class _InternalCallMiddleware(AgentMiddleware):
     """Calls a side model tagged as internal before letting the main turn run."""
 
+    transformers = (InternalCallTransformer,)
+
     def __init__(self, internal_model: GenericFakeChatModel) -> None:
         super().__init__()
         self.internal_model = internal_model
@@ -61,6 +63,8 @@ class _InternalWholeMessageMiddleware(AgentMiddleware):
     or for any model/provider that doesn't stream.
     """
 
+    transformers = (InternalCallTransformer,)
+
     def __init__(self, internal_model: FakeToolCallingModel) -> None:
         super().__init__()
         self.internal_model = internal_model
@@ -78,9 +82,30 @@ class _InternalWholeMessageMiddleware(AgentMiddleware):
         )
 
 
-def test_internal_call_transformer_registered_before_messages_transformer() -> None:
-    """`InternalCallTransformer` is registered unconditionally, ahead of built-ins."""
+def test_internal_call_transformer_not_registered_without_offending_middleware() -> None:
+    """A plain agent with no internal-call middleware doesn't pay for the filter."""
     agent = create_agent(model=FakeToolCallingModel(), tools=[])
+
+    run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+    transformers = run._mux._transformers
+
+    assert not any(isinstance(t, InternalCallTransformer) for t in transformers)
+
+    # Drain to close cleanly.
+    list(run.tool_calls)
+
+
+def test_internal_call_transformer_registered_before_messages_transformer() -> None:
+    """Middleware declaring `transformers` registers it, ahead of built-ins."""
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        middleware=[
+            _InternalCallMiddleware(
+                GenericFakeChatModel(messages=iter([AIMessage(content="internal")]))
+            )
+        ],
+    )
 
     run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
     transformers = run._mux._transformers
@@ -93,6 +118,28 @@ def test_internal_call_transformer_registered_before_messages_transformer() -> N
         "InternalCallTransformer must be registered before MessagesTransformer "
         "so tagged events never reach the messages projection"
     )
+
+    # Drain to close cleanly.
+    list(run.tool_calls)
+
+
+def test_internal_call_transformer_deduped_across_middleware() -> None:
+    """Combining two internal-call middleware doesn't double-register the transformer."""
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        middleware=[
+            _InternalCallMiddleware(
+                GenericFakeChatModel(messages=iter([AIMessage(content="internal")]))
+            ),
+            _InternalWholeMessageMiddleware(FakeToolCallingModel(index=1000)),
+        ],
+    )
+
+    run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+    transformers = run._mux._transformers
+
+    assert sum(isinstance(t, InternalCallTransformer) for t in transformers) == 1
 
     # Drain to close cleanly.
     list(run.tool_calls)

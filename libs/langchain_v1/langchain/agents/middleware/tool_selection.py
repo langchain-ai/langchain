@@ -11,7 +11,10 @@ from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
-from langchain.agents._internal_call_transformer import internal_call_metadata
+from langchain.agents._internal_call_transformer import (
+    InternalCallTransformer,
+    internal_call_metadata,
+)
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -118,6 +121,13 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             ```python
             middleware = LLMToolSelectorMiddleware(model="openai:gpt-5.4-mini", max_tools=2)
             ```
+    """
+
+    transformers = (InternalCallTransformer,)
+    """Keeps the tool-selection model call's tokens out of `run.messages`.
+
+    Registered only when this middleware is used — see
+    `InternalCallTransformer` for why the call needs tagging and filtering.
     """
 
     def __init__(

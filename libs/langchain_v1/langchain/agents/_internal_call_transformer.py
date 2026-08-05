@@ -4,8 +4,9 @@ Middleware may make bookkeeping model calls (e.g. summarization or tool
 selection) in the same graph namespace as the main agent call, causing their
 tokens to appear in `run.messages`.
 
-Tag these calls with `internal_call_metadata()` so `InternalCallTransformer`
-can filter them from `run.messages` and the raw event log.
+Tag these calls with `internal_call_metadata()` and declare
+`transformers = (InternalCallTransformer,)` on the middleware class so it's
+only registered on agents that actually use it — see `AgentMiddleware.transformers`.
 """
 
 from __future__ import annotations
@@ -39,7 +40,9 @@ def internal_call_metadata() -> dict[str, Any]:
 class InternalCallTransformer(StreamTransformer):
     """Keep internal model calls out of `run.messages` and the raw event log.
 
-    Registered on every compiled agent and runs before built-in transformers.
+    Declared on `transformers` by middleware that makes internal calls (e.g.
+    `SummarizationMiddleware`), so it's only registered on agents using one of
+    those, and runs before built-in transformers.
 
     Handles both streamed protocol events and whole-`AIMessage` events. For
     internal calls, it rewrites streamed `message-start` events to a `"tool"`
