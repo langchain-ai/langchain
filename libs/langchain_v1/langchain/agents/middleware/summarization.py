@@ -837,13 +837,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     def _snap_cutoff_past_open_thinking_turn(messages: list[AnyMessage], cutoff_index: int) -> int:
         """Snap `cutoff_index` back to the start of an open turn with thinking blocks.
 
-        An assistant turn starts right after a `HumanMessage`/`SystemMessage` (or at
-        the start of the conversation) and stays open across `AIMessage`/`ToolMessage`
-        exchanges until an `AIMessage` with no `tool_calls` completes it. If
-        `cutoff_index` would split such an open turn, and any `AIMessage` being
-        summarized away within that turn carries an Anthropic extended-thinking
-        block, the cutoff is moved back to the turn's start so the thinking block
-        stays with the tool calls/results it precedes, as Anthropic requires.
+        If the cutoff would split an unfinished assistant turn containing Anthropic
+        `thinking`/`redacted_thinking` blocks, move it to the turn's start so the
+        thinking stays with the associated tool calls and results.
         """
         if cutoff_index <= 0 or cutoff_index >= len(messages):
             return cutoff_index
