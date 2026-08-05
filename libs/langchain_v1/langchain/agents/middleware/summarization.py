@@ -97,6 +97,12 @@ _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 # accept known aliases per `ls_provider`.
 _LS_PROVIDER_ALIASES: dict[str, frozenset[str]] = {
     "amazon_bedrock": frozenset({"bedrock", "bedrock_converse"}),
+    # ChatOpenAIMantle traces under ls_provider="openai-mantle" but its messages
+    # inherit model_provider="openai" from BaseChatOpenAI.
+    "openai-mantle": frozenset({"openai"}),
+    # ChatAnthropicMantle traces under ls_provider="anthropic-mantle" but its
+    # messages inherit model_provider="anthropic" from BaseChatAnthropic.
+    "anthropic-mantle": frozenset({"anthropic"}),
 }
 
 
