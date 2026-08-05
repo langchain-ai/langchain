@@ -1625,7 +1625,7 @@ def test_anthropic_bind_tools_does_not_mutate_tool_choice() -> None:
 
 
 def test_bind_tools_drops_top_level_composition() -> None:
-    """Tools with a root `oneOf`/`anyOf`/`allOf` are dropped with a warning.
+    """Tools with a root `oneOf`/`anyOf` are dropped with a warning.
 
     The Anthropic API rejects tool schemas carrying these keywords at the top
     level, failing the whole request. MCP servers can emit them. See
@@ -1697,10 +1697,10 @@ def test_bind_tools_keeps_nested_composition_without_warning() -> None:
 
 
 def _composition_tool(name: str, keyword: str = "anyOf") -> dict:
-    """A tool whose root `input_schema` uses a top-level combinator (unsupported)."""
+    """A tool whose root `input_schema` uses a top-level combinator."""
     return {
         "name": name,
-        "description": "Unsupported root composition.",
+        "description": "Root schema composition.",
         "input_schema": {
             "type": "object",
             keyword: [
@@ -1723,7 +1723,7 @@ def _plain_tool(name: str) -> dict:
     }
 
 
-@pytest.mark.parametrize("keyword", ["oneOf", "anyOf", "allOf"])
+@pytest.mark.parametrize("keyword", ["oneOf", "anyOf"])
 def test_bind_tools_drops_each_root_combinator(keyword: str) -> None:
     """Every combinator in the unsupported set is filtered and named in the warning."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
@@ -1739,6 +1739,22 @@ def test_bind_tools_drops_each_root_combinator(keyword: str) -> None:
         "search"
     ]
     assert "attach" in str(record[0].message)
+
+
+def test_bind_tools_keeps_root_all_of_without_warning() -> None:
+    """A root `allOf` schema is supported and remains available to the model."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool = _composition_tool("attach", "allOf")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        bound = chat_model.bind_tools([tool])
+
+    bound_tools = cast("RunnableBinding", bound).kwargs["tools"]
+    assert [tool["name"] for tool in bound_tools] == ["attach"]
+    assert bound_tools[0]["input_schema"] == tool["input_schema"]
 
 
 def test_bind_tools_warning_names_every_offending_combinator() -> None:

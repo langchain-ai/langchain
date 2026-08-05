@@ -2473,13 +2473,13 @@ class ChatAnthropic(BaseChatModel):
         return response.input_tokens
 
 
-_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS = ("oneOf", "anyOf", "allOf")
+_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS = ("oneOf", "anyOf")
 
 
 def _drop_unsupported_root_composition_tools(
     tools: Sequence[Mapping[str, Any]],
 ) -> tuple[list[Mapping[str, Any]], set[str]]:
-    """Drop tools whose root `input_schema` uses `oneOf`/`anyOf`/`allOf`.
+    """Drop tools whose root `input_schema` uses `oneOf`/`anyOf`.
 
     The Anthropic API rejects these at request validation, failing the entire
     request. A tool is dropped only if its `input_schema` is a mapping carrying
