@@ -1870,6 +1870,35 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     assert details["cache_creation"] == 10
 
 
+def test_usage_metadata_with_reasoning_tokens() -> None:
+    """Test _create_usage_metadata with reasoning tokens."""
+
+    class OutputTokensDetails(BaseModel):
+        thinking_tokens: int = 20
+
+    class UsageWithReasoning(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 50
+        output_tokens_details: OutputTokensDetails | None
+
+    # Case 1: output_tokens_details present
+    result = _create_usage_metadata(
+        UsageWithReasoning(output_tokens_details=OutputTokensDetails())
+    )
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["total_tokens"] == 150
+    details = dict(result.get("output_token_details") or {})
+    assert details["reasoning"] == 20
+
+    # Case 2: output_tokens_details is None
+    result = _create_usage_metadata(UsageWithReasoning(output_tokens_details=None))
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["total_tokens"] == 150
+    assert "output_token_details" not in result
+
+
 class FakeTracer(BaseTracer):
     """Fake tracer to capture inputs to `chat_model_start`."""
 

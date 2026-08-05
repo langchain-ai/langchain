@@ -30,6 +30,7 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     HumanMessage,
+    OutputTokenDetails,
     SystemMessage,
     ToolCall,
     ToolMessage,
@@ -2530,6 +2531,17 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
         "cache_read": getattr(anthropic_usage, "cache_read_input_tokens", None),
         "cache_creation": getattr(anthropic_usage, "cache_creation_input_tokens", None),
     }
+    output_token_details: dict = {
+        "reasoning": getattr(
+            getattr(
+                anthropic_usage,
+                "output_tokens_details",
+                None,
+            ),
+            "thinking_tokens",
+            None,
+        )
+    }
 
     # Add cache TTL information if provided (5-minute and 1-hour ephemeral cache)
     cache_creation = getattr(anthropic_usage, "cache_creation", None)
@@ -2561,11 +2573,21 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
     )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0) or 0
 
-    return UsageMetadata(
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-        total_tokens=input_tokens + output_tokens,
-        input_token_details=InputTokenDetails(
+    usage_metadata = {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": input_tokens + output_tokens,
+        "input_token_details": InputTokenDetails(
             **{k: v for k, v in input_token_details.items() if v is not None},
         ),
-    )
+    }
+
+    filtered_output_token_details = {
+        k: v for k, v in output_token_details.items() if v is not None
+    }
+    if filtered_output_token_details:
+        usage_metadata["output_token_details"] = OutputTokenDetails(
+            **filtered_output_token_details
+        )
+
+    return UsageMetadata(**usage_metadata)
