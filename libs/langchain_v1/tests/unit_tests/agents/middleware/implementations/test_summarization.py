@@ -335,13 +335,10 @@ async def test_summarization_middleware_abefore_model_preserves_history_on_summa
 def test_summarization_middleware_e2e_transient_failure_preserves_then_recovers() -> None:
     """End-to-end regression test for #38867.
 
-    Drives a real `create_agent` graph with a checkpointer across several turns on
-    the same thread. The first time the trigger fires, the summary model raises a
-    transient error; the full conversation must survive untouched (no
-    `RemoveMessage(REMOVE_ALL_MESSAGES)`, no fabricated "Error generating summary"
-    text) and the agent must keep responding normally. Once the summary model
-    recovers, a later turn must still perform the real summarization/cutoff, proving
-    the earlier failure didn't permanently disable it.
+    Runs a real `create_agent` graph with a checkpointer. A transient summary
+    failure must leave the conversation intact and the agent responsive. Once the
+    summary model recovers, a later turn should successfully summarize the
+    conversation, proving the earlier failure didn't permanently disable it.
     """
 
     class TemporarilyFailingSummaryModel(BaseChatModel):
