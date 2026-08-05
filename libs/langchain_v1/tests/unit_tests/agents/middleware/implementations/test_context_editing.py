@@ -9,24 +9,32 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
+    HumanMessage,
     MessageLikeRepresentation,
+    ToolCall,
     ToolMessage,
 )
+from langchain_core.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver
 from typing_extensions import override
 
+from langchain.agents.factory import create_agent
 from langchain.agents.middleware.context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
 )
 from langchain.agents.middleware.types import (
     AgentState,
+    ExtendedModelResponse,
     ModelRequest,
     ModelResponse,
 )
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from langchain_core.runnables import RunnableConfig
     from langgraph.runtime import Runtime
 
 
@@ -276,11 +284,16 @@ def _fake_runtime() -> Runtime:
     return cast("Runtime", object())
 
 
-def test_after_model_persists_cleared_tool_result() -> None:
-    """`after_model` must return a state update so the checkpointer sees the clear.
+def test_wrap_model_call_persists_edit_matching_model_request() -> None:
+    """The persisted `Command` must reuse the exact edit decided for the real request.
 
-    Regression test for the `cleared` idempotency flag being discarded
-    because `wrap_model_call` only ever edits a `deepcopy`.
+    Regression test for a review comment on #37815: a persistence pass that
+    recomputed the edit with a *different* token counter than the one used
+    to build the outgoing model request could disagree about which messages
+    to clear (e.g. under `token_count_method="model"`, where the model's
+    exact count over messages + system prompt + tools can differ from the
+    approximate, messages-only count). Persisting the identical objects that
+    were actually sent to the model rules that out structurally.
     """
     tool_call_id = "call-1"
     ai_message = AIMessage(
@@ -289,30 +302,65 @@ def test_after_model_persists_cleared_tool_result() -> None:
     )
     tool_message = ToolMessage(content="x" * 200, tool_call_id=tool_call_id)
 
-    state = cast("AgentState[Any]", {"messages": [ai_message, tool_message]})
+    _state, request = _make_state_and_request([ai_message, tool_message])
     middleware = ContextEditingMiddleware(
         edits=[ClearToolUsesEdit(trigger=50, keep=0, placeholder="[cleared]")],
+        token_count_method="model",  # noqa: S106
     )
 
-    result = middleware.after_model(state, _fake_runtime())
+    captured_request: ModelRequest | None = None
 
-    assert result is not None
-    updated_tool_message = result["messages"][0]
-    assert isinstance(updated_tool_message, ToolMessage)
-    assert updated_tool_message.id == tool_message.id
-    assert updated_tool_message.content == "[cleared]"
-    assert updated_tool_message.response_metadata["context_editing"]["cleared"] is True
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
-    # The original state's messages are untouched (new object returned).
+    result = middleware.wrap_model_call(request, mock_handler)
+
+    assert captured_request is not None
+    sent_tool_message = captured_request.messages[1]
+    assert isinstance(sent_tool_message, ToolMessage)
+    assert sent_tool_message.content == "[cleared]"
+
+    assert isinstance(result, ExtendedModelResponse)
+    assert result.command is not None
+    assert result.command.update is not None
+    persisted = result.command.update["messages"]
+    assert len(persisted) == 1
+    # The persisted message is the identical object sent to the model, not a
+    # second, independently-decided copy.
+    assert persisted[0] is sent_tool_message
+
+    # The original state's messages are untouched.
     assert tool_message.content == "x" * 200
 
 
-def test_after_model_is_idempotent_across_turns() -> None:
+def test_wrap_model_call_returns_plain_response_when_no_edit_applied() -> None:
+    """Below trigger, `wrap_model_call` must not wrap the response in a `Command`."""
+    tool_call_id = "call-1"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    tool_message = ToolMessage(content="12345", tool_call_id=tool_call_id)
+
+    _state, request = _make_state_and_request([ai_message, tool_message])
+    middleware = ContextEditingMiddleware(edits=[ClearToolUsesEdit(trigger=50)])
+
+    def mock_handler(_req: ModelRequest) -> ModelResponse:
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    result = middleware.wrap_model_call(request, mock_handler)
+
+    assert isinstance(result, ModelResponse)
+
+
+def test_persisted_edit_is_idempotent_across_turns() -> None:
     """Once persisted, a later turn must not re-clear an already-cleared message.
 
-    Simulates the checkpointer round trip: apply `after_model`'s state
-    update back onto the message list (as `add_messages` would), then run
-    `after_model` again on the grown conversation.
+    Simulates the checkpointer round trip: apply `wrap_model_call`'s
+    persisted `Command` update back onto the message list (as `add_messages`
+    would), then run `wrap_model_call` again on the grown conversation.
     """
     tool_call_id = "call-1"
     ai_message = AIMessage(
@@ -325,18 +373,24 @@ def test_after_model_is_idempotent_across_turns() -> None:
         edits=[ClearToolUsesEdit(trigger=50, keep=0, placeholder="[cleared]")],
     )
 
-    state = cast("AgentState[Any]", {"messages": [ai_message, tool_message]})
-    first_result = middleware.after_model(state, _fake_runtime())
-    assert first_result is not None
+    def mock_handler(_req: ModelRequest) -> ModelResponse:
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    _state, request = _make_state_and_request([ai_message, tool_message])
+    first_result = middleware.wrap_model_call(request, mock_handler)
+    assert isinstance(first_result, ExtendedModelResponse)
+    assert first_result.command is not None
+    assert first_result.command.update is not None
 
     # Apply the persisted update, as the checkpointer/`add_messages` would.
-    messages = list(state["messages"])
-    messages[1] = first_result["messages"][0]
-    state = cast("AgentState[Any]", {"messages": messages})
+    messages = list(request.messages)
+    messages[1] = first_result.command.update["messages"][0]
 
-    # A second call against the already-persisted, cleared state changes nothing.
-    second_result = middleware.after_model(state, _fake_runtime())
-    assert second_result is None
+    # A second call against the already-persisted, cleared conversation
+    # changes nothing further.
+    _state, second_request = _make_state_and_request(cast("list[Any]", messages))
+    second_result = middleware.wrap_model_call(second_request, mock_handler)
+    assert isinstance(second_result, ModelResponse)
 
 
 async def test_no_edit_when_below_trigger_async() -> None:
@@ -531,3 +585,54 @@ async def test_exclude_tools_prevents_clearing_async() -> None:
 
     assert isinstance(calc_tool, ToolMessage)
     assert calc_tool.content == "[cleared]"
+
+
+def test_end_to_end_with_checkpointer_clears_persist_across_turns() -> None:
+    """End-to-end regression test for #37815 against a real checkpointer.
+
+    Mirrors the issue's repro: each turn appends a large tool result to a
+    persistent (`InMemorySaver`-backed) conversation. Once the trigger is
+    crossed, older tool results must show up as cleared *in the checkpointed
+    state itself* — not just in the transient request sent to the model —
+    and stay cleared rather than needing to be reprocessed every turn.
+    """
+
+    @tool
+    def big_tool(query: str) -> str:  # noqa: ARG001
+        """Return a large payload."""
+        return "x" * 2_000
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            call
+            for i in range(4)
+            for call in (
+                [ToolCall(name="big_tool", args={"query": f"q{i}"}, id=f"call_{i}")],
+                [],
+            )
+        ]
+    )
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=100, keep=1, placeholder="[cleared]")],
+    )
+    agent = create_agent(
+        model=model,
+        tools=[big_tool],
+        middleware=[middleware],
+        checkpointer=InMemorySaver(),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "context-editing-e2e"}}
+
+    for turn in range(4):
+        agent.invoke({"messages": [HumanMessage(f"turn {turn}")]}, config=config)
+
+    final_state = agent.get_state(config).values
+    tool_messages = [m for m in final_state["messages"] if isinstance(m, ToolMessage)]
+
+    assert len(tool_messages) == 4
+    # All but the most recent tool result are cleared *in checkpointed state*.
+    assert [m.content for m in tool_messages[:-1]] == ["[cleared]"] * 3
+    assert tool_messages[-1].content == "x" * 2_000
+    assert all(
+        m.response_metadata.get("context_editing", {}).get("cleared") for m in tool_messages[:-1]
+    )
