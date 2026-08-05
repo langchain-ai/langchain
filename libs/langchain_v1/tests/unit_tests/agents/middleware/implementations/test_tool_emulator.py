@@ -4,6 +4,7 @@ from collections.abc import Callable, Sequence
 from itertools import cycle
 from typing import Any, Literal
 
+import pytest
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
@@ -460,17 +461,14 @@ class TestLLMToolEmulatorModelConfiguration:
         # Should use the custom model for emulation
         assert isinstance(result["messages"][-1], AIMessage)
 
-    def test_default_model_used_when_none(self) -> None:
-        """Test that default model is used when model=None."""
-        # Just test that initialization doesn't fail - don't require anthropic package
-        # The actual default model requires langchain_anthropic which may not be installed
-        try:
-            emulator = LLMToolEmulator(tools=["get_weather"], model=None)
-            assert emulator.model is not None
-        except ImportError:
-            # If anthropic isn't installed, that's fine for this unit test
-            # The integration tests will verify the full functionality
-            pass
+    def test_model_is_required(self) -> None:
+        """Test that omitting `model` raises a clear error instead of an ImportError.
+
+        `LLMToolEmulator` should never implicitly depend on a specific model
+        provider's package being installed, so `model` is a required argument.
+        """
+        with pytest.raises(TypeError):
+            LLMToolEmulator(tools=["get_weather"])  # type: ignore[call-arg]
 
 
 class TestLLMToolEmulatorAsync:
