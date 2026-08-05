@@ -420,14 +420,8 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
         ]
 
         if self.exit_behavior == "end":
-            # Jumping to "end" skips the tool-execution node entirely, so only tool
-            # calls we inject synthetic `ToolMessage`s for (the blocked ones) would
-            # otherwise have a matching response. Any other pending tool call on this
-            # `AIMessage` — an allowed call to the limited tool (e.g. from parallel
-            # tool calling) or a call to an unrelated tool — is given an explanatory
-            # `ToolMessage` too, instead of being executed, so the message history
-            # stays valid (no orphaned tool calls) with no additional tool side
-            # effects once the limit is hit.
+            # Since jumping to `"end"` skips tool execution, add `ToolMessage`s for all
+            # pending calls so none are executed and the message history stays valid.
             blocked_ids = {tool_call["id"] for tool_call in blocked_calls}
             pending_tool_calls = [
                 tc for tc in last_ai_message.tool_calls if tc["id"] not in blocked_ids
@@ -458,10 +452,8 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             )
             artificial_messages.append(AIMessage(content=final_msg_content))
 
-            # None of this batch's tool calls actually execute once we jump to "end"
-            # — not even the ones `_separate_tool_calls` classified as "allowed" — so
-            # the thread-level count must not include their increment. Only
-            # `run_tool_call_count` tracks calls attempted during this run.
+            # Since no calls execute after jumping to `"end"`, don't include this batch in
+            # the thread-level count. Only the run-level count tracks attempted calls.
             thread_counts[count_key] = current_thread_count
 
             return {
