@@ -1017,6 +1017,40 @@ def test_summarization_middleware_find_safe_cutoff_point_no_snap_without_thinkin
     assert middleware._find_safe_cutoff_point(messages, 3) == 3
 
 
+def test_summarization_middleware_find_safe_cutoff_point_closed_turn_not_reopened() -> None:
+    """A cutoff already on a Human/System boundary must not be pulled backward.
+
+    `Human -> AI(thinking+tool) -> Tool -> Human` with the cutoff on the final
+    `HumanMessage` is already a safe boundary right after a *completed* assistant
+    turn. Scanning backward from there (as opposed to refusing to scan at all)
+    would walk through that finished turn and, because it contains a thinking
+    block, incorrectly pull the cutoff back to the earlier `AIMessage` - retaining
+    an old turn beyond the configured retention budget.
+    """
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 10), keep=("messages", 2)
+    )
+
+    def thinking_block(text: str) -> dict[str, str]:
+        return {"type": "thinking", "thinking": text, "signature": "sig"}
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="first request", id="h0"),  # index 0
+        AIMessage(
+            content=[thinking_block("plan")],
+            tool_calls=[{"name": "get_data", "args": {}, "id": "call_get"}],
+            id="a1",
+        ),  # index 1
+        ToolMessage(content="raw data", tool_call_id="call_get", id="t1"),  # index 2
+        HumanMessage(content="second request", id="h1"),  # index 3 - naive cutoff, closed turn
+    ]
+
+    # The candidate cutoff (index 3) already sits right after the completed turn
+    # (index 1-2). It must be returned unchanged, not pulled back to index 1.
+    assert middleware._find_safe_cutoff_point(messages, 3) == 3
+
+
 def test_summarization_middleware_zero_and_negative_target_tokens() -> None:
     """Test handling of edge cases with target token calculations."""
     # Test with very small fraction that rounds to zero

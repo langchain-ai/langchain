@@ -844,6 +844,13 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if cutoff_index <= 0 or cutoff_index >= len(messages):
             return cutoff_index
 
+        # A cutoff that already lands on a HumanMessage/SystemMessage is itself a
+        # turn boundary right after the preceding (completed) assistant turn -
+        # there's nothing open to preserve, so leave it alone rather than scanning
+        # backward into that already-finished turn.
+        if isinstance(messages[cutoff_index], (HumanMessage, SystemMessage)):
+            return cutoff_index
+
         turn_start = cutoff_index
         while turn_start > 0:
             previous_message = messages[turn_start - 1]
