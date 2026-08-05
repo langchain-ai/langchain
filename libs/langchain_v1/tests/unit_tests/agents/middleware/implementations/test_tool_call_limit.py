@@ -163,12 +163,10 @@ def test_middleware_unit_functionality() -> None:
 def test_middleware_end_behavior_with_unrelated_parallel_tool_calls() -> None:
     """Test middleware 'end' behavior with unrelated parallel tool calls.
 
-    Test that 'end' behavior raises NotImplementedError when there are parallel calls
-    to unrelated tools.
-
-    When limiting a specific tool with "end" behavior and the model proposes parallel calls
-    to BOTH the limited tool AND other tools, we can't handle this scenario (we'd be stopping
-    execution while other tools should run).
+    When limiting a specific tool with "end" behavior and the model proposes parallel
+    calls to BOTH the limited tool AND other tools, execution still stops immediately,
+    but the unrelated call gets an explanatory `ToolMessage` instead of being executed,
+    so it isn't left orphaned in the message history.
     """
     # Limit search tool specifically
     middleware = ToolCallLimitMiddleware(tool_name="search", thread_limit=1, exit_behavior="end")
@@ -189,10 +187,19 @@ def test_middleware_end_behavior_with_unrelated_parallel_tool_calls() -> None:
         run_tool_call_count={"search": 1},
     )
 
-    with pytest.raises(
-        NotImplementedError, match="Cannot end execution with other tool calls pending"
-    ):
-        middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+    assert result["jump_to"] == "end"
+
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert len(tool_messages) == 2, "Both the exceeded call and the unrelated call get a message"
+
+    search_msg = next(msg for msg in tool_messages if msg.tool_call_id == "1")
+    calculator_msg = next(msg for msg in tool_messages if msg.tool_call_id == "2")
+    assert search_msg.status == "error"
+    assert "Tool call limit exceeded" in search_msg.content
+    assert calculator_msg.status == "error"
+    assert "exceeded the limit" in calculator_msg.content
 
 
 def test_middleware_with_specific_tool() -> None:
@@ -688,10 +695,9 @@ def test_parallel_tool_calls_with_limit_end_mode() -> None:
 
     When the model proposes 3 tool calls with a limit of 1, the first call would be
     allowed (within limit) while the 2nd and 3rd exceed it. Jumping to "end" skips the
-    tool-execution node entirely, so the allowed call would never receive a
-    `ToolMessage`, leaving it "orphaned" and producing an invalid message history.
-    `ToolCallLimitMiddleware` must instead raise `NotImplementedError` in this case,
-    per its documented contract, rather than silently dropping the allowed call.
+    tool-execution node entirely, so `ToolCallLimitMiddleware` gives the allowed call
+    an explanatory `ToolMessage` too (instead of executing it, or leaving it
+    "orphaned" with no response at all).
     """
     middleware = ToolCallLimitMiddleware(thread_limit=1, exit_behavior="end")
     runtime = None
@@ -711,10 +717,19 @@ def test_parallel_tool_calls_with_limit_end_mode() -> None:
         run_tool_call_count={},
     )
 
-    with pytest.raises(
-        NotImplementedError, match="Cannot end execution with other tool calls pending"
-    ):
-        middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+    assert result["jump_to"] == "end"
+
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert len(tool_messages) == 3, "Every tool call gets a matching ToolMessage"
+    assert {msg.tool_call_id for msg in tool_messages} == {"1", "2", "3"}
+    assert all(msg.status == "error" for msg in tool_messages)
+
+    exceeded_msgs = [msg for msg in tool_messages if msg.tool_call_id in {"2", "3"}]
+    allowed_msg = next(msg for msg in tool_messages if msg.tool_call_id == "1")
+    assert all("Tool call limit exceeded" in msg.content for msg in exceeded_msgs)
+    assert "exceeded the limit" in allowed_msg.content
 
 
 def test_middleware_end_behavior_with_allowed_and_blocked_parallel_calls() -> None:
@@ -722,11 +737,10 @@ def test_middleware_end_behavior_with_allowed_and_blocked_parallel_calls() -> No
 
     When `exit_behavior="end"` and the middleware limits all tools (`tool_name=None`),
     a single `AIMessage` with parallel tool calls can have some calls allowed (under
-    the limit) and some blocked (over the limit). Previously, the "other pending tool
-    calls" check only fired when `tool_name` was set, so this scenario would jump to
-    "end" while leaving the allowed call without a `ToolMessage` — an invalid message
-    history that raises a 400 error on the next turn. It must now raise
-    `NotImplementedError` instead.
+    the limit) and some blocked (over the limit). Previously, only the blocked call
+    got a `ToolMessage`, so the allowed call was left without a matching response — an
+    invalid message history that raises a 400 error on the next turn. The allowed call
+    must now get an explanatory `ToolMessage` too.
     """
     middleware = ToolCallLimitMiddleware(run_limit=2, exit_behavior="end")
     runtime = None
@@ -745,10 +759,15 @@ def test_middleware_end_behavior_with_allowed_and_blocked_parallel_calls() -> No
         run_tool_call_count={"__all__": 1},
     )
 
-    with pytest.raises(
-        NotImplementedError, match="Cannot end execution with other tool calls pending"
-    ):
-        middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+    assert result["jump_to"] == "end"
+
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert {msg.tool_call_id for msg in tool_messages} == {"call_1", "call_2"}, (
+        "Every tool call on the AIMessage must get a matching ToolMessage"
+    )
+    assert all(msg.status == "error" for msg in tool_messages)
 
 
 def test_parallel_mixed_tool_calls_with_specific_tool_limit() -> None:
