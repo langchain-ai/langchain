@@ -54,11 +54,8 @@ def _redact_tool_call_list(
 ) -> tuple[list[Any], bool]:
     """Walk a list of tool-call (or invalid-tool-call) dicts.
 
-    Returns `(new_list, changed)`. Each element's `args` is run through
-    `_redact_value` regardless of its type — `tool_call.args` is a dict,
-    `invalid_tool_call.args` is a raw JSON string, and `_redact_value`
-    handles both shapes uniformly. If nothing changed, returns the input
-    list and `changed=False`.
+    Returns `(new_list, changed)`. Redacts each element's `args` (dict or JSON
+    string) via `_redact_value`. If nothing changes, returns the original list.
     """
     if not calls:
         return calls or [], False
@@ -80,25 +77,13 @@ def _redact_tool_call_list(
 def _redact_value(rule: ResolvedRedactionRule, value: Any) -> Any:
     """Recursively redact PII in string leaves of a nested structure.
 
-    Returns a new value where every `str` leaf that contains PII has
-    been replaced (or emptied under `block`). Non-string leaves and
-    the structure itself are preserved.
+    Returns a copy with PII redacted from string values while preserving the
+    original structure.
 
-    `BaseMessage` payloads (typically `ToolMessage` from
-    `tool-finished.output`, or any message reached via the `values`
-    channel, or a message acted on directly by a state-level hook)
-    return a fresh copy with `.content` redacted plus
-    `AIMessage.tool_calls[*].args` / `invalid_tool_calls[*].args`
-    walked. The original object stays intact unless the caller applies
-    the returned copy.
-
-    Scope mirrors the pre-streaming state-level surfaces:
-    `.content` (string or list-of-content-blocks) and `tool_calls`
-    args. Other message attributes (`additional_kwargs`,
-    `response_metadata`, `ToolMessage.artifact`) are intentionally
-    not walked here — they aren't scrubbed in graph state by the
-    existing hooks, so scrubbing them on the wire would create
-    a wire/state divergence.
+    For `BaseMessage`s, redacts `.content` and
+    `AIMessage.tool_calls[*].args`/`invalid_tool_calls[*].args`. Other message
+    fields are intentionally left untouched to match the existing state-level
+    redaction behavior.
     """
     if isinstance(value, str):
         if not value:
@@ -107,7 +92,7 @@ def _redact_value(rule: ResolvedRedactionRule, value: Any) -> Any:
         if not matches:
             return value
         # `apply_strategy` raises `PIIDetectionError` under `block`
-        # — the run fails immediately rather than buffering until a
+        #  the run fails immediately rather than buffering until a
         # state-level hook can raise.
         return apply_strategy(value, matches, rule.strategy)
     if isinstance(value, BaseMessage):
@@ -143,12 +128,9 @@ def _redact_base_message(rule: ResolvedRedactionRule, value: _MessageT) -> _Mess
         if redacted_content != content:
             update["content"] = redacted_content
 
-    # `AIMessage.tool_calls` and `.invalid_tool_calls` carry PII in
-    # `args` independently of `.content`. `tool_call.args` is a
-    # dict; `invalid_tool_call.args` is a raw JSON string —
-    # `_redact_value` handles both shapes via the recursion. This also
-    # covers tool-call-only messages (`content == ""`) since it runs
-    # unconditionally, not just when `.content` is truthy.
+    # Redact `AIMessage.tool_calls[*].args` and
+    # `invalid_tool_calls[*].args` independently of `.content`. This also
+    # covers tool-call-only messages (`content == ""`).
     if isinstance(value, AIMessage):
         new_tc_list, tc_changed = _redact_tool_call_list(rule, value.tool_calls)
         if tc_changed:
@@ -725,9 +707,8 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                     break
 
             if last_user_idx is not None and last_user_msg is not None:
-                # `_redact_base_message` is the same recursive redactor the
-                # streaming transformer uses, so structured content stays
-                # structured and other message attributes are preserved.
+                # Reuse the same recursive redactor as the streaming transformer, preserving
+                # structured content and other message attributes.
                 updated_message = _redact_base_message(self._resolved_rule, last_user_msg)
                 if updated_message is not last_user_msg:
                     new_messages[last_user_idx] = updated_message
@@ -817,10 +798,8 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         if last_ai_idx is None or last_ai_msg is None:
             return None
 
-        # `_redact_base_message` walks `.content` (string or structured
-        # content blocks) and `tool_calls[*].args` regardless of whether
-        # `.content` is empty, so tool-call-only assistant messages are
-        # still checked for PII in their tool-call arguments.
+        # `_redact_base_message` redacts both `.content` and `tool_calls[*].args`,
+        # including tool-call-only messages with empty `.content`.
         updated_message = _redact_base_message(self._resolved_rule, last_ai_msg)
         if updated_message is last_ai_msg:
             return None
