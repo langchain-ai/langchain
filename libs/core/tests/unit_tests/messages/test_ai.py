@@ -576,3 +576,100 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_truncated_tool_call_args_on_last_chunk_are_invalid() -> None:
+    """A stream cut mid-arguments must not yield a valid tool call.
+
+    Partial parsing is correct *during* a stream, but once the stream has ended
+    the arguments are final. Parsing them partially silently drops the missing
+    arguments -- including any with defaults, such as ``confirm`` or ``dry_run``
+    -- and presents the result as a complete call.
+    """
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="transfer_funds",
+                args='{"to": "alice", "amount": 100, "conf',
+                id="call_1",
+                index=0,
+            )
+        ],
+        chunk_position="last",
+    )
+
+    assert chunk.tool_calls == []
+    assert len(chunk.invalid_tool_calls) == 1
+    assert chunk.invalid_tool_calls[0]["name"] == "transfer_funds"
+    assert chunk.invalid_tool_calls[0]["args"] == '{"to": "alice", "amount": 100, "conf'
+    assert chunk.invalid_tool_calls[0]["id"] == "call_1"
+
+
+def test_complete_tool_call_args_on_last_chunk_still_parse() -> None:
+    """Well-formed arguments on the final chunk are unaffected."""
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="transfer_funds",
+                args='{"to": "alice", "amount": 100, "confirm": true}',
+                id="call_1",
+                index=0,
+            )
+        ],
+        chunk_position="last",
+    )
+
+    assert chunk.invalid_tool_calls == []
+    assert len(chunk.tool_calls) == 1
+    assert chunk.tool_calls[0]["args"] == {
+        "to": "alice",
+        "amount": 100,
+        "confirm": True,
+    }
+
+
+def test_partial_tool_call_args_mid_stream_still_parse_partially() -> None:
+    """Mid-stream chunks keep partial parsing, so streaming UIs are unchanged."""
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="transfer_funds",
+                args='{"to": "alice", "amount": 100, "conf',
+                id="call_1",
+                index=0,
+            )
+        ],
+        # no chunk_position -> stream still in progress
+    )
+
+    assert chunk.invalid_tool_calls == []
+    assert len(chunk.tool_calls) == 1
+    assert chunk.tool_calls[0]["args"] == {"to": "alice", "amount": 100}
+
+
+def test_accumulated_stream_ending_truncated_is_invalid() -> None:
+    """The realistic path: chunks accumulate, then the stream ends truncated."""
+    c1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="transfer_funds", args='{"to": "ali', id="call_1", index=0
+            )
+        ],
+    )
+    c2 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name=None, args='ce", "conf', id=None, index=0)
+        ],
+        chunk_position="last",
+    )
+
+    merged = c1 + c2
+
+    assert merged.tool_calls == []
+    assert len(merged.invalid_tool_calls) == 1
+    assert merged.invalid_tool_calls[0]["args"] == '{"to": "alice", "conf'

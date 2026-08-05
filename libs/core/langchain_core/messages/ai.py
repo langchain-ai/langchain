@@ -552,9 +552,14 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 )
             )
 
+        # Once the stream has ended, tool call arguments must be complete,
+        # valid JSON. Parsing them partially here would silently discard
+        # truncated arguments and surface the result as a well-formed tool
+        # call, so parse strictly and route failures to ``invalid_tool_calls``.
+        parse_args = json.loads if self.chunk_position == "last" else parse_partial_json
         for chunk in self.tool_call_chunks:
             try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
+                args_ = parse_args(chunk["args"]) if chunk["args"] else {}
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
