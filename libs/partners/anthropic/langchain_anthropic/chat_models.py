@@ -11,7 +11,7 @@ import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Final, Literal, cast
+from typing import Any, Final, Literal, TypeGuard, cast
 
 import anthropic
 from langchain_core.callbacks import (
@@ -175,7 +175,7 @@ _ANTHROPIC_EXTRA_FIELDS: set[str] = {
 """Valid Anthropic-specific extra fields"""
 
 
-def _is_builtin_tool(tool: Any) -> bool:
+def _is_builtin_tool(tool: Any) -> TypeGuard[dict[str, Any]]:
     """Check if a tool is a built-in (server-side) Anthropic tool.
 
     `tool` must be a `dict` and have a `type` key starting with one of the known
@@ -2044,6 +2044,15 @@ class ChatAnthropic(BaseChatModel):
                 See the [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#strict-tool-use) for more info.
             kwargs: Any additional parameters are passed directly to `bind`.
 
+        Raises:
+            ValueError: If every tool in `tools` was dropped for using top-level
+                schema composition, leaving the model with no callable tool.
+            ValueError: If `tool_choice` forces tool use (a specific tool, or
+                `'any'`) while any tool was dropped, since the forced tool may be
+                unreachable. Does not apply when `thinking` is enabled, as the
+                forced choice is discarded before the request is sent.
+            ValueError: If `tool_choice` is neither a `dict`, a `str`, nor `None`.
+
         Example:
             ```python
             from langchain_anthropic import ChatAnthropic
@@ -2080,12 +2089,84 @@ class ChatAnthropic(BaseChatModel):
         # Allows built-in tools either by their:
         # - Raw `dict` format
         # - Extracting extras["provider_tool_definition"] if provided on a BaseTool
-        formatted_tools = [
+        formatted_tools: list[Mapping[str, Any]] = [
             tool
             if _is_builtin_tool(tool)
             else convert_to_anthropic_tool(tool, strict=strict)
             for tool in tools
         ]
+        formatted_tools, dropped_tool_names = _drop_unsupported_root_composition_tools(
+            formatted_tools
+        )
+
+        # Dropping salvages a request when usable tools remain. If every tool was
+        # dropped there is nothing to salvage: the caller asked for a model with
+        # tools and would get one that cannot call any, so fail loudly instead of
+        # letting it surface later as a tool call that never happens.
+        if tools and not formatted_tools:
+            msg = (
+                f"All {len(tools)} bound tool(s) use a top-level "
+                f"{'/'.join(_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS)} in their "
+                f"input_schema, which the Anthropic API rejects: "
+                f"{sorted(dropped_tool_names)}. No tool is left for the model to "
+                "call. If you control the schema, move the combinator under "
+                "`properties`; for structured output, `with_structured_output(..., "
+                "method='json_schema')` accepts these schemas directly. Otherwise "
+                "these tools cannot be used with Anthropic -- bind a subset that "
+                "excludes them, or raise it with the tool's author."
+            )
+            raise ValueError(msg)
+
+        # Reconcile tool_choice with the filtered list: forcing a tool that was
+        # dropped, or forcing tool use at all when the set the caller depends on
+        # has silently shrunk, still produces a 400 or a stuck agent loop.
+        if tool_choice and dropped_tool_names:
+            choice_type: str | None = None
+            choice_name: str | None = None
+            if isinstance(tool_choice, dict):
+                choice_type = tool_choice.get("type")
+                choice_name = tool_choice.get("name")
+            elif isinstance(tool_choice, str):
+                if tool_choice in ("any", "auto"):
+                    choice_type = tool_choice
+                else:
+                    choice_type, choice_name = "tool", tool_choice
+            # Thinking discards forced choices before the request is sent, so
+            # they need not refer to a tool that remains after filtering.
+            thinking_discards_forced_choice = (
+                self.thinking is not None
+                and self.thinking.get("type") in ("enabled", "adaptive")
+                and choice_type in ("any", "tool")
+            )
+            if not thinking_discards_forced_choice:
+                if choice_type == "tool" and choice_name in dropped_tool_names:
+                    msg = (
+                        f"tool_choice forces {choice_name!r}, but that tool was "
+                        "dropped because its input_schema uses a top-level "
+                        f"{'/'.join(_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS)}, which "
+                        "the Anthropic API rejects. Stop forcing it, or -- if you "
+                        "control the schema -- move the combinator under "
+                        "`properties`. For structured output, "
+                        "`with_structured_output(..., method='json_schema')` "
+                        "accepts these schemas directly."
+                    )
+                    raise ValueError(msg)
+                if choice_type == "any":
+                    # Forcing tool use means the caller depends on a specific
+                    # reachable tool set, so losing any member of it is fatal --
+                    # not just losing all of them.
+                    msg = (
+                        "tool_choice='any' forces the model to call a tool, but "
+                        f"{sorted(dropped_tool_names)} were dropped because their "
+                        "input_schema uses a top-level "
+                        f"{'/'.join(_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS)}, which "
+                        "the Anthropic API rejects, so the model can no longer "
+                        "call them. Use tool_choice='auto' to proceed with the "
+                        "remaining tools, or -- if you control the schema -- move "
+                        "the combinator under `properties`."
+                    )
+                    raise ValueError(msg)
+
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
@@ -2368,7 +2449,11 @@ class ChatAnthropic(BaseChatModel):
         if isinstance(formatted_system, str):
             kwargs["system"] = formatted_system
         if tools:
-            kwargs["tools"] = [convert_to_anthropic_tool(tool) for tool in tools]
+            # Filter the same schemas `bind_tools` drops, so counting tokens and
+            # sending a request agree on which tools the API will accept.
+            kwargs["tools"], _ = _drop_unsupported_root_composition_tools(
+                [convert_to_anthropic_tool(tool) for tool in tools]
+            )
         if self.context_management is not None:
             kwargs["context_management"] = self.context_management
 
@@ -2386,6 +2471,56 @@ class ChatAnthropic(BaseChatModel):
             **kwargs,
         )
         return response.input_tokens
+
+
+_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS = ("oneOf", "anyOf")
+
+
+def _drop_unsupported_root_composition_tools(
+    tools: Sequence[Mapping[str, Any]],
+) -> tuple[list[Mapping[str, Any]], set[str]]:
+    """Drop tools whose root `input_schema` uses `oneOf`/`anyOf`.
+
+    The Anthropic API rejects these at request validation, failing the entire
+    request. A tool is dropped only if its `input_schema` is a mapping carrying
+    a root combinator, so built-in (server-side) tools -- which have no
+    `input_schema` -- and tools whose combinators are nested under `properties`
+    are passed through as the same objects, unmodified.
+
+    A `UserWarning` is emitted per dropped tool.
+
+    Args:
+        tools: Already-formatted tool definitions, as built by `bind_tools`.
+
+    Returns:
+        The retained tools, and the names of the dropped tools. A dropped tool
+        with no string `name` contributes no entry to the name set.
+    """
+    kept: list[Mapping[str, Any]] = []
+    dropped_tool_names: set[str] = set()
+    for tool in tools:
+        input_schema = tool.get("input_schema")
+        offending_keys = (
+            [k for k in _TOP_LEVEL_SCHEMA_COMPOSITION_KEYS if k in input_schema]
+            if isinstance(input_schema, Mapping)
+            else []
+        )
+        if not offending_keys:
+            kept.append(tool)
+            continue
+        tool_name = tool.get("name")
+        if isinstance(tool_name, str):
+            dropped_tool_names.add(tool_name)
+            described = repr(tool_name)
+        else:
+            described = "with no name"
+        warnings.warn(
+            f"Dropping tool {described}: its input_schema has a "
+            f"top-level {'/'.join(offending_keys)}, which the Anthropic API does "
+            "not support. The tool will not be available to the model.",
+            stacklevel=3,
+        )
+    return kept, dropped_tool_names
 
 
 def convert_to_anthropic_tool(
