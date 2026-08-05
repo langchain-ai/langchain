@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langgraph.stream.transformers import MessagesTransformer
 
 from langchain.agents._internal_call_transformer import (
@@ -108,7 +108,14 @@ async def test_internal_model_calls_excluded_from_messages_projection() -> None:
 
 
 async def test_internal_model_calls_excluded_from_raw_event_log() -> None:
-    """Internal calls must not leak into the raw protocol event stream either."""
+    """Internal calls must not leak into the raw protocol event stream either.
+
+    `stream_events(version="v3")` may deliver a chat model's output either as
+    streamed `content-block-delta` protocol events or (e.g. when the runtime
+    doesn't propagate streaming context, as on Python 3.10) as a single
+    whole-`AIMessage` event, so this collects text from both shapes rather
+    than assuming one.
+    """
     main_model = GenericFakeChatModel(messages=iter([AIMessage(content="final answer")]))
     internal_model = GenericFakeChatModel(messages=iter([AIMessage(content="internal check")]))
     agent = create_agent(
@@ -117,7 +124,7 @@ async def test_internal_model_calls_excluded_from_raw_event_log() -> None:
 
     run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
-    message_start_count = 0
+    seen_text: list[str] = []
     async for event in run:
         if event.get("method") != "messages":
             continue
@@ -125,7 +132,13 @@ async def test_internal_model_calls_excluded_from_raw_event_log() -> None:
         if not isinstance(data, tuple) or len(data) != 2:
             continue
         payload = data[0]
-        if isinstance(payload, dict) and payload.get("event") == "message-start":
-            message_start_count += 1
+        if isinstance(payload, dict):
+            delta = payload.get("delta") or {}
+            if text := delta.get("text"):
+                seen_text.append(text)
+        elif isinstance(payload, BaseMessage):
+            seen_text.append(payload.text)
 
-    assert message_start_count == 1
+    combined = "".join(seen_text)
+    assert "internal check" not in combined
+    assert "final answer" in combined
