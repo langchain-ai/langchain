@@ -33,7 +33,6 @@ from langchain_anthropic import ChatAnthropic
 from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
     _TOOL_CALL_ID_PATTERN,
-    UnsupportedToolSchemaWarning,
     _create_usage_metadata,
     _format_image,
     _format_messages,
@@ -1662,7 +1661,7 @@ def test_bind_tools_drops_top_level_composition() -> None:
             ],
         },
     }
-    with pytest.warns(UnsupportedToolSchemaWarning, match="notion_create_attachment"):
+    with pytest.warns(UserWarning, match="notion_create_attachment"):
         chat_model_with_tools = chat_model.bind_tools([valid_tool, invalid_tool])
 
     bound = cast("RunnableBinding", chat_model_with_tools).kwargs["tools"]
@@ -1720,7 +1719,7 @@ def test_bind_tools_dropped_tool_forced_by_tool_choice_raises() -> None:
         anthropic_api_key="secret-api-key",
     )
     with (
-        pytest.warns(UnsupportedToolSchemaWarning),
+        pytest.warns(UserWarning, match="Dropping tool"),
         pytest.raises(ValueError, match="tool_choice references 'attach'"),
     ):
         chat_model.bind_tools(
@@ -1736,7 +1735,7 @@ def test_bind_tools_dropped_tool_forced_by_tool_choice_raises() -> None:
         )
     # Bare-string tool_choice naming the dropped tool raises too.
     with (
-        pytest.warns(UnsupportedToolSchemaWarning),
+        pytest.warns(UserWarning, match="Dropping tool"),
         pytest.raises(ValueError, match="tool_choice references 'attach'"),
     ):
         chat_model.bind_tools([_composition_tool("attach")], tool_choice="attach")
@@ -1768,7 +1767,7 @@ def test_bind_tools_any_with_all_tools_dropped_raises() -> None:
         anthropic_api_key="secret-api-key",
     )
     with (
-        pytest.warns(UnsupportedToolSchemaWarning),
+        pytest.warns(UserWarning, match="Dropping tool"),
         pytest.raises(ValueError, match="tool_choice='any' requires at least one"),
     ):
         chat_model.bind_tools([_composition_tool("attach")], tool_choice="any")

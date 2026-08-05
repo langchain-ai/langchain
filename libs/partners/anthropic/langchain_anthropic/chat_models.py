@@ -2433,17 +2433,6 @@ class ChatAnthropic(BaseChatModel):
         return response.input_tokens
 
 
-class UnsupportedToolSchemaWarning(UserWarning):
-    """A tool was dropped because its `input_schema` is unsupported by Anthropic.
-
-    The Anthropic API rejects custom tool schemas that carry `oneOf`, `anyOf`,
-    or `allOf` at the top level (nested under `properties` is fine). Such
-    schemas are valid JSON Schema and permitted by the MCP spec (SEP-2106), so
-    some MCP servers emit them. Rather than fail the whole request with a 400,
-    the offending tool is dropped and this warning is emitted.
-    """
-
-
 _TOP_LEVEL_SCHEMA_COMPOSITION_KEYS = ("oneOf", "anyOf", "allOf")
 
 
@@ -2454,8 +2443,8 @@ def _drop_unsupported_root_composition_tools(
 
     The Anthropic API rejects these at request validation, failing the entire
     request. Built-in (server-side) tools and tools without a root combinator
-    are kept unchanged. A [warning][UnsupportedToolSchemaWarning] names each
-    dropped tool. Returns the retained tools and the names of dropped tools.
+    are kept unchanged. A `UserWarning` names each dropped tool. Returns the
+    retained tools and the names of dropped tools.
     """
     kept: list[Mapping[str, Any] | Callable | BaseTool | AnthropicTool] = []
     dropped_tool_names: set[str] = set()
@@ -2476,7 +2465,6 @@ def _drop_unsupported_root_composition_tools(
             f"Dropping tool {tool_name!r}: its input_schema has a "
             f"top-level {'/'.join(dropped_keys)}, which the Anthropic API does "
             "not support. The tool will not be available to the model.",
-            UnsupportedToolSchemaWarning,
             stacklevel=3,
         )
     return kept, dropped_tool_names
