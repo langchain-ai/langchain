@@ -328,7 +328,7 @@ def init_chat_model(
             - `baseten`                 -> [`langchain-baseten`](https://docs.langchain.com/oss/python/integrations/providers/baseten)
             - `litellm`                 -> [`langchain-litellm`](https://docs.langchain.com/oss/python/integrations/providers/litellm)
             - `meta`                    -> [`langchain-meta`](https://pypi.org/project/langchain-meta)
-            - `langsmith`               -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
+            - `langsmith`               -> [`langchain-openai`](https://docs.langchain.com/langsmith/llm-gateway)
 
         configurable_fields: Which model parameters are configurable at runtime:
 
