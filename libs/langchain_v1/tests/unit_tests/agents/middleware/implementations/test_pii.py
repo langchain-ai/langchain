@@ -508,6 +508,59 @@ class TestPIIMiddlewareIntegration:
         assert exc_info.value.pii_type == "email"
         assert len(exc_info.value.matches) == 1
 
+    def test_after_model_redacts_tool_call_only_ai_message(self) -> None:
+        """`after_model` must redact `tool_calls[*].args`, even with empty `.content`.
+
+        Regression test for the state hook previously skipping
+        `AIMessage(content="", tool_calls=[...])` entirely because it
+        only checked `last_ai_msg.content` for truthiness.
+        """
+        middleware = PIIMiddleware("email", strategy="redact", apply_to_output=True)
+        msg = AIMessage(
+            content="",
+            tool_calls=[
+                ToolCall(name="send_email", args={"to": "alice@example.com"}, id="c1"),
+            ],
+        )
+        state = AgentState[Any](messages=[HumanMessage("hi"), msg])
+
+        result = middleware.after_model(state, Runtime())
+
+        assert result is not None
+        redacted = result["messages"][-1]
+        assert redacted.tool_calls[0]["args"] == {"to": "[REDACTED_EMAIL]"}
+
+    def test_before_model_preserves_structured_content_blocks(self) -> None:
+        """`before_model` must keep structured content as a list of blocks.
+
+        Regression test for the state hook previously calling
+        `str(message.content)`, which stringified content-block lists
+        into a Python repr instead of redacting the text in place.
+        """
+        middleware = PIIMiddleware("email", strategy="redact", apply_to_input=True)
+        msg = HumanMessage(content=[{"type": "text", "text": "Reach me at alice@example.com"}])
+        state = AgentState[Any](messages=[msg])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        redacted = result["messages"][0]
+        assert isinstance(redacted.content, list)
+        assert redacted.content[0]["text"] == "Reach me at [REDACTED_EMAIL]"
+
+    def test_after_model_preserves_structured_content_blocks(self) -> None:
+        """`after_model` must keep structured content as a list of blocks."""
+        middleware = PIIMiddleware("email", strategy="redact", apply_to_output=True)
+        msg = AIMessage(content=[{"type": "text", "text": "My email is ai@example.com"}])
+        state = AgentState[Any](messages=[HumanMessage("hi"), msg])
+
+        result = middleware.after_model(state, Runtime())
+
+        assert result is not None
+        redacted = result["messages"][-1]
+        assert isinstance(redacted.content, list)
+        assert redacted.content[0]["text"] == "My email is [REDACTED_EMAIL]"
+
     def test_with_agent(self) -> None:
         """Test PIIMiddleware integrated with create_agent."""
         model = FakeToolCallingModel()
