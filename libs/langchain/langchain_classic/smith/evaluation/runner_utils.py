@@ -7,6 +7,7 @@ import dataclasses
 import functools
 import inspect
 import logging
+import re
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -15,6 +16,7 @@ from typing import (
     Any,
     cast,
 )
+from urllib.parse import urlsplit, urlunsplit
 
 from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import Callbacks
@@ -68,6 +70,61 @@ MODEL_OR_CHAIN_FACTORY = (
     | Chain
 )
 MCF = Callable[[], Chain | Runnable] | BaseLanguageModel
+
+_ASCII_CONTROL_CHARACTER_LIMIT = 32
+_GIT_REMOTE_URL_SCHEMES = {"git", "http", "https", "ssh"}
+_SCP_STYLE_GIT_REMOTE_RE = re.compile(
+    r"^(?:[^@/:\s]+@)?(?P<host>[^@/:\s]+):(?P<path>[^\s:][^\s]*)$"
+)
+
+
+def _sanitize_git_remote_url(remote_url: object) -> str | None:
+    if not isinstance(remote_url, str) or not remote_url:
+        return None
+    if any(
+        character.isspace() or ord(character) < _ASCII_CONTROL_CHARACTER_LIMIT
+        for character in remote_url
+    ):
+        return None
+
+    if "://" not in remote_url:
+        match = _SCP_STYLE_GIT_REMOTE_RE.fullmatch(remote_url)
+        if match is None:
+            return None
+        return f"{match.group('host')}:{match.group('path')}"
+
+    try:
+        parsed = urlsplit(remote_url)
+        if (
+            parsed.scheme not in _GIT_REMOTE_URL_SCHEMES
+            or parsed.hostname is None
+            or not parsed.path
+            or parsed.query
+            or parsed.fragment
+        ):
+            return None
+        port = parsed.port
+    except ValueError:
+        return None
+
+    host = parsed.hostname
+    if ":" in host:
+        host = f"[{host}]"
+    netloc = f"{host}:{port}" if port is not None else host
+    return urlunsplit((parsed.scheme, netloc, parsed.path, "", ""))
+
+
+def _format_git_tags(git_info: dict[str, Any]) -> list[str]:
+    tags = []
+    for key, value in git_info.items():
+        if key == "remote_url":
+            sanitized_remote_url = _sanitize_git_remote_url(value)
+            if sanitized_remote_url is None:
+                continue
+            tags.append(f"git:{key}={sanitized_remote_url}")
+        else:
+            tags.append(f"git:{key}={value}")
+    return tags
 
 
 class InputFormatError(Exception):
@@ -1247,8 +1304,7 @@ class _DatasetRunContainer:
             dataset_version=dataset_version,
         )
         tags = tags or []
-        for k, v in (project.metadata.get("git") or {}).items():
-            tags.append(f"git:{k}={v}")
+        tags.extend(_format_git_tags(project.metadata.get("git") or {}))
         run_metadata = {"dataset_version": project.metadata["dataset_version"]}
         if revision_id:
             run_metadata["revision_id"] = revision_id
