@@ -2103,7 +2103,18 @@ class ChatAnthropic(BaseChatModel):
                     choice_type = tool_choice
                 else:
                     choice_type, choice_name = "tool", tool_choice
-            if choice_type == "tool" and choice_name is not None:
+            # Thinking discards forced choices before the request is sent, so
+            # they need not refer to a tool that remains after filtering.
+            thinking_discards_forced_choice = (
+                self.thinking is not None
+                and self.thinking.get("type") in ("enabled", "adaptive")
+                and choice_type in ("any", "tool")
+            )
+            if (
+                not thinking_discards_forced_choice
+                and choice_type == "tool"
+                and choice_name is not None
+            ):
                 available = {
                     t.get("name") for t in formatted_tools if isinstance(t, Mapping)
                 }
@@ -2122,7 +2133,11 @@ class ChatAnthropic(BaseChatModel):
                             "tool has that name. Choose one of the bound tools."
                         )
                     raise ValueError(msg)
-            elif choice_type == "any" and not formatted_tools:
+            elif (
+                not thinking_discards_forced_choice
+                and choice_type == "any"
+                and not formatted_tools
+            ):
                 msg = (
                     "tool_choice='any' requires at least one available tool, but "
                     "all tools were dropped because their input_schema uses a "

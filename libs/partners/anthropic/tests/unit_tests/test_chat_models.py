@@ -3924,6 +3924,40 @@ def test_bind_tools_drops_forced_tool_choice_when_thinking_enabled() -> None:
     assert len(w) == 1
 
 
+@pytest.mark.parametrize(
+    "thinking",
+    [
+        pytest.param({"type": "enabled", "budget_tokens": 5000}, id="enabled"),
+        pytest.param({"type": "adaptive"}, id="adaptive"),
+    ],
+)
+def test_bind_tools_drops_forced_choice_for_filtered_tool_when_thinking_enabled(
+    thinking: dict[str, Any],
+) -> None:
+    """Thinking takes precedence over forced-choice validation."""
+    chat_model = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking=thinking,
+    )
+    unsupported_tool = {
+        "name": "unsupported_tool",
+        "description": "A tool with an unsupported root schema composition.",
+        "input_schema": {"oneOf": [{"type": "string"}, {"type": "number"}]},
+    }
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools(
+            [unsupported_tool], tool_choice="unsupported_tool"
+        )
+
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert len(w) == 2
+    assert "unsupported_tool" in str(w[0].message)
+    assert "thinking is enabled" in str(w[1].message)
+
+
 def test_bind_tools_drops_forced_tool_choice_when_adaptive_thinking() -> None:
     """Adaptive thinking has the same forced tool_choice restriction as enabled."""
     chat_model = ChatAnthropic(
