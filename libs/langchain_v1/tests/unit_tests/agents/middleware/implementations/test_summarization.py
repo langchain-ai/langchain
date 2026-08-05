@@ -1916,21 +1916,32 @@ def test_usage_metadata_trigger() -> None:
 
 
 def test_provider_matches() -> None:
-    """Direct equality matches, plus Bedrock aliases under amazon_bedrock."""
+    """Direct equality matches, plus provider aliases (Bedrock, Mantle)."""
     assert _provider_matches("anthropic", "anthropic")
     assert _provider_matches("openai", "openai")
     # Bedrock chat models tag messages with model_provider="bedrock" or
     # "bedrock_converse" but trace under ls_provider="amazon_bedrock".
     assert _provider_matches("bedrock", "amazon_bedrock")
     assert _provider_matches("bedrock_converse", "amazon_bedrock")
+    # ChatOpenAIMantle tags messages with model_provider="openai" but traces
+    # under ls_provider="openai-mantle".
+    assert _provider_matches("openai", "openai-mantle")
     # Non-matches
     assert not _provider_matches("openai", "anthropic")
     assert not _provider_matches("bedrock", "anthropic")
+    assert not _provider_matches("anthropic", "openai-mantle")
     assert not _provider_matches("anthropic", None)
 
 
-class _MockBedrockChatModel(BaseChatModel):
-    """Mock model that mimics ChatBedrockConverse's ls_provider for tracing."""
+class _MockAliasedProviderChatModel(BaseChatModel):
+    """Mock model whose ls_provider differs from its messages' model_provider.
+
+    Mimics chat models (e.g. ChatBedrockConverse, ChatOpenAIMantle,
+    ChatAnthropicMantle) that trace under an ls_provider aliased in
+    ``_LS_PROVIDER_ALIASES``.
+    """
+
+    ls_provider: str = "amazon_bedrock"
 
     @override
     def _generate(
@@ -1944,21 +1955,33 @@ class _MockBedrockChatModel(BaseChatModel):
 
     @property
     def _llm_type(self) -> str:
-        return "amazon_bedrock_converse_chat"
+        return "mock_aliased_provider_chat"
 
     @override
     def _get_ls_params(self, stop: list[str] | None = None, **kwargs: Any) -> LangSmithParams:
-        return LangSmithParams(ls_provider="amazon_bedrock", ls_model_type="chat")
+        return LangSmithParams(ls_provider=self.ls_provider, ls_model_type="chat")
 
 
-def test_reported_tokens_trigger_for_bedrock_converse() -> None:
-    """Bedrock messages should satisfy the reported-token check.
+@pytest.mark.parametrize(
+    ("ls_provider", "model_provider"),
+    [
+        ("amazon_bedrock", "bedrock_converse"),
+        ("openai-mantle", "openai"),
+        ("anthropic-mantle", "anthropic"),
+    ],
+)
+def test_reported_tokens_trigger_for_aliased_provider(
+    ls_provider: str, model_provider: str
+) -> None:
+    """Aliased-provider messages should satisfy the reported-token check.
 
-    Despite the model_provider/ls_provider mismatch (bedrock_converse vs.
-    amazon_bedrock), the reported-token check should still trigger summarization.
+    Despite the model_provider/ls_provider mismatch (e.g. bedrock_converse vs.
+    amazon_bedrock, openai vs. openai-mantle, or anthropic vs.
+    anthropic-mantle), the reported-token check should still trigger
+    summarization.
     """
     middleware = SummarizationMiddleware(
-        model=_MockBedrockChatModel(),
+        model=_MockAliasedProviderChatModel(ls_provider=ls_provider),
         trigger=("tokens", 10_000),
         keep=("messages", 4),
     )
@@ -1966,7 +1989,7 @@ def test_reported_tokens_trigger_for_bedrock_converse() -> None:
         HumanMessage(content="msg1"),
         AIMessage(
             content="msg2",
-            response_metadata={"model_provider": "bedrock_converse"},
+            response_metadata={"model_provider": model_provider},
             usage_metadata={
                 "input_tokens": 7500,
                 "output_tokens": 2501,
@@ -1982,7 +2005,7 @@ def test_reported_tokens_trigger_for_bedrock_converse() -> None:
         HumanMessage(content="msg1"),
         AIMessage(
             content="msg2",
-            response_metadata={"model_provider": "anthropic"},
+            response_metadata={"model_provider": "some-other-provider"},
             usage_metadata={
                 "input_tokens": 7500,
                 "output_tokens": 2501,
