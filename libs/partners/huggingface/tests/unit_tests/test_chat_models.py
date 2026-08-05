@@ -1,3 +1,4 @@
+import json
 from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
@@ -9,8 +10,9 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -402,3 +404,200 @@ def test_init_chat_model_huggingface() -> None:
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+
+class _Joke(BaseModel):
+    """A joke with a setup and a punchline."""
+
+    setup: str = Field(description="The setup of the joke")
+    punchline: str = Field(description="The punchline of the joke")
+
+
+@pytest.fixture
+def structured_output_chat() -> ChatHuggingFace:
+    """A ChatHuggingFace instance that can be used for structured output tests."""
+    empty_llm = Mock(spec=HuggingFaceEndpoint)
+    empty_llm.repo_id = "test/model"
+    empty_llm.model = "test/model"
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
+    ):
+        return ChatHuggingFace(llm=empty_llm)
+
+
+def test_with_structured_output_pydantic_function_calling(
+    structured_output_chat: ChatHuggingFace,
+) -> None:
+    """Test that Pydantic schemas are supported with function calling."""
+    structured_llm = structured_output_chat.with_structured_output(_Joke)
+    with patch.object(
+        ChatHuggingFace,
+        "_generate",
+        return_value=ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "_Joke",
+                                "args": {
+                                    "setup": "Why did the chicken cross the road?",
+                                    "punchline": "To get to the other side.",
+                                },
+                                "id": "call_1",
+                            }
+                        ],
+                    )
+                )
+            ]
+        ),
+    ):
+        result = structured_llm.invoke("Tell me a joke.")
+    assert isinstance(result, _Joke)
+    assert result.setup == "Why did the chicken cross the road?"
+    assert result.punchline == "To get to the other side."
+
+
+def test_with_structured_output_pydantic_json_mode(
+    structured_output_chat: ChatHuggingFace,
+) -> None:
+    """Test that Pydantic schemas are supported with json mode."""
+    structured_llm = structured_output_chat.with_structured_output(
+        _Joke, method="json_mode"
+    )
+    with patch.object(
+        ChatHuggingFace,
+        "_generate",
+        return_value=ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=AIMessage(
+                        content=json.dumps(
+                            {
+                                "setup": "Why did the chicken cross the road?",
+                                "punchline": "To get to the other side.",
+                            }
+                        )
+                    )
+                )
+            ]
+        ),
+    ):
+        result = structured_llm.invoke("Tell me a joke.")
+    assert isinstance(result, _Joke)
+    assert result.setup == "Why did the chicken cross the road?"
+    assert result.punchline == "To get to the other side."
+
+
+def test_with_structured_output_pydantic_json_schema(
+    structured_output_chat: ChatHuggingFace,
+) -> None:
+    """Test that Pydantic schemas are supported with json schema mode."""
+    structured_llm = structured_output_chat.with_structured_output(
+        _Joke, method="json_schema"
+    )
+    with patch.object(
+        ChatHuggingFace,
+        "_generate",
+        return_value=ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=AIMessage(
+                        content=json.dumps(
+                            {
+                                "setup": "Why did the chicken cross the road?",
+                                "punchline": "To get to the other side.",
+                            }
+                        )
+                    )
+                )
+            ]
+        ),
+    ):
+        result = structured_llm.invoke("Tell me a joke.")
+    assert isinstance(result, _Joke)
+    assert result.setup == "Why did the chicken cross the road?"
+    assert result.punchline == "To get to the other side."
+
+
+def test_with_structured_output_dict_function_calling(
+    structured_output_chat: ChatHuggingFace,
+) -> None:
+    """Test that dict schemas still return dicts with function calling."""
+    schema = {
+        "name": "_Joke",
+        "description": "A joke with a setup and a punchline.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "setup": {"type": "string"},
+                "punchline": {"type": "string"},
+            },
+            "required": ["setup", "punchline"],
+        },
+    }
+    structured_llm = structured_output_chat.with_structured_output(schema)
+    with patch.object(
+        ChatHuggingFace,
+        "_generate",
+        return_value=ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "_Joke",
+                                "args": {
+                                    "setup": "Why did the chicken cross the road?",
+                                    "punchline": "To get to the other side.",
+                                },
+                                "id": "call_1",
+                            }
+                        ],
+                    )
+                )
+            ]
+        ),
+    ):
+        result = structured_llm.invoke("Tell me a joke.")
+    assert isinstance(result, dict)
+    assert result["setup"] == "Why did the chicken cross the road?"
+    assert result["punchline"] == "To get to the other side."
+
+
+def test_with_structured_output_include_raw_pydantic(
+    structured_output_chat: ChatHuggingFace,
+) -> None:
+    """Test that include_raw returns the raw message and parsed output."""
+    structured_llm = structured_output_chat.with_structured_output(
+        _Joke, include_raw=True
+    )
+    with patch.object(
+        ChatHuggingFace,
+        "_generate",
+        return_value=ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "_Joke",
+                                "args": {
+                                    "setup": "Why did the chicken cross the road?",
+                                    "punchline": "To get to the other side.",
+                                },
+                                "id": "call_1",
+                            }
+                        ],
+                    )
+                )
+            ]
+        ),
+    ):
+        result = structured_llm.invoke("Tell me a joke.")
+    assert isinstance(result["raw"], AIMessage)
+    assert isinstance(result["parsed"], _Joke)
+    assert result["parsing_error"] is None
