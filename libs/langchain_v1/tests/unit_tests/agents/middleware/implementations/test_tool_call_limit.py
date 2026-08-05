@@ -200,6 +200,9 @@ def test_middleware_end_behavior_with_unrelated_parallel_tool_calls() -> None:
     assert "Tool call limit exceeded" in search_msg.content
     assert calculator_msg.status == "error"
     assert "exceeded the limit" in calculator_msg.content
+    assert result["thread_tool_call_count"] == {"search": 1}, (
+        "Thread count shouldn't advance since the blocked call never executed"
+    )
 
 
 def test_middleware_with_specific_tool() -> None:
@@ -731,6 +734,13 @@ def test_parallel_tool_calls_with_limit_end_mode() -> None:
     assert all("Tool call limit exceeded" in msg.content for msg in exceeded_msgs)
     assert "exceeded the limit" in allowed_msg.content
 
+    # None of the 3 calls actually ran (jump_to="end" skips the tool node), including
+    # call "1" which `_separate_tool_calls` classified as "allowed" — so the thread
+    # count must stay at its pre-batch value, not be incremented for that call.
+    assert result["thread_tool_call_count"] == {"__all__": 0}, (
+        "Thread count shouldn't advance for calls that never actually executed"
+    )
+
 
 def test_middleware_end_behavior_with_allowed_and_blocked_parallel_calls() -> None:
     """Regression test for orphaned tool_calls when tool_name is unset (langchain#34159).
@@ -768,6 +778,13 @@ def test_middleware_end_behavior_with_allowed_and_blocked_parallel_calls() -> No
         "Every tool call on the AIMessage must get a matching ToolMessage"
     )
     assert all(msg.status == "error" for msg in tool_messages)
+
+    # `call_1` was "allowed" by `_separate_tool_calls`, but it never actually
+    # executes once we jump to "end", so it must not permanently consume the
+    # thread's quota — the count should stay at its pre-batch value (1).
+    assert result["thread_tool_call_count"] == {"__all__": 1}, (
+        "Thread count shouldn't advance for a call that never actually executed"
+    )
 
 
 def test_parallel_mixed_tool_calls_with_specific_tool_limit() -> None:

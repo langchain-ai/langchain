@@ -458,6 +458,12 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             )
             artificial_messages.append(AIMessage(content=final_msg_content))
 
+            # None of this batch's tool calls actually execute once we jump to "end"
+            # — not even the ones `_separate_tool_calls` classified as "allowed" — so
+            # the thread-level count must not include their increment. Only
+            # `run_tool_call_count` tracks calls attempted during this run.
+            thread_counts[count_key] = current_thread_count
+
             return {
                 "thread_tool_call_count": thread_counts,
                 "run_tool_call_count": run_counts,
