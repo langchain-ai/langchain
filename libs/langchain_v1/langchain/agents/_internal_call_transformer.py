@@ -1,16 +1,11 @@
-"""Tag and filter model calls middleware makes for its own bookkeeping.
+"""Tag and filter middleware-internal model calls.
 
-Middleware occasionally calls a model outside the main agent turn — for
-example `SummarizationMiddleware` condensing history, `LLMToolEmulator` faking
-a tool result, or `LLMToolSelectionMiddleware` picking which tools to expose.
-These calls run inside the same graph node/namespace as the main agent loop,
-so `MessagesTransformer` (the built-in `messages` projection, which filters
-only by checkpoint namespace) can't tell them apart from the model's real
-turn — their tokens land in `run.messages` right alongside the actual answer.
+Middleware may make bookkeeping model calls (e.g. summarization or tool
+selection) in the same graph namespace as the main agent call, causing their
+tokens to appear in `run.messages`.
 
-Middleware that makes such a call should merge `internal_call_metadata()`
-into the call's `config["metadata"]`. `InternalCallTransformer` then keeps the
-resulting `messages` events out of `run.messages` and off the raw event log.
+Tag these calls with `internal_call_metadata()` so `InternalCallTransformer`
+can filter them from `run.messages` and the raw event log.
 """
 
 from __future__ import annotations
@@ -41,25 +36,11 @@ def internal_call_metadata() -> dict[str, Any]:
 
 
 class InternalCallTransformer(StreamTransformer):
-    """Keep `messages` events for internal model calls out of `run.messages`.
+    """Keep internal model calls out of `run.messages` and the raw event log.
 
-    Registered unconditionally on every compiled agent (alongside
-    `ToolCallTransformer` / `SubagentTransformer`) rather than opted into by
-    individual middleware, since any middleware can make an internal call.
-
-    Runs before built-in transformers (`before_builtins = True`), which gives
-    it two levers, both needed since a `process` return value alone only
-    controls the raw event log — it doesn't stop sibling transformers like
-    `MessagesTransformer` from independently building their own projection
-    from the same event:
-
-    - Returning `False` drops the event from the raw protocol log, so
-      internal calls never leak there either.
-    - Rewriting a marked `message-start` event's `role` to `"tool"` before
-      `MessagesTransformer` sees it reuses its existing tool-result
-      exclusion (`run.messages` is documented as "the chat-token
-      projection"; tool-role runs are already skipped) so the internal call
-      never becomes a `ChatModelStream` in `run.messages`.
+    Registered on every compiled agent and runs before built-in transformers.
+    For internal calls, it drops the raw event and marks `message-start` as a
+    tool role so `MessagesTransformer` excludes it from `run.messages`.
     """
 
     before_builtins: ClassVar[bool] = True
