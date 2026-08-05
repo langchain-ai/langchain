@@ -4567,3 +4567,65 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     llm = ChatAnthropic(model=MODEL_NAME)
     assert llm.anthropic_api_url == "https://api.anthropic.com"
     assert llm.anthropic_api_key.get_secret_value() == "provider-key"
+
+
+_MISSING_CREDENTIALS_TYPE_ERROR = TypeError(
+    "Could not resolve authentication method. Expected one of api_key, "
+    "auth_token, or credentials to be set. Or for one of the `X-Api-Key` or "
+    "`Authorization` headers to be explicitly omitted"
+)
+
+
+def _clear_auth_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_URL", raising=False)
+    monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
+
+
+def test_missing_credentials_error_sync(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Missing credentials raise a `TypeError` with LangChain guidance."""
+    _clear_auth_env(monkeypatch)
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
+    ):
+        mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    assert exc_info.value.__cause__ is _MISSING_CREDENTIALS_TYPE_ERROR
+
+
+async def test_missing_credentials_error_async(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing credentials raise a `TypeError` with LangChain guidance (async)."""
+    _clear_auth_env(monkeypatch)
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._async_client.messages, "create") as mock_create,
+        pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
+    ):
+        mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
+        await llm.ainvoke([HumanMessage(content="test")])
+
+    assert exc_info.value.__cause__ is _MISSING_CREDENTIALS_TYPE_ERROR
+
+
+def test_unrelated_type_error_propagates_unchanged() -> None:
+    """A `TypeError` not about authentication is re-raised as-is."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    unrelated_error = TypeError("some unrelated client error")
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(TypeError) as exc_info,
+    ):
+        mock_create.side_effect = unrelated_error
+        llm.invoke([HumanMessage(content="test")])
+
+    assert exc_info.value is unrelated_error
