@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeGuard, Union
 
@@ -22,7 +23,7 @@ from langchain.agents.middleware.types import (
 from langchain.chat_models.base import init_chat_model
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import Awaitable
 
     from langchain_core.runnables import RunnableConfig
 
@@ -34,7 +35,7 @@ DEFAULT_SYSTEM_PROMPT = (
     "Your goal is to select the most relevant tools for answering the user's query."
 )
 
-OnParsingFailure = Union[Literal["error", "none", "all"], list[str], "Callable[[Any], list[str]]"]
+OnParsingFailure = Literal["error", "none", "all"] | list[str] | Callable[[Any], list[str]]
 """Behavior when the selection model keeps returning a malformed response.
 
 Can be either:
@@ -188,6 +189,10 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
                 - A callable that takes the last (malformed) response and returns
                     the tool names to use.
 
+                Unlike a normal model selection, the fallback tools are not capped
+                by `max_tools` -- it's an already-deliberate choice, not raw model
+                output that needs bounding.
+
         Raises:
             ValueError: If `max_retries < 0`.
         """
@@ -285,10 +290,25 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         available_tools: list[BaseTool],
         valid_tool_names: list[str],
         request: ModelRequest[ContextT],
+        *,
+        apply_max_tools: bool = True,
     ) -> ModelRequest[ContextT]:
-        """Process the selection response and return filtered `ModelRequest`."""
+        """Process the selection response and return filtered `ModelRequest`.
+
+        Args:
+            response: Selection response, expected to have a `tools` list.
+            available_tools: Tools eligible for selection.
+            valid_tool_names: Names of `available_tools`.
+            request: Original model request to override.
+            apply_max_tools: Whether to cap the selection at `max_tools`.
+
+                Set to `False` for an already-deliberate fallback selection (e.g.
+                `on_parsing_failure="all"`), where truncating would contradict the
+                fallback's own semantics.
+        """
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
+        max_tools = self.max_tools if apply_max_tools else None
 
         for tool_name in response.get("tools", []):
             if tool_name not in valid_tool_names:
@@ -297,7 +317,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
             # Only add if not already selected and within max_tools limit
             if tool_name not in selected_tool_names and (
-                self.max_tools is None or len(selected_tool_names) < self.max_tools
+                max_tools is None or len(selected_tool_names) < max_tools
             ):
                 selected_tool_names.append(tool_name)
 
@@ -402,11 +422,15 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             fallback_tool_names = self._resolve_parsing_failure(
                 response, selection_request.valid_tool_names
             )
+            # Bypass max_tools: the fallback is already a deliberate selection
+            # (e.g. `on_parsing_failure="all"`), not raw model output that needs
+            # to be capped.
             modified_request = self._process_selection_response(
                 {"tools": fallback_tool_names},
                 selection_request.available_tools,
                 selection_request.valid_tool_names,
                 request,
+                apply_max_tools=False,
             )
         return handler(modified_request)
 
@@ -463,10 +487,14 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             fallback_tool_names = self._resolve_parsing_failure(
                 response, selection_request.valid_tool_names
             )
+            # Bypass max_tools: the fallback is already a deliberate selection
+            # (e.g. `on_parsing_failure="all"`), not raw model output that needs
+            # to be capped.
             modified_request = self._process_selection_response(
                 {"tools": fallback_tool_names},
                 selection_request.available_tools,
                 selection_request.valid_tool_names,
                 request,
+                apply_max_tools=False,
             )
         return await handler(modified_request)
