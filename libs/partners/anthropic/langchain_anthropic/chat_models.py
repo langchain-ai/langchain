@@ -2086,6 +2086,7 @@ class ChatAnthropic(BaseChatModel):
             else convert_to_anthropic_tool(tool, strict=strict)
             for tool in tools
         ]
+        formatted_tools = _drop_unsupported_root_composition_tools(formatted_tools)
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
@@ -2386,6 +2387,52 @@ class ChatAnthropic(BaseChatModel):
             **kwargs,
         )
         return response.input_tokens
+
+
+class UnsupportedToolSchemaWarning(UserWarning):
+    """A tool was dropped because its `input_schema` is unsupported by Anthropic.
+
+    The Anthropic API rejects custom tool schemas that carry `oneOf`, `anyOf`,
+    or `allOf` at the top level (nested under `properties` is fine). Such
+    schemas are valid JSON Schema and permitted by the MCP spec (SEP-2106), so
+    some MCP servers emit them. Rather than fail the whole request with a 400,
+    the offending tool is dropped and this warning is emitted.
+    """
+
+
+_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS = ("oneOf", "anyOf", "allOf")
+
+
+def _drop_unsupported_root_composition_tools(
+    tools: list[Mapping[str, Any] | Callable | BaseTool | AnthropicTool],
+) -> list[Mapping[str, Any] | Callable | BaseTool | AnthropicTool]:
+    """Drop custom tools whose root `input_schema` uses `oneOf`/`anyOf`/`allOf`.
+
+    The Anthropic API rejects these at request validation, failing the entire
+    request. Built-in (server-side) tools and tools without a root combinator
+    are kept unchanged. A [warning][UnsupportedToolSchemaWarning] names each
+    dropped tool.
+    """
+    kept: list[Mapping[str, Any] | Callable | BaseTool | AnthropicTool] = []
+    for tool in tools:
+        input_schema = tool.get("input_schema") if isinstance(tool, Mapping) else None
+        dropped_keys = (
+            [k for k in _TOP_LEVEL_SCHEMA_COMPOSITION_KEYS if k in input_schema]
+            if isinstance(input_schema, dict)
+            else []
+        )
+        if not dropped_keys:
+            kept.append(tool)
+            continue
+        tool_name = tool.get("name") if isinstance(tool, Mapping) else None
+        warnings.warn(
+            f"Dropping tool {tool_name!r}: its input_schema has a "
+            f"top-level {'/'.join(dropped_keys)}, which the Anthropic API does "
+            "not support. The tool will not be available to the model.",
+            UnsupportedToolSchemaWarning,
+            stacklevel=3,
+        )
+    return kept
 
 
 def convert_to_anthropic_tool(

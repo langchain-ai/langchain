@@ -33,6 +33,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
     _TOOL_CALL_ID_PATTERN,
+    UnsupportedToolSchemaWarning,
     _create_usage_metadata,
     _format_image,
     _format_messages,
@@ -1620,6 +1621,78 @@ def test_anthropic_bind_tools_does_not_mutate_tool_choice() -> None:
         "name": "GetWeather",
         "disable_parallel_tool_use": True,
     }
+
+
+def test_bind_tools_drops_top_level_composition() -> None:
+    """Tools with a root `oneOf`/`anyOf`/`allOf` are dropped with a warning.
+
+    The Anthropic API rejects tool schemas carrying these keywords at the top
+    level, failing the whole request. MCP servers can emit them. See
+    https://github.com/langchain-ai/langchain/issues/39271.
+    """
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    valid_tool = {
+        "name": "search",
+        "description": "Search",
+        "input_schema": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+            "required": ["query"],
+        },
+    }
+    invalid_tool = {
+        "name": "notion_create_attachment",
+        "description": "Create an attachment",
+        "input_schema": {
+            "type": "object",
+            "anyOf": [
+                {
+                    "type": "object",
+                    "properties": {"content": {"type": "string"}},
+                    "required": ["content"],
+                },
+                {
+                    "type": "object",
+                    "properties": {"source_url": {"type": "string"}},
+                    "required": ["source_url"],
+                },
+            ],
+        },
+    }
+    with pytest.warns(UnsupportedToolSchemaWarning, match="notion_create_attachment"):
+        chat_model_with_tools = chat_model.bind_tools([valid_tool, invalid_tool])
+
+    bound = cast("RunnableBinding", chat_model_with_tools).kwargs["tools"]
+    assert [t["name"] for t in bound] == ["search"]
+
+
+def test_bind_tools_keeps_nested_composition_without_warning() -> None:
+    """Combinators nested under `properties` are valid and left untouched."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool = {
+        "name": "search",
+        "description": "Search",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "value": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+            },
+            "required": ["value"],
+        },
+    }
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # no warning expected
+        chat_model_with_tools = chat_model.bind_tools([tool])
+
+    bound = cast("RunnableBinding", chat_model_with_tools).kwargs["tools"]
+    assert [t["name"] for t in bound] == ["search"]
+    assert bound[0]["input_schema"] == tool["input_schema"]
 
 
 def test_fine_grained_tool_streaming_beta() -> None:
