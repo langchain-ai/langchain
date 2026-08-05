@@ -1008,8 +1008,8 @@ class VectorStoreRetriever(BaseRetriever):
         if search_type == "similarity_score_threshold":
             score_threshold = values.get("search_kwargs", {}).get("score_threshold")
             if (
-                score_threshold is None 
-                or (not isinstance(score_threshold, float)) 
+                score_threshold is None
+                or (not isinstance(score_threshold, float))
                 or (not (0.0 <= float(score_threshold) <= 1.0))
             ):
                 msg = (
