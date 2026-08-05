@@ -11,6 +11,7 @@ from langchain_core.language_models.base import (
     LanguageModelInput,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -28,7 +29,7 @@ from langgraph.runtime import Runtime
 from pydantic import Field
 from typing_extensions import override
 
-from langchain.agents import AgentState
+from langchain.agents import AgentState, create_agent
 from langchain.agents._internal_call_transformer import INTERNAL_CALL_METADATA_KEY
 from langchain.agents.middleware.summarization import (
     ContextSize,
@@ -2109,3 +2110,43 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     assert "metadata" in config
     assert config["metadata"]["lc_source"] == "summarization"
     assert config["metadata"][INTERNAL_CALL_METADATA_KEY] is True
+
+
+class TestSummarizationStreamingEndToEnd:
+    """End-to-end: a real summarization call must not leak into `run.messages`."""
+
+    async def test_summarization_call_excluded_from_messages_projection(self) -> None:
+        """Drives `create_agent` with a triggered summarization mid-run.
+
+        Uses `GenericFakeChatModel` for both the main agent and the
+        summarizer (it actually streams via `_astream`, unlike
+        `FakeToolCallingModel`), then asserts `run.messages` surfaces only
+        the agent's real answer.
+        """
+        main_model = GenericFakeChatModel(messages=iter([AIMessage(content="Final answer.")]))
+        summarizer_model = GenericFakeChatModel(
+            messages=iter([AIMessage(content="Summary of prior turns.")])
+        )
+        middleware = SummarizationMiddleware(model=summarizer_model, trigger=("messages", 1))
+
+        agent = create_agent(model=main_model, tools=[], middleware=[middleware])
+
+        run = await agent.astream_events(
+            {
+                "messages": [
+                    HumanMessage("hi"),
+                    HumanMessage("there"),
+                    HumanMessage("again"),
+                ]
+            },
+            version="v3",
+        )
+
+        texts: list[str] = []
+        async for msg in run.messages:
+            text = ""
+            async for chunk in msg.text:
+                text += chunk
+            texts.append(text)
+
+        assert texts == ["Final answer."]

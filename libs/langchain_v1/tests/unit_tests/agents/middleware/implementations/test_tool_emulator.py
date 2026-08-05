@@ -18,6 +18,7 @@ from langchain.agents import create_agent
 from langchain.agents._internal_call_transformer import INTERNAL_CALL_METADATA_KEY
 from langchain.agents.middleware import LLMToolEmulator
 from langchain.messages import AIMessage
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @tool
@@ -730,3 +731,40 @@ class TestLLMToolEmulatorInternalCallMetadata:
         assert config is not None
         assert config["metadata"]["lc_source"] == "tool_emulation"
         assert config["metadata"][INTERNAL_CALL_METADATA_KEY] is True
+
+
+class TestLLMToolEmulatorStreamingEndToEnd:
+    """End-to-end: a real emulation call must not leak into `run.messages`."""
+
+    async def test_emulated_tool_call_excluded_from_messages_projection(self) -> None:
+        """Drives `create_agent` with a real streaming emulator model.
+
+        `GenericFakeChatModel` (unlike `FakeEmulatorModel`) actually streams
+        via `_astream`, so this exercises the same token-leak path as a real
+        provider. The agent's own two model turns (deciding to call the
+        tool, then answering) always surface in `run.messages`, so a leak
+        would show up as a *third* stream carrying the emulator's content.
+        """
+        agent_model = FakeToolCallingModel(
+            tool_calls=[[{"name": "get_weather", "args": {"location": "NYC"}, "id": "tc1"}], []]
+        )
+        emulator_model = GenericFakeChatModel(messages=iter([AIMessage(content="XEMULATEDX")]))
+        emulator = LLMToolEmulator(tools=["get_weather"], model=emulator_model)
+
+        agent = create_agent(model=agent_model, tools=[get_weather], middleware=[emulator])
+
+        run = await agent.astream_events(
+            {"messages": [HumanMessage("Weather in NYC?")]}, version="v3"
+        )
+
+        texts: list[str] = []
+        async for msg in run.messages:
+            text = ""
+            async for chunk in msg.text:
+                text += chunk
+            texts.append(text)
+
+        # Exactly the agent's two real turns — no separate stream for the
+        # emulator's own call, and its content is never on its own.
+        assert len(texts) == 2
+        assert "XEMULATEDX" not in texts
