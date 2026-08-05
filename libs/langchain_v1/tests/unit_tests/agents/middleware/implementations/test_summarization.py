@@ -1,4 +1,3 @@
-import sys
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -12,10 +11,8 @@ from langchain_core.language_models.base import (
     LanguageModelInput,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
-    AIMessageChunk,
     AnyMessage,
     BaseMessage,
     HumanMessage,
@@ -31,7 +28,7 @@ from langgraph.runtime import Runtime
 from pydantic import Field
 from typing_extensions import override
 
-from langchain.agents import AgentState, create_agent
+from langchain.agents import AgentState
 from langchain.agents.middleware.summarization import (
     ContextSize,
     SummarizationMiddleware,
@@ -2087,74 +2084,3 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     assert config is not None
     assert "metadata" in config
     assert config["metadata"]["lc_source"] == "summarization"
-    # Callbacks must be explicitly cleared so internal summarization tokens don't
-    # leak into the parent stream.
-    assert config["callbacks"] == []
-
-
-def test_summarization_internal_call_does_not_leak_into_messages_stream_sync() -> None:
-    """End-to-end: `stream_mode="messages"` must not surface summarization tokens."""
-    summary_model = GenericFakeChatModel(messages=iter(["LEAKED_SUMMARY_TOKEN"]))
-    main_model = GenericFakeChatModel(messages=iter(["Final answer content"]))
-
-    middleware = SummarizationMiddleware(
-        model=summary_model,
-        trigger=("messages", 3),
-        keep=("messages", 1),
-    )
-
-    agent = create_agent(model=main_model, middleware=[middleware])
-
-    initial_messages: list[AnyMessage | dict[str, Any]] = [
-        HumanMessage(content="one"),
-        HumanMessage(content="two"),
-        HumanMessage(content="three"),
-        HumanMessage(content="four"),
-    ]
-
-    collected_text = ""
-    for chunk, _metadata in agent.stream({"messages": initial_messages}, stream_mode="messages"):
-        if isinstance(chunk, AIMessageChunk) and isinstance(chunk.content, str):
-            collected_text += chunk.content
-
-    assert "LEAKED_SUMMARY_TOKEN" not in collected_text
-    assert "Final answer content" in collected_text
-
-
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="langgraph doesn't propagate per-call callbacks through nested async "
-    "steps before Python 3.11 (ASYNCIO_ACCEPTS_CONTEXT in "
-    "langgraph._internal._runnable), so stream_mode='messages' produces no chunks "
-    "at all in async mode on 3.10 -- independent of this middleware. The sync "
-    "counterpart covers this on every supported Python version.",
-)
-async def test_summarization_internal_call_does_not_leak_into_messages_stream_async() -> None:
-    """Async counterpart of the sync leak-isolation end-to-end test."""
-    summary_model = GenericFakeChatModel(messages=iter(["LEAKED_SUMMARY_TOKEN"]))
-    main_model = GenericFakeChatModel(messages=iter(["Final answer content"]))
-
-    middleware = SummarizationMiddleware(
-        model=summary_model,
-        trigger=("messages", 3),
-        keep=("messages", 1),
-    )
-
-    agent = create_agent(model=main_model, middleware=[middleware])
-
-    initial_messages: list[AnyMessage | dict[str, Any]] = [
-        HumanMessage(content="one"),
-        HumanMessage(content="two"),
-        HumanMessage(content="three"),
-        HumanMessage(content="four"),
-    ]
-
-    collected_text = ""
-    async for chunk, _metadata in agent.astream(
-        {"messages": initial_messages}, stream_mode="messages"
-    ):
-        if isinstance(chunk, AIMessageChunk) and isinstance(chunk.content, str):
-            collected_text += chunk.content
-
-    assert "LEAKED_SUMMARY_TOKEN" not in collected_text
-    assert "Final answer content" in collected_text

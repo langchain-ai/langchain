@@ -25,7 +25,6 @@ from langgraph.graph.message import (
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
-from langchain.agents.middleware._internal_call_config import internal_call_config
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 from langchain.chat_models import BaseChatModel, init_chat_model
 
@@ -814,11 +813,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         try:
-            # Drop only the streaming callback handlers so summary tokens don't leak
-            # into the user-facing stream
             response = self.model.invoke(
                 self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config=internal_call_config("summarization"),
+                config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
         except Exception as e:
@@ -842,11 +839,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         try:
-            # Drop only the streaming callback handlers so summary tokens don't leak
-            # into the user-facing stream; tracers (e.g. LangSmith) are preserved.
             response = await self.model.ainvoke(
                 self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config=internal_call_config("summarization"),
+                config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
         except Exception as e:
