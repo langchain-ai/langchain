@@ -9,14 +9,14 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langgraph.stream.transformers import MessagesTransformer
 
 from langchain.agents.factory import create_agent
-from langchain.agents.middleware import (
-    INTERNAL_CALL_METADATA_KEY,
-    AgentMiddleware,
-    InternalCallTransformer,
-    internal_call_metadata,
-)
+from langchain.agents.middleware import AgentMiddleware
 from langchain.agents.middleware import (
     internal_call_transformer as internal_call_transformer_module,
+)
+from langchain.agents.middleware.internal_call_transformer import (
+    INTERNAL_CALL_METADATA_KEY,
+    InternalCallTransformer,
+    internal_call_metadata,
 )
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from tests.unit_tests.agents.model import FakeToolCallingModel
@@ -231,18 +231,14 @@ async def test_internal_model_calls_excluded_from_messages_projection() -> None:
         pass
 
 
-def test_internal_model_calls_preserved_in_raw_event_log() -> None:
-    """Internal calls stay visible on the raw event log for audit purposes.
+async def test_internal_model_calls_excluded_from_raw_event_log() -> None:
+    """Internal calls must not leak into the raw protocol event stream either.
 
-    Only `run.messages` should exclude internal middleware calls — the raw
-    `stream_events` iterator (and any tracing/observability consumer reading
-    it) should still see everything, including the internal call's tokens.
-
-    Sync `stream_events`, not `astream_events`: on Python 3.10, an internal
-    call made from `wrap_model_call` doesn't reach the `messages` stream mode
-    at all under the async path (streaming context isn't propagated the same
-    way it is on 3.11+), which would make this assertion meaningless there
-    regardless of what this transformer does.
+    Mutating an event to influence `MessagesTransformer` (there's no metadata
+    hook it consults, so mutation is the only lever) would misrepresent the
+    call to any consumer that also sees the raw log — a real AI response
+    reported as `role: "tool"`, for instance. So tagged calls are dropped
+    from the raw log entirely rather than published in a mutated form.
     """
     main_model = GenericFakeChatModel(messages=iter([AIMessage(content="final answer")]))
     internal_model = GenericFakeChatModel(messages=iter([AIMessage(content="internal check")]))
@@ -250,10 +246,10 @@ def test_internal_model_calls_preserved_in_raw_event_log() -> None:
         model=main_model, tools=[], middleware=[_InternalCallMiddleware(internal_model)]
     )
 
-    run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+    run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
     seen_text: list[str] = []
-    for event in run:
+    async for event in run:
         if event.get("method") != "messages":
             continue
         data = event["params"].get("data")
@@ -268,7 +264,7 @@ def test_internal_model_calls_preserved_in_raw_event_log() -> None:
             seen_text.append(payload.text)
 
     combined = "".join(seen_text)
-    assert "internal check" in combined
+    assert "internal check" not in combined
     assert "final answer" in combined
 
 
@@ -296,39 +292,28 @@ async def test_internal_whole_message_excluded_from_messages_projection() -> Non
     assert texts == ["hi"]
 
 
-def test_internal_whole_message_redacted_but_present_in_raw_event_log() -> None:
-    """A non-streaming internal call's whole-`AIMessage` event stays on the raw log.
-
-    Its content is cleared (there's no way to keep `MessagesTransformer` from
-    routing the very same object into `run.messages` while leaving the
-    original text visible elsewhere), but the event itself — an audit trace
-    that a call happened — is not dropped.
-
-    Sync `stream_events`, not `astream_events`: see
-    `test_internal_model_calls_preserved_in_raw_event_log` for why the async
-    path can't reliably reach the `messages` stream mode on Python 3.10.
-    """
+async def test_internal_whole_message_excluded_from_raw_event_log() -> None:
+    """A non-streaming internal call's whole-`AIMessage` event never hits the raw log."""
     main_model = FakeToolCallingModel()
     internal_model = FakeToolCallingModel(index=1000)
     agent = create_agent(
         model=main_model, tools=[], middleware=[_InternalWholeMessageMiddleware(internal_model)]
     )
 
-    run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
+    run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
     payloads: list[Any] = []
-    for event in run:
+    async for event in run:
         if event.get("method") != "messages":
             continue
         data = event["params"].get("data")
         if isinstance(data, tuple) and len(data) == 2:
             payloads.append(data[0])
 
-    # Both the main turn's message and the internal call's (redacted) message
-    # are still on the raw log — neither was silently dropped.
-    assert len(payloads) == 2
-    assert any(isinstance(p, BaseMessage) and p.text == "hi" for p in payloads)
-    assert any(p is None for p in payloads)
+    # Only the main turn's message made it to the raw log.
+    assert len(payloads) == 1
+    assert isinstance(payloads[0], BaseMessage)
+    assert payloads[0].text == "hi"
 
 
 async def test_caller_supplied_metadata_cannot_forge_internal_marker() -> None:
@@ -372,3 +357,30 @@ def test_internal_call_token_is_not_a_predictable_value() -> None:
     token = internal_call_transformer_module._INTERNAL_CALL_TOKEN
     assert token not in (True, False, None, "", "true", "internal", INTERNAL_CALL_METADATA_KEY)
     assert len(str(token)) >= 16
+
+
+def test_process_ignores_events_outside_its_own_scope() -> None:
+    """A root-scoped transformer must not touch a nested subgraph's events.
+
+    `MessagesTransformer` itself ignores events whose namespace doesn't
+    match its own scope, and a correctly-scoped `InternalCallTransformer`
+    instance (if the offending middleware runs inside that subgraph too)
+    would already handle them — so mutating or dropping them here would be
+    both unnecessary and would corrupt a namespace this instance doesn't own.
+    """
+    transformer = InternalCallTransformer(())
+    payload = {"event": "message-start", "role": "ai", "id": "msg-1"}
+    metadata = {**internal_call_metadata(), "run_id": "run-1"}
+    event: Any = {
+        "type": "event",
+        "method": "messages",
+        "params": {
+            "namespace": ["some-subgraph"],
+            "timestamp": 0,
+            "data": (payload, metadata),
+        },
+    }
+
+    assert transformer.process(event) is True
+    assert event["params"]["data"] == (payload, metadata)
+    assert payload["role"] == "ai"

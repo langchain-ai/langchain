@@ -8,11 +8,6 @@ from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
 )
-from langchain.agents.middleware.internal_call_transformer import (
-    INTERNAL_CALL_METADATA_KEY,
-    InternalCallTransformer,
-    internal_call_metadata,
-)
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
@@ -53,7 +48,6 @@ from langchain.agents.middleware.types import (
 )
 
 __all__ = [
-    "INTERNAL_CALL_METADATA_KEY",
     "AgentMiddleware",
     "AgentState",
     "ClearToolUsesEdit",
@@ -65,7 +59,6 @@ __all__ = [
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
     "InputAgentState",
-    "InternalCallTransformer",
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
@@ -95,7 +88,6 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
-    "internal_call_metadata",
     "wrap_model_call",
     "wrap_tool_call",
 ]

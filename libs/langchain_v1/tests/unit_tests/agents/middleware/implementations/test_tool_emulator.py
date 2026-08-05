@@ -15,9 +15,9 @@ from pydantic import BaseModel, Field
 from typing_extensions import override
 
 from langchain.agents import create_agent
-from langchain.agents.middleware import (
+from langchain.agents.middleware import LLMToolEmulator
+from langchain.agents.middleware.internal_call_transformer import (
     INTERNAL_CALL_METADATA_KEY,
-    LLMToolEmulator,
     internal_call_metadata,
 )
 from langchain.messages import AIMessage

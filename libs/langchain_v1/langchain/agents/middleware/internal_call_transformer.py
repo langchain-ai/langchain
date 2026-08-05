@@ -54,37 +54,51 @@ def internal_call_metadata() -> dict[str, Any]:
 
 
 class InternalCallTransformer(StreamTransformer):
-    """Keep internal model calls out of `run.messages`.
+    """Keep internal model calls out of `run.messages` and the raw event log.
 
     Declared on `transformers` by middleware that makes internal calls (e.g.
     `SummarizationMiddleware`), so it's only registered on agents using one of
     those, and runs before built-in transformers.
 
-    Only `run.messages` is affected — internal calls stay visible on the raw
-    event log (`stream_events`'s underlying event iterator) for audit and
-    observability consumers; no new projection is added. `messages`-mode
-    events come in two shapes:
+    `messages`-mode events come in two shapes, and influencing
+    `MessagesTransformer`'s built-in exclusion rules for either one requires
+    mutating the event in place (there's no metadata hook it consults). That
+    mutation would misrepresent the call if it also reached raw event
+    consumers — a real AI response reported as `role: "tool"`, or a payload
+    replaced with `None`, neither a real messages-mode shape — so tagged
+    events are dropped from the raw log entirely rather than published in a
+    mutated form:
 
     - Streamed protocol events (`message-start` / `content-block-*` /
-      `message-finish`): for internal calls, `message-start`'s `role` is
-      rewritten to `"tool"`, reusing `MessagesTransformer`'s existing
-      tool-result exclusion so the run never becomes a `run.messages` entry.
+      `message-finish`): `message-start`'s `role` is rewritten to `"tool"`,
+      reusing `MessagesTransformer`'s existing tool-result exclusion, then
+      the event is dropped.
     - Whole-`AIMessage` events — the fallback `MessagesTransformer` uses when
       a chat model doesn't stream (notably, streaming context isn't
       propagated on Python 3.10) or when a node returns a finalized message
-      as state: for internal calls, the payload is cleared so
-      `MessagesTransformer` has nothing left to route. Unlike the streamed
-      shape, this does redact the event's content on the raw log too — there
-      is no metadata-free way to keep the original message visible there
-      while also keeping `MessagesTransformer` from routing the very same
-      object into `run.messages`.
+      as state: the payload is cleared so `MessagesTransformer` has nothing
+      left to route, then the event is dropped.
+
+    Only events in this transformer's own scope are touched — nested
+    subgraphs get their own scoped instance (if the offending middleware runs
+    there too), and `MessagesTransformer` itself ignores events outside its
+    scope, so mutating them here would be both unnecessary and unsafe.
     """
 
     before_builtins: ClassVar[bool] = True
     required_stream_modes: ClassVar[tuple[str, ...]] = ("messages",)
 
+    def __init__(self, scope: tuple[str, ...] = ()) -> None:
+        """Initialize the transformer, scoped to a single mux/namespace.
+
+        Args:
+            scope: The namespace tuple the owning mux is scoped to.
+        """
+        super().__init__(scope)
+        self._scope_list: list[str] = list(scope)
+
     def init(self) -> dict[str, Any]:
-        """Return an empty projection — this transformer only mutates events in place.
+        """Return an empty projection — this transformer only suppresses events.
 
         Returns:
             An empty mapping; no `run.<key>` projection is added.
@@ -92,19 +106,22 @@ class InternalCallTransformer(StreamTransformer):
         return {}
 
     def process(self, event: ProtocolEvent) -> bool:
-        """Rewrite tagged `messages` events so `MessagesTransformer` skips them.
+        """Drop tagged `messages` events after nudging `MessagesTransformer` to ignore them.
 
         Args:
             event: The protocol event to observe, and possibly mutate.
 
         Returns:
-            `True` always — internal calls stay on the raw event log; only
-            `run.messages` excludes them.
+            `False` to drop a tagged internal call from the raw event log and
+            `run.messages`; `True` otherwise.
         """
         if event["method"] != "messages":
             return True
 
         params = event["params"]
+        if params["namespace"] != self._scope_list:
+            return True
+
         payload, metadata = params["data"]
         is_internal = (
             bool(metadata) and metadata.get(INTERNAL_CALL_METADATA_KEY) == _INTERNAL_CALL_TOKEN
@@ -113,13 +130,8 @@ class InternalCallTransformer(StreamTransformer):
             return True
 
         if isinstance(payload, dict) and payload.get("event") == "message-start":
-            # `MessagesTransformer` already excludes tool-role `message-start`
-            # runs (and every later event for that run) from `run.messages`;
-            # piggyback on that instead of adding a new check upstream.
             payload["role"] = "tool"
         elif isinstance(payload, BaseMessage):
             params["data"] = (None, metadata)
 
-        # Keep the (possibly mutated) event on the raw log/`run` iterator —
-        # only `run.messages` should exclude internal calls.
-        return True
+        return False
