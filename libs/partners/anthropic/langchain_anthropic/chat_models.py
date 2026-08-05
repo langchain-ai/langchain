@@ -895,9 +895,10 @@ def _raise_if_authentication_error(e: TypeError) -> None:
         msg = (
             "Anthropic authentication failed: no API key or authorization "
             "credentials were provided. Set the ANTHROPIC_API_KEY environment "
-            "variable, pass api_key=... to ChatAnthropic, provide credentials "
-            'via default_headers={"Authorization": ...}, or configure the '
-            "LangSmith gateway (LANGSMITH_GATEWAY and LANGSMITH_GATEWAY_API_KEY)."
+            "variable, pass api_key=... to ChatAnthropic, or provide "
+            'credentials via default_headers={"Authorization": ...}. If you '
+            "are routing through the LangSmith gateway, set LANGSMITH_GATEWAY "
+            "and LANGSMITH_GATEWAY_API_KEY."
         )
         raise TypeError(msg) from e
 
