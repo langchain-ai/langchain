@@ -8,6 +8,7 @@ import functools
 import inspect
 import logging
 import re
+import unicodedata
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -71,7 +72,6 @@ MODEL_OR_CHAIN_FACTORY = (
 )
 MCF = Callable[[], Chain | Runnable] | BaseLanguageModel
 
-_ASCII_CONTROL_CHARACTER_LIMIT = 32
 _GIT_REMOTE_URL_SCHEMES = {"git", "http", "https", "ssh"}
 _SCP_STYLE_GIT_REMOTE_RE = re.compile(
     r"^(?:[^@/:\s]+@)?(?P<host>[^@/:\s]+):(?P<path>[^\s:][^\s]*)$"
@@ -82,7 +82,7 @@ def _sanitize_git_remote_url(remote_url: object) -> str | None:
     if not isinstance(remote_url, str) or not remote_url:
         return None
     if any(
-        character.isspace() or ord(character) < _ASCII_CONTROL_CHARACTER_LIMIT
+        character.isspace() or unicodedata.category(character) == "Cc"
         for character in remote_url
     ):
         return None
@@ -91,7 +91,16 @@ def _sanitize_git_remote_url(remote_url: object) -> str | None:
         match = _SCP_STYLE_GIT_REMOTE_RE.fullmatch(remote_url)
         if match is None:
             return None
-        return f"{match.group('host')}:{match.group('path')}"
+        host = match.group("host")
+        path = match.group("path")
+        if host.lower() in _GIT_REMOTE_URL_SCHEMES or (
+            len(host) == 1
+            and host.isascii()
+            and host.isalpha()
+            and path.startswith(("/", "\\"))
+        ):
+            return None
+        return f"{host}:{path}"
 
     try:
         parsed = urlsplit(remote_url)
