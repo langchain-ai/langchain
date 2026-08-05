@@ -30,7 +30,10 @@ from pydantic import Field
 from typing_extensions import override
 
 from langchain.agents import AgentState, create_agent
-from langchain.agents._internal_call_transformer import INTERNAL_CALL_METADATA_KEY
+from langchain.agents._internal_call_transformer import (
+    INTERNAL_CALL_METADATA_KEY,
+    internal_call_metadata,
+)
 from langchain.agents.middleware.summarization import (
     ContextSize,
     SummarizationMiddleware,
@@ -2109,7 +2112,10 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     assert config is not None
     assert "metadata" in config
     assert config["metadata"]["lc_source"] == "summarization"
-    assert config["metadata"][INTERNAL_CALL_METADATA_KEY] is True
+    assert (
+        config["metadata"][INTERNAL_CALL_METADATA_KEY]
+        == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
+    )
 
 
 class TestSummarizationStreamingEndToEnd:

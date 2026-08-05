@@ -14,7 +14,10 @@ from pydantic import BaseModel, Field
 from typing_extensions import override
 
 from langchain.agents import create_agent
-from langchain.agents._internal_call_transformer import INTERNAL_CALL_METADATA_KEY
+from langchain.agents._internal_call_transformer import (
+    INTERNAL_CALL_METADATA_KEY,
+    internal_call_metadata,
+)
 from langchain.agents.middleware import (
     LLMToolSelectorMiddleware,
     ModelRequest,
@@ -709,7 +712,10 @@ class TestLLMToolSelectorInternalCallMetadata:
         config = tool_selection_model.captured_configs[0]
         assert config is not None
         assert config["metadata"]["lc_source"] == "tool_selection"
-        assert config["metadata"][INTERNAL_CALL_METADATA_KEY] is True
+        assert (
+            config["metadata"][INTERNAL_CALL_METADATA_KEY]
+            == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
+        )
 
     async def test_awrap_model_call_marks_internal_call(self) -> None:
         """`awrap_model_call` should tag its model call as internal to middleware."""
@@ -743,4 +749,7 @@ class TestLLMToolSelectorInternalCallMetadata:
         config = tool_selection_model.captured_configs[0]
         assert config is not None
         assert config["metadata"]["lc_source"] == "tool_selection"
-        assert config["metadata"][INTERNAL_CALL_METADATA_KEY] is True
+        assert (
+            config["metadata"][INTERNAL_CALL_METADATA_KEY]
+            == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
+        )

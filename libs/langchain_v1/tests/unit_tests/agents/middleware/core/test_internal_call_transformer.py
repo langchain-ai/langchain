@@ -8,11 +8,14 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langgraph.stream.transformers import MessagesTransformer
 
+from langchain.agents import _internal_call_transformer
 from langchain.agents._internal_call_transformer import (
+    INTERNAL_CALL_METADATA_KEY,
     InternalCallTransformer,
     internal_call_metadata,
 )
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import AgentMiddleware
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -264,3 +267,46 @@ async def test_internal_whole_message_excluded_from_raw_event_log() -> None:
 
     assert len(seen_messages) == 1
     assert seen_messages[0].text == "hi"
+
+
+async def test_caller_supplied_metadata_cannot_forge_internal_marker() -> None:
+    """A caller can't hide the agent's real answer by guessing the marker's value.
+
+    `config["metadata"]` on the top-level `invoke`/`stream_events` call flows
+    into every model call made during the run, including the main agent
+    turn's own — so if the marker were a predictable value (e.g. `True`), an
+    attacker-controlled caller (or an API layer forwarding user-supplied
+    metadata) could set `lc_internal_call` themselves and make the agent's
+    real answer disappear from `run.messages` and the raw event log.
+    """
+    main_model = GenericFakeChatModel(messages=iter([AIMessage(content="final answer")]))
+    summarizer_model = GenericFakeChatModel(messages=iter([AIMessage(content="summary")]))
+    middleware = SummarizationMiddleware(model=summarizer_model, trigger=("messages", 1))
+    agent = create_agent(model=main_model, tools=[], middleware=[middleware])
+
+    forged_metadata = {INTERNAL_CALL_METADATA_KEY: True}
+    assert forged_metadata != internal_call_metadata(), (
+        "the real marker must not be a guessable value like `True`"
+    )
+
+    run = await agent.astream_events(
+        {"messages": [HumanMessage("hi"), HumanMessage("there"), HumanMessage("again")]},
+        config={"metadata": forged_metadata},
+        version="v3",
+    )
+
+    texts: list[str] = []
+    async for msg in run.messages:
+        text = ""
+        async for chunk in msg.text:
+            text += chunk
+        texts.append(text)
+
+    assert texts == ["final answer"]
+
+
+def test_internal_call_token_is_not_a_predictable_value() -> None:
+    """The marker's value must not be something a caller could plausibly guess."""
+    token = _internal_call_transformer._INTERNAL_CALL_TOKEN
+    assert token not in (True, False, None, "", "true", "internal", INTERNAL_CALL_METADATA_KEY)
+    assert len(str(token)) >= 16

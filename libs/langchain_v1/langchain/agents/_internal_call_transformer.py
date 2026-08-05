@@ -11,6 +11,7 @@ only registered on agents that actually use it — see `AgentMiddleware.transfor
 
 from __future__ import annotations
 
+import secrets
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from langchain_core.messages import BaseMessage
@@ -27,6 +28,20 @@ that a summarization call is in flight) so tagging a call for filtering here
 never changes what other consumers observe via that key.
 """
 
+_INTERNAL_CALL_TOKEN = secrets.token_hex(16)
+"""Unguessable marker value, regenerated on import.
+
+`config["metadata"]` ultimately comes from a `RunnableConfig`, which callers
+of `invoke`/`stream_events` can populate with arbitrary values — including
+the main agent turn's own call, since it goes through the same ambient
+config. If the marker were a fixed value like `True`, a caller who can
+influence invocation metadata (e.g. an API layer that forwards user-supplied
+metadata) could set `lc_internal_call` themselves and hide the agent's real
+answer from `run.messages` and the raw event log. Comparing against this
+process-local secret instead of truthiness means a caller can't forge it
+without already being able to run code in this process.
+"""
+
 
 def internal_call_metadata() -> dict[str, Any]:
     """Return metadata that marks a model call as internal to middleware.
@@ -34,7 +49,7 @@ def internal_call_metadata() -> dict[str, Any]:
     Returns:
         A mapping to merge into a model call's `config["metadata"]`.
     """
-    return {INTERNAL_CALL_METADATA_KEY: True}
+    return {INTERNAL_CALL_METADATA_KEY: _INTERNAL_CALL_TOKEN}
 
 
 class InternalCallTransformer(StreamTransformer):
@@ -67,7 +82,9 @@ class InternalCallTransformer(StreamTransformer):
 
         params = event["params"]
         payload, metadata = params["data"]
-        is_internal = bool(metadata and metadata.get(INTERNAL_CALL_METADATA_KEY))
+        is_internal = (
+            bool(metadata) and metadata.get(INTERNAL_CALL_METADATA_KEY) == _INTERNAL_CALL_TOKEN
+        )
 
         if isinstance(payload, dict) and "event" in payload:
             return self._process_protocol_event(payload, metadata, is_internal=is_internal)
