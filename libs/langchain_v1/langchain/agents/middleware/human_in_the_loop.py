@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Protocol
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Literal, Optional, Protocol
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langchain_core.runnables.config import var_child_runnable_config
 from langgraph.config import get_config
 from langgraph.prebuilt.tool_node import ToolRuntime
 from langgraph.types import interrupt
@@ -20,8 +22,9 @@ from langchain.agents.middleware.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
+    from langchain_core.runnables import RunnableConfig
     from langgraph.runtime import Runtime
 
 
@@ -396,14 +399,52 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         )
         return when(req)
 
+    @staticmethod
+    @contextmanager
+    def _ensure_runnable_config(config: RunnableConfig | None) -> Iterator[None]:
+        """Seed the ambient `RunnableConfig` contextvar `interrupt()` relies on.
+
+        `interrupt()` calls `get_config()`, which reads the `RunnableConfig`
+        contextvar set by the surrounding runnable machinery. `aafter_model`
+        delegates to this (synchronous) method, and on Python < 3.11 LangGraph's
+        async node runner can't propagate that contextvar across the coroutine
+        boundary (`asyncio.create_task`'s `context` kwarg only exists from
+        Python 3.11 on), so `get_config()` raises `RuntimeError: Called
+        get_config outside of a runnable context`.
+
+        `RunnableCallable` still passes the real, per-invocation config as a
+        plain `config` argument when a node/hook declares one (see `after_model`
+        below), independent of the contextvar. Use that to seed the contextvar
+        ourselves for the duration of the `interrupt()` call so it succeeds
+        regardless of the async contextvar-propagation gap. A no-op when
+        `config` is `None` (e.g. when called directly, as in unit tests).
+        """
+        if config is None:
+            yield
+            return
+        token = var_child_runnable_config.set(config)
+        try:
+            yield
+        finally:
+            var_child_runnable_config.reset(token)
+
     def after_model(
-        self, state: AgentState[Any], runtime: Runtime[ContextT]
+        self,
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
+        # `RunnableCallable` auto-injects the real per-invocation config for a
+        # parameter literally named `config`, matching this annotation as a
+        # raw string (this module uses `from __future__ import annotations`);
+        # `RunnableConfig | None` does not match, hence `Optional[...]` here.
+        config: Optional[RunnableConfig] = None,  # noqa: UP045
     ) -> dict[str, Any] | None:
         """Trigger interrupt flows for relevant tool calls after an `AIMessage`.
 
         Args:
             state: The current agent state.
             runtime: The runtime context.
+            config: The runnable config for the current invocation, used to
+                make `interrupt()` work even without an ambient config context.
 
         Returns:
             Updated message with the revised tool calls.
@@ -426,11 +467,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         interrupt_indices: list[int] = []
 
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
-            if (config := self.interrupt_on.get(tool_call["name"])) is not None:
-                if not self._should_interrupt(tool_call, config, state, runtime):
+            if (tool_config := self.interrupt_on.get(tool_call["name"])) is not None:
+                if not self._should_interrupt(tool_call, tool_config, state, runtime):
                     continue
                 action_request, review_config = self._create_action_and_config(
-                    tool_call, config, state, runtime
+                    tool_call, tool_config, state, runtime
                 )
                 action_requests.append(action_request)
                 review_configs.append(review_config)
@@ -447,7 +488,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         )
 
         # Send interrupt and get response
-        decisions = interrupt(hitl_request)["decisions"]
+        with self._ensure_runnable_config(config):
+            decisions = interrupt(hitl_request)["decisions"]
 
         # Validate that the number of decisions matches the number of interrupt tool calls
         if (decisions_len := len(decisions)) != (interrupt_count := len(interrupt_indices)):
@@ -465,12 +507,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
             if idx in interrupt_indices:
                 # This was an interrupt tool call - process the decision
-                config = self.interrupt_on[tool_call["name"]]
+                tool_config = self.interrupt_on[tool_call["name"]]
                 decision = decisions[decision_idx]
                 decision_idx += 1
 
                 revised_tool_call, tool_message = self._process_decision(
-                    decision, tool_call, config
+                    decision, tool_call, tool_config
                 )
                 if revised_tool_call is not None:
                     revised_tool_calls.append(revised_tool_call)
@@ -486,15 +528,20 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         return {"messages": [last_ai_msg, *artificial_tool_messages]}
 
     async def aafter_model(
-        self, state: AgentState[Any], runtime: Runtime[ContextT]
+        self,
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
+        config: Optional[RunnableConfig] = None,  # noqa: UP045
     ) -> dict[str, Any] | None:
         """Async trigger interrupt flows for relevant tool calls after an `AIMessage`.
 
         Args:
             state: The current agent state.
             runtime: The runtime context.
+            config: The runnable config for the current invocation, used to
+                make `interrupt()` work even without an ambient config context.
 
         Returns:
             Updated message with the revised tool calls.
         """
-        return self.after_model(state, runtime)
+        return self.after_model(state, runtime, config)

@@ -1,11 +1,12 @@
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.config import get_config
 from langgraph.prebuilt.tool_node import ToolRuntime
 from langgraph.runtime import Runtime
 from langgraph.types import Command
@@ -18,6 +19,9 @@ from langchain.agents.middleware.human_in_the_loop import (
 )
 from langchain.agents.middleware.types import AgentState, ToolCallRequest
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
 
 
 def test_human_in_the_loop_middleware_initialization() -> None:
@@ -1120,3 +1124,72 @@ def test_when_predicate_receives_correct_args() -> None:
     assert req.runtime.state is state
     assert req.runtime.context is runtime.context
     assert req.runtime.store is runtime.store
+
+
+# ---------------------------------------------------------------------------
+# interrupt() without an ambient RunnableConfig context (#34974)
+# ---------------------------------------------------------------------------
+
+
+def test_ensure_runnable_config_seeds_ambient_context_for_get_config() -> None:
+    """`_ensure_runnable_config` makes `get_config()` succeed without ambient context."""
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": True})
+    config: RunnableConfig = {"configurable": {"thread_id": "abc"}}
+
+    with pytest.raises(RuntimeError, match="outside of a runnable context"):
+        get_config()
+
+    with middleware._ensure_runnable_config(config):
+        assert get_config() == config
+
+    with pytest.raises(RuntimeError, match="outside of a runnable context"):
+        get_config()
+
+
+def test_ensure_runnable_config_is_noop_without_config() -> None:
+    """Without an explicit config, the context manager leaves the ambient state untouched."""
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": True})
+
+    with (
+        pytest.raises(RuntimeError, match="outside of a runnable context"),
+        middleware._ensure_runnable_config(None),
+    ):
+        get_config()
+
+
+def test_after_model_interrupt_succeeds_without_ambient_config_context() -> None:
+    """Regression test for #34974.
+
+    On Python < 3.11, `aafter_model` delegating to sync `after_model` inside
+    an async graph run can leave `get_config()` (which `interrupt()` relies
+    on) without an ambient `RunnableConfig` context. `RunnableCallable`
+    still passes the real per-invocation config as an explicit `config`
+    argument to hooks that declare one; `after_model` must use that to make
+    `interrupt()` work even when no ambient context is set.
+    """
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": True})
+    ai_message = AIMessage(
+        content="...",
+        tool_calls=[{"name": "test_tool", "args": {}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
+    real_config: RunnableConfig = {"configurable": {"thread_id": "thread-1"}}
+
+    def fake_interrupt(_value: Any) -> Any:
+        # Mirrors langgraph.types.interrupt's dependency on the ambient config.
+        assert get_config() == real_config
+        return {"decisions": [{"type": "approve"}]}
+
+    with pytest.raises(RuntimeError, match="outside of a runnable context"):
+        get_config()
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=fake_interrupt
+    ):
+        result = middleware.after_model(state, Runtime(), config=real_config)
+
+    assert result is not None
+
+    # The ambient context is restored to its prior (unset) state afterward.
+    with pytest.raises(RuntimeError, match="outside of a runnable context"):
+        get_config()
