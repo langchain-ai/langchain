@@ -2254,6 +2254,29 @@ class BaseChatOpenAI(BaseChatModel):
                 and the model does not call a tool, the model will generate a
                 [structured response](https://platform.openai.com/docs/guides/structured-outputs).
             kwargs: Any additional parameters are passed directly to `bind`.
+
+        Returns:
+            A `Runnable` that takes the same inputs as a
+            `~langchain_core.language_models.chat.BaseChatModel` and returns an
+            `~langchain_core.messages.AIMessage`. The returned `AIMessage` may
+            contain ``tool_calls`` populated by the model.
+
+        Example:
+            .. code-block:: python
+
+                from langchain_core.tools import tool
+                from langchain_openai import ChatOpenAI
+
+                @tool
+                def get_weather(location: str) -> str:
+                    '''Return the weather for a location.'''
+                    return f"It's sunny in {location}."
+
+                llm = ChatOpenAI(model="gpt-4o-mini")
+                llm_with_tools = llm.bind_tools([get_weather])
+
+                ai_msg = llm_with_tools.invoke("What's the weather in Boston?")
+                ai_msg.tool_calls
         """  # noqa: E501
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
