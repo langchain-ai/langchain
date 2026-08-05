@@ -1744,6 +1744,38 @@ def test_usage_metadata_standardization() -> None:
     assert result["total_tokens"] == 0
 
 
+def test_usage_metadata_reasoning_tokens() -> None:
+    """Test _create_usage_metadata populates output_token_details['reasoning']."""
+
+    class OutputTokensDetailsModel(BaseModel):
+        thinking_tokens: int = 150
+
+    class UsageWithThinkingDetails(BaseModel):
+        input_tokens: int = 50
+        output_tokens: int = 200
+        output_tokens_details: OutputTokensDetailsModel = OutputTokensDetailsModel()
+
+    res1 = _create_usage_metadata(UsageWithThinkingDetails())
+    assert res1["output_tokens"] == 200
+    assert res1["output_token_details"] == {"reasoning": 150}
+
+    class UsageWithThinkingDict(BaseModel):
+        input_tokens: int = 50
+        output_tokens: int = 200
+        output_tokens_details: dict = {"thinking_tokens": 120}
+
+    res2 = _create_usage_metadata(UsageWithThinkingDict())
+    assert res2["output_token_details"] == {"reasoning": 120}
+
+    class UsageWithDirectThinking(BaseModel):
+        input_tokens: int = 50
+        output_tokens: int = 200
+        thinking_tokens: int = 90
+
+    res3 = _create_usage_metadata(UsageWithDirectThinking())
+    assert res3["output_token_details"] == {"reasoning": 90}
+
+
 def test_usage_metadata_cache_creation_ttl() -> None:
     """Test _create_usage_metadata with granular cache_creation TTL fields."""
 

@@ -36,7 +36,11 @@ from langchain_core.messages import (
     is_data_content_block,
 )
 from langchain_core.messages import content as types
-from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -2561,6 +2565,27 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
     )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0) or 0
 
+    output_token_details: dict = {}
+    raw_output_details = getattr(anthropic_usage, "output_tokens_details", None)
+    if raw_output_details is not None:
+        if isinstance(raw_output_details, BaseModel):
+            raw_output_details = raw_output_details.model_dump()
+        if isinstance(raw_output_details, dict):
+            reasoning = raw_output_details.get("thinking_tokens")
+            if reasoning is None:
+                reasoning = raw_output_details.get("reasoning_tokens")
+            if reasoning is not None:
+                output_token_details["reasoning"] = reasoning
+
+    if "reasoning" not in output_token_details:
+        thinking = getattr(anthropic_usage, "thinking_tokens", None)
+        if thinking is not None:
+            output_token_details["reasoning"] = thinking
+
+    filtered_output_token_details = {
+        k: v for k, v in output_token_details.items() if v is not None
+    }
+
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
@@ -2568,4 +2593,7 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
         input_token_details=InputTokenDetails(
             **{k: v for k, v in input_token_details.items() if v is not None},
         ),
+        output_token_details=OutputTokenDetails(**filtered_output_token_details)
+        if filtered_output_token_details
+        else OutputTokenDetails(),
     )
