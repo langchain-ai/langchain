@@ -2087,6 +2087,42 @@ class ChatAnthropic(BaseChatModel):
             for tool in tools
         ]
         formatted_tools = _drop_unsupported_root_composition_tools(formatted_tools)
+
+        # Reconcile tool_choice with the filtered list: a forced choice for a
+        # dropped tool, or "any" with no remaining tools, still produces a 400.
+        if tool_choice:
+            choice_type: str | None = None
+            choice_name: str | None = None
+            if isinstance(tool_choice, dict):
+                choice_type = tool_choice.get("type")
+                choice_name = tool_choice.get("name")
+            elif isinstance(tool_choice, str):
+                if tool_choice in ("any", "auto"):
+                    choice_type = tool_choice
+                else:
+                    choice_type, choice_name = "tool", tool_choice
+            if choice_type == "tool" and choice_name is not None:
+                available = {
+                    t.get("name") for t in formatted_tools if isinstance(t, Mapping)
+                }
+                if choice_name not in available:
+                    msg = (
+                        f"tool_choice references {choice_name!r}, but that tool "
+                        "was dropped because its input_schema uses a top-level "
+                        "oneOf/anyOf/allOf, which the Anthropic API does not "
+                        "support. Remove the forced tool_choice or fix the "
+                        "tool's schema."
+                    )
+                    raise ValueError(msg)
+            elif choice_type == "any" and not formatted_tools:
+                msg = (
+                    "tool_choice='any' requires at least one available tool, but "
+                    "all tools were dropped because their input_schema uses a "
+                    "top-level oneOf/anyOf/allOf, which the Anthropic API does "
+                    "not support."
+                )
+                raise ValueError(msg)
+
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):

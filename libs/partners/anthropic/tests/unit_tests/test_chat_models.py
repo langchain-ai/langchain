@@ -1695,6 +1695,59 @@ def test_bind_tools_keeps_nested_composition_without_warning() -> None:
     assert bound[0]["input_schema"] == tool["input_schema"]
 
 
+def _composition_tool(name: str) -> dict:
+    """A tool whose root `input_schema` uses a top-level `anyOf` (unsupported)."""
+    return {
+        "name": name,
+        "description": "Unsupported root composition.",
+        "input_schema": {
+            "type": "object",
+            "anyOf": [
+                {
+                    "type": "object",
+                    "properties": {"content": {"type": "string"}},
+                    "required": ["content"],
+                }
+            ],
+        },
+    }
+
+
+def test_bind_tools_dropped_tool_forced_by_tool_choice_raises() -> None:
+    """A forced `tool_choice` for a dropped tool raises locally, not a 400."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    with (
+        pytest.warns(UnsupportedToolSchemaWarning),
+        pytest.raises(ValueError, match="tool_choice references 'attach'"),
+    ):
+        chat_model.bind_tools(
+            [_composition_tool("attach")],
+            tool_choice={"type": "tool", "name": "attach"},
+        )
+    # Bare-string tool_choice naming the dropped tool raises too.
+    with (
+        pytest.warns(UnsupportedToolSchemaWarning),
+        pytest.raises(ValueError, match="tool_choice references 'attach'"),
+    ):
+        chat_model.bind_tools([_composition_tool("attach")], tool_choice="attach")
+
+
+def test_bind_tools_any_with_all_tools_dropped_raises() -> None:
+    """`tool_choice='any'` with no remaining tools raises locally, not a 400."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    with (
+        pytest.warns(UnsupportedToolSchemaWarning),
+        pytest.raises(ValueError, match="tool_choice='any' requires at least one"),
+    ):
+        chat_model.bind_tools([_composition_tool("attach")], tool_choice="any")
+
+
 def test_fine_grained_tool_streaming_beta() -> None:
     """Test that fine-grained tool streaming beta can be enabled."""
     # Test with betas parameter at initialization
