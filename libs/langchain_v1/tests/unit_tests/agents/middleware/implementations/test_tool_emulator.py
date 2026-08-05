@@ -9,12 +9,13 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.tools import BaseTool, tool
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing_extensions import override
 
 from langchain.agents import create_agent
+from langchain.agents._internal_call_transformer import INTERNAL_CALL_METADATA_KEY
 from langchain.agents.middleware import LLMToolEmulator
 from langchain.messages import AIMessage
 
@@ -117,6 +118,52 @@ class FakeEmulatorModel(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "fake_emulator"
+
+
+class ConfigCapturingEmulatorModel(BaseChatModel):
+    """Fake model that captures the config passed to invoke/ainvoke."""
+
+    captured_configs: list[RunnableConfig | None] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Emulated response")
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Emulated response")
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content="Emulated response"))]
+        )
+
+    @property
+    def _llm_type(self) -> str:
+        return "config-capturing-emulator"
 
 
 class TestLLMToolEmulatorBasic:
@@ -625,3 +672,61 @@ class TestLLMToolEmulatorAsync:
         calc_messages = [msg for msg in tool_messages if msg.name == "calculator"]
         assert len(calc_messages) > 0
         assert "Result: 20" in calc_messages[0].content
+
+
+class TestLLMToolEmulatorInternalCallMetadata:
+    """Test that emulation calls are tagged as internal for stream filtering."""
+
+    def test_wrap_tool_call_marks_internal_call(self) -> None:
+        """`wrap_tool_call` should tag its model call as internal to middleware."""
+        model = ConfigCapturingEmulatorModel()
+        emulator = LLMToolEmulator(tools=["get_weather"], model=model)
+
+        agent_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "get_weather", "id": "1", "args": {"location": "NYC"}}
+                        ],
+                    ),
+                    AIMessage(content="Done."),
+                ]
+            )
+        )
+        agent = create_agent(model=agent_model, tools=[get_weather], middleware=[emulator])
+        agent.invoke({"messages": [HumanMessage("Weather in NYC")]})
+
+        assert len(model.captured_configs) == 1
+        config = model.captured_configs[0]
+        assert config is not None
+        assert config["metadata"]["lc_source"] == "tool_emulation"
+        assert config["metadata"][INTERNAL_CALL_METADATA_KEY] is True
+
+    async def test_awrap_tool_call_marks_internal_call(self) -> None:
+        """`awrap_tool_call` should tag its model call as internal to middleware."""
+        model = ConfigCapturingEmulatorModel()
+        emulator = LLMToolEmulator(tools=["get_weather"], model=model)
+
+        agent_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "get_weather", "id": "1", "args": {"location": "NYC"}}
+                        ],
+                    ),
+                    AIMessage(content="Done."),
+                ]
+            )
+        )
+        agent = create_agent(model=agent_model, tools=[get_weather], middleware=[emulator])
+        await agent.ainvoke({"messages": [HumanMessage("Weather in NYC")]})
+
+        assert len(model.captured_configs) == 1
+        config = model.captured_configs[0]
+        assert config is not None
+        assert config["metadata"]["lc_source"] == "tool_emulation"
+        assert config["metadata"][INTERNAL_CALL_METADATA_KEY] is True

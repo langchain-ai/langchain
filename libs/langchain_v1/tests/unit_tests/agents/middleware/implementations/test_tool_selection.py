@@ -8,12 +8,13 @@ import pytest
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.tools import BaseTool, tool
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing_extensions import override
 
 from langchain.agents import create_agent
+from langchain.agents._internal_call_transformer import INTERNAL_CALL_METADATA_KEY
 from langchain.agents.middleware import (
     LLMToolSelectorMiddleware,
     ModelRequest,
@@ -641,3 +642,105 @@ class TestEdgeCases:
         """Test that empty tools list raises an error in schema creation."""
         with pytest.raises(AssertionError, match="tools must be non-empty"):
             _create_tool_selection_response([])
+
+
+class ConfigCapturingSelectionModel(FakeModel):
+    """`FakeModel` that records the config passed to invoke/ainvoke."""
+
+    captured_configs: list[RunnableConfig | None] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return super().invoke(input, config, stop=stop, **kwargs)
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return await super().ainvoke(input, config, stop=stop, **kwargs)
+
+
+class TestLLMToolSelectorInternalCallMetadata:
+    """Test that selection calls are tagged as internal for stream filtering."""
+
+    def test_wrap_model_call_marks_internal_call(self) -> None:
+        """`wrap_model_call` should tag its model call as internal to middleware."""
+        tool_selection_model = ConfigCapturingSelectionModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["get_weather"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+        agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert len(tool_selection_model.captured_configs) == 1
+        config = tool_selection_model.captured_configs[0]
+        assert config is not None
+        assert config["metadata"]["lc_source"] == "tool_selection"
+        assert config["metadata"][INTERNAL_CALL_METADATA_KEY] is True
+
+    async def test_awrap_model_call_marks_internal_call(self) -> None:
+        """`awrap_model_call` should tag its model call as internal to middleware."""
+        tool_selection_model = ConfigCapturingSelectionModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["get_weather"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+        await agent.ainvoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert len(tool_selection_model.captured_configs) == 1
+        config = tool_selection_model.captured_configs[0]
+        assert config is not None
+        assert config["metadata"]["lc_source"] == "tool_selection"
+        assert config["metadata"][INTERNAL_CALL_METADATA_KEY] is True

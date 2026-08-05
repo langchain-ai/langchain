@@ -11,6 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
+from langchain.agents._internal_call_transformer import internal_call_metadata
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -300,7 +301,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             [
                 {"role": "system", "content": selection_request.system_message},
                 selection_request.last_user_message,
-            ]
+            ],
+            config={"metadata": {"lc_source": "tool_selection", **internal_call_metadata()}},
         )
 
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
@@ -342,7 +344,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             [
                 {"role": "system", "content": selection_request.system_message},
                 selection_request.last_user_message,
-            ]
+            ],
+            config={"metadata": {"lc_source": "tool_selection", **internal_call_metadata()}},
         )
 
         # Response should be a dict since we're passing a schema (not a Pydantic model class)

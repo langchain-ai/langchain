@@ -30,6 +30,7 @@ from langgraph.types import Command, Send
 from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict, overload
 
+from langchain.agents._internal_call_transformer import InternalCallTransformer
 from langchain.agents._subagent_transformer import SubagentTransformer
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -1809,6 +1810,7 @@ def create_agent(
         transformers=[
             ToolCallTransformer,
             SubagentTransformer,
+            InternalCallTransformer,
             *middleware_transformers,
             *(transformers or ()),
         ],

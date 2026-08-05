@@ -25,6 +25,7 @@ from langgraph.graph.message import (
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
+from langchain.agents._internal_call_transformer import internal_call_metadata
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 from langchain.chat_models import BaseChatModel, init_chat_model
 
@@ -815,7 +816,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         try:
             response = self.model.invoke(
                 self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization"}},
+                config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
             )
             return response.text.strip()
         except Exception as e:
@@ -841,7 +842,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         try:
             response = await self.model.ainvoke(
                 self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization"}},
+                config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
             )
             return response.text.strip()
         except Exception as e:
