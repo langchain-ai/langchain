@@ -807,9 +807,12 @@ def test_summarization_middleware_find_safe_cutoff_point() -> None:
     assert middleware._find_safe_cutoff_point(messages, 0) == 0
     assert middleware._find_safe_cutoff_point(messages, 1) == 1
 
-    # Starting at ToolMessage with matching AIMessage moves back to include it
-    # ToolMessage at index 2 has tool_call_id="call1" which matches AIMessage at index 1
-    assert middleware._find_safe_cutoff_point(messages, 2) == 1
+    # Starting at ToolMessage index 2 pulls in the consecutive ToolMessage run
+    # (call1, call2). call1 is covered by the AIMessage at index 1, but call2 has no
+    # matching AIMessage anywhere in the conversation, so full coverage is never
+    # reached and we fall back to advancing past the entire ToolMessage run rather
+    # than leaving the unfixable orphan (call2) in the preserved window.
+    assert middleware._find_safe_cutoff_point(messages, 2) == 4
 
     # Starting at orphan ToolMessage (no matching AIMessage) falls back to advancing
     # ToolMessage at index 3 has tool_call_id="call2" with no matching AIMessage
@@ -885,6 +888,133 @@ def test_summarization_cutoff_moves_backward_to_include_ai_message() -> None:
     assert isinstance(messages[result], AIMessage)
     assert messages[result].tool_calls  # type: ignore[union-attr]
     assert messages[result].tool_calls[0]["id"] == "call_abc"  # type: ignore[union-attr]
+
+
+def test_summarization_middleware_find_safe_cutoff_point_mixed_pair_full_coverage() -> None:
+    """Regression test for #38352.
+
+    In a mixed `ToolMessage` run where one `tool_call_id` is covered by a surviving
+    `AIMessage` and another's originating `AIMessage` is further back, the cutoff
+    must keep walking backward until *every* id in the run is covered, rather than
+    short-circuiting on the first (partial) match and leaving an orphan
+    `ToolMessage` in the preserved window.
+    """
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 10), keep=("messages", 3)
+    )
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),  # index 0
+        AIMessage(
+            content="",
+            tool_calls=[{"name": "old_tool", "args": {}, "id": "X"}],
+            id="a_old",
+        ),  # index 1
+        ToolMessage(content="old result for X", tool_call_id="X", id="t_old_x"),  # index 2
+        AIMessage(
+            content="",
+            tool_calls=[{"name": "new_tool", "args": {}, "id": "Y"}],
+            id="a_new",
+        ),  # index 3
+        ToolMessage(content="duplicated X reply", tool_call_id="X", id="t_orphan_x"),  # index 4
+        ToolMessage(content="result for Y", tool_call_id="Y", id="t_y"),  # index 5
+        HumanMessage(content="next", id="h_next"),  # index 6
+    ]
+
+    # Naive target cutoff (len(messages) - keep = 7 - 3 = 4) lands on the ToolMessage
+    # run [X, Y]. Y is covered by the AIMessage at index 3, but X's originating
+    # AIMessage is at index 1 - the cutoff must walk back that far for full coverage.
+    result = middleware._find_safe_cutoff(messages, messages_to_keep=3)
+    assert result == 1
+
+    preserved = messages[result:]
+    ai_tool_call_ids = {
+        tc.get("id")
+        for msg in preserved
+        if isinstance(msg, AIMessage) and msg.tool_calls
+        for tc in msg.tool_calls
+        if tc.get("id")
+    }
+    tool_message_ids = {
+        msg.tool_call_id for msg in preserved if isinstance(msg, ToolMessage) and msg.tool_call_id
+    }
+    assert tool_message_ids <= ai_tool_call_ids, "no orphan ToolMessage should survive the cutoff"
+
+
+def test_summarization_middleware_find_safe_cutoff_point_preserves_thinking_turn() -> None:
+    """Regression test for #34794.
+
+    When the naive cutoff would split an in-progress assistant turn (a multi-step
+    tool-calling loop that hasn't produced a final, tool-call-free `AIMessage` yet),
+    and an earlier `AIMessage` in that turn carries an Anthropic extended-thinking
+    block, the cutoff must snap back to the start of the turn so the thinking block
+    stays with the tool calls/results it precedes.
+    """
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 10), keep=("messages", 2)
+    )
+
+    def thinking_block(text: str) -> dict[str, str]:
+        return {"type": "thinking", "thinking": text, "signature": "sig"}
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Get data, process it, format it", id="h0"),  # index 0, turn start
+        AIMessage(
+            content=[thinking_block("plan to fetch data")],
+            tool_calls=[{"name": "get_data", "args": {}, "id": "call_get"}],
+            id="a1",
+        ),  # index 1
+        ToolMessage(content="raw data", tool_call_id="call_get", id="t1"),  # index 2
+        AIMessage(
+            content=[thinking_block("plan to process data")],
+            tool_calls=[{"name": "process_data", "args": {}, "id": "call_process"}],
+            id="a2",
+        ),  # index 3 - naive cutoff lands here
+        ToolMessage(content="processed data", tool_call_id="call_process", id="t2"),  # index 4
+        AIMessage(
+            content=[thinking_block("plan to format output")],
+            tool_calls=[{"name": "format_output", "args": {}, "id": "call_format"}],
+            id="a3",
+        ),  # index 5
+        ToolMessage(content="formatted output", tool_call_id="call_format", id="t3"),  # index 6
+    ]
+
+    # The naive cutoff (index 3) is itself a safe AI/Tool boundary, so without
+    # turn-awareness it would be returned unchanged, splitting off the thinking
+    # block on the AIMessage at index 1 from the tool loop it belongs to.
+    result = middleware._find_safe_cutoff_point(messages, 3)
+
+    assert result == 1
+    assert isinstance(messages[result], AIMessage)
+
+
+def test_summarization_middleware_find_safe_cutoff_point_no_snap_without_thinking() -> None:
+    """A cutoff mid tool-loop is left alone when no thinking blocks are involved."""
+    model = FakeToolCallingModel()
+    middleware = SummarizationMiddleware(
+        model=model, trigger=("messages", 10), keep=("messages", 2)
+    )
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="Get data, process it, format it", id="h0"),
+        AIMessage(
+            content="plan to fetch data",
+            tool_calls=[{"name": "get_data", "args": {}, "id": "call_get"}],
+            id="a1",
+        ),
+        ToolMessage(content="raw data", tool_call_id="call_get", id="t1"),
+        AIMessage(
+            content="plan to process data",
+            tool_calls=[{"name": "process_data", "args": {}, "id": "call_process"}],
+            id="a2",
+        ),
+        ToolMessage(content="processed data", tool_call_id="call_process", id="t2"),
+    ]
+
+    # No thinking blocks anywhere, so the naive (already-safe) cutoff is unchanged.
+    assert middleware._find_safe_cutoff_point(messages, 3) == 3
 
 
 def test_summarization_middleware_zero_and_negative_target_tokens() -> None:

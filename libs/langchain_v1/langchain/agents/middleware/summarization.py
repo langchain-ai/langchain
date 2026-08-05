@@ -11,6 +11,7 @@ from langchain_core.messages import (
     AnyMessage,
     MessageLikeRepresentation,
     RemoveMessage,
+    SystemMessage,
     ToolMessage,
 )
 from langchain_core.messages.human import HumanMessage
@@ -767,14 +768,35 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
     @staticmethod
     def _find_safe_cutoff_point(messages: list[AnyMessage], cutoff_index: int) -> int:
-        """Find a safe cutoff point that doesn't split AI/Tool message pairs.
+        """Find a safe cutoff point that doesn't split AI/Tool message pairs or turns.
 
         If the message at `cutoff_index` is a `ToolMessage`, search backward for the
-        `AIMessage` containing the corresponding `tool_calls` and adjust the cutoff to
-        include it. This ensures tool call requests and responses stay together.
+        `AIMessage`(s) containing the corresponding `tool_calls` and adjust the cutoff
+        to include them, walking back until *every* `tool_call_id` in the run is
+        covered by a preserved `AIMessage` (not just the first match). This ensures
+        tool call requests and responses stay together even when a mixed run of
+        `ToolMessage`s originates from non-contiguous `AIMessage`s.
 
-        Falls back to advancing forward past `ToolMessage` objects only if no matching
-        `AIMessage` is found (edge case).
+        Falls back to advancing forward past `ToolMessage` objects only if full
+        coverage is never reached (edge case).
+
+        Finally, if the resulting cutoff would split an in-progress assistant turn
+        that contains an Anthropic extended-thinking block (`thinking` or
+        `redacted_thinking` content block), the cutoff is snapped back to the start
+        of that turn so the required thinking block stays with the tool calls/results
+        it precedes.
+        """
+        cutoff_index = SummarizationMiddleware._find_tool_pair_safe_cutoff(messages, cutoff_index)
+        return SummarizationMiddleware._snap_cutoff_past_open_thinking_turn(messages, cutoff_index)
+
+    @staticmethod
+    def _find_tool_pair_safe_cutoff(messages: list[AnyMessage], cutoff_index: int) -> int:
+        """Adjust `cutoff_index` so it never separates a `ToolMessage` from its `AIMessage`.
+
+        If `cutoff_index` lands on a `ToolMessage`, search backward, accumulating
+        matches, until every `tool_call_id` in the consecutive `ToolMessage` run is
+        covered by some preserved `AIMessage`. Falls back to advancing past the
+        `ToolMessage` run if full coverage is never found.
         """
         if cutoff_index >= len(messages) or not isinstance(messages[cutoff_index], ToolMessage):
             return cutoff_index
@@ -788,18 +810,72 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 tool_call_ids.add(tool_msg.tool_call_id)
             idx += 1
 
-        # Search backward for AIMessage with matching tool_calls
+        # Search backward for the AIMessage(s) with matching tool_calls, accumulating
+        # coverage until every tool_call_id has a home rather than stopping at the
+        # first (possibly partial) match.
+        covered_ids: set[str] = set()
+        earliest_index = cutoff_index
         for i in range(cutoff_index - 1, -1, -1):
             msg = messages[i]
             if isinstance(msg, AIMessage) and msg.tool_calls:
                 ai_tool_call_ids = {tc.get("id") for tc in msg.tool_calls if tc.get("id")}
-                if tool_call_ids & ai_tool_call_ids:
-                    # Found the AIMessage - move cutoff to include it
-                    return i
+                matched_ids = tool_call_ids & ai_tool_call_ids
+                if matched_ids:
+                    covered_ids |= matched_ids
+                    earliest_index = i
+                    if covered_ids >= tool_call_ids:
+                        return earliest_index
 
-        # Fallback: no matching AIMessage found, advance past ToolMessages to avoid
+        if covered_ids >= tool_call_ids:
+            return earliest_index
+
+        # Fallback: no full coverage found, advance past ToolMessages to avoid
         # orphaned tool responses
         return idx
+
+    @staticmethod
+    def _snap_cutoff_past_open_thinking_turn(messages: list[AnyMessage], cutoff_index: int) -> int:
+        """Snap `cutoff_index` back to the start of an open turn with thinking blocks.
+
+        An assistant turn starts right after a `HumanMessage`/`SystemMessage` (or at
+        the start of the conversation) and stays open across `AIMessage`/`ToolMessage`
+        exchanges until an `AIMessage` with no `tool_calls` completes it. If
+        `cutoff_index` would split such an open turn, and any `AIMessage` being
+        summarized away within that turn carries an Anthropic extended-thinking
+        block, the cutoff is moved back to the turn's start so the thinking block
+        stays with the tool calls/results it precedes, as Anthropic requires.
+        """
+        if cutoff_index <= 0 or cutoff_index >= len(messages):
+            return cutoff_index
+
+        turn_start = cutoff_index
+        while turn_start > 0:
+            previous_message = messages[turn_start - 1]
+            if isinstance(previous_message, (HumanMessage, SystemMessage)):
+                break
+            if isinstance(previous_message, AIMessage) and not previous_message.tool_calls:
+                break
+            turn_start -= 1
+
+        if turn_start >= cutoff_index:
+            return cutoff_index
+
+        has_thinking_block = any(
+            isinstance(msg, AIMessage) and SummarizationMiddleware._has_thinking_block(msg)
+            for msg in messages[turn_start:cutoff_index]
+        )
+        return turn_start if has_thinking_block else cutoff_index
+
+    @staticmethod
+    def _has_thinking_block(message: AIMessage) -> bool:
+        """Check whether `message` carries an Anthropic extended-thinking block."""
+        content = message.content
+        if not isinstance(content, list):
+            return False
+        return any(
+            isinstance(block, dict) and block.get("type") in {"thinking", "redacted_thinking"}
+            for block in content
+        )
 
     def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages.
