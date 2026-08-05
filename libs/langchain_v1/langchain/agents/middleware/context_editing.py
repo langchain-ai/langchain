@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Iterable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from langchain_core.messages import (
     AIMessage,
@@ -21,7 +21,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately
-from typing_extensions import Protocol
+from typing_extensions import Protocol, override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -31,6 +31,9 @@ from langchain.agents.middleware.types import (
     ModelResponse,
     ResponseT,
 )
+
+if TYPE_CHECKING:
+    from langgraph.runtime import Runtime
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
 
@@ -290,6 +293,75 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
             edit.apply(edited_messages, count_tokens=count_tokens)
 
         return await handler(request.override(messages=edited_messages))
+
+    @override
+    def after_model(
+        self,
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
+    ) -> dict[str, Any] | None:
+        """Persist context edits so the checkpointer observes cleared tool results.
+
+        `wrap_model_call` only edits a deep copy for the outgoing model
+        request, so a persistent checkpointer never sees the placeholder
+        content or the `cleared` flag `ClearToolUsesEdit.apply` sets — every
+        subsequent turn re-loads the full, never-cleared history, and the
+        trigger check (`count_tokens(messages) <= trigger`) stays permanently
+        false once first crossed. Re-running the edits here against the real
+        state and returning the changed messages lets the checkpointer store
+        the placeholders, so the next turn's raw token count reflects them
+        and the `cleared` flag can actually skip already-cleared messages.
+
+        Args:
+            state: The current agent state.
+            runtime: The langgraph runtime.
+
+        Returns:
+            Updated state with cleared tool results persisted, or `None` if
+                no edit changed anything.
+        """
+        return self._persist_edits(state["messages"])
+
+    async def aafter_model(
+        self,
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
+    ) -> dict[str, Any] | None:
+        """Persist context edits so the checkpointer observes cleared tool results.
+
+        Args:
+            state: The current agent state.
+            runtime: The langgraph runtime.
+
+        Returns:
+            Updated state with cleared tool results persisted, or `None` if
+                no edit changed anything.
+        """
+        return self.after_model(state, runtime)
+
+    def _persist_edits(self, messages: list[AnyMessage]) -> dict[str, Any] | None:
+        """Re-apply edits to a copy of `messages` and diff for a state update.
+
+        Uses `count_tokens_approximately` regardless of `token_count_method`
+        since no chat model is available outside of a model call; this only
+        affects the persistence decision, not the token counting used to
+        build the outgoing model request in `wrap_model_call`.
+        """
+        if not messages:
+            return None
+
+        edited_messages = list(messages)
+        for edit in self.edits:
+            edit.apply(edited_messages, count_tokens=count_tokens_approximately)
+
+        changed = [
+            new_msg
+            for old_msg, new_msg in zip(messages, edited_messages, strict=True)
+            if new_msg is not old_msg
+        ]
+        if not changed:
+            return None
+        return {"messages": changed}
 
 
 __all__ = [

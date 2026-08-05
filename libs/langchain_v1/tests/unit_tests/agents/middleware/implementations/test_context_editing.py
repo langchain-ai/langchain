@@ -276,6 +276,69 @@ def _fake_runtime() -> Runtime:
     return cast("Runtime", object())
 
 
+def test_after_model_persists_cleared_tool_result() -> None:
+    """`after_model` must return a state update so the checkpointer sees the clear.
+
+    Regression test for the `cleared` idempotency flag being discarded
+    because `wrap_model_call` only ever edits a `deepcopy`.
+    """
+    tool_call_id = "call-1"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    tool_message = ToolMessage(content="x" * 200, tool_call_id=tool_call_id)
+
+    state = cast("AgentState[Any]", {"messages": [ai_message, tool_message]})
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=50, keep=0, placeholder="[cleared]")],
+    )
+
+    result = middleware.after_model(state, _fake_runtime())
+
+    assert result is not None
+    updated_tool_message = result["messages"][0]
+    assert isinstance(updated_tool_message, ToolMessage)
+    assert updated_tool_message.id == tool_message.id
+    assert updated_tool_message.content == "[cleared]"
+    assert updated_tool_message.response_metadata["context_editing"]["cleared"] is True
+
+    # The original state's messages are untouched (new object returned).
+    assert tool_message.content == "x" * 200
+
+
+def test_after_model_is_idempotent_across_turns() -> None:
+    """Once persisted, a later turn must not re-clear an already-cleared message.
+
+    Simulates the checkpointer round trip: apply `after_model`'s state
+    update back onto the message list (as `add_messages` would), then run
+    `after_model` again on the grown conversation.
+    """
+    tool_call_id = "call-1"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    tool_message = ToolMessage(content="x" * 200, tool_call_id=tool_call_id)
+
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=50, keep=0, placeholder="[cleared]")],
+    )
+
+    state = cast("AgentState[Any]", {"messages": [ai_message, tool_message]})
+    first_result = middleware.after_model(state, _fake_runtime())
+    assert first_result is not None
+
+    # Apply the persisted update, as the checkpointer/`add_messages` would.
+    messages = list(state["messages"])
+    messages[1] = first_result["messages"][0]
+    state = cast("AgentState[Any]", {"messages": messages})
+
+    # A second call against the already-persisted, cleared state changes nothing.
+    second_result = middleware.after_model(state, _fake_runtime())
+    assert second_result is None
+
+
 async def test_no_edit_when_below_trigger_async() -> None:
     """Test async version of context editing with no edit when below trigger."""
     tool_call_id = "call-1"
