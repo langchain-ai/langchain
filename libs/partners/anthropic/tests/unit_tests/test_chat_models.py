@@ -1744,6 +1744,43 @@ def test_usage_metadata_standardization() -> None:
     assert result["total_tokens"] == 0
 
 
+def test_usage_metadata_reasoning_tokens() -> None:
+    """Reasoning tokens surfaced via `output_tokens_details.thinking_tokens` should
+    be mapped to `output_token_details.reasoning`.
+    """
+
+    class OutputTokensDetailsModel(BaseModel):
+        thinking_tokens: int = 140
+
+    class UsageModelWithThinking(BaseModel):
+        input_tokens: int = 70
+        output_tokens: int = 190
+        cache_read_input_tokens: int = 0
+        cache_creation_input_tokens: int = 0
+        output_tokens_details: OutputTokensDetailsModel = OutputTokensDetailsModel()
+
+    result = _create_usage_metadata(UsageModelWithThinking())
+    assert result["output_tokens"] == 190
+    assert result.get("output_token_details") == {"reasoning": 140}
+
+    # No `output_tokens_details` at all (older/other providers, or absent field)
+    class UsageModelNoDetails(BaseModel):
+        input_tokens: int = 10
+        output_tokens: int = 5
+
+    result_no_details = _create_usage_metadata(UsageModelNoDetails())
+    assert "output_token_details" not in result_no_details
+
+    # `output_tokens_details` explicitly `None`
+    class UsageModelNoneDetails(BaseModel):
+        input_tokens: int = 10
+        output_tokens: int = 5
+        output_tokens_details: OutputTokensDetailsModel | None = None
+
+    result_none_details = _create_usage_metadata(UsageModelNoneDetails())
+    assert "output_token_details" not in result_none_details
+
+
 def test_usage_metadata_cache_creation_ttl() -> None:
     """Test _create_usage_metadata with granular cache_creation TTL fields."""
 

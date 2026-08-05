@@ -36,7 +36,11 @@ from langchain_core.messages import (
     is_data_content_block,
 )
 from langchain_core.messages import content as types
-from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -2561,7 +2565,19 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
     )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0) or 0
 
-    return UsageMetadata(
+    # Extract reasoning (thinking) token count, if provided. Anthropic reports this
+    # as a decomposition of `output_tokens` (not additive) via
+    # `output_tokens_details.thinking_tokens`.
+    output_token_details: dict = {}
+    output_tokens_details = getattr(anthropic_usage, "output_tokens_details", None)
+    if output_tokens_details:
+        if isinstance(output_tokens_details, BaseModel):
+            output_tokens_details = output_tokens_details.model_dump()
+        thinking_tokens = output_tokens_details.get("thinking_tokens")
+        if thinking_tokens is not None:
+            output_token_details["reasoning"] = thinking_tokens
+
+    usage_metadata = UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=input_tokens + output_tokens,
@@ -2569,3 +2585,8 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
             **{k: v for k, v in input_token_details.items() if v is not None},
         ),
     )
+    if output_token_details:
+        usage_metadata["output_token_details"] = OutputTokenDetails(
+            **output_token_details
+        )
+    return usage_metadata
