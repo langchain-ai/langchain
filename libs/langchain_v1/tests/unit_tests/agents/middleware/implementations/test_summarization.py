@@ -23,12 +23,13 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import count_tokens_approximately, get_buffer_string
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import Runtime
 from pydantic import Field
 from typing_extensions import override
 
-from langchain.agents import AgentState
+from langchain.agents import AgentState, create_agent
 from langchain.agents.middleware.summarization import (
     ContextSize,
     SummarizationMiddleware,
@@ -329,6 +330,93 @@ async def test_summarization_middleware_abefore_model_preserves_history_on_summa
     result = await middleware.abefore_model(state, Runtime())
 
     assert result is None
+
+
+def test_summarization_middleware_e2e_transient_failure_preserves_then_recovers() -> None:
+    """End-to-end regression test for #38867.
+
+    Drives a real `create_agent` graph with a checkpointer across several turns on
+    the same thread. The first time the trigger fires, the summary model raises a
+    transient error; the full conversation must survive untouched (no
+    `RemoveMessage(REMOVE_ALL_MESSAGES)`, no fabricated "Error generating summary"
+    text) and the agent must keep responding normally. Once the summary model
+    recovers, a later turn must still perform the real summarization/cutoff, proving
+    the earlier failure didn't permanently disable it.
+    """
+
+    class TemporarilyFailingSummaryModel(BaseChatModel):
+        """Summary-only model that fails a fixed number of times, then succeeds."""
+
+        fail_count: int = Field(default=0)
+        attempts: int = Field(default=0)
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            self.attempts += 1
+            if self.attempts <= self.fail_count:
+                msg = "429 Too Many Requests (simulated transient failure)"
+                raise RuntimeError(msg)
+            summary = AIMessage(content="Summary of the conversation so far.")
+            return ChatResult(generations=[ChatGeneration(message=summary)])
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    main_model = FakeToolCallingModel()
+    summary_model = TemporarilyFailingSummaryModel(fail_count=1)
+    middleware = SummarizationMiddleware(
+        model=summary_model, trigger=("messages", 6), keep=("messages", 2)
+    )
+
+    agent = create_agent(
+        model=main_model,
+        tools=[],
+        middleware=[middleware],
+        checkpointer=InMemorySaver(),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "e2e-summary-failure"}}
+
+    # Build up history below the ("messages", 6) trigger threshold.
+    for i in range(3):
+        agent.invoke({"messages": [HumanMessage(f"turn {i}")]}, config)
+
+    messages_below_threshold = agent.get_state(config).values["messages"]
+    assert len(messages_below_threshold) == 6
+
+    # This turn pushes the message count to 7, past the trigger. The summary model's
+    # first call fails, so before_model must skip summarization entirely: no message
+    # is deleted, and no "Error generating summary" text is fabricated.
+    agent.invoke({"messages": [HumanMessage("turn 3")]}, config)
+
+    messages_after_failed_summary = agent.get_state(config).values["messages"]
+    assert len(messages_after_failed_summary) == 8
+    assert not any(
+        "Error generating summary" in (m.content or "") for m in messages_after_failed_summary
+    )
+    assert any(m.content == "turn 0" for m in messages_after_failed_summary), (
+        "original history must survive a transient summarization failure"
+    )
+
+    # The next turn triggers summarization again; the summary model now succeeds,
+    # proving the earlier failure didn't permanently disable summarization.
+    agent.invoke({"messages": [HumanMessage("turn 4")]}, config)
+
+    messages_after_recovered_summary = agent.get_state(config).values["messages"]
+    assert len(messages_after_recovered_summary) < len(messages_after_failed_summary)
+    assert any(
+        "summary of the conversation" in (m.content or "").lower()
+        for m in messages_after_recovered_summary
+    )
+    assert not any(m.content == "turn 0" for m in messages_after_recovered_summary), (
+        "history should actually be trimmed once summarization succeeds"
+    )
 
 
 def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
