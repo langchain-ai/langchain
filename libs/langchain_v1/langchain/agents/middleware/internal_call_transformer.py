@@ -129,6 +129,10 @@ class InternalCallTransformer(StreamTransformer):
         if not is_internal:
             return True
 
+        # Only `message-start` needs mutating: once MessagesTransformer sees its
+        # `role` spoofed as "tool", its own tool-result bookkeeping ignores every
+        # later event for this run_id, so content-block-*/message-finish need no
+        # action here, the whole run gets dropped below regardless.
         if isinstance(payload, dict) and payload.get("event") == "message-start":
             payload["role"] = "tool"
         elif isinstance(payload, BaseMessage):
