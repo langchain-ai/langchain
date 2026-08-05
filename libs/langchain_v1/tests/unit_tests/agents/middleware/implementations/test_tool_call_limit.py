@@ -686,71 +686,69 @@ def test_parallel_tool_calls_with_limit_continue_mode() -> None:
 def test_parallel_tool_calls_with_limit_end_mode() -> None:
     """Test parallel tool calls with a limit of 1 in 'end' mode.
 
-    When the model proposes 3 tool calls with a limit of 1:
-    - The first call would be allowed (within limit)
-    - The 2nd and 3rd calls exceed the limit and get blocked with error ToolMessages
-    - Execution stops immediately (jump_to: end) so NO tools actually execute
-    - An AI message explains why execution stopped
+    When the model proposes 3 tool calls with a limit of 1, the first call would be
+    allowed (within limit) while the 2nd and 3rd exceed it. Jumping to "end" skips the
+    tool-execution node entirely, so the allowed call would never receive a
+    `ToolMessage`, leaving it "orphaned" and producing an invalid message history.
+    `ToolCallLimitMiddleware` must instead raise `NotImplementedError` in this case,
+    per its documented contract, rather than silently dropping the allowed call.
     """
+    middleware = ToolCallLimitMiddleware(thread_limit=1, exit_behavior="end")
+    runtime = None
 
-    @tool
-    def search(query: str) -> str:
-        """Search for information."""
-        return f"Results: {query}"
-
-    # Model proposes 3 parallel search calls
-    model = FakeToolCallingModel(
-        tool_calls=[
-            [
-                ToolCall(name="search", args={"query": "q1"}, id="1"),
-                ToolCall(name="search", args={"query": "q2"}, id="2"),
-                ToolCall(name="search", args={"query": "q3"}, id="3"),
-            ],
-            [],
-        ]
+    state = ToolCallLimitState(
+        messages=[
+            AIMessage(
+                "Response",
+                tool_calls=[
+                    {"name": "search", "args": {"query": "q1"}, "id": "1"},
+                    {"name": "search", "args": {"query": "q2"}, "id": "2"},
+                    {"name": "search", "args": {"query": "q3"}, "id": "3"},
+                ],
+            ),
+        ],
+        thread_tool_call_count={},
+        run_tool_call_count={},
     )
 
-    limiter = ToolCallLimitMiddleware(thread_limit=1, exit_behavior="end")
-    agent = create_agent(
-        model=model, tools=[search], middleware=[limiter], checkpointer=InMemorySaver()
+    with pytest.raises(
+        NotImplementedError, match="Cannot end execution with other tool calls pending"
+    ):
+        middleware.after_model(state, runtime)  # type: ignore[arg-type]
+
+
+def test_middleware_end_behavior_with_allowed_and_blocked_parallel_calls() -> None:
+    """Regression test for orphaned tool_calls when tool_name is unset (langchain#34159).
+
+    When `exit_behavior="end"` and the middleware limits all tools (`tool_name=None`),
+    a single `AIMessage` with parallel tool calls can have some calls allowed (under
+    the limit) and some blocked (over the limit). Previously, the "other pending tool
+    calls" check only fired when `tool_name` was set, so this scenario would jump to
+    "end" while leaving the allowed call without a `ToolMessage` — an invalid message
+    history that raises a 400 error on the next turn. It must now raise
+    `NotImplementedError` instead.
+    """
+    middleware = ToolCallLimitMiddleware(run_limit=2, exit_behavior="end")
+    runtime = None
+
+    state = ToolCallLimitState(
+        messages=[
+            AIMessage(
+                "Response",
+                tool_calls=[
+                    {"name": "get_summarized_eda_data", "args": {}, "id": "call_1"},
+                    {"name": "get_org_psych_analysis", "args": {}, "id": "call_2"},
+                ],
+            ),
+        ],
+        thread_tool_call_count={"__all__": 1},
+        run_tool_call_count={"__all__": 1},
     )
 
-    result = agent.invoke(
-        {"messages": [HumanMessage("Test")]}, {"configurable": {"thread_id": "test"}}
-    )
-    messages = result["messages"]
-
-    # Verify tool message counts
-    # With "end" behavior, when we jump to end, NO tools execute (not even allowed ones)
-    # We only get error ToolMessages for the 2 blocked calls
-    tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
-    successful_tool_messages = [msg for msg in tool_messages if msg.status != "error"]
-    error_tool_messages = [msg for msg in tool_messages if msg.status == "error"]
-
-    assert len(successful_tool_messages) == 0, "No tools execute when we jump to end"
-    assert len(error_tool_messages) == 2, "Should have 2 blocked tool messages (q2, q3)"
-
-    # Verify error tool messages (sent to model - include "Do not" instruction)
-    for error_msg in error_tool_messages:
-        assert "Tool call limit exceeded" in error_msg.content
-        assert "Do not" in error_msg.content
-
-    # Verify AI message explaining why execution stopped
-    # (displayed to user - includes thread/run details)
-    ai_limit_messages = []
-    for msg in messages:
-        if not isinstance(msg, AIMessage):
-            continue
-        assert isinstance(msg.content, str)
-        if "limit" in msg.content.lower() and not msg.tool_calls:
-            ai_limit_messages.append(msg)
-    assert len(ai_limit_messages) == 1, "Should have exactly one AI message explaining the limit"
-
-    ai_msg_content = ai_limit_messages[0].content
-    assert isinstance(ai_msg_content, str)
-    assert "thread limit exceeded" in ai_msg_content.lower() or (
-        "run limit exceeded" in ai_msg_content.lower()
-    ), "AI message should include thread/run limit details for the user"
+    with pytest.raises(
+        NotImplementedError, match="Cannot end execution with other tool calls pending"
+    ):
+        middleware.after_model(state, runtime)  # type: ignore[arg-type]
 
 
 def test_parallel_mixed_tool_calls_with_specific_tool_limit() -> None:

@@ -419,15 +419,19 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
         ]
 
         if self.exit_behavior == "end":
-            # Check if there are tool calls to other tools that would continue executing
-            other_tools = [
-                tc
-                for tc in last_ai_message.tool_calls
-                if self.tool_name is not None and tc["name"] != self.tool_name
+            # Jumping to "end" skips the tool-execution node entirely, so only tool
+            # calls we inject synthetic `ToolMessage`s for (the blocked ones) will
+            # have a matching response. Any other pending tool call on this
+            # `AIMessage` — whether it's an allowed call to the limited tool (e.g.
+            # from parallel tool calling) or a call to an unrelated tool — would be
+            # left without a `ToolMessage`, producing an invalid message history.
+            blocked_ids = {tool_call["id"] for tool_call in blocked_calls}
+            pending_tool_calls = [
+                tc for tc in last_ai_message.tool_calls if tc["id"] not in blocked_ids
             ]
 
-            if other_tools:
-                tool_names = ", ".join({tc["name"] for tc in other_tools})
+            if pending_tool_calls:
+                tool_names = ", ".join({tc["name"] for tc in pending_tool_calls})
                 msg = (
                     f"Cannot end execution with other tool calls pending. "
                     f"Found calls to: {tool_names}. Use 'continue' or 'error' behavior instead."
