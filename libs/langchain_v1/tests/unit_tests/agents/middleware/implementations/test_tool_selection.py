@@ -1,4 +1,5 @@
 """Unit tests for LLM tool selection middleware."""
+
 from collections.abc import Callable, Sequence
 from itertools import cycle
 from typing import Any, Literal
@@ -21,6 +22,7 @@ from langchain.agents.middleware import (
 )
 from langchain.agents.middleware.tool_selection import _create_tool_selection_response
 from langchain.messages import AIMessage
+
 
 @tool
 def get_weather(location: str) -> str:

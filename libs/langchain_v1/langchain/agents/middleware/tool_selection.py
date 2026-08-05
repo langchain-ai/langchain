@@ -24,6 +24,8 @@ from langchain.chat_models.base import init_chat_model
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
+    from langchain_core.runnables import RunnableConfig
+
     from langchain.tools import BaseTool
 
 logger = logging.getLogger(__name__)
@@ -379,7 +381,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             {"role": "system", "content": selection_request.system_message},
             selection_request.last_user_message,
         ]
-        config = {"metadata": {"lc_source": "tool_selection"}}
+        config: RunnableConfig = {"metadata": {"lc_source": "tool_selection"}}
 
         response = structured_model.invoke(messages, config=config)
         attempts = 0
@@ -440,7 +442,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             {"role": "system", "content": selection_request.system_message},
             selection_request.last_user_message,
         ]
-        config = {"metadata": {"lc_source": "tool_selection"}}
+        config: RunnableConfig = {"metadata": {"lc_source": "tool_selection"}}
 
         response = await structured_model.ainvoke(messages, config=config)
         attempts = 0
