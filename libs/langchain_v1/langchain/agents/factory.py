@@ -77,7 +77,7 @@ class _ComposedExtendedModelResponse(Generic[ResponseT]):
 
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Sequence
+    from collections.abc import Awaitable, Callable, Iterable, Sequence
 
     from langchain_core.runnables import Runnable, RunnableConfig
     from langgraph.cache.base import BaseCache
@@ -1796,6 +1796,9 @@ def create_agent(
     if name:
         config["metadata"]["lc_agent_name"] = name
 
+    # Middleware that makes internal model calls (e.g. `SummarizationMiddleware`)
+    # each declare `InternalCallTransformer` on their own `transformers` tuple so
+    # it's only registered when one of them is actually in use.
     middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
 
     return graph.compile(
@@ -1806,13 +1809,42 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
-        transformers=[
-            ToolCallTransformer,
-            SubagentTransformer,
-            *middleware_transformers,
-            *(transformers or ()),
-        ],
+        transformers=_dedupe_transformers(
+            [
+                ToolCallTransformer,
+                SubagentTransformer,
+                *middleware_transformers,
+                *(transformers or ()),
+            ]
+        ),
     ).with_config(config)
+
+
+def _dedupe_transformers(
+    factories: Iterable[TransformerFactory],
+) -> list[TransformerFactory]:
+    """Order-preserving de-dup of transformer factories, by identity.
+
+    `AgentMiddleware.transformers` accepts any scope-aware callable, and
+    callables aren't required to be hashable (e.g. a dataclass-based factory
+    with `__hash__ = None`), so this can't use a `set`/`dict` keyed on the
+    factories themselves. Combining several middleware that each declare the
+    same shared transformer class (e.g. `InternalCallTransformer`) would
+    otherwise register it once per middleware.
+
+    Args:
+        factories: Transformer factories to de-dup, in registration order.
+
+    Returns:
+        The same factories with exact repeats (by `is`) removed, order kept.
+    """
+    seen_ids: set[int] = set()
+    deduped: list[TransformerFactory] = []
+    for factory in factories:
+        if id(factory) not in seen_ids:
+            seen_ids.add(id(factory))
+            deduped.append(factory)
+    return deduped
 
 
 def _resolve_jump(

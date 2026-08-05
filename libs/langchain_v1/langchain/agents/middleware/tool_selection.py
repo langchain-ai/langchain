@@ -12,6 +12,10 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
+from langchain.agents.middleware.internal_call_transformer import (
+    InternalCallTransformer,
+    internal_call_metadata,
+)
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -143,6 +147,13 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             ```python
             middleware = LLMToolSelectorMiddleware(model="openai:gpt-5.4-mini", max_tools=2)
             ```
+    """
+
+    transformers = (InternalCallTransformer,)
+    """Keeps the tool-selection model call's tokens out of `run.messages`.
+
+    Registered only when this middleware is used — see
+    `InternalCallTransformer` for why the call needs tagging and filtering.
     """
 
     def __init__(
@@ -401,7 +412,9 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             {"role": "system", "content": selection_request.system_message},
             selection_request.last_user_message,
         ]
-        config: RunnableConfig = {"metadata": {"lc_source": "tool_selection"}}
+        config: RunnableConfig = {
+            "metadata": {"lc_source": "tool_selection", **internal_call_metadata()}
+        }
 
         response = structured_model.invoke(messages, config=config)
         attempts = 0
@@ -466,7 +479,9 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
             {"role": "system", "content": selection_request.system_message},
             selection_request.last_user_message,
         ]
-        config: RunnableConfig = {"metadata": {"lc_source": "tool_selection"}}
+        config: RunnableConfig = {
+            "metadata": {"lc_source": "tool_selection", **internal_call_metadata()}
+        }
 
         response = await structured_model.ainvoke(messages, config=config)
         attempts = 0

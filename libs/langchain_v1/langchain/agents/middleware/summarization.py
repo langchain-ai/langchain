@@ -25,6 +25,10 @@ from langgraph.graph.message import (
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
+from langchain.agents.middleware.internal_call_transformer import (
+    InternalCallTransformer,
+    internal_call_metadata,
+)
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 from langchain.chat_models import BaseChatModel, init_chat_model
 
@@ -228,6 +232,13 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     This middleware monitors message token counts and automatically summarizes older
     messages when a threshold is reached, preserving recent messages and maintaining
     context continuity by ensuring AI/Tool message pairs remain together.
+    """
+
+    transformers = (InternalCallTransformer,)
+    """Keeps the summarization model call's tokens out of `run.messages`.
+
+    Registered only when this middleware is used — see
+    `InternalCallTransformer` for why the call needs tagging and filtering.
     """
 
     def __init__(
@@ -821,7 +832,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         try:
             response = self.model.invoke(
                 self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization"}},
+                config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
             )
             return response.text.strip()
         except Exception as e:
@@ -847,7 +858,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         try:
             response = await self.model.ainvoke(
                 self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization"}},
+                config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
             )
             return response.text.strip()
         except Exception as e:
