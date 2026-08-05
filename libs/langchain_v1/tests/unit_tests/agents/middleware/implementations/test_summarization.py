@@ -242,13 +242,93 @@ def test_summarization_middleware_summary_creation() -> None:
 
     middleware_error = SummarizationMiddleware(model=ErrorModel(), trigger=("tokens", 1000))
     summary = middleware_error._create_summary(messages)
-    assert "Error generating summary: Model error" in summary
+    assert summary is None
 
     # Test we raise warning if max_tokens_before_summary or messages_to_keep is specified
     with pytest.warns(DeprecationWarning, match="max_tokens_before_summary is deprecated"):
         SummarizationMiddleware(model=MockChatModel(), max_tokens_before_summary=500)
     with pytest.warns(DeprecationWarning, match="messages_to_keep is deprecated"):
         SummarizationMiddleware(model=MockChatModel(), messages_to_keep=5)
+
+
+def test_summarization_middleware_before_model_preserves_history_on_summary_failure() -> None:
+    """A failed summary generation must never delete history or fabricate a summary."""
+
+    class AlwaysFailingModel(BaseChatModel):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            msg = "429 Too Many Requests"
+            raise RuntimeError(msg)
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    middleware = SummarizationMiddleware(
+        model=AlwaysFailingModel(), trigger=("messages", 2), keep=("messages", 1)
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+        HumanMessage(content="how are you", id="h1"),
+    ]
+    state = AgentState[Any](messages=messages)
+
+    result = middleware.before_model(state, Runtime())
+
+    assert result is None
+
+
+async def test_summarization_middleware_abefore_model_preserves_history_on_summary_failure() -> (
+    None
+):
+    """A failed async summary generation must never delete history or fabricate a summary."""
+
+    class AlwaysFailingAsyncModel(BaseChatModel):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @override
+        async def _agenerate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            msg = "429 Too Many Requests"
+            raise RuntimeError(msg)
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    middleware = SummarizationMiddleware(
+        model=AlwaysFailingAsyncModel(), trigger=("messages", 2), keep=("messages", 1)
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+        HumanMessage(content="how are you", id="h1"),
+    ]
+    state = AgentState[Any](messages=messages)
+
+    result = await middleware.abefore_model(state, Runtime())
+
+    assert result is None
 
 
 def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
@@ -938,7 +1018,7 @@ async def test_summarization_middleware_async_error_handling() -> None:
     middleware = SummarizationMiddleware(model=ErrorAsyncModel(), trigger=("messages", 5))
     messages: list[AnyMessage] = [HumanMessage(content="test")]
     summary = await middleware._acreate_summary(messages)
-    assert "Error generating summary: Async model error" in summary
+    assert summary is None
 
 
 def test_summarization_middleware_cutoff_at_boundary() -> None:

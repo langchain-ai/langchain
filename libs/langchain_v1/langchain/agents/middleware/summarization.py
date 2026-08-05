@@ -1,5 +1,6 @@
 """Summarization middleware."""
 
+import logging
 import uuid
 import warnings
 from collections.abc import Callable, Iterable, Mapping
@@ -27,6 +28,8 @@ from typing_extensions import override
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 from langchain.chat_models import BaseChatModel, init_chat_model
+
+logger = logging.getLogger(__name__)
 
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
 
@@ -400,6 +403,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
         summary = self._create_summary(messages_to_summarize)
+        if summary is None:
+            # Summary generation failed; leave the conversation untouched and retry
+            # summarization on a later turn rather than destroying history.
+            return None
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -438,6 +445,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
         summary = await self._acreate_summary(messages_to_summarize)
+        if summary is None:
+            # Summary generation failed; leave the conversation untouched and retry
+            # summarization on a later turn rather than destroying history.
+            return None
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -801,11 +812,15 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         # orphaned tool responses
         return idx
 
-    def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
+    def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str | None:
         """Generate summary for the given messages.
 
         Args:
             messages_to_summarize: Messages to summarize.
+
+        Returns:
+            The generated summary, or `None` if summary generation failed. A `None`
+            return must never be treated as a valid summary by callers.
         """
         if not messages_to_summarize:
             return "No previous conversation history."
@@ -824,14 +839,19 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
-        except Exception as e:
-            return f"Error generating summary: {e!s}"
+        except Exception:
+            logger.warning("Summary generation failed; skipping summarization.", exc_info=True)
+            return None
 
-    async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
+    async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str | None:
         """Generate summary for the given messages.
 
         Args:
             messages_to_summarize: Messages to summarize.
+
+        Returns:
+            The generated summary, or `None` if summary generation failed. A `None`
+            return must never be treated as a valid summary by callers.
         """
         if not messages_to_summarize:
             return "No previous conversation history."
@@ -850,8 +870,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
-        except Exception as e:
-            return f"Error generating summary: {e!s}"
+        except Exception:
+            logger.warning("Summary generation failed; skipping summarization.", exc_info=True)
+            return None
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
         """Trim messages to fit within summary generation limits."""
