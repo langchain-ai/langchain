@@ -19,7 +19,9 @@ from langgraph.stream._types import ProtocolEvent
 from langgraph.stream.transformers import MessagesTransformer
 
 from langchain.agents import AgentState
+from langchain.agents import middleware as middleware_package
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware import PIIMatch as PublicPIIMatch
 from langchain.agents.middleware._redaction import RedactionRule
 from langchain.agents.middleware.pii import (
     PIIDetectionError,
@@ -33,6 +35,24 @@ from langchain.agents.middleware.pii import (
     detect_url,
 )
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+# ============================================================================
+# Public Export Tests
+# ============================================================================
+
+
+class TestPIIMatchPublicExport:
+    """Test that `PIIMatch` is importable from the public middleware package.
+
+    Regression test: `PIIMatch` was only exported from the private
+    `_redaction` module, forcing custom-detector authors to import from it
+    directly instead of `langchain.agents.middleware`.
+    """
+
+    def test_pii_match_importable_from_middleware_package(self) -> None:
+        assert PublicPIIMatch is PIIMatch
+        assert "PIIMatch" in middleware_package.__all__
+
 
 # ============================================================================
 # Detection Function Tests
