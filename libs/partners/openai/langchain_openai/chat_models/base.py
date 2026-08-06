@@ -564,6 +564,7 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
         "context_length_exceeded" in str(e)
         or "Input tokens exceed the configured limit" in e.message
         or "prompt is too long" in e.message
+        or "ContextWindowExceededError" in e.message
     ):
         raise OpenAIContextOverflowError(
             message=e.message, response=e.response, body=e.body
