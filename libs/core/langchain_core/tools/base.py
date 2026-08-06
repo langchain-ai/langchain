@@ -1441,7 +1441,14 @@ def _normalize_message_content(obj: Any) -> str | list[MessageContentBlock] | No
     # Validate lazily before materializing: `all` short-circuits on the first
     # invalid element, so a large non-content sequence (e.g. `range(10**12)`)
     # falls back to stringification without allocating it.
-    if isinstance(obj, Sequence) and all(_is_message_content_block(e) for e in obj):
+    # An empty sequence is ambiguous (it could be an empty list of content
+    # blocks or a generic empty result), so treat it as non-content and let
+    # it fall through to `_stringify` for a serialized `"[]"`.
+    if (
+        isinstance(obj, Sequence)
+        and obj
+        and all(_is_message_content_block(e) for e in obj)
+    ):
         return list(obj)
     return None
 

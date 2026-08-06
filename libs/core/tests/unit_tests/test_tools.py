@@ -2355,8 +2355,11 @@ def test__is_message_content_block(obj: Any, *, expected: bool) -> None:
         ("foo", True),
         (valid_tool_result_blocks, True),
         (tuple(valid_tool_result_blocks), True),
-        ([], True),  # empty sequences are vacuously valid content
-        ((), True),
+        # Empty sequences are ambiguous (could be a genuine empty result rather
+        # than an empty list of content blocks), so they are not treated as
+        # message content and get serialized instead. See issue #30578.
+        ([], False),
+        ((), False),
         (invalid_tool_result_blocks, False),
         (tuple(invalid_tool_result_blocks), False),
         (({"type": "text", "text": "ok"}, {"text": "bad"}), False),  # mixed
@@ -4113,12 +4116,16 @@ def test_format_output_list_with_non_mixin_element() -> None:
 
 
 def test_format_output_empty_list() -> None:
-    """An empty list is vacuously valid content and wrapped unchanged."""
+    """An empty list result is serialized, not treated as empty content.
+
+    See issue #30578: an unserialized empty list is indistinguishable from a
+    `ToolMessage` with no content blocks at all.
+    """
     result = _format_output(
         [], artifact=None, tool_call_id="0", name="t", status="success"
     )
     assert isinstance(result, ToolMessage)
-    assert result.content == []
+    assert result.content == "[]"
     assert result.tool_call_id == "0"
 
 
