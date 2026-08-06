@@ -13,6 +13,7 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
+from pytest_mock import MockerFixture
 from typing_extensions import override
 
 from langchain.agents import create_agent
@@ -461,14 +462,38 @@ class TestLLMToolEmulatorModelConfiguration:
         # Should use the custom model for emulation
         assert isinstance(result["messages"][-1], AIMessage)
 
-    def test_model_is_required(self) -> None:
-        """Test that omitting `model` raises a clear error instead of an ImportError.
+    def test_default_model_deprecated_and_missing_langchain_anthropic_raises_clear_error(
+        self,
+    ) -> None:
+        """Test the `model=None` default path without `langchain-anthropic` installed.
 
-        `LLMToolEmulator` should never implicitly depend on a specific model
-        provider's package being installed, so `model` is a required argument.
+        Regression test: omitting `model` used to either silently depend on
+        `langchain-anthropic` or (in an earlier draft of this fix) raise a
+        `TypeError` for a previously-supported call shape. It should instead
+        keep working when a model provider is available, and raise an
+        actionable `ImportError` (plus a `DeprecationWarning`) when it isn't.
         """
-        with pytest.raises(TypeError):
-            LLMToolEmulator(tools=["get_weather"])  # type: ignore[call-arg]
+        with (
+            pytest.warns(DeprecationWarning, match="deprecated"),
+            pytest.raises(ImportError, match="langchain-anthropic"),
+        ):
+            LLMToolEmulator(tools=["get_weather"])
+
+    def test_default_model_used_when_none(self, mocker: MockerFixture) -> None:
+        """Test that the default model is used and a deprecation warning is raised."""
+        fake_model = FakeEmulatorModel(responses=["response"])
+        init_chat_model_mock = mocker.patch(
+            "langchain.agents.middleware.tool_emulator.init_chat_model",
+            return_value=fake_model,
+        )
+
+        with pytest.warns(DeprecationWarning, match="deprecated"):
+            emulator = LLMToolEmulator(tools=["get_weather"])
+
+        assert emulator.model is fake_model
+        init_chat_model_mock.assert_called_once_with(
+            "anthropic:claude-sonnet-4-5-20250929", temperature=1
+        )
 
 
 class TestLLMToolEmulatorAsync:
