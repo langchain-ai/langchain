@@ -37,7 +37,7 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
             ```python
             from langchain.agents.middleware import LLMToolEmulator
 
-            middleware = LLMToolEmulator()
+            middleware = LLMToolEmulator(model="anthropic:claude-sonnet-4-5-20250929")
 
             agent = create_agent(
                 model="openai:gpt-5.5",
@@ -49,7 +49,10 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
         !!! example "Emulate specific tools by name"
 
             ```python
-            middleware = LLMToolEmulator(tools=["get_weather", "get_user_location"])
+            middleware = LLMToolEmulator(
+                tools=["get_weather", "get_user_location"],
+                model="anthropic:claude-sonnet-4-5-20250929",
+            )
             ```
 
         !!! example "Use a custom model for emulation"
@@ -63,7 +66,10 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
         !!! example "Emulate specific tools by passing tool instances"
 
             ```python
-            middleware = LLMToolEmulator(tools=[get_weather, get_user_location])
+            middleware = LLMToolEmulator(
+                tools=[get_weather, get_user_location],
+                model="anthropic:claude-sonnet-4-5-20250929",
+            )
             ```
     """
 
@@ -78,7 +84,7 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
         self,
         *,
         tools: list[str | BaseTool] | None = None,
-        model: str | BaseChatModel | None = None,
+        model: str | BaseChatModel,
     ) -> None:
         """Initialize the tool emulator.
 
@@ -90,7 +96,8 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
                 If empty list, no tools will be emulated.
             model: Model to use for emulation.
 
-                Defaults to `'anthropic:claude-sonnet-4-5-20250929'`.
+                Required, since this middleware should not implicitly depend on
+                any specific model provider's package being installed.
 
                 Can be a model identifier string or `BaseChatModel` instance.
         """
@@ -101,7 +108,7 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
         self.emulate_all = tools is None
         self.tools_to_emulate: set[str] = set()
 
-        if not self.emulate_all and tools is not None:
+        if tools is not None:
             for tool in tools:
                 if isinstance(tool, str):
                     self.tools_to_emulate.add(tool)
@@ -110,12 +117,9 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
                     self.tools_to_emulate.add(tool.name)
 
         # Initialize emulator model
-        if model is None:
-            self.model = init_chat_model("anthropic:claude-sonnet-4-5-20250929", temperature=1)
-        elif isinstance(model, BaseChatModel):
-            self.model = model
-        else:
-            self.model = init_chat_model(model, temperature=1)
+        self.model = (
+            model if isinstance(model, BaseChatModel) else init_chat_model(model, temperature=1)
+        )
 
     def wrap_tool_call(
         self,
