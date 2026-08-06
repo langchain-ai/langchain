@@ -158,6 +158,10 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 def _get_pydantic_test_configs(
     dir_: str, *, python_version: str = "3.12"
 ) -> List[Dict[str, str]]:
+    base_path = Path("libs").resolve()
+    safe_dir = (base_path / Path(dir_).relative_to("libs")).resolve()
+    if not safe_dir.is_relative_to(base_path):
+        raise ValueError(f"Invalid directory path: {dir_!r}")
     with open("./libs/core/uv.lock", "rb") as f:
         core_uv_lock_data = tomllib.load(f)
     for package in core_uv_lock_data["package"]:
@@ -165,7 +169,7 @@ def _get_pydantic_test_configs(
             core_max_pydantic_minor = package["version"].split(".")[1]
             break
 
-    with open(f"./{dir_}/uv.lock", "rb") as f:
+    with open(safe_dir / "uv.lock", "rb") as f:
         dir_uv_lock_data = tomllib.load(f)
 
     for package in dir_uv_lock_data["package"]:
@@ -182,7 +186,7 @@ def _get_pydantic_test_configs(
         else "0"
     )
     dir_min_pydantic_version = get_min_version_from_toml(
-        f"./{dir_}/pyproject.toml", "release", python_version, include=["pydantic"]
+        str(safe_dir / "pyproject.toml"), "release", python_version, include=["pydantic"]
     ).get("pydantic", "0.0.0")
     dir_min_pydantic_minor = (
         dir_min_pydantic_version.split(".")[1]
