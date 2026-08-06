@@ -4323,7 +4323,16 @@ def _construct_responses_api_payload(
             # responses api: {"type": "function", "name": "...", "description": "...", "parameters": {...}, "strict": ...}  # noqa: E501
             if tool["type"] == "function" and "function" in tool:
                 extra = {k: v for k, v in tool.items() if k not in ("type", "function")}
-                new_tools.append({"type": "function", **tool["function"], **extra})
+                function = tool["function"]
+                if "strict" not in function and "strict" not in extra:
+                    # The Chat Completions API treats an omitted `strict` as
+                    # `False`, but the Responses API defaults to `True`. Make
+                    # the omitted case explicit so switching to the Responses
+                    # API (e.g. via `reasoning`) doesn't silently change
+                    # tool-calling behavior for schemas that aren't
+                    # strict-mode compliant.
+                    function = {**function, "strict": False}
+                new_tools.append({"type": "function", **function, **extra})
             else:
                 if tool["type"] == "image_generation":
                     # Handle partial images (not yet supported)
