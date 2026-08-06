@@ -340,3 +340,23 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
     assert result.generations[0].message.additional_kwargs["parsed"] == ModelOutput(
         output="Paris"
     )
+
+def test_azure_chat_openai_reuses_default_httpx_client() -> None:
+    """Identically configured AzureChatOpenAI instances share one httpx client.
+
+    Mirrors ChatOpenAI behavior and guards against regressing #39294.
+    """
+    llm1 = AzureChatOpenAI(
+        azure_deployment="35-turbo-dev",
+        azure_endpoint="my-base-url",
+        api_key=SecretStr("test"),
+        api_version="2023-05-15",
+    )
+    llm2 = AzureChatOpenAI(
+        azure_deployment="35-turbo-dev",
+        azure_endpoint="my-base-url",
+        api_key=SecretStr("test"),
+        api_version="2023-05-15",
+    )
+    assert llm1.root_client._client is llm2.root_client._client
+    assert llm1.root_async_client._client is llm2.root_async_client._client

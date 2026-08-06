@@ -17,6 +17,11 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openai.chat_models._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+    _resolve_socket_options,
+)
 from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
 
 if TYPE_CHECKING:
@@ -686,12 +691,27 @@ class AzureChatOpenAI(BaseChatOpenAI):
         if self.max_retries is not None:
             client_params["max_retries"] = self.max_retries
 
+        resolved_socket_options = _resolve_socket_options(self.http_socket_options)
         if not self.client:
-            sync_specific = {"http_client": self.http_client}
+            sync_specific = {
+                "http_client": self.http_client
+                or _get_default_httpx_client(
+                    self.openai_api_base,
+                    self.request_timeout,
+                    resolved_socket_options,
+                ),
+            }
             self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
         if not self.async_client:
-            async_specific = {"http_client": self.http_async_client}
+            async_specific = {
+                "http_client": self.http_async_client
+                or _get_default_async_httpx_client(
+                    self.openai_api_base,
+                    self.request_timeout,
+                    resolved_socket_options,
+                ),
+            }
 
             if self.azure_ad_async_token_provider:
                 client_params["azure_ad_token_provider"] = (
