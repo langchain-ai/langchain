@@ -54,6 +54,11 @@ class TestPIIMatchPublicExport:
         assert "PIIMatch" in middleware_package.__all__
 
 
+# ============================================================================
+# Detection Function Tests
+# ============================================================================
+
+
 class TestEmailDetection:
     """Test email detection."""
 
