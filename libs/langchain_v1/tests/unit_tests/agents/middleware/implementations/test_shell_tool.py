@@ -11,10 +11,12 @@ from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools.base import ToolException
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.runtime import Runtime
 
+from langchain.agents.factory import create_agent
 from langchain.agents.middleware.shell_tool import (
     HostExecutionPolicy,
     RedactionRule,
@@ -24,6 +26,7 @@ from langchain.agents.middleware.shell_tool import (
     _SessionResources,
     _ShellToolInput,
 )
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 def _empty_state() -> ShellToolState:
@@ -694,3 +697,36 @@ def test_kill_process_noop_without_active_process(tmp_path: Path) -> None:
 
     # No process has been started; this must not raise.
     session._kill_process()
+
+
+def test_shell_tool_with_checkpointer_does_not_raise_msgpack_error(tmp_path: Path) -> None:
+    """`ShellToolMiddleware` must work with a checkpointer end to end.
+
+    Regression test for #34490: `ShellToolState.shell_session_resources` holds
+    a live, non-serializable `ShellSession` (subprocess + threads). Before
+    `create_agent` stopped inlining the full agent state into tool-dispatch
+    `Send`s, that resource ended up in the `Send` payload and the
+    checkpointer's msgpack writer raised `TypeError: Type is not msgpack
+    serializable: Send` the moment a checkpointer was configured.
+    """
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="shell", args={"command": "echo hi"}, id="call_1")],
+            [],
+        ]
+    )
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    agent = create_agent(
+        model=model,
+        middleware=[middleware],
+        checkpointer=InMemorySaver(),
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("run echo hi")]},
+        {"configurable": {"thread_id": "shell-checkpointer-test"}},
+    )
+
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert tool_messages
+    assert "hi" in str(tool_messages[0].content)
