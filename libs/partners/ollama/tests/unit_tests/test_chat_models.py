@@ -10,6 +10,7 @@ import pytest
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, BaseMessage, ChatMessage, HumanMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
+from ollama import ResponseError
 
 from langchain_ollama.chat_models import (
     ChatOllama,
@@ -785,6 +786,55 @@ def test_invoke_raises_when_client_none() -> None:
         llm._client = None  # type: ignore[assignment]
 
         with pytest.raises(RuntimeError, match="sync client is not initialized"):
+            llm.invoke([HumanMessage("Hello")])
+
+
+def test_malformed_tool_call_response_error_is_output_parser_exception() -> None:
+    """A malformed tool-call `ResponseError` from `ollama` becomes an
+    `OutputParserException` instead of propagating as an opaque error.
+
+    See issue #34746: Ollama's client raises a bare `ResponseError` when the
+    model streams invalid JSON tool-call arguments, crashing the agent with
+    a confusing error instead of a recognizable parsing failure.
+    """
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.side_effect = ResponseError(
+            "error parsing tool call: raw='{\"foo\": ' err=unexpected end of JSON input"
+        )
+
+        llm = ChatOllama(model=MODEL_NAME)
+        with pytest.raises(OutputParserException, match="error parsing tool call"):
+            llm.invoke([HumanMessage("Hello")])
+
+
+async def test_malformed_tool_call_response_error_output_parser_async() -> None:
+    """Async counterpart of the malformed tool-call `ResponseError` handling."""
+    with patch("langchain_ollama.chat_models.AsyncClient") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat = AsyncMock(
+            side_effect=ResponseError(
+                "error parsing tool call: raw='{\"foo\": ' err=unexpected end of "
+                "JSON input"
+            )
+        )
+
+        llm = ChatOllama(model=MODEL_NAME)
+        with pytest.raises(OutputParserException, match="error parsing tool call"):
+            await llm.ainvoke([HumanMessage("Hello")])
+
+
+def test_unrelated_response_error_is_not_wrapped() -> None:
+    """A `ResponseError` unrelated to tool-call parsing propagates unchanged."""
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.side_effect = ResponseError("model not found", 404)
+
+        llm = ChatOllama(model=MODEL_NAME)
+        with pytest.raises(ResponseError, match="model not found"):
             llm.invoke([HumanMessage("Hello")])
 
 

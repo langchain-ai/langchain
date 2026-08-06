@@ -83,7 +83,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
-from ollama import AsyncClient, Client, Message
+from ollama import AsyncClient, Client, Message, ResponseError
 from pydantic import BaseModel, PrivateAttr, field_validator, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -115,6 +115,30 @@ def _get_usage_metadata_from_generation_info(
             total_tokens=input_tokens + output_tokens,
         )
     return None
+
+
+def _reraise_if_malformed_tool_call_response(exc: ResponseError) -> None:
+    """Re-raise an Ollama tool-call parsing failure as an `OutputParserException`.
+
+    The `ollama` client parses streamed tool-call arguments internally and
+    raises a bare `ResponseError` (e.g. `"error parsing tool call: raw='...',
+    err=..."`) when the model produces malformed JSON. That error never
+    reaches `_parse_json_string`, so it otherwise propagates as an opaque,
+    non-`langchain_core` exception that crashes the entire agent run instead
+    of being recognized as a tool-call parsing issue.
+
+    Args:
+        exc: The `ResponseError` raised by the `ollama` client.
+
+    Raises:
+        OutputParserException: If `exc` is a tool-call parsing failure.
+    """
+    if "error parsing tool call" in str(exc.error):
+        msg = (
+            "Ollama returned a tool call with malformed JSON arguments that "
+            f"could not be parsed: {exc.error}"
+        )
+        raise OutputParserException(msg) from exc
 
 
 def _parse_json_string(
@@ -1109,11 +1133,15 @@ class ChatOllama(BaseChatModel):
             raise RuntimeError(msg)
         chat_params = self._chat_params(messages, stop, **kwargs)
 
-        if chat_params["stream"]:
-            async for part in await self._async_client.chat(**chat_params):
-                yield part
-        else:
-            yield await self._async_client.chat(**chat_params)
+        try:
+            if chat_params["stream"]:
+                async for part in await self._async_client.chat(**chat_params):
+                    yield part
+            else:
+                yield await self._async_client.chat(**chat_params)
+        except ResponseError as e:
+            _reraise_if_malformed_tool_call_response(e)
+            raise
 
     def _create_chat_stream(
         self,
@@ -1129,10 +1157,14 @@ class ChatOllama(BaseChatModel):
             raise RuntimeError(msg)
         chat_params = self._chat_params(messages, stop, **kwargs)
 
-        if chat_params["stream"]:
-            yield from self._client.chat(**chat_params)
-        else:
-            yield self._client.chat(**chat_params)
+        try:
+            if chat_params["stream"]:
+                yield from self._client.chat(**chat_params)
+            else:
+                yield self._client.chat(**chat_params)
+        except ResponseError as e:
+            _reraise_if_malformed_tool_call_response(e)
+            raise
 
     def _chat_stream_with_aggregation(
         self,
