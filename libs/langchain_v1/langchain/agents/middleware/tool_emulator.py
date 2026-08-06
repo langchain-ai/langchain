@@ -96,6 +96,12 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
                 Defaults to `'anthropic:claude-sonnet-4-5-20250929'`, which requires
                 `langchain-anthropic` to be installed.
 
+                !!! warning "Deprecated"
+                    Relying on the implicit default is deprecated and will be
+                    removed in a future release, since it makes this middleware
+                    depend on `langchain-anthropic` even when unspecified. Pass
+                    `model` explicitly instead.
+
                 Can be a model identifier string or `BaseChatModel` instance.
         """
         super().__init__()
@@ -115,6 +121,13 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
 
         # Initialize emulator model
         if model is None:
+            warnings.warn(
+                "LLMToolEmulator's default model "
+                f"({_DEFAULT_EMULATOR_MODEL!r}) is deprecated and will be removed "
+                "in a future release. Pass `model` explicitly instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             try:
                 self.model = init_chat_model(_DEFAULT_EMULATOR_MODEL, temperature=1)
             except ImportError as e:
