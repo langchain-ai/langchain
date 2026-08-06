@@ -4747,6 +4747,12 @@ def _construct_responses_api_input(
                             "name": tool_call["function"]["name"],
                             "arguments": tool_call["function"]["arguments"],
                             "call_id": tool_call["id"],
+                            # Some OpenAI-compatible servers (e.g. vLLM serving
+                            # GPT-OSS models) require "status" to be present on
+                            # a function_call block when it's echoed back as
+                            # conversation history; omitting it can cause a
+                            # "No call message found" error.
+                            "status": None,
                         }
                         input_.append(function_call)
 
@@ -4883,7 +4889,13 @@ def _construct_lc_result_from_responses_api(
                         refusal_block["phase"] = phase
                     content_blocks.append(refusal_block)
         elif output.type == "function_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            function_call_block = output.model_dump(exclude_none=True, mode="json")
+            # Some OpenAI-compatible servers (e.g. vLLM serving GPT-OSS models)
+            # require "status" to be present in the function_call block when
+            # it's sent back as conversation history; omitting it causes
+            # "No call message found" errors.
+            function_call_block.setdefault("status", None)
+            content_blocks.append(function_call_block)
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
@@ -5161,6 +5173,11 @@ def _convert_responses_chunk_to_generation_chunk(
             "arguments": chunk.item.arguments,
             "call_id": chunk.item.call_id,
             "id": chunk.item.id,
+            # Some OpenAI-compatible servers (e.g. vLLM serving GPT-OSS models)
+            # require "status" to be present in the function_call block when
+            # it's sent back as conversation history; omitting it causes
+            # "No call message found" errors.
+            "status": getattr(chunk.item, "status", None),
             "index": current_index,
         }
         if getattr(chunk.item, "namespace", None) is not None:
