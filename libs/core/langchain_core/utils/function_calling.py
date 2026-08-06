@@ -821,6 +821,14 @@ def _recursive_set_additional_properties_false(
     schema: dict[str, Any],
 ) -> dict[str, Any]:
     if isinstance(schema, dict):
+        # OpenAI strict mode requires every key in `properties` to also be listed
+        # in `required`, at every level of nesting (fields that are logically
+        # optional should be made nullable instead). Without this, nested
+        # objects with optional fields are rejected by the API.
+        properties = schema.get("properties")
+        if isinstance(properties, dict) and properties:
+            schema["required"] = list(properties.keys())
+
         # Check if 'required' is a key at the current level or if the schema is empty,
         # in which case additionalProperties still needs to be specified.
         if (

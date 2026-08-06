@@ -1179,6 +1179,29 @@ def test_convert_to_openai_function_strict_required() -> None:
     assert actual == expected
 
 
+def test_convert_to_openai_function_strict_nested_required() -> None:
+    """Nested objects must also list every property as `required` under strict mode.
+
+    See: https://github.com/langchain-ai/langchain/issues/33869
+    """
+
+    class Inner(BaseModel):
+        """Inner schema."""
+
+        required_field: str = Field(..., description="req")
+        optional_field: str = Field(default="x", description="opt")
+
+    class Outer(BaseModel):
+        """Outer schema."""
+
+        inner: Inner = Field(..., description="nested")
+
+    func = convert_to_openai_function(Outer, strict=True)
+    inner_schema = func["parameters"]["properties"]["inner"]
+    assert set(inner_schema["required"]) == {"required_field", "optional_field"}
+    assert inner_schema["additionalProperties"] is False
+
+
 def test_convert_to_openai_function_arbitrary_type_error() -> None:
     """Test that a helpful error is raised for non-JSON-serializable types.
 
