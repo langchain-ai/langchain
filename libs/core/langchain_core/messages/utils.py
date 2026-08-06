@@ -28,7 +28,25 @@ from typing import (
     cast,
     overload,
 )
-from xml.sax.saxutils import escape, quoteattr
+def escape(data: str, entities: dict = {}) -> str:
+    """Escape &, <, and > in a string of data."""
+    data = data.replace("&", "&amp;")
+    data = data.replace(">", "&gt;")
+    data = data.replace("<", "&lt;")
+    for chars, ref in entities.items():
+        data = data.replace(chars, ref)
+    return data
+
+
+def quoteattr(data: str, entities: dict = {}) -> str:
+    """Escape and quote an attribute value."""
+    entities = {"\n": "&#10;", "\r": "&#13;", "\t": "&#9;", **entities}
+    data = escape(data, entities)
+    if '"' in data:
+        if "'" in data:
+            return '"%s"' % data.replace('"', "&quot;")
+        return "'%s'" % data
+    return '"%s"' % data
 
 from pydantic import Discriminator, Field, Tag
 
