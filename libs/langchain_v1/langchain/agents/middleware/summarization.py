@@ -344,6 +344,8 @@ class SummarizationMiddleware(AgentMiddleware[SummarizationState[ResponseT], Con
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
+        summary_max_attempts: int = 3,
+        summary_retry_backoff: bool = True,
         max_consecutive_summary_failures: int | None = 3,
         hard_token_ceiling: int | None = None,
         **deprecated_kwargs: Any,
@@ -414,6 +416,18 @@ class SummarizationMiddleware(AgentMiddleware[SummarizationState[ResponseT], Con
                 the summarization call.
 
                 Pass `None` to skip trimming entirely.
+            summary_max_attempts: Maximum number of attempts for a single summary
+                call, retrying transient errors (e.g. rate limits, timeouts)
+                in-process with exponential backoff via
+                [`Runnable.with_retry`][langchain_core.runnables.Runnable.with_retry]
+                before the call is counted as a failure.
+
+                Only once these attempts are exhausted does the call count toward
+                `max_consecutive_summary_failures`/`hard_token_ceiling` below. Pass
+                `1` to disable additional retries and attempt each summary call once.
+            summary_retry_backoff: Whether to wait between summary retry attempts
+                using exponential backoff with jitter. Pass `False` for immediate
+                retries with no delay.
             max_consecutive_summary_failures: Maximum number of consecutive
                 summary-generation failures tolerated for a given thread before
                 raising
@@ -433,9 +447,13 @@ class SummarizationMiddleware(AgentMiddleware[SummarizationState[ResponseT], Con
                 check.
 
         Raises:
-            ValueError: If `max_consecutive_summary_failures` or `hard_token_ceiling`
-                is not a positive integer.
+            ValueError: If `summary_max_attempts`, `max_consecutive_summary_failures`,
+                or `hard_token_ceiling` is not a positive integer.
         """
+        if summary_max_attempts < 1:
+            msg = f"summary_max_attempts must be a positive integer, got {summary_max_attempts}."
+            raise ValueError(msg)
+
         if max_consecutive_summary_failures is not None and max_consecutive_summary_failures < 1:
             msg = (
                 "max_consecutive_summary_failures must be a positive integer or None, "
@@ -476,6 +494,17 @@ class SummarizationMiddleware(AgentMiddleware[SummarizationState[ResponseT], Con
             model = init_chat_model(model)
 
         self.model = model
+        # Transient errors (rate limits, timeouts) are retried in-process with
+        # exponential backoff before a summary call is ever counted as a failure,
+        # using the standard `Runnable.with_retry` mechanism
+        # (https://reference.langchain.com/python/langchain-core/runnables/retry/RunnableRetry).
+        # Only once these attempts are exhausted does `_create_summary`/`_acreate_summary`
+        # return `None`, which `before_model`/`abefore_model` count toward
+        # `max_consecutive_summary_failures`/`hard_token_ceiling`.
+        self._summary_model = self.model.with_retry(
+            stop_after_attempt=summary_max_attempts,
+            wait_exponential_jitter=summary_retry_backoff,
+        )
 
         self.trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None = (
             self._copy_trigger(trigger)
@@ -499,6 +528,7 @@ class SummarizationMiddleware(AgentMiddleware[SummarizationState[ResponseT], Con
             self._partial_token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
+        self.summary_max_attempts = summary_max_attempts
         self.max_consecutive_summary_failures = max_consecutive_summary_failures
         self.hard_token_ceiling = hard_token_ceiling
 
@@ -1035,13 +1065,17 @@ class SummarizationMiddleware(AgentMiddleware[SummarizationState[ResponseT], Con
         formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         try:
-            response = self.model.invoke(
+            response = self._summary_model.invoke(
                 self.summary_prompt.format(messages=formatted_messages).rstrip(),
                 config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
         except Exception:
-            logger.warning("Summary generation failed; skipping summarization.", exc_info=True)
+            logger.warning(
+                "Summary generation failed after %d attempt(s); skipping summarization.",
+                self.summary_max_attempts,
+                exc_info=True,
+            )
             return None
 
     async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str | None:
@@ -1066,13 +1100,17 @@ class SummarizationMiddleware(AgentMiddleware[SummarizationState[ResponseT], Con
         formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         try:
-            response = await self.model.ainvoke(
+            response = await self._summary_model.ainvoke(
                 self.summary_prompt.format(messages=formatted_messages).rstrip(),
                 config={"metadata": {"lc_source": "summarization"}},
             )
             return response.text.strip()
         except Exception:
-            logger.warning("Summary generation failed; skipping summarization.", exc_info=True)
+            logger.warning(
+                "Summary generation failed after %d attempt(s); skipping summarization.",
+                self.summary_max_attempts,
+                exc_info=True,
+            )
             return None
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
