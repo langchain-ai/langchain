@@ -5,7 +5,7 @@ import uuid
 import warnings
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial
-from typing import Any, Literal, TypedDict, cast
+from typing import Annotated, Any, Literal, TypedDict, cast
 
 from langchain_core.messages import (
     AIMessage,
@@ -24,9 +24,15 @@ from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
 from langgraph.runtime import Runtime
-from typing_extensions import override
+from typing_extensions import NotRequired, override
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    PrivateStateAttr,
+    ResponseT,
+)
 from langchain.chat_models import BaseChatModel, init_chat_model
 
 logger = logging.getLogger(__name__)
@@ -225,13 +231,109 @@ def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     return partial(count_tokens_approximately, use_usage_metadata_scaling=True)
 
 
-class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
+class SummarizationState(AgentState[ResponseT]):
+    """State schema for `SummarizationMiddleware`.
+
+    Extends `AgentState` with a counter tracking consecutive summary-generation
+    failures for the current thread.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any`.
+    """
+
+    summary_consecutive_failures: NotRequired[Annotated[int, PrivateStateAttr]]
+
+
+def _build_summarization_failed_message(
+    *,
+    consecutive_failures: int,
+    max_consecutive_summary_failures: int | None,
+    total_tokens: int,
+    hard_token_ceiling: int | None,
+) -> str:
+    """Build a message describing why summarization is being surfaced as an error.
+
+    Args:
+        consecutive_failures: Number of consecutive summary-generation failures.
+        max_consecutive_summary_failures: Configured cap on consecutive failures.
+        total_tokens: Current (pre-summarization) token count.
+        hard_token_ceiling: Configured absolute token ceiling.
+
+    Returns:
+        A message describing which limit was exceeded.
+    """
+    if hard_token_ceiling is not None and total_tokens >= hard_token_ceiling:
+        return (
+            f"Summarization failed with token usage ({total_tokens}) at or above the "
+            f"configured hard_token_ceiling ({hard_token_ceiling}). Refusing to silently "
+            "skip summarization again - check logs for the underlying error(s)."
+        )
+    return (
+        f"Summarization failed {consecutive_failures} consecutive time(s), reaching "
+        f"max_consecutive_summary_failures ({max_consecutive_summary_failures}). Refusing to "
+        "silently skip summarization again - check logs for the underlying error(s)."
+    )
+
+
+class SummarizationFailedError(Exception):
+    """Raised when summary generation keeps failing and it is no longer safe to skip.
+
+    A single summary-generation failure is not fatal: `SummarizationMiddleware` skips
+    compaction for that turn and retries on the next one, so a transient error (e.g. a
+    rate limit) never destroys or blocks the primary model call. This exception is
+    raised instead once further silent retries are no longer safe - either
+    `max_consecutive_summary_failures` consecutive failures have accumulated for this
+    thread, or a failure occurs while token usage is already at or above
+    `hard_token_ceiling` - so a persistently broken summarizer cannot let context grow
+    unbounded without anyone noticing.
+    """
+
+    def __init__(
+        self,
+        *,
+        consecutive_failures: int,
+        max_consecutive_summary_failures: int | None,
+        total_tokens: int,
+        hard_token_ceiling: int | None,
+    ) -> None:
+        """Initialize the exception with failure and token usage information.
+
+        Args:
+            consecutive_failures: Number of consecutive summary-generation failures.
+            max_consecutive_summary_failures: Configured cap on consecutive failures.
+            total_tokens: Current (pre-summarization) token count.
+            hard_token_ceiling: Configured absolute token ceiling.
+        """
+        self.consecutive_failures = consecutive_failures
+        self.max_consecutive_summary_failures = max_consecutive_summary_failures
+        self.total_tokens = total_tokens
+        self.hard_token_ceiling = hard_token_ceiling
+
+        msg = _build_summarization_failed_message(
+            consecutive_failures=consecutive_failures,
+            max_consecutive_summary_failures=max_consecutive_summary_failures,
+            total_tokens=total_tokens,
+            hard_token_ceiling=hard_token_ceiling,
+        )
+        super().__init__(msg)
+
+
+class SummarizationMiddleware(AgentMiddleware[SummarizationState[ResponseT], ContextT, ResponseT]):
     """Summarizes conversation history when token limits are approached.
 
     This middleware monitors message token counts and automatically summarizes older
     messages when a threshold is reached, preserving recent messages and maintaining
     context continuity by ensuring AI/Tool message pairs remain together.
+
+    A single summary-generation failure never blocks the primary model call: it is
+    logged and summarization is skipped for that turn. However, failures are tracked
+    per thread via `max_consecutive_summary_failures` and `hard_token_ceiling`, so a
+    persistently broken summarizer raises
+    [`SummarizationFailedError`][langchain.agents.middleware.summarization.SummarizationFailedError]
+    instead of silently letting context usage grow unbounded.
     """
+
+    state_schema = SummarizationState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -242,6 +344,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
+        max_consecutive_summary_failures: int | None = 3,
+        hard_token_ceiling: int | None = None,
         **deprecated_kwargs: Any,
     ) -> None:
         """Initialize summarization middleware.
@@ -310,7 +414,41 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 the summarization call.
 
                 Pass `None` to skip trimming entirely.
+            max_consecutive_summary_failures: Maximum number of consecutive
+                summary-generation failures tolerated for a given thread before
+                raising
+                [`SummarizationFailedError`][langchain.agents.middleware.summarization.SummarizationFailedError].
+
+                Each individual failure is skipped (not raised) so a transient error
+                never blocks the primary model call; the counter resets to `0` after
+                any successful summarization. Pass `None` to retry indefinitely and
+                never raise on consecutive failures alone.
+            hard_token_ceiling: An absolute token count that, if reached or exceeded
+                at the time a summarization attempt fails, immediately raises
+                [`SummarizationFailedError`][langchain.agents.middleware.summarization.SummarizationFailedError]
+                regardless of `max_consecutive_summary_failures`.
+
+                Use this to fail fast when there is no headroom left to safely defer
+                summarization to a later turn. Pass `None` (default) to disable this
+                check.
+
+        Raises:
+            ValueError: If `max_consecutive_summary_failures` or `hard_token_ceiling`
+                is not a positive integer.
         """
+        if max_consecutive_summary_failures is not None and max_consecutive_summary_failures < 1:
+            msg = (
+                "max_consecutive_summary_failures must be a positive integer or None, "
+                f"got {max_consecutive_summary_failures}."
+            )
+            raise ValueError(msg)
+
+        if hard_token_ceiling is not None and hard_token_ceiling < 1:
+            msg = (
+                f"hard_token_ceiling must be a positive integer or None, got {hard_token_ceiling}."
+            )
+            raise ValueError(msg)
+
         # Handle deprecated parameters
         if "max_tokens_before_summary" in deprecated_kwargs:
             value = deprecated_kwargs["max_tokens_before_summary"]
@@ -361,6 +499,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             self._partial_token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
+        self.max_consecutive_summary_failures = max_consecutive_summary_failures
+        self.hard_token_ceiling = hard_token_ceiling
 
         requires_profile = any("fraction" in clause for clause in self._trigger_clauses)
         if self.keep[0] == "fraction":
@@ -377,7 +517,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
     @override
     def before_model(
-        self, state: AgentState[Any], runtime: Runtime[ContextT]
+        self, state: SummarizationState[Any], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization.
 
@@ -386,7 +526,15 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             runtime: The runtime environment.
 
         Returns:
-            An updated state with summarized messages if summarization was performed.
+            An updated state with summarized messages if summarization was performed,
+                or with an incremented failure counter if summarization failed but was
+                skipped for this turn.
+
+        Raises:
+            SummarizationFailedError: If summary generation fails and either
+                `max_consecutive_summary_failures` consecutive failures have
+                accumulated for this thread, or `hard_token_ceiling` has been reached
+                or exceeded.
         """
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -405,8 +553,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         summary = self._create_summary(messages_to_summarize)
         if summary is None:
             # Summary generation failed; leave the conversation untouched and retry
-            # summarization on a later turn rather than destroying history.
-            return None
+            # summarization on a later turn rather than destroying history, unless
+            # retries are exhausted or we're already out of headroom.
+            return self._handle_summary_failure(state, total_tokens)
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -414,12 +563,13 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 RemoveMessage(id=REMOVE_ALL_MESSAGES),
                 *new_messages,
                 *preserved_messages,
-            ]
+            ],
+            "summary_consecutive_failures": 0,
         }
 
     @override
     async def abefore_model(
-        self, state: AgentState[Any], runtime: Runtime[ContextT]
+        self, state: SummarizationState[Any], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization.
 
@@ -428,7 +578,15 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             runtime: The runtime environment.
 
         Returns:
-            An updated state with summarized messages if summarization was performed.
+            An updated state with summarized messages if summarization was performed,
+                or with an incremented failure counter if summarization failed but was
+                skipped for this turn.
+
+        Raises:
+            SummarizationFailedError: If summary generation fails and either
+                `max_consecutive_summary_failures` consecutive failures have
+                accumulated for this thread, or `hard_token_ceiling` has been reached
+                or exceeded.
         """
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -447,8 +605,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         summary = await self._acreate_summary(messages_to_summarize)
         if summary is None:
             # Summary generation failed; leave the conversation untouched and retry
-            # summarization on a later turn rather than destroying history.
-            return None
+            # summarization on a later turn rather than destroying history, unless
+            # retries are exhausted or we're already out of headroom.
+            return self._handle_summary_failure(state, total_tokens)
         new_messages = self._build_new_messages(summary)
 
         return {
@@ -456,8 +615,50 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 RemoveMessage(id=REMOVE_ALL_MESSAGES),
                 *new_messages,
                 *preserved_messages,
-            ]
+            ],
+            "summary_consecutive_failures": 0,
         }
+
+    def _handle_summary_failure(
+        self, state: SummarizationState[Any], total_tokens: int
+    ) -> dict[str, Any]:
+        """Track a summary-generation failure and raise once it is no longer safe to skip.
+
+        Args:
+            state: The agent state, used to read the current consecutive-failure count.
+            total_tokens: The (pre-summarization) token count for the conversation.
+
+        Returns:
+            A state update incrementing the consecutive-failure counter.
+
+        Raises:
+            SummarizationFailedError: If `max_consecutive_summary_failures` consecutive
+                failures have accumulated for this thread, or `hard_token_ceiling` has
+                been reached or exceeded.
+        """
+        consecutive_failures = state.get("summary_consecutive_failures", 0) + 1
+
+        ceiling_reached = (
+            self.hard_token_ceiling is not None and total_tokens >= self.hard_token_ceiling
+        )
+        retries_exhausted = (
+            self.max_consecutive_summary_failures is not None
+            and consecutive_failures >= self.max_consecutive_summary_failures
+        )
+        if ceiling_reached or retries_exhausted:
+            raise SummarizationFailedError(
+                consecutive_failures=consecutive_failures,
+                max_consecutive_summary_failures=self.max_consecutive_summary_failures,
+                total_tokens=total_tokens,
+                hard_token_ceiling=self.hard_token_ceiling,
+            )
+
+        logger.warning(
+            "Summarization failed (%d consecutive failure(s) for this thread); "
+            "skipping summarization and retrying on a later turn.",
+            consecutive_failures,
+        )
+        return {"summary_consecutive_failures": consecutive_failures}
 
     @staticmethod
     def _copy_trigger(
