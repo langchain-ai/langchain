@@ -999,6 +999,9 @@ def before_model(
 
         !!! example "With custom state schema"
 
+        Use a custom state schema when your middleware needs to read or write additional
+        state fields that aren't part of the default agent state.
+
             ```python
             @before_model(state_schema=MyCustomState)
             def custom_before_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
@@ -1172,6 +1175,9 @@ def after_model(
             ```
 
         !!! example "With custom state schema"
+
+        Use a custom state schema when your middleware needs to read or write additional
+        state fields that aren't part of the default agent state.
 
             ```python
             @after_model(state_schema=MyCustomState, name="MyAfterModelMiddleware")
@@ -1358,6 +1364,9 @@ def before_agent(
             ```
 
         !!! example "With custom state schema"
+
+        Use a custom state schema when your middleware needs to read or write additional
+        state fields that aren't part of the default agent state.
 
             ```python
             @before_agent(state_schema=MyCustomState)
@@ -1557,6 +1566,9 @@ def after_agent(
             ```
 
         !!! example "With custom state schema"
+
+        Use a custom state schema when your middleware needs to read or write additional
+        state fields that aren't part of the default agent state.
 
             ```python
             @after_agent(state_schema=MyCustomState, name="MyAfterAgentMiddleware")
@@ -2104,6 +2116,9 @@ def wrap_tool_call(
             ```
 
         !!! example "With custom state schema"
+
+        Use a custom state schema when your middleware needs to read or write additional
+        state fields that aren't part of the default agent state.
 
             ```python
             @wrap_tool_call(state_schema=MyCustomState)
