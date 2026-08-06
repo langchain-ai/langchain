@@ -28,7 +28,7 @@ from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
 from langgraph.runtime import Runtime
-from langgraph.types import Command
+from langgraph.types import Command, TracePolicy, omit_payload
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
@@ -54,13 +54,14 @@ __all__ = [
     "StateT_co",
     "ToolCallRequest",
     "ToolCallWrapper",
-    "TraceConfig",
+    "TracePolicy",
     "after_agent",
     "after_model",
     "before_agent",
     "before_model",
     "dynamic_prompt",
     "hook_config",
+    "omit_payload",
     "wrap_tool_call",
 ]
 
@@ -381,19 +382,6 @@ class _DefaultAgentState(AgentState[Any]):
     """AgentMiddleware default state."""
 
 
-class TraceConfig(TypedDict, total=False):
-    """Tracing configuration for a middleware's hook spans.
-
-    Passed via `AgentMiddleware.tracing`. `total=False` so new keys can be added
-    without breaking existing configs.
-    """
-
-    inputs: bool
-    """Whether to record this middleware's hook inputs in traces. Defaults to `False`
-    (hook spans record empty inputs, dropping the conversation/state payload while
-    keeping the span and its timing)."""
-
-
 class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     """Base middleware class for an agent.
 
@@ -412,16 +400,14 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
 
-    tracing: TraceConfig | None = None
-    """Tracing configuration for this middleware's hook spans.
+    trace_policy: TracePolicy | None = None
+    """Optional trace policy for this middleware's hook spans (`wrap_model_call`/
+    `wrap_tool_call` and the `before_*`/`after_*` node hooks).
 
-    By default (`None` or empty), this middleware's hook spans (`wrap_model_call`/
-    `wrap_tool_call` and the `before_*`/`after_*` node hooks) record empty inputs,
-    dropping the conversation `messages` and `state` payload while keeping the span
-    and its timing. This avoids re-serializing the growing conversation on every
-    hook, which otherwise dominates tracing latency in long-running agents; the
-    messages are still captured on the inner model-call span. Set `{"inputs": True}`
-    to record full hook inputs (e.g. when debugging a specific middleware).
+    By default (`None`), hook spans are traced normally. Set a `TracePolicy` to shape
+    what they record -- e.g. `TracePolicy(process_inputs=omit_payload)` to drop the
+    conversation `messages`/`state` payload while keeping the span and its timing.
+    Messages are still captured on the inner model-call span.
     """
 
     transformers: Sequence[TransformerFactory] = ()

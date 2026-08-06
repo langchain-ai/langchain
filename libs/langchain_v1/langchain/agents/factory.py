@@ -151,26 +151,33 @@ def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     return filtered
 
 
-def _omit_trace_inputs(_inputs: Any) -> dict[str, Any]:
-    """Trace scrubber for hooks that opt out of input tracing: record no inputs.
+def _wrap_process_inputs(policy: TracePolicy) -> Callable[[Any], Any]:
+    """Compose the wrap-span input baseline with the policy's `process_inputs`.
 
-    Used as `process_inputs` on `traceable` wrap-hook spans and as
-    `TracePolicy(process_inputs=...)` on the `before_*`/`after_*` node runs. Only the
-    trace payload is dropped; the real request/state still flow to the hook unchanged.
+    `_scrub_inputs` always runs first to strip the unserializable `handler`/`runtime`;
+    the policy's callable then transforms the cleaned payload. A custom `process_inputs`
+    never has to re-strip them and cannot disable the baseline.
     """
-    return {}
+    if policy.process_inputs is None:
+        return _scrub_inputs
+    process = policy.process_inputs
+    return lambda inputs: process(_scrub_inputs(inputs))
 
 
-def _should_trace_inputs(middleware: AgentMiddleware[Any, Any]) -> bool:
-    """Whether the middleware opted into recording full hook inputs in traces."""
-    return bool((middleware.tracing or {}).get("inputs", False))
+def _wrap_trace_kwargs(middleware: AgentMiddleware[Any, Any]) -> dict[str, Any]:
+    """`traceable` kwargs for a middleware's `wrap_*` hook spans.
 
-
-def _node_trace_policy(middleware: AgentMiddleware[Any, Any]) -> TracePolicy | None:
-    """Build the `TracePolicy` for a middleware's `before_*`/`after_*` node hooks."""
-    if _should_trace_inputs(middleware):
-        return None
-    return TracePolicy(process_inputs=_omit_trace_inputs)
+    Default (`trace_policy is None`): only the `_scrub_inputs` baseline (strip the
+    unserializable `handler`/`runtime`), i.e. normal tracing. A middleware's
+    `trace_policy` composes on top.
+    """
+    policy = middleware.trace_policy
+    if policy is None:
+        return {"process_inputs": _scrub_inputs}
+    return {
+        "process_inputs": _wrap_process_inputs(policy),
+        "process_outputs": policy.process_outputs,
+    }
 
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
@@ -1040,10 +1047,9 @@ def create_agent(
     wrap_tool_call_wrapper = None
     if middleware_w_wrap_tool_call:
         wrappers = [
-            traceable(
-                name=f"{m.name}.wrap_tool_call",
-                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
-            )(m.wrap_tool_call)
+            traceable(name=f"{m.name}.wrap_tool_call", **_wrap_trace_kwargs(m))(
+                m.wrap_tool_call
+            )
             for m in middleware_w_wrap_tool_call
         ]
         wrap_tool_call_wrapper = _chain_tool_call_wrappers(wrappers)
@@ -1062,10 +1068,9 @@ def create_agent(
     awrap_tool_call_wrapper = None
     if middleware_w_awrap_tool_call:
         async_wrappers = [
-            traceable(
-                name=f"{m.name}.awrap_tool_call",
-                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
-            )(m.awrap_tool_call)
+            traceable(name=f"{m.name}.awrap_tool_call", **_wrap_trace_kwargs(m))(
+                m.awrap_tool_call
+            )
             for m in middleware_w_awrap_tool_call
         ]
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
@@ -1151,10 +1156,9 @@ def create_agent(
     wrap_model_call_handler = None
     if middleware_w_wrap_model_call:
         sync_handlers = [
-            traceable(
-                name=f"{m.name}.wrap_model_call",
-                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
-            )(m.wrap_model_call)
+            traceable(name=f"{m.name}.wrap_model_call", **_wrap_trace_kwargs(m))(
+                m.wrap_model_call
+            )
             for m in middleware_w_wrap_model_call
         ]
         wrap_model_call_handler = _chain_model_call_handlers(sync_handlers)
@@ -1163,10 +1167,9 @@ def create_agent(
     awrap_model_call_handler = None
     if middleware_w_awrap_model_call:
         async_handlers = [
-            traceable(
-                name=f"{m.name}.awrap_model_call",
-                process_inputs=_scrub_inputs if _should_trace_inputs(m) else _omit_trace_inputs,
-            )(m.awrap_model_call)
+            traceable(name=f"{m.name}.awrap_model_call", **_wrap_trace_kwargs(m))(
+                m.awrap_model_call
+            )
             for m in middleware_w_awrap_model_call
         ]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
@@ -1554,7 +1557,7 @@ def create_agent(
                 f"{m.name}.before_agent",
                 before_agent_node,
                 input_schema=resolved_state_schema,
-                trace_policy=_node_trace_policy(m),
+                trace_policy=m.trace_policy,
             )
 
         if (
@@ -1578,7 +1581,7 @@ def create_agent(
                 f"{m.name}.before_model",
                 before_node,
                 input_schema=resolved_state_schema,
-                trace_policy=_node_trace_policy(m),
+                trace_policy=m.trace_policy,
             )
 
         if (
@@ -1602,7 +1605,7 @@ def create_agent(
                 f"{m.name}.after_model",
                 after_node,
                 input_schema=resolved_state_schema,
-                trace_policy=_node_trace_policy(m),
+                trace_policy=m.trace_policy,
             )
 
         if (
@@ -1626,7 +1629,7 @@ def create_agent(
                 f"{m.name}.after_agent",
                 after_agent_node,
                 input_schema=resolved_state_schema,
-                trace_policy=_node_trace_policy(m),
+                trace_policy=m.trace_policy,
             )
 
     # Determine the entry node (runs once at start): before_agent -> before_model -> model

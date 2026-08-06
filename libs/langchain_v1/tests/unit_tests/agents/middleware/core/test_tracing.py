@@ -1,4 +1,4 @@
-"""End-to-end tests for `AgentMiddleware.tracing` hook-input recording."""
+"""End-to-end tests for `AgentMiddleware.trace_policy` hook-input recording."""
 
 from typing import Any
 
@@ -7,8 +7,8 @@ from langchain_core.messages import HumanMessage
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
-from langchain.agents.factory import create_agent
-from langchain.agents.middleware import AgentMiddleware, TraceConfig
+from langchain.agents.factory import _wrap_process_inputs, create_agent
+from langchain.agents.middleware import AgentMiddleware, TracePolicy, omit_payload
 from langchain.agents.middleware.types import AgentState
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -33,25 +33,45 @@ def _recorded_before_model_inputs(middleware: AgentMiddleware) -> Any:
     return capture.inputs_by_name[f"{middleware.name}.before_model"]
 
 
-def test_tracing_omits_hook_inputs_by_default() -> None:
+def test_tracing_records_hook_inputs_by_default() -> None:
     class Default(AgentMiddleware):
         @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             return None
 
-    # no `tracing` config -> the before_model node records an empty payload
-    assert _recorded_before_model_inputs(Default()) == {}
+    # no `trace_policy` -> hooks trace normally; the real state (incl. messages) is recorded
+    recorded = _recorded_before_model_inputs(Default())
+    assert "messages" in recorded
+    assert [m.content for m in recorded["messages"]] == ["hi"]
 
 
-def test_tracing_records_hook_inputs_when_enabled() -> None:
-    class Debug(AgentMiddleware):
-        tracing: TraceConfig = {"inputs": True}  # noqa: RUF012
+def test_tracing_omits_hook_inputs_with_omit_payload() -> None:
+    class Scrubbed(AgentMiddleware):
+        trace_policy = TracePolicy(process_inputs=omit_payload)
 
         @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             return None
 
-    # tracing={"inputs": True} -> the real state (incl. messages) is recorded
-    recorded = _recorded_before_model_inputs(Debug())
-    assert "messages" in recorded
-    assert [m.content for m in recorded["messages"]] == ["hi"]
+    # opt in via omit_payload -> the before_model node records an empty payload
+    assert _recorded_before_model_inputs(Scrubbed()) == {}
+
+
+def test_wrap_process_inputs_composes_scrub_baseline() -> None:
+    seen: dict[str, Any] = {}
+
+    def process_inputs(inp: Any) -> Any:
+        seen["inputs"] = inp
+        return inp
+
+    # the baseline (`_scrub_inputs`) strips `handler` before the policy callable runs
+    composed = _wrap_process_inputs(TracePolicy(process_inputs=process_inputs))
+    result = composed({"request": {"x": 1}, "handler": lambda: None})
+    assert "handler" not in seen["inputs"]
+    assert seen["inputs"] == {"request": {"x": 1}}
+    assert result == {"request": {"x": 1}}
+
+
+def test_wrap_process_inputs_omit_drops_everything() -> None:
+    composed = _wrap_process_inputs(TracePolicy(process_inputs=omit_payload))
+    assert composed({"request": {"x": 1}, "handler": lambda: None}) == {}
