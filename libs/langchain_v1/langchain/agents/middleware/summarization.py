@@ -229,24 +229,6 @@ def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     return partial(count_tokens_approximately, use_usage_metadata_scaling=True)
 
 
-class SummarizationFailedError(Exception):
-    """Raised when summary generation fails after all retry attempts.
-
-    Transient errors are retried up to `summary_max_attempts`. If all attempts
-    fail, this error is raised instead of fabricating or silently skipping the
-    summary.
-    """
-
-    def __init__(self, cause: BaseException) -> None:
-        """Initialize the exception, wrapping the underlying cause.
-
-        Args:
-            cause: The exception raised by the final summary-generation attempt.
-        """
-        msg = f"Summarization failed: {cause!s}"
-        super().__init__(msg)
-
-
 class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Summarizes conversation history when token limits are approached.
 
@@ -254,9 +236,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     messages when a threshold is reached, preserving recent messages and maintaining
     context continuity by ensuring AI/Tool message pairs remain together.
 
-    Transient summary failures are retried up to `summary_max_attempts`.
-
-    If all attempts fail, `SummarizationFailedError` is raised instead of
+    Transient summary-generation errors (rate limits, timeouts) are retried
+    in-process, up to 3 attempts total, via `Runnable.with_retry`. If a summary call
+    still fails after those attempts, the underlying error propagates rather than
     fabricating a summary.
     """
 
@@ -276,8 +258,6 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
-        summary_max_attempts: int = 3,
-        summary_retry_backoff: bool = True,
         **deprecated_kwargs: Any,
     ) -> None:
         """Initialize summarization middleware.
@@ -346,20 +326,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 the summarization call.
 
                 Pass `None` to skip trimming entirely.
-            summary_max_attempts: Maximum attempts for a summary call, retrying transient
-                errors with exponential backoff before raising `SummarizationFailedError`.
-                Pass `1` to disable retries.
-
-            summary_retry_backoff: Whether to use exponential backoff with jitter between
-                retries. Pass `False` to retry immediately.
-
-        Raises:
-            ValueError: If `summary_max_attempts` is not a positive integer.
         """
-        if summary_max_attempts < 1:
-            msg = f"summary_max_attempts must be a positive integer, got {summary_max_attempts}."
-            raise ValueError(msg)
-
         # Handle deprecated parameters
         if "max_tokens_before_summary" in deprecated_kwargs:
             value = deprecated_kwargs["max_tokens_before_summary"]
@@ -387,12 +354,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             model = init_chat_model(model)
 
         self.model = model
-        # Transient errors (rate limits, timeouts) are retried in-process with
-        # exponential backoff before giving up
-        self._summary_model = self.model.with_retry(
-            stop_after_attempt=summary_max_attempts,
-            wait_exponential_jitter=summary_retry_backoff,
-        )
+        # Retry transient errors (rate limits, timeouts) in-process, up to 3 attempts
+        # total, before giving up. See `Runnable.with_retry`.
+        self._summary_model = self.model.with_retry()
 
         self.trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None = (
             self._copy_trigger(trigger)
@@ -416,7 +380,6 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             self._partial_token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
-        self.summary_max_attempts = summary_max_attempts
 
         requires_profile = any("fraction" in clause for clause in self._trigger_clauses)
         if self.keep[0] == "fraction":
@@ -445,8 +408,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             An updated state with summarized messages if summarization was performed.
 
         Raises:
-            SummarizationFailedError: If summary generation fails after all
-                `summary_max_attempts` retry attempts are exhausted.
+            Exception: If summary generation still fails once retries are exhausted.
         """
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -487,8 +449,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             An updated state with summarized messages if summarization was performed.
 
         Raises:
-            SummarizationFailedError: If summary generation fails after all
-                `summary_max_attempts` retry attempts are exhausted.
+            Exception: If summary generation still fails once retries are exhausted.
         """
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -878,8 +839,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             The generated summary.
 
         Raises:
-            SummarizationFailedError: If summary generation fails after all
-                `summary_max_attempts` retry attempts are exhausted.
+            Exception: If the summary model call still fails once retries (see
+                `Runnable.with_retry`) are exhausted.
         """
         if not messages_to_summarize:
             return "No previous conversation history."
@@ -892,19 +853,11 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         # prompt while excluding raw message metadata from the token budget.
         formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
-        try:
-            response = self._summary_model.invoke(
-                self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
-            )
-            return response.text.strip()
-        except Exception as e:
-            logger.warning(
-                "Summary generation failed after %d attempt(s).",
-                self.summary_max_attempts,
-                exc_info=True,
-            )
-            raise SummarizationFailedError(e) from e
+        response = self._summary_model.invoke(
+            self.summary_prompt.format(messages=formatted_messages).rstrip(),
+            config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
+        )
+        return response.text.strip()
 
     async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages.
@@ -916,8 +869,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             The generated summary.
 
         Raises:
-            SummarizationFailedError: If summary generation fails after all
-                `summary_max_attempts` retry attempts are exhausted.
+            Exception: If the summary model call still fails once retries (see
+                `Runnable.with_retry`) are exhausted.
         """
         if not messages_to_summarize:
             return "No previous conversation history."
@@ -930,19 +883,11 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         # prompt while excluding raw message metadata from the token budget.
         formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
-        try:
-            response = await self._summary_model.ainvoke(
-                self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
-            )
-            return response.text.strip()
-        except Exception as e:
-            logger.warning(
-                "Summary generation failed after %d attempt(s).",
-                self.summary_max_attempts,
-                exc_info=True,
-            )
-            raise SummarizationFailedError(e) from e
+        response = await self._summary_model.ainvoke(
+            self.summary_prompt.format(messages=formatted_messages).rstrip(),
+            config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
+        )
+        return response.text.strip()
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
         """Trim messages to fit within summary generation limits."""
