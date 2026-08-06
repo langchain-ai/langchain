@@ -29,12 +29,11 @@ from langgraph.runtime import Runtime
 from pydantic import Field
 from typing_extensions import override
 
-from langchain.agents import create_agent
+from langchain.agents import AgentState, create_agent
 from langchain.agents.middleware.summarization import (
     ContextSize,
     SummarizationFailedError,
     SummarizationMiddleware,
-    SummarizationState,
     TriggerClause,
     _provider_matches,
 )
@@ -154,9 +153,7 @@ def test_summarization_middleware_no_summarization_cases() -> None:
 
     # Test when summarization is disabled
     middleware_disabled = SummarizationMiddleware(model=model, trigger=None)
-    state = SummarizationState[Any](
-        messages=[HumanMessage(content="Hello"), AIMessage(content="Hi")]
-    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), AIMessage(content="Hi")])
     result = middleware_disabled.before_model(state, Runtime())
     assert result is None
 
@@ -248,8 +245,8 @@ def test_summarization_middleware_summary_creation() -> None:
     middleware_error = SummarizationMiddleware(
         model=ErrorModel(), trigger=("tokens", 1000), summary_max_attempts=1
     )
-    summary = middleware_error._create_summary(messages)
-    assert summary is None
+    with pytest.raises(SummarizationFailedError, match="Model error"):
+        middleware_error._create_summary(messages)
 
     # Test we raise warning if max_tokens_before_summary or messages_to_keep is specified
     with pytest.warns(DeprecationWarning, match="max_tokens_before_summary is deprecated"):
@@ -310,96 +307,6 @@ def test_summarization_middleware_retries_transient_failure_in_call() -> None:
     assert model.attempts == 3
 
 
-def test_summarization_middleware_before_model_preserves_history_on_summary_failure() -> None:
-    """A failed summary generation must never delete history or fabricate a summary."""
-
-    class AlwaysFailingModel(BaseChatModel):
-        @override
-        def _generate(
-            self,
-            messages: list[BaseMessage],
-            stop: list[str] | None = None,
-            run_manager: CallbackManagerForLLMRun | None = None,
-            **kwargs: Any,
-        ) -> ChatResult:
-            msg = "429 Too Many Requests"
-            raise RuntimeError(msg)
-
-        @property
-        def _llm_type(self) -> str:
-            return "mock"
-
-    middleware = SummarizationMiddleware(
-        model=AlwaysFailingModel(),
-        trigger=("messages", 2),
-        keep=("messages", 1),
-        summary_max_attempts=1,
-    )
-    messages: list[AnyMessage] = [
-        HumanMessage(content="hi", id="h0"),
-        AIMessage(content="hello", id="a0"),
-        HumanMessage(content="how are you", id="h1"),
-    ]
-    state = SummarizationState[Any](messages=messages)
-
-    result = middleware.before_model(state, Runtime())
-
-    # History is left untouched (no "messages" update); only the per-thread
-    # consecutive-failure counter is incremented so a persistently broken
-    # summarizer can eventually be surfaced (see the `SummarizationFailedError`
-    # tests below).
-    assert result == {"summary_consecutive_failures": 1}
-
-
-async def test_summarization_middleware_abefore_model_preserves_history_on_summary_failure() -> (
-    None
-):
-    """A failed async summary generation must never delete history or fabricate a summary."""
-
-    class AlwaysFailingAsyncModel(BaseChatModel):
-        @override
-        def _generate(
-            self,
-            messages: list[BaseMessage],
-            stop: list[str] | None = None,
-            run_manager: CallbackManagerForLLMRun | None = None,
-            **kwargs: Any,
-        ) -> ChatResult:
-            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
-
-        @override
-        async def _agenerate(
-            self,
-            messages: list[BaseMessage],
-            stop: list[str] | None = None,
-            run_manager: AsyncCallbackManagerForLLMRun | None = None,
-            **kwargs: Any,
-        ) -> ChatResult:
-            msg = "429 Too Many Requests"
-            raise RuntimeError(msg)
-
-        @property
-        def _llm_type(self) -> str:
-            return "mock"
-
-    middleware = SummarizationMiddleware(
-        model=AlwaysFailingAsyncModel(),
-        trigger=("messages", 2),
-        keep=("messages", 1),
-        summary_max_attempts=1,
-    )
-    messages: list[AnyMessage] = [
-        HumanMessage(content="hi", id="h0"),
-        AIMessage(content="hello", id="a0"),
-        HumanMessage(content="how are you", id="h1"),
-    ]
-    state = SummarizationState[Any](messages=messages)
-
-    result = await middleware.abefore_model(state, Runtime())
-
-    assert result == {"summary_consecutive_failures": 1}
-
-
 class _AlwaysFailingModel(BaseChatModel):
     """Chat model whose sync and async summary calls always raise."""
 
@@ -430,28 +337,31 @@ class _AlwaysFailingModel(BaseChatModel):
         return "mock"
 
 
-def test_summarization_middleware_max_consecutive_failures_validation() -> None:
-    """`max_consecutive_summary_failures` must be a positive integer or `None`."""
-    with pytest.raises(ValueError, match="max_consecutive_summary_failures must be"):
-        SummarizationMiddleware(model=MockChatModel(), max_consecutive_summary_failures=0)
+def test_create_summary_raises_summarization_failed_error() -> None:
+    """`_create_summary` must raise `SummarizationFailedError` wrapping the cause.
 
-
-def test_summarization_middleware_hard_token_ceiling_validation() -> None:
-    """`hard_token_ceiling` must be a positive integer or `None`."""
-    with pytest.raises(ValueError, match="hard_token_ceiling must be"):
-        SummarizationMiddleware(model=MockChatModel(), hard_token_ceiling=0)
-
-
-def test_summarization_middleware_raises_after_max_consecutive_failures() -> None:
-    """Once the cap of consecutive failures is reached, the middleware must raise.
-
-    It must surface `SummarizationFailedError` rather than silently skipping again.
+    It must never fabricate a fake summary string once retries are exhausted.
     """
+    middleware = SummarizationMiddleware(model=_AlwaysFailingModel(), summary_max_attempts=1)
+
+    with pytest.raises(SummarizationFailedError, match="429 Too Many Requests"):
+        middleware._create_summary([HumanMessage(content="hi")])
+
+
+async def test_acreate_summary_raises_summarization_failed_error() -> None:
+    """Async: `_acreate_summary` must raise `SummarizationFailedError`."""
+    middleware = SummarizationMiddleware(model=_AlwaysFailingModel(), summary_max_attempts=1)
+
+    with pytest.raises(SummarizationFailedError, match="429 Too Many Requests"):
+        await middleware._acreate_summary([HumanMessage(content="hi")])
+
+
+def test_summarization_middleware_before_model_raises_on_summary_failure() -> None:
+    """A failed summary generation must raise, never fabricate a summary or delete history."""
     middleware = SummarizationMiddleware(
         model=_AlwaysFailingModel(),
         trigger=("messages", 2),
         keep=("messages", 1),
-        max_consecutive_summary_failures=2,
         summary_max_attempts=1,
     )
     messages: list[AnyMessage] = [
@@ -459,27 +369,21 @@ def test_summarization_middleware_raises_after_max_consecutive_failures() -> Non
         AIMessage(content="hello", id="a0"),
         HumanMessage(content="how are you", id="h1"),
     ]
-    state = SummarizationState[Any](messages=messages)
+    state = AgentState[Any](messages=messages)
 
-    # First failure is skipped and tracked on the thread's state.
-    first_result = middleware.before_model(state, Runtime())
-    assert first_result == {"summary_consecutive_failures": 1}
-
-    # Simulate the checkpointer persisting that update for the next turn.
-    state["summary_consecutive_failures"] = first_result["summary_consecutive_failures"]
-
-    # Second consecutive failure reaches the cap and must raise.
-    with pytest.raises(SummarizationFailedError, match="2 consecutive time"):
+    with pytest.raises(SummarizationFailedError, match="429 Too Many Requests"):
         middleware.before_model(state, Runtime())
 
+    # The original message list is untouched - no fabricated summary, no deletion.
+    assert state["messages"] == messages
 
-async def test_summarization_middleware_araises_after_max_consecutive_failures() -> None:
-    """Async: same cap-exceeded behavior as `abefore_model`."""
+
+async def test_summarization_middleware_abefore_model_raises_on_summary_failure() -> None:
+    """Async: same raise-on-failure behavior as `before_model`."""
     middleware = SummarizationMiddleware(
         model=_AlwaysFailingModel(),
         trigger=("messages", 2),
         keep=("messages", 1),
-        max_consecutive_summary_failures=2,
         summary_max_attempts=1,
     )
     messages: list[AnyMessage] = [
@@ -487,109 +391,28 @@ async def test_summarization_middleware_araises_after_max_consecutive_failures()
         AIMessage(content="hello", id="a0"),
         HumanMessage(content="how are you", id="h1"),
     ]
-    state = SummarizationState[Any](messages=messages)
+    state = AgentState[Any](messages=messages)
 
-    first_result = await middleware.abefore_model(state, Runtime())
-    assert first_result == {"summary_consecutive_failures": 1}
-    state["summary_consecutive_failures"] = first_result["summary_consecutive_failures"]
-
-    with pytest.raises(SummarizationFailedError, match="2 consecutive time"):
+    with pytest.raises(SummarizationFailedError, match="429 Too Many Requests"):
         await middleware.abefore_model(state, Runtime())
 
-
-def test_summarization_middleware_no_cap_retries_indefinitely() -> None:
-    """`max_consecutive_summary_failures=None` disables the consecutive-failure cap."""
-    middleware = SummarizationMiddleware(
-        model=_AlwaysFailingModel(),
-        trigger=("messages", 2),
-        keep=("messages", 1),
-        max_consecutive_summary_failures=None,
-        summary_max_attempts=1,
-    )
-    messages: list[AnyMessage] = [
-        HumanMessage(content="hi", id="h0"),
-        AIMessage(content="hello", id="a0"),
-        HumanMessage(content="how are you", id="h1"),
-    ]
-    state = SummarizationState[Any](messages=messages)
-
-    for expected_count in range(1, 6):
-        result = middleware.before_model(state, Runtime())
-        assert result == {"summary_consecutive_failures": expected_count}
-        state["summary_consecutive_failures"] = expected_count
+    assert state["messages"] == messages
 
 
-def test_summarization_middleware_hard_token_ceiling_raises_immediately() -> None:
-    """A single failure at/above `hard_token_ceiling` must raise immediately.
-
-    This is true even though `max_consecutive_summary_failures` has not been
-    reached yet.
-    """
-
-    def token_counter(_: Iterable[MessageLikeRepresentation]) -> int:
-        return 10_000
-
-    middleware = SummarizationMiddleware(
-        model=_AlwaysFailingModel(),
-        trigger=("messages", 2),
-        keep=("messages", 1),
-        max_consecutive_summary_failures=5,
-        hard_token_ceiling=1_000,
-        token_counter=token_counter,
-        summary_max_attempts=1,
-        # Skip pre-summarization trimming so the (deliberately oversized) fake token
-        # counter doesn't cause `_trim_messages_for_summary` to trim everything away
-        # and short-circuit with a placeholder before the model is even called.
-        trim_tokens_to_summarize=None,
-    )
-    messages: list[AnyMessage] = [
-        HumanMessage(content="hi", id="h0"),
-        AIMessage(content="hello", id="a0"),
-        HumanMessage(content="how are you", id="h1"),
-    ]
-    state = SummarizationState[Any](messages=messages)
-
-    with pytest.raises(SummarizationFailedError, match="hard_token_ceiling"):
-        middleware.before_model(state, Runtime())
-
-
-def test_summarization_middleware_consecutive_failure_counter_resets_on_success() -> None:
-    """A successful summarization must reset the consecutive-failure counter to `0`."""
-    middleware = SummarizationMiddleware(
-        model=MockChatModel(),
-        trigger=("messages", 2),
-        keep=("messages", 1),
-        max_consecutive_summary_failures=2,
-    )
-    messages: list[AnyMessage] = [
-        HumanMessage(content="hi", id="h0"),
-        AIMessage(content="hello", id="a0"),
-        HumanMessage(content="how are you", id="h1"),
-    ]
-    # Simulate one prior failure recorded on the thread's state.
-    state = SummarizationState[Any](messages=messages)
-    state["summary_consecutive_failures"] = 1
-
-    result = middleware.before_model(state, Runtime())
-
-    assert result is not None
-    assert result["summary_consecutive_failures"] == 0
-
-
-def test_summarization_middleware_e2e_transient_failure_preserves_then_recovers() -> None:
+def test_summarization_middleware_e2e_failure_raises_without_corrupting_history() -> None:
     """End-to-end regression test for #38867.
 
-    Runs a real `create_agent` graph with a checkpointer. A transient summary
-    failure must leave the conversation intact and the agent responsive. Once the
-    summary model recovers, a later turn should successfully summarize the
-    conversation, proving the earlier failure didn't permanently disable it.
+    Runs a real `create_agent` graph with a checkpointer. A summary failure (after
+    retries are exhausted) must propagate as `SummarizationFailedError` out of
+    `agent.invoke` rather than fabricating a fake summary or deleting history. Once
+    the summary model is fixed, a later invocation must succeed and summarize
+    normally, proving the checkpointed history was never corrupted by the failure.
     """
 
     class TemporarilyFailingSummaryModel(BaseChatModel):
-        """Summary-only model that fails a fixed number of times, then succeeds."""
+        """Summary-only model that fails until `working` is set to `True`."""
 
-        fail_count: int = Field(default=0)
-        attempts: int = Field(default=0)
+        working: bool = Field(default=False)
 
         @override
         def _generate(
@@ -599,9 +422,8 @@ def test_summarization_middleware_e2e_transient_failure_preserves_then_recovers(
             run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> ChatResult:
-            self.attempts += 1
-            if self.attempts <= self.fail_count:
-                msg = "429 Too Many Requests (simulated transient failure)"
+            if not self.working:
+                msg = "429 Too Many Requests (simulated persistent failure)"
                 raise RuntimeError(msg)
             summary = AIMessage(content="Summary of the conversation so far.")
             return ChatResult(generations=[ChatGeneration(message=summary)])
@@ -611,13 +433,11 @@ def test_summarization_middleware_e2e_transient_failure_preserves_then_recovers(
             return "mock"
 
     main_model = FakeToolCallingModel()
-    summary_model = TemporarilyFailingSummaryModel(fail_count=1)
+    summary_model = TemporarilyFailingSummaryModel()
     middleware = SummarizationMiddleware(
         model=summary_model,
         trigger=("messages", 6),
         keep=("messages", 2),
-        # Exercise the cross-turn skip/retry path in isolation from the in-call
-        # `RunnableRetry` behavior (covered separately) by disabling in-call retries.
         summary_max_attempts=1,
     )
 
@@ -636,23 +456,25 @@ def test_summarization_middleware_e2e_transient_failure_preserves_then_recovers(
     messages_below_threshold = agent.get_state(config).values["messages"]
     assert len(messages_below_threshold) == 6
 
-    # This turn pushes the message count to 7, past the trigger. The summary model's
-    # first call fails, so before_model must skip summarization entirely: no message
-    # is deleted, and no "Error generating summary" text is fabricated.
-    agent.invoke({"messages": [HumanMessage("turn 3")]}, config)
+    # This turn pushes the message count to 7, past the trigger, and the summary
+    # model fails: the whole invocation must raise, and no fabricated summary or
+    # `RemoveMessage` can have been applied to the checkpointed history. The new
+    # human input is still recorded (LangGraph commits it before `before_model`
+    # runs), but no AI response or compaction ever happens on top of it.
+    with pytest.raises(SummarizationFailedError, match="429 Too Many Requests"):
+        agent.invoke({"messages": [HumanMessage("turn 3")]}, config)
 
     messages_after_failed_summary = agent.get_state(config).values["messages"]
-    assert len(messages_after_failed_summary) == 8
+    assert messages_after_failed_summary[:-1] == messages_below_threshold
+    assert messages_after_failed_summary[-1].content == "turn 3"
     assert not any(
         "Error generating summary" in (m.content or "") for m in messages_after_failed_summary
     )
-    assert any(m.content == "turn 0" for m in messages_after_failed_summary), (
-        "original history must survive a transient summarization failure"
-    )
 
-    # The next turn triggers summarization again; the summary model now succeeds,
-    # proving the earlier failure didn't permanently disable summarization.
-    agent.invoke({"messages": [HumanMessage("turn 4")]}, config)
+    # Once the summarizer is fixed, retrying the same turn must succeed and
+    # actually summarize, proving the earlier failure didn't corrupt anything.
+    summary_model.working = True
+    agent.invoke({"messages": [HumanMessage("turn 3")]}, config)
 
     messages_after_recovered_summary = agent.get_state(config).values["messages"]
     assert len(messages_after_recovered_summary) < len(messages_after_failed_summary)
@@ -663,45 +485,6 @@ def test_summarization_middleware_e2e_transient_failure_preserves_then_recovers(
     assert not any(m.content == "turn 0" for m in messages_after_recovered_summary), (
         "history should actually be trimmed once summarization succeeds"
     )
-
-
-def test_summarization_middleware_e2e_persistent_failure_raises() -> None:
-    """A persistently broken summarizer must eventually surface an error.
-
-    Drives a real `create_agent` invocation and asserts `SummarizationFailedError`
-    propagates out, rather than silently letting context grow forever.
-    """
-    main_model = FakeToolCallingModel()
-    middleware = SummarizationMiddleware(
-        model=_AlwaysFailingModel(),
-        trigger=("messages", 4),
-        keep=("messages", 2),
-        max_consecutive_summary_failures=2,
-        summary_max_attempts=1,
-    )
-    agent = create_agent(
-        model=main_model,
-        tools=[],
-        middleware=[middleware],
-        checkpointer=InMemorySaver(),
-    )
-    config: RunnableConfig = {"configurable": {"thread_id": "e2e-summary-persistent-failure"}}
-
-    # Build up history below the ("messages", 4) trigger threshold.
-    for i in range(2):
-        agent.invoke({"messages": [HumanMessage(f"turn {i}")]}, config)
-
-    # This turn crosses the trigger threshold. The summary model fails (1st
-    # consecutive failure); before_model must skip it and let the primary call
-    # through normally with the full, untrimmed history.
-    agent.invoke({"messages": [HumanMessage("turn 2")]}, config)
-    assert agent.get_state(config).values.get("summary_consecutive_failures") == 1
-
-    # The next turn also fails to summarize (2nd consecutive failure), reaching
-    # max_consecutive_summary_failures=2. The middleware must surface the error
-    # instead of continuing to silently grow the untrimmed context unnoticed.
-    with pytest.raises(SummarizationFailedError, match="2 consecutive time"):
-        agent.invoke({"messages": [HumanMessage("turn 3")]}, config)
 
 
 def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
@@ -734,7 +517,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         token_counter=token_counter,
     )
 
-    state = SummarizationState[Any](
+    state = AgentState[Any](
         messages=[
             HumanMessage(content="Message 1"),
             AIMessage(content="Message 2"),
@@ -855,7 +638,7 @@ def test_summarization_middleware_token_retention_preserves_ai_tool_pairs() -> N
         HumanMessage(content="H" * 160),
     ]
 
-    state = SummarizationState[Any](messages=messages)
+    state = AgentState[Any](messages=messages)
     result = middleware.before_model(state, Runtime())
     assert result is not None
 
@@ -904,7 +687,7 @@ def test_summarization_middleware_full_workflow() -> None:
         HumanMessage(content="5"),
     ]
 
-    state = SummarizationState[Any](messages=messages)
+    state = AgentState[Any](messages=messages)
     result = middleware.before_model(state, Runtime())
 
     assert result is not None
@@ -972,7 +755,7 @@ async def test_summarization_middleware_full_workflow_async() -> None:
         HumanMessage(content="5"),
     ]
 
-    state = SummarizationState[Any](messages=messages)
+    state = AgentState[Any](messages=messages)
     result = await middleware.abefore_model(state, Runtime())
 
     assert result is not None
@@ -1002,7 +785,7 @@ def test_summarization_middleware_keep_messages() -> None:
         HumanMessage(content="3"),
         HumanMessage(content="4"),
     ]
-    state_below = SummarizationState[Any](messages=messages_below)
+    state_below = AgentState[Any](messages=messages_below)
     result = middleware.before_model(state_below, Runtime())
     assert result is None
 
@@ -1014,7 +797,7 @@ def test_summarization_middleware_keep_messages() -> None:
         HumanMessage(content="4"),
         HumanMessage(content="5"),
     ]
-    state_at = SummarizationState[Any](messages=messages_at_threshold)
+    state_at = AgentState[Any](messages=messages_at_threshold)
     result = middleware.before_model(state_at, Runtime())
     assert result is not None
     assert "messages" in result
@@ -1025,7 +808,7 @@ def test_summarization_middleware_keep_messages() -> None:
 
     # Above threshold - should also trigger summarization
     messages_above: list[AnyMessage] = [*messages_at_threshold, HumanMessage(content="6")]
-    state_above = SummarizationState[Any](messages=messages_above)
+    state_above = AgentState[Any](messages=messages_above)
     result = middleware.before_model(state_above, Runtime())
     assert result is not None
     assert "messages" in result
@@ -1079,13 +862,13 @@ def test_summarization_middleware_multiple_triggers() -> None:
 
     # Should not trigger - neither condition met
     messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
-    state = SummarizationState[Any](messages=messages)
+    state = AgentState[Any](messages=messages)
     result = middleware.before_model(state, Runtime())
     assert result is None
 
     # Should trigger - message count threshold met
     messages = [HumanMessage(content=str(i)) for i in range(10)]
-    state = SummarizationState[Any](messages=messages)
+    state = AgentState[Any](messages=messages)
     result = middleware.before_model(state, Runtime())
     assert result is not None
 
@@ -1095,7 +878,7 @@ def test_summarization_middleware_multiple_triggers() -> None:
 
     middleware.token_counter = mock_high_tokens
     messages = [HumanMessage(content=str(i)) for i in range(5)]
-    state = SummarizationState[Any](messages=messages)
+    state = AgentState[Any](messages=messages)
     result = middleware.before_model(state, Runtime())
     assert result is not None
 
@@ -1392,8 +1175,8 @@ async def test_summarization_middleware_async_error_handling() -> None:
         model=ErrorAsyncModel(), trigger=("messages", 5), summary_max_attempts=1
     )
     messages: list[AnyMessage] = [HumanMessage(content="test")]
-    summary = await middleware._acreate_summary(messages)
-    assert summary is None
+    with pytest.raises(SummarizationFailedError, match="Async model error"):
+        await middleware._acreate_summary(messages)
 
 
 def test_summarization_middleware_cutoff_at_boundary() -> None:
@@ -1424,7 +1207,7 @@ def test_summarization_middleware_skips_when_no_safe_cutoff() -> None:
         keep=("messages", 1),
         token_counter=token_counter,
     )
-    state = SummarizationState[Any](messages=[HumanMessage(content="Current request")])
+    state = AgentState[Any](messages=[HumanMessage(content="Current request")])
 
     assert middleware.before_model(state, Runtime()) is None
 
@@ -1441,7 +1224,7 @@ async def test_summarization_middleware_skips_when_no_safe_cutoff_async() -> Non
         keep=("messages", 1),
         token_counter=token_counter,
     )
-    state = SummarizationState[Any](messages=[HumanMessage(content="Current request")])
+    state = AgentState[Any](messages=[HumanMessage(content="Current request")])
 
     assert await middleware.abefore_model(state, Runtime()) is None
 
@@ -1477,7 +1260,7 @@ def test_summarization_middleware_fraction_trigger_with_no_profile() -> None:
     # Mock _get_profile_limits to return None
     with patch.object(middleware, "_get_profile_limits", autospec=True, return_value=None):
         # Should still trigger based on message count
-        state = SummarizationState[Any](messages=messages)
+        state = AgentState[Any](messages=messages)
         result = middleware.before_model(state, Runtime())
         assert result is not None
 
@@ -1542,9 +1325,7 @@ def test_summarization_before_model_uses_unscaled_tokens_for_cutoff() -> None:
             keep=("tokens", 1),
             token_counter=mock_counter,
         )
-        state = SummarizationState[Any](
-            messages=[HumanMessage(content="one"), HumanMessage(content="two")]
-        )
+        state = AgentState[Any](messages=[HumanMessage(content="one"), HumanMessage(content="two")])
         assert middleware.before_model(state, Runtime()) is not None
 
     # Test we support partial token counting (which for default token counter does not
@@ -1630,7 +1411,7 @@ def test_trigger_copies_mutable_inputs() -> None:
         return 500
 
     middleware.token_counter = token_counter_low
-    state = SummarizationState(messages=[HumanMessage(content="1"), HumanMessage(content="2")])
+    state = AgentState(messages=[HumanMessage(content="1"), HumanMessage(content="2")])
     result = middleware.before_model(state, Runtime())
     assert result is None
 
@@ -1690,7 +1471,7 @@ def test_and_trigger_conditions() -> None:
         return 1500  # Above token threshold
 
     middleware.token_counter = token_counter_high
-    state = SummarizationState(
+    state = AgentState(
         messages=[
             HumanMessage(content="1"),
             AIMessage(content="2"),
@@ -1706,7 +1487,7 @@ def test_and_trigger_conditions() -> None:
         return 500  # Below token threshold
 
     middleware.token_counter = token_counter_low
-    state = SummarizationState(
+    state = AgentState(
         messages=[
             HumanMessage(content="1"),
             AIMessage(content="2"),
@@ -1748,7 +1529,7 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
         return 5500
 
     middleware.token_counter = token_counter_5500
-    state = SummarizationState(
+    state = AgentState(
         messages=[
             HumanMessage(content="1"),
             AIMessage(content="2"),
@@ -1765,7 +1546,7 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
         return 3500
 
     middleware.token_counter = token_counter_3500
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(7)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(7)])
     result = middleware.before_model(state, Runtime())
     assert result is not None, "Should summarize when second OR clause is met"
 
@@ -1777,7 +1558,7 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
         return 4500
 
     middleware.token_counter = token_counter_4500
-    state = SummarizationState(
+    state = AgentState(
         messages=[
             HumanMessage(content="1"),
             AIMessage(content="2"),
@@ -1796,7 +1577,7 @@ async def test_and_trigger_conditions_async() -> None:
         trigger={"tokens": 1000, "messages": 5},
         keep=("messages", 2),
     )
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(6)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(6)])
 
     # Only the messages threshold met (tokens below) -> should not summarize.
     def token_counter_low(_messages: Iterable[MessageLikeRepresentation]) -> int:
@@ -1826,7 +1607,7 @@ async def test_or_trigger_conditions_with_and_clauses_async() -> None:
         ],
         keep=("messages", 2),
     )
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(4)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(4)])
 
     # First clause met (tokens = 5500, messages = 4) -> should summarize.
     def token_counter_5500(_messages: Iterable[MessageLikeRepresentation]) -> int:
@@ -1860,7 +1641,7 @@ def test_backward_compatibility_tuple_trigger() -> None:
         return 1500
 
     middleware_single.token_counter = token_counter_high
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(3)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(3)])
     result = middleware_single.before_model(state, Runtime())
     assert result is not None, "Single tuple trigger should work"
 
@@ -1873,7 +1654,7 @@ def test_backward_compatibility_tuple_trigger() -> None:
 
     # Should trigger with high tokens (first condition met)
     middleware_list.token_counter = token_counter_high
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(3)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(3)])
     result = middleware_list.before_model(state, Runtime())
     assert result is not None, "List of tuples should trigger when any condition met"
 
@@ -1882,7 +1663,7 @@ def test_backward_compatibility_tuple_trigger() -> None:
         return 100
 
     middleware_list.token_counter = token_counter_low
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(6)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(6)])
     result = middleware_list.before_model(state, Runtime())
     assert result is not None, "List of tuples should trigger when second condition met"
 
@@ -1906,7 +1687,7 @@ def test_mixed_and_or_conditions() -> None:
         return 4500
 
     middleware.token_counter = token_counter_high
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(12)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(12)])
     result = middleware.before_model(state, Runtime())
     assert result is not None, "Should trigger when AND clause is met"
 
@@ -1915,13 +1696,13 @@ def test_mixed_and_or_conditions() -> None:
         return 1000
 
     middleware.token_counter = token_counter_low
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(55)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(55)])
     result = middleware.before_model(state, Runtime())
     assert result is not None, "Should trigger when simple messages condition is met"
 
     # Test case 3: Neither condition met
     middleware.token_counter = token_counter_low
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(8)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(8)])
     result = middleware.before_model(state, Runtime())
     assert result is None, "Should not trigger when no condition is met"
 
@@ -1943,21 +1724,21 @@ def test_fraction_in_and_trigger() -> None:
     # Test case 1: Both conditions met
     # 5 messages * 200 = 1000 tokens (profile max is 1000)
     # 1000 / 1000 = 1.0 >= 0.8  AND messages = 5 >= 5
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(5)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(5)])
     result = middleware.before_model(state, Runtime())
     assert result is not None, "Should trigger when both fraction and messages conditions met"
 
     # Test case 2: Only messages condition met
     # 3 messages * 200 = 600 tokens
     # 600 / 1000 = 0.6 < 0.8 and messages = 3 < 5
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(3)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(3)])
     result = middleware.before_model(state, Runtime())
     assert result is None, "Should not trigger when neither condition is fully met"
 
     # Test case 3: High fraction but not enough messages
     # 4 messages * 200 = 800 tokens
     # 800 / 1000 = 0.8 >= 0.8 but messages = 4 < 5
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(4)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(4)])
     result = middleware.before_model(state, Runtime())
     assert result is None, "Should not trigger when only fraction condition is met"
 
@@ -2075,7 +1856,7 @@ def test_empty_list_trigger_never_summarizes() -> None:
         token_counter=lambda _: 10_000,
     )
     assert middleware._trigger_conditions == []
-    state = SummarizationState(messages=[HumanMessage(content=str(i)) for i in range(50)])
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(50)])
     assert middleware.before_model(state, Runtime()) is None
 
 
