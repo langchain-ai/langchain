@@ -1356,8 +1356,17 @@ def create_agent(
         # and dicts (built-ins)
         final_tools = list(request.tools)
         if isinstance(effective_response_format, ToolStrategy):
-            # Add structured output tools to final tools list
-            structured_tools = [info.tool for info in structured_output_tools.values()]
+            # Add structured output tools to final tools list, narrowed to only the
+            # schemas present in the (possibly middleware-narrowed) response format.
+            # This ensures middleware that narrows a union `ToolStrategy` to a subset
+            # via `request.override()` actually restricts which structured output
+            # tools the model can choose from.
+            narrowed_tool_names = {spec.name for spec in effective_response_format.schema_specs}
+            structured_tools = [
+                info.tool
+                for name, info in structured_output_tools.items()
+                if name in narrowed_tool_names
+            ]
             final_tools.extend(structured_tools)
 
         # Bind model based on effective response format
