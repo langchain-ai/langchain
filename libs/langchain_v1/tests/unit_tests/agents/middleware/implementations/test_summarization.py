@@ -400,13 +400,11 @@ async def test_summarization_middleware_abefore_model_raises_on_summary_failure(
 
 
 def test_summarization_middleware_e2e_failure_raises_without_corrupting_history() -> None:
-    """End-to-end regression test for #38867.
+    """End-to-end regression test.
 
-    Runs a real `create_agent` graph with a checkpointer. A summary failure (after
-    retries are exhausted) must propagate as `SummarizationFailedError` out of
-    `agent.invoke` rather than fabricating a fake summary or deleting history. Once
-    the summary model is fixed, a later invocation must succeed and summarize
-    normally, proving the checkpointed history was never corrupted by the failure.
+    Verifies that exhausted summary retries raise `SummarizationFailedError`
+    without corrupting checkpointed history, and that summarization succeeds on a
+    later invocation once the model recovers.
     """
 
     class TemporarilyFailingSummaryModel(BaseChatModel):
@@ -456,11 +454,8 @@ def test_summarization_middleware_e2e_failure_raises_without_corrupting_history(
     messages_below_threshold = agent.get_state(config).values["messages"]
     assert len(messages_below_threshold) == 6
 
-    # This turn pushes the message count to 7, past the trigger, and the summary
-    # model fails: the whole invocation must raise, and no fabricated summary or
-    # `RemoveMessage` can have been applied to the checkpointed history. The new
-    # human input is still recorded (LangGraph commits it before `before_model`
-    # runs), but no AI response or compaction ever happens on top of it.
+    # This turn triggers summarization, which fails and raises. The new human
+    # message is checkpointed, but no AI response, summary, or message removal occurs.
     with pytest.raises(SummarizationFailedError, match="429 Too Many Requests"):
         agent.invoke({"messages": [HumanMessage("turn 3")]}, config)
 

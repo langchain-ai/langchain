@@ -226,13 +226,11 @@ def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
 
 
 class SummarizationFailedError(Exception):
-    """Raised when summary generation fails after all retry attempts are exhausted.
+    """Raised when summary generation fails after all retry attempts.
 
-    Transient errors (rate limits, timeouts) are retried in-process via
-    `Runnable.with_retry` before a summary call is considered failed (see
-    `summary_max_attempts`). If the call still fails after those attempts, this
-    exception is raised immediately rather than fabricating a summary or silently
-    dropping the summarization attempt.
+    Transient errors are retried up to `summary_max_attempts`. If all attempts
+    fail, this error is raised instead of fabricating or silently skipping the
+    summary.
     """
 
     def __init__(self, cause: BaseException) -> None:
@@ -252,11 +250,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     messages when a threshold is reached, preserving recent messages and maintaining
     context continuity by ensuring AI/Tool message pairs remain together.
 
-    Transient summary-generation errors (rate limits, timeouts) are retried
-    in-process via `Runnable.with_retry` (see `summary_max_attempts`). If a summary
-    call still fails after those attempts,
-    [`SummarizationFailedError`][langchain.agents.middleware.summarization.SummarizationFailedError]
-    is raised immediately rather than fabricating a summary.
+    Transient summary failures are retried up to `summary_max_attempts`.
+
+    If all attempts fail, `SummarizationFailedError` is raised instead of
+    fabricating a summary.
     """
 
     def __init__(
@@ -338,18 +335,12 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 the summarization call.
 
                 Pass `None` to skip trimming entirely.
-            summary_max_attempts: Maximum number of attempts for a single summary
-                call, retrying transient errors (e.g. rate limits, timeouts)
-                in-process with exponential backoff via
-                [`Runnable.with_retry`][langchain_core.runnables.Runnable.with_retry]
-                before raising
-                [`SummarizationFailedError`][langchain.agents.middleware.summarization.SummarizationFailedError].
+            summary_max_attempts: Maximum attempts for a summary call, retrying transient
+                errors with exponential backoff before raising `SummarizationFailedError`.
+                Pass `1` to disable retries.
 
-                Pass `1` to disable additional retries and attempt each summary
-                call once.
-            summary_retry_backoff: Whether to wait between summary retry attempts
-                using exponential backoff with jitter. Pass `False` for immediate
-                retries with no delay.
+            summary_retry_backoff: Whether to use exponential backoff with jitter between
+                retries. Pass `False` to retry immediately.
 
         Raises:
             ValueError: If `summary_max_attempts` is not a positive integer.
@@ -386,8 +377,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         self.model = model
         # Transient errors (rate limits, timeouts) are retried in-process with
-        # exponential backoff before giving up, using the standard `Runnable.with_retry`
-        # mechanism (https://reference.langchain.com/python/langchain-core/runnables/retry/RunnableRetry).
+        # exponential backoff before giving up
         self._summary_model = self.model.with_retry(
             stop_after_attempt=summary_max_attempts,
             wait_exponential_jitter=summary_retry_backoff,
