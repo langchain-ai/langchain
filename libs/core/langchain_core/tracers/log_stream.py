@@ -26,7 +26,7 @@ from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
-from langchain_core.tracers.memory_stream import _MemoryStream
+from langchain_core.tracers.memory_stream import _get_or_create_loop, _MemoryStream
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
@@ -287,11 +287,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler[Any]):
         self.exclude_types = exclude_types
         self.exclude_tags = exclude_tags
 
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-        memory_stream = _MemoryStream[RunLogPatch](loop)
+        memory_stream = _MemoryStream[RunLogPatch](_get_or_create_loop(self))
         self.lock = threading.Lock()
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()

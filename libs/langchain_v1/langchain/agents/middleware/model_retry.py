@@ -7,6 +7,7 @@ import time
 from typing import TYPE_CHECKING
 
 from langchain_core.messages import AIMessage
+from langgraph.errors import GraphBubbleUp
 
 from langchain.agents.middleware._retry import (
     OnFailure,
@@ -233,6 +234,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
         for attempt in range(self.max_retries + 1):
             try:
                 return handler(request)
+            except GraphBubbleUp:
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
@@ -283,6 +286,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
         for attempt in range(self.max_retries + 1):
             try:
                 return await handler(request)
+            except GraphBubbleUp:
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 

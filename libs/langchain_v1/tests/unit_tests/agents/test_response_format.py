@@ -11,8 +11,9 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
-from langchain_core.runnables import Runnable
-from pydantic import BaseModel, Field
+from langchain_core.runnables import Runnable, RunnableConfig
+from langgraph.checkpoint.memory import InMemorySaver
+from pydantic import BaseModel, Field, field_validator
 from typing_extensions import TypedDict, override
 
 from langchain.agents import create_agent
@@ -683,6 +684,49 @@ class TestResponseFormatAsToolStrategy:
             match=r".*WeatherBaseModel.*",
         ):
             agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    def test_structured_response_not_stale_across_checkpointed_turns(self) -> None:
+        """Test that a checkpointed turn doesn't reuse a previous turn's response.
+
+        Regression test for a bug where the routing edges checked for
+        `structured_response` key *presence* rather than freshness, so a turn whose
+        first attempt failed validation (and needed a retry) would exit early with
+        the previous turn's stale `structured_response` still sitting in the
+        checkpointed state.
+        """
+
+        class Answer(BaseModel):
+            text: str
+
+            @field_validator("text")
+            @classmethod
+            def not_bad(cls, v: str) -> str:
+                if v == "BAD":
+                    msg = "bad sentinel"
+                    raise ValueError(msg)
+                return v
+
+        tool_calls = [
+            [{"name": "Answer", "id": "1", "args": {"text": "Hi"}}],
+            [{"name": "Answer", "id": "2", "args": {"text": "BAD"}}],
+            [{"name": "Answer", "id": "3", "args": {"text": "Bye"}}],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(Answer, handle_errors=True),
+            checkpointer=InMemorySaver(),
+        )
+        thread: RunnableConfig = {"configurable": {"thread_id": "test-thread"}}
+
+        response_1 = agent.invoke({"messages": [HumanMessage("say hi")]}, config=thread)
+        response_2 = agent.invoke({"messages": [HumanMessage("say bye")]}, config=thread)
+
+        assert response_1["structured_response"] == Answer(text="Hi")
+        assert response_2["structured_response"] == Answer(text="Bye")
 
 
 class TestResponseFormatAsProviderStrategy:

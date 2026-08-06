@@ -167,6 +167,14 @@ def test_profile() -> None:
     assert model.profile["max_input_tokens"] == 272_000
 
 
+def test_gpt_5_3_chat_latest_profile_has_no_reasoning_effort() -> None:
+    model = ChatOpenAI(model="gpt-5.3-chat-latest")
+
+    assert model.profile
+    assert model.profile["reasoning_output"] is False
+    assert "reasoning_effort_levels" not in model.profile
+
+
 def test_function_message_dict_to_function_message() -> None:
     content = json.dumps({"result": "Example #1"})
     name = "test_function"
@@ -1547,7 +1555,7 @@ def test_minimal_reasoning_effort_payload(
     # When using responses API, reasoning_effort becomes reasoning.effort
     if use_responses_api:
         assert "reasoning" in payload
-        assert payload["reasoning"]["effort"] == "minimal"
+        assert payload["reasoning"] == {"effort": "minimal"}
         # For responses API, tokens param becomes max_output_tokens
         assert payload["max_output_tokens"] == 100
     else:
@@ -1815,6 +1823,22 @@ def test_verbosity_parameter_payload() -> None:
     payload = llm._get_request_payload(messages, stop=None)
 
     assert payload["text"]["verbosity"] == "high"
+
+
+def test_responses_payload_does_not_mutate_text_model_kwargs() -> None:
+    text = {"verbosity": "low"}
+    llm = ChatOpenAI(
+        model="gpt-5",
+        api_key=SecretStr("test"),
+        use_responses_api=True,
+        model_kwargs={"text": text},
+    )
+
+    payload = llm._get_request_payload("hello", response_format={"type": "json_object"})
+
+    assert payload["text"]["format"] == {"type": "json_object"}
+    assert text == {"verbosity": "low"}
+    assert llm._get_request_payload("hello")["text"] == {"verbosity": "low"}
 
 
 def test_structured_output_legacy_model() -> None:
@@ -2961,6 +2985,34 @@ def test__construct_responses_api_input_skips_blocks_without_text() -> None:
     }
 
 
+def test_responses_api_payload_drops_lc_auto_ids() -> None:
+    """LangChain-auto-generated (`lc_`) IDs must not be forwarded to OpenAI.
+
+    The Responses API validates provider-issued message IDs (expects `msg_...`),
+    so synthetic AI messages built from `create_text_block` (which assigns an
+    `lc_`-prefixed ID) previously triggered a 400. See issue #39113.
+    """
+    text_block = types.create_text_block("The capital of France is Paris.")
+    assert text_block["id"].startswith("lc_")
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    payload = llm._get_request_payload([AIMessage(content_blocks=[text_block])])
+
+    input_ = payload["input"]
+    assert len(input_) == 1
+    assert input_[0]["type"] == "message"
+    assert input_[0]["role"] == "assistant"
+    # The `lc_` ID is dropped rather than forwarded to OpenAI.
+    assert "id" not in input_[0]
+    assert input_[0]["content"] == [
+        {
+            "type": "output_text",
+            "text": "The capital of France is Paris.",
+            "annotations": [],
+        }
+    ]
+
+
 def test__construct_responses_api_input_human_message_with_image_url_conversion() -> (
     None
 ):
@@ -3439,25 +3491,31 @@ def test_mcp_tracing() -> None:
             "server_label": "deepwiki",
             "server_url": "https://mcp.deepwiki.com/mcp",
             "require_approval": "always",
-            "headers": {"Authorization": "Bearer PLACEHOLDER"},
+            "headers": {"Authorization": "Bearer HEADER_SECRET"},
+            "authorization": "Bearer AUTHORIZATION_SECRET",
         }
     ]
     with patch.object(llm, "root_client", mock_client):
         llm_with_tools = llm.bind_tools(tools)
         _ = llm_with_tools.invoke([input_message], config={"callbacks": [tracer]})
 
-    # Test headers are not traced
+    # Test credentials are not traced
     assert len(tracer.chat_model_start_inputs) == 1
     invocation_params = tracer.chat_model_start_inputs[0]["kwargs"]["invocation_params"]
-    for tool in invocation_params["tools"]:
-        if "headers" in tool:
-            assert tool["headers"] == "**REDACTED**"
-    for substring in ["Authorization", "Bearer", "PLACEHOLDER"]:
+    assert invocation_params["tools"][0]["headers"] == "**REDACTED**"
+    assert invocation_params["tools"][0]["authorization"] == "**REDACTED**"
+    for substring in [
+        "Authorization",
+        "Bearer",
+        "HEADER_SECRET",
+        "AUTHORIZATION_SECRET",
+    ]:
         assert substring not in str(tracer.chat_model_start_inputs)
 
-    # Test headers are correctly propagated to request
+    # Test credentials are correctly propagated to request
     payload = llm_with_tools._get_request_payload([input_message], tools=tools)  # type: ignore[attr-defined]
-    assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"
+    assert payload["tools"][0]["headers"]["Authorization"] == "Bearer HEADER_SECRET"
+    assert payload["tools"][0]["authorization"] == "Bearer AUTHORIZATION_SECRET"
 
 
 def test_compat_responses_v03() -> None:
@@ -4616,6 +4674,39 @@ def test_namespace_passthrough() -> None:
     assert {"type": "tool_search"} in payload["tools"]
 
 
+def test_reasoning_effort_responses_api_maps_to_effort_only() -> None:
+    """Test `reasoning_effort` maps to `reasoning.effort` alone, no `summary`.
+
+    `summary` is a separate concern, configured via the `reasoning` param
+    directly (e.g. `reasoning={"effort": "high", "summary": "auto"}`) rather
+    than implied by `reasoning_effort`.
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    payload = _construct_responses_api_payload([], {"reasoning_effort": "high"})
+
+    assert payload["reasoning"] == {"effort": "high"}
+    assert "reasoning_effort" not in payload
+
+
+def test_reasoning_effort_responses_api_preserves_existing_reasoning() -> None:
+    """Test that an already-present `reasoning` dict is not overwritten."""
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    payload = _construct_responses_api_payload(
+        [],
+        {
+            "reasoning_effort": "high",
+            "reasoning": {"effort": "low", "summary": "concise"},
+        },
+    )
+
+    assert payload["reasoning"] == {"effort": "low", "summary": "concise"}
+    # The unused `reasoning_effort` kwarg is left untouched in this case, since
+    # the guard requires `"reasoning" not in payload` before popping it.
+    assert payload["reasoning_effort"] == "high"
+
+
 def test_defer_loading_in_responses_api_payload() -> None:
     """Test that defer_loading is preserved in Responses API tool format."""
     from langchain_openai.chat_models.base import _construct_responses_api_payload
@@ -4649,3 +4740,84 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://gateway.smith.langchain.com/openai/v1"
+    assert llm.stream_usage is True
+
+
+def test_langsmith_gateway_false(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base is None
+
+
+def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base is None
+
+
+def test_langsmith_gateway_custom_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://my-gateway.example.com/")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://my-gateway.example.com/openai/v1"
+
+
+def test_langsmith_gateway_provider_env_overrides_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://api.openai.com/v1"
+
+
+def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_api_key_not_used_without_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+def test_langsmith_gateway_api_key_overrides_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_provider_base_url_uses_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Provider-specific wiring check: base URL overridden away from the gateway
+    # -> provider key wins over the gateway key. Full precedence matrix lives in
+    # core's test_gateway.py.
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert llm.openai_api_base == "https://api.openai.com/v1"
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "provider-key"

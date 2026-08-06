@@ -1524,6 +1524,90 @@ class TestStreamUsage:
         }
 
 
+class TestReasoningEffort:
+    """Tests for the `reasoning_effort` field plumbing."""
+
+    def test_reasoning_effort_omitted_by_default(self) -> None:
+        model = _make_model()
+        assert "reasoning_effort" not in model._default_params
+
+    def test_reasoning_effort_in_default_params_when_set(self) -> None:
+        model = _make_model(reasoning_effort="high")
+        assert model._default_params["reasoning_effort"] == "high"
+
+    def test_reasoning_effort_passed_to_client_when_set(self) -> None:
+        model = _make_model(reasoning_effort="high")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "high"
+
+    def test_reasoning_effort_not_passed_when_unset(self) -> None:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert "reasoning_effort" not in call_kwargs
+
+    def test_reasoning_effort_as_call_time_kwarg(self) -> None:
+        """`reasoning_effort` also works as a call-time keyword argument.
+
+        This is the standard `reasoning_effort` param shared across chat model
+        integrations, so it must work via `model.invoke(..., reasoning_effort=...)`
+        without requiring it to be set on the model instance.
+        """
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello", reasoning_effort="low")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "low"
+
+    def test_reasoning_effort_call_time_kwarg_overrides_construction_time(
+        self,
+    ) -> None:
+        model = _make_model(reasoning_effort="low")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello", reasoning_effort="high")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "high"
+
+
 class TestServiceTier:
     """Tests for the `service_tier` field plumbing."""
 
@@ -1836,3 +1920,67 @@ def test_request_timeout_tuple_normalized_to_httpx_timeout(
     assert forwarded.connect == 5.0
     assert forwarded.read == 30.0
     assert async_mock.call_args.kwargs["timeout"] == forwarded
+
+
+def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://gateway.smith.langchain.com/fireworks"
+
+
+def test_langsmith_gateway_false(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
+    llm = _make_model()
+    assert llm.fireworks_api_base is None
+
+
+def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
+    llm = _make_model()
+    assert llm.fireworks_api_base is None
+
+
+def test_langsmith_gateway_custom_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://my-gateway.example.com/")
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://my-gateway.example.com/fireworks"
+
+
+def test_langsmith_gateway_provider_env_overrides_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("FIREWORKS_API_BASE", "https://api.fireworks.ai/inference/v1")
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://api.fireworks.ai/inference/v1"
+
+
+def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.delenv("FIREWORKS_API_KEY", raising=False)
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_api_key_not_used_without_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "provider-key"
+
+
+def test_langsmith_gateway_api_key_overrides_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "gateway-key"
