@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import HumanMessage
+from langchain_core.tracers import BaseTracer, Run
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
@@ -13,16 +13,22 @@ from langchain.agents.middleware.types import AgentState
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
-class _CaptureInputs(BaseCallbackHandler):
-    """Record the inputs each chain run reports on `on_chain_start`, by run name."""
+class _CaptureInputs(BaseTracer):
+    """Tracer that records the inputs each run reports, keyed by run name.
+
+    A real tracer (not a plain callback) so `TracePolicy` processors, which run only
+    when a tracer is attached, actually fire.
+    """
 
     def __init__(self) -> None:
+        super().__init__()
         self.inputs_by_name: dict[str, Any] = {}
 
-    def on_chain_start(self, serialized: dict[str, Any], inputs: Any, **kwargs: Any) -> None:
-        name = kwargs.get("name") or (serialized or {}).get("name")
-        if name is not None:
-            self.inputs_by_name.setdefault(name, inputs)
+    def _persist_run(self, run: Run) -> None:
+        pass
+
+    def _on_chain_start(self, run: Run) -> None:
+        self.inputs_by_name.setdefault(run.name, run.inputs)
 
 
 def _recorded_before_model_inputs(middleware: AgentMiddleware) -> Any:
