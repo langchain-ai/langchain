@@ -402,22 +402,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     @staticmethod
     @contextmanager
     def _ensure_runnable_config(config: RunnableConfig | None) -> Iterator[None]:
-        """Seed the ambient `RunnableConfig` contextvar `interrupt()` relies on.
+        """Seed the `RunnableConfig` context needed by `interrupt()`.
 
-        `interrupt()` calls `get_config()`, which reads the `RunnableConfig`
-        contextvar set by the surrounding runnable machinery. `aafter_model`
-        delegates to this (synchronous) method, and on Python < 3.11 LangGraph's
-        async node runner can't propagate that contextvar across the coroutine
-        boundary (`asyncio.create_task`'s `context` kwarg only exists from
-        Python 3.11 on), so `get_config()` raises `RuntimeError: Called
-        get_config outside of a runnable context`.
-
-        `RunnableCallable` still passes the real, per-invocation config as a
-        plain `config` argument when a node/hook declares one (see `after_model`
-        below), independent of the contextvar. Use that to seed the contextvar
-        ourselves for the duration of the `interrupt()` call so it succeeds
-        regardless of the async contextvar-propagation gap. A no-op when
-        `config` is `None` (e.g. when called directly, as in unit tests).
+        On Python <3.11, async execution may not propagate the config contextvar.
+        Use the explicitly passed `config` to seed it around `interrupt()`. No-op
+        when `config` is `None`.
         """
         if config is None:
             yield
@@ -432,10 +421,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         self,
         state: AgentState[Any],
         runtime: Runtime[ContextT],
-        # `RunnableCallable` auto-injects the real per-invocation config for a
-        # parameter literally named `config`, matching this annotation as a
-        # raw string (this module uses `from __future__ import annotations`);
-        # `RunnableConfig | None` does not match, hence `Optional[...]` here.
+    # `RunnableCallable` injects config only for a parameter named `config` with
+    # this exact annotation; `RunnableConfig | None` isn't recognized, so use `Optional`.
         config: Optional[RunnableConfig] = None,  # noqa: UP045
     ) -> dict[str, Any] | None:
         """Trigger interrupt flows for relevant tool calls after an `AIMessage`.
