@@ -945,6 +945,55 @@ def test_union_of_types() -> None:
     assert len(response["messages"]) == 5
 
 
+def test_wrap_model_call_narrows_response_format_tools() -> None:
+    """`wrap_model_call` narrowing `response_format` should restrict bound tools."""
+
+    class RecordingModel(GenericFakeChatModel):
+        bound_tool_names: list[list[str]] = Field(default_factory=list)
+
+        @override
+        def bind_tools(
+            self,
+            tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+            **kwargs: Any,
+        ) -> Runnable[LanguageModelInput, AIMessage]:
+            self.bound_tool_names.append(sorted(t.name for t in tools if isinstance(t, BaseTool)))
+            return self
+
+    model = RecordingModel(
+        messages=iter(
+            [
+                AIMessage(
+                    content="",
+                    tool_calls=[{"name": "WeatherBaseModel", "id": "1", "args": WEATHER_DATA}],
+                ),
+            ]
+        )
+    )
+
+    class NarrowToWeatherMiddleware(AgentMiddleware):
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
+            narrowed = request.override(response_format=ToolStrategy(WeatherBaseModel))
+            return handler(narrowed)
+
+    agent = create_agent(
+        model=model,
+        tools=[],
+        response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
+        middleware=[NarrowToWeatherMiddleware()],
+    )
+    response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+    # Only the narrowed tool should have been bound to the model, not the full
+    # union of originally-declared structured output tools.
+    assert model.bound_tool_names == [["WeatherBaseModel"]]
+
+
 class TestSupportsProviderStrategy:
     """Unit tests for `_supports_provider_strategy`."""
 
