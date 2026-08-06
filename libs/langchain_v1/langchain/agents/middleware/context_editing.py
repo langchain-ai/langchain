@@ -317,7 +317,18 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
         different counter could disagree with `wrap_model_call`'s decision
         and either skip persisting a clear that was applied, or persist one
         that wasn't.
+
+        `ContextEdit.apply` is only required to mutate `messages` in place —
+        custom strategies are free to insert or remove entries, not just
+        replace them one-for-one. A same-length assumption would either raise
+        (pairing up mismatched indices) or silently mismatch messages, so this
+        only persists when the edit preserved length; otherwise the edited
+        request still reaches the model exactly as before, just without the
+        persistence benefit for that edit.
         """
+        if len(original_messages) != len(edited_messages):
+            return response
+
         changed = [
             new_msg
             for old_msg, new_msg in zip(original_messages, edited_messages, strict=True)

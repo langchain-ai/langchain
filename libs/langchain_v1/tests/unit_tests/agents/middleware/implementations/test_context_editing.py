@@ -355,6 +355,48 @@ def test_wrap_model_call_returns_plain_response_when_no_edit_applied() -> None:
     assert isinstance(result, ModelResponse)
 
 
+def test_wrap_model_call_skips_persistence_for_length_changing_edit() -> None:
+    """A length-changing custom `ContextEdit` must not crash persistence.
+
+    Regression test for a review comment on #37815: `ContextEdit.apply` is
+    only required to mutate the message list in place — it isn't required to
+    preserve length (e.g. a custom strategy could `messages.pop(0)`). Pairing
+    up messages by index to detect changes would previously raise
+    `ValueError` from a length-mismatched `zip(..., strict=True)`. The edited,
+    shortened request must still reach the model, just without persistence
+    for that edit.
+    """
+
+    class DropFirstMessageEdit:
+        """Custom edit that removes the oldest message instead of replacing it."""
+
+        def apply(self, messages: list[AnyMessage], *, count_tokens: Any) -> None:
+            del count_tokens
+            if messages:
+                messages.pop(0)
+
+    ai_message = AIMessage(content="", tool_calls=[])
+    tool_message = ToolMessage(content="x" * 200, tool_call_id="call-1")
+
+    _state, request = _make_state_and_request([ai_message, tool_message])
+    middleware = ContextEditingMiddleware(edits=[DropFirstMessageEdit()])
+
+    captured_request: ModelRequest | None = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    result = middleware.wrap_model_call(request, mock_handler)
+
+    assert captured_request is not None
+    # The model still receives the shortened request.
+    assert captured_request.messages == [tool_message]
+    # No persistence is attempted for a length-changing edit.
+    assert isinstance(result, ModelResponse)
+
+
 def test_persisted_edit_is_idempotent_across_turns() -> None:
     """Once persisted, a later turn must not re-clear an already-cleared message.
 
