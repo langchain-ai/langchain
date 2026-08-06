@@ -994,6 +994,98 @@ def test_wrap_model_call_narrows_response_format_tools() -> None:
     assert model.bound_tool_names == [["WeatherBaseModel"]]
 
 
+def test_tool_strategy_forces_tool_choice_any_by_default() -> None:
+    """`ToolStrategy` structured output forces `tool_choice="any"` by default."""
+
+    class RecordingModel(GenericFakeChatModel):
+        bound_tool_choices: list[Any] = Field(default_factory=list)
+
+        @override
+        def bind_tools(
+            self,
+            tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+            *,
+            tool_choice: Any | None = None,
+            **kwargs: Any,
+        ) -> Runnable[LanguageModelInput, AIMessage]:
+            self.bound_tool_choices.append(tool_choice)
+            return self
+
+    model = RecordingModel(
+        messages=iter(
+            [
+                AIMessage(
+                    content="",
+                    tool_calls=[{"name": "WeatherBaseModel", "id": "1", "args": WEATHER_DATA}],
+                ),
+            ]
+        )
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[],
+        response_format=ToolStrategy(WeatherBaseModel),
+    )
+    response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+    assert model.bound_tool_choices == ["any"]
+
+
+def test_tool_strategy_respects_explicit_tool_choice_override() -> None:
+    """An explicit `tool_choice` set by middleware overrides the forced "any".
+
+    Some models (e.g. reasoning/thinking models) reject a forced tool_choice
+    outright, so callers need a way to opt out of `ToolStrategy`'s default
+    behavior of forcing tool use. See issue #36120.
+    """
+
+    class RecordingModel(GenericFakeChatModel):
+        bound_tool_choices: list[Any] = Field(default_factory=list)
+
+        @override
+        def bind_tools(
+            self,
+            tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+            *,
+            tool_choice: Any | None = None,
+            **kwargs: Any,
+        ) -> Runnable[LanguageModelInput, AIMessage]:
+            self.bound_tool_choices.append(tool_choice)
+            return self
+
+    model = RecordingModel(
+        messages=iter(
+            [
+                AIMessage(
+                    content="",
+                    tool_calls=[{"name": "WeatherBaseModel", "id": "1", "args": WEATHER_DATA}],
+                ),
+            ]
+        )
+    )
+
+    class ForceAutoToolChoiceMiddleware(AgentMiddleware):
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
+            return handler(request.override(tool_choice="auto"))
+
+    agent = create_agent(
+        model=model,
+        tools=[],
+        response_format=ToolStrategy(WeatherBaseModel),
+        middleware=[ForceAutoToolChoiceMiddleware()],
+    )
+    response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+    assert model.bound_tool_choices == ["auto"]
+
+
 class TestSupportsProviderStrategy:
     """Unit tests for `_supports_provider_strategy`."""
 
