@@ -1765,7 +1765,6 @@ def test_convert_from_runnable_root_model_input_schema() -> None:
     Some `Runnable`s (e.g. a compiled `langgraph` `StateGraph`) expose a
     `pydantic.RootModel` as `input_schema` even though `get_input_jsonschema`
     reports a flat object schema. See:
-    https://github.com/langchain-ai/langchain/issues/38713
     """
 
     class Args(TypedDict):

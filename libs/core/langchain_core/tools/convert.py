@@ -470,6 +470,8 @@ def convert_runnable_to_tool(
         return runnable.invoke(kwargs, config={"callbacks": callbacks})
 
     input_schema_cls = runnable.input_schema
+    # Detect `RootModel` input schemas so we don't use them directly as the tool
+    # args schema.
     is_root_model = isinstance(input_schema_cls, type) and issubclass(
         input_schema_cls, RootModel
     )
@@ -481,13 +483,6 @@ def convert_runnable_to_tool(
     ):
         args_schema = input_schema_cls
     else:
-        # `Runnable`s whose input type is a `TypedDict` (e.g. a compiled
-        # `StateGraph`) expose `input_schema` as a `pydantic.RootModel`. Using it
-        # directly as `args_schema` would advertise the input nested under a
-        # synthetic `root` key, which doesn't match the flat top-level fields
-        # the runnable actually expects. Building the schema from the runnable's
-        # type hints instead keeps the advertised schema and the invocation
-        # payload in the same shape.
         args_schema = _get_schema_from_runnable_and_arg_types(
             runnable, name, arg_types=arg_types
         )
