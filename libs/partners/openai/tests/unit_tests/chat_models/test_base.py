@@ -4507,6 +4507,31 @@ def test_context_overflow_error_prompt_too_long() -> None:
     assert "prompt is too long" in str(exc_info.value)
 
 
+def test_context_overflow_error_context_window_exceeded() -> None:
+    """Test context overflow error triggered by ContextWindowExceededError."""
+    error_body = {
+        "error": {
+            "message": "ContextWindowExceededError: maximum context length exceeded",
+            "type": "invalid_request_error",
+            "param": "messages",
+            "code": "invalid_request_error",
+        }
+    }
+    bad_request_error = openai.BadRequestError(
+        message=error_body["error"]["message"],
+        response=MagicMock(status_code=400),
+        body=error_body,
+    )
+    llm = ChatOpenAI()
+
+    with patch.object(llm.client, "with_raw_response") as mock_client:
+        mock_client.create.side_effect = bad_request_error
+        with pytest.raises(ContextOverflowError) as exc_info:
+            llm.invoke([HumanMessage(content="test")])
+
+    assert "ContextWindowExceededError" in str(exc_info.value)
+
+
 def test_context_overflow_error_backwards_compatibility() -> None:
     """Test that ContextOverflowError can be caught as BadRequestError."""
     llm = ChatOpenAI()
