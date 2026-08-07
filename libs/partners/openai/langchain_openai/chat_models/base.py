@@ -3311,6 +3311,24 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             )
             ```
 
+        !!! warning "Model name can trigger Responses API routing"
+
+            The choice between the Chat Completions API (`/v1/chat/completions`)
+            and the Responses API (`/v1/responses`) is inferred in part from the
+            model name, independent of `base_url`.
+
+            `use_responses_api` should generally be set explicitly to avoid ambiguity,
+            especially when using OpenAI-compatible providers:
+
+            ```python
+            model = ChatOpenAI(
+                base_url="http://localhost:8000/v1",
+                api_key="EMPTY",
+                model="codex-7b-instruct",
+                use_responses_api=False,
+            )
+            ```
+
     ??? info "`model_kwargs` vs `extra_body`"
 
         Use the correct parameter for different types of API arguments:
