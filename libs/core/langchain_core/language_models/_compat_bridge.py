@@ -336,9 +336,9 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
                 state[key] = value
     elif btype in {"tool_call_chunk", "server_tool_call_chunk"} and dtype == btype:
         state["args"] = (state.get("args", "") or "") + (delta.get("args") or "")
-        if delta.get("id") is not None:
+        if delta.get("id") not in (None, ""):
             state["id"] = delta["id"]
-        if delta.get("name") is not None:
+        if delta.get("name") not in (None, ""):
             state["name"] = delta["name"]
     elif btype == dtype and "data" in delta:
         state["data"] = (state.get("data", "") or "") + (delta.get("data") or "")
