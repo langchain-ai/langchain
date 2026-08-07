@@ -145,6 +145,36 @@ async def test_aupdate_timestamp(manager: InMemoryRecordManager) -> None:
     ) == ["key1"]
 
 
+def test_update_uses_single_timestamp_for_batch(
+    manager: InMemoryRecordManager,
+) -> None:
+    """All keys upserted in a single `update()` call must share one timestamp.
+
+    Regression test: `get_time()` used to be called once per key inside the
+    update loop, so keys in the same batch could receive different
+    timestamps. That drift could cause `list_keys(before=...)` to miss some
+    keys that were logically updated together, breaking cleanup logic that
+    relies on a stable "as of" cutoff for a batch.
+    """
+    call_count = 0
+    real_get_time = manager.get_time
+
+    def fake_get_time() -> float:
+        nonlocal call_count
+        call_count += 1
+        return real_get_time()
+
+    with patch.object(manager, "get_time", side_effect=fake_get_time):
+        manager.update(["key1", "key2", "key3"])
+
+    # get_time() should be invoked exactly once for the whole batch.
+    assert call_count == 1
+
+    records = manager.records
+    timestamps = {records[key]["updated_at"] for key in ("key1", "key2", "key3")}
+    assert len(timestamps) == 1
+
+
 def test_exists(manager: InMemoryRecordManager) -> None:
     """Test checking if keys exist in the database."""
     # Insert records
