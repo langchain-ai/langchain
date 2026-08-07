@@ -25,6 +25,7 @@ from langchain_core.prompts import (
 )
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.tracers import log_stream
+from langchain_core.utils import from_env
 
 OPENAI_TEST_MODEL = "gpt-5.5"
 
@@ -146,14 +147,19 @@ def test__is_field_useful() -> None:
     assert not _is_field_useful(foo, "y", foo.y)
 
 
-def test_try_neq_default_none_factory() -> None:
-    """A `None`-valued `default_factory` field at its default is not flagged as changed.
+def test_try_neq_default_none_factory(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An env-backed `default_factory` at its `None` default is not flagged as changed.
 
-    Regression test for issue #39157.
+    Mirrors the real `output_version` field on chat models
+    (`Field(default_factory=from_env(..., default=None))`). Regression test for issue
+    #39157.
     """
+    monkeypatch.delenv("LC_TEST_OUTPUT_VERSION", raising=False)
 
     class Model(BaseModel):
-        none_factory: str | None = Field(default_factory=lambda: None)
+        none_factory: str | None = Field(
+            default_factory=from_env("LC_TEST_OUTPUT_VERSION", default=None)
+        )
 
     field = Model.model_fields["none_factory"]
     assert not _try_neq_default(None, field)
@@ -168,10 +174,14 @@ def test_try_neq_default_simulating_pydantic_2_14(
     Pydantic 2.14+ returns the sentinel (instead of `None`) for an un-called
     `default_factory`; this forces that behavior on the current pydantic.
     """
+    monkeypatch.delenv("LC_TEST_OUTPUT_VERSION", raising=False)
+    monkeypatch.delenv("LC_TEST_STR", raising=False)
 
     class Model(BaseModel):
-        none_factory: str | None = Field(default_factory=lambda: None)
-        str_factory: str = Field(default_factory=lambda: "v1")
+        none_factory: str | None = Field(
+            default_factory=from_env("LC_TEST_OUTPUT_VERSION", default=None)
+        )
+        str_factory: str = Field(default_factory=from_env("LC_TEST_STR", default="v1"))
 
     real_get_default = FieldInfo.get_default
 
