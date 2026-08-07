@@ -3320,6 +3320,10 @@ def test__construct_responses_api_input_tool_message_conversion() -> None:
     assert result[0]["type"] == "function_call_output"
     assert result[0]["output"] == '{"temperature": 72, "conditions": "sunny"}'
     assert result[0]["call_id"] == "call_123"
+    # Some OpenAI-compatible servers (e.g. vLLM serving GPT-OSS models) reject
+    # function_call_output blocks that omit "status" with "No call message
+    # found", mirroring the function_call block it responds to. See #32885.
+    assert result[0]["status"] is None
 
 
 def test__construct_responses_api_input_multiple_message_types() -> None:

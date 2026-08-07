@@ -4625,6 +4625,12 @@ def _construct_responses_api_input(
                     "type": "function_call_output",
                     "output": tool_output,
                     "call_id": msg["tool_call_id"],
+                    # Some OpenAI-compatible servers (e.g. vLLM serving
+                    # GPT-OSS models) require "status" to be present on a
+                    # function_call_output block, mirroring the function_call
+                    # block it responds to; omitting it can cause a
+                    # "No call message found" error.
+                    "status": None,
                 }
                 input_.append(function_call_output)
         elif msg["role"] == "assistant":
