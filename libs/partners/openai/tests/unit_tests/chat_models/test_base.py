@@ -4303,6 +4303,80 @@ def test_model_prefers_responses_api() -> None:
     assert not _model_prefers_responses_api(None)
 
 
+@pytest.mark.parametrize(
+    ("base_url", "expected_api"),
+    [
+        (None, "responses"),
+        ("https://api.openai.com/v1", "responses"),
+        ("https://api.openai.com/v1/", "responses"),
+        ("http://localhost:8000/v1", "chat"),
+        ("https://api.openai.com.example.com/v1", "chat"),
+        ("https://api.openai.com.evil.example/v1", "chat"),
+        ("https://api.openai.com-proxy.example/v1", "chat"),
+    ],
+)
+def test_custom_base_url_responses_api_routing(
+    base_url: str | None, expected_api: str
+) -> None:
+    kwargs: dict[str, Any] = {"model": "gpt-5.3-codex", "api_key": "test"}
+    if base_url:
+        kwargs["base_url"] = base_url
+
+    llm = ChatOpenAI(**kwargs)
+    payload = llm._get_request_payload([HumanMessage(content="hello")])
+
+    if expected_api == "responses":
+        assert llm._use_responses_api({}) is True
+        assert "input" in payload
+        assert "messages" not in payload
+    else:
+        assert llm._use_responses_api({}) is False
+        assert "messages" in payload
+        assert "input" not in payload
+
+
+@pytest.mark.parametrize(
+    ("use_responses_api", "expected_key"),
+    [
+        (True, "input"),
+        (False, "messages"),
+    ],
+)
+def test_custom_base_url_explicit_use_responses_api(
+    use_responses_api: bool, expected_key: str
+) -> None:
+    llm = ChatOpenAI(
+        model="gpt-5.3-codex",
+        base_url="http://localhost:8000/v1",
+        api_key="test",
+        use_responses_api=use_responses_api,
+    )
+    assert llm._use_responses_api({}) is use_responses_api
+    payload = llm._get_request_payload([HumanMessage(content="hello")])
+    assert expected_key in payload
+
+
+def test_custom_base_url_responses_api_env_var(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://localhost:8000/v1")
+    llm = ChatOpenAI(model="gpt-5.3-codex", api_key="test")
+    assert llm._use_responses_api({}) is False
+    payload = llm._get_request_payload([HumanMessage(content="hello")])
+    assert "messages" in payload
+    assert "input" not in payload
+
+
+def test_custom_base_url_with_responses_features() -> None:
+    llm = ChatOpenAI(
+        model="gpt-5.3-codex",
+        base_url="http://localhost:8000/v1",
+        api_key="test",
+        reasoning={"effort": "low"},
+    )
+    assert llm._use_responses_api({}) is True
+
+
 def test_openai_structured_output_refusal_handling_responses_api() -> None:
     """
     Test that _oai_structured_outputs_parser raises OpenAIRefusalError

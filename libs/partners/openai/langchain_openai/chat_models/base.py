@@ -123,6 +123,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     SecretStr,
     ValidationError,
     field_validator,
@@ -615,6 +616,12 @@ def _model_prefers_responses_api(model_name: str | None) -> bool:
     return model_name.startswith(_RESPONSES_API_ONLY_PREFIXES) or "codex" in model_name
 
 
+def _is_standard_openai_url(url: str | None) -> bool:
+    if not url:
+        return True
+    return urlparse(url).hostname == "api.openai.com"
+
+
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
 _DictOrPydantic: TypeAlias = dict | _BM
@@ -629,6 +636,8 @@ class BaseChatOpenAI(BaseChatModel):
     `reasoning_content`) are not extracted. Use a provider-specific subclass for
     full provider support.
     """
+
+    _base_url_from_gateway: bool = PrivateAttr(default=False)
 
     client: Any = Field(default=None, exclude=True)
 
@@ -1222,6 +1231,7 @@ class BaseChatOpenAI(BaseChatModel):
         self.openai_api_base = _gateway_config.base_url
         self.openai_api_key = _gateway_config.api_key
         _base_url_from_gateway = _gateway_config.base_url_from_gateway
+        self._base_url_from_gateway = _base_url_from_gateway
 
         # Enable stream_usage by default if using default base URL and client,
         # or when the base URL was set by the LangSmith gateway (which proxies
@@ -1757,6 +1767,13 @@ class BaseChatOpenAI(BaseChatModel):
             generation_info = {"headers": dict(raw_response.headers)}
         return self._create_chat_result(response, generation_info)
 
+    @property
+    def _is_custom_base_url(self) -> bool:
+        if getattr(self, "_base_url_from_gateway", False):
+            return False
+        base_url = self.openai_api_base or os.environ.get("OPENAI_BASE_URL")
+        return not _is_standard_openai_url(base_url)
+
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
@@ -1767,7 +1784,10 @@ class BaseChatOpenAI(BaseChatModel):
             or self.reasoning is not None
             or self.truncation is not None
             or self.use_previous_response_id
-            or _model_prefers_responses_api(self.model_name)
+            or (
+                not self._is_custom_base_url
+                and _model_prefers_responses_api(self.model_name)
+            )
         ):
             return True
         return _use_responses_api(payload)
