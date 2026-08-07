@@ -851,5 +851,12 @@ def _recursive_set_additional_properties_false(
                 _recursive_set_additional_properties_false(sub_schema)
         if "items" in schema:
             _recursive_set_additional_properties_false(schema["items"])
+        # Schemas passed in raw (e.g. a JSON schema dict with a top-level
+        # 'title') can reference nested object definitions via '$ref'/'$defs'
+        # instead of inlining them; walk those too so they're made strict.
+        for defs_key in ("$defs", "definitions"):
+            if isinstance(schema.get(defs_key), dict):
+                for sub_schema in schema[defs_key].values():
+                    _recursive_set_additional_properties_false(sub_schema)
 
     return schema

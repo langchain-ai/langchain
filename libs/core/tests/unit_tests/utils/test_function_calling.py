@@ -1202,6 +1202,36 @@ def test_convert_to_openai_function_strict_nested_required() -> None:
     assert inner_schema["additionalProperties"] is False
 
 
+def test_convert_to_openai_function_strict_nested_required_via_defs_ref() -> None:
+    """Object definitions referenced via `$ref`/`$defs` must also be made strict.
+
+    Raw JSON-schema-style tool input can represent nested objects as `$ref`
+    pointers into a top-level `$defs`/`definitions` map instead of inlining
+    them under `properties`. See: https://github.com/langchain-ai/langchain/pull/39306
+    """
+    raw_schema = {
+        "name": "f",
+        "parameters": {
+            "type": "object",
+            "properties": {"inner": {"$ref": "#/$defs/Inner"}},
+            "$defs": {
+                "Inner": {
+                    "type": "object",
+                    "properties": {
+                        "required_field": {"type": "string"},
+                        "optional_field": {"type": "string"},
+                    },
+                }
+            },
+        },
+    }
+
+    func = convert_to_openai_function(raw_schema, strict=True)
+    inner_def = func["parameters"]["$defs"]["Inner"]
+    assert set(inner_def["required"]) == {"required_field", "optional_field"}
+    assert inner_def["additionalProperties"] is False
+
+
 def test_convert_to_openai_function_arbitrary_type_error() -> None:
     """Test that a helpful error is raised for non-JSON-serializable types.
 
