@@ -844,6 +844,11 @@ def _recursive_set_additional_properties_false(
         if "anyOf" in schema:
             for sub_schema in schema["anyOf"]:
                 _recursive_set_additional_properties_false(sub_schema)
+        # Pydantic <2.9 wraps a referenced model field in 'allOf' when it has
+        # sibling keys (e.g. 'description'), instead of merging them directly.
+        if "allOf" in schema:
+            for sub_schema in schema["allOf"]:
+                _recursive_set_additional_properties_false(sub_schema)
         if "properties" in schema:
             for sub_schema in schema["properties"].values():
                 _recursive_set_additional_properties_false(sub_schema)

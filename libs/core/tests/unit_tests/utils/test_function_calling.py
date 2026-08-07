@@ -1198,6 +1198,10 @@ def test_convert_to_openai_function_strict_nested_required() -> None:
 
     func = convert_to_openai_function(Outer, strict=True)
     inner_schema = func["parameters"]["properties"]["inner"]
+    # Pydantic <2.9 wraps a referenced model field with sibling keys (e.g. the
+    # `description` set above) in `allOf` instead of merging them directly.
+    if "allOf" in inner_schema:
+        inner_schema = inner_schema["allOf"][0]
     assert set(inner_schema["required"]) == {"required_field", "optional_field"}
     assert inner_schema["additionalProperties"] is False
 
