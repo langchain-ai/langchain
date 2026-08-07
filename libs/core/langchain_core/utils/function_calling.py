@@ -821,10 +821,8 @@ def _recursive_set_additional_properties_false(
     schema: dict[str, Any],
 ) -> dict[str, Any]:
     if isinstance(schema, dict):
-        # OpenAI strict mode requires every key in `properties` to also be listed
-        # in `required`, at every level of nesting (fields that are logically
-        # optional should be made nullable instead). Without this, nested
-        # objects with optional fields are rejected by the API.
+        # OpenAI strict mode requires every property to appear in `required` at every
+        # level of nesting. Without this, nested object schemas are rejected.
         properties = schema.get("properties")
         if isinstance(properties, dict) and properties:
             schema["required"] = list(properties.keys())
@@ -851,9 +849,8 @@ def _recursive_set_additional_properties_false(
                 _recursive_set_additional_properties_false(sub_schema)
         if "items" in schema:
             _recursive_set_additional_properties_false(schema["items"])
-        # Schemas passed in raw (e.g. a JSON schema dict with a top-level
-        # 'title') can reference nested object definitions via '$ref'/'$defs'
-        # instead of inlining them; walk those too so they're made strict.
+        # Raw JSON schemas may keep nested objects in `$defs` and reference them via
+        # `$ref`; walk those definitions too so they're made strict.
         for defs_key in ("$defs", "definitions"):
             if isinstance(schema.get(defs_key), dict):
                 for sub_schema in schema[defs_key].values():
