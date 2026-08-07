@@ -4625,11 +4625,6 @@ def _construct_responses_api_input(
                     "type": "function_call_output",
                     "output": tool_output,
                     "call_id": msg["tool_call_id"],
-                    # Some OpenAI-compatible servers (e.g. vLLM serving
-                    # GPT-OSS models) require "status" to be present on a
-                    # function_call_output block, mirroring the function_call
-                    # block it responds to; omitting it can cause a
-                    # "No call message found" error.
                     "status": None,
                 }
                 input_.append(function_call_output)
@@ -4753,11 +4748,6 @@ def _construct_responses_api_input(
                             "name": tool_call["function"]["name"],
                             "arguments": tool_call["function"]["arguments"],
                             "call_id": tool_call["id"],
-                            # Some OpenAI-compatible servers (e.g. vLLM serving
-                            # GPT-OSS models) require "status" to be present on
-                            # a function_call block when it's echoed back as
-                            # conversation history; omitting it can cause a
-                            # "No call message found" error.
                             "status": None,
                         }
                         input_.append(function_call)
@@ -4896,10 +4886,6 @@ def _construct_lc_result_from_responses_api(
                     content_blocks.append(refusal_block)
         elif output.type == "function_call":
             function_call_block = output.model_dump(exclude_none=True, mode="json")
-            # Some OpenAI-compatible servers (e.g. vLLM serving GPT-OSS models)
-            # require "status" to be present in the function_call block when
-            # it's sent back as conversation history; omitting it causes
-            # "No call message found" errors.
             function_call_block.setdefault("status", None)
             content_blocks.append(function_call_block)
             try:
@@ -5179,10 +5165,6 @@ def _convert_responses_chunk_to_generation_chunk(
             "arguments": chunk.item.arguments,
             "call_id": chunk.item.call_id,
             "id": chunk.item.id,
-            # Some OpenAI-compatible servers (e.g. vLLM serving GPT-OSS models)
-            # require "status" to be present in the function_call block when
-            # it's sent back as conversation history; omitting it causes
-            # "No call message found" errors.
             "status": getattr(chunk.item, "status", None),
             "index": current_index,
         }
