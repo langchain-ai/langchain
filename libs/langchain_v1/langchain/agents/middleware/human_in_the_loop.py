@@ -421,8 +421,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         self,
         state: AgentState[Any],
         runtime: Runtime[ContextT],
-    # `RunnableCallable` injects config only for a parameter named `config` with
-    # this exact annotation; `RunnableConfig | None` isn't recognized, so use `Optional`.
+        # `RunnableCallable` injects config only for a parameter named `config` with
+        # this exact annotation; `RunnableConfig | None` isn't recognized, so use `Optional`.
         config: Optional[RunnableConfig] = None,  # noqa: UP045
     ) -> dict[str, Any] | None:
         """Trigger interrupt flows for relevant tool calls after an `AIMessage`.
