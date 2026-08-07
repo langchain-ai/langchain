@@ -17,6 +17,7 @@ A cache is useful for two reasons:
 
 from __future__ import annotations
 
+import threading
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Any
@@ -197,6 +198,7 @@ class InMemoryCache(BaseCache):
             msg = "maxsize must be greater than 0"
             raise ValueError(msg)
         self._maxsize = maxsize
+        self._lock = threading.Lock()
 
     def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
         """Look up based on `prompt` and `llm_string`.
@@ -226,9 +228,10 @@ class InMemoryCache(BaseCache):
 
                 The value is a list of `Generation` (or subclasses).
         """
-        if self._maxsize is not None and len(self._cache) == self._maxsize:
-            del self._cache[next(iter(self._cache))]
-        self._cache[prompt, llm_string] = return_val
+        with self._lock:
+            if self._maxsize is not None and len(self._cache) == self._maxsize:
+                del self._cache[next(iter(self._cache))]
+            self._cache[prompt, llm_string] = return_val
 
     @override
     def clear(self, **kwargs: Any) -> None:
