@@ -564,6 +564,7 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
         "context_length_exceeded" in str(e)
         or "Input tokens exceed the configured limit" in e.message
         or "prompt is too long" in e.message
+        or "ContextWindowExceededError" in e.message
     ):
         raise OpenAIContextOverflowError(
             message=e.message, response=e.response, body=e.body
@@ -984,7 +985,11 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     include_response_headers: bool = False
-    """Whether to include response headers in the output message `response_metadata`."""
+    """Whether to include response headers in the output message `response_metadata`.
+
+    Note: some inference providers return additional metadata (such as served model
+    names) in the response headers. Enable to capture these metadata.
+    """
 
     disabled_params: dict[str, Any] | None = Field(default=None)
     """Parameters of the OpenAI client or `chat.completions` endpoint that should be
