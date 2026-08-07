@@ -73,13 +73,13 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
 
 def _get_field_default(field: FieldInfo) -> Any:
     # Pydantic 2.14+ returns ``PydanticUndefined`` (rather than ``None``) from
-    # ``get_default()`` for an un-called ``default_factory``; call the factory to get
-    # the real default so factory-defaulted fields are not treated as non-default.
+    # ``get_default()`` for an un-called ``default_factory``. Restore the historical
+    # ``None`` so a factory-defaulted field at its default is still treated as
+    # unchanged. The factory is intentionally not called: ``get_default()`` keeps
+    # ``call_default_factory=False`` precisely because factories may have side effects.
     default = field.get_default()
     if default is PydanticUndefined and field.default_factory is not None:
-        # ``validated_data={}`` supports factories that accept the validated data;
-        # zero-argument factories ignore it.
-        return field.get_default(call_default_factory=True, validated_data={})
+        return None
     return default
 
 

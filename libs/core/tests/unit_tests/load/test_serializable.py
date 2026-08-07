@@ -169,19 +169,22 @@ def test_try_neq_default_none_factory(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_try_neq_default_simulating_pydantic_2_14(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Factory defaults are resolved when `get_default()` returns `PydanticUndefined`.
+    """A `None`-factory default is still recognized when `get_default()` is undefined.
 
-    Pydantic 2.14+ returns the sentinel (instead of `None`) for an un-called
-    `default_factory`; this forces that behavior on the current pydantic.
+    Pydantic 2.14+ returns `PydanticUndefined` (instead of `None`) for an un-called
+    `default_factory`; this forces that behavior on the current pydantic. The factory
+    must not be invoked, so the sentinel is mapped back to `None` for comparison.
     """
     monkeypatch.delenv("LC_TEST_OUTPUT_VERSION", raising=False)
-    monkeypatch.delenv("LC_TEST_STR", raising=False)
+
+    called = False
+
+    def _factory() -> None:
+        nonlocal called
+        called = True
 
     class Model(BaseModel):
-        none_factory: str | None = Field(
-            default_factory=from_env("LC_TEST_OUTPUT_VERSION", default=None)
-        )
-        str_factory: str = Field(default_factory=from_env("LC_TEST_STR", default="v1"))
+        none_factory: str | None = Field(default_factory=_factory)
 
     real_get_default = FieldInfo.get_default
 
@@ -192,33 +195,12 @@ def test_try_neq_default_simulating_pydantic_2_14(
 
     monkeypatch.setattr(FieldInfo, "get_default", fake_get_default)
 
-    fields = Model.model_fields
-    assert fields["none_factory"].get_default() is PydanticUndefined
-    assert not _try_neq_default(None, fields["none_factory"])
-    assert not _try_neq_default("v1", fields["str_factory"])
-    assert _try_neq_default("set", fields["none_factory"])
-
-
-def test_try_neq_default_raising_factory(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A `default_factory` that raises is treated as non-default (simulating 2.14)."""
-
-    def _boom() -> str:
-        msg = "factory error"
-        raise RuntimeError(msg)
-
-    class Model(BaseModel):
-        boom: str = Field(default_factory=_boom)
-
-    real_get_default = FieldInfo.get_default
-
-    def fake_get_default(self: FieldInfo, **kwargs: Any) -> Any:
-        if self.default_factory is not None and not kwargs.get("call_default_factory"):
-            return PydanticUndefined
-        return real_get_default(self, **kwargs)
-
-    monkeypatch.setattr(FieldInfo, "get_default", fake_get_default)
-
-    assert _try_neq_default("anything", Model.model_fields["boom"])
+    field = Model.model_fields["none_factory"]
+    assert field.get_default() is PydanticUndefined
+    assert not _try_neq_default(None, field)
+    assert _try_neq_default("set", field)
+    # The factory must never be re-executed during comparison (possible side effects).
+    assert called is False
 
 
 class Foo(Serializable):
