@@ -5,6 +5,8 @@ from typing import Any
 
 import pytest
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic.fields import FieldInfo
+from pydantic_core import PydanticUndefined
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
@@ -13,7 +15,7 @@ from langchain_core.load import InitValidator, Serializable, dumpd, dumps, load,
 from langchain_core.load.load import (
     _get_default_allowed_class_paths,
 )
-from langchain_core.load.serializable import _is_field_useful
+from langchain_core.load.serializable import _is_field_useful, _try_neq_default
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.prompts import (
@@ -142,6 +144,71 @@ def test__is_field_useful() -> None:
     foo = Foo(x=default_x, y=default_y, z=ArrayObj())
     assert not _is_field_useful(foo, "x", foo.x)
     assert not _is_field_useful(foo, "y", foo.y)
+
+
+def test_try_neq_default_none_factory() -> None:
+    """A `None`-valued `default_factory` field at its default is not flagged as changed.
+
+    Regression test for issue #39157.
+    """
+
+    class Model(BaseModel):
+        none_factory: str | None = Field(default_factory=lambda: None)
+
+    field = Model.model_fields["none_factory"]
+    assert not _try_neq_default(None, field)
+    assert _try_neq_default("set", field)
+
+
+def test_try_neq_default_simulating_pydantic_2_14(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Factory defaults are resolved when `get_default()` returns `PydanticUndefined`.
+
+    Pydantic 2.14+ returns the sentinel (instead of `None`) for an un-called
+    `default_factory`; this forces that behavior on the current pydantic.
+    """
+
+    class Model(BaseModel):
+        none_factory: str | None = Field(default_factory=lambda: None)
+        str_factory: str = Field(default_factory=lambda: "v1")
+
+    real_get_default = FieldInfo.get_default
+
+    def fake_get_default(self: FieldInfo, **kwargs: Any) -> Any:
+        if self.default_factory is not None and not kwargs.get("call_default_factory"):
+            return PydanticUndefined
+        return real_get_default(self, **kwargs)
+
+    monkeypatch.setattr(FieldInfo, "get_default", fake_get_default)
+
+    fields = Model.model_fields
+    assert fields["none_factory"].get_default() is PydanticUndefined
+    assert not _try_neq_default(None, fields["none_factory"])
+    assert not _try_neq_default("v1", fields["str_factory"])
+    assert _try_neq_default("set", fields["none_factory"])
+
+
+def test_try_neq_default_raising_factory(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A `default_factory` that raises is treated as non-default (simulating 2.14)."""
+
+    def _boom() -> str:
+        msg = "factory error"
+        raise RuntimeError(msg)
+
+    class Model(BaseModel):
+        boom: str = Field(default_factory=_boom)
+
+    real_get_default = FieldInfo.get_default
+
+    def fake_get_default(self: FieldInfo, **kwargs: Any) -> Any:
+        if self.default_factory is not None and not kwargs.get("call_default_factory"):
+            return PydanticUndefined
+        return real_get_default(self, **kwargs)
+
+    monkeypatch.setattr(FieldInfo, "get_default", fake_get_default)
+
+    assert _try_neq_default("anything", Model.model_fields["boom"])
 
 
 class Foo(Serializable):
