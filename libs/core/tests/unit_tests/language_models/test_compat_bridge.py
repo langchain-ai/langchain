@@ -294,8 +294,8 @@ def test_chunks_to_events_tool_call_multichunk() -> None:
                 tool_call_chunks=[
                     {
                         "index": 0,
-                        "id": None,
-                        "name": None,
+                        "id": "",
+                        "name": "",
                         "args": ' "test"}',
                         "type": "tool_call_chunk",
                     }
@@ -319,6 +319,8 @@ def test_chunks_to_events_tool_call_multichunk() -> None:
     assert len(finish_events) == 1
     finalized = cast("ToolCall", finish_events[0]["content"])
     assert finalized["type"] == "tool_call"
+    assert finalized["id"] == "tc1"
+    assert finalized["name"] == "search"
     assert finalized["args"] == {"q": "test"}
 
     # No provider finish_reason in the fixture chunks — the bridge does
