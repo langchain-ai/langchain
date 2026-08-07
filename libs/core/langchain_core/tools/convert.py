@@ -4,7 +4,7 @@ import inspect
 from collections.abc import Callable
 from typing import Any, Literal, cast, get_type_hints, overload
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, RootModel, create_model
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import Runnable
@@ -469,12 +469,19 @@ def convert_runnable_to_tool(
     def invoke_wrapper(callbacks: Callbacks | None = None, **kwargs: Any) -> Any:
         return runnable.invoke(kwargs, config={"callbacks": callbacks})
 
+    input_schema_cls = runnable.input_schema
+    # Detect `RootModel` input schemas so we don't use them directly as the tool
+    # args schema.
+    is_root_model = isinstance(input_schema_cls, type) and issubclass(
+        input_schema_cls, RootModel
+    )
     if (
         arg_types is None
         and schema.get("type") == "object"
         and schema.get("properties")
+        and not is_root_model
     ):
-        args_schema = runnable.input_schema
+        args_schema = input_schema_cls
     else:
         args_schema = _get_schema_from_runnable_and_arg_types(
             runnable, name, arg_types=arg_types

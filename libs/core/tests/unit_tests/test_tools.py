@@ -23,7 +23,7 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, RootModel, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -1757,6 +1757,57 @@ def test_convert_from_runnable_dict() -> None:
         {"a": 3, "b": [1, 2]}, config={"configurable": {"foo": "not-bar"}}
     )
     assert result == "6"
+
+
+def test_convert_from_runnable_root_model_input_schema() -> None:
+    """`as_tool` should not advertise a `TypedDict` input nested under `root`.
+
+    Some `Runnable`s (e.g. a compiled `langgraph` `StateGraph`) expose a
+    `pydantic.RootModel` as `input_schema` even though `get_input_jsonschema`
+    reports a flat object schema. See:
+    """
+
+    class Args(TypedDict):
+        foo: str
+        bar: str
+
+    class _RootModelInputRunnable(RunnableLambda[Args, str]):
+        @override
+        def get_input_schema(
+            self, config: RunnableConfig | None = None
+        ) -> TypeBaseModel:
+            return RootModel[Args]
+
+        @override
+        def get_input_jsonschema(
+            self, config: RunnableConfig | None = None
+        ) -> dict[str, Any]:
+            return {
+                "type": "object",
+                "properties": {
+                    "foo": {"type": "string"},
+                    "bar": {"type": "string"},
+                },
+                "required": ["foo", "bar"],
+            }
+
+    def f(x: Args) -> str:
+        return f"{x['foo']} {x['bar']}"
+
+    runnable = _RootModelInputRunnable(f)
+    as_tool = runnable.as_tool(name="my_tool", description="Example tool.")
+
+    assert as_tool.args_schema is not None
+    assert isinstance(as_tool.args_schema, type)
+    assert not issubclass(as_tool.args_schema, RootModel)
+
+    oai_schema = convert_to_openai_tool(as_tool)
+    parameters = oai_schema["function"]["parameters"]
+    assert parameters["properties"].keys() == {"foo", "bar"}
+    assert "root" not in parameters["properties"]
+
+    result = as_tool.invoke({"foo": "hello", "bar": "world"})
+    assert result == "hello world"
 
 
 def test_convert_from_runnable_other() -> None:
