@@ -1043,8 +1043,7 @@ def test__convert_typed_dict_to_openai_function(
 
 
 def test_convert_to_openai_function_typed_dict_total_false() -> None:
-    """`total=False` fields should be optional unless marked `Required`.
-    """
+    """`total=False` fields should be optional unless marked `Required`."""
 
     class PartialPayload(ExtensionsTypedDict, total=False):
         required_value: Required[int]
@@ -1061,8 +1060,7 @@ def test_convert_to_openai_function_typed_dict_total_false() -> None:
 
 
 def test_convert_to_openai_function_typed_dict_not_required() -> None:
-    """`NotRequired[...]` fields should not raise and should be optional.
-    """
+    """`NotRequired[...]` fields should not raise and should be optional."""
 
     class PayloadWithNotRequired(ExtensionsTypedDict):
         required_value: int
