@@ -277,15 +277,13 @@ def _convert_any_typed_dicts_to_pydantic(
         description, arg_descriptions = _parse_google_docstring(
             docstring, list(annotations_)
         )
-        # `__required_keys__` already accounts for `total`, `Required[...]`, and
-        # `NotRequired[...]`, so it's the source of truth for which fields are
-        # actually required rather than re-deriving that from `total` alone.
+        # `__required_keys__` already captures `total`, `Required[...]`, and
+        # `NotRequired[...]`, so it defines the actual required fields.
         required_keys = getattr(typed_dict, "__required_keys__", set(annotations_))
         fields: dict[str, Any] = {}
         for arg, raw_arg_type in annotations_.items():
-            # `Required`/`NotRequired` only mark requiredness (handled above via
-            # `__required_keys__`); unwrap them so the inner type is what gets
-            # converted and stored as the field's annotation.
+            # `Required`/`NotRequired` only affect requiredness; unwrap them so the
+            # field annotation uses the underlying type.
             if get_origin(raw_arg_type) in {Required, NotRequired}:
                 arg_type = get_args(raw_arg_type)[0]
             else:

@@ -1044,8 +1044,6 @@ def test__convert_typed_dict_to_openai_function(
 
 def test_convert_to_openai_function_typed_dict_total_false() -> None:
     """`total=False` fields should be optional unless marked `Required`.
-
-    See: https://github.com/langchain-ai/langchain/issues/36490
     """
 
     class PartialPayload(ExtensionsTypedDict, total=False):
@@ -1064,8 +1062,6 @@ def test_convert_to_openai_function_typed_dict_total_false() -> None:
 
 def test_convert_to_openai_function_typed_dict_not_required() -> None:
     """`NotRequired[...]` fields should not raise and should be optional.
-
-    See: https://github.com/langchain-ai/langchain/issues/36490
     """
 
     class PayloadWithNotRequired(ExtensionsTypedDict):
