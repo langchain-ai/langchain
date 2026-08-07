@@ -246,6 +246,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 requested.
 
                 Not used if a tool has a `description` in its `InterruptOnConfig`.
+
+        Raises:
+            ValueError: If a tool's `InterruptOnConfig` does not have a non-empty
+                `allowed_decisions` list (e.g. a misspelled key or an empty list).
+                An interrupt config without decisions would otherwise be silently
+                dropped, disabling the approval gate for that tool.
         """
         super().__init__()
         resolved_configs: dict[str, InterruptOnConfig] = {}
@@ -257,6 +263,15 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                     )
             elif tool_config.get("allowed_decisions"):
                 resolved_configs[tool_name] = tool_config
+            else:
+                msg = (
+                    f"Invalid `interrupt_on` config for tool '{tool_name}': "
+                    "`allowed_decisions` must be a non-empty list of decision types "
+                    "(e.g. ['approve', 'reject']). Got config with keys "
+                    f"{sorted(tool_config.keys())} and "
+                    f"allowed_decisions={tool_config.get('allowed_decisions')!r}."
+                )
+                raise ValueError(msg)
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix
 

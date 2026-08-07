@@ -77,7 +77,7 @@ class _ComposedExtendedModelResponse(Generic[ResponseT]):
 
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Sequence
+    from collections.abc import Awaitable, Callable, Iterable, Sequence
 
     from langchain_core.runnables import Runnable, RunnableConfig
     from langgraph.cache.base import BaseCache
@@ -193,6 +193,8 @@ def _normalize_to_model_response(
 def _build_commands(
     model_response: ModelResponse,
     middleware_commands: list[Command[Any]] | None = None,
+    *,
+    has_structured_output: bool = False,
 ) -> list[Command[Any]]:
     """Build a list of Commands from a model response and middleware commands.
 
@@ -204,6 +206,10 @@ def _build_commands(
             structured output.
         middleware_commands: Commands accumulated from middleware layers during
             composition (inner-first ordering).
+        has_structured_output: Whether the agent was configured with a
+            `response_format`. When `True` and no structured response was
+            produced, `structured_response` is explicitly cleared to avoid a
+            stale value from a previous checkpointed turn.
 
     Returns:
         List of `Command` objects ready to be returned from a model node.
@@ -212,6 +218,8 @@ def _build_commands(
 
     if model_response.structured_response is not None:
         state["structured_response"] = model_response.structured_response
+    elif has_structured_output:
+        state["structured_response"] = None
 
     for cmd in middleware_commands or []:
         if cmd.goto:
@@ -1348,8 +1356,17 @@ def create_agent(
         # and dicts (built-ins)
         final_tools = list(request.tools)
         if isinstance(effective_response_format, ToolStrategy):
-            # Add structured output tools to final tools list
-            structured_tools = [info.tool for info in structured_output_tools.values()]
+            # Add structured output tools to final tools list, narrowed to only the
+            # schemas present in the (possibly middleware-narrowed) response format.
+            # This ensures middleware that narrows a union `ToolStrategy` to a subset
+            # via `request.override()` actually restricts which structured output
+            # tools the model can choose from.
+            narrowed_tool_names = {spec.name for spec in effective_response_format.schema_specs}
+            structured_tools = [
+                info.tool
+                for name, info in structured_output_tools.items()
+                if name in narrowed_tool_names
+            ]
             final_tools.extend(structured_tools)
 
         # Bind model based on effective response format
@@ -1443,12 +1460,15 @@ def create_agent(
             runtime=runtime,
         )
 
+        has_structured_output = initial_response_format is not None
         if wrap_model_call_handler is None:
             model_response = _execute_model_sync(request)
-            return _build_commands(model_response)
+            return _build_commands(model_response, has_structured_output=has_structured_output)
 
         result = wrap_model_call_handler(request, _execute_model_sync)
-        return _build_commands(result.model_response, result.commands)
+        return _build_commands(
+            result.model_response, result.commands, has_structured_output=has_structured_output
+        )
 
     async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model asynchronously and return response.
@@ -1491,12 +1511,15 @@ def create_agent(
             runtime=runtime,
         )
 
+        has_structured_output = initial_response_format is not None
         if awrap_model_call_handler is None:
             model_response = await _execute_model_async(request)
-            return _build_commands(model_response)
+            return _build_commands(model_response, has_structured_output=has_structured_output)
 
         result = await awrap_model_call_handler(request, _execute_model_async)
-        return _build_commands(result.model_response, result.commands)
+        return _build_commands(
+            result.model_response, result.commands, has_structured_output=has_structured_output
+        )
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
@@ -1782,6 +1805,9 @@ def create_agent(
     if name:
         config["metadata"]["lc_agent_name"] = name
 
+    # Middleware that makes internal model calls (e.g. `SummarizationMiddleware`)
+    # each declare `InternalCallTransformer` on their own `transformers` tuple so
+    # it's only registered when one of them is actually in use.
     middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
 
     return graph.compile(
@@ -1792,13 +1818,42 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
-        transformers=[
-            ToolCallTransformer,
-            SubagentTransformer,
-            *middleware_transformers,
-            *(transformers or ()),
-        ],
+        transformers=_dedupe_transformers(
+            [
+                ToolCallTransformer,
+                SubagentTransformer,
+                *middleware_transformers,
+                *(transformers or ()),
+            ]
+        ),
     ).with_config(config)
+
+
+def _dedupe_transformers(
+    factories: Iterable[TransformerFactory],
+) -> list[TransformerFactory]:
+    """Order-preserving de-dup of transformer factories, by identity.
+
+    `AgentMiddleware.transformers` accepts any scope-aware callable, and
+    callables aren't required to be hashable (e.g. a dataclass-based factory
+    with `__hash__ = None`), so this can't use a `set`/`dict` keyed on the
+    factories themselves. Combining several middleware that each declare the
+    same shared transformer class (e.g. `InternalCallTransformer`) would
+    otherwise register it once per middleware.
+
+    Args:
+        factories: Transformer factories to de-dup, in registration order.
+
+    Returns:
+        The same factories with exact repeats (by `is`) removed, order kept.
+    """
+    seen_ids: set[int] = set()
+    deduped: list[TransformerFactory] = []
+    for factory in factories:
+        if id(factory) not in seen_ids:
+            seen_ids.add(id(factory))
+            deduped.append(factory)
+    return deduped
 
 
 def _resolve_jump(
@@ -1880,8 +1935,8 @@ def _make_model_to_tools_edge(
         if pending_tool_calls:
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
-        # 5. If there is a structured response, exit the loop
-        if "structured_response" in state:
+        # 5. If a fresh structured response was produced this call, exit the loop
+        if state.get("structured_response") is not None:
             return end_destination
 
         # 6. AIMessage has tool calls, but there are no pending tool calls which suggests
@@ -1907,8 +1962,8 @@ def _make_model_to_model_edge(
                 end_destination=end_destination,
             )
 
-        # 2. Exit condition: A structured response was generated
-        if "structured_response" in state:
+        # 2. Exit condition: a fresh structured response was generated this call
+        if state.get("structured_response") is not None:
             return end_destination
 
         # 3. Default: Continue the loop, there may have been an issue with structured

@@ -14,13 +14,16 @@ from langsmith.schemas import Dataset, Example
 from langchain_classic.chains.transform import TransformChain
 from langchain_classic.smith.evaluation.runner_utils import (
     InputFormatError,
+    _format_git_tags,
     _get_messages,
     _get_prompt,
     _run_llm,
     _run_llm_or_chain,
+    _sanitize_git_remote_url,
     _validate_example_inputs_for_chain,
     _validate_example_inputs_for_language_model,
     arun_on_dataset,
+    run_on_dataset,
 )
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
@@ -56,6 +59,74 @@ _INVALID_PROMPTS = (
         {"some_key": "foo", "other_key": "bar"},
     ],
 )
+
+
+@pytest.mark.parametrize(
+    ("remote_url", "expected"),
+    [
+        (
+            "https://user:token@github.com/langchain-ai/langchain.git",
+            "https://github.com/langchain-ai/langchain.git",
+        ),
+        (
+            "https://user%40example.com:token%2Fsecret@github.com/org/repo.git",
+            "https://github.com/org/repo.git",
+        ),
+        (
+            "ssh://git@github.com:2222/langchain-ai/langchain.git",
+            "ssh://github.com:2222/langchain-ai/langchain.git",
+        ),
+        (
+            "git@github.com:langchain-ai/langchain.git",
+            "github.com:langchain-ai/langchain.git",
+        ),
+        (
+            "github.com:langchain-ai/langchain.git",
+            "github.com:langchain-ai/langchain.git",
+        ),
+        (
+            "https://github.com/langchain-ai/langchain.git",
+            "https://github.com/langchain-ai/langchain.git",
+        ),
+        ("https://alice%3As3cret%40github.com/org/repo.git", None),
+        ("not a remote", None),
+        ("https:user:token@github.com/org/repo.git", None),
+        ("https:/user:token@github.com/org/repo.git", None),
+        ("C:/Users/alice/private.git", None),
+        (r"C:\Users\alice\private.git", None),
+        ("https://user:token@", None),
+        ("file:///tmp/repo", None),
+        ("https://github.com/org/repo.git?token=secret", None),
+        ("https://github.com/org/repo.git\nsecret", None),
+        ("https://github.com/org/repo.git\x7fsecret", None),
+        ("https://github.com/org/repo.git\x9bsecret", None),
+        (None, None),
+    ],
+)
+def test_sanitize_git_remote_url(remote_url: object, expected: str | None) -> None:
+    assert _sanitize_git_remote_url(remote_url) == expected
+
+
+def test_format_git_tags_sanitizes_only_remote_url() -> None:
+    git_info = {
+        "remote_url": "https://user:token@github.com/langchain-ai/langchain.git",
+        "commit": "abc123",
+        "branch": None,
+        "dirty": False,
+    }
+
+    assert _format_git_tags(git_info) == [
+        "git:remote_url=https://github.com/langchain-ai/langchain.git",
+        "git:commit=abc123",
+        "git:branch=None",
+        "git:dirty=False",
+    ]
+
+
+def test_format_git_tags_omits_malformed_remote_url() -> None:
+    assert _format_git_tags({"remote_url": "not a remote", "commit": "abc123"}) == [
+        "git:commit=abc123"
+    ]
 
 
 @pytest.mark.parametrize(
@@ -241,6 +312,72 @@ def test_run_chat_model_all_formats(inputs: dict[str, Any]) -> None:
 
 
 @freeze_time("2023-01-01")
+def test_run_on_dataset_sanitizes_git_remote_tag() -> None:
+    dataset = Dataset(
+        id=uuid.uuid4(),
+        name="test",
+        description="Test dataset",
+        owner_id="owner",
+        created_at=_CREATED_AT,
+        tenant_id=_TENANT_ID,
+        _host_url="http://localhost:1984",
+    )
+    example = Example(
+        id=uuid.uuid4(),
+        created_at=_CREATED_AT,
+        inputs={"input": "1"},
+        outputs={"output": "2"},
+        dataset_id=str(dataset.id),
+    )
+    captured_tags = []
+
+    def mock_run_chain(
+        _: Example,
+        config: dict[str, Any],
+        **__: Any,
+    ) -> dict[str, str]:
+        captured_tags.append(config["tags"])
+        return {"result": "done"}
+
+    project = mock.MagicMock()
+    project.id = "123"
+    project.metadata = {
+        "dataset_version": None,
+        "git": {
+            "remote_url": "https://user:token@github.com/langchain-ai/langchain.git",
+            "commit": "abc123",
+        },
+    }
+
+    with (
+        mock.patch.object(Client, "read_dataset", return_value=dataset),
+        mock.patch.object(Client, "list_examples", return_value=iter([example])),
+        mock.patch(
+            "langchain_classic.smith.evaluation.runner_utils._run_llm_or_chain",
+            new=mock_run_chain,
+        ),
+        mock.patch.object(Client, "create_project", return_value=project),
+    ):
+        client = Client(api_url="http://localhost:1984", api_key="123")
+        chain = mock.MagicMock()
+        chain.input_keys = ["input"]
+        run_on_dataset(
+            dataset_name="test",
+            llm_or_chain_factory=lambda: chain,
+            concurrency_level=0,
+            project_name="test_project",
+            client=client,
+        )
+
+    assert captured_tags == [
+        [
+            "git:remote_url=https://github.com/langchain-ai/langchain.git",
+            "git:commit=abc123",
+        ]
+    ]
+
+
+@freeze_time("2023-01-01")
 async def test_arun_on_dataset() -> None:
     dataset = Dataset(
         id=uuid.uuid4(),
@@ -302,16 +439,27 @@ async def test_arun_on_dataset() -> None:
     def mock_list_examples(*_: Any, **__: Any) -> Iterator[Example]:
         return iter(examples)
 
+    captured_tags = []
+
     async def mock_arun_chain(
         example: Example,
+        config: dict[str, Any],
         *_: Any,
         **__: Any,
     ) -> dict[str, Any]:
+        captured_tags.append(config["tags"])
         return {"result": f"Result for example {example.id}"}
 
     def mock_create_project(*_: Any, **__: Any) -> Any:
         proj = mock.MagicMock()
         proj.id = "123"
+        proj.metadata = {
+            "dataset_version": None,
+            "git": {
+                "remote_url": "https://user:token@github.com/langchain-ai/langchain.git",
+                "commit": "abc123",
+            },
+        }
         return proj
 
     with (
@@ -352,3 +500,9 @@ async def test_arun_on_dataset() -> None:
             for example in examples
         }
         assert results["results"] == expected
+        assert captured_tags == [
+            [
+                "git:remote_url=https://github.com/langchain-ai/langchain.git",
+                "git:commit=abc123",
+            ]
+        ] * len(examples)
