@@ -618,8 +618,15 @@ class ChatOpenRouter(BaseChatModel):
                 # Usage-only chunk (no choices) — emit with usage_metadata
                 if usage := chunk_dict.get("usage"):
                     usage_metadata = _create_usage_metadata(usage)
+                    response_metadata: dict[str, Any] = {}
+                    if "cost" in usage:
+                        response_metadata["cost"] = usage["cost"]
+                    if "cost_details" in usage:
+                        response_metadata["cost_details"] = usage["cost_details"]
                     usage_chunk = AIMessageChunk(
-                        content="", usage_metadata=usage_metadata
+                        content="",
+                        usage_metadata=usage_metadata,
+                        response_metadata=response_metadata,
                     )
                     generation_chunk = ChatGenerationChunk(message=usage_chunk)
                     if run_manager:
@@ -703,8 +710,15 @@ class ChatOpenRouter(BaseChatModel):
                 # Usage-only chunk (no choices) — emit with usage_metadata
                 if usage := chunk_dict.get("usage"):
                     usage_metadata = _create_usage_metadata(usage)
+                    response_metadata = {}
+                    if "cost" in usage:
+                        response_metadata["cost"] = usage["cost"]
+                    if "cost_details" in usage:
+                        response_metadata["cost_details"] = usage["cost_details"]
                     usage_chunk = AIMessageChunk(
-                        content="", usage_metadata=usage_metadata
+                        content="",
+                        usage_metadata=usage_metadata,
+                        response_metadata=response_metadata,
                     )
                     generation_chunk = ChatGenerationChunk(message=usage_chunk)
                     if run_manager:
