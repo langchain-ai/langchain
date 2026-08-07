@@ -43,6 +43,12 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 )
                 raise TypeError(msg)
             elif isinstance(merged[right_k], str):
+                # Empty-string id/name values from continuation chunks should not
+                # overwrite already accumulated valid values.
+                if right_k in {"id", "name"} and right_v == "":
+                    if merged[right_k] == "":
+                        continue
+                    continue
                 # TODO: Add below special handling for 'type' key in 0.3 and remove
                 # merge_lists 'type' logic.
                 #

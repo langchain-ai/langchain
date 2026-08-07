@@ -985,6 +985,24 @@ def test_merge_tool_calls_parallel_same_index() -> None:
     assert [m["id"] for m in merged] == ["id_a", "id_b", "id_c"]
 
 
+def test_merge_tool_calls_empty_continuation_id_name() -> None:
+    """Continuation chunks with empty id/name must not clobber accumulated values."""
+    first = create_tool_call_chunk(name="tool1", args="", id="id1", index=0)
+    continuation = create_tool_call_chunk(name="", args='{"key": ', id="", index=0)
+    final_args = create_tool_call_chunk(name="", args='"value"}', id="", index=0)
+    merged = merge_lists([first], [continuation], [final_args])
+    assert merged is not None
+    assert merged == [
+        {
+            "name": "tool1",
+            "args": '{"key": "value"}',
+            "id": "id1",
+            "index": 0,
+            "type": "tool_call_chunk",
+        }
+    ]
+
+
 def test_tool_message_serdes() -> None:
     message = ToolMessage(
         "foo", artifact={"bar": {"baz": 123}}, tool_call_id="1", status="error"
