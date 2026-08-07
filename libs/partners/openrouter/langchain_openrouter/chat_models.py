@@ -88,6 +88,8 @@ def _create_stream_generation_info(
 ) -> dict[str, Any]:
     generation_info = {"finish_reason": choice["finish_reason"]}
     generation_info["model_name"] = chunk_dict.get("model") or model_name
+    if provider := chunk_dict.get("provider"):
+        generation_info["provider"] = provider
     if system_fingerprint := chunk_dict.get("system_fingerprint"):
         generation_info["system_fingerprint"] = system_fingerprint
     if native_finish_reason := choice.get("native_finish_reason"):
@@ -836,6 +838,7 @@ class ChatOpenRouter(BaseChatModel):
         # Extract top-level response metadata
         response_model = response.get("model")
         system_fingerprint = response.get("system_fingerprint")
+        provider = response.get("provider")
 
         for res in choices:
             message = _convert_dict_to_message(res["message"])
@@ -849,6 +852,8 @@ class ChatOpenRouter(BaseChatModel):
                         "cost_details"
                     ]
             if isinstance(message, AIMessage):
+                if provider:
+                    message.response_metadata["provider"] = provider
                 if system_fingerprint:
                     message.response_metadata["system_fingerprint"] = system_fingerprint
                 if native_finish_reason := res.get("native_finish_reason"):
