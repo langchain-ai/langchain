@@ -821,6 +821,12 @@ def _recursive_set_additional_properties_false(
     schema: dict[str, Any],
 ) -> dict[str, Any]:
     if isinstance(schema, dict):
+        # OpenAI strict mode requires every property to appear in `required` at every
+        # level of nesting. Without this, nested object schemas are rejected.
+        properties = schema.get("properties")
+        if isinstance(properties, dict) and properties:
+            schema["required"] = list(properties.keys())
+
         # Check if 'required' is a key at the current level or if the schema is empty,
         # in which case additionalProperties still needs to be specified.
         if (
@@ -838,10 +844,21 @@ def _recursive_set_additional_properties_false(
         if "anyOf" in schema:
             for sub_schema in schema["anyOf"]:
                 _recursive_set_additional_properties_false(sub_schema)
+        # Pydantic <2.9 wraps a referenced model field in 'allOf' when it has
+        # sibling keys (e.g. 'description'), instead of merging them directly.
+        if "allOf" in schema:
+            for sub_schema in schema["allOf"]:
+                _recursive_set_additional_properties_false(sub_schema)
         if "properties" in schema:
             for sub_schema in schema["properties"].values():
                 _recursive_set_additional_properties_false(sub_schema)
         if "items" in schema:
             _recursive_set_additional_properties_false(schema["items"])
+        # Raw JSON schemas may keep nested objects in `$defs` and reference them via
+        # `$ref`; walk those definitions too so they're made strict.
+        for defs_key in ("$defs", "definitions"):
+            if isinstance(schema.get(defs_key), dict):
+                for sub_schema in schema[defs_key].values():
+                    _recursive_set_additional_properties_false(sub_schema)
 
     return schema
