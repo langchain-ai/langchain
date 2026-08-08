@@ -3,7 +3,15 @@
 
 LANGCHAIN_DIRS = core text-splitters langchain langchain_v1 model-profiles
 
-.PHONY: lock check-lock
+.PHONY: help lock check-lock
+
+.DEFAULT_GOAL := help
+
+# Show help for all Makefile targets
+help:
+	@echo "Available targets:"
+	@echo "  lock       - Regenerate lockfiles for all core packages"
+	@echo "  check-lock - Verify all lockfiles are up-to-date"
 
 # Regenerate lockfiles for all core packages
 lock:
