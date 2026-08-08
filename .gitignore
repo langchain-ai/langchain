@@ -195,3 +195,6 @@ virtualenv/
 scratch/
 
 .langgraph_api/
+.uv/
+*.tmp
+.nx/
