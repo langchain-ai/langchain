@@ -101,6 +101,8 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
         output_token_details["reasoning"] = reasoning
     if (citation_tokens := token_usage.get("citation_tokens")) is not None:
         output_token_details["citation_tokens"] = citation_tokens  # type: ignore[typeddict-unknown-key]
+    if (num_search_queries := token_usage.get("num_search_queries")) is not None:
+        output_token_details["num_search_queries"] = num_search_queries  # type: ignore[typeddict-unknown-key]
 
     return UsageMetadata(
         input_tokens=input_tokens,
@@ -350,10 +352,16 @@ def _convert_responses_usage(usage: Any) -> UsageMetadata | None:
     total_tokens = _get_attr(usage, "total_tokens", None)
     if total_tokens is None:
         total_tokens = input_tokens + output_tokens
+
+    output_token_details: OutputTokenDetails = {}
+    if (num_search_queries := _get_attr(usage, "num_search_queries", None)) is not None:
+        output_token_details["num_search_queries"] = num_search_queries  # type: ignore[typeddict-unknown-key]
+
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
+        output_token_details=output_token_details,
     )
 
 

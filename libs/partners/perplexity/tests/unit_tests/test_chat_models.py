@@ -167,6 +167,7 @@ def test_create_usage_metadata_basic() -> None:
         "total_tokens": 30,
         "reasoning_tokens": 0,
         "citation_tokens": 0,
+        "num_search_queries": 3,
     }
 
     usage_metadata = _create_usage_metadata(token_usage)
@@ -176,6 +177,20 @@ def test_create_usage_metadata_basic() -> None:
     assert usage_metadata["total_tokens"] == 30
     assert usage_metadata["output_token_details"]["reasoning"] == 0
     assert usage_metadata["output_token_details"]["citation_tokens"] == 0  # type: ignore[typeddict-item]
+    assert usage_metadata["output_token_details"]["num_search_queries"] == 3  # type: ignore[typeddict-item]
+
+
+def test_create_usage_metadata_without_search_queries() -> None:
+    """Test _create_usage_metadata omits num_search_queries when absent."""
+    token_usage = {
+        "prompt_tokens": 10,
+        "completion_tokens": 20,
+        "total_tokens": 30,
+    }
+
+    usage_metadata = _create_usage_metadata(token_usage)
+
+    assert "num_search_queries" not in usage_metadata.get("output_token_details", {})
 
 
 def test_perplexity_invoke_includes_num_search_queries(mocker: MockerFixture) -> None:
@@ -220,6 +235,10 @@ def test_perplexity_invoke_includes_num_search_queries(mocker: MockerFixture) ->
     assert result.response_metadata["num_search_queries"] == 3
     assert result.response_metadata["search_context_size"] == "high"
     assert result.response_metadata["model_name"] == "test-model"
+    # num_search_queries must also flow through to usage_metadata so downstream
+    # cost trackers (LangSmith, Braintrust) can compute accurate Perplexity costs
+    assert result.usage_metadata is not None
+    assert result.usage_metadata["output_token_details"]["num_search_queries"] == 3  # type: ignore[typeddict-item]
     patcher.assert_called_once()
 
 
