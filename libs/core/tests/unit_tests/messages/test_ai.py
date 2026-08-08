@@ -105,6 +105,28 @@ def test_serdes_message_chunk() -> None:
     assert load(actual, allowed_objects=[AIMessageChunk]) == chunk
 
 
+def test_ai_message_chunk_preserves_non_ascii_tool_call_args() -> None:
+    chunk = AIMessageChunk(
+        content="",
+        tool_calls=[
+            create_tool_call(
+                name="echo",
+                args={"text": "你好", "emoji": "🚀"},
+                id="call_1",
+            )
+        ],
+    )
+
+    assert chunk.tool_call_chunks == [
+        create_tool_call_chunk(
+            name="echo",
+            args='{"text": "你好", "emoji": "🚀"}',
+            id="call_1",
+            index=None,
+        )
+    ]
+
+
 def test_add_usage_both_none() -> None:
     result = add_usage(None, None)
     assert result == UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)
