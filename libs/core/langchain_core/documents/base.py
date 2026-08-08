@@ -19,7 +19,7 @@ import contextlib
 import mimetypes
 from io import BufferedReader, BytesIO
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from pydantic import ConfigDict, Field, model_validator
 
@@ -308,11 +308,39 @@ class Document(BaseMedia):
 
     type: Literal["Document"] = "Document"
 
-    def __init__(self, page_content: str, **kwargs: Any) -> None:
-        """Pass page_content in as positional or named arg."""
+    @overload
+    def __init__(
+        self,
+        page_content: str,
+        **kwargs: Any,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        page_content: str | None = None,
+        **kwargs: Any,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        page_content: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Pass `page_content` as positional or named arg.
+
+        Keeping this custom init preserves positional initialization for backward
+        compatibility while ensuring pydantic handles missing required fields.
+        """
+        if page_content is not None:
+            if "page_content" in kwargs:
+                msg = "Document() got multiple values for argument 'page_content'"
+                raise TypeError(msg)
+            kwargs["page_content"] = page_content
+
         # my-py is complaining that page_content is not defined on the base class.
         # Here, we're relying on pydantic base class to handle the validation.
-        super().__init__(page_content=page_content, **kwargs)  # type: ignore[call-arg,unused-ignore]
+        super().__init__(**kwargs)  # type: ignore[call-arg,unused-ignore]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
