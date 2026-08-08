@@ -11,6 +11,7 @@ from typing import TypedDict as TypingTypedDict
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
+from typing_extensions import NotRequired, Required
 from typing_extensions import TypedDict as ExtensionsTypedDict
 
 try:
@@ -1039,6 +1040,34 @@ def test__convert_typed_dict_to_openai_function(
     }
     actual = _convert_typed_dict_to_openai_function(Tool)
     assert actual == expected
+
+
+def test_convert_to_openai_function_typed_dict_total_false() -> None:
+    """`total=False` fields should be optional unless marked `Required`."""
+
+    class PartialPayload(ExtensionsTypedDict, total=False):
+        required_value: Required[int]
+        optional_value: str
+        explicit_optional_value: NotRequired[bool]
+
+    func = convert_to_openai_function(PartialPayload)
+    assert func["parameters"]["required"] == ["required_value"]
+    assert set(func["parameters"]["properties"]) == {
+        "required_value",
+        "optional_value",
+        "explicit_optional_value",
+    }
+
+
+def test_convert_to_openai_function_typed_dict_not_required() -> None:
+    """`NotRequired[...]` fields should not raise and should be optional."""
+
+    class PayloadWithNotRequired(ExtensionsTypedDict):
+        required_value: int
+        optional_value: NotRequired[str]
+
+    func = convert_to_openai_function(PayloadWithNotRequired)
+    assert func["parameters"]["required"] == ["required_value"]
 
 
 @pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
