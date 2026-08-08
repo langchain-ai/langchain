@@ -644,13 +644,8 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         Returns:
             The iterator for the mapped function.
         """
-        contexts = [copy_context() for _ in range(len(iterables[0]))]  # type: ignore[arg-type]
-
-        def _wrapped_fn(*args: Any) -> T:
-            return contexts.pop().run(fn, *args)
-
         return super().map(
-            _wrapped_fn,
+            fn,
             *iterables,
             **kwargs,
         )

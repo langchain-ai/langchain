@@ -1,6 +1,7 @@
 import json
 import uuid
-from contextvars import copy_context
+from collections.abc import Iterator
+from contextvars import ContextVar, copy_context
 from typing import Any, cast
 
 import pytest
@@ -15,6 +16,7 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_core.runnables import RunnableBinding, RunnablePassthrough
 from langchain_core.runnables.config import (
+    ContextThreadPoolExecutor,
     RunnableConfig,
     _get_langsmith_inheritable_metadata_from_config,
     _merge_metadata_dicts,
@@ -26,6 +28,38 @@ from langchain_core.runnables.config import (
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
 OPENAI_TEST_MODEL = "gpt-5.5"
+
+
+def test_context_thread_pool_executor_map_accepts_generator() -> None:
+    marker: ContextVar[str] = ContextVar("marker")
+    marker.set("from-caller")
+
+    def values() -> Iterator[int]:
+        yield from range(3)
+
+    def double(value: int) -> tuple[int, str]:
+        return value * 2, marker.get()
+
+    with ContextThreadPoolExecutor(max_workers=2) as executor:
+        assert list(executor.map(double, values())) == [
+            (0, "from-caller"),
+            (2, "from-caller"),
+            (4, "from-caller"),
+        ]
+
+
+def test_context_thread_pool_executor_map_generator_shortest_iterable() -> None:
+    def values() -> Iterator[int]:
+        yield from range(3)
+
+    def pair(value: int, label: str) -> tuple[int, str]:
+        return value, label
+
+    with ContextThreadPoolExecutor(max_workers=2) as executor:
+        assert list(executor.map(pair, values(), ["a", "b"])) == [
+            (0, "a"),
+            (1, "b"),
+        ]
 
 
 def test_ensure_config() -> None:
