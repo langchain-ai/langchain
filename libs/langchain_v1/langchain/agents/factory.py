@@ -26,7 +26,7 @@ from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
-from langgraph.types import Command, Send
+from langgraph.types import Command, Send, TracePolicy
 from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict, overload
 
@@ -149,6 +149,35 @@ def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
             f.name: getattr(req, f.name) for f in fields(req) if f.name != "runtime"
         }
     return filtered
+
+
+def _wrap_process_inputs(policy: TracePolicy) -> Callable[[Any], Any]:
+    """Compose the wrap-span input baseline with the policy's `process_inputs`.
+
+    `_scrub_inputs` always runs first to strip the unserializable `handler`/`runtime`;
+    the policy's callable then transforms the cleaned payload. A custom `process_inputs`
+    never has to re-strip them and cannot disable the baseline.
+    """
+    if policy.process_inputs is None:
+        return _scrub_inputs
+    process = policy.process_inputs
+    return lambda inputs: process(_scrub_inputs(inputs))
+
+
+def _wrap_trace_kwargs(middleware: AgentMiddleware[Any, Any]) -> dict[str, Any]:
+    """`traceable` kwargs for a middleware's `wrap_*` hook spans.
+
+    Default (`trace_policy is None`): only the `_scrub_inputs` baseline (strip the
+    unserializable `handler`/`runtime`), i.e. normal tracing. A middleware's
+    `trace_policy` composes on top.
+    """
+    policy = middleware.trace_policy
+    if policy is None:
+        return {"process_inputs": _scrub_inputs}
+    return {
+        "process_inputs": _wrap_process_inputs(policy),
+        "process_outputs": policy.process_outputs,
+    }
 
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
@@ -1026,7 +1055,7 @@ def create_agent(
     wrap_tool_call_wrapper = None
     if middleware_w_wrap_tool_call:
         wrappers = [
-            traceable(name=f"{m.name}.wrap_tool_call", process_inputs=_scrub_inputs)(
+            traceable(name=f"{m.name}.wrap_tool_call", **_wrap_trace_kwargs(m))(
                 m.wrap_tool_call
             )
             for m in middleware_w_wrap_tool_call
@@ -1047,7 +1076,7 @@ def create_agent(
     awrap_tool_call_wrapper = None
     if middleware_w_awrap_tool_call:
         async_wrappers = [
-            traceable(name=f"{m.name}.awrap_tool_call", process_inputs=_scrub_inputs)(
+            traceable(name=f"{m.name}.awrap_tool_call", **_wrap_trace_kwargs(m))(
                 m.awrap_tool_call
             )
             for m in middleware_w_awrap_tool_call
@@ -1135,7 +1164,7 @@ def create_agent(
     wrap_model_call_handler = None
     if middleware_w_wrap_model_call:
         sync_handlers = [
-            traceable(name=f"{m.name}.wrap_model_call", process_inputs=_scrub_inputs)(
+            traceable(name=f"{m.name}.wrap_model_call", **_wrap_trace_kwargs(m))(
                 m.wrap_model_call
             )
             for m in middleware_w_wrap_model_call
@@ -1146,7 +1175,7 @@ def create_agent(
     awrap_model_call_handler = None
     if middleware_w_awrap_model_call:
         async_handlers = [
-            traceable(name=f"{m.name}.awrap_model_call", process_inputs=_scrub_inputs)(
+            traceable(name=f"{m.name}.awrap_model_call", **_wrap_trace_kwargs(m))(
                 m.awrap_model_call
             )
             for m in middleware_w_awrap_model_call
@@ -1548,7 +1577,10 @@ def create_agent(
             )
             before_agent_node = RunnableCallable(sync_before_agent, async_before_agent, trace=False)
             graph.add_node(
-                f"{m.name}.before_agent", before_agent_node, input_schema=resolved_state_schema
+                f"{m.name}.before_agent",
+                before_agent_node,
+                input_schema=resolved_state_schema,
+                trace_policy=m.trace_policy,
             )
 
         if (
@@ -1569,7 +1601,10 @@ def create_agent(
             )
             before_node = RunnableCallable(sync_before, async_before, trace=False)
             graph.add_node(
-                f"{m.name}.before_model", before_node, input_schema=resolved_state_schema
+                f"{m.name}.before_model",
+                before_node,
+                input_schema=resolved_state_schema,
+                trace_policy=m.trace_policy,
             )
 
         if (
@@ -1589,7 +1624,12 @@ def create_agent(
                 else None
             )
             after_node = RunnableCallable(sync_after, async_after, trace=False)
-            graph.add_node(f"{m.name}.after_model", after_node, input_schema=resolved_state_schema)
+            graph.add_node(
+                f"{m.name}.after_model",
+                after_node,
+                input_schema=resolved_state_schema,
+                trace_policy=m.trace_policy,
+            )
 
         if (
             m.__class__.after_agent is not AgentMiddleware.after_agent
@@ -1609,7 +1649,10 @@ def create_agent(
             )
             after_agent_node = RunnableCallable(sync_after_agent, async_after_agent, trace=False)
             graph.add_node(
-                f"{m.name}.after_agent", after_agent_node, input_schema=resolved_state_schema
+                f"{m.name}.after_agent",
+                after_agent_node,
+                input_schema=resolved_state_schema,
+                trace_policy=m.trace_policy,
             )
 
     # Determine the entry node (runs once at start): before_agent -> before_model -> model

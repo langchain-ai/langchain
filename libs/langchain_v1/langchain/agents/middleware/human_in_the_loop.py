@@ -17,6 +17,8 @@ from langchain.agents.middleware.types import (
     ResponseT,
     StateT,
     ToolCallRequest,
+    TracePolicy,
+    omit_payload,
 )
 
 if TYPE_CHECKING:
@@ -215,6 +217,9 @@ class InterruptOnConfig(TypedDict):
 
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     """Human in the loop middleware."""
+
+    trace_policy = TracePolicy(process_inputs=omit_payload)
+    """Omit hook inputs from traces by default; set a `TracePolicy` to override."""
 
     def __init__(
         self,

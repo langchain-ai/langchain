@@ -22,6 +22,8 @@ try:
         ModelCallResult,
         ModelRequest,
         ModelResponse,
+        TracePolicy,
+        omit_payload,
     )
 except ImportError as e:
     msg = (
@@ -54,6 +56,9 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
     Learn more about Anthropic prompt caching
     [here](https://platform.claude.com/docs/en/build-with-claude/prompt-caching).
     """
+
+    trace_policy = TracePolicy(process_inputs=omit_payload)
+    """Omit hook inputs from traces by default; set a `TracePolicy` to override."""
 
     def __init__(
         self,
