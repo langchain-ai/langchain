@@ -10,7 +10,6 @@ chat model.
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterable, Sequence
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Literal
 
@@ -21,12 +20,14 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately
+from langgraph.types import Command
 from typing_extensions import Protocol
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
+    ExtendedModelResponse,
     ModelRequest,
     ModelResponse,
     ResponseT,
@@ -188,7 +189,10 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
     """Automatically prune tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count exceeds
-    configured thresholds.
+    configured thresholds. Messages an edit changes are persisted back to agent
+    state (via a `Command` update), so a configured checkpointer observes the
+    same cleared tool results the model saw, and subsequent turns' idempotency
+    checks (e.g. `ClearToolUsesEdit`'s `cleared` flag) see accurate history.
 
     Currently the `ClearToolUsesEdit` strategy is supported, aligning with Anthropic's
     `clear_tool_uses_20250919` behavior [(read more)](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool).
@@ -221,7 +225,7 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
         """Apply context edits before invoking the model via handler.
 
         Args:
@@ -231,34 +235,27 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
 
         Returns:
             The result of invoking the handler with potentially edited messages.
+            When an edit changes any message, the changed messages are also
+            returned as a `Command` update so the checkpointer persists them
+            (see `_with_persisted_edits`).
         """
         if not request.messages:
             return handler(request)
 
-        if self.token_count_method == "approximate":  # noqa: S105
+        count_tokens = self._make_token_counter(request)
 
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return count_tokens_approximately(messages)
-
-        else:
-            system_msg = [request.system_message] if request.system_message else []
-
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return request.model.get_num_tokens_from_messages(
-                    system_msg + list(messages), request.tools
-                )
-
-        edited_messages = deepcopy(list(request.messages))
+        edited_messages = list(request.messages)
         for edit in self.edits:
             edit.apply(edited_messages, count_tokens=count_tokens)
 
-        return handler(request.override(messages=edited_messages))
+        response = handler(request.override(messages=edited_messages))
+        return self._with_persisted_edits(response, request.messages, edited_messages)
 
     async def awrap_model_call(
         self,
         request: ModelRequest[ContextT],
         handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
-    ) -> ModelResponse[ResponseT] | AIMessage:
+    ) -> ModelResponse[ResponseT] | AIMessage | ExtendedModelResponse[ResponseT]:
         """Apply context edits before invoking the model via handler.
 
         Args:
@@ -268,10 +265,24 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
 
         Returns:
             The result of invoking the handler with potentially edited messages.
+            When an edit changes any message, the changed messages are also
+            returned as a `Command` update so the checkpointer persists them
+            (see `_with_persisted_edits`).
         """
         if not request.messages:
             return await handler(request)
 
+        count_tokens = self._make_token_counter(request)
+
+        edited_messages = list(request.messages)
+        for edit in self.edits:
+            edit.apply(edited_messages, count_tokens=count_tokens)
+
+        response = await handler(request.override(messages=edited_messages))
+        return self._with_persisted_edits(response, request.messages, edited_messages)
+
+    def _make_token_counter(self, request: ModelRequest[ContextT]) -> TokenCounter:
+        """Build the token counter for `request`, per `self.token_count_method`."""
         if self.token_count_method == "approximate":  # noqa: S105
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
@@ -285,11 +296,50 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
                     system_msg + list(messages), request.tools
                 )
 
-        edited_messages = deepcopy(list(request.messages))
-        for edit in self.edits:
-            edit.apply(edited_messages, count_tokens=count_tokens)
+        return count_tokens
 
-        return await handler(request.override(messages=edited_messages))
+    @staticmethod
+    def _with_persisted_edits(
+        response: ModelResponse[ResponseT],
+        original_messages: Sequence[AnyMessage],
+        edited_messages: Sequence[AnyMessage],
+    ) -> ModelResponse[ResponseT] | ExtendedModelResponse[ResponseT]:
+        """Wrap `response` with a `Command` persisting any messages edits changed.
+
+        `edited_messages` is built from a shallow copy of `original_messages`,
+        so edits that don't touch a given message leave that slot referencing
+        the identical object; only messages `ClearToolUsesEdit.apply` actually
+        replaced (via `model_copy`) differ by identity. Persisting exactly
+        those messages — decided using the same `count_tokens` as the request
+        that was actually sent to the model — keeps the checkpointer's view
+        consistent with what the model saw, regardless of `token_count_method`.
+        Without this, a persistence pass that recomputed edits with a
+        different counter could disagree with `wrap_model_call`'s decision
+        and either skip persisting a clear that was applied, or persist one
+        that wasn't.
+
+        `ContextEdit.apply` is only required to mutate `messages` in place —
+        custom strategies are free to insert or remove entries, not just
+        replace them one-for-one. A same-length assumption would either raise
+        (pairing up mismatched indices) or silently mismatch messages, so this
+        only persists when the edit preserved length; otherwise the edited
+        request still reaches the model exactly as before, just without the
+        persistence benefit for that edit.
+        """
+        if len(original_messages) != len(edited_messages):
+            return response
+
+        changed = [
+            new_msg
+            for old_msg, new_msg in zip(original_messages, edited_messages, strict=True)
+            if new_msg is not old_msg
+        ]
+        if not changed:
+            return response
+        return ExtendedModelResponse(
+            model_response=response,
+            command=Command(update={"messages": changed}),
+        )
 
 
 __all__ = [
