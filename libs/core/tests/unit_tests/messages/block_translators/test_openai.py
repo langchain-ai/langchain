@@ -490,6 +490,16 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block)
     assert result == expected
 
+    # File / base64 with non-PDF MIME (chat/completions)
+    block = {
+        "type": "file",
+        "base64": "<base64 string>",
+        "mime_type": "text/csv",
+        "filename": "test.csv",
+    }
+    with pytest.raises(ValueError, match="only supports application/pdf"):
+        convert_to_openai_data_block(block)
+
     # Image / base64
     block = {
         "type": "image",
@@ -603,3 +613,39 @@ def test_convert_to_openai_data_block() -> None:
     expected = {"type": "input_file", "file_id": "file-abc123"}
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
+
+
+def test_convert_to_v1_file_block_preserves_non_pdf_mime_type() -> None:
+    message = HumanMessage(
+        content=[
+            {
+                "type": "file",
+                "file": {
+                    "filename": "sheet.csv",
+                    "file_data": "data:text/csv;base64,aGVsbG8=",
+                },
+            },
+            {
+                "type": "file",
+                "file": {
+                    "file_data": "data:text/plain;base64,aGVsbG8=",
+                },
+            },
+        ]
+    )
+
+    expected: list[types.ContentBlock] = [
+        {
+            "type": "file",
+            "base64": "aGVsbG8=",
+            "mime_type": "text/csv",
+            "extras": {"filename": "sheet.csv"},
+        },
+        {
+            "type": "file",
+            "base64": "aGVsbG8=",
+            "mime_type": "text/plain",
+        },
+    ]
+
+    assert _content_blocks_equal_ignore_id(message.content_blocks, expected)
