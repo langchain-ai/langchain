@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-rustchain"
+version = "0.1.0"
+description = "An integration package connecting RustChain and LangChain"
+license = { text = "MIT" }
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "langchain-core>=1.4.7,<2.0.0",
+]
+
+[project.urls]
+Homepage = "https://rustchain.org"
+Documentation = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/rustchain"
+Repository = "https://github.com/langchain-ai/langchain"
+Issues = "https://github.com/langchain-ai/langchain/issues"
+
+[dependency-groups]
+test = [
+    "pytest>=9.0.3,<10.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "pytest-xdist>=3.6.1,<4.0.0",
+]
+lint = ["ruff>=0.13.1,<0.14.0"]
+dev = []
+test_integration = []
+
+[tool.hatch.build.targets.wheel]
+packages = ["langchain_rustchain"]
+
+[tool.ruff]
+target-version = "py310"
