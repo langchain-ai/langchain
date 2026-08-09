@@ -35,7 +35,7 @@ uv add langchain
 ```python
 from langchain.chat_models import init_chat_model
 
-model = init_chat_model("openai:gpt-5.5")
+model = init_chat_model("openai:gpt-4o")
 result = model.invoke("Hello, world!")
 ```
 
