@@ -323,25 +323,31 @@ class aclosing(AbstractAsyncContextManager[Any]):  # noqa: N801
 
 
 async def abatch_iterate(
-    size: int, iterable: AsyncIterable[T]
+    size: int | None, iterable: AsyncIterable[T]
 ) -> AsyncIterator[list[T]]:
     """Utility batching function for async iterables.
 
     Args:
         size: The size of the batch.
+
+            If `None`, returns a single batch.
         iterable: The async iterable to batch.
 
     Yields:
         The batches.
     """
+    if size is None:
+        batch = [el async for el in iterable]
+        if batch:
+            yield batch
+        return
+    if size <= 0:
+        raise ValueError("size must be > 0 or None")
     batch: list[T] = []
     async for element in iterable:
-        if len(batch) < size:
-            batch.append(element)
-
+        batch.append(element)
         if len(batch) >= size:
             yield batch
             batch = []
-
     if batch:
         yield batch
