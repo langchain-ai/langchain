@@ -123,7 +123,10 @@ def trace_as_chain_group(
     )
     try:
         yield group_cm
-    except Exception as e:
+    # Catch BaseException so a cancellation (asyncio.CancelledError) or a
+    # KeyboardInterrupt / SystemExit still finalizes the run via on_chain_error
+    # instead of leaving it pending forever; the error is recorded and re-raised.
+    except BaseException as e:
         if not group_cm.ended:
             run_manager.on_chain_error(e)
         raise
@@ -206,7 +209,11 @@ async def atrace_as_chain_group(
     )
     try:
         yield group_cm
-    except Exception as e:
+    # Catch BaseException so a cancellation (asyncio.CancelledError, common when an
+    # ASGI/WebSocket client disconnects) or a KeyboardInterrupt / SystemExit still
+    # finalizes the run via on_chain_error instead of leaving it pending forever;
+    # the error is recorded and re-raised.
+    except BaseException as e:
         if not group_cm.ended:
             await run_manager.on_chain_error(e)
         raise
