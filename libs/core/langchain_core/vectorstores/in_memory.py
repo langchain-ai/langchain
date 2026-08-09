@@ -201,13 +201,24 @@ class InMemoryVectorStore(VectorStore):
             )
             raise ValueError(msg)
 
+        # check against embedding model returning wrong number of vectors
+        if len(vectors) != len(documents):
+            msg = (
+                f"Embedding model returned {len(vectors)} vectors"
+                f"for {len(documents)} documents."
+                f"The number of embeddings must match with the number of documents."
+                f"This can happen when embedding provider truncates "
+                f"input or embedding implementation has an error."
+            )
+            raise ValueError(msg)
+
         id_iterator: Iterator[str | None] = (
             iter(ids) if ids else iter(doc.id for doc in documents)
         )
 
         ids_ = []
 
-        for doc, vector in zip(documents, vectors, strict=False):
+        for doc, vector in zip(documents, vectors, strict=True):
             doc_id = next(id_iterator)
             doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
@@ -231,6 +242,17 @@ class InMemoryVectorStore(VectorStore):
             msg = (
                 f"ids must be the same length as texts. "
                 f"Got {len(ids)} ids and {len(texts)} texts."
+            )
+            raise ValueError(msg)
+
+        # check against embedding model returning wrong number of vectors
+        if isinstance(vectors, list) and len(vectors) != len(documents):
+            msg = (
+                f"Embedding model returned {len(vectors)} vectors"
+                f"for {len(documents)} documents."
+                f"The number of embeddings must match with the number of documents."
+                f"This can happen when embedding provider truncates "
+                f"input or embedding implementation has an error."
             )
             raise ValueError(msg)
 

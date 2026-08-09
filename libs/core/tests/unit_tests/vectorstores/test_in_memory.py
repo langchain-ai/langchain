@@ -5,6 +5,7 @@ import pytest
 from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_core.embeddings.fake import DeterministicFakeEmbedding
 from langchain_core.vectorstores import InMemoryVectorStore
 from tests.unit_tests.stubs import _any_id_document
@@ -220,3 +221,94 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+class _ShortEmbeddings(Embeddings):
+    """Returns one vector less than the document count."""
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return [[0.1, 0.2, 0.3] for _ in texts[:-1]]
+
+    def embed_query(self, _text: str) -> list[float]:
+        return [0.1, 0.2, 0.3]
+
+
+class _CorrectEmbeddings(Embeddings):
+    """Returns correct number of embedding vectors.
+
+    Vectors count equal document count.
+    """
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return [[0.1, 0.2, 0.3] for _ in texts]
+
+    def embed_query(self, _text: str) -> list[float]:
+        return [0.1, 0.2, 0.3]
+
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.embed_documents(texts)
+
+    async def aembed_query(self, text: str) -> list[float]:
+        return self.embed_query(text)
+
+
+class _ShortEmbeddingsAsync(Embeddings):
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return [[0.1, 0.2, 0.3] for _ in texts[:1]]
+
+    def embed_query(self, _text: str) -> list[float]:
+        return [0.1, 0.2, 0.3]
+
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.embed_documents(texts)
+
+    async def aembed_query(self, text: str) -> list[float]:
+        return self.embed_query(text)
+
+
+def test_add_documents_raises_embedding_count_mismatch() -> None:
+    """add_documents must raise ValueError when embed_documents returns fewer vectors.
+
+    Documents must not be silently dropped when embedding count mismatches.
+    """
+    store = InMemoryVectorStore(embedding=_ShortEmbeddings())
+    docs = [
+        Document(page_content="foo"),
+        Document(page_content="boo"),
+        Document(page_content="bar"),
+    ]
+
+    with pytest.raises(ValueError, match="Embedding model returned"):
+        store.add_documents(docs)
+
+
+async def test_aadd_documents_raises_embedding_count_mismatch() -> None:
+    """add_documents must raise ValueError when embedding count mismatches.
+
+    Embedding count less than document count, should not silently drop documents.
+    """
+    store = InMemoryVectorStore(embedding=_ShortEmbeddingsAsync())
+    docs = [
+        Document(page_content="foo"),
+        Document(page_content="boo"),
+        Document(page_content="bar"),
+    ]
+
+    with pytest.raises(ValueError, match="Embedding model returned"):
+        await store.aadd_documents(docs)
+
+
+def test_add_documents_success_embedding_count_match() -> None:
+    """add_documents must succeed when embedding count matches document count.
+
+    Ensures the fix does not break the happy path.
+    """
+    store = InMemoryVectorStore(embedding=_CorrectEmbeddings())
+    docs = [
+        Document(page_content="foo"),
+        Document(page_content="boo"),
+        Document(page_content="bar"),
+    ]
+    ids = store.add_documents(docs)
+    assert len(ids) == 3
+    assert len(store.store) == 3
