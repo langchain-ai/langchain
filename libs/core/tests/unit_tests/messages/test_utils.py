@@ -269,6 +269,132 @@ def test_filter_message_exclude_tool_calls_content_blocks() -> None:
     assert messages == messages_model_copy
 
 
+def test_filter_message_exclude_tool_calls_openai_content_blocks() -> None:
+    """OpenAI Responses blocks carry the tool call ID under `call_id`."""
+    tool_calls = [
+        {"name": "foo", "id": "1", "args": {}, "type": "tool_call"},
+        {"name": "bar", "id": "2", "args": {}, "type": "tool_call"},
+    ]
+    messages = [
+        HumanMessage("foo", name="blah", id="1"),
+        AIMessage("foo-response", name="blah", id="2"),
+        HumanMessage("bar", name="blur", id="3"),
+        AIMessage(
+            [
+                {"text": "bar-response", "type": "text"},
+                {
+                    "type": "function_call",
+                    "call_id": "1",
+                    "name": "foo",
+                    "arguments": "{}",
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "2",
+                    "name": "bar",
+                    "arguments": "{}",
+                },
+            ],
+            tool_calls=tool_calls,
+            id="4",
+        ),
+        ToolMessage("baz", tool_call_id="1", id="5"),
+        ToolMessage("qux", tool_call_id="2", id="6"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+
+    # the excluded function_call block is dropped alongside its tool call
+    expected = messages[:4] + messages[-1:]
+    expected[3] = expected[3].model_copy(
+        update={
+            "tool_calls": [tool_calls[1]],
+            "content": [
+                {"text": "bar-response", "type": "text"},
+                {
+                    "type": "function_call",
+                    "call_id": "2",
+                    "name": "bar",
+                    "arguments": "{}",
+                },
+            ],
+        }
+    )
+    actual = filter_messages(messages, exclude_tool_calls=["1"])
+    assert expected == actual
+
+    # assert that we didn't mutate the original messages
+    assert messages == messages_model_copy
+
+
+def test_filter_message_exclude_tool_calls_standard_content_blocks() -> None:
+    """Standard content blocks carry the tool call ID under `id`."""
+    tool_calls = [
+        {"name": "foo", "id": "1", "args": {}, "type": "tool_call"},
+        {"name": "bar", "id": "2", "args": {}, "type": "tool_call"},
+    ]
+    messages = [
+        HumanMessage("foo", name="blah", id="1"),
+        AIMessage("foo-response", name="blah", id="2"),
+        HumanMessage("bar", name="blur", id="3"),
+        AIMessage(
+            [
+                {"text": "bar-response", "type": "text"},
+                {"type": "tool_call", "id": "1", "name": "foo", "args": {}},
+                {"type": "tool_call", "id": "2", "name": "bar", "args": {}},
+            ],
+            tool_calls=tool_calls,
+            id="4",
+        ),
+        ToolMessage("baz", tool_call_id="1", id="5"),
+        ToolMessage("qux", tool_call_id="2", id="6"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+
+    # the excluded tool_call block is dropped alongside its tool call
+    expected = messages[:4] + messages[-1:]
+    expected[3] = expected[3].model_copy(
+        update={
+            "tool_calls": [tool_calls[1]],
+            "content": [
+                {"text": "bar-response", "type": "text"},
+                {"type": "tool_call", "id": "2", "name": "bar", "args": {}},
+            ],
+        }
+    )
+    actual = filter_messages(messages, exclude_tool_calls=["1"])
+    assert expected == actual
+
+    # assert that we didn't mutate the original messages
+    assert messages == messages_model_copy
+
+
+def test_filter_message_exclude_tool_calls_preserves_unrelated_blocks() -> None:
+    """Blocks that aren't tool calls are kept even when their ID is excluded."""
+    messages = [
+        AIMessage(
+            [
+                {"type": "text", "text": "hi"},
+                # Not a tool call block, so the matching `id` is irrelevant.
+                {"type": "image", "id": "1"},
+                {"name": "foo", "type": "tool_use", "id": "1"},
+                {"name": "bar", "type": "tool_use", "id": "2"},
+            ],
+            tool_calls=[
+                {"name": "foo", "id": "1", "args": {}, "type": "tool_call"},
+                {"name": "bar", "id": "2", "args": {}, "type": "tool_call"},
+            ],
+            id="1",
+        ),
+    ]
+
+    actual = filter_messages(messages, exclude_tool_calls=["1"])
+    assert actual[0].content == [
+        {"type": "text", "text": "hi"},
+        {"type": "image", "id": "1"},
+        {"name": "bar", "type": "tool_use", "id": "2"},
+    ]
+
+
 _MESSAGES_TO_TRIM = [
     SystemMessage("This is a 4 token text."),
     HumanMessage("This is a 4 token text.", id="first"),

@@ -14,7 +14,7 @@ import inspect
 import json
 import logging
 import math
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Collection, Iterable, Sequence
 from functools import partial, wraps
 from typing import (
     TYPE_CHECKING,
@@ -853,6 +853,43 @@ def _runnable_support(
     return cast("_RunnableSupportCallable[_P, _R_co]", wrapped)
 
 
+_TOOL_CALL_BLOCK_ID_KEYS: dict[str, str] = {
+    # Anthropic-style blocks.
+    "tool_use": "id",
+    # LangChain standard content blocks.
+    "tool_call": "id",
+    # OpenAI Responses-style blocks.
+    "function_call": "call_id",
+}
+"""Maps a tool call content block type to the key holding its tool call ID."""
+
+
+def _is_excluded_tool_call_block(
+    content_block: Any, exclude_tool_calls: Collection[str]
+) -> bool:
+    """Whether a content block represents a tool call that should be excluded.
+
+    Tool calls are represented differently depending on the provider, so a block is
+    matched against whichever key that provider uses to carry the tool call ID.
+
+    Args:
+        content_block: A single entry from a message's content list.
+        exclude_tool_calls: The tool call IDs being excluded.
+
+    Returns:
+        `True` if the block is a tool call block whose ID is excluded.
+    """
+    if not isinstance(content_block, dict):
+        return False
+    block_type = content_block.get("type")
+    if not isinstance(block_type, str):
+        return False
+    id_key = _TOOL_CALL_BLOCK_ID_KEYS.get(block_type)
+    if id_key is None:
+        return False
+    return content_block.get(id_key) in exclude_tool_calls
+
+
 @_runnable_support
 def filter_messages(
     messages: Iterable[MessageLikeRepresentation] | PromptValue,
@@ -966,15 +1003,14 @@ def filter_messages(
                     continue
 
                 content = msg.content
-                # handle Anthropic content blocks
+                # Drop the content blocks representing the excluded tool calls, so
+                # that content stays consistent with tool_calls.
                 if isinstance(msg.content, list):
                     content = [
                         content_block
                         for content_block in msg.content
-                        if (
-                            not isinstance(content_block, dict)
-                            or content_block.get("type") != "tool_use"
-                            or content_block.get("id") not in exclude_tool_calls
+                        if not _is_excluded_tool_call_block(
+                            content_block, exclude_tool_calls
                         )
                     ]
 
