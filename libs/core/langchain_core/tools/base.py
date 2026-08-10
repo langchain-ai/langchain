@@ -701,6 +701,17 @@ class ChildTool(BaseTool):
 
         full_schema = self.get_input_schema()
         fields = []
+
+        # Accommodates a condition where forward references were not resolved
+        # during model construction. At introspection time, we fail fast if
+        # the model schema is not complete so the underlying serialized schema
+        # doesn't narrow the propreties in the tool json schema to an empty dict
+        if (
+            is_pydantic_v2_subclass(full_schema)
+            and not full_schema.__pydantic_complete__
+        ):
+            full_schema.model_rebuild()
+
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
                 fields.append(name)
