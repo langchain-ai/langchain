@@ -26,11 +26,15 @@ from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
-from langgraph.types import Command, Send, TracePolicy
+from langgraph.types import Command, Send
 from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict, overload
 
 from langchain.agents._subagent_transformer import SubagentTransformer
+from langchain.agents.middleware._trace_policy import (
+    _node_trace_policy,
+    _resolved_transform,
+)
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -151,32 +155,19 @@ def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     return filtered
 
 
-def _wrap_process_inputs(policy: TracePolicy) -> Callable[[Any], Any]:
-    """Compose the wrap-span input baseline with the policy's `process_inputs`.
-
-    `_scrub_inputs` always runs first to strip the unserializable `handler`/`runtime`;
-    the policy's callable then transforms the cleaned payload. A custom `process_inputs`
-    never has to re-strip them and cannot disable the baseline.
-    """
-    if policy.process_inputs is None:
-        return _scrub_inputs
-    process = policy.process_inputs
-    return lambda inputs: process(_scrub_inputs(inputs))
-
-
 def _wrap_trace_kwargs(middleware: AgentMiddleware[Any, Any]) -> dict[str, Any]:
     """`traceable` kwargs for a middleware's `wrap_*` hook spans.
 
-    Default (`trace_policy is None`): only the `_scrub_inputs` baseline (strip the
-    unserializable `handler`/`runtime`), i.e. normal tracing. A middleware's
-    `trace_policy` composes on top.
+    The `_scrub_inputs` baseline (strip the unserializable `handler`/`runtime`) always
+    runs first; the effective `TracePolicy` (the middleware's own, else the process-wide
+    default) composes on top. The effective policy is resolved at call time, so a
+    `configure_trace_policy` call after `create_agent` still applies.
     """
-    policy = middleware.trace_policy
-    if policy is None:
-        return {"process_inputs": _scrub_inputs}
+    process_inputs = _resolved_transform(middleware.trace_policy, "process_inputs")
+    process_outputs = _resolved_transform(middleware.trace_policy, "process_outputs")
     return {
-        "process_inputs": _wrap_process_inputs(policy),
-        "process_outputs": policy.process_outputs,
+        "process_inputs": lambda inputs: process_inputs(_scrub_inputs(inputs)),
+        "process_outputs": process_outputs,
     }
 
 
@@ -1574,7 +1565,7 @@ def create_agent(
                 f"{m.name}.before_agent",
                 before_agent_node,
                 input_schema=resolved_state_schema,
-                trace_policy=m.trace_policy,
+                trace_policy=_node_trace_policy(m.trace_policy),
             )
 
         if (
@@ -1598,7 +1589,7 @@ def create_agent(
                 f"{m.name}.before_model",
                 before_node,
                 input_schema=resolved_state_schema,
-                trace_policy=m.trace_policy,
+                trace_policy=_node_trace_policy(m.trace_policy),
             )
 
         if (
@@ -1622,7 +1613,7 @@ def create_agent(
                 f"{m.name}.after_model",
                 after_node,
                 input_schema=resolved_state_schema,
-                trace_policy=m.trace_policy,
+                trace_policy=_node_trace_policy(m.trace_policy),
             )
 
         if (
@@ -1646,7 +1637,7 @@ def create_agent(
                 f"{m.name}.after_agent",
                 after_agent_node,
                 input_schema=resolved_state_schema,
-                trace_policy=m.trace_policy,
+                trace_policy=_node_trace_policy(m.trace_policy),
             )
 
     # Determine the entry node (runs once at start): before_agent -> before_model -> model

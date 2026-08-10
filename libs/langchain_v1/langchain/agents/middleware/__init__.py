@@ -2,6 +2,7 @@
 
 from langgraph.runtime import Runtime
 
+from langchain.agents.middleware._trace_policy import configure_trace_policy
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
@@ -90,6 +91,7 @@ __all__ = [
     "after_model",
     "before_agent",
     "before_model",
+    "configure_trace_policy",
     "dynamic_prompt",
     "hook_config",
     "omit_payload",
