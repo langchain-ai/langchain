@@ -5194,6 +5194,20 @@ def _convert_responses_chunk_to_generation_chunk(
         if getattr(chunk.item, "namespace", None) is not None:
             function_call_content["namespace"] = chunk.item.namespace
         content.append(function_call_content)
+    elif (
+        chunk.type == "response.output_item.done" and chunk.item.type == "function_call"
+    ):
+        # The "added" event above records the transient status (typically
+        # "in_progress"); update it here with the terminal status (e.g.
+        # "completed") so a replayed history doesn't send a stale value.
+        _advance(chunk.output_index)
+        content.append(
+            {
+                "type": "function_call",
+                "status": getattr(chunk.item, "status", None),
+                "index": current_index,
+            }
+        )
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
         "web_search_call",
