@@ -1,11 +1,8 @@
-"""TypedDicts with deferred (string) annotations for regression testing.
+"""TypedDicts with deferred string annotations for regression testing.
 
-Kept in a separate module (rather than inline in a test function) because
-`from __future__ import annotations` applies to the whole file, and we need
-these classes' annotations to genuinely be unevaluated strings at class
-creation time to reproduce https://github.com/langchain-ai/langchain/pull/39336#discussion.
+Kept in a separate module so `from __future__ import annotations` applies and
+the annotations remain unevaluated at class creation time.
 """
-
 from __future__ import annotations
 
 from typing_extensions import NotRequired, Required, TypedDict
