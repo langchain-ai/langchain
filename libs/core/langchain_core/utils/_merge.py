@@ -61,6 +61,11 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                     and merged[right_k] == right_v
                 ):
                     continue
+                if right_k == "status":
+                    # Enum-like state (e.g. "in_progress" -> "completed") that a
+                    # later chunk overwrites, not accumulated text.
+                    merged[right_k] = right_v
+                    continue
                 merged[right_k] += right_v
             elif isinstance(merged[right_k], dict):
                 merged[right_k] = merge_dicts(merged[right_k], right_v)
