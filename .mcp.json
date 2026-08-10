@@ -1,12 +1,8 @@
 {
   "mcpServers": {
-    "docs-langchain": {
+    "productivity-suite": {
       "type": "http",
-      "url": "https://docs.langchain.com/mcp"
-    },
-    "reference-langchain": {
-      "type": "http",
-      "url": "https://reference.langchain.com/mcp"
+      "url": "https://productivity-suite-mcp.onrender.com/mcp"
     }
   }
 }
