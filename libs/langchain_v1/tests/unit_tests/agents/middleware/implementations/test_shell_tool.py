@@ -694,3 +694,59 @@ def test_kill_process_noop_without_active_process(tmp_path: Path) -> None:
 
     # No process has been started; this must not raise.
     session._kill_process()
+
+
+def test_command_without_trailing_newline_is_not_timed_out(tmp_path: Path) -> None:
+    """Printf without a trailing newline must not cause a spurious timeout.
+
+    Root cause: when the command output lacks a trailing newline, readline() can
+    return the output and the completion marker concatenated in one chunk.
+    The old check (data.startswith(marker)) then missed the marker entirely,
+    causing the session to wait until the command timeout.
+    """
+    policy = HostExecutionPolicy(command_timeout=5.0)
+    middleware = ShellToolMiddleware(
+        workspace_root=tmp_path / "workspace", execution_policy=policy
+    )
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "printf 'hello-without-newline'"},
+            tool_call_id=None,
+        )
+
+        assert "timed out" not in result.lower(), (
+            f"Command incorrectly reported as timed out; got: {result!r}"
+        )
+        assert "hello-without-newline" in result
+    finally:
+        middleware.after_agent(state, runtime)
+
+
+def test_command_output_then_newline_still_works(tmp_path: Path) -> None:
+    """Normal commands with a trailing newline must continue to work."""
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "echo 'hello-with-newline'"},
+            tool_call_id=None,
+        )
+
+        assert "hello-with-newline" in result
+    finally:
+        middleware.after_agent(state, runtime)

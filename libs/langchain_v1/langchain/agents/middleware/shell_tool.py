@@ -265,8 +265,24 @@ class ShellSession:
             if data is None:
                 continue
 
-            if source == "stdout" and data.startswith(marker):
-                _, _, status = data.partition(" ")
+            if source == "stdout" and marker in data:
+                prefix, _, tail = data.partition(marker)
+                if prefix:
+                    # Command output had no trailing newline; it was merged with
+                    # the marker into a single readline() result.
+                    total_lines += 1
+                    encoded_prefix = prefix.encode("utf-8", "replace")
+                    total_bytes += len(encoded_prefix)
+                    if total_lines > self._policy.max_output_lines:
+                        truncated_by_lines = True
+                    elif (
+                        self._policy.max_output_bytes is not None
+                        and total_bytes > self._policy.max_output_bytes
+                    ):
+                        truncated_by_bytes = True
+                    else:
+                        collected.append(prefix)
+                _, _, status = tail.partition(" ")
                 exit_code = self._safe_int(status.strip())
                 # Drain any remaining stderr that may have arrived concurrently.
                 # The stderr reader thread runs independently, so output might
