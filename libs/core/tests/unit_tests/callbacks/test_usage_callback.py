@@ -97,6 +97,26 @@ def test_usage_callback() -> None:
     }
 
 
+def test_usage_callback_stops_tracking_after_exception() -> None:
+    llm = FakeChatModelWithResponseMetadata(
+        messages=iter(messages[:2]), model_name="test_model"
+    )
+
+    def invoke_and_raise() -> None:
+        _ = llm.invoke("Message 1")
+        raise RuntimeError
+
+    try:
+        with get_usage_metadata_callback() as cb:
+            invoke_and_raise()
+    except RuntimeError:
+        pass
+
+    _ = llm.invoke("Message 2")
+
+    assert cb.usage_metadata == {"test_model": usage1}
+
+
 async def test_usage_callback_async() -> None:
     llm = FakeChatModelWithResponseMetadata(
         messages=iter(messages), model_name="test_model"
