@@ -265,8 +265,15 @@ class ShellSession:
             if data is None:
                 continue
 
-            if source == "stdout" and data.startswith(marker):
-                _, _, status = data.partition(" ")
+            # The marker may be glued to the tail of the command's own output
+            # when that output does not end with a newline (e.g. `printf x`),
+            # so match it anywhere in the line instead of only at the start.
+            if source == "stdout" and marker in data:
+                before, _, status = data.partition(marker)
+                if before:
+                    collected.append(before)
+                    total_lines += 1
+                    total_bytes += len(before.encode("utf-8", "replace"))
                 exit_code = self._safe_int(status.strip())
                 # Drain any remaining stderr that may have arrived concurrently.
                 # The stderr reader thread runs independently, so output might

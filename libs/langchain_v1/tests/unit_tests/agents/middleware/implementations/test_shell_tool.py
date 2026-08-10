@@ -115,6 +115,30 @@ def test_timeout_returns_error(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+def test_command_output_without_trailing_newline(tmp_path: Path) -> None:
+    """Commands whose output lacks a trailing newline must not time out.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/39363:
+    the completion marker is printed immediately after the command output, so
+    with unterminated output the marker arrives glued to the final line.
+    """
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+        result = middleware._run_shell_tool(
+            resources, {"command": "printf 'hello-without-newline'"}, tool_call_id=None
+        )
+        assert "timed out" not in result.lower()
+        assert "hello-without-newline" in result
+    finally:
+        middleware.after_agent(state, runtime)
+
+
 def test_redaction_policy_applies(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(
         workspace_root=tmp_path / "workspace",
