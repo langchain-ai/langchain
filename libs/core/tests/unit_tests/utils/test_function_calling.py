@@ -1371,6 +1371,37 @@ class TestParseGoogleDocstring:
         assert "y: the y value" in args["x"]
 
 
+def test_tool_outputs_fewer_than_tool_calls_raises() -> None:
+    """Regression #39138: mismatched tool_outputs must raise, not silently truncate."""
+    with pytest.raises(ValueError, match="Length of tool_outputs"):
+        tool_example_to_messages(
+            input="Extract both values",
+            tool_calls=[FakeCall(data="a"), FakeCall(data="b")],
+            tool_outputs=["only one output"],
+        )
+
+
+def test_tool_outputs_more_than_tool_calls_raises() -> None:
+    """Regression #39138: extra tool_outputs must raise, not silently be dropped."""
+    with pytest.raises(ValueError, match="Length of tool_outputs"):
+        tool_example_to_messages(
+            input="Extract one value",
+            tool_calls=[FakeCall(data="a")],
+            tool_outputs=["output1", "output2"],
+        )
+
+
+def test_tool_outputs_none_auto_fills() -> None:
+    """Passing tool_outputs=None still auto-fills one placeholder per tool call."""
+    messages = tool_example_to_messages(
+        input="Extract both",
+        tool_calls=[FakeCall(data="a"), FakeCall(data="b")],
+        tool_outputs=None,
+    )
+    tool_messages = [m for m in messages if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 2
+
+
 def test_convert_to_openai_tool_apply_patch_passthrough() -> None:
     """Test apply_patch is passed through as an OpenAI built-in tool."""
     tool = {"type": "apply_patch"}

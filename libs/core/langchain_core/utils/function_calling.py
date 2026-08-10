@@ -713,6 +713,12 @@ def tool_example_to_messages(
     messages.append(
         AIMessage(content="", additional_kwargs={"tool_calls": openai_tool_calls})
     )
+    if tool_outputs is not None and len(tool_outputs) != len(openai_tool_calls):
+        msg = (
+            f"Length of tool_outputs ({len(tool_outputs)}) does not match "
+            f"number of tool calls ({len(openai_tool_calls)})."
+        )
+        raise ValueError(msg)
     tool_outputs = tool_outputs or ["You have correctly called this tool."] * len(
         openai_tool_calls
     )
