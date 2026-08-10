@@ -3196,7 +3196,8 @@ def test_inferred_args_schema_raises_for_unresolved_nested_forward_ref() -> None
     """Tool schemas should not silently drop incomplete Pydantic model fields."""
 
     class Container(BaseModel):
-        rows: list["UndefinedRow"] = Field(default_factory=list)
+        # Intentionally unresolved; schema conversion must fail loudly.
+        rows: list["UndefinedRow"] = Field(default_factory=list)  # noqa: F821
 
     @tool
     def my_tool(real_arg: str, container: Container) -> str:
