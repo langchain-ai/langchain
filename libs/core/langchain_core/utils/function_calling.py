@@ -277,14 +277,8 @@ def _convert_any_typed_dicts_to_pydantic(
         description, arg_descriptions = _parse_google_docstring(
             docstring, list(annotations_)
         )
-        # `__required_keys__` reflects `total` plus any `Required`/`NotRequired`
-        # overrides *resolved at class-creation time*. Under
-        # `from __future__ import annotations`, annotations are still strings
-        # then, so those overrides aren't applied and `__required_keys__` only
-        # reflects `total`. `annotations_` above is resolved via
-        # `get_type_hints`, so it always has the real `Required`/`NotRequired`
-        # wrapper; prefer that when present and fall back to
-        # `__required_keys__` (i.e. `total`) otherwise.
+        # Under future annotations, `__required_keys__` misses `Required`/`NotRequired`.
+        # Prefer resolved `get_type_hints` annotations; otherwise use `__required_keys__`.   
         required_keys = getattr(typed_dict, "__required_keys__", set(annotations_))
         fields: dict[str, Any] = {}
         for arg, raw_arg_type in annotations_.items():
