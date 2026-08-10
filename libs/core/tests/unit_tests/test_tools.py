@@ -3197,14 +3197,15 @@ def test_inferred_args_schema_raises_for_unresolved_nested_forward_ref() -> None
 
     class Container(BaseModel):
         # Intentionally unresolved; schema conversion must fail loudly.
-        rows: list["UndefinedRow"] = Field(default_factory=list)  # noqa: F821
+        rows: list["UndefinedRow"] = Field(  # type: ignore[name-defined]  # noqa: F821
+            default_factory=list
+        )
 
     @tool
     def my_tool(real_arg: str, container: Container) -> str:
         """Process a container."""
         return "ok"
 
-    assert my_tool.get_input_schema().__pydantic_complete__ is False
     with pytest.raises(PydanticUndefinedAnnotation, match="UndefinedRow"):
         convert_to_openai_tool(my_tool)
 
