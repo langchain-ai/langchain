@@ -277,3 +277,34 @@ async def test_adelete_keys(amanager: InMemoryRecordManager) -> None:
     # Check if the deleted keys are no longer in the database
     remaining_keys = await amanager.alist_keys()
     assert remaining_keys == ["key3"]
+
+
+def test_update_batch_uses_consistent_timestamps(
+    manager: InMemoryRecordManager,
+) -> None:
+    """Regression: all keys in one update() call must share the same timestamp.
+
+    Before the fix, get_time() was called once per key, so rapid indexing could
+    assign slightly different timestamps within a single batch.  After the fix,
+    get_time() is called once before the loop and the single value is reused.
+    """
+    tick = iter([1.0, 2.0, 3.0])
+
+    with patch.object(manager, "get_time", side_effect=lambda: next(tick)):
+        manager.update(["key1", "key2", "key3"])
+
+    timestamps = {k: manager.records[k]["updated_at"] for k in ["key1", "key2", "key3"]}
+    assert len(set(timestamps.values())) == 1, (
+        f"Expected all keys to share one timestamp, got {timestamps}"
+    )
+
+
+def test_update_time_at_least_raises_when_in_future(
+    manager: InMemoryRecordManager,
+) -> None:
+    """time_at_least greater than current time must raise ValueError."""
+    with (
+        patch.object(manager, "get_time", return_value=1000.0),
+        pytest.raises(ValueError, match="time_at_least must be in the past"),
+    ):
+        manager.update(["key1"], time_at_least=2000.0)
