@@ -3,6 +3,7 @@
 Kept in a separate module so `from __future__ import annotations` applies and
 the annotations remain unevaluated at class creation time.
 """
+
 from __future__ import annotations
 
 from typing_extensions import NotRequired, Required, TypedDict
