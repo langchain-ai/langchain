@@ -73,8 +73,11 @@ def _merge_block_delta_into_store(
     """Shallow-merge a block-delta snapshot into an indexed chunk store."""
     existing = store.get(idx, {})
     for key, value in fields.items():
-        if value is not None:
-            existing[key] = value
+        if value is None:
+            continue
+        if key in {"id", "name"} and value == "" and existing.get(key):
+            continue
+        existing[key] = value
     store[idx] = existing
 
 

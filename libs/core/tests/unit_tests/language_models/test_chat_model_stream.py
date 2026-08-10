@@ -785,6 +785,45 @@ class TestChatModelStream:
         assert itc["args"] == '{"q": '
         assert "Failed to parse" in (itc["error"] or "")
 
+    def test_tool_call_empty_id_name_continuation_not_overwritten(self) -> None:
+        """Regression #39335: empty-string id/name deltas must not overwrite values."""
+        stream = ChatModelStream()
+        stream.dispatch({"event": "message-start", "role": "ai"})
+        stream.dispatch(
+            {
+                "event": "content-block-delta",
+                "index": 0,
+                "delta": {
+                    "type": "block-delta",
+                    "fields": {
+                        "type": "tool_call_chunk",
+                        "id": "call_abc",
+                        "name": "search",
+                        "args": "",
+                    },
+                },
+            }
+        )
+        stream.dispatch(
+            {
+                "event": "content-block-delta",
+                "index": 0,
+                "delta": {
+                    "type": "block-delta",
+                    "fields": {
+                        "type": "tool_call_chunk",
+                        "id": "",
+                        "name": "",
+                        "args": '{"q":"hi"}',
+                    },
+                },
+            }
+        )
+        stored = stream._tool_call_chunks[0]
+        assert stored["id"] == "call_abc", f"id overwritten: {stored['id']!r}"
+        assert stored["name"] == "search", f"name overwritten: {stored['name']!r}"
+        assert stored["args"] == '{"q":"hi"}'
+
 
 # ---------------------------------------------------------------------------
 # AsyncChatModelStream unit tests

@@ -8,6 +8,7 @@ from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 
 from langchain_core.language_models._compat_bridge import (
     CompatBlock,
+    _accumulate,
     _finalize_block,
     _isolate_usage,
     achunks_to_events,
@@ -1374,6 +1375,21 @@ def test_lifecycle_validator_invalid_tool_call_args() -> None:
     finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
     assert len(finishes) == 1
     assert finishes[0]["content"]["type"] == "invalid_tool_call"
+
+
+def test_accumulate_empty_id_name_not_overwritten() -> None:
+    """Regression #39335: _accumulate preserves id/name when delta sends empty str."""
+    state = _accumulate(
+        None,
+        {"type": "tool_call_chunk", "id": "call_abc", "name": "search", "args": ""},
+    )
+    final = _accumulate(
+        state,
+        {"type": "tool_call_chunk", "id": "", "name": "", "args": '{"q":"hi"}'},
+    )
+    assert final["id"] == "call_abc", f"id overwritten: {final['id']!r}"
+    assert final["name"] == "search", f"name overwritten: {final['name']!r}"
+    assert final["args"] == '{"q":"hi"}'
 
 
 def test_lifecycle_validator_empty_stream() -> None:
