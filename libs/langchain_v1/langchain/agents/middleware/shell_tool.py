@@ -265,7 +265,11 @@ class ShellSession:
             if data is None:
                 continue
 
-            if source == "stdout" and data.startswith(marker):
+            if source == "stdout" and marker in data:
+                prefix, _, remainder = data.partition(marker)
+                # Preserve any command output that preceded the marker on the same line.
+                if prefix:
+                    collected.append(prefix)
                 _, _, status = data.partition(" ")
                 exit_code = self._safe_int(status.strip())
                 # Drain any remaining stderr that may have arrived concurrently.
