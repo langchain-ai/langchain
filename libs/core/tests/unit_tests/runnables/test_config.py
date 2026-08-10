@@ -1,6 +1,7 @@
 import json
 import uuid
-from contextvars import copy_context
+from collections.abc import Generator
+from contextvars import ContextVar, copy_context
 from typing import Any, cast
 
 import pytest
@@ -15,6 +16,7 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_core.runnables import RunnableBinding, RunnablePassthrough
 from langchain_core.runnables.config import (
+    ContextThreadPoolExecutor,
     RunnableConfig,
     _get_langsmith_inheritable_metadata_from_config,
     _merge_metadata_dicts,
@@ -414,3 +416,41 @@ class TestMergeMetadataDicts:
         assert merged["metadata"] == {
             "lc_versions": {"a": "1", "b": "2", "c": "3"},
         }
+
+
+class TestContextThreadPoolExecutorMap:
+    """Tests for ContextThreadPoolExecutor.map() generator/iterable support."""
+
+    def test_map_accepts_generator(self) -> None:
+        def values() -> Generator[int, None, None]:
+            yield from range(3)
+
+        with ContextThreadPoolExecutor(max_workers=2) as executor:
+            result = list(executor.map(lambda x: x * 2, values()))
+
+        assert result == [0, 2, 4]
+
+    def test_map_accepts_list(self) -> None:
+        with ContextThreadPoolExecutor(max_workers=2) as executor:
+            result = list(executor.map(lambda x: x + 1, [10, 20, 30]))
+
+        assert result == [11, 21, 31]
+
+    def test_map_accepts_iterator(self) -> None:
+        with ContextThreadPoolExecutor(max_workers=2) as executor:
+            result = list(executor.map(lambda x: x, iter([5, 6, 7])))
+
+        assert result == [5, 6, 7]
+
+    def test_map_preserves_context(self) -> None:
+        var: ContextVar[str] = ContextVar("var", default="outer")
+        var.set("outer")
+        captured = []
+
+        def read_var(_: int) -> str:
+            return var.get()
+
+        with ContextThreadPoolExecutor(max_workers=2) as executor:
+            captured = list(executor.map(read_var, range(3)))
+
+        assert all(v == "outer" for v in captured)
