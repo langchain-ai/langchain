@@ -296,12 +296,20 @@ class InMemoryRecordManager(RecordManager):
         if group_ids and len(keys) != len(group_ids):
             msg = "Length of keys must match length of group_ids"
             raise ValueError(msg)
+        current_time = self.get_time()
+        if time_at_least and time_at_least > current_time:
+            msg = "time_at_least must be in the past"
+            raise ValueError(msg)
+        if time_at_least is not None:
+            # Guarantee updated_at > time_at_least so that
+            # list_keys(before=time_at_least) never returns records from
+            # this batch — even on clocks with 1-second resolution.
+            update_time = max(current_time, time_at_least + 1e-6)
+        else:
+            update_time = current_time
         for index, key in enumerate(keys):
             group_id = group_ids[index] if group_ids else None
-            if time_at_least and time_at_least > self.get_time():
-                msg = "time_at_least must be in the past"
-                raise ValueError(msg)
-            self.records[key] = {"group_id": group_id, "updated_at": self.get_time()}
+            self.records[key] = {"group_id": group_id, "updated_at": update_time}
 
     async def aupdate(
         self,

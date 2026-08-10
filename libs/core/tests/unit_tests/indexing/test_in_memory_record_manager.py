@@ -264,6 +264,61 @@ def test_delete_keys(manager: InMemoryRecordManager) -> None:
     assert remaining_keys == ["key3"]
 
 
+def test_update_batch_uses_consistent_timestamps(
+    manager: InMemoryRecordManager,
+) -> None:
+    """Regression #39087: all keys in one update() call must share the same timestamp.
+
+    Before the fix, get_time() was called once per key so rapid batches could
+    assign slightly different updated_at values within the same call.
+    """
+    tick = iter([1.0, 2.0, 3.0])
+
+    with patch.object(manager, "get_time", side_effect=lambda: next(tick)):
+        manager.update(["key1", "key2", "key3"])
+
+    timestamps = {k: manager.records[k]["updated_at"] for k in ["key1", "key2", "key3"]}
+    assert len(set(timestamps.values())) == 1, (
+        f"Expected all keys to share one timestamp, got {timestamps}"
+    )
+
+
+def test_update_time_at_least_raises_when_in_future(
+    manager: InMemoryRecordManager,
+) -> None:
+    """time_at_least greater than current time must raise ValueError."""
+    with (
+        patch.object(manager, "get_time", return_value=1000.0),
+        pytest.raises(ValueError, match="time_at_least must be in the past"),
+    ):
+        manager.update(["key1"], time_at_least=2000.0)
+
+
+def test_update_time_at_least_yields_strictly_greater_timestamp(
+    manager: InMemoryRecordManager,
+) -> None:
+    """Regression #39106: updated_at must be > time_at_least.
+
+    On low-resolution clocks get_time() can return the same value as
+    time_at_least (e.g. on Windows with 1-second resolution).
+    list_keys(before=time_at_least) with strict < then fails to return
+    records from a previous run that have updated_at == time_at_least.
+    The fix: ensure updated_at > time_at_least so cleanup always works.
+    """
+    time_at_least = 1000.0
+    with patch.object(manager, "get_time", return_value=time_at_least):
+        manager.update(["key1"], time_at_least=time_at_least)
+
+    stored_ts = manager.records["key1"]["updated_at"]
+    assert stored_ts > time_at_least, (
+        f"updated_at {stored_ts} must be strictly greater than "
+        f"time_at_least {time_at_least}"
+    )
+    assert manager.list_keys(before=time_at_least) == [], (
+        "a freshly-indexed record must not appear in list_keys(before=time_at_least)"
+    )
+
+
 async def test_adelete_keys(amanager: InMemoryRecordManager) -> None:
     """Test deleting keys from the database."""
     # Insert records
