@@ -278,7 +278,8 @@ def _convert_any_typed_dicts_to_pydantic(
             docstring, list(annotations_)
         )
         # Under future annotations, `__required_keys__` misses `Required`/`NotRequired`.
-        # Prefer resolved `get_type_hints` annotations; otherwise use `__required_keys__`.   
+        # Prefer resolved `get_type_hints` annotations; otherwise use
+        # `__required_keys__`.
         required_keys = getattr(typed_dict, "__required_keys__", set(annotations_))
         fields: dict[str, Any] = {}
         for arg, raw_arg_type in annotations_.items():
