@@ -37,6 +37,10 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
     tool_example_to_messages,
 )
+from tests.unit_tests.utils._deferred_annotations_typed_dicts import (
+    FullPayloadDeferred,
+    PartialPayloadDeferred,
+)
 
 
 @pytest.fixture
@@ -1067,6 +1071,22 @@ def test_convert_to_openai_function_typed_dict_not_required() -> None:
         optional_value: NotRequired[str]
 
     func = convert_to_openai_function(PayloadWithNotRequired)
+    assert func["parameters"]["required"] == ["required_value"]
+
+
+def test_convert_to_openai_function_typed_dict_deferred_annotations() -> None:
+    """`Required`/`NotRequired` must be respected under deferred annotations.
+
+    With `from __future__ import annotations`, a `TypedDict`'s
+    `__required_keys__` is computed from unevaluated string annotations, so
+    it can't see `Required`/`NotRequired` and falls back to `total` alone.
+    Conversion must instead trust the resolved annotation (via
+    `get_type_hints`), not `__required_keys__` directly.
+    """
+    func = convert_to_openai_function(PartialPayloadDeferred)
+    assert func["parameters"]["required"] == ["required_value"]
+
+    func = convert_to_openai_function(FullPayloadDeferred)
     assert func["parameters"]["required"] == ["required_value"]
 
 

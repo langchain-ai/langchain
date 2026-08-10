@@ -277,18 +277,28 @@ def _convert_any_typed_dicts_to_pydantic(
         description, arg_descriptions = _parse_google_docstring(
             docstring, list(annotations_)
         )
-        # `__required_keys__` already captures `total`, `Required[...]`, and
-        # `NotRequired[...]`, so it defines the actual required fields.
+        # `__required_keys__` reflects `total` plus any `Required`/`NotRequired`
+        # overrides *resolved at class-creation time*. Under
+        # `from __future__ import annotations`, annotations are still strings
+        # then, so those overrides aren't applied and `__required_keys__` only
+        # reflects `total`. `annotations_` above is resolved via
+        # `get_type_hints`, so it always has the real `Required`/`NotRequired`
+        # wrapper; prefer that when present and fall back to
+        # `__required_keys__` (i.e. `total`) otherwise.
         required_keys = getattr(typed_dict, "__required_keys__", set(annotations_))
         fields: dict[str, Any] = {}
         for arg, raw_arg_type in annotations_.items():
             # `Required`/`NotRequired` only affect requiredness; unwrap them so the
             # field annotation uses the underlying type.
-            if get_origin(raw_arg_type) in {Required, NotRequired}:
+            if get_origin(raw_arg_type) is Required:
                 arg_type = get_args(raw_arg_type)[0]
+                is_required = True
+            elif get_origin(raw_arg_type) is NotRequired:
+                arg_type = get_args(raw_arg_type)[0]
+                is_required = False
             else:
                 arg_type = raw_arg_type
-            is_required = arg in required_keys
+                is_required = arg in required_keys
             if get_origin(arg_type) in {Annotated, typing_extensions.Annotated}:
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
