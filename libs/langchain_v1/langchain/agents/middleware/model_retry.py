@@ -13,6 +13,7 @@ from langchain.agents.middleware._retry import (
     OnFailure,
     RetryOn,
     calculate_delay,
+    default_retry_on,
     should_retry_exception,
     validate_retry_params,
 )
@@ -113,7 +114,7 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
         self,
         *,
         max_retries: int = 2,
-        retry_on: RetryOn = (Exception,),
+        retry_on: RetryOn = default_retry_on,
         on_failure: OnFailure = "continue",
         backoff_factor: float = 2.0,
         initial_delay: float = 1.0,
@@ -129,7 +130,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
             retry_on: Either a tuple of exception types to retry on, or a callable
                 that takes an exception and returns `True` if it should be retried.
 
-                Default is to retry on all exceptions.
+                By default, retryable model errors and all unclassified exceptions are
+                retried.
             on_failure: Behavior when all retries are exhausted.
 
                 Options:

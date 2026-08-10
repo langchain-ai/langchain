@@ -65,7 +65,50 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
         self.send_to_llm = send_to_llm
 
 
-class ContextOverflowError(LangChainException):
+class ModelError(LangChainException):
+    """Base exception for failures related to model invocation."""
+
+    is_retryable = False
+    """Whether retrying the same model request may succeed."""
+
+
+class AuthenticationError(ModelError):
+    """Exception raised when model provider authentication fails."""
+
+
+class PermissionDeniedError(ModelError):
+    """Exception raised when credentials lack permission for a model request."""
+
+
+class ModelNotFoundError(ModelError):
+    """Exception raised when the requested model cannot be found."""
+
+
+class ModelTimeoutError(ModelError):
+    """Exception raised when a model request times out."""
+
+    is_retryable = True
+
+
+class RateLimitError(ModelError):
+    """Exception raised when a model provider rate limit is exceeded."""
+
+    is_retryable = True
+
+
+class ModelConnectionError(ModelError):
+    """Exception raised when a model provider cannot be reached."""
+
+    is_retryable = True
+
+
+class ServerError(ModelError):
+    """Exception raised when a model provider reports a server failure."""
+
+    is_retryable = True
+
+
+class ContextOverflowError(ModelError):
     """Exception raised when input exceeds the model's context limit.
 
     This exception is raised by chat models when the input tokens exceed

@@ -12,7 +12,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import openai
 import pytest
-from langchain_core.exceptions import ContextOverflowError
+from langchain.agents import create_agent
+from langchain.agents.middleware import ModelRetryMiddleware
+from langchain_core.exceptions import (
+    AuthenticationError,
+    ContextOverflowError,
+    ModelError,
+    RateLimitError,
+)
 from langchain_core.load import dumps, loads
 from langchain_core.messages import (
     AIMessage,
@@ -4572,6 +4579,41 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+@pytest.mark.parametrize(
+    ("status_code", "sdk_error_type", "model_error_type", "expected_attempts"),
+    [
+        (401, openai.AuthenticationError, AuthenticationError, 1),
+        (429, openai.RateLimitError, RateLimitError, 3),
+    ],
+)
+def test_model_retry_respects_openai_error_classification(
+    status_code: int,
+    sdk_error_type: type[openai.APIStatusError],
+    model_error_type: type[ModelError],
+    expected_attempts: int,
+) -> None:
+    request = httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
+    response = httpx.Response(status_code, request=request)
+    sdk_error = sdk_error_type("model request failed", response=response, body=None)
+    model = ChatOpenAI(api_key=SecretStr("test"))
+    retry = ModelRetryMiddleware(
+        max_retries=2,
+        initial_delay=0,
+        jitter=False,
+        on_failure="error",
+    )
+    agent = create_agent(model=model, tools=[], middleware=[retry])
+
+    with patch.object(model.client, "with_raw_response") as mock_client:
+        mock_client.create.side_effect = sdk_error
+        with pytest.raises(sdk_error_type) as exc_info:
+            agent.invoke({"messages": [{"role": "user", "content": "test"}]})
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is (status_code == 429)
+    assert mock_client.create.call_count == expected_attempts
 
 
 def test_metadata_versions() -> None:
