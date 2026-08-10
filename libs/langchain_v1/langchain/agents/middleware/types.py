@@ -1011,6 +1011,9 @@ def before_model(
 
         !!! example "With custom state schema"
 
+        Use a custom state schema when your middleware needs to read or write additional
+        state fields that aren't part of the default agent state.
+
             ```python
             @before_model(state_schema=MyCustomState)
             def custom_before_model(state: MyCustomState, runtime: Runtime) -> dict[str, Any]:
@@ -1184,6 +1187,9 @@ def after_model(
             ```
 
         !!! example "With custom state schema"
+
+        Use a custom state schema when your middleware needs to read or write additional
+        state fields that aren't part of the default agent state.
 
             ```python
             @after_model(state_schema=MyCustomState, name="MyAfterModelMiddleware")
@@ -1370,6 +1376,9 @@ def before_agent(
             ```
 
         !!! example "With custom state schema"
+
+        Use a custom state schema when your middleware needs to read or write additional
+        state fields that aren't part of the default agent state.
 
             ```python
             @before_agent(state_schema=MyCustomState)
@@ -1569,6 +1578,9 @@ def after_agent(
             ```
 
         !!! example "With custom state schema"
+
+        Use a custom state schema when your middleware needs to read or write additional
+        state fields that aren't part of the default agent state.
 
             ```python
             @after_agent(state_schema=MyCustomState, name="MyAfterAgentMiddleware")
@@ -2006,32 +2018,34 @@ def wrap_model_call(
 @overload
 def wrap_tool_call(
     func: _CallableReturningToolResponse,
-) -> AgentMiddleware: ...
+) -> AgentMiddleware[StateT, ContextT]: ...
 
 
 @overload
 def wrap_tool_call(
     func: None = None,
     *,
+    state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> Callable[
     [_CallableReturningToolResponse],
-    AgentMiddleware,
+    AgentMiddleware[StateT, ContextT],
 ]: ...
 
 
 def wrap_tool_call(
     func: _CallableReturningToolResponse | None = None,
     *,
+    state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
 ) -> (
     Callable[
         [_CallableReturningToolResponse],
-        AgentMiddleware,
+        AgentMiddleware[StateT, ContextT],
     ]
-    | AgentMiddleware
+    | AgentMiddleware[StateT, ContextT]
 ):
     """Create middleware with `wrap_tool_call` hook from a function.
 
@@ -2046,6 +2060,9 @@ def wrap_tool_call(
             `Command`.
 
             Can be sync or async.
+        state_schema: Optional custom state schema type.
+
+            If not provided, uses the default `AgentState` schema.
         tools: Additional tools to register with this middleware.
         name: Middleware class name.
 
@@ -2109,17 +2126,28 @@ def wrap_tool_call(
                 save_cache(request, result)
                 return result
             ```
+
+        !!! example "With custom state schema"
+
+        Use a custom state schema when your middleware needs to read or write additional
+        state fields that aren't part of the default agent state.
+
+            ```python
+            @wrap_tool_call(state_schema=MyCustomState)
+            def custom_wrap_tool_call(request, handler):
+                return handler(request)
+            ```
     """
 
     def decorator(
         func: _CallableReturningToolResponse,
-    ) -> AgentMiddleware:
+    ) -> AgentMiddleware[StateT, ContextT]:
         is_async = iscoroutinefunction(func)
 
         if is_async:
 
             async def async_wrapped(
-                _self: AgentMiddleware,
+                _self: AgentMiddleware[StateT, ContextT],
                 request: ToolCallRequest,
                 handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
             ) -> ToolMessage | Command[Any]:
@@ -2132,12 +2160,12 @@ def wrap_tool_call(
             # `type(...)` builds the correct middleware subclass at runtime, but
             # type checkers cannot infer its generic `AgentMiddleware` parameters.
             return cast(
-                "AgentMiddleware",
+                "AgentMiddleware[StateT, ContextT]",
                 type(
                     middleware_name,
                     (AgentMiddleware,),
                     {
-                        "state_schema": AgentState,
+                        "state_schema": state_schema or AgentState,
                         "tools": tools or [],
                         "awrap_tool_call": async_wrapped,
                     },
@@ -2145,7 +2173,7 @@ def wrap_tool_call(
             )
 
         def wrapped(
-            _self: AgentMiddleware,
+            _self: AgentMiddleware[StateT, ContextT],
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
         ) -> ToolMessage | Command[Any]:
@@ -2156,12 +2184,12 @@ def wrap_tool_call(
         # `type(...)` builds the correct middleware subclass at runtime, but
         # type checkers cannot infer its generic `AgentMiddleware` parameters.
         return cast(
-            "AgentMiddleware",
+            "AgentMiddleware[StateT, ContextT]",
             type(
                 middleware_name,
                 (AgentMiddleware,),
                 {
-                    "state_schema": AgentState,
+                    "state_schema": state_schema or AgentState,
                     "tools": tools or [],
                     "wrap_tool_call": wrapped,
                 },
