@@ -7,6 +7,7 @@ import pickle
 import sys
 import textwrap
 import threading
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -2889,6 +2890,28 @@ def test_tool_allows_postponed_runtime_annotation_with_custom_schema(
     assert "runtime" not in properties
 
 
+def test_tool_partial_does_not_restore_bound_injected_arg() -> None:
+    """Injected args already bound by a partial are absent from its signature."""
+
+    class InputSchema(BaseModel):
+        y: int
+
+    bound_runtime = _PostponedRuntime(some_obj=object())
+
+    def fn(x: int, runtime: _PostponedRuntime, y: int) -> int:
+        return x + y
+
+    tool_ = StructuredTool.from_function(
+        func=partial(fn, 1, bound_runtime),
+        name="fn",
+        description="Add two numbers.",
+        args_schema=InputSchema,
+    )
+
+    assert "runtime" not in tool_._injected_args_keys
+    assert tool_.invoke({"y": 2, "runtime": object()}) == 3
+
+
 def test_tool_custom_schema_unresolvable_forward_ref_does_not_raise() -> None:
     """Unresolved forward references must not break `_injected_args_keys`.
 
@@ -2945,10 +2968,14 @@ def test_tool_unresolvable_sibling_annotation_does_not_disable_injection() -> No
 
     runtime = _PostponedRuntime(some_obj=object())
 
-    # The resolvable injected annotation is still detected...
-    assert "runtime" in runtime_tool._injected_args_keys
+    # The resolvable injected annotation is still detected without relying on
+    # deprecated typing internals.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        injected_args_keys = runtime_tool._injected_args_keys
+    assert "runtime" in injected_args_keys
     # ...while the unresolvable one is not misclassified.
-    assert "query" not in runtime_tool._injected_args_keys
+    assert "query" not in injected_args_keys
 
     assert runtime_tool.invoke({"query": "hello", "runtime": runtime}) == "hello"
     assert captured["runtime"] is runtime

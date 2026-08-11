@@ -15,7 +15,6 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    ForwardRef,
     Literal,
     TypeVar,
     cast,
@@ -1509,8 +1508,6 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
     Returns:
         `frozenset` of parameter names annotated as injected arguments.
     """
-    if isinstance(func, functools.partial):
-        func = func.func
     params = signature(func).parameters
     hints = _get_type_hints(func, include_extras=True)
     if hints is not None:
@@ -1519,7 +1516,8 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
             for name, param in params.items()
             if _is_injected_arg_type(hints.get(name, param.annotation))
         )
-    globalns = getattr(func, "__globals__", {})
+    hint_source = func.func if isinstance(func, functools.partial) else func
+    globalns = getattr(hint_source, "__globals__", {})
     keys = set()
     for name, param in params.items():
         annotation = param.annotation
@@ -1535,8 +1533,8 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
 def _resolve_forward_ref(annotation: str, globalns: dict[str, Any]) -> Any:
     """Resolve a single string annotation, returning `None` on failure.
 
-    Uses `ForwardRef` + `typing._eval_type`, the same machinery
-    `get_type_hints` applies per annotation.
+    Uses a temporary annotated function so each annotation can be passed through
+    the public `get_type_hints` API independently.
 
     Args:
         annotation: The raw string annotation to resolve.
@@ -1545,10 +1543,17 @@ def _resolve_forward_ref(annotation: str, globalns: dict[str, Any]) -> Any:
     Returns:
         The resolved type, or `None` if the annotation cannot be resolved.
     """
+
+    def _annotation_holder() -> None:
+        pass
+
+    _annotation_holder.__annotations__ = {"value": annotation}
     try:
-        return typing._eval_type(  # type: ignore[attr-defined]  # noqa: SLF001
-            ForwardRef(annotation), globalns, None
-        )
+        return get_type_hints(
+            _annotation_holder,
+            globalns=globalns,
+            include_extras=True,
+        )["value"]
     except Exception:
         _logger.debug("Failed to resolve annotation %r.", annotation, exc_info=True)
         return None
