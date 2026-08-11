@@ -1,5 +1,11 @@
 """Tests for PII detection middleware."""
 
+# `run.tool_calls`/`run.subagents` are stream projections registered dynamically by
+# `create_agent` (via langgraph-prebuilt's `ToolCallTransformer` and langchain's
+# `SubagentTransformer`), not declared on langgraph's typed `GraphRunStream`
+# (langgraph#8389). The `# type: ignore[attr-defined]` below self-remove once
+# langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
+
 import re
 from typing import Any
 
@@ -1973,7 +1979,7 @@ class TestPIIStreamTransformer:
         )
 
         # Drain to close cleanly.
-        list(run.tool_calls)
+        list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 class TestPIIStreamingEndToEnd:
@@ -2113,8 +2119,6 @@ class TestPIIStreamingEndToEnd:
         surfaces: list[str] = []
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         async for event in run:
-            if not isinstance(event, dict):
-                continue
             data = event.get("params", {}).get("data")
             if isinstance(data, tuple) and len(data) == 2:
                 p = data[0]
@@ -2187,8 +2191,6 @@ class TestPIIStreamingEndToEnd:
         surfaces: list[str] = []
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         async for event in run:
-            if not isinstance(event, dict):
-                continue
             data = event.get("params", {}).get("data")
             if isinstance(data, tuple) and len(data) == 2:
                 p = data[0]
