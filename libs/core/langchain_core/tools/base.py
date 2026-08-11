@@ -720,19 +720,8 @@ class ChildTool(BaseTool):
         # re-injected during execution. `StructuredTool` overrides this to
         # inspect its wrapped `func`/`coroutine` instead.
         #
-        # Resolve annotations via `get_type_hints` (rather than reading raw
-        # `signature` annotations) so postponed annotations -- e.g. from
-        # `from __future__ import annotations` or quoted forward references --
-        # are recognized. Fall back to the raw annotation per-parameter when a
-        # hint can't be resolved.
         for method in (self._run, self._arun):
-            params = signature(method).parameters
-            hints = _get_type_hints(method, include_extras=True) or {}
-            keys = frozenset(
-                name
-                for name, param in params.items()
-                if _is_injected_arg_type(hints.get(name, param.annotation))
-            )
+            keys = _get_injected_args_keys(method)
             if keys:
                 return keys
         return _EMPTY_SET
@@ -818,10 +807,17 @@ class ChildTool(BaseTool):
         if input_args is not None:
             if isinstance(input_args, dict):
                 return tool_input
+            input_annotations = get_all_basemodel_annotations(input_args)
+            schema_injected_keys = {
+                key
+                for key, annotation in input_annotations.items()
+                if _is_injected_arg_type(annotation)
+            }
+            injected_input_keys = schema_injected_keys | self._injected_args_keys
             result: BaseModel | BaseModelV1
             if issubclass(input_args, BaseModel):
                 # Check args_schema for InjectedToolCallId
-                for k, v in get_all_basemodel_annotations(input_args).items():
+                for k, v in input_annotations.items():
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
@@ -834,11 +830,11 @@ class ChildTool(BaseTool):
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
                 result_v2 = input_args.model_validate(tool_input)
-                result_dict = result_v2.model_dump()
+                result_dict = result_v2.model_dump(exclude=injected_input_keys)
                 result = result_v2
             elif issubclass(input_args, BaseModelV1):
                 # Check args_schema for InjectedToolCallId
-                for k, v in get_all_basemodel_annotations(input_args).items():
+                for k, v in input_annotations.items():
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
@@ -851,7 +847,7 @@ class ChildTool(BaseTool):
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
                 result_v1 = input_args.parse_obj(tool_input)
-                result_dict = result_v1.dict()
+                result_dict = result_v1.dict(exclude=injected_input_keys)
                 result = result_v1
             else:
                 msg = (  # type: ignore[unreachable]
@@ -881,6 +877,10 @@ class ChildTool(BaseTool):
                     )
                     if has_default:
                         validated_input[k] = getattr(result, k)
+
+            for k in injected_input_keys:
+                if k in field_info:
+                    validated_input[k] = getattr(result, k)
 
             for k in self._injected_args_keys:
                 if k in tool_input:
@@ -1498,6 +1498,17 @@ def _get_type_hints(
         return get_type_hints(func, include_extras=include_extras)
     except Exception:
         return None
+
+
+def _get_injected_args_keys(func: Callable[..., Any]) -> frozenset[str]:
+    """Return runtime-injected parameters declared by a callable."""
+    params = signature(func).parameters
+    hints = _get_type_hints(func, include_extras=True) or {}
+    return frozenset(
+        name
+        for name, param in params.items()
+        if _is_injected_arg_type(hints.get(name, param.annotation))
+    )
 
 
 def _get_runnable_config_param(func: Callable[..., Any]) -> str | None:

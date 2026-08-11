@@ -7,6 +7,7 @@ import pickle
 import sys
 import textwrap
 import threading
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -23,7 +24,14 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, RootModel, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    ValidationError,
+    model_serializer,
+)
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -3493,6 +3501,191 @@ async def test_filter_injected_args_async() -> None:
     assert captured["query"] == "async test"
 
 
+def test_tool_does_not_serialize_injected_pydantic_v2_arg() -> None:
+    """Injected Pydantic v2 arguments must bypass model serialization."""
+
+    class InjectedValue(BaseModel):
+        value: str
+
+        @model_serializer
+        def fail_serialization(self) -> dict[str, str]:
+            raise AssertionError
+
+    class InputSchema(BaseModel):
+        query: str
+        injected: Annotated[InjectedValue, InjectedToolArg]
+
+    captured: dict[str, Any] = {}
+
+    @tool(args_schema=InputSchema)
+    def injected_tool(
+        query: str,
+        injected: InjectedValue,
+    ) -> str:
+        """Return the query without inspecting the injected value."""
+        captured["injected"] = injected
+        return query
+
+    assert (
+        injected_tool.invoke(
+            {"query": "test", "injected": {"value": "large runtime graph"}}
+        )
+        == "test"
+    )
+    assert captured["injected"] == InjectedValue(value="large runtime graph")
+
+
+@skip_if_no_pydantic_v1
+def test_tool_does_not_serialize_injected_pydantic_v1_arg() -> None:
+    """Injected Pydantic v1 arguments must bypass model serialization."""
+
+    class InjectedValueV1(BaseModelV1):
+        value: str
+
+        def dict(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+            raise AssertionError
+
+    class InputSchemaV1(BaseModelV1):
+        query: str
+        injected: Annotated[InjectedValueV1, InjectedToolArg]
+
+    captured: dict[str, Any] = {}
+
+    @tool(args_schema=InputSchemaV1)
+    def injected_tool(
+        query: str,
+        injected: InjectedValueV1,
+    ) -> str:
+        """Return the query without inspecting the injected value."""
+        captured["injected"] = injected
+        return query
+
+    assert (
+        injected_tool.invoke(
+            {"query": "test", "injected": {"value": "large runtime graph"}}
+        )
+        == "test"
+    )
+    captured_injected = captured["injected"]
+    assert isinstance(captured_injected, InjectedValueV1)
+    assert captured_injected.value == "large runtime graph"
+
+
+def test_tool_does_not_serialize_callable_only_injected_pydantic_v2_arg() -> None:
+    """Callable-only injected arguments must bypass Pydantic v2 serialization."""
+
+    class InjectedValue(BaseModel):
+        value: str
+
+        @model_serializer
+        def fail_serialization(self) -> dict[str, str]:
+            raise AssertionError
+
+    class InputSchema(BaseModel, extra="allow"):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    @tool(args_schema=InputSchema)
+    def injected_tool(
+        query: str,
+        injected: Annotated[InjectedValue, InjectedToolArg],
+    ) -> str:
+        """Return the query without inspecting the injected value."""
+        captured["injected"] = injected
+        return query
+
+    injected = InjectedValue(value="large runtime graph")
+
+    assert injected_tool.invoke({"query": "test", "injected": injected}) == "test"
+    assert captured["injected"] is injected
+
+
+def test_tool_does_not_serialize_generic_directly_injected_arg() -> None:
+    """Generic directly injected arguments must bypass model serialization."""
+    ContextT = TypeVar("ContextT")
+    StateT = TypeVar("StateT")
+
+    @dataclass
+    class GenericRuntime(
+        _DirectlyInjectedToolArg,
+        Generic[ContextT, StateT],
+    ):
+        context: ContextT
+        state: StateT
+
+    captured: dict[str, Any] = {}
+
+    @tool
+    def injected_tool(
+        query: str,
+        runtime: GenericRuntime[None, dict[str, str]],
+    ) -> str:
+        """Return the query without inspecting the injected value."""
+        captured["runtime"] = runtime
+        return query
+
+    runtime = GenericRuntime(
+        context={"catalog_size": 48_283},
+        state={"query": "hexagon bolt"},
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert injected_tool.invoke({"query": "test", "runtime": runtime}) == "test"
+
+    assert captured["runtime"] is runtime
+
+
+def test_tool_preserves_injected_arg_schema_default() -> None:
+    """Schema defaults for omitted injected arguments must remain supported."""
+
+    class InputSchema(BaseModel):
+        query: str
+        injected: Annotated[str, InjectedToolArg] = "default"
+
+    @tool(args_schema=InputSchema)
+    def injected_tool(query: str, injected: str) -> str:
+        """Return the injected value."""
+        return f"{query}: {injected}"
+
+    assert injected_tool.invoke({"query": "test"}) == "test: default"
+
+
+def test_tool_preserves_callable_injected_arg_schema_default() -> None:
+    """Schema defaults remain supported for callable-only injected arguments."""
+
+    class InputSchema(BaseModel):
+        query: str
+        injected: str = "default"
+
+    @tool(args_schema=InputSchema)
+    def injected_tool(
+        query: str,
+        injected: Annotated[str, InjectedToolArg],
+    ) -> str:
+        """Return the injected value."""
+        return f"{query}: {injected}"
+
+    assert injected_tool.invoke({"query": "test"}) == "test: default"
+
+
+@skip_if_no_pydantic_v1
+def test_tool_preserves_injected_arg_pydantic_v1_schema_default() -> None:
+    """Pydantic v1 defaults for omitted injected arguments remain supported."""
+
+    class InputSchemaV1(BaseModelV1):
+        query: str
+        injected: Annotated[str, InjectedToolArg] = "default"
+
+    @tool(args_schema=InputSchemaV1)
+    def injected_tool(query: str, injected: str) -> str:
+        """Return the injected value."""
+        return f"{query}: {injected}"
+
+    assert injected_tool.invoke({"query": "test"}) == "test: default"
+
+
 @pytest.mark.skipif(not HAS_LANGGRAPH, reason="langgraph not installed")
 def test_filter_tool_runtime_directly_injected_arg() -> None:
     """Test that ToolRuntime (a _DirectlyInjectedToolArg) is filtered."""
@@ -3554,7 +3747,7 @@ class _ToolArgsSchemaNoRuntime(BaseModel):
 
 
 def _tool_func_directly_injected(
-    query: str, limit: int, runtime: _CustomRuntime
+    query: str, limit: int, runtime: "_CustomRuntime"
 ) -> str:
     """Tool with directly injected runtime not in schema.
 
