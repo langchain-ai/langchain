@@ -1,3 +1,5 @@
+from typing import Any
+
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages import content as types
 
@@ -510,7 +512,7 @@ def test_convert_to_v1_from_anthropic_input() -> None:
 
 
 def test_convert_to_v1_from_anthropic_input_malformed_sources() -> None:
-    content = [
+    content: list[str | dict[Any, Any]] = [
         {"type": "document", "source": {"type": "base64", "media_type": "app/pdf"}},
         {"type": "document", "source": {"type": "url"}},
         {"type": "document", "source": {"type": "file"}},
