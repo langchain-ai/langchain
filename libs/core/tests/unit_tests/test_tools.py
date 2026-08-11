@@ -3781,6 +3781,65 @@ def test_base_tool_subclass_injects_postponed_annotated_arg() -> None:
     assert captured["injected"] == "value"
 
 
+def test_structured_tool_injects_postponed_annotation_runtime() -> None:
+    """`StructuredTool` must resolve postponed / forward-ref injected args too.
+
+    `StructuredTool._injected_args_keys` inspects the wrapped `func`/`coroutine`
+    instead of `_run`, so it needs the same hint resolution as
+    `BaseTool._injected_args_keys`. A quoted forward reference exposes a raw
+    string annotation at `signature()` time; without resolution the injected
+    arg is omitted from `_injected_args_keys` and the call raises `TypeError`.
+    Fixes #39568.
+    """
+
+    class MultiplyInput(BaseModel):
+        a: int
+        b: int
+
+    captured: dict[str, Any] = {}
+
+    # Quoted forward reference -> raw string annotation "_CustomRuntime".
+    @tool(args_schema=MultiplyInput)
+    def multiply(a: int, b: int, runtime: "_CustomRuntime") -> int:
+        """Multiply two numbers."""
+        captured["runtime"] = runtime
+        return a * b
+
+    assert "runtime" in multiply._injected_args_keys
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    result = multiply.invoke({"a": 2, "b": 3, "runtime": runtime})
+    assert result == 6
+    assert captured["runtime"] is runtime
+
+
+def test_structured_tool_injects_postponed_annotated_arg() -> None:
+    """`StructuredTool` must resolve postponed `Annotated[..., InjectedToolArg]`.
+
+    `include_extras=True` when resolving hints preserves the `InjectedToolArg`
+    metadata, so annotated injected args on the wrapped function are still
+    detected. Fixes #39568.
+    """
+
+    class QueryInput(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    # Quoted forward reference to a postponed `Annotated` injected arg.
+    @tool(args_schema=QueryInput)
+    def echo(query: str, injected: "Annotated[str, InjectedToolArg]") -> str:
+        """Echo the query."""
+        captured["injected"] = injected
+        return query
+
+    assert "injected" in echo._injected_args_keys
+
+    result = echo.invoke({"query": "hi", "injected": "value"})
+    assert result == "hi"
+    assert captured["injected"] == "value"
+
+
 class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
     """Callback handler that captures `tool_call_id` passed to `on_tool_start`.
 
