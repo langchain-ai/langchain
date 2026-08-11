@@ -1,6 +1,6 @@
 import json
 import uuid
-from contextvars import copy_context
+from contextvars import ContextVar, copy_context
 from typing import Any, cast
 
 import pytest
@@ -15,6 +15,7 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_core.runnables import RunnableBinding, RunnablePassthrough
 from langchain_core.runnables.config import (
+    ContextThreadPoolExecutor,
     RunnableConfig,
     _get_langsmith_inheritable_metadata_from_config,
     _merge_metadata_dicts,
@@ -414,3 +415,35 @@ class TestMergeMetadataDicts:
         assert merged["metadata"] == {
             "lc_versions": {"a": "1", "b": "2", "c": "3"},
         }
+
+
+class TestContextThreadPoolExecutorMap:
+    """Regression tests for ContextThreadPoolExecutor.map (fixes #39211)."""
+
+    def test_map_accepts_generator_input(self) -> None:
+        """map() must not call len() on its first iterable (was broken for generators)."""
+
+        def _gen():
+            yield from range(5)
+
+        with ContextThreadPoolExecutor(max_workers=2) as executor:
+            result = list(executor.map(lambda x: x * 2, _gen()))
+
+        assert result == [0, 2, 4, 6, 8]
+
+    def test_map_propagates_context_var(self) -> None:
+        """Context vars set before map() must be visible inside the mapped function."""
+        var: ContextVar[str] = ContextVar("_test_var", default="missing")
+        var.set("from_caller")
+
+        with ContextThreadPoolExecutor(max_workers=2) as executor:
+            values = list(executor.map(lambda _: var.get(), range(3)))
+
+        assert all(v == "from_caller" for v in values)
+
+    def test_map_multiple_iterables_shortest_wins(self) -> None:
+        """Standard shortest-iterable truncation must be preserved."""
+        with ContextThreadPoolExecutor(max_workers=2) as executor:
+            result = list(executor.map(lambda a, b: a + b, [1, 2, 3], [10, 20]))
+
+        assert result == [11, 22]

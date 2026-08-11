@@ -214,10 +214,18 @@ def batch_iterate(size: int | None, iterable: Iterable[T]) -> Iterator[list[T]]:
 
     Yields:
         The batches of the iterable.
+
+    Raises:
+        ValueError: If ``size`` is not ``None`` and is not a positive integer.
     """
+    if size is not None and size <= 0:
+        raise ValueError(
+            f"batch_iterate size must be a positive integer or None, got {size}."
+        )
     it = iter(iterable)
     while True:
         chunk = list(islice(it, size))
         if not chunk:
             return
         yield chunk
+

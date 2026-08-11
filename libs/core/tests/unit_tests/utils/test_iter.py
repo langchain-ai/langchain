@@ -1,3 +1,5 @@
+from collections.abc import Generator
+
 import pytest
 
 from langchain_core.utils.iter import batch_iterate
@@ -17,3 +19,24 @@ def test_batch_iterate(
 ) -> None:
     """Test batching function."""
     assert list(batch_iterate(input_size, input_iterable)) == expected_output
+
+
+@pytest.mark.parametrize("bad_size", [0, -1, -100])
+def test_batch_iterate_invalid_size_raises(bad_size: int) -> None:
+    """batch_iterate must raise ValueError for non-positive size."""
+    with pytest.raises(ValueError, match="positive integer"):
+        list(batch_iterate(bad_size, [1, 2, 3]))
+
+
+def test_batch_iterate_none_size_returns_single_batch() -> None:
+    """size=None should return the entire iterable as one batch."""
+    assert list(batch_iterate(None, [1, 2, 3])) == [[1, 2, 3]]
+
+
+def test_batch_iterate_accepts_generator() -> None:
+    """batch_iterate must accept unsized iterables such as generators."""
+
+    def _gen() -> Generator[int, None, None]:
+        yield from range(5)
+
+    assert list(batch_iterate(2, _gen())) == [[0, 1], [2, 3], [4]]
