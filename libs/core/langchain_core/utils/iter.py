@@ -215,6 +215,9 @@ def batch_iterate(size: int | None, iterable: Iterable[T]) -> Iterator[list[T]]:
     Yields:
         The batches of the iterable.
     """
+    if size is not None and size <= 0:
+        msg = f"Batch size must be a positive integer, got {size}."
+        raise ValueError(msg)
     it = iter(iterable)
     while True:
         chunk = list(islice(it, size))

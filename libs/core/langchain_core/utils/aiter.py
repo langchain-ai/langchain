@@ -334,6 +334,9 @@ async def abatch_iterate(
     Yields:
         The batches.
     """
+    if size <= 0:
+        msg = f"Batch size must be a positive integer, got {size}."
+        raise ValueError(msg)
     batch: list[T] = []
     async for element in iterable:
         if len(batch) < size:
