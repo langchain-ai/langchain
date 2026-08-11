@@ -10,6 +10,31 @@ from typing_extensions import override
 from langchain_text_splitters.base import Language, TextSplitter
 
 
+def _regex_is_literal(pattern: str) -> bool:
+    """Return whether ``pattern`` matches only its own literal text.
+
+    When ``keep_separator=False`` the split pieces are re-joined with the
+    separator used as a *literal* join string (see ``CharacterTextSplitter``
+    and ``RecursiveCharacterTextSplitter``). That is only safe for a regex
+    that is effectively literal (``" "``, ``","``, ``"\\n\\n"``): the string
+    re-inserted is then exactly the text the pattern consumed. A consuming
+    pattern such as ``r"\\s+"`` matches variable text, so re-inserting the raw
+    pattern string would corrupt the chunk content with literal regex syntax
+    (e.g. ``"AAA\\s+BBB"``). ``#31137`` special-cased zero-width lookarounds;
+    this handles every other consuming pattern.
+
+    Args:
+        pattern: The regex separator string.
+
+    Returns:
+        True if the pattern matches its own text verbatim.
+    """
+    try:
+        return re.fullmatch(pattern, pattern) is not None
+    except re.error:
+        return False
+
+
 class CharacterTextSplitter(TextSplitter):
     """Splitting text that looks at characters."""
 
@@ -52,9 +77,15 @@ class CharacterTextSplitter(TextSplitter):
 
         # 4. Decide merge separator:
         #    - if keep_separator or lookaround -> don't re-insert
+        #    - if a consuming regex separator would corrupt the chunk when
+        #      re-inserted verbatim -> drop it (keep_separator=False semantics)
+        #      instead of embedding literal regex syntax in the output
         #    - else -> re-insert literal separator
         merge_sep = ""
-        if not (self._keep_separator or is_lookaround):
+        reinsert_corrupts = self._is_separator_regex and not _regex_is_literal(
+            self._separator
+        )
+        if not (self._keep_separator or is_lookaround or reinsert_corrupts):
             merge_sep = self._separator
 
         # 5. Merge adjacent splits and return
@@ -130,7 +161,10 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
         # Now go merging things, recursively splitting longer texts.
         good_splits = []
-        separator_ = "" if self._keep_separator else separator
+        reinsert_corrupts = self._is_separator_regex and not _regex_is_literal(
+            separator
+        )
+        separator_ = "" if (self._keep_separator or reinsert_corrupts) else separator
         for s in splits:
             if self._length_function(s) < self._chunk_size:
                 good_splits.append(s)
