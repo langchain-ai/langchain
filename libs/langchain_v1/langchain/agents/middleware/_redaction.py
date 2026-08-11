@@ -56,7 +56,7 @@ def detect_email(content: str) -> list[PIIMatch]:
     Returns:
         A list of detected email matches.
     """
-    pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+    pattern = r"\b[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,255}\.[A-Za-z]{2,}\b"
     return [
         PIIMatch(
             type="email",
