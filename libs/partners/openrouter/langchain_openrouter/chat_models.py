@@ -88,6 +88,8 @@ def _create_stream_generation_info(
 ) -> dict[str, Any]:
     generation_info = {"finish_reason": choice["finish_reason"]}
     generation_info["model_name"] = chunk_dict.get("model") or model_name
+    if provider := chunk_dict.get("provider"):
+        generation_info["provider"] = provider
     if system_fingerprint := chunk_dict.get("system_fingerprint"):
         generation_info["system_fingerprint"] = system_fingerprint
     if native_finish_reason := choice.get("native_finish_reason"):
@@ -140,6 +142,7 @@ class ChatOpenRouter(BaseChatModel):
         | `app_categories` | `list[str] | None` | Marketplace attribution categories. |
         | `session_id` | `str | None` | Group related requests for observability. |
         | `trace` | `dict[str, Any] | None` | Trace metadata for broadcasts. |
+        | `default_headers` | `Mapping[str, str] | None` | Extra request headers. |
         | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
 
     ??? info "Instantiate"
@@ -313,6 +316,28 @@ class ChatOpenRouter(BaseChatModel):
     plugins: list[dict[str, Any]] | None = None
     """Plugins configuration for OpenRouter."""
 
+    default_headers: Mapping[str, str] | None = Field(default=None, exclude=True)
+    """Additional HTTP headers to include on every request to OpenRouter.
+
+    Headers set here become the underlying httpx client's default headers, so
+    they are sent on every request to OpenRouter. Useful for upstream provider
+    features that require custom headers — for example, xAI's `x-grok-conv-id`
+    for sticky-routing prompt cache hits, region routing, A/B test bucketing
+    headers, or provider-specific authentication. Whether a given header is
+    forwarded to the upstream provider (versus consumed by OpenRouter itself)
+    is determined by OpenRouter; consult its docs for which headers propagate.
+
+    Because these headers may contain credentials, they are excluded from
+    LangChain serialization.
+
+    Example: `{"x-grok-conv-id": "session-abc123"}`
+
+    Headers set via this field are merged with the OpenRouter app-attribution
+    headers (`HTTP-Referer`, `X-Title`, `X-OpenRouter-Categories`); on a
+    collision the value from `default_headers` takes precedence, matched
+    case-insensitively (HTTP header names are case-insensitive).
+    """
+
     session_id: str | None = Field(
         default_factory=from_env("OPENROUTER_SESSION_ID", default=None),
     )
@@ -321,7 +346,7 @@ class ChatOpenRouter(BaseChatModel):
     Useful any time multiple requests should share an observability
     grouping (e.g. a conversation, an agent workflow, a batch job, or a CI
     run). Equivalent to setting the `x-session-id` HTTP header on the
-    underlying request. OpenRouter rejects values longer than 128
+    underlying request. OpenRouter rejects values longer than 256
     characters.
 
     Falls back to the `OPENROUTER_SESSION_ID` environment variable when
@@ -405,6 +430,19 @@ class ChatOpenRouter(BaseChatModel):
             extra_headers["X-Title"] = self.app_title
         if self.app_categories:
             extra_headers["X-OpenRouter-Categories"] = ",".join(self.app_categories)
+        # User-supplied headers take precedence over the built-in
+        # app-attribution headers on collision. HTTP header names are
+        # case-insensitive, so drop any built-in whose name case-insensitively
+        # matches a user header before merging; a plain dict update would keep
+        # both spellings and httpx would then send a doubled header.
+        if self.default_headers:
+            user_header_names = {name.casefold() for name in self.default_headers}
+            extra_headers = {
+                name: value
+                for name, value in extra_headers.items()
+                if name.casefold() not in user_header_names
+            }
+            extra_headers.update(self.default_headers)
         if extra_headers:
             import httpx  # noqa: PLC0415
 
@@ -800,6 +838,7 @@ class ChatOpenRouter(BaseChatModel):
         # Extract top-level response metadata
         response_model = response.get("model")
         system_fingerprint = response.get("system_fingerprint")
+        provider = response.get("provider")
 
         for res in choices:
             message = _convert_dict_to_message(res["message"])
@@ -813,6 +852,8 @@ class ChatOpenRouter(BaseChatModel):
                         "cost_details"
                     ]
             if isinstance(message, AIMessage):
+                if provider:
+                    message.response_metadata["provider"] = provider
                 if system_fingerprint:
                     message.response_metadata["system_fingerprint"] = system_fingerprint
                 if native_finish_reason := res.get("native_finish_reason"):

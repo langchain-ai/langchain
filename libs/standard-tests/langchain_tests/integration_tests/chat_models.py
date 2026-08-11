@@ -6,7 +6,7 @@ import base64
 import json
 import os
 import warnings
-from typing import TYPE_CHECKING, Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 from unittest.mock import MagicMock
 
 import httpx
@@ -759,6 +759,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             will use the cassette instead of making HTTP calls.
     '''  # noqa: E501
 
+    @override
     @property
     def standard_chat_model_params(self) -> dict[str, Any]:
         """Standard parameters for chat model."""
@@ -1710,7 +1711,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for chunk in model_with_tools.stream(query):
             if tool_call_streaming and isinstance(chunk, AIMessageChunk):
                 found_tool_call_chunk |= _validate_tool_call_chunk(chunk)
-            full = chunk if full is None else full + chunk  # type: ignore[assignment]
+            full = chunk if full is None else (cast("AIMessageChunk", full) + chunk)
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
@@ -1789,7 +1790,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         async for chunk in model_with_tools.astream(query):
             if tool_call_streaming and isinstance(chunk, AIMessageChunk):
                 found_tool_call_chunk |= _validate_tool_call_chunk(chunk)
-            full = chunk if full is None else full + chunk  # type: ignore[assignment]
+            full = chunk if full is None else (cast("AIMessageChunk", full) + chunk)
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
@@ -2146,7 +2147,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         full: BaseMessage | None = None
         for chunk in model_with_tools.stream(query):
-            full = chunk if full is None else full + chunk  # type: ignore[assignment]
+            full = chunk if full is None else (cast("AIMessageChunk", full) + chunk)
         assert isinstance(full, AIMessage)
         _validate_tool_call_message_no_args(full)
 
@@ -3248,7 +3249,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             "cache_control": {"type": "ephemeral"},
         }
 
-        human_content = [
+        human_content: list[str | dict[Any, Any]] = [
             {
                 "type": "text",
                 "text": "what's your favorite color in this image",
@@ -3272,7 +3273,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             )
         messages = [
             SystemMessage("you're a good assistant"),
-            HumanMessage(human_content),  # type: ignore[arg-type]
+            HumanMessage(human_content),
             AIMessage(
                 [
                     {"type": "text", "text": "Hmm let me think about that"},

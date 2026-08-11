@@ -87,7 +87,10 @@ class ToolsUnitTests(ToolsTests):
         env_params, tools_params, expected_attrs = self.init_from_env_params
         if env_params:
             with mock.patch.dict(os.environ, env_params):
-                tool = self.tool_constructor(**tools_params)  # type: ignore[operator]
+                if isinstance(self.tool_constructor, BaseTool):
+                    tool = self.tool_constructor
+                else:
+                    tool = self.tool_constructor(**tools_params)
             assert tool is not None
             for k, expected in expected_attrs.items():
                 actual = getattr(tool, k)

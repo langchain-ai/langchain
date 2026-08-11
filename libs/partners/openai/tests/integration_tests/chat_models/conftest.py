@@ -1,4 +1,4 @@
-"""Shared fixtures for chat-model integration tests.
+"""Shared fixtures and collection hooks for chat-model integration tests.
 
 The `_ChatOpenAICodex` integration tests run under VCR cassette playback in
 CI (`make test_vcr`), but its `_FileChatGPTOAuthTokenProvider` still tries
@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -62,15 +63,33 @@ def _vcr_record_mode(config: pytest.Config) -> str | None:
     return None
 
 
-@pytest.fixture(autouse=True)
-def _skip_codex_live_ci(request: pytest.FixtureRequest) -> None:
-    """Skip Codex tests in CI unless they are replaying VCR cassettes."""
-    if "codex" not in request.module.__name__:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
+    """Skip Codex tests in CI unless they are replaying VCR cassettes.
+
+    Applied at collection time so Codex tests are deselected before
+    pytest-recording opens a cassette. An autouse skip fixture would instead
+    fire during test setup, after the `vcr` fixture has already tried (and
+    failed) to open the cassette against CI's missing on-disk token.
+
+    `pytest_collection_modifyitems` hooks receive the whole session's items, so
+    matches are scoped to this conftest's own directory. Otherwise a same-named
+    module collected elsewhere in the session (e.g. the unit `test_codex`
+    module) would be skipped too.
+    """
+    if not os.getenv("CI") or _vcr_record_mode(config) == "none":
         return
-    if _vcr_record_mode(request.config) == "none":
-        return
-    if os.getenv("CI"):
-        pytest.skip("Codex tests require VCR playback in CI.")
+    here = Path(__file__).parent
+    skip_codex = pytest.mark.skip(reason="Codex tests require VCR playback in CI.")
+    for item in items:
+        item_path = getattr(item, "path", None)
+        if item_path is None or here not in Path(str(item_path)).parents:
+            continue
+        module = getattr(item, "module", None)
+        module_name = getattr(module, "__name__", "")
+        if "codex" in module_name:
+            item.add_marker(skip_codex)
 
 
 @pytest.fixture(autouse=True)

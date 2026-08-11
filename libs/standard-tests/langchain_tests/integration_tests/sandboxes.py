@@ -46,6 +46,7 @@ import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from pydantic import Field
+from typing_extensions import override
 
 deepagents = pytest.importorskip("deepagents")
 
@@ -76,7 +77,8 @@ class _ScriptedToolModel(GenericFakeChatModel):
 
     messages: Iterator[AIMessage | str] = Field(exclude=True)
 
-    def bind_tools(self, tools: Any, **kwargs: Any) -> _ScriptedToolModel:  # noqa: ARG002
+    @override
+    def bind_tools(self, tools: Any, **kwargs: Any) -> _ScriptedToolModel:
         return self
 
 
