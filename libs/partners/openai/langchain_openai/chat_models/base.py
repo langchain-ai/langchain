@@ -118,7 +118,7 @@ from langchain_core.utils.pydantic import (
     TypeBaseModel,
     is_basemodel_subclass,
 )
-from langchain_core.utils.utils import _build_model_kwargs, from_env
+from langchain_core.utils.utils import LC_AUTO_PREFIX, _build_model_kwargs, from_env
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -564,6 +564,7 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
         "context_length_exceeded" in str(e)
         or "Input tokens exceed the configured limit" in e.message
         or "prompt is too long" in e.message
+        or "ContextWindowExceededError" in e.message
     ):
         raise OpenAIContextOverflowError(
             message=e.message, response=e.response, body=e.body
@@ -984,7 +985,11 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     include_response_headers: bool = False
-    """Whether to include response headers in the output message `response_metadata`."""
+    """Whether to include response headers in the output message `response_metadata`.
+
+    Note: some inference providers return additional metadata (such as served model
+    names) in the response headers. Enable to capture these metadata.
+    """
 
     disabled_params: dict[str, Any] | None = Field(default=None)
     """Parameters of the OpenAI client or `chat.completions` endpoint that should be
@@ -2045,10 +2050,18 @@ class BaseChatOpenAI(BaseChatModel):
             **self._default_params,
             **kwargs,
         }
-        # Redact headers from built-in remote MCP tool invocations
+        # Redact credentials from built-in remote MCP tool invocations
         if (tools := params.get("tools")) and isinstance(tools, list):
+            sensitive_fields = ("headers", "authorization")
             params["tools"] = [
-                ({**tool, "headers": "**REDACTED**"} if "headers" in tool else tool)
+                {
+                    **tool,
+                    **{
+                        field: "**REDACTED**"
+                        for field in sensitive_fields
+                        if field in tool
+                    },
+                }
                 if isinstance(tool, dict) and tool.get("type") == "mcp"
                 else tool
                 for tool in tools
@@ -3298,6 +3311,24 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             )
             ```
 
+        !!! warning "Model name can trigger Responses API routing"
+
+            The choice between the Chat Completions API (`/v1/chat/completions`)
+            and the Responses API (`/v1/responses`) is inferred in part from the
+            model name, independent of `base_url`.
+
+            `use_responses_api` should generally be set explicitly to avoid ambiguity,
+            especially when using OpenAI-compatible providers:
+
+            ```python
+            model = ChatOpenAI(
+                base_url="http://localhost:8000/v1",
+                api_key="EMPTY",
+                model="codex-7b-instruct",
+                use_responses_api=False,
+            )
+            ```
+
     ??? info "`model_kwargs` vs `extra_body`"
 
         Use the correct parameter for different types of API arguments:
@@ -4349,6 +4380,9 @@ def _construct_responses_api_payload(
         else:
             payload["tool_choice"] = tool_choice
 
+    if isinstance(payload.get("text"), dict):
+        payload["text"] = payload["text"].copy()
+
     # Structured output
     if schema := payload.pop("response_format", None):
         # For pydantic + non-streaming case, we use responses.parse.
@@ -4659,7 +4693,14 @@ def _construct_responses_api_input(
                                     "content": [new_block],
                                     "role": "assistant",
                                 }
-                                if store is not False:
+                                if (
+                                    store is not False
+                                    and msg_id
+                                    and not msg_id.startswith(LC_AUTO_PREFIX)
+                                ):
+                                    # LangChain-auto-generated (`lc_`) IDs are not
+                                    # provider-issued; the Responses API rejects
+                                    # them (expects `msg_...`), so don't forward.
                                     new_item["id"] = msg_id
                                 if phase is not None:
                                     new_item["phase"] = phase

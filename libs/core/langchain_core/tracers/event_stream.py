@@ -40,7 +40,7 @@ from langchain_core.tracers.log_stream import (
     RunLog,
     _astream_log_implementation,
 )
-from langchain_core.tracers.memory_stream import _MemoryStream
+from langchain_core.tracers.memory_stream import _get_or_create_loop, _MemoryStream
 from langchain_core.utils.aiter import aclosing
 from langchain_core.utils.uuid import uuid7
 
@@ -139,11 +139,7 @@ class _AstreamEventsCallbackHandler(
             exclude_tags=exclude_tags,
         )
 
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-        memory_stream = _MemoryStream[StreamEvent](loop)
+        memory_stream = _MemoryStream[StreamEvent](_get_or_create_loop(self))
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
 
