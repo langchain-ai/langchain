@@ -56,6 +56,36 @@ def test_executes_command_and_persists_state(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+def test_output_without_trailing_newline_not_treated_as_timeout(tmp_path: Path) -> None:
+    """A command whose stdout does not end with a newline must not be
+    misclassified as a timeout (issue #39363)."""
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "printf 'hello-without-newline'"},
+            tool_call_id=None,
+        )
+        assert "hello-without-newline" in result
+        assert "timed out" not in result.lower()
+
+        # The persistent session must survive marker parsing without a
+        # restart; a follow-up command should still work.
+        follow_up = middleware._run_shell_tool(
+            resources, {"command": "echo after"}, tool_call_id=None
+        )
+        assert "after" in follow_up
+    finally:
+        middleware.after_agent(state, runtime)
+
+
 def test_restart_resets_session_environment(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
     runtime = Runtime()

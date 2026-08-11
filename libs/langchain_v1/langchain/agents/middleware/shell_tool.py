@@ -265,14 +265,34 @@ class ShellSession:
             if data is None:
                 continue
 
-            if source == "stdout" and data.startswith(marker):
-                _, _, status = data.partition(" ")
-                exit_code = self._safe_int(status.strip())
-                # Drain any remaining stderr that may have arrived concurrently.
-                # The stderr reader thread runs independently, so output might
-                # still be in flight when the stdout marker arrives.
-                self._drain_remaining_stderr(collected, deadline)
-                break
+            if source == "stdout":
+                marker_idx = data.find(marker)
+                if marker_idx != -1:
+                    # The completion marker may share a line with command
+                    # output when the command does not end stdout with a
+                    # newline (e.g. `printf 'hello'`). Preserve the part of
+                    # the line that precedes the marker as command output.
+                    if marker_idx:
+                        prefix = data[:marker_idx]
+                        total_lines += 1
+                        encoded = prefix.encode("utf-8", "replace")
+                        total_bytes += len(encoded)
+                        if total_lines > self._policy.max_output_lines:
+                            truncated_by_lines = True
+                        elif (
+                            self._policy.max_output_bytes is not None
+                            and total_bytes > self._policy.max_output_bytes
+                        ):
+                            truncated_by_bytes = True
+                        else:
+                            collected.append(prefix)
+                    _, _, status = data[marker_idx:].partition(" ")
+                    exit_code = self._safe_int(status.strip())
+                    # Drain any remaining stderr that may have arrived concurrently.
+                    # The stderr reader thread runs independently, so output might
+                    # still be in flight when the stdout marker arrives.
+                    self._drain_remaining_stderr(collected, deadline)
+                    break
 
             total_lines += 1
             encoded = data.encode("utf-8", "replace")
