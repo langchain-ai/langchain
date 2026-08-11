@@ -4295,3 +4295,55 @@ def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> Non
     new_schema = new_cls.model_json_schema()
     assert new_schema is not old_schema
     assert new_schema["description"] == "New description for cache test."
+
+
+def test_structured_tool_injects_postponed_annotation_runtime() -> None:
+    """StructuredTool._injected_args_keys must resolve postponed annotations.
+
+    When `from __future__ import annotations` is active (or a quoted forward
+    reference is used), `signature()` returns raw string annotations that
+    `_is_injected_arg_type` cannot match.  The fix mirrors the resolution
+    already applied to ChildTool._injected_args_keys in #39202.  Closes #39568.
+    """
+
+    class EchoInput(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    # Quoted forward reference -> raw string annotation at `signature()` time.
+    @tool(args_schema=EchoInput)
+    def my_tool(query: str, secret: "Annotated[str, InjectedToolArg]") -> str:
+        """Echo the query."""
+        captured["secret"] = secret
+        return query
+
+    assert "secret" in my_tool._injected_args_keys
+
+    result = my_tool.invoke({"query": "hello", "secret": "topsecret"})
+    assert result == "hello"
+    assert captured["secret"] == "topsecret"
+
+
+def test_structured_tool_from_function_injects_postponed_annotation() -> None:
+    """StructuredTool.from_function also uses _injected_args_keys; same fix applies."""
+
+    class CalcInput(BaseModel):
+        a: int
+        b: int
+
+    captured: dict[str, Any] = {}
+
+    def multiply(a: int, b: int, ctx: "Annotated[str, InjectedToolArg]") -> int:
+        captured["ctx"] = ctx
+        return a * b
+
+    tool_ = StructuredTool.from_function(
+        multiply, args_schema=CalcInput, description="Multiply."
+    )
+
+    assert "ctx" in tool_._injected_args_keys
+
+    result = tool_.invoke({"a": 3, "b": 4, "ctx": "my-context"})
+    assert result == 12
+    assert captured["ctx"] == "my-context"
