@@ -17,3 +17,10 @@ def test_batch_iterate(
 ) -> None:
     """Test batching function."""
     assert list(batch_iterate(input_size, input_iterable)) == expected_output
+
+
+@pytest.mark.parametrize("invalid_size", [0, -1, -100])
+def test_batch_iterate_invalid_size_raises(invalid_size: int) -> None:
+    """batch_iterate must raise ValueError for non-positive size."""
+    with pytest.raises(ValueError, match="Batch size must be a positive integer"):
+        list(batch_iterate(invalid_size, [1, 2, 3]))

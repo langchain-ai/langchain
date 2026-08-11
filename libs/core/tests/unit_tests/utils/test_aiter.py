@@ -29,3 +29,16 @@ async def test_abatch_iterate(
 
     output = [el async for el in iterator_]
     assert output == expected_output
+
+
+@pytest.mark.parametrize("invalid_size", [0, -1, -100])
+async def test_abatch_iterate_invalid_size_raises(invalid_size: int) -> None:
+    """abatch_iterate must raise ValueError for non-positive size."""
+
+    async def _agen() -> AsyncIterator[int]:
+        for i in [1, 2, 3]:
+            yield i
+
+    with pytest.raises(ValueError, match="Batch size must be a positive integer"):
+        async for _ in abatch_iterate(invalid_size, _agen()):
+            pass
