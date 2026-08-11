@@ -28,6 +28,7 @@ from langchain_core.tools.base import (
     ArgsSchema,
     BaseTool,
     _get_runnable_config_param,
+    _get_type_hints,
     _is_injected_arg_type,
     create_schema_from_function,
 )
@@ -256,10 +257,19 @@ class StructuredTool(BaseTool):
         fn = self.func or self.coroutine
         if fn is None:
             return _EMPTY_SET
+        # Resolve annotations via `_get_type_hints` (rather than reading raw
+        # `signature` annotations) so postponed annotations -- e.g. from
+        # `from __future__ import annotations` or quoted forward references --
+        # are recognized. `include_extras=True` preserves `Annotated` metadata
+        # so `InjectedToolArg` markers survive resolution. Falls back to the
+        # raw parameter annotation when a hint cannot be resolved. Mirrors the
+        # approach used by `ChildTool._injected_args_keys` in `base.py`.
+        params = signature(fn).parameters
+        hints = _get_type_hints(fn, include_extras=True) or {}
         return frozenset(
             k
-            for k, v in signature(fn).parameters.items()
-            if _is_injected_arg_type(v.annotation)
+            for k, param in params.items()
+            if _is_injected_arg_type(hints.get(k, param.annotation))
         )
 
 

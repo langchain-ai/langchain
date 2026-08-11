@@ -4295,3 +4295,65 @@ def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> Non
     new_schema = new_cls.model_json_schema()
     assert new_schema is not old_schema
     assert new_schema["description"] == "New description for cache test."
+
+
+def test_structured_tool_injects_postponed_annotation_runtime() -> None:
+    """StructuredTool._injected_args_keys must resolve postponed annotations.
+
+    `signature()` exposes raw (string) annotations under
+    `from __future__ import annotations` or quoted forward references, which
+    `_is_injected_arg_type` cannot classify. A quoted forward reference in the
+    wrapped function reproduces the same string-annotation behavior without a
+    module-wide `__future__` import. Completes the fix from #39202 which only
+    patched `ChildTool._injected_args_keys` in base.py. Fixes #39568.
+    """
+    from langchain_core.tools import tool
+
+    class MultiplyInput(BaseModel):
+        a: int
+        b: int
+
+    captured: dict[str, Any] = {}
+
+    # Quoted forward reference -> raw string annotation "_CustomRuntime".
+    @tool(args_schema=MultiplyInput)
+    def multiply(a: int, b: int, runtime: "_CustomRuntime") -> int:  # type: ignore[name-defined]  # noqa: F821
+        """Multiply two numbers."""
+        captured["runtime"] = runtime
+        return a * b
+
+    assert "runtime" in multiply._injected_args_keys
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    result = multiply.invoke({"a": 2, "b": 3, "runtime": runtime})
+    assert result == 6
+    assert captured["runtime"] is runtime
+
+
+def test_structured_tool_injects_postponed_annotated_arg() -> None:
+    """StructuredTool._injected_args_keys must resolve postponed Annotated args.
+
+    `include_extras=True` in `_get_type_hints` preserves `InjectedToolArg`
+    metadata so annotated injected args are still detected after resolution.
+    A quoted forward reference to the `Annotated` type reproduces the
+    string-annotation behavior. Completes the fix from #39202. Fixes #39568.
+    """
+    from langchain_core.tools import tool
+
+    class QueryInput(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    # Quoted forward reference to a postponed `Annotated` injected arg.
+    @tool(args_schema=QueryInput)
+    def echo(query: str, secret: "Annotated[str, InjectedToolArg]") -> str:  # type: ignore[name-defined]  # noqa: F821
+        """Echo the query."""
+        captured["secret"] = secret
+        return query
+
+    assert "secret" in echo._injected_args_keys
+
+    result = echo.invoke({"query": "hi", "secret": "topsecret"})
+    assert result == "hi"
+    assert captured["secret"] == "topsecret"
