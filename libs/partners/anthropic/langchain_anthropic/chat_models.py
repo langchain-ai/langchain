@@ -36,7 +36,11 @@ from langchain_core.messages import (
     is_data_content_block,
 )
 from langchain_core.messages import content as types
-from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -2718,7 +2722,18 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
     )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0) or 0
 
-    return UsageMetadata(
+    # Reasoning (thinking) tokens are a decomposition of `output_tokens` (not
+    # additive), reported by Anthropic via `output_tokens_details.thinking_tokens`.
+    # Older models omit `output_tokens_details` entirely, so guard with `getattr`.
+    output_token_details: dict = {
+        "reasoning": getattr(
+            getattr(anthropic_usage, "output_tokens_details", None),
+            "thinking_tokens",
+            None,
+        ),
+    }
+
+    usage_metadata = UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=input_tokens + output_tokens,
@@ -2726,3 +2741,13 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
             **{k: v for k, v in input_token_details.items() if v is not None},
         ),
     )
+
+    filtered_output_token_details = {
+        k: v for k, v in output_token_details.items() if v is not None
+    }
+    if filtered_output_token_details:
+        usage_metadata["output_token_details"] = OutputTokenDetails(
+            **filtered_output_token_details,
+        )
+
+    return usage_metadata
