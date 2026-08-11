@@ -2919,6 +2919,71 @@ def test_tool_custom_schema_unresolvable_forward_ref_does_not_raise() -> None:
     assert "runtime" not in tool_._injected_args_keys
 
 
+def test_tool_unresolvable_sibling_annotation_does_not_disable_injection() -> None:
+    """An unresolvable annotation on one parameter must not hide injected args.
+
+    `get_type_hints` resolves all annotations at once, so a single unresolvable
+    forward reference (e.g. on `query`) would otherwise discard the resolvable
+    hints too -- including the injected `runtime` -- leaving
+    `_injected_args_keys` empty and dropping the injected value during custom
+    `args_schema` validation.
+    """
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    @tool(args_schema=InputSchema)
+    def runtime_tool(
+        query: "NotDefinedAnywhere123",  # type: ignore[name-defined]  # noqa: F821
+        runtime: "_PostponedRuntime",
+    ) -> str:
+        """Echo the query and capture runtime value."""
+        captured["runtime"] = runtime
+        return query  # type: ignore[no-any-return]
+
+    runtime = _PostponedRuntime(some_obj=object())
+
+    # The resolvable injected annotation is still detected...
+    assert "runtime" in runtime_tool._injected_args_keys
+    # ...while the unresolvable one is not misclassified.
+    assert "query" not in runtime_tool._injected_args_keys
+
+    assert runtime_tool.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert captured["runtime"] is runtime
+
+
+def test_base_tool_unresolvable_sibling_annotation_does_not_disable_injection() -> None:
+    """`BaseTool` subclasses get the same per-parameter hint resolution."""
+
+    class MultiplyInput(BaseModel):
+        a: int
+
+    captured: dict[str, Any] = {}
+
+    class Multiplier(BaseTool):
+        name: str = "Multiplier"
+        description: str = "Multiply."
+        args_schema: type[BaseModel] = MultiplyInput
+
+        def _run(
+            self,
+            a: "NotDefinedAnywhere123",  # type: ignore[name-defined]  # noqa: F821
+            runtime: "_CustomRuntime",
+        ) -> int:
+            captured["runtime"] = runtime
+            return a * 2  # type: ignore[no-any-return]
+
+    tool_ = Multiplier()
+    assert "runtime" in tool_._injected_args_keys
+    assert "a" not in tool_._injected_args_keys
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    assert tool_.invoke({"a": 2, "runtime": runtime}) == 4
+    assert captured["runtime"] is runtime
+
+
 def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:

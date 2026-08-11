@@ -15,6 +15,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ForwardRef,
     Literal,
     TypeVar,
     cast,
@@ -719,20 +720,8 @@ class ChildTool(BaseTool):
         # rather than by the model, so they must be excluded from the schema and
         # re-injected during execution. `StructuredTool` overrides this to
         # inspect its wrapped `func`/`coroutine` instead.
-        #
-        # Resolve annotations via `get_type_hints` (rather than reading raw
-        # `signature` annotations) so postponed annotations -- e.g. from
-        # `from __future__ import annotations` or quoted forward references --
-        # are recognized. Fall back to the raw annotation per-parameter when a
-        # hint can't be resolved.
         for method in (self._run, self._arun):
-            params = signature(method).parameters
-            hints = _get_type_hints(method, include_extras=True) or {}
-            keys = frozenset(
-                name
-                for name, param in params.items()
-                if _is_injected_arg_type(hints.get(name, param.annotation))
-            )
+            keys = _get_injected_args_keys_from_signature(method)
             if keys:
                 return keys
         return _EMPTY_SET
@@ -1497,6 +1486,71 @@ def _get_type_hints(
     try:
         return get_type_hints(func, include_extras=include_extras)
     except Exception:
+        return None
+
+
+def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozenset[str]:
+    """Identify injected-argument parameters of a callable.
+
+    Resolve annotations with `get_type_hints` (rather than reading raw
+    `signature` annotations) so postponed annotations -- e.g. from
+    `from __future__ import annotations` or quoted forward references -- are
+    recognized. `get_type_hints` resolves every annotation at once and raises
+    on the first failure, so when wholesale resolution fails each raw
+    annotation is retried independently: an unrelated unresolvable forward
+    reference must not disable injection for parameters whose annotations do
+    resolve. Anything still unresolved falls back to the raw annotation, which
+    `_is_injected_arg_type` will not classify as injected (the pre-existing
+    behavior).
+
+    Args:
+        func: The function (or bound method) whose signature to inspect.
+
+    Returns:
+        `frozenset` of parameter names annotated as injected arguments.
+    """
+    if isinstance(func, functools.partial):
+        func = func.func
+    params = signature(func).parameters
+    hints = _get_type_hints(func, include_extras=True)
+    if hints is not None:
+        return frozenset(
+            name
+            for name, param in params.items()
+            if _is_injected_arg_type(hints.get(name, param.annotation))
+        )
+    globalns = getattr(func, "__globals__", {})
+    keys = set()
+    for name, param in params.items():
+        annotation = param.annotation
+        if isinstance(annotation, str):
+            resolved = _resolve_forward_ref(annotation, globalns)
+            if resolved is not None:
+                annotation = resolved
+        if _is_injected_arg_type(annotation):
+            keys.add(name)
+    return frozenset(keys)
+
+
+def _resolve_forward_ref(annotation: str, globalns: dict[str, Any]) -> Any:
+    """Resolve a single string annotation, returning `None` on failure.
+
+    Uses `ForwardRef` + `typing._eval_type`, the same machinery
+    `get_type_hints` applies per annotation.
+
+    Args:
+        annotation: The raw string annotation to resolve.
+        globalns: The globals namespace to resolve names against.
+
+    Returns:
+        The resolved type, or `None` if the annotation cannot be resolved.
+    """
+    try:
+        return typing._eval_type(  # type: ignore[attr-defined]  # noqa: SLF001
+            ForwardRef(annotation), globalns, None
+        )
+    except Exception:
+        _logger.debug("Failed to resolve annotation %r.", annotation, exc_info=True)
         return None
 
 

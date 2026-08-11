@@ -27,9 +27,8 @@ from langchain_core.tools.base import (
     FILTERED_ARGS,
     ArgsSchema,
     BaseTool,
+    _get_injected_args_keys_from_signature,
     _get_runnable_config_param,
-    _get_type_hints,
-    _is_injected_arg_type,
     create_schema_from_function,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -257,18 +256,7 @@ class StructuredTool(BaseTool):
         fn = self.func or self.coroutine
         if fn is None:
             return _EMPTY_SET
-        params = signature(fn).parameters
-        # Resolve annotations via `get_type_hints` (rather than reading raw
-        # `signature` annotations) so postponed annotations -- e.g. from
-        # `from __future__ import annotations` or quoted forward references --
-        # are recognized. Fall back to the raw annotation per-parameter when a
-        # hint can't be resolved.
-        hints = _get_type_hints(fn, include_extras=True) or {}
-        return frozenset(
-            name
-            for name, param in params.items()
-            if _is_injected_arg_type(hints.get(name, param.annotation))
-        )
+        return _get_injected_args_keys_from_signature(fn)
 
 
 def _filter_schema_args(func: Callable[..., Any]) -> list[str]:
