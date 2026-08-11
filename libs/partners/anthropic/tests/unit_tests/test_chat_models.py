@@ -2077,6 +2077,42 @@ def test_usage_metadata_standardization() -> None:
     assert result["total_tokens"] == 0
 
 
+def test_usage_metadata_reasoning_tokens() -> None:
+    """Reasoning tokens should be surfaced via `output_token_details.reasoning`.
+
+    Anthropic reports these through `output_tokens_details.thinking_tokens` as a
+    decomposition of `output_tokens` (not additive).
+    """
+
+    class OutputTokensDetails(BaseModel):
+        thinking_tokens: int = 20
+
+    class UsageWithReasoning(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 50
+        output_tokens_details: OutputTokensDetails | None = OutputTokensDetails()
+
+    # Case 1: reasoning tokens present
+    result = _create_usage_metadata(UsageWithReasoning())
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["total_tokens"] == 150
+    assert result.get("output_token_details") == {"reasoning": 20}
+
+    # Case 2: output_tokens_details explicitly None
+    result = _create_usage_metadata(UsageWithReasoning(output_tokens_details=None))
+    assert result["output_tokens"] == 50
+    assert "output_token_details" not in result
+
+    # Case 3: output_tokens_details field absent (older models)
+    class UsageNoDetails(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 50
+
+    result = _create_usage_metadata(UsageNoDetails())
+    assert "output_token_details" not in result
+
+
 def test_usage_metadata_cache_creation_ttl() -> None:
     """Test _create_usage_metadata with granular cache_creation TTL fields."""
 
