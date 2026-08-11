@@ -2838,6 +2838,87 @@ def test_tool_injected_arg_with_custom_schema() -> None:
     assert captured["context"].value == "test_context"
 
 
+@dataclass
+class _PostponedRuntime(_DirectlyInjectedToolArg):
+    """Custom directly injected runtime used to exercise postponed annotations."""
+
+    some_obj: object
+
+
+@pytest.mark.parametrize("schema_format", ["model", "json_schema"])
+def test_tool_allows_postponed_runtime_annotation_with_custom_schema(
+    schema_format: Literal["model", "json_schema"],
+) -> None:
+    """Ensure postponed injected annotations are preserved with custom args_schema.
+
+    Regression test: `StructuredTool._injected_args_keys` previously read raw
+    `signature` annotations, which are strings under `from __future__ import
+    annotations`. A quoted forward reference reproduces the same string-annotation
+    behavior without a module-wide `__future__` import.
+    """
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    args_schema = (
+        InputSchema if schema_format == "model" else InputSchema.model_json_schema()
+    )
+
+    @tool(args_schema=args_schema)
+    def runtime_tool(query: str, runtime: "_PostponedRuntime") -> str:
+        """Echo the query and capture runtime value."""
+        captured["runtime"] = runtime
+        return query
+
+    runtime_obj = object()
+    runtime = _PostponedRuntime(some_obj=runtime_obj)
+
+    # The injected arg is detected from the postponed annotation...
+    assert "runtime" in runtime_tool._injected_args_keys
+    # ...survives input validation and reaches the function...
+    assert runtime_tool.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert captured["runtime"] is runtime
+    # ...and does not leak into the model-facing tool-call schema.
+    tool_call_schema = runtime_tool.tool_call_schema
+    if isinstance(tool_call_schema, dict):
+        properties = tool_call_schema["properties"]
+    else:
+        properties = model_json_schema(tool_call_schema)["properties"]
+    assert "runtime" not in properties
+
+
+def test_tool_custom_schema_unresolvable_forward_ref_does_not_raise() -> None:
+    """Unresolved forward references must not break `_injected_args_keys`.
+
+    When a postponed annotation cannot be resolved (e.g. the name is not
+    defined), `get_type_hints` raises. `_injected_args_keys` must fall back to
+    the raw (string) annotation instead of propagating the error.
+    """
+
+    class InputSchema(BaseModel):
+        query: str
+
+    def fn(
+        query: str,
+        runtime: "NotDefinedAnywhere123",  # type: ignore[name-defined]  # noqa: F821
+    ) -> str:
+        """Fn with unresolvable forward ref."""
+        return query
+
+    tool_ = StructuredTool.from_function(
+        func=fn,
+        name="fn",
+        description="desc",
+        args_schema=InputSchema,
+    )
+
+    # The unresolved annotation is not recognized as injected (safe fallback),
+    # and accessing `_injected_args_keys` must not raise.
+    assert "runtime" not in tool_._injected_args_keys
+
+
 def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
