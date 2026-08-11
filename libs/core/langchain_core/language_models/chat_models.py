@@ -1569,7 +1569,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             param_string = str(sorted(params.items()))
             # This code is not super efficient as it goes back and forth between
             # json and dict.
-            serialized_repr = self._serialized
+            # Recompute rather than reuse `self._serialized`: that property is
+            # memoized, so reusing it here would (1) freeze the cache key to
+            # whatever the model's fields were at first use, silently ignoring
+            # later attribute mutations, and (2) let the in-place cleanup below
+            # permanently strip fields from the memoized dict that callbacks
+            # also read via `self._serialized`.
+            serialized_repr = dumpd(self)
             _cleanup_llm_representation(serialized_repr, 1)
             llm_string = json.dumps(serialized_repr, sort_keys=True)
             return llm_string + "---" + param_string

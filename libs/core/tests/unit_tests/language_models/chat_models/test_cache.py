@@ -307,6 +307,61 @@ def test_llm_representation_for_serializable() -> None:
     )
 
 
+def test_llm_string_reflects_field_mutated_after_first_use() -> None:
+    """`_get_llm_string` must reflect current fields, not fields at first use.
+
+    `_serialized` is a memoized (`cached_property`) view of the model. Tracing
+    callbacks (`on_chat_model_start`) access it independently of caching, so it
+    may already be memoized by the time `_get_llm_string` runs. `_get_llm_string`
+    used to read straight from that memo, so a field changed after `_serialized`
+    was first populated was invisible to the resulting cache key.
+    """
+    chat = CustomChat(cache=InMemoryCache(), messages=iter([]))
+
+    # Populate the memo first, simulating a tracing callback firing before
+    # `_get_llm_string` is ever called.
+    _ = chat._serialized
+    assert "_serialized" in chat.__dict__
+
+    before = chat._get_llm_string()
+    chat.disable_streaming = True
+    after = chat._get_llm_string()
+
+    assert before != after
+
+
+def test_get_llm_string_does_not_mutate_cached_serialized() -> None:
+    """`_get_llm_string` must not corrupt the memoized `_serialized` dict.
+
+    Tracing callbacks (`on_chat_model_start`) also read `_serialized`.
+    `_cleanup_llm_representation` deletes keys (nested `repr`, `graph`) from
+    whatever dict it's given, in place. It must operate on a fresh dict, not
+    the shared memoized one. `CustomChat`'s `messages` field is a `not_implemented`
+    iterator, so its `repr` key is a real, naturally occurring victim of that
+    in-place cleanup (there's no natural `graph` key to observe here).
+    """
+    chat = CustomChat(cache=InMemoryCache(), messages=iter([]))
+    chat._get_llm_string()
+
+    assert "repr" in chat._serialized["kwargs"]["messages"]
+
+
+def test_cache_miss_after_field_mutation() -> None:
+    """A cache lookup after mutating a field must miss.
+
+    It must not silently reuse a response generated under the model's
+    previous configuration.
+    """
+    cache = InMemoryCache()
+    chat = CustomChat(cache=cache, messages=iter(["hello", "goodbye"]))
+
+    assert chat.invoke("How are you?").content == "hello"
+
+    chat.disable_streaming = True
+
+    assert chat.invoke("How are you?").content == "goodbye"
+
+
 def test_cache_with_generation_objects() -> None:
     """Test that cache can handle Generation objects instead of ChatGeneration objects.
 
