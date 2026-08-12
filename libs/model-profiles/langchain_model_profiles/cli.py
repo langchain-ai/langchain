@@ -62,18 +62,21 @@ def _validate_data_dir(data_dir: Path) -> Path:
 
 def _load_augmentations(
     data_dir: Path,
-) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
     """Load augmentations from `profile_augmentations.toml`.
 
     Args:
         data_dir: Directory containing `profile_augmentations.toml`.
 
     Returns:
-        Tuple of `(provider_augmentations, model_augmentations)`.
+        Tuple of `(provider_augmentations, model_overrides, extra_models)`.
+        `model_overrides` are `[overrides."model-id"]` tables (applied to models
+        that exist upstream); `extra_models` are `[extra_models."model-id"]`
+        tables (models defined purely here, absent from models.dev).
     """
     aug_file = data_dir / "profile_augmentations.toml"
     if not aug_file.exists():
-        return {}, {}
+        return {}, {}, {}
 
     try:
         with aug_file.open("rb") as f:
@@ -101,7 +104,77 @@ def _load_augmentations(
         else:
             provider_aug[key] = value
 
-    return provider_aug, model_augs
+    # Models intentionally defined without an upstream models.dev counterpart.
+    # TOML parses `[extra_models]` alone as `{}` and `[extra_models."id"]` as
+    # `{"id": {...}}`; a plain-dict value means a user wrote `extra_models` as
+    # a key under `[overrides]`, which is a mistake — flag it.
+    raw_extra = data.get("extra_models", {})
+    if not isinstance(raw_extra, dict):
+        msg = f"'extra_models' in {aug_file} must be a table"
+        print(f"❌ {msg}", file=sys.stderr)
+        sys.exit(1)
+    extra_models: dict[str, dict[str, Any]] = {}
+    for key, value in raw_extra.items():
+        if isinstance(value, dict):
+            extra_models[key] = value
+        else:
+            msg = (
+                f"'extra_models.{key}' in {aug_file} must be a table "
+                '(use `[extra_models."model-id"]` syntax)'
+            )
+            print(f"❌ {msg}", file=sys.stderr)
+            sys.exit(1)
+
+    return provider_aug, model_augs, extra_models
+
+
+def _find_stale_overrides(
+    model_augs: dict[str, dict[str, Any]], upstream_models: dict[str, Any]
+) -> list[str]:
+    """Return sorted `[overrides]` model IDs absent from models.dev data."""
+    return sorted(set(model_augs) - set(upstream_models))
+
+
+def _fetch_models_dev_data(
+    api_url: str = "https://models.dev/api.json",
+) -> dict[str, Any]:
+    """Download and parse the models.dev API payload.
+
+    Args:
+        api_url: models.dev API endpoint.
+
+    Returns:
+        Parsed mapping of provider ID to provider data.
+    """
+    try:
+        response = httpx.get(api_url, timeout=30)
+        response.raise_for_status()
+    except httpx.TimeoutException:
+        msg = f"Request timed out connecting to {api_url}"
+        print(f"❌ {msg}", file=sys.stderr)
+        sys.exit(1)
+    except httpx.HTTPStatusError as e:
+        msg = f"HTTP error {e.response.status_code} from {api_url}"
+        print(f"❌ {msg}", file=sys.stderr)
+        sys.exit(1)
+    except httpx.RequestError as e:
+        msg = f"Failed to connect to {api_url}: {e}"
+        print(f"❌ {msg}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        all_data = response.json()
+    except json.JSONDecodeError as e:
+        msg = f"Invalid JSON response from API: {e}"
+        print(f"❌ {msg}", file=sys.stderr)
+        sys.exit(1)
+
+    if not isinstance(all_data, dict):
+        msg = "Expected API response to be a dictionary"
+        print(f"❌ {msg}", file=sys.stderr)
+        sys.exit(1)
+
+    return all_data
 
 
 def _model_data_to_profile(model_data: dict[str, Any]) -> dict[str, Any]:
@@ -258,7 +331,46 @@ https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-p
 """
 
 
-def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
+def check_augmentations(provider: str, data_dir: Path) -> None:
+    """Fail if any `[overrides]` entry references a model absent from models.dev.
+
+    Args:
+        provider: Provider ID from models.dev (e.g., `'anthropic'`, `'openai'`).
+        data_dir: Directory containing `profile_augmentations.toml`.
+    """
+    data_dir = _validate_data_dir(data_dir)
+
+    all_data = _fetch_models_dev_data()
+    if provider not in all_data:
+        msg = f"Provider '{provider}' not found in models.dev data"
+        print(f"❌ {msg}", file=sys.stderr)
+        sys.exit(1)
+    models = all_data[provider].get("models", {})
+
+    _, model_augs, _ = _load_augmentations(data_dir)
+    stale = _find_stale_overrides(model_augs, models)
+
+    if not stale:
+        print(f"✓ All augmentation overrides for '{provider}' match models.dev data")
+        return
+
+    aug_file = data_dir / "profile_augmentations.toml"
+    print(
+        f"❌ {len(stale)} augmentation override(s) in {aug_file} reference "
+        f"models absent from models.dev for provider '{provider}':",
+        file=sys.stderr,
+    )
+    for model_id in stale:
+        print(f"   - {model_id}", file=sys.stderr)
+    print(
+        "Remove the stale override, or move it to an `[extra_models]` table "
+        "if the model is intentionally not tracked by models.dev.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+def refresh(provider: str, data_dir: Path) -> None:  # noqa: PLR0915
     """Download and merge model profile data for a specific provider.
 
     Args:
@@ -277,34 +389,7 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
 
     # Download data from models.dev
     print(f"Downloading data from {api_url}...")
-    try:
-        response = httpx.get(api_url, timeout=30)
-        response.raise_for_status()
-    except httpx.TimeoutException:
-        msg = f"Request timed out connecting to {api_url}"
-        print(f"❌ {msg}", file=sys.stderr)
-        sys.exit(1)
-    except httpx.HTTPStatusError as e:
-        msg = f"HTTP error {e.response.status_code} from {api_url}"
-        print(f"❌ {msg}", file=sys.stderr)
-        sys.exit(1)
-    except httpx.RequestError as e:
-        msg = f"Failed to connect to {api_url}: {e}"
-        print(f"❌ {msg}", file=sys.stderr)
-        sys.exit(1)
-
-    try:
-        all_data = response.json()
-    except json.JSONDecodeError as e:
-        msg = f"Invalid JSON response from API: {e}"
-        print(f"❌ {msg}", file=sys.stderr)
-        sys.exit(1)
-
-    # Basic validation
-    if not isinstance(all_data, dict):
-        msg = "Expected API response to be a dictionary"
-        print(f"❌ {msg}", file=sys.stderr)
-        sys.exit(1)
+    all_data = _fetch_models_dev_data(api_url)
 
     provider_count = len(all_data)
     model_count = sum(len(p.get("models", {})) for p in all_data.values())
@@ -322,7 +407,21 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
 
     # Load augmentations
     print("Loading augmentations...")
-    provider_aug, model_augs = _load_augmentations(data_dir)
+    provider_aug, model_augs, extra_models = _load_augmentations(data_dir)
+
+    # Flag `[overrides."model-id"]` entries whose model is no longer listed
+    # upstream: the override is left over from a removed model and should be
+    # deleted (or moved to `[extra_models]` if the omission is intentional).
+    stale_overrides = _find_stale_overrides(model_augs, models)
+    if stale_overrides:
+        warnings.warn(
+            f"{len(stale_overrides)} augmentation override(s) in "
+            f"{data_dir / 'profile_augmentations.toml'} reference models absent "
+            f"from models.dev for provider '{provider}': {stale_overrides}. "
+            "Remove the stale override, or move it to an `[extra_models]` table "
+            "if the model is intentionally not tracked by models.dev.",
+            stacklevel=2,
+        )
 
     # Merge and convert to profiles
     profiles: dict[str, dict[str, Any]] = {}
@@ -332,12 +431,11 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
             base_profile, provider_aug, model_augs.get(model_id)
         )
 
-    # Include new models defined purely via augmentations
-    extra_models = set(model_augs) - set(models)
+    # Include models defined purely via augmentations (`[extra_models]` tables).
     if extra_models:
-        print(f"Adding {len(extra_models)} models from augmentations only...")
+        print(f"Adding {len(extra_models)} models from [extra_models]...")
     for model_id in sorted(extra_models):
-        profiles[model_id] = _apply_overrides({}, provider_aug, model_augs[model_id])
+        profiles[model_id] = _apply_overrides({}, provider_aug, extra_models[model_id])
 
     _warn_undeclared_profile_keys(profiles)
 
@@ -399,6 +497,24 @@ def main() -> None:
         help="Data directory containing profile_augmentations.toml",
     )
 
+    # check-augmentations command
+    check_parser = subparsers.add_parser(
+        "check-augmentations",
+        help="Fail if any augmentation override references a model absent from "
+        "models.dev (stale leftovers from removed models)",
+    )
+    check_parser.add_argument(
+        "--provider",
+        required=True,
+        help="Provider ID from models.dev (e.g., 'anthropic', 'openai')",
+    )
+    check_parser.add_argument(
+        "--data-dir",
+        required=True,
+        type=Path,
+        help="Data directory containing profile_augmentations.toml",
+    )
+
     # summarize command
     summarize_parser = subparsers.add_parser(
         "summarize",
@@ -428,6 +544,8 @@ def main() -> None:
 
     if args.command == "refresh":
         refresh(args.provider, args.data_dir)
+    elif args.command == "check-augmentations":
+        check_augmentations(args.provider, args.data_dir)
     elif args.command == "summarize":
         from langchain_model_profiles._summary import summarize
 

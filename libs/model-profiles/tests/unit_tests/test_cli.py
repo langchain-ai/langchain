@@ -10,8 +10,10 @@ import pytest
 from langchain_core.language_models.model_profile import ModelProfile
 
 from langchain_model_profiles.cli import (
+    _load_augmentations,
     _model_data_to_profile,
     _warn_undeclared_profile_keys,
+    check_augmentations,
     refresh,
 )
 
@@ -179,7 +181,7 @@ def test_refresh_aborts_when_user_declines_external_directory(
 def test_refresh_includes_models_defined_only_in_augmentations(
     tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
-    """Ensure models that only exist in augmentations are emitted."""
+    """Ensure models that only exist in `[extra_models]` are emitted."""
     data_dir = tmp_path / "data"
     data_dir.mkdir()
 
@@ -187,7 +189,7 @@ def test_refresh_includes_models_defined_only_in_augmentations(
     aug_file.write_text("""
 provider = "anthropic"
 
-[overrides."custom-offline-model"]
+[extra_models."custom-offline-model"]
 structured_output = true
 pdf_inputs = true
 max_input_tokens = 123
@@ -468,3 +470,203 @@ class TestWarnUndeclaredProfileKeys:
             side_effect=TypeError("broken"),
         ):
             _warn_undeclared_profile_keys(profiles)
+
+
+def test_refresh_warns_on_stale_overrides(
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
+) -> None:
+    """An `[overrides]` entry for a model absent from models.dev warns."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    aug_file = data_dir / "profile_augmentations.toml"
+    aug_file.write_text("""
+provider = "anthropic"
+
+[overrides."removed-model"]
+max_input_tokens = 100
+""")
+
+    mock_response = Mock()
+    mock_response.json.return_value = mock_models_dev_response
+    mock_response.raise_for_status = Mock()
+
+    with (
+        patch("langchain_model_profiles.cli.httpx.get", return_value=mock_response),
+        patch("builtins.input", return_value="y"),
+        warnings.catch_warnings(record=True) as w,
+    ):
+        warnings.simplefilter("always")
+        refresh("anthropic", data_dir)
+
+    stale_warnings = [x for x in w if "removed-model" in str(x.message)]
+    assert len(stale_warnings) == 1
+    assert "extra_models" in str(stale_warnings[0].message)
+
+    # The stale override must NOT be emitted as a profile.
+    profiles_content = (data_dir / "_profiles.py").read_text()
+    assert "removed-model" not in profiles_content
+
+
+def test_refresh_no_warning_when_overrides_match_upstream(
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
+) -> None:
+    """No staleness warning when every override matches an upstream model."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    aug_file = data_dir / "profile_augmentations.toml"
+    aug_file.write_text("""
+provider = "anthropic"
+
+[overrides."claude-3-opus"]
+max_input_tokens = 100
+""")
+
+    mock_response = Mock()
+    mock_response.json.return_value = mock_models_dev_response
+    mock_response.raise_for_status = Mock()
+
+    with (
+        patch("langchain_model_profiles.cli.httpx.get", return_value=mock_response),
+        patch("builtins.input", return_value="y"),
+        warnings.catch_warnings(record=True) as w,
+    ):
+        warnings.simplefilter("always")
+        refresh("anthropic", data_dir)
+
+    stale_warnings = [x for x in w if "absent from models.dev" in str(x.message)]
+    assert len(stale_warnings) == 0
+
+
+class TestCheckAugmentations:
+    """Tests for the check-augmentations command."""
+
+    def test_fails_on_stale_override(
+        self, tmp_path: Path, mock_models_dev_response: dict[str, Any]
+    ) -> None:
+        """Exits 1 when an override references a model absent from models.dev."""
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        (data_dir / "profile_augmentations.toml").write_text("""
+provider = "anthropic"
+
+[overrides."removed-model"]
+max_input_tokens = 100
+""")
+
+        mock_response = Mock()
+        mock_response.json.return_value = mock_models_dev_response
+        mock_response.raise_for_status = Mock()
+
+        with (
+            patch("langchain_model_profiles.cli.httpx.get", return_value=mock_response),
+            patch("builtins.input", return_value="y"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            check_augmentations("anthropic", data_dir)
+
+        assert exc_info.value.code == 1
+
+    def test_passes_when_overrides_match_upstream(
+        self, tmp_path: Path, mock_models_dev_response: dict[str, Any]
+    ) -> None:
+        """Exits cleanly when every override matches an upstream model."""
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        (data_dir / "profile_augmentations.toml").write_text("""
+provider = "anthropic"
+
+[overrides."claude-3-opus"]
+max_input_tokens = 100
+""")
+
+        mock_response = Mock()
+        mock_response.json.return_value = mock_models_dev_response
+        mock_response.raise_for_status = Mock()
+
+        with (
+            patch("langchain_model_profiles.cli.httpx.get", return_value=mock_response),
+            patch("builtins.input", return_value="y"),
+        ):
+            check_augmentations("anthropic", data_dir)  # must not raise
+
+    def test_extra_models_not_flagged(
+        self, tmp_path: Path, mock_models_dev_response: dict[str, Any]
+    ) -> None:
+        """`[extra_models]` entries are intentional and never flagged as stale."""
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        (data_dir / "profile_augmentations.toml").write_text("""
+provider = "anthropic"
+
+[extra_models."offline-only-model"]
+max_input_tokens = 100
+""")
+
+        mock_response = Mock()
+        mock_response.json.return_value = mock_models_dev_response
+        mock_response.raise_for_status = Mock()
+
+        with (
+            patch("langchain_model_profiles.cli.httpx.get", return_value=mock_response),
+            patch("builtins.input", return_value="y"),
+        ):
+            check_augmentations("anthropic", data_dir)  # must not raise
+
+    def test_unknown_provider_exits(
+        self, tmp_path: Path, mock_models_dev_response: dict[str, Any]
+    ) -> None:
+        """Exits 1 when the provider is not present in models.dev data."""
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+
+        mock_response = Mock()
+        mock_response.json.return_value = mock_models_dev_response
+        mock_response.raise_for_status = Mock()
+
+        with (
+            patch("langchain_model_profiles.cli.httpx.get", return_value=mock_response),
+            patch("builtins.input", return_value="y"),
+            pytest.raises(SystemExit) as exc_info,
+        ):
+            check_augmentations("nonexistent-provider", data_dir)
+
+        assert exc_info.value.code == 1
+
+
+class TestLoadAugmentations:
+    """Tests for _load_augmentations."""
+
+    def test_missing_file_returns_empty(self, tmp_path: Path) -> None:
+        """A missing TOML yields empty augmentations."""
+        assert _load_augmentations(tmp_path) == ({}, {}, {})
+
+    def test_parses_all_three_kinds(self, tmp_path: Path) -> None:
+        """Provider scalars, model overrides, and extra models are split."""
+        (tmp_path / "profile_augmentations.toml").write_text("""
+provider = "anthropic"
+
+[overrides]
+tool_calling = true
+
+[overrides."claude-3-opus"]
+max_input_tokens = 100
+
+[extra_models."offline-model"]
+max_input_tokens = 50
+""")
+        provider_aug, model_augs, extra_models = _load_augmentations(tmp_path)
+        assert provider_aug == {"tool_calling": True}
+        assert model_augs == {"claude-3-opus": {"max_input_tokens": 100}}
+        assert extra_models == {"offline-model": {"max_input_tokens": 50}}
+
+    def test_non_dict_extra_models_entry_exits(self, tmp_path: Path) -> None:
+        """A scalar under [extra_models] is a config error, not silently dropped."""
+        (tmp_path / "profile_augmentations.toml").write_text("""
+[extra_models]
+bogus = true
+""")
+        with pytest.raises(SystemExit) as exc_info:
+            _load_augmentations(tmp_path)
+        assert exc_info.value.code == 1
