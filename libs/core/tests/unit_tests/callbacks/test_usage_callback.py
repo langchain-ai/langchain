@@ -1,3 +1,4 @@
+import contextlib
 from typing import Any
 
 from langchain_core.callbacks import (
@@ -124,15 +125,10 @@ async def test_usage_callback_async() -> None:
 
 def test_usage_callback_clears_on_exception() -> None:
     """Callback must stop tracking after with-block exits via exception (#38989)."""
-    llm = FakeChatModelWithResponseMetadata(
-        messages=iter(messages), model_name="fake"
-    )
-    try:
-        with get_usage_metadata_callback() as cb:
-            _ = llm.invoke("in block")
-            raise RuntimeError("boom")
-    except RuntimeError:
-        pass
+    llm = FakeChatModelWithResponseMetadata(messages=iter(messages), model_name="fake")
+    with contextlib.suppress(RuntimeError), get_usage_metadata_callback() as cb:
+        _ = llm.invoke("in block")
+        raise RuntimeError
 
     # Calls after the block must not accumulate into the previous callback.
     _ = llm.invoke("outside block")
