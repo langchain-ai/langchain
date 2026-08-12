@@ -471,8 +471,6 @@ def _convert_chunk_to_message_chunk(
 ) -> BaseMessageChunk:
     choices = chunk.get("choices") or []
     response_metadata: dict[str, Any] = {"model_provider": "fireworks"}
-    if service_tier := chunk.get("service_tier"):
-        response_metadata["service_tier"] = service_tier
     if not choices:
         # Final chunk emitted when `stream_options.include_usage=True`:
         # `choices` is empty and the chunk carries only `usage`.
@@ -1103,6 +1101,8 @@ class ChatFireworks(BaseChatModel):
                 if finish_reason := choice.get("finish_reason"):
                     generation_info["finish_reason"] = finish_reason
                     generation_info["model_name"] = self.model_name
+                    if service_tier := chunk.get("service_tier"):
+                        generation_info["service_tier"] = service_tier
                 logprobs = choice.get("logprobs")
                 if logprobs:
                     generation_info["logprobs"] = logprobs
@@ -1214,6 +1214,8 @@ class ChatFireworks(BaseChatModel):
                 if finish_reason := choice.get("finish_reason"):
                     generation_info["finish_reason"] = finish_reason
                     generation_info["model_name"] = self.model_name
+                    if service_tier := chunk.get("service_tier"):
+                        generation_info["service_tier"] = service_tier
                 logprobs = choice.get("logprobs")
                 if logprobs:
                     generation_info["logprobs"] = logprobs
