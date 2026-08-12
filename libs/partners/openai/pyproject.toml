@@ -24,13 +24,6 @@ version = "1.4.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.5.3,<2.0.0",
-    # `certifi` is imported at module load for the shared SSL context, so it is
-    # declared directly: it used to arrive via `httpx`, but `openai>=3` depends
-    # on `httpx2`, whose chain (httpcore2 + truststore) does not include it.
-    # Classic `httpx` is also imported directly (the SSRF-safe image fetch) and
-    # must be the *same* `httpx` that `langchain-core`'s SSRF transport uses; it
-    # is not pinned here because it reaches us transitively
-    # (langchain-core -> langsmith -> httpx).
     "certifi>=2024.6.2",
     "openai>=2.45.0,<4.0.0",
     "tiktoken>=0.7.0,<1.0.0",

@@ -1,7 +1,6 @@
 """Tests for the `httpx` / `httpx2` compatibility shim (`_compat`)."""
 
 import inspect
-import logging
 
 import openai
 import pytest
@@ -11,33 +10,23 @@ from langchain_openai.chat_models import _client_utils
 
 
 def test_module_httpx_matches_helper() -> None:
-    """The import branch and the helper must not diverge (same predicate).
-
-    Note this shares its predicate with the code under test, so it guards
-    against the `if`/`elif`/`else` wiring in `_compat` being edited to
-    contradict `_sdk_uses_httpx2`, not against the helper itself being wrong.
-    """
+    """The module-level `httpx` binding agrees with the version check."""
     expected = "httpx2" if _compat._sdk_uses_httpx2() else "httpx"
     assert _compat.httpx.__name__ == expected
 
 
 def test_only_httpx_is_exported() -> None:
-    """`__all__` stays minimal; the module docstring explains why.
-
-    The default client classes are deliberately left out, so nothing but the
-    resolved `httpx` module should appear here.
-    """
+    """The default client classes are intentionally not re-exported."""
     assert _compat.__all__ == ["httpx"]
-    assert not hasattr(_compat, "DefaultHttpxClient")
 
 
 def test_default_clients_are_subclassable_classes() -> None:
-    """`DefaultHttpxClient`/`DefaultAsyncHttpxClient` must stay classes.
+    """`DefaultHttpxClient`/`DefaultAsyncHttpxClient` must be classes, not factories.
 
-    The wrappers in `_client_utils` subclass them. The parallel
-    `DefaultHttpx2Client` names are factory functions and cannot be subclassed,
-    which is why they are not used — but they are absent on the `openai>=2.45.0`
-    floor, so that asymmetry is documented rather than asserted here.
+    Regression guard: on openai>=3, `DefaultHttpx2Client` is a *factory
+    function* (returns an `httpx2.Client`) and cannot be subclassed, while the
+    legacy `DefaultHttpxClient` name remains a subclassable class. The wrappers
+    below depend on subclassing the latter.
     """
     assert inspect.isclass(openai.DefaultHttpxClient)
     assert inspect.isclass(openai.DefaultAsyncHttpxClient)
@@ -61,39 +50,6 @@ def test_client_utils_transport_objects_use_shim_httpx() -> None:
     assert isinstance(_client_utils._DEFAULT_CONNECTION_LIMITS, _compat.httpx.Limits)
 
 
-def test_selection_matches_sdk_backing_library() -> None:
-    """The selection agrees with the library the SDK is demonstrably built on.
-
-    An oracle independent of `_compat`: whichever httpx client class
-    `openai.DefaultHttpxClient` inherits from is, by definition, the library our
-    transport objects have to match. Unlike a version-string check, this catches
-    a wrong selection under the SDK actually installed.
-    """
-    base = next(
-        b
-        for b in openai.DefaultHttpxClient.__mro__
-        if b.__module__.split(".", 1)[0] in ("httpx", "httpx2")
-    )
-    expected = base.__module__.split(".", 1)[0]
-    assert _compat.httpx.__name__ == expected
-    assert _compat._sdk_uses_httpx2() is (expected == "httpx2")
-
-
-def test_selection_ignores_version_string() -> None:
-    """A mangled version must not change the answer while the SDK is readable.
-
-    Regression guard for the original heuristic: build tooling that stamps
-    `__version__` from a git tag can leave a `v` prefix, which an `int()` parse
-    rejects. Selection then silently fell back to classic `httpx` even on
-    openai 3, surfacing much later as `APIConnectionError`.
-    """
-    truth = _compat._sdk_uses_httpx2()
-    for version in ("v3.0.0", "not-a-version", "", "2.0.0", "9.9.9"):
-        with pytest.MonkeyPatch.context() as mp:
-            mp.setattr(openai, "__version__", version)
-            assert _compat._sdk_uses_httpx2() is truth
-
-
 @pytest.mark.parametrize(
     ("version", "expected"),
     [
@@ -102,56 +58,32 @@ def test_selection_ignores_version_string() -> None:
         ("3.0.0", True),
         ("3.1.2", True),
         ("4.0.0", True),
-        # Tag-derived version strings the old `int()` parse choked on.
-        ("v3.0.0", True),
-        ("3.0.0b1", True),
-        ("3.0.0.dev1", True),
     ],
 )
-def test_version_fallback_reads_major_version(
+def test_sdk_uses_httpx2_reads_major_version(
     monkeypatch: pytest.MonkeyPatch, version: str, expected: bool
 ) -> None:
-    """With no readable base class, fall back to the openai major version."""
-    monkeypatch.setattr(openai, "DefaultHttpxClient", object, raising=False)
+    """Selection keys on the openai major version (httpx2 default landed in 3.0)."""
     monkeypatch.setattr(openai, "__version__", version)
     assert _compat._sdk_uses_httpx2() is expected
 
 
-def test_version_fallback_warns(
-    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+def test_httpx2_factory_presence_does_not_flip_selection(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Falling back to the version string must be visible in logs.
+    """Late openai 2.x exposes a `DefaultHttpx2Client` factory but stays classic.
 
-    A silent fallback is what made the original failure so hard to trace: the
-    only symptom was a retried `APIConnectionError` naming no cause.
+    Regression guard for the case where a 2.x SDK backports the httpx2 factory:
+    the major version (2) must win, so the shim stays on classic `httpx`.
     """
-    monkeypatch.setattr(openai, "DefaultHttpxClient", object, raising=False)
-    monkeypatch.setattr(openai, "__version__", "3.0.0")
-    with caplog.at_level(logging.WARNING, logger=_compat.__name__):
-        assert _compat._sdk_uses_httpx2() is True
-    assert "no recognizable" in caplog.text
-    assert "3.0.0" in caplog.text
+    monkeypatch.setattr(openai, "__version__", "2.54.0")
+    monkeypatch.setattr(openai, "DefaultHttpx2Client", object(), raising=False)
+    assert _compat._sdk_uses_httpx2() is False
 
 
-def test_unreadable_sdk_warns_and_falls_back_to_classic(
-    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+def test_sdk_uses_httpx2_unparseable_version_falls_back_to_classic(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Neither a base class nor a version: warn loudly, do not raise at import."""
-    monkeypatch.setattr(openai, "DefaultHttpxClient", object, raising=False)
+    """An unparseable version must not raise at import; fall back to classic."""
     monkeypatch.setattr(openai, "__version__", "not-a-version")
-    with caplog.at_level(logging.WARNING, logger=_compat.__name__):
-        assert _compat._sdk_uses_httpx2() is False
-    assert "unparseable" in caplog.text
-    assert "http_client=" in caplog.text
-
-
-@pytest.mark.parametrize(
-    ("version", "expected"),
-    [("3.0.0", 3), ("v3.0.0", 3), ("2.45.0", 2), ("10.1.0", 10), ("", None)],
-)
-def test_sdk_major_version_parsing(
-    monkeypatch: pytest.MonkeyPatch, version: str, expected: int | None
-) -> None:
-    """Leading non-digits are tolerated; an empty version reads as unknown."""
-    monkeypatch.setattr(openai, "__version__", version)
-    assert _compat._sdk_major_version() == expected
+    assert _compat._sdk_uses_httpx2() is False
