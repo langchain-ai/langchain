@@ -1,5 +1,11 @@
 """Tests for `InternalCallTransformer` filtering middleware-internal model calls."""
 
+# `run.tool_calls`/`run.subagents` are stream projections registered dynamically by
+# `create_agent` (via langgraph-prebuilt's `ToolCallTransformer` and langchain's
+# `SubagentTransformer`), not declared on langgraph's typed `GraphRunStream`
+# (langgraph#8389). The `# type: ignore[attr-defined]` below self-remove once
+# langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -97,7 +103,7 @@ def test_internal_call_transformer_not_registered_without_offending_middleware()
     assert not any(isinstance(t, InternalCallTransformer) for t in transformers)
 
     # Drain to close cleanly.
-    list(run.tool_calls)
+    list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 def test_internal_call_transformer_registered_before_messages_transformer() -> None:
@@ -125,7 +131,7 @@ def test_internal_call_transformer_registered_before_messages_transformer() -> N
     )
 
     # Drain to close cleanly.
-    list(run.tool_calls)
+    list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 def test_internal_call_transformer_deduped_across_middleware() -> None:
@@ -147,7 +153,7 @@ def test_internal_call_transformer_deduped_across_middleware() -> None:
     assert sum(isinstance(t, InternalCallTransformer) for t in transformers) == 1
 
     # Drain to close cleanly.
-    list(run.tool_calls)
+    list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 def test_internal_call_transformer_deduped_alongside_builtins() -> None:
@@ -170,7 +176,7 @@ def test_internal_call_transformer_deduped_alongside_builtins() -> None:
     assert sum(isinstance(t, InternalCallTransformer) for t in transformers) == 1
 
     # Drain to close cleanly.
-    list(run.tool_calls)
+    list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 def test_internal_call_transformer_dedup_accepts_unhashable_factories() -> None:
@@ -193,7 +199,7 @@ def test_internal_call_transformer_dedup_accepts_unhashable_factories() -> None:
     )
 
     run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
-    list(run.tool_calls)
+    list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 def test_internal_model_calls_excluded_from_messages_projection_sync() -> None:
