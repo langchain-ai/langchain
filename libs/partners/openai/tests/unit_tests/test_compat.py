@@ -43,8 +43,10 @@ def test_wrappers_subclass_openai_default_clients() -> None:
 def test_client_utils_transport_objects_use_shim_httpx() -> None:
     """Transport/config objects come from the same module the SDK client uses.
 
-    If these were built from a different httpx than the SDK's backing library,
-    an httpx transport would be handed to an httpx2 client (or vice versa).
+    Handing the SDK an `httpx` object when it expects `httpx2` (or vice
+    versa) happens to work today because the two libraries are drop-in
+    equivalents. Matching them anyway keeps type annotations and `isinstance`
+    checks honest.
     """
     assert _client_utils.httpx is _compat.httpx
     assert isinstance(_client_utils._DEFAULT_CONNECTION_LIMITS, _compat.httpx.Limits)

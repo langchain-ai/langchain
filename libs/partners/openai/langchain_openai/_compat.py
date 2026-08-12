@@ -2,7 +2,7 @@
 
 `openai>=3` is backed by `httpx2` (an API-identical drop-in for `httpx`),
 `openai<3` by `httpx`. Transport/config objects injected into the SDK client
-must come from the same library, so this module re-exports whichever one the
+are built from the same library, so this module re-exports whichever one the
 installed SDK version defaults to.
 
 Import `httpx` from here **only** for objects handed to the OpenAI SDK client
