@@ -1,10 +1,6 @@
 """Tests for the `httpx` / `httpx2` compatibility shim (`_compat`)."""
 
-import importlib
 import inspect
-import sys
-import types
-from collections.abc import Iterator
 
 import openai
 import pytest
@@ -13,14 +9,9 @@ from langchain_openai import _compat
 from langchain_openai.chat_models import _client_utils
 
 
-def _sdk_is_httpx2() -> bool:
-    """Whether the installed openai SDK is backed by httpx2 (openai>=3)."""
-    return hasattr(openai, "DefaultHttpx2Client")
-
-
-def test_shim_httpx_matches_installed_openai() -> None:
-    """The shim resolves httpx2 iff the installed SDK is httpx2-backed."""
-    expected = "httpx2" if _sdk_is_httpx2() else "httpx"
+def test_module_httpx_matches_helper() -> None:
+    """The module-level `httpx` binding agrees with the version check."""
+    expected = "httpx2" if _compat._sdk_uses_httpx2() else "httpx"
     assert _compat.httpx.__name__ == expected
 
 
@@ -59,40 +50,40 @@ def test_client_utils_transport_objects_use_shim_httpx() -> None:
     assert isinstance(_client_utils._DEFAULT_CONNECTION_LIMITS, _compat.httpx.Limits)
 
 
-@pytest.fixture
-def isolated_compat() -> Iterator[types.ModuleType]:
-    """Yield `_compat`, then reload it to its true env-derived state.
-
-    The branch-selection tests mutate `openai`/`sys.modules` and reload
-    `_compat`; this guarantees the module is restored for later tests even if
-    an assertion fails mid-test. Requested *before* `monkeypatch` so its
-    teardown (the restoring reload) runs *after* the mutations are undone.
-    """
-    try:
-        yield _compat
-    finally:
-        importlib.reload(_compat)
-
-
-def test_selects_classic_httpx_when_sdk_lacks_httpx2_factory(
-    isolated_compat: types.ModuleType, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    ("version", "expected"),
+    [
+        ("2.45.0", False),
+        ("2.54.0", False),
+        ("3.0.0", True),
+        ("3.1.2", True),
+        ("4.0.0", True),
+    ],
+)
+def test_sdk_uses_httpx2_reads_major_version(
+    monkeypatch: pytest.MonkeyPatch, version: str, expected: bool
 ) -> None:
-    """openai<3 shape (no `DefaultHttpx2Client`) resolves to classic `httpx`."""
-    monkeypatch.delattr(openai, "DefaultHttpx2Client", raising=False)
-    reloaded = importlib.reload(isolated_compat)
-    assert reloaded.httpx.__name__ == "httpx"
+    """Selection keys on the openai major version (httpx2 default landed in 3.0)."""
+    monkeypatch.setattr(openai, "__version__", version)
+    assert _compat._sdk_uses_httpx2() is expected
 
 
-def test_selects_httpx2_when_sdk_exposes_httpx2_factory(
-    isolated_compat: types.ModuleType, monkeypatch: pytest.MonkeyPatch
+def test_httpx2_factory_presence_does_not_flip_selection(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """openai>=3 shape (has `DefaultHttpx2Client`) resolves to `httpx2`.
+    """Late openai 2.x exposes a `DefaultHttpx2Client` factory but stays classic.
 
-    Stubs `httpx2` in `sys.modules` so the branch is exercised even in an
-    environment where `httpx2` is not installed (i.e. CI on openai<3).
+    Regression guard for the case where a 2.x SDK backports the httpx2 factory:
+    the major version (2) must win, so the shim stays on classic `httpx`.
     """
+    monkeypatch.setattr(openai, "__version__", "2.54.0")
     monkeypatch.setattr(openai, "DefaultHttpx2Client", object(), raising=False)
-    if "httpx2" not in sys.modules:
-        monkeypatch.setitem(sys.modules, "httpx2", types.ModuleType("httpx2"))
-    reloaded = importlib.reload(isolated_compat)
-    assert reloaded.httpx.__name__ == "httpx2"
+    assert _compat._sdk_uses_httpx2() is False
+
+
+def test_sdk_uses_httpx2_unparseable_version_falls_back_to_classic(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unparseable version must not raise at import; fall back to classic."""
+    monkeypatch.setattr(openai, "__version__", "not-a-version")
+    assert _compat._sdk_uses_httpx2() is False
