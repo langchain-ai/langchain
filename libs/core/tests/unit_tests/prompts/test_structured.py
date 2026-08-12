@@ -145,3 +145,36 @@ def test_structured_prompt_template_empty_vars() -> None:
             schema={"type": "object", "properties": {}, "title": "foo"},
             template_format="mustache",
         )
+
+
+def test_structured_prompt_does_not_mutate_caller_kwargs() -> None:
+    """StructuredPrompt must not mutate caller-provided kwargs.
+
+    Merging extra structured-output kwargs into a caller-owned dict would leak
+    options into later prompts that reuse the same dict.
+    """
+    schema = {
+        "type": "object",
+        "properties": {"answer": {"type": "string"}},
+    }
+    shared_options = {"method": "json_schema"}
+
+    first = StructuredPrompt(
+        [("human", "one")],
+        schema,
+        structured_output_kwargs=shared_options,
+        strict=True,
+    )
+    assert first.structured_output_kwargs == {
+        "method": "json_schema",
+        "strict": True,
+    }
+    assert shared_options == {"method": "json_schema"}
+
+    second = StructuredPrompt(
+        [("human", "two")],
+        schema,
+        structured_output_kwargs=shared_options,
+    )
+    assert second.structured_output_kwargs == {"method": "json_schema"}
+    assert shared_options == {"method": "json_schema"}

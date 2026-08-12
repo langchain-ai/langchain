@@ -1,5 +1,11 @@
 """Tests for PII detection middleware."""
 
+# `run.tool_calls`/`run.subagents` are stream projections registered dynamically by
+# `create_agent` (via langgraph-prebuilt's `ToolCallTransformer` and langchain's
+# `SubagentTransformer`), not declared on langgraph's typed `GraphRunStream`
+# (langgraph#8389). The `# type: ignore[attr-defined]` below self-remove once
+# langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
+
 import re
 from typing import Any
 
@@ -19,7 +25,9 @@ from langgraph.stream._types import ProtocolEvent
 from langgraph.stream.transformers import MessagesTransformer
 
 from langchain.agents import AgentState
+from langchain.agents import middleware as middleware_package
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware import PIIMatch as PublicPIIMatch
 from langchain.agents.middleware._redaction import RedactionRule
 from langchain.agents.middleware.pii import (
     PIIDetectionError,
@@ -33,6 +41,24 @@ from langchain.agents.middleware.pii import (
     detect_url,
 )
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+# ============================================================================
+# Public Export Tests
+# ============================================================================
+
+
+class TestPIIMatchPublicExport:
+    """Test that `PIIMatch` is importable from the public middleware package.
+
+    Regression test: `PIIMatch` was only exported from the private
+    `_redaction` module, forcing custom-detector authors to import from it
+    directly instead of `langchain.agents.middleware`.
+    """
+
+    def test_pii_match_importable_from_middleware_package(self) -> None:
+        assert PublicPIIMatch is PIIMatch
+        assert "PIIMatch" in middleware_package.__all__
+
 
 # ============================================================================
 # Detection Function Tests
@@ -1953,7 +1979,7 @@ class TestPIIStreamTransformer:
         )
 
         # Drain to close cleanly.
-        list(run.tool_calls)
+        list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 class TestPIIStreamingEndToEnd:
@@ -2093,8 +2119,6 @@ class TestPIIStreamingEndToEnd:
         surfaces: list[str] = []
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         async for event in run:
-            if not isinstance(event, dict):
-                continue
             data = event.get("params", {}).get("data")
             if isinstance(data, tuple) and len(data) == 2:
                 p = data[0]
@@ -2167,8 +2191,6 @@ class TestPIIStreamingEndToEnd:
         surfaces: list[str] = []
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         async for event in run:
-            if not isinstance(event, dict):
-                continue
             data = event.get("params", {}).get("data")
             if isinstance(data, tuple) and len(data) == 2:
                 p = data[0]

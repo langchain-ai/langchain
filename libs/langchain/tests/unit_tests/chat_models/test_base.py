@@ -277,6 +277,7 @@ def test_configurable_with_default() -> None:
             "model_kwargs": {},
             "reuse_last_container": None,
             "inference_geo": None,
+            "user_profile_id": None,
             "streaming": False,
             "stream_usage": True,
             "output_version": None,
