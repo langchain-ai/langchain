@@ -2293,6 +2293,7 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
             "name": "get_weather",
             "arguments": '{"location": "New York", "unit": "celsius"}',
             "call_id": "call_123",
+            "status": None,
         }
     ]
 
@@ -2418,6 +2419,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
             "call_id": "call_123",
             "name": "get_weather",
             "arguments": '{"location": "New York"}',
+            "status": None,
         },
     ]
 
@@ -2623,6 +2625,101 @@ def test__convert_responses_chunk_to_generation_chunk_apply_patch_response() -> 
             "index": 0,
         }
     ]
+
+
+def test__convert_responses_chunk_to_generation_chunk_function_call_status() -> None:
+    """A streamed function_call item's "status" is preserved in the chunk.
+
+    Some OpenAI-compatible servers (e.g. vLLM serving GPT-OSS models) reject
+    function_call blocks that omit "status" with "No call message found".
+    See issue #32885.
+    """
+    chunk = MagicMock()
+    chunk.type = "response.output_item.added"
+    chunk.output_index = 0
+    chunk.item = ResponseFunctionToolCall(
+        type="function_call",
+        id="func_123",
+        call_id="call_123",
+        name="get_weather",
+        arguments="",
+        status="in_progress",
+    )
+
+    _, _, _, generation_chunk = _convert_responses_chunk_to_generation_chunk(
+        chunk,
+        current_index=-1,
+        current_output_index=-1,
+        current_sub_index=-1,
+    )
+
+    assert generation_chunk is not None
+    content = generation_chunk.message.content
+    assert isinstance(content, list)
+    function_call_block = content[0]
+    assert isinstance(function_call_block, dict)
+    assert function_call_block["type"] == "function_call"
+    assert function_call_block["status"] == "in_progress"
+
+
+def test__convert_responses_chunk_to_generation_chunk_function_call_done_status() -> (
+    None
+):
+    """A streamed function_call's terminal status overwrites the transient one.
+
+    The "added" event reports a transient status (typically "in_progress"),
+    and the "done" event reports the terminal status (e.g. "completed").
+    Merging the two chunks must not concatenate "status" as if it were
+    accumulated text.
+    """
+    added_chunk = MagicMock()
+    added_chunk.type = "response.output_item.added"
+    added_chunk.output_index = 0
+    added_chunk.item = ResponseFunctionToolCall(
+        type="function_call",
+        id="func_123",
+        call_id="call_123",
+        name="get_weather",
+        arguments="",
+        status="in_progress",
+    )
+
+    idx, output_idx, sub_idx, added_generation_chunk = (
+        _convert_responses_chunk_to_generation_chunk(
+            added_chunk,
+            current_index=-1,
+            current_output_index=-1,
+            current_sub_index=-1,
+        )
+    )
+    assert added_generation_chunk is not None
+
+    done_chunk = MagicMock()
+    done_chunk.type = "response.output_item.done"
+    done_chunk.output_index = 0
+    done_chunk.item = ResponseFunctionToolCall(
+        type="function_call",
+        id="func_123",
+        call_id="call_123",
+        name="get_weather",
+        arguments="{}",
+        status="completed",
+    )
+
+    _, _, _, done_generation_chunk = _convert_responses_chunk_to_generation_chunk(
+        done_chunk,
+        current_index=idx,
+        current_output_index=output_idx,
+        current_sub_index=sub_idx,
+    )
+    assert done_generation_chunk is not None
+
+    merged = added_generation_chunk + done_generation_chunk
+    content = merged.message.content
+    assert isinstance(content, list)
+    function_call_block = content[0]
+    assert isinstance(function_call_block, dict)
+    assert function_call_block["status"] == "completed"
 
 
 def test__construct_lc_result_from_responses_api_web_search_response() -> None:
@@ -3190,6 +3287,10 @@ def test__construct_responses_api_input_ai_message_with_tool_calls() -> None:
     assert result[0]["arguments"] == '{"location": "San Francisco"}'
     assert result[0]["call_id"] == "call_123"
     assert "id" not in result[0]
+    # Some OpenAI-compatible servers (e.g. vLLM serving GPT-OSS models) reject
+    # function_call blocks that omit "status" with "No call message found".
+    # See issue #32885.
+    assert result[0]["status"] is None
 
 
 def test__construct_responses_api_input_ai_message_with_tool_calls_and_content() -> (
@@ -3279,6 +3380,10 @@ def test__construct_responses_api_input_tool_message_conversion() -> None:
     assert result[0]["type"] == "function_call_output"
     assert result[0]["output"] == '{"temperature": 72, "conditions": "sunny"}'
     assert result[0]["call_id"] == "call_123"
+    # Some OpenAI-compatible servers (e.g. vLLM serving GPT-OSS models) reject
+    # function_call_output blocks that omit "status" with "No call message
+    # found", mirroring the function_call block it responds to. See #32885.
+    assert result[0]["status"] is None
 
 
 def test__construct_responses_api_input_multiple_message_types() -> None:

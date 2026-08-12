@@ -4648,6 +4648,7 @@ def _construct_responses_api_input(
                     "type": "function_call_output",
                     "output": tool_output,
                     "call_id": msg["tool_call_id"],
+                    "status": None,
                 }
                 input_.append(function_call_output)
         elif msg["role"] == "assistant":
@@ -4770,6 +4771,7 @@ def _construct_responses_api_input(
                             "name": tool_call["function"]["name"],
                             "arguments": tool_call["function"]["arguments"],
                             "call_id": tool_call["id"],
+                            "status": None,
                         }
                         input_.append(function_call)
 
@@ -4906,7 +4908,9 @@ def _construct_lc_result_from_responses_api(
                         refusal_block["phase"] = phase
                     content_blocks.append(refusal_block)
         elif output.type == "function_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            function_call_block = output.model_dump(exclude_none=True, mode="json")
+            function_call_block.setdefault("status", None)
+            content_blocks.append(function_call_block)
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
@@ -5184,11 +5188,26 @@ def _convert_responses_chunk_to_generation_chunk(
             "arguments": chunk.item.arguments,
             "call_id": chunk.item.call_id,
             "id": chunk.item.id,
+            "status": getattr(chunk.item, "status", None),
             "index": current_index,
         }
         if getattr(chunk.item, "namespace", None) is not None:
             function_call_content["namespace"] = chunk.item.namespace
         content.append(function_call_content)
+    elif (
+        chunk.type == "response.output_item.done" and chunk.item.type == "function_call"
+    ):
+        # The "added" event above records the transient status (typically
+        # "in_progress"); update it here with the terminal status (e.g.
+        # "completed") so a replayed history doesn't send a stale value.
+        _advance(chunk.output_index)
+        content.append(
+            {
+                "type": "function_call",
+                "status": getattr(chunk.item, "status", None),
+                "index": current_index,
+            }
+        )
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
         "web_search_call",

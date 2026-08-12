@@ -51,6 +51,27 @@ def vcr_config() -> dict[str, Any]:
     return config
 
 
+def _normalize_function_call_status(body: Any) -> Any:
+    """Drop the `status` key from `function_call`/`function_call_output` items.
+
+    `status` is now always included (defaulting to `None`) on these Responses
+    API input items so OpenAI-compatible servers that require it don't reject
+    replayed history. Cassettes recorded before that change don't have the
+    key, so ignore it here rather than re-recording every affected cassette.
+    """
+    if not isinstance(body, dict):
+        return body
+    input_items = body.get("input")
+    if isinstance(input_items, list):
+        for item in input_items:
+            if isinstance(item, dict) and item.get("type") in (
+                "function_call",
+                "function_call_output",
+            ):
+                item.pop("status", None)
+    return body
+
+
 def _json_body_matcher(r1: Any, r2: Any) -> None:
     """Match request bodies as parsed JSON, ignoring key order."""
     b1 = r1.body or b""
@@ -60,8 +81,8 @@ def _json_body_matcher(r1: Any, r2: Any) -> None:
     if isinstance(b2, bytes):
         b2 = b2.decode("utf-8")
     try:
-        j1 = json.loads(b1)
-        j2 = json.loads(b2)
+        j1 = _normalize_function_call_status(json.loads(b1))
+        j2 = _normalize_function_call_status(json.loads(b2))
     except (json.JSONDecodeError, ValueError):
         assert b1 == b2, f"body mismatch (non-JSON):\n{b1}\n!=\n{b2}"
         return
