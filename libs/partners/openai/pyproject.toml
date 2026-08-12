@@ -23,8 +23,15 @@ classifiers = [
 version = "1.4.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
+    # `certifi` is imported directly at module load (the shared SSL context), so
+    # it is declared here. Classic `httpx` is also imported directly (the
+    # SSRF-safe image fetch), but it must be the *same* `httpx` that
+    # `langchain-core`'s SSRF transport uses — so it is inherited from
+    # `langchain-core` rather than pinned separately. `openai>=3` pulls in the
+    # drop-in `httpx2` distribution on its own.
+    "certifi>=2024.6.2",
     "langchain-core>=1.5.3,<2.0.0",
-    "openai>=2.45.0,<3.0.0",
+    "openai>=2.45.0,<4.0.0",
     "tiktoken>=0.7.0,<1.0.0",
 ]
 
