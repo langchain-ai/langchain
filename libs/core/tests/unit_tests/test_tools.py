@@ -2981,6 +2981,58 @@ def test_tool_unresolvable_sibling_annotation_does_not_disable_injection() -> No
     assert captured["runtime"] is runtime
 
 
+def test_tool_fallback_preserves_annotated_injected_arg() -> None:
+    """Per-parameter fallback preserves `Annotated` injection metadata."""
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    @tool(args_schema=InputSchema)
+    def runtime_tool(
+        query: "NotDefinedAnywhere123",  # type: ignore[name-defined]  # noqa: F821
+        runtime: "Annotated[str, InjectedToolArg]",
+    ) -> str:
+        """Echo the query and capture the injected value."""
+        captured["runtime"] = runtime
+        return query  # type: ignore[no-any-return]
+
+    assert runtime_tool._injected_args_keys == frozenset({"runtime"})
+    assert runtime_tool.invoke({"query": "hello", "runtime": "injected"}) == "hello"
+    assert captured["runtime"] == "injected"
+
+
+def test_tool_partial_fallback_uses_wrapped_function_namespace() -> None:
+    """Partial fallback resolves hints in the wrapped function's namespace."""
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    def runtime_fn(
+        bound: int,
+        query: "NotDefinedAnywhere123",  # type: ignore[name-defined]  # noqa: F821
+        runtime: "_PostponedRuntime",
+    ) -> str:
+        captured["bound"] = bound
+        captured["runtime"] = runtime
+        return query  # type: ignore[no-any-return]
+
+    tool_ = StructuredTool.from_function(
+        func=partial(runtime_fn, 1),
+        name="runtime_tool",
+        description="Echo a query.",
+        args_schema=InputSchema,
+    )
+    runtime = _PostponedRuntime(some_obj=object())
+
+    assert tool_._injected_args_keys == frozenset({"runtime"})
+    assert tool_.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert captured == {"bound": 1, "runtime": runtime}
+
+
 def test_base_tool_unresolvable_sibling_annotation_does_not_disable_injection() -> None:
     """`BaseTool` subclasses get the same per-parameter hint resolution."""
 

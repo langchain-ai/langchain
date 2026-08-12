@@ -1488,6 +1488,23 @@ def _get_type_hints(
         return None
 
 
+def _get_type_hints_source(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Return the callable that owns the annotations for an effective signature.
+
+    Args:
+        func: The callable being inspected.
+
+    Returns:
+        The function or method whose annotations describe `signature(func)`.
+    """
+    if isinstance(func, functools.partial):
+        func = func.func
+    if not inspect.isroutine(func) and not inspect.isclass(func):
+        callable_obj = cast("Any", func)
+        return cast("Callable[..., Any]", callable_obj.__call__)
+    return func
+
+
 def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozenset[str]:
     """Identify injected-argument parameters of a callable.
 
@@ -1502,6 +1519,9 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
     `_is_injected_arg_type` will not classify as injected (the pre-existing
     behavior).
 
+    Names that existed only in a callable's defining local scope are unavailable
+    at this inspection point and remain unresolved.
+
     Args:
         func: The function (or bound method) whose signature to inspect.
 
@@ -1509,14 +1529,14 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
         `frozenset` of parameter names annotated as injected arguments.
     """
     params = signature(func).parameters
-    hints = _get_type_hints(func, include_extras=True)
+    hint_source = _get_type_hints_source(func)
+    hints = _get_type_hints(hint_source, include_extras=True)
     if hints is not None:
         return frozenset(
             name
             for name, param in params.items()
             if _is_injected_arg_type(hints.get(name, param.annotation))
         )
-    hint_source = func.func if isinstance(func, functools.partial) else func
     globalns = getattr(hint_source, "__globals__", {})
     keys = set()
     for name, param in params.items():
