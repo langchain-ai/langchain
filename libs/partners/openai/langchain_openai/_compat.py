@@ -18,6 +18,7 @@ subclassed.
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 import openai
@@ -25,12 +26,10 @@ import openai
 
 def _sdk_uses_httpx2() -> bool:
     """Whether the installed `openai` SDK defaults to `httpx2` (openai>=3)."""
-    try:
-        major = int(openai.__version__.split(".", 1)[0])
-    except (AttributeError, ValueError):
-        # Unparseable version: fall back to classic httpx (always present).
-        return False
-    return major >= 3
+    # First integer run, so tag-derived strings like `v3.0.0` still parse;
+    # unparseable falls back to classic httpx (always present).
+    match = re.match(r"\D*(\d+)", str(getattr(openai, "__version__", "")))
+    return match is not None and int(match.group(1)) >= 3
 
 
 if TYPE_CHECKING:

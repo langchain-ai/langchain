@@ -58,6 +58,10 @@ def test_client_utils_transport_objects_use_shim_httpx() -> None:
         ("3.0.0", True),
         ("3.1.2", True),
         ("4.0.0", True),
+        # Tag-derived / pre-release strings a plain `int()` parse choked on.
+        ("v3.0.0", True),
+        ("3.0.0rc1", True),
+        ("3.0.0.dev1", True),
     ],
 )
 def test_sdk_uses_httpx2_reads_major_version(
