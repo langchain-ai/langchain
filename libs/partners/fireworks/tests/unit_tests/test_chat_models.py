@@ -1668,12 +1668,16 @@ class TestServiceTier:
         assert isinstance(result, AIMessage)
         assert result.response_metadata["service_tier"] == "priority"
 
-    def test_service_tier_echoed_in_stream_chunks(self) -> None:
+    def test_service_tier_echoed_once_in_stream_chunks(self) -> None:
         model = _make_model(service_tier="priority")
         model.client = MagicMock()
         chunks: list[dict[str, Any]] = [
             {
                 "choices": [{"delta": {"role": "assistant", "content": "hi"}}],
+                "service_tier": "priority",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop"}],
                 "service_tier": "priority",
             },
             {
@@ -1687,10 +1691,42 @@ class TestServiceTier:
             },
         ]
         model.client.create.return_value = iter(chunks)
-        out = list(model.stream("Hello"))
-        tagged = [c for c in out if c.response_metadata.get("service_tier")]
-        assert tagged
-        assert all(c.response_metadata["service_tier"] == "priority" for c in tagged)
+        output = list(model.stream("Hello"))
+        tagged = [c for c in output if c.response_metadata.get("service_tier")]
+        assert len(tagged) == 1
+        assert tagged[0].response_metadata["service_tier"] == "priority"
+
+        combined = output[0]
+        for chunk in output[1:]:
+            combined += chunk
+        assert combined.response_metadata["service_tier"] == "priority"
+
+    async def test_service_tier_echoed_once_in_async_stream_chunks(self) -> None:
+        model = _make_model(service_tier="priority")
+        model.async_client = MagicMock()
+        chunks: list[dict[str, Any]] = [
+            {
+                "choices": [{"delta": {"role": "assistant", "content": "hi"}}],
+                "service_tier": "priority",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop"}],
+                "service_tier": "priority",
+            },
+        ]
+
+        async def _aiter() -> Any:
+            for chunk in chunks:
+                yield chunk
+
+        async def _create(**_kwargs: Any) -> Any:
+            return _aiter()
+
+        model.async_client.create = MagicMock(side_effect=_create)
+        output = [chunk async for chunk in model.astream("Hello")]
+        tagged = [c for c in output if c.response_metadata.get("service_tier")]
+        assert len(tagged) == 1
+        assert tagged[0].response_metadata["service_tier"] == "priority"
 
     def test_service_tier_absent_when_not_in_response(self) -> None:
         model = _make_model()
