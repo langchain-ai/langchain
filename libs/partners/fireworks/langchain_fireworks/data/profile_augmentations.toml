@@ -35,3 +35,9 @@ reasoning_effort_levels = ["low", "medium", "high"]
 
 [overrides."accounts/fireworks/routers/kimi-k2p7-code-fast"]
 reasoning_effort_levels = ["low", "medium", "high"]
+
+[overrides."accounts/fireworks/models/minimax-m2p7"]
+max_input_tokens = 204800
+
+[overrides."accounts/fireworks/models/minimax-m3"]
+max_input_tokens = 1000000

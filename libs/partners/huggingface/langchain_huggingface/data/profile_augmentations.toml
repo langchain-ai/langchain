@@ -2,3 +2,7 @@ provider = "huggingface"
 
 [overrides]
 tool_call_streaming = true
+
+[overrides."MiniMaxAI/MiniMax-M3"]
+max_input_tokens = 1000000
+video_inputs = true
