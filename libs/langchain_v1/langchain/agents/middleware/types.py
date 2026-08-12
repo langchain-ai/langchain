@@ -28,7 +28,7 @@ from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
 from langgraph.runtime import Runtime
-from langgraph.types import Command
+from langgraph.types import Command, TracePolicy, omit_payload
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
@@ -54,12 +54,14 @@ __all__ = [
     "StateT_co",
     "ToolCallRequest",
     "ToolCallWrapper",
+    "TracePolicy",
     "after_agent",
     "after_model",
     "before_agent",
     "before_model",
     "dynamic_prompt",
     "hook_config",
+    "omit_payload",
     "wrap_tool_call",
 ]
 
@@ -397,6 +399,16 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
 
     tools: Sequence[BaseTool]
     """Additional tools registered by the middleware."""
+
+    trace_policy: TracePolicy | None = None
+    """Optional trace policy for this middleware's hook spans (`wrap_model_call`/
+    `wrap_tool_call` and the `before_*`/`after_*` node hooks).
+
+    By default (`None`), hook spans are traced normally. Set a `TracePolicy` to shape
+    what they record -- e.g. `TracePolicy(process_inputs=omit_payload)` to drop the
+    conversation `messages`/`state` payload while keeping the span and its timing.
+    Messages are still captured on the inner model-call span.
+    """
 
     transformers: Sequence[TransformerFactory] = ()
     """Stream transformer factories registered by the middleware.

@@ -795,6 +795,24 @@ def test_tool_outputs() -> None:
     assert not response.tool_calls
 
 
+def test_tool_outputs_fewer_than_tool_calls_raises() -> None:
+    with pytest.raises(ValueError, match="must match"):
+        tool_example_to_messages(
+            input="Extract both values",
+            tool_calls=[FakeCall(data="a"), FakeCall(data="b")],
+            tool_outputs=["only one output"],
+        )
+
+
+def test_tool_outputs_more_than_tool_calls_raises() -> None:
+    with pytest.raises(ValueError, match="must match"):
+        tool_example_to_messages(
+            input="Extract one value",
+            tool_calls=[FakeCall(data="a")],
+            tool_outputs=["output1", "extra output"],
+        )
+
+
 @pytest.mark.parametrize(
     "typed_dict",
     [ExtensionsTypedDict, TypingTypedDict],

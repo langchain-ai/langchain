@@ -2,6 +2,7 @@
 
 from langgraph.runtime import Runtime
 
+from langchain.agents.middleware._trace_policy import configure_trace_policy
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
@@ -37,12 +38,14 @@ from langchain.agents.middleware.types import (
     ModelResponse,
     OutputAgentState,
     ToolCallRequest,
+    TracePolicy,
     after_agent,
     after_model,
     before_agent,
     before_model,
     dynamic_prompt,
     hook_config,
+    omit_payload,
     wrap_model_call,
     wrap_tool_call,
 )
@@ -82,13 +85,16 @@ __all__ = [
     "ToolCallRequest",
     "ToolErrorMiddleware",
     "ToolRetryMiddleware",
+    "TracePolicy",
     "TriggerClause",
     "after_agent",
     "after_model",
     "before_agent",
     "before_model",
+    "configure_trace_policy",
     "dynamic_prompt",
     "hook_config",
+    "omit_payload",
     "wrap_model_call",
     "wrap_tool_call",
 ]
