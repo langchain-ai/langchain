@@ -9,11 +9,14 @@ import functools
 import os
 import re
 from collections.abc import Callable, Sequence
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import PurePosixPath
 from typing import Any, Final, Literal, overload
 
-import wcmatch.glob as wcglob
+try:
+    from wcmatch import glob as wcglob
+except ImportError:
+    wcglob = None
 
 from langchain.agents.protocol import FileData, GrepResult, ReadResult
 from langchain.agents.protocol import FileInfo as _FileInfo
@@ -110,6 +113,10 @@ def compile_grep_include_glob(pattern: str) -> Callable[[str], bool]:
         Predicate accepting a search-root-relative POSIX path; returns True when
         the path is included by `pattern`.
     """
+    if wcglob is None:
+        err_msg = "wcmatch is required. Install the `skills` extra."
+        raise ImportError(err_msg)
+
     flags = wcglob.BRACE | wcglob.GLOBSTAR
     # A leading `/` anchors to the search root: strip it so it matches against
     # the (slash-less) relative path, but decide anchoring from the original
@@ -153,6 +160,10 @@ def compile_recursive_glob(pattern: str) -> Callable[[str], bool]:
         Predicate accepting a search-root-relative POSIX path; returns True when
         the path matches `pattern` under recursive-glob semantics.
     """
+    if wcglob is None:
+        err_msg = "wcmatch is required. Install the `skills` extra."
+        raise ImportError(err_msg)
+
     flags = wcglob.BRACE | wcglob.GLOBSTAR | wcglob.DOTMATCH
     compiled = wcglob.compile("**/" + pattern.lstrip("/"), flags=flags)
 
@@ -178,8 +189,12 @@ def _normalize_content(file_data: FileData) -> str:
     if isinstance(content, list) and all(isinstance(line, str) for line in content):
         return "\n".join(content)
     if not isinstance(content, str):
-        msg = f"File content must be a string or a legacy list of strings, got {type(content).__name__}."
+        msg = (
+            "File content must be a string or a legacy list of strings, "
+            f"got {type(content).__name__}."
+        )
         raise TypeError(msg)
+
     return content
 
 
@@ -222,7 +237,9 @@ def format_content_with_line_numbers(
         # One slice per MAX_LINE_LENGTH chunk; short lines yield a single chunk.
         # `or [line]` keeps a row for a blank line, whose empty range would
         # otherwise drop it, so it still gets a gutter.
-        chunks = [line[s : s + MAX_LINE_LENGTH] for s in range(0, len(line), MAX_LINE_LENGTH)] or [line]
+        chunks = [line[s : s + MAX_LINE_LENGTH] for s in range(0, len(line), MAX_LINE_LENGTH)] or [
+            line
+        ]
 
         for chunk_idx, chunk in enumerate(chunks):
             marker = str(line_num) if chunk_idx == 0 else f"{line_num}.{chunk_idx}"
@@ -334,7 +351,7 @@ def create_file_data(
     Returns:
         FileD`ata dict with content, encoding, and timestamps.
     """
-    now = datetime.now(UTC).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
 
     return {
         "content": content,
@@ -354,7 +371,7 @@ def update_file_data(file_data: FileData, content: str) -> FileData:
     Returns:
         Updated `FileData` dict
     """
-    now = datetime.now(UTC).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
 
     result = FileData(
         content=content,
@@ -473,7 +490,11 @@ def perform_string_replacement(
         # consumers must surface a precise hint rather than silently relax
         # the contract — silent recovery on a stripped key risks corrupting
         # interior text that happens to share a prefix.
-        if old_string.endswith("\n") and len(old_string) > 1 and content.endswith(old_string.removesuffix("\n")):
+        if (
+            old_string.endswith("\n")
+            and len(old_string) > 1
+            and content.endswith(old_string.removesuffix("\n"))
+        ):
             stripped = old_string.removesuffix("\n")
             stripped_count = content.count(stripped)
             if stripped_count == 1:
@@ -497,7 +518,8 @@ def perform_string_replacement(
     if occurrences > 1 and not replace_all:
         return (
             f"Error: String '{old_string}' appears {occurrences} times in file. "
-            f"Use replace_all=True to replace all instances, or provide a more specific string with surrounding context."
+            "Use replace_all=True to replace all instances, "
+            "or provide a more specific string with surrounding context."
         )
 
     new_content = content.replace(old_string, new_string)
@@ -517,7 +539,10 @@ def truncate_if_too_long(result: list[str] | str) -> list[str] | str:
     if isinstance(result, list):
         total_chars = sum(len(item) for item in result)
         if total_chars > TOOL_RESULT_TOKEN_LIMIT * 4:
-            return result[: len(result) * TOOL_RESULT_TOKEN_LIMIT * 4 // total_chars] + [TRUNCATION_GUIDANCE]  # noqa: RUF005  # Concatenation preferred for clarity
+            return [
+                *result[: len(result) * TOOL_RESULT_TOKEN_LIMIT * 4 // total_chars],
+                TRUNCATION_GUIDANCE,
+            ]  # Concatenation preferred for clarity
         return result
     # string
     if len(result) > TOOL_RESULT_TOKEN_LIMIT * 4:
@@ -633,7 +658,11 @@ def validate_path(path: str, *, allowed_prefixes: Sequence[str] | None = None) -
 
     # Reject Windows absolute paths (e.g., C:\..., D:/...)
     if re.match(r"^[a-zA-Z]:", path):
-        msg = f"Windows absolute paths are not supported: {path}. Please use virtual paths starting with / (e.g., /workspace/file.txt)"
+        msg = (
+            f"Windows absolute paths are not supported: {path}. "
+            "Please use virtual paths starting with / "
+            "(e.g., /workspace/file.txt)"
+        )
         raise ValueError(msg)
 
     normalized = os.path.normpath(path)
@@ -647,7 +676,9 @@ def validate_path(path: str, *, allowed_prefixes: Sequence[str] | None = None) -
         msg = f"Path traversal detected after normalization: {path} -> {normalized}"
         raise ValueError(msg)
 
-    if allowed_prefixes is not None and not any(normalized.startswith(prefix) for prefix in allowed_prefixes):
+    if allowed_prefixes is not None and not any(
+        normalized.startswith(prefix) for prefix in allowed_prefixes
+    ):
         msg = f"Path must start with one of {allowed_prefixes}: {path}"
         raise ValueError(msg)
 
@@ -863,7 +894,9 @@ def grep_matches_from_files(
 
     if glob:
         matcher = compile_grep_include_glob(glob)
-        filtered = {fp: fd for fp, fd in filtered.items() if matcher(_relative_to_root(fp, normalized_path))}
+        filtered = {
+            fp: fd for fp, fd in filtered.items() if matcher(_relative_to_root(fp, normalized_path))
+        }
 
     matches: list[GrepMatch] = []
     for file_path, file_data in filtered.items():
@@ -899,7 +932,9 @@ def format_grep_matches(
     # the producer sets both keys on every match or none. `_format_grep_with_context`
     # still tolerates a hand-built mix of matches with and without context, because
     # `format_grep_matches` is public and may be handed such input.
-    if output_mode != "content" or not any("context_before" in match or "context_after" in match for match in matches):
+    if output_mode != "content" or not any(
+        "context_before" in match or "context_after" in match for match in matches
+    ):
         return _format_grep_results(build_grep_results_dict(matches), output_mode)
     return _format_grep_with_context(matches)
 

@@ -1,8 +1,12 @@
 from pathlib import Path
 from types import SimpleNamespace
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from langchain_core.messages import SystemMessage
+
+if TYPE_CHECKING:
+    from langchain_core.messages.content import TextContentBlock
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import SkillsMiddleware
@@ -62,7 +66,10 @@ class _FakeRequest:
     def override(self, **kwargs: object) -> "_FakeRequest":
         return _FakeRequest(
             state=self.state,
-            system_message=kwargs.get("system_message", self.system_message),
+            system_message=cast(
+                "SystemMessage | None",
+                kwargs.get("system_message", self.system_message),
+            ),
         )
 
 
@@ -113,7 +120,17 @@ def test_modify_request_appends_skill_list_to_system_message() -> None:
 
     assert modified_request.system_message is not None
     assert isinstance(modified_request.system_message, SystemMessage)
-    text = modified_request.system_message.content_blocks[0]["text"]
+
+    content_blocks = modified_request.system_message.content_blocks
+
+    text_blocks = [
+        cast("TextContentBlock", block)["text"]
+        for block in content_blocks
+        if cast("dict[str, object]", block).get("type") == "text"
+    ]
+
+    assert text_blocks
+    text = text_blocks[0]
     assert text.startswith("## Skills System")
     assert "web-research" in text
     assert "/skills/web-research/SKILL.md" in text

@@ -1,4 +1,5 @@
 """Utility functions for middleware."""
+
 from langchain_core.messages import ContentBlock, SystemMessage
 
 

@@ -2,9 +2,8 @@ import pytest
 
 from langchain.agents.protocol import (
     BackendProtocol,
-    GrepResult,
+    DeleteResult,
     ReadResult,
-    _apply_grep_max_count,
     _supports_delete,
 )
 
@@ -94,57 +93,19 @@ class TestReadResult:
                 next_offset=9,
             )
 
-class TestApplyGrepMaxCount:
-    def test_no_limit(self) -> None:
-        result = GrepResult(
-            matches=[{"line": 1}, {"line": 2}],
-            truncated=False,
-        )
-
-        new_result = _apply_grep_max_count(result, None)
-
-        assert new_result is result
-
-    def test_matches_less_than_limit(self) -> None:
-        result = GrepResult(
-            matches=[{"line": 1}, {"line": 2}],
-            truncated=False,
-        )
-
-        new_result = _apply_grep_max_count(result, 5)
-
-        assert new_result is result
-
-    def test_matches_equal_limit(self) -> None:
-        result = GrepResult(
-            matches=[{"line": 1}, {"line": 2}],
-            truncated=False,
-        )
-
-        new_result = _apply_grep_max_count(result, 2)
-
-        assert new_result is result
-
-    def test_matches_greater_than_limit(self) -> None:
-        result = GrepResult(
-            matches=[{"line": 1}, {"line": 2}, {"line": 3}],
-            truncated=False,
-        )
-
-        new_result = _apply_grep_max_count(result, 2)
-
-        assert len(new_result.matches) == 2
-        assert new_result.truncated is True
 
 class BackendWithoutDelete(BackendProtocol):
     pass
 
+
 class BackendWithDelete(BackendProtocol):
-    def delete() -> None:
-        return None
+    def delete(self, _path: str) -> DeleteResult:
+        return DeleteResult()
+
 
 def test_supports_delete_false() -> None:
     assert _supports_delete(BackendWithoutDelete()) is False
+
 
 def test_supports_delete_true() -> None:
     assert _supports_delete(BackendWithDelete()) is True

@@ -1,5 +1,6 @@
 import pytest
 
+from langchain.agents.protocol import FileData
 from langchain.agents.utils import (
     compile_grep_include_glob,
     create_file_data,
@@ -11,11 +12,10 @@ from langchain.agents.utils import (
 )
 
 
-@pytest.mark.requires("wcmatch")
 def test_validate_path_normalizes_relative_path() -> None:
     assert validate_path("foo/bar") == "/foo/bar"
 
-@pytest.mark.requires("wcmatch")
+
 def test_validate_path_rejects_parent_traversal() -> None:
     with pytest.raises(
         ValueError,
@@ -23,7 +23,7 @@ def test_validate_path_rejects_parent_traversal() -> None:
     ):
         validate_path("../etc/passwd")
 
-@pytest.mark.requires("wcmatch")
+
 def test_validate_path_rejects_windows_absolute_path() -> None:
     with pytest.raises(
         ValueError,
@@ -31,18 +31,13 @@ def test_validate_path_rejects_windows_absolute_path() -> None:
     ):
         validate_path(r"C:\Users\test.txt")
 
-@pytest.mark.requires("wcmatch")
+
 def test_format_content_with_line_numbers() -> None:
-    result = format_content_with_line_numbers(
-        "hello\nworld"
-    )
+    result = format_content_with_line_numbers("hello\nworld")
 
-    assert result == (
-        "1  hello\n"
-        "2  world"
-    )
+    assert result == ("1  hello\n2  world")
 
-@pytest.mark.requires("wcmatch")
+
 def test_format_long_line() -> None:
     content = "a" * 6000
 
@@ -50,47 +45,30 @@ def test_format_long_line() -> None:
 
     assert "1.1" in result
 
-@pytest.mark.requires("wcmatch")
+
 def test_slice_read_response() -> None:
-    file_data = {
-        "content": "a\nb\nc",
-        "encoding": "utf-8"
-    }
+    file_data: FileData = {"content": "a\nb\nc", "encoding": "utf-8"}
 
-    result = slice_read_response(
-        file_data,
-        offset=1,
-        limit=1
-    )
+    result = slice_read_response(file_data, offset=1, limit=1)
 
+    assert result.file_data is not None
     assert result.file_data["content"] == "b\n"
     assert result.start_line == 2
     assert result.end_line == 2
 
-@pytest.mark.requires("wcmatch")
+
 def test_slice_read_response_invalid_offset() -> None:
-    result = slice_read_response(
-        {
-            "content": "hello",
-            "encoding": "utf-8"
-        },
-        offset=10,
-        limit=2
-    )
+    result = slice_read_response({"content": "hello", "encoding": "utf-8"}, offset=10, limit=2)
 
     assert result.error is not None
 
-@pytest.mark.requires("wcmatch")
+
 def test_replace_string() -> None:
-    result = perform_string_replacement(
-        "hello world",
-        "world",
-        "python"
-    )
+    result = perform_string_replacement("hello world", "world", "python")
 
     assert result == ("hello python", 1)
 
-@pytest.mark.requires("wcmatch")
+
 def test_replace_missing_string() -> None:
 
     result = perform_string_replacement(
@@ -102,13 +80,9 @@ def test_replace_missing_string() -> None:
     assert isinstance(result, str)
     assert "not found" in result
 
-@pytest.mark.requires("wcmatch")
+
 def test_replace_duplicate_without_replace_all() -> None:
-    result = perform_string_replacement(
-        "a a",
-        "a",
-        "b"
-    )
+    result = perform_string_replacement("a a", "a", "b")
 
     assert isinstance(result, str)
     assert "replace_all=True" in result
@@ -125,30 +99,16 @@ def test_compile_grep_include_glob_rejects_txt() -> None:
 
     assert not matcher("src/main.txt")
 
-@pytest.mark.requires("wcmatch")
+
 def test_grep_matches_files() -> None:
 
-    files = {
-        "/a.py": {
-            "content": "hello\nworld",
-            "encoding": "utf-8"
-        }
-    }
+    files = {"/a.py": {"content": "hello\nworld", "encoding": "utf-8"}}
 
-    result = grep_matches_from_files(
-        files,
-        "hello"
-    )
+    result = grep_matches_from_files(files, "hello")
 
-    assert result.matches == [
-        {
-            "path": "/a.py",
-            "line": 1,
-            "text": "hello"
-        }
-    ]
+    assert result.matches == [{"path": "/a.py", "line": 1, "text": "hello"}]
 
-@pytest.mark.requires("wcmatch")
+
 def test_create_file_data() -> None:
     result = create_file_data("hello")
 
@@ -156,24 +116,24 @@ def test_create_file_data() -> None:
     assert result["encoding"] == "utf-8"
     assert "created_at" in result
 
-@pytest.mark.requires("wcmatch")
+
 def test_validate_path_root() -> None:
     assert validate_path("/") == "/"
 
-@pytest.mark.requires("wcmatch")
+
 def test_validate_path_removes_duplicate_slashes() -> None:
     assert validate_path("/foo//bar") == "/foo/bar"
 
-@pytest.mark.requires("wcmatch")
+
 def test_validate_path_rejects_parent_directory_component() -> None:
     with pytest.raises(ValueError, match="Path traversal"):
         validate_path("/foo/../bar")
 
-@pytest.mark.requires("wcmatch")
+
 def test_validate_path_allows_filename_with_dots() -> None:
     assert validate_path("/foo..bar.txt") == "/foo..bar.txt"
 
-@pytest.mark.requires("wcmatch")
+
 def test_validate_path_rejects_home_expansion() -> None:
     with pytest.raises(
         ValueError,
@@ -181,19 +141,22 @@ def test_validate_path_rejects_home_expansion() -> None:
     ):
         validate_path("~/secret.txt")
 
-@pytest.mark.requires("wcmatch")
+
 def test_validate_path_rejects_windows_drive_path() -> None:
     with pytest.raises(ValueError, match="Windows absolute paths"):
         validate_path(r"C:\Users\test.txt")
 
-@pytest.mark.requires("wcmatch")
-def test_validate_path_checks_allowed_prefixes() -> None:
-    assert validate_path(
-        "/data/file.txt",
-        allowed_prefixes=["/data"],
-    ) == "/data/file.txt"
 
-@pytest.mark.requires("wcmatch")
+def test_validate_path_checks_allowed_prefixes() -> None:
+    assert (
+        validate_path(
+            "/data/file.txt",
+            allowed_prefixes=["/data"],
+        )
+        == "/data/file.txt"
+    )
+
+
 def test_validate_path_rejects_disallowed_prefix() -> None:
     with pytest.raises(
         ValueError,
@@ -204,19 +167,19 @@ def test_validate_path_rejects_disallowed_prefix() -> None:
             allowed_prefixes=["/data"],
         )
 
-@pytest.mark.requires("wcmatch")
+
 def test_format_empty_content() -> None:
     result = format_content_with_line_numbers("")
 
     assert result == ""
 
-@pytest.mark.requires("wcmatch")
+
 def test_format_content_with_trailing_newline() -> None:
     result = format_content_with_line_numbers("hello\n")
 
     assert result == "1  hello"
 
-@pytest.mark.requires("wcmatch")
+
 def test_format_content_custom_start_line() -> None:
     result = format_content_with_line_numbers(
         "hello",
@@ -225,7 +188,7 @@ def test_format_content_custom_start_line() -> None:
 
     assert result == "10  hello"
 
-@pytest.mark.requires("wcmatch")
+
 def test_format_long_line_creates_continuation_marker() -> None:
     content = "a" * 6000
 
@@ -233,15 +196,15 @@ def test_format_long_line_creates_continuation_marker() -> None:
 
     assert "1.1" in result
 
-@pytest.mark.requires("wcmatch")
-def make_file(content: str) -> None:
+
+def make_file(content: str) -> FileData:
     return {
         "content": content,
         "encoding": "utf-8",
         "created_at": "today",
     }
 
-@pytest.mark.requires("wcmatch")
+
 def test_slice_empty_file() -> None:
     result = slice_read_response(
         make_file(""),
@@ -249,10 +212,11 @@ def test_slice_empty_file() -> None:
         limit=10,
     )
 
+    assert result.file_data is not None
     assert result.file_data["content"] == ""
     assert result.start_line is None
 
-@pytest.mark.requires("wcmatch")
+
 def test_slice_offset_beyond_file() -> None:
 
     result = slice_read_response(
@@ -263,7 +227,7 @@ def test_slice_offset_beyond_file() -> None:
 
     assert result.error is not None
 
-@pytest.mark.requires("wcmatch")
+
 def test_slice_preserves_metadata() -> None:
     result = slice_read_response(
         make_file("hello"),
@@ -271,9 +235,10 @@ def test_slice_preserves_metadata() -> None:
         limit=1,
     )
 
+    assert result.file_data is not None
     assert result.file_data["created_at"] == "today"
 
-@pytest.mark.requires("wcmatch")
+
 def test_slice_handles_crlf() -> None:
 
     result = slice_read_response(
@@ -282,9 +247,10 @@ def test_slice_handles_crlf() -> None:
         limit=3,
     )
 
+    assert result.file_data is not None
     assert result.file_data["content"] == "a\nb\nc"
 
-@pytest.mark.requires("wcmatch")
+
 def test_slice_returns_next_offset() -> None:
 
     result = slice_read_response(
@@ -295,7 +261,7 @@ def test_slice_returns_next_offset() -> None:
 
     assert result.next_offset == 2
 
-@pytest.mark.requires("wcmatch")
+
 def test_replace_single_occurrence() -> None:
     result = perform_string_replacement(
         "hello world",
@@ -305,7 +271,7 @@ def test_replace_single_occurrence() -> None:
 
     assert result == ("hello python", 1)
 
-@pytest.mark.requires("wcmatch")
+
 def test_replace_all_occurrences() -> None:
     result = perform_string_replacement(
         "a a a",
@@ -316,7 +282,7 @@ def test_replace_all_occurrences() -> None:
 
     assert result == ("b b b", 3)
 
-@pytest.mark.requires("wcmatch")
+
 def test_replace_missing_final_newline_hint() -> None:
 
     result = perform_string_replacement(
@@ -328,7 +294,7 @@ def test_replace_missing_final_newline_hint() -> None:
     assert isinstance(result, str)
     assert "trailing newline" in result
 
-@pytest.mark.requires("wcmatch")
+
 def test_grep_finds_literal_match() -> None:
 
     files = {
@@ -343,6 +309,7 @@ def test_grep_finds_literal_match() -> None:
         "hello",
     )
 
+    assert result.matches
     assert result.matches[0]["line"] == 1
 
 @pytest.mark.requires("wcmatch")
@@ -360,9 +327,10 @@ def test_grep_is_literal_not_regex() -> None:
         ".*",
     )
 
+    assert result.matches is not None
     assert len(result.matches) == 1
 
-@pytest.mark.requires("wcmatch")
+
 def test_grep_respects_max_count() -> None:
 
     files = {
@@ -381,7 +349,7 @@ def test_grep_respects_max_count() -> None:
     assert len(result.matches) == 2
     assert result.truncated is True
 
-@pytest.mark.requires("wcmatch")
+
 def test_grep_invalid_path_returns_empty() -> None:
 
     result = grep_matches_from_files(

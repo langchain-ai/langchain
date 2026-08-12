@@ -9,11 +9,11 @@ import abc
 import asyncio
 import inspect
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache, partial
-from typing import Final, Literal, NotRequired
+from typing import Final, Literal
 
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 logger = logging.getLogger(__name__)
 
@@ -241,13 +241,25 @@ class ReadResult:
         # bound together above, so testing `start_line` covers both.
         if self.start_line is not None and self.end_line is not None:
             if self.start_line < 1 or self.end_line < self.start_line:
-                msg = f"ReadResult window must satisfy 1 <= start_line <= end_line, got start_line={self.start_line}, end_line={self.end_line}"
+                msg = (
+                    "ReadResult window must satisfy "
+                    "1 <= start_line <= end_line, "
+                    f"got start_line={self.start_line}, "
+                    f"end_line={self.end_line}"
+                )
                 raise ValueError(msg)
             if self.total_lines is not None and self.total_lines < self.end_line:
-                msg = f"ReadResult.total_lines ({self.total_lines}) cannot be less than end_line ({self.end_line})"
+                msg = (
+                    "ReadResult.total_lines "
+                    f"({self.total_lines}) cannot be less than "
+                    f"end_line ({self.end_line})"
+                )
                 raise ValueError(msg)
             if self.next_offset is not None and self.next_offset != self.end_line:
-                msg = f"ReadResult.next_offset ({self.next_offset}) must equal end_line ({self.end_line}), the 0-indexed line after the last shown"
+                msg = (
+                    f"ReadResult.next_offset ({self.next_offset}) must equal "
+                    f"end_line ({self.end_line}), the 0-indexed line after the last shown"
+                )
                 raise ValueError(msg)
 
 
@@ -331,7 +343,7 @@ class GrepResult:
     """
 
     error: str | None = None
-    matches: list["GrepMatch"] | None = None
+    matches: list["GrepMatch"] = field(default_factory=list)
     truncated: bool = False
 
 
@@ -524,7 +536,9 @@ class BackendProtocol(abc.ABC):  # noqa: B024
         through `_apply_grep_max_count` (a no-op when already within the cap), so
         callers get the same guarantee regardless of which path runs.
         """
-        grep_kwargs = {"max_count": max_count} if _method_accepts_max_count(type(self), "grep") else {}
+        grep_kwargs = (
+            {"max_count": max_count} if _method_accepts_max_count(type(self), "grep") else {}
+        )
         grep_call = partial(self.grep, pattern, path, glob, **grep_kwargs)
         try:
             result = await asyncio.wait_for(
@@ -541,7 +555,10 @@ class BackendProtocol(abc.ABC):  # noqa: B024
                 glob,
             )
             return GrepResult(
-                error=f"Error: grep timed out after {ASYNC_GREP_TIMEOUT}s. Try a more specific pattern or a narrower path.",
+                error=(
+                    f"Error: grep timed out after {ASYNC_GREP_TIMEOUT}s. "
+                    "Try a more specific pattern or a narrower path."
+                ),
             )
 
     def glob(self, pattern: str, path: str | None = None) -> "GlobResult":
@@ -747,7 +764,9 @@ class ExecuteResponse:
 
 @dataclass(frozen=True, slots=True)
 class ExecuteOffloadResult:
-    """Result of [`BaseSandbox.execute_with_offload`][deepagents.backends.sandbox.BaseSandbox.execute_with_offload].
+    """Result of sandbox execution.
+
+    [`BaseSandbox.execute_with_offload`][deepagents.backends.sandbox.BaseSandbox.execute_with_offload].
 
     `offloaded` describes the capture mechanism and is kept off `ExecuteResponse`
     (which an ordinary `execute` never sets).
@@ -813,7 +832,7 @@ class SandboxBackendProtocol(BackendProtocol):
         *,
         # ASYNC109 - timeout is a semantic parameter forwarded to the sync
         # implementation, not an asyncio.timeout() contract.
-        timeout: int | None = None,  # noqa: ASYNC109
+        timeout: int | None = None,
     ) -> ExecuteResponse:
         """Async version of execute."""
         # The middleware layer validates timeout support before calling, so
@@ -824,7 +843,9 @@ class SandboxBackendProtocol(BackendProtocol):
 
 
 @lru_cache(maxsize=256)
-def _method_accepts_max_count(cls: type[BackendProtocol], method_name: Literal["grep", "agrep"]) -> bool:
+def _method_accepts_max_count(
+    cls: type[BackendProtocol], method_name: Literal["grep", "agrep"]
+) -> bool:
     """Check whether a backend method accepts the optional `max_count` keyword."""
     try:
         sig = inspect.signature(getattr(cls, method_name))
@@ -838,7 +859,9 @@ def _method_accepts_max_count(cls: type[BackendProtocol], method_name: Literal["
             exc_info=True,
         )
         return False
-    return "max_count" in sig.parameters or any(parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in sig.parameters.values())
+    return "max_count" in sig.parameters or any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in sig.parameters.values()
+    )
 
 
 @lru_cache(maxsize=128)
@@ -855,7 +878,8 @@ def execute_accepts_timeout(cls: type[SandboxBackendProtocol]) -> bool:
         sig = inspect.signature(cls.execute)
     except (ValueError, TypeError):
         logger.warning(
-            "Could not inspect signature of %s.execute; assuming timeout is not supported. This may indicate a backend packaging issue.",
+            "Could not inspect signature of %s.execute; assuming timeout is not supported."
+            " This may indicate a backend packaging issue.",
             cls.__qualname__,
             exc_info=True,
         )

@@ -49,6 +49,7 @@ deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 meta = ["langchain-meta"]
+skills = ["wcmatch>=10.0"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
@@ -91,6 +92,9 @@ test_integration = [
     "langchainhub>=0.1.16,<1.0.0",
     "langchain-text-splitters>=1.0.0,<2.0.0",
 ]
+dev = [
+    "types-pyyaml>=6.0.12.20260724",
+]
 
 [tool.uv]
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
@@ -112,7 +116,7 @@ enable_error_code = "deprecated"
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = ["pytest_socket.*", "vcr.*"]
+module = ["pytest_socket.*", "vcr.*", "wcmatch.*"]
 ignore_missing_imports = true
 
 [tool.ruff.format]

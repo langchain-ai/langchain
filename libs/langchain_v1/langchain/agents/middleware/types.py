@@ -49,6 +49,17 @@ from langchain.agents.protocol import (
     ReadResult,
     WriteResult,
 )
+from langchain.agents.utils import (
+    _copy_file_data_with_content,
+    _get_backend_read_file_type,
+    _glob_search_files,
+    create_file_data,
+    file_data_to_string,
+    grep_matches_from_files,
+    perform_string_replacement,
+    slice_read_response,
+    update_file_data,
+)
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
@@ -57,17 +68,7 @@ if TYPE_CHECKING:
     from langgraph.stream._mux import TransformerFactory
 
     from langchain.agents.structured_output import ResponseFormat
-    from langchain.agents.utils import (
-        _copy_file_data_with_content,
-        _get_backend_read_file_type,
-        _glob_search_files,
-        create_file_data,
-        file_data_to_string,
-        grep_matches_from_files,
-        perform_string_replacement,
-        slice_read_response,
-        update_file_data,
-    )
+
 __all__ = [
     "AgentMiddleware",
     "AgentState",
@@ -2189,8 +2190,10 @@ def wrap_tool_call(
         return decorator(func)
     return decorator
 
+
 ###########################################################################################
 """`StateBackend`: Store files in LangGraph agent state (ephemeral)."""
+
 
 class StateBackend(BackendProtocol):
     """Backend that stores files in agent state (ephemeral).
@@ -2319,7 +2322,9 @@ class StateBackend(BackendProtocol):
             )
 
         # Add directories to the results
-        infos.extend(FileInfo(path=subdir, is_dir=True, size=0, modified_at="") for subdir in sorted(subdirs))
+        infos.extend(
+            FileInfo(path=subdir, is_dir=True, size=0, modified_at="") for subdir in sorted(subdirs)
+        )
 
         infos.sort(key=lambda x: x.get("path", ""))
         return LsResult(entries=infos)
@@ -2350,7 +2355,9 @@ class StateBackend(BackendProtocol):
         if _get_backend_read_file_type(file_path) != "text":
             # Normalize legacy `list[str]` content to a string without mutating
             # the stored file; timestamps and encoding are carried through.
-            return ReadResult(file_data=_copy_file_data_with_content(file_data, file_data_to_string(file_data)))
+            return ReadResult(
+                file_data=_copy_file_data_with_content(file_data, file_data_to_string(file_data))
+            )
 
         return slice_read_response(file_data, offset, limit)
 
@@ -2366,7 +2373,11 @@ class StateBackend(BackendProtocol):
         files = self._read_files()
 
         existing = files.get(file_path)
-        new_file_data = update_file_data(existing, content) if existing is not None else create_file_data(content)
+        new_file_data = (
+            update_file_data(existing, content)
+            if existing is not None
+            else create_file_data(content)
+        )
         self._send_files_update({file_path: self._prepare_for_storage(new_file_data)})
         return WriteResult(path=file_path)
 
@@ -2434,7 +2445,9 @@ class StateBackend(BackendProtocol):
     ) -> GrepResult:
         """Search state files for a literal text pattern."""
         files = self._read_files()
-        return grep_matches_from_files(files, pattern, path if path is not None else "/", glob, max_count=max_count)
+        return grep_matches_from_files(
+            files, pattern, path if path is not None else "/", glob, max_count=max_count
+        )
 
     def glob(self, pattern: str, path: str | None = None) -> GlobResult:
         """Get `FileInfo` for files matching glob pattern."""
@@ -2500,13 +2513,19 @@ class StateBackend(BackendProtocol):
             file_data = state_files.get(path)
 
             if file_data is None:
-                responses.append(FileDownloadResponse(path=path, content=None, error="file_not_found"))
+                responses.append(
+                    FileDownloadResponse(path=path, content=None, error="file_not_found")
+                )
                 continue
 
             content_str = file_data_to_string(file_data)
 
             encoding = file_data.get("encoding", "utf-8")
-            content_bytes = content_str.encode("utf-8") if encoding == "utf-8" else base64.standard_b64decode(content_str)
+            content_bytes = (
+                content_str.encode("utf-8")
+                if encoding == "utf-8"
+                else base64.standard_b64decode(content_str)
+            )
             responses.append(FileDownloadResponse(path=path, content=content_bytes, error=None))
 
         return responses

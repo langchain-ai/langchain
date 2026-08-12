@@ -3,5 +3,3 @@
 -e ../partners/fireworks
 -e ../partners/mistralai
 -e ../partners/groq
-
-wcmatch>=10.0
