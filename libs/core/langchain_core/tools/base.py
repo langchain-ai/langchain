@@ -1488,20 +1488,33 @@ def _get_type_hints(
         return None
 
 
-def _get_type_hints_source(func: Callable[..., Any]) -> Callable[..., Any]:
+def _get_type_hints_source(
+    func: Callable[..., Any],
+) -> Callable[..., Any] | None:
     """Return the callable that owns the annotations for an effective signature.
 
     Args:
         func: The callable being inspected.
 
     Returns:
-        The function or method whose annotations describe `signature(func)`.
+        The function or method whose annotations describe `signature(func)`, or
+        `None` when an explicit `__signature__` supplies the annotations.
     """
+    func = inspect.unwrap(
+        func,
+        stop=lambda wrapped: (
+            hasattr(wrapped, "__signature__") or inspect.ismethod(wrapped)
+        ),
+    )
+    if inspect.ismethod(func):
+        return _get_type_hints_source(func.__func__)
+    if getattr(func, "__signature__", None) is not None:
+        return None
     if isinstance(func, functools.partial):
-        func = func.func
+        return _get_type_hints_source(func.func)
     if not inspect.isroutine(func) and not inspect.isclass(func):
         callable_obj = cast("Any", func)
-        return cast("Callable[..., Any]", callable_obj.__call__)
+        return _get_type_hints_source(cast("Callable[..., Any]", callable_obj.__call__))
     return func
 
 
@@ -1530,7 +1543,11 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
     """
     params = signature(func).parameters
     hint_source = _get_type_hints_source(func)
-    hints = _get_type_hints(hint_source, include_extras=True)
+    hints = (
+        _get_type_hints(hint_source, include_extras=True)
+        if hint_source is not None
+        else None
+    )
     if hints is not None:
         return frozenset(
             name

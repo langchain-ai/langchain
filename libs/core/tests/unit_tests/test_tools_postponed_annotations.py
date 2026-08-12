@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from functools import update_wrapper
+from inspect import Parameter, Signature
+from typing import Any
+
 from pydantic import BaseModel
 
 from langchain_core.tools import StructuredTool
@@ -45,3 +49,66 @@ def test_callable_object_resolves_postponed_injected_arg() -> None:
     tool_call_schema = tool.tool_call_schema
     assert not isinstance(tool_call_schema, dict)
     assert "runtime" not in model_json_schema(tool_call_schema)["properties"]
+
+
+def test_callable_wrapper_uses_wrapped_function_annotations() -> None:
+    """Callable wrappers resolve hints from their effective signature source."""
+    received: dict[str, Any] = {}
+
+    def wrapped(query: str, runtime: _PostponedRuntime) -> str:
+        received["runtime"] = runtime
+        return query
+
+    class CallableWrapper:
+        def __init__(self) -> None:
+            update_wrapper(self, wrapped)
+
+        def __call__(self, query: str, runtime: str) -> str:
+            return wrapped(query, runtime)  # type: ignore[arg-type]
+
+    callable_wrapper = CallableWrapper()
+    tool = StructuredTool.from_function(
+        func=callable_wrapper,
+        name="callable_wrapper",
+        description="Echo a query.",
+        args_schema=_InputSchema,
+    )
+    runtime = _PostponedRuntime()
+
+    assert tool._injected_args_keys == frozenset({"runtime"})
+    assert tool.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert received["runtime"] is runtime
+
+
+def test_callable_object_uses_explicit_signature_annotations() -> None:
+    """An explicit signature takes precedence over `__call__` annotations."""
+    received: dict[str, Any] = {}
+
+    class CallableWithSignature:
+        __signature__ = Signature(
+            parameters=[
+                Parameter("query", Parameter.POSITIONAL_OR_KEYWORD, annotation=str),
+                Parameter(
+                    "runtime",
+                    Parameter.POSITIONAL_OR_KEYWORD,
+                    annotation=_PostponedRuntime,
+                ),
+            ]
+        )
+
+        def __call__(self, query: str, runtime: str) -> str:
+            received["runtime"] = runtime
+            return query
+
+    callable_with_signature = CallableWithSignature()
+    tool = StructuredTool.from_function(
+        func=callable_with_signature,
+        name="callable_with_signature",
+        description="Echo a query.",
+        args_schema=_InputSchema,
+    )
+    runtime = _PostponedRuntime()
+
+    assert tool._injected_args_keys == frozenset({"runtime"})
+    assert tool.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert received["runtime"] is runtime
