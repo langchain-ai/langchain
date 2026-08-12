@@ -29,9 +29,9 @@ test tests:
 	TIKTOKEN_CACHE_DIR=tiktoken_cache uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 # Runs the full integration suite against the locked SDK, then smokes a single
-# live request on each supported openai major so the httpx (2.x) and httpx2
-# (3.x) transport paths are always covered, regardless of which openai version
-# uv.lock currently resolves.
+# live request on each supported openai major -- openai 2.x (backed by `httpx`)
+# and openai 3.x (backed by `httpx2`) -- so both transport paths stay covered
+# regardless of which openai version uv.lock currently resolves.
 integration_test integration_tests:
 	uv run --group test --group test_integration pytest -v --tb=short -n auto --benchmark-disable $(TEST_FILE)
 	uv run --with 'openai>=2.45.0,<3.0.0' --group test --group test_integration pytest -v --tb=short $(SDK_SMOKE_TEST)
