@@ -3052,13 +3052,7 @@ def test__construct_responses_api_input_human_message_with_image_url_conversion(
 def test__construct_responses_api_input_store_false_replays_stateless_history() -> None:
     ai_message = AIMessage(
         content=[
-            {"type": "reasoning", "id": "rs_123", "summary": []},
-            {
-                "type": "reasoning",
-                "id": "rs_456",
-                "summary": [],
-                "encrypted_content": "",
-            },
+            {"type": "reasoning", "encrypted_content": ""},
             {
                 "type": "reasoning",
                 "id": "rs_789",
