@@ -13,7 +13,7 @@ from typing import (
     Literal,
 )
 
-from pydantic import Field, SkipValidation
+from pydantic import Field, SkipValidation, field_serializer
 from typing_extensions import override
 
 # Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
@@ -52,6 +52,23 @@ class StructuredTool(BaseTool):
 
     coroutine: Callable[..., Awaitable[Any]] | None = None
     """The asynchronous version of the function."""
+
+    @field_serializer("args_schema", when_used="json-unless-none")
+    def _serialize_args_schema(self, args_schema: ArgsSchema) -> Any:
+        """Represent a schema class as a string when dumping to JSON.
+
+        A Pydantic model class has no JSON form, so leaving it to the default
+        serializer raises `PydanticSerializationError`. A dict schema is already
+        JSON-compatible and is returned unchanged.
+        """
+        if isinstance(args_schema, dict):
+            return args_schema
+        return str(args_schema)
+
+    @field_serializer("func", "coroutine", when_used="json-unless-none")
+    def _serialize_callable(self, func: Callable[..., Any]) -> str:
+        """Represent the wrapped callable as a string when dumping to JSON."""
+        return str(func)
 
     # --- Runnable ---
 
