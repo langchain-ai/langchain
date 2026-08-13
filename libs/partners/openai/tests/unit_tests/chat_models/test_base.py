@@ -3644,6 +3644,13 @@ def test_compat_responses_v03_apply_patch_tool_outputs() -> None:
                         "args": {"location": "San Francisco"},
                     },
                     {
+                        "type": "invalid_tool_call",
+                        "id": "call_234",
+                        "name": "get_weather",
+                        "args": '{"location":',
+                        "error": "Failed to parse tool call arguments as JSON",
+                    },
+                    {
                         "type": "text",
                         "text": "Hello, world!",
                         "annotations": [
@@ -3653,11 +3660,29 @@ def test_compat_responses_v03_apply_patch_tool_outputs() -> None:
                 ],
                 id="chatcmpl-123",
                 response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+                invalid_tool_calls=[
+                    InvalidToolCall(
+                        id="call_234",
+                        name="get_weather",
+                        args='{"location":',
+                        error="Failed to parse tool call arguments as JSON",
+                        type="invalid_tool_call",
+                    )
+                ],
             ),
             AIMessage(
                 [{"type": "text", "text": "Hello, world!"}],
                 id="chatcmpl-123",
                 response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+                invalid_tool_calls=[
+                    InvalidToolCall(
+                        id="call_234",
+                        name="get_weather",
+                        args='{"location":',
+                        error="Failed to parse tool call arguments as JSON",
+                        type="invalid_tool_call",
+                    )
+                ],
             ),
         )
     ],
@@ -3668,6 +3693,7 @@ def test_convert_from_v1_to_chat_completions(
     result = _convert_from_v1_to_chat_completions(message_v1)
     assert result == expected
     assert result.tool_calls == message_v1.tool_calls  # tool calls remain cached
+    assert result.invalid_tool_calls == message_v1.invalid_tool_calls
 
     # Check no mutation
     assert message_v1 != result
@@ -4505,6 +4531,31 @@ def test_context_overflow_error_prompt_too_long() -> None:
         llm.invoke([HumanMessage(content="test")])
 
     assert "prompt is too long" in str(exc_info.value)
+
+
+def test_context_overflow_error_context_window_exceeded() -> None:
+    """Test context overflow error triggered by ContextWindowExceededError."""
+    error_body = {
+        "error": {
+            "message": "ContextWindowExceededError: maximum context length exceeded",
+            "type": "invalid_request_error",
+            "param": "messages",
+            "code": "invalid_request_error",
+        }
+    }
+    bad_request_error = openai.BadRequestError(
+        message=error_body["error"]["message"],
+        response=MagicMock(status_code=400),
+        body=error_body,
+    )
+    llm = ChatOpenAI()
+
+    with patch.object(llm.client, "with_raw_response") as mock_client:
+        mock_client.create.side_effect = bad_request_error
+        with pytest.raises(ContextOverflowError) as exc_info:
+            llm.invoke([HumanMessage(content="test")])
+
+    assert "ContextWindowExceededError" in str(exc_info.value)
 
 
 def test_context_overflow_error_backwards_compatibility() -> None:
