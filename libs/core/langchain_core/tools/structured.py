@@ -37,6 +37,15 @@ if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
 
 
+def _serialize_as_str(value: Any) -> str:
+    """Stringify a value that has no JSON form.
+
+    A plain function rather than the `str` builtin: Pydantic < 2.9 inspects the
+    serializer's signature, and `inspect.signature` raises for C builtins.
+    """
+    return str(value)
+
+
 def _serialize_args_schema(args_schema: ArgsSchema) -> Any:
     """Represent a schema class as a string when dumping to JSON.
 
@@ -56,7 +65,7 @@ def _serialize_args_schema(args_schema: ArgsSchema) -> Any:
 _JsonSchemaFallback = PlainSerializer(
     _serialize_args_schema, when_used="json-unless-none"
 )
-_JsonCallableFallback = PlainSerializer(str, when_used="json-unless-none")
+_JsonCallableFallback = PlainSerializer(_serialize_as_str, when_used="json-unless-none")
 
 
 class StructuredTool(BaseTool):
