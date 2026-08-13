@@ -33,9 +33,9 @@ test tests:
 # (3.x) transport paths are always covered, regardless of which openai version
 # uv.lock currently resolves.
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest -v --tb=short -n auto --benchmark-disable $(TEST_FILE)
 	uv run --with 'openai>=2.45.0,<3.0.0' --group test --group test_integration pytest -v --tb=short $(SDK_SMOKE_TEST)
 	uv run --with 'openai>=3.0.0,<4.0.0' --group test --group test_integration pytest -v --tb=short $(SDK_SMOKE_TEST)
+	uv run --group test --group test_integration pytest -v --tb=short -n auto --benchmark-disable $(TEST_FILE)
 
 # Run VCR cassette-backed integration tests in playback-only mode (no API keys needed).
 # Catches stale cassettes caused by test input changes without re-recording.
