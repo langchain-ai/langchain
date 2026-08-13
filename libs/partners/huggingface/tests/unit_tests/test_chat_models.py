@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest  # type: ignore[import-not-found]
@@ -10,7 +10,9 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatResult
+from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -222,6 +224,56 @@ def test_bind_tools(chat_hugging_face: Any) -> None:
         _, kwargs = mock_super_bind.call_args
         assert kwargs["tools"] == tools
         assert kwargs["tool_choice"] == "auto"
+
+
+class StructuredAnswer(BaseModel):
+    answer: int
+
+
+def test_with_structured_output_pydantic_function_calling(
+    chat_hugging_face: Any,
+) -> None:
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "StructuredAnswer",
+                "args": {"answer": 42},
+                "id": "tool-call-id",
+            }
+        ],
+    )
+    llm = RunnableLambda(lambda _: message)
+
+    with patch.object(
+        ChatHuggingFace, "bind_tools", return_value=llm
+    ):
+        structured_model = chat_hugging_face.with_structured_output(StructuredAnswer)
+
+    result = structured_model.invoke("Return an answer")
+
+    assert isinstance(result, StructuredAnswer)
+    assert result.answer == 42
+
+
+@pytest.mark.parametrize("method", ["json_mode", "json_schema"])
+def test_with_structured_output_pydantic_json_methods(
+    chat_hugging_face: Any,
+    method: Literal["json_mode", "json_schema"],
+) -> None:
+    llm = RunnableLambda(
+        lambda _: AIMessage(content='{"answer": 42}')
+    )
+
+    with patch.object(ChatHuggingFace, "bind", return_value=llm):
+        structured_model = chat_hugging_face.with_structured_output(
+            StructuredAnswer, method=method
+        )
+
+    result = structured_model.invoke("Return an answer")
+
+    assert isinstance(result, StructuredAnswer)
+    assert result.answer == 42
 
 
 def test_property_inheritance_integration(chat_hugging_face: Any) -> None:
