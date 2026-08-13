@@ -23,7 +23,14 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, RootModel, ValidationError
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    ValidationError,
+)
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -4022,6 +4029,22 @@ async def test_tool_call_id_passed_via_run_method(method: str) -> None:
     assert handler.tool_starts == 1
     assert len(handler.captured_tool_call_ids) == 1
     assert handler.captured_tool_call_ids[0] == "run_method_tool_call_id"
+
+
+def test_tool_args_schema_required_field_validation_alias() -> None:
+    """Test required args provided through validation aliases reach the tool."""
+
+    class Args(BaseModel):
+        """Tool arguments."""
+
+        canonical: str = Field(validation_alias=AliasChoices("canonical", "alias"))
+
+    @tool(args_schema=Args)
+    def aliased_tool(canonical: str) -> str:
+        """Return the canonical argument."""
+        return canonical
+
+    assert aliased_tool.invoke({"alias": "value"}) == "value"
 
 
 def test_tool_args_schema_default_values() -> None:
