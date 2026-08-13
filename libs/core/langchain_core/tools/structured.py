@@ -13,7 +13,7 @@ from typing import (
     Literal,
 )
 
-from pydantic import Field, SkipValidation, field_serializer
+from pydantic import Field, PlainSerializer, SkipValidation
 from typing_extensions import override
 
 # Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
@@ -37,38 +37,45 @@ if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
 
 
+def _serialize_args_schema(args_schema: ArgsSchema) -> Any:
+    """Represent a schema class as a string when dumping to JSON.
+
+    A Pydantic model class has no JSON form, so leaving it to the default
+    serializer raises `PydanticSerializationError`. A dict schema is already
+    JSON-compatible and is returned unchanged.
+    """
+    if isinstance(args_schema, dict):
+        return args_schema
+    return str(args_schema)
+
+
+# Attached to the fields via `Annotated` rather than declared with
+# `@field_serializer`, which would take the field's one serializer slot and make
+# any subclass that declares its own serializer for the same field fail at class
+# creation with `PydanticUserError: Multiple field serializer functions ...`.
+_JsonSchemaFallback = PlainSerializer(
+    _serialize_args_schema, when_used="json-unless-none"
+)
+_JsonCallableFallback = PlainSerializer(str, when_used="json-unless-none")
+
+
 class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
 
-    args_schema: Annotated[ArgsSchema, SkipValidation()] = Field(
+    args_schema: Annotated[ArgsSchema, SkipValidation(), _JsonSchemaFallback] = Field(
         ..., description="The tool schema."
     )
     """The input arguments' schema."""
 
-    func: Callable[..., Any] | None = None
+    func: Annotated[Callable[..., Any] | None, _JsonCallableFallback] = None
     """The function to run when the tool is called."""
 
-    coroutine: Callable[..., Awaitable[Any]] | None = None
+    coroutine: Annotated[
+        Callable[..., Awaitable[Any]] | None, _JsonCallableFallback
+    ] = None
     """The asynchronous version of the function."""
-
-    @field_serializer("args_schema", when_used="json-unless-none")
-    def _serialize_args_schema(self, args_schema: ArgsSchema) -> Any:
-        """Represent a schema class as a string when dumping to JSON.
-
-        A Pydantic model class has no JSON form, so leaving it to the default
-        serializer raises `PydanticSerializationError`. A dict schema is already
-        JSON-compatible and is returned unchanged.
-        """
-        if isinstance(args_schema, dict):
-            return args_schema
-        return str(args_schema)
-
-    @field_serializer("func", "coroutine", when_used="json-unless-none")
-    def _serialize_callable(self, func: Callable[..., Any]) -> str:
-        """Represent the wrapped callable as a string when dumping to JSON."""
-        return str(func)
 
     # --- Runnable ---
 

@@ -30,6 +30,7 @@ from pydantic import (
     Field,
     RootModel,
     ValidationError,
+    field_serializer,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
@@ -4419,3 +4420,28 @@ def test_structured_tool_json_dump_keeps_dict_args_schema() -> None:
         args_schema=schema,
     )
     assert dict_tool.model_dump(mode="json")["args_schema"] == schema
+
+
+def test_structured_tool_subclass_can_override_json_serializers() -> None:
+    """The JSON fallbacks must not occupy the fields' single serializer slot.
+
+    A subclass declaring its own `@field_serializer` for the same fields used to
+    fail at class creation with `PydanticUserError: Multiple field serializer
+    functions were defined`.
+    """
+
+    class MyTool(StructuredTool):
+        @field_serializer("func", when_used="json-unless-none")
+        def _my_func_repr(self, func: Any) -> str:
+            return "custom-func"
+
+        @field_serializer("args_schema", when_used="json-unless-none")
+        def _my_schema_repr(self, args_schema: Any) -> Any:
+            return {"custom": "schema"}
+
+    my_tool = MyTool.from_function(
+        func=lambda file_path, content: "ok", name="w", description="d"
+    )
+    dumped = my_tool.model_dump(mode="json")
+    assert dumped["func"] == "custom-func"
+    assert dumped["args_schema"] == {"custom": "schema"}
