@@ -4706,7 +4706,7 @@ def _construct_responses_api_input(
                                     new_item["phase"] = phase
                                 input_.append(new_item)
                         elif block_type == "reasoning":
-                            if store is not False or "encrypted_content" in block:
+                            if store is not False or block.get("encrypted_content"):
                                 input_.append(_pop_index_and_sub_index(block))
                         elif block_type in (
                             "compaction",
@@ -5239,8 +5239,21 @@ def _convert_responses_chunk_to_generation_chunk(
         _advance(chunk.output_index)
         current_sub_index = 0
         reasoning = chunk.item.model_dump(exclude_none=True, mode="json")
+        reasoning.pop("encrypted_content", None)
         reasoning["index"] = current_index
         content.append(reasoning)
+    elif chunk.type == "response.output_item.done" and chunk.item.type == "reasoning":
+        _advance(chunk.output_index)
+        if encrypted_content := chunk.item.encrypted_content:
+            content.append(
+                {
+                    "type": "reasoning",
+                    "id": chunk.item.id,
+                    "summary": [],
+                    "encrypted_content": encrypted_content,
+                    "index": current_index,
+                }
+            )
     elif chunk.type == "response.reasoning_summary_part.added":
         _advance(chunk.output_index)
         content.append(

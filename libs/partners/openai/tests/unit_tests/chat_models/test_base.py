@@ -3059,6 +3059,12 @@ def test__construct_responses_api_input_store_false_replays_stateless_history() 
                 "summary": [],
                 "encrypted_content": "",
             },
+            {
+                "type": "reasoning",
+                "id": "rs_789",
+                "summary": [],
+                "encrypted_content": "encrypted-reasoning",
+            },
             {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
         ],
         response_metadata={"id": "resp_123"},
@@ -3069,9 +3075,9 @@ def test__construct_responses_api_input_store_false_replays_stateless_history() 
     assert result == [
         {
             "type": "reasoning",
-            "id": "rs_456",
+            "id": "rs_789",
             "summary": [],
-            "encrypted_content": "",
+            "encrypted_content": "encrypted-reasoning",
         },
         {
             "type": "message",

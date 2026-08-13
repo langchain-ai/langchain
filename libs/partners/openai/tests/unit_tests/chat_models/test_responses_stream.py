@@ -349,7 +349,7 @@ responses_stream = [
             id="rs_234",
             summary=[],
             type="reasoning",
-            encrypted_content="encrypted-content",
+            encrypted_content="",
             status=None,
         ),
         output_index=2,
