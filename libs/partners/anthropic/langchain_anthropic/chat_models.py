@@ -672,6 +672,23 @@ def _format_messages(
                                 },
                             ),
                         )
+                    elif block["type"] == "tool_search_tool_result":
+                        # Omit streaming-only fields, such as `index`, from results.
+                        content.append(
+                            _normalize_block_tool_use_id(
+                                {
+                                    k: v
+                                    for k, v in block.items()
+                                    if k
+                                    in (
+                                        "type",
+                                        "content",
+                                        "tool_use_id",
+                                        "cache_control",
+                                    )
+                                },
+                            ),
+                        )
                     elif block["type"] == "tool_result":
                         # Regular tool results that need content formatting
                         tool_content = _format_messages(
