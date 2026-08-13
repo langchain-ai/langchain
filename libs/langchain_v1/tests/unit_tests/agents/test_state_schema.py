@@ -302,6 +302,10 @@ def test_last_schema_wins_for_conflicting_field() -> None:
     hints = get_type_hints(resolved, include_extras=True)
     assert get_args(hints["shared_field"])[1] == "last"
 
+    resolved, _, _ = factory._resolve_schemas([LastState, MiddleState, LastState])
+    hints = get_type_hints(resolved, include_extras=True)
+    assert get_args(hints["shared_field"])[1] == "last"
+
 
 def test_get_schema_type_hints_cache_hits_for_reused_schema() -> None:
     """Test repeated schema resolution reuses cached type hints for the same schema."""

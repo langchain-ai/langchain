@@ -23,7 +23,14 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, RootModel, ValidationError
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    ValidationError,
+)
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -365,7 +372,32 @@ def test_structured_single_str_decorator_no_infer_schema() -> None:
 
     assert isinstance(unstructured_tool_input, BaseTool)
     assert unstructured_tool_input.args_schema is None
+    assert unstructured_tool_input.description == "Return the arguments directly."
     assert unstructured_tool_input.run("foo") == "foo"
+
+
+def test_simple_tool_decorator_no_infer_schema_uses_explicit_description() -> None:
+    """Test that a simple tool preserves an explicit description."""
+
+    @tool(infer_schema=False, description="Echo the supplied input.")
+    def echo(tool_input: str) -> str:
+        return tool_input
+
+    assert echo.description == "Echo the supplied input."
+
+
+def test_simple_tool_decorator_no_infer_schema_requires_description_or_docstring() -> (
+    None
+):
+    """Test that a simple tool requires an authored description."""
+    with pytest.raises(
+        ValueError,
+        match="Function must have either a docstring or description",
+    ):
+
+        @tool(infer_schema=False)
+        def echo(tool_input: str) -> str:
+            return tool_input
 
 
 def test_structured_tool_types_parsed() -> None:
@@ -1121,6 +1153,30 @@ async def test_async_validation_error_handling_callable() -> None:
     tool_ = _MockStructuredTool(handle_validation_error=handling)
     actual = await tool_.arun({})
     assert expected == actual
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+async def test_async_validation_error_handling_pydantic_v1_schema() -> None:
+    """Test async validation error handling for Pydantic V1 schemas."""
+
+    class Args(BaseModelV1):
+        x: int
+
+    def foo(x: int) -> str:
+        """Return x as text."""
+        return str(x)
+
+    tool_ = StructuredTool.from_function(
+        foo,
+        args_schema=cast("ArgsSchema", Args),
+        handle_validation_error=True,
+    )
+
+    assert tool_.run({"x": "not-an-integer"}) == "Tool input validation error"
+    assert await tool_.arun({"x": "not-an-integer"}) == "Tool input validation error"
 
 
 @pytest.mark.parametrize(
@@ -3973,6 +4029,22 @@ async def test_tool_call_id_passed_via_run_method(method: str) -> None:
     assert handler.tool_starts == 1
     assert len(handler.captured_tool_call_ids) == 1
     assert handler.captured_tool_call_ids[0] == "run_method_tool_call_id"
+
+
+def test_tool_args_schema_required_field_validation_alias() -> None:
+    """Test required args provided through validation aliases reach the tool."""
+
+    class Args(BaseModel):
+        """Tool arguments."""
+
+        canonical: str = Field(validation_alias=AliasChoices("canonical", "alias"))
+
+    @tool(args_schema=Args)
+    def aliased_tool(canonical: str) -> str:
+        """Return the canonical argument."""
+        return canonical
+
+    assert aliased_tool.invoke({"alias": "value"}) == "value"
 
 
 def test_tool_args_schema_default_values() -> None:

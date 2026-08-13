@@ -1,5 +1,11 @@
 """Tests for middleware-registered stream transformers."""
 
+# `run.tool_calls`/`run.subagents` are stream projections registered dynamically by
+# `create_agent` (via langgraph-prebuilt's `ToolCallTransformer` and langchain's
+# `SubagentTransformer`), not declared on langgraph's typed `GraphRunStream`
+# (langgraph#8389). The `# type: ignore[attr-defined]` below self-remove once
+# langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -62,7 +68,7 @@ def test_middleware_transformer_registered_on_compiled_graph() -> None:
 
     assert "middleware_marker" in run._mux.extensions
     # Drain to close the run cleanly.
-    list(run.tool_calls)
+    list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 def test_middleware_and_user_transformers_compose_in_order() -> None:
@@ -91,7 +97,7 @@ def test_middleware_and_user_transformers_compose_in_order() -> None:
         "transformers must register as: built-in, then middleware, then user-supplied"
     )
 
-    list(run.tool_calls)
+    list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 def test_transformers_from_multiple_middleware_preserve_middleware_order() -> None:
@@ -124,7 +130,7 @@ def test_transformers_from_multiple_middleware_preserve_middleware_order() -> No
     idx_b = next(i for i, t in enumerate(transformers) if isinstance(t, _MarkerB))
     assert idx_a < idx_b
 
-    list(run.tool_calls)
+    list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 def test_middleware_without_transformers_does_not_affect_registry() -> None:
@@ -140,4 +146,4 @@ def test_middleware_without_transformers_does_not_affect_registry() -> None:
     assert any(isinstance(t, ToolCallTransformer) for t in transformers)
     assert not any(isinstance(t, _MiddlewareMarker) for t in transformers)
 
-    list(run.tool_calls)
+    list(run.tool_calls)  # type: ignore[attr-defined]

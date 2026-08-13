@@ -31,6 +31,10 @@ from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict, overload
 
 from langchain.agents._subagent_transformer import SubagentTransformer
+from langchain.agents.middleware._trace_policy import (
+    _node_trace_policy,
+    _resolved_transform,
+)
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -149,6 +153,22 @@ def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
             f.name: getattr(req, f.name) for f in fields(req) if f.name != "runtime"
         }
     return filtered
+
+
+def _wrap_trace_kwargs(middleware: AgentMiddleware[Any, Any]) -> dict[str, Any]:
+    """`traceable` kwargs for a middleware's `wrap_*` hook spans.
+
+    The `_scrub_inputs` baseline (strip the unserializable `handler`/`runtime`) always
+    runs first; the effective `TracePolicy` (the middleware's own, else the process-wide
+    default) composes on top. The effective policy is resolved at call time, so a
+    `configure_trace_policy` call after `create_agent` still applies.
+    """
+    process_inputs = _resolved_transform(middleware.trace_policy, "process_inputs")
+    process_outputs = _resolved_transform(middleware.trace_policy, "process_outputs")
+    return {
+        "process_inputs": lambda inputs: process_inputs(_scrub_inputs(inputs)),
+        "process_outputs": process_outputs,
+    }
 
 
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
@@ -436,7 +456,11 @@ def _resolve_schemas(schemas: list[type]) -> tuple[type, type, type]:
     same field is declared by multiple schemas.  Duplicates are harmless — a type
     that appears more than once is processed at its last position.
     """
-    schema_hints = {schema: _get_schema_type_hints(schema) for schema in schemas}
+    schema_hints: dict[type, dict[str, Any]] = {}
+    for schema in schemas:
+        # Reinsert duplicates so dict iteration reflects their final position.
+        schema_hints.pop(schema, None)
+        schema_hints[schema] = _get_schema_type_hints(schema)
     return (
         _resolve_schema(schema_hints, "StateSchema", None),
         _resolve_schema(schema_hints, "InputSchema", "input"),
@@ -1026,9 +1050,7 @@ def create_agent(
     wrap_tool_call_wrapper = None
     if middleware_w_wrap_tool_call:
         wrappers = [
-            traceable(name=f"{m.name}.wrap_tool_call", process_inputs=_scrub_inputs)(
-                m.wrap_tool_call
-            )
+            traceable(name=f"{m.name}.wrap_tool_call", **_wrap_trace_kwargs(m))(m.wrap_tool_call)
             for m in middleware_w_wrap_tool_call
         ]
         wrap_tool_call_wrapper = _chain_tool_call_wrappers(wrappers)
@@ -1047,9 +1069,7 @@ def create_agent(
     awrap_tool_call_wrapper = None
     if middleware_w_awrap_tool_call:
         async_wrappers = [
-            traceable(name=f"{m.name}.awrap_tool_call", process_inputs=_scrub_inputs)(
-                m.awrap_tool_call
-            )
+            traceable(name=f"{m.name}.awrap_tool_call", **_wrap_trace_kwargs(m))(m.awrap_tool_call)
             for m in middleware_w_awrap_tool_call
         ]
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
@@ -1135,9 +1155,7 @@ def create_agent(
     wrap_model_call_handler = None
     if middleware_w_wrap_model_call:
         sync_handlers = [
-            traceable(name=f"{m.name}.wrap_model_call", process_inputs=_scrub_inputs)(
-                m.wrap_model_call
-            )
+            traceable(name=f"{m.name}.wrap_model_call", **_wrap_trace_kwargs(m))(m.wrap_model_call)
             for m in middleware_w_wrap_model_call
         ]
         wrap_model_call_handler = _chain_model_call_handlers(sync_handlers)
@@ -1146,7 +1164,7 @@ def create_agent(
     awrap_model_call_handler = None
     if middleware_w_awrap_model_call:
         async_handlers = [
-            traceable(name=f"{m.name}.awrap_model_call", process_inputs=_scrub_inputs)(
+            traceable(name=f"{m.name}.awrap_model_call", **_wrap_trace_kwargs(m))(
                 m.awrap_model_call
             )
             for m in middleware_w_awrap_model_call
@@ -1548,7 +1566,10 @@ def create_agent(
             )
             before_agent_node = RunnableCallable(sync_before_agent, async_before_agent, trace=False)
             graph.add_node(
-                f"{m.name}.before_agent", before_agent_node, input_schema=resolved_state_schema
+                f"{m.name}.before_agent",
+                before_agent_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m.trace_policy),
             )
 
         if (
@@ -1569,7 +1590,10 @@ def create_agent(
             )
             before_node = RunnableCallable(sync_before, async_before, trace=False)
             graph.add_node(
-                f"{m.name}.before_model", before_node, input_schema=resolved_state_schema
+                f"{m.name}.before_model",
+                before_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m.trace_policy),
             )
 
         if (
@@ -1589,7 +1613,12 @@ def create_agent(
                 else None
             )
             after_node = RunnableCallable(sync_after, async_after, trace=False)
-            graph.add_node(f"{m.name}.after_model", after_node, input_schema=resolved_state_schema)
+            graph.add_node(
+                f"{m.name}.after_model",
+                after_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m.trace_policy),
+            )
 
         if (
             m.__class__.after_agent is not AgentMiddleware.after_agent
@@ -1609,7 +1638,10 @@ def create_agent(
             )
             after_agent_node = RunnableCallable(sync_after_agent, async_after_agent, trace=False)
             graph.add_node(
-                f"{m.name}.after_agent", after_agent_node, input_schema=resolved_state_schema
+                f"{m.name}.after_agent",
+                after_agent_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m.trace_policy),
             )
 
     # Determine the entry node (runs once at start): before_agent -> before_model -> model
