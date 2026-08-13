@@ -3356,6 +3356,35 @@ def test_tool_search_result_formatting() -> None:
     assert tool_result_block["content"][1]["tool_name"] == "weather_forecast"
 
 
+# Regression test for https://github.com/langchain-ai/langchain/issues/37584
+def test__format_messages_tool_search_result_drops_streaming_index() -> None:
+    """Test that streaming-only indexes are not sent to Anthropic."""
+    messages = [
+        AIMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "tool_search_tool_result",
+                    "tool_use_id": "srvtoolu_123",
+                    "content": [
+                        {"type": "tool_reference", "tool_name": "get_weather"},
+                    ],
+                    "index": 1,
+                },
+            ],
+        ),
+    ]
+
+    _, formatted = _format_messages(messages)
+
+    assert formatted[0]["content"][0] == {
+        "type": "tool_search_tool_result",
+        "tool_use_id": "srvtoolu_123",
+        "content": [
+            {"type": "tool_reference", "tool_name": "get_weather"},
+        ],
+    }
+
+
 def test_auto_append_betas_for_mcp_servers() -> None:
     """Test that `mcp-client-2025-11-20` beta is automatically appended
     for `mcp_servers`."""
