@@ -335,14 +335,18 @@ async def abatch_iterate(
 
     Yields:
         The batches.
+
+    Raises:
+        ValueError: If `size` is not `None` and is not a positive integer.
     """
     if size is None:
-        batch = [el async for el in iterable]
-        if batch:
-            yield batch
+        single_batch = [el async for el in iterable]
+        if single_batch:
+            yield single_batch
         return
     if size <= 0:
-        raise ValueError("size must be > 0 or None")
+        msg = f"Batch size must be a positive integer, got {size}."
+        raise ValueError(msg)
     batch: list[T] = []
     async for element in iterable:
         batch.append(element)
