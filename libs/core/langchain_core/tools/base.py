@@ -319,7 +319,8 @@ def create_schema_from_function(
     inferred_model = validated.model
 
     if filter_args:
-        filter_args_ = filter_args
+        # Copy to avoid mutating the caller's sequence below.
+        filter_args_ = list(filter_args)
     else:
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
@@ -328,9 +329,15 @@ def create_schema_from_function(
         else:
             filter_args_ = list(FILTERED_ARGS)
 
-        for existing_param in existing_params:
-            if not include_injected and _is_injected_arg_type(
-                sig.parameters[existing_param].annotation
+    # Exclude injected args from the schema regardless of whether `filter_args`
+    # was provided. Injected args (e.g. `InjectedToolArg`, `ToolRuntime`) are
+    # supplied at runtime rather than by the model, so they should not appear in
+    # the generated schema.
+    if not include_injected:
+        for existing_param in sig.parameters:
+            if (
+                _is_injected_arg_type(sig.parameters[existing_param].annotation)
+                and existing_param not in filter_args_
             ):
                 filter_args_.append(existing_param)
 
@@ -706,7 +713,28 @@ class ChildTool(BaseTool):
 
     @functools.cached_property
     def _injected_args_keys(self) -> frozenset[str]:
-        # Base implementation doesn't manage injected args
+        # Inspect the tool's `_run` (falling back to `_arun` for async-only
+        # subclasses) for directly injected args like `ToolRuntime` or args
+        # annotated with `InjectedToolArg`. These are supplied at call time
+        # rather than by the model, so they must be excluded from the schema and
+        # re-injected during execution. `StructuredTool` overrides this to
+        # inspect its wrapped `func`/`coroutine` instead.
+        #
+        # Resolve annotations via `get_type_hints` (rather than reading raw
+        # `signature` annotations) so postponed annotations -- e.g. from
+        # `from __future__ import annotations` or quoted forward references --
+        # are recognized. Fall back to the raw annotation per-parameter when a
+        # hint can't be resolved.
+        for method in (self._run, self._arun):
+            params = signature(method).parameters
+            hints = _get_type_hints(method, include_extras=True) or {}
+            keys = frozenset(
+                name
+                for name, param in params.items()
+                if _is_injected_arg_type(hints.get(name, param.annotation))
+            )
+            if keys:
+                return keys
         return _EMPTY_SET
 
     # --- Runnable ---
@@ -807,6 +835,7 @@ class ChildTool(BaseTool):
                         tool_input[k] = tool_call_id
                 result_v2 = input_args.model_validate(tool_input)
                 result_dict = result_v2.model_dump()
+                provided_fields = result_v2.model_fields_set
                 result = result_v2
             elif issubclass(input_args, BaseModelV1):
                 # Check args_schema for InjectedToolCallId
@@ -824,6 +853,7 @@ class ChildTool(BaseTool):
                         tool_input[k] = tool_call_id
                 result_v1 = input_args.parse_obj(tool_input)
                 result_dict = result_v1.dict()
+                provided_fields = result_v1.__fields_set__
                 result = result_v1
             else:
                 msg = (  # type: ignore[unreachable]
@@ -831,14 +861,18 @@ class ChildTool(BaseTool):
                 )
                 raise NotImplementedError(msg)
 
-            # Include fields from tool_input, plus fields with explicit defaults.
-            # This applies Pydantic defaults (like Field(default=1)) while excluding
-            # synthetic "args"/"kwargs" fields that Pydantic creates for *args/**kwargs.
+            # Include fields from tool_input, fields provided through Pydantic aliases,
+            # plus fields with explicit defaults. This applies Pydantic defaults (like
+            # Field(default=1)) while excluding synthetic "args"/"kwargs" fields that
+            # Pydantic creates for *args/**kwargs.
             field_info = get_fields(input_args)
             validated_input = {}
             for k in result_dict:
                 if k in tool_input:
                     # Field was provided in input - include it (validated)
+                    validated_input[k] = getattr(result, k)
+                elif k in provided_fields:
+                    # Field was provided through a Pydantic alias - include it.
                     validated_input[k] = getattr(result, k)
                 elif k in field_info and k not in {"args", "kwargs"}:
                     # Check if field has an explicit default defined in the schema.
@@ -1210,7 +1244,7 @@ class ChildTool(BaseTool):
                         error_to_raise = ValueError(msg)
             else:
                 content = response
-        except ValidationError as e:
+        except (ValidationError, ValidationErrorV1) as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
@@ -1451,11 +1485,15 @@ def _stringify(content: Any) -> str:
         return str(content)
 
 
-def _get_type_hints(func: Callable[..., Any]) -> dict[str, type] | None:
+def _get_type_hints(
+    func: Callable[..., Any], *, include_extras: bool = False
+) -> dict[str, type] | None:
     """Get type hints from a function, handling partial functions.
 
     Args:
         func: The function to get type hints from.
+        include_extras: Whether to preserve `Annotated` metadata in the resolved
+            hints (e.g. to detect `Annotated[..., InjectedToolArg]`).
 
     Returns:
         `dict` of type hints, or `None` if extraction fails.
@@ -1463,7 +1501,7 @@ def _get_type_hints(func: Callable[..., Any]) -> dict[str, type] | None:
     if isinstance(func, functools.partial):
         func = func.func
     try:
-        return get_type_hints(func)
+        return get_type_hints(func, include_extras=include_extras)
     except Exception:
         return None
 

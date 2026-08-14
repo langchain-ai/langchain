@@ -23,7 +23,14 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    ValidationError,
+)
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -64,6 +71,7 @@ from langchain_core.tools.base import (
     _format_output,
     _is_message_content_block,
     _normalize_message_content,
+    create_schema_from_function,
     get_all_basemodel_annotations,
 )
 from langchain_core.utils.function_calling import (
@@ -364,7 +372,32 @@ def test_structured_single_str_decorator_no_infer_schema() -> None:
 
     assert isinstance(unstructured_tool_input, BaseTool)
     assert unstructured_tool_input.args_schema is None
+    assert unstructured_tool_input.description == "Return the arguments directly."
     assert unstructured_tool_input.run("foo") == "foo"
+
+
+def test_simple_tool_decorator_no_infer_schema_uses_explicit_description() -> None:
+    """Test that a simple tool preserves an explicit description."""
+
+    @tool(infer_schema=False, description="Echo the supplied input.")
+    def echo(tool_input: str) -> str:
+        return tool_input
+
+    assert echo.description == "Echo the supplied input."
+
+
+def test_simple_tool_decorator_no_infer_schema_requires_description_or_docstring() -> (
+    None
+):
+    """Test that a simple tool requires an authored description."""
+    with pytest.raises(
+        ValueError,
+        match="Function must have either a docstring or description",
+    ):
+
+        @tool(infer_schema=False)
+        def echo(tool_input: str) -> str:
+            return tool_input
 
 
 def test_structured_tool_types_parsed() -> None:
@@ -1122,6 +1155,30 @@ async def test_async_validation_error_handling_callable() -> None:
     assert expected == actual
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+async def test_async_validation_error_handling_pydantic_v1_schema() -> None:
+    """Test async validation error handling for Pydantic V1 schemas."""
+
+    class Args(BaseModelV1):
+        x: int
+
+    def foo(x: int) -> str:
+        """Return x as text."""
+        return str(x)
+
+    tool_ = StructuredTool.from_function(
+        foo,
+        args_schema=cast("ArgsSchema", Args),
+        handle_validation_error=True,
+    )
+
+    assert tool_.run({"x": "not-an-integer"}) == "Tool input validation error"
+    assert await tool_.arun({"x": "not-an-integer"}) == "Tool input validation error"
+
+
 @pytest.mark.parametrize(
     "handler",
     [
@@ -1756,6 +1813,57 @@ def test_convert_from_runnable_dict() -> None:
         {"a": 3, "b": [1, 2]}, config={"configurable": {"foo": "not-bar"}}
     )
     assert result == "6"
+
+
+def test_convert_from_runnable_root_model_input_schema() -> None:
+    """`as_tool` should not advertise a `TypedDict` input nested under `root`.
+
+    Some `Runnable`s (e.g. a compiled `langgraph` `StateGraph`) expose a
+    `pydantic.RootModel` as `input_schema` even though `get_input_jsonschema`
+    reports a flat object schema. See:
+    """
+
+    class Args(TypedDict):
+        foo: str
+        bar: str
+
+    class _RootModelInputRunnable(RunnableLambda[Args, str]):
+        @override
+        def get_input_schema(
+            self, config: RunnableConfig | None = None
+        ) -> TypeBaseModel:
+            return RootModel[Args]
+
+        @override
+        def get_input_jsonschema(
+            self, config: RunnableConfig | None = None
+        ) -> dict[str, Any]:
+            return {
+                "type": "object",
+                "properties": {
+                    "foo": {"type": "string"},
+                    "bar": {"type": "string"},
+                },
+                "required": ["foo", "bar"],
+            }
+
+    def f(x: Args) -> str:
+        return f"{x['foo']} {x['bar']}"
+
+    runnable = _RootModelInputRunnable(f)
+    as_tool = runnable.as_tool(name="my_tool", description="Example tool.")
+
+    assert as_tool.args_schema is not None
+    assert isinstance(as_tool.args_schema, type)
+    assert not issubclass(as_tool.args_schema, RootModel)
+
+    oai_schema = convert_to_openai_tool(as_tool)
+    parameters = oai_schema["function"]["parameters"]
+    assert parameters["properties"].keys() == {"foo", "bar"}
+    assert "root" not in parameters["properties"]
+
+    result = as_tool.invoke({"foo": "hello", "bar": "world"})
+    assert result == "hello world"
 
 
 def test_convert_from_runnable_other() -> None:
@@ -2643,6 +2751,48 @@ def test_injected_arg_with_complex_type() -> None:
         return foo.value
 
     assert injected_tool.invoke({"x": 5, "foo": Foo()}) == "bar"
+
+
+def test_create_schema_from_function_include_injected_with_filter_args() -> None:
+    """`include_injected=False` must be honored even when `filter_args` is passed.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35831:
+    the injected-arg filtering was nested inside the `else` branch of the
+    `filter_args` check, so injected args ended up in the generated schema when a
+    caller also supplied `filter_args`.
+    """
+
+    def my_tool(
+        query: str,
+        injected: Annotated[str, InjectedToolArg],
+        runtime: _DirectlyInjectedToolArg,
+    ) -> None:
+        """Tool with an annotated and a directly injected arg."""
+
+    # filter_args is provided *and* include_injected is False.
+    schema = create_schema_from_function(
+        "MyTool",
+        my_tool,
+        filter_args=["query"],
+        include_injected=False,
+    )
+    properties = model_json_schema(schema)["properties"]
+    assert "injected" not in properties
+    assert "runtime" not in properties
+    assert properties == {}
+
+
+def test_create_schema_from_function_does_not_mutate_filter_args() -> None:
+    """`filter_args` passed by the caller must not be mutated. See #35831."""
+
+    def my_tool(query: str, injected: Annotated[str, InjectedToolArg]) -> None:
+        """Tool with an injected arg."""
+
+    filter_args = ["query"]
+    create_schema_from_function(
+        "MyTool", my_tool, filter_args=filter_args, include_injected=False
+    )
+    assert filter_args == ["query"]
 
 
 @pytest.mark.parametrize("schema_format", ["model", "json_schema"])
@@ -3549,6 +3699,144 @@ def test_filter_injected_args_not_in_schema(
     assert "runtime" not in captured
 
 
+def test_base_tool_subclass_injects_directly_injected_runtime() -> None:
+    """Directly injected args on a `BaseTool` subclass `_run` must be injected.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/34558:
+    `BaseTool._injected_args_keys` returned an empty set, so a directly injected
+    arg (e.g. `ToolRuntime`) declared on a subclass `_run` was dropped before
+    `_run` was called, raising `TypeError: _run() missing 1 required positional
+    argument: 'runtime'`.
+    """
+
+    class MultiplyInput(BaseModel):
+        a: int
+        b: int
+
+    captured: dict[str, Any] = {}
+
+    class Multiplier(BaseTool):
+        name: str = "Multiplier"
+        description: str = "Multiply two numbers."
+        args_schema: type[BaseModel] = MultiplyInput
+
+        def _run(self, a: int, b: int, runtime: _CustomRuntime) -> int:
+            captured["runtime"] = runtime
+            return a * b
+
+    tool_ = Multiplier()
+
+    # The directly injected runtime arg is detected from the `_run` signature...
+    assert "runtime" in tool_._injected_args_keys
+    # ...and does not leak into the model-facing schema.
+    tool_call_schema = tool_.tool_call_schema
+    assert not isinstance(tool_call_schema, dict)
+    properties = model_json_schema(tool_call_schema)["properties"]
+    assert "runtime" not in properties
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    result = tool_.invoke({"a": 2, "b": 3, "runtime": runtime})
+    assert result == 6
+    assert captured["runtime"] is runtime
+
+
+async def test_base_tool_subclass_injects_runtime_async_only() -> None:
+    """`_injected_args_keys` falls back to `_arun` for async-only subclasses."""
+
+    class MultiplyInput(BaseModel):
+        a: int
+        b: int
+
+    captured: dict[str, Any] = {}
+
+    class AsyncMultiplier(BaseTool):
+        name: str = "AsyncMultiplier"
+        description: str = "Multiply two numbers."
+        args_schema: type[BaseModel] = MultiplyInput
+
+        def _run(self, *args: Any, **kwargs: Any) -> int:
+            raise NotImplementedError
+
+        async def _arun(self, a: int, b: int, runtime: _CustomRuntime) -> int:
+            captured["runtime"] = runtime
+            return a * b
+
+    tool_ = AsyncMultiplier()
+    assert "runtime" in tool_._injected_args_keys
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    result = await tool_.ainvoke({"a": 2, "b": 3, "runtime": runtime})
+    assert result == 6
+    assert captured["runtime"] is runtime
+
+
+def test_base_tool_subclass_injects_postponed_annotation_runtime() -> None:
+    """Postponed / forward-ref annotations for injected args must be resolved.
+
+    `signature()` exposes raw (string) annotations under
+    `from __future__ import annotations` or quoted forward references, which
+    `_is_injected_arg_type` cannot classify. `_injected_args_keys` resolves the
+    hints first, so injection still works. A quoted forward reference reproduces
+    the same string-annotation behavior without a module-wide `__future__`
+    import. Follow-up hardening for #34558.
+    """
+
+    class MultiplyInput(BaseModel):
+        a: int
+        b: int
+
+    captured: dict[str, Any] = {}
+
+    class Multiplier(BaseTool):
+        name: str = "Multiplier"
+        description: str = "Multiply two numbers."
+        args_schema: type[BaseModel] = MultiplyInput
+
+        # Quoted forward reference -> raw string annotation "_CustomRuntime".
+        def _run(self, a: int, b: int, runtime: "_CustomRuntime") -> int:
+            captured["runtime"] = runtime
+            return a * b
+
+    tool_ = Multiplier()
+    assert "runtime" in tool_._injected_args_keys
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    result = tool_.invoke({"a": 2, "b": 3, "runtime": runtime})
+    assert result == 6
+    assert captured["runtime"] is runtime
+
+
+def test_base_tool_subclass_injects_postponed_annotated_arg() -> None:
+    """Postponed `Annotated[..., InjectedToolArg]` args must be resolved too.
+
+    `include_extras=True` when resolving hints preserves the `InjectedToolArg`
+    metadata, so annotated injected args are still detected. Follow-up hardening
+    for #34558.
+    """
+
+    class QueryInput(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    class Echo(BaseTool):
+        name: str = "Echo"
+        description: str = "Echo the query."
+        args_schema: type[BaseModel] = QueryInput
+
+        # Quoted forward reference to a postponed `Annotated` injected arg.
+        def _run(self, query: str, injected: "Annotated[str, InjectedToolArg]") -> str:
+            captured["injected"] = injected
+            return query
+
+    tool_ = Echo()
+    assert "injected" in tool_._injected_args_keys
+
+    result = tool_.invoke({"query": "hi", "injected": "value"})
+    assert result == "hi"
+    assert captured["injected"] == "value"
+
+
 class CallbackHandlerWithToolCallIdCapture(FakeCallbackHandler):
     """Callback handler that captures `tool_call_id` passed to `on_tool_start`.
 
@@ -3741,6 +4029,22 @@ async def test_tool_call_id_passed_via_run_method(method: str) -> None:
     assert handler.tool_starts == 1
     assert len(handler.captured_tool_call_ids) == 1
     assert handler.captured_tool_call_ids[0] == "run_method_tool_call_id"
+
+
+def test_tool_args_schema_required_field_validation_alias() -> None:
+    """Test required args provided through validation aliases reach the tool."""
+
+    class Args(BaseModel):
+        """Tool arguments."""
+
+        canonical: str = Field(validation_alias=AliasChoices("canonical", "alias"))
+
+    @tool(args_schema=Args)
+    def aliased_tool(canonical: str) -> str:
+        """Return the canonical argument."""
+        return canonical
+
+    assert aliased_tool.invoke({"alias": "value"}) == "value"
 
 
 def test_tool_args_schema_default_values() -> None:

@@ -11,7 +11,7 @@ import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Final, Literal, cast
+from typing import Any, Final, Literal, TypeGuard, cast
 
 import anthropic
 from langchain_core.callbacks import (
@@ -36,7 +36,11 @@ from langchain_core.messages import (
     is_data_content_block,
 )
 from langchain_core.messages import content as types
-from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -48,7 +52,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
+from langchain_core.utils import from_env, get_pydantic_field_names
+from langchain_core.utils._gateway import _apply_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -161,6 +166,7 @@ _BUILTIN_TOOL_PREFIXES = [
     "mcp_toolset",
     "memory_",
     "tool_search_",
+    "advisor_",
 ]
 
 _ANTHROPIC_EXTRA_FIELDS: set[str] = {
@@ -173,7 +179,7 @@ _ANTHROPIC_EXTRA_FIELDS: set[str] = {
 """Valid Anthropic-specific extra fields"""
 
 
-def _is_builtin_tool(tool: Any) -> bool:
+def _is_builtin_tool(tool: Any) -> TypeGuard[dict[str, Any]]:
     """Check if a tool is a built-in (server-side) Anthropic tool.
 
     `tool` must be a `dict` and have a `type` key starting with one of the known
@@ -473,6 +479,29 @@ def _format_data_content_block(block: dict) -> dict:
     return formatted_block
 
 
+def _format_text_block(block: dict) -> dict:
+    """Narrow a text content block to fields supported by Anthropic's API.
+
+    Drops LangChain-internal fields (e.g. the ``id`` minted by
+    ``create_text_block``) that Anthropic rejects as extra inputs.
+    """
+    formatted_block = {
+        k: v
+        for k, v in block.items()
+        if k in ("type", "text", "cache_control", "citations")
+    }
+    # Clean up citations to remove null file_id fields
+    if formatted_block.get("citations"):
+        cleaned_citations = []
+        for citation in formatted_block["citations"]:
+            cleaned_citation = {
+                k: v for k, v in citation.items() if not (k == "file_id" and v is None)
+            }
+            cleaned_citations.append(cleaned_citation)
+        formatted_block["citations"] = cleaned_citations
+    return formatted_block
+
+
 def _format_messages(
     messages: Sequence[BaseMessage],
 ) -> tuple[str | list[dict] | None, list[dict]]:
@@ -488,7 +517,11 @@ def _format_messages(
             if isinstance(message.content, list):
                 system = [
                     (
-                        block
+                        (
+                            _format_text_block(block)
+                            if block.get("type") == "text"
+                            else block
+                        )
                         if isinstance(block, dict)
                         else {"type": "text", "text": block}
                     )
@@ -596,32 +629,16 @@ def _format_messages(
                         # accepted.
                         # https://github.com/anthropics/anthropic-sdk-python/issues/461
                         if text.strip():
-                            formatted_block = {
-                                k: v
-                                for k, v in block.items()
-                                if k in ("type", "text", "cache_control", "citations")
-                            }
-                            # Clean up citations to remove null file_id fields
-                            if formatted_block.get("citations"):
-                                cleaned_citations = []
-                                for citation in formatted_block["citations"]:
-                                    cleaned_citation = {
-                                        k: v
-                                        for k, v in citation.items()
-                                        if not (k == "file_id" and v is None)
-                                    }
-                                    cleaned_citations.append(cleaned_citation)
-                                formatted_block["citations"] = cleaned_citations
-                            content.append(formatted_block)
+                            content.append(_format_text_block(block))
                     elif block["type"] == "thinking":
-                        content.append(
-                            {
-                                k: v
-                                for k, v in block.items()
-                                if k
-                                in ("type", "thinking", "cache_control", "signature")
-                            },
-                        )
+                        formatted_thinking = {
+                            k: v
+                            for k, v in block.items()
+                            if k in ("type", "thinking", "cache_control", "signature")
+                        }
+                        if "signature" in formatted_thinking:
+                            formatted_thinking.setdefault("thinking", "")
+                        content.append(formatted_thinking)
                     elif block["type"] == "redacted_thinking":
                         content.append(
                             {
@@ -640,6 +657,23 @@ def _format_messages(
                         )
                     ):
                         # Tool search results with tool_reference blocks
+                        content.append(
+                            _normalize_block_tool_use_id(
+                                {
+                                    k: v
+                                    for k, v in block.items()
+                                    if k
+                                    in (
+                                        "type",
+                                        "content",
+                                        "tool_use_id",
+                                        "cache_control",
+                                    )
+                                },
+                            ),
+                        )
+                    elif block["type"] == "tool_search_tool_result":
+                        # Omit streaming-only fields, such as `index`, from results.
                         content.append(
                             _normalize_block_tool_use_id(
                                 {
@@ -805,6 +839,21 @@ def _is_code_execution_related_block(
     return False
 
 
+def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
+    """Return the reasoning-effort levels declared in a model's profile, if any.
+
+    Defensive against a missing/malformed profile: an absent `profile`, a
+    non-mapping value, or a missing/non-list `reasoning_effort_levels` value is
+    treated as "no levels declared" rather than raising.
+    """
+    if not isinstance(profile, Mapping):
+        return ()
+    levels = profile.get("reasoning_effort_levels")
+    if not isinstance(levels, (list, tuple)):
+        return ()
+    return tuple(levels)
+
+
 def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
     """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
 
@@ -859,6 +908,20 @@ def _apply_cache_control_to_last_eligible_block(
 
 class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
     """BadRequestError raised when input exceeds Anthropic's context limit."""
+
+
+def _raise_if_authentication_error(e: TypeError) -> None:
+    """Re-raise anthropic SDK's missing-credentials `TypeError` with guidance."""
+    if "Could not resolve authentication method" in str(e):
+        msg = (
+            "Anthropic authentication failed: no API key or authorization "
+            "credentials were provided. Set the ANTHROPIC_API_KEY environment "
+            "variable, pass api_key=... to ChatAnthropic, or provide "
+            'credentials via default_headers={"Authorization": ...}. If you '
+            "are routing through the LangSmith gateway, set LANGSMITH_GATEWAY "
+            "and LANGSMITH_GATEWAY_API_KEY."
+        )
+        raise TypeError(msg) from e
 
 
 def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
@@ -943,24 +1006,21 @@ class ChatAnthropic(BaseChatModel):
     stop_sequences: list[str] | None = Field(None, alias="stop")
     """Default stop sequences."""
 
-    anthropic_api_url: str | None = Field(
-        alias="base_url",
-        default_factory=from_env(
-            ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
-            default="https://api.anthropic.com",
-        ),
-    )
+    anthropic_api_url: str | None = Field(default=None, alias="base_url")
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value first from
     `ANTHROPIC_API_URL` and if that is not set, `ANTHROPIC_BASE_URL`.
+
+    If `LANGSMITH_GATEWAY` is set, it is used as a fallback after those env vars.
     """
 
-    anthropic_api_key: SecretStr = Field(
-        alias="api_key",
-        default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
-    )
-    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
+    anthropic_api_key: SecretStr = Field(default=SecretStr(""), alias="api_key")
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided.
+
+    If `LANGSMITH_GATEWAY` is enabled and the base URL points at the gateway,
+    `LANGSMITH_GATEWAY_API_KEY` is used instead.
+    """
 
     anthropic_proxy: str | None = Field(
         default_factory=from_env("ANTHROPIC_PROXY", default=None)
@@ -1005,17 +1065,19 @@ class ChatAnthropic(BaseChatModel):
     Examples:
 
     - `#!python {"type": "enabled", "budget_tokens": 10_000}` (pre-4.7 models)
-    - `#!python {"type": "adaptive"}` (Opus 4.6+, Sonnet 5)
-    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+, Sonnet 5)
-    - `#!python {"type": "disabled"}` (Sonnet 5, where adaptive thinking is
-      on by default)
+    - `#!python {"type": "adaptive"}` (Opus 4.6+, Opus 5, Sonnet 5)
+    - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+,
+      Opus 5, Sonnet 5)
+    - `#!python {"type": "disabled"}` (Opus 5 and Sonnet 5, where adaptive
+      thinking is on by default)
 
-    !!! note "Claude Opus 4.7+ and Sonnet 5"
+    !!! note "Claude Opus 4.7+, Opus 5, and Sonnet 5"
 
         `budget_tokens` is removed on these models — use `{"type": "adaptive"}`
         with `output_config.effort` to control reasoning effort. The default
         `display` is `"omitted"`; set it to `"summarized"` to receive
-        summarized reasoning in the response.
+        summarized reasoning in the response. On Opus 5, disabled thinking is
+        supported only at `"high"` effort or below.
     """
 
     output_config: dict[str, Any] | None = None
@@ -1046,18 +1108,29 @@ class ChatAnthropic(BaseChatModel):
     [extended output](https://platform.claude.com/docs/en/api/go/beta/messages/create).
     """
 
-    effort: Literal["max", "xhigh", "high", "medium", "low"] | None = None
-    """Convenience shorthand for `output_config.effort`.
+    reasoning_effort: Literal["max", "xhigh", "high", "medium", "low"] | None = Field(
+        default=None,
+        alias="effort",
+    )
+    """Reasoning effort.
 
-    When set, this value takes precedence over any `effort` key inside
-    `output_config`.
+    Configures `output_config.effort`. If `thinking` isn't set explicitly,
+    defaults it to `{"type": "adaptive", "display": "summarized"}`. Can also
+    be passed at call time (for example,
+    `model.invoke(..., reasoning_effort="high")`).
 
-    Example: `effort="medium"`
+    !!! note "`effort` alias"
+
+        `effort` is also accepted as an alias for this field, at both
+        construction and call time. If both `effort` and `reasoning_effort` are
+        set, `effort` wins (Pydantic's alias-resolution precedence).
 
     !!! note
 
-        Setting `effort` to `'high'` produces exactly the same behavior as omitting the
-        parameter altogether.
+        Setting `reasoning_effort` to `'high'` produces exactly the same behavior
+        as omitting the parameter altogether.
+
+    Example: `reasoning_effort="medium"`
     """
 
     mcp_servers: list[dict[str, Any]] | None = None
@@ -1087,6 +1160,22 @@ class ChatAnthropic(BaseChatModel):
     [data residency](https://platform.claude.com/docs/en/build-with-claude/data-residency)
     docs for more information.
     """
+
+    user_profile_id: str | None = None
+    """User profile ID to attribute the request to.
+
+    Use when acting on behalf of a party other than your organization. Setting this
+    automatically enables the required `user-profiles` beta, routing the request
+    through `client.beta.messages.create`.
+
+    Can also be passed at call time, which overrides the value set here (for example,
+    `model.invoke(..., user_profile_id="uprof_...")`).
+    """
+
+    @property
+    def effort(self) -> Literal["max", "xhigh", "high", "medium", "low"] | None:
+        """Alias for `reasoning_effort`."""
+        return self.reasoning_effort
 
     @property
     def _llm_type(self) -> str:
@@ -1176,6 +1265,31 @@ class ChatAnthropic(BaseChatModel):
         self._add_version("langchain-anthropic", __version__)
         return self
 
+    @model_validator(mode="before")
+    @classmethod
+    def _resolve_gateway(cls, values: Any) -> Any:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        An explicit ``base_url``/``api_key`` always wins. Otherwise the base URL
+        falls back to ``ANTHROPIC_API_URL``/``ANTHROPIC_BASE_URL``, then the
+        LangSmith gateway, then the Anthropic default. The gateway key is
+        preferred only when the base URL came from the gateway; for any other
+        endpoint the provider key wins, and the gateway key is a candidate only
+        when the gateway is enabled.
+        """
+        if isinstance(values, dict):
+            _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="anthropic_api_url",
+                api_key_field="anthropic_api_key",
+                provider_path="anthropic",
+                base_url_env=["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
+                api_key_env="ANTHROPIC_API_KEY",
+                default_base_url="https://api.anthropic.com",
+            )
+        return values
+
     def _resolve_model_profile(self) -> ModelProfile | None:
         profile = _get_default_model_profile(self.model) or None
         if profile is not None and self.betas and "context-1m-2025-08-07" in self.betas:
@@ -1233,14 +1347,60 @@ class ChatAnthropic(BaseChatModel):
         }
         return anthropic.AsyncClient(**params)
 
+    def _assert_valid_model_configuration(self, kwargs: Mapping[str, Any]) -> None:
+        """Validate resolved request configuration against model-specific invariants."""
+        request_config = {**self.model_kwargs, **kwargs}
+        thinking = request_config.get("thinking")
+        if self.thinking is not None:
+            thinking = self.thinking
+
+        output_config = dict(self.output_config or {})
+        if self.reasoning_effort:
+            output_config["effort"] = self.reasoning_effort
+        request_output_config = request_config.get("output_config")
+        if isinstance(request_output_config, dict):
+            output_config.update(request_output_config)
+        effort = request_config.get("effort")
+        if effort is None:
+            effort = request_config.get("reasoning_effort")
+        if effort:
+            output_config["effort"] = effort
+
+        if (
+            self.model.startswith("claude-opus-5")
+            and isinstance(thinking, Mapping)
+            and thinking.get("type") == "enabled"
+        ):
+            msg = (
+                '`thinking={"type": "enabled", "budget_tokens": ...}` is not '
+                f"supported for {self.model}; use adaptive thinking and "
+                "`output_config.effort` instead."
+            )
+            raise ValueError(msg)
+
+        if (
+            self.model.startswith("claude-opus-5")
+            and isinstance(thinking, Mapping)
+            and thinking.get("type") == "disabled"
+            and output_config.get("effort") in {"xhigh", "max"}
+        ):
+            msg = (
+                '`thinking={"type": "disabled"}` is not supported for '
+                f"{self.model} with "
+                f"`output_config.effort={output_config['effort']!r}`; use adaptive "
+                "thinking, omit `thinking`, or set effort to `high` or below."
+            )
+            raise ValueError(msg)
+
     def _get_request_payload(
         self,
         input_: LanguageModelInput,
         *,
         stop: list[str] | None = None,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> dict:
         """Get the request payload for the Anthropic API."""
+        self._assert_valid_model_configuration(kwargs)
         messages = self._convert_input(input_).to_messages()
 
         for idx, message in enumerate(messages):
@@ -1307,29 +1467,60 @@ class ChatAnthropic(BaseChatModel):
             "betas": self.betas,
             "context_management": self.context_management,
             "mcp_servers": self.mcp_servers,
+            "user_profile_id": self.user_profile_id,
             "system": system,
             **self.model_kwargs,
             **kwargs,
         }
+        # Captured before `self.thinking` is applied below, so a call-time
+        # `thinking` kwarg counts as "explicitly set" too.
+        thinking_explicitly_set = "thinking" in payload or self.thinking is not None
         if self.thinking is not None:
             payload["thinking"] = self.thinking
         if self.inference_geo is not None:
             payload["inference_geo"] = self.inference_geo
 
         # Handle output_config and effort parameter
-        # Priority: self.effort > kwargs output_config > self.output_config
+        # Priority: kwarg `effort`/`reasoning_effort` > kwarg `output_config`
+        # > self.reasoning_effort > self.output_config
         output_config: dict[str, Any] = {}
         if self.output_config:
             output_config.update(self.output_config)
+        reasoning_effort_applied = False
+        if self.reasoning_effort:
+            output_config["effort"] = self.reasoning_effort
+            reasoning_effort_applied = True
         payload_oc = payload.get("output_config")
         if isinstance(payload_oc, dict):
             output_config.update(payload_oc)
 
-        if self.effort:
-            output_config["effort"] = self.effort
+        # Neither `reasoning_effort` nor its `effort` alias are Anthropic API
+        # fields. Pop them so they never leak through as top-level keys.
+        effort_kwarg = payload.pop("effort", None)
+        reasoning_effort_kwarg = payload.pop("reasoning_effort", None)
+        # `effort` wins if both are set at call time, matching the
+        # construction-time alias-resolution precedence (`Field(alias="effort")`).
+        reasoning_effort_override = (
+            effort_kwarg if effort_kwarg is not None else reasoning_effort_kwarg
+        )
+        if reasoning_effort_override:
+            output_config["effort"] = reasoning_effort_override
+            reasoning_effort_applied = True
 
         if output_config:
             payload["output_config"] = output_config
+
+        # Default adaptive thinking when `reasoning_effort` is set, unless the
+        # caller explicitly provided `thinking`. Gated on `xhigh` support: only
+        # Opus 4.7+/Sonnet 5 accept the adaptive+summarized `thinking` shape —
+        # sending it to an older model (e.g. Opus 4.5, 4.6) is rejected by the
+        # API with "adaptive thinking is not supported on this model".
+        if (
+            reasoning_effort_applied
+            and not thinking_explicitly_set
+            and "xhigh" in _reasoning_effort_levels(self.profile)
+        ):
+            payload["thinking"] = {"type": "adaptive", "display": "summarized"}
 
         if "response_format" in payload:
             # response_format present when using agents.create_agent's ProviderStrategy
@@ -1425,17 +1616,34 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = [required_beta]
 
+        # Auto-append required beta for user_profile_id
+        if payload.get("user_profile_id"):
+            required_beta = "user-profiles-2026-03-24"
+            if payload.get("betas"):
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
         return {k: v for k, v in payload.items() if v is not None}
 
     def _create(self, payload: dict) -> Any:
-        if "betas" in payload:
-            return self._client.beta.messages.create(**payload)
-        return self._client.messages.create(**payload)
+        try:
+            if "betas" in payload:
+                return self._client.beta.messages.create(**payload)
+            return self._client.messages.create(**payload)
+        except TypeError as e:
+            _raise_if_authentication_error(e)
+            raise
 
     async def _acreate(self, payload: dict) -> Any:
-        if "betas" in payload:
-            return await self._async_client.beta.messages.create(**payload)
-        return await self._async_client.messages.create(**payload)
+        try:
+            if "betas" in payload:
+                return await self._async_client.beta.messages.create(**payload)
+            return await self._async_client.messages.create(**payload)
+        except TypeError as e:
+            _raise_if_authentication_error(e)
+            raise
 
     def _stream(
         self,
@@ -1657,6 +1865,8 @@ class ChatAnthropic(BaseChatModel):
                 content_block = event.delta.model_dump()
                 content_block["index"] = event.index
                 content_block["type"] = "thinking"
+                if event.delta.type == "signature_delta":
+                    content_block.setdefault("thinking", "")
                 message_chunk = AIMessageChunk(content=[content_block])
 
             # Tool input JSON (streaming tool arguments)
@@ -1877,6 +2087,15 @@ class ChatAnthropic(BaseChatModel):
                 See the [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#strict-tool-use) for more info.
             kwargs: Any additional parameters are passed directly to `bind`.
 
+        Raises:
+            ValueError: If every tool in `tools` was dropped for using top-level
+                schema composition, leaving the model with no callable tool.
+            ValueError: If `tool_choice` forces tool use (a specific tool, or
+                `'any'`) while any tool was dropped, since the forced tool may be
+                unreachable. Does not apply when `thinking` is enabled, as the
+                forced choice is discarded before the request is sent.
+            ValueError: If `tool_choice` is neither a `dict`, a `str`, nor `None`.
+
         Example:
             ```python
             from langchain_anthropic import ChatAnthropic
@@ -1913,16 +2132,88 @@ class ChatAnthropic(BaseChatModel):
         # Allows built-in tools either by their:
         # - Raw `dict` format
         # - Extracting extras["provider_tool_definition"] if provided on a BaseTool
-        formatted_tools = [
+        formatted_tools: list[Mapping[str, Any]] = [
             tool
             if _is_builtin_tool(tool)
             else convert_to_anthropic_tool(tool, strict=strict)
             for tool in tools
         ]
+        formatted_tools, dropped_tool_names = _drop_unsupported_root_composition_tools(
+            formatted_tools
+        )
+
+        # Dropping salvages a request when usable tools remain. If every tool was
+        # dropped there is nothing to salvage: the caller asked for a model with
+        # tools and would get one that cannot call any, so fail loudly instead of
+        # letting it surface later as a tool call that never happens.
+        if tools and not formatted_tools:
+            msg = (
+                f"All {len(tools)} bound tool(s) use a top-level "
+                f"{'/'.join(_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS)} in their "
+                f"input_schema, which the Anthropic API rejects: "
+                f"{sorted(dropped_tool_names)}. No tool is left for the model to "
+                "call. If you control the schema, move the combinator under "
+                "`properties`; for structured output, `with_structured_output(..., "
+                "method='json_schema')` accepts these schemas directly. Otherwise "
+                "these tools cannot be used with Anthropic -- bind a subset that "
+                "excludes them, or raise it with the tool's author."
+            )
+            raise ValueError(msg)
+
+        # Reconcile tool_choice with the filtered list: forcing a tool that was
+        # dropped, or forcing tool use at all when the set the caller depends on
+        # has silently shrunk, still produces a 400 or a stuck agent loop.
+        if tool_choice and dropped_tool_names:
+            choice_type: str | None = None
+            choice_name: str | None = None
+            if isinstance(tool_choice, dict):
+                choice_type = tool_choice.get("type")
+                choice_name = tool_choice.get("name")
+            elif isinstance(tool_choice, str):
+                if tool_choice in ("any", "auto"):
+                    choice_type = tool_choice
+                else:
+                    choice_type, choice_name = "tool", tool_choice
+            # Thinking discards forced choices before the request is sent, so
+            # they need not refer to a tool that remains after filtering.
+            thinking_discards_forced_choice = (
+                self.thinking is not None
+                and self.thinking.get("type") in ("enabled", "adaptive")
+                and choice_type in ("any", "tool")
+            )
+            if not thinking_discards_forced_choice:
+                if choice_type == "tool" and choice_name in dropped_tool_names:
+                    msg = (
+                        f"tool_choice forces {choice_name!r}, but that tool was "
+                        "dropped because its input_schema uses a top-level "
+                        f"{'/'.join(_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS)}, which "
+                        "the Anthropic API rejects. Stop forcing it, or -- if you "
+                        "control the schema -- move the combinator under "
+                        "`properties`. For structured output, "
+                        "`with_structured_output(..., method='json_schema')` "
+                        "accepts these schemas directly."
+                    )
+                    raise ValueError(msg)
+                if choice_type == "any":
+                    # Forcing tool use means the caller depends on a specific
+                    # reachable tool set, so losing any member of it is fatal --
+                    # not just losing all of them.
+                    msg = (
+                        "tool_choice='any' forces the model to call a tool, but "
+                        f"{sorted(dropped_tool_names)} were dropped because their "
+                        "input_schema uses a top-level "
+                        f"{'/'.join(_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS)}, which "
+                        "the Anthropic API rejects, so the model can no longer "
+                        "call them. Use tool_choice='auto' to proceed with the "
+                        "remaining tools, or -- if you control the schema -- move "
+                        "the combinator under `properties`."
+                    )
+                    raise ValueError(msg)
+
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
-            kwargs["tool_choice"] = tool_choice
+            kwargs["tool_choice"] = tool_choice.copy()
         elif isinstance(tool_choice, str) and tool_choice in ("any", "auto"):
             kwargs["tool_choice"] = {"type": tool_choice}
         elif isinstance(tool_choice, str):
@@ -2201,7 +2492,11 @@ class ChatAnthropic(BaseChatModel):
         if isinstance(formatted_system, str):
             kwargs["system"] = formatted_system
         if tools:
-            kwargs["tools"] = [convert_to_anthropic_tool(tool) for tool in tools]
+            # Filter the same schemas `bind_tools` drops, so counting tokens and
+            # sending a request agree on which tools the API will accept.
+            kwargs["tools"], _ = _drop_unsupported_root_composition_tools(
+                [convert_to_anthropic_tool(tool) for tool in tools]
+            )
         if self.context_management is not None:
             kwargs["context_management"] = self.context_management
 
@@ -2219,6 +2514,56 @@ class ChatAnthropic(BaseChatModel):
             **kwargs,
         )
         return response.input_tokens
+
+
+_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS = ("oneOf", "anyOf")
+
+
+def _drop_unsupported_root_composition_tools(
+    tools: Sequence[Mapping[str, Any]],
+) -> tuple[list[Mapping[str, Any]], set[str]]:
+    """Drop tools whose root `input_schema` uses `oneOf`/`anyOf`.
+
+    The Anthropic API rejects these at request validation, failing the entire
+    request. A tool is dropped only if its `input_schema` is a mapping carrying
+    a root combinator, so built-in (server-side) tools -- which have no
+    `input_schema` -- and tools whose combinators are nested under `properties`
+    are passed through as the same objects, unmodified.
+
+    A `UserWarning` is emitted per dropped tool.
+
+    Args:
+        tools: Already-formatted tool definitions, as built by `bind_tools`.
+
+    Returns:
+        The retained tools, and the names of the dropped tools. A dropped tool
+        with no string `name` contributes no entry to the name set.
+    """
+    kept: list[Mapping[str, Any]] = []
+    dropped_tool_names: set[str] = set()
+    for tool in tools:
+        input_schema = tool.get("input_schema")
+        offending_keys = (
+            [k for k in _TOP_LEVEL_SCHEMA_COMPOSITION_KEYS if k in input_schema]
+            if isinstance(input_schema, Mapping)
+            else []
+        )
+        if not offending_keys:
+            kept.append(tool)
+            continue
+        tool_name = tool.get("name")
+        if isinstance(tool_name, str):
+            dropped_tool_names.add(tool_name)
+            described = repr(tool_name)
+        else:
+            described = "with no name"
+        warnings.warn(
+            f"Dropping tool {described}: its input_schema has a "
+            f"top-level {'/'.join(offending_keys)}, which the Anthropic API does "
+            "not support. The tool will not be available to the model.",
+            stacklevel=3,
+        )
+    return kept, dropped_tool_names
 
 
 def convert_to_anthropic_tool(
@@ -2394,7 +2739,18 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
     )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0) or 0
 
-    return UsageMetadata(
+    # Reasoning (thinking) tokens are a decomposition of `output_tokens` (not
+    # additive), reported by Anthropic via `output_tokens_details.thinking_tokens`.
+    # Older models omit `output_tokens_details` entirely, so guard with `getattr`.
+    output_token_details: dict = {
+        "reasoning": getattr(
+            getattr(anthropic_usage, "output_tokens_details", None),
+            "thinking_tokens",
+            None,
+        ),
+    }
+
+    usage_metadata = UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=input_tokens + output_tokens,
@@ -2402,3 +2758,13 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
             **{k: v for k, v in input_token_details.items() if v is not None},
         ),
     )
+
+    filtered_output_token_details = {
+        k: v for k, v in output_token_details.items() if v is not None
+    }
+    if filtered_output_token_details:
+        usage_metadata["output_token_details"] = OutputTokenDetails(
+            **filtered_output_token_details,
+        )
+
+    return usage_metadata

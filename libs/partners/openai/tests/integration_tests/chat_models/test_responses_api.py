@@ -782,6 +782,35 @@ def test_stream_reasoning_summary(
     assert isinstance(response_2, AIMessage)
 
 
+@pytest.mark.vcr
+def test_stream_encrypted_reasoning() -> None:
+    llm = ChatOpenAI(
+        model="gpt-5.6-luna",
+        use_responses_api=True,
+        reasoning_effort="medium",
+        store=False,
+        include=["reasoning.encrypted_content"],
+    )
+    message_1 = {
+        "role": "user",
+        "content": "What was the third tallest buliding in the year 2000?",
+    }
+    response_1 = llm.stream_events([message_1], version="v3").output
+    total_reasoning_blocks = 0
+    for block in response_1.content_blocks:
+        if block["type"] == "reasoning":
+            total_reasoning_blocks += 1
+            assert isinstance(block.get("id"), str)
+            assert block.get("id", "").startswith("rs_")
+            assert isinstance(block["extras"].get("encrypted_content"), str)
+            assert isinstance(block.get("index"), str)
+
+    # Check we can pass back summaries
+    message_2 = {"role": "user", "content": "Thank you."}
+    response_2 = llm.invoke([message_1, response_1, message_2])
+    assert isinstance(response_2, AIMessage)
+
+
 @pytest.mark.default_cassette("test_code_interpreter.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize(

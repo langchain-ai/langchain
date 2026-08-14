@@ -21,10 +21,11 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.4.8"
+version = "1.5.5"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
+    "httpx>=0.23.0,<1.0.0",
     "tenacity!=8.4.0,>=8.1.0,<10.0.0",
     "jsonpatch>=1.33.0,<2.0.0",
     "PyYAML>=5.3.0,<7.0.0",
@@ -46,7 +47,7 @@ Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
-lint = ["ruff>=0.15.0,<0.16.0"]
+lint = ["ruff>=0.15.0,<0.17.0"]
 typing = [
     "mypy>=2.1.0,<2.2.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
@@ -55,7 +56,7 @@ typing = [
 ]
 dev = [
     "jupyter>=1.0.0,<2.0.0",
-    "setuptools>=67.6.1,<83.0.0",
+    "setuptools>=67.6.1,<84.0.0",
     "grandalf>=0.8.0,<1.0.0",
 ]
 test = [

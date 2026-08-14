@@ -477,6 +477,9 @@ class AddableDict(dict[str, Any]):
 
         Returns:
             A dictionary that is the result of adding the two dictionaries.
+
+        Raises:
+            TypeError: If a shared key holds values of incompatible types.
         """
         chunk = AddableDict(self)
         for key in other:
@@ -485,8 +488,13 @@ class AddableDict(dict[str, Any]):
             elif other[key] is not None:
                 try:
                     added = chunk[key] + other[key]
-                except TypeError:
-                    added = other[key]
+                except TypeError as exc:
+                    msg = (
+                        f"Cannot add incompatible types for key {key!r}: "
+                        f"{type(chunk[key]).__name__!r} and "
+                        f"{type(other[key]).__name__!r}."
+                    )
+                    raise TypeError(msg) from exc
                 chunk[key] = added
         return chunk
 
@@ -498,6 +506,9 @@ class AddableDict(dict[str, Any]):
 
         Returns:
             A dictionary that is the result of adding the two dictionaries.
+
+        Raises:
+            TypeError: If a shared key holds values of incompatible types.
         """
         chunk = AddableDict(other)
         for key in self:
@@ -506,8 +517,13 @@ class AddableDict(dict[str, Any]):
             elif self[key] is not None:
                 try:
                     added = chunk[key] + self[key]
-                except TypeError:
-                    added = self[key]
+                except TypeError as exc:
+                    msg = (
+                        f"Cannot add incompatible types for key {key!r}: "
+                        f"{type(chunk[key]).__name__!r} and "
+                        f"{type(self[key]).__name__!r}."
+                    )
+                    raise TypeError(msg) from exc
                 chunk[key] = added
         return chunk
 

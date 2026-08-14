@@ -737,7 +737,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             )
 
             params = self._get_invocation_params(stop=stop, **kwargs)
-            options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+            options = {
+                "stop": stop,
+                **{key: params[key] for key in kwargs if key in params},
+                **ls_structured_output_format_dict,
+            }
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
                 **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -866,7 +870,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+        options = {
+            "stop": stop,
+            **{key: params[key] for key in kwargs if key in params},
+            **ls_structured_output_format_dict,
+        }
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1001,7 +1009,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+        options = {
+            "stop": stop,
+            **{key: params[key] for key in kwargs if key in params},
+            **ls_structured_output_format_dict,
+        }
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1135,7 +1147,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+        options = {
+            "stop": stop,
+            **{key: params[key] for key in kwargs if key in params},
+            **ls_structured_output_format_dict,
+        }
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1872,9 +1888,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
-        check_cache = self.cache or self.cache is None
+        check_cache = self.cache is not False
         if check_cache:
-            if llm_cache:
+            if llm_cache is not None:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
                 normalized_messages = [
                     (
@@ -2016,7 +2032,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **result.llm_output,
                 **result.generations[0].message.response_metadata,
             }
-        if check_cache and llm_cache:
+        if check_cache and llm_cache is not None:
             llm_cache.update(prompt, llm_string, result.generations)
         return result
 
@@ -2031,9 +2047,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
-        check_cache = self.cache or self.cache is None
+        check_cache = self.cache is not False
         if check_cache:
-            if llm_cache:
+            if llm_cache is not None:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
                 normalized_messages = [
                     (
@@ -2173,7 +2189,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **result.llm_output,
                 **result.generations[0].message.response_metadata,
             }
-        if check_cache and llm_cache:
+        if check_cache and llm_cache is not None:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
 

@@ -33,7 +33,7 @@ dependencies = [
     "pytest-benchmark",
     "pytest-codspeed",
     "pytest-recording",
-    "vcrpy>=8.0.0,<9.0.0",
+    "vcrpy>=8.2.1,<9.0.0",
     "numpy>=1.26.2; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
 ]
@@ -54,9 +54,9 @@ langsmith_ci = "langchain_tests._langsmith_plugin"
 [dependency-groups]
 test = []
 test_integration = []
-lint = ["ruff>=0.15.0,<0.16.0"]
+lint = ["ruff>=0.15.0,<0.17.0"]
 typing = [
-    "mypy>=2.1.0,<2.2.0",
+    "mypy>=2.1.0,<2.4.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
 ]
 
@@ -88,6 +88,7 @@ select = [ "ALL",]
 ignore = [
     "C90",     # McCabe complexity
     "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
     "FIX002",  # Line contains TODO
     "PERF203", # Rarely useful
     "PLR2004", # Magic numbers

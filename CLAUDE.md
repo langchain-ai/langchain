@@ -287,7 +287,7 @@ Each partner package is released independently. The full flow is:
 1. **Version bump PR.** Create a PR that bumps three files by one line each:
    - `langchain_<partner>/_version.py` — `__version__`
    - `pyproject.toml` — `version`
-   - `uv.lock` — regenerate with `uv lock` from the package directory; keep only the package-version line if `uv lock` touches unrelated entries
+   - `uv.lock` — run `uv lock` from the package directory. If the diff includes unrelated changes (e.g. environment-dependent marker lines from a different local Python version), revert them and keep only the `version = "..."` line for the package being released
 
    Title follows Conventional Commits: `release(<partner>): <version>` (e.g. `release(openrouter): 0.2.6`). Use the branch name `release/<partner>-<version>`.
 
