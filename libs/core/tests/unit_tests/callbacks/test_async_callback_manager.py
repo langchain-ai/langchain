@@ -151,6 +151,30 @@ async def test_inline_handlers_share_parent_context_multiple() -> None:
         ]
 
 
+async def test_on_llm_start_dispatches_to_inline_and_non_inline_handlers() -> None:
+    """Non-inline handlers must receive `on_llm_start` when inline handlers exist."""
+    received: list[str] = []
+
+    class RecordingHandler(AsyncCallbackHandler):
+        def __init__(self, name: str, *, run_inline: bool) -> None:
+            self.name = name
+            self.run_inline = run_inline
+
+        @override
+        async def on_llm_start(self, *args: Any, **kwargs: Any) -> None:
+            received.append(self.name)
+
+    manager = AsyncCallbackManager(
+        handlers=[
+            RecordingHandler("inline", run_inline=True),
+            RecordingHandler("non_inline", run_inline=False),
+        ]
+    )
+    await manager.on_llm_start({}, ["hi"])
+
+    assert received == ["inline", "non_inline"]
+
+
 async def test_shielded_callback_context_preservation() -> None:
     """Verify that shielded callbacks preserve context variables.
 

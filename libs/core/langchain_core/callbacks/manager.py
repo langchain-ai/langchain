@@ -1885,10 +1885,6 @@ class AsyncCallbackManager(BaseCallbackManager):
         """
         inline_tasks = []
         non_inline_tasks = []
-        inline_handlers = [handler for handler in self.handlers if handler.run_inline]
-        non_inline_handlers = [
-            handler for handler in self.handlers if not handler.run_inline
-        ]
         managers = []
 
         for prompt in prompts:
@@ -1898,36 +1894,23 @@ class AsyncCallbackManager(BaseCallbackManager):
             else:
                 run_id_ = uuid7()
 
-            if inline_handlers:
-                inline_tasks.append(
-                    ahandle_event(
-                        inline_handlers,
-                        "on_llm_start",
-                        "ignore_llm",
-                        serialized,
-                        [prompt],
-                        run_id=run_id_,
-                        parent_run_id=self.parent_run_id,
-                        tags=self.tags,
-                        metadata=self.metadata,
-                        **kwargs,
-                    )
+            for handler in self.handlers:
+                task = ahandle_event(
+                    [handler],
+                    "on_llm_start",
+                    "ignore_llm",
+                    serialized,
+                    [prompt],
+                    run_id=run_id_,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    metadata=self.metadata,
+                    **kwargs,
                 )
-            else:
-                non_inline_tasks.append(
-                    ahandle_event(
-                        non_inline_handlers,
-                        "on_llm_start",
-                        "ignore_llm",
-                        serialized,
-                        [prompt],
-                        run_id=run_id_,
-                        parent_run_id=self.parent_run_id,
-                        tags=self.tags,
-                        metadata=self.metadata,
-                        **kwargs,
-                    )
-                )
+                if handler.run_inline:
+                    inline_tasks.append(task)
+                else:
+                    non_inline_tasks.append(task)
 
             managers.append(
                 AsyncCallbackManagerForLLMRun(
