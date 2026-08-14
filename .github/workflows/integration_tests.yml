@@ -288,8 +288,9 @@ jobs:
           LANGSMITH_PROJECT: ${{ vars.LANGSMITH_PROJECT || 'scheduled-testing-py' }}
           LANGSMITH_TAGS: "github-actions,${{ matrix.working-directory }},python-${{ matrix.python-version }},sha-${{ github.sha }}"
 
+          LANGSMITH_GATEWAY: ${{ secrets.LANGSMITH_GATEWAY }}
+          LANGSMITH_GATEWAY_API_KEY: ${{ secrets.LANGSMITH_GATEWAY_API_KEY }}
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
           ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
           ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
