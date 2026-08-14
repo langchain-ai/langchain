@@ -35,6 +35,19 @@ if TYPE_CHECKING:
 MAX_TOKEN_COUNT = 100
 
 
+def _gateway_or_provider_key() -> str:
+    """Return an API key valid for the endpoint the base URL resolves to.
+
+    When the LangSmith gateway is enabled, requests route through it and must
+    authenticate with the gateway key rather than the provider key. The
+    truthiness check mirrors `langchain_core`'s gateway resolution.
+    """
+    gateway = (os.environ.get("LANGSMITH_GATEWAY") or "").lower()
+    if gateway not in ("", "false", "0", "no"):
+        return os.environ["LANGSMITH_GATEWAY_API_KEY"]
+    return os.environ["OPENAI_API_KEY"]
+
+
 @pytest.mark.scheduled
 def test_chat_openai() -> None:
     """Test ChatOpenAI wrapper."""
@@ -66,7 +79,7 @@ def test_chat_openai_model() -> None:
 
 
 def test_callable_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    original_key = os.environ["OPENAI_API_KEY"]
+    original_key = _gateway_or_provider_key()
 
     calls = {"sync": 0}
 
@@ -83,7 +96,7 @@ def test_callable_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 async def test_callable_api_key_async(monkeypatch: pytest.MonkeyPatch) -> None:
-    original_key = os.environ["OPENAI_API_KEY"]
+    original_key = _gateway_or_provider_key()
 
     calls = {"sync": 0, "async": 0}
 
