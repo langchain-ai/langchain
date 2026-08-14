@@ -1,0 +1,135 @@
+{
+  "url": "https://api.github.com/repos/langchain-ai/langchain/issues/32197",
+  "repository_url": "https://api.github.com/repos/langchain-ai/langchain",
+  "labels_url": "https://api.github.com/repos/langchain-ai/langchain/issues/32197/labels{/name}",
+  "comments_url": "https://api.github.com/repos/langchain-ai/langchain/issues/32197/comments",
+  "events_url": "https://api.github.com/repos/langchain-ai/langchain/issues/32197/events",
+  "html_url": "https://github.com/langchain-ai/langchain/issues/32197",
+  "id": 3254573983,
+  "node_id": "I_kwDOIPDwls7B_Nuf",
+  "number": 32197,
+  "title": "Support structured output with Pydantic models in `langchain-huggingface`",
+  "user": {
+    "login": "bitsydarel",
+    "id": 17922775,
+    "node_id": "MDQ6VXNlcjE3OTIyNzc1",
+    "avatar_url": "https://avatars.githubusercontent.com/u/17922775?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/bitsydarel",
+    "html_url": "https://github.com/bitsydarel",
+    "followers_url": "https://api.github.com/users/bitsydarel/followers",
+    "following_url": "https://api.github.com/users/bitsydarel/following{/other_user}",
+    "gists_url": "https://api.github.com/users/bitsydarel/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/bitsydarel/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/bitsydarel/subscriptions",
+    "organizations_url": "https://api.github.com/users/bitsydarel/orgs",
+    "repos_url": "https://api.github.com/users/bitsydarel/repos",
+    "events_url": "https://api.github.com/users/bitsydarel/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/bitsydarel/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "labels": [
+    {
+      "id": 4678528822,
+      "node_id": "LA_kwDOIPDwls8AAAABFtyvNg",
+      "url": "https://api.github.com/repos/langchain-ai/langchain/labels/help%20wanted",
+      "name": "help wanted",
+      "color": "1D76DB",
+      "default": true,
+      "description": "Open to community contribution."
+    },
+    {
+      "id": 6411661606,
+      "node_id": "LA_kwDOIPDwls8AAAABfioxJg",
+      "url": "https://api.github.com/repos/langchain-ai/langchain/labels/investigate",
+      "name": "investigate",
+      "color": "0e8a16",
+      "default": false,
+      "description": "Flagged for investigation"
+    },
+    {
+      "id": 9019011443,
+      "node_id": "LA_kwDOIPDwls8AAAACGZMxcw",
+      "url": "https://api.github.com/repos/langchain-ai/langchain/labels/integration",
+      "name": "integration",
+      "color": "bfd4f2",
+      "default": false,
+      "description": "PR made that is related to a provider partner package integration"
+    },
+    {
+      "id": 9605599133,
+      "node_id": "LA_kwDOIPDwls8AAAACPInPnQ",
+      "url": "https://api.github.com/repos/langchain-ai/langchain/labels/huggingface",
+      "name": "huggingface",
+      "color": "97a58e",
+      "default": false,
+      "description": "`langchain-huggingface` package issues & PRs"
+    },
+    {
+      "id": 10037429975,
+      "node_id": "LA_kwDOIPDwls8AAAACVkcG1w",
+      "url": "https://api.github.com/repos/langchain-ai/langchain/labels/external",
+      "name": "external",
+      "color": "d32751",
+      "default": false,
+      "description": ""
+    }
+  ],
+  "state": "open",
+  "locked": false,
+  "assignees": [
+
+  ],
+  "milestone": null,
+  "comments": 23,
+  "created_at": "2025-07-23T02:02:48Z",
+  "updated_at": "2026-08-11T13:35:02Z",
+  "closed_at": null,
+  "assignee": null,
+  "author_association": "NONE",
+  "issue_field_values": [
+
+  ],
+  "type": {
+    "id": 18879553,
+    "node_id": "IT_kwDOB43M6c4BIBRB",
+    "name": "Feature",
+    "description": "A request, idea, or new functionality",
+    "color": "blue",
+    "created_at": "2024-02-16T01:43:34Z",
+    "updated_at": "2024-10-08T21:10:19Z",
+    "is_enabled": true
+  },
+  "active_lock_reason": null,
+  "sub_issues_summary": {
+    "total": 0,
+    "completed": 0,
+    "percent_completed": 0
+  },
+  "issue_dependencies_summary": {
+    "blocked_by": 0,
+    "total_blocked_by": 0,
+    "blocking": 0,
+    "total_blocking": 0
+  },
+  "body": "The documentation indicates that it does, but the PydanticOutputParser is not being utilised.\n\nhttps://github.com/langchain-ai/langchain/blob/0f39155f62742aeaa71c3993dcaa01e03b73f87e/libs/partners/huggingface/langchain_huggingface/chat_models/huggingface.py#L882",
+  "closed_by": null,
+  "reactions": {
+    "url": "https://api.github.com/repos/langchain-ai/langchain/issues/32197/reactions",
+    "total_count": 0,
+    "+1": 0,
+    "-1": 0,
+    "laugh": 0,
+    "hooray": 0,
+    "confused": 0,
+    "heart": 0,
+    "rocket": 0,
+    "eyes": 0
+  },
+  "timeline_url": "https://api.github.com/repos/langchain-ai/langchain/issues/32197/timeline",
+  "performed_via_github_app": null,
+  "state_reason": null,
+  "pinned_comment": null
+}

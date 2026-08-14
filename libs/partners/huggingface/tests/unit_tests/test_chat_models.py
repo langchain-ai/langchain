@@ -402,3 +402,151 @@ def test_init_chat_model_huggingface() -> None:
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+
+def test_with_structured_output_pydantic_function_calling(chat_hugging_face: Any) -> None:
+    """Test with_structured_output with Pydantic schema using function_calling method."""
+    from pydantic import BaseModel, Field
+
+    class TestSchema(BaseModel):
+        """Test schema for structured output."""
+        answer: str = Field(description="The answer to the question")
+        confidence: float = Field(description="Confidence score", ge=0.0, le=1.0)
+
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.convert_to_openai_tool",
+        side_effect=lambda x: {"function": {"name": "TestSchema", "parameters": {}}}
+    ), patch(
+        "langchain_huggingface.chat_models.huggingface.BaseChatModel.bind"
+    ) as mock_bind:
+        mock_bind.return_value = MagicMock()
+
+        runnable = chat_hugging_face.with_structured_output(
+            TestSchema,
+            method="function_calling"
+        )
+
+        assert runnable is not None
+        mock_bind.assert_called_once()
+
+def test_with_structured_output_pydantic_json_schema(chat_hugging_face: Any) -> None:
+    """Test with_structured_output with Pydantic schema using json_schema method."""
+    from pydantic import BaseModel, Field
+
+    class TestSchema(BaseModel):
+        """Test schema for structured output."""
+        answer: str = Field(description="The answer to the question")
+        confidence: float = Field(description="Confidence score", ge=0.0, le=1.0)
+
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.convert_to_json_schema",
+        side_effect=lambda x: {"type": "object", "properties": {}}
+    ), patch(
+        "langchain_huggingface.chat_models.huggingface.BaseChatModel.bind"
+    ) as mock_bind:
+        mock_bind.return_value = MagicMock()
+
+        runnable = chat_hugging_face.with_structured_output(
+            TestSchema,
+            method="json_schema"
+        )
+
+        assert runnable is not None
+        mock_bind.assert_called_once()
+
+def test_with_structured_output_pydantic_json_mode(chat_hugging_face: Any) -> None:
+    """Test with_structured_output with Pydantic schema using json_mode method."""
+    from pydantic import BaseModel, Field
+
+    class TestSchema(BaseModel):
+        """Test schema for structured output."""
+        answer: str = Field(description="The answer to the question")
+        confidence: float = Field(description="Confidence score", ge=0.0, le=1.0)
+
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.BaseChatModel.bind"
+    ) as mock_bind:
+        mock_bind.return_value = MagicMock()
+
+        runnable = chat_hugging_face.with_structured_output(
+            TestSchema,
+            method="json_mode"
+        )
+
+        assert runnable is not None
+        mock_bind.assert_called_once()
+
+def test_with_structured_output_non_pydantic_still_works(chat_hugging_face: Any) -> None:
+    """Test that non-Pydantic schemas (dict, TypedDict) still work."""
+    from typing_extensions import TypedDict
+
+    class TestDict(TypedDict):
+        answer: str
+        confidence: float
+
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.convert_to_openai_tool",
+        side_effect=lambda x: {"function": {"name": "TestDict", "parameters": {}}}
+    ), patch(
+        "langchain_huggingface.chat_models.huggingface.BaseChatModel.bind"
+    ) as mock_bind:
+        mock_bind.return_value = MagicMock()
+
+        runnable = chat_hugging_face.with_structured_output(
+            TestDict,
+            method="function_calling"
+        )
+
+        assert runnable is not None
+        mock_bind.assert_called_once()
+
+def test_with_structured_output_json_schema_non_pydantic(chat_hugging_face: Any) -> None:
+    """Test json_schema method with non-Pydantic schema."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "answer": {"type": "string"},
+            "confidence": {"type": "number"}
+        },
+        "required": ["answer", "confidence"]
+    }
+
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.convert_to_json_schema",
+        side_effect=lambda x: x
+    ), patch(
+        "langchain_huggingface.chat_models.huggingface.BaseChatModel.bind"
+    ) as mock_bind:
+        mock_bind.return_value = MagicMock()
+
+        runnable = chat_hugging_face.with_structured_output(
+            schema,
+            method="json_schema"
+        )
+
+        assert runnable is not None
+        mock_bind.assert_called_once()
+
+def test_with_structured_output_json_mode_non_pydantic(chat_hugging_face: Any) -> None:
+    """Test json_mode method with non-Pydantic schema."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "answer": {"type": "string"},
+            "confidence": {"type": "number"}
+        },
+        "required": ["answer", "confidence"]
+    }
+
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.BaseChatModel.bind"
+    ) as mock_bind:
+        mock_bind.return_value = MagicMock()
+
+        runnable = chat_hugging_face.with_structured_output(
+            schema,
+            method="json_mode"
+        )
+
+        assert runnable is not None
+        mock_bind.assert_called_once()
