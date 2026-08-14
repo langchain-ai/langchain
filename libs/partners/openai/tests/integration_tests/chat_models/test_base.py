@@ -34,16 +34,23 @@ if TYPE_CHECKING:
 
 MAX_TOKEN_COUNT = 100
 
+# Whether requests route through the LangSmith gateway. Mirrors the truthiness
+# used by `langchain_core`'s gateway resolution.
+_GATEWAY_ENABLED = (os.environ.get("LANGSMITH_GATEWAY") or "").lower() not in (
+    "",
+    "false",
+    "0",
+    "no",
+)
+
 
 def _gateway_or_provider_key() -> str:
     """Return an API key valid for the endpoint the base URL resolves to.
 
     When the LangSmith gateway is enabled, requests route through it and must
-    authenticate with the gateway key rather than the provider key. The
-    truthiness check mirrors `langchain_core`'s gateway resolution.
+    authenticate with the gateway key rather than the provider key.
     """
-    gateway = (os.environ.get("LANGSMITH_GATEWAY") or "").lower()
-    if gateway not in ("", "false", "0", "no"):
+    if _GATEWAY_ENABLED:
         return os.environ["LANGSMITH_GATEWAY_API_KEY"]
     return os.environ["OPENAI_API_KEY"]
 
@@ -379,7 +386,10 @@ async def test_astream() -> None:
             assert full.usage_metadata["input_tokens"] > 0
             assert full.usage_metadata["output_tokens"] > 0
             assert full.usage_metadata["total_tokens"] > 0
-        else:
+        # The LangSmith gateway always emits a usage chunk regardless of
+        # `stream_options.include_usage`, so the opt-out assertions below only
+        # hold when not routing through it.
+        elif not _GATEWAY_ENABLED:
             assert chunks_with_token_counts == 0
             assert full.usage_metadata is None
 
