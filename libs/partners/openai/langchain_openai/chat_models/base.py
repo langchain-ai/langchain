@@ -5239,21 +5239,27 @@ def _convert_responses_chunk_to_generation_chunk(
         _advance(chunk.output_index)
         current_sub_index = 0
         reasoning = chunk.item.model_dump(exclude_none=True, mode="json")
+        # Encrypted content is only complete on the corresponding `done` event, which
+        # emits it below. Drop it here so the two events don't merge into a doubled
+        # string (blocks sharing an `index` are merged by concatenation).
         reasoning.pop("encrypted_content", None)
         reasoning["index"] = current_index
         content.append(reasoning)
-    elif chunk.type == "response.output_item.done" and chunk.item.type == "reasoning":
+    elif (
+        chunk.type == "response.output_item.done"
+        and chunk.item.type == "reasoning"
+        and chunk.item.encrypted_content
+    ):
         _advance(chunk.output_index)
-        if encrypted_content := chunk.item.encrypted_content:
-            content.append(
-                {
-                    "type": "reasoning",
-                    "id": chunk.item.id,
-                    "summary": [],
-                    "encrypted_content": encrypted_content,
-                    "index": current_index,
-                }
-            )
+        content.append(
+            {
+                "type": "reasoning",
+                "id": chunk.item.id,
+                "summary": [],
+                "encrypted_content": chunk.item.encrypted_content,
+                "index": current_index,
+            }
+        )
     elif chunk.type == "response.reasoning_summary_part.added":
         _advance(chunk.output_index)
         content.append(

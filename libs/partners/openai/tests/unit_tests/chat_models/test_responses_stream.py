@@ -47,6 +47,9 @@ from openai.types.shared.reasoning import Reasoning
 from openai.types.shared.response_format_text import ResponseFormatText
 
 from langchain_openai import ChatOpenAI
+from langchain_openai.chat_models.base import (
+    _convert_responses_chunk_to_generation_chunk,
+)
 from tests.unit_tests.chat_models.test_base import MockSyncContextManager
 
 MODEL = "gpt-5.4"
@@ -349,7 +352,9 @@ responses_stream = [
             id="rs_234",
             summary=[],
             type="reasoning",
-            encrypted_content="",
+            # Deliberately populated: pins that the `added` event's encrypted content
+            # is dropped rather than merged with the `done` event's copy below.
+            encrypted_content="encrypted-content",
             status=None,
         ),
         output_index=2,
@@ -764,6 +769,74 @@ def test_responses_stream(output_version: str, expected_content: list[dict]) -> 
         dumped = _strip_none(item.model_dump())
         _ = dumped.pop("status", None)
         assert dumped == payload["input"][idx]
+
+
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_responses_stream_encrypted_reasoning_replays_with_store_false(
+    output_version: str,
+) -> None:
+    """Streamed encrypted reasoning survives a stateless (`store=False`) replay.
+
+    Regression test for the round trip users actually hit: with `store=False`,
+    reasoning can only be replayed via its encrypted content, so a reasoning item
+    that carried one must come back with it intact -- exactly once -- while an item
+    that carried none is dropped rather than replayed as an unresolvable item ID.
+    """
+    llm = ChatOpenAI(
+        model=MODEL, use_responses_api=True, output_version=output_version, store=False
+    )
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(responses_stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+
+    payload = llm._get_request_payload([full], store=False)
+    reasoning_items = [
+        item for item in payload["input"] if item.get("type") == "reasoning"
+    ]
+
+    # `rs_123` carried no encrypted content and is dropped; `rs_234` is replayed.
+    assert [item["id"] for item in reasoning_items] == ["rs_234"]
+    assert reasoning_items[0]["encrypted_content"] == "encrypted-content"
+
+
+def test_responses_reasoning_done_without_encrypted_content_emits_no_chunk() -> None:
+    """A reasoning `done` event with no encrypted content yields no chunk at all.
+
+    The event carries nothing the `added` event has not already surfaced, so
+    emitting a chunk for it would mean an extra empty `on_llm_new_token` callback
+    for every reasoning item -- the common case, since encrypted content is only
+    populated when the caller opts into it.
+    """
+    for encrypted_content in (None, ""):
+        event = ResponseOutputItemDoneEvent(
+            item=ResponseReasoningItem(
+                id="rs_123",
+                summary=[Summary(text="reasoning", type="summary_text")],
+                type="reasoning",
+                encrypted_content=encrypted_content,
+                status=None,
+            ),
+            output_index=0,
+            sequence_number=1,
+            type="response.output_item.done",
+        )
+
+        _, _, _, generation_chunk = _convert_responses_chunk_to_generation_chunk(
+            event, 0, 0, 0
+        )
+
+        assert generation_chunk is None, (
+            f"expected no chunk for encrypted_content={encrypted_content!r}"
+        )
 
 
 def test_responses_stream_events_v3_emits_reasoning_lifecycle() -> None:
