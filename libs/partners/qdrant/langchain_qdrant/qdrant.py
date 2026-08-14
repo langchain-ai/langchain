@@ -12,11 +12,12 @@ from typing import (
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore
-from qdrant_client import QdrantClient, models
+from qdrant_client import AsyncQdrantClient, QdrantClient, models
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Iterable, Sequence
+    from collections.abc import AsyncGenerator, Generator, Iterable, Sequence
 
     from langchain_qdrant.sparse_embeddings import SparseEmbeddings
 
@@ -209,7 +210,7 @@ class QdrantVectorStore(VectorStore):
 
     def __init__(
         self,
-        client: QdrantClient,
+        client: QdrantClient | AsyncQdrantClient,
         collection_name: str,
         embedding: Embeddings | None = None,
         retrieval_mode: RetrievalMode = RetrievalMode.DENSE,
@@ -516,6 +517,35 @@ class QdrantVectorStore(VectorStore):
             added_ids.extend(batch_ids)
 
         return added_ids
+
+    async def aadd_texts(  # type: ignore[override]
+        self,
+        texts: Iterable[str],
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str | int] | None = None,
+        batch_size: int = 64,
+        **kwargs: Any,
+    ) -> list[str | int]:
+        """Run more texts through the embeddings and add to the `VectorStore`.
+
+        Returns:
+            List of ids from adding the texts into the `VectorStore`.
+
+        """
+        if isinstance(self.client, AsyncQdrantClient):
+            added_ids = []
+            async for batch_ids, points in self._agenerate_batches(
+                texts, metadatas, ids, batch_size
+            ):
+                await self.client.upsert(
+                    collection_name=self.collection_name, points=points, **kwargs
+                )
+                added_ids.extend(batch_ids)
+            return added_ids
+
+        return await run_in_executor(
+            None, self.add_texts, texts, metadatas, ids, batch_size, **kwargs
+        )
 
     def similarity_search(
         self,
@@ -1070,6 +1100,42 @@ class QdrantVectorStore(VectorStore):
 
             yield batch_ids, points
 
+    async def _agenerate_batches(
+        self,
+        texts: Iterable[str],
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str | int] | None = None,
+        batch_size: int = 64,
+    ) -> AsyncGenerator[tuple[list[str | int], list[models.PointStruct]], None]:
+        texts_iterator = iter(texts)
+        metadatas_iterator = iter(metadatas or [])
+        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
+
+        while batch_texts := list(islice(texts_iterator, batch_size)):
+            batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
+            batch_ids = list(islice(ids_iterator, batch_size))
+            vectors = await self._abuild_vectors(batch_texts)
+            points = [
+                models.PointStruct(
+                    id=point_id,
+                    vector=vector,
+                    payload=payload,
+                )
+                for point_id, vector, payload in zip(
+                    batch_ids,
+                    vectors,
+                    self._build_payloads(
+                        batch_texts,
+                        batch_metadatas,
+                        self.content_payload_key,
+                        self.metadata_payload_key,
+                    ),
+                    strict=False,
+                )
+            ]
+
+            yield batch_ids, points
+
     @staticmethod
     def _build_payloads(
         texts: Iterable[str],
@@ -1146,10 +1212,67 @@ class QdrantVectorStore(VectorStore):
         msg = f"Unknown retrieval mode. {self.retrieval_mode} to build vectors."
         raise ValueError(msg)
 
+    async def _abuild_vectors(
+        self,
+        texts: Iterable[str],
+    ) -> list[models.VectorStruct]:
+        if self.retrieval_mode == RetrievalMode.DENSE:
+            embeddings = self._require_embeddings("DENSE mode")
+            batch_embeddings = await embeddings.aembed_documents(list(texts))
+            return [
+                {
+                    self.vector_name: vector,
+                }
+                for vector in batch_embeddings
+            ]
+
+        if self.retrieval_mode == RetrievalMode.SPARSE:
+            batch_sparse_embeddings = (
+                await self.sparse_embeddings.aembed_documents(list(texts))
+                if hasattr(self.sparse_embeddings, "aembed_documents")
+                else self.sparse_embeddings.embed_documents(list(texts))
+            )
+            return [
+                {
+                    self.sparse_vector_name: models.SparseVector(
+                        values=vector.values, indices=vector.indices
+                    )
+                }
+                for vector in batch_sparse_embeddings
+            ]
+
+        if self.retrieval_mode == RetrievalMode.HYBRID:
+            embeddings = self._require_embeddings("HYBRID mode")
+            dense_embeddings = await embeddings.aembed_documents(list(texts))
+            sparse_embeddings = (
+                await self.sparse_embeddings.aembed_documents(list(texts))
+                if hasattr(self.sparse_embeddings, "aembed_documents")
+                else self.sparse_embeddings.embed_documents(list(texts))
+            )
+
+            if len(dense_embeddings) != len(sparse_embeddings):
+                msg = "Mismatched length between dense and sparse embeddings."
+                raise ValueError(msg)
+
+            return [
+                {
+                    self.vector_name: dense_vector,
+                    self.sparse_vector_name: models.SparseVector(
+                        values=sparse_vector.values, indices=sparse_vector.indices
+                    ),
+                }
+                for dense_vector, sparse_vector in zip(
+                    dense_embeddings, sparse_embeddings, strict=False
+                )
+            ]
+
+        msg = f"Unknown retrieval mode. {self.retrieval_mode} to build vectors."
+        raise ValueError(msg)
+
     @classmethod
     def _validate_collection_config(
         cls: type[QdrantVectorStore],
-        client: QdrantClient,
+        client: QdrantClient | AsyncQdrantClient,
         collection_name: str,
         retrieval_mode: RetrievalMode,
         vector_name: str,
@@ -1157,6 +1280,9 @@ class QdrantVectorStore(VectorStore):
         distance: models.Distance,
         embedding: Embeddings | None,
     ) -> None:
+        if isinstance(client, AsyncQdrantClient):
+            return
+
         if retrieval_mode == RetrievalMode.DENSE:
             cls._validate_collection_for_dense(
                 client, collection_name, vector_name, distance, embedding
