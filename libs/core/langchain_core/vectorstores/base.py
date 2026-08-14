@@ -286,6 +286,8 @@ class VectorStore(ABC):
 
             texts = [doc.page_content for doc in documents]
             metadatas = [doc.metadata for doc in documents]
+            # Forward IDs only through kwargs to avoid passing multiple values to
+            # aadd_texts when callers provide custom IDs.
             return await self.aadd_texts(texts, metadatas, **kwargs)
 
         return await run_in_executor(None, self.add_documents, documents, **kwargs)
