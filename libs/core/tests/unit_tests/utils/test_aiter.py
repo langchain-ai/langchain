@@ -35,7 +35,7 @@ async def test_abatch_iterate(
     assert output == expected_output
 
 
-@pytest.mark.parametrize("input_size", [0, -1])
+@pytest.mark.parametrize("input_size", [0, -1, -5])
 async def test_abatch_iterate_invalid_size(input_size: int) -> None:
     """Non-positive sizes should raise instead of silently discarding data."""
 

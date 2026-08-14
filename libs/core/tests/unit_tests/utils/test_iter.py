@@ -23,7 +23,7 @@ def test_batch_iterate(
     assert list(batch_iterate(input_size, input_iterable)) == expected_output
 
 
-@pytest.mark.parametrize("input_size", [0, -1])
+@pytest.mark.parametrize("input_size", [0, -1, -5])
 def test_batch_iterate_invalid_size(input_size: int) -> None:
     """Non-positive sizes should raise instead of silently discarding data."""
     with pytest.raises(ValueError, match="positive integer"):
