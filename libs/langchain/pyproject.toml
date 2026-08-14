@@ -25,7 +25,7 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.4.7,<2.0.0",
     "langchain-text-splitters>=1.1.2,<2.0.0",
-    "langsmith>=0.1.17,<1.0.0",
+    "langsmith>=0.3.45,<1.0.0",
     "pydantic>=2.7.4,<3.0.0",
     "SQLAlchemy>=1.4.0,<3.0.0",
     "requests>=2.0.0,<3.0.0",
