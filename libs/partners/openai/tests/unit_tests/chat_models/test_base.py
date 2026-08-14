@@ -3052,12 +3052,14 @@ def test__construct_responses_api_input_human_message_with_image_url_conversion(
 def test__construct_responses_api_input_store_false_replays_stateless_history() -> None:
     ai_message = AIMessage(
         content=[
+            # Dropped: no encrypted content to replay, in both shapes it can take.
             {"type": "reasoning", "id": "rs_123", "summary": []},
+            {"type": "reasoning", "encrypted_content": ""},
             {
                 "type": "reasoning",
-                "id": "rs_456",
+                "id": "rs_789",
                 "summary": [],
-                "encrypted_content": "",
+                "encrypted_content": "encrypted-reasoning",
             },
             {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
         ],
@@ -3069,9 +3071,9 @@ def test__construct_responses_api_input_store_false_replays_stateless_history() 
     assert result == [
         {
             "type": "reasoning",
-            "id": "rs_456",
+            "id": "rs_789",
             "summary": [],
-            "encrypted_content": "",
+            "encrypted_content": "encrypted-reasoning",
         },
         {
             "type": "message",
