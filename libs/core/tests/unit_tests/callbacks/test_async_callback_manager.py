@@ -151,6 +151,50 @@ async def test_inline_handlers_share_parent_context_multiple() -> None:
         ]
 
 
+async def test_non_inline_handlers_run_alongside_inline_handlers() -> None:
+    """Non-inline handlers must fire even when inline handlers are present.
+
+    Regression test for gh-39633: AsyncCallbackManager.on_llm_start dispatched
+    non-inline handlers only when there were zero inline handlers, silently
+    dropping them in the common mixed configuration.
+    """
+    received: list[str] = []
+
+    class H(AsyncCallbackHandler):
+        def __init__(self, name: str, *, run_inline: bool) -> None:
+            self.name = name
+            self.run_inline = run_inline
+
+        @override
+        async def on_llm_start(self, *args: Any, **kwargs: Any) -> None:
+            received.append(self.name)
+
+    # Mixed: inline + non-inline. Both must be dispatched (the bug dropped the
+    # non-inline handler here).
+    mixed = AsyncCallbackManager(
+        handlers=[H("inline", run_inline=True), H("non_inline", run_inline=False)]
+    )
+    await mixed.on_llm_start({}, ["hi"])
+    assert received == ["inline", "non_inline"]
+
+    # Inline-only stays unchanged.
+    received.clear()
+    inline_only = AsyncCallbackManager(handlers=[H("inline", run_inline=True)])
+    await inline_only.on_llm_start({}, ["hi"])
+    assert received == ["inline"]
+
+    # Non-inline-only stays unchanged.
+    received.clear()
+    non_inline_only = AsyncCallbackManager(handlers=[H("non_inline", run_inline=False)])
+    await non_inline_only.on_llm_start({}, ["hi"])
+    assert received == ["non_inline"]
+
+    # Multiple prompts still dispatch non-inline handlers for every prompt.
+    received.clear()
+    await mixed.on_llm_start({}, ["one", "two"])
+    assert received == ["inline", "inline", "non_inline", "non_inline"]
+
+
 async def test_shielded_callback_context_preservation() -> None:
     """Verify that shielded callbacks preserve context variables.
 

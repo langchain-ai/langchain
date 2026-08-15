@@ -1913,21 +1913,23 @@ class AsyncCallbackManager(BaseCallbackManager):
                         **kwargs,
                     )
                 )
-            else:
-                non_inline_tasks.append(
-                    ahandle_event(
-                        non_inline_handlers,
-                        "on_llm_start",
-                        "ignore_llm",
-                        serialized,
-                        [prompt],
-                        run_id=run_id_,
-                        parent_run_id=self.parent_run_id,
-                        tags=self.tags,
-                        metadata=self.metadata,
-                        **kwargs,
-                    )
+            # Non-inline handlers must run whenever present, not only when there
+            # are no inline handlers (gh #39633). ahandle_event is a no-op for
+            # an empty list, so this is safe for inline-only managers.
+            non_inline_tasks.append(
+                ahandle_event(
+                    non_inline_handlers,
+                    "on_llm_start",
+                    "ignore_llm",
+                    serialized,
+                    [prompt],
+                    run_id=run_id_,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    metadata=self.metadata,
+                    **kwargs,
                 )
+            )
 
             managers.append(
                 AsyncCallbackManagerForLLMRun(
