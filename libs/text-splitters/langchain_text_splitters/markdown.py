@@ -85,6 +85,25 @@ class MarkdownHeaderTextSplitter:
                 return True
         return False
 
+    def _is_header_line(self, line: str) -> bool:
+        """Check if a line is a tracked header, standard or custom.
+
+        Args:
+            line: The line to check
+
+        Returns:
+            `True` if the line matches any tracked standard or custom header
+        """
+        for sep, _ in self.headers_to_split_on:
+            if line.startswith(sep) and (
+                # Header with no text OR header is followed by space
+                len(line) == len(sep) or line[len(sep)] == " "
+            ):
+                return True
+            if self._is_custom_header(line, sep):
+                return True
+        return False
+
     def aggregate_lines_to_chunks(self, lines: list[LineType]) -> list[Document]:
         """Combine lines with common metadata into chunks.
 
@@ -110,7 +129,9 @@ class MarkdownHeaderTextSplitter:
                 and aggregated_chunks[-1]["metadata"] != line["metadata"]
                 # may be issues if other metadata is present
                 and len(aggregated_chunks[-1]["metadata"]) < len(line["metadata"])
-                and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
+                and self._is_header_line(
+                    aggregated_chunks[-1]["content"].split("\n")[-1]
+                )
                 and not self.strip_headers
             ):
                 # If the last line in the aggregated list
