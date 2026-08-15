@@ -66,6 +66,31 @@ def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     result = middleware.after_model(state, Runtime())
     assert result is None
 
+
+@pytest.mark.asyncio
+async def test_human_in_the_loop_middleware_async_after_model() -> None:
+    """Test the async hook executes the interrupt flow without losing context."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve"]}}
+    )
+    state = AgentState[Any](
+        messages=[
+            AIMessage(
+                content="I'll help you",
+                tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+            )
+        ]
+    )
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        return_value={"decisions": [{"type": "approve"}]},
+    ):
+        result = await middleware.aafter_model(state, Runtime())
+
+    assert result is not None
+    assert result["messages"][0].tool_calls[0]["name"] == "test_tool"
+
     # Test with message but no tool calls
     state = AgentState[Any](messages=[HumanMessage(content="Hello"), AIMessage(content="Hi there")])
 

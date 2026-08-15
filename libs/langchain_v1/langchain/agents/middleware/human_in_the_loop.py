@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING, Any, Literal, Protocol
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
@@ -497,4 +498,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         Returns:
             Updated message with the revised tool calls.
         """
-        return self.after_model(state, runtime)
+        # Run the synchronous interrupt flow in a worker so LangGraph preserves
+        # the runnable context required by `interrupt()` on async agent runs.
+        return await asyncio.to_thread(self.after_model, state, runtime)
