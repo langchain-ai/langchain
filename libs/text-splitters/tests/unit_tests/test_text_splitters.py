@@ -1884,6 +1884,70 @@ def test_md_header_text_splitter_preserve_headers_custom() -> None:
     assert output == expected_output
 
 
+def test_md_header_text_splitter_preserve_headers_mixed() -> None:
+    """Test a custom parent header merges with a standard child header.
+
+    The parent must be a custom header here: a `#` parent would satisfy the old
+    `line[0] == "#"` check and pass even without the fix.
+    """
+    markdown_document = "**Custom H1**\n## H2\nContent.\n"
+
+    headers_to_split_on = [
+        ("**", "Custom Header"),
+        ("##", "Header 2"),
+    ]
+
+    custom_header_patterns = {
+        "**": 1,
+    }
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        custom_header_patterns=custom_header_patterns,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="**Custom H1**  \n## H2\nContent.",
+            metadata={"Custom Header": "Custom H1", "Header 2": "H2"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_custom_headers_strip_unchanged() -> None:
+    """Test that stripping headers is unaffected by the aggregation fix."""
+    markdown_document = "**H1**\n***H2***\nbody\n"
+
+    headers_to_split_on = [
+        ("**", "Header 1"),
+        ("***", "Header 2"),
+    ]
+
+    custom_header_patterns = {
+        "**": 1,
+        "***": 2,
+    }
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        custom_header_patterns=custom_header_patterns,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="body",
+            metadata={"Header 1": "H1", "Header 2": "H2"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
 EXPERIMENTAL_MARKDOWN_DOCUMENT = (
     "# My Header 1\n"
     "Content for header 1\n"
