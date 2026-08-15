@@ -1848,6 +1848,42 @@ Content under custom header 2.
     assert output == expected_output
 
 
+def test_md_header_text_splitter_preserve_headers_custom() -> None:
+    """Test custom headers merge like standard headers when preserving headers.
+
+    The nested-header merge branch in `aggregate_lines_to_chunks` used a
+    hardcoded `line[0] == "#"` check, so custom patterns such as `**Header**`
+    were never merged and the parent header was emitted as a header-only chunk.
+    """
+    markdown_document = "**H1**\n***H2***\nbody\n"
+
+    headers_to_split_on = [
+        ("**", "Header 1"),
+        ("***", "Header 2"),
+    ]
+
+    custom_header_patterns = {
+        "**": 1,
+        "***": 2,
+    }
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        custom_header_patterns=custom_header_patterns,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="**H1**  \n***H2***\nbody",
+            metadata={"Header 1": "H1", "Header 2": "H2"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
 EXPERIMENTAL_MARKDOWN_DOCUMENT = (
     "# My Header 1\n"
     "Content for header 1\n"
