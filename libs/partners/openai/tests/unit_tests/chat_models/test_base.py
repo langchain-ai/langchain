@@ -89,6 +89,7 @@ from langchain_openai.chat_models.base import (
     _model_prefers_responses_api,
     _oai_structured_outputs_parser,
     _resize,
+    _response_format_needs_parsing,
 )
 
 OPENAI_TEST_MODEL = "gpt-5.5"
@@ -537,6 +538,28 @@ def test_deepseek_stream(mock_deepseek_completion: list) -> None:
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
 
 
+def test_response_format_needs_parsing() -> None:
+    """Only Pydantic models and `json_schema` dicts need the beta parsing helper."""
+
+    class Foo(BaseModel):
+        bar: str
+
+    # Pydantic model class -> needs parsing.
+    assert _response_format_needs_parsing(Foo) is True
+    # json_schema dict -> needs parsing.
+    assert (
+        _response_format_needs_parsing(
+            {"type": "json_schema", "json_schema": {"name": "foo", "schema": {}}}
+        )
+        is True
+    )
+    # Plain JSON mode -> does NOT need parsing (should stream incrementally).
+    assert _response_format_needs_parsing({"type": "json_object"}) is False
+    # Missing/other type -> does not need parsing.
+    assert _response_format_needs_parsing({}) is False
+    assert _response_format_needs_parsing({"type": "text"}) is False
+
+
 OPENAI_STREAM_DATA = """{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"usage":null}
 {"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"我是"},"logprobs":null,"finish_reason":null}],"usage":null}
 {"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"助手"},"logprobs":null,"finish_reason":null}],"usage":null}
@@ -627,6 +650,73 @@ def test_openai_stream(mock_openai_completion: list) -> None:
         with patch.object(llm, "client", mock_client):
             _ = list(llm.stream("..."))
         assert "stream_options" not in call_kwargs[-1]
+
+
+def test_stream_json_object_uses_plain_streaming_path(
+    mock_openai_completion: list,
+) -> None:
+    """`response_format={"type": "json_object"}` must not use the buffering helper.
+
+    Routing plain JSON mode through `beta.chat.completions.stream()` buffers the
+    whole response, so provider-specific incremental fields (e.g. DeepSeek's
+    `reasoning_content`) only surface in a single final chunk. Plain JSON mode needs
+    no parsing, so it should use the standard streaming path and stream token by
+    token, exactly as an unconstrained request does.
+    """
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    mock_client = MagicMock()
+    create_calls = []
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        create_calls.append(kwargs)
+        return MockSyncContextManager(mock_openai_completion)
+
+    mock_client.create = mock_create
+    beta_stream = MagicMock()
+
+    bound = llm.bind(response_format={"type": "json_object"})
+    with (
+        patch.object(llm, "client", mock_client),
+        patch.object(llm.root_client.beta.chat.completions, "stream", beta_stream),
+    ):
+        chunks = list(bound.stream("hi"))
+
+    # The plain streaming path was used; the buffering helper was not.
+    assert len(create_calls) == 1
+    assert create_calls[0]["response_format"] == {"type": "json_object"}
+    beta_stream.assert_not_called()
+    # Content still streams across multiple chunks (not aggregated into one).
+    assert len([c for c in chunks if c.content]) > 1
+
+
+async def test_astream_json_object_uses_plain_streaming_path(
+    mock_openai_completion: list,
+) -> None:
+    """Async counterpart of `test_stream_json_object_uses_plain_streaming_path`."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    mock_client = AsyncMock()
+    create_calls = []
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        create_calls.append(kwargs)
+        return MockAsyncContextManager(mock_openai_completion)
+
+    mock_client.create = mock_create
+    beta_stream = MagicMock()
+
+    bound = llm.bind(response_format={"type": "json_object"})
+    with (
+        patch.object(llm, "async_client", mock_client),
+        patch.object(
+            llm.root_async_client.beta.chat.completions, "stream", beta_stream
+        ),
+    ):
+        chunks = [chunk async for chunk in bound.astream("hi")]
+
+    assert len(create_calls) == 1
+    assert create_calls[0]["response_format"] == {"type": "json_object"}
+    beta_stream.assert_not_called()
+    assert len([c for c in chunks if c.content]) > 1
 
 
 def test_openai_stream_events_v3_lifecycle(mock_openai_completion: list) -> None:

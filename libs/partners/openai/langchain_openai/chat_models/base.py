@@ -1650,7 +1650,9 @@ class BaseChatOpenAI(BaseChatModel):
         base_generation_info = {}
 
         try:
-            if "response_format" in payload:
+            if "response_format" in payload and _response_format_needs_parsing(
+                payload["response_format"]
+            ):
                 if self.include_response_headers:
                     warnings.warn(
                         "Cannot currently include response headers when "
@@ -1910,7 +1912,9 @@ class BaseChatOpenAI(BaseChatModel):
         base_generation_info = {}
 
         try:
-            if "response_format" in payload:
+            if "response_format" in payload and _response_format_needs_parsing(
+                payload["response_format"]
+            ):
                 if self.include_response_headers:
                     warnings.warn(
                         "Cannot currently include response headers when "
@@ -4088,6 +4092,34 @@ def _resize(width: int, height: int) -> tuple[int, int]:
             height = (height * 768) // width
             width = 768
     return width, height
+
+
+def _response_format_needs_parsing(response_format: Any) -> bool:
+    """Whether a `response_format` value requires the beta parsing/streaming helper.
+
+    OpenAI's `beta.chat.completions.stream()` buffers the entire response so it can
+    parse structured output (a Pydantic model or a JSON Schema) and expose it via
+    `get_final_completion()`. That buffering means incremental fields streamed by
+    some providers (e.g. DeepSeek's `reasoning_content`) only surface in the single
+    final chunk instead of token-by-token.
+
+    Plain JSON mode (`{"type": "json_object"}`) needs no such parsing, so it should
+    use the standard streaming path and stream incrementally like an unconstrained
+    request does.
+
+    Args:
+        response_format: The `response_format` value from the request payload.
+
+    Returns:
+        `True` if the value is a Pydantic model class or a `json_schema` dict (which
+        require the parsing helper), `False` otherwise (e.g. plain JSON mode).
+    """
+    if isinstance(response_format, type):
+        # A Pydantic model class -> structured output parsing is required.
+        return True
+    if isinstance(response_format, dict):
+        return response_format.get("type") == "json_schema"
+    return False
 
 
 def _convert_to_openai_response_format(
