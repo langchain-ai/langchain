@@ -1,7 +1,7 @@
 """Test functionality related to prompts."""
 
 import re
-from tempfile import NamedTemporaryFile
+from pathlib import Path
 from typing import Any, Literal
 from unittest import mock
 
@@ -37,25 +37,23 @@ def test_prompt_valid() -> None:
     assert prompt.input_variables == input_variables
 
 
-def test_from_file_encoding() -> None:
+def test_from_file_encoding(tmp_path: Path) -> None:
     """Test that we can load a template from a file with a non utf-8 encoding."""
     template = "This is a {foo} test with special character €."
     input_variables = ["foo"]
 
     # First write to a file using CP-1252 encoding.
-    with NamedTemporaryFile(delete=True, mode="w", encoding="cp1252") as f:
-        f.write(template)
-        f.flush()
-        file_name = f.name
+    file_path = tmp_path / "template.txt"
+    file_path.write_text(template, encoding="cp1252")
 
-        # Now read from the file using CP-1252 encoding and test
-        prompt = PromptTemplate.from_file(file_name, encoding="cp1252")
-        assert prompt.template == template
-        assert prompt.input_variables == input_variables
+    # Now read from the file using CP-1252 encoding and test
+    prompt = PromptTemplate.from_file(str(file_path), encoding="cp1252")
+    assert prompt.template == template
+    assert prompt.input_variables == input_variables
 
-        # Now read from the file using UTF-8 encoding and test
-        with pytest.raises(UnicodeDecodeError):
-            PromptTemplate.from_file(file_name, encoding="utf-8")
+    # Now read from the file using UTF-8 encoding and test
+    with pytest.raises(UnicodeDecodeError):
+        PromptTemplate.from_file(str(file_path), encoding="utf-8")
 
 
 def test_prompt_from_template() -> None:
