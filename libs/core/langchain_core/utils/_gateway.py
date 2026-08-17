@@ -22,10 +22,10 @@ if TYPE_CHECKING:
 
     from pydantic import BaseModel
 
-# Key under which integrations place parsed gateway metadata on a message's
-# `response_metadata`. This is the contract consumed by the LangSmith tracer,
-# which promotes it to run metadata. Defined here so integrations and the tracer
-# agree on a single name.
+# Key under which integrations place parsed gateway metadata on a generation's
+# `generation_info`. This is the contract consumed by the LangSmith tracer, which
+# promotes it to run metadata. Defined here so integrations and the tracer agree
+# on a single name.
 GATEWAY_METADATA_RESPONSE_KEY = "lc_gateway_metadata"
 
 # HTTP response header the LangSmith gateway uses to return per-request metadata
