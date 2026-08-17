@@ -531,17 +531,16 @@ class ChatOpenRouter(BaseChatModel):
             self._http_client = None
 
     async def aclose(self) -> None:
-        """Close the async httpx client created for attribution headers.
+        """Close httpx clients created for attribution headers.
 
-        Releases the connector owned by the `httpx.AsyncClient` that
-        `_build_client` creates for attribution headers. Without this,
-        transient `ChatOpenRouter` instances can leak sockets and
-        ephemeral ports. Safe to call multiple times. Does not close a
-        user-supplied SDK `client`.
+        Closes the async client first, then the sync client, so `async with`
+        does not leave a leftover `httpx.Client`. Safe to call multiple times.
+        Does not close a user-supplied SDK `client`.
         """
         if self._http_async_client is not None:
             await self._http_async_client.aclose()
             self._http_async_client = None
+        self.close()
 
     def __enter__(self) -> Self:
         """Enter a context manager that closes the sync HTTP client on exit."""

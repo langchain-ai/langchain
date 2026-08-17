@@ -756,33 +756,53 @@ class TestHttpClientLifecycle:
         mock_sync.close.assert_called_once()
 
     async def test_aclose_closes_async_client_once(self) -> None:
-        """Test that `aclose()` closes the async client once."""
+        """Test that `aclose()` closes both clients; a second call is a no-op."""
+        mock_sync = MagicMock()
         mock_async = MagicMock()
         mock_async.aclose = AsyncMock()
         with (
             patch("openrouter.OpenRouter", return_value=MagicMock()),
-            patch("httpx.Client", return_value=MagicMock()),
+            patch("httpx.Client", return_value=mock_sync),
             patch("httpx.AsyncClient", return_value=mock_async),
         ):
             model = _make_model()
         await model.aclose()
         mock_async.aclose.assert_awaited_once()
+        mock_sync.close.assert_called_once()
         assert model._http_async_client is None
+        assert model._http_client is None
         await model.aclose()
         mock_async.aclose.assert_awaited_once()
+        mock_sync.close.assert_called_once()
+
+    def test_sync_context_manager_calls_close(self) -> None:
+        """Test that `with ChatOpenRouter(...)` closes the sync client."""
+        mock_sync = MagicMock()
+        with (
+            patch("openrouter.OpenRouter", return_value=MagicMock()),
+            patch("httpx.Client", return_value=mock_sync),
+            patch("httpx.AsyncClient", return_value=MagicMock()),
+        ):
+            model = _make_model()
+        with model:
+            pass
+        mock_sync.close.assert_called_once()
 
     async def test_async_context_manager_calls_aclose(self) -> None:
-        """Test that `async with ChatOpenRouter(...)` closes the async client."""
+        """Test that `async with ChatOpenRouter(...)` closes both clients."""
+        mock_sync = MagicMock()
         mock_async = MagicMock()
         mock_async.aclose = AsyncMock()
         with (
             patch("openrouter.OpenRouter", return_value=MagicMock()),
-            patch("httpx.Client", return_value=MagicMock()),
+            patch("httpx.Client", return_value=mock_sync),
             patch("httpx.AsyncClient", return_value=mock_async),
         ):
-            async with _make_model():
-                pass
+            model = _make_model()
+        async with model:
+            pass
         mock_async.aclose.assert_awaited_once()
+        mock_sync.close.assert_called_once()
 
 
 # ===========================================================================
