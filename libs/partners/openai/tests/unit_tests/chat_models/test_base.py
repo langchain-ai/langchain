@@ -10,6 +10,7 @@ from typing import Any, Literal, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
+import httpx2
 import openai
 import pytest
 from langchain_core.exceptions import ContextOverflowError
@@ -744,7 +745,9 @@ def test_openai_invoke_surfaces_gateway_metadata(mock_completion: dict) -> None:
     llm = ChatOpenAI()
     mock_client = MagicMock()
     mock_resp = MagicMock()
-    mock_resp.headers = {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
+    mock_resp.headers = httpx2.Headers(
+        {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
+    )
     mock_resp.parse.return_value = mock_completion
     mock_client.with_raw_response.create.return_value = mock_resp
 
@@ -770,7 +773,9 @@ def test_openai_stream_surfaces_gateway_metadata(
     )
     mock_client = MagicMock()
     mock_resp = MagicMock()
-    mock_resp.headers = {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
+    mock_resp.headers = httpx2.Headers(
+        {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
+    )
     mock_resp.parse.return_value = MockSyncContextManager(mock_openai_completion)
     mock_client.with_raw_response.create.return_value = mock_resp
 
