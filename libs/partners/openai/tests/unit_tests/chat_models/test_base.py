@@ -773,9 +773,7 @@ def test_openai_stream_surfaces_gateway_metadata(
 
     tracer = _GatewayMetadataTracer()
     with patch.object(llm, "client", mock_client):
-        for chunk in llm.stream(
-            "what is your name?", config={"callbacks": [tracer]}
-        ):
+        for chunk in llm.stream("what is your name?", config={"callbacks": [tracer]}):
             # Gateway metadata is kept off the user-facing chunk metadata.
             assert GATEWAY_METADATA_RESPONSE_KEY not in chunk.response_metadata
 

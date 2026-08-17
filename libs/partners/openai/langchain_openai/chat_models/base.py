@@ -110,8 +110,8 @@ from langchain_core.tools.base import _stringify
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils._gateway import (
     GATEWAY_METADATA_RESPONSE_KEY,
-    _resolve_gateway_config,
     _parse_gateway_metadata,
+    _resolve_gateway_config,
 )
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
