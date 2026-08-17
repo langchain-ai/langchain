@@ -5081,3 +5081,36 @@ def test_thinking_display_summarized_does_not_enable_beta() -> None:
     )
     payload = llm._get_request_payload([HumanMessage("Hello, world!")])
     assert "betas" not in payload
+
+
+def test__format_messages_drops_empty_string_items_in_content_list() -> None:
+    """Streamed thinking-by-default turns can accumulate a leading ``''`` item.
+
+    Regression test for #39687: an empty or whitespace-only str item in a
+    content list must not become an empty text block (the API rejects those),
+    matching the existing guard on dict text blocks.
+    """
+    human = HumanMessage("hi")
+    ai = AIMessage(
+        [
+            "",
+            {"type": "thinking", "thinking": "Reasoning...", "signature": "abc"},
+            "Paris",
+        ]
+    )
+    _, anthropic_messages = _format_messages([human, ai])
+    assistant_content = anthropic_messages[1]["content"]
+    assert {"type": "text", "text": "Paris"} in assistant_content
+    assert not any(
+        block.get("type") == "text" and not block["text"].strip()
+        for block in assistant_content
+    )
+
+    # Whitespace-only items are dropped too; non-empty ones survive.
+    _, anthropic_messages = _format_messages([human, AIMessage(["  \n", "ok"])])
+    texts = [
+        block
+        for block in anthropic_messages[1]["content"]
+        if block.get("type") == "text"
+    ]
+    assert texts == [{"type": "text", "text": "ok"}]

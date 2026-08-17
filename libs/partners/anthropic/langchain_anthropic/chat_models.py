@@ -580,7 +580,11 @@ def _format_messages(
             content = []
             for block in message.content:
                 if isinstance(block, str):
-                    content.append({"type": "text", "text": block})
+                    # Only add non-empty strings as empty text blocks are not
+                    # accepted, matching the dict text branch below.
+                    # https://github.com/anthropics/anthropic-sdk-python/issues/461
+                    if block.strip():
+                        content.append({"type": "text", "text": block})
                 elif isinstance(block, dict):
                     if "type" not in block:
                         msg = "Dict content block must have a type key"
