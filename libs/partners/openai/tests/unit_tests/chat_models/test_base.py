@@ -843,6 +843,42 @@ def test_openai_stream_surfaces_gateway_metadata(
     assert tracer.gateway_metadata == {"provider": "openai"}
 
 
+@pytest.mark.parametrize("use_responses_api", [False, True])
+async def test_openai_astream_surfaces_gateway_metadata(
+    mock_openai_completion: list, *, use_responses_api: bool
+) -> None:
+    """Gateway metadata reaches the tracer for a gateway-routed async stream."""
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key="lsv2_pt_example",  # type: ignore[arg-type]
+        use_responses_api=use_responses_api,
+    )
+    mock_client = AsyncMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = MockAsyncContextManager(_RESPONSES_API_STREAM)
+        mock_client.with_raw_response.responses.create.return_value = mock_resp
+        mock_client.responses.create.return_value = MockAsyncContextManager(
+            _RESPONSES_API_STREAM
+        )
+        client_attr = "root_async_client"
+    else:
+        mock_resp.parse.return_value = MockAsyncContextManager(mock_openai_completion)
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "async_client"
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, client_attr, mock_client):
+        async for chunk in llm.astream(
+            "what is your name?", config={"callbacks": [tracer]}
+        ):
+            # Gateway metadata is kept off the user-facing chunk metadata.
+            assert GATEWAY_METADATA_RESPONSE_KEY not in chunk.response_metadata
+
+    assert tracer.gateway_metadata == {"provider": "openai"}
+
+
 @pytest.mark.parametrize(
     "model",
     [

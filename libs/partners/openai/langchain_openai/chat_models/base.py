@@ -1529,16 +1529,19 @@ class BaseChatOpenAI(BaseChatModel):
         self._ensure_sync_client_available()
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        headers: dict = {}
+        base_generation_info: dict = {}
         try:
-            if self.include_response_headers:
+            if self.include_response_headers or self._uses_gateway:
                 raw_context_manager = (
                     self.root_client.with_raw_response.responses.create(**payload)
                 )
                 context_manager = raw_context_manager.parse()
-                headers = {"headers": dict(raw_context_manager.headers)}
+                if self.include_response_headers:
+                    headers = {"headers": dict(raw_context_manager.headers)}
+                _add_gateway_metadata(base_generation_info, raw_context_manager)
             else:
                 context_manager = self.root_client.responses.create(**payload)
-                headers = {}
             original_schema_obj = kwargs.get("response_format")
 
             with context_manager as response:
@@ -1565,6 +1568,11 @@ class BaseChatOpenAI(BaseChatModel):
                         output_version=self.output_version,
                     )
                     if generation_chunk:
+                        if is_first_chunk and base_generation_info:
+                            generation_chunk.generation_info = {
+                                **base_generation_info,
+                                **(generation_chunk.generation_info or {}),
+                            }
                         if run_manager:
                             run_manager.on_llm_new_token(
                                 generation_chunk.text, chunk=generation_chunk
@@ -1587,20 +1595,23 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        headers: dict = {}
+        base_generation_info: dict = {}
         try:
-            if self.include_response_headers:
+            if self.include_response_headers or self._uses_gateway:
                 raw_context_manager = (
                     await self.root_async_client.with_raw_response.responses.create(
                         **payload
                     )
                 )
                 context_manager = raw_context_manager.parse()
-                headers = {"headers": dict(raw_context_manager.headers)}
+                if self.include_response_headers:
+                    headers = {"headers": dict(raw_context_manager.headers)}
+                _add_gateway_metadata(base_generation_info, raw_context_manager)
             else:
                 context_manager = await self.root_async_client.responses.create(
                     **payload
                 )
-                headers = {}
             original_schema_obj = kwargs.get("response_format")
 
             async with context_manager as response:
@@ -1631,6 +1642,11 @@ class BaseChatOpenAI(BaseChatModel):
                         output_version=self.output_version,
                     )
                     if generation_chunk:
+                        if is_first_chunk and base_generation_info:
+                            generation_chunk.generation_info = {
+                                **base_generation_info,
+                                **(generation_chunk.generation_info or {}),
+                            }
                         if run_manager:
                             await run_manager.on_llm_new_token(
                                 generation_chunk.text, chunk=generation_chunk
