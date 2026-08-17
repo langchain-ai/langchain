@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import logging
+from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
@@ -13,6 +14,8 @@ from openai.types.responses import (
     ResponseContentPartAddedEvent,
     ResponseContentPartDoneEvent,
     ResponseCreatedEvent,
+    ResponseErrorEvent,
+    ResponseFailedEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseFunctionToolCallItem,
@@ -50,7 +53,10 @@ from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _convert_responses_chunk_to_generation_chunk,
 )
-from tests.unit_tests.chat_models.test_base import MockSyncContextManager
+from tests.unit_tests.chat_models.test_base import (
+    MockAsyncContextManager,
+    MockSyncContextManager,
+)
 
 MODEL = "gpt-5.4"
 
@@ -1231,3 +1237,122 @@ def test_responses_stream_tolerates_unknown_literal_drift() -> None:
             full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.id == "resp_123"
+
+
+def _make_failed_event(
+    message: str = "The model failed to generate a response.",
+    *,
+    code: str = "server_error",
+    include_error: bool = True,
+) -> ResponseFailedEvent:
+    created = responses_stream[0]
+    assert isinstance(created, ResponseCreatedEvent)
+    dumped = created.response.model_dump(mode="json")
+    dumped["status"] = "failed"
+    dumped["error"] = {"code": code, "message": message} if include_error else None
+    return ResponseFailedEvent(
+        type="response.failed",
+        sequence_number=99,
+        response=Response.model_validate(dumped),
+    )
+
+
+def test_convert_raises_on_response_failed() -> None:
+    """`response.failed` must raise with the provider error, not return None."""
+    event = _make_failed_event(message="boom", code="server_error")
+    with pytest.raises(ValueError, match="boom") as exc_info:
+        _convert_responses_chunk_to_generation_chunk(event, 0, 0, 0)
+    assert "code=server_error" in str(exc_info.value)
+
+
+def test_convert_raises_on_error_event() -> None:
+    """Top-level `error` SSE events carry message/code on the event itself."""
+    event = ResponseErrorEvent(
+        type="error",
+        sequence_number=1,
+        message="rate limited",
+        code="rate_limit_exceeded",
+        param=None,
+    )
+    with pytest.raises(ValueError, match="rate limited") as exc_info:
+        _convert_responses_chunk_to_generation_chunk(event, 0, 0, 0)
+    assert "code=rate_limit_exceeded" in str(exc_info.value)
+
+
+def test_convert_raises_on_response_error_event() -> None:
+    """`response.error` is a fallback name if the API surfaces it in transit."""
+    event = SimpleNamespace(
+        type="response.error",
+        error=SimpleNamespace(message="transport error", code="server_error"),
+    )
+    with pytest.raises(ValueError, match="transport error") as exc_info:
+        _convert_responses_chunk_to_generation_chunk(event, 0, 0, 0)
+    assert "code=server_error" in str(exc_info.value)
+
+
+def test_convert_raises_on_response_failed_without_error_payload() -> None:
+    """A failed event with `error=None` must still raise, not complete as success."""
+    event = _make_failed_event(include_error=False)
+    with pytest.raises(
+        ValueError, match="OpenAI Responses API stream failed"
+    ) as exc_info:
+        _convert_responses_chunk_to_generation_chunk(event, 0, 0, 0)
+    assert "id=resp_123" in str(exc_info.value)
+
+
+def test_convert_raises_on_response_failed_with_dict_response() -> None:
+    """Dict `response` payloads nest the error the same way as typed events."""
+    event = SimpleNamespace(
+        type="response.failed",
+        error=None,
+        response={
+            "id": "resp_dict",
+            "error": {"code": "server_error", "message": "nested dict error"},
+        },
+    )
+    with pytest.raises(ValueError, match="nested dict error") as exc_info:
+        _convert_responses_chunk_to_generation_chunk(event, 0, 0, 0)
+    assert "code=server_error" in str(exc_info.value)
+
+
+def test_stream_raises_when_response_failed_mid_stream() -> None:
+    """End-to-end: `response.failed` must surface through `ChatOpenAI.stream`."""
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, api_key="test")
+    mock_client = MagicMock()
+    events = [
+        responses_stream[0],
+        _make_failed_event(message="boom mid-stream", code="server_error"),
+    ]
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(events)
+
+    mock_client.responses.create = mock_create
+
+    with (
+        patch.object(llm, "root_client", mock_client),
+        pytest.raises(ValueError, match="boom mid-stream"),
+    ):
+        list(llm.stream("test"))
+
+
+async def test_astream_raises_when_response_failed_mid_stream() -> None:
+    """Async counterpart: `response.failed` propagates through `astream()`."""
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, api_key="test")
+    mock_client = MagicMock()
+    events = [
+        responses_stream[0],
+        _make_failed_event(message="async boom", code="server_error"),
+    ]
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(events)
+
+    mock_client.responses.create = mock_create
+
+    with (
+        patch.object(llm, "root_async_client", mock_client),
+        pytest.raises(ValueError, match="async boom"),
+    ):
+        async for _ in llm.astream("test"):
+            pass

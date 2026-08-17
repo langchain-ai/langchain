@@ -38,6 +38,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    NoReturn,
     TypeAlias,
     TypeVar,
     cast,
@@ -5030,6 +5031,55 @@ def _coerce_chunk_response(resp: Any) -> Any:
     return resp
 
 
+def _get_responses_stream_error_payload(chunk: Any) -> Any:
+    """Return the error object nested on a failed Responses stream event."""
+    error = getattr(chunk, "error", None)
+    if error is not None:
+        return error
+    response = getattr(chunk, "response", None)
+    if response is None:
+        return None
+    if isinstance(response, dict):
+        return response.get("error")
+    return getattr(response, "error", None)
+
+
+def _raise_for_responses_stream_failure(chunk: Any) -> NoReturn:
+    """Raise when a Responses stream emits a failure event.
+
+    `response.failed` nests the error on `chunk.response.error`. Top-level
+    `error` / `response.error` events carry `message` / `code` on the event
+    itself. Always raise so a failed stream is never treated as success,
+    even when the error object is missing.
+    """
+    error = _get_responses_stream_error_payload(chunk)
+    if isinstance(error, dict):
+        message = error.get("message")
+        code = error.get("code")
+    elif error is not None:
+        message = getattr(error, "message", None) or str(error)
+        code = getattr(error, "code", None)
+    else:
+        message = getattr(chunk, "message", None)
+        code = getattr(chunk, "code", None)
+
+    if not message:
+        response = getattr(chunk, "response", None)
+        response_id = None
+        if isinstance(response, dict):
+            response_id = response.get("id")
+        elif response is not None:
+            response_id = getattr(response, "id", None)
+        if response_id:
+            message = f"OpenAI Responses API stream failed (id={response_id})"
+        else:
+            message = "OpenAI Responses API stream error"
+    if code:
+        message = f"{message} (code={code})"
+    msg = str(message)
+    raise ValueError(msg)
+
+
 def _convert_responses_chunk_to_generation_chunk(
     chunk: Any,
     current_index: int,  # index in content
@@ -5130,6 +5180,11 @@ def _convert_responses_chunk_to_generation_chunk(
         response = _coerce_chunk_response(chunk.response)
         id = response.id
         response_metadata["id"] = response.id  # Backwards compatibility
+    elif chunk.type in ("response.failed", "error", "response.error"):
+        # Dedicated failure path: do not route through completed/incomplete.
+        # `response.error` can be None on a failed Response, which would
+        # otherwise look like a successful last chunk.
+        _raise_for_responses_stream_failure(chunk)
     elif chunk.type in ("response.completed", "response.incomplete"):
         response = _coerce_chunk_response(chunk.response)
         msg = cast(
