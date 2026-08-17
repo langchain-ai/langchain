@@ -609,13 +609,6 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
 def _add_gateway_metadata(generation_info: dict[str, Any], raw_response: Any) -> None:
     """Add parsed LangSmith gateway metadata to `generation_info`, if present.
 
-    Reads the gateway metadata header off `raw_response` (available whenever the
-    request goes through `with_raw_response`) and, when the LangSmith gateway is
-    in front of the provider, surfaces the parsed value on the message's
-    `response_metadata`. The tracer then promotes it to run metadata. This is
-    independent of `include_response_headers`, which controls dumping the full
-    header set.
-
     Args:
         generation_info: Generation info to mutate in place.
         raw_response: The raw provider response, or None.
@@ -1780,12 +1773,24 @@ class BaseChatOpenAI(BaseChatModel):
                     generation_info = {"headers": dict(raw_response.headers)}
                 generation_info = generation_info or {}
                 _add_gateway_metadata(generation_info, raw_response)
-                return _construct_lc_result_from_responses_api(
+                # Gateway metadata belongs on `generation_info`, not the message
+                # `response_metadata` that `metadata` populates.
+                gateway_metadata = generation_info.pop(
+                    GATEWAY_METADATA_RESPONSE_KEY, None
+                )
+                result = _construct_lc_result_from_responses_api(
                     response,
                     schema=original_schema_obj,
                     metadata=generation_info,
                     output_version=self.output_version,
                 )
+                if gateway_metadata is not None:
+                    for generation in result.generations:
+                        generation.generation_info = generation.generation_info or {}
+                        generation.generation_info[GATEWAY_METADATA_RESPONSE_KEY] = (
+                            gateway_metadata
+                        )
+                return result
             else:
                 raw_response = self.client.with_raw_response.create(**payload)
                 response = raw_response.parse()
@@ -2054,12 +2059,24 @@ class BaseChatOpenAI(BaseChatModel):
                 if self.include_response_headers:
                     generation_info = {"headers": dict(raw_response.headers)}
                 _add_gateway_metadata(generation_info, raw_response)
-                return _construct_lc_result_from_responses_api(
+                # Gateway metadata belongs on `generation_info`, not the message
+                # `response_metadata` that `metadata` populates.
+                gateway_metadata = generation_info.pop(
+                    GATEWAY_METADATA_RESPONSE_KEY, None
+                )
+                result = _construct_lc_result_from_responses_api(
                     response,
                     schema=original_schema_obj,
                     metadata=generation_info,
                     output_version=self.output_version,
                 )
+                if gateway_metadata is not None:
+                    for generation in result.generations:
+                        generation.generation_info = generation.generation_info or {}
+                        generation.generation_info[GATEWAY_METADATA_RESPONSE_KEY] = (
+                            gateway_metadata
+                        )
+                return result
             else:
                 raw_response = await self.async_client.with_raw_response.create(
                     **payload
