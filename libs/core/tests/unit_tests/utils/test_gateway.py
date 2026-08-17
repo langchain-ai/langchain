@@ -10,6 +10,7 @@ from langchain_core.utils._gateway import (
     _apply_gateway_config,
     _resolve_gateway_base_url,
     _resolve_gateway_config,
+    _parse_gateway_metadata,
 )
 
 # A representative provider path; the helper is provider-agnostic.
@@ -316,3 +317,22 @@ def test_apply_omits_key_when_unresolved() -> None:
     values, config = _apply({})
     assert "api_key" not in values
     assert config.api_key is None
+
+
+def test_parse_gateway_metadata_deserializes_json() -> None:
+    headers = {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
+    assert _parse_gateway_metadata(headers) == {"provider": "openai"}
+
+
+def test_parse_gateway_metadata_case_insensitive() -> None:
+    headers = {"X-LangSmith-Gateway-Metadata": '{"provider": "openai"}'}
+    assert _parse_gateway_metadata(headers) == {"provider": "openai"}
+
+
+def test_parse_gateway_metadata_absent() -> None:
+    assert _parse_gateway_metadata({"content-type": "application/json"}) is None
+
+
+def test_parse_gateway_metadata_non_json() -> None:
+    headers = {"x-langsmith-gateway-metadata": "not-json"}
+    assert _parse_gateway_metadata(headers) is None

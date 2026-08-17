@@ -36,6 +36,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from openai.types.responses import (
     ResponseApplyPatchToolCall,
@@ -720,6 +721,65 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
         # headers are not in response_metadata if include_response_headers not set
         assert "headers" not in res.response_metadata
     assert mock_async_client.with_raw_response.create.called
+
+
+class _GatewayMetadataTracer(BaseTracer):
+    """Captures gateway metadata promoted onto completed LLM runs."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.gateway_metadata: dict | None = None
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op; runs are inspected as they complete."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        metadata = run.extra.get("metadata", {})
+        if "ls_gateway_info" in metadata:
+            self.gateway_metadata = metadata["ls_gateway_info"]
+
+
+def test_openai_invoke_surfaces_gateway_metadata(mock_completion: dict) -> None:
+    """Gateway metadata header is surfaced on `generation_info`, not the message."""
+    llm = ChatOpenAI()
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
+    mock_resp.parse.return_value = mock_completion
+    mock_client.with_raw_response.create.return_value = mock_resp
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, "client", mock_client):
+        res = llm.invoke("bar", config={"callbacks": [tracer]})
+
+    # Gateway metadata reaches the tracer via `generation_info`...
+    assert tracer.gateway_metadata == {"provider": "openai"}
+    # ...but is kept off the user-facing message `response_metadata`.
+    assert GATEWAY_METADATA_RESPONSE_KEY not in res.response_metadata
+
+
+def test_openai_stream_surfaces_gateway_metadata(
+    mock_openai_completion: list,
+) -> None:
+    """Gateway metadata reaches the tracer for a gateway-routed stream."""
+    # A LangSmith API key signals gateway routing, so streaming fetches raw
+    # headers.
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key="lsv2_pt_example")
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
+    mock_resp.parse.return_value = MockSyncContextManager(mock_openai_completion)
+    mock_client.with_raw_response.create.return_value = mock_resp
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, "client", mock_client):
+        for chunk in llm.stream(
+            "what is your name?", config={"callbacks": [tracer]}
+        ):
+            # Gateway metadata is kept off the user-facing chunk metadata.
+            assert GATEWAY_METADATA_RESPONSE_KEY not in chunk.response_metadata
+
+    assert tracer.gateway_metadata == {"provider": "openai"}
 
 
 @pytest.mark.parametrize(
