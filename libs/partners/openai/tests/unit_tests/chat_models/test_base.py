@@ -764,7 +764,10 @@ def test_openai_stream_surfaces_gateway_metadata(
     """Gateway metadata reaches the tracer for a gateway-routed stream."""
     # A LangSmith API key signals gateway routing, so streaming fetches raw
     # headers.
-    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key="lsv2_pt_example")
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key="lsv2_pt_example",  # type: ignore[arg-type]
+    )
     mock_client = MagicMock()
     mock_resp = MagicMock()
     mock_resp.headers = {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
