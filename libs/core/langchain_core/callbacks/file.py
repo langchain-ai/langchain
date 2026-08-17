@@ -229,7 +229,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         """
         if observation_prefix is not None:
             self._write(f"\n{observation_prefix}")
-        self._write(output)
+        self._write(output, color=color or self.color)
         if llm_prefix is not None:
             self._write(f"\n{llm_prefix}")
 
