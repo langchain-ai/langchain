@@ -2696,7 +2696,7 @@ def _gen_info_and_msg_metadata(
 ) -> dict[str, Any]:
     """Extract metadata for the response metadata.
 
-    Gateway metadata is excluded intentionally for now.
+    Removes GATEWAY_METADATA from the generation info.
     """
     generation_info = generation.generation_info or {}
     return {
