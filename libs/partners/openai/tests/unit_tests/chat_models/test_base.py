@@ -44,6 +44,7 @@ from openai.types.responses import (
     ResponseApplyPatchToolCallOutput,
     ResponseOutputMessage,
     ResponseReasoningItem,
+    ResponseTextDeltaEvent,
 )
 from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_apply_patch_tool_call import OperationCreateFile
@@ -740,19 +741,64 @@ class _GatewayMetadataTracer(BaseTracer):
             self.gateway_metadata = metadata["ls_gateway_info"]
 
 
-def test_openai_invoke_surfaces_gateway_metadata(mock_completion: dict) -> None:
+_GATEWAY_METADATA_HEADERS = httpx2.Headers(
+    {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
+)
+
+_RESPONSES_API_COMPLETION = Response(
+    id="resp_123",
+    created_at=1234567890,
+    model=OPENAI_TEST_MODEL,
+    object="response",
+    parallel_tool_calls=True,
+    tools=[],
+    tool_choice="auto",
+    output=[
+        ResponseOutputMessage(
+            type="message",
+            id="msg_123",
+            content=[
+                ResponseOutputText(type="output_text", text="Bar Baz", annotations=[])
+            ],
+            role="assistant",
+            status="completed",
+        )
+    ],
+)
+
+_RESPONSES_API_STREAM = [
+    ResponseTextDeltaEvent(
+        content_index=0,
+        delta="Bar Baz",
+        item_id="msg_123",
+        output_index=0,
+        sequence_number=0,
+        logprobs=[],
+        type="response.output_text.delta",
+    ),
+]
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_openai_invoke_surfaces_gateway_metadata(
+    mock_completion: dict, *, use_responses_api: bool
+) -> None:
     """Gateway metadata header is surfaced on `generation_info`, not the message."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(use_responses_api=use_responses_api)
     mock_client = MagicMock()
     mock_resp = MagicMock()
-    mock_resp.headers = httpx2.Headers(
-        {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
-    )
-    mock_resp.parse.return_value = mock_completion
-    mock_client.with_raw_response.create.return_value = mock_resp
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = _RESPONSES_API_COMPLETION
+        mock_client.responses.with_raw_response.create.return_value = mock_resp
+        client_attr = "root_client"
+    else:
+        mock_resp.parse.return_value = mock_completion
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "client"
 
     tracer = _GatewayMetadataTracer()
-    with patch.object(llm, "client", mock_client):
+    with patch.object(llm, client_attr, mock_client):
         res = llm.invoke("bar", config={"callbacks": [tracer]})
 
     # Gateway metadata reaches the tracer via `generation_info`...
@@ -761,8 +807,9 @@ def test_openai_invoke_surfaces_gateway_metadata(mock_completion: dict) -> None:
     assert GATEWAY_METADATA_RESPONSE_KEY not in res.response_metadata
 
 
+@pytest.mark.parametrize("use_responses_api", [False, True])
 def test_openai_stream_surfaces_gateway_metadata(
-    mock_openai_completion: list,
+    mock_openai_completion: list, *, use_responses_api: bool
 ) -> None:
     """Gateway metadata reaches the tracer for a gateway-routed stream."""
     # A LangSmith API key signals gateway routing, so streaming fetches raw
@@ -770,17 +817,25 @@ def test_openai_stream_surfaces_gateway_metadata(
     llm = ChatOpenAI(
         model=OPENAI_TEST_MODEL,
         api_key="lsv2_pt_example",  # type: ignore[arg-type]
+        use_responses_api=use_responses_api,
     )
     mock_client = MagicMock()
     mock_resp = MagicMock()
-    mock_resp.headers = httpx2.Headers(
-        {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
-    )
-    mock_resp.parse.return_value = MockSyncContextManager(mock_openai_completion)
-    mock_client.with_raw_response.create.return_value = mock_resp
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = MockSyncContextManager(_RESPONSES_API_STREAM)
+        mock_client.with_raw_response.responses.create.return_value = mock_resp
+        mock_client.responses.create.return_value = MockSyncContextManager(
+            _RESPONSES_API_STREAM
+        )
+        client_attr = "root_client"
+    else:
+        mock_resp.parse.return_value = MockSyncContextManager(mock_openai_completion)
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "client"
 
     tracer = _GatewayMetadataTracer()
-    with patch.object(llm, "client", mock_client):
+    with patch.object(llm, client_attr, mock_client):
         for chunk in llm.stream("what is your name?", config={"callbacks": [tracer]}):
             # Gateway metadata is kept off the user-facing chunk metadata.
             assert GATEWAY_METADATA_RESPONSE_KEY not in chunk.response_metadata
