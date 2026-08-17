@@ -452,6 +452,21 @@ def test_dumps_mixed_data_structure() -> None:
     assert parsed["primitive"] == "string"
 
 
+def test_dumpd_lc_key_with_non_serializable_value() -> None:
+    """Test `dumpd()` with an `'lc'` key alongside a non-JSON-native value."""
+    import datetime
+
+    data = {"lc": "en", "indexed_at": datetime.datetime(2024, 1, 1)}
+    serialized = dumpd(data)
+
+    escaped = serialized["__lc_escaped__"]
+    assert escaped["lc"] == "en"
+    assert escaped["indexed_at"]["type"] == "not_implemented"
+
+    # The result must be JSON-serializable (this raised a `TypeError` before).
+    json.dumps(serialized)
+
+
 def test_document_normal_metadata_allowed() -> None:
     """Test that `Document` metadata without `'lc'` key works fine."""
     doc = Document(

@@ -66,6 +66,27 @@ def _is_escaped_dict(obj: dict[str, Any]) -> bool:
     return len(obj) == 1 and _LC_ESCAPED_KEY in obj
 
 
+def _serialize_escaped_contents(obj: Any) -> Any:
+    """Encode values inside an escaped dict without further LC escaping.
+
+    An escaped user dict is unwrapped as-is on deserialization, so its nested
+    dicts must not receive their own escape wrapper. They do still need to be
+    JSON-serializable, so non-JSON-native values are encoded to the
+    `not_implemented` marker.
+    """
+    if isinstance(obj, Serializable):
+        return _serialize_lc_object(obj)
+    if isinstance(obj, dict):
+        if not all(isinstance(k, (str, int, float, bool, type(None))) for k in obj):
+            return to_json_not_implemented(obj)
+        return {k: _serialize_escaped_contents(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_serialize_escaped_contents(item) for item in obj]
+    if isinstance(obj, (str, int, float, bool, type(None))):
+        return obj
+    return to_json_not_implemented(obj)
+
+
 def _serialize_value(obj: Any) -> Any:
     """Serialize a value with escaping of user dicts.
 
@@ -86,11 +107,11 @@ def _serialize_value(obj: Any) -> Any:
             # if keys are not json serializable
             return to_json_not_implemented(obj)
         # Check if dict needs escaping BEFORE recursing into values.
-        # If it needs escaping, wrap it as-is - the contents are user data that
-        # will be returned as-is during deserialization (no instantiation).
-        # This prevents re-escaping of already-escaped nested content.
+        # If it needs escaping, encode its values so the result stays
+        # JSON-serializable, but wrap them without further LC escaping — the
+        # contents are user data returned as-is during deserialization.
         if _needs_escaping(obj):
-            return _escape_dict(obj)
+            return _escape_dict(_serialize_escaped_contents(obj))
         # Safe dict (no 'lc' key) - recurse into values
         return {k: _serialize_value(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
