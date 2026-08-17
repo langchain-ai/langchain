@@ -108,7 +108,11 @@ from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import _stringify
 from langchain_core.utils import get_pydantic_field_names
-from langchain_core.utils._gateway import _resolve_gateway_config
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_RESPONSE_KEY,
+    _resolve_gateway_config,
+    _parse_gateway_metadata,
+)
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -600,6 +604,21 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
             message=e.message, request=e.request, body=e.body
         ) from e
     raise
+
+
+def _add_gateway_metadata(generation_info: dict[str, Any], raw_response: Any) -> None:
+    """Add parsed LangSmith gateway metadata to `generation_info`, if present.
+
+    Args:
+        generation_info: Generation info to mutate in place.
+        raw_response: The raw provider response, or None.
+    """
+    headers = getattr(raw_response, "headers", None)
+    if headers is None:
+        return
+    gateway_metadata = _parse_gateway_metadata(headers)
+    if gateway_metadata is not None:
+        generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
 
 
 _RESPONSES_API_ONLY_PREFIXES = (
@@ -1120,6 +1139,19 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     model_config = ConfigDict(populate_by_name=True)
+
+    @property
+    def _uses_gateway(self) -> bool:
+        """Whether requests are routed through the LangSmith gateway.
+
+        Detected from the resolved API key: LangSmith keys (used to authenticate
+        to the gateway) carry the `lsv2_` prefix. Callable keys cannot be
+        inspected without invoking them, so they are treated as non-gateway.
+        """
+        api_key = self.openai_api_key
+        if isinstance(api_key, SecretStr):
+            return api_key.get_secret_value().startswith("lsv2_")
+        return False
 
     @property
     def model(self) -> str:
@@ -1662,10 +1694,12 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 context_manager = response_stream
             else:
-                if self.include_response_headers:
+                if self.include_response_headers or self._uses_gateway:
                     raw_response = self.client.with_raw_response.create(**payload)
                     response = raw_response.parse()
-                    base_generation_info = {"headers": dict(raw_response.headers)}
+                    if self.include_response_headers:
+                        base_generation_info = {"headers": dict(raw_response.headers)}
+                    _add_gateway_metadata(base_generation_info, raw_response)
                 else:
                     response = self.client.create(**payload)
                 context_manager = response
@@ -1737,12 +1771,26 @@ class BaseChatOpenAI(BaseChatModel):
                 response = raw_response.parse()
                 if self.include_response_headers:
                     generation_info = {"headers": dict(raw_response.headers)}
-                return _construct_lc_result_from_responses_api(
+                generation_info = generation_info or {}
+                _add_gateway_metadata(generation_info, raw_response)
+                # Gateway metadata belongs on `generation_info`, not the message
+                # `response_metadata` that `metadata` populates.
+                gateway_metadata = generation_info.pop(
+                    GATEWAY_METADATA_RESPONSE_KEY, None
+                )
+                result = _construct_lc_result_from_responses_api(
                     response,
                     schema=original_schema_obj,
                     metadata=generation_info,
                     output_version=self.output_version,
                 )
+                if gateway_metadata is not None:
+                    for generation in result.generations:
+                        generation.generation_info = generation.generation_info or {}
+                        generation.generation_info[GATEWAY_METADATA_RESPONSE_KEY] = (
+                            gateway_metadata
+                        )
+                return result
             else:
                 raw_response = self.client.with_raw_response.create(**payload)
                 response = raw_response.parse()
@@ -1760,6 +1808,8 @@ class BaseChatOpenAI(BaseChatModel):
             and hasattr(raw_response, "headers")
         ):
             generation_info = {"headers": dict(raw_response.headers)}
+        generation_info = generation_info or {}
+        _add_gateway_metadata(generation_info, raw_response)
         return self._create_chat_result(response, generation_info)
 
     def _use_responses_api(self, payload: dict) -> bool:
@@ -1922,12 +1972,14 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 context_manager = response_stream
             else:
-                if self.include_response_headers:
+                if self.include_response_headers or self._uses_gateway:
                     raw_response = await self.async_client.with_raw_response.create(
                         **payload
                     )
                     response = raw_response.parse()
-                    base_generation_info = {"headers": dict(raw_response.headers)}
+                    if self.include_response_headers:
+                        base_generation_info = {"headers": dict(raw_response.headers)}
+                    _add_gateway_metadata(base_generation_info, raw_response)
                 else:
                     response = await self.async_client.create(**payload)
                 context_manager = response
@@ -1980,7 +2032,7 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        generation_info = None
+        generation_info = {}
         raw_response = None
         try:
             if "response_format" in payload:
@@ -2006,12 +2058,25 @@ class BaseChatOpenAI(BaseChatModel):
                 response = raw_response.parse()
                 if self.include_response_headers:
                     generation_info = {"headers": dict(raw_response.headers)}
-                return _construct_lc_result_from_responses_api(
+                _add_gateway_metadata(generation_info, raw_response)
+                # Gateway metadata belongs on `generation_info`, not the message
+                # `response_metadata` that `metadata` populates.
+                gateway_metadata = generation_info.pop(
+                    GATEWAY_METADATA_RESPONSE_KEY, None
+                )
+                result = _construct_lc_result_from_responses_api(
                     response,
                     schema=original_schema_obj,
                     metadata=generation_info,
                     output_version=self.output_version,
                 )
+                if gateway_metadata is not None:
+                    for generation in result.generations:
+                        generation.generation_info = generation.generation_info or {}
+                        generation.generation_info[GATEWAY_METADATA_RESPONSE_KEY] = (
+                            gateway_metadata
+                        )
+                return result
             else:
                 raw_response = await self.async_client.with_raw_response.create(
                     **payload
@@ -2031,6 +2096,7 @@ class BaseChatOpenAI(BaseChatModel):
             and hasattr(raw_response, "headers")
         ):
             generation_info = {"headers": dict(raw_response.headers)}
+        _add_gateway_metadata(generation_info, raw_response)
         return await run_in_executor(
             None, self._create_chat_result, response, generation_info
         )
@@ -2158,7 +2224,7 @@ class BaseChatOpenAI(BaseChatModel):
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith(("gpt-3.5-turbo", "gpt-4", "gpt-5", "o1", "o3", "o4")):
+        elif model.startswith(("gpt-3.5-turbo", "gpt-4", "gpt-5")):
             tokens_per_message = 3
             tokens_per_name = 1
         else:
