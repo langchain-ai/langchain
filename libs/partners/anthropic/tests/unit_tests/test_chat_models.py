@@ -41,6 +41,7 @@ from langchain_anthropic.chat_models import (
     _is_builtin_tool,
     _merge_messages,
     _normalize_tool_call_id,
+    _supports_sampling_params,
     _thinking_in_params,
     convert_to_anthropic_tool,
 )
@@ -2503,6 +2504,109 @@ def test_cache_control_kwarg_unknown_subclass_injects_into_blocks() -> None:
     assert payload["messages"][-1]["content"] == [
         {"type": "text", "text": "hello", "cache_control": {"type": "ephemeral"}}
     ]
+
+
+def _sampling_warnings(caught: list[warnings.WarningMessage]) -> list[str]:
+    return [str(w.message) for w in caught if "sampling parameters" in str(w.message)]
+
+
+def test_sampling_params_dropped_for_unsupported_model() -> None:
+    """Sampling params are dropped for models whose profile rejects them.
+
+    Anthropic removed `temperature`/`top_p`/`top_k` on its newer models, so
+    forwarding them turns a model-string upgrade into an opaque provider 400
+    for the very common `temperature=0` configuration.
+    """
+    llm = ChatAnthropic(model="claude-opus-5", temperature=0, top_p=0.5, top_k=10)
+
+    with pytest.warns(UserWarning, match="does not support sampling parameters"):
+        payload = llm._get_request_payload([HumanMessage("hello")])
+
+    assert "temperature" not in payload
+    assert "top_p" not in payload
+    assert "top_k" not in payload
+
+
+def test_sampling_params_warning_names_only_what_was_set() -> None:
+    """The warning lists the dropped keys so the fix is obvious."""
+    llm = ChatAnthropic(model="claude-opus-5", temperature=0)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        llm._get_request_payload([HumanMessage("hello")])
+
+    assert len(_sampling_warnings(caught)) == 1
+    message = _sampling_warnings(caught)[0]
+    assert "'temperature'" in message
+    assert "'top_p'" not in message
+    assert "'top_k'" not in message
+
+
+def test_sampling_params_dropped_from_call_kwargs() -> None:
+    """Call-time overrides are gated too, not just constructor fields."""
+    llm = ChatAnthropic(model="claude-opus-5")
+
+    with pytest.warns(UserWarning, match="does not support sampling parameters"):
+        payload = llm._get_request_payload([HumanMessage("hello")], temperature=0.7)
+
+    assert "temperature" not in payload
+
+
+def test_sampling_params_kept_for_supported_model() -> None:
+    """Models that still accept sampling params are left untouched."""
+    llm = ChatAnthropic(model="claude-sonnet-4-6", temperature=0, top_p=0.5, top_k=10)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        payload = llm._get_request_payload([HumanMessage("hello")])
+
+    assert _sampling_warnings(caught) == []
+    assert payload["temperature"] == 0
+    assert payload["top_p"] == 0.5
+    assert payload["top_k"] == 10
+
+
+def test_sampling_params_kept_for_unrecognized_model() -> None:
+    """An unrecognized model has no profile, so behavior is unchanged.
+
+    Gating on a missing profile would silently strip sampling params for
+    models this package does not ship a profile for yet.
+    """
+    llm = ChatAnthropic(model="claude-not-a-real-model", temperature=0)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        payload = llm._get_request_payload([HumanMessage("hello")])
+
+    assert _sampling_warnings(caught) == []
+    assert payload["temperature"] == 0
+
+
+def test_sampling_params_unset_is_silent() -> None:
+    """No warning when the caller never set a sampling param."""
+    llm = ChatAnthropic(model="claude-opus-5")
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        payload = llm._get_request_payload([HumanMessage("hello")])
+
+    assert _sampling_warnings(caught) == []
+    assert "temperature" not in payload
+
+
+@pytest.mark.parametrize(
+    ("profile", "expected"),
+    [
+        ({"temperature": False}, False),
+        ({"temperature": True}, True),
+        ({}, True),
+        (None, True),
+        ("not-a-mapping", True),
+    ],
+)
+def test_supports_sampling_params(profile: object, expected: bool) -> None:  # noqa: FBT001
+    """Only an explicit `temperature: False` disables sampling params."""
+    assert _supports_sampling_params(profile) is expected
 
 
 @pytest.mark.parametrize(

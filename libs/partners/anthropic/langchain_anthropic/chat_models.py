@@ -854,6 +854,23 @@ def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
     return tuple(levels)
 
 
+_SAMPLING_PARAMS: Final[tuple[str, ...]] = ("temperature", "top_k", "top_p")
+
+
+def _supports_sampling_params(profile: object) -> bool:
+    """Return whether a model's profile permits sampling parameters.
+
+    Anthropic removed `temperature`/`top_p`/`top_k` on its newer models, which
+    reject them with a 400. The bundled profiles record that as
+    `temperature: False`. Anything else - an absent profile, a non-mapping
+    value, or a profile that predates the flag - is treated as "supported" so
+    unrecognized models keep their existing behavior.
+    """
+    if not isinstance(profile, Mapping):
+        return True
+    return profile.get("temperature") is not False
+
+
 def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
     """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
 
@@ -1472,6 +1489,24 @@ class ChatAnthropic(BaseChatModel):
             **self.model_kwargs,
             **kwargs,
         }
+
+        # Newer models reject sampling parameters outright, so forwarding them
+        # turns a model upgrade into an opaque provider 400 for code that has
+        # always passed `temperature=0`. Drop them and name what was dropped.
+        # Applied after the kwargs merge so call-time overrides are covered too.
+        if not _supports_sampling_params(self.profile):
+            dropped = [key for key in _SAMPLING_PARAMS if payload.get(key) is not None]
+            for key in _SAMPLING_PARAMS:
+                payload.pop(key, None)
+            if dropped:
+                warnings.warn(
+                    f"{self.model} does not support sampling parameters. Dropped "
+                    f"{', '.join(repr(key) for key in dropped)} from the request; "
+                    "remove them to silence this warning.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
         # Captured before `self.thinking` is applied below, so a call-time
         # `thinking` kwarg counts as "explicitly set" too.
         thinking_explicitly_set = "thinking" in payload or self.thinking is not None
