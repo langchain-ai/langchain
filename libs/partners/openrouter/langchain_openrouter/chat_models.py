@@ -66,7 +66,14 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    SecretStr,
+    model_validator,
+)
 from typing_extensions import Self
 
 from langchain_openrouter._version import __version__
@@ -163,6 +170,19 @@ class ChatOpenRouter(BaseChatModel):
 
     client: Any = Field(default=None, exclude=True)
     """Underlying SDK client (`openrouter.OpenRouter`)."""
+
+    _http_client: Any = PrivateAttr(default=None)
+    """`httpx.Client` created for attribution headers; closed by `close()`.
+
+    Only set when `_build_client` constructs the client. A user-supplied SDK
+    `client` is never stored here and is never closed by this class.
+    """
+
+    _http_async_client: Any = PrivateAttr(default=None)
+    """`httpx.AsyncClient` created for attribution headers; closed by `aclose()`.
+
+    See `_http_client`.
+    """
 
     openrouter_api_key: SecretStr | None = Field(
         alias="api_key",
@@ -446,12 +466,14 @@ class ChatOpenRouter(BaseChatModel):
         if extra_headers:
             import httpx  # noqa: PLC0415
 
-            client_kwargs["client"] = httpx.Client(
+            self._http_client = httpx.Client(
                 headers=extra_headers, follow_redirects=True
             )
-            client_kwargs["async_client"] = httpx.AsyncClient(
+            self._http_async_client = httpx.AsyncClient(
                 headers=extra_headers, follow_redirects=True
             )
+            client_kwargs["client"] = self._http_client
+            client_kwargs["async_client"] = self._http_async_client
         if self.request_timeout is not None:
             client_kwargs["timeout_ms"] = self.request_timeout
         if self.max_retries > 0:
@@ -495,6 +517,47 @@ class ChatOpenRouter(BaseChatModel):
                 )
                 raise ImportError(msg) from e
         return self
+
+    def close(self) -> None:
+        """Close the sync httpx client created for attribution headers.
+
+        After calling, sync invocations that rely on this client may raise.
+        Async invocations remain available until `aclose()` is also called.
+        Safe to call multiple times. Does not close a user-supplied SDK
+        `client`.
+        """
+        if self._http_client is not None:
+            self._http_client.close()
+            self._http_client = None
+
+    async def aclose(self) -> None:
+        """Close the async httpx client created for attribution headers.
+
+        Releases the connector owned by the `httpx.AsyncClient` that
+        `_build_client` creates for attribution headers. Without this,
+        transient `ChatOpenRouter` instances can leak sockets and
+        ephemeral ports. Safe to call multiple times. Does not close a
+        user-supplied SDK `client`.
+        """
+        if self._http_async_client is not None:
+            await self._http_async_client.aclose()
+            self._http_async_client = None
+
+    def __enter__(self) -> Self:
+        """Enter a context manager that closes the sync HTTP client on exit."""
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        """Exit the context manager and close the sync HTTP client."""
+        self.close()
+
+    async def __aenter__(self) -> Self:
+        """Enter an async context manager that closes the async HTTP client on exit."""
+        return self
+
+    async def __aexit__(self, *args: object) -> None:
+        """Exit the async context manager and close the async HTTP client."""
+        await self.aclose()
 
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None

@@ -718,6 +718,74 @@ class TestChatOpenRouterInstantiation:
 
 
 # ===========================================================================
+# HTTP client lifecycle tests
+# ===========================================================================
+
+
+class TestHttpClientLifecycle:
+    """Tests for closing httpx clients created for attribution headers."""
+
+    def test_constructing_model_creates_httpx_clients(self) -> None:
+        """Test that default attribution headers cause httpx clients to be created."""
+        mock_sync = MagicMock()
+        mock_async = MagicMock()
+        with (
+            patch("openrouter.OpenRouter", return_value=MagicMock()),
+            patch("httpx.Client", return_value=mock_sync) as mock_client_cls,
+            patch("httpx.AsyncClient", return_value=mock_async) as mock_async_cls,
+        ):
+            model = _make_model()
+        mock_client_cls.assert_called_once()
+        mock_async_cls.assert_called_once()
+        assert model._http_client is mock_sync
+        assert model._http_async_client is mock_async
+
+    def test_close_closes_sync_client_once(self) -> None:
+        """Test that `close()` closes the sync client once; a second call is a no-op."""
+        mock_sync = MagicMock()
+        with (
+            patch("openrouter.OpenRouter", return_value=MagicMock()),
+            patch("httpx.Client", return_value=mock_sync),
+            patch("httpx.AsyncClient", return_value=MagicMock()),
+        ):
+            model = _make_model()
+        model.close()
+        mock_sync.close.assert_called_once()
+        assert model._http_client is None
+        model.close()
+        mock_sync.close.assert_called_once()
+
+    async def test_aclose_closes_async_client_once(self) -> None:
+        """Test that `aclose()` closes the async client once."""
+        mock_async = MagicMock()
+        mock_async.aclose = AsyncMock()
+        with (
+            patch("openrouter.OpenRouter", return_value=MagicMock()),
+            patch("httpx.Client", return_value=MagicMock()),
+            patch("httpx.AsyncClient", return_value=mock_async),
+        ):
+            model = _make_model()
+        await model.aclose()
+        mock_async.aclose.assert_awaited_once()
+        assert model._http_async_client is None
+        await model.aclose()
+        mock_async.aclose.assert_awaited_once()
+
+    async def test_async_context_manager_calls_aclose(self) -> None:
+        """Test that `async with ChatOpenRouter(...)` closes the async client."""
+        mock_async = MagicMock()
+        mock_async.aclose = AsyncMock()
+        with (
+            patch("openrouter.OpenRouter", return_value=MagicMock()),
+            patch("httpx.Client", return_value=MagicMock()),
+            patch("httpx.AsyncClient", return_value=mock_async),
+        ):
+            async with _make_model():
+                pass
+        mock_async.aclose.assert_awaited_once()
+
+
+# ===========================================================================
 # Serialization tests
 # ===========================================================================
 
