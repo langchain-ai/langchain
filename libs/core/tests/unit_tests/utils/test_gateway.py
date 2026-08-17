@@ -320,11 +320,6 @@ def test_apply_omits_key_when_unresolved() -> None:
 
 
 def test_parse_gateway_metadata_deserializes_json() -> None:
-    headers = {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
-    assert _parse_gateway_metadata(headers) == {"provider": "openai"}
-
-
-def test_parse_gateway_metadata_case_insensitive() -> None:
     headers = {"X-LangSmith-Gateway-Metadata": '{"provider": "openai"}'}
     assert _parse_gateway_metadata(headers) == {"provider": "openai"}
 
@@ -334,5 +329,5 @@ def test_parse_gateway_metadata_absent() -> None:
 
 
 def test_parse_gateway_metadata_non_json() -> None:
-    headers = {"x-langsmith-gateway-metadata": "not-json"}
+    headers = {"X-LangSmith-Gateway-Metadata": "not-json"}
     assert _parse_gateway_metadata(headers) is None

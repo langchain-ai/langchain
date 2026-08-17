@@ -30,7 +30,7 @@ GATEWAY_METADATA_RESPONSE_KEY = "lc_gateway_metadata"
 
 # HTTP response header the LangSmith gateway uses to return per-request metadata
 # (e.g. the resolved provider and model). The value is JSON-encoded.
-GATEWAY_METADATA_HEADER = "x-langsmith-gateway-metadata"
+GATEWAY_METADATA_HEADER = "X-LangSmith-Gateway-Metadata"
 
 _LANGSMITH_GATEWAY_ENV = "LANGSMITH_GATEWAY"
 _LANGSMITH_GATEWAY_API_KEY_ENV = "LANGSMITH_GATEWAY_API_KEY"
@@ -255,8 +255,7 @@ def _parse_gateway_metadata(headers: Any) -> dict[str, Any] | None:
     promoted to run metadata by the LangSmith tracer.
 
     Args:
-        headers: The response headers. Header names are matched
-            case-insensitively.
+        headers: The response headers.
 
     Returns:
         The deserialized gateway metadata, or None when the header is absent,
@@ -265,14 +264,7 @@ def _parse_gateway_metadata(headers: Any) -> dict[str, Any] | None:
     if not isinstance(headers, Mapping):
         return None
 
-    raw = next(
-        (
-            value
-            for key, value in headers.items()
-            if key.lower() == GATEWAY_METADATA_HEADER
-        ),
-        None,
-    )
+    raw = headers.get(GATEWAY_METADATA_HEADER)
     if not raw:
         return None
     try:
