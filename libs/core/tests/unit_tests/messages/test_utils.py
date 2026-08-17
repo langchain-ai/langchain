@@ -2879,6 +2879,70 @@ def test_count_tokens_approximately_with_unknown_block_type() -> None:
     assert mixed > text_only
 
 
+def test_count_tokens_approximately_reasoning_block_excludes_extras() -> None:
+    """Reasoning blocks should count only readable text, not provider metadata.
+
+    OpenAI reasoning models (with store=False) return an encrypted copy of the
+    chain-of-thought inside ``extras.encrypted_content``.  The ciphertext is
+    much longer than the actual reasoning and is not billed by the provider, so
+    including it in the estimate inflates the count by up to 10x.
+    """
+    reasoning_text = "I should inspect the staging model."
+    ciphertext = "g" * 4000
+
+    block_with_extras = {
+        "type": "reasoning",
+        "id": "rs_abc",
+        "reasoning": reasoning_text,
+        "extras": {"content": [], "encrypted_content": ciphertext},
+    }
+    block_without_extras = {
+        "type": "reasoning",
+        "id": "rs_abc",
+        "reasoning": reasoning_text,
+    }
+
+    with_extras = count_tokens_approximately(
+        [AIMessage(content=[block_with_extras], id="ai-1")]
+    )
+    without_extras = count_tokens_approximately(
+        [AIMessage(content=[block_without_extras], id="ai-1")]
+    )
+
+    assert with_extras == without_extras
+
+
+def test_count_tokens_approximately_thinking_block_excludes_extras() -> None:
+    """Thinking blocks (Anthropic) should count only the thinking text."""
+    thinking_text = "Let me consider the options."
+    block = {
+        "type": "thinking",
+        "thinking": thinking_text,
+        "extras": {"signature": "s" * 2000},
+    }
+
+    with_extras = count_tokens_approximately([AIMessage(content=[block], id="ai-1")])
+    text_only = count_tokens_approximately(
+        [AIMessage(content=[{"type": "text", "text": thinking_text}], id="ai-1")]
+    )
+
+    assert with_extras == text_only
+
+
+def test_count_tokens_approximately_encrypted_only_reasoning_block() -> None:
+    """A reasoning block with no readable text should contribute zero chars."""
+    block = {
+        "type": "reasoning",
+        "id": "rs_abc",
+        "extras": {"encrypted_content": "g" * 4000},
+    }
+
+    count = count_tokens_approximately([AIMessage(content=[block], id="ai-1")])
+    empty = count_tokens_approximately([AIMessage(content=[], id="ai-1")])
+
+    assert count == empty
+
+
 def test_count_tokens_approximately_ai_tool_calls_skipped_for_list_content() -> None:
     """Test that tool_calls aren't double-counted for list (Anthropic-style) content."""
     tool_calls = [
