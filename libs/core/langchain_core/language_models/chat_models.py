@@ -87,6 +87,7 @@ from langchain_core.tracers._streaming import (
     _StreamingCallbackHandler,
     _V2StreamingCallbackHandler,
 )
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -2693,8 +2694,17 @@ class SimpleChatModel(BaseChatModel):
 def _gen_info_and_msg_metadata(
     generation: ChatGeneration | ChatGenerationChunk,
 ) -> dict[str, Any]:
+    """Extract metadata for the response metadata.
+
+    Gateway metadata is excluded intentionally for now.
+    """
+    generation_info = generation.generation_info or {}
     return {
-        **(generation.generation_info or {}),
+        **{
+            key: value
+            for key, value in generation_info.items()
+            if key != GATEWAY_METADATA_RESPONSE_KEY
+        },
         **generation.message.response_metadata,
     }
 
