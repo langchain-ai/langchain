@@ -606,7 +606,7 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
     raise
 
 
-def _add_gateway_metadata(generation_info: dict, raw_response: Any) -> None:
+def _add_gateway_metadata(generation_info: dict[str, Any], raw_response: Any) -> None:
     """Add parsed LangSmith gateway metadata to `generation_info`, if present.
 
     Reads the gateway metadata header off `raw_response` (available whenever the
