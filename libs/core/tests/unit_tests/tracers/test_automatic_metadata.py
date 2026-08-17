@@ -198,9 +198,7 @@ def test_complete_llm_run_no_gateway_metadata() -> None:
     run = _make_run("test-no-gateway-run-id")
     tracer.run_map[str(run.id)] = run
 
-    message = AIMessage(
-        content="Test", response_metadata={"model_provider": "openai"}
-    )
+    message = AIMessage(content="Test", response_metadata={"model_provider": "openai"})
     response = LLMResult(generations=[[ChatGeneration(message=message)]])
 
     completed_run = tracer._complete_llm_run(response=response, run_id=run.id)

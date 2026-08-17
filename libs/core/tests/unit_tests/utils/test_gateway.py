@@ -8,9 +8,9 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from langchain_core.utils._gateway import (
     GatewayConfig,
     _apply_gateway_config,
+    _parse_gateway_metadata,
     _resolve_gateway_base_url,
     _resolve_gateway_config,
-    _parse_gateway_metadata,
 )
 
 # A representative provider path; the helper is provider-agnostic.
