@@ -1251,12 +1251,12 @@ def test_convert_to_openai_function_strict_nested_required_via_defs_ref() -> Non
     # Snapshot the caller's schema before conversion; the strict-mode walk
     # mutates `required`/`additionalProperties` in place, so `deepcopy` must
     # shield the original input (see "don't mutate" commit on #39306).
-    original_inner = raw_schema["parameters"]["$defs"]["Inner"]
+    original_inner: dict[str, Any] = raw_schema["parameters"]["$defs"]["Inner"]  # type: ignore[index]
     assert "required" not in original_inner
     assert "additionalProperties" not in original_inner
 
     func = convert_to_openai_function(raw_schema, strict=True)
-    inner_def = func["parameters"]["$defs"]["Inner"]
+    inner_def: dict[str, Any] = func["parameters"]["$defs"]["Inner"]
     assert set(inner_def["required"]) == {"required_field", "optional_field"}
     assert inner_def["additionalProperties"] is False
     # The caller's original schema must be left untouched.
