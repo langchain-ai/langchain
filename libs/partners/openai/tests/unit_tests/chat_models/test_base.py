@@ -10,6 +10,7 @@ from typing import Any, Literal, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
+import httpx2
 import openai
 import pytest
 from langchain.agents import create_agent
@@ -43,12 +44,14 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from openai.types.responses import (
     ResponseApplyPatchToolCall,
     ResponseApplyPatchToolCallOutput,
     ResponseOutputMessage,
     ResponseReasoningItem,
+    ResponseTextDeltaEvent,
 )
 from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_apply_patch_tool_call import OperationCreateFile
@@ -729,6 +732,160 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
     assert mock_async_client.with_raw_response.create.called
 
 
+class _GatewayMetadataTracer(BaseTracer):
+    """Captures gateway metadata promoted onto completed LLM runs."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.gateway_metadata: dict | None = None
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op; runs are inspected as they complete."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        metadata = run.extra.get("metadata", {})
+        if "ls_gateway_info" in metadata:
+            self.gateway_metadata = metadata["ls_gateway_info"]
+
+
+_GATEWAY_METADATA_HEADERS = httpx2.Headers(
+    {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
+)
+
+_RESPONSES_API_COMPLETION = Response(
+    id="resp_123",
+    created_at=1234567890,
+    model=OPENAI_TEST_MODEL,
+    object="response",
+    parallel_tool_calls=True,
+    tools=[],
+    tool_choice="auto",
+    output=[
+        ResponseOutputMessage(
+            type="message",
+            id="msg_123",
+            content=[
+                ResponseOutputText(type="output_text", text="Bar Baz", annotations=[])
+            ],
+            role="assistant",
+            status="completed",
+        )
+    ],
+)
+
+_RESPONSES_API_STREAM = [
+    ResponseTextDeltaEvent(
+        content_index=0,
+        delta="Bar Baz",
+        item_id="msg_123",
+        output_index=0,
+        sequence_number=0,
+        logprobs=[],
+        type="response.output_text.delta",
+    ),
+]
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_openai_invoke_surfaces_gateway_metadata(
+    mock_completion: dict, *, use_responses_api: bool
+) -> None:
+    """Gateway metadata header is surfaced on `generation_info`, not the message."""
+    llm = ChatOpenAI(use_responses_api=use_responses_api)
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = _RESPONSES_API_COMPLETION
+        mock_client.responses.with_raw_response.create.return_value = mock_resp
+        client_attr = "root_client"
+    else:
+        mock_resp.parse.return_value = mock_completion
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "client"
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, client_attr, mock_client):
+        res = llm.invoke("bar", config={"callbacks": [tracer]})
+
+    # Gateway metadata reaches the tracer via `generation_info`...
+    assert tracer.gateway_metadata == {"provider": "openai"}
+    # ...but is kept off the user-facing message `response_metadata`.
+    assert GATEWAY_METADATA_RESPONSE_KEY not in res.response_metadata
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_openai_stream_surfaces_gateway_metadata(
+    mock_openai_completion: list, *, use_responses_api: bool
+) -> None:
+    """Gateway metadata reaches the tracer for a gateway-routed stream."""
+    # A LangSmith API key signals gateway routing, so streaming fetches raw
+    # headers.
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key="lsv2_pt_example",  # type: ignore[arg-type]
+        use_responses_api=use_responses_api,
+    )
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = MockSyncContextManager(_RESPONSES_API_STREAM)
+        mock_client.with_raw_response.responses.create.return_value = mock_resp
+        mock_client.responses.create.return_value = MockSyncContextManager(
+            _RESPONSES_API_STREAM
+        )
+        client_attr = "root_client"
+    else:
+        mock_resp.parse.return_value = MockSyncContextManager(mock_openai_completion)
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "client"
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, client_attr, mock_client):
+        for chunk in llm.stream("what is your name?", config={"callbacks": [tracer]}):
+            # Gateway metadata is kept off the user-facing chunk metadata.
+            assert GATEWAY_METADATA_RESPONSE_KEY not in chunk.response_metadata
+
+    assert tracer.gateway_metadata == {"provider": "openai"}
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+async def test_openai_astream_surfaces_gateway_metadata(
+    mock_openai_completion: list, *, use_responses_api: bool
+) -> None:
+    """Gateway metadata reaches the tracer for a gateway-routed async stream."""
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key="lsv2_pt_example",  # type: ignore[arg-type]
+        use_responses_api=use_responses_api,
+    )
+    mock_client = AsyncMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = MockAsyncContextManager(_RESPONSES_API_STREAM)
+        mock_client.with_raw_response.responses.create.return_value = mock_resp
+        mock_client.responses.create.return_value = MockAsyncContextManager(
+            _RESPONSES_API_STREAM
+        )
+        client_attr = "root_async_client"
+    else:
+        mock_resp.parse.return_value = MockAsyncContextManager(mock_openai_completion)
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "async_client"
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, client_attr, mock_client):
+        async for chunk in llm.astream(
+            "what is your name?", config={"callbacks": [tracer]}
+        ):
+            # Gateway metadata is kept off the user-facing chunk metadata.
+            assert GATEWAY_METADATA_RESPONSE_KEY not in chunk.response_metadata
+
+    assert tracer.gateway_metadata == {"provider": "openai"}
+
+
 @pytest.mark.parametrize(
     "model",
     [
@@ -1104,6 +1261,26 @@ def test_get_num_tokens_from_messages() -> None:
     ]
     actual = llm.get_num_tokens_from_messages(messages)
     assert actual
+
+
+@pytest.mark.parametrize(
+    "model", ["o1", "o1-preview", "o1-mini", "o3", "o3-mini", "o4-mini"]
+)
+def test_get_num_tokens_from_messages_o_series(model: str) -> None:
+    """o-series models use the same message token format as gpt-4/gpt-5.
+
+    Regression test: these raised NotImplementedError.
+    """
+    llm = ChatOpenAI(model=model)
+    messages = [
+        SystemMessage("you're a good assistant"),
+        HumanMessage("how are you"),
+    ]
+    actual = llm.get_num_tokens_from_messages(messages)
+    expected = ChatOpenAI(model=OPENAI_TEST_MODEL).get_num_tokens_from_messages(
+        messages
+    )
+    assert actual == expected
 
 
 class Foo(BaseModel):
@@ -3059,12 +3236,14 @@ def test__construct_responses_api_input_human_message_with_image_url_conversion(
 def test__construct_responses_api_input_store_false_replays_stateless_history() -> None:
     ai_message = AIMessage(
         content=[
+            # Dropped: no encrypted content to replay, in both shapes it can take.
             {"type": "reasoning", "id": "rs_123", "summary": []},
+            {"type": "reasoning", "encrypted_content": ""},
             {
                 "type": "reasoning",
-                "id": "rs_456",
+                "id": "rs_789",
                 "summary": [],
-                "encrypted_content": "",
+                "encrypted_content": "encrypted-reasoning",
             },
             {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
         ],
@@ -3076,9 +3255,9 @@ def test__construct_responses_api_input_store_false_replays_stateless_history() 
     assert result == [
         {
             "type": "reasoning",
-            "id": "rs_456",
+            "id": "rs_789",
             "summary": [],
-            "encrypted_content": "",
+            "encrypted_content": "encrypted-reasoning",
         },
         {
             "type": "message",
