@@ -69,18 +69,23 @@ class LangSmithParams(TypedDict, total=False):
 
 @cache
 def _get_tokenizer_module() -> Callable[[str], Any] | None:
-    """
-    Get the `from_pretrained` module function from GPT2TokenizerFast
-    if it can be imported; None otherwise.
+    """Get the `from_pretrained` function from `GPT2TokenizerFast`.
 
-    Cached to pay the cost of loading `pytorch` once.
+    Imported lazily so that merely importing this module doesn't pull in
+    `transformers` (and, transitively, `pytorch`). Cached so the cost is paid once.
+
+    Returns:
+        The `GPT2TokenizerFast.from_pretrained` function, or `None` if
+        `transformers` is not installed.
+
     """
     try:
-        from transformers import GPT2TokenizerFast # type: ignore[import-not-found]
-
-        return GPT2TokenizerFast.from_pretrained
+        from transformers import (  # type: ignore[import-not-found] # noqa: PLC0415
+            GPT2TokenizerFast,
+        )
     except ImportError:
         return None
+    return cast("Callable[[str], Any]", GPT2TokenizerFast.from_pretrained)
 
 
 @cache  # Cache the tokenizer
