@@ -400,6 +400,38 @@ class TestFilesystemGrepSearch:
         assert "/src/main.py" in result
         assert "/tests/test.py" not in result
 
+    def test_grep_excludes_sibling_directory(self) -> None:
+        """Test grep scoped to a path excludes sibling directories sharing a prefix."""
+        middleware = StateFileSearchMiddleware()
+
+        state: AnthropicToolsState = {
+            "messages": [],
+            "text_editor_files": {
+                "/app/config.txt": {
+                    "content": ["service=web"],
+                    "created_at": "2025-01-01T00:00:00",
+                    "modified_at": "2025-01-01T00:00:00",
+                },
+                "/app-secret/creds.txt": {
+                    "content": ["password=SIBLING-LEAK"],
+                    "created_at": "2025-01-01T00:00:00",
+                    "modified_at": "2025-01-01T00:00:00",
+                },
+            },
+        }
+
+        result = middleware._handle_grep_search(
+            pattern="password|service",
+            path="/app",
+            include=None,
+            output_mode="files_with_matches",
+            state=state,
+        )
+
+        assert isinstance(result, str)
+        assert "/app/config.txt" in result
+        assert "/app-secret/creds.txt" not in result
+
     def test_grep_no_matches(self) -> None:
         """Test grep with no matching content."""
         middleware = StateFileSearchMiddleware()

@@ -1268,7 +1268,9 @@ def test_structured_output_thinking_force_tool_use() -> None:
     # Structured output currently relies on forced tool use, which is not supported
     # when `thinking` is enabled. When this test fails, it means that the feature
     # is supported and the workarounds in `with_structured_output` should be removed.
-    client = anthropic.Anthropic()
+    # Use the client resolved off `ChatAnthropic` so requests honor any
+    # configured base URL / credentials (e.g. the LangSmith gateway).
+    client = ChatAnthropic(model="claude-sonnet-4-5-20250929")._client  # type: ignore[call-arg]
     with pytest.raises(anthropic.BadRequestError):
         _ = client.messages.create(
             model="claude-sonnet-4-5-20250929",

@@ -701,6 +701,17 @@ class ChildTool(BaseTool):
 
         full_schema = self.get_input_schema()
         fields = []
+
+        # Accommodates a condition where forward references were not resolved
+        # during model construction. At introspection time, we fail fast if
+        # the model schema is not complete so the underlying serialized schema
+        # doesn't narrow the propreties in the tool json schema to an empty dict
+        if (
+            is_pydantic_v2_subclass(full_schema)
+            and not full_schema.__pydantic_complete__
+        ):
+            full_schema.model_rebuild()
+
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
                 fields.append(name)
@@ -835,6 +846,7 @@ class ChildTool(BaseTool):
                         tool_input[k] = tool_call_id
                 result_v2 = input_args.model_validate(tool_input)
                 result_dict = result_v2.model_dump()
+                provided_fields = result_v2.model_fields_set
                 result = result_v2
             elif issubclass(input_args, BaseModelV1):
                 # Check args_schema for InjectedToolCallId
@@ -852,6 +864,7 @@ class ChildTool(BaseTool):
                         tool_input[k] = tool_call_id
                 result_v1 = input_args.parse_obj(tool_input)
                 result_dict = result_v1.dict()
+                provided_fields = result_v1.__fields_set__
                 result = result_v1
             else:
                 msg = (  # type: ignore[unreachable]
@@ -859,14 +872,18 @@ class ChildTool(BaseTool):
                 )
                 raise NotImplementedError(msg)
 
-            # Include fields from tool_input, plus fields with explicit defaults.
-            # This applies Pydantic defaults (like Field(default=1)) while excluding
-            # synthetic "args"/"kwargs" fields that Pydantic creates for *args/**kwargs.
+            # Include fields from tool_input, fields provided through Pydantic aliases,
+            # plus fields with explicit defaults. This applies Pydantic defaults (like
+            # Field(default=1)) while excluding synthetic "args"/"kwargs" fields that
+            # Pydantic creates for *args/**kwargs.
             field_info = get_fields(input_args)
             validated_input = {}
             for k in result_dict:
                 if k in tool_input:
                     # Field was provided in input - include it (validated)
+                    validated_input[k] = getattr(result, k)
+                elif k in provided_fields:
+                    # Field was provided through a Pydantic alias - include it.
                     validated_input[k] = getattr(result, k)
                 elif k in field_info and k not in {"args", "kwargs"}:
                     # Check if field has an explicit default defined in the schema.
@@ -1238,7 +1255,7 @@ class ChildTool(BaseTool):
                         error_to_raise = ValueError(msg)
             else:
                 content = response
-        except ValidationError as e:
+        except (ValidationError, ValidationErrorV1) as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:

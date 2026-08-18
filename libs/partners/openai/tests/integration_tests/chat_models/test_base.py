@@ -34,6 +34,26 @@ if TYPE_CHECKING:
 
 MAX_TOKEN_COUNT = 100
 
+# Whether requests route through the LangSmith gateway. Mirrors the truthiness
+# used by `langchain_core`'s gateway resolution.
+_GATEWAY_ENABLED = (os.environ.get("LANGSMITH_GATEWAY") or "").lower() not in (
+    "",
+    "false",
+    "0",
+    "no",
+)
+
+
+def _gateway_or_provider_key() -> str:
+    """Return an API key valid for the endpoint the base URL resolves to.
+
+    When the LangSmith gateway is enabled, requests route through it and must
+    authenticate with the gateway key rather than the provider key.
+    """
+    if _GATEWAY_ENABLED:
+        return os.environ["LANGSMITH_GATEWAY_API_KEY"]
+    return os.environ["OPENAI_API_KEY"]
+
 
 @pytest.mark.scheduled
 def test_chat_openai() -> None:
@@ -66,7 +86,7 @@ def test_chat_openai_model() -> None:
 
 
 def test_callable_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    original_key = os.environ["OPENAI_API_KEY"]
+    original_key = _gateway_or_provider_key()
 
     calls = {"sync": 0}
 
@@ -83,7 +103,7 @@ def test_callable_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 async def test_callable_api_key_async(monkeypatch: pytest.MonkeyPatch) -> None:
-    original_key = os.environ["OPENAI_API_KEY"]
+    original_key = _gateway_or_provider_key()
 
     calls = {"sync": 0, "async": 0}
 
@@ -366,7 +386,10 @@ async def test_astream() -> None:
             assert full.usage_metadata["input_tokens"] > 0
             assert full.usage_metadata["output_tokens"] > 0
             assert full.usage_metadata["total_tokens"] > 0
-        else:
+        # The LangSmith gateway always emits a usage chunk regardless of
+        # `stream_options.include_usage`, so the opt-out assertions below only
+        # hold when not routing through it.
+        elif not _GATEWAY_ENABLED:
             assert chunks_with_token_counts == 0
             assert full.usage_metadata is None
 

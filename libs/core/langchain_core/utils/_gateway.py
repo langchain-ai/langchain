@@ -10,7 +10,9 @@ This module is private: the API is not stable and may change without notice.
 
 from __future__ import annotations
 
+import json
 import os
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from pydantic import SecretStr
@@ -19,6 +21,16 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from pydantic import BaseModel
+
+# Key under which integrations place parsed gateway metadata on a generation's
+# `generation_info`. This is the contract consumed by the LangSmith tracer, which
+# promotes it to run metadata. Defined here so integrations and the tracer agree
+# on a single name.
+GATEWAY_METADATA_RESPONSE_KEY = "lc_gateway_metadata"
+
+# HTTP response header the LangSmith gateway uses to return per-request metadata
+# (e.g. the resolved provider and model). The value is JSON-encoded.
+GATEWAY_METADATA_HEADER = "X-LangSmith-Gateway-Metadata"
 
 _LANGSMITH_GATEWAY_ENV = "LANGSMITH_GATEWAY"
 _LANGSMITH_GATEWAY_API_KEY_ENV = "LANGSMITH_GATEWAY_API_KEY"
@@ -233,3 +245,30 @@ def _apply_gateway_config(
     if config.api_key is not None:
         values[api_key_field] = config.api_key
     return config
+
+
+def _parse_gateway_metadata(headers: Any) -> dict[str, Any] | None:
+    """Parse LangSmith gateway metadata from HTTP response headers.
+
+    Provider integrations call this on the raw response headers so the parsed
+    result can be surfaced under `GATEWAY_METADATA_RESPONSE_KEY` and later
+    promoted to run metadata by the LangSmith tracer.
+
+    Args:
+        headers: The response headers.
+
+    Returns:
+        The deserialized gateway metadata, or None when the header is absent,
+        not a mapping, or not a JSON object.
+    """
+    if not isinstance(headers, Mapping):
+        return None
+
+    raw = headers.get(GATEWAY_METADATA_HEADER)
+    if not raw:
+        return None
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    return parsed if isinstance(parsed, dict) else None

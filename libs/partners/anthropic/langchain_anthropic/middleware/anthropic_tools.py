@@ -240,7 +240,9 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
                 Command for state update or string result.
             """
             # Build args dict for handler methods
-            args: dict[str, Any] = {"path": path}
+            # `old_path` is populated for `_handle_rename`, which reads the source
+            # path under that key instead of `path`.
+            args: dict[str, Any] = {"path": path, "old_path": path}
             if file_text is not None:
                 args["file_text"] = file_text
             if old_str is not None:
@@ -742,7 +744,9 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
                 Command for message update or string result.
             """
             # Build args dict for handler methods
-            args: dict[str, Any] = {"path": path}
+            # `old_path` is populated for `_handle_rename`, which reads the source
+            # path under that key instead of `path`.
+            args: dict[str, Any] = {"path": path, "old_path": path}
             if file_text is not None:
                 args["file_text"] = file_text
             if old_str is not None:
