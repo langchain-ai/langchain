@@ -663,6 +663,12 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Returns:
             A new `Runnable`.
+
+        Raises:
+            TypeError: If `other` cannot be coerced to a `Runnable`. This method does
+                not return `NotImplemented`, to avoid delegating LCEL composition to
+                unrelated reflected `|` implementations. To interoperate, implement
+                `Runnable`, make the object callable, or define `__or__` on the left.
         """
         return RunnableSequence(self, coerce_to_runnable(other))
 
@@ -706,6 +712,12 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Returns:
             A new `Runnable`.
+
+        Raises:
+            TypeError: If `other` cannot be coerced to a `Runnable`. This method does
+                not return `NotImplemented`, to avoid delegating LCEL composition to
+                unrelated reflected `|` implementations. To interoperate, implement
+                `Runnable`, make the object callable, or define `__or__` on the left.
         """
         return RunnableSequence(coerce_to_runnable(other), self)
 
