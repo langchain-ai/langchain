@@ -20,6 +20,7 @@ from langchain_ollama._utils import (
     parse_url_with_auth,
     validate_model,
 )
+from langchain_ollama._version import __version__
 
 
 class OllamaLLM(BaseLLM):
@@ -318,6 +319,12 @@ class OllamaLLM(BaseLLM):
         if max_tokens := kwargs.get("num_predict", self.num_predict):
             params["ls_max_tokens"] = max_tokens
         return params
+
+    @model_validator(mode="after")
+    def _set_ollama_llm_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-ollama", __version__)
+        return self
 
     @model_validator(mode="after")
     def _set_clients(self) -> Self:

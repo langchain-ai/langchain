@@ -19,7 +19,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 from typing_extensions import override
 
 from langchain_core.runnables.base import Runnable, RunnableSerializable
@@ -44,6 +44,7 @@ from langchain_core.runnables.utils import (
 
 if TYPE_CHECKING:
     from langchain_core.runnables.graph import Graph
+    from langchain_core.utils.pydantic import TypeBaseModel
 
 
 class DynamicRunnable(RunnableSerializable[Input, Output]):
@@ -90,14 +91,12 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         return self.default.OutputType
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         runnable, config = self.prepare(config)
         return runnable.get_input_schema(config)
 
     @override
-    def get_output_schema(
-        self, config: RunnableConfig | None = None
-    ) -> type[BaseModel]:
+    def get_output_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         runnable, config = self.prepare(config)
         return runnable.get_output_schema(config)
 
@@ -621,7 +620,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                 {
                     **config,
                     "configurable": {
-                        _strremoveprefix(k, f"{self.which.id}=={which}/"): v
+                        k.removeprefix(f"{self.which.id}=={which}/"): v
                         for k, v in config.get("configurable", {}).items()
                     },
                 },
@@ -636,11 +635,6 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             return (alt(), config)
         msg = f"Unknown alternative: {which}"
         raise ValueError(msg)
-
-
-def _strremoveprefix(s: str, prefix: str) -> str:
-    """`str.removeprefix()` is only available in Python 3.9+."""
-    return s.replace(prefix, "", 1) if s.startswith(prefix) else s
 
 
 def prefix_config_spec(

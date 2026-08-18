@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeAlias
 
 from langchain_core.tools import BaseTool
 from typing_extensions import NotRequired, TypedDict
+
+from langchain.chat_models.base import _attempt_infer_model_provider
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -281,12 +284,13 @@ def _provider_from_model_name(model_name: str) -> str | None:
     provider, _, rest = model_name.partition(":")
     if rest:
         return _normalize_provider(provider)
-    model_lower = model_name.lower()
-    if model_lower.startswith("claude"):
-        return "anthropic"
-    if model_lower.startswith(("gpt-", "o1", "o3", "chatgpt")):
-        return "openai"
-    return None
+    # The inferred provider is only used for a registry lookup here, so suppress the
+    # `model_provider` inference deprecation warning that `_attempt_infer_model_provider`
+    # emits for some names (e.g. `gemini*`); its guidance is irrelevant to routing.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        inferred = _attempt_infer_model_provider(model_name)
+    return _normalize_provider(inferred) if inferred else None
 
 
 def _provider_from_class_name(class_name: str) -> str | None:

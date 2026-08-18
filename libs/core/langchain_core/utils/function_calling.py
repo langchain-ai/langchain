@@ -57,10 +57,8 @@ _ORIGIN_MAP: dict[type, Any] = {
     collections.abc.Mapping: typing.Mapping,
     collections.abc.Sequence: typing.Sequence,
     collections.abc.MutableMapping: typing.MutableMapping,
+    types.UnionType: Union,
 }
-# Add UnionType mapping for Python 3.10+
-if hasattr(types, "UnionType"):
-    _ORIGIN_MAP[types.UnionType] = Union
 
 
 class FunctionDescription(TypedDict):
@@ -349,7 +347,7 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
             return _convert_pydantic_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
-        error_msg = (
+        error_msg = (  # type: ignore[unreachable]
             f"Unsupported tool call schema: {tool.tool_call_schema}. "
             "Tool call schema must be a JSON schema dict or a Pydantic model."
         )
@@ -715,6 +713,13 @@ def tool_example_to_messages(
     messages.append(
         AIMessage(content="", additional_kwargs={"tool_calls": openai_tool_calls})
     )
+    if tool_outputs is not None and len(tool_outputs) != len(openai_tool_calls):
+        msg = (
+            f"The number of tool_outputs ({len(tool_outputs)}) must match the number "
+            f"of tool_calls ({len(openai_tool_calls)}). Got {len(tool_outputs)} "
+            f"output(s) for {len(openai_tool_calls)} tool call(s)."
+        )
+        raise ValueError(msg)
     tool_outputs = tool_outputs or ["You have correctly called this tool."] * len(
         openai_tool_calls
     )
@@ -783,11 +788,27 @@ def _parse_google_docstring(
             raise ValueError(msg)
         description = ""
         args_block = None
-    arg_descriptions = {}
+    arg_descriptions: dict[str, str] = {}
     if args_block:
-        arg = None
+        arg: str | None = None
+        # Base indentation, latched once from the first argument line, lets us
+        # distinguish new argument definitions from continuation lines. This
+        # assumes Google-style uniform indentation of argument names: a line
+        # indented deeper than the first argument is treated as a continuation
+        # (even if it contains a colon), so a more-indented later `name:` line
+        # in a malformed, non-uniformly-indented block folds into the previous
+        # argument rather than starting a new one.
+        arg_indent: int | None = None
         for line in args_block.split("\n")[1:]:
-            if ":" in line:
+            if not line.strip():
+                continue
+            current_indent = len(line) - len(line.lstrip())
+            if arg_indent is None and ":" in line:
+                arg_indent = current_indent
+            is_continuation = arg_indent is not None and current_indent > arg_indent
+            if arg is not None and is_continuation:
+                arg_descriptions[arg] += " " + line.strip()
+            elif ":" in line:
                 arg, desc = line.split(":", maxsplit=1)
                 arg = arg.strip()
                 arg_name, _, annotations_ = arg.partition(" ")

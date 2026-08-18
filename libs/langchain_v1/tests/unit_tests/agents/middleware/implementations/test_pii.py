@@ -1,5 +1,11 @@
 """Tests for PII detection middleware."""
 
+# `run.tool_calls`/`run.subagents` are stream projections registered dynamically by
+# `create_agent` (via langgraph-prebuilt's `ToolCallTransformer` and langchain's
+# `SubagentTransformer`), not declared on langgraph's typed `GraphRunStream`
+# (langgraph#8389). The `# type: ignore[attr-defined]` below self-remove once
+# langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
+
 import re
 from typing import Any
 
@@ -15,10 +21,13 @@ from langchain_core.messages import (
 )
 from langchain_core.tools import tool
 from langgraph.runtime import Runtime
+from langgraph.stream._types import ProtocolEvent
 from langgraph.stream.transformers import MessagesTransformer
 
 from langchain.agents import AgentState
+from langchain.agents import middleware as middleware_package
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware import PIIMatch as PublicPIIMatch
 from langchain.agents.middleware._redaction import RedactionRule
 from langchain.agents.middleware.pii import (
     PIIDetectionError,
@@ -32,6 +41,24 @@ from langchain.agents.middleware.pii import (
     detect_url,
 )
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+# ============================================================================
+# Public Export Tests
+# ============================================================================
+
+
+class TestPIIMatchPublicExport:
+    """Test that `PIIMatch` is importable from the public middleware package.
+
+    Regression test: `PIIMatch` was only exported from the private
+    `_redaction` module, forcing custom-detector authors to import from it
+    directly instead of `langchain.agents.middleware`.
+    """
+
+    def test_pii_match_importable_from_middleware_package(self) -> None:
+        assert PublicPIIMatch is PIIMatch
+        assert "PIIMatch" in middleware_package.__all__
+
 
 # ============================================================================
 # Detection Function Tests
@@ -578,7 +605,7 @@ class TestCustomDetector:
         KeyError: 'value' when used with hash or mask strategies.
         """
 
-        def detect_phone(content: str) -> list[dict]:  # type: ignore[type-arg]
+        def detect_phone(content: str) -> list[dict[str, Any]]:
             return [
                 {"text": m.group(), "start": m.start(), "end": m.end()}
                 for m in re.finditer(r"\+91[\s.-]?\d{10}", content)
@@ -586,7 +613,7 @@ class TestCustomDetector:
 
         middleware = PIIMiddleware(
             "indian_phone",
-            detector=detect_phone,
+            detector=detect_phone,  # type: ignore[arg-type]
             strategy="hash",
             apply_to_input=True,
         )
@@ -601,7 +628,7 @@ class TestCustomDetector:
     def test_custom_callable_detector_with_text_key_mask(self) -> None:
         """Custom detectors returning 'text' instead of 'value' must work with mask strategy."""
 
-        def detect_phone(content: str) -> list[dict]:  # type: ignore[type-arg]
+        def detect_phone(content: str) -> list[dict[str, Any]]:
             return [
                 {"text": m.group(), "start": m.start(), "end": m.end()}
                 for m in re.finditer(r"\+91[\s.-]?\d{10}", content)
@@ -609,7 +636,7 @@ class TestCustomDetector:
 
         middleware = PIIMiddleware(
             "indian_phone",
-            detector=detect_phone,
+            detector=detect_phone,  # type: ignore[arg-type]
             strategy="mask",
             apply_to_input=True,
         )
@@ -715,7 +742,7 @@ class TestMultipleMiddleware:
 # ============================================================================
 
 
-def _make_delta_event(text: str, *, index: int = 0, run_id: str = "r1") -> dict[str, Any]:
+def _make_delta_event(text: str, *, index: int = 0, run_id: str = "r1") -> ProtocolEvent:
     """Build a `messages` protocol event for a text content-block delta."""
     return {
         "type": "event",
@@ -735,7 +762,7 @@ def _make_delta_event(text: str, *, index: int = 0, run_id: str = "r1") -> dict[
     }
 
 
-def _make_finish_event(text: str, *, index: int = 0, run_id: str = "r1") -> dict[str, Any]:
+def _make_finish_event(text: str, *, index: int = 0, run_id: str = "r1") -> ProtocolEvent:
     """Build a `messages` protocol event for content-block-finish on a text block."""
     return {
         "type": "event",
@@ -755,7 +782,7 @@ def _make_finish_event(text: str, *, index: int = 0, run_id: str = "r1") -> dict
     }
 
 
-def _emitted_text(events: list[dict[str, Any]]) -> str:
+def _emitted_text(events: list[ProtocolEvent]) -> tuple[str, dict[int, str]]:
     """Concatenate delta + finalized text the way a streaming consumer would."""
     parts = []
     final_by_index: dict[int, str] = {}
@@ -772,10 +799,10 @@ def _emitted_text(events: list[dict[str, Any]]) -> str:
                 final_by_index[payload["index"]] = content["text"]
     # Concatenated delta stream is what the consumer sees in real time;
     # finalized text is the snapshot. Return both via a tuple-like dict.
-    return "".join(parts), final_by_index  # type: ignore[return-value]
+    return "".join(parts), final_by_index
 
 
-def _run_transformer(transformer: Any, events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _run_transformer(transformer: Any, events: list[ProtocolEvent]) -> list[ProtocolEvent]:
     """Feed events through the transformer (mutates in place) and return them."""
     for event in events:
         transformer.process(event)
@@ -840,6 +867,7 @@ class TestPIIStreamTransformer:
         redacted = transformer._redact_value(msg)
 
         # Original untouched.
+        assert isinstance(msg.content[0], dict)
         assert msg.content[0]["text"] == "Reach me at alice@example.com"
         # Redacted copy walked every block.
         assert "alice@example.com" not in redacted.content[0]["text"]
@@ -898,7 +926,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule, lookback=32)
 
-        events = [
+        events: list[ProtocolEvent] = [
             {
                 "type": "event",
                 "method": "messages",
@@ -953,7 +981,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        event = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "messages",
             "params": {
@@ -986,7 +1014,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)  # default lookback=128
 
-        events = [
+        events: list[ProtocolEvent] = [
             {
                 "type": "event",
                 "method": "messages",
@@ -1031,7 +1059,7 @@ class TestPIIStreamTransformer:
 
         # 50-char args with PII near the start; emit_end = 50 - 8 = 42.
         args = '{"to": "alice@example.com", "subject": "hi"}'
-        events = [
+        events: list[ProtocolEvent] = [
             {
                 "type": "event",
                 "method": "messages",
@@ -1082,7 +1110,7 @@ class TestPIIStreamTransformer:
             '{"to": "alice@example',
             '{"to": "alice@example.com"}',
         ]
-        events = [
+        events: list[ProtocolEvent] = [
             {
                 "type": "event",
                 "method": "messages",
@@ -1124,7 +1152,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        events = [
+        events: list[ProtocolEvent] = [
             {
                 "type": "event",
                 "method": "messages",
@@ -1156,7 +1184,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        event = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "messages",
             "params": {
@@ -1192,7 +1220,7 @@ class TestPIIStreamTransformer:
             ],
             id="m1",
         )
-        event: dict[str, Any] = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "messages",
             "params": {
@@ -1217,7 +1245,7 @@ class TestPIIStreamTransformer:
             ],
             id="m1",
         )
-        event: dict[str, Any] = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "messages",
             "params": {
@@ -1235,7 +1263,7 @@ class TestPIIStreamTransformer:
         transformer = _PIIStreamTransformer(rule=rule)
 
         msg = ToolMessage(content="Result: alice@example.com", tool_call_id="c1", id="m1")
-        event: dict[str, Any] = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "messages",
             "params": {
@@ -1258,7 +1286,7 @@ class TestPIIStreamTransformer:
         """Tools events route to the new handler without error."""
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
-        event = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "tools",
             "params": {
@@ -1279,7 +1307,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        event = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "tools",
             "params": {
@@ -1303,7 +1331,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        event = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "tools",
             "params": {
@@ -1365,7 +1393,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        events = [
+        events: list[ProtocolEvent] = [
             {
                 "type": "event",
                 "method": "messages",
@@ -1403,6 +1431,7 @@ class TestPIIStreamTransformer:
             content="",
             invalid_tool_calls=[
                 InvalidToolCall(
+                    type="invalid_tool_call",
                     name="send_email",
                     args='{"to": "alice@example.com"} BROKEN',
                     id="c1",
@@ -1411,16 +1440,18 @@ class TestPIIStreamTransformer:
             ],
             id="m1",
         )
-        redacted = transformer._redact_value(msg)
+        redacted: AIMessage = transformer._redact_value(msg)
+        assert redacted.invalid_tool_calls[0]["args"] is not None
         assert "alice@example.com" not in redacted.invalid_tool_calls[0]["args"]
         assert "[REDACTED_EMAIL]" in redacted.invalid_tool_calls[0]["args"]
+        assert msg.invalid_tool_calls[0]["args"] is not None
         assert "alice@example.com" in msg.invalid_tool_calls[0]["args"]
 
     def test_tool_started_input_is_redacted(self) -> None:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        event = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "tools",
             "params": {
@@ -1445,7 +1476,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule, lookback=64)
 
-        events = [
+        events: list[ProtocolEvent] = [
             {
                 "type": "event",
                 "method": "tools",
@@ -1483,7 +1514,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        event = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "tools",
             "params": {
@@ -1506,7 +1537,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        event = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "tools",
             "params": {
@@ -1529,7 +1560,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        event = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "tools",
             "params": {
@@ -1551,7 +1582,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule, lookback=64)
 
-        delta_event = {
+        delta_event: ProtocolEvent = {
             "type": "event",
             "method": "tools",
             "params": {
@@ -1567,7 +1598,7 @@ class TestPIIStreamTransformer:
         transformer.process(delta_event)
         assert "c1" in transformer._tool_buffers
 
-        finish_event = {
+        finish_event: ProtocolEvent = {
             "type": "event",
             "method": "tools",
             "params": {
@@ -1588,7 +1619,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        event = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "tools",
             "params": {
@@ -1609,7 +1640,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email", strategy="block").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        event = {
+        event: ProtocolEvent = {
             "type": "event",
             "method": "messages",
             "params": {
@@ -1646,7 +1677,7 @@ class TestPIIStreamTransformer:
             _make_finish_event("Reach me at alice@example.com tomorrow."),
         ]
         _run_transformer(transformer, events)
-        streamed, finals = _emitted_text(events)  # type: ignore[misc]
+        streamed, finals = _emitted_text(events)
 
         # The raw email never reaches the wire — the delta is held in the
         # lookback buffer and the finalize snapshot is the redacted text.
@@ -1665,7 +1696,7 @@ class TestPIIStreamTransformer:
             _make_finish_event("Hi, contact alice@example.com when ready"),
         ]
         _run_transformer(transformer, events)
-        streamed, finals = _emitted_text(events)  # type: ignore[misc]
+        streamed, finals = _emitted_text(events)
 
         # The held-buffer should have prevented the raw email from being
         # released until detection ran over the concatenation.
@@ -1695,7 +1726,7 @@ class TestPIIStreamTransformer:
             _make_finish_event(text),
         ]
         _run_transformer(transformer, events)
-        streamed, finals = _emitted_text(events)  # type: ignore[misc]
+        streamed, finals = _emitted_text(events)
 
         # No prefix of the email reaches the wire.
         assert email not in streamed
@@ -1716,7 +1747,7 @@ class TestPIIStreamTransformer:
             _make_finish_event("Card: 5425 2334 3010 9903 next"),
         ]
         _run_transformer(transformer, events)
-        streamed, finals = _emitted_text(events)  # type: ignore[misc]
+        streamed, finals = _emitted_text(events)
 
         # No prefix of the card may reach the wire — the lookback buffer
         # holds whitespace-separated groups until detection runs over the
@@ -1762,7 +1793,7 @@ class TestPIIStreamTransformer:
         transformer.process(clean_event)  # no raise yet
 
         # Second delta completes the email — detection fires, raises.
-        completing_event = _make_delta_event("@example.com soon")
+        completing_event: ProtocolEvent = _make_delta_event("@example.com soon")
         with pytest.raises(PIIDetectionError):
             transformer.process(completing_event)
 
@@ -1777,7 +1808,7 @@ class TestPIIStreamTransformer:
             _make_finish_event("Hello there, how are you?"),
         ]
         _run_transformer(transformer, events)
-        streamed, finals = _emitted_text(events)  # type: ignore[misc]
+        streamed, finals = _emitted_text(events)
 
         # Deltas hold everything back; the finalize event carries the
         # whole block at once. `ChatModelStream._resolve_block_text`
@@ -1801,7 +1832,7 @@ class TestPIIStreamTransformer:
             _make_finish_event("alice@example.com"),
         ]
         _run_transformer(transformer, events)
-        _, finals = _emitted_text(events)  # type: ignore[misc]
+        _, finals = _emitted_text(events)
 
         assert "alice@example.com" not in finals[0]
         assert "[REDACTED_EMAIL]" in finals[0]
@@ -1851,7 +1882,7 @@ class TestPIIStreamTransformer:
         assert ("r1", 0) in transformer._buffers
 
         # message-finish for the run wipes any (run-id, *) entries.
-        message_finish_event = {
+        message_finish_event: ProtocolEvent = {
             "type": "event",
             "method": "messages",
             "params": {
@@ -1886,7 +1917,7 @@ class TestPIIStreamTransformer:
             _make_finish_event("hello alice@example.com goodbye"),
         ]
         _run_transformer(transformer, events)
-        _, finals = _emitted_text(events)  # type: ignore[misc]
+        _, finals = _emitted_text(events)
         # The finalized snapshot always re-runs detection over the full text.
         assert "alice@example.com" not in finals[0]
 
@@ -1901,7 +1932,7 @@ class TestPIIStreamTransformer:
         rule = RedactionRule(pii_type="email").resolve()
         transformer = _PIIStreamTransformer(rule=rule)
 
-        data_event = {
+        data_event: ProtocolEvent = {
             "type": "event",
             "method": "messages",
             "params": {
@@ -1934,7 +1965,7 @@ class TestPIIStreamTransformer:
         agent = create_agent(model, [], middleware=[PIIMiddleware("email", apply_to_output=True)])
 
         run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
-        transformers = run._mux._transformers  # type: ignore[attr-defined]
+        transformers = run._mux._transformers
 
         pii_idx = next(
             i for i, t in enumerate(transformers) if isinstance(t, _PIIStreamTransformer)
@@ -1948,7 +1979,7 @@ class TestPIIStreamTransformer:
         )
 
         # Drain to close cleanly.
-        list(run.tool_calls)
+        list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 class TestPIIStreamingEndToEnd:
@@ -2088,8 +2119,6 @@ class TestPIIStreamingEndToEnd:
         surfaces: list[str] = []
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         async for event in run:
-            if not isinstance(event, dict):
-                continue
             data = event.get("params", {}).get("data")
             if isinstance(data, tuple) and len(data) == 2:
                 p = data[0]
@@ -2162,8 +2191,6 @@ class TestPIIStreamingEndToEnd:
         surfaces: list[str] = []
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         async for event in run:
-            if not isinstance(event, dict):
-                continue
             data = event.get("params", {}).get("data")
             if isinstance(data, tuple) and len(data) == 2:
                 p = data[0]

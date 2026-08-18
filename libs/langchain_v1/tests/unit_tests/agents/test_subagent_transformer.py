@@ -6,9 +6,16 @@ The transformer surfaces, on `run.subagents`, any nested run that carries an
 dispatches a nested `create_agent` from a tool, giving true end-to-end coverage.
 """
 
+# `run.tool_calls`/`run.subagents` are stream projections registered dynamically by
+# `create_agent` (via langgraph-prebuilt's `ToolCallTransformer` and langchain's
+# `SubagentTransformer`), not declared on langgraph's typed `GraphRunStream`
+# (langgraph#8389). The `# type: ignore[attr-defined]` below self-remove once
+# langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
+
 from __future__ import annotations
 
 import sys
+from typing import cast
 
 import pytest
 from langchain_core.messages import HumanMessage
@@ -38,7 +45,9 @@ def test_subagents_surfaces_named_subagent() -> None:
     def call_weather(city: str) -> str:
         """Call the weather agent."""
         result = weather_agent.invoke({"messages": [HumanMessage(f"weather in {city}")]})
-        return result["messages"][-1].text
+        # `invoke()` returns an untyped state, so `.text` is `Any`; it is really a
+        # `str` (`TextAccessor`), so narrow it to satisfy the `-> str` return type.
+        return cast("str", result["messages"][-1].text)
 
     supervisor = create_agent(
         model=_supervisor_model(),
@@ -49,7 +58,7 @@ def test_subagents_surfaces_named_subagent() -> None:
     run = supervisor.stream_events({"messages": [HumanMessage("weather?")]}, version="v3")
 
     handles = []
-    for handle in run.subagents:
+    for handle in run.subagents:  # type: ignore[attr-defined]
         handles.append(handle)
         # Drain the nested run so it completes.
         for _ in handle:
@@ -85,7 +94,9 @@ async def test_subagents_surfaces_named_subagent_async() -> None:
     async def call_weather(city: str) -> str:
         """Call the weather agent."""
         result = await weather_agent.ainvoke({"messages": [HumanMessage(f"weather in {city}")]})
-        return result["messages"][-1].text
+        # `invoke()` returns an untyped state, so `.text` is `Any`; it is really a
+        # `str` (`TextAccessor`), so narrow it to satisfy the `-> str` return type.
+        return cast("str", result["messages"][-1].text)
 
     supervisor = create_agent(
         model=_supervisor_model(),
@@ -96,7 +107,7 @@ async def test_subagents_surfaces_named_subagent_async() -> None:
     run = await supervisor.astream_events({"messages": [HumanMessage("weather?")]}, version="v3")
 
     handles = []
-    async for handle in run.subagents:
+    async for handle in run.subagents:  # type: ignore[attr-defined]
         handles.append(handle)
         # Drain the nested run so it completes.
         async for _ in handle:
@@ -125,7 +136,7 @@ def test_plain_tool_not_surfaced() -> None:
 
     run = supervisor.stream_events({"messages": [HumanMessage("weather?")]}, version="v3")
 
-    handles = list(run.subagents)
+    handles = list(run.subagents)  # type: ignore[attr-defined]
     # Drain the main run to completion.
     for _ in run:
         pass
@@ -148,7 +159,9 @@ def test_unnamed_inner_agent_surfaces_with_inherited_name() -> None:
     def call_weather(city: str) -> str:
         """Call an unnamed inner agent."""
         result = inner_agent.invoke({"messages": [HumanMessage(f"weather in {city}")]})
-        return result["messages"][-1].text
+        # `invoke()` returns an untyped state, so `.text` is `Any`; it is really a
+        # `str` (`TextAccessor`), so narrow it to satisfy the `-> str` return type.
+        return cast("str", result["messages"][-1].text)
 
     supervisor = create_agent(
         model=_supervisor_model(),
@@ -159,7 +172,7 @@ def test_unnamed_inner_agent_surfaces_with_inherited_name() -> None:
     run = supervisor.stream_events({"messages": [HumanMessage("weather?")]}, version="v3")
 
     handles = []
-    for handle in run.subagents:
+    for handle in run.subagents:  # type: ignore[attr-defined]
         handles.append(handle)
         for _ in handle:
             pass
@@ -183,7 +196,9 @@ def test_same_name_nested_agent_surfaced() -> None:
     def call_weather(city: str) -> str:
         """Call a same-named inner agent."""
         result = inner_agent.invoke({"messages": [HumanMessage(f"weather in {city}")]})
-        return result["messages"][-1].text
+        # `invoke()` returns an untyped state, so `.text` is `Any`; it is really a
+        # `str` (`TextAccessor`), so narrow it to satisfy the `-> str` return type.
+        return cast("str", result["messages"][-1].text)
 
     # The parent agent shares the inner agent's name.
     supervisor = create_agent(
@@ -195,7 +210,7 @@ def test_same_name_nested_agent_surfaced() -> None:
     run = supervisor.stream_events({"messages": [HumanMessage("weather?")]}, version="v3")
 
     handles = []
-    for handle in run.subagents:
+    for handle in run.subagents:  # type: ignore[attr-defined]
         handles.append(handle)
         for _ in handle:
             pass

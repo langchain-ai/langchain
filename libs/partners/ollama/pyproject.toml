@@ -24,7 +24,7 @@ version = "1.1.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "ollama>=0.6.1,<1.0.0",
-    "langchain-core>=1.4.0,<2.0.0",
+    "langchain-core>=1.4.7,<2.0.0",
 ]
 
 [project.urls]
@@ -45,15 +45,13 @@ test = [
     "pytest-watcher>=0.4.3,<1.0.0",
     "pytest-xdist>=3.6.1,<4.0.0",
     "syrupy>=5.0.0,<6.0.0",
-    "langchain-core>=1.4.0,<2.0.0",
     "langchain-tests>=1.1.9,<2.0.0",
 ]
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
-dev = ["langchain-core>=1.4.0,<2.0.0"]
+dev = []
 typing = [
     "ty>=0.0.1,<1.0.0",
-    "langchain-core>=1.4.0,<2.0.0"
 ]
 
 [tool.uv]

@@ -25,6 +25,8 @@ from langgraph.runtime import Runtime
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 
+OPENAI_TEST_MODEL = "gpt-5.5"
+
 
 def _make_request(
     system_message: SystemMessage | None = None,
@@ -319,7 +321,7 @@ class TestCreateAgentSystemMessage:
             SystemMessage(
                 content="You are a helpful assistant",
                 additional_kwargs={"role": "system_admin", "priority": "high"},
-                response_metadata={"model": "gpt-4", "temperature": 0.7},
+                response_metadata={"model": OPENAI_TEST_MODEL, "temperature": 0.7},
             ),
             SystemMessage(
                 content=[
@@ -695,9 +697,9 @@ class TestMetadataMerging:
             # response_metadata merging
             (
                 "response_metadata",
-                {"model": "gpt-4", "region": "us-east"},
+                {"model": OPENAI_TEST_MODEL, "region": "us-east"},
                 {"tokens": 100, "region": "eu-west"},
-                {"model": "gpt-4", "tokens": 100, "region": "eu-west"},
+                {"model": OPENAI_TEST_MODEL, "tokens": 100, "region": "eu-west"},
             ),
         ],
         ids=["additional_kwargs", "response_metadata"],
@@ -763,7 +765,7 @@ class TestDynamicSystemPromptMiddleware:
     def test_middleware_can_return_system_message(self) -> None:
         """Test that middleware can return a SystemMessage with dynamic content."""
 
-        def dynamic_system_prompt_middleware(request: ModelRequest) -> SystemMessage:
+        def dynamic_system_prompt_middleware(request: ModelRequest[Any]) -> SystemMessage:
             """Return a SystemMessage with dynamic content."""
             region = getattr(request.runtime.context, "region", "n/a")
             return SystemMessage(content=f"You are a helpful assistant. Region: {region}")
@@ -784,7 +786,6 @@ class TestDynamicSystemPromptMiddleware:
             runtime=runtime,
             model_settings={},
         )
-
         new_system_message = dynamic_system_prompt_middleware(request)
 
         assert isinstance(new_system_message, SystemMessage)
@@ -798,7 +799,7 @@ class TestDynamicSystemPromptMiddleware:
         """Test creating a `SystemMessage` with additional metadata."""
         system_message = SystemMessage(
             content="You are a helpful assistant",
-            additional_kwargs={"temperature": 0.7, "model": "gpt-4"},
+            additional_kwargs={"temperature": 0.7, "model": OPENAI_TEST_MODEL},
             response_metadata={"region": "us-east"},
         )
 
@@ -806,7 +807,7 @@ class TestDynamicSystemPromptMiddleware:
         assert system_message.content_blocks[0].get("text") == "You are a helpful assistant"
         assert system_message.additional_kwargs == {
             "temperature": 0.7,
-            "model": "gpt-4",
+            "model": OPENAI_TEST_MODEL,
         }
         assert system_message.response_metadata == {"region": "us-east"}
 
@@ -900,7 +901,7 @@ class TestSystemMessageMiddlewareIntegration:
         base_message = SystemMessage(
             content="Base prompt",
             additional_kwargs={"key1": "value1", "key2": "value2"},
-            response_metadata={"model": "gpt-4"},
+            response_metadata={"model": OPENAI_TEST_MODEL},
         )
 
         def preserving_middleware(request: ModelRequest) -> ModelRequest:
@@ -923,7 +924,7 @@ class TestSystemMessageMiddlewareIntegration:
             "key1": "value1",
             "key2": "value2",
         }
-        assert new_request.system_message.response_metadata == {"model": "gpt-4"}
+        assert new_request.system_message.response_metadata == {"model": OPENAI_TEST_MODEL}
 
     def test_backward_compatibility_with_string_system_prompt(self) -> None:
         """Test that middleware still works with string system prompts."""

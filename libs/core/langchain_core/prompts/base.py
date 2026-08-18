@@ -58,7 +58,10 @@ class BasePromptTemplate(
     If not provided, all variables are assumed to be strings.
     """
 
-    output_parser: BaseOutputParser | None = None
+    # Ideally we would type output_parser as BaseOutputParser[Any]
+    # but that makes Pydantic fail (Pydantic tries to instantiate BaseOutputParser
+    # instead of using the provided output_parser...)
+    output_parser: BaseOutputParser | None = None  # type: ignore[type-arg]
     """How to parse the output of calling an LLM on this formatted prompt."""
 
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)

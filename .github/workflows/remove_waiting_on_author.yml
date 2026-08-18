@@ -20,6 +20,7 @@ permissions:
 jobs:
   remove-label:
     if: >-
+      github.repository_owner == 'langchain-ai' &&
       github.event.issue.state == 'open' &&
       contains(github.event.issue.labels.*.name, 'waiting-on-author') &&
       github.event.comment.user.type != 'Bot' &&

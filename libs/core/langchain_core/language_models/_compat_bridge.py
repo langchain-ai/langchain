@@ -71,6 +71,7 @@ if TYPE_CHECKING:
         TextDelta,
     )
 
+    from langchain_core.messages.ai import UsageMetadata
     from langchain_core.outputs import ChatGenerationChunk
 
 
@@ -189,7 +190,7 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     result: list[tuple[Any, CompatBlock]] = []
     for i, block in enumerate(raw):
         if not isinstance(block, dict):
-            continue
+            continue  # type: ignore[unreachable]
         explicit_idx = block.get("index")
         if explicit_idx is None:
             # No source-side identity. Bucket by (sentinel, block type,
@@ -269,7 +270,7 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     stripped: CompatBlock = {k: v for k, v in block.items() if k not in _HEAVY_FIELDS}
     # Restore required-but-heavy fields with minimal placeholders so the
     # start event still validates against the CDDL shape of the block type.
-    if btype in ("tool_call", "server_tool_call"):
+    if btype in {"tool_call", "server_tool_call"}:
         stripped["args"] = {}
     elif btype == "non_standard":
         stripped["value"] = {}
@@ -288,7 +289,7 @@ def _should_emit_delta(block: CompatBlock) -> bool:
         return bool(block.get("text"))
     if btype == "reasoning":
         return bool(block.get("reasoning"))
-    if btype in ("tool_call_chunk", "server_tool_call_chunk"):
+    if btype in {"tool_call_chunk", "server_tool_call_chunk"}:
         return bool(
             block.get("args") or block.get("id") or block.get("name"),
         )
@@ -314,7 +315,7 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
         # on later deltas. Merging (not replacing) keeps earlier keys
         # intact while picking up these late-arriving fields.
         for key, value in delta.items():
-            if key in ("type", "text") or value is None:
+            if key in {"type", "text"} or value is None:
                 continue
             if key == "extras" and isinstance(value, dict):
                 state["extras"] = {**(state.get("extras") or {}), **value}
@@ -327,13 +328,13 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
         # as `extras.signature`; merging (not replacing) keeps earlier
         # keys intact.
         for key, value in delta.items():
-            if key in ("type", "reasoning") or value is None:
+            if key in {"type", "reasoning"} or value is None:
                 continue
             if key == "extras" and isinstance(value, dict):
                 state["extras"] = {**(state.get("extras") or {}), **value}
             else:
                 state[key] = value
-    elif btype in ("tool_call_chunk", "server_tool_call_chunk") and dtype == btype:
+    elif btype in {"tool_call_chunk", "server_tool_call_chunk"} and dtype == btype:
         state["args"] = (state.get("args", "") or "") + (delta.get("args") or "")
         if delta.get("id") is not None:
             state["id"] = delta["id"]
@@ -342,7 +343,7 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
     elif btype == dtype and "data" in delta:
         state["data"] = (state.get("data", "") or "") + (delta.get("data") or "")
         for key, value in delta.items():
-            if key in ("type", "data") or value is None:
+            if key in {"type", "data"} or value is None:
                 continue
             if key == "extras" and isinstance(value, dict):
                 state["extras"] = {**(state.get("extras") or {}), **value}
@@ -431,7 +432,7 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
     their terminal shape.
     """
     btype = block.get("type")
-    if btype in ("tool_call_chunk", "server_tool_call_chunk"):
+    if btype in {"tool_call_chunk", "server_tool_call_chunk"}:
         # Carry provider-specific fields from the accumulated chunk onto
         # the finalized block. Drop the chunk-only keys we rewrite
         # explicitly. `index` is stripped on client-side
@@ -444,7 +445,7 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
         client_tool_call = btype == "tool_call_chunk"
         extras_drop = {"type", "id", "name", "args"}
         if client_tool_call:
-            extras_drop = extras_drop | {"index"}
+            extras_drop |= {"index"}
         extras = {
             k: v for k, v in block.items() if k not in extras_drop and v is not None
         }
@@ -473,34 +474,52 @@ def _extract_start_metadata(response_metadata: dict[str, Any]) -> MessageMetadat
     return metadata
 
 
-def _accumulate_usage(
-    current: dict[str, Any] | None, delta: Any
-) -> dict[str, Any] | None:
-    """Sum usage counts and merge detail dicts across chunks."""
-    if not isinstance(delta, dict):
-        return current
-    if current is None:
-        return dict(delta)
-    for key in ("input_tokens", "output_tokens", "total_tokens", "cached_tokens"):
-        if key in delta:
-            current[key] = current.get(key, 0) + delta[key]
-    for detail_key in ("input_token_details", "output_token_details"):
-        if detail_key in delta and isinstance(delta[detail_key], dict):
-            if detail_key not in current:
-                current[detail_key] = {}
-            current[detail_key].update(delta[detail_key])
-    return current
+def _accumulate_usage(current: UsageInfo | None, delta: UsageMetadata) -> UsageInfo:
+    """Sum usage counts and merge detail dicts across chunks.
+
+    `delta` is a chunk's `usage_metadata`; `current` is the running total.
+    Both sides are read and written by literal key so the typed shape is
+    preserved end to end — no `dict[str, Any]` detour.
+    """
+    new: UsageInfo = current if current is not None else {}
+    if "input_tokens" in delta:
+        new["input_tokens"] = new.get("input_tokens", 0) + delta["input_tokens"]
+    if "output_tokens" in delta:
+        new["output_tokens"] = new.get("output_tokens", 0) + delta["output_tokens"]
+    if "total_tokens" in delta:
+        new["total_tokens"] = new.get("total_tokens", 0) + delta["total_tokens"]
+    input_details = delta.get("input_token_details")
+    if input_details:
+        merged_input = new.get("input_token_details", {})
+        merged_input.update(input_details)
+        new["input_token_details"] = merged_input
+    output_details = delta.get("output_token_details")
+    if output_details:
+        merged_output = new.get("output_token_details", {})
+        merged_output.update(output_details)
+        new["output_token_details"] = merged_output
+    return new
 
 
-def _to_protocol_usage(usage: dict[str, Any] | None) -> UsageInfo | None:
-    """Convert accumulated usage to the protocol's `UsageInfo` shape."""
-    if usage is None:
+def _isolate_usage(usage: UsageInfo | None) -> UsageInfo | None:
+    """Copy usage for the event so consumers can't mutate the source message.
+
+    The replay path (`message_to_events`) feeds the live `msg.usage_metadata`,
+    so the emitted event must not share its dicts: copy the top level plus the
+    nested `input_token_details` / `output_token_details` to de-alias it. The
+    streaming accumulator already owns the dicts it builds, so the copy is a
+    harmless no-op on that path.
+    """
+    if not usage:
         return None
-    result: dict[str, Any] = {}
-    for key in ("input_tokens", "output_tokens", "total_tokens", "cached_tokens"):
-        if key in usage:
-            result[key] = usage[key]
-    return cast("UsageInfo", result) if result else None
+    result: UsageInfo = usage.copy()
+    input_details = result.get("input_token_details")
+    if input_details is not None:
+        result["input_token_details"] = input_details.copy()
+    output_details = result.get("output_token_details")
+    if output_details is not None:
+        result["output_token_details"] = output_details.copy()
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -524,7 +543,7 @@ def _build_message_start(
 
 def _build_message_finish(
     *,
-    usage: dict[str, Any] | None,
+    usage: UsageInfo | None,
     response_metadata: dict[str, Any] | None,
     additional_kwargs: dict[str, Any] | None = None,
 ) -> MessageFinishData:
@@ -533,7 +552,7 @@ def _build_message_finish(
     # `stop_reason` now rides inside `metadata` alongside other
     # response metadata. Pass it through unchanged.
     finish_data: dict[str, Any] = {"event": "message-finish"}
-    usage_info = _to_protocol_usage(usage)
+    usage_info = _isolate_usage(usage)
     if usage_info is not None:
         finish_data["usage"] = usage_info
     if response_metadata:
@@ -592,7 +611,7 @@ def chunks_to_events(
     started = False
     blocks: dict[Any, tuple[int, CompatBlock]] = {}
     next_wire_idx = 0
-    usage: dict[str, Any] | None = None
+    usage: UsageInfo | None = None
     response_metadata: dict[str, Any] = {}
     additional_kwargs: dict[str, Any] = {}
 
@@ -647,10 +666,10 @@ def chunks_to_events(
                 blocks[key] = (wire_idx, _accumulate(existing, block))
             if _should_emit_delta(block):
                 wire_idx, current = blocks[key]
-                is_block_delta = block.get("type") in (
+                is_block_delta = block.get("type") in {
                     "tool_call_chunk",
                     "server_tool_call_chunk",
-                )
+                }
                 delta_source = current if is_block_delta else block
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
@@ -683,7 +702,7 @@ async def achunks_to_events(
     started = False
     blocks: dict[Any, tuple[int, CompatBlock]] = {}
     next_wire_idx = 0
-    usage: dict[str, Any] | None = None
+    usage: UsageInfo | None = None
     response_metadata: dict[str, Any] = {}
     additional_kwargs: dict[str, Any] = {}
 
@@ -727,10 +746,10 @@ async def achunks_to_events(
                 blocks[key] = (wire_idx, _accumulate(existing, block))
             if _should_emit_delta(block):
                 wire_idx, current = blocks[key]
-                is_block_delta = block.get("type") in (
+                is_block_delta = block.get("type") in {
                     "tool_call_chunk",
                     "server_tool_call_chunk",
-                )
+                }
                 delta_source = current if is_block_delta else block
                 yield ContentBlockDeltaData(
                     event="content-block-delta",

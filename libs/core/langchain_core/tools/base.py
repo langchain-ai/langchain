@@ -9,7 +9,7 @@ import logging
 import typing
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
@@ -28,6 +28,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     PydanticDeprecationWarning,
     SkipValidation,
     ValidationError,
@@ -37,7 +38,7 @@ from pydantic.fields import FieldInfo
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -65,6 +66,7 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
     is_pydantic_v1_subclass,
     is_pydantic_v2_subclass,
+    model_json_schema,
 )
 
 if TYPE_CHECKING:
@@ -267,7 +269,7 @@ def create_schema_from_function(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
     include_injected: bool = True,
-) -> type[BaseModel]:
+) -> TypeBaseModel:
     """Create a Pydantic schema from a function's signature.
 
     Args:
@@ -317,7 +319,8 @@ def create_schema_from_function(
     inferred_model = validated.model
 
     if filter_args:
-        filter_args_ = filter_args
+        # Copy to avoid mutating the caller's sequence below.
+        filter_args_ = list(filter_args)
     else:
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
@@ -326,9 +329,15 @@ def create_schema_from_function(
         else:
             filter_args_ = list(FILTERED_ARGS)
 
-        for existing_param in existing_params:
-            if not include_injected and _is_injected_arg_type(
-                sig.parameters[existing_param].annotation
+    # Exclude injected args from the schema regardless of whether `filter_args`
+    # was provided. Injected args (e.g. `InjectedToolArg`, `ToolRuntime`) are
+    # supplied at runtime rather than by the model, so they should not appear in
+    # the generated schema.
+    if not include_injected:
+        for existing_param in sig.parameters:
+            if (
+                _is_injected_arg_type(sig.parameters[existing_param].annotation)
+                and existing_param not in filter_args_
             ):
                 filter_args_.append(existing_param)
 
@@ -387,6 +396,39 @@ content is normalized to the content of a `ToolMessage` with `status="error"`.
 """
 
 _EMPTY_SET: frozenset[str] = frozenset()
+
+
+_TOOL_CALL_SCHEMA_FIELDS = frozenset({"name", "description", "args_schema"})
+"""Fields the memoized `tool_call_schema` is built from; reassignment clears it."""
+
+
+def _patch_json_schema_cache(model_cls: type) -> None:
+    """Patch `model_json_schema` (or `schema` for pydantic v1) to cache.
+
+    Pydantic regenerates the full JSON-schema dict on every
+    `model_json_schema()` call — there is no per-class cache.  When the
+    model class is stable (memoized on a `BaseTool` instance), this patch
+    caches the dict on the class so repeated calls return instantly.
+
+    Only calls with all-default arguments are cached; any explicit arguments
+    bypass the cache and delegate to the original method.
+    """
+    method_name = (
+        "model_json_schema" if hasattr(model_cls, "model_json_schema") else "schema"
+    )
+    orig = getattr(model_cls, method_name)
+
+    def _cached_json_schema(cls: type, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        if not args and not kwargs:
+            cached = cls.__dict__.get("_json_schema_cache")
+            if cached is not None:
+                return cast("dict[str, Any]", cached)
+        result = orig(*args, **kwargs)
+        if not args and not kwargs:
+            cls._json_schema_cache = result  # type: ignore[attr-defined]
+        return cast("dict[str, Any]", result)
+
+    setattr(model_cls, method_name, classmethod(_cached_json_schema))
 
 
 class BaseTool(RunnableSerializable[str | dict[str, Any] | ToolCall, Any]):
@@ -572,15 +614,65 @@ class ChildTool(BaseTool):
         """
         if isinstance(self.args_schema, dict):
             json_schema = self.args_schema
-        elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
-            json_schema = self.args_schema.schema()
         else:
             input_schema = self.tool_call_schema
             if isinstance(input_schema, dict):
                 json_schema = input_schema
             else:
-                json_schema = input_schema.model_json_schema()
+                json_schema = model_json_schema(input_schema)
         return cast("dict[str, Any]", json_schema["properties"])
+
+    _tool_call_schema_memo: ArgsSchema | None = PrivateAttr(default=None)
+    """Memoized `tool_call_schema` result.
+
+    Building the subset model is expensive, and pydantic does not cache
+    `model_json_schema()` per class, so agent loops would otherwise pay full
+    schema generation for every tool on every model call. The subset model
+    class is memoized here and its `model_json_schema`/`schema` method is
+    patched to cache the generated dict, so both costs are paid only once per
+    tool instance.
+    Cleared whenever `name`, `description`, or `args_schema` is reassigned (see
+    `__setattr__` and `model_copy`).
+    """
+
+    @override
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Clear the tool-call schema memo when an input to it is reassigned."""
+        super().__setattr__(name, value)
+        if name in _TOOL_CALL_SCHEMA_FIELDS and self.__pydantic_private__ is not None:
+            self._tool_call_schema_memo = None
+
+    @override
+    def model_copy(
+        self, *, update: Mapping[str, Any] | None = None, deep: bool = False
+    ) -> Self:
+        """Copy the tool, clearing the schema memo if `update` affects it.
+
+        `model_copy` writes `update` directly to the copy's `__dict__` without
+        going through `__setattr__`, and private attributes (including the
+        memo) carry over to the copy, so the memo is cleared here when the
+        update touches one of the fields the schema is built from.
+        """
+        copied = super().model_copy(update=update, deep=deep)
+        if update and not _TOOL_CALL_SCHEMA_FIELDS.isdisjoint(update):
+            copied._tool_call_schema_memo = None  # noqa: SLF001
+        return copied
+
+    def __getstate__(self) -> dict[Any, Any]:
+        """Drop the tool-call schema memo when pickling.
+
+        The memoized subset model is a dynamically created class that cannot be
+        pickled by reference; it is rebuilt lazily on next access.
+        """
+        state = super().__getstate__()
+        private = state.get("__pydantic_private__")
+        if private and private.get("_tool_call_schema_memo") is not None:
+            state = dict(state)
+            state["__pydantic_private__"] = {
+                **private,
+                "_tool_call_schema_memo": None,
+            }
+        return state
 
     @property
     def tool_call_schema(self) -> ArgsSchema:
@@ -588,6 +680,12 @@ class ChildTool(BaseTool):
 
         Returns:
             The schema that should be used for tool calls from language models.
+
+            The returned model class is memoized per tool instance (invalidated
+            when `name`, `description`, or `args_schema` is reassigned) so
+            repeated access does not regenerate the class. The class's
+            `model_json_schema` method is also patched to cache the generated
+            schema dict, since pydantic does not cache it per class.
         """
         if isinstance(self.args_schema, dict):
             if self.description:
@@ -598,24 +696,51 @@ class ChildTool(BaseTool):
 
             return self.args_schema
 
+        if (memo := self._tool_call_schema_memo) is not None:
+            return memo
+
         full_schema = self.get_input_schema()
         fields = []
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
                 fields.append(name)
-        return _create_subset_model(
+        subset_model = _create_subset_model(
             self.name, full_schema, fields, fn_description=self.description
         )
+        _patch_json_schema_cache(subset_model)
+        self._tool_call_schema_memo = subset_model
+        return subset_model
 
     @functools.cached_property
     def _injected_args_keys(self) -> frozenset[str]:
-        # Base implementation doesn't manage injected args
+        # Inspect the tool's `_run` (falling back to `_arun` for async-only
+        # subclasses) for directly injected args like `ToolRuntime` or args
+        # annotated with `InjectedToolArg`. These are supplied at call time
+        # rather than by the model, so they must be excluded from the schema and
+        # re-injected during execution. `StructuredTool` overrides this to
+        # inspect its wrapped `func`/`coroutine` instead.
+        #
+        # Resolve annotations via `get_type_hints` (rather than reading raw
+        # `signature` annotations) so postponed annotations -- e.g. from
+        # `from __future__ import annotations` or quoted forward references --
+        # are recognized. Fall back to the raw annotation per-parameter when a
+        # hint can't be resolved.
+        for method in (self._run, self._arun):
+            params = signature(method).parameters
+            hints = _get_type_hints(method, include_extras=True) or {}
+            keys = frozenset(
+                name
+                for name, param in params.items()
+                if _is_injected_arg_type(hints.get(name, param.annotation))
+            )
+            if keys:
+                return keys
         return _EMPTY_SET
 
     # --- Runnable ---
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         """The tool's input schema.
 
         Args:
@@ -686,13 +811,14 @@ class ChildTool(BaseTool):
                 elif issubclass(input_args, BaseModelV1):
                     input_args.parse_obj({key_: tool_input})
                 else:
-                    msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"
+                    msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"  # type: ignore[unreachable]
                     raise TypeError(msg)
             return tool_input
 
         if input_args is not None:
             if isinstance(input_args, dict):
                 return tool_input
+            result: BaseModel | BaseModelV1
             if issubclass(input_args, BaseModel):
                 # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
@@ -707,8 +833,10 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.model_validate(tool_input)
-                result_dict = result.model_dump()
+                result_v2 = input_args.model_validate(tool_input)
+                result_dict = result_v2.model_dump()
+                provided_fields = result_v2.model_fields_set
+                result = result_v2
             elif issubclass(input_args, BaseModelV1):
                 # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
@@ -723,22 +851,28 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.parse_obj(tool_input)
-                result_dict = result.dict()
+                result_v1 = input_args.parse_obj(tool_input)
+                result_dict = result_v1.dict()
+                provided_fields = result_v1.__fields_set__
+                result = result_v1
             else:
-                msg = (
+                msg = (  # type: ignore[unreachable]
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
                 )
                 raise NotImplementedError(msg)
 
-            # Include fields from tool_input, plus fields with explicit defaults.
-            # This applies Pydantic defaults (like Field(default=1)) while excluding
-            # synthetic "args"/"kwargs" fields that Pydantic creates for *args/**kwargs.
+            # Include fields from tool_input, fields provided through Pydantic aliases,
+            # plus fields with explicit defaults. This applies Pydantic defaults (like
+            # Field(default=1)) while excluding synthetic "args"/"kwargs" fields that
+            # Pydantic creates for *args/**kwargs.
             field_info = get_fields(input_args)
             validated_input = {}
             for k in result_dict:
                 if k in tool_input:
                     # Field was provided in input - include it (validated)
+                    validated_input[k] = getattr(result, k)
+                elif k in provided_fields:
+                    # Field was provided through a Pydantic alias - include it.
                     validated_input[k] = getattr(result, k)
                 elif k in field_info and k not in {"args", "kwargs"}:
                     # Check if field has an explicit default defined in the schema.
@@ -871,7 +1005,7 @@ class ChildTool(BaseTool):
             # the callback manager.
             return (), tool_input.copy()
         # This code path is not expected to be reachable.
-        msg = f"Invalid tool input type: {type(tool_input)}"
+        msg = f"Invalid tool input type: {type(tool_input)}"  # type: ignore[unreachable]
         raise TypeError(msg)
 
     def run(
@@ -1110,7 +1244,7 @@ class ChildTool(BaseTool):
                         error_to_raise = ValueError(msg)
             else:
                 content = response
-        except ValidationError as e:
+        except (ValidationError, ValidationErrorV1) as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
@@ -1170,7 +1304,7 @@ def _handle_validation_error(
     elif callable(flag):
         content = flag(e)
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Got unexpected type of `handle_validation_error`. Expected bool, "
             f"str or callable. Received: {flag}"
         )
@@ -1351,11 +1485,15 @@ def _stringify(content: Any) -> str:
         return str(content)
 
 
-def _get_type_hints(func: Callable[..., Any]) -> dict[str, type] | None:
+def _get_type_hints(
+    func: Callable[..., Any], *, include_extras: bool = False
+) -> dict[str, type] | None:
     """Get type hints from a function, handling partial functions.
 
     Args:
         func: The function to get type hints from.
+        include_extras: Whether to preserve `Annotated` metadata in the resolved
+            hints (e.g. to detect `Annotated[..., InjectedToolArg]`).
 
     Returns:
         `dict` of type hints, or `None` if extraction fails.
@@ -1363,7 +1501,7 @@ def _get_type_hints(func: Callable[..., Any]) -> dict[str, type] | None:
     if isinstance(func, functools.partial):
         func = func.func
     try:
-        return get_type_hints(func)
+        return get_type_hints(func, include_extras=include_extras)
     except Exception:
         return None
 

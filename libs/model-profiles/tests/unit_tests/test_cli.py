@@ -17,7 +17,7 @@ from langchain_model_profiles.cli import (
 
 
 @pytest.fixture
-def mock_models_dev_response() -> dict:
+def mock_models_dev_response() -> dict[str, Any]:
     """Create a mock response from models.dev API."""
     return {
         "anthropic": {
@@ -57,7 +57,7 @@ def mock_models_dev_response() -> dict:
 
 
 def test_refresh_generates_profiles_file(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Test that refresh command generates _profiles.py with merged data."""
     data_dir = tmp_path / "data"
@@ -101,7 +101,7 @@ pdf_inputs = true
 
 
 def test_refresh_raises_error_for_missing_provider(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Test that refresh exits with error for non-existent provider."""
     data_dir = tmp_path / "data"
@@ -127,7 +127,7 @@ def test_refresh_raises_error_for_missing_provider(
 
 
 def test_refresh_works_without_augmentations(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Test that refresh works even without augmentations file."""
     data_dir = tmp_path / "data"
@@ -151,7 +151,7 @@ def test_refresh_works_without_augmentations(
 
 
 def test_refresh_aborts_when_user_declines_external_directory(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Test that refresh aborts when user declines writing to external directory."""
     data_dir = tmp_path / "data"
@@ -177,7 +177,7 @@ def test_refresh_aborts_when_user_declines_external_directory(
 
 
 def test_refresh_includes_models_defined_only_in_augmentations(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Ensure models that only exist in augmentations are emitted."""
     data_dir = tmp_path / "data"
@@ -212,19 +212,15 @@ max_input_tokens = 123
     assert spec
     assert spec.loader
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # type: ignore[union-attr]
+    spec.loader.exec_module(module)
 
-    assert "custom-offline-model" in module._PROFILES  # type: ignore[attr-defined]
-    assert (
-        module._PROFILES["custom-offline-model"]["structured_output"] is True  # type: ignore[index]
-    )
-    assert (
-        module._PROFILES["custom-offline-model"]["max_input_tokens"] == 123  # type: ignore[index]
-    )
+    assert "custom-offline-model" in module._PROFILES
+    assert module._PROFILES["custom-offline-model"]["structured_output"] is True
+    assert module._PROFILES["custom-offline-model"]["max_input_tokens"] == 123
 
 
 def test_refresh_generates_sorted_profiles(
-    tmp_path: Path, mock_models_dev_response: dict
+    tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:
     """Test that profiles are sorted alphabetically by model ID."""
     data_dir = tmp_path / "data"
@@ -273,9 +269,9 @@ def test_refresh_generates_sorted_profiles(
     assert spec
     assert spec.loader
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # type: ignore[union-attr]
+    spec.loader.exec_module(module)
 
-    model_ids = list(module._PROFILES.keys())  # type: ignore[attr-defined]
+    model_ids = list(module._PROFILES.keys())
     assert model_ids == sorted(model_ids), f"Profile keys are not sorted: {model_ids}"
 
 

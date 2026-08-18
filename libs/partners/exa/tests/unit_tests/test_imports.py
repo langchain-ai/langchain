@@ -8,6 +8,7 @@ EXPECTED_ALL = [
     "HighlightsContentsOptions",
     "TextContentsOptions",
     "ExaFindSimilarResults",
+    "__version__",
 ]
 
 

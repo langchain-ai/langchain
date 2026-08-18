@@ -5,6 +5,8 @@ This module tests that the name parameter correctly sets .name on AIMessage outp
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
@@ -119,7 +121,9 @@ def test_lc_agent_name_in_stream_metadata() -> None:
         stream_mode="messages",
     ):
         if "lc_agent_name" in metadata:
-            metadata_with_agent_name.append(metadata["lc_agent_name"])
+            # `stream()` is typed `Iterator[dict[str, Any] | Any]`, so unpacking the
+            # tuple leaves `metadata` as `str | Any`; cast to index it as the dict it is.
+            metadata_with_agent_name.append(cast("dict[str, Any]", metadata)["lc_agent_name"])
 
     assert len(metadata_with_agent_name) > 0
     assert all(name == "streaming_agent" for name in metadata_with_agent_name)
@@ -155,7 +159,9 @@ def test_lc_agent_name_in_stream_metadata_multiple_iterations() -> None:
         stream_mode="messages",
     ):
         if "lc_agent_name" in metadata:
-            metadata_with_agent_name.append(metadata["lc_agent_name"])
+            # `stream()` is typed `Iterator[dict[str, Any] | Any]`, so unpacking the
+            # tuple leaves `metadata` as `str | Any`; cast to index it as the dict it is.
+            metadata_with_agent_name.append(cast("dict[str, Any]", metadata)["lc_agent_name"])
 
     # Should have metadata entries for messages from both iterations
     assert len(metadata_with_agent_name) > 0
@@ -176,7 +182,9 @@ async def test_lc_agent_name_in_astream_metadata() -> None:
         stream_mode="messages",
     ):
         if "lc_agent_name" in metadata:
-            metadata_with_agent_name.append(metadata["lc_agent_name"])
+            # `stream()` is typed `Iterator[dict[str, Any] | Any]`, so unpacking the
+            # tuple leaves `metadata` as `str | Any`; cast to index it as the dict it is.
+            metadata_with_agent_name.append(cast("dict[str, Any]", metadata)["lc_agent_name"])
 
     assert len(metadata_with_agent_name) > 0
     assert all(name == "async_streaming_agent" for name in metadata_with_agent_name)
@@ -212,7 +220,9 @@ async def test_lc_agent_name_in_astream_metadata_multiple_iterations() -> None:
         stream_mode="messages",
     ):
         if "lc_agent_name" in metadata:
-            metadata_with_agent_name.append(metadata["lc_agent_name"])
+            # `stream()` is typed `Iterator[dict[str, Any] | Any]`, so unpacking the
+            # tuple leaves `metadata` as `str | Any`; cast to index it as the dict it is.
+            metadata_with_agent_name.append(cast("dict[str, Any]", metadata)["lc_agent_name"])
 
     # Should have metadata entries for messages from both iterations
     assert len(metadata_with_agent_name) > 0

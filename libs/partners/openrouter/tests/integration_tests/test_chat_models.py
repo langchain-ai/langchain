@@ -23,13 +23,36 @@ def test_basic_invoke() -> None:
 
 
 def test_streaming() -> None:
-    """Test streaming."""
+    """Test streaming.
+
+    Also asserts that OpenRouter spend survives streaming (regression test for
+    #39333). With `stream_usage` enabled (the default), the final usage-only
+    chunk (`choices: []`) must surface `cost` in `response_metadata`, matching
+    the non-streaming path. Requires a funded OpenRouter account — a `:free`
+    model returns `cost: 0`.
+    """
     model = ChatOpenRouter(model="openai/gpt-4o-mini", temperature=0)
     full: BaseMessageChunk | None = None
     for chunk in model.stream("Say 'hello' and nothing else."):
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.content
+    assert full.response_metadata["cost"] > 0
+
+
+async def test_astreaming() -> None:
+    """Test async streaming (sister to `test_streaming`).
+
+    Covers `_astream`, which surfaces `cost` on the usage-only chunk the same
+    way `_stream` does (#39333).
+    """
+    model = ChatOpenRouter(model="openai/gpt-4o-mini", temperature=0)
+    full: BaseMessageChunk | None = None
+    async for chunk in model.astream("Say 'hello' and nothing else."):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.content
+    assert full.response_metadata["cost"] > 0
 
 
 def test_tool_calling() -> None:
@@ -67,7 +90,7 @@ def test_structured_output() -> None:
 def test_reasoning_content() -> None:
     """Test reasoning content from a reasoning model."""
     model = ChatOpenRouter(
-        model="openai/o3-mini",
+        model="openai/gpt-5-nano",
         reasoning={"effort": "low"},
     )
     response = model.invoke("What is 2 + 2?")

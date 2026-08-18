@@ -510,7 +510,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                             template_format=template_format,
                         )
                     else:
-                        msg = f"Invalid image template: {tmpl}"
+                        msg = f"Invalid image template: {tmpl}"  # type: ignore[unreachable]
                         raise ValueError(msg)
                     prompt.append(img_template_obj)
                 elif isinstance(tmpl, dict):
@@ -527,10 +527,10 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     )
                     prompt.append(data_template_obj)
                 else:
-                    msg = f"Invalid template: {tmpl}"
+                    msg = f"Invalid template: {tmpl}"  # type: ignore[unreachable]
                     raise ValueError(msg)
             return cls(prompt=prompt, **kwargs)
-        msg = f"Invalid template: {template}"
+        msg = f"Invalid template: {template}"  # type: ignore[unreachable]
         raise ValueError(msg)
 
     @classmethod
@@ -1195,7 +1195,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 message = message_template.format_messages(**kwargs)
                 result.extend(message)
             else:
-                msg = f"Unexpected input: {message_template}"
+                msg = f"Unexpected input: {message_template}"  # type: ignore[unreachable]
                 raise ValueError(msg)  # noqa: TRY004
         return result
 
@@ -1223,7 +1223,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 message = await message_template.aformat_messages(**kwargs)
                 result.extend(message)
             else:
-                msg = f"Unexpected input: {message_template}"
+                msg = f"Unexpected input: {message_template}"  # type: ignore[unreachable]
                 raise ValueError(msg)  # noqa:TRY004
         return result
 
@@ -1340,7 +1340,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
 def _create_template_from_message_type(
     message_type: str,
-    template: str | list[str | dict[str, Any]],
+    template: str | list[str | dict[str, Any] | bool],
     template_format: PromptTemplateFormat = "f-string",
 ) -> BaseMessagePromptTemplate:
     """Create a message prompt template from a message type and template string.
@@ -1358,7 +1358,7 @@ def _create_template_from_message_type(
     """
     if message_type in {"human", "user"}:
         message: BaseMessagePromptTemplate = HumanMessagePromptTemplate.from_template(
-            template, template_format=template_format
+            cast("str", template), template_format=template_format
         )
     elif message_type in {"ai", "assistant"}:
         message = AIMessagePromptTemplate.from_template(
@@ -1462,7 +1462,7 @@ def _convert_to_message_template(
             template = message["content"]
         else:
             if len(message) != 2:  # noqa: PLR2004
-                msg = f"Expected 2-tuple of (role, template), got {message}"
+                msg = f"Expected 2-tuple of (role, template), got {message}"  # type: ignore[unreachable]
                 raise ValueError(msg)
             message_type_str, template = message
 
@@ -1485,7 +1485,7 @@ def _convert_to_message_template(
                 )
             )
     else:
-        msg = f"Unsupported message type: {type(message)}"
+        msg = f"Unsupported message type: {type(message)}"  # type: ignore[unreachable]
         raise NotImplementedError(msg)
 
     return message_

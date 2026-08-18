@@ -199,3 +199,24 @@ def test_reasoning_v1() -> None:
 
     next_message = {"role": "user", "content": "What is my name?"}
     _ = model.invoke([input_message, full, next_message])
+
+
+def test_stop_sequence() -> None:
+    """Mistral honors `stop`: generation halts and the sequence is excluded."""
+    model = ChatMistralAI(model="ministral-8b-latest", rate_limiter=rate_limiter)  # type: ignore[call-arg]
+    prompt = "Count from 1 to 10, separated by spaces. Reply with only the numbers."
+
+    # Without a stop sequence the full count is produced.
+    baseline = model.invoke(prompt)
+    assert isinstance(baseline.text, str)
+    assert "5" in baseline.text
+
+    # With stop=["5"], generation halts before "5" and the sequence is excluded.
+    stopped = model.invoke(prompt, stop=["5"])
+    assert "5" not in stopped.text
+
+    # An instance-level `stop` is honored identically.
+    stopped_instance = ChatMistralAI(  # type: ignore[call-arg]
+        model="ministral-8b-latest", stop=["5"], rate_limiter=rate_limiter
+    ).invoke(prompt)
+    assert "5" not in stopped_instance.text

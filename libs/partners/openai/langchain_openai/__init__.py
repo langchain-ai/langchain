@@ -1,5 +1,6 @@
 """Module for OpenAI integrations."""
 
+from langchain_openai._version import __version__
 from langchain_openai.chat_models import AzureChatOpenAI, ChatOpenAI
 from langchain_openai.chat_models._client_utils import StreamChunkTimeoutError
 from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
@@ -14,5 +15,6 @@ __all__ = [
     "OpenAI",
     "OpenAIEmbeddings",
     "StreamChunkTimeoutError",
+    "__version__",
     "custom_tool",
 ]

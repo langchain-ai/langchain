@@ -207,7 +207,7 @@ def test_apply_patch() -> None:
 
     apply_patch is a client-executed tool: the model proposes a file operation
     via an `apply_patch_call` block, the client applies it, and the result is
-    returned as an ``apply_patch_call_output`` block. Requires a model that
+    returned as an `apply_patch_call_output` block. Requires a model that
     supports the tool.
     """
     prompt = "Create a new file named hello.txt containing the line: hello world"
@@ -511,7 +511,9 @@ def test_parsed_strict() -> None:
 
     schema = _convert_to_openai_response_format(Joke)
     invalid_schema = cast(dict, _convert_to_openai_response_format(Joke, strict=True))
-    invalid_schema["json_schema"]["schema"]["required"] = ["setup"]  # make invalid
+    # Intentionally make the strict schema invalid. OpenAI requires every property
+    # to appear in `required`; omitting `punchline` should produce a BadRequestError.
+    invalid_schema["json_schema"]["schema"]["required"] = ["setup"]
 
     # Test not strict
     response = llm.invoke("Tell me a joke", response_format=schema)
@@ -585,14 +587,14 @@ def test_function_calling_and_structured_output(schema: Any) -> None:
 @pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
 def test_reasoning(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
     llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version=output_version
+        model="gpt-5-nano", use_responses_api=True, output_version=output_version
     )
     response = llm.invoke("Hello", reasoning={"effort": "low"})
     assert isinstance(response, AIMessage)
 
     # Test init params + streaming
     llm = ChatOpenAI(
-        model="o4-mini", reasoning={"effort": "low"}, output_version=output_version
+        model="gpt-5-nano", reasoning={"effort": "low"}, output_version=output_version
     )
     full: BaseMessageChunk | None = None
     for chunk in llm.stream("Hello"):
@@ -715,7 +717,7 @@ def test_stream_reasoning_summary(
     use_v2_stream: bool,
 ) -> None:
     llm = ChatOpenAI(
-        model="o4-mini",
+        model="gpt-5-nano",
         # Routes to Responses API if `reasoning` is set.
         reasoning={"effort": "medium", "summary": "auto"},
         output_version=output_version,
@@ -780,6 +782,35 @@ def test_stream_reasoning_summary(
     assert isinstance(response_2, AIMessage)
 
 
+@pytest.mark.vcr
+def test_stream_encrypted_reasoning() -> None:
+    llm = ChatOpenAI(
+        model="gpt-5.6-luna",
+        use_responses_api=True,
+        reasoning_effort="medium",
+        store=False,
+        include=["reasoning.encrypted_content"],
+    )
+    message_1 = {
+        "role": "user",
+        "content": "What was the third tallest buliding in the year 2000?",
+    }
+    response_1 = llm.stream_events([message_1], version="v3").output
+    total_reasoning_blocks = 0
+    for block in response_1.content_blocks:
+        if block["type"] == "reasoning":
+            total_reasoning_blocks += 1
+            assert isinstance(block.get("id"), str)
+            assert block.get("id", "").startswith("rs_")
+            assert isinstance(block["extras"].get("encrypted_content"), str)
+            assert isinstance(block.get("index"), str)
+
+    # Check we can pass back summaries
+    message_2 = {"role": "user", "content": "Thank you."}
+    response_2 = llm.invoke([message_1, response_1, message_2])
+    assert isinstance(response_2, AIMessage)
+
+
 @pytest.mark.default_cassette("test_code_interpreter.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize(
@@ -795,7 +826,7 @@ def test_code_interpreter(
     output_version: Literal["v0", "responses/v1", "v1"], use_v2_stream: bool
 ) -> None:
     llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version=output_version
+        model="gpt-5-nano", use_responses_api=True, output_version=output_version
     )
     llm_with_tools = llm.bind_tools(
         [{"type": "code_interpreter", "container": {"type": "auto"}}]
@@ -893,7 +924,7 @@ def test_code_interpreter(
 
 @pytest.mark.vcr
 def test_mcp_builtin() -> None:
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True, output_version="v0")
+    llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True, output_version="v0")
 
     llm_with_tools = llm.bind_tools(
         [
@@ -1834,13 +1865,13 @@ def test_reasoning_text_v1_v2_parity() -> None:
     """`stream()` and `stream_events(version="v3")` agree on reasoning + text.
 
     Exercises the non-tool-call branch of the parity claim: a reasoning
-    model (`o4-mini` via the Responses API) produces one or more
+    model (`gpt-5-nano` via the Responses API) produces one or more
     `reasoning` blocks followed by a `text` block. Both paths replay the
     same recorded HTTP response (cassette with `allow_playback_repeats`),
     so any remaining divergence is a library issue.
     """
     llm = ChatOpenAI(
-        model="o4-mini",
+        model="gpt-5-nano",
         reasoning={"effort": "low", "summary": "auto"},
         output_version="v1",
     )

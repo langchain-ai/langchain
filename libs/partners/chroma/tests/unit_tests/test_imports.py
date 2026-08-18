@@ -2,6 +2,7 @@ from langchain_chroma import __all__
 
 EXPECTED_ALL = [
     "Chroma",
+    "__version__",
 ]
 
 

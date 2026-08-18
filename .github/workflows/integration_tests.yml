@@ -5,7 +5,7 @@
 # Runs daily with the option to trigger manually.
 
 name: "⏰ Integration Tests"
-run-name: "Run Integration Tests - ${{ inputs.working-directory-override || (inputs.working-directory != 'all' && inputs.working-directory) || (inputs.exclude != '' && format('exclude:{0}', inputs.exclude)) || 'all libs' }} (Python ${{ inputs.python-version-override || '3.10, 3.13' }})"
+run-name: "Run Integration Tests - ${{ inputs.working-directory-override || (inputs.working-directory != 'all' && inputs.working-directory) || (inputs.exclude != '' && format('exclude:{0}', inputs.exclude)) || 'all libs' }} (Python ${{ inputs.python-version-override || '3.10, 3.14' }})"
 
 on:
   workflow_dispatch:
@@ -52,7 +52,7 @@ on:
         description: "Comma-separated short names to drop from the 'all' run (e.g. openai,anthropic). Ignored unless dropdown is 'all' and no working-directory-override is set."
       python-version-override:
         type: string
-        description: "Python version override — defaults to 3.10 and 3.13 in matrix (e.g. 3.11)"
+        description: "Python version override — defaults to 3.10 and 3.14 in matrix (e.g. 3.11)"
   schedule:
     - cron: "0 13 * * *" # Runs daily at 1PM UTC (9AM EDT/6AM PDT)
 
@@ -95,10 +95,10 @@ jobs:
           EXCLUDE: ${{ github.event.inputs.exclude || '' }}
         run: |
           # echo "matrix=..." where matrix is a json formatted str with keys python-version and working-directory
-          # python-version defaults to 3.10 and 3.13, overridden to [PYTHON_VERSION_OVERRIDE] if set
+          # python-version defaults to 3.10 and 3.14, overridden to [PYTHON_VERSION_OVERRIDE] if set
           # working-directory priority: override string > dropdown choice > DEFAULT_LIBS
-          python_version='["3.10", "3.13"]'
-          python_version_min_3_11='["3.11", "3.13"]'
+          python_version='["3.10", "3.14"]'
+          python_version_min_3_11='["3.11", "3.14"]'
           working_directory="$DEFAULT_LIBS"
           if [ -n "$PYTHON_VERSION_OVERRIDE" ]; then
             python_version="[\"$PYTHON_VERSION_OVERRIDE\"]"
@@ -161,7 +161,7 @@ jobs:
     # Serialize same-package shards across workflow runs so a per-package
     # manual dispatch doesn't race the scheduled "all libs" run against the
     # same live API credentials. Keyed per (working-directory, python-version)
-    # so the 3.10/3.13 matrix legs within one run still execute in parallel.
+    # so the 3.10/3.14 matrix legs within one run still execute in parallel.
     concurrency:
       group: integration-tests-${{ matrix.working-directory }}-${{ matrix.python-version }}
       cancel-in-progress: false
@@ -172,12 +172,12 @@ jobs:
         working-directory: ${{ fromJSON(needs.compute-matrix.outputs.matrix).working-directory }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           path: langchain
 
       # These libraries exist outside of the monorepo and need to be checked out separately
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           repository: langchain-ai/langchain-google
           path: langchain-google
@@ -186,12 +186,12 @@ jobs:
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}"
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
       - name: "🔐 Configure AWS Credentials"
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -288,8 +288,9 @@ jobs:
           LANGSMITH_PROJECT: ${{ vars.LANGSMITH_PROJECT || 'scheduled-testing-py' }}
           LANGSMITH_TAGS: "github-actions,${{ matrix.working-directory }},python-${{ matrix.python-version }},sha-${{ github.sha }}"
 
+          LANGSMITH_GATEWAY: ${{ secrets.LANGSMITH_GATEWAY }}
+          LANGSMITH_GATEWAY_API_KEY: ${{ secrets.LANGSMITH_GATEWAY_API_KEY }}
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
           ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
           ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
@@ -371,11 +372,11 @@ jobs:
             path: libs/deepagents
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           path: langchain
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           repository: ${{ matrix.package.repo }}
           path: ${{ matrix.package.name }}

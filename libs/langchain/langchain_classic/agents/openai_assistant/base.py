@@ -150,7 +150,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             instructions="You are a personal math tutor. "
             "Write and run code to answer math questions.",
             tools=[{"type": "code_interpreter"}],
-            model="gpt-4-1106-preview",
+            model="gpt-5.5",
         )
         output = interpreter_assistant.invoke(
             {"content": "What's 10 - 4 raised to the 2.7"}
@@ -170,7 +170,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             instructions="You are a personal math tutor. "
             "Write and run code to answer math questions.",
             tools=tools,
-            model="gpt-4-1106-preview",
+            model="gpt-5.5",
             as_agent=True,
         )
 
@@ -192,7 +192,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             instructions="You are a personal math tutor. "
             "Write and run code to answer math questions.",
             tools=tools,
-            model="gpt-4-1106-preview",
+            model="gpt-5.5",
             as_agent=True,
         )
 

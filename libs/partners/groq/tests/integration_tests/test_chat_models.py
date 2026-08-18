@@ -25,9 +25,11 @@ from tests.unit_tests.fake.callbacks import (
 )
 
 DEFAULT_MODEL_NAME = "openai/gpt-oss-20b"
+TOOL_CALLING_MODEL_NAME = "qwen/qwen3.6-27b"
+TOOL_CALLING_MODEL_KWARGS: dict[str, Any] = {"reasoning_effort": "none"}
 
-# gpt-oss doesn't support `reasoning_effort`
-REASONING_MODEL_NAME = "qwen/qwen3-32b"
+# GPT-OSS models don't support `reasoning_format`
+REASONING_MODEL_NAME = "qwen/qwen3.6-27b"
 
 
 #
@@ -276,7 +278,7 @@ def test_reasoning_output_stream() -> None:
 def test_reasoning_effort_none() -> None:
     """Test that no reasoning output is returned if effort is set to none."""
     chat = ChatGroq(
-        model="qwen/qwen3-32b",  # Only qwen3 currently supports reasoning_effort = none
+        model=REASONING_MODEL_NAME,
         reasoning_effort="none",
     )
     message = HumanMessage(content="What is the capital of France?")
@@ -379,7 +381,9 @@ def test_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     chat = ChatGroq(
-        model="llama-3.1-8b-instant",  # Use a model that properly streams content
+        # Non-reasoning model so the first tokens are plain content
+        model="qwen/qwen3.6-27b",
+        reasoning_effort="none",
         max_tokens=2,
         temperature=0,
         callbacks=[callback],
@@ -403,7 +407,7 @@ def test_system_message() -> None:
 
 def test_tool_choice() -> None:
     """Test that tool choice is respected."""
-    llm = ChatGroq(model=DEFAULT_MODEL_NAME)
+    llm = ChatGroq(model=TOOL_CALLING_MODEL_NAME, **TOOL_CALLING_MODEL_KWARGS)
 
     class MyTool(BaseModel):
         name: str
@@ -433,7 +437,7 @@ def test_tool_choice() -> None:
 
 def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
-    llm = ChatGroq(model=DEFAULT_MODEL_NAME)
+    llm = ChatGroq(model=TOOL_CALLING_MODEL_NAME, **TOOL_CALLING_MODEL_KWARGS)
 
     class MyTool(BaseModel):
         name: str
@@ -455,10 +459,9 @@ def test_tool_choice_bool() -> None:
     assert tool_call["type"] == "function"
 
 
-@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 def test_streaming_tool_call() -> None:
     """Test that tool choice is respected."""
-    llm = ChatGroq(model=DEFAULT_MODEL_NAME)
+    llm = ChatGroq(model=TOOL_CALLING_MODEL_NAME, **TOOL_CALLING_MODEL_KWARGS)
 
     class MyTool(BaseModel):
         name: str
@@ -466,37 +469,32 @@ def test_streaming_tool_call() -> None:
 
     with_tool = llm.bind_tools([MyTool], tool_choice="MyTool")
 
-    resp = with_tool.stream("Who was the 27 year old named Erick?")
-    additional_kwargs = None
+    resp = with_tool.stream("Who was the 27 year old named Erick? Use the tool.")
+    full: AIMessageChunk | None = None
     for chunk in resp:
         assert isinstance(chunk, AIMessageChunk)
-        assert chunk.content == ""  # should just be tool call
-        additional_kwargs = chunk.additional_kwargs
+        full = chunk if full is None else full + chunk
 
-    assert additional_kwargs is not None
-    tool_calls = additional_kwargs["tool_calls"]
-    assert len(tool_calls) == 1
-    tool_call = tool_calls[0]
-    assert tool_call["function"]["name"] == "MyTool"
-    assert json.loads(tool_call["function"]["arguments"]) == {
-        "age": 27,
-        "name": "Erick",
-    }
-    assert tool_call["type"] == "function"
+    assert full is not None
+    assert full.content == ""  # should just be tool call
+    assert len(full.tool_calls) == 1
+    tool_call = full.tool_calls[0]
+    assert tool_call["name"] == "MyTool"
+    assert tool_call["args"] == {"name": "Erick", "age": 27}
+    assert tool_call["id"] is not None
 
-    assert isinstance(chunk, AIMessageChunk)
-    assert isinstance(chunk.tool_call_chunks, list)
-    assert len(chunk.tool_call_chunks) == 1
-    tool_call_chunk = chunk.tool_call_chunks[0]
+    assert isinstance(full.tool_call_chunks, list)
+    assert len(full.tool_call_chunks) == 1
+    tool_call_chunk = full.tool_call_chunks[0]
     assert tool_call_chunk["name"] == "MyTool"
+    assert tool_call_chunk["id"] == tool_call["id"]
     assert isinstance(tool_call_chunk["args"], str)
     assert json.loads(tool_call_chunk["args"]) == {"name": "Erick", "age": 27}
 
 
-@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 async def test_astreaming_tool_call() -> None:
     """Test that tool choice is respected."""
-    llm = ChatGroq(model=DEFAULT_MODEL_NAME)
+    llm = ChatGroq(model=TOOL_CALLING_MODEL_NAME, **TOOL_CALLING_MODEL_KWARGS)
 
     class MyTool(BaseModel):
         name: str
@@ -504,29 +502,25 @@ async def test_astreaming_tool_call() -> None:
 
     with_tool = llm.bind_tools([MyTool], tool_choice="MyTool")
 
-    resp = with_tool.astream("Who was the 27 year old named Erick?")
-    additional_kwargs = None
+    resp = with_tool.astream("Who was the 27 year old named Erick? Use the tool.")
+    full: AIMessageChunk | None = None
     async for chunk in resp:
         assert isinstance(chunk, AIMessageChunk)
-        assert chunk.content == ""  # should just be tool call
-        additional_kwargs = chunk.additional_kwargs
+        full = chunk if full is None else full + chunk
 
-    assert additional_kwargs is not None
-    tool_calls = additional_kwargs["tool_calls"]
-    assert len(tool_calls) == 1
-    tool_call = tool_calls[0]
-    assert tool_call["function"]["name"] == "MyTool"
-    assert json.loads(tool_call["function"]["arguments"]) == {
-        "age": 27,
-        "name": "Erick",
-    }
-    assert tool_call["type"] == "function"
+    assert full is not None
+    assert full.content == ""  # should just be tool call
+    assert len(full.tool_calls) == 1
+    tool_call = full.tool_calls[0]
+    assert tool_call["name"] == "MyTool"
+    assert tool_call["args"] == {"name": "Erick", "age": 27}
+    assert tool_call["id"] is not None
 
-    assert isinstance(chunk, AIMessageChunk)
-    assert isinstance(chunk.tool_call_chunks, list)
-    assert len(chunk.tool_call_chunks) == 1
-    tool_call_chunk = chunk.tool_call_chunks[0]
+    assert isinstance(full.tool_call_chunks, list)
+    assert len(full.tool_call_chunks) == 1
+    tool_call_chunk = full.tool_call_chunks[0]
     assert tool_call_chunk["name"] == "MyTool"
+    assert tool_call_chunk["id"] == tool_call["id"]
     assert isinstance(tool_call_chunk["args"], str)
     assert json.loads(tool_call_chunk["args"]) == {"name": "Erick", "age": 27}
 
@@ -573,6 +567,9 @@ def test_setting_service_tier_class() -> None:
     assert chat.service_tier == "on_demand"
     response = chat.invoke([message])
     assert response.response_metadata.get("service_tier") == "on_demand"
+
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, service_tier="performance")
+    assert chat.service_tier == "performance"
 
     chat = ChatGroq(model=DEFAULT_MODEL_NAME)
     assert chat.service_tier == "on_demand"

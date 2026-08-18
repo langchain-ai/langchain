@@ -1,6 +1,6 @@
 """Shared rate limiter for Mistral integration tests.
 
-Scaled by ``PYTEST_XDIST_WORKER_COUNT`` so aggregate QPS across all xdist
+Scaled by `PYTEST_XDIST_WORKER_COUNT` so aggregate QPS across all xdist
 workers stays bounded near the target rate.
 """
 

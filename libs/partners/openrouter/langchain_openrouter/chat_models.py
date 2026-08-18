@@ -69,6 +69,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_openrouter._version import __version__
 from langchain_openrouter.data._profiles import _PROFILES
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
@@ -80,6 +81,26 @@ _INTERNAL_KWARGS = frozenset({"ls_structured_output_format"})
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
+
+
+def _create_stream_generation_info(
+    chunk_dict: dict[str, Any], choice: dict[str, Any], model_name: str
+) -> dict[str, Any]:
+    generation_info = {"finish_reason": choice["finish_reason"]}
+    generation_info["model_name"] = chunk_dict.get("model") or model_name
+    if provider := chunk_dict.get("provider"):
+        generation_info["provider"] = provider
+    if system_fingerprint := chunk_dict.get("system_fingerprint"):
+        generation_info["system_fingerprint"] = system_fingerprint
+    if native_finish_reason := choice.get("native_finish_reason"):
+        generation_info["native_finish_reason"] = native_finish_reason
+    if response_id := chunk_dict.get("id"):
+        generation_info["id"] = response_id
+    if created := chunk_dict.get("created"):
+        generation_info["created"] = int(created)
+    if object_ := chunk_dict.get("object"):
+        generation_info["object"] = object_
+    return generation_info
 
 
 class ChatOpenRouter(BaseChatModel):
@@ -121,6 +142,7 @@ class ChatOpenRouter(BaseChatModel):
         | `app_categories` | `list[str] | None` | Marketplace attribution categories. |
         | `session_id` | `str | None` | Group related requests for observability. |
         | `trace` | `dict[str, Any] | None` | Trace metadata for broadcasts. |
+        | `default_headers` | `Mapping[str, str] | None` | Extra request headers. |
         | `max_retries` | `int` | Max retries (default `2`). Set to `0` to disable. |
 
     ??? info "Instantiate"
@@ -294,6 +316,28 @@ class ChatOpenRouter(BaseChatModel):
     plugins: list[dict[str, Any]] | None = None
     """Plugins configuration for OpenRouter."""
 
+    default_headers: Mapping[str, str] | None = Field(default=None, exclude=True)
+    """Additional HTTP headers to include on every request to OpenRouter.
+
+    Headers set here become the underlying httpx client's default headers, so
+    they are sent on every request to OpenRouter. Useful for upstream provider
+    features that require custom headers — for example, xAI's `x-grok-conv-id`
+    for sticky-routing prompt cache hits, region routing, A/B test bucketing
+    headers, or provider-specific authentication. Whether a given header is
+    forwarded to the upstream provider (versus consumed by OpenRouter itself)
+    is determined by OpenRouter; consult its docs for which headers propagate.
+
+    Because these headers may contain credentials, they are excluded from
+    LangChain serialization.
+
+    Example: `{"x-grok-conv-id": "session-abc123"}`
+
+    Headers set via this field are merged with the OpenRouter app-attribution
+    headers (`HTTP-Referer`, `X-Title`, `X-OpenRouter-Categories`); on a
+    collision the value from `default_headers` takes precedence, matched
+    case-insensitively (HTTP header names are case-insensitive).
+    """
+
     session_id: str | None = Field(
         default_factory=from_env("OPENROUTER_SESSION_ID", default=None),
     )
@@ -302,7 +346,7 @@ class ChatOpenRouter(BaseChatModel):
     Useful any time multiple requests should share an observability
     grouping (e.g. a conversation, an agent workflow, a batch job, or a CI
     run). Equivalent to setting the `x-session-id` HTTP header on the
-    underlying request. OpenRouter rejects values longer than 128
+    underlying request. OpenRouter rejects values longer than 256
     characters.
 
     Falls back to the `OPENROUTER_SESSION_ID` environment variable when
@@ -386,6 +430,19 @@ class ChatOpenRouter(BaseChatModel):
             extra_headers["X-Title"] = self.app_title
         if self.app_categories:
             extra_headers["X-OpenRouter-Categories"] = ",".join(self.app_categories)
+        # User-supplied headers take precedence over the built-in
+        # app-attribution headers on collision. HTTP header names are
+        # case-insensitive, so drop any built-in whose name case-insensitively
+        # matches a user header before merging; a plain dict update would keep
+        # both spellings and httpx would then send a doubled header.
+        if self.default_headers:
+            user_header_names = {name.casefold() for name in self.default_headers}
+            extra_headers = {
+                name: value
+                for name, value in extra_headers.items()
+                if name.casefold() not in user_header_names
+            }
+            extra_headers.update(self.default_headers)
         if extra_headers:
             import httpx  # noqa: PLC0415
 
@@ -409,6 +466,12 @@ class ChatOpenRouter(BaseChatModel):
                 retry_connection_errors=True,
             )
         return openrouter.OpenRouter(**client_kwargs)
+
+    @model_validator(mode="after")
+    def _set_openrouter_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-openrouter", __version__)
+        return self
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
@@ -506,8 +569,7 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
-        response = self.client.chat.send(messages=sdk_messages, **params)
+        response = self.client.chat.send(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
     async def _agenerate(
@@ -525,11 +587,10 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
-        response = await self.client.chat.send_async(messages=sdk_messages, **params)
+        response = await self.client.chat.send_async(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
-    def _stream(  # noqa: C901, PLR0912
+    def _stream(  # noqa: C901
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -541,10 +602,10 @@ class ChatOpenRouter(BaseChatModel):
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        for chunk in self.client.chat.send(messages=sdk_messages, **params):
+        terminal_generation_info: dict[str, Any] = {}
+        for chunk in self.client.chat.send(messages=message_dicts, **params):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
                 if error := chunk_dict.get("error"):
@@ -557,8 +618,15 @@ class ChatOpenRouter(BaseChatModel):
                 # Usage-only chunk (no choices) — emit with usage_metadata
                 if usage := chunk_dict.get("usage"):
                     usage_metadata = _create_usage_metadata(usage)
+                    response_metadata: dict[str, Any] = {}
+                    if "cost" in usage:
+                        response_metadata["cost"] = usage["cost"]
+                    if "cost_details" in usage:
+                        response_metadata["cost_details"] = usage["cost_details"]
                     usage_chunk = AIMessageChunk(
-                        content="", usage_metadata=usage_metadata
+                        content="",
+                        usage_metadata=usage_metadata,
+                        response_metadata=response_metadata,
                     )
                     generation_chunk = ChatGenerationChunk(message=usage_chunk)
                     if run_manager:
@@ -572,21 +640,18 @@ class ChatOpenRouter(BaseChatModel):
                 chunk_dict, default_chunk_class
             )
             generation_info: dict[str, Any] = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-                # Include response-level metadata on the final chunk
-                response_model = chunk_dict.get("model")
-                generation_info["model_name"] = response_model or self.model_name
-                if system_fingerprint := chunk_dict.get("system_fingerprint"):
-                    generation_info["system_fingerprint"] = system_fingerprint
-                if native_finish_reason := choice.get("native_finish_reason"):
-                    generation_info["native_finish_reason"] = native_finish_reason
-                if response_id := chunk_dict.get("id"):
-                    generation_info["id"] = response_id
-                if created := chunk_dict.get("created"):
-                    generation_info["created"] = int(created)
-                if object_ := chunk_dict.get("object"):
-                    generation_info["object"] = object_
+            if choice.get("finish_reason"):
+                candidate_generation_info = _create_stream_generation_info(
+                    chunk_dict, choice, self.model_name
+                )
+                generation_info.update(
+                    {
+                        key: value
+                        for key, value in candidate_generation_info.items()
+                        if key not in terminal_generation_info
+                    }
+                )
+                terminal_generation_info.update(generation_info)
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -615,7 +680,7 @@ class ChatOpenRouter(BaseChatModel):
                 )
             yield generation_chunk
 
-    async def _astream(  # noqa: C901, PLR0912
+    async def _astream(  # noqa: C901
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
@@ -627,11 +692,11 @@ class ChatOpenRouter(BaseChatModel):
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
-        sdk_messages = _wrap_messages_for_sdk(message_dicts)
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+        terminal_generation_info: dict[str, Any] = {}
         async for chunk in await self.client.chat.send_async(
-            messages=sdk_messages, **params
+            messages=message_dicts, **params
         ):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
@@ -645,8 +710,15 @@ class ChatOpenRouter(BaseChatModel):
                 # Usage-only chunk (no choices) — emit with usage_metadata
                 if usage := chunk_dict.get("usage"):
                     usage_metadata = _create_usage_metadata(usage)
+                    response_metadata = {}
+                    if "cost" in usage:
+                        response_metadata["cost"] = usage["cost"]
+                    if "cost_details" in usage:
+                        response_metadata["cost_details"] = usage["cost_details"]
                     usage_chunk = AIMessageChunk(
-                        content="", usage_metadata=usage_metadata
+                        content="",
+                        usage_metadata=usage_metadata,
+                        response_metadata=response_metadata,
                     )
                     generation_chunk = ChatGenerationChunk(message=usage_chunk)
                     if run_manager:
@@ -660,21 +732,18 @@ class ChatOpenRouter(BaseChatModel):
                 chunk_dict, default_chunk_class
             )
             generation_info: dict[str, Any] = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-                # Include response-level metadata on the final chunk
-                response_model = chunk_dict.get("model")
-                generation_info["model_name"] = response_model or self.model_name
-                if system_fingerprint := chunk_dict.get("system_fingerprint"):
-                    generation_info["system_fingerprint"] = system_fingerprint
-                if native_finish_reason := choice.get("native_finish_reason"):
-                    generation_info["native_finish_reason"] = native_finish_reason
-                if response_id := chunk_dict.get("id"):
-                    generation_info["id"] = response_id
-                if created := chunk_dict.get("created"):
-                    generation_info["created"] = int(created)  # UNIX timestamp
-                if object_ := chunk_dict.get("object"):
-                    generation_info["object"] = object_
+            if choice.get("finish_reason"):
+                candidate_generation_info = _create_stream_generation_info(
+                    chunk_dict, choice, self.model_name
+                )
+                generation_info.update(
+                    {
+                        key: value
+                        for key, value in candidate_generation_info.items()
+                        if key not in terminal_generation_info
+                    }
+                )
+                terminal_generation_info.update(generation_info)
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -783,6 +852,7 @@ class ChatOpenRouter(BaseChatModel):
         # Extract top-level response metadata
         response_model = response.get("model")
         system_fingerprint = response.get("system_fingerprint")
+        provider = response.get("provider")
 
         for res in choices:
             message = _convert_dict_to_message(res["message"])
@@ -796,6 +866,8 @@ class ChatOpenRouter(BaseChatModel):
                         "cost_details"
                     ]
             if isinstance(message, AIMessage):
+                if provider:
+                    message.response_metadata["provider"] = provider
                 if system_fingerprint:
                     message.response_metadata["system_fingerprint"] = system_fingerprint
                 if native_finish_reason := res.get("native_finish_reason"):
@@ -830,6 +902,7 @@ class ChatOpenRouter(BaseChatModel):
         *,
         tool_choice: dict | str | bool | None = None,
         strict: bool | None = None,
+        parallel_tool_calls: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -845,8 +918,13 @@ class ChatOpenRouter(BaseChatModel):
 
                 If `None`, the `strict` argument will not be passed to
                 the model.
+            parallel_tool_calls: Set to `False` to disable parallel tool use.
+                Defaults to `None` (no specification, which allows parallel
+                tool use).
             **kwargs: Any additional parameters.
         """
+        if parallel_tool_calls is not None:
+            kwargs["parallel_tool_calls"] = parallel_tool_calls
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
@@ -997,74 +1075,6 @@ def _strip_internal_kwargs(params: dict[str, Any]) -> None:
         params.pop(key, None)
 
 
-def _has_file_content_blocks(message_dicts: list[dict[str, Any]]) -> bool:
-    """Return `True` if any message dict contains a `file` content block."""
-    for msg in message_dicts:
-        content = msg.get("content")
-        if isinstance(content, list):
-            for block in content:
-                if isinstance(block, dict) and block.get("type") == "file":
-                    return True
-    return False
-
-
-def _wrap_messages_for_sdk(
-    message_dicts: list[dict[str, Any]],
-) -> list[dict[str, Any]] | list[Any]:
-    """Wrap message dicts as SDK Pydantic models when file blocks are present.
-
-    The OpenRouter Python SDK does not include `file` in its
-    `ChatMessageContentItem` discriminated union, so Pydantic validation
-    rejects file content blocks even though the OpenRouter **API** supports
-    them. Using `model_construct` on the SDK's message classes bypasses
-    validation while still producing the correct JSON payload.
-
-    When no file blocks are detected the original dicts are returned unchanged
-    so the normal (validated) code path is preserved.
-
-    Args:
-        message_dicts: Message dicts produced by `_convert_message_to_dict`.
-
-    Returns:
-        The original list when no file blocks are present, or a list of SDK
-        Pydantic model instances otherwise.
-    """
-    if not _has_file_content_blocks(message_dicts):
-        return message_dicts
-
-    try:
-        from openrouter import components  # noqa: PLC0415
-    except ImportError:
-        warnings.warn(
-            "Could not import openrouter.components; file content blocks "
-            "will be sent as raw dicts which may cause validation errors.",
-            stacklevel=2,
-        )
-        return message_dicts
-
-    role_to_model: dict[str, type[BaseModel]] = {
-        "user": components.ChatUserMessage,
-        "system": components.ChatSystemMessage,
-        "assistant": components.ChatAssistantMessage,
-        "tool": components.ChatToolMessage,
-        "developer": components.ChatDeveloperMessage,
-    }
-
-    wrapped: list[Any] = []
-    for msg in message_dicts:
-        model_cls = role_to_model.get(msg.get("role", ""))
-        if model_cls is None:
-            warnings.warn(
-                f"Unknown message role {msg.get('role')!r} encountered during "
-                f"SDK wrapping; passing raw dict to the API.",
-                stacklevel=2,
-            )
-            wrapped.append(msg)
-            continue
-        wrapped.append(model_cls.model_construct(**msg))
-    return wrapped
-
-
 #
 # Type conversion helpers
 #
@@ -1182,6 +1192,19 @@ def _merge_reasoning_run(run: list[dict[str, Any]]) -> dict[str, Any]:
     if has_text:
         merged_entry["text"] = "".join(text_parts)
     return merged_entry
+
+
+def _strip_ephemeral_reasoning_ids(value: Any) -> Any:
+    """Remove OpenAI Responses reasoning item IDs from outbound payloads."""
+    if isinstance(value, list):
+        return [_strip_ephemeral_reasoning_ids(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: _strip_ephemeral_reasoning_ids(item)
+            for key, item in value.items()
+            if not (key == "id" and isinstance(item, str) and item.startswith("rs_"))
+        }
+    return value
 
 
 def _merge_reasoning_details(
@@ -1303,8 +1326,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C
         if "reasoning_content" in message.additional_kwargs:
             message_dict["reasoning"] = message.additional_kwargs["reasoning_content"]
         if "reasoning_details" in message.additional_kwargs:
-            message_dict["reasoning_details"] = _merge_reasoning_details(
-                message.additional_kwargs["reasoning_details"]
+            message_dict["reasoning_details"] = _strip_ephemeral_reasoning_ids(
+                _merge_reasoning_details(message.additional_kwargs["reasoning_details"])
             )
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
@@ -1468,7 +1491,7 @@ def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911, PLR0912
 
 
 def _lc_tool_call_to_openrouter_tool_call(tool_call: ToolCall) -> dict[str, Any]:
-    """Convert a LangChain ``ToolCall`` to an OpenRouter tool call dict.
+    """Convert a LangChain `ToolCall` to an OpenRouter tool call dict.
 
     Serializes `args` (a dict) via `json.dumps`.
     """

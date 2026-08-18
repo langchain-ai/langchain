@@ -9,7 +9,7 @@ from langchain_core.messages import content as types
 def _convert_from_v1_to_groq(
     content: list[types.ContentBlock],
     model_provider: str | None,
-) -> tuple[list[dict[str, Any] | str], dict]:
+) -> tuple[str | list[dict[str, Any] | str], dict]:
     new_content: list = []
     new_additional_kwargs: dict = {}
     for i, block in enumerate(content):

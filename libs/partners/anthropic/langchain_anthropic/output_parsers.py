@@ -77,7 +77,7 @@ def _extract_tool_calls_from_message(message: AIMessage) -> list[ToolCall]:
     return extract_tool_calls(message.content)
 
 
-def extract_tool_calls(content: str | list[str | dict]) -> list[ToolCall]:
+def extract_tool_calls(content: str | list[str | dict[str, Any]]) -> list[ToolCall]:
     """Extract tool calls from a list of content blocks."""
     if isinstance(content, list):
         tool_calls = []

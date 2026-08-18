@@ -153,7 +153,7 @@ class TestCustomStateField:
             summary: str
 
         class SummaryMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -437,7 +437,7 @@ class TestComposition:
             custom_key: str
 
         class OuterMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -456,7 +456,7 @@ class TestComposition:
                 )
 
         class InnerMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -493,7 +493,7 @@ class TestComposition:
             outer_key: str
 
         class OuterMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -507,7 +507,7 @@ class TestComposition:
                 )
 
         class InnerMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -550,7 +550,7 @@ class TestComposition:
                 return handler(request)
 
         class InnerMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             def wrap_model_call(
                 self,
@@ -752,7 +752,7 @@ class TestAsyncComposition:
                 return await handler(request)
 
         class InnerMiddleware(AgentMiddleware):
-            state_schema = MyState  # type: ignore[assignment]
+            state_schema = MyState
 
             async def awrap_model_call(
                 self,

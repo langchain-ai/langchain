@@ -91,6 +91,22 @@ class ModelProfile(TypedDict, total=False):
     reasoning_output: bool
     """Whether the model supports [reasoning / chain-of-thought](https://docs.langchain.com/oss/python/langchain/models#reasoning)."""
 
+    reasoning_effort_levels: list[str]
+    """Supported reasoning-effort levels (e.g. `['low', 'medium', 'high']`).
+
+    Absent or empty if the model does not support a configurable reasoning
+    effort. Only meaningful when `reasoning_output` is `True`.
+    """
+
+    reasoning_effort_default: str
+    """The provider's documented default reasoning-effort level, if known.
+
+    Absent when no default is documented. Only meaningful when
+    `reasoning_effort_levels` is non-empty; not necessarily a member of
+    `reasoning_effort_levels` itself (a model may default to unconfigurable
+    behavior distinct from any explicit level).
+    """
+
     text_outputs: bool
     """Whether text outputs are supported."""
 
@@ -112,6 +128,12 @@ class ModelProfile(TypedDict, total=False):
 
     tool_choice: bool
     """Whether the model supports [tool choice](https://docs.langchain.com/oss/python/langchain/models#forcing-tool-calls)."""
+
+    tool_call_streaming: bool
+    """Whether the model returns properly structured `tool_call_chunks` when streaming.
+
+    Only meaningful when `tool_calling` is `True`.
+    """
 
     # --- Structured output ---
     structured_output: bool
@@ -137,7 +159,7 @@ def _warn_unknown_profile_keys(profile: ModelProfile) -> None:
         profile: The model profile dict to check for undeclared keys.
     """
     if not isinstance(profile, dict):
-        return
+        return  # type: ignore[unreachable]
 
     try:
         declared = frozenset(get_type_hints(ModelProfile).keys())

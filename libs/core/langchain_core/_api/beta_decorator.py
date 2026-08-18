@@ -26,7 +26,7 @@ class LangChainBetaWarning(DeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", bound=Callable[..., Any] | type)
+T = TypeVar("T", bound=Callable[..., Any] | type | property)
 
 
 def beta(
@@ -145,27 +145,40 @@ def beta(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or obj.fget.__qualname__
+            _name = _name or (obj.fget and obj.fget.__qualname__) or "<property>"
             old_doc = obj.__doc__
 
+            # `obj.fget`/`fset`/`fdel` are typed `Callable | None`, so the `and`
+            # short-circuits guard the calls for the type checker. Each wrapper is
+            # only installed when its accessor is truthy (see `finalize` below), so
+            # the guards never short-circuit at runtime — do not "simplify" them
+            # away or mypy's `warn_unreachable` will flag the accessor as `None`.
             def _fget(instance: Any) -> Any:
                 if instance is not None:
                     emit_warning()
-                return obj.fget(instance)
+                return obj.fget and obj.fget(instance)
 
             def _fset(instance: Any, value: Any) -> None:
                 if instance is not None:
                     emit_warning()
-                obj.fset(instance, value)
+                obj.fset and obj.fset(instance, value)
 
             def _fdel(instance: Any) -> None:
                 if instance is not None:
                     emit_warning()
-                obj.fdel(instance)
+                obj.fdel and obj.fdel(instance)
 
-            def finalize(_: Callable[..., Any], new_doc: str, /) -> Any:
+            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
                 """Finalize the property."""
-                return property(fget=_fget, fset=_fset, fdel=_fdel, doc=new_doc)
+                return cast(
+                    "T",
+                    property(
+                        fget=_fget if obj.fget else None,
+                        fset=_fset if obj.fset else None,
+                        fdel=_fdel if obj.fdel else None,
+                        doc=new_doc,
+                    ),
+                )
 
         else:
             _name = _name or obj.__qualname__

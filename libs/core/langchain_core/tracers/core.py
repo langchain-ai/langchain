@@ -16,6 +16,7 @@ from typing import (
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 
 if TYPE_CHECKING:
     from collections.abc import Coroutine, Sequence
@@ -35,6 +36,31 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
+
+# Key under which gateway metadata is attached to a run's metadata for tracing.
+_GATEWAY_RUN_METADATA_KEY = "ls_gateway_info"
+
+
+def _extract_gateway_metadata(response: LLMResult) -> dict[str, Any] | None:
+    """Extract LangSmith gateway metadata from a model response.
+
+    When a request is routed through the LangSmith gateway, the gateway returns
+    metadata (e.g. the resolved provider and model) that integrations surface on
+    the generation's `generation_info` under `GATEWAY_METADATA_RESPONSE_KEY`.
+
+    Args:
+        response: The `LLMResult` produced by the model.
+
+    Returns:
+        The gateway metadata, or `None` if the response carries none.
+    """
+    for generations in response.generations:
+        for generation in generations:
+            generation_info = getattr(generation, "generation_info", None) or {}
+            gateway_metadata = generation_info.get(GATEWAY_METADATA_RESPONSE_KEY)
+            if isinstance(gateway_metadata, dict):
+                return gateway_metadata
+    return None
 
 
 class _TracerCore(ABC):
@@ -242,7 +268,7 @@ class _TracerCore(ABC):
 
     def _llm_run_with_token_event(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         run_id: UUID,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         parent_run_id: UUID | None = None,
@@ -319,7 +345,17 @@ class _TracerCore(ABC):
         if tool_call_count > 0:
             llm_run.extra["tool_call_count"] = tool_call_count
 
+        self._attach_gateway_metadata(llm_run, response)
+
         return llm_run
+
+    def _attach_gateway_metadata(self, run: Run, response: LLMResult) -> None:
+        """Promote LangSmith gateway metadata from the response to run metadata."""
+        gateway_metadata = _extract_gateway_metadata(response)
+        if gateway_metadata is None:
+            return
+        metadata = run.extra.setdefault("metadata", {})
+        metadata[_GATEWAY_RUN_METADATA_KEY] = gateway_metadata
 
     def _errored_llm_run(
         self, error: BaseException, run_id: UUID, response: LLMResult | None = None
@@ -340,6 +376,7 @@ class _TracerCore(ABC):
                         output_generation["message"] = dumpd(
                             cast("ChatGeneration", generation).message
                         )
+            self._attach_gateway_metadata(llm_run, response)
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
 
@@ -602,14 +639,14 @@ class _TracerCore(ABC):
     def _on_llm_new_token(
         self,
         run: Run,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         chunk: GenerationChunk | ChatGenerationChunk | None,
     ) -> Coroutine[Any, Any, None] | None:
         """Process new LLM token.
 
         Args:
             run: The LLM run.
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: Optional chunk.
         """
         _ = (run, token, chunk)

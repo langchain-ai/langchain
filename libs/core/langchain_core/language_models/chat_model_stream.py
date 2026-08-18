@@ -140,7 +140,7 @@ def _sweep_chunk_store(
         extras = {
             k: v
             for k, v in chunk.items()
-            if k not in ("type", "id", "name", "args") and v is not None
+            if k not in {"type", "id", "name", "args"} and v is not None
         }
         final_block = finalize_tool_call_chunk(
             raw_args=chunk.get("args"),
@@ -283,16 +283,47 @@ class SyncProjection(_ProjectionBase):
 class SyncTextProjection(SyncProjection):
     """String-specialized sync projection.
 
-    Adds `__str__`, `__bool__`, `__repr__` for ergonomic use with
-    `.text` and `.reasoning` projections.
+    Adds typed string producers and consumers, plus `__str__`, `__bool__`,
+    `__repr__` for ergonomic use with `.text` and `.reasoning` projections.
     """
 
     __slots__ = ()
 
+    def push(self, delta: str) -> None:
+        """Append a text delta."""
+        if not isinstance(cast("Any", delta), str):
+            msg = "SyncTextProjection requires a string delta"
+            raise TypeError(msg)
+        super().push(delta)
+
+    def complete(self, final_value: str) -> None:
+        """Set the final accumulated text and mark the projection as done."""
+        if not isinstance(cast("Any", final_value), str):
+            msg = "SyncTextProjection requires a string final value"
+            raise TypeError(msg)
+        super().complete(final_value)
+
+    def __iter__(self) -> Iterator[str]:
+        """Yield text deltas, raising if a producer supplied a non-string value."""
+        for delta in super().__iter__():
+            if not isinstance(delta, str):
+                msg = "SyncTextProjection received a non-string delta"
+                raise TypeError(msg)
+            yield delta
+
+    def get(self) -> str:
+        """Drain and return the full accumulated string, or empty if unfinished."""
+        value = super().get()
+        if value is None:
+            return ""
+        if not isinstance(value, str):
+            msg = "SyncTextProjection received a non-string final value"
+            raise TypeError(msg)
+        return value
+
     def __str__(self) -> str:
         """Drain and return the full accumulated string."""
-        val = self.get()
-        return val if val is not None else ""
+        return self.get()
 
     def __bool__(self) -> bool:
         """Return whether any deltas have been pushed."""
@@ -463,6 +494,58 @@ class _AsyncProjectionIterator:
             else:
                 proj._event.clear()  # noqa: SLF001
                 await proj._event.wait()  # noqa: SLF001
+
+
+class _AsyncTextProjectionIterator(_AsyncProjectionIterator):
+    """Async iterator over an `AsyncTextProjection`'s text deltas."""
+
+    __slots__ = ()
+
+    async def __anext__(self) -> str:
+        """Return the next text delta."""
+        item = await super().__anext__()
+        if not isinstance(item, str):
+            msg = "AsyncTextProjection received a non-string delta"
+            raise TypeError(msg)
+        return item
+
+
+class AsyncTextProjection(AsyncProjection):
+    """String-specialized async projection for `.text` and `.reasoning`."""
+
+    __slots__ = ()
+
+    def push(self, delta: str) -> None:
+        """Append a text delta and notify waiters."""
+        if not isinstance(cast("Any", delta), str):
+            msg = "AsyncTextProjection requires a string delta"
+            raise TypeError(msg)
+        super().push(delta)
+
+    def complete(self, final_value: str) -> None:
+        """Set the final accumulated text and notify waiters."""
+        if not isinstance(cast("Any", final_value), str):
+            msg = "AsyncTextProjection requires a string final value"
+            raise TypeError(msg)
+        super().complete(final_value)
+
+    def __aiter__(self) -> _AsyncTextProjectionIterator:
+        """Return an async iterator over text deltas."""
+        return _AsyncTextProjectionIterator(self)
+
+    def __await__(self) -> Generator[Any, None, str]:
+        """Await the full accumulated text."""
+        return self._await_text_impl().__await__()
+
+    async def _await_text_impl(self) -> str:
+        """Return accumulated text or raise if the final value is not a string."""
+        value = await self._await_impl()
+        if value is None:
+            return ""
+        if not isinstance(value, str):
+            msg = "AsyncTextProjection received a non-string final value"
+            raise TypeError(msg)
+        return value
 
 
 # ---------------------------------------------------------------------------
@@ -647,7 +730,7 @@ class _ChatModelStreamBase:
                 tcc = cast("ToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = tcc.get("index", len(self._tool_call_chunks))
+                    idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
                 _merge_block_delta_into_store(self._tool_call_chunks, idx, dict(tcc))
                 chunk_block: ToolCallChunk = {
                     "type": "tool_call_chunk",
@@ -662,7 +745,7 @@ class _ChatModelStreamBase:
                 stcc = cast("ServerToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = len(self._server_tool_call_chunks)
+                    idx = len(self._server_tool_call_chunks)  # type: ignore[unreachable]
                 _merge_block_delta_into_store(
                     self._server_tool_call_chunks,
                     idx,
@@ -677,7 +760,7 @@ class _ChatModelStreamBase:
                 tcc = cast("ToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = tcc.get("index", len(self._tool_call_chunks))
+                    idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
                 _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
                 legacy_chunk_block: ToolCallChunk = {
                     "type": "tool_call_chunk",
@@ -692,7 +775,7 @@ class _ChatModelStreamBase:
                 stcc = cast("ServerToolCallChunk", fields)
                 idx = data.get("index")
                 if idx is None:
-                    idx = len(self._server_tool_call_chunks)
+                    idx = len(self._server_tool_call_chunks)  # type: ignore[unreachable]
                 _merge_chunk_into_store(
                     self._server_tool_call_chunks,
                     idx,
@@ -715,7 +798,7 @@ class _ChatModelStreamBase:
             tcc = cast("ToolCallChunk", block)
             idx = data.get("index")
             if idx is None:
-                idx = tcc.get("index", len(self._tool_call_chunks))
+                idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
             _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
             fallback_chunk_block: ToolCallChunk = {
                 "type": "tool_call_chunk",
@@ -864,7 +947,7 @@ class _ChatModelStreamBase:
             if idx is not None and idx in self._server_tool_call_chunks:
                 del self._server_tool_call_chunks[idx]
             finalized = itc
-        elif btype in (
+        elif btype in {
             "server_tool_call",
             "server_tool_result",
             "image",
@@ -872,7 +955,7 @@ class _ChatModelStreamBase:
             "video",
             "file",
             "non_standard",
-        ):
+        }:
             if btype == "server_tool_call" and idx is not None:
                 self._server_tool_call_chunks.pop(idx, None)
             finalized = cast("FinalizedContentBlock", block)
@@ -888,7 +971,7 @@ class _ChatModelStreamBase:
             # `tool_call` / `invalid_tool_call` blocks are excluded: v1
             # finalization drops `index` on them so further deltas
             # cannot clobber already-parsed args, and v2 mirrors that.
-            if btype not in ("tool_call", "invalid_tool_call"):
+            if btype not in {"tool_call", "invalid_tool_call"}:
                 finalized.setdefault("index", idx)
             self._blocks[idx] = finalized
 
@@ -1222,8 +1305,8 @@ class AsyncChatModelStream(_ChatModelStreamBase):
     async-iterable (`async for event in stream`).
     """
 
-    _text_proj: AsyncProjection
-    _reasoning_proj: AsyncProjection
+    _text_proj: AsyncTextProjection
+    _reasoning_proj: AsyncTextProjection
     _tool_calls_proj: AsyncProjection
 
     def __init__(  # noqa: D107
@@ -1234,8 +1317,8 @@ class AsyncChatModelStream(_ChatModelStreamBase):
         message_id: str | None = None,
     ) -> None:
         super().__init__(namespace=namespace, node=node, message_id=message_id)
-        self._text_proj = AsyncProjection()
-        self._reasoning_proj = AsyncProjection()
+        self._text_proj = AsyncTextProjection()
+        self._reasoning_proj = AsyncTextProjection()
         self._tool_calls_proj = AsyncProjection()
         self._output_proj = AsyncProjection()
         self._events_proj = AsyncProjection()
@@ -1285,12 +1368,12 @@ class AsyncChatModelStream(_ChatModelStreamBase):
     # -- Public projections ------------------------------------------------
 
     @property
-    def text(self) -> AsyncProjection:
-        """Text content — async iterable of deltas, awaitable for full."""
+    def text(self) -> AsyncTextProjection:
+        """Text content — async iterable of `str` deltas, awaitable for full text."""
         return self._text_proj
 
     @property
-    def reasoning(self) -> AsyncProjection:
+    def reasoning(self) -> AsyncTextProjection:
         """Reasoning content — same interface as :attr:`text`."""
         return self._reasoning_proj
 
@@ -1435,6 +1518,7 @@ class AsyncChatModelStream(_ChatModelStreamBase):
 __all__ = [
     "AsyncChatModelStream",
     "AsyncProjection",
+    "AsyncTextProjection",
     "ChatModelStream",
     "SyncProjection",
     "SyncTextProjection",

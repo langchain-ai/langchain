@@ -220,7 +220,7 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
             env=env,
             cwd=workspace,
             preexec_fn=None,
-            start_new_session=False,
+            start_new_session=True,
         )
 
     def _build_command(self, command: Sequence[str]) -> list[str]:
@@ -276,7 +276,7 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
 
     The security guarantees depend on your Docker daemon configuration. Run the agent on
     a host where Docker is locked down (rootless mode, AppArmor/SELinux, etc.) and
-    review any additional volumes or capabilities passed through ``extra_run_args``. The
+    review any additional volumes or capabilities passed through `extra_run_args`. The
     default image is `python:3.12-alpine3.19`; supply a custom image if you need
     preinstalled tooling.
     """
@@ -325,7 +325,7 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
             env=host_env,
             cwd=workspace,
             preexec_fn=None,
-            start_new_session=False,
+            start_new_session=True,
         )
 
     def _build_command(

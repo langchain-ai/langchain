@@ -7,16 +7,13 @@ _EXPECTED_NUM_TOKENS = {
     "babbage": 17,
     "curie": 17,
     "davinci": 17,
-    "gpt-4": 12,
-    "gpt-4-32k": 12,
-    "gpt-3.5-turbo": 12,
-    "o1": 11,
+    "gpt-5.5": 11,
+    "gpt-5-nano": 11,
     "o3": 11,
-    "gpt-4o": 11,
 }
 
 _MODELS = models = ["ada", "babbage", "curie", "davinci"]
-_CHAT_MODELS = ["gpt-4", "gpt-4-32k", "gpt-3.5-turbo", "o1", "o3", "gpt-4o"]
+_CHAT_MODELS = ["gpt-5.5", "gpt-5-nano", "o3"]
 
 
 @pytest.mark.xfail(reason="Old models require different tiktoken cached file")

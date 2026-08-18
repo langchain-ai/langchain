@@ -147,16 +147,15 @@ def coro_with_context(
     Args:
         coro: The coroutine to await.
         context: The context to use.
-        create_task: Whether to create a task.
+        create_task: Kept for compatibility; this helper always creates a task.
 
     Returns:
         The coroutine with the context.
     """
     if asyncio_accepts_context():
         return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
-    if create_task:
-        return asyncio.create_task(coro)  # type: ignore[arg-type]
-    return coro
+    del create_task
+    return context.run(asyncio.create_task, coro)  # type: ignore[arg-type]
 
 
 class IsLocalDict(ast.NodeVisitor):
@@ -478,6 +477,9 @@ class AddableDict(dict[str, Any]):
 
         Returns:
             A dictionary that is the result of adding the two dictionaries.
+
+        Raises:
+            TypeError: If a shared key holds values of incompatible types.
         """
         chunk = AddableDict(self)
         for key in other:
@@ -486,8 +488,13 @@ class AddableDict(dict[str, Any]):
             elif other[key] is not None:
                 try:
                     added = chunk[key] + other[key]
-                except TypeError:
-                    added = other[key]
+                except TypeError as exc:
+                    msg = (
+                        f"Cannot add incompatible types for key {key!r}: "
+                        f"{type(chunk[key]).__name__!r} and "
+                        f"{type(other[key]).__name__!r}."
+                    )
+                    raise TypeError(msg) from exc
                 chunk[key] = added
         return chunk
 
@@ -499,6 +506,9 @@ class AddableDict(dict[str, Any]):
 
         Returns:
             A dictionary that is the result of adding the two dictionaries.
+
+        Raises:
+            TypeError: If a shared key holds values of incompatible types.
         """
         chunk = AddableDict(other)
         for key in self:
@@ -507,8 +517,13 @@ class AddableDict(dict[str, Any]):
             elif self[key] is not None:
                 try:
                     added = chunk[key] + self[key]
-                except TypeError:
-                    added = self[key]
+                except TypeError as exc:
+                    msg = (
+                        f"Cannot add incompatible types for key {key!r}: "
+                        f"{type(chunk[key]).__name__!r} and "
+                        f"{type(self[key]).__name__!r}."
+                    )
+                    raise TypeError(msg) from exc
                 chunk[key] = added
         return chunk
 
@@ -777,7 +792,7 @@ def is_async_callable(
     Returns:
         `True` if the function is async, `False` otherwise.
     """
-    return asyncio.iscoroutinefunction(func) or (
+    return inspect.iscoroutinefunction(func) or (
         hasattr(func, "__call__")  # noqa: B004
-        and asyncio.iscoroutinefunction(func.__call__)
+        and inspect.iscoroutinefunction(func.__call__)
     )

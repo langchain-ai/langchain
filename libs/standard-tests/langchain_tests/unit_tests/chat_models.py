@@ -14,6 +14,7 @@ from langchain_core.load import dumpd, load
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field, SecretStr, ValidationError
+from typing_extensions import override
 
 from langchain_tests.base import BaseStandardTests
 
@@ -901,6 +902,7 @@ class ChatModelUnitTests(ChatModelTests):
         ```
     '''  # noqa: E501,D214
 
+    @override
     @property
     def standard_chat_model_params(self) -> dict[str, Any]:
         """Standard chat model parameters."""
@@ -1082,12 +1084,14 @@ class ChatModelUnitTests(ChatModelTests):
         class ExpectedParams(BaseModel):
             ls_provider: str
             ls_model_name: str
-            ls_model_type: Literal["chat"]
+            ls_model_type: str
             ls_temperature: float | None = None
             ls_max_tokens: int | None = None
             ls_stop: list[str] | None = None
+            ls_integration: str | None = None
 
         ls_params = model._get_ls_params()
+        assert ls_params["ls_model_type"] == "chat"
         try:
             ExpectedParams(**ls_params)
         except ValidationError as e:
@@ -1100,6 +1104,7 @@ class ChatModelUnitTests(ChatModelTests):
             **self.chat_model_params,
         )
         ls_params = model._get_ls_params()
+        assert ls_params["ls_model_type"] == "chat"
         try:
             ExpectedParams(**ls_params)
         except ValidationError as e:

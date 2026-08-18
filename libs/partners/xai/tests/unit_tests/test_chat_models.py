@@ -48,12 +48,14 @@ def test_chat_xai_invalid_streaming_params() -> None:
 def test_chat_xai_extra_kwargs() -> None:
     """Test extra kwargs to chat xai."""
     # Check that foo is saved in extra_kwargs.
-    llm = ChatXAI(model=MODEL_NAME, foo=3, max_tokens=10)  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatXAI(model=MODEL_NAME, foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatXAI(model=MODEL_NAME, foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatXAI(model=MODEL_NAME, foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors
@@ -80,6 +82,113 @@ def test_chat_xai_api_base_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     assert llm.xai_api_base == "http://env.example.test/v1"
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        # Profiled reasoning models (`reasoning_output=True`).
+        "grok-4.3",
+        "grok-4.20-0309-reasoning",
+        # Unprofiled families that the live API rejects `stop` on. `grok-4`
+        # base and `grok-4-fast-non-reasoning` lack the substring "reasoning"
+        # yet still reject `stop`; `grok-code-fast` is a separate family.
+        "grok-3",
+        "grok-3-mini",
+        "grok-4",
+        "grok-4-0709",
+        "grok-4-fast-reasoning",
+        "grok-4-fast-non-reasoning",
+        "grok-code-fast-1",
+    ],
+)
+def test_reasoning_model_payload_drops_stop(model: str) -> None:
+    llm = ChatXAI(
+        model=model,
+        api_key=SecretStr("test-api-key"),
+        stop_sequences=["END"],
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert "stop" not in payload
+
+
+def test_non_reasoning_model_payload_keeps_stop() -> None:
+    # `grok-4.20-0309-non-reasoning` is profiled with `reasoning_output=False`
+    # and the live API accepts `stop` for it, even though its name contains
+    # "non-reasoning" like the unprofiled `grok-4-fast-non-reasoning` that does
+    # not. The profile must take precedence over the name-based fallback.
+    llm = ChatXAI(
+        model="grok-4.20-0309-non-reasoning",
+        api_key=SecretStr("test-api-key"),
+        stop_sequences=["END"],
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert payload["stop"] == ["END"]
+
+
+def test_reasoning_effort_moved_to_extra_body() -> None:
+    """`reasoning_effort` (inherited from `BaseChatOpenAI`) must reach xAI's
+    API via `extra_body`, since xAI does not accept it as a top-level field.
+    """
+    llm = ChatXAI(
+        model="grok-3-mini",
+        api_key=SecretStr("test-api-key"),
+        reasoning_effort="high",
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert "reasoning_effort" not in payload
+    assert payload["extra_body"]["reasoning_effort"] == "high"
+
+
+def test_reasoning_effort_as_call_time_kwarg() -> None:
+    """`reasoning_effort` also works as a call-time keyword argument.
+
+    This is the standard `reasoning_effort` param shared across chat model
+    integrations, so it must work via `model.invoke(..., reasoning_effort=...)`
+    without requiring it to be set on the model instance.
+    """
+    llm = ChatXAI(model="grok-3-mini", api_key=SecretStr("test-api-key"))
+
+    payload = llm._get_request_payload("hello", reasoning_effort="low")
+
+    assert "reasoning_effort" not in payload
+    assert payload["extra_body"]["reasoning_effort"] == "low"
+
+
+def test_reasoning_effort_preserves_existing_extra_body() -> None:
+    """Moving `reasoning_effort` into `extra_body` must not drop sibling keys."""
+    llm = ChatXAI(
+        model="grok-3-mini",
+        api_key=SecretStr("test-api-key"),
+        reasoning_effort="high",
+        extra_body={"some_other_field": "value"},
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert payload["extra_body"] == {
+        "some_other_field": "value",
+        "reasoning_effort": "high",
+    }
+
+
+def test_no_reasoning_effort_leaves_extra_body_untouched() -> None:
+    llm = ChatXAI(
+        model="grok-3-mini",
+        api_key=SecretStr("test-api-key"),
+        extra_body={"some_other_field": "value"},
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert payload["extra_body"] == {"some_other_field": "value"}
+    assert "reasoning_effort" not in payload
 
 
 def test_function_dict_to_message_function_message() -> None:
@@ -159,3 +268,13 @@ def test_stream_usage_metadata() -> None:
 
     model = ChatXAI(model=MODEL_NAME, stream_usage=False)
     assert model.stream_usage is False
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatXAI(model=MODEL_NAME)
+    assert llm.metadata is not None
+    versions = llm.metadata["lc_versions"]
+    assert "langchain-core" in versions
+    assert "langchain-xai" in versions
+    assert "langchain-openai" in versions

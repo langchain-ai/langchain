@@ -2,6 +2,7 @@
 
 from langgraph.runtime import Runtime
 
+from langchain.agents.middleware._trace_policy import configure_trace_policy
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
@@ -11,7 +12,7 @@ from langchain.agents.middleware.human_in_the_loop import (
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
-from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
+from langchain.agents.middleware.pii import PIIDetectionError, PIIMatch, PIIMiddleware
 from langchain.agents.middleware.provider_tool_search import ProviderToolSearchMiddleware
 from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
@@ -24,22 +25,27 @@ from langchain.agents.middleware.summarization import SummarizationMiddleware, T
 from langchain.agents.middleware.todo import TodoListMiddleware
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
+from langchain.agents.middleware.tool_error import ToolErrorMiddleware
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.tool_selection import LLMToolSelectorMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ExtendedModelResponse,
+    InputAgentState,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
+    OutputAgentState,
     ToolCallRequest,
+    TracePolicy,
     after_agent,
     after_model,
     before_agent,
     before_model,
     dynamic_prompt,
     hook_config,
+    omit_payload,
     wrap_model_call,
     wrap_tool_call,
 )
@@ -55,6 +61,7 @@ __all__ = [
     "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
+    "InputAgentState",
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
@@ -64,7 +71,9 @@ __all__ = [
     "ModelRequest",
     "ModelResponse",
     "ModelRetryMiddleware",
+    "OutputAgentState",
     "PIIDetectionError",
+    "PIIMatch",
     "PIIMiddleware",
     "ProviderToolSearchMiddleware",
     "RedactionRule",
@@ -74,14 +83,18 @@ __all__ = [
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
+    "ToolErrorMiddleware",
     "ToolRetryMiddleware",
+    "TracePolicy",
     "TriggerClause",
     "after_agent",
     "after_model",
     "before_agent",
     "before_model",
+    "configure_trace_policy",
     "dynamic_prompt",
     "hook_config",
+    "omit_payload",
     "wrap_model_call",
     "wrap_tool_call",
 ]

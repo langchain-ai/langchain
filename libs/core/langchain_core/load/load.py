@@ -321,7 +321,7 @@ def _compute_allowed_class_paths(
         if not isinstance(allowed_obj, type) or not issubclass(
             allowed_obj, Serializable
         ):
-            msg = "allowed_objects must contain Serializable subclasses."
+            msg = "allowed_objects must contain Serializable subclasses."  # type: ignore[unreachable]
             raise TypeError(msg)
 
         class_path = tuple(allowed_obj.lc_id())
@@ -440,9 +440,7 @@ class Reviver:
         # - Explicit list -> compute from those classes
         if allowed_objects in ("all", "core", "messages"):
             self.allowed_class_paths: set[tuple[str, ...]] | None = (
-                _get_default_allowed_class_paths(
-                    cast("Literal['all', 'core', 'messages']", allowed_objects)
-                ).copy()
+                _get_default_allowed_class_paths(allowed_objects).copy()
             )
             # Add paths from additional_import_mappings to the defaults
             if self.additional_import_mappings:

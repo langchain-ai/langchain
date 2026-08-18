@@ -151,7 +151,7 @@ def _resolve_cache(*, cache: BaseCache | bool | None) -> BaseCache | None:
     elif cache is False:
         llm_cache = None
     else:
-        msg = f"Unsupported cache value {cache}"
+        msg = f"Unsupported cache value {cache}"  # type: ignore[unreachable]
         raise ValueError(msg)
     return llm_cache
 
@@ -182,13 +182,13 @@ def get_prompts(
 
     llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
-        if llm_cache:
+        if llm_cache is not None:
             cache_val = llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
-            else:
-                missing_prompts.append(prompt)
-                missing_prompt_idxs.append(i)
+                continue
+        missing_prompts.append(prompt)
+        missing_prompt_idxs.append(i)
     return existing_prompts, llm_string, missing_prompt_idxs, missing_prompts
 
 
@@ -217,13 +217,13 @@ async def aget_prompts(
     existing_prompts = {}
     llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
-        if llm_cache:
+        if llm_cache is not None:
             cache_val = await llm_cache.alookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
-            else:
-                missing_prompts.append(prompt)
-                missing_prompt_idxs.append(i)
+                continue
+        missing_prompts.append(prompt)
+        missing_prompt_idxs.append(i)
     return existing_prompts, llm_string, missing_prompt_idxs, missing_prompts
 
 
@@ -288,7 +288,7 @@ async def aupdate_cache(
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
-        if llm_cache:
+        if llm_cache is not None:
             await llm_cache.aupdate(prompt, llm_string, result)
     return new_results.llm_output
 
@@ -325,7 +325,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             return StringPromptValue(text=model_input)
         if isinstance(model_input, Sequence):
             return ChatPromptValue(messages=convert_to_messages(model_input))
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Invalid input type {type(model_input)}. "
             "Must be a PromptValue, str, or list of BaseMessages."
         )
@@ -906,7 +906,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 input prompt and additional model provider-specific output.
         """
         if not isinstance(prompts, list):
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 "Argument 'prompts' is expected to be of type list[str], received"
                 f" argument of type {type(prompts)}."
             )
@@ -952,7 +952,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ):
                 msg = "run_name must be a list of the same length as prompts"
                 raise ValueError(msg)
-            callbacks = cast("list[Callbacks]", callbacks)
             tags_list = cast("list[list[str] | None]", tags or ([None] * len(prompts)))
             metadata_list = cast(
                 "list[builtins.dict[str, Any] | None]",
@@ -1225,7 +1224,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ):
                 msg = "run_name must be a list of the same length as prompts"
                 raise ValueError(msg)
-            callbacks = cast("list[Callbacks]", callbacks)
             tags_list = cast("list[list[str] | None]", tags or ([None] * len(prompts)))
             metadata_list = cast(
                 "list[builtins.dict[str, Any] | None]",
@@ -1259,7 +1257,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             params["stop"] = stop
             callback_managers = [
                 AsyncCallbackManager.configure(
-                    cast("Callbacks", callbacks),
+                    callbacks,
                     self.callbacks,
                     self.verbose,
                     cast("list[str]", tags),

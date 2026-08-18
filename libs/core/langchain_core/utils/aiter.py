@@ -214,7 +214,7 @@ class Tee(Generic[T]):
             lock: The lock to synchronise access to the shared buffers.
 
         """
-        self._iterator = iterable.__aiter__()  # before 3.10 aiter() doesn't exist
+        self._iterator = aiter(iterable)
         self._buffers: list[deque[T]] = [deque() for _ in range(n)]
         self._children = tuple(
             tee_peer(
@@ -323,25 +323,35 @@ class aclosing(AbstractAsyncContextManager[Any]):  # noqa: N801
 
 
 async def abatch_iterate(
-    size: int, iterable: AsyncIterable[T]
+    size: int | None, iterable: AsyncIterable[T]
 ) -> AsyncIterator[list[T]]:
     """Utility batching function for async iterables.
 
     Args:
         size: The size of the batch.
+
+            If `None`, returns a single batch.
         iterable: The async iterable to batch.
 
     Yields:
         The batches.
+
+    Raises:
+        ValueError: If `size` is not `None` and is not a positive integer.
     """
+    if size is None:
+        single_batch = [el async for el in iterable]
+        if single_batch:
+            yield single_batch
+        return
+    if size <= 0:
+        msg = f"Batch size must be a positive integer, got {size}."
+        raise ValueError(msg)
     batch: list[T] = []
     async for element in iterable:
-        if len(batch) < size:
-            batch.append(element)
-
+        batch.append(element)
         if len(batch) >= size:
             yield batch
             batch = []
-
     if batch:
         yield batch

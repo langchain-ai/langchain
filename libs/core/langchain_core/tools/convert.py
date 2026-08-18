@@ -4,13 +4,14 @@ import inspect
 from collections.abc import Callable
 from typing import Any, Literal, cast, get_type_hints, overload
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, RootModel, create_model
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import Runnable
 from langchain_core.tools.base import ArgsSchema, BaseTool
 from langchain_core.tools.simple import Tool
 from langchain_core.tools.structured import StructuredTool
+from langchain_core.utils.pydantic import TypeBaseModel
 
 
 @overload
@@ -99,6 +100,16 @@ def tool(
         - Functions may accept multiple arguments and return types are flexible;
             outputs will be serialized if needed.
         - When using with `Runnable`, a string name must be provided.
+
+    !!! warning "Reserved argument names"
+
+        Avoid naming tool arguments `config`, `run_manager`, or `callbacks`. These
+        collide with values LangChain injects into tools at call time. A `config`
+        argument is shadowed by the injected `RunnableConfig`, so the tool fails
+        at call time with `TypeError: ... missing 1 required positional argument:
+        'config'`, while `run_manager` and `callbacks` are silently dropped from
+        the generated schema. To access runtime information (state, context, store,
+        config), add a `ToolRuntime` parameter instead.
 
     Args:
         name_or_callable: Optional name of the tool or the `Callable` to be
@@ -275,7 +286,7 @@ def tool(
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
 
-                if runnable.input_schema.model_json_schema().get("type") != "object":
+                if runnable.get_input_jsonschema().get("type") != "object":
                     msg = "Runnable must have an object schema."
                     raise ValueError(msg)
 
@@ -318,16 +329,17 @@ def tool(
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
-            if dec_func.__doc__ is None:
+            tool_description = tool_description or dec_func.__doc__
+            if tool_description is None:
                 msg = (
-                    "Function must have a docstring if "
-                    "description not provided and infer_schema is False."
+                    "Function must have either a docstring or description "
+                    "when infer_schema is False."
                 )
                 raise ValueError(msg)
             return Tool(
                 name=tool_name,
                 func=func,
-                description=f"{tool_name} tool",
+                description=tool_description,
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
@@ -394,7 +406,7 @@ def tool(
 
 def _get_description_from_runnable(runnable: Runnable[Any, Any]) -> str:
     """Generate a placeholder description of a `Runnable`."""
-    input_schema = runnable.input_schema.model_json_schema()
+    input_schema = runnable.get_input_jsonschema()
     return f"Takes {input_schema}."
 
 
@@ -420,7 +432,7 @@ def _get_schema_from_runnable_and_arg_types(
 
 def convert_runnable_to_tool(
     runnable: Runnable[Any, Any],
-    args_schema: type[BaseModel] | None = None,
+    args_schema: TypeBaseModel | None = None,
     *,
     name: str | None = None,
     description: str | None = None,
@@ -443,7 +455,7 @@ def convert_runnable_to_tool(
     description = description or _get_description_from_runnable(runnable)
     name = name or runnable.get_name()
 
-    schema = runnable.input_schema.model_json_schema()
+    schema = runnable.get_input_jsonschema()
     if schema.get("type") == "string":
         return Tool(
             name=name,
@@ -458,12 +470,19 @@ def convert_runnable_to_tool(
     def invoke_wrapper(callbacks: Callbacks | None = None, **kwargs: Any) -> Any:
         return runnable.invoke(kwargs, config={"callbacks": callbacks})
 
+    input_schema_cls = runnable.input_schema
+    # Detect `RootModel` input schemas so we don't use them directly as the tool
+    # args schema.
+    is_root_model = isinstance(input_schema_cls, type) and issubclass(
+        input_schema_cls, RootModel
+    )
     if (
         arg_types is None
         and schema.get("type") == "object"
         and schema.get("properties")
+        and not is_root_model
     ):
-        args_schema = runnable.input_schema
+        args_schema = input_schema_cls
     else:
         args_schema = _get_schema_from_runnable_and_arg_types(
             runnable, name, arg_types=arg_types

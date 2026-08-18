@@ -22,6 +22,8 @@ ANTHROPIC_SEARCH_TOOL = {
     "name": "tool_search_tool_bm25",
 }
 OPENAI_SEARCH_TOOL = {"type": "tool_search"}
+OPENAI_TEST_MODEL = "gpt-5.5"
+OPENAI_REASONING_TEST_MODEL = "o3"
 
 
 @tool
@@ -305,8 +307,8 @@ def test_normalizes_provider_casing_and_hyphens() -> None:
     [
         ("claude-sonnet-4-5", ANTHROPIC_SEARCH_TOOL),
         ("gpt-5.4", OPENAI_SEARCH_TOOL),
-        ("o3-mini", OPENAI_SEARCH_TOOL),
-        ("chatgpt-4o-latest", OPENAI_SEARCH_TOOL),
+        (OPENAI_REASONING_TEST_MODEL, OPENAI_SEARCH_TOOL),
+        (OPENAI_TEST_MODEL, OPENAI_SEARCH_TOOL),
     ],
 )
 def test_detects_provider_from_bare_model_name(

@@ -7,6 +7,7 @@ EXPECTED_ALL = [
     "SparseVector",
     "FastEmbedSparse",
     "RetrievalMode",
+    "__version__",
 ]
 
 

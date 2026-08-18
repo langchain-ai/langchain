@@ -2,7 +2,6 @@
 
 import copy
 import json
-from types import GenericAlias
 from typing import Any
 
 import jsonpatch  # type: ignore[import-untyped]
@@ -17,6 +16,7 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.json import parse_partial_json
 from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.utils.pydantic import PydanticBaseModel, TypeBaseModel
 
 
 class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
@@ -219,7 +219,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
 
     """
 
-    pydantic_schema: type[BaseModel] | dict[str, type[BaseModel]]
+    pydantic_schema: TypeBaseModel | dict[str, TypeBaseModel]
     """The Pydantic schema to parse the output with.
 
     If multiple schemas are provided, then the function name will be used to
@@ -242,10 +242,8 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         """
         schema = values["pydantic_schema"]
         if "args_only" not in values:
-            values["args_only"] = (
-                isinstance(schema, type)
-                and not isinstance(schema, GenericAlias)
-                and issubclass(schema, BaseModel)
+            values["args_only"] = isinstance(schema, type) and issubclass(
+                schema, BaseModel
             )
         elif values["args_only"] and isinstance(schema, dict):
             msg = (
@@ -270,11 +268,24 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             The parsed JSON object.
         """
         result_ = super().parse_result(result)
+        pydantic_args: PydanticBaseModel
         if self.args_only:
-            if hasattr(self.pydantic_schema, "model_validate_json"):
+            if isinstance(self.pydantic_schema, dict):
+                msg = (
+                    "Dict Pydantic schema unsupported with args_only: "
+                    f"{self.pydantic_schema}"
+                )
+                raise ValueError(msg)
+            if issubclass(self.pydantic_schema, BaseModel):
                 pydantic_args = self.pydantic_schema.model_validate_json(result_)
+            elif issubclass(self.pydantic_schema, BaseModelV1):
+                pydantic_args = self.pydantic_schema.parse_raw(result_)
             else:
-                pydantic_args = self.pydantic_schema.parse_raw(result_)  # type: ignore[attr-defined]
+                msg = (  # type: ignore[unreachable]
+                    "Unsupported Pydantic schema with args_only: "
+                    f"{self.pydantic_schema}"
+                )
+                raise ValueError(msg)
         else:
             fn_name = result_["name"]
             args = result_["arguments"]
@@ -287,7 +298,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             elif issubclass(pydantic_schema, BaseModelV1):
                 pydantic_args = pydantic_schema.parse_raw(args)
             else:
-                msg = f"Unsupported Pydantic schema: {pydantic_schema}"
+                msg = f"Unsupported Pydantic schema: {pydantic_schema}"  # type: ignore[unreachable]
                 raise ValueError(msg)
         return pydantic_args
 
