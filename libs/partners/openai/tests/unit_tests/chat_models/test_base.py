@@ -4035,12 +4035,15 @@ def test_convert_from_v1_to_responses_preserves_reasoning_item_boundaries() -> N
         {"type": "reasoning", "reasoning": "legacy "},
         {"type": "reasoning", "reasoning": "reasoning"},
         {"type": "reasoning", "id": "rs_789", "reasoning": "last"},
-        {
-            "type": "reasoning",
-            "id": "rs_native",
-            "summary": [{"type": "summary_text", "text": "already native"}],
-            "encrypted_content": "encrypted-native",
-        },
+        cast(
+            types.ContentBlock,
+            {
+                "type": "reasoning",
+                "id": "rs_native",
+                "summary": [{"type": "summary_text", "text": "already native"}],
+                "encrypted_content": "encrypted-native",
+            },
+        ),
     ]
 
     result = _convert_from_v1_to_responses(content, [])
