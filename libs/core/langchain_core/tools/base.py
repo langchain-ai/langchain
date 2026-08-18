@@ -1620,7 +1620,7 @@ def _is_injected_arg_type(
         injected_type = InjectedToolArg
 
     # if the type is an Annotated type, check if annotated metadata
-    # is an intance or subclass of the injected type
+    # is an instance or subclass of the injected type
     return any(
         isinstance(arg, injected_type)
         or (isinstance(arg, type) and issubclass(arg, injected_type))
