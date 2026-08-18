@@ -309,7 +309,6 @@ def test_create_chat_result_recomputes_total_tokens_for_reasoning() -> None:
                 message=ChatCompletionMessage(
                     role="assistant",
                     content="Test response",
-                    reasoning_content="Thinking...",
                 ),
             )
         ],
@@ -323,7 +322,9 @@ def test_create_chat_result_recomputes_total_tokens_for_reasoning() -> None:
 
     result = llm._create_chat_result(response)
 
-    usage_metadata = result.generations[0].message.usage_metadata
+    message = result.generations[0].message
+    assert isinstance(message, AIMessage)
+    usage_metadata = message.usage_metadata
     assert usage_metadata is not None
     assert usage_metadata["input_tokens"] == 32
     assert usage_metadata["output_tokens"] == 14  # 9 completion + 5 reasoning
@@ -359,7 +360,9 @@ def test_convert_chunk_recomputes_total_tokens_for_reasoning() -> None:
     )
     assert generation_chunk is not None
 
-    usage_metadata = generation_chunk.message.usage_metadata
+    message = generation_chunk.message
+    assert isinstance(message, AIMessageChunk)
+    usage_metadata = message.usage_metadata
     assert usage_metadata is not None
     assert usage_metadata["input_tokens"] == 32
     assert usage_metadata["output_tokens"] == 14  # 9 completion + 5 reasoning
