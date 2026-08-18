@@ -82,9 +82,9 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "deepseek-v4-pro": {
         "name": "DeepSeek V4 Pro",
-        "release_date": "2026-04-24",
-        "last_updated": "2026-04-24",
-        "open_weights": True,
+        "release_date": "2026-08-12",
+        "last_updated": "2026-08-12",
+        "open_weights": False,
         "max_input_tokens": 1000000,
         "max_output_tokens": 384000,
         "text_inputs": True,

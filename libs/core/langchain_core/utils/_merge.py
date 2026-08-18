@@ -68,6 +68,15 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] = merge_lists(merged[right_k], right_v)
             elif merged[right_k] == right_v:
                 continue
+            elif isinstance(merged[right_k], bool):
+                # `bool` is a subclass of `int`, so without this check differing
+                # booleans would fall into the int branch below and get summed,
+                # silently turning e.g. `True + False` into the int `1`.
+                msg = (
+                    f"Additional kwargs key {right_k} already exists in left dict and "
+                    f"value has unsupported type {type(merged[right_k])}."
+                )
+                raise TypeError(msg)
             elif isinstance(merged[right_k], int):
                 # Preserve identification and temporal fields using last-wins strategy
                 # instead of summing:
@@ -118,7 +127,8 @@ def merge_lists(left: list[Any] | None, *others: list[Any] | None) -> list[Any] 
                         i
                         for i, e_left in enumerate(merged)
                         if (
-                            "index" in e_left
+                            isinstance(e_left, dict)
+                            and "index" in e_left
                             and e_left["index"] == e["index"]  # index matches
                             and (  # IDs not inconsistent
                                 e_left.get("id") in {None, ""}

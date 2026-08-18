@@ -456,7 +456,7 @@ def test_build_proxied_async_httpx_client_opt_out_returns_plain_client() -> None
         verify=True,
         socket_options=(),
     )
-    assert isinstance(client, httpx.AsyncClient)
+    assert isinstance(client, _client_utils.httpx.AsyncClient)
 
 
 def test_build_proxied_async_httpx_client_wraps_transport() -> None:
@@ -470,7 +470,7 @@ def test_build_proxied_async_httpx_client_wraps_transport() -> None:
         verify=True,
         socket_options=((SOL_SOCKET, SO_KEEPALIVE, 1),),
     )
-    assert isinstance(client, httpx.AsyncClient)
+    assert isinstance(client, _client_utils.httpx.AsyncClient)
 
 
 def test_build_proxied_sync_httpx_client_opt_out_returns_plain_client() -> None:
@@ -479,7 +479,7 @@ def test_build_proxied_sync_httpx_client_opt_out_returns_plain_client() -> None:
         verify=True,
         socket_options=(),
     )
-    assert isinstance(client, httpx.Client)
+    assert isinstance(client, _client_utils.httpx.Client)
 
 
 def test_build_proxied_sync_httpx_client_wraps_transport() -> None:
@@ -488,7 +488,7 @@ def test_build_proxied_sync_httpx_client_wraps_transport() -> None:
         verify=True,
         socket_options=((SOL_SOCKET, SO_KEEPALIVE, 1),),
     )
-    assert isinstance(client, httpx.Client)
+    assert isinstance(client, _client_utils.httpx.Client)
 
 
 def test_warn_if_proxy_env_shadowed_emits_once(

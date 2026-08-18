@@ -20,11 +20,12 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "1.4.3"
+version = "1.5.2"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.5.3,<2.0.0",
-    "openai>=2.45.0,<3.0.0",
+    "langchain-core>=1.5.6,<2.0.0",
+    "certifi>=2024.6.2",
+    "openai>=2.45.0,<4.0.0",
     "tiktoken>=0.7.0,<1.0.0",
 ]
 
@@ -50,7 +51,7 @@ test = [
     "pytest-retry>=1.7.0,<1.8.0",
     "pytest-socket>=0.6.0,<1.0.0",
     "pytest-xdist>=3.6.1,<4.0.0",
-    "vcrpy>=8.0.0,<9.0.0",
+    "vcrpy>=8.2.0,<9.0.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
     "langchain>=1.0.0,<2.0.0",

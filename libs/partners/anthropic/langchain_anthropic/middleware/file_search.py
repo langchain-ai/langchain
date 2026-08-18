@@ -299,7 +299,11 @@ class StateFileSearchMiddleware(AgentMiddleware):
         results: dict[str, list[tuple[int, str]]] = {}
 
         for file_path, file_data in files.items():
-            if not file_path.startswith(base_path):
+            if (
+                base_path != "/"  # noqa: PLR1714
+                and file_path != base_path
+                and not file_path.startswith(base_path + "/")
+            ):
                 continue
 
             # Check include filter
