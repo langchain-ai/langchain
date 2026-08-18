@@ -12,14 +12,11 @@ PYTEST_EXTRA ?=
 
 integration_test integration_tests: TEST_FILE = tests/integration_tests/
 
-test:
-	uv run --group test --group test_integration pytest $(PYTEST_EXTRA) $(TEST_FILE)
+test tests:
+	uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
 	uv run --group test --group test_integration pytest -v --tb=short -n auto --benchmark-disable $(PYTEST_EXTRA) $(TEST_FILE)
-
-tests:
-	uv run --group test pytest $(PYTEST_EXTRA) $(TEST_FILE)
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
