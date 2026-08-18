@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import collections
+import copy
 import inspect
 import logging
 import types
@@ -401,6 +402,9 @@ def convert_to_openai_function(
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
     """
+    if strict and isinstance(function, dict):
+        function = copy.deepcopy(function)
+
     # an Anthropic format tool
     if isinstance(function, dict) and all(
         k in function for k in ("name", "input_schema")
@@ -477,8 +481,6 @@ def convert_to_openai_function(
             raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
-            if isinstance(oai_function.get("parameters"), dict):
-                oai_function["parameters"] = dict(oai_function["parameters"])
             oai_function["parameters"] = _recursive_set_additional_properties_false(
                 oai_function["parameters"]
             )
