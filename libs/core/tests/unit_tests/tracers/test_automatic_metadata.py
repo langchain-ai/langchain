@@ -192,6 +192,87 @@ def test_complete_llm_run_attaches_gateway_metadata() -> None:
     assert completed_run.extra["metadata"]["ls_gateway_info"] == gateway_info
 
 
+def test_complete_llm_run_gateway_metadata_overrides_ls_params() -> None:
+    """Gateway provider/model override the static `ls_*` run metadata."""
+    tracer = MockTracerCore()
+    run = _make_run("test-gateway-override-run-id")
+    run.extra = {"metadata": {"ls_provider": "openai", "ls_model_name": "gpt-5.6"}}
+    tracer.run_map[str(run.id)] = run
+
+    gateway_info = {"provider": "anthropic", "model": "claude-opus-5"}
+    response = LLMResult(
+        generations=[
+            [
+                ChatGeneration(
+                    message=AIMessage(content="Test"),
+                    generation_info={GATEWAY_METADATA_RESPONSE_KEY: gateway_info},
+                )
+            ]
+        ]
+    )
+
+    completed_run = tracer._complete_llm_run(response=response, run_id=run.id)
+
+    metadata = completed_run.extra["metadata"]
+    assert metadata["ls_provider"] == "anthropic"
+    assert metadata["ls_model_name"] == "claude-opus-5"
+    assert metadata["ls_gateway_info"] == gateway_info
+
+
+def test_complete_llm_run_gateway_metadata_prefers_selected_model() -> None:
+    """`selected_model` (route-based served model) wins over `model`."""
+    tracer = MockTracerCore()
+    run = _make_run("test-gateway-selected-model-run-id")
+    run.extra = {"metadata": {"ls_model_name": "gpt-5.6"}}
+    tracer.run_map[str(run.id)] = run
+
+    gateway_info = {
+        "provider": "openai",
+        "model": "gpt-5.6",
+        "selected_model": "gpt-5.6-mini",
+    }
+    response = LLMResult(
+        generations=[
+            [
+                ChatGeneration(
+                    message=AIMessage(content="Test"),
+                    generation_info={GATEWAY_METADATA_RESPONSE_KEY: gateway_info},
+                )
+            ]
+        ]
+    )
+
+    completed_run = tracer._complete_llm_run(response=response, run_id=run.id)
+
+    assert completed_run.extra["metadata"]["ls_model_name"] == "gpt-5.6-mini"
+
+
+def test_complete_llm_run_gateway_metadata_preserves_ls_params_when_absent() -> None:
+    """Static `ls_*` values are kept when the gateway omits provider/model."""
+    tracer = MockTracerCore()
+    run = _make_run("test-gateway-partial-run-id")
+    run.extra = {"metadata": {"ls_provider": "openai", "ls_model_name": "gpt-5.6"}}
+    tracer.run_map[str(run.id)] = run
+
+    gateway_info = {"outcome": "success"}
+    response = LLMResult(
+        generations=[
+            [
+                ChatGeneration(
+                    message=AIMessage(content="Test"),
+                    generation_info={GATEWAY_METADATA_RESPONSE_KEY: gateway_info},
+                )
+            ]
+        ]
+    )
+
+    completed_run = tracer._complete_llm_run(response=response, run_id=run.id)
+
+    metadata = completed_run.extra["metadata"]
+    assert metadata["ls_provider"] == "openai"
+    assert metadata["ls_model_name"] == "gpt-5.6"
+
+
 def test_complete_llm_run_no_gateway_metadata() -> None:
     """No gateway metadata is attached when the response carries none."""
     tracer = MockTracerCore()
