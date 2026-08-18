@@ -1,7 +1,9 @@
 """Test functionality related to prompts."""
 
 import re
+from collections import ChainMap, UserDict
 from tempfile import NamedTemporaryFile
+from types import MappingProxyType
 from typing import Any, Literal
 from unittest import mock
 
@@ -249,6 +251,16 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
     }
+
+
+def test_mustache_prompt_with_non_dict_mapping() -> None:
+    """Test mustache templates accept non-`dict` `Mapping` values."""
+    template = "Hello {{user.name}}"
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+
+    assert prompt.format(user=ChainMap({"name": "Alice"})) == "Hello Alice"
+    assert prompt.format(user=UserDict({"name": "Alice"})) == "Hello Alice"
+    assert prompt.format(user=MappingProxyType({"name": "Alice"})) == "Hello Alice"
 
 
 def test_prompt_from_template_with_partial_variables() -> None:
