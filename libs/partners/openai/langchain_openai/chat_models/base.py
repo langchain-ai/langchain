@@ -1881,6 +1881,18 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> ChatResult:
         generations = []
 
+        if not isinstance(response, dict | openai.BaseModel):
+            max_preview_length = 200
+            preview = str(response)
+            if len(preview) > max_preview_length:
+                preview = f"{preview[:max_preview_length]}..."
+            msg = (
+                f"Unexpected chat completion response type "
+                f"{type(response).__name__}. "
+                f"Expected dict or openai.BaseModel. Preview: {preview}"
+            )
+            raise ValueError(msg)
+
         response_dict = (
             response
             if isinstance(response, dict)

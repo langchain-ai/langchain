@@ -2100,6 +2100,26 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
     )
 
 
+def test_create_chat_result_raises_on_string_html_response() -> None:
+    html = (
+        "<html><head><title>302 Found</title></head><body>"
+        + ("x" * 5000)
+        + "</body></html>"
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    with pytest.raises(ValueError, match="str") as exc_info:
+        llm._create_chat_result(html)  # type: ignore[arg-type]
+    message = str(exc_info.value)
+    assert "302 Found" in message
+    assert len(message) < len(html)
+
+
+def test_create_chat_result_raises_on_non_pydantic_response() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    with pytest.raises(ValueError, match="object"):
+        llm._create_chat_result(object())  # type: ignore[arg-type]
+
+
 @pytest.mark.skipif(
     (PYDANTIC_VERSION.major, PYDANTIC_VERSION.minor) < (2, 8),
     reason=(
