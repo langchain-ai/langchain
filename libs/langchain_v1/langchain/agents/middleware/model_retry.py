@@ -59,12 +59,15 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
 
         !!! example "Custom exception filtering"
 
+            Exceptions for which the callable returns `False` propagate to the caller.
+            They are not passed to `on_failure`.
+
             ```python
             from anthropic import APIStatusError
 
 
             def should_retry(exc: Exception) -> bool:
-                # Only retry on 5xx errors
+                # Retry 5xx; anything else propagates
                 if isinstance(exc, APIStatusError):
                     return 500 <= exc.status_code < 600
                 return False
@@ -228,6 +231,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
             `ModelResponse` or `AIMessage` (the final result).
 
         Raises:
+            Exception: Any exception not matched by `retry_on` is re-raised immediately,
+                without being passed to `on_failure`.
             RuntimeError: If the retry loop completes without returning. (This should not happen.)
         """
         # Initial attempt + retries
@@ -280,6 +285,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
             `ModelResponse` or `AIMessage` (the final result).
 
         Raises:
+            Exception: Any exception not matched by `retry_on` is re-raised immediately,
+                without being passed to `on_failure`.
             RuntimeError: If the retry loop completes without returning. (This should not happen.)
         """
         # Initial attempt + retries

@@ -57,12 +57,15 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
 
         !!! example "Custom exception filtering"
 
+            Exceptions for which the callable returns `False` propagate to the caller.
+            They are not passed to `on_failure`.
+
             ```python
             from requests.exceptions import HTTPError
 
 
             def should_retry(exc: Exception) -> bool:
-                # Only retry on 5xx errors
+                # Retry 5xx; anything else propagates
                 if isinstance(exc, HTTPError):
                     return 500 <= exc.status_code < 600
                 return False
@@ -302,6 +305,8 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
             `ToolMessage` or `Command` (the final result).
 
         Raises:
+            Exception: Any exception not matched by `retry_on` is re-raised immediately,
+                without being passed to `on_failure`.
             RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
@@ -364,6 +369,8 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
             `ToolMessage` or `Command` (the final result).
 
         Raises:
+            Exception: Any exception not matched by `retry_on` is re-raised immediately,
+                without being passed to `on_failure`.
             RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
