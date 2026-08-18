@@ -300,7 +300,7 @@ class StateFileSearchMiddleware(AgentMiddleware):
 
         for file_path, file_data in files.items():
             if (
-                base_path != "/"
+                base_path != "/"  # noqa: PLR1714
                 and file_path != base_path
                 and not file_path.startswith(base_path + "/")
             ):
