@@ -1517,6 +1517,26 @@ def _get_type_hints_source(
     return func
 
 
+def _get_callable_globals(func: Callable[..., Any]) -> dict[str, Any]:
+    """Return the globals namespace associated with a callable.
+
+    Explicit `__signature__` objects store annotations separately from a
+    callable's `__annotations__`. String annotations on such signatures
+    still need the callable's defining globals to be resolved.
+    """
+    if isinstance(func, functools.partial):
+        return _get_callable_globals(func.func)
+    if inspect.ismethod(func):
+        return _get_callable_globals(func.__func__)
+    globalns = getattr(func, "__globals__", None)
+    if isinstance(globalns, dict):
+        return globalns
+    if not inspect.isroutine(func) and not inspect.isclass(func):
+        callable_obj = cast("Any", func)
+        return _get_callable_globals(cast("Callable[..., Any]", callable_obj.__call__))
+    return {}
+
+
 def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozenset[str]:
     """Identify injected-argument parameters of a callable.
 
@@ -1554,7 +1574,11 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
             for name, param in params.items()
             if _is_injected_arg_type(hints.get(name, param.annotation))
         )
-    globalns = getattr(hint_source, "__globals__", {})
+    globalns = (
+        getattr(hint_source, "__globals__", {})
+        if hint_source is not None
+        else _get_callable_globals(func)
+    )
     keys = set()
     resolved_annotations: dict[str, Any] = {}
     for name, param in params.items():
