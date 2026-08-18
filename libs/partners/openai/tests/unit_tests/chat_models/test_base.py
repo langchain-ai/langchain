@@ -2101,20 +2101,27 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
 
 
 def test_create_chat_result_raises_on_unexpected_response_type() -> None:
-    """Non-dict / non-BaseModel responses must surface a clear error.
-
-    `raw_response.parse()` can hand back a `str` (or other non-model value)
-    when an OpenAI-compatible endpoint returns a non-JSON body, e.g. an Azure
-    302 redirect that serves an HTML page. Previously this reached
-    `response.model_dump()` and raised an opaque
-    `AttributeError: 'str' object has no attribute 'model_dump'`. See #38866.
-    """
+    """A non-JSON response body must surface a clear error, not an `AttributeError`."""
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
-    # Simulate the Azure 302 redirect scenario where `parse()` returns the raw
-    # HTML body as a string instead of a typed completion model.
-    with pytest.raises(ValueError, match="Unexpected response type"):
+    with pytest.raises(ValueError, match="got str") as exc_info:
         llm._create_chat_result("<html><body>Moved</body></html>")  # type: ignore[arg-type]
+    assert "Moved" in str(exc_info.value)
+
+    with pytest.raises(ValueError, match="got object"):
+        llm._create_chat_result(object())  # type: ignore[arg-type]
+
+
+def test_create_chat_result_truncates_unexpected_response_body() -> None:
+    """A large response body must not be echoed in full in the error message."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    body = "<html>" + "x" * 5000 + "</html>"
+
+    with pytest.raises(ValueError, match="got str") as exc_info:
+        llm._create_chat_result(body)  # type: ignore[arg-type]
+    message = str(exc_info.value)
+    assert len(message) < len(body)
+    assert message.endswith("...")
 
 
 @pytest.mark.skipif(

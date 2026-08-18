@@ -1882,20 +1882,18 @@ class BaseChatOpenAI(BaseChatModel):
         generations = []
 
         if not isinstance(response, dict | openai.BaseModel):
-            # `raw_response.parse()` can hand back something other than a
-            # dict or BaseModel when the upstream endpoint returns a non-JSON
-            # body (e.g. an Azure 302 redirect that yields an HTML string, or
-            # another OpenAI-compatible backend returning plain text). Without
-            # this guard the code below calls `.model_dump()` on the value and
-            # surfaces an opaque `AttributeError: 'str' object has no attribute
-            # 'model_dump'`, hiding the real cause. Raise a clear error so the
-            # caller knows the response shape is unexpected.
+            # `parse()` yields a `str` when the endpoint returns a non-JSON body,
+            # e.g. an HTML error page served after a redirect.
+            preview = repr(response)
+            if len(preview) > 200:
+                preview = f"{preview[:200]}..."
             msg = (
                 "Unexpected response type from OpenAI-compatible endpoint. "
-                f"Expected a dict or openai.BaseModel, got "
-                f"{type(response).__name__}: {response!r}"
+                "Expected a dict or openai.BaseModel, got "
+                f"{type(response).__name__}: {preview}"
             )
             raise ValueError(msg)
+
         response_dict = (
             response
             if isinstance(response, dict)
