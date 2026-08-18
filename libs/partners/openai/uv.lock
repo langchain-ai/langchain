@@ -707,7 +707,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.5.4"
+version = "1.5.6"
 source = { editable = "../../core" }
 dependencies = [
     { name = "httpx" },
@@ -771,7 +771,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.5.1"
+version = "1.5.2"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
