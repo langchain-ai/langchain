@@ -18,18 +18,32 @@ from typing import (
 import httpx
 from fireworks import (
     APIConnectionError,
+    APITimeoutError,
     AsyncFireworks,
+    AuthenticationError,
     BadRequestError,
     Fireworks,
     FireworksError,
     InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
     RateLimitError,
 )
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelServerError,
+    ModelTimeoutError,
+)
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -563,6 +577,38 @@ def _promote_http_status_error(exc: httpx.HTTPStatusError) -> NoReturn:
 
 class FireworksContextOverflowError(BadRequestError, ContextOverflowError):
     """`BadRequestError` raised when input exceeds Fireworks's context limit."""
+
+
+class FireworksAuthenticationError(AuthenticationError, ModelAuthenticationError):
+    """Fireworks authentication error classified as a LangChain model error."""
+
+
+class FireworksPermissionDeniedError(PermissionDeniedError, ModelPermissionDeniedError):
+    """Fireworks permission error classified as a LangChain model error."""
+
+
+class FireworksInvalidRequestError(BadRequestError, ModelInvalidRequestError):
+    """Fireworks bad-request error classified as a LangChain model error."""
+
+
+class FireworksModelNotFoundError(NotFoundError, ModelNotFoundError):
+    """Fireworks not-found error classified as a LangChain model error."""
+
+
+class FireworksRateLimitError(RateLimitError, ModelRateLimitError):
+    """Fireworks rate-limit error classified as a LangChain model error."""
+
+
+class FireworksServerError(InternalServerError, ModelServerError):
+    """Fireworks server error classified as a LangChain model error."""
+
+
+class FireworksConnectionError(APIConnectionError, ModelConnectionError):
+    """Fireworks connection error classified as a LangChain model error."""
+
+
+class FireworksTimeoutError(APITimeoutError, ModelTimeoutError):
+    """Fireworks timeout error classified as a LangChain model error."""
 
 
 def _handle_fireworks_invalid_request(e: BadRequestError) -> NoReturn:

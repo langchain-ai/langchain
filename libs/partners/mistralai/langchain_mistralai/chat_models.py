@@ -23,6 +23,14 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import (
+    ModelAuthenticationError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelServerError,
+)
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -217,6 +225,30 @@ def _convert_mistral_chat_message_to_message(
         invalid_tool_calls=invalid_tool_calls,
         response_metadata={"model_provider": "mistralai"},
     )
+
+
+class MistralAIAuthenticationError(httpx.HTTPStatusError, ModelAuthenticationError):
+    """Mistral AI authentication error classified as a LangChain model error."""
+
+
+class MistralAIPermissionDeniedError(httpx.HTTPStatusError, ModelPermissionDeniedError):
+    """Mistral AI permission error classified as a LangChain model error."""
+
+
+class MistralAIInvalidRequestError(httpx.HTTPStatusError, ModelInvalidRequestError):
+    """Mistral AI invalid-request error classified as a LangChain model error."""
+
+
+class MistralAIModelNotFoundError(httpx.HTTPStatusError, ModelNotFoundError):
+    """Mistral AI not-found error classified as a LangChain model error."""
+
+
+class MistralAIRateLimitError(httpx.HTTPStatusError, ModelRateLimitError):
+    """Mistral AI rate-limit error classified as a LangChain model error."""
+
+
+class MistralAIServerError(httpx.HTTPStatusError, ModelServerError):
+    """Mistral AI server error classified as a LangChain model error."""
 
 
 def _raise_on_error(response: httpx.Response) -> None:

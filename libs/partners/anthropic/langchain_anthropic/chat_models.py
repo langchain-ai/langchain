@@ -18,7 +18,18 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import ContextOverflowError, OutputParserException
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelServerError,
+    ModelTimeoutError,
+    OutputParserException,
+)
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -908,6 +919,46 @@ def _apply_cache_control_to_last_eligible_block(
 
 class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
     """BadRequestError raised when input exceeds Anthropic's context limit."""
+
+
+class AnthropicAuthenticationError(
+    anthropic.AuthenticationError, ModelAuthenticationError
+):
+    """Anthropic authentication error classified as a LangChain model error."""
+
+
+class AnthropicPermissionDeniedError(
+    anthropic.PermissionDeniedError, ModelPermissionDeniedError
+):
+    """Anthropic permission error classified as a LangChain model error."""
+
+
+class AnthropicInvalidRequestError(anthropic.BadRequestError, ModelInvalidRequestError):
+    """Anthropic bad-request error classified as a LangChain model error."""
+
+
+class AnthropicModelNotFoundError(anthropic.NotFoundError, ModelNotFoundError):
+    """Anthropic not-found error classified as a LangChain model error."""
+
+
+class AnthropicRateLimitError(anthropic.RateLimitError, ModelRateLimitError):
+    """Anthropic rate-limit error classified as a LangChain model error."""
+
+
+class AnthropicServerError(anthropic.InternalServerError, ModelServerError):
+    """Anthropic server error classified as a LangChain model error."""
+
+
+class AnthropicOverloadedError(anthropic.OverloadedError, ModelServerError):
+    """Anthropic overloaded error (HTTP 529) classified as a LangChain model error."""
+
+
+class AnthropicConnectionError(anthropic.APIConnectionError, ModelConnectionError):
+    """Anthropic connection error classified as a LangChain model error."""
+
+
+class AnthropicTimeoutError(anthropic.APITimeoutError, ModelTimeoutError):
+    """Anthropic timeout error classified as a LangChain model error."""
 
 
 def _raise_if_authentication_error(e: TypeError) -> None:
