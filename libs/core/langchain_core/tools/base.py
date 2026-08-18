@@ -20,7 +20,6 @@ from typing import (
     cast,
     get_args,
     get_origin,
-    get_type_hints,
 )
 
 import typing_extensions
@@ -38,7 +37,7 @@ from pydantic.fields import FieldInfo
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
-from typing_extensions import Self, override
+from typing_extensions import Self, get_type_hints, override
 
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -184,7 +183,7 @@ def _infer_arg_descriptions(
     Returns:
         A tuple containing the function description and argument descriptions.
     """
-    annotations = typing.get_type_hints(fn, include_extras=True)
+    annotations = get_type_hints(fn, include_extras=True)
     if parse_docstring:
         description, arg_descriptions = _parse_python_function_docstring(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
