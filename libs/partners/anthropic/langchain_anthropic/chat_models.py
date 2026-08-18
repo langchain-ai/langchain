@@ -36,7 +36,11 @@ from langchain_core.messages import (
     is_data_content_block,
 )
 from langchain_core.messages import content as types
-from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -668,6 +672,23 @@ def _format_messages(
                                 },
                             ),
                         )
+                    elif block["type"] == "tool_search_tool_result":
+                        # Omit streaming-only fields, such as `index`, from results.
+                        content.append(
+                            _normalize_block_tool_use_id(
+                                {
+                                    k: v
+                                    for k, v in block.items()
+                                    if k
+                                    in (
+                                        "type",
+                                        "content",
+                                        "tool_use_id",
+                                        "cache_control",
+                                    )
+                                },
+                            ),
+                        )
                     elif block["type"] == "tool_result":
                         # Regular tool results that need content formatting
                         tool_content = _format_messages(
@@ -887,6 +908,20 @@ def _apply_cache_control_to_last_eligible_block(
 
 class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
     """BadRequestError raised when input exceeds Anthropic's context limit."""
+
+
+def _raise_if_authentication_error(e: TypeError) -> None:
+    """Re-raise anthropic SDK's missing-credentials `TypeError` with guidance."""
+    if "Could not resolve authentication method" in str(e):
+        msg = (
+            "Anthropic authentication failed: no API key or authorization "
+            "credentials were provided. Set the ANTHROPIC_API_KEY environment "
+            "variable, pass api_key=... to ChatAnthropic, or provide "
+            'credentials via default_headers={"Authorization": ...}. If you '
+            "are routing through the LangSmith gateway, set LANGSMITH_GATEWAY "
+            "and LANGSMITH_GATEWAY_API_KEY."
+        )
+        raise TypeError(msg) from e
 
 
 def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
@@ -1593,14 +1628,22 @@ class ChatAnthropic(BaseChatModel):
         return {k: v for k, v in payload.items() if v is not None}
 
     def _create(self, payload: dict) -> Any:
-        if "betas" in payload:
-            return self._client.beta.messages.create(**payload)
-        return self._client.messages.create(**payload)
+        try:
+            if "betas" in payload:
+                return self._client.beta.messages.create(**payload)
+            return self._client.messages.create(**payload)
+        except TypeError as e:
+            _raise_if_authentication_error(e)
+            raise
 
     async def _acreate(self, payload: dict) -> Any:
-        if "betas" in payload:
-            return await self._async_client.beta.messages.create(**payload)
-        return await self._async_client.messages.create(**payload)
+        try:
+            if "betas" in payload:
+                return await self._async_client.beta.messages.create(**payload)
+            return await self._async_client.messages.create(**payload)
+        except TypeError as e:
+            _raise_if_authentication_error(e)
+            raise
 
     def _stream(
         self,
@@ -2696,7 +2739,18 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
     )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0) or 0
 
-    return UsageMetadata(
+    # Reasoning (thinking) tokens are a decomposition of `output_tokens` (not
+    # additive), reported by Anthropic via `output_tokens_details.thinking_tokens`.
+    # Older models omit `output_tokens_details` entirely, so guard with `getattr`.
+    output_token_details: dict = {
+        "reasoning": getattr(
+            getattr(anthropic_usage, "output_tokens_details", None),
+            "thinking_tokens",
+            None,
+        ),
+    }
+
+    usage_metadata = UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=input_tokens + output_tokens,
@@ -2704,3 +2758,13 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
             **{k: v for k, v in input_token_details.items() if v is not None},
         ),
     )
+
+    filtered_output_token_details = {
+        k: v for k, v in output_token_details.items() if v is not None
+    }
+    if filtered_output_token_details:
+        usage_metadata["output_token_details"] = OutputTokenDetails(
+            **filtered_output_token_details,
+        )
+
+    return usage_metadata

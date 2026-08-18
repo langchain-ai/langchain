@@ -150,10 +150,6 @@ def test_set_default_max_tokens() -> None:
     llm = ChatAnthropic(model="claude-sonnet-4-5-20250929", anthropic_api_key="test")
     assert llm.max_tokens == 64000
 
-    # Test claude-opus-4-1 models
-    llm = ChatAnthropic(model="claude-opus-4-1-20250805", anthropic_api_key="test")
-    assert llm.max_tokens == 32000
-
     # Test claude-haiku-4-5 models
     llm = ChatAnthropic(model="claude-haiku-4-5-20251001", anthropic_api_key="test")
     assert llm.max_tokens == 64000
@@ -2081,6 +2077,42 @@ def test_usage_metadata_standardization() -> None:
     assert result["total_tokens"] == 0
 
 
+def test_usage_metadata_reasoning_tokens() -> None:
+    """Reasoning tokens should be surfaced via `output_token_details.reasoning`.
+
+    Anthropic reports these through `output_tokens_details.thinking_tokens` as a
+    decomposition of `output_tokens` (not additive).
+    """
+
+    class OutputTokensDetails(BaseModel):
+        thinking_tokens: int = 20
+
+    class UsageWithReasoning(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 50
+        output_tokens_details: OutputTokensDetails | None = OutputTokensDetails()
+
+    # Case 1: reasoning tokens present
+    result = _create_usage_metadata(UsageWithReasoning())
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["total_tokens"] == 150
+    assert result.get("output_token_details") == {"reasoning": 20}
+
+    # Case 2: output_tokens_details explicitly None
+    result = _create_usage_metadata(UsageWithReasoning(output_tokens_details=None))
+    assert result["output_tokens"] == 50
+    assert "output_token_details" not in result
+
+    # Case 3: output_tokens_details field absent (older models)
+    class UsageNoDetails(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 50
+
+    result = _create_usage_metadata(UsageNoDetails())
+    assert "output_token_details" not in result
+
+
 def test_usage_metadata_cache_creation_ttl() -> None:
     """Test _create_usage_metadata with granular cache_creation TTL fields."""
 
@@ -3322,6 +3354,35 @@ def test_tool_search_result_formatting() -> None:
     assert tool_result_block["content"][0]["tool_name"] == "get_weather"
     assert tool_result_block["content"][1]["type"] == "tool_reference"
     assert tool_result_block["content"][1]["tool_name"] == "weather_forecast"
+
+
+# Regression test for https://github.com/langchain-ai/langchain/issues/37584
+def test__format_messages_tool_search_result_drops_streaming_index() -> None:
+    """Test that streaming-only indexes are not sent to Anthropic."""
+    messages = [
+        AIMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "tool_search_tool_result",
+                    "tool_use_id": "srvtoolu_123",
+                    "content": [
+                        {"type": "tool_reference", "tool_name": "get_weather"},
+                    ],
+                    "index": 1,
+                },
+            ],
+        ),
+    ]
+
+    _, formatted = _format_messages(messages)
+
+    assert formatted[0]["content"][0] == {
+        "type": "tool_search_tool_result",
+        "tool_use_id": "srvtoolu_123",
+        "content": [
+            {"type": "tool_reference", "tool_name": "get_weather"},
+        ],
+    }
 
 
 def test_auto_append_betas_for_mcp_servers() -> None:
@@ -4567,3 +4628,65 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     llm = ChatAnthropic(model=MODEL_NAME)
     assert llm.anthropic_api_url == "https://api.anthropic.com"
     assert llm.anthropic_api_key.get_secret_value() == "provider-key"
+
+
+_MISSING_CREDENTIALS_TYPE_ERROR = TypeError(
+    "Could not resolve authentication method. Expected one of api_key, "
+    "auth_token, or credentials to be set. Or for one of the `X-Api-Key` or "
+    "`Authorization` headers to be explicitly omitted"
+)
+
+
+def _clear_auth_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_URL", raising=False)
+    monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
+
+
+def test_missing_credentials_error_sync(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Missing credentials raise a `TypeError` with LangChain guidance."""
+    _clear_auth_env(monkeypatch)
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
+    ):
+        mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    assert exc_info.value.__cause__ is _MISSING_CREDENTIALS_TYPE_ERROR
+
+
+async def test_missing_credentials_error_async(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing credentials raise a `TypeError` with LangChain guidance (async)."""
+    _clear_auth_env(monkeypatch)
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._async_client.messages, "create") as mock_create,
+        pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
+    ):
+        mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
+        await llm.ainvoke([HumanMessage(content="test")])
+
+    assert exc_info.value.__cause__ is _MISSING_CREDENTIALS_TYPE_ERROR
+
+
+def test_unrelated_type_error_propagates_unchanged() -> None:
+    """A `TypeError` not about authentication is re-raised as-is."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    unrelated_error = TypeError("some unrelated client error")
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(TypeError) as exc_info,
+    ):
+        mock_create.side_effect = unrelated_error
+        llm.invoke([HumanMessage(content="test")])
+
+    assert exc_info.value is unrelated_error

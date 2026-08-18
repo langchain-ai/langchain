@@ -23,7 +23,14 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    RootModel,
+    ValidationError,
+)
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -365,7 +372,32 @@ def test_structured_single_str_decorator_no_infer_schema() -> None:
 
     assert isinstance(unstructured_tool_input, BaseTool)
     assert unstructured_tool_input.args_schema is None
+    assert unstructured_tool_input.description == "Return the arguments directly."
     assert unstructured_tool_input.run("foo") == "foo"
+
+
+def test_simple_tool_decorator_no_infer_schema_uses_explicit_description() -> None:
+    """Test that a simple tool preserves an explicit description."""
+
+    @tool(infer_schema=False, description="Echo the supplied input.")
+    def echo(tool_input: str) -> str:
+        return tool_input
+
+    assert echo.description == "Echo the supplied input."
+
+
+def test_simple_tool_decorator_no_infer_schema_requires_description_or_docstring() -> (
+    None
+):
+    """Test that a simple tool requires an authored description."""
+    with pytest.raises(
+        ValueError,
+        match="Function must have either a docstring or description",
+    ):
+
+        @tool(infer_schema=False)
+        def echo(tool_input: str) -> str:
+            return tool_input
 
 
 def test_structured_tool_types_parsed() -> None:
@@ -1123,6 +1155,30 @@ async def test_async_validation_error_handling_callable() -> None:
     assert expected == actual
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+async def test_async_validation_error_handling_pydantic_v1_schema() -> None:
+    """Test async validation error handling for Pydantic V1 schemas."""
+
+    class Args(BaseModelV1):
+        x: int
+
+    def foo(x: int) -> str:
+        """Return x as text."""
+        return str(x)
+
+    tool_ = StructuredTool.from_function(
+        foo,
+        args_schema=cast("ArgsSchema", Args),
+        handle_validation_error=True,
+    )
+
+    assert tool_.run({"x": "not-an-integer"}) == "Tool input validation error"
+    assert await tool_.arun({"x": "not-an-integer"}) == "Tool input validation error"
+
+
 @pytest.mark.parametrize(
     "handler",
     [
@@ -1757,6 +1813,57 @@ def test_convert_from_runnable_dict() -> None:
         {"a": 3, "b": [1, 2]}, config={"configurable": {"foo": "not-bar"}}
     )
     assert result == "6"
+
+
+def test_convert_from_runnable_root_model_input_schema() -> None:
+    """`as_tool` should not advertise a `TypedDict` input nested under `root`.
+
+    Some `Runnable`s (e.g. a compiled `langgraph` `StateGraph`) expose a
+    `pydantic.RootModel` as `input_schema` even though `get_input_jsonschema`
+    reports a flat object schema. See:
+    """
+
+    class Args(TypedDict):
+        foo: str
+        bar: str
+
+    class _RootModelInputRunnable(RunnableLambda[Args, str]):
+        @override
+        def get_input_schema(
+            self, config: RunnableConfig | None = None
+        ) -> TypeBaseModel:
+            return RootModel[Args]
+
+        @override
+        def get_input_jsonschema(
+            self, config: RunnableConfig | None = None
+        ) -> dict[str, Any]:
+            return {
+                "type": "object",
+                "properties": {
+                    "foo": {"type": "string"},
+                    "bar": {"type": "string"},
+                },
+                "required": ["foo", "bar"],
+            }
+
+    def f(x: Args) -> str:
+        return f"{x['foo']} {x['bar']}"
+
+    runnable = _RootModelInputRunnable(f)
+    as_tool = runnable.as_tool(name="my_tool", description="Example tool.")
+
+    assert as_tool.args_schema is not None
+    assert isinstance(as_tool.args_schema, type)
+    assert not issubclass(as_tool.args_schema, RootModel)
+
+    oai_schema = convert_to_openai_tool(as_tool)
+    parameters = oai_schema["function"]["parameters"]
+    assert parameters["properties"].keys() == {"foo", "bar"}
+    assert "root" not in parameters["properties"]
+
+    result = as_tool.invoke({"foo": "hello", "bar": "world"})
+    assert result == "hello world"
 
 
 def test_convert_from_runnable_other() -> None:
@@ -3922,6 +4029,22 @@ async def test_tool_call_id_passed_via_run_method(method: str) -> None:
     assert handler.tool_starts == 1
     assert len(handler.captured_tool_call_ids) == 1
     assert handler.captured_tool_call_ids[0] == "run_method_tool_call_id"
+
+
+def test_tool_args_schema_required_field_validation_alias() -> None:
+    """Test required args provided through validation aliases reach the tool."""
+
+    class Args(BaseModel):
+        """Tool arguments."""
+
+        canonical: str = Field(validation_alias=AliasChoices("canonical", "alias"))
+
+    @tool(args_schema=Args)
+    def aliased_tool(canonical: str) -> str:
+        """Return the canonical argument."""
+        return canonical
+
+    assert aliased_tool.invoke({"alias": "value"}) == "value"
 
 
 def test_tool_args_schema_default_values() -> None:

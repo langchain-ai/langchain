@@ -497,9 +497,10 @@ jobs:
         # Uses the Makefile's `integration_tests` target for the specified package
         if: ${{ startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/partners/') }}
         env:
+          LANGSMITH_GATEWAY: ${{ secrets.LANGSMITH_GATEWAY }}
+          LANGSMITH_GATEWAY_API_KEY: ${{ secrets.LANGSMITH_GATEWAY_API_KEY }}
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -600,7 +601,8 @@ jobs:
         partner: [ anthropic, openai ]
       fail-fast: false # Continue testing other partners if one fails
     env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      LANGSMITH_GATEWAY: ${{ secrets.LANGSMITH_GATEWAY }}
+      LANGSMITH_GATEWAY_API_KEY: ${{ secrets.LANGSMITH_GATEWAY_API_KEY }}
       ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
       ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
