@@ -1529,7 +1529,8 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
     reference must not disable injection for parameters whose annotations do
     resolve. Anything still unresolved falls back to the raw annotation, which
     `_is_injected_arg_type` will not classify as injected (the pre-existing
-    behavior).
+    behavior). Each distinct string annotation is resolved at most once per
+    call.
 
     Names that existed only in a callable's defining local scope are unavailable
     at this inspection point and remain unresolved.
@@ -1555,10 +1556,15 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
         )
     globalns = getattr(hint_source, "__globals__", {})
     keys = set()
+    resolved_annotations: dict[str, Any] = {}
     for name, param in params.items():
         annotation = param.annotation
         if isinstance(annotation, str):
-            resolved = _resolve_forward_ref(annotation, globalns)
+            if annotation not in resolved_annotations:
+                resolved_annotations[annotation] = _resolve_forward_ref(
+                    annotation, globalns
+                )
+            resolved = resolved_annotations[annotation]
             if resolved is not None:
                 annotation = resolved
         if _is_injected_arg_type(annotation):
