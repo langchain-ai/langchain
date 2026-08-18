@@ -4773,8 +4773,8 @@ def test_model_retry_respects_openai_error_classification(
     model_error_type: type[ModelError],
     expected_attempts: int,
 ) -> None:
-    request = httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
-    response = httpx.Response(status_code, request=request)
+    request = httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")
+    response = httpx2.Response(status_code, request=request)
     sdk_error = sdk_error_type("model request failed", response=response, body=None)
     model = ChatOpenAI(api_key=SecretStr("test"))
     retry = ModelRetryMiddleware(
