@@ -1,5 +1,6 @@
 """Test base chat model."""
 
+import asyncio
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
@@ -233,6 +234,39 @@ async def test_stream_error_callback() -> None:
         with pytest.raises(FakeListChatModelError):
             next(llm_stream)
         eval_response(cb_sync, i)
+
+
+async def test_agenerate_reraises_cancelled_error_with_callbacks() -> None:
+    """`agenerate` should re-raise `CancelledError`, not mask it as `AttributeError`."""
+
+    class CancellingChatModel(SimpleChatModel):
+        @property
+        @override
+        def _llm_type(self) -> str:
+            return "cancelling-chat-model"
+
+        @override
+        def _call(
+            self,
+            *_args: Any,
+            **_kwargs: Any,
+        ) -> str:
+            return "unused"
+
+        @override
+        async def _agenerate(
+            self,
+            *_args: Any,
+            **_kwargs: Any,
+        ) -> ChatResult:
+            raise asyncio.CancelledError
+
+    llm = CancellingChatModel()
+    with pytest.raises(asyncio.CancelledError):
+        await llm.agenerate(
+            [[HumanMessage(content="hello")]],
+            callbacks=[FakeAsyncCallbackHandler()],
+        )
 
 
 async def test_astream_fallback_to_ainvoke() -> None:
