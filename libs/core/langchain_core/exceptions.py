@@ -66,32 +66,44 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
 
 
 class ModelError(LangChainException):
-    """Base exception for failures related to model invocation."""
+    """Base exception for failures related to model invocation.
+
+    Subclasses correspond to conditions that model providers report consistently,
+    keyed to the HTTP status they surface it with, so the same condition maps to
+    the same exception type regardless of provider.
+
+    Provider integrations raise subclasses that also inherit from the provider
+    SDK's own exception type, so code catching either continues to work.
+    """
 
     is_retryable = False
     """Whether retrying the same model request may succeed."""
 
 
-class AuthenticationError(ModelError):
-    """Exception raised when model provider authentication fails."""
+class ModelAuthenticationError(ModelError):
+    """Exception raised when model provider authentication fails (HTTP 401)."""
 
 
-class PermissionDeniedError(ModelError):
-    """Exception raised when credentials lack permission for a model request."""
+class ModelPermissionDeniedError(ModelError):
+    """Exception raised when credentials lack permission for a request (HTTP 403)."""
+
+
+class ModelInvalidRequestError(ModelError):
+    """Exception raised when a provider rejects a request as invalid (HTTP 400, 422)."""
 
 
 class ModelNotFoundError(ModelError):
-    """Exception raised when the requested model cannot be found."""
+    """Exception raised when the requested model cannot be found (HTTP 404)."""
 
 
-class ModelTimeoutError(ModelError):
-    """Exception raised when a model request times out."""
+class ModelRateLimitError(ModelError):
+    """Exception raised when a model provider rate limit is exceeded (HTTP 429)."""
 
     is_retryable = True
 
 
-class RateLimitError(ModelError):
-    """Exception raised when a model provider rate limit is exceeded."""
+class ModelServerError(ModelError):
+    """Exception raised when a model provider reports a server failure (HTTP 5xx)."""
 
     is_retryable = True
 
@@ -102,8 +114,8 @@ class ModelConnectionError(ModelError):
     is_retryable = True
 
 
-class ServerError(ModelError):
-    """Exception raised when a model provider reports a server failure."""
+class ModelTimeoutError(ModelError):
+    """Exception raised when a model request times out."""
 
     is_retryable = True
 

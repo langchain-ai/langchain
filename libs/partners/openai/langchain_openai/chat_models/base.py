@@ -52,16 +52,15 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.exceptions import (
-    AuthenticationError,
     ContextOverflowError,
+    ModelAuthenticationError,
     ModelConnectionError,
+    ModelInvalidRequestError,
     ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelServerError,
     ModelTimeoutError,
-    PermissionDeniedError,
-    ServerError,
-)
-from langchain_core.exceptions import (
-    RateLimitError as ModelRateLimitError,
 )
 from langchain_core.language_models import (
     LanguageModelInput,
@@ -574,12 +573,18 @@ class OpenAIAPIContextOverflowError(openai.APIError, ContextOverflowError):
     """APIError raised when input exceeds OpenAI's context limit."""
 
 
-class OpenAIAuthenticationError(openai.AuthenticationError, AuthenticationError):
+class OpenAIAuthenticationError(openai.AuthenticationError, ModelAuthenticationError):
     """OpenAI authentication error classified as a LangChain model error."""
 
 
-class OpenAIPermissionDeniedError(openai.PermissionDeniedError, PermissionDeniedError):
+class OpenAIPermissionDeniedError(
+    openai.PermissionDeniedError, ModelPermissionDeniedError
+):
     """OpenAI permission error classified as a LangChain model error."""
+
+
+class OpenAIInvalidRequestError(openai.BadRequestError, ModelInvalidRequestError):
+    """OpenAI bad-request error classified as a LangChain model error."""
 
 
 class OpenAIModelNotFoundError(openai.NotFoundError, ModelNotFoundError):
@@ -590,7 +595,7 @@ class OpenAIRateLimitError(openai.RateLimitError, ModelRateLimitError):
     """OpenAI rate-limit error classified as a LangChain model error."""
 
 
-class OpenAIServerError(openai.InternalServerError, ServerError):
+class OpenAIServerError(openai.InternalServerError, ModelServerError):
     """OpenAI server error classified as a LangChain model error."""
 
 
@@ -622,7 +627,9 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
             'specify `method="function_calling"`.'
         )
         warnings.warn(message)
-        raise e
+        raise OpenAIInvalidRequestError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
     if "Invalid schema for response_format" in e.message:
         message = (
             "Invalid schema for OpenAI's structured output feature, which is the "
@@ -632,8 +639,9 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
             "https://platform.openai.com/docs/guides/structured-outputs#supported-schemas"
         )
         warnings.warn(message)
-        raise e
-    raise
+    raise OpenAIInvalidRequestError(
+        message=e.message, response=e.response, body=e.body
+    ) from e
 
 
 def _handle_openai_api_error(e: openai.APIError) -> None:

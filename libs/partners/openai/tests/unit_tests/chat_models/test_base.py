@@ -16,10 +16,10 @@ import pytest
 from langchain.agents import create_agent
 from langchain.agents.middleware import ModelRetryMiddleware
 from langchain_core.exceptions import (
-    AuthenticationError,
     ContextOverflowError,
+    ModelAuthenticationError,
     ModelError,
-    RateLimitError,
+    ModelRateLimitError,
 )
 from langchain_core.load import dumps, loads
 from langchain_core.messages import (
@@ -4763,8 +4763,8 @@ def test_context_overflow_error_backwards_compatibility() -> None:
 @pytest.mark.parametrize(
     ("status_code", "sdk_error_type", "model_error_type", "expected_attempts"),
     [
-        (401, openai.AuthenticationError, AuthenticationError, 1),
-        (429, openai.RateLimitError, RateLimitError, 3),
+        (401, openai.AuthenticationError, ModelAuthenticationError, 1),
+        (429, openai.RateLimitError, ModelRateLimitError, 3),
     ],
 )
 def test_model_retry_respects_openai_error_classification(
