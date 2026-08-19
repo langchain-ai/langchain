@@ -1,0 +1,23 @@
+libs/core/tests/unit_tests/test_tools.py
+  s_0dbb2464f12e40::t_a3fd08022697fb 4384-4385
+  s_0dbb2464f12e40::t_4cedb1b48962cb 4426-4455
+libs/core/langchain_core/tools/structured.py
+  s_0dbb2464f12e40::t_3891f3cdc56fed 34,38
+  s_0dbb2464f12e40::t_13b9e653f00ba0 50-62,64,67-68,72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "a1e6bb30d79a06b006423346cfee1eb28d0b591d",
+  "prompts": {},
+  "sessions": {
+    "s_0dbb2464f12e40": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dca18b2e-4fef-48b5-b230-e8ffe881a80e",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Emil Filipov <emil@langchain.dev>"
+    }
+  }
+}
