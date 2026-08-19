@@ -13,13 +13,17 @@ import httpx
 import httpx2
 import openai
 import pytest
-from langchain.agents import create_agent
-from langchain.agents.middleware import ModelRetryMiddleware
 from langchain_core.exceptions import (
     ContextOverflowError,
+    ModelAPIError,
     ModelAuthenticationError,
+    ModelConnectionError,
     ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelTimeoutError,
 )
 from langchain_core.load import dumps, loads
 from langchain_core.messages import (
@@ -4761,38 +4765,54 @@ def test_context_overflow_error_backwards_compatibility() -> None:
 
 
 @pytest.mark.parametrize(
-    ("status_code", "sdk_error_type", "model_error_type", "expected_attempts"),
+    ("status_code", "sdk_error_type", "model_error_type", "is_retryable"),
     [
-        (401, openai.AuthenticationError, ModelAuthenticationError, 1),
-        (429, openai.RateLimitError, ModelRateLimitError, 3),
+        (400, openai.BadRequestError, ModelInvalidRequestError, False),
+        (401, openai.AuthenticationError, ModelAuthenticationError, False),
+        (403, openai.PermissionDeniedError, ModelPermissionDeniedError, False),
+        (404, openai.NotFoundError, ModelNotFoundError, False),
+        (429, openai.RateLimitError, ModelRateLimitError, True),
+        (500, openai.InternalServerError, ModelAPIError, True),
     ],
 )
-def test_model_retry_respects_openai_error_classification(
+def test_openai_error_classification(
     status_code: int,
     sdk_error_type: type[openai.APIStatusError],
     model_error_type: type[ModelError],
-    expected_attempts: int,
+    *,
+    is_retryable: bool,
 ) -> None:
+    """Provider errors are raised as both the SDK type and the LangChain type."""
     request = httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")
     response = httpx2.Response(status_code, request=request)
     sdk_error = sdk_error_type("model request failed", response=response, body=None)
     model = ChatOpenAI(api_key=SecretStr("test"))
-    retry = ModelRetryMiddleware(
-        max_retries=2,
-        initial_delay=0,
-        jitter=False,
-        on_failure="error",
-    )
-    agent = create_agent(model=model, tools=[], middleware=[retry])
 
     with patch.object(model.client, "with_raw_response") as mock_client:
         mock_client.create.side_effect = sdk_error
         with pytest.raises(sdk_error_type) as exc_info:
-            agent.invoke({"messages": [{"role": "user", "content": "test"}]})
+            model.invoke("test")
 
     assert isinstance(exc_info.value, model_error_type)
-    assert exc_info.value.is_retryable is (status_code == 429)
-    assert mock_client.create.call_count == expected_attempts
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_openai_transport_error_classification() -> None:
+    """Timeout and connection failures are classified without a status code."""
+    request = httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")
+    model = ChatOpenAI(api_key=SecretStr("test"))
+
+    for sdk_error, model_error_type in (
+        (openai.APITimeoutError(request), ModelTimeoutError),
+        (openai.APIConnectionError(request=request), ModelConnectionError),
+    ):
+        with patch.object(model.client, "with_raw_response") as mock_client:
+            mock_client.create.side_effect = sdk_error
+            with pytest.raises(type(sdk_error)) as exc_info:
+                model.invoke("test")
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is True
 
 
 def test_metadata_versions() -> None:

@@ -6,6 +6,10 @@ from typing import Any
 
 import pytest
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.exceptions import (
+    ModelAuthenticationError,
+    ModelRateLimitError,
+)
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.checkpoint.memory import InMemorySaver
@@ -321,6 +325,44 @@ def test_model_retry_specific_exceptions() -> None:
     assert len(ai_messages) >= 1
     # RuntimeError should fail immediately (1 attempt only)
     assert "1 attempt" in ai_messages[-1].content
+
+
+@pytest.mark.parametrize(
+    ("error_type", "expected_attempts"),
+    [
+        # Non-retryable model errors fail on the first attempt.
+        (ModelAuthenticationError, "1 attempt"),
+        # Retryable model errors use the full budget.
+        (ModelRateLimitError, "3 attempts"),
+        # Exceptions the taxonomy does not classify keep retrying as before.
+        (ValueError, "3 attempts"),
+    ],
+)
+def test_model_retry_respects_is_retryable(
+    error_type: type[Exception], expected_attempts: str
+) -> None:
+    """The default `retry_on` honors `ModelError.is_retryable`."""
+    model = AlwaysFailingModel(error_message="boom", error_type=error_type)
+    retry = ModelRetryMiddleware(
+        max_retries=2,
+        initial_delay=0,
+        jitter=False,
+        on_failure="continue",
+    )
+    agent = create_agent(
+        model=model,
+        tools=[],
+        middleware=[retry],
+        checkpointer=InMemorySaver(),
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Hello")]},
+        {"configurable": {"thread_id": "test"}},
+    )
+
+    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
+    assert expected_attempts in ai_messages[-1].content
 
 
 def test_model_retry_custom_exception_filter() -> None:

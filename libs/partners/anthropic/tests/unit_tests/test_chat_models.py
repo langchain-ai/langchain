@@ -11,10 +11,22 @@ from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic
+import httpx
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -4040,6 +4052,64 @@ _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR = anthropic.BadRequestError(
         },
     },
 )
+
+
+@pytest.mark.parametrize(
+    ("status_code", "sdk_error_type", "model_error_type", "is_retryable"),
+    [
+        (400, anthropic.BadRequestError, ModelInvalidRequestError, False),
+        (401, anthropic.AuthenticationError, ModelAuthenticationError, False),
+        (403, anthropic.PermissionDeniedError, ModelPermissionDeniedError, False),
+        (404, anthropic.NotFoundError, ModelNotFoundError, False),
+        (429, anthropic.RateLimitError, ModelRateLimitError, True),
+        (500, anthropic.InternalServerError, ModelAPIError, True),
+        (529, anthropic.OverloadedError, ModelAPIError, True),
+    ],
+)
+def test_anthropic_error_classification(
+    status_code: int,
+    sdk_error_type: type[anthropic.APIStatusError],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Provider errors are raised as both the SDK type and the LangChain type."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    sdk_error = sdk_error_type(
+        "model request failed",
+        response=MagicMock(status_code=status_code),
+        body=None,
+    )
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages, "create") as mock_create,
+        pytest.raises(sdk_error_type) as exc_info,
+    ):
+        mock_create.side_effect = sdk_error
+        llm.invoke([HumanMessage(content="test")])
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_anthropic_transport_error_classification() -> None:
+    """Timeout and connection failures are classified without a status code."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+
+    for sdk_error, model_error_type in (
+        (anthropic.APITimeoutError(request), ModelTimeoutError),
+        (anthropic.APIConnectionError(request=request), ModelConnectionError),
+    ):
+        with (  # noqa: PT012
+            patch.object(llm._client.messages, "create") as mock_create,
+            pytest.raises(type(sdk_error)) as exc_info,
+        ):
+            mock_create.side_effect = sdk_error
+            llm.invoke([HumanMessage(content="test")])
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is True
 
 
 def test_context_overflow_error_invoke_sync() -> None:

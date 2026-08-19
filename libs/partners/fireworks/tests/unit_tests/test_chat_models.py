@@ -10,13 +10,28 @@ from unittest.mock import MagicMock
 import httpx
 import pytest
 from fireworks import (
+    APIConnectionError,
+    APITimeoutError,
     AuthenticationError,
     BadRequestError,
     FireworksError,
     InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
     RateLimitError,
 )
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -1788,6 +1803,59 @@ _CONTEXT_OVERFLOW_MESSAGE = (
     '"code": "invalid_request_error", "message": "The prompt is too long: '
     '500208, model maximum context length: 262143"}}'
 )
+
+
+@pytest.mark.parametrize(
+    ("status_code", "sdk_error_type", "model_error_type", "is_retryable"),
+    [
+        (400, BadRequestError, ModelInvalidRequestError, False),
+        (401, AuthenticationError, ModelAuthenticationError, False),
+        (403, PermissionDeniedError, ModelPermissionDeniedError, False),
+        (404, NotFoundError, ModelNotFoundError, False),
+        (429, RateLimitError, ModelRateLimitError, True),
+        (500, InternalServerError, ModelAPIError, True),
+    ],
+)
+def test_fireworks_error_classification(
+    status_code: int,
+    sdk_error_type: type[Exception],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Provider errors are raised as both the SDK type and the LangChain type."""
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(
+        sdk_error_type, "model request failed", status_code
+    )
+    llm.client = mock_client
+
+    with pytest.raises(sdk_error_type) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_fireworks_transport_error_classification() -> None:
+    """Timeout and connection failures are classified without a status code."""
+    request = httpx.Request("POST", "https://api.fireworks.ai/inference/v1")
+
+    for sdk_error, model_error_type in (
+        (APITimeoutError(request), ModelTimeoutError),
+        (APIConnectionError(request=request), ModelConnectionError),
+    ):
+        llm = _make_llm(max_retries=0)
+        mock_client = MagicMock()
+        mock_client.create.side_effect = sdk_error
+        llm.client = mock_client
+
+        with pytest.raises(type(sdk_error)) as exc_info:
+            llm.invoke([HumanMessage(content="test")])
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is True
 
 
 def test_context_overflow_error_invoke_sync() -> None:
