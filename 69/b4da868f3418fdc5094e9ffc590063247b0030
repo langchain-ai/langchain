@@ -1,0 +1,21 @@
+libs/core/langchain_core/tools/structured.py
+  s_0dbb2464f12e40::t_ba91b34ff2d7a5 61-67
+libs/core/tests/unit_tests/test_tools.py
+  s_0dbb2464f12e40::t_f9c38af9c2aaa0 32,4385,4389-4390,4393-4394,4416-4417,4425-4426,4434-4435,4439-4440
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "69b4da868f3418fdc5094e9ffc590063247b0030",
+  "prompts": {},
+  "sessions": {
+    "s_0dbb2464f12e40": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dca18b2e-4fef-48b5-b230-e8ffe881a80e",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Emil Filipov <emil@langchain.dev>"
+    }
+  }
+}
