@@ -4039,6 +4039,56 @@ def test_retry_batch_preserves_order() -> None:
     assert results == [0, 1, 2]
 
 
+class _FalseyError(RuntimeError):
+    """Exception whose truth value is `False`."""
+
+    def __bool__(self) -> bool:
+        return False
+
+
+def test_retry_batch_retries_falsey_exception() -> None:
+    """Test batch retries an exception that evaluates to `False`.
+
+    Regression test: the retry loop recorded the first failure with a truthiness check,
+    so an exception overriding `__bool__` was never raised to `tenacity` and the batch
+    silently completed after a single attempt instead of retrying.
+    """
+    attempts = 0
+
+    def always_fail(_x: int) -> int:
+        nonlocal attempts
+        attempts += 1
+        msg = "boom"
+        raise _FalseyError(msg)
+
+    runnable = RunnableLambda(always_fail).with_retry(
+        stop_after_attempt=3, wait_exponential_jitter=False
+    )
+
+    runnable.batch([0], return_exceptions=True)
+
+    assert attempts == 3
+
+
+async def test_async_retry_batch_retries_falsey_exception() -> None:
+    """Test abatch shares the fixed retry behaviour for falsey exceptions."""
+    attempts = 0
+
+    def always_fail(_x: int) -> int:
+        nonlocal attempts
+        attempts += 1
+        msg = "boom"
+        raise _FalseyError(msg)
+
+    runnable = RunnableLambda(always_fail).with_retry(
+        stop_after_attempt=3, wait_exponential_jitter=False
+    )
+
+    await runnable.abatch([0], return_exceptions=True)
+
+    assert attempts == 3
+
+
 async def test_async_retry_batch_preserves_order() -> None:
     """Async variant of order preservation regression test."""
     first_fail: set[int] = {1}

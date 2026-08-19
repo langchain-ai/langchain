@@ -259,16 +259,19 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     )
                     # Register the results of the inputs that have succeeded, mapping
                     # back to their original indices.
-                    first_exception = None
+                    first_exception: Exception | None = None
                     for offset, r in enumerate(result):
                         if isinstance(r, Exception):
-                            if not first_exception:
+                            # Compare against `None`: an exception overriding
+                            # `__bool__`/`__len__` is falsey, and a truthiness check
+                            # would skip the retry entirely.
+                            if first_exception is None:
                                 first_exception = r
                             continue
                         orig_idx = remaining_indices[offset]
                         results_map[orig_idx] = r
                     # If any exception occurred, raise it, to retry the failed ones
-                    if first_exception:
+                    if first_exception is not None:
                         raise first_exception
                 if (
                     attempt.retry_state.outcome
@@ -334,16 +337,19 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     )
                     # Register the results of the inputs that have succeeded, mapping
                     # back to their original indices.
-                    first_exception = None
+                    first_exception: Exception | None = None
                     for offset, r in enumerate(result):
                         if isinstance(r, Exception):
-                            if not first_exception:
+                            # Compare against `None`: an exception overriding
+                            # `__bool__`/`__len__` is falsey, and a truthiness check
+                            # would skip the retry entirely.
+                            if first_exception is None:
                                 first_exception = r
                             continue
                         orig_idx = remaining_indices[offset]
                         results_map[orig_idx] = r
                     # If any exception occurred, raise it, to retry the failed ones
-                    if first_exception:
+                    if first_exception is not None:
                         raise first_exception
                 if (
                     attempt.retry_state.outcome
