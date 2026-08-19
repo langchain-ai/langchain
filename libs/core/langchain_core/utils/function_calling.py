@@ -30,6 +30,7 @@ from pydantic.v1 import create_model as create_model_v1
 from typing_extensions import TypedDict, is_typeddict
 
 import langchain_core
+import langchain_core.tools  # noqa: F401  # ensure submodule is loaded before attribute access
 from langchain_core._api import beta
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.utils.json_schema import dereference_refs
