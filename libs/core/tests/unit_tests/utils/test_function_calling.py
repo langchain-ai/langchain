@@ -1,7 +1,5 @@
 import typing
-from collections import ChainMap, UserDict
 from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
-from types import MappingProxyType
 from typing import Annotated as ExtensionsAnnotated
 from typing import (
     Any,
@@ -1478,97 +1476,6 @@ def test_convert_to_openai_tool_computer_passthrough() -> None:
     }
     result = convert_to_openai_tool(computer_tool)
     assert result == computer_tool
-
-
-@pytest.mark.parametrize("mapping_cls", [ChainMap, UserDict, MappingProxyType])
-@pytest.mark.parametrize(
-    ("payload", "expected_name"),
-    [
-        pytest.param(
-            {"name": "f", "description": "d", "parameters": {"type": "object"}},
-            "f",
-            id="openai-format",
-        ),
-        pytest.param(
-            {"name": "f", "description": "d", "input_schema": {"type": "object"}},
-            "f",
-            id="anthropic-format",
-        ),
-        pytest.param(
-            {
-                "toolSpec": {
-                    "name": "f",
-                    "description": "d",
-                    "inputSchema": {"json": {"type": "object"}},
-                }
-            },
-            "f",
-            id="bedrock-converse-format",
-        ),
-        pytest.param(
-            {"title": "f", "description": "d", "properties": {}},
-            "f",
-            id="json-schema-with-title",
-        ),
-    ],
-)
-def test_convert_to_openai_function_accepts_non_dict_mapping(
-    mapping_cls: type, payload: dict[str, Any], expected_name: str
-) -> None:
-    """Test `convert_to_openai_function` accepts any `Mapping`, not only `dict`.
-
-    Regression test: the annotation accepts `Mapping[str, Any]`, but every format check
-    used `isinstance(function, dict)`, so a `Mapping` that is not a `dict` subclass fell
-    through to the unsupported-input branch.
-    """
-    result = convert_to_openai_function(mapping_cls(payload))
-
-    assert result["name"] == expected_name
-
-
-@pytest.mark.parametrize("mapping_cls", [ChainMap, UserDict, MappingProxyType])
-def test_convert_to_openai_tool_accepts_non_dict_mapping(mapping_cls: type) -> None:
-    """Test `convert_to_openai_tool` accepts any `Mapping`, not only `dict`."""
-    payload = {"name": "f", "description": "d", "parameters": {"type": "object"}}
-
-    result = convert_to_openai_tool(mapping_cls(payload))
-
-    assert result == {
-        "type": "function",
-        "function": {
-            "name": "f",
-            "description": "d",
-            "parameters": {"type": "object"},
-        },
-    }
-
-
-@pytest.mark.parametrize("mapping_cls", [ChainMap, UserDict, MappingProxyType])
-def test_convert_to_openai_tool_mapping_passthrough_returns_dict(
-    mapping_cls: type,
-) -> None:
-    """Test a well-known tool passed as a `Mapping` is returned as a `dict`.
-
-    The declared return type is `dict[str, Any]`, so the passthrough branch must not
-    hand back the original mapping.
-    """
-    payload = {"type": "web_search_preview"}
-
-    result = convert_to_openai_tool(mapping_cls(payload))
-
-    assert isinstance(result, dict)
-    assert result == payload
-
-
-@pytest.mark.parametrize("mapping_cls", [ChainMap, UserDict, MappingProxyType])
-def test_convert_to_openai_function_mapping_without_name_still_raises(
-    mapping_cls: type,
-) -> None:
-    """Test unsupported mappings keep raising, with the JSON-schema specific message."""
-    payload = {"type": "object", "properties": {}}
-
-    with pytest.raises(ValueError, match="top-level 'title' key"):
-        convert_to_openai_function(mapping_cls(payload))
 
 
 def test_convert_to_openai_function_without_tools_module_imported(

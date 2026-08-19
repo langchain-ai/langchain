@@ -9,7 +9,6 @@ import logging
 import types
 import typing
 import uuid
-from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -36,7 +35,7 @@ from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Mapping
 
     from langchain_core.tools import BaseTool
 
@@ -225,9 +224,7 @@ def _convert_python_function_to_openai_function(
     Returns:
         The OpenAI function description.
     """
-    # Import locally: `langchain_core.tools` is only bound as an attribute of
-    # `langchain_core` once something imports it, so reaching it through the parent
-    # package raises `AttributeError` in a process that has not.
+    # Import locally to prevent circular import
     from langchain_core.tools.base import create_schema_from_function  # noqa: PLC0415
 
     func_name = _get_python_function_name(function)
@@ -341,9 +338,8 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     Returns:
         The function description.
     """
-    # Import locally to prevent circular import, and because `langchain_core.tools`
-    # is not guaranteed to be bound on the parent package.
-    from langchain_core.tools.simple import Tool  # noqa: PLC0415
+    # Import locally to prevent circular import
+    from langchain_core.tools import Tool  # noqa: PLC0415
 
     is_simple_oai_tool = isinstance(tool, Tool) and not tool.args_schema
     if tool.tool_call_schema and not is_simple_oai_tool:
@@ -409,16 +405,8 @@ def convert_to_openai_function(
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
     """
-    # Import locally to prevent circular import. `langchain_core.tools` is also only
-    # bound as an attribute of `langchain_core` once something imports it, so reaching
-    # it through the parent package raises `AttributeError` in a process that has not.
+    # Import locally to prevent circular import
     from langchain_core.tools import BaseTool  # noqa: PLC0415
-
-    # Normalize any non-`dict` mapping (e.g. `ChainMap`, `MappingProxyType`) so the
-    # format checks below, which rely on `dict` behavior, apply to every `Mapping`.
-    # Done before the `strict` copy so mapping inputs are protected from mutation too.
-    if isinstance(function, Mapping) and not isinstance(function, dict):
-        function = dict(function)
 
     if strict and isinstance(function, dict):
         function = copy.deepcopy(function)
@@ -567,10 +555,6 @@ def convert_to_openai_tool(
     # Import locally to prevent circular import
     from langchain_core.tools import Tool  # noqa: PLC0415
 
-    # Normalize any non-`dict` mapping so the checks below apply to every `Mapping`,
-    # and so a passthrough return honors the declared `dict[str, Any]` return type.
-    if isinstance(tool, Mapping) and not isinstance(tool, dict):
-        tool = dict(tool)
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:
             return tool
