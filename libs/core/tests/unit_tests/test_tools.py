@@ -4381,7 +4381,9 @@ def test_structured_tool_json_dump() -> None:
     dumped = write_file.model_dump(mode="json")
     # Round-trips through the stdlib encoder, i.e. it really is JSON-native.
     json.dumps(dumped)
-    assert dumped["args_schema"].startswith("<class ")
+    schema = cast("type[BaseModel]", write_file.args_schema)
+    assert dumped["args_schema"] == schema.model_json_schema()
+    assert set(dumped["args_schema"]["properties"]) == {"file_path", "content"}
     assert "write_file" in dumped["func"]
     json.loads(write_file.model_dump_json())
 
@@ -4420,6 +4422,69 @@ def test_structured_tool_json_dump_keeps_dict_args_schema() -> None:
         args_schema=schema,
     )
     assert dict_tool.model_dump(mode="json")["args_schema"] == schema
+
+
+def test_structured_tool_json_dump_uses_v1_schema_method() -> None:
+    """A `pydantic.v1` schema class is a supported `args_schema` form too."""
+
+    class V1Schema(BaseModelV1):
+        a: str
+
+    v1_tool = StructuredTool(
+        name="v", description="d", func=lambda a: "x", args_schema=V1Schema
+    )
+    assert v1_tool.model_dump(mode="json")["args_schema"] == V1Schema.schema()
+
+
+def test_structured_tool_json_dump_falls_back_for_arbitrary_types() -> None:
+    """A schema with no JSON schema form must still dump instead of raising."""
+
+    class NotJsonSchemable:
+        pass
+
+    @tool
+    def uses_injected(
+        a: int, conn: Annotated[NotJsonSchemable, InjectedToolArg]
+    ) -> str:
+        """Doc."""
+        return "ok"
+
+    assert uses_injected.model_dump(mode="json")["args_schema"].startswith("<class ")
+    # The injected arg never reaches the model, so the tool is still usable.
+    assert set(uses_injected.args) == {"a"}
+
+
+def test_structured_tool_json_dump_follows_model_rebuild() -> None:
+    """A rebuilt schema must not keep serving its pre-rebuild JSON schema."""
+
+    class Renamable(BaseModel):
+        a: str
+
+    renamable = StructuredTool(
+        name="r", description="d", func=lambda a: "x", args_schema=Renamable
+    )
+    assert renamable.model_dump(mode="json")["args_schema"]["title"] == "Renamable"
+
+    Renamable.model_config["title"] = "Renamed"
+    Renamable.model_rebuild(force=True)
+    assert renamable.model_dump(mode="json")["args_schema"]["title"] == "Renamed"
+
+    class Deferred(BaseModel):
+        a: "Resolved"
+
+    deferred = StructuredTool(
+        name="f", description="d", func=lambda a: "x", args_schema=Deferred
+    )
+    # Unresolvable so far, so it dumps as a repr like any other schema-less type.
+    assert deferred.model_dump(mode="json")["args_schema"].startswith("<class ")
+
+    class Resolved(BaseModel):
+        z: int
+
+    Deferred.model_rebuild(force=True)
+    assert deferred.model_dump(mode="json")["args_schema"]["properties"] == {
+        "a": {"$ref": "#/$defs/Resolved"}
+    }
 
 
 def test_structured_tool_subclass_can_override_json_serializers() -> None:
