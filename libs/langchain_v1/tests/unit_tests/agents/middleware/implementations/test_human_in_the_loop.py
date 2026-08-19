@@ -204,11 +204,7 @@ def test_human_in_the_loop_middleware_default_rejection_message() -> None:
         assert len(result["messages"]) == 2
         tool_message = result["messages"][1]
         assert isinstance(tool_message, ToolMessage)
-        assert tool_message.content == (
-            "User rejected the tool call for `test_tool` with id 1. "
-            "The tool was not executed. Do not retry this tool call unless the user "
-            "explicitly requests it."
-        )
+        assert tool_message.content == "User rejected the tool call."
         assert tool_message.status == "error"
         assert tool_message.name == "test_tool"
         assert tool_message.tool_call_id == "1"
