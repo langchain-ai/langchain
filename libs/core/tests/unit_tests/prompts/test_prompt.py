@@ -744,3 +744,17 @@ def test_prompt_template_add(
         variable="template",
         another_variable="other_template",
     )
+
+
+@pytest.mark.parametrize("cls", [dict, ChainMap, UserDict, MappingProxyType])
+def test_prompt_template_invoke_with_mapping_types(cls: Any) -> None:
+    """Regression test for issue #39743: Prompt templates must support all Mapping types."""
+    single = PromptTemplate.from_template("Hello {name}")
+    multi = PromptTemplate.from_template("{greeting} {name}")
+
+    assert single.invoke(cls({"name": "Alice"})).to_string() == "Hello Alice"
+    assert (
+        multi.invoke(cls({"greeting": "Hello", "name": "Alice"})).to_string()
+        == "Hello Alice"
+    )
+

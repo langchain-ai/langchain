@@ -158,8 +158,8 @@ class BasePromptTemplate(
             field_definitions={**required_input_variables, **optional_input_variables},
         )
 
-    def _validate_input(self, inner_input: Any) -> builtins.dict[str, Any]:
-        if not isinstance(inner_input, dict):
+    def _validate_input(self, inner_input: Any) -> Mapping[str, Any]:
+        if not isinstance(inner_input, Mapping):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
                 inner_input_ = {var_name: inner_input}
@@ -195,13 +195,13 @@ class BasePromptTemplate(
         return inner_input_
 
     def _format_prompt_with_error_handling(
-        self, inner_input: builtins.dict[str, Any]
+        self, inner_input: Mapping[str, Any]
     ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
         return self.format_prompt(**inner_input_)
 
     async def _aformat_prompt_with_error_handling(
-        self, inner_input: builtins.dict[str, Any]
+        self, inner_input: Mapping[str, Any]
     ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
         return await self.aformat_prompt(**inner_input_)
