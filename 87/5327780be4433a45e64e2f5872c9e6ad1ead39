@@ -1,0 +1,47 @@
+libs/langchain_v1/langchain/mcp/connections.py
+  s_e88a5373c21d3d::t_11e54418ccbd56 1-63
+libs/langchain_v1/langchain/mcp/client.py
+  s_e88a5373c21d3d::t_808c94fd9a50b2 1-5,9,11-14,16-17,21-29,40,44-60,86-104,106-107,111-115,121-122,124
+  s_e88a5373c21d3d::t_81d2c17ff45587 8
+  s_e88a5373c21d3d::t_a4d1ee0e379f83 105,108-110
+  s_e88a5373c21d3d::t_dac9315c9b1b56 67
+  s_e88a5373c21d3d::t_b8a144ce381cc9 6-7,10,15,18-20,30-39,41-43,61-66,68-85,123,125-128,130-143
+  s_e88a5373c21d3d::t_07c88dfb291fef 116-120
+  s_e88a5373c21d3d::t_2a02cec3b5cc13 129
+libs/langchain_v1/pyproject.toml
+  s_e88a5373c21d3d::t_4fea140cf17b7e 79
+  s_e88a5373c21d3d::t_b78513fbd7ab30 52
+libs/langchain_v1/langchain/mcp/tools.py
+  s_e88a5373c21d3d::t_241fce59323c78 1-11,14-17,20-26,28-32,35-37,39-46,48-115
+  s_e88a5373c21d3d::t_4b0d0aa7c556d7 12-13,27,33-34,38,47
+  s_e88a5373c21d3d::t_1c4d39fa04f1a7 18-19
+libs/langchain_v1/langchain/mcp/__init__.py
+  s_e88a5373c21d3d::t_32d1f338ad8170 1-43
+libs/langchain_v1/tests/unit_tests/mcp/_server.py
+  s_e88a5373c21d3d::t_0ad8cc9f71094e 1-21
+libs/langchain_v1/langchain/mcp/_transport.py
+  s_e88a5373c21d3d::t_7f8b39bc3e5c9b 1-17,19-20,22-32,35,39-40,42,45-52,57,61
+  s_e88a5373c21d3d::t_a7955565470562 18,21,33-34,36-38,41,43-44,53-56,58-60,62-65
+libs/langchain_v1/tests/unit_tests/mcp/test_tools.py
+  s_e88a5373c21d3d::t_7ac419bdb51dce 1-6,8,12,16-17,19-21,23,25-29,34,39,43-47,54-68,74,77,84-94
+  s_e88a5373c21d3d::t_2ba3ba269d50fd 7,13-15,18,22,24,30-33,35-38,40-42,48-53,69-73,75-76,78-83
+  s_e88a5373c21d3d::t_329210286b6186 9-11
+libs/langchain_v1/uv.lock
+  s_e88a5373c21d3d::t_60d9cd505681fa 1715-1727,1767-1792,1823,1825,1827,2008-2035,2080-2082,2113,2159,2162,2170,2196,2336,2339,2353,2540,2543,2551,2553,2575,3034-3071,4542-4550,4590-4614,4679-4693,4841-5101,5202-5214,5224-5236,5441-5449,5565-5578
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "875327780be4433a45e64e2f5872c9e6ad1ead39",
+  "prompts": {},
+  "sessions": {
+    "s_e88a5373c21d3d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7b07b877-cb3a-4afc-b6aa-f6fd0403181b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
