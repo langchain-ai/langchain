@@ -830,6 +830,24 @@ class ChildTool(BaseTool):
             if isinstance(input_args, dict):
                 return tool_input
             result: BaseModel | BaseModelV1
+            field_info = get_fields(input_args)
+            # Keys that may legitimately appear in the payload but are not model
+            # arguments: filtered args (e.g. `run_manager`) and injected args.
+            # Strict (`extra="forbid"`) schemas reject them, so they are
+            # stripped before validation unless the schema declares them as a
+            # field (e.g. the `Annotated[..., SkipJsonSchema()]` workaround).
+            # Injected values are re-merged into the validated input below.
+            injected_keys = (
+                set(FILTERED_ARGS)
+                | self._injected_args_keys
+                | {
+                    name
+                    for name, field_type in get_all_basemodel_annotations(
+                        input_args
+                    ).items()
+                    if _is_injected_arg_type(field_type)
+                }
+            )
             if issubclass(input_args, BaseModel):
                 # Check args_schema for InjectedToolCallId
                 for k, v in get_all_basemodel_annotations(input_args).items():
@@ -844,7 +862,12 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result_v2 = input_args.model_validate(tool_input)
+                validate_input = {
+                    k: v
+                    for k, v in tool_input.items()
+                    if k in field_info or k not in injected_keys
+                }
+                result_v2 = input_args.model_validate(validate_input)
                 result_dict = result_v2.model_dump()
                 provided_fields = result_v2.model_fields_set
                 result = result_v2
@@ -862,7 +885,12 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result_v1 = input_args.parse_obj(tool_input)
+                validate_input = {
+                    k: v
+                    for k, v in tool_input.items()
+                    if k in field_info or k not in injected_keys
+                }
+                result_v1 = input_args.parse_obj(validate_input)
                 result_dict = result_v1.dict()
                 provided_fields = result_v1.__fields_set__
                 result = result_v1
@@ -876,7 +904,6 @@ class ChildTool(BaseTool):
             # plus fields with explicit defaults. This applies Pydantic defaults (like
             # Field(default=1)) while excluding synthetic "args"/"kwargs" fields that
             # Pydantic creates for *args/**kwargs.
-            field_info = get_fields(input_args)
             validated_input = {}
             for k in result_dict:
                 if k in tool_input:

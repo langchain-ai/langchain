@@ -3718,6 +3718,91 @@ def test_filter_injected_args_not_in_schema(
     assert "runtime" not in captured
 
 
+def test_injected_arg_not_in_strict_args_schema() -> None:
+    """Injected args must survive validation with strict args schemas.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/34246:
+    a `StructuredTool` whose `args_schema` uses `extra="forbid"` raised
+    `ValidationError` (`extra_forbidden`) when an injected argument not
+    declared in the schema was present in the invoke payload, because the
+    full payload was validated before injected args were stripped.
+    """
+
+    class StrictArgsSchema(BaseModel):
+        """Schema with `extra="forbid"` and no injected field."""
+
+        query: str
+        limit: int
+
+        model_config = ConfigDict(extra="forbid")
+
+    def tool_func(query: str, limit: int, runtime: _CustomRuntime) -> Any:
+        """Echo the input, receiving a directly injected runtime.
+
+        Args:
+            query: The query.
+            limit: Max results.
+            runtime: Custom runtime (directly injected, not in schema).
+
+        Returns:
+            The echoed input including the injected runtime.
+        """
+        return {"query": query, "limit": limit, "runtime": runtime}
+
+    tool_ = StructuredTool.from_function(
+        func=tool_func,
+        name="strict_echo_tool",
+        description="Echoes input with an injected runtime not in schema",
+        args_schema=StrictArgsSchema,
+    )
+
+    runtime = _CustomRuntime(data={"foo": "bar"})
+    result = tool_.invoke({"query": "test", "limit": 5, "runtime": runtime})
+
+    assert result == {"query": "test", "limit": 5, "runtime": runtime}
+
+
+def test_declared_injected_arg_in_strict_args_schema() -> None:
+    """Declared injected args must still validate under strict schemas.
+
+    Guards the #34246 workaround: when the `args_schema` itself declares the
+    injected argument as a field, the value must validate as a normal field
+    rather than being stripped before validation.
+    """
+
+    class DeclaredArgsSchema(BaseModel):
+        """Schema with `extra="forbid"` that declares the injected field."""
+
+        query: str
+        runtime: Any
+
+        model_config = ConfigDict(extra="forbid")
+
+    def tool_func(query: str, runtime: _CustomRuntime) -> Any:
+        """Echo the input, receiving a declared injected runtime.
+
+        Args:
+            query: The query.
+            runtime: Custom runtime (declared in schema, injected).
+
+        Returns:
+            The echoed input including the injected runtime.
+        """
+        return {"query": query, "runtime": runtime}
+
+    tool_ = StructuredTool.from_function(
+        func=tool_func,
+        name="declared_echo_tool",
+        description="Echoes input with the injected runtime declared in schema",
+        args_schema=DeclaredArgsSchema,
+    )
+
+    runtime = _CustomRuntime(data={"foo": "bar"})
+    result = tool_.invoke({"query": "test", "runtime": runtime})
+
+    assert result == {"query": "test", "runtime": runtime}
+
+
 def test_base_tool_subclass_injects_directly_injected_runtime() -> None:
     """Directly injected args on a `BaseTool` subclass `_run` must be injected.
 
