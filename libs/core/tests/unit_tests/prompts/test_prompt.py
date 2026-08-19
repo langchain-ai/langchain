@@ -263,6 +263,56 @@ def test_mustache_prompt_with_non_dict_mapping() -> None:
     assert prompt.format(user=MappingProxyType({"name": "Alice"})) == "Hello Alice"
 
 
+@pytest.mark.parametrize("mapping_cls", [ChainMap, UserDict, MappingProxyType])
+def test_prompt_invoke_with_non_dict_mapping(mapping_cls: type) -> None:
+    """Test `invoke` accepts non-`dict` `Mapping` inputs.
+
+    Regression test: the input check only accepted `dict`, so a `Mapping` that is not
+    a `dict` subclass was treated as a single positional value for
+    single-variable templates.
+    """
+    prompt = PromptTemplate.from_template("Hello {name}")
+
+    result = prompt.invoke(mapping_cls({"name": "Alice"}))
+
+    assert result.to_string() == "Hello Alice"
+
+
+@pytest.mark.parametrize("mapping_cls", [ChainMap, UserDict, MappingProxyType])
+def test_prompt_invoke_multivariable_with_non_dict_mapping(mapping_cls: type) -> None:
+    """Test multi-variable templates accept non-`dict` `Mapping` inputs.
+
+    Regression test: these raised `TypeError` reporting that a mapping type was
+    expected, even though the input was a `Mapping`.
+    """
+    prompt = PromptTemplate.from_template("{greeting} {name}")
+
+    result = prompt.invoke(mapping_cls({"greeting": "Hello", "name": "Alice"}))
+
+    assert result.to_string() == "Hello Alice"
+
+
+async def test_prompt_ainvoke_with_non_dict_mapping() -> None:
+    """Test `ainvoke` also accepts non-`dict` `Mapping` inputs."""
+    prompt = PromptTemplate.from_template("{greeting} {name}")
+
+    result = await prompt.ainvoke(ChainMap({"greeting": "Hello", "name": "Alice"}))
+
+    assert result.to_string() == "Hello Alice"
+
+
+def test_prompt_invoke_does_not_mutate_mapping_input() -> None:
+    """Test that validating the input does not mutate the caller's mapping."""
+    prompt = PromptTemplate.from_template("Hello {name}")
+    original = {"name": "Alice"}
+    chain_map = ChainMap(original)
+
+    prompt.invoke(chain_map)
+
+    assert original == {"name": "Alice"}
+    assert dict(chain_map) == {"name": "Alice"}
+
+
 def test_prompt_from_template_with_partial_variables() -> None:
     """Test prompts can be constructed from a template with partial variables."""
     # given

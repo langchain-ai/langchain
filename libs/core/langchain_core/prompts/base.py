@@ -159,7 +159,7 @@ class BasePromptTemplate(
         )
 
     def _validate_input(self, inner_input: Any) -> builtins.dict[str, Any]:
-        if not isinstance(inner_input, dict):
+        if not isinstance(inner_input, Mapping):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
                 inner_input_ = {var_name: inner_input}
@@ -175,7 +175,7 @@ class BasePromptTemplate(
                     )
                 )
         else:
-            inner_input_ = inner_input
+            inner_input_ = dict(inner_input)
         missing = set(self.input_variables).difference(inner_input_)
         if missing:
             msg = (
