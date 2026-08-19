@@ -91,12 +91,9 @@ class _StreamingParser:
             xml.etree.ElementTree.ParseError: If the XML is not well-formed.
         """
         if isinstance(chunk, BaseMessage):
-            # extract text
-            chunk_content = chunk.content
-            if not isinstance(chunk_content, str):
-                # ignore non-string messages (e.g., function calls)
-                return
-            chunk = chunk_content
+            # extract text; also covers list content (e.g. content blocks), in
+            # which non-text blocks (e.g., tool calls) contribute nothing
+            chunk = chunk.text
         # add chunk to buffer of unprocessed text
         self.buffer += chunk
         # if xml string hasn't started yet, continue to next chunk

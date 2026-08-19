@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator, Iterable
 import pytest
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import AIMessageChunk
 from langchain_core.output_parsers.xml import XMLOutputParser
 
 DATA = """
@@ -120,6 +121,25 @@ async def test_xml_output_parser_defused(content: str) -> None:
     """Test XMLOutputParser."""
     xml_parser = XMLOutputParser(parser="defusedxml")
     await _test_parser(xml_parser, content)
+
+
+async def test_xml_output_parser_list_content_stream() -> None:
+    """Streamed messages with list content parse the same as string content."""
+    xml_parser = XMLOutputParser(parser="xml")
+    chunks = [
+        AIMessageChunk(content=[{"type": "text", "text": "<body>Text of", "index": 0}]),
+        AIMessageChunk(content=[{"type": "text", "text": " the body.", "index": 0}]),
+        AIMessageChunk(content=[{"type": "text", "text": "</body>", "index": 0}]),
+    ]
+
+    async def _achunks() -> AsyncIterator[AIMessageChunk]:
+        for chunk in chunks:
+            yield chunk
+
+    assert list(xml_parser.transform(iter(chunks))) == [{"body": "Text of the body."}]
+    assert [a async for a in xml_parser.atransform(_achunks())] == [
+        {"body": "Text of the body."}
+    ]
 
 
 @pytest.mark.parametrize("result", ["foo></foo>", "<foo></foo", "foo></foo", "foofoo"])

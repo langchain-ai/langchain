@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator, Iterable
 from typing import TypeVar
 
+from langchain_core.messages import AIMessageChunk
 from langchain_core.output_parsers.list import (
     CommaSeparatedListOutputParser,
     MarkdownListOutputParser,
@@ -312,3 +313,34 @@ async def test_markdown_list_async() -> None:
         assert [
             a async for a in parser.atransform(aiter_from_iter([text]))
         ] == expectedlist
+
+
+def test_list_content_stream() -> None:
+    """Streamed messages with list content parse the same as string content."""
+    parser = CommaSeparatedListOutputParser()
+    chunks = [
+        AIMessageChunk(content=[{"type": "text", "text": "foo, ba", "index": 0}]),
+        AIMessageChunk(content=[{"type": "text", "text": "r, baz", "index": 0}]),
+        # Non-text blocks contribute no text, same as in `parse`
+        AIMessageChunk(
+            content=[{"type": "tool_call_chunk", "name": "t", "args": "", "index": 1}]
+        ),
+    ]
+    assert list(parser.transform(iter(chunks))) == [["foo"], ["bar"], ["baz"]]
+
+
+async def test_list_content_stream_async() -> None:
+    """Streamed messages with list content parse the same as string content."""
+    parser = CommaSeparatedListOutputParser()
+    chunks = [
+        AIMessageChunk(content=[{"type": "text", "text": "foo, ba", "index": 0}]),
+        AIMessageChunk(content=[{"type": "text", "text": "r, baz", "index": 0}]),
+        AIMessageChunk(
+            content=[{"type": "tool_call_chunk", "name": "t", "args": "", "index": 1}]
+        ),
+    ]
+    assert [a async for a in parser.atransform(aiter_from_iter(chunks))] == [
+        ["foo"],
+        ["bar"],
+        ["baz"],
+    ]

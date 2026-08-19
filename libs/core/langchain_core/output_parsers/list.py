@@ -74,11 +74,8 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         buffer = ""
         for chunk in input:
             if isinstance(chunk, BaseMessage):
-                # Extract text
-                chunk_content = chunk.content
-                if not isinstance(chunk_content, str):
-                    continue
-                buffer += chunk_content
+                # Extract text (also covers list content, e.g. content blocks)
+                buffer += chunk.text
             else:
                 # Add current chunk to buffer
                 buffer += chunk
@@ -108,11 +105,8 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         buffer = ""
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
-                # Extract text
-                chunk_content = chunk.content
-                if not isinstance(chunk_content, str):
-                    continue
-                buffer += chunk_content
+                # Extract text (also covers list content, e.g. content blocks)
+                buffer += chunk.text
             else:
                 # Add current chunk to buffer
                 buffer += chunk
