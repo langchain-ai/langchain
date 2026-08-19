@@ -89,7 +89,7 @@ class ModelPermissionDeniedError(ModelError):
 
 
 class ModelInvalidRequestError(ModelError):
-    """Exception raised when a provider rejects a request as invalid (HTTP 400, 422)."""
+    """Exception raised when a provider rejects a request as invalid (e.g. HTTP 400)."""
 
 
 class ModelNotFoundError(ModelError):
