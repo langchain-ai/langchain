@@ -816,8 +816,8 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
-            if isinstance(config, list):
-                config = config[0]
+            if isinstance(config, (list, tuple)):
+                config = config[0] if len(config) == 1 else None
             return self._model(config).batch(
                 inputs,
                 config=config,
@@ -844,8 +844,8 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
-            if isinstance(config, list):
-                config = config[0]
+            if isinstance(config, (list, tuple)):
+                config = config[0] if len(config) == 1 else None
             return await self._model(config).abatch(
                 inputs,
                 config=config,
@@ -872,8 +872,8 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
-            if isinstance(config, list):
-                config = config[0]
+            if isinstance(config, (list, tuple)):
+                config = config[0] if len(config) == 1 else None
             yield from self._model(cast("RunnableConfig", config)).batch_as_completed(  # type: ignore[call-overload]
                 inputs,
                 config=config,
@@ -901,8 +901,8 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
-            if isinstance(config, list):
-                config = config[0]
+            if isinstance(config, (list, tuple)):
+                config = config[0] if len(config) == 1 else None
             async for x in self._model(
                 cast("RunnableConfig", config),
             ).abatch_as_completed(  # type: ignore[call-overload]

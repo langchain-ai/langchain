@@ -427,3 +427,23 @@ def test_configurable_with_default() -> None:
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)
+
+
+def test_configurable_model_batch_tuple_config() -> None:
+    """Test that singleton tuple configs are unwrapped correctly without AttributeError."""
+    model = init_chat_model()
+    fake = FakeChatModel()
+
+    with mock.patch(
+        "langchain.chat_models.base._init_chat_model_helper", return_value=fake
+    ):
+        # Test singleton tuple config on batch
+        res_batch = model.batch(["hello"], config=({"tags": ["test"]},))
+        assert len(res_batch) == 1
+
+        # Test singleton tuple config on batch_as_completed
+        res_completed = list(
+            model.batch_as_completed(["hello"], config=({"tags": ["test"]},))
+        )
+        assert len(res_completed) == 1
+
