@@ -47,11 +47,10 @@ class FireworksRerank(BaseDocumentCompressor):
     def validate_environment(self) -> FireworksRerank:
         """Create the OpenAI-compatible client when one was not supplied."""
         if self.client is None:
-            api_key = (
-                self.fireworks_api_key.get_secret_value()
-                if self.fireworks_api_key is not None
-                else None
-            )
+            if self.fireworks_api_key is None:
+                msg = "FIREWORKS_API_KEY is required when no client is supplied."
+                raise ValueError(msg)
+            api_key = self.fireworks_api_key.get_secret_value()
             self.client = OpenAI(
                 api_key=api_key,
                 base_url=self.base_url,
