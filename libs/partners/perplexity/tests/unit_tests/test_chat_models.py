@@ -493,7 +493,7 @@ def test_translate_responses_input_tool_roundtrip() -> None:
         {"role": "tool", "content": "18C cloudy", "tool_call_id": "call_1"},
     ]
     translated = _translate_responses_input(message_dicts)
-    assert translated[0] == {"role": "user", "content": "hi"}
+    assert translated[0] == {"type": "message", "role": "user", "content": "hi"}
     # Empty/None assistant content is dropped; only the function_call item remains.
     assert translated[1] == {
         "type": "function_call",
@@ -525,9 +525,56 @@ def test_translate_responses_input_keeps_assistant_text_with_tool_calls() -> Non
             }
         ]
     )
-    assert translated[0] == {"role": "assistant", "content": "Let me check."}
+    assert translated[0] == {
+        "type": "message",
+        "role": "assistant",
+        "content": "Let me check.",
+    }
     assert translated[1]["type"] == "function_call"
     assert translated[1]["call_id"] == "call_1"
+
+
+def test_to_responses_payload_marks_message_items_with_type() -> None:
+    """Message items use the SDK's `message` union variant."""
+    llm = ChatPerplexity(model="openai/gpt-5", api_key="test")
+    payload = llm._to_responses_payload(
+        [
+            {"role": "system", "content": "Be concise."},
+            {"role": "user", "content": "What is the weather?"},
+            {"role": "assistant", "content": "It is sunny."},
+            {
+                "role": "assistant",
+                "content": "Let me check.",
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {"name": "get_weather", "arguments": "{}"},
+                    }
+                ],
+            },
+            {"role": "tool", "content": "18C cloudy", "tool_call_id": "call_1"},
+        ],
+        {},
+    )
+
+    assert payload["input"] == [
+        {"type": "message", "role": "system", "content": "Be concise."},
+        {"type": "message", "role": "user", "content": "What is the weather?"},
+        {"type": "message", "role": "assistant", "content": "It is sunny."},
+        {"type": "message", "role": "assistant", "content": "Let me check."},
+        {
+            "type": "function_call",
+            "call_id": "call_1",
+            "name": "get_weather",
+            "arguments": "{}",
+        },
+        {
+            "type": "function_call_output",
+            "call_id": "call_1",
+            "output": "18C cloudy",
+        },
+    ]
 
 
 def test_to_responses_payload_flattens_tools_and_translates_messages() -> None:
