@@ -18,18 +18,33 @@ from typing import (
 import httpx
 from fireworks import (
     APIConnectionError,
+    APIError,
+    APITimeoutError,
     AsyncFireworks,
+    AuthenticationError,
     BadRequestError,
     Fireworks,
     FireworksError,
     InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
     RateLimitError,
 )
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -565,12 +580,70 @@ class FireworksContextOverflowError(BadRequestError, ContextOverflowError):
     """`BadRequestError` raised when input exceeds Fireworks's context limit."""
 
 
+class FireworksAuthenticationError(AuthenticationError, ModelAuthenticationError):
+    """Fireworks authentication error classified as a LangChain model error."""
+
+
+class FireworksPermissionDeniedError(PermissionDeniedError, ModelPermissionDeniedError):
+    """Fireworks permission error classified as a LangChain model error."""
+
+
+class FireworksInvalidRequestError(BadRequestError, ModelInvalidRequestError):
+    """Fireworks bad-request error classified as a LangChain model error."""
+
+
+class FireworksModelNotFoundError(NotFoundError, ModelNotFoundError):
+    """Fireworks not-found error classified as a LangChain model error."""
+
+
+class FireworksRateLimitError(RateLimitError, ModelRateLimitError):
+    """Fireworks rate-limit error classified as a LangChain model error."""
+
+
+class FireworksAPIError(InternalServerError, ModelAPIError):
+    """Fireworks server error classified as a LangChain model error."""
+
+
+class FireworksConnectionError(APIConnectionError, ModelConnectionError):
+    """Fireworks connection error classified as a LangChain model error."""
+
+
+class FireworksTimeoutError(APITimeoutError, ModelTimeoutError):
+    """Fireworks timeout error classified as a LangChain model error."""
+
+
 def _handle_fireworks_invalid_request(e: BadRequestError) -> NoReturn:
     """Promote prompt-too-long errors to `FireworksContextOverflowError`."""
     if "prompt is too long" in str(e):
         raise FireworksContextOverflowError(
             str(e), response=e.response, body=e.body
         ) from e
+    raise FireworksInvalidRequestError(str(e), response=e.response, body=e.body) from e
+
+
+def _handle_fireworks_api_error(e: APIError) -> NoReturn:
+    """Re-raise a Fireworks SDK error as its LangChain-classified equivalent."""
+    if isinstance(e, AuthenticationError):
+        raise FireworksAuthenticationError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, PermissionDeniedError):
+        raise FireworksPermissionDeniedError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, NotFoundError):
+        raise FireworksModelNotFoundError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, RateLimitError):
+        raise FireworksRateLimitError(str(e), response=e.response, body=e.body) from e
+    if isinstance(e, InternalServerError):
+        raise FireworksAPIError(str(e), response=e.response, body=e.body) from e
+    # `APITimeoutError` subclasses `APIConnectionError`, so check it first.
+    if isinstance(e, APITimeoutError):
+        raise FireworksTimeoutError(e.request) from e
+    if isinstance(e, APIConnectionError):
+        raise FireworksConnectionError(message=str(e), request=e.request) from e
     raise e
 
 
@@ -1090,6 +1163,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1142,6 +1217,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         return self._create_chat_result(response)
 
     def _create_message_dicts(
@@ -1203,6 +1280,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1258,6 +1337,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         return self._create_chat_result(response)
 
     @property

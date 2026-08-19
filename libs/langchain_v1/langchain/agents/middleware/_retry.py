@@ -10,6 +10,8 @@ import random
 from collections.abc import Callable
 from typing import Literal
 
+from langchain_core.exceptions import ModelError
+
 # Type aliases
 RetryOn = tuple[type[Exception], ...] | Callable[[Exception], bool]
 """Type for specifying which exceptions to retry on.
@@ -63,6 +65,13 @@ def validate_retry_params(
     if backoff_factor < 0:
         msg = "backoff_factor must be >= 0"
         raise ValueError(msg)
+
+
+def default_retry_on(exc: Exception) -> bool:
+    """Return whether an exception should be retried by default."""
+    if isinstance(exc, ModelError):
+        return exc.is_retryable
+    return True
 
 
 def should_retry_exception(
