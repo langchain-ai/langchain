@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import importlib
 import warnings
+from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -39,7 +40,7 @@ def _init_langsmith(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
 
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable, Iterator, Sequence
+    from collections.abc import AsyncIterator, Callable, Iterator
     from types import ModuleType
 
     from langchain_core.runnables.schema import StreamEvent
@@ -872,7 +873,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
-            if isinstance(config, list):
+            if isinstance(config, Sequence):
                 config = config[0]
             yield from self._model(cast("RunnableConfig", config)).batch_as_completed(  # type: ignore[call-overload]
                 inputs,
@@ -901,7 +902,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
-            if isinstance(config, list):
+            if isinstance(config, Sequence):
                 config = config[0]
             async for x in self._model(
                 cast("RunnableConfig", config),

@@ -4,6 +4,7 @@ from unittest import mock
 
 import pytest
 from langchain_core.language_models.fake_chat_models import FakeChatModel
+from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
@@ -427,3 +428,39 @@ def test_configurable_with_default() -> None:
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)
+
+
+def test_configurable_batch_as_completed_single_tuple_config() -> None:
+    """Test `batch_as_completed` with a singleton tuple config."""
+    model = init_chat_model()
+    config: tuple[RunnableConfig] = ({"tags": ["test"]},)
+
+    with mock.patch(
+        "langchain.chat_models.base._init_chat_model_helper",
+        return_value=FakeChatModel(),
+    ):
+        results = list(model.batch_as_completed(["hello"], config=config))
+
+    assert len(results) == 1
+    index, response = results[0]
+    assert index == 0
+    assert isinstance(response, AIMessage)
+    assert response.content == "fake response"
+
+
+async def test_configurable_abatch_as_completed_single_tuple_config() -> None:
+    """Test `abatch_as_completed` with a singleton tuple config."""
+    model = init_chat_model()
+    config: tuple[RunnableConfig] = ({"tags": ["test"]},)
+
+    with mock.patch(
+        "langchain.chat_models.base._init_chat_model_helper",
+        return_value=FakeChatModel(),
+    ):
+        results = [item async for item in model.abatch_as_completed(["hello"], config=config)]
+
+    assert len(results) == 1
+    index, response = results[0]
+    assert index == 0
+    assert isinstance(response, AIMessage)
+    assert response.content == "fake response"
