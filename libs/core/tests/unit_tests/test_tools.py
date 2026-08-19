@@ -7,6 +7,7 @@ import pickle
 import sys
 import textwrap
 import threading
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -2893,6 +2894,353 @@ def test_tool_injected_arg_with_custom_schema() -> None:
     assert result == "Results for hello with context test_context"
     assert captured["context"] is ctx
     assert captured["context"].value == "test_context"
+
+
+@dataclass
+class _PostponedRuntime(_DirectlyInjectedToolArg):
+    """Custom directly injected runtime used to exercise postponed annotations."""
+
+    some_obj: object
+
+
+@pytest.mark.parametrize("schema_format", ["model", "json_schema"])
+def test_tool_allows_postponed_runtime_annotation_with_custom_schema(
+    schema_format: Literal["model", "json_schema"],
+) -> None:
+    """Ensure postponed injected annotations are preserved with custom args_schema.
+
+    Regression test: `StructuredTool._injected_args_keys` previously read raw
+    `signature` annotations, which are strings under `from __future__ import
+    annotations`. A quoted forward reference reproduces the same string-annotation
+    behavior without a module-wide `__future__` import.
+    """
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    args_schema = (
+        InputSchema if schema_format == "model" else InputSchema.model_json_schema()
+    )
+
+    @tool(args_schema=args_schema)
+    def runtime_tool(query: str, runtime: "_PostponedRuntime") -> str:
+        """Echo the query and capture runtime value."""
+        captured["runtime"] = runtime
+        return query
+
+    runtime_obj = object()
+    runtime = _PostponedRuntime(some_obj=runtime_obj)
+
+    # The injected arg is detected from the postponed annotation...
+    assert "runtime" in runtime_tool._injected_args_keys
+    # ...survives input validation and reaches the function...
+    assert runtime_tool.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert captured["runtime"] is runtime
+    # ...and does not leak into the model-facing tool-call schema.
+    tool_call_schema = runtime_tool.tool_call_schema
+    if isinstance(tool_call_schema, dict):
+        properties = tool_call_schema["properties"]
+    else:
+        properties = model_json_schema(tool_call_schema)["properties"]
+    assert "runtime" not in properties
+
+
+def test_tool_partial_does_not_restore_bound_injected_arg() -> None:
+    """Injected args already bound by a partial are absent from its signature."""
+
+    class InputSchema(BaseModel):
+        y: int
+
+    bound_runtime = _PostponedRuntime(some_obj=object())
+
+    def fn(x: int, runtime: _PostponedRuntime, y: int) -> int:
+        return x + y
+
+    tool_ = StructuredTool.from_function(
+        func=partial(fn, 1, bound_runtime),
+        name="fn",
+        description="Add two numbers.",
+        args_schema=InputSchema,
+    )
+
+    assert "runtime" not in tool_._injected_args_keys
+    assert tool_.invoke({"y": 2, "runtime": object()}) == 3
+
+
+def test_tool_custom_schema_unresolvable_forward_ref_does_not_raise() -> None:
+    """Unresolved forward references must not break `_injected_args_keys`.
+
+    When a postponed annotation cannot be resolved (e.g. the name is not
+    defined), `get_type_hints` raises. `_injected_args_keys` must fall back to
+    the raw (string) annotation instead of propagating the error.
+    """
+
+    class InputSchema(BaseModel):
+        query: str
+
+    def fn(
+        query: str,
+        runtime: "NotDefinedAnywhere123",  # type: ignore[name-defined]  # noqa: F821
+    ) -> str:
+        """Fn with unresolvable forward ref."""
+        return query
+
+    tool_ = StructuredTool.from_function(
+        func=fn,
+        name="fn",
+        description="desc",
+        args_schema=InputSchema,
+    )
+
+    # The unresolved annotation is not recognized as injected (safe fallback),
+    # and accessing `_injected_args_keys` must not raise.
+    assert "runtime" not in tool_._injected_args_keys
+
+
+def test_tool_unresolvable_sibling_annotation_does_not_disable_injection() -> None:
+    """An unresolvable annotation on one parameter must not hide injected args.
+
+    `get_type_hints` resolves all annotations at once, so a single unresolvable
+    forward reference (e.g. on `query`) would otherwise discard the resolvable
+    hints too -- including the injected `runtime` -- leaving
+    `_injected_args_keys` empty and dropping the injected value during custom
+    `args_schema` validation.
+    """
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    @tool(args_schema=InputSchema)
+    def runtime_tool(
+        query: "NotDefinedAnywhere123",  # type: ignore[name-defined]  # noqa: F821
+        runtime: "_PostponedRuntime",
+    ) -> str:
+        """Echo the query and capture runtime value."""
+        captured["runtime"] = runtime
+        return query  # type: ignore[no-any-return]
+
+    runtime = _PostponedRuntime(some_obj=object())
+
+    # The resolvable injected annotation is still detected without relying on
+    # deprecated typing internals.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        injected_args_keys = runtime_tool._injected_args_keys
+    assert "runtime" in injected_args_keys
+    # ...while the unresolvable one is not misclassified.
+    assert "query" not in injected_args_keys
+
+    assert runtime_tool.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert captured["runtime"] is runtime
+
+
+def test_tool_fallback_preserves_annotated_injected_arg() -> None:
+    """Per-parameter fallback preserves `Annotated` injection metadata."""
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    @tool(args_schema=InputSchema)
+    def runtime_tool(
+        query: "NotDefinedAnywhere123",  # type: ignore[name-defined]  # noqa: F821
+        runtime: "Annotated[str, InjectedToolArg]",
+    ) -> str:
+        """Echo the query and capture the injected value."""
+        captured["runtime"] = runtime
+        return query  # type: ignore[no-any-return]
+
+    assert runtime_tool._injected_args_keys == frozenset({"runtime"})
+    assert runtime_tool.invoke({"query": "hello", "runtime": "injected"}) == "hello"
+    assert captured["runtime"] == "injected"
+
+
+def test_tool_partial_fallback_uses_wrapped_function_namespace() -> None:
+    """Partial fallback resolves hints in the wrapped function's namespace."""
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    def runtime_fn(
+        bound: int,
+        query: "NotDefinedAnywhere123",  # type: ignore[name-defined]  # noqa: F821
+        runtime: "_PostponedRuntime",
+    ) -> str:
+        captured["bound"] = bound
+        captured["runtime"] = runtime
+        return query  # type: ignore[no-any-return]
+
+    tool_ = StructuredTool.from_function(
+        func=partial(runtime_fn, 1),
+        name="runtime_tool",
+        description="Echo a query.",
+        args_schema=InputSchema,
+    )
+    runtime = _PostponedRuntime(some_obj=object())
+
+    assert tool_._injected_args_keys == frozenset({"runtime"})
+    assert tool_.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert captured == {"bound": 1, "runtime": runtime}
+
+
+def test_base_tool_unresolvable_sibling_annotation_does_not_disable_injection() -> None:
+    """`BaseTool` subclasses get the same per-parameter hint resolution."""
+
+    class MultiplyInput(BaseModel):
+        a: int
+
+    captured: dict[str, Any] = {}
+
+    class Multiplier(BaseTool):
+        name: str = "Multiplier"
+        description: str = "Multiply."
+        args_schema: type[BaseModel] = MultiplyInput
+
+        def _run(
+            self,
+            a: "NotDefinedAnywhere123",  # type: ignore[name-defined]  # noqa: F821
+            runtime: "_CustomRuntime",
+        ) -> int:
+            captured["runtime"] = runtime
+            return a * 2  # type: ignore[no-any-return]
+
+    tool_ = Multiplier()
+    assert "runtime" in tool_._injected_args_keys
+    assert "a" not in tool_._injected_args_keys
+
+    runtime = _CustomRuntime(data={"scale": 10})
+    assert tool_.invoke({"a": 2, "runtime": runtime}) == 4
+    assert captured["runtime"] is runtime
+
+
+def test_tool_class_callable_uses_constructor_annotations() -> None:
+    """A class used as `func` is inspected via its constructor, not its attributes.
+
+    Regression test: a class's own annotations describe attributes, so a
+    class-level annotation sharing a name with a constructor parameter must not
+    shadow that parameter's annotation.
+    """
+
+    class InputSchema(BaseModel):
+        query: str
+
+    class SearchTool:
+        runtime: str = "class attribute sharing a name with a constructor param"
+
+        def __init__(self, query: str, runtime: _PostponedRuntime) -> None:
+            self.query = query
+            self.runtime = runtime  # type: ignore[assignment]
+
+    tool_ = StructuredTool.from_function(
+        func=SearchTool,
+        name="search_tool",
+        description="Search.",
+        args_schema=InputSchema,
+    )
+    runtime = _PostponedRuntime(some_obj=object())
+
+    assert tool_._injected_args_keys == frozenset({"runtime"})
+    result = tool_.invoke({"query": "hello", "runtime": runtime})
+    assert result.query == "hello"
+    assert result.runtime is runtime
+
+
+def test_tool_class_callable_attribute_annotation_is_not_injected() -> None:
+    """A class attribute annotation must not mark a constructor param injected.
+
+    Otherwise a model-facing argument is treated as injected, and the raw input
+    value replaces the one validated against `args_schema`.
+    """
+
+    class InputSchema(BaseModel):
+        query: str
+        count: int
+
+    class CountTool:
+        count: _PostponedRuntime = None  # type: ignore[assignment]
+
+        def __init__(self, query: str, count: int) -> None:
+            self.count = count  # type: ignore[assignment]
+
+    tool_ = StructuredTool.from_function(
+        func=CountTool,
+        name="count_tool",
+        description="Count.",
+        args_schema=InputSchema,
+    )
+
+    assert tool_._injected_args_keys == frozenset()
+    tool_call_schema = tool_.tool_call_schema
+    assert not isinstance(tool_call_schema, dict)
+    assert "count" in model_json_schema(tool_call_schema)["properties"]
+    # The schema-validated value reaches the constructor, not the raw input.
+    result = tool_.invoke({"query": "hello", "count": "5"})
+    assert result.count == 5
+    assert isinstance(result.count, int)
+
+
+def test_tool_class_callable_uses_new_annotations() -> None:
+    """Classes that customize allocation are inspected via `__new__`."""
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    class NewTool:
+        # Quoted so resolution must go through `__new__`'s own globals.
+        def __new__(cls, query: str, runtime: "_PostponedRuntime") -> str:  # type: ignore[misc]
+            captured["runtime"] = runtime
+            return query
+
+    tool_ = StructuredTool.from_function(
+        func=NewTool,
+        name="new_tool",
+        description="Echo a query.",
+        args_schema=InputSchema,
+    )
+    runtime = _PostponedRuntime(some_obj=object())
+
+    assert tool_._injected_args_keys == frozenset({"runtime"})
+    assert tool_.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert captured["runtime"] is runtime
+
+
+def test_tool_class_callable_uses_metaclass_call_annotations() -> None:
+    """A metaclass `__call__` override supplies the effective signature."""
+
+    class InputSchema(BaseModel):
+        query: str
+
+    captured: dict[str, Any] = {}
+
+    class _Meta(type):
+        def __call__(cls, query: str, runtime: _PostponedRuntime) -> str:
+            captured["runtime"] = runtime
+            return query
+
+    class MetaTool(metaclass=_Meta):
+        def __init__(self, runtime: int) -> None:
+            """Constructor parameters are shadowed by the metaclass `__call__`."""
+
+    tool_ = StructuredTool.from_function(
+        func=MetaTool,
+        name="meta_tool",
+        description="Echo a query.",
+        args_schema=InputSchema,
+    )
+    runtime = _PostponedRuntime(some_obj=object())
+
+    assert tool_._injected_args_keys == frozenset({"runtime"})
+    assert tool_.invoke({"query": "hello", "runtime": runtime}) == "hello"
+    assert captured["runtime"] is runtime
 
 
 def test_tool_injected_tool_call_id() -> None:
