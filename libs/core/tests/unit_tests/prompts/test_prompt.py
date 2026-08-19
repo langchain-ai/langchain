@@ -744,3 +744,19 @@ def test_prompt_template_add(
         variable="template",
         another_variable="other_template",
     )
+
+
+@pytest.mark.parametrize("cls", [dict, ChainMap, UserDict, MappingProxyType])
+def test_prompt_template_invoke_mapping_types(cls: type) -> None:
+    """Test that PromptTemplate.invoke accepts any Mapping subclass."""
+    single = PromptTemplate.from_template("Hello {name}")
+    multi = PromptTemplate.from_template("{greeting} {name}")
+
+    # Single-variable template
+    res_single = single.invoke(cls({"name": "Alice"})).to_string()
+    assert res_single == "Hello Alice"
+
+    # Multi-variable template
+    res_multi = multi.invoke(cls({"greeting": "Hello", "name": "Alice"})).to_string()
+    assert res_multi == "Hello Alice"
+
