@@ -31,10 +31,11 @@ from langchain_core.tools.base import (
     _is_injected_arg_type,
     create_schema_from_function,
 )
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.pydantic import is_basemodel_subclass, model_json_schema
 
 if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
+    from langchain_core.utils.pydantic import TypeBaseModel
 
 
 def _serialize_as_str(value: Any) -> str:
@@ -46,16 +47,29 @@ def _serialize_as_str(value: Any) -> str:
     return str(value)
 
 
+@functools.lru_cache(maxsize=256)
+def _model_json_schema(args_schema: TypeBaseModel) -> Any:
+    """Ask a v1 or v2 model class for its JSON schema, or fall back to its repr.
+
+    Cached because pydantic does not memoize this per class and it costs ~500x
+    the rest of the dump, which tracing pays on every run.
+    """
+    try:
+        return model_json_schema(args_schema)
+    except Exception:  # a schema holding an arbitrary type has no JSON schema
+        return str(args_schema)
+
+
 def _serialize_args_schema(args_schema: ArgsSchema) -> Any:
-    """Represent a schema class as a string when dumping to JSON.
+    """Represent a schema class by its JSON schema when dumping to JSON.
 
     A Pydantic model class has no JSON form, so leaving it to the default
-    serializer raises `PydanticSerializationError`. A dict schema is already
-    JSON-compatible and is returned unchanged.
+    serializer raises `PydanticSerializationError`. Its own JSON schema is the
+    shape a dict schema already has, and a dict is returned unchanged.
     """
     if isinstance(args_schema, dict):
         return args_schema
-    return str(args_schema)
+    return _model_json_schema(args_schema)
 
 
 # Attached to the fields via `Annotated` rather than declared with
