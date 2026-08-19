@@ -821,6 +821,54 @@ def test_create_tool_keyword_args() -> None:
     assert test_tool.description == "test_description"
 
 
+def test_structured_tool_positional_only_args() -> None:
+    """Structured tools bind positional-only parameters from dictionary inputs."""
+
+    @tool
+    def add(x: int, /, y: int) -> int:
+        """Add two values."""
+        return x + y
+
+    properties = _get_tool_call_json_schema(add)["properties"]
+    assert properties.keys() == {"x", "y"}
+    assert "v__positional_only" not in properties
+    assert add.invoke({"x": 1, "y": 2}) == 3
+
+
+def test_structured_tool_var_positional_args() -> None:
+    """Structured tools expand validated variadic positional parameters."""
+
+    @tool
+    def join(prefix: str, *values: int) -> str:
+        """Join a prefix and integer values."""
+        return f"{prefix}:{','.join(str(value) for value in values)}"
+
+    assert join.invoke({"prefix": "n", "values": [1, 2]}) == "n:1,2"
+
+
+def test_structured_tool_var_keyword_args() -> None:
+    """Structured tools expand validated variadic keyword parameters."""
+
+    @tool
+    def join(prefix: str, **values: int) -> str:
+        """Join a prefix and named integer values."""
+        rendered = ",".join(f"{key}={value}" for key, value in values.items())
+        return f"{prefix}:{rendered}"
+
+    assert join.invoke({"prefix": "n", "values": {"a": 1, "b": 2}}) == "n:a=1,b=2"
+
+
+async def test_async_structured_tool_var_positional_args() -> None:
+    """Async structured tools expand validated variadic parameters."""
+
+    @tool
+    async def join(prefix: str, *values: int) -> str:
+        """Join a prefix and integer values."""
+        return f"{prefix}:{','.join(str(value) for value in values)}"
+
+    assert await join.ainvoke({"prefix": "n", "values": [1, 2]}) == "n:1,2"
+
+
 async def test_create_async_tool() -> None:
     """Test that async tools are allowed."""
 
@@ -851,6 +899,11 @@ class _FakeExceptionTool(BaseTool):
 
     async def _arun(self) -> str:
         raise self.exception
+
+
+class _FalseyError(RuntimeError):
+    def __bool__(self) -> bool:
+        return False
 
 
 def test_exception_handling_bool() -> None:
@@ -950,6 +1003,12 @@ def test_exception_handling_non_tool_exception() -> None:
         tool_.run({})
 
 
+def test_falsey_exception_is_raised() -> None:
+    tool_ = _FakeExceptionTool(exception=_FalseyError("some error"))
+    with pytest.raises(_FalseyError, match="some error"):
+        tool_.run({})
+
+
 async def test_async_exception_handling_bool() -> None:
     tool_ = _FakeExceptionTool(handle_tool_error=True)
     expected = "Tool execution error"
@@ -1024,6 +1083,12 @@ async def test_async_exception_handling_callable_message_content_blocks_sequence
 async def test_async_exception_handling_non_tool_exception() -> None:
     tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
+        await tool_.arun({})
+
+
+async def test_async_falsey_exception_is_raised() -> None:
+    tool_ = _FakeExceptionTool(exception=_FalseyError("some error"))
+    with pytest.raises(_FalseyError, match="some error"):
         await tool_.arun({})
 
 
@@ -2863,6 +2928,30 @@ def test_tool_injected_tool_call_id_with_custom_schema() -> None:
     assert result == ToolMessage("42", tool_call_id="direct_id")
 
 
+def test_tool_injected_tool_call_id_with_custom_parameter_name() -> None:
+    """The annotation, rather than the parameter name, controls ID injection."""
+
+    class InputSchema(BaseModel):
+        x: int
+
+    @tool(args_schema=InputSchema)
+    def injected_tool(
+        x: int, call_id: Annotated[str, InjectedToolCallId]
+    ) -> ToolMessage:
+        """Return a message with the injected call ID."""
+        return ToolMessage(str(x), tool_call_id=call_id)
+
+    result = injected_tool.invoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 42},
+            "name": "injected_tool",
+            "id": "test_call_id",
+        }
+    )
+    assert result == ToolMessage("42", tool_call_id="test_call_id")
+
+
 def test_tool_injected_arg_with_custom_schema() -> None:
     """Ensure InjectedToolArg works with custom args schema."""
 
@@ -3622,6 +3711,19 @@ def _tool_func_directly_injected(
     return f"Query: {query}, Limit: {limit}"
 
 
+def _tool_func_postponed_directly_injected(
+    query: str, limit: int, runtime: "_CustomRuntime"
+) -> str:
+    """Tool with a postponed directly injected runtime annotation.
+
+    Args:
+        query: The search query.
+        limit: Max results.
+        runtime: Custom runtime (directly injected, not in schema).
+    """
+    return f"Query: {query}, Limit: {limit}"
+
+
 def _tool_func_annotated_injected(
     query: str, limit: int, runtime: Annotated[Any, InjectedToolArg()]
 ) -> str:
@@ -3649,6 +3751,12 @@ def _tool_func_annotated_injected(
             {"foo": "bar"},
             "annotated injected (Annotated[Any, InjectedToolArg()])",
             id="annotated_injected",
+        ),
+        pytest.param(
+            _tool_func_postponed_directly_injected,
+            _CustomRuntime(data={"foo": "bar"}),
+            "postponed directly injected annotation",
+            id="postponed_directly_injected",
         ),
     ],
 )
@@ -4045,6 +4153,75 @@ def test_tool_args_schema_required_field_validation_alias() -> None:
         return canonical
 
     assert aliased_tool.invoke({"alias": "value"}) == "value"
+
+
+def test_tool_call_schema_preserves_pydantic_aliases() -> None:
+    """Tool schemas preserve aliases used to validate model-generated arguments."""
+
+    class Args(BaseModel):
+        model_config = ConfigDict(serialize_by_alias=True)
+
+        canonical: str = Field(alias="external", description="An aliased value.")
+
+    @tool(args_schema=Args)
+    def aliased_tool(canonical: str) -> str:
+        """Return the canonical argument."""
+        return canonical
+
+    properties = _get_tool_call_json_schema(aliased_tool)["properties"]
+    assert properties.keys() == {"external"}
+    assert aliased_tool.invoke({"external": "value"}) == "value"
+
+
+def test_tool_call_schema_preserves_validation_alias() -> None:
+    """A validation-only alias remains visible in the model-facing schema."""
+
+    class Args(BaseModel):
+        canonical: str = Field(validation_alias="external")
+
+    @tool(args_schema=Args)
+    def aliased_tool(canonical: str) -> str:
+        """Return the canonical argument."""
+        return canonical
+
+    properties = _get_tool_call_json_schema(aliased_tool)["properties"]
+    assert properties.keys() == {"external"}
+    assert aliased_tool.invoke({"external": "value"}) == "value"
+
+
+def test_tool_args_schema_excluded_field_reaches_tool() -> None:
+    """Serialization exclusions do not remove validated execution arguments."""
+
+    class Args(BaseModel):
+        visible: str
+        hidden: str = Field(exclude=True)
+
+    @tool(args_schema=Args)
+    def joined_tool(visible: str, hidden: str) -> str:
+        """Join visible and hidden arguments."""
+        return f"{visible}:{hidden}"
+
+    assert joined_tool.invoke({"visible": "a", "hidden": "b"}) == "a:b"
+
+
+def test_tool_args_schema_root_model_dict() -> None:
+    """Dictionary root models expose and pass through their fields directly."""
+
+    class RootArgsDict(TypedDict):
+        x: int
+        y: int
+
+    class RootArgs(RootModel[RootArgsDict]):
+        pass
+
+    @tool(args_schema=RootArgs)
+    def add_tool(x: int, y: int) -> int:
+        """Add two values."""
+        return x + y
+
+    properties = _get_tool_call_json_schema(add_tool)["properties"]
+    assert properties.keys() == {"x", "y"}
+    assert add_tool.invoke({"x": 1, "y": 2}) == 3
 
 
 def test_tool_args_schema_default_values() -> None:

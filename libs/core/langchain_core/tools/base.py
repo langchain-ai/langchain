@@ -30,6 +30,7 @@ from pydantic import (
     Field,
     PrivateAttr,
     PydanticDeprecationWarning,
+    RootModel,
     SkipValidation,
     ValidationError,
     validate_arguments,
@@ -59,6 +60,7 @@ from langchain_core.utils.function_calling import (
     _parse_google_docstring,
     _py_38_safe_origin,
 )
+from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
     _create_subset_model,
@@ -354,7 +356,10 @@ def create_schema_from_function(
         if not has_kwargs and field == "kwargs":
             continue
 
-        if field == "v__duplicate_kwargs":  # Internal pydantic field
+        if field in {
+            "v__duplicate_kwargs",
+            "v__positional_only",
+        }:  # Internal pydantic fields
             continue
 
         if field not in filter_args_:
@@ -429,6 +434,51 @@ def _patch_json_schema_cache(model_cls: type) -> None:
         return cast("dict[str, Any]", result)
 
     setattr(model_cls, method_name, classmethod(_cached_json_schema))
+
+
+def _extract_model_input(
+    result: BaseModel | BaseModelV1,
+    input_args: type[BaseModel | BaseModelV1],
+) -> dict[str, Any]:
+    """Extract validated tool arguments without applying serialization settings."""
+    if isinstance(result, RootModel):
+        root = result.root
+        return root.copy() if isinstance(root, dict) else {"root": root}
+
+    field_info = get_fields(input_args)
+    provided_fields = (
+        result.model_fields_set
+        if isinstance(result, BaseModel)
+        else result.__fields_set__
+    )
+    validated_input: dict[str, Any] = {}
+    for field_name, field in field_info.items():
+        if field_name in {"v__duplicate_kwargs", "v__positional_only"}:
+            continue
+        if field_name in provided_fields:
+            validated_input[field_name] = getattr(result, field_name)
+            continue
+        if field_name in {"args", "kwargs"}:
+            continue
+        has_default = (
+            not field.is_required()
+            if hasattr(field, "is_required")
+            else not getattr(field, "required", True)
+        )
+        if has_default:
+            validated_input[field_name] = getattr(result, field_name)
+
+    if isinstance(result, BaseModel):
+        validated_input.update(result.model_extra or {})
+    else:
+        validated_input.update(
+            {
+                key: value
+                for key, value in result.__dict__.items()
+                if key not in field_info
+            }
+        )
+    return validated_input
 
 
 class BaseTool(RunnableSerializable[str | dict[str, Any] | ToolCall, Any]):
@@ -700,6 +750,15 @@ class ChildTool(BaseTool):
             return memo
 
         full_schema = self.get_input_schema()
+        if isinstance(full_schema, type) and issubclass(full_schema, RootModel):
+            root_schema = dereference_refs(model_json_schema(full_schema))
+            if root_schema.get("type") == "object":
+                root_schema.pop("$defs", None)
+                root_schema["title"] = self.name
+                if self.description:
+                    root_schema["description"] = self.description
+                self._tool_call_schema_memo = root_schema
+                return root_schema
         fields = []
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
@@ -725,13 +784,24 @@ class ChildTool(BaseTool):
         # `from __future__ import annotations` or quoted forward references --
         # are recognized. Fall back to the raw annotation per-parameter when a
         # hint can't be resolved.
+        return self._get_injected_args_keys(None)
+
+    @functools.cached_property
+    def _injected_tool_call_id_keys(self) -> frozenset[str]:
+        return self._get_injected_args_keys(InjectedToolCallId)
+
+    def _get_injected_args_keys(
+        self, injected_type: type[InjectedToolArg] | None
+    ) -> frozenset[str]:
         for method in (self._run, self._arun):
             params = signature(method).parameters
             hints = _get_type_hints(method, include_extras=True) or {}
             keys = frozenset(
                 name
                 for name, param in params.items()
-                if _is_injected_arg_type(hints.get(name, param.annotation))
+                if _is_injected_arg_type(
+                    hints.get(name, param.annotation), injected_type=injected_type
+                )
             )
             if keys:
                 return keys
@@ -834,8 +904,6 @@ class ChildTool(BaseTool):
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
                 result_v2 = input_args.model_validate(tool_input)
-                result_dict = result_v2.model_dump()
-                provided_fields = result_v2.model_fields_set
                 result = result_v2
             elif issubclass(input_args, BaseModelV1):
                 # Check args_schema for InjectedToolCallId
@@ -852,8 +920,6 @@ class ChildTool(BaseTool):
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
                 result_v1 = input_args.parse_obj(tool_input)
-                result_dict = result_v1.dict()
-                provided_fields = result_v1.__fields_set__
                 result = result_v1
             else:
                 msg = (  # type: ignore[unreachable]
@@ -861,37 +927,12 @@ class ChildTool(BaseTool):
                 )
                 raise NotImplementedError(msg)
 
-            # Include fields from tool_input, fields provided through Pydantic aliases,
-            # plus fields with explicit defaults. This applies Pydantic defaults (like
-            # Field(default=1)) while excluding synthetic "args"/"kwargs" fields that
-            # Pydantic creates for *args/**kwargs.
-            field_info = get_fields(input_args)
-            validated_input = {}
-            for k in result_dict:
-                if k in tool_input:
-                    # Field was provided in input - include it (validated)
-                    validated_input[k] = getattr(result, k)
-                elif k in provided_fields:
-                    # Field was provided through a Pydantic alias - include it.
-                    validated_input[k] = getattr(result, k)
-                elif k in field_info and k not in {"args", "kwargs"}:
-                    # Check if field has an explicit default defined in the schema.
-                    # Exclude "args"/"kwargs" as these are synthetic fields for variadic
-                    # parameters that should not be passed as keyword arguments.
-                    fi = field_info[k]
-                    # Pydantic v2 uses is_required() method, v1 uses required attribute
-                    has_default = (
-                        not fi.is_required()
-                        if hasattr(fi, "is_required")
-                        else not getattr(fi, "required", True)
-                    )
-                    if has_default:
-                        validated_input[k] = getattr(result, k)
+            validated_input = _extract_model_input(result, input_args)
 
             for k in self._injected_args_keys:
                 if k in tool_input:
                     validated_input[k] = tool_input[k]
-                elif k == "tool_call_id":
+                elif k in self._injected_tool_call_id_keys:
                     if tool_call_id is None:
                         msg = (
                             "When tool includes an InjectedToolCallId "
@@ -1129,7 +1170,7 @@ class ChildTool(BaseTool):
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
 
-        if error_to_raise:
+        if error_to_raise is not None:
             run_manager.on_tool_error(error_to_raise, tool_call_id=tool_call_id)
             raise error_to_raise
         output = _format_output(content, artifact, tool_call_id, self.name, status)
@@ -1259,7 +1300,7 @@ class ChildTool(BaseTool):
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
 
-        if error_to_raise:
+        if error_to_raise is not None:
             await run_manager.on_tool_error(error_to_raise, tool_call_id=tool_call_id)
             raise error_to_raise
 
@@ -1654,6 +1695,11 @@ def get_all_basemodel_annotations(
                 continue
             field_name = alias_map.get(name, name)
             annotations[field_name] = param.annotation
+        for field_name, field in fields.items():
+            if field_name not in annotations:
+                field_annotation = field.annotation
+                if field_annotation is not None:
+                    annotations[field_name] = field_annotation
         orig_bases = getattr(cls, "__orig_bases__", ())
     # cls has subscript: cls = FooBar[int]
     else:

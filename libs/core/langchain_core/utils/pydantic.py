@@ -6,6 +6,7 @@ import inspect
 import textwrap
 import warnings
 from contextlib import nullcontext
+from copy import copy
 from functools import lru_cache, wraps
 from types import GenericAlias
 from typing import (
@@ -243,15 +244,8 @@ def _create_subset_model_v2(
     fields = {}
     for field_name in field_names:
         field = model.model_fields[field_name]
-        description = descriptions_.get(field_name, field.description)
-        field_kwargs: dict[str, Any] = {"description": description}
-        if field.default_factory is not None:
-            field_kwargs["default_factory"] = field.default_factory
-        else:
-            field_kwargs["default"] = field.default
-        field_info = FieldInfoV2(**field_kwargs)
-        if field.metadata:
-            field_info.metadata = field.metadata
+        field_info = copy(field)
+        field_info.description = descriptions_.get(field_name, field.description)
         fields[field_name] = (field.annotation, field_info)
 
     rtn = cast(

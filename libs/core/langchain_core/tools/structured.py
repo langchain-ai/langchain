@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import functools
 import textwrap
 from collections.abc import Awaitable, Callable
 from inspect import signature
@@ -27,7 +26,9 @@ from langchain_core.tools.base import (
     FILTERED_ARGS,
     ArgsSchema,
     BaseTool,
+    InjectedToolArg,
     _get_runnable_config_param,
+    _get_type_hints,
     _is_injected_arg_type,
     create_schema_from_function,
 )
@@ -94,7 +95,8 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
-            return self.func(*args, **kwargs)
+            call_args, call_kwargs = _prepare_function_call(self.func, args, kwargs)
+            return self.func(*call_args, **call_kwargs)
         msg = "StructuredTool does not support sync invocation."
         raise NotImplementedError(msg)
 
@@ -121,7 +123,10 @@ class StructuredTool(BaseTool):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config
-            return await self.coroutine(*args, **kwargs)
+            call_args, call_kwargs = _prepare_function_call(
+                self.coroutine, args, kwargs
+            )
+            return await self.coroutine(*call_args, **call_kwargs)
 
         # If self.coroutine is None, then this will delegate to the default
         # implementation which is expected to delegate to _run on a separate thread.
@@ -251,16 +256,65 @@ class StructuredTool(BaseTool):
             **kwargs,
         )
 
-    @functools.cached_property
-    def _injected_args_keys(self) -> frozenset[str]:
+    @override
+    def _get_injected_args_keys(
+        self, injected_type: type[InjectedToolArg] | None
+    ) -> frozenset[str]:
         fn = self.func or self.coroutine
         if fn is None:
             return _EMPTY_SET
+        params = signature(fn).parameters
+        hints = _get_type_hints(fn, include_extras=True) or {}
         return frozenset(
-            k
-            for k, v in signature(fn).parameters.items()
-            if _is_injected_arg_type(v.annotation)
+            name
+            for name, param in params.items()
+            if _is_injected_arg_type(
+                hints.get(name, param.annotation), injected_type=injected_type
+            )
         )
+
+
+def _prepare_function_call(
+    func: Callable[..., Any],
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    """Convert structured arguments for positional-only and variadic callables."""
+    if args:
+        return args, kwargs
+
+    parameters = tuple(signature(func).parameters.values())
+    var_positional = next(
+        (
+            parameter
+            for parameter in parameters
+            if parameter.kind == parameter.VAR_POSITIONAL
+        ),
+        None,
+    )
+    expand_varargs = (
+        var_positional is not None and kwargs.get(var_positional.name) is not None
+    )
+    positional_args: list[Any] = []
+    call_kwargs = kwargs.copy()
+
+    for parameter in parameters:
+        if parameter.kind == parameter.POSITIONAL_ONLY:
+            if parameter.name in call_kwargs:
+                positional_args.append(call_kwargs.pop(parameter.name))
+        elif parameter.kind == parameter.POSITIONAL_OR_KEYWORD and expand_varargs:
+            if parameter.name in call_kwargs:
+                positional_args.append(call_kwargs.pop(parameter.name))
+            elif parameter.default is not parameter.empty:
+                positional_args.append(parameter.default)
+        elif parameter.kind == parameter.VAR_POSITIONAL:
+            positional_args.extend(call_kwargs.pop(parameter.name, None) or ())
+        elif parameter.kind == parameter.VAR_KEYWORD:
+            extra_kwargs = call_kwargs.pop(parameter.name, None)
+            if extra_kwargs:
+                call_kwargs.update(extra_kwargs)
+
+    return tuple(positional_args), call_kwargs
 
 
 def _filter_schema_args(func: Callable[..., Any]) -> list[str]:
