@@ -46,25 +46,10 @@ def _serialize_as_str(value: Any) -> str:
     return str(value)
 
 
-def _serialize_args_schema(args_schema: ArgsSchema) -> Any:
-    """Represent a schema class as a string when dumping to JSON.
-
-    A Pydantic model class has no JSON form, so leaving it to the default
-    serializer raises `PydanticSerializationError`. A dict schema is already
-    JSON-compatible and is returned unchanged.
-    """
-    if isinstance(args_schema, dict):
-        return args_schema
-    return str(args_schema)
-
-
 # Attached to the fields via `Annotated` rather than declared with
 # `@field_serializer`, which would take the field's one serializer slot and make
 # any subclass that declares its own serializer for the same field fail at class
 # creation with `PydanticUserError: Multiple field serializer functions ...`.
-_JsonSchemaFallback = PlainSerializer(
-    _serialize_args_schema, when_used="json-unless-none"
-)
 _JsonCallableFallback = PlainSerializer(_serialize_as_str, when_used="json-unless-none")
 
 
@@ -73,8 +58,13 @@ class StructuredTool(BaseTool):
 
     description: str = ""
 
-    args_schema: Annotated[ArgsSchema, SkipValidation(), _JsonSchemaFallback] = Field(
-        ..., description="The tool schema."
+    # Of the accepted schema forms -- a v1 or v2 model class, or a JSON schema
+    # dict -- only the dict has a JSON form, so dumping the field raises
+    # `PydanticSerializationError` unless it is left out. `exclude` applies to
+    # every mode at once (pydantic has no per-mode variant), so the dict form is
+    # dropped alongside the classes.
+    args_schema: Annotated[ArgsSchema, SkipValidation()] = Field(
+        ..., description="The tool schema.", exclude=True
     )
     """The input arguments' schema."""
 

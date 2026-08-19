@@ -29,6 +29,7 @@ from pydantic import (
     ConfigDict,
     Field,
     RootModel,
+    SkipValidation,
     ValidationError,
     field_serializer,
 )
@@ -4381,14 +4382,16 @@ def test_structured_tool_json_dump() -> None:
     dumped = write_file.model_dump(mode="json")
     # Round-trips through the stdlib encoder, i.e. it really is JSON-native.
     json.dumps(dumped)
-    assert dumped["args_schema"].startswith("<class ")
+    assert "args_schema" not in dumped
     assert "write_file" in dumped["func"]
     json.loads(write_file.model_dump_json())
 
-    # Python-mode dumps still hand out the live objects.
+    # Python-mode dumps still hand out the live callable, and excluding
+    # `args_schema` from dumps must not affect the tool itself.
     native = write_file.model_dump()
     assert callable(native["func"])
-    assert isinstance(native["args_schema"], type)
+    assert "args_schema" not in native
+    assert set(write_file.args) == {"file_path", "content"}
 
 
 def test_structured_tool_json_dump_respects_options() -> None:
@@ -4410,8 +4413,8 @@ def test_structured_tool_json_dump_respects_options() -> None:
     assert "coroutine" not in write_file.model_dump(mode="json", exclude_none=True)
 
 
-def test_structured_tool_json_dump_keeps_dict_args_schema() -> None:
-    """A dict schema is already JSON-native and must be passed through as-is."""
+def test_structured_tool_json_dump_drops_dict_args_schema() -> None:
+    """A dict schema is JSON-native, but `exclude` has no per-mode variant."""
     schema = {"type": "object", "properties": {"a": {"type": "string"}}}
     dict_tool = StructuredTool(
         name="d",
@@ -4419,7 +4422,8 @@ def test_structured_tool_json_dump_keeps_dict_args_schema() -> None:
         func=lambda **kwargs: "x",
         args_schema=schema,
     )
-    assert dict_tool.model_dump(mode="json")["args_schema"] == schema
+    assert "args_schema" not in dict_tool.model_dump(mode="json")
+    assert dict_tool.args_schema == schema
 
 
 def test_structured_tool_subclass_can_override_json_serializers() -> None:
@@ -4427,10 +4431,13 @@ def test_structured_tool_subclass_can_override_json_serializers() -> None:
 
     A subclass declaring its own `@field_serializer` for the same fields used to
     fail at class creation with `PydanticUserError: Multiple field serializer
-    functions were defined`.
+    functions were defined`. `args_schema` has to be re-declared to undo its
+    exclusion before a serializer for it can have any effect.
     """
 
     class MyTool(StructuredTool):
+        args_schema: Annotated[ArgsSchema, SkipValidation()] = Field(...)
+
         @field_serializer("func", when_used="json-unless-none")
         def _my_func_repr(self, func: Any) -> str:
             return "custom-func"
