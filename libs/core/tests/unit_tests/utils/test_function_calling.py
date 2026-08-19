@@ -25,6 +25,7 @@ from packaging.version import parse
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.errors import PydanticInvalidForJsonSchema
 
+import langchain_core
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
@@ -1475,3 +1476,29 @@ def test_convert_to_openai_tool_computer_passthrough() -> None:
     }
     result = convert_to_openai_tool(computer_tool)
     assert result == computer_tool
+
+
+def test_convert_to_openai_function_without_tools_module_imported(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test conversion works when `langchain_core.tools` is not bound on the package.
+
+    Regression test: the `BaseTool` check reached the class through
+    `langchain_core.tools.base`, which is only an attribute of `langchain_core` once
+    something imports that submodule. Called from a process that had not, conversion
+    raised `AttributeError: module 'langchain_core' has no attribute 'tools'` instead of
+    converting the callable.
+    """
+    monkeypatch.delattr(langchain_core, "tools", raising=False)
+
+    def my_func(x: int) -> int:
+        """Return the input.
+
+        Args:
+            x: A number.
+        """
+        return x
+
+    result = convert_to_openai_function(my_func)
+
+    assert result["name"] == "my_func"
