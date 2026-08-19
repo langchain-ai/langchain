@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import warnings
 from functools import partial
 from types import TracebackType
@@ -80,6 +81,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_responses_chunk_to_generation_chunk,
@@ -5155,3 +5157,73 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     assert llm.openai_api_base == "https://api.openai.com/v1"
     assert isinstance(llm.openai_api_key, SecretStr)
     assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+def test__convert_delta_to_message_chunk_refusal() -> None:
+    """Test streamed refusals land in `additional_kwargs`.
+
+    Regression test: `ChoiceDelta` carries a `refusal` field, but the delta converter
+    ignored it, so a refusal was dropped when streaming even though the non-streaming
+    path records it.
+    """
+    chunk = _convert_delta_to_message_chunk(
+        {"role": "assistant", "content": "", "refusal": "I cannot help with that."},
+        AIMessageChunk,
+    )
+
+    assert chunk.additional_kwargs["refusal"] == "I cannot help with that."
+
+
+def test__convert_dict_to_message_refusal() -> None:
+    """Test refusals in a dict response land in `additional_kwargs`.
+
+    `_create_chat_result` only reads `refusal` off an `openai.BaseModel` response, so
+    OpenAI-compatible endpoints returning plain dicts relied on this path.
+    """
+    message = _convert_dict_to_message(
+        {"role": "assistant", "content": None, "refusal": "I cannot help with that."}
+    )
+
+    assert message.additional_kwargs["refusal"] == "I cannot help with that."
+
+
+def test_streamed_refusal_accumulates_across_chunks() -> None:
+    """Test a refusal split across deltas is reassembled."""
+    deltas = [
+        {"role": "assistant", "content": "", "refusal": "I'm sorry, "},
+        {"refusal": "I cannot comply."},
+    ]
+
+    chunks = [_convert_delta_to_message_chunk(d, AIMessageChunk) for d in deltas]
+    aggregated = chunks[0] + chunks[1]
+
+    assert aggregated.additional_kwargs["refusal"] == "I'm sorry, I cannot comply."
+
+
+def test_streamed_refusal_raises_from_structured_output_parser() -> None:
+    """Test streaming and non-streaming refusals both raise `OpenAIRefusalError`.
+
+    Since the non-streaming path started raising `OpenAIRefusalError`, a streamed
+    refusal fell through to the generic "does not have a 'parsed' field nor a 'refusal'
+    field" `ValueError`, hiding the reason the model gave.
+    """
+
+    class Answer(BaseModel):
+        """An answer."""
+
+        text: str
+
+    deltas = [
+        {"role": "assistant", "content": "", "refusal": "I'm sorry, "},
+        {"refusal": "I cannot comply."},
+    ]
+    chunks = [_convert_delta_to_message_chunk(d, AIMessageChunk) for d in deltas]
+    aggregated = chunks[0] + chunks[1]
+    message = AIMessage(
+        content=aggregated.content, additional_kwargs=aggregated.additional_kwargs
+    )
+
+    with pytest.raises(
+        OpenAIRefusalError, match=re.escape("I'm sorry, I cannot comply.")
+    ):
+        _oai_structured_outputs_parser(message, Answer)
