@@ -31,6 +31,7 @@ from pydantic import (
     RootModel,
     ValidationError,
 )
+from pydantic.errors import PydanticUndefinedAnnotation
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -3189,6 +3190,24 @@ def test_tool_decorator_description() -> None:
         ]
         == "description"
     )
+
+
+def test_inferred_args_schema_raises_for_unresolved_nested_forward_ref() -> None:
+    """Tool schemas should not silently drop incomplete Pydantic model fields."""
+
+    class Container(BaseModel):
+        # Intentionally unresolved; schema conversion must fail loudly.
+        rows: list["UndefinedRow"] = Field(  # type: ignore[name-defined]  # noqa: F821
+            default_factory=list
+        )
+
+    @tool
+    def my_tool(real_arg: str, container: Container) -> str:
+        """Process a container."""
+        return "ok"
+
+    with pytest.raises(PydanticUndefinedAnnotation, match="UndefinedRow"):
+        convert_to_openai_tool(my_tool)
 
 
 def test_title_property_preserved() -> None:

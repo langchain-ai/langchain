@@ -1197,6 +1197,73 @@ def test_convert_to_openai_function_strict_required() -> None:
     assert actual == expected
 
 
+def test_convert_to_openai_function_strict_nested_required() -> None:
+    """Nested objects must also list every property as `required` under strict mode.
+
+    See: https://github.com/langchain-ai/langchain/issues/33869
+    """
+
+    class Inner(BaseModel):
+        """Inner schema."""
+
+        required_field: str = Field(..., description="req")
+        optional_field: str = Field(default="x", description="opt")
+
+    class Outer(BaseModel):
+        """Outer schema."""
+
+        inner: Inner = Field(..., description="nested")
+
+    func = convert_to_openai_function(Outer, strict=True)
+    inner_schema = func["parameters"]["properties"]["inner"]
+    # Pydantic <2.9 wraps a referenced model field with sibling keys (e.g. the
+    # `description` set above) in `allOf` instead of merging them directly.
+    if "allOf" in inner_schema:
+        inner_schema = inner_schema["allOf"][0]
+    assert set(inner_schema["required"]) == {"required_field", "optional_field"}
+    assert inner_schema["additionalProperties"] is False
+
+
+def test_convert_to_openai_function_strict_nested_required_via_defs_ref() -> None:
+    """Object definitions referenced via `$ref`/`$defs` must also be made strict.
+
+    Raw JSON-schema-style tool input can represent nested objects as `$ref`
+    pointers into a top-level `$defs`/`definitions` map instead of inlining
+    them under `properties`. See: https://github.com/langchain-ai/langchain/pull/39306
+    """
+    raw_schema = {
+        "name": "f",
+        "parameters": {
+            "type": "object",
+            "properties": {"inner": {"$ref": "#/$defs/Inner"}},
+            "$defs": {
+                "Inner": {
+                    "type": "object",
+                    "properties": {
+                        "required_field": {"type": "string"},
+                        "optional_field": {"type": "string"},
+                    },
+                }
+            },
+        },
+    }
+
+    # Snapshot the caller's schema before conversion; the strict-mode walk
+    # mutates `required`/`additionalProperties` in place, so `deepcopy` must
+    # shield the original input (see "don't mutate" commit on #39306).
+    original_inner: dict[str, Any] = raw_schema["parameters"]["$defs"]["Inner"]  # type: ignore[index]
+    assert "required" not in original_inner
+    assert "additionalProperties" not in original_inner
+
+    func = convert_to_openai_function(raw_schema, strict=True)
+    inner_def: dict[str, Any] = func["parameters"]["$defs"]["Inner"]
+    assert set(inner_def["required"]) == {"required_field", "optional_field"}
+    assert inner_def["additionalProperties"] is False
+    # The caller's original schema must be left untouched.
+    assert "required" not in original_inner
+    assert "additionalProperties" not in original_inner
+
+
 def test_convert_to_openai_function_arbitrary_type_error() -> None:
     """Test that a helpful error is raised for non-JSON-serializable types.
 

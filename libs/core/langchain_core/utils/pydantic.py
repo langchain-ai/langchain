@@ -11,6 +11,7 @@ from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
+    TypeGuard,
     TypeVar,
     cast,
     overload,
@@ -84,7 +85,7 @@ def is_pydantic_v1_subclass(cls: type) -> bool:
     return issubclass(cls, BaseModelV1)
 
 
-def is_pydantic_v2_subclass(cls: type) -> bool:
+def is_pydantic_v2_subclass(cls: type) -> TypeGuard[type[BaseModel]]:
     """Check if the given class is Pydantic v2-like.
 
     Returns:

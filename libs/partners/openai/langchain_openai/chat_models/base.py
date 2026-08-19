@@ -1950,6 +1950,19 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> ChatResult:
         generations = []
 
+        if not isinstance(response, dict | openai.BaseModel):
+            # `parse()` yields a `str` when the endpoint returns a non-JSON body,
+            # e.g. an HTML error page served after a redirect.
+            preview = repr(response)
+            if len(preview) > 200:
+                preview = f"{preview[:200]}..."
+            msg = (
+                "Unexpected response type from OpenAI-compatible endpoint. "
+                "Expected a dict or openai.BaseModel, got "
+                f"{type(response).__name__}: {preview}"
+            )
+            raise ValueError(msg)
+
         response_dict = (
             response
             if isinstance(response, dict)

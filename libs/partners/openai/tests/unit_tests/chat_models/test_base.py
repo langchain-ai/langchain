@@ -2111,6 +2111,30 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
     )
 
 
+def test_create_chat_result_raises_on_unexpected_response_type() -> None:
+    """A non-JSON response body must surface a clear error, not an `AttributeError`."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+
+    with pytest.raises(ValueError, match="got str") as exc_info:
+        llm._create_chat_result("<html><body>Moved</body></html>")  # type: ignore[arg-type]
+    assert "Moved" in str(exc_info.value)
+
+    with pytest.raises(ValueError, match="got object"):
+        llm._create_chat_result(object())  # type: ignore[arg-type]
+
+
+def test_create_chat_result_truncates_unexpected_response_body() -> None:
+    """A large response body must not be echoed in full in the error message."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    body = "<html>" + "x" * 5000 + "</html>"
+
+    with pytest.raises(ValueError, match="got str") as exc_info:
+        llm._create_chat_result(body)  # type: ignore[arg-type]
+    message = str(exc_info.value)
+    assert len(message) < len(body)
+    assert message.endswith("...")
+
+
 @pytest.mark.skipif(
     (PYDANTIC_VERSION.major, PYDANTIC_VERSION.minor) < (2, 8),
     reason=(
@@ -4016,6 +4040,86 @@ def test_convert_from_v1_to_responses(
 
     # Check no mutation
     assert message_v1 != result
+
+
+def test_convert_from_v1_to_responses_preserves_reasoning_item_boundaries() -> None:
+    content: list[types.ContentBlock] = [
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "reasoning": "first ",
+            "extras": {
+                "encrypted_content": "encrypted-123",
+                "status": "completed",
+            },
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "reasoning": "second",
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_456",
+            "reasoning": "third",
+            "extras": {
+                "encrypted_content": "encrypted-456",
+                "status": "incomplete",
+            },
+        },
+        {"type": "reasoning", "reasoning": "legacy "},
+        {"type": "reasoning", "reasoning": "reasoning"},
+        {"type": "reasoning", "id": "rs_789", "reasoning": "last"},
+        cast(
+            types.ContentBlock,
+            {
+                "type": "reasoning",
+                "id": "rs_native",
+                "summary": [{"type": "summary_text", "text": "already native"}],
+                "encrypted_content": "encrypted-native",
+            },
+        ),
+    ]
+
+    result = _convert_from_v1_to_responses(content, [])
+
+    assert result == [
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "summary": [
+                {"type": "summary_text", "text": "first "},
+                {"type": "summary_text", "text": "second"},
+            ],
+            "encrypted_content": "encrypted-123",
+            "status": "completed",
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_456",
+            "summary": [{"type": "summary_text", "text": "third"}],
+            "encrypted_content": "encrypted-456",
+            "status": "incomplete",
+        },
+        {
+            "type": "reasoning",
+            "summary": [
+                {"type": "summary_text", "text": "legacy "},
+                {"type": "summary_text", "text": "reasoning"},
+            ],
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_789",
+            "summary": [{"type": "summary_text", "text": "last"}],
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_native",
+            "summary": [{"type": "summary_text", "text": "already native"}],
+            "encrypted_content": "encrypted-native",
+        },
+    ]
 
 
 def test_convert_from_v1_to_responses_missing_type() -> None:
