@@ -23,6 +23,7 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     PromptTemplate,
 )
+from langchain_core.runnables import RunnablePassthrough, RunnablePick
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.tracers import log_stream
 from langchain_core.utils import from_env
@@ -1233,3 +1234,27 @@ class TestInternalCallSitesUseMessages:
             'allowed_objects="messages"' in source
             or "allowed_objects='messages'" in source
         )
+
+
+def test_runnable_pick_roundtrips() -> None:
+    """Test `RunnablePick` can be loaded back after being dumped.
+
+    Regression test: `RunnablePick` reports `is_lc_serializable()` and dumps fine,
+    but was missing from the deserialization mapping, so `load` rejected it while
+    its siblings in the same module round-tripped.
+    """
+    original = RunnablePick(keys=["a"])
+
+    revived = load(dumpd(original))
+
+    assert isinstance(revived, RunnablePick)
+    assert revived.keys == ["a"]
+
+
+def test_chain_using_pick_roundtrips() -> None:
+    """Test a chain built with the public `.pick()` helper survives a round trip."""
+    chain = RunnablePassthrough().pick(["a"])
+
+    revived = load(dumpd(chain))
+
+    assert revived.invoke({"a": 1, "b": 2}) == {"a": 1}
