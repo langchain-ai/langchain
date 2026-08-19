@@ -150,3 +150,29 @@ def test_explicit_signature_resolves_string_injected_annotation() -> None:
     tool_call_schema = tool.tool_call_schema
     assert not isinstance(tool_call_schema, dict)
     assert "runtime" not in model_json_schema(tool_call_schema)["properties"]
+
+
+def test_class_callable_resolves_postponed_injected_arg() -> None:
+    """Classes resolve constructor annotations postponed by the future import."""
+
+    class ClassTool:
+        def __init__(self, query: str, runtime: _PostponedRuntime) -> None:
+            self.query = query
+            self.runtime = runtime
+
+    tool = StructuredTool.from_function(
+        func=ClassTool,
+        name="class_tool",
+        description="Echo a query.",
+        args_schema=_InputSchema,
+    )
+    runtime = _PostponedRuntime()
+
+    assert tool._injected_args_keys == frozenset({"runtime"})
+    result = tool.invoke({"query": "hello", "runtime": runtime})
+    assert result.query == "hello"
+    assert result.runtime is runtime
+
+    tool_call_schema = tool.tool_call_schema
+    assert not isinstance(tool_call_schema, dict)
+    assert "runtime" not in model_json_schema(tool_call_schema)["properties"]

@@ -1466,6 +1466,11 @@ def _stringify(content: Any) -> str:
         return str(content)
 
 
+def _describe_callable(func: Any) -> str:
+    """Return a readable identifier for a callable, for use in log messages."""
+    return getattr(func, "__qualname__", None) or repr(func)
+
+
 def _get_type_hints(
     func: Callable[..., Any], *, include_extras: bool = False
 ) -> dict[str, type] | None:
@@ -1484,7 +1489,44 @@ def _get_type_hints(
     try:
         return get_type_hints(func, include_extras=include_extras)
     except Exception:
+        _logger.debug(
+            "Failed to resolve type hints for %s.",
+            _describe_callable(func),
+            exc_info=True,
+        )
         return None
+
+
+def _get_class_signature_source(cls: type) -> Callable[..., Any] | None:
+    """Return the callable whose parameters `signature(cls)` describes.
+
+    A class's own annotations describe its attributes, not its constructor
+    parameters, so a class is never its own annotation owner. Constructor
+    precedence mirrors `inspect.signature`: a metaclass `__call__` override,
+    then a `__new__`/`__init__` the class defines itself, then an inherited one.
+
+    Args:
+        cls: The class being inspected.
+
+    Returns:
+        The constructor whose annotations describe `signature(cls)`, or `None`
+        when only slot wrappers inherited from `object` are available.
+    """
+    metaclass = type(cls)
+    if metaclass is not type:
+        metaclass_call = inspect.getattr_static(metaclass, "__call__", None)
+        if inspect.isfunction(metaclass_call):
+            return metaclass_call
+    for attr in ("__new__", "__init__"):
+        if attr in cls.__dict__:
+            return cast("Callable[..., Any]", getattr(cls, attr))
+    for attr in ("__new__", "__init__"):
+        # `object.__new__`/`object.__init__` are slot wrappers carrying no
+        # useful annotations, so only inherited Python constructors qualify.
+        inherited = getattr(cls, attr, None)
+        if inspect.isfunction(inherited):
+            return cast("Callable[..., Any]", inherited)
+    return None
 
 
 def _get_type_hints_source(
@@ -1492,12 +1534,17 @@ def _get_type_hints_source(
 ) -> Callable[..., Any] | None:
     """Return the callable that owns the annotations for an effective signature.
 
+    Unwrapping stops as soon as a callable declares its own `__signature__` (or
+    is a bound method), because that declaration -- not the annotations of
+    whatever it wraps -- defines the effective signature.
+
     Args:
         func: The callable being inspected.
 
     Returns:
         The function or method whose annotations describe `signature(func)`, or
-        `None` when an explicit `__signature__` supplies the annotations.
+        `None` when an explicit `__signature__` supplies the annotations or no
+        annotation owner can be identified.
     """
     func = inspect.unwrap(
         func,
@@ -1511,7 +1558,12 @@ def _get_type_hints_source(
         return None
     if isinstance(func, functools.partial):
         return _get_type_hints_source(func.func)
-    if not inspect.isroutine(func) and not inspect.isclass(func):
+    if inspect.isclass(func):
+        constructor = _get_class_signature_source(func)
+        if constructor is None:
+            return None
+        return _get_type_hints_source(constructor)
+    if not inspect.isroutine(func):
         callable_obj = cast("Any", func)
         return _get_type_hints_source(cast("Callable[..., Any]", callable_obj.__call__))
     return func
@@ -1523,6 +1575,14 @@ def _get_callable_globals(func: Callable[..., Any]) -> dict[str, Any]:
     Explicit `__signature__` objects store annotations separately from a
     callable's `__annotations__`. String annotations on such signatures
     still need the callable's defining globals to be resolved.
+
+    Args:
+        func: The callable whose defining globals to locate.
+
+    Returns:
+        The callable's globals namespace, or an empty `dict` when none can be
+        located (e.g. classes, builtins, and other C-implemented callables), in
+        which case no string annotation will resolve.
     """
     if isinstance(func, functools.partial):
         return _get_callable_globals(func.func)
@@ -1544,16 +1604,17 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
     `signature` annotations) so postponed annotations -- e.g. from
     `from __future__ import annotations` or quoted forward references -- are
     recognized. `get_type_hints` resolves every annotation at once and raises
-    on the first failure, so when wholesale resolution fails each raw
-    annotation is retried independently: an unrelated unresolvable forward
-    reference must not disable injection for parameters whose annotations do
-    resolve. Anything still unresolved falls back to the raw annotation, which
-    `_is_injected_arg_type` will not classify as injected (the pre-existing
-    behavior). Each distinct string annotation is resolved at most once per
-    call.
+    on the first failure, so any parameter it leaves uncovered is retried on its
+    own: an unrelated unresolvable forward reference must not disable injection
+    for parameters whose annotations do resolve. Each distinct string annotation
+    is resolved at most once per call, failures included.
 
-    Names that existed only in a callable's defining local scope are unavailable
-    at this inspection point and remain unresolved.
+    A *string* annotation naming a type that exists only in the callable's
+    defining local scope cannot be resolved here, since only globals are
+    available. Such a parameter keeps its raw string annotation, which
+    `_is_injected_arg_type` never classifies as injected, so it stays visible to
+    the model rather than being injected at call time. Non-string annotations
+    are unaffected, since `signature` yields the live object.
 
     Args:
         func: The function (or bound method) whose signature to inspect.
@@ -1567,29 +1628,31 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
         _get_type_hints(hint_source, include_extras=True)
         if hint_source is not None
         else None
-    )
-    if hints is not None:
-        return frozenset(
-            name
-            for name, param in params.items()
-            if _is_injected_arg_type(hints.get(name, param.annotation))
-        )
-    globalns = (
-        getattr(hint_source, "__globals__", {})
-        if hint_source is not None
-        else _get_callable_globals(func)
-    )
-    keys = set()
+    ) or {}
+    globalns: dict[str, Any] | None = None
     resolved_annotations: dict[str, Any] = {}
+    keys = set()
     for name, param in params.items():
-        annotation = param.annotation
+        annotation = hints.get(name, param.annotation)
         if isinstance(annotation, str):
+            if globalns is None:
+                globalns = _get_callable_globals(
+                    func if hint_source is None else hint_source
+                )
             if annotation not in resolved_annotations:
                 resolved_annotations[annotation] = _resolve_forward_ref(
                     annotation, globalns
                 )
             resolved = resolved_annotations[annotation]
-            if resolved is not None:
+            if resolved is None:
+                _logger.debug(
+                    "Could not resolve annotation %r for parameter %r of %s; it "
+                    "will not be treated as an injected argument.",
+                    annotation,
+                    name,
+                    _describe_callable(func),
+                )
+            else:
                 annotation = resolved
         if _is_injected_arg_type(annotation):
             keys.add(name)
