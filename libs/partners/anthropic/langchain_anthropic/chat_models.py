@@ -20,13 +20,13 @@ from langchain_core.callbacks import (
 )
 from langchain_core.exceptions import (
     ContextOverflowError,
+    ModelAPIError,
     ModelAuthenticationError,
     ModelConnectionError,
     ModelInvalidRequestError,
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
-    ModelServerError,
     ModelTimeoutError,
     OutputParserException,
 )
@@ -945,11 +945,11 @@ class AnthropicRateLimitError(anthropic.RateLimitError, ModelRateLimitError):
     """Anthropic rate-limit error classified as a LangChain model error."""
 
 
-class AnthropicServerError(anthropic.InternalServerError, ModelServerError):
+class AnthropicAPIError(anthropic.InternalServerError, ModelAPIError):
     """Anthropic server error classified as a LangChain model error."""
 
 
-class AnthropicOverloadedError(anthropic.OverloadedError, ModelServerError):
+class AnthropicOverloadedError(anthropic.OverloadedError, ModelAPIError):
     """Anthropic overloaded error (HTTP 529) classified as a LangChain model error."""
 
 

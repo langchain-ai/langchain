@@ -102,7 +102,7 @@ class ModelRateLimitError(ModelError):
     is_retryable = True
 
 
-class ModelServerError(ModelError):
+class ModelAPIError(ModelError):
     """Exception raised when a model provider reports a server failure (HTTP 5xx)."""
 
     is_retryable = True

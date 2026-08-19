@@ -35,13 +35,13 @@ from langchain_core.callbacks import (
 )
 from langchain_core.exceptions import (
     ContextOverflowError,
+    ModelAPIError,
     ModelAuthenticationError,
     ModelConnectionError,
     ModelInvalidRequestError,
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
-    ModelServerError,
     ModelTimeoutError,
 )
 from langchain_core.language_models import (
@@ -599,7 +599,7 @@ class FireworksRateLimitError(RateLimitError, ModelRateLimitError):
     """Fireworks rate-limit error classified as a LangChain model error."""
 
 
-class FireworksServerError(InternalServerError, ModelServerError):
+class FireworksAPIError(InternalServerError, ModelAPIError):
     """Fireworks server error classified as a LangChain model error."""
 
 

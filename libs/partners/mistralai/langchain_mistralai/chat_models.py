@@ -24,12 +24,12 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.exceptions import (
+    ModelAPIError,
     ModelAuthenticationError,
     ModelInvalidRequestError,
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
-    ModelServerError,
 )
 from langchain_core.language_models import (
     LanguageModelInput,
@@ -247,7 +247,7 @@ class MistralAIRateLimitError(httpx.HTTPStatusError, ModelRateLimitError):
     """Mistral AI rate-limit error classified as a LangChain model error."""
 
 
-class MistralAIServerError(httpx.HTTPStatusError, ModelServerError):
+class MistralAIAPIError(httpx.HTTPStatusError, ModelAPIError):
     """Mistral AI server error classified as a LangChain model error."""
 
 

@@ -53,13 +53,13 @@ from langchain_core.callbacks import (
 )
 from langchain_core.exceptions import (
     ContextOverflowError,
+    ModelAPIError,
     ModelAuthenticationError,
     ModelConnectionError,
     ModelInvalidRequestError,
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
-    ModelServerError,
     ModelTimeoutError,
 )
 from langchain_core.language_models import (
@@ -595,7 +595,7 @@ class OpenAIRateLimitError(openai.RateLimitError, ModelRateLimitError):
     """OpenAI rate-limit error classified as a LangChain model error."""
 
 
-class OpenAIServerError(openai.InternalServerError, ModelServerError):
+class OpenAIAPIError(openai.InternalServerError, ModelAPIError):
     """OpenAI server error classified as a LangChain model error."""
 
 
@@ -667,9 +667,7 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
             message=e.message, response=e.response, body=e.body
         ) from e
     if isinstance(e, openai.InternalServerError):
-        raise OpenAIServerError(
-            message=e.message, response=e.response, body=e.body
-        ) from e
+        raise OpenAIAPIError(message=e.message, response=e.response, body=e.body) from e
     if isinstance(e, openai.APITimeoutError):
         raise OpenAITimeoutError(e.request) from e
     if isinstance(e, openai.APIConnectionError):
