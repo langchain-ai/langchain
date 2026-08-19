@@ -18,6 +18,7 @@ from typing import (
 import httpx
 from fireworks import (
     APIConnectionError,
+    APIError,
     APITimeoutError,
     AsyncFireworks,
     AuthenticationError,
@@ -617,6 +618,32 @@ def _handle_fireworks_invalid_request(e: BadRequestError) -> NoReturn:
         raise FireworksContextOverflowError(
             str(e), response=e.response, body=e.body
         ) from e
+    raise FireworksInvalidRequestError(str(e), response=e.response, body=e.body) from e
+
+
+def _handle_fireworks_api_error(e: APIError) -> NoReturn:
+    """Re-raise a Fireworks SDK error as its LangChain-classified equivalent."""
+    if isinstance(e, AuthenticationError):
+        raise FireworksAuthenticationError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, PermissionDeniedError):
+        raise FireworksPermissionDeniedError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, NotFoundError):
+        raise FireworksModelNotFoundError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, RateLimitError):
+        raise FireworksRateLimitError(str(e), response=e.response, body=e.body) from e
+    if isinstance(e, InternalServerError):
+        raise FireworksAPIError(str(e), response=e.response, body=e.body) from e
+    # `APITimeoutError` subclasses `APIConnectionError`, so check it first.
+    if isinstance(e, APITimeoutError):
+        raise FireworksTimeoutError(e.request) from e
+    if isinstance(e, APIConnectionError):
+        raise FireworksConnectionError(message=str(e), request=e.request) from e
     raise e
 
 
@@ -1136,6 +1163,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1188,6 +1217,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         return self._create_chat_result(response)
 
     def _create_message_dicts(
@@ -1249,6 +1280,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1304,6 +1337,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         return self._create_chat_result(response)
 
     @property

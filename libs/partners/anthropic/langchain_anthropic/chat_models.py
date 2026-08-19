@@ -984,7 +984,42 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     if ("messages: at least one message is required") in e.message:
         message = "Received only system message(s). "
         warnings.warn(message, stacklevel=2)
-        raise e
+    raise AnthropicInvalidRequestError(
+        message=e.message, response=e.response, body=e.body
+    ) from e
+
+
+def _handle_anthropic_api_error(e: anthropic.APIError) -> None:
+    """Re-raise an Anthropic SDK error as its LangChain-classified equivalent."""
+    if isinstance(e, anthropic.AuthenticationError):
+        raise AnthropicAuthenticationError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.PermissionDeniedError):
+        raise AnthropicPermissionDeniedError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.NotFoundError):
+        raise AnthropicModelNotFoundError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.RateLimitError):
+        raise AnthropicRateLimitError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.OverloadedError):
+        raise AnthropicOverloadedError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.InternalServerError):
+        raise AnthropicAPIError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    # `APITimeoutError` subclasses `APIConnectionError`, so check it first.
+    if isinstance(e, anthropic.APITimeoutError):
+        raise AnthropicTimeoutError(e.request) from e
+    if isinstance(e, anthropic.APIConnectionError):
+        raise AnthropicConnectionError(message=e.message, request=e.request) from e
     raise
 
 
@@ -1732,6 +1767,8 @@ class ChatAnthropic(BaseChatModel):
                     yield chunk
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
 
     async def _astream(
         self,
@@ -1769,6 +1806,8 @@ class ChatAnthropic(BaseChatModel):
                     yield chunk
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
 
     def _make_message_chunk_from_anthropic_event(
         self,
@@ -2062,6 +2101,8 @@ class ChatAnthropic(BaseChatModel):
             data = self._create(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -2076,6 +2117,8 @@ class ChatAnthropic(BaseChatModel):
             data = await self._acreate(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
         return self._format_output(data, **kwargs)
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(
