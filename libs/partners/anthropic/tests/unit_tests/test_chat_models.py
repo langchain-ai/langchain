@@ -4690,3 +4690,75 @@ def test_unrelated_type_error_propagates_unchanged() -> None:
         llm.invoke([HumanMessage(content="test")])
 
     assert exc_info.value is unrelated_error
+
+
+def test_stream_usage_false_omits_usage_metadata_only() -> None:
+    """`stream_usage=False` suppresses usage metadata and nothing else.
+
+    `stop_reason` has no other source in the streaming path, so gating the
+    `message_start` and `message_delta` branches on `stream_usage` made a stream
+    truncated by `max_tokens` indistinguishable from a complete one.
+    """
+    import datetime
+
+    from anthropic.types import (
+        Container,
+        MessageDeltaUsage,
+        RawMessageDeltaEvent,
+        RawMessageStartEvent,
+    )
+    from anthropic.types.raw_message_delta_event import Delta
+
+    llm = ChatAnthropic(model=MODEL_NAME)
+    message_start = RawMessageStartEvent(
+        type="message_start",
+        message=Message(
+            id="msg_01",
+            type="message",
+            role="assistant",
+            model=MODEL_NAME,
+            content=[],
+            stop_reason=None,
+            stop_sequence=None,
+            usage=Usage(input_tokens=12, output_tokens=1),
+        ),
+    )
+    message_delta = RawMessageDeltaEvent(
+        type="message_delta",
+        delta=Delta(
+            stop_reason="max_tokens",
+            stop_sequence=None,
+            container=Container(
+                id="container_01",
+                expires_at=datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc),
+            ),
+        ),
+        usage=MessageDeltaUsage(output_tokens=1),
+    )
+
+    start_chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        message_start,
+        stream_usage=False,
+        coerce_content_to_string=True,
+        block_start_event=None,
+    )
+    delta_chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        message_delta,
+        stream_usage=False,
+        coerce_content_to_string=True,
+        block_start_event=None,
+    )
+
+    assert start_chunk is not None
+    assert start_chunk.response_metadata["model_name"] == MODEL_NAME
+    # `message_start` never carried usage metadata, with or without the flag.
+    assert start_chunk.usage_metadata is None
+
+    assert delta_chunk is not None
+    assert delta_chunk.response_metadata["stop_reason"] == "max_tokens"
+    assert delta_chunk.response_metadata["stop_sequence"] is None
+    assert delta_chunk.response_metadata["container"]["id"] == "container_01"
+    assert delta_chunk.chunk_position == "last"
+
+    # The flag still governs usage metadata, and only usage metadata.
+    assert delta_chunk.usage_metadata is None
