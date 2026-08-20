@@ -237,7 +237,9 @@ def _translate_responses_input(message_dicts: list[dict[str, Any]]) -> list[Any]
             # as `function_call` items.
             text = _content_to_text(message.get("content"))
             if text:
-                translated.append({"role": "assistant", "content": text})
+                translated.append(
+                    {"type": "message", "role": "assistant", "content": text}
+                )
             for tool_call in message["tool_calls"]:
                 function = tool_call.get("function", {})
                 call_id = tool_call.get("id")
@@ -274,6 +276,8 @@ def _translate_responses_input(message_dicts: list[dict[str, Any]]) -> list[Any]
                     "output": output,
                 }
             )
+        elif role in {"assistant", "system", "user", "developer"}:
+            translated.append({**message, "type": "message"})
         else:
             translated.append(message)
     return translated

@@ -600,7 +600,7 @@ def test_to_responses_payload_renames_and_drops_keys() -> None:
         },
     )
 
-    assert payload["input"] == [{"role": "user", "content": "hi"}]
+    assert payload["input"] == [{"type": "message", "role": "user", "content": "hi"}]
     assert payload["model"] == "sonar-pro"
     assert payload["max_output_tokens"] == 128
     assert "max_tokens" not in payload
