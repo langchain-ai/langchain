@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from fastmcp import Client
-    from fastmcp.client.transports import ClientTransport
     from langchain_core.tools import BaseTool
     from mcp.types import ContentBlock as MCPContentBlock
     from mcp.types import Tool as MCPTool
@@ -51,7 +50,7 @@ class _ToolResult(Protocol):
 
 
 async def load_mcp_tools(
-    client: Client[ClientTransport],
+    client: Client[Any],
     *,
     elicitation: ElicitationMode | None = None,
 ) -> list[BaseTool]:
@@ -79,7 +78,7 @@ async def load_mcp_tools(
 
 def convert_mcp_tool(
     tool: MCPTool,
-    client: Client[ClientTransport],
+    client: Client[Any],
     *,
     elicitation: ElicitationMode | None = None,
 ) -> BaseTool:

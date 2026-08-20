@@ -23,7 +23,6 @@ from typing_extensions import NotRequired, TypedDict
 
 if TYPE_CHECKING:
     from fastmcp import Client
-    from fastmcp.client.transports import ClientTransport
     from mcp.types import CallToolResult, InputResponses
 
 _VALID_ACTIONS = ("accept", "decline", "cancel")
@@ -45,7 +44,7 @@ class MCPElicitation(TypedDict):
 
 
 async def call_tool_with_elicitation(
-    client: Client[ClientTransport],
+    client: Client[Any],
     name: str,
     arguments: dict[str, Any],
 ) -> CallToolResult:
