@@ -1,3 +1,5 @@
+import pytest
+
 from langchain_core.messages import HumanMessage
 from langchain_core.messages import content as types
 from langchain_core.messages.block_translators.langchain_v0 import (
@@ -111,3 +113,66 @@ def test_convert_with_extras_on_v0_block() -> None:
     }
 
     assert _convert_legacy_v0_content_block_to_v1(block) == expected_output
+
+
+@pytest.mark.parametrize(
+    ("block_type", "source"),
+    [
+        ("image", {"source_type": "url", "url": "https://example.com/x.png"}),
+        (
+            "image",
+            {"source_type": "base64", "data": "aGk=", "mime_type": "image/png"},
+        ),
+        ("audio", {"source_type": "url", "url": "https://example.com/x.mp3"}),
+        (
+            "audio",
+            {"source_type": "base64", "data": "aGk=", "mime_type": "audio/mp3"},
+        ),
+        ("file", {"source_type": "url", "url": "https://example.com/x.pdf"}),
+        (
+            "file",
+            {"source_type": "base64", "data": "aGk=", "mime_type": "application/pdf"},
+        ),
+    ],
+    ids=[
+        "image-url",
+        "image-base64",
+        "audio-url",
+        "audio-base64",
+        "file-url",
+        "file-base64",
+    ],
+)
+def test_block_id_is_not_treated_as_an_extra(
+    block_type: str, source: dict[str, str]
+) -> None:
+    """Test a v0 block carrying `id` converts instead of raising.
+
+    Regression test: `_extract_v0_extras` filtered by each branch's `known_keys`, and
+    the `url`/`base64` branches did not list `id`. It therefore stayed in `extras`,
+    and expanding `**extras` alongside the explicit `id=block["id"]` argument raised
+    `TypeError: got multiple values for keyword argument 'id'`. The `source_type="id"`
+    branches were unaffected because their `known_keys` included it.
+    """
+    block = {"type": block_type, "id": "block-1", **source}
+
+    converted = _convert_legacy_v0_content_block_to_v1(block)
+
+    assert converted["id"] == "block-1"
+    assert "id" not in converted.get("extras", {})
+
+
+def test_block_id_does_not_shadow_real_extras() -> None:
+    """Test excluding `id` from extras leaves genuine extra keys intact."""
+    block = {
+        "type": "image",
+        "source_type": "url",
+        "url": "https://example.com/x.png",
+        "id": "block-1",
+        "alt_text": "kept",
+    }
+
+    converted = _convert_legacy_v0_content_block_to_v1(block)
+
+    assert converted["id"] == "block-1"
+    assert converted["extras"] == {"alt_text": "kept"}
