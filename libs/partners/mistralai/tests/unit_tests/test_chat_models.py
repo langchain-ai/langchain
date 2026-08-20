@@ -2,7 +2,7 @@
 
 import os
 from collections.abc import AsyncGenerator, Generator
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -11,11 +11,13 @@ from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.exceptions import (
     ModelAPIError,
     ModelAuthenticationError,
+    ModelConnectionError,
     ModelError,
     ModelInvalidRequestError,
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelTimeoutError,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -43,9 +45,12 @@ from langchain_mistralai.chat_models import (  # type: ignore[import]
     _convert_tool_call_id_to_mistral_compatible,
     _format_message_content,
     _is_valid_mistral_tool_call_id,
+    _raise_classified_transport_error,
     _raise_on_error,
     _sanitize_chat_completions_content,
 )
+
+_REQUEST = httpx.Request("POST", "https://api.mistral.ai/v1/chat/completions")
 
 os.environ["MISTRAL_API_KEY"] = "foo"
 
@@ -1149,6 +1154,86 @@ async def test_error_classification_async() -> None:
         await _araise_on_error(_error_response(429))
 
     assert isinstance(exc_info.value, ModelRateLimitError)
+
+
+@pytest.mark.parametrize(
+    ("httpx_error", "model_error_type"),
+    [
+        (
+            httpx.ConnectTimeout("timed out", request=_REQUEST),
+            ModelTimeoutError,
+        ),
+        (
+            httpx.ReadTimeout("read timed out", request=_REQUEST),
+            ModelTimeoutError,
+        ),
+        (
+            httpx.ConnectError("cannot connect", request=_REQUEST),
+            ModelConnectionError,
+        ),
+    ],
+    ids=["connect-timeout", "read-timeout", "connect-error"],
+)
+def test_transport_error_classification(
+    httpx_error: httpx.HTTPError,
+    model_error_type: type[ModelError],
+) -> None:
+    """Test transport failures are classified like the other integrations.
+
+    Timeouts and connection failures never produce an HTTP response, so they do not
+    reach `_raise_on_error` and previously surfaced as plain `httpx` exceptions —
+    unlike `langchain-openai`, `langchain-anthropic` and `langchain-fireworks`, which
+    map them to the LangChain types. `ModelError` documents that the same condition
+    maps to the same exception type regardless of provider.
+    """
+    with pytest.raises(model_error_type) as exc_info:
+        _raise_classified_transport_error(httpx_error)
+
+    # Still catchable as the original httpx type, so existing handlers keep working.
+    assert isinstance(exc_info.value, type(httpx_error).__mro__[1])
+    assert exc_info.value.is_retryable is True
+    assert exc_info.value.__cause__ is httpx_error
+
+
+@pytest.mark.parametrize(
+    ("httpx_error", "model_error_type"),
+    [
+        (httpx.ConnectTimeout("timed out", request=_REQUEST), ModelTimeoutError),
+        (httpx.ConnectError("cannot connect", request=_REQUEST), ModelConnectionError),
+    ],
+    ids=["timeout", "connection"],
+)
+def test_invoke_classifies_transport_errors(
+    httpx_error: httpx.HTTPError,
+    model_error_type: type[ModelError],
+) -> None:
+    """Test the classification is wired into the request path, not just the helper.
+
+    Asserting on the helper alone would still pass if the `try`/`except` around the
+    `post` call were removed, so this drives `invoke` with a client that fails at the
+    transport layer.
+    """
+
+    class FailingClient:
+        def post(self, **_kwargs: Any) -> NoReturn:
+            raise httpx_error
+
+    model = ChatMistralAI(model="mistral-small", api_key="k", max_retries=0)  # type: ignore[call-arg]
+    model.client = FailingClient()  # type: ignore[assignment]
+
+    with pytest.raises(model_error_type):
+        model.invoke("hi")
+
+
+def test_unclassified_transport_error_is_reraised() -> None:
+    """Test transport errors outside the taxonomy keep their original type."""
+    original = httpx.TooManyRedirects("too many", request=_REQUEST)
+
+    with pytest.raises(httpx.TooManyRedirects) as exc_info:
+        _raise_classified_transport_error(original)
+
+    assert exc_info.value is original
+    assert not isinstance(exc_info.value, ModelError)
 
 
 def test_unclassified_status_stays_a_plain_status_error() -> None:

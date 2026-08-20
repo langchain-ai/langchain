@@ -13,6 +13,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    NoReturn,
     cast,
 )
 
@@ -26,10 +27,12 @@ from langchain_core.callbacks import (
 from langchain_core.exceptions import (
     ModelAPIError,
     ModelAuthenticationError,
+    ModelConnectionError,
     ModelInvalidRequestError,
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelTimeoutError,
 )
 from langchain_core.language_models import (
     LanguageModelInput,
@@ -251,6 +254,14 @@ class MistralAIAPIError(httpx.HTTPStatusError, ModelAPIError):
     """Mistral AI server error classified as a LangChain model error."""
 
 
+class MistralAITimeoutError(httpx.TimeoutException, ModelTimeoutError):
+    """Mistral AI timeout classified as a LangChain model error."""
+
+
+class MistralAIConnectionError(httpx.ConnectError, ModelConnectionError):
+    """Mistral AI connection failure classified as a LangChain model error."""
+
+
 _STATUS_ERROR_TYPES: dict[int, type[httpx.HTTPStatusError]] = {
     400: MistralAIInvalidRequestError,
     401: MistralAIAuthenticationError,
@@ -339,11 +350,41 @@ async def acompletion_with_retry(
                 llm.async_client, "POST", "/chat/completions", json=kwargs
             )
             return _aiter_sse(event_source)
-        response = await llm.async_client.post(url="/chat/completions", json=kwargs)
+        try:
+            response = await llm.async_client.post(url="/chat/completions", json=kwargs)
+        except httpx.HTTPError as e:
+            _raise_classified_transport_error(e)
         await _araise_on_error(response)
         return response.json()
 
     return await _completion_with_retry(**kwargs)
+
+
+def _raise_classified_transport_error(e: httpx.HTTPError) -> NoReturn:
+    """Re-raise a transport-level `httpx` error as its LangChain equivalent.
+
+    Timeouts and connection failures never produce an HTTP response, so they do not
+    pass through `_raise_on_error` and would otherwise reach callers as plain `httpx`
+    exceptions. The other integrations classify these (`OpenAITimeoutError`,
+    `AnthropicTimeoutError`, `FireworksTimeoutError`), and `ModelError` documents that
+    "the same condition maps to the same exception type regardless of provider".
+
+    Args:
+        e: The transport-level error raised by `httpx`.
+
+    Raises:
+        MistralAITimeoutError: If the request timed out.
+        MistralAIConnectionError: If the endpoint could not be reached.
+    """
+    # `ConnectTimeout` subclasses both `TimeoutException` and `ConnectError`;
+    # check the timeout branch first so it keeps its more specific meaning.
+    if isinstance(e, httpx.TimeoutException):
+        raise MistralAITimeoutError(str(e), request=e.request) from e
+    if isinstance(e, httpx.ConnectError):
+        raise MistralAIConnectionError(str(e), request=e.request) from e
+    # Anything else keeps its original type. `raise e` rather than a bare `raise`
+    # so the helper also behaves correctly when called outside an `except` block.
+    raise e
 
 
 def _convert_chunk_to_message_chunk(
@@ -743,7 +784,10 @@ class ChatMistralAI(BaseChatModel):
                             yield event.json()
 
                 return iter_sse()
-            response = self.client.post(url="/chat/completions", json=kwargs)
+            try:
+                response = self.client.post(url="/chat/completions", json=kwargs)
+            except httpx.HTTPError as e:
+                _raise_classified_transport_error(e)
             _raise_on_error(response)
             return response.json()
 
