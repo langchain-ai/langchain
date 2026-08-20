@@ -20,7 +20,7 @@ from langchain_core.load.load import (
     _get_default_allowed_class_paths,
 )
 from langchain_core.load.serializable import _is_field_useful, _try_neq_default
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.prompt_values import ImagePromptValue
 from langchain_core.prompts import (
@@ -1348,3 +1348,54 @@ def test_declared_serializable_classes_are_loadable() -> None:
         "`langchain_core/load/mapping.py`:\n"
         + "\n".join(f"  {name}: {lc_id}" for name, lc_id in unregistered)
     )
+
+
+@pytest.mark.parametrize(
+    "instance",
+    [
+        AIMessage("hi"),
+        AIMessage(
+            "",
+            tool_calls=[
+                {"name": "f", "args": {"x": 1}, "id": "1", "type": "tool_call"}
+            ],
+        ),
+        AIMessageChunk("hi"),
+        PromptTemplate.from_template("{a}"),
+        ChatPromptTemplate.from_messages([("human", "{a}")]),
+    ],
+    ids=[
+        "AIMessage",
+        "AIMessage-with-tool-calls",
+        "AIMessageChunk",
+        "PromptTemplate",
+        "ChatPromptTemplate",
+    ],
+)
+def test_lc_attributes_are_constructor_arguments(instance: Serializable) -> None:
+    """Test `lc_attributes` only names arguments the constructor accepts.
+
+    `Serializable.lc_attributes` documents itself as "attributes that should be included
+    in the serialized kwargs" and states "These attributes must be accepted by the
+    constructor". `to_json` merges them into the serialized `kwargs`, which `load` then
+    passes to the constructor — so a key that is not a real field (renamed, misspelled,
+    or drifted away in a subclass) breaks the round trip.
+
+    Nothing enforced that contract, so this checks the declared keys against the model's
+    fields (including aliases) and confirms the round trip still works.
+    """
+    model_fields = type(instance).model_fields
+    accepted = set(model_fields)
+    accepted.update(
+        field.alias for field in model_fields.values() if field.alias is not None
+    )
+
+    declared = set(instance.lc_attributes)
+
+    assert declared <= accepted, (
+        f"{type(instance).__name__}.lc_attributes declares "
+        f"{sorted(declared - accepted)}, which the constructor does not accept"
+    )
+
+    revived = load(dumpd(instance))
+    assert type(revived) is type(instance)
