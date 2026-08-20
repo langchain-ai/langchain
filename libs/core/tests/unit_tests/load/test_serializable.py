@@ -18,6 +18,7 @@ from langchain_core.load.load import (
 from langchain_core.load.serializable import _is_field_useful, _try_neq_default
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, Generation
+from langchain_core.prompt_values import ImagePromptValue
 from langchain_core.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -1249,6 +1250,22 @@ def test_runnable_pick_roundtrips() -> None:
 
     assert isinstance(revived, RunnablePick)
     assert revived.keys == ["a"]
+
+
+def test_image_prompt_value_roundtrips() -> None:
+    """Test `ImagePromptValue` can be loaded back after being dumped.
+
+    Regression test: `ImagePromptValue` reports `is_lc_serializable()` and dumps fine,
+    but was missing from the deserialization mapping, so `load` rejected it while its
+    siblings in the same module (`StringPromptValue`, `ChatPromptValue`,
+    `ChatPromptValueConcrete`) all round-tripped.
+    """
+    original = ImagePromptValue(image_url={"url": "https://example.com/cat.png"})
+
+    revived = load(dumpd(original))
+
+    assert isinstance(revived, ImagePromptValue)
+    assert revived.image_url == {"url": "https://example.com/cat.png"}
 
 
 def test_chain_using_pick_roundtrips() -> None:
