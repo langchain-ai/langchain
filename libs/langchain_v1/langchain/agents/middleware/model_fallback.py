@@ -24,6 +24,7 @@ import re
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import _WellKnownOpenAITools
 from langgraph.errors import GraphBubbleUp
 
 from langchain.agents.middleware.types import (
@@ -288,21 +289,13 @@ def _supports_anthropic_cache_control(model: BaseChatModel) -> bool:
 # payloads (`{"google_search": {}}`) in either snake or camel case. Plain function
 # tools — `{"type": "function", ...}`, OpenAI's `namespace` grouping, Gemini's
 # `functionDeclarations` — match none of these shapes and are never dropped.
-_OPENAI_BUILTIN_TOOL_TYPES: frozenset[str] = frozenset(
-    {
-        "apply_patch",
-        "code_interpreter",
-        "computer_use_preview",
-        "file_search",
-        "image_generation",
-        "local_shell",
-        "mcp",
-        "shell",
-        "tool_search",
-        "web_search",
-        "web_search_preview",
-    }
-)
+# Sourced from core's own allowlist so the two cannot drift, minus the two entries
+# that carry client tools rather than a provider capability (`function` wraps a
+# function schema, `namespace` groups them) — dropping those would delete real tools.
+# `local_shell` and `shell` are Responses tools that core does not list.
+_OPENAI_BUILTIN_TOOL_TYPES: frozenset[str] = (
+    frozenset(_WellKnownOpenAITools) - {"function", "namespace"}
+) | {"local_shell", "shell"}
 _ANTHROPIC_BUILTIN_TOOL_TYPES: frozenset[str] = frozenset(
     {
         "mcp_toolset",

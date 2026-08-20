@@ -12,12 +12,14 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.tools import BaseTool, tool
+from langchain_core.utils.function_calling import _WellKnownOpenAITools
 from langgraph.errors import GraphInterrupt
 from typing_extensions import override
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware import model_fallback as model_fallback_module
 from langchain.agents.middleware.model_fallback import (
+    _OPENAI_BUILTIN_TOOL_TYPES,
     ModelFallbackMiddleware,
     _builtin_tool_provider,
     _model_provider,
@@ -1137,6 +1139,14 @@ def _plain_tool(query: str) -> str:
     return query
 
 
+def test_openai_builtin_types_track_core_allowlist() -> None:
+    """Core's allowlist is the source of truth, minus its client-tool containers."""
+    assert set(_WellKnownOpenAITools) - {"function", "namespace"} <= _OPENAI_BUILTIN_TOOL_TYPES
+    # Both carry client tools, so classifying them as provider built-ins would drop
+    # real function tools on fallback.
+    assert not {"function", "namespace"} & _OPENAI_BUILTIN_TOOL_TYPES
+
+
 def test_model_provider_resolves_from_llm_type() -> None:
     """Provider detection is `_llm_type`-based, with Anthropic winning over Vertex."""
     assert _model_provider(_FakeOpenAIModel(messages=iter([]))) == "openai"
@@ -1155,6 +1165,7 @@ def test_model_provider_resolves_from_llm_type() -> None:
         ({"type": "code_interpreter", "container": {"type": "auto"}}, "openai"),
         ({"type": "apply_patch"}, "openai"),
         ({"type": "local_shell"}, "openai"),
+        ({"type": "computer"}, "openai"),
         ({"type": "tool_search"}, "openai"),
         ({"type": "web_search_20250305", "name": "web_search"}, "anthropic"),
         ({"type": "bash_20250124", "name": "bash"}, "anthropic"),
