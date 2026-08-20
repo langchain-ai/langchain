@@ -30,9 +30,11 @@ except ImportError as e:  # pragma: no cover
     )
     raise ModuleNotFoundError(msg) from e
 
+from langchain.mcp._elicitation import MCPElicitation
 from langchain.mcp.tools import convert_mcp_tool, load_mcp_tools
 
 __all__ = [
+    "MCPElicitation",
     "convert_mcp_tool",
     "load_mcp_tools",
 ]
