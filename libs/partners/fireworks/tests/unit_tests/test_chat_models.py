@@ -172,6 +172,44 @@ def test_sanitize_chat_completions_content_passthrough_string() -> None:
     assert _sanitize_chat_completions_content("hello") == "hello"
 
 
+def test_convert_v1_message_filters_invalid_tool_call_content() -> None:
+    """Invalid tool calls remain diagnostic metadata, not content blocks."""
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "Let me check."},
+            {
+                "type": "invalid_tool_call",
+                "id": "call_invalid",
+                "name": "get_weather",
+                "args": '{"city":',
+                "error": "Invalid JSON",
+            },
+        ],
+        invalid_tool_calls=[
+            {
+                "type": "invalid_tool_call",
+                "id": "call_invalid",
+                "name": "get_weather",
+                "args": '{"city":',
+                "error": "Invalid JSON",
+            }
+        ],
+        response_metadata={"output_version": "v1"},
+    )
+
+    assert _convert_message_to_dict(message) == {
+        "role": "assistant",
+        "content": "Let me check.",
+        "tool_calls": [
+            {
+                "type": "function",
+                "id": "call_invalid",
+                "function": {"name": "get_weather", "arguments": '{"city":'},
+            }
+        ],
+    }
+
+
 def test_sanitize_chat_completions_content_passthrough_non_text_block() -> None:
     blocks = [{"type": "image_url", "image_url": {"url": "https://x/y.png"}}]
     assert _sanitize_chat_completions_content(blocks) == blocks
