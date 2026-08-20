@@ -1825,6 +1825,7 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            is_first_chunk = True
             for event in stream:
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
@@ -1835,9 +1836,11 @@ class ChatAnthropic(BaseChatModel):
                 if msg is not None:
                     chunk = ChatGenerationChunk(
                         message=msg,
-                        generation_info=base_generation_info or None,
+                        generation_info=base_generation_info
+                        if is_first_chunk
+                        else None,
                     )
-                    base_generation_info = {}
+                    is_first_chunk = False
                     if run_manager and isinstance(msg.content, str):
                         run_manager.on_llm_new_token(msg.content, chunk=chunk)
                     yield chunk
@@ -1870,6 +1873,7 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            is_first_chunk = True
             async for event in stream:
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
@@ -1880,9 +1884,11 @@ class ChatAnthropic(BaseChatModel):
                 if msg is not None:
                     chunk = ChatGenerationChunk(
                         message=msg,
-                        generation_info=base_generation_info or None,
+                        generation_info=base_generation_info
+                        if is_first_chunk
+                        else None,
                     )
-                    base_generation_info = {}
+                    is_first_chunk = False
                     if run_manager and isinstance(msg.content, str):
                         await run_manager.on_llm_new_token(msg.content, chunk=chunk)
                     yield chunk

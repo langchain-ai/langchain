@@ -141,20 +141,29 @@ def _message_start_event() -> MagicMock:
     return event
 
 
+def _text_delta_event() -> MagicMock:
+    event = MagicMock()
+    event.type = "content_block_delta"
+    event.delta.type = "text_delta"
+    event.delta.text = "Bar Baz"
+    return event
+
+
 def test_anthropic_stream_surfaces_gateway_metadata() -> None:
     """Gateway metadata is attached to the first streaming generation chunk."""
     llm = ChatAnthropic(model=MODEL_NAME, api_key="lsv2_pt_example")
     mock_client = MagicMock()
     raw_response = _gateway_raw_response(_message())
-    raw_response.parse.return_value = [_message_start_event()]
+    raw_response.parse.return_value = [_message_start_event(), _text_delta_event()]
     mock_client.messages.with_raw_response.create.return_value = raw_response
 
     with patch.object(llm, "_client", mock_client):
         chunks = list(llm._stream([HumanMessage("bar")]))
 
-    assert chunks[0].generation_info == {
-        "lc_gateway_metadata": {"provider": "anthropic"}
-    }
+    assert [chunk.generation_info for chunk in chunks] == [
+        {GATEWAY_METADATA_RESPONSE_KEY: {"provider": "anthropic"}},
+        None,
+    ]
 
 
 async def test_anthropic_astream_surfaces_gateway_metadata() -> None:
@@ -165,6 +174,7 @@ async def test_anthropic_astream_surfaces_gateway_metadata() -> None:
 
     async def events() -> Any:
         yield _message_start_event()
+        yield _text_delta_event()
 
     raw_response.parse.return_value = events()
     mock_client.messages.with_raw_response.create = AsyncMock(return_value=raw_response)
@@ -172,9 +182,10 @@ async def test_anthropic_astream_surfaces_gateway_metadata() -> None:
     with patch.object(llm, "_async_client", mock_client):
         chunks = [chunk async for chunk in llm._astream([HumanMessage("bar")])]
 
-    assert chunks[0].generation_info == {
-        "lc_gateway_metadata": {"provider": "anthropic"}
-    }
+    assert [chunk.generation_info for chunk in chunks] == [
+        {GATEWAY_METADATA_RESPONSE_KEY: {"provider": "anthropic"}},
+        None,
+    ]
 
 
 def test_initialization() -> None:
