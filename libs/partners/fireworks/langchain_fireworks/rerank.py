@@ -14,6 +14,10 @@ from openai import AsyncOpenAI, OpenAI
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import override
 
+# The OpenAI SDK unpacks `get_args()` on a `dict` `cast_to`, so a bare `dict`
+# raises `ValueError` while parsing the response. Keep this parameterized.
+_RESPONSE_TYPE = dict[str, Any]
+
 
 class FireworksRerank(BaseDocumentCompressor):
     """Document compressor that uses Fireworks' reranking API."""
@@ -153,7 +157,7 @@ class FireworksRerank(BaseDocumentCompressor):
             top_n=top_n,
             task=task,
         )
-        response = self.client.post("/rerank", cast_to=dict, body=payload)
+        response = self.client.post("/rerank", cast_to=_RESPONSE_TYPE, body=payload)
         return self._parse_response(response)
 
     async def arerank(
@@ -190,7 +194,9 @@ class FireworksRerank(BaseDocumentCompressor):
             top_n=top_n,
             task=task,
         )
-        response = await self.async_client.post("/rerank", cast_to=dict, body=payload)
+        response = await self.async_client.post(
+            "/rerank", cast_to=_RESPONSE_TYPE, body=payload
+        )
         return self._parse_response(response)
 
     @staticmethod

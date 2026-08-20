@@ -72,7 +72,7 @@ def test_rerank_posts_fireworks_payload() -> None:
     assert client.calls == [
         {
             "path": "/rerank",
-            "cast_to": dict,
+            "cast_to": dict[str, Any],
             "body": {
                 "model": "fireworks/qwen3-reranker-8b",
                 "query": "the query",
@@ -100,7 +100,7 @@ async def test_arerank_posts_fireworks_payload() -> None:
     assert async_client.calls == [
         {
             "path": "/rerank",
-            "cast_to": dict,
+            "cast_to": dict[str, Any],
             "body": {
                 "model": "fireworks/qwen3-reranker-8b",
                 "query": "the query",
