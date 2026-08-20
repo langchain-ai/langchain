@@ -529,7 +529,10 @@ def test_graph_mermaid_to_safe_id() -> None:
     assert _to_safe_id("foo") == "foo"
     assert _to_safe_id("foo-bar") == "foo-bar"
     assert _to_safe_id("foo_1") == "foo_1"
-    assert _to_safe_id("#foo*&!") == "\\23foo\\2a\\26\\21"
+    assert _to_safe_id("#foo*&!") == "_23foo_2a_26_21"
+    assert _to_safe_id("PIIMiddleware[email]") == "PIIMiddleware_5bemail_5d"
+    assert _to_safe_id("node.with.dots") == "node_2ewith_2edots"
+    assert _to_safe_id("a b") == "a_20b"
 
 
 def test_graph_mermaid_duplicate_nodes(snapshot: SnapshotAssertion) -> None:
