@@ -1176,11 +1176,15 @@ def test_model_provider_resolves_from_llm_type() -> None:
         ({"google_search": {}}, "google"),
         ({"googleSearch": {}, "urlContext": {}}, "google"),
         ({"enterprise_web_search": {}}, "google"),
-        # Plain tool payloads, including a Gemini tool that also declares functions.
+        ({"mcpServers": []}, "google"),
+        ({"retrieval": {}}, "google"),
+        # A Gemini payload is Gemini-shaped throughout, function declarations included.
+        ({"googleSearch": {}, "functionDeclarations": []}, "google"),
+        ({"functionDeclarations": []}, "google"),
+        # Provider-neutral tool payloads.
         ({"type": "function", "function": {"name": "lookup", "parameters": {}}}, None),
         ({"type": "namespace", "name": "group", "tools": []}, None),
         ({"name": "lookup", "description": "", "parameters": {}}, None),
-        ({"googleSearch": {}, "functionDeclarations": []}, None),
     ],
 )
 def test_builtin_tool_provider_classifies_payloads(

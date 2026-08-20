@@ -286,9 +286,9 @@ def _supports_anthropic_cache_control(model: BaseChatModel) -> bool:
 # that defines them. OpenAI Responses built-ins are `{"type": <name>}` entries, with
 # dated variants (`web_search_preview_2025_03_11`); Anthropic tools carry a dated
 # `type` (`web_search_20250305`) plus a few undated ones; Gemini built-ins are keyed
-# payloads (`{"google_search": {}}`) in either snake or camel case. Plain function
-# tools — `{"type": "function", ...}`, OpenAI's `namespace` grouping, Gemini's
-# `functionDeclarations` — match none of these shapes and are never dropped.
+# payloads (`{"google_search": {}}`) in either snake or camel case. Provider-neutral
+# function tools — `BaseTool`, `{"type": "function", ...}`, OpenAI's `namespace`
+# grouping — match none of these shapes and are never dropped.
 # Sourced from core's own allowlist so the two cannot drift, minus the two entries
 # that carry client tools rather than a provider capability (`function` wraps a
 # function schema, `namespace` groups them) — dropping those would delete real tools.
@@ -304,15 +304,21 @@ _ANTHROPIC_BUILTIN_TOOL_TYPES: frozenset[str] = frozenset(
     }
 )
 _ANTHROPIC_DATED_BUILTIN_TOOL_TYPE = re.compile(r"_\d{8}$")
-_GOOGLE_BUILTIN_TOOL_KEYS: frozenset[str] = frozenset(
+# Every field of the Gemini `Tool` payload, `functionDeclarations` included: a Gemini
+# tool object is Gemini-shaped in all of its parts, so no other provider can read one
+# even when it carries function declarations.
+_GOOGLE_TOOL_KEYS: frozenset[str] = frozenset(
     {
         "codeexecution",
         "computeruse",
         "enterprisewebsearch",
         "filesearch",
+        "functiondeclarations",
         "googlemaps",
         "googlesearch",
         "googlesearchretrieval",
+        "mcpservers",
+        "retrieval",
         "urlcontext",
     }
 )
@@ -357,9 +363,7 @@ def _builtin_tool_provider(tool: dict[str, Any]) -> str | None:
         ):
             return "openai"
         return None
-    # A payload mixing built-ins with `functionDeclarations` keeps its function tools
-    # rather than being dropped whole, so every key must be a built-in to qualify.
-    if tool and all(_normalized_key(key) in _GOOGLE_BUILTIN_TOOL_KEYS for key in tool):
+    if tool and all(_normalized_key(key) in _GOOGLE_TOOL_KEYS for key in tool):
         return "google"
     return None
 
