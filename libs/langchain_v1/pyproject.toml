@@ -49,6 +49,7 @@ deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 meta = ["langchain-meta"]
+mcp = ["fastmcp-slim[client]>=4.0.0b1"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
@@ -75,6 +76,7 @@ test = [
     "blockbuster>=1.5.26,<1.6.0",
     "langchain-tests>=1.1.9,<2.0.0",
     "langchain-openai",
+    "fastmcp>=4.0.0b1",
 ]
 lint = [
     "ruff>=0.15.0,<0.17.0",
