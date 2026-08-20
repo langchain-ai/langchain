@@ -23,6 +23,7 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     PromptTemplate,
 )
+from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.runnables import RunnablePassthrough, RunnablePick
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.tracers import log_stream
@@ -1249,6 +1250,20 @@ def test_runnable_pick_roundtrips() -> None:
 
     assert isinstance(revived, RunnablePick)
     assert revived.keys == ["a"]
+
+
+def test_image_prompt_value_roundtrips() -> None:
+    """Test ImagePromptValue can be loaded back after being dumped."""
+    template = ImagePromptTemplate(
+        template={"url": "https://example.com/{name}.png"},
+        input_variables=["name"],
+    )
+    original = template.format_prompt(name="cat")
+
+    revived = load(dumpd(original))
+
+    assert type(revived) is type(original)
+    assert revived == original
 
 
 def test_chain_using_pick_roundtrips() -> None:
