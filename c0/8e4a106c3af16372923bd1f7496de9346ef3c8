@@ -1,0 +1,25 @@
+libs/langchain_v1/langchain/mcp/tools.py
+  s_e88a5373c21d3d::t_e51ffc4e15d501 6,23-24,26-27,34-37,42-57,68-71,77,80-85,91,99-103,127,132
+libs/langchain_v1/langchain/mcp/_elicitation.py
+  s_e88a5373c21d3d::t_c9595854384784 1-113
+libs/langchain_v1/tests/unit_tests/mcp/test_elicitation.py
+  s_e88a5373c21d3d::t_e51ffc4e15d501 1-85
+libs/langchain_v1/langchain/mcp/__init__.py
+  s_e88a5373c21d3d::t_e51ffc4e15d501 33,37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "c08e4a106c3af16372923bd1f7496de9346ef3c8",
+  "prompts": {},
+  "sessions": {
+    "s_e88a5373c21d3d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7b07b877-cb3a-4afc-b6aa-f6fd0403181b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
