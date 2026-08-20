@@ -1151,12 +1151,25 @@ def test_model_provider_resolves_from_llm_type() -> None:
     ("payload", "expected"),
     [
         ({"type": "web_search"}, "openai"),
+        ({"type": "web_search_preview_2025_03_11"}, "openai"),
         ({"type": "code_interpreter", "container": {"type": "auto"}}, "openai"),
+        ({"type": "apply_patch"}, "openai"),
+        ({"type": "local_shell"}, "openai"),
+        ({"type": "tool_search"}, "openai"),
         ({"type": "web_search_20250305", "name": "web_search"}, "anthropic"),
         ({"type": "bash_20250124", "name": "bash"}, "anthropic"),
+        # Undated Anthropic types, and a dated one that also matches an OpenAI prefix.
+        ({"type": "mcp_toolset", "mcp_servers": []}, "anthropic"),
+        ({"type": "tool_search_tool_bm25"}, "anthropic"),
+        ({"type": "tool_search_tool_bm25_20251119"}, "anthropic"),
         ({"google_search": {}}, "google"),
+        ({"googleSearch": {}, "urlContext": {}}, "google"),
+        ({"enterprise_web_search": {}}, "google"),
+        # Plain tool payloads, including a Gemini tool that also declares functions.
         ({"type": "function", "function": {"name": "lookup", "parameters": {}}}, None),
+        ({"type": "namespace", "name": "group", "tools": []}, None),
         ({"name": "lookup", "description": "", "parameters": {}}, None),
+        ({"googleSearch": {}, "functionDeclarations": []}, None),
     ],
 )
 def test_builtin_tool_provider_classifies_payloads(

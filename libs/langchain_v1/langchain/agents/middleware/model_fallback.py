@@ -282,29 +282,45 @@ def _supports_anthropic_cache_control(model: BaseChatModel) -> bool:
 
 
 # Provider built-in tools are passed as dicts and are only accepted by the provider
-# that defines them: OpenAI Responses built-ins are bare `{"type": ...}` entries,
-# Anthropic server tools carry a dated `type` (`web_search_20250305`), and Gemini
-# built-ins are single-key payloads (`{"google_search": {}}`). Plain function-tool
-# dicts match none of those shapes and are never touched.
+# that defines them. OpenAI Responses built-ins are `{"type": <name>}` entries, with
+# dated variants (`web_search_preview_2025_03_11`); Anthropic tools carry a dated
+# `type` (`web_search_20250305`) plus a few undated ones; Gemini built-ins are keyed
+# payloads (`{"google_search": {}}`) in either snake or camel case. Plain function
+# tools — `{"type": "function", ...}`, OpenAI's `namespace` grouping, Gemini's
+# `functionDeclarations` — match none of these shapes and are never dropped.
 _OPENAI_BUILTIN_TOOL_TYPES: frozenset[str] = frozenset(
     {
+        "apply_patch",
         "code_interpreter",
         "computer_use_preview",
         "file_search",
         "image_generation",
+        "local_shell",
         "mcp",
+        "shell",
+        "tool_search",
         "web_search",
         "web_search_preview",
     }
 )
-_ANTHROPIC_BUILTIN_TOOL_TYPE = re.compile(r"_\d{8}$")
+_ANTHROPIC_BUILTIN_TOOL_TYPES: frozenset[str] = frozenset(
+    {
+        "mcp_toolset",
+        "tool_search_tool_bm25",
+        "tool_search_tool_regex",
+    }
+)
+_ANTHROPIC_DATED_BUILTIN_TOOL_TYPE = re.compile(r"_\d{8}$")
 _GOOGLE_BUILTIN_TOOL_KEYS: frozenset[str] = frozenset(
     {
-        "code_execution",
-        "enterprise_web_search",
-        "google_search",
-        "google_search_retrieval",
-        "url_context",
+        "codeexecution",
+        "computeruse",
+        "enterprisewebsearch",
+        "filesearch",
+        "googlemaps",
+        "googlesearch",
+        "googlesearchretrieval",
+        "urlcontext",
     }
 )
 
@@ -331,17 +347,33 @@ def _model_provider(model: BaseChatModel) -> str | None:
 
 
 def _builtin_tool_provider(tool: dict[str, Any]) -> str | None:
-    """Return the provider that defines this built-in tool, or `None` for plain tools."""
+    """Return the provider that defines this built-in tool, or `None` for plain tools.
+
+    Anthropic is matched before OpenAI: `tool_search_tool_bm25_20251119` would also
+    match the `tool_search` prefix, and `web_search_20250305` the `web_search` one.
+    """
     tool_type = tool.get("type")
     if isinstance(tool_type, str):
-        if tool_type in _OPENAI_BUILTIN_TOOL_TYPES:
-            return "openai"
-        if _ANTHROPIC_BUILTIN_TOOL_TYPE.search(tool_type):
+        if tool_type in _ANTHROPIC_BUILTIN_TOOL_TYPES or _ANTHROPIC_DATED_BUILTIN_TOOL_TYPE.search(
+            tool_type
+        ):
             return "anthropic"
+        if any(
+            tool_type == name or tool_type.startswith(f"{name}_")
+            for name in _OPENAI_BUILTIN_TOOL_TYPES
+        ):
+            return "openai"
         return None
-    if len(tool) == 1 and not _GOOGLE_BUILTIN_TOOL_KEYS.isdisjoint(tool):
+    # A payload mixing built-ins with `functionDeclarations` keeps its function tools
+    # rather than being dropped whole, so every key must be a built-in to qualify.
+    if tool and all(_normalized_key(key) in _GOOGLE_BUILTIN_TOOL_KEYS for key in tool):
         return "google"
     return None
+
+
+def _normalized_key(key: str) -> str:
+    """Fold a Gemini tool key so snake and camel spellings compare equal."""
+    return key.replace("_", "").lower()
 
 
 def _is_foreign_builtin_tool(tool: BaseTool | dict[str, Any], provider: str | None) -> bool:
