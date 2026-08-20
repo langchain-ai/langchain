@@ -5893,6 +5893,44 @@ def test_runnable_parallel_preserves_required_v1_input_fields() -> None:
 
 
 @skip_if_no_pydantic_v1
+def test_runnable_parallel_input_schema_accepts_what_invoke_accepts() -> None:
+    """Test the parallel input schema validates the inputs `invoke` actually takes.
+
+    Regression test: a step that accepts any single value (`RunnablePassthrough`, an
+    unannotated `RunnableLambda`) reports its input schema as a Pydantic root model,
+    whose synthetic field is named `root` in v2. Merging that name into the parallel
+    schema made it demand `{"root": ...}`, so no input could satisfy both the declared
+    schema and `invoke`. The v1 spelling `__root__` was already excluded.
+    """
+    parallel = RunnableParallel(a=RunnablePassthrough(), b=RunnableLambda(lambda x: x))
+    schema = parallel.get_input_schema()
+
+    assert "root" not in schema.model_fields
+
+    # Whatever `invoke` accepts, the schema must accept too.
+    for value in ({"k": 1}, {"nested": {"x": 1}}):
+        parallel.invoke(value)
+        schema.model_validate(value)
+
+
+def test_runnable_parallel_input_schema_keeps_real_step_fields() -> None:
+    """Test excluding the root field does not drop genuine step fields.
+
+    Mixing a root-model step with a step that declares real fields must keep the real
+    fields; only the synthetic root name is dropped.
+    """
+    parallel = RunnableParallel(
+        passthrough=RunnablePassthrough(),
+        prompt=PromptTemplate.from_template("{question}"),
+    )
+    schema = parallel.get_input_schema()
+
+    assert "root" not in schema.model_fields
+    assert "question" in schema.model_fields
+
+    schema.model_validate({"question": "hi"})
+
+
 def test_runnable_parallel_uses_base_schema_for_v1_root_model() -> None:
     class InputModel(BaseModelV1):
         __root__: dict[str, int]

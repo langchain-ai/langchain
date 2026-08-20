@@ -4044,13 +4044,21 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                     return step_input_schema
 
             # This is correct, but pydantic typings/mypy don't think so.
+            #
+            # `root`/`__root__` are the synthetic field names Pydantic uses for a
+            # root model, which is how a step that accepts any single value (e.g.
+            # `RunnablePassthrough`, an unannotated `RunnableLambda`) reports its
+            # input schema. They are not keys the caller is expected to supply, so
+            # merging them in would require callers to pass `{"root": ...}` while
+            # `invoke` actually takes the bare value. `__root__` is the Pydantic v1
+            # spelling and was already excluded; `root` is the v2 spelling.
             return create_model_v2(
                 self.get_name("Input"),
                 field_definitions={
                     k: _get_schema_field_definition(v)
                     for step in self.steps__.values()
                     for k, v in get_fields(step.get_input_schema(config)).items()
-                    if k != "__root__"
+                    if k not in {"__root__", "root"}
                 },
             )
 
