@@ -220,8 +220,8 @@ class ChatOpenRouter(BaseChatModel):
     See https://openrouter.ai/docs/app-attribution for recognized categories.
     """
 
-    request_timeout: int | None = Field(default=None, alias="timeout")
-    """Timeout for requests in milliseconds. Maps to SDK `timeout_ms`."""
+    request_timeout: float | None = Field(default=None, alias="timeout")
+    """Timeout for requests in seconds. Converted to milliseconds for SDK `timeout_ms`."""
 
     max_retries: int = 2
     """Maximum number of retries.
@@ -453,7 +453,7 @@ class ChatOpenRouter(BaseChatModel):
                 headers=extra_headers, follow_redirects=True
             )
         if self.request_timeout is not None:
-            client_kwargs["timeout_ms"] = self.request_timeout
+            client_kwargs["timeout_ms"] = int(self.request_timeout * 1000)
         if self.max_retries > 0:
             client_kwargs["retry_config"] = RetryConfig(
                 strategy="backoff",
