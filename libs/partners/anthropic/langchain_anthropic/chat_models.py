@@ -1795,7 +1795,7 @@ class ChatAnthropic(BaseChatModel):
                         **payload
                     )
                 )
-            response = raw_response.parse()
+            response = await raw_response.parse()
         except TypeError as e:
             _raise_if_authentication_error(e)
             raise

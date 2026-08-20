@@ -122,9 +122,9 @@ async def test_anthropic_ainvoke_surfaces_gateway_metadata() -> None:
     """Async gateway responses surface metadata on `generation_info`."""
     llm = ChatAnthropic(model=MODEL_NAME, api_key="lsv2_pt_example")
     mock_client = MagicMock()
-    mock_client.messages.with_raw_response.create = AsyncMock(
-        return_value=_gateway_raw_response(_message())
-    )
+    raw_response = _gateway_raw_response(_message())
+    raw_response.parse = AsyncMock(return_value=_message())
+    mock_client.messages.with_raw_response.create = AsyncMock(return_value=raw_response)
     tracer = _GatewayMetadataTracer()
 
     with patch.object(llm, "_async_client", mock_client):
@@ -176,7 +176,7 @@ async def test_anthropic_astream_surfaces_gateway_metadata() -> None:
         yield _message_start_event()
         yield _text_delta_event()
 
-    raw_response.parse.return_value = events()
+    raw_response.parse = AsyncMock(return_value=events())
     mock_client.messages.with_raw_response.create = AsyncMock(return_value=raw_response)
 
     with patch.object(llm, "_async_client", mock_client):
