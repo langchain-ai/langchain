@@ -7,6 +7,7 @@ from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from typing import Any
 
+from langchain_core._api import beta
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.utils import secret_from_env
@@ -19,6 +20,7 @@ from typing_extensions import override
 _RESPONSE_TYPE = dict[str, Any]
 
 
+@beta()
 class FireworksRerank(BaseDocumentCompressor):
     """Document compressor that uses Fireworks' reranking API."""
 
