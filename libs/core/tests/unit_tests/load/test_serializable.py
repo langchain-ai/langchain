@@ -1,6 +1,9 @@
+import importlib
 import inspect
 import json
+import pkgutil
 import warnings
+from collections.abc import Iterator
 from typing import Any
 
 import pytest
@@ -8,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
+import langchain_core
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
 from langchain_core.documents import Document
@@ -1275,3 +1279,72 @@ def test_chain_using_pick_roundtrips() -> None:
     revived = load(dumpd(chain))
 
     assert revived.invoke({"a": 1, "b": 2}) == {"a": 1}
+
+
+def _iter_declared_serializable_classes() -> Iterator[tuple[str, type]]:
+    """Yield every `langchain_core` class that reports `is_lc_serializable()`.
+
+    Generic aliases (`Foo[str]`), nested classes and private classes are skipped: the
+    first two are artefacts of walking module namespaces rather than distinct classes,
+    and private ones are not part of the serialization contract users rely on.
+    """
+    seen: dict[tuple[str, str], type] = {}
+    for module_info in pkgutil.walk_packages(
+        langchain_core.__path__, "langchain_core."
+    ):
+        if "sys_info" in module_info.name:
+            continue
+        try:
+            module = importlib.import_module(module_info.name)
+        except Exception:  # optional deps may be absent
+            continue
+        for obj in vars(module).values():
+            if not inspect.isclass(obj):
+                continue
+            try:
+                if not issubclass(obj, Serializable) or obj is Serializable:
+                    continue
+                if not obj.is_lc_serializable():
+                    continue
+            except Exception:  # abstract/partially built classes
+                continue
+            qualname = obj.__qualname__
+            if "[" in qualname or "." in qualname or qualname.startswith("_"):
+                continue
+            seen.setdefault((obj.__module__, qualname), obj)
+    for (module_name, qualname), cls in sorted(seen.items()):
+        yield f"{module_name}.{qualname}", cls
+
+
+def test_declared_serializable_classes_are_loadable() -> None:
+    """Test every class claiming to be serializable can also be deserialized.
+
+    `is_lc_serializable()` returning `True` is a promise that a `dumps`/`loads` round
+    trip works. `dumps` writes an id of `get_lc_namespace() + [class name]`, and `load`
+    only accepts ids present in the allowlist derived from the serialization mappings.
+    A class can therefore declare itself serializable, dump successfully, and still be
+    rejected on the way back in if nobody added it to `load/mapping.py`.
+
+    That is not hypothetical: `RunnablePick` (#39752) and `ImagePromptValue` (#39783)
+    were both in exactly that state. This test turns the whole family into a build
+    failure instead of a runtime surprise, so a new serializable class cannot be added
+    without registering it.
+    """
+    allowed_paths = _get_default_allowed_class_paths("core")
+
+    def dumped_id(cls: type) -> tuple[str, ...]:
+        """The id `dumps` writes for this class."""
+        return (*tuple(cls.get_lc_namespace()), cls.__qualname__)
+
+    unregistered = [
+        (name, dumped_id(cls))
+        for name, cls in _iter_declared_serializable_classes()
+        if dumped_id(cls) not in allowed_paths
+    ]
+
+    assert not unregistered, (
+        "These classes report `is_lc_serializable()` but the id `dumps` writes for "
+        "them is not accepted by `load`. Add the id to "
+        "`langchain_core/load/mapping.py`:\n"
+        + "\n".join(f"  {name}: {lc_id}" for name, lc_id in unregistered)
+    )
