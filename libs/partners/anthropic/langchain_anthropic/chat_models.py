@@ -1737,71 +1737,53 @@ class ChatAnthropic(BaseChatModel):
 
         return {k: v for k, v in payload.items() if v is not None}
 
-    def _create(self, payload: dict) -> Any:
+    def _create(self, payload: dict) -> tuple[Any, dict[str, Any]]:
         try:
-            if "betas" in payload:
-                return self._client.beta.messages.create(**payload)
-            return self._client.messages.create(**payload)
-        except TypeError as e:
-            _raise_if_authentication_error(e)
-            raise
-
-    async def _acreate(self, payload: dict) -> Any:
-        try:
-            if "betas" in payload:
-                return await self._async_client.beta.messages.create(**payload)
-            return await self._async_client.messages.create(**payload)
-        except TypeError as e:
-            _raise_if_authentication_error(e)
-            raise
-
-    def _create_with_gateway_metadata(
-        self, payload: dict
-    ) -> tuple[Any, dict[str, Any]]:
-        """Create a message and extract gateway metadata when gateway-routed."""
-        if not self._uses_gateway:
-            return self._create(payload), {}
-        try:
-            if "betas" in payload:
-                raw_response = self._client.beta.messages.with_raw_response.create(
-                    **payload
-                )
-            else:
-                raw_response = self._client.messages.with_raw_response.create(**payload)
-            response = raw_response.parse()
-        except TypeError as e:
-            _raise_if_authentication_error(e)
-            raise
-        generation_info: dict[str, Any] = {}
-        _add_gateway_metadata(generation_info, raw_response)
-        return response, generation_info
-
-    async def _acreate_with_gateway_metadata(
-        self, payload: dict
-    ) -> tuple[Any, dict[str, Any]]:
-        """Asynchronously create a message and extract gateway metadata."""
-        if not self._uses_gateway:
-            return await self._acreate(payload), {}
-        try:
-            if "betas" in payload:
-                raw_response = (
-                    await self._async_client.beta.messages.with_raw_response.create(
+            if self._uses_gateway:
+                if "betas" in payload:
+                    raw_response = self._client.beta.messages.with_raw_response.create(
                         **payload
                     )
-                )
-            else:
-                raw_response = (
-                    await self._async_client.messages.with_raw_response.create(
+                else:
+                    raw_response = self._client.messages.with_raw_response.create(
                         **payload
                     )
-                )
-            response = await raw_response.parse()
+                response = raw_response.parse()
+                generation_info: dict[str, Any] = {}
+                _add_gateway_metadata(generation_info, raw_response)
+                return response, generation_info
+            if "betas" in payload:
+                return self._client.beta.messages.create(**payload), {}
+            return self._client.messages.create(**payload), {}
         except TypeError as e:
             _raise_if_authentication_error(e)
             raise
-        generation_info: dict[str, Any] = {}
-        _add_gateway_metadata(generation_info, raw_response)
-        return response, generation_info
+
+    async def _acreate(self, payload: dict) -> tuple[Any, dict[str, Any]]:
+        try:
+            if self._uses_gateway:
+                if "betas" in payload:
+                    raw_response = (
+                        await self._async_client.beta.messages.with_raw_response.create(
+                            **payload
+                        )
+                    )
+                else:
+                    raw_response = (
+                        await self._async_client.messages.with_raw_response.create(
+                            **payload
+                        )
+                    )
+                response = raw_response.parse()
+                generation_info: dict[str, Any] = {}
+                _add_gateway_metadata(generation_info, raw_response)
+                return response, generation_info
+            if "betas" in payload:
+                return await self._async_client.beta.messages.create(**payload), {}
+            return await self._async_client.messages.create(**payload), {}
+        except TypeError as e:
+            _raise_if_authentication_error(e)
+            raise
 
     def _stream(
         self,
@@ -1817,7 +1799,7 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            stream, base_generation_info = self._create_with_gateway_metadata(payload)
+            stream, base_generation_info = self._create(payload)
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -1863,9 +1845,7 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            stream, base_generation_info = await self._acreate_with_gateway_metadata(
-                payload
-            )
+            stream, base_generation_info = await self._acreate(payload)
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -2194,7 +2174,7 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            data, generation_info = self._create_with_gateway_metadata(payload)
+            data, generation_info = self._create(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
         except anthropic.APIError as e:
@@ -2210,7 +2190,7 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            data, generation_info = await self._acreate_with_gateway_metadata(payload)
+            data, generation_info = await self._acreate(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
         except anthropic.APIError as e:

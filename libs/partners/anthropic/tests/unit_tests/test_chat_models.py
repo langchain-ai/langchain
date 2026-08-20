@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import copy
+import json
 import os
 import warnings
 from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any, Literal, cast
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import anthropic
 import httpx
@@ -80,110 +81,176 @@ class _GatewayMetadataTracer(BaseTracer):
             self.gateway_metadata = gateway_metadata
 
 
-def _gateway_raw_response(message: Message) -> MagicMock:
-    raw_response = MagicMock()
-    raw_response.headers = httpx.Headers(
-        {"x-langsmith-gateway-metadata": '{"provider": "anthropic"}'}
+_GATEWAY_METADATA = {"provider": "anthropic"}
+_MESSAGE_RESPONSE = {
+    "id": "msg_123",
+    "content": [{"type": "text", "text": "Bar Baz", "citations": None}],
+    "model": MODEL_NAME,
+    "role": "assistant",
+    "stop_reason": "end_turn",
+    "stop_sequence": None,
+    "usage": {"input_tokens": 2, "output_tokens": 1},
+    "type": "message",
+}
+_STREAM_EVENTS = [
+    {
+        "type": "message_start",
+        "message": {
+            **_MESSAGE_RESPONSE,
+            "content": [],
+            "stop_reason": None,
+            "usage": {"input_tokens": 2, "output_tokens": 0},
+        },
+    },
+    {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {"type": "text_delta", "text": "Bar Baz"},
+    },
+    {
+        "type": "message_delta",
+        "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+        "usage": {"input_tokens": 2, "output_tokens": 1},
+    },
+    {"type": "message_stop"},
+]
+
+
+def _gateway_handler(
+    expected_beta: str | None,
+) -> Callable[[httpx.Request], httpx.Response]:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers.get("anthropic-beta") == expected_beta
+        headers = {"x-langsmith-gateway-metadata": json.dumps(_GATEWAY_METADATA)}
+        if json.loads(request.content).get("stream"):
+            stream = "".join(
+                f"event: {event['type']}\ndata: {json.dumps(event)}\n\n"
+                for event in _STREAM_EVENTS
+            )
+            return httpx.Response(
+                200,
+                text=stream,
+                headers={**headers, "content-type": "text/event-stream"},
+            )
+        return httpx.Response(200, json=_MESSAGE_RESPONSE, headers=headers)
+
+    return handler
+
+
+def _sync_gateway_client(betas: list[str] | None) -> anthropic.Client:
+    return anthropic.Client(
+        api_key="lsv2_pt_example",
+        http_client=httpx.Client(
+            transport=httpx.MockTransport(
+                _gateway_handler(",".join(betas) if betas else None)
+            )
+        ),
     )
-    raw_response.parse.return_value = message
-    return raw_response
 
 
-def _message() -> Message:
-    return Message(
-        id="msg_123",
-        content=[TextBlock(type="text", text="Bar Baz")],
-        model=MODEL_NAME,
-        role="assistant",
-        stop_reason="end_turn",
-        stop_sequence=None,
-        usage=Usage(input_tokens=2, output_tokens=1),
-        type="message",
+def _async_gateway_client(betas: list[str] | None) -> anthropic.AsyncClient:
+    return anthropic.AsyncClient(
+        api_key="lsv2_pt_example",
+        http_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                _gateway_handler(",".join(betas) if betas else None)
+            )
+        ),
     )
 
 
-def test_anthropic_invoke_surfaces_gateway_metadata() -> None:
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+def test_anthropic_invoke_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
     """Gateway metadata header is surfaced on `generation_info`, not the message."""
-    llm = ChatAnthropic(model=MODEL_NAME, api_key="lsv2_pt_example")
-    mock_client = MagicMock()
-    mock_client.messages.with_raw_response.create.return_value = _gateway_raw_response(
-        _message()
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
     )
+    client = _sync_gateway_client(betas)
     tracer = _GatewayMetadataTracer()
+    try:
+        with patch.object(llm, "_client", client):
+            result = llm.invoke("bar", config={"callbacks": [tracer]})
+    finally:
+        client.close()
 
-    with patch.object(llm, "_client", mock_client):
-        result = llm.invoke("bar", config={"callbacks": [tracer]})
-
-    assert tracer.gateway_metadata == {"provider": "anthropic"}
+    assert tracer.gateway_metadata == _GATEWAY_METADATA
     assert GATEWAY_METADATA_RESPONSE_KEY not in result.response_metadata
 
 
-async def test_anthropic_ainvoke_surfaces_gateway_metadata() -> None:
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+async def test_anthropic_ainvoke_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
     """Async gateway responses surface metadata on `generation_info`."""
-    llm = ChatAnthropic(model=MODEL_NAME, api_key="lsv2_pt_example")
-    mock_client = MagicMock()
-    raw_response = _gateway_raw_response(_message())
-    raw_response.parse = AsyncMock(return_value=_message())
-    mock_client.messages.with_raw_response.create = AsyncMock(return_value=raw_response)
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _async_gateway_client(betas)
     tracer = _GatewayMetadataTracer()
+    try:
+        with patch.object(llm, "_async_client", client):
+            result = await llm.ainvoke("bar", config={"callbacks": [tracer]})
+    finally:
+        await client.close()
 
-    with patch.object(llm, "_async_client", mock_client):
-        result = await llm.ainvoke("bar", config={"callbacks": [tracer]})
-
-    assert tracer.gateway_metadata == {"provider": "anthropic"}
+    assert tracer.gateway_metadata == _GATEWAY_METADATA
     assert GATEWAY_METADATA_RESPONSE_KEY not in result.response_metadata
 
 
-def _message_start_event() -> MagicMock:
-    event = MagicMock()
-    event.type = "message_start"
-    event.message.model = MODEL_NAME
-    return event
-
-
-def _text_delta_event() -> MagicMock:
-    event = MagicMock()
-    event.type = "content_block_delta"
-    event.delta.type = "text_delta"
-    event.delta.text = "Bar Baz"
-    return event
-
-
-def test_anthropic_stream_surfaces_gateway_metadata() -> None:
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+def test_anthropic_stream_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
     """Gateway metadata is attached to the first streaming generation chunk."""
-    llm = ChatAnthropic(model=MODEL_NAME, api_key="lsv2_pt_example")
-    mock_client = MagicMock()
-    raw_response = _gateway_raw_response(_message())
-    raw_response.parse.return_value = [_message_start_event(), _text_delta_event()]
-    mock_client.messages.with_raw_response.create.return_value = raw_response
-
-    with patch.object(llm, "_client", mock_client):
-        chunks = list(llm._stream([HumanMessage("bar")]))
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _sync_gateway_client(betas)
+    try:
+        with patch.object(llm, "_client", client):
+            chunks = list(llm._stream([HumanMessage("bar")]))
+    finally:
+        client.close()
 
     assert [chunk.generation_info for chunk in chunks] == [
-        {GATEWAY_METADATA_RESPONSE_KEY: {"provider": "anthropic"}},
+        {GATEWAY_METADATA_RESPONSE_KEY: _GATEWAY_METADATA},
+        None,
         None,
     ]
 
 
-async def test_anthropic_astream_surfaces_gateway_metadata() -> None:
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+async def test_anthropic_astream_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
     """Async gateway metadata is attached to the first streaming chunk."""
-    llm = ChatAnthropic(model=MODEL_NAME, api_key="lsv2_pt_example")
-    mock_client = MagicMock()
-    raw_response = _gateway_raw_response(_message())
-
-    async def events() -> Any:
-        yield _message_start_event()
-        yield _text_delta_event()
-
-    raw_response.parse = AsyncMock(return_value=events())
-    mock_client.messages.with_raw_response.create = AsyncMock(return_value=raw_response)
-
-    with patch.object(llm, "_async_client", mock_client):
-        chunks = [chunk async for chunk in llm._astream([HumanMessage("bar")])]
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _async_gateway_client(betas)
+    try:
+        with patch.object(llm, "_async_client", client):
+            chunks = [chunk async for chunk in llm._astream([HumanMessage("bar")])]
+    finally:
+        await client.close()
 
     assert [chunk.generation_info for chunk in chunks] == [
-        {GATEWAY_METADATA_RESPONSE_KEY: {"provider": "anthropic"}},
+        {GATEWAY_METADATA_RESPONSE_KEY: _GATEWAY_METADATA},
+        None,
         None,
     ]
 
@@ -4702,8 +4769,8 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
         thinking={"type": "enabled", "budget_tokens": 1024},
     )
 
-    def mock_create(_payload: Any) -> list:
-        return events
+    def mock_create(_payload: Any) -> tuple[list, dict[str, Any]]:
+        return events, {}
 
     with patch.object(llm, "_create", mock_create):
         stream_events = list(llm.stream_events("Test query", version="v3"))
