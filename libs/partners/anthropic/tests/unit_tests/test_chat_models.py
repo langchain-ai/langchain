@@ -8,7 +8,7 @@ import warnings
 from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any, Literal, cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import anthropic
 import httpx
@@ -39,6 +39,7 @@ from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from pydantic import BaseModel, Field, RootModel, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
@@ -60,6 +61,120 @@ from langchain_anthropic.chat_models import (
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
 MODEL_NAME = "claude-sonnet-4-5-20250929"
+
+
+class _GatewayMetadataTracer(BaseTracer):
+    """Captures gateway metadata promoted onto completed LLM runs."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.gateway_metadata: dict[str, Any] | None = None
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op; runs are inspected as they complete."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        metadata = run.extra.get("metadata", {})
+        gateway_metadata = metadata.get("ls_gateway_info")
+        if isinstance(gateway_metadata, dict):
+            self.gateway_metadata = gateway_metadata
+
+
+def _gateway_raw_response(message: Message) -> MagicMock:
+    raw_response = MagicMock()
+    raw_response.headers = httpx.Headers(
+        {"x-langsmith-gateway-metadata": '{"provider": "anthropic"}'}
+    )
+    raw_response.parse.return_value = message
+    return raw_response
+
+
+def _message() -> Message:
+    return Message(
+        id="msg_123",
+        content=[TextBlock(type="text", text="Bar Baz")],
+        model=MODEL_NAME,
+        role="assistant",
+        stop_reason="end_turn",
+        stop_sequence=None,
+        usage=Usage(input_tokens=2, output_tokens=1),
+        type="message",
+    )
+
+
+def test_anthropic_invoke_surfaces_gateway_metadata() -> None:
+    """Gateway metadata header is surfaced on `generation_info`, not the message."""
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="lsv2_pt_example")
+    mock_client = MagicMock()
+    mock_client.messages.with_raw_response.create.return_value = _gateway_raw_response(
+        _message()
+    )
+    tracer = _GatewayMetadataTracer()
+
+    with patch.object(llm, "_client", mock_client):
+        result = llm.invoke("bar", config={"callbacks": [tracer]})
+
+    assert tracer.gateway_metadata == {"provider": "anthropic"}
+    assert GATEWAY_METADATA_RESPONSE_KEY not in result.response_metadata
+
+
+async def test_anthropic_ainvoke_surfaces_gateway_metadata() -> None:
+    """Async gateway responses surface metadata on `generation_info`."""
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="lsv2_pt_example")
+    mock_client = MagicMock()
+    mock_client.messages.with_raw_response.create = AsyncMock(
+        return_value=_gateway_raw_response(_message())
+    )
+    tracer = _GatewayMetadataTracer()
+
+    with patch.object(llm, "_async_client", mock_client):
+        result = await llm.ainvoke("bar", config={"callbacks": [tracer]})
+
+    assert tracer.gateway_metadata == {"provider": "anthropic"}
+    assert GATEWAY_METADATA_RESPONSE_KEY not in result.response_metadata
+
+
+def _message_start_event() -> MagicMock:
+    event = MagicMock()
+    event.type = "message_start"
+    event.message.model = MODEL_NAME
+    return event
+
+
+def test_anthropic_stream_surfaces_gateway_metadata() -> None:
+    """Gateway metadata is attached to the first streaming generation chunk."""
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="lsv2_pt_example")
+    mock_client = MagicMock()
+    raw_response = _gateway_raw_response(_message())
+    raw_response.parse.return_value = [_message_start_event()]
+    mock_client.messages.with_raw_response.create.return_value = raw_response
+
+    with patch.object(llm, "_client", mock_client):
+        chunks = list(llm._stream([HumanMessage("bar")]))
+
+    assert chunks[0].generation_info == {
+        "lc_gateway_metadata": {"provider": "anthropic"}
+    }
+
+
+async def test_anthropic_astream_surfaces_gateway_metadata() -> None:
+    """Async gateway metadata is attached to the first streaming chunk."""
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="lsv2_pt_example")
+    mock_client = MagicMock()
+    raw_response = _gateway_raw_response(_message())
+
+    async def events() -> Any:
+        yield _message_start_event()
+
+    raw_response.parse.return_value = events()
+    mock_client.messages.with_raw_response.create = AsyncMock(return_value=raw_response)
+
+    with patch.object(llm, "_async_client", mock_client):
+        chunks = [chunk async for chunk in llm._astream([HumanMessage("bar")])]
+
+    assert chunks[0].generation_info == {
+        "lc_gateway_metadata": {"provider": "anthropic"}
+    }
 
 
 def test_initialization() -> None:

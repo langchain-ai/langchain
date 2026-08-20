@@ -64,7 +64,11 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names
-from langchain_core.utils._gateway import _apply_gateway_config
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_RESPONSE_KEY,
+    _apply_gateway_config,
+    _parse_gateway_metadata,
+)
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -93,6 +97,21 @@ _message_type_lookups = {
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
 _USER_AGENT: Final[str] = f"langchain-anthropic/{__version__}"
+
+
+def _add_gateway_metadata(generation_info: dict[str, Any], raw_response: Any) -> None:
+    """Add parsed LangSmith gateway metadata to `generation_info`, if present.
+
+    Args:
+        generation_info: Generation info to mutate in place.
+        raw_response: The raw provider response, or None.
+    """
+    headers = getattr(raw_response, "headers", None)
+    if headers is None:
+        return
+    gateway_metadata = _parse_gateway_metadata(headers)
+    if gateway_metadata is not None:
+        generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -1269,6 +1288,11 @@ class ChatAnthropic(BaseChatModel):
         return "anthropic-chat"
 
     @property
+    def _uses_gateway(self) -> bool:
+        """Whether requests are routed through the LangSmith gateway."""
+        return self.anthropic_api_key.get_secret_value().startswith("lsv2_")
+
+    @property
     def lc_secrets(self) -> dict[str, str]:
         """Return a mapping of secret keys to environment variables."""
         return {
@@ -1731,6 +1755,54 @@ class ChatAnthropic(BaseChatModel):
             _raise_if_authentication_error(e)
             raise
 
+    def _create_with_gateway_metadata(
+        self, payload: dict
+    ) -> tuple[Any, dict[str, Any]]:
+        """Create a message and extract gateway metadata when gateway-routed."""
+        if not self._uses_gateway:
+            return self._create(payload), {}
+        try:
+            if "betas" in payload:
+                raw_response = self._client.beta.messages.with_raw_response.create(
+                    **payload
+                )
+            else:
+                raw_response = self._client.messages.with_raw_response.create(**payload)
+            response = raw_response.parse()
+        except TypeError as e:
+            _raise_if_authentication_error(e)
+            raise
+        generation_info: dict[str, Any] = {}
+        _add_gateway_metadata(generation_info, raw_response)
+        return response, generation_info
+
+    async def _acreate_with_gateway_metadata(
+        self, payload: dict
+    ) -> tuple[Any, dict[str, Any]]:
+        """Asynchronously create a message and extract gateway metadata."""
+        if not self._uses_gateway:
+            return await self._acreate(payload), {}
+        try:
+            if "betas" in payload:
+                raw_response = (
+                    await self._async_client.beta.messages.with_raw_response.create(
+                        **payload
+                    )
+                )
+            else:
+                raw_response = (
+                    await self._async_client.messages.with_raw_response.create(
+                        **payload
+                    )
+                )
+            response = raw_response.parse()
+        except TypeError as e:
+            _raise_if_authentication_error(e)
+            raise
+        generation_info: dict[str, Any] = {}
+        _add_gateway_metadata(generation_info, raw_response)
+        return response, generation_info
+
     def _stream(
         self,
         messages: list[BaseMessage],
@@ -1745,7 +1817,7 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            stream = self._create(payload)
+            stream, base_generation_info = self._create_with_gateway_metadata(payload)
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -1761,7 +1833,11 @@ class ChatAnthropic(BaseChatModel):
                     block_start_event=block_start_event,
                 )
                 if msg is not None:
-                    chunk = ChatGenerationChunk(message=msg)
+                    chunk = ChatGenerationChunk(
+                        message=msg,
+                        generation_info=base_generation_info or None,
+                    )
+                    base_generation_info = {}
                     if run_manager and isinstance(msg.content, str):
                         run_manager.on_llm_new_token(msg.content, chunk=chunk)
                     yield chunk
@@ -1784,7 +1860,9 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            stream = await self._acreate(payload)
+            stream, base_generation_info = await self._acreate_with_gateway_metadata(
+                payload
+            )
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -1800,7 +1878,11 @@ class ChatAnthropic(BaseChatModel):
                     block_start_event=block_start_event,
                 )
                 if msg is not None:
-                    chunk = ChatGenerationChunk(message=msg)
+                    chunk = ChatGenerationChunk(
+                        message=msg,
+                        generation_info=base_generation_info or None,
+                    )
+                    base_generation_info = {}
                     if run_manager and isinstance(msg.content, str):
                         await run_manager.on_llm_new_token(msg.content, chunk=chunk)
                     yield chunk
@@ -2031,7 +2113,13 @@ class ChatAnthropic(BaseChatModel):
             message_chunk.response_metadata["model_provider"] = "anthropic"
         return message_chunk, block_start_event
 
-    def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
+    def _format_output(
+        self,
+        data: Any,
+        *,
+        generation_info: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
         """Format the output from the Anthropic API to LC."""
         data_dict = data.model_dump()
         content = data_dict["content"]
@@ -2085,7 +2173,9 @@ class ChatAnthropic(BaseChatModel):
             msg = AIMessage(content=content, response_metadata=response_metadata)
         msg.usage_metadata = _create_usage_metadata(data.usage)
         return ChatResult(
-            generations=[ChatGeneration(message=msg)],
+            generations=[
+                ChatGeneration(message=msg, generation_info=generation_info or None)
+            ],
             llm_output=llm_output,
         )
 
@@ -2098,12 +2188,12 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            data = self._create(payload)
+            data, generation_info = self._create_with_gateway_metadata(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
         except anthropic.APIError as e:
             _handle_anthropic_api_error(e)
-        return self._format_output(data, **kwargs)
+        return self._format_output(data, generation_info=generation_info, **kwargs)
 
     async def _agenerate(
         self,
@@ -2114,12 +2204,12 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            data = await self._acreate(payload)
+            data, generation_info = await self._acreate_with_gateway_metadata(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
         except anthropic.APIError as e:
             _handle_anthropic_api_error(e)
-        return self._format_output(data, **kwargs)
+        return self._format_output(data, generation_info=generation_info, **kwargs)
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(
         self,
