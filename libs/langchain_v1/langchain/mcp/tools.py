@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, Protocol
 
 from langchain_core.messages.content import (
     ContentBlock,
@@ -20,19 +20,40 @@ from mcp.types import (
     TextResourceContents,
 )
 
+from langchain.mcp._elicitation import call_tool_with_elicitation
+
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from fastmcp import Client
-    from fastmcp.client.client import CallToolResult
-    from fastmcp.client.transports import ClientTransport
     from langchain_core.tools import BaseTool
     from mcp.types import ContentBlock as MCPContentBlock
     from mcp.types import Tool as MCPTool
+
+#: How to handle server elicitation. `"interrupt"` bridges modern-spec elicitation to a
+#: LangGraph `interrupt()`; `None` (default) leaves it unhandled.
+ElicitationMode = Literal["interrupt"]
 
 # Result artifact carrying the server's structured (JSON) output, when provided.
 _STRUCTURED_CONTENT_KEY = "structured_content"
 
 
-async def load_mcp_tools(client: Client[ClientTransport]) -> list[BaseTool]:
+class _ToolResult(Protocol):
+    """Structural view shared by the FastMCP and MCP `CallToolResult` types."""
+
+    @property
+    def content(self) -> Sequence[Any]: ...
+    @property
+    def structured_content(self) -> dict[str, Any] | None: ...
+    @property
+    def is_error(self) -> bool: ...
+
+
+async def load_mcp_tools(
+    client: Client[Any],
+    *,
+    elicitation: ElicitationMode | None = None,
+) -> list[BaseTool]:
     """Load the tools exposed by an MCP server as LangChain tools.
 
     Connection, transport, multi-server configuration, authentication, and protocol
@@ -43,20 +64,30 @@ async def load_mcp_tools(client: Client[ClientTransport]) -> list[BaseTool]:
         client: A FastMCP [`Client`][fastmcp.Client]. Enter it as an async context
             manager (`async with client: ...`) to reuse a single connection across tool
             calls; otherwise FastMCP connects per call as needed.
+        elicitation: If `"interrupt"`, modern-spec server elicitation is surfaced as a
+            LangGraph `interrupt()` (resume with the user's answer). Requires the tool to
+            run inside a graph/agent. Only servers speaking the 2026-07-28 input-required
+            mechanism trigger it; older servers are unaffected.
 
     Returns:
         The server's tools as LangChain tools.
     """
     tools = await client.list_tools()
-    return [convert_mcp_tool(tool, client) for tool in tools]
+    return [convert_mcp_tool(tool, client, elicitation=elicitation) for tool in tools]
 
 
-def convert_mcp_tool(tool: MCPTool, client: Client[ClientTransport]) -> BaseTool:
+def convert_mcp_tool(
+    tool: MCPTool,
+    client: Client[Any],
+    *,
+    elicitation: ElicitationMode | None = None,
+) -> BaseTool:
     """Convert a single MCP tool definition into a LangChain tool.
 
     Args:
         tool: The MCP tool definition to convert.
         client: FastMCP client used to invoke the tool.
+        elicitation: See [`load_mcp_tools`][langchain.mcp.load_mcp_tools].
 
     Returns:
         A [`StructuredTool`][langchain_core.tools.StructuredTool] wrapping the MCP tool.
@@ -64,7 +95,11 @@ def convert_mcp_tool(tool: MCPTool, client: Client[ClientTransport]) -> BaseTool
     tool_name = tool.name
 
     async def call_tool(**arguments: Any) -> tuple[list[ContentBlock], dict[str, Any] | None]:
-        result = await client.call_tool(tool_name, arguments, raise_on_error=False)
+        result: _ToolResult
+        if elicitation == "interrupt":
+            result = await call_tool_with_elicitation(client, tool_name, arguments)
+        else:
+            result = await client.call_tool(tool_name, arguments, raise_on_error=False)
         return _convert_call_result(result)
 
     return StructuredTool(
@@ -88,12 +123,12 @@ def _tool_metadata(tool: MCPTool) -> dict[str, Any] | None:
 
 
 def _convert_call_result(
-    result: CallToolResult,
+    result: _ToolResult,
 ) -> tuple[list[ContentBlock], dict[str, Any] | None]:
     """Convert an MCP tool-call result into LangChain content and an artifact.
 
     Args:
-        result: The result returned by the FastMCP client.
+        result: The result returned by the FastMCP client (or raw MCP session).
 
     Returns:
         A `(content, artifact)` tuple. `content` is a list of content blocks; `artifact`
