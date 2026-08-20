@@ -11,11 +11,16 @@ are valid and preserve prompt caching, so they are left intact.
 The knowledge of the `cache_control` marker is duplicated here (rather than owned
 solely by the Anthropic partner package) because an outer caching middleware
 never re-runs during fallback and therefore cannot clean up after itself.
+
+Provider built-in tools (OpenAI's `{"type": "web_search"}`, Anthropic's server
+tools, Gemini's `{"google_search": {}}`) are provider-scoped in the same way, and
+are dropped from fallback attempts that target a different provider.
 """
 
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.tools import BaseTool
@@ -276,6 +281,124 @@ def _supports_anthropic_cache_control(model: BaseChatModel) -> bool:
     return isinstance(llm_type, str) and llm_type in _ANTHROPIC_LLM_TYPES
 
 
+# Provider built-in tools are passed as dicts and are only accepted by the provider
+# that defines them: OpenAI Responses built-ins are bare `{"type": ...}` entries,
+# Anthropic server tools carry a dated `type` (`web_search_20250305`), and Gemini
+# built-ins are single-key payloads (`{"google_search": {}}`). Plain function-tool
+# dicts match none of those shapes and are never touched.
+_OPENAI_BUILTIN_TOOL_TYPES: frozenset[str] = frozenset(
+    {
+        "code_interpreter",
+        "computer_use_preview",
+        "file_search",
+        "image_generation",
+        "mcp",
+        "web_search",
+        "web_search_preview",
+    }
+)
+_ANTHROPIC_BUILTIN_TOOL_TYPE = re.compile(r"_\d{8}$")
+_GOOGLE_BUILTIN_TOOL_KEYS: frozenset[str] = frozenset(
+    {
+        "code_execution",
+        "enterprise_web_search",
+        "google_search",
+        "google_search_retrieval",
+        "url_context",
+    }
+)
+
+# Substring matched against `_llm_type`, ordered so `anthropic-chat-vertexai`
+# resolves to Anthropic rather than Google.
+_LLM_TYPE_PROVIDERS: tuple[tuple[str, str], ...] = (
+    ("anthropic", "anthropic"),
+    ("openai", "openai"),
+    ("google", "google"),
+    ("gemini", "google"),
+    ("vertex", "google"),
+)
+
+
+def _model_provider(model: BaseChatModel) -> str | None:
+    """Return the provider whose built-in tools `model` accepts, if recognized."""
+    llm_type = getattr(model, "_llm_type", None)
+    if not isinstance(llm_type, str):
+        return None
+    return next(
+        (provider for marker, provider in _LLM_TYPE_PROVIDERS if marker in llm_type),
+        None,
+    )
+
+
+def _builtin_tool_provider(tool: dict[str, Any]) -> str | None:
+    """Return the provider that defines this built-in tool, or `None` for plain tools."""
+    tool_type = tool.get("type")
+    if isinstance(tool_type, str):
+        if tool_type in _OPENAI_BUILTIN_TOOL_TYPES:
+            return "openai"
+        if _ANTHROPIC_BUILTIN_TOOL_TYPE.search(tool_type):
+            return "anthropic"
+        return None
+    if len(tool) == 1 and not _GOOGLE_BUILTIN_TOOL_KEYS.isdisjoint(tool):
+        return "google"
+    return None
+
+
+def _is_foreign_builtin_tool(tool: BaseTool | dict[str, Any], provider: str | None) -> bool:
+    if not isinstance(tool, dict):
+        return False
+    owner = _builtin_tool_provider(tool)
+    return owner is not None and owner != provider
+
+
+def _without_foreign_builtin_tools(
+    request: ModelRequest[ContextT], fallback_model: BaseChatModel
+) -> ModelRequest[ContextT]:
+    """Drop built-in tools the fallback model's provider does not define.
+
+    An unrecognized fallback provider drops them too: a built-in tool only exists
+    on its own provider's API, so losing the capability on a retry beats failing
+    the retry outright on an unknown tool type.
+    """
+    provider = _model_provider(fallback_model)
+    tools = [tool for tool in request.tools if not _is_foreign_builtin_tool(tool, provider)]
+    if len(tools) == len(request.tools):
+        return request
+
+    logger.warning(
+        "Dropped %d provider built-in tool(s) not supported by the fallback model",
+        len(request.tools) - len(tools),
+    )
+    return request.override(tools=tools)
+
+
+def _prepare_request_for_fallback(
+    request: ModelRequest[ContextT], fallback_model: BaseChatModel
+) -> ModelRequest[ContextT]:
+    """Strip everything the fallback model cannot accept from `request`."""
+    prepared = (
+        request
+        if _supports_anthropic_cache_control(fallback_model)
+        else _sanitize_request_for_fallback(request)
+    )
+    return _without_foreign_builtin_tools(prepared, fallback_model)
+
+
+def _log_fallback_attempt(exception: Exception, fallback_model: BaseChatModel) -> None:
+    """Report a fallback attempt without logging request content (may hold PII)."""
+    logger.warning(
+        "Model call failed with %s; retrying with fallback model %s",
+        type(exception).__name__,
+        _model_label(fallback_model),
+    )
+    logger.debug("Model call failure preceding fallback", exc_info=exception)
+
+
+def _model_label(model: BaseChatModel) -> str:
+    name = getattr(model, "model_name", None) or getattr(model, "model", None)
+    return name if isinstance(name, str) and name else type(model).__name__
+
+
 class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Automatic fallback to alternative models on errors.
 
@@ -350,16 +473,12 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         except Exception as e:
             last_exception = e
 
-        # Try fallback models — sanitize cache markers only when the fallback
-        # model cannot accept them (i.e. is not an Anthropic-compatible model).
-        # The request is derived outside the try so a sanitizer or `_llm_type`
-        # bug surfaces directly instead of being masked as a model failure.
+        # Try fallback models — the request is prepared outside the try so a
+        # sanitizer or `_llm_type` bug surfaces directly instead of being masked
+        # as a model failure.
         for fallback_model in self.models:
-            fallback_request = (
-                request
-                if _supports_anthropic_cache_control(fallback_model)
-                else _sanitize_request_for_fallback(request)
-            )
+            fallback_request = _prepare_request_for_fallback(request, fallback_model)
+            _log_fallback_attempt(last_exception, fallback_model)
             try:
                 return handler(fallback_request.override(model=fallback_model))
             except GraphBubbleUp:
@@ -396,16 +515,12 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         except Exception as e:
             last_exception = e
 
-        # Try fallback models — sanitize cache markers only when the fallback
-        # model cannot accept them (i.e. is not an Anthropic-compatible model).
-        # The request is derived outside the try so a sanitizer or `_llm_type`
-        # bug surfaces directly instead of being masked as a model failure.
+        # Try fallback models — the request is prepared outside the try so a
+        # sanitizer or `_llm_type` bug surfaces directly instead of being masked
+        # as a model failure.
         for fallback_model in self.models:
-            fallback_request = (
-                request
-                if _supports_anthropic_cache_control(fallback_model)
-                else _sanitize_request_for_fallback(request)
-            )
+            fallback_request = _prepare_request_for_fallback(request, fallback_model)
+            _log_fallback_attempt(last_exception, fallback_model)
             try:
                 return await handler(fallback_request.override(model=fallback_model))
             except GraphBubbleUp:
