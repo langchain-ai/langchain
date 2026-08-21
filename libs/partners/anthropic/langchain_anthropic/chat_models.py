@@ -1748,52 +1748,38 @@ class ChatAnthropic(BaseChatModel):
 
     def _create(self, payload: dict) -> _AnthropicResponse:
         try:
-            if self._uses_gateway:
-                if "betas" in payload:
-                    raw_response = self._client.beta.messages.with_raw_response.create(
-                        **payload
-                    )
-                else:
-                    raw_response = self._client.messages.with_raw_response.create(
-                        **payload
-                    )
-                response = raw_response.parse()
-                generation_info: dict[str, Any] = {}
-                _add_gateway_metadata(generation_info, raw_response)
-                return _AnthropicResponse(response, generation_info)
             if "betas" in payload:
-                response = self._client.beta.messages.create(**payload)
+                raw_response = self._client.beta.messages.with_raw_response.create(
+                    **payload
+                )
             else:
-                response = self._client.messages.create(**payload)
-            return _AnthropicResponse(response, {})
+                raw_response = self._client.messages.with_raw_response.create(**payload)
+            generation_info: dict[str, Any] = {}
+            if self._uses_gateway:
+                _add_gateway_metadata(generation_info, raw_response)
+            return _AnthropicResponse(raw_response.parse(), generation_info)
         except TypeError as e:
             _raise_if_authentication_error(e)
             raise
 
     async def _acreate(self, payload: dict) -> _AnthropicResponse:
         try:
-            if self._uses_gateway:
-                if "betas" in payload:
-                    raw_response = (
-                        await self._async_client.beta.messages.with_raw_response.create(
-                            **payload
-                        )
-                    )
-                else:
-                    raw_response = (
-                        await self._async_client.messages.with_raw_response.create(
-                            **payload
-                        )
-                    )
-                response = raw_response.parse()
-                generation_info: dict[str, Any] = {}
-                _add_gateway_metadata(generation_info, raw_response)
-                return _AnthropicResponse(response, generation_info)
             if "betas" in payload:
-                response = await self._async_client.beta.messages.create(**payload)
+                raw_response = (
+                    await self._async_client.beta.messages.with_raw_response.create(
+                        **payload
+                    )
+                )
             else:
-                response = await self._async_client.messages.create(**payload)
-            return _AnthropicResponse(response, {})
+                raw_response = (
+                    await self._async_client.messages.with_raw_response.create(
+                        **payload
+                    )
+                )
+            generation_info: dict[str, Any] = {}
+            if self._uses_gateway:
+                _add_gateway_metadata(generation_info, raw_response)
+            return _AnthropicResponse(raw_response.parse(), generation_info)
         except TypeError as e:
             _raise_if_authentication_error(e)
             raise

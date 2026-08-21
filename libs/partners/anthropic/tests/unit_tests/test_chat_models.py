@@ -2200,13 +2200,15 @@ def test_fine_grained_tool_streaming_beta() -> None:
         "fine-grained-tool-streaming-2025-05-14",
     }
 
-    # Test that _create routes to beta client when betas are present
+    # Test that _create routes to the beta raw-response client when betas are present
     model = ChatAnthropic(
         model=MODEL_NAME, betas=["fine-grained-tool-streaming-2025-05-14"]
     )
     payload = {"betas": ["fine-grained-tool-streaming-2025-05-14"], "stream": True}
 
-    with patch.object(model._client.beta.messages, "create") as mock_beta_create:
+    with patch.object(
+        model._client.beta.messages.with_raw_response, "create"
+    ) as mock_beta_create:
         model._create(payload)
         mock_beta_create.assert_called_once_with(**payload)
 
@@ -4276,7 +4278,7 @@ def test_anthropic_error_classification(
     )
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(sdk_error_type) as exc_info,
     ):
         mock_create.side_effect = sdk_error
@@ -4296,7 +4298,9 @@ def test_anthropic_transport_error_classification() -> None:
         (anthropic.APIConnectionError(request=request), ModelConnectionError),
     ):
         with (  # noqa: PT012
-            patch.object(llm._client.messages, "create") as mock_create,
+            patch.object(
+                llm._client.messages.with_raw_response, "create"
+            ) as mock_create,
             pytest.raises(type(sdk_error)) as exc_info,
         ):
             mock_create.side_effect = sdk_error
@@ -4311,7 +4315,7 @@ def test_context_overflow_error_invoke_sync() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -4325,7 +4329,9 @@ async def test_context_overflow_error_invoke_async() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -4339,7 +4345,7 @@ def test_context_overflow_error_stream_sync() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -4353,7 +4359,9 @@ async def test_context_overflow_error_stream_async() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -4368,7 +4376,7 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(anthropic.BadRequestError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -4915,7 +4923,7 @@ def test_missing_credentials_error_sync(monkeypatch: pytest.MonkeyPatch) -> None
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
     ):
         mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
@@ -4932,7 +4940,9 @@ async def test_missing_credentials_error_async(
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
         pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
     ):
         mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
@@ -4947,7 +4957,7 @@ def test_unrelated_type_error_propagates_unchanged() -> None:
     unrelated_error = TypeError("some unrelated client error")
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(TypeError) as exc_info,
     ):
         mock_create.side_effect = unrelated_error
