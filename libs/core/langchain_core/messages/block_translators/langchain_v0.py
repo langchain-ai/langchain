@@ -65,7 +65,9 @@ def _convert_legacy_v0_content_block_to_v1(
         Returns:
             A dictionary of extra keys not part of the known v0 format.
         """
-        return {k: v for k, v in block_dict.items() if k not in known_keys}
+        return {
+            k: v for k, v in block_dict.items() if k not in known_keys and k != "id"
+        }
 
     # Check if this is actually a v0 format block
     block_type = block.get("type")
