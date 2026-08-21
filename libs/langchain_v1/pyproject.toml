@@ -82,6 +82,7 @@ lint = [
 typing = [
     "mypy>=2.1.0,<2.2.0",
     "types-toml>=0.10.8.20240310,<1.0.0.0",
+    "types-pyyaml>=6.0.12.2,<7.0.0.0",
 ]
 
 test_integration = [
