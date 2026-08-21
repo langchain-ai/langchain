@@ -2004,3 +2004,33 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
     )
     result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
     assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]
+
+
+async def test_multimodal_dict_prompt_template_aformat(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that _MultiModalMessagePromptTemplate.aformat calls DictPromptTemplate.aformat."""
+    from langchain_core.prompts.dict import DictPromptTemplate
+
+    called_aformat = False
+    original_aformat = DictPromptTemplate.aformat
+
+    async def mock_aformat(self: Any, **kwargs: Any) -> Any:
+        nonlocal called_aformat
+        called_aformat = True
+        return await original_aformat(self, **kwargs)
+
+    monkeypatch.setattr(DictPromptTemplate, "aformat", mock_aformat)
+
+    tmpl = ChatPromptTemplate.from_messages(
+        [("human", [{"type": "text", "text": "{q}"}, {"my_field": "{q}"}])]
+    )
+    messages = await tmpl.aformat_messages(q="hello")
+
+    assert called_aformat is True
+    assert len(messages) == 1
+    assert messages[0].content == [
+        {"type": "text", "text": "hello"},
+        {"my_field": "hello"},
+    ]
+
