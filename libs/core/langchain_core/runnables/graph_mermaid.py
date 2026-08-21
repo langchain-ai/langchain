@@ -144,6 +144,7 @@ def draw_mermaid(
                 + "\n".join(f"{k} = {value}" for k, value in node.metadata.items())
                 + "</em></small>"
             )
+        label = label.replace("[", "(").replace("]", ")")
         node_label = format_dict.get(key, format_dict[default_class_label]).format(
             _to_safe_id(key), label
         )

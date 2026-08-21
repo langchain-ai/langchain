@@ -220,7 +220,12 @@ class StateFileSearchMiddleware(AgentMiddleware):
                 Returns `'No files found'` if no matches.
         """
         # Normalize base path
-        base_path = path if path.startswith("/") else "/" + path
+        normalized_path = path.rstrip("/")
+        base_path = (
+            normalized_path
+            if normalized_path.startswith("/")
+            else "/" + normalized_path
+        )
 
         # Get files from state
         files = cast("dict[str, Any]", state.get(self.state_key, {}))
@@ -283,7 +288,12 @@ class StateFileSearchMiddleware(AgentMiddleware):
                 Returns `'No matches found'` if no results.
         """
         # Normalize base path
-        base_path = path if path.startswith("/") else "/" + path
+        normalized_path = path.rstrip("/")
+        base_path = (
+            normalized_path
+            if normalized_path.startswith("/")
+            else "/" + normalized_path
+        )
 
         # Compile regex pattern (for validation)
         try:

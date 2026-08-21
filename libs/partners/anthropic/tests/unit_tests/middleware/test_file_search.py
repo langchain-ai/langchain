@@ -121,6 +121,34 @@ class TestGlobSearch:
         assert "/src/main.py" in result
         assert "/tests/test.py" not in result
 
+    def test_glob_with_trailing_slash_path(self) -> None:
+        """Test glob with base path ending in trailing slash."""
+        middleware = StateFileSearchMiddleware()
+
+        state: AnthropicToolsState = {
+            "messages": [],
+            "text_editor_files": {
+                "/src/main.py": {
+                    "content": [],
+                    "created_at": "2025-01-01T00:00:00",
+                    "modified_at": "2025-01-01T00:00:00",
+                },
+                "/tests/test.py": {
+                    "content": [],
+                    "created_at": "2025-01-01T00:00:00",
+                    "modified_at": "2025-01-01T00:00:00",
+                },
+            },
+        }
+
+        result = middleware._handle_glob_search(
+            pattern="**/*.py", path="/src/", state=state
+        )
+
+        assert isinstance(result, str)
+        assert "/src/main.py" in result
+        assert "/tests/test.py" not in result
+
     def test_glob_no_matches(self) -> None:
         """Test glob with no matching files."""
         middleware = StateFileSearchMiddleware()
@@ -391,6 +419,38 @@ class TestFilesystemGrepSearch:
         result = middleware._handle_grep_search(
             pattern="import",
             path="/src",
+            include=None,
+            output_mode="files_with_matches",
+            state=state,
+        )
+
+        assert isinstance(result, str)
+        assert "/src/main.py" in result
+        assert "/tests/test.py" not in result
+
+    def test_grep_with_trailing_slash_path(self) -> None:
+        """Test grep with base path ending in trailing slash."""
+        middleware = StateFileSearchMiddleware()
+
+        state: AnthropicToolsState = {
+            "messages": [],
+            "text_editor_files": {
+                "/src/main.py": {
+                    "content": ["import foo"],
+                    "created_at": "2025-01-01T00:00:00",
+                    "modified_at": "2025-01-01T00:00:00",
+                },
+                "/tests/test.py": {
+                    "content": ["import foo"],
+                    "created_at": "2025-01-01T00:00:00",
+                    "modified_at": "2025-01-01T00:00:00",
+                },
+            },
+        }
+
+        result = middleware._handle_grep_search(
+            pattern="import",
+            path="/src/",
             include=None,
             output_mode="files_with_matches",
             state=state,

@@ -719,3 +719,28 @@ def test_graph_mermaid_special_chars(snapshot: SnapshotAssertion) -> None:
         ],
     )
     assert graph.draw_mermaid() == snapshot(name="mermaid")
+
+
+def test_graph_mermaid_brackets_in_node_name() -> None:
+    """Test that square brackets in node names are sanitized in mermaid output."""
+    graph = Graph(
+        nodes={
+            "__start__": Node(
+                id="__start__", name="__start__", data=BaseModel, metadata=None
+            ),
+            "node[0]": Node(
+                id="node[0]", name="node[0]", data=BaseModel, metadata=None
+            ),
+            "__end__": Node(
+                id="__end__", name="__end__", data=BaseModel, metadata=None
+            ),
+        },
+        edges=[
+            Edge(source="__start__", target="node[0]", data=None, conditional=False),
+            Edge(source="node[0]", target="__end__", data=None, conditional=False),
+        ],
+    )
+    mermaid_str = graph.draw_mermaid()
+    assert "node(0)" in mermaid_str
+    assert "node[0]" not in mermaid_str
+    assert r"node\5b0\5d" in mermaid_str
