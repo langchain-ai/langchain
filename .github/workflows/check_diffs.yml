@@ -71,6 +71,8 @@ jobs:
       dependencies: ${{ steps.set-matrix.outputs.dependencies }}
       test-pydantic: ${{ steps.set-matrix.outputs.test-pydantic }}
       vcr-tests: ${{ steps.set-matrix.outputs.vcr-tests }}
+      check-augmentations: ${{ steps.set-matrix.outputs.check-augmentations }}
+      providers-with-data: ${{ steps.set-matrix.outputs.providers-with-data }}
   # Run linting only on packages that have changed files
   lint:
     needs: [build]
@@ -189,6 +191,51 @@ jobs:
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
 
+  # Flag `[overrides."model-id"]` entries in profile_augmentations.toml whose
+  # model is no longer listed on models.dev — stale leftovers from removed
+  # models. Runs when any partner data dir changes. Hits the models.dev API.
+  check-augmentations:
+    name: "Check model profile augmentations"
+    needs: [build]
+    if: ${{ needs.build.outputs.check-augmentations == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+
+      - name: "🐍 Set up Python + uv"
+        uses: astral-sh/setup-uv@0ca8f610542aa7f4acaf39e65cf4eb3c35091883 # v7
+        with:
+          version: "0.5.25"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: "**/model-profiles/uv.lock"
+
+      - name: "📦 Install langchain-profiles CLI"
+        working-directory: libs/model-profiles
+        run: uv sync --frozen --no-group test --no-group dev --no-group lint
+
+      - name: "🔍 Check augmentations against models.dev"
+        env:
+          PROVIDERS_JSON: ${{ needs.build.outputs.providers-with-data }}
+        run: |
+          failed=""
+          mapfile -t rows < <(echo "${PROVIDERS_JSON}" | jq -c '.[]')
+          for row in "${rows[@]}"; do
+            provider=$(echo "${row}" | jq -r '.provider')
+            data_dir=$(echo "${row}" | jq -r '.data_dir')
+            echo "--- Checking ${provider} -> ${data_dir} ---"
+            if ! echo y | uv run --frozen --project libs/model-profiles \
+              langchain-profiles check-augmentations \
+              --provider "${provider}" \
+              --data-dir "${GITHUB_WORKSPACE}/${data_dir}"; then
+              failed="${failed} ${provider}"
+            fi
+          done
+          if [ -n "${failed}" ]; then
+            echo "::error::Stale augmentation overrides for:${failed}"
+            exit 1
+          fi
+
   # Verify _release.yml dropdown options stay in sync with package directories
   check-release-options:
     name: "Validate Release Options"
@@ -218,6 +265,7 @@ jobs:
         extended-tests,
         test-pydantic,
         check-release-options,
+        check-augmentations,
       ]
     if: |
       always()

@@ -52,6 +52,22 @@ IGNORED_PARTNERS = [
     "huggingface",
 ]
 
+# Providers whose partner package has a `data/profile_augmentations.toml` to
+# check for stale model overrides. `provider` is the models.dev ID; `data_dir`
+# is the package data directory. Mirrors the list in refresh_model_profiles.yml.
+PROVIDERS_WITH_DATA = [
+    {"provider": "anthropic", "data_dir": "libs/partners/anthropic/langchain_anthropic/data"},
+    {"provider": "deepseek", "data_dir": "libs/partners/deepseek/langchain_deepseek/data"},
+    {"provider": "fireworks-ai", "data_dir": "libs/partners/fireworks/langchain_fireworks/data"},
+    {"provider": "groq", "data_dir": "libs/partners/groq/langchain_groq/data"},
+    {"provider": "huggingface", "data_dir": "libs/partners/huggingface/langchain_huggingface/data"},
+    {"provider": "mistral", "data_dir": "libs/partners/mistralai/langchain_mistralai/data"},
+    {"provider": "openai", "data_dir": "libs/partners/openai/langchain_openai/data"},
+    {"provider": "openrouter", "data_dir": "libs/partners/openrouter/langchain_openrouter/data"},
+    {"provider": "perplexity", "data_dir": "libs/partners/perplexity/langchain_perplexity/data"},
+    {"provider": "xai", "data_dir": "libs/partners/xai/langchain_xai/data"},
+]
+
 
 def all_package_dirs() -> Set[str]:
     return {
@@ -396,3 +412,15 @@ if __name__ == "__main__":
     for key, value in map_job_to_configs.items():
         json_output = json.dumps(value)
         print(f"{key}={json_output}")
+
+    # Detect changes to partner data dirs so the check-augmentations CI job can
+    # flag stale model overrides against models.dev. Any changed file under a
+    # provider's data dir (or to the CLI that produces it) triggers the check.
+    cli_touched = any(f.startswith("libs/model-profiles") for f in files)
+    affected_providers = [
+        entry
+        for entry in PROVIDERS_WITH_DATA
+        if cli_touched or any(f.startswith(entry["data_dir"]) for f in files)
+    ]
+    print(f"check-augmentations={'true' if affected_providers else 'false'}")
+    print(f"providers-with-data={json.dumps(affected_providers)}")

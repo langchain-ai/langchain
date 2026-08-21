@@ -144,11 +144,18 @@ jobs:
           }
 
       - name: "🔄 Refresh profiles"
+        id: refresh
         env:
           PROVIDERS_JSON: ${{ inputs.providers }}
         run: |
           cli_dir="${GITHUB_WORKSPACE}/${{ steps.cli.outputs.dir }}"
           failed=""
+          # Capture the staleness warnings the refresh emits so they can be
+          # surfaced in the PR body below (they otherwise only appear in the
+          # Actions log, which a PR reviewer won't see).
+          stale_log="${RUNNER_TEMP}/stale_augmentations.txt"
+          : > "${stale_log}"
+          echo "stale-log=${stale_log}" >> "$GITHUB_OUTPUT"
           mapfile -t rows < <(echo "${PROVIDERS_JSON}" | jq -c '.[]')
           for row in "${rows[@]}"; do
             provider=$(echo "${row}" | jq -r '.provider')
@@ -157,7 +164,7 @@ jobs:
             if ! echo y | uv run --frozen --project "${cli_dir}" \
               langchain-profiles refresh \
               --provider "${provider}" \
-              --data-dir "${GITHUB_WORKSPACE}/${data_dir}"; then
+              --data-dir "${GITHUB_WORKSPACE}/${data_dir}" 2> >(tee -a "${stale_log}" >&2); then
               echo "::error::Failed to refresh provider: ${provider}"
               failed="${failed} ${provider}"
             fi
@@ -190,6 +197,19 @@ jobs:
             # Surface the degradation in the PR body too: the warning above only
             # lands in the Actions log, which a PR reviewer won't see.
             printf '\n> [!NOTE]\n> Automated change summary unavailable — see the workflow run log.\n' >> "${body_file}"
+          fi
+
+          # Surface any stale-augmentation warnings captured during refresh.
+          stale_log="${{ steps.refresh.outputs.stale-log }}"
+          if [ -n "${stale_log}" ] && grep -q "absent from models.dev" "${stale_log}"; then
+            {
+              printf '\n## ⚠️ Stale augmentation overrides\n\n'
+              printf 'The refresh flagged `[overrides]` entries whose model is no longer listed on models.dev. '
+              printf 'Remove them, or move them to `[extra_models]` if the omission is intentional:\n\n'
+              printf '```\n'
+              grep "absent from models.dev" "${stale_log}" || true
+              printf '```\n'
+            } >> "${body_file}"
           fi
           echo "path=${body_file}" >> "$GITHUB_OUTPUT"
 
