@@ -5138,6 +5138,63 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert {"type": "tool_search"} in result["tools"]
 
 
+def test_responses_api_tool_strict_defaults_to_false() -> None:
+    """A tool with no `strict` key should stay non-strict in the Responses API.
+
+    The Chat Completions API treats an omitted `strict` as `False`, but the
+    Responses API defaults to `True`. Without an explicit `strict: False`,
+    switching to the Responses API (e.g. via `reasoning`) silently changes
+    tool-calling behavior. See issue #35837.
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    payload = {
+        "model": "gpt-5",
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string"}},
+                    },
+                },
+            }
+        ],
+    }
+    result = _construct_responses_api_payload([], payload)
+    assert result["tools"][0]["strict"] is False
+
+
+def test_responses_api_tool_strict_explicit_value_preserved() -> None:
+    """An explicit `strict` value on the tool should not be overridden."""
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    payload = {
+        "model": "gpt-5",
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string"}},
+                        "required": ["location"],
+                        "additionalProperties": False,
+                    },
+                    "strict": True,
+                },
+            }
+        ],
+    }
+    result = _construct_responses_api_payload([], payload)
+    assert result["tools"][0]["strict"] is True
+
+
 def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
