@@ -1948,6 +1948,42 @@ def test_md_header_text_splitter_custom_headers_strip_unchanged() -> None:
     assert output == expected_output
 
 
+def test_md_header_text_splitter_hash_prefixed_body_line() -> None:
+    """Test a body line starting with `#` does not merge its chunk into the next.
+
+    The old check read any line starting with `#` as a header, so a chunk
+    ending in a body line such as `#hashtag` was merged into the next chunk and
+    the body line picked up that chunk's metadata. `_is_header_line` requires a
+    real header. No custom patterns are involved here: this is the default
+    `#`-only path.
+    """
+    markdown_document = "# H1\n#hashtag\n## H2\nbody\n"
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="# H1\n#hashtag",
+            metadata={"Header 1": "H1"},
+        ),
+        Document(
+            page_content="## H2\nbody",
+            metadata={"Header 1": "H1", "Header 2": "H2"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
 EXPERIMENTAL_MARKDOWN_DOCUMENT = (
     "# My Header 1\n"
     "Content for header 1\n"
