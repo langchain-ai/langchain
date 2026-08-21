@@ -221,6 +221,7 @@ class StateFileSearchMiddleware(AgentMiddleware):
         """
         # Normalize base path
         base_path = path if path.startswith("/") else "/" + path
+        base_path = base_path.rstrip("/")
 
         # Get files from state
         files = cast("dict[str, Any]", state.get(self.state_key, {}))
@@ -284,6 +285,7 @@ class StateFileSearchMiddleware(AgentMiddleware):
         """
         # Normalize base path
         base_path = path if path.startswith("/") else "/" + path
+        base_path = base_path.rstrip("/")
 
         # Compile regex pattern (for validation)
         try:
