@@ -31,6 +31,7 @@ from pydantic import (
     Field,
     RootModel,
     ValidationError,
+    field_serializer,
 )
 from pydantic.errors import PydanticUndefinedAnnotation
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -4734,3 +4735,80 @@ def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> Non
     new_schema = new_cls.model_json_schema()
     assert new_schema is not old_schema
     assert new_schema["description"] == "New description for cache test."
+
+
+def test_structured_tool_json_dump() -> None:
+    """`mode="json"` dumps must not raise on the callable / schema-class fields."""
+
+    @tool
+    def write_file(file_path: str, content: str) -> str:
+        """Write content to the given path."""
+        return "ok"
+
+    dumped = write_file.model_dump(mode="json")
+    # Round-trips through the stdlib encoder, i.e. it really is JSON-native.
+    json.dumps(dumped)
+    assert dumped["args_schema"].startswith("<class ")
+    assert "write_file" in dumped["func"]
+    json.loads(write_file.model_dump_json())
+
+    # Python-mode dumps still hand out the live objects.
+    native = write_file.model_dump()
+    assert callable(native["func"])
+    assert isinstance(native["args_schema"], type)
+
+
+def test_structured_tool_json_dump_respects_options() -> None:
+    """The field serializers compose with the usual `model_dump` options."""
+
+    @tool
+    def write_file(file_path: str, content: str) -> str:
+        """Write content to the given path."""
+        return "ok"
+
+    assert "description" not in write_file.model_dump(
+        mode="json", exclude={"description"}
+    )
+    assert set(write_file.model_dump(mode="json", include={"name", "func"})) == {
+        "name",
+        "func",
+    }
+    # `coroutine` is None here, so `exclude_none` must still drop it.
+    assert "coroutine" not in write_file.model_dump(mode="json", exclude_none=True)
+
+
+def test_structured_tool_json_dump_keeps_dict_args_schema() -> None:
+    """A dict schema is already JSON-native and must be passed through as-is."""
+    schema = {"type": "object", "properties": {"a": {"type": "string"}}}
+    dict_tool = StructuredTool(
+        name="d",
+        description="d",
+        func=lambda **kwargs: "x",
+        args_schema=schema,
+    )
+    assert dict_tool.model_dump(mode="json")["args_schema"] == schema
+
+
+def test_structured_tool_subclass_can_override_json_serializers() -> None:
+    """The JSON fallbacks must not occupy the fields' single serializer slot.
+
+    A subclass declaring its own `@field_serializer` for the same fields used to
+    fail at class creation with `PydanticUserError: Multiple field serializer
+    functions were defined`.
+    """
+
+    class MyTool(StructuredTool):
+        @field_serializer("func", when_used="json-unless-none")
+        def _my_func_repr(self, func: Any) -> str:
+            return "custom-func"
+
+        @field_serializer("args_schema", when_used="json-unless-none")
+        def _my_schema_repr(self, args_schema: Any) -> Any:
+            return {"custom": "schema"}
+
+    my_tool = MyTool.from_function(
+        func=lambda file_path, content: "ok", name="w", description="d"
+    )
+    dumped = my_tool.model_dump(mode="json")
+    assert dumped["func"] == "custom-func"
+    assert dumped["args_schema"] == {"custom": "schema"}
