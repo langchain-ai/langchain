@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from json import JSONDecodeError
 from typing import Any, Literal, TypeAlias, cast
 from urllib.parse import urlparse
 
 import openai
 from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -342,20 +343,33 @@ class ChatDeepSeek(BaseChatOpenAI):
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-        for message in payload["messages"]:
-            if message["role"] == "tool" and isinstance(message["content"], list):
-                message["content"] = json.dumps(message["content"])
-            elif message["role"] == "assistant" and isinstance(
-                message["content"], list
-            ):
-                # DeepSeek API expects assistant content to be a string, not a list.
-                # Extract text blocks and join them, or use empty string if none exist.
-                text_parts = [
-                    block.get("text", "")
-                    for block in message["content"]
-                    if isinstance(block, dict) and block.get("type") == "text"
-                ]
-                message["content"] = "".join(text_parts) if text_parts else ""
+        if "messages" in payload:
+            messages = self._convert_input(input_).to_messages()
+            for message, msg_obj in zip(payload["messages"], messages, strict=False):
+                if message["role"] == "tool" and isinstance(message["content"], list):
+                    message["content"] = json.dumps(message["content"])
+                elif message["role"] == "assistant":
+                    if isinstance(message["content"], list):
+                        # DeepSeek API expects assistant content to be a string,
+                        # not a list. Extract text blocks and join them, or
+                        # use empty string if none exist.
+                        text_parts = [
+                            block.get("text", "")
+                            for block in message["content"]
+                            if isinstance(block, dict) and block.get("type") == "text"
+                        ]
+                        message["content"] = "".join(text_parts) if text_parts else ""
+
+                    if (
+                        isinstance(msg_obj, AIMessage)
+                        and (
+                            reasoning_content := msg_obj.additional_kwargs.get(
+                                "reasoning_content"
+                            )
+                        )
+                        is not None
+                    ):
+                        message["reasoning_content"] = reasoning_content
 
         # Azure-hosted DeepSeek does not support the dict/object form of
         # tool_choice (e.g. {"type": "function", "function": {"name": "..."}}).
@@ -453,12 +467,55 @@ class ChatDeepSeek(BaseChatOpenAI):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         try:
-            yield from super()._stream(
-                messages,
-                stop=stop,
-                run_manager=run_manager,
-                **kwargs,
+            if self._use_responses_api({**kwargs, **self.model_kwargs}):
+                yield from super()._stream_responses(
+                    messages,
+                    stop=stop,
+                    run_manager=run_manager,
+                    **kwargs,
+                )
+            else:
+                yield from super()._stream(
+                    messages,
+                    stop=stop,
+                    run_manager=run_manager,
+                    **kwargs,
+                )
+        except JSONDecodeError as e:
+            msg = (
+                "DeepSeek API returned an invalid response. "
+                "Please check the API status and try again."
             )
+            raise JSONDecodeError(
+                msg,
+                e.doc,
+                e.pos,
+            ) from e
+
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        try:
+            if self._use_responses_api({**kwargs, **self.model_kwargs}):
+                async for chunk in super()._astream_responses(
+                    messages,
+                    stop=stop,
+                    run_manager=run_manager,
+                    **kwargs,
+                ):
+                    yield chunk
+            else:
+                async for chunk in super()._astream(
+                    messages,
+                    stop=stop,
+                    run_manager=run_manager,
+                    **kwargs,
+                ):
+                    yield chunk
         except JSONDecodeError as e:
             msg = (
                 "DeepSeek API returned an invalid response. "

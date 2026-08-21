@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from typing import Any, Literal
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types import CompletionUsage
@@ -647,3 +647,60 @@ def test_metadata_versions() -> None:
     assert "langchain-core" in versions
     assert "langchain-deepseek" in versions
     assert "langchain-openai" in versions
+
+
+def test_get_request_payload_with_responses_api() -> None:
+    """Test that _get_request_payload works with Responses API (no KeyError)."""
+    chat_model = ChatDeepSeek(
+        model="deepseek-chat",
+        api_key=SecretStr("test_key"),
+        use_responses_api=True,
+    )
+    payload = chat_model._get_request_payload([HumanMessage(content="Hello")])
+    assert "messages" not in payload
+    assert "input" in payload
+
+
+def test_get_request_payload_preserves_reasoning_content() -> None:
+    """Test that reasoning_content is preserved in assistant message payload."""
+    chat_model = ChatDeepSeek(
+        model="deepseek-chat",
+        api_key=SecretStr("test_key"),
+    )
+    messages = [
+        AIMessage(
+            content="Reasoning response",
+            additional_kwargs={"reasoning_content": "Detailed thinking process"},
+        )
+    ]
+    payload = chat_model._get_request_payload(messages)
+    assert payload["messages"][0]["reasoning_content"] == "Detailed thinking process"
+
+
+async def test_stream_and_astream_routing_responses_api() -> None:
+    """Test that stream and astream route correctly to Responses API methods."""
+    chat_model = ChatDeepSeek(
+        model="deepseek-chat",
+        api_key=SecretStr("test_key"),
+        use_responses_api=True,
+    )
+
+    with patch(
+        "langchain_openai.chat_models.base.BaseChatOpenAI._stream_responses",
+        return_value=iter([]),
+    ) as mock_stream:
+        list(chat_model._stream([]))
+        mock_stream.assert_called_once()
+
+    async def mock_astream_impl(*_args: Any, **_kwargs: Any) -> Any:
+        # async generator
+        if False:
+            yield
+
+    with patch(
+        "langchain_openai.chat_models.base.BaseChatOpenAI._astream_responses",
+        return_value=mock_astream_impl(),
+    ) as mock_astream:
+        async for _ in chat_model._astream([]):
+            pass
+        mock_astream.assert_called_once()
