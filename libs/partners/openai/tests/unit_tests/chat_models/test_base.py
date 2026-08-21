@@ -737,7 +737,7 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
 
 
 class _GatewayMetadataTracer(BaseTracer):
-    """Captures gateway metadata promoted onto completed LLM runs."""
+    """Captures gateway metadata promoted onto completed or errored LLM runs."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -746,10 +746,16 @@ class _GatewayMetadataTracer(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         """No-op; runs are inspected as they complete."""
 
-    def _on_llm_end(self, run: Run) -> None:
+    def _capture_gateway_metadata(self, run: Run) -> None:
         metadata = run.extra.get("metadata", {})
         if "ls_gateway_info" in metadata:
             self.gateway_metadata = metadata["ls_gateway_info"]
+
+    def _on_llm_end(self, run: Run) -> None:
+        self._capture_gateway_metadata(run)
+
+    def _on_llm_error(self, run: Run) -> None:
+        self._capture_gateway_metadata(run)
 
 
 _GATEWAY_METADATA_HEADERS = httpx2.Headers(
@@ -816,6 +822,35 @@ def test_openai_invoke_surfaces_gateway_metadata(
     assert tracer.gateway_metadata == {"provider": "openai"}
     # ...but is kept off the user-facing message `response_metadata`.
     assert GATEWAY_METADATA_RESPONSE_KEY not in res.response_metadata
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_openai_error_surfaces_gateway_metadata(*, use_responses_api: bool) -> None:
+    """Gateway metadata reaches the tracer when a request errors."""
+    llm = ChatOpenAI(use_responses_api=use_responses_api)
+    request = httpx2.Request("POST", "https://gateway.smith.langchain.com/openai/v1")
+    response = httpx2.Response(
+        429,
+        headers=_GATEWAY_METADATA_HEADERS,
+        request=request,
+    )
+    sdk_error = openai.RateLimitError("rate limited", response=response, body=None)
+    mock_client = MagicMock()
+    if use_responses_api:
+        mock_client.responses.with_raw_response.create.side_effect = sdk_error
+        client_attr = "root_client"
+    else:
+        mock_client.with_raw_response.create.side_effect = sdk_error
+        client_attr = "client"
+
+    tracer = _GatewayMetadataTracer()
+    with (
+        patch.object(llm, client_attr, mock_client),
+        pytest.raises(ModelRateLimitError),
+    ):
+        llm.invoke("bar", config={"callbacks": [tracer]})
+
+    assert tracer.gateway_metadata == {"provider": "openai"}
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])

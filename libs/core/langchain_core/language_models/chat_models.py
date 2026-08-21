@@ -87,7 +87,10 @@ from langchain_core.tracers._streaming import (
     _StreamingCallbackHandler,
     _V2StreamingCallbackHandler,
 )
-from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_RESPONSE_KEY,
+    _parse_gateway_metadata,
+)
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -127,8 +130,17 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
             metadata["status_code"] = response.status_code
         if hasattr(error, "request_id"):
             metadata["request_id"] = error.request_id
+        gateway_metadata = _parse_gateway_metadata(getattr(response, "headers", None))
+        generation_info = (
+            {GATEWAY_METADATA_RESPONSE_KEY: gateway_metadata}
+            if gateway_metadata is not None
+            else None
+        )
         generations = [
-            ChatGeneration(message=AIMessage(content="", response_metadata=metadata))
+            ChatGeneration(
+                message=AIMessage(content="", response_metadata=metadata),
+                generation_info=generation_info,
+            )
         ]
     else:
         generations = []
