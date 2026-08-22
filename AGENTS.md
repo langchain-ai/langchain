@@ -2,6 +2,14 @@
 
 This document provides context to understand the LangChain Python project and assist with development.
 
+<corridor>
+
+## Corridor security analysis
+
+Before generating or modifying code, create a plan and use Corridor's `analyzePlan` tool to analyze it. Apply the resulting security guidance before writing code.
+
+</corridor>
+
 ## Project architecture and context
 
 ### Monorepo structure
