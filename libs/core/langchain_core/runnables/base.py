@@ -2642,6 +2642,9 @@ class Runnable(ABC, Generic[Input, Output]):
             run_id=config.pop("run_id", None),
             defers_inputs=defers_inputs,
         )
+        # Assigned inside the try; init here so a setup failure cannot
+        # NameError in `finally` and hide the original exception.
+        iterator_: AsyncIterator[Output] | None = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             if accepts_config(transformer):
@@ -4353,18 +4356,26 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         # Yield chunks from each as they become available,
         # and start the next iteration of the generator that yielded it.
         # When all generators are exhausted, stop.
-        while tasks:
-            completed_tasks, _ = await asyncio.wait(
-                tasks, return_when=asyncio.FIRST_COMPLETED
-            )
-            for task in completed_tasks:
-                (step_name, generator) = tasks.pop(task)
-                try:
-                    yield AddableDict({step_name: task.result()})
-                    new_task = asyncio.create_task(get_next_chunk(generator))
-                    tasks[new_task] = (step_name, generator)
-                except StopAsyncIteration:
-                    pass
+        try:
+            while tasks:
+                completed_tasks, _ = await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+                for task in completed_tasks:
+                    (step_name, generator) = tasks.pop(task)
+                    try:
+                        yield AddableDict({step_name: task.result()})
+                        new_task = asyncio.create_task(get_next_chunk(generator))
+                        tasks[new_task] = (step_name, generator)
+                    except StopAsyncIteration:
+                        pass
+        finally:
+            leftover = list(tasks)
+            for task in leftover:
+                if not task.done():
+                    task.cancel()
+            if leftover:
+                await asyncio.gather(*leftover, return_exceptions=True)
 
     @override
     async def atransform(
