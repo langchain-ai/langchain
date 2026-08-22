@@ -5,6 +5,7 @@ from __future__ import annotations
 import collections
 import copy
 import inspect
+import json
 import logging
 import types
 import typing
@@ -551,9 +552,16 @@ def convert_to_openai_tool(
     !!! warning "Behavior changed in `langchain-core` 0.3.63"
 
         Added support for OpenAI's image generation built-in tool.
+
+    !!! warning "Behavior changed in `langchain-core` 1.5.2"
+
+        For `BaseTool` inputs, conversion results are now memoized per tool
+        instance (keyed by `strict`), avoiding repeated schema post-processing.
+        Each call still returns an independent dict safe to mutate. The cache is
+        cleared when `name`, `description`, `args_schema`, or `metadata` changes.
     """
     # Import locally to prevent circular import
-    from langchain_core.tools import Tool  # noqa: PLC0415
+    from langchain_core.tools import BaseTool, Tool  # noqa: PLC0415
 
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:
@@ -561,6 +569,16 @@ def convert_to_openai_tool(
         # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
         if (tool.get("type") or "").startswith("web_search_preview"):
             return tool
+
+    if isinstance(tool, BaseTool):
+        cached = tool._openai_tool_schema_memo.get(strict)  # noqa: SLF001
+        if cached is not None:
+            # Return a copy since callers (e.g. `ChatOpenAI.bind_tools`) mutate the
+            # result in place. A JSON round-trip is faster than `copy.deepcopy`
+            # for a plain JSON-safe dict like this one (it always is, since it's
+            # built to be sent to the OpenAI API as JSON).
+            return cast("dict[str, Any]", json.loads(json.dumps(cached)))
+
     if isinstance(tool, Tool) and (tool.metadata or {}).get("type") == "custom_tool":
         oai_tool = {
             "type": "custom",
@@ -569,9 +587,16 @@ def convert_to_openai_tool(
         }
         if tool.metadata is not None and "format" in tool.metadata:
             oai_tool["format"] = tool.metadata["format"]
-        return oai_tool
+        # `Tool` is always a `BaseTool`, so this branch always has a memo to fill.
+        tool._openai_tool_schema_memo[strict] = oai_tool  # noqa: SLF001
+        return cast("dict[str, Any]", json.loads(json.dumps(oai_tool)))
+
     oai_function = convert_to_openai_function(tool, strict=strict)
-    return {"type": "function", "function": oai_function}
+    result = {"type": "function", "function": oai_function}
+    if isinstance(tool, BaseTool):
+        tool._openai_tool_schema_memo[strict] = result  # noqa: SLF001
+        return cast("dict[str, Any]", json.loads(json.dumps(result)))
+    return result
 
 
 def convert_to_json_schema(

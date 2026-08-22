@@ -29,7 +29,7 @@ from langchain_core.messages.utils import (
     merge_message_runs,
     trim_messages,
 )
-from langchain_core.tools import BaseTool, StructuredTool, tool
+from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 
 
 @pytest.mark.parametrize("msg_cls", [HumanMessage, AIMessage, SystemMessage])
@@ -3001,6 +3001,41 @@ def test_count_tokens_approximately_basetool_dict_args_schema() -> None:
     base_count = count_tokens_approximately(messages)
     count_with_tool = count_tokens_approximately(messages, tools=[weather_tool])
     assert count_with_tool > base_count
+
+
+def test_count_tokens_approximately_custom_tool_format_counted() -> None:
+    """OpenAI custom tools (bypass `tool_call_schema` entirely) must count `format`.
+
+    This is the `convert_to_openai_tool` custom-tool branch -- previously a
+    known gap when this function built its own `{name, description,
+    parameters}` dict by hand instead of calling `convert_to_openai_tool`.
+    """
+    messages = [HumanMessage(content="Hello")]
+    base_count = count_tokens_approximately(messages)
+
+    small_grammar_tool = Tool(
+        name="custom_grammar_tool",
+        description="A custom-format tool.",
+        func=lambda x: x,
+        metadata={"type": "custom_tool", "format": {"type": "grammar", "syntax": "x"}},
+    )
+    small_count = count_tokens_approximately(messages, tools=[small_grammar_tool])
+    assert small_count > base_count
+
+    large_grammar_tool = Tool(
+        name="custom_grammar_tool",
+        description="A custom-format tool.",
+        func=lambda x: x,
+        metadata={
+            "type": "custom_tool",
+            "format": {"type": "grammar", "syntax": "x" * 500},
+        },
+    )
+    large_count = count_tokens_approximately(messages, tools=[large_grammar_tool])
+
+    # If `format` were dropped, small_count and large_count would be identical
+    # despite a 500-character difference in grammar size.
+    assert large_count > small_count
 
 
 # ---------------------------------------------------------------------------
