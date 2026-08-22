@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, NoReturn, cast
+from typing import Any, Literal, NoReturn, TypeAlias, cast
 
 import groq
 from langchain_core.callbacks import (
@@ -75,6 +76,8 @@ from typing_extensions import Self
 from langchain_groq._compat import _convert_from_v1_to_groq
 from langchain_groq._version import __version__
 from langchain_groq.data._profiles import _PROFILES
+
+logger = logging.getLogger(__name__)
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 _STRICT_STRUCTURED_OUTPUT_MODELS = frozenset(
@@ -869,24 +872,15 @@ class ChatGroq(BaseChatModel):
             if output is None:
                 # Happens in streaming
                 continue
-            token_usage = output["token_usage"]
+            token_usage = output.get("token_usage")
             if token_usage is not None:
                 for k, v in token_usage.items():
-                    if k in overall_token_usage and v is not None:
-                        # Handle nested dictionaries
-                        if isinstance(v, dict):
-                            if k not in overall_token_usage:
-                                overall_token_usage[k] = {}
-                            for nested_k, nested_v in v.items():
-                                if (
-                                    nested_k in overall_token_usage[k]
-                                    and nested_v is not None
-                                ):
-                                    overall_token_usage[k][nested_k] += nested_v
-                                else:
-                                    overall_token_usage[k][nested_k] = nested_v
-                        else:
-                            overall_token_usage[k] += v
+                    if v is None:
+                        continue
+                    if k in overall_token_usage:
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
@@ -1330,6 +1324,62 @@ class ChatGroq(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
+
+TokenUsageTree: TypeAlias = "int | float | dict[str, TokenUsageTree]"
+"""Raw provider token usage: a tree of numeric leaves and nested `dict` nodes
+(e.g. `cached_tokens` inside `input_tokens_details`). Leaves include Groq's
+float timings such as `queue_time` and `prompt_time`.
+
+Modeled as a recursive alias so the merge helper's signature carries the shape
+rather than leaving it to `Any`.
+"""
+
+
+def _update_token_usage(
+    overall_token_usage: TokenUsageTree, new_usage: TokenUsageTree
+) -> TokenUsageTree:
+    """Recursively merge raw provider token usage across generations.
+
+    Token usage is a tree of numeric leaves (summed; Groq includes float
+    timings such as `queue_time`) and `dict` nodes such as
+    `input_tokens_details` (merged key-by-key, skipping `None` values).
+
+    A type mismatch between the accumulator and the incoming value (e.g. a
+    number on one side and a `dict` on the other) indicates malformed provider
+    data and is raised rather than silently coerced. An entirely unexpected
+    leaf type (neither numeric nor `dict`) is logged and passed through, so a
+    telemetry anomaly degrades gracefully instead of failing the response.
+    """
+    if isinstance(new_usage, (int, float)):
+        if not isinstance(overall_token_usage, (int, float)):
+            msg = (
+                "Got different types for token usage: "
+                f"{new_usage!r} ({type(new_usage).__name__}) and "
+                f"{overall_token_usage!r} ({type(overall_token_usage).__name__})"
+            )
+            raise TypeError(msg)
+        return overall_token_usage + new_usage
+    if isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            msg = (
+                "Got different types for token usage: "
+                f"{new_usage!r} ({type(new_usage).__name__}) and "
+                f"{overall_token_usage!r} ({type(overall_token_usage).__name__})"
+            )
+            raise TypeError(msg)
+        updated_token_usage = dict(overall_token_usage)
+        for key, value in new_usage.items():
+            if value is not None:
+                # Seed a first-seen key with an empty node of the same kind so a
+                # nested `dict` value merges rather than colliding with a number.
+                default: TokenUsageTree = {} if isinstance(value, dict) else 0
+                updated_token_usage[key] = _update_token_usage(
+                    overall_token_usage.get(key, default), value
+                )
+        return updated_token_usage
+    logger.warning("Unexpected type for token usage: %s", type(new_usage).__name__)
+    return new_usage
 
 
 def _is_pydantic_class(obj: Any) -> bool:
