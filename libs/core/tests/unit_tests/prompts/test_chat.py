@@ -2004,3 +2004,41 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
     )
     result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
     assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]
+
+
+async def test_multimodal_dict_prompt_template_aformat() -> None:
+    """Test that async multimodal formatting calls aformat on DictPromptTemplate."""
+    from langchain_core.prompts.dict import DictPromptTemplate
+
+    calls = []
+    _format = DictPromptTemplate.format
+    _aformat = DictPromptTemplate.aformat
+
+    def traced_format(self: Any, **kwargs: Any) -> Any:
+        calls.append("format")
+        return _format(self, **kwargs)
+
+    async def traced_aformat(self: Any, **kwargs: Any) -> Any:
+        calls.append("aformat")
+        return _format(self, **kwargs)
+
+    DictPromptTemplate.format = traced_format  # type: ignore[assignment]
+    DictPromptTemplate.aformat = traced_aformat  # type: ignore[assignment]
+
+    try:
+        tmpl = ChatPromptTemplate.from_messages(
+            [("human", [{"type": "text", "text": "{q}"}, {"custom_field": "{q}"}])]
+        )
+
+        calls.clear()
+        tmpl.format_messages(q="hi")
+        assert calls == ["format"]
+
+        calls.clear()
+        await tmpl.aformat_messages(q="hi")
+        assert calls == ["aformat"]
+    finally:
+        DictPromptTemplate.format = _format  # type: ignore[assignment]
+        DictPromptTemplate.aformat = _aformat  # type: ignore[assignment]
+
+
