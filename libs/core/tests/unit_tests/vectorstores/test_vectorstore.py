@@ -98,6 +98,24 @@ class CustomAddDocumentsVectorstore(VectorStore):
     def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         return [self.store[id_] for id_ in ids if id_ in self.store]
 
+    @override
+    async def aadd_documents(
+        self,
+        documents: list[Document],
+        *,
+        ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        ids_ = []
+        ids_iter = iter(ids or [])
+        for document in documents:
+            id_ = next(ids_iter) if ids else document.id or str(uuid.uuid4())
+            self.store[id_] = Document(
+                id=id_, page_content=document.page_content, metadata=document.metadata
+            )
+            ids_.append(id_)
+        return ids_
+
     @classmethod
     @override
     def from_texts(
@@ -234,6 +252,56 @@ async def test_default_aadd_texts(vs_class: type[VectorStore]) -> None:
         Document(id=ids_2[0], page_content="foo", metadata={"foo": "bar"}),
         Document(id=ids_2[1], page_content="bar", metadata={"foo": "bar"}),
     ]
+
+
+@pytest.mark.parametrize(
+    "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
+)
+def test_default_add_texts_with_generator(vs_class: type[VectorStore]) -> None:
+    """Test that add_texts consumes a generator input exactly once."""
+    store = vs_class()
+    metadatas = [{"i": 0}, {"i": 1}, {"i": 2}]
+    ids_ = store.add_texts((t for t in ["foo", "bar", "baz"]), metadatas=metadatas)
+    assert len(ids_) == 3
+    assert store.get_by_ids(ids_) == [
+        Document(id=ids_[0], page_content="foo", metadata={"i": 0}),
+        Document(id=ids_[1], page_content="bar", metadata={"i": 1}),
+        Document(id=ids_[2], page_content="baz", metadata={"i": 2}),
+    ]
+
+
+@pytest.mark.parametrize(
+    "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
+)
+async def test_default_aadd_texts_with_generator(
+    vs_class: type[VectorStore],
+) -> None:
+    """Test that aadd_texts consumes a generator input exactly once."""
+    store = vs_class()
+    metadatas = [{"i": 0}, {"i": 1}, {"i": 2}]
+    ids_ = await store.aadd_texts(
+        (t for t in ["foo", "bar", "baz"]), metadatas=metadatas
+    )
+    assert len(ids_) == 3
+    assert await store.aget_by_ids(ids_) == [
+        Document(id=ids_[0], page_content="foo", metadata={"i": 0}),
+        Document(id=ids_[1], page_content="bar", metadata={"i": 1}),
+        Document(id=ids_[2], page_content="baz", metadata={"i": 2}),
+    ]
+
+
+def test_default_add_texts_generator_metadata_mismatch() -> None:
+    """Test that metadata length is validated for generator input."""
+    store = CustomAddDocumentsVectorstore()
+    with pytest.raises(ValueError, match="number of metadatas must match"):
+        store.add_texts((t for t in ["foo", "bar"]), metadatas=[{"i": 0}])
+
+
+async def test_default_aadd_texts_generator_metadata_mismatch() -> None:
+    """Test that metadata length is validated for generator input."""
+    store = CustomAddDocumentsVectorstore()
+    with pytest.raises(ValueError, match="number of metadatas must match"):
+        await store.aadd_texts((t for t in ["foo", "bar"]), metadatas=[{"i": 0}])
 
 
 @pytest.mark.parametrize(
