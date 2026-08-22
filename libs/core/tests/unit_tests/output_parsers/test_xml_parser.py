@@ -147,6 +147,31 @@ MALICIOUS_XML = """<?xml version="1.0"?>
 <lolz>&lol9;</lolz>"""
 
 
+MIXED_CONTENT = "<result>Summary<detail>info</detail></result>"
+
+MIXED_CONTENT_EXPECTED = {
+    "result": [
+        {"_text": "Summary"},
+        {"detail": "info"},
+    ],
+}
+
+
+@pytest.mark.parametrize("parser_impl", ["xml", "defusedxml"])
+def test_xml_output_parser_mixed_content(parser_impl: str) -> None:
+    """Regression test for #36744.
+
+    An element that has both non-whitespace text *and* child elements
+    (mixed content) must not silently drop the child elements -- only the
+    element's own text used to short-circuit `_root_to_dict` and discard
+    everything else.
+    """
+    if parser_impl == "defusedxml" and importlib.util.find_spec("defusedxml") is None:
+        pytest.skip("defusedxml is not installed")
+    xml_parser = XMLOutputParser(parser=parser_impl)
+    assert xml_parser.parse(MIXED_CONTENT) == MIXED_CONTENT_EXPECTED
+
+
 async def tests_billion_laughs_attack() -> None:
     # Testing with standard XML parser since it's safe to use in
     # newer versions of Python
