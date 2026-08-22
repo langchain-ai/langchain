@@ -8,10 +8,10 @@ If loading a file fails, the script prints the problematic filename and the deta
 error traceback.
 """
 
-import random
-import string
-import sys
-import traceback
+# import random
+# import string
+# import sys
+# import traceback
 from importlib.machinery import SourceFileLoader
 
 if __name__ == "__main__":
