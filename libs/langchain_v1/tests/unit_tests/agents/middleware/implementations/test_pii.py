@@ -148,6 +148,34 @@ class TestIPDetection:
         assert matches[0]["type"] == "ip"
         assert matches[0]["value"] == "192.168.1.1"
 
+    def test_detect_valid_ipv6(self) -> None:
+        content = "Server IP: 2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["type"] == "ip"
+        assert matches[0]["value"] == "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+
+    def test_detect_compressed_ipv6(self) -> None:
+        content = "Connect to fe80::1 or ::1"
+        matches = detect_ip(content)
+
+        assert len(matches) == 2
+        assert matches[0]["value"] == "fe80::1"
+        assert matches[1]["value"] == "::1"
+
+    def test_detect_ipv4_mapped_ipv6(self) -> None:
+        content = "Address ::ffff:192.168.1.1"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "::ffff:192.168.1.1"
+
+    def test_scope_resolution_operator_not_detected(self) -> None:
+        content = "C++: std::collections, Rust: std::vector"
+        matches = detect_ip(content)
+        assert len(matches) == 0
+
     def test_detect_multiple_ips(self) -> None:
         content = "Connect to 10.0.0.1 or 8.8.8.8"
         matches = detect_ip(content)
@@ -330,6 +358,17 @@ class TestMaskStrategy:
         content = result["messages"][0].content
         assert "*.*.*.100" in content
         assert "192.168.1.100" not in content
+
+    def test_mask_ipv6(self) -> None:
+        middleware = PIIMiddleware("ip", strategy="mask")
+        state = AgentState[Any](messages=[HumanMessage("IP: 2001:db8::1")])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert "****" in content
+        assert "2001:db8::1" not in content
 
 
 class TestHashStrategy:

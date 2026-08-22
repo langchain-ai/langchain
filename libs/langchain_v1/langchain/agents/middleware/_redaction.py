@@ -106,8 +106,10 @@ def detect_ip(content: str) -> list[PIIMatch]:
     """
     matches: list[PIIMatch] = []
     ipv4_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
+    ipv6_pattern = r"(?<!\w)(?:[0-9a-fA-F]*:[0-9a-fA-F.:]*){2,}(?!\w)"
+    pattern = re.compile(f"(?:{ipv6_pattern}|{ipv4_pattern})")
 
-    for match in re.finditer(ipv4_pattern, content):
+    for match in pattern.finditer(content):
         ip_candidate = match.group()
         try:
             ipaddress.ip_address(ip_candidate)
