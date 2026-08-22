@@ -1833,7 +1833,7 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         self._ensure_sync_client_available()
-        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        payload = self._get_request_payload(messages, stop=stop, stream=False, **kwargs)
         generation_info = None
         raw_response = None
         try:
@@ -2129,7 +2129,7 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        payload = self._get_request_payload(messages, stop=stop, stream=False, **kwargs)
         generation_info = {}
         raw_response = None
         try:
