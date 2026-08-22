@@ -525,11 +525,27 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
 
 
 def test_graph_mermaid_to_safe_id() -> None:
-    """Test that node labels are correctly preprocessed for draw_mermaid."""
-    assert _to_safe_id("foo") == "foo"
-    assert _to_safe_id("foo-bar") == "foo-bar"
-    assert _to_safe_id("foo_1") == "foo_1"
-    assert _to_safe_id("#foo*&!") == "\\23foo\\2a\\26\\21"
+    """Test that _to_safe_id produces Mermaid-valid, unique IDs."""
+    import hashlib as _hl
+    allowed = string.ascii_letters + string.digits + "_-"
+
+    # Basic: alphanumeric preserved, unique suffix appended
+    result_foo = _to_safe_id("foo")
+    result_bar = _to_safe_id("bar")
+    assert result_foo != result_bar, "Different inputs must produce different IDs"
+    assert result_foo.startswith("foo_"), "Alphanumeric prefix preserved"
+
+    # All characters in result must be Mermaid-valid (no backslashes)
+    for r in [result_foo, result_bar]:
+        assert "\\" not in r, f"Backslash found in Mermaid ID: {r}"
+        assert all(c in allowed for c in r), f"Invalid chars in Mermaid ID: {r}"
+
+    # Bracket regression test for #39816
+    bracket_result = _to_safe_id("PIIMiddleware[email].before_model")
+    assert "\\" not in bracket_result, "Backslash in bracket ID"
+    assert all(c in allowed for c in bracket_result), "Invalid chars in bracket ID"
+    assert "PIIMiddleware" in bracket_result, "Original prefix should appear"
+
 
 
 def test_graph_mermaid_duplicate_nodes(snapshot: SnapshotAssertion) -> None:
