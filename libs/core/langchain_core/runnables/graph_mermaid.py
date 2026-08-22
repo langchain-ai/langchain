@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import hashlib
 import random
 import re
 import string
@@ -256,14 +257,17 @@ def _to_safe_id(label: str) -> str:
     """Convert a string into a Mermaid-compatible node id.
 
     Keep [a-zA-Z0-9_-] characters unchanged.
-    Map every other character -> backslash + lowercase hex codepoint.
+    Replace all other characters with underscores, then append a short
+    deterministic hash suffix to guarantee uniqueness even when different
+    labels would otherwise sanitize to the same string.
 
-    Result is guaranteed to be unique and Mermaid-compatible,
-    so nodes with special characters always render correctly.
+    Result is always valid Mermaid syntax (no backslashes), so nodes
+    with special characters like brackets render correctly.
     """
     allowed = string.ascii_letters + string.digits + "_-"
-    out = [ch if ch in allowed else "\\" + format(ord(ch), "x") for ch in label]
-    return "".join(out)
+    sanitized = "".join(ch if ch in allowed else "_" for ch in label)
+    suffix = hashlib.sha256(label.encode()).hexdigest()[:6]
+    return f"{sanitized}_{suffix}"
 
 
 def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:
