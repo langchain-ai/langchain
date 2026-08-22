@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import re
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from operator import itemgetter
@@ -320,6 +321,41 @@ def _is_huggingface_endpoint(llm: Any) -> bool:
 
 def _is_huggingface_pipeline(llm: Any) -> bool:
     return isinstance(llm, HuggingFacePipeline)
+
+
+def _template_supports_tools(tokenizer: Any) -> bool:
+    """Check whether a tokenizer's chat template accepts a ``tools`` variable."""
+    template = getattr(tokenizer, "chat_template", None)
+    if isinstance(template, Mapping):
+        template = "\n".join(str(t) for t in template.values())
+    elif not isinstance(template, str):
+        return False
+    try:
+        from jinja2 import Environment  # type: ignore[import-not-found]
+        from jinja2.meta import (  # type: ignore[import-not-found]
+            find_undeclared_variables,
+        )
+
+        variables = find_undeclared_variables(Environment().parse(template))
+        return "tools" in variables
+    except ImportError:
+        # transformers normally ships Jinja; fall back to a source check.
+        return re.search(r"\btools\b", template) is not None
+
+
+_TOOLS_PROMPT_HEADER = (
+    "In this environment you have access to a set of tools you can use to "
+    "answer the user's question.\n\n"
+    'You can invoke functions by writing a JSON object with the keys "name" '
+    'and "arguments" inside <tool_call> </tool_call> XML tags as part of '
+    "your reply.\n\nAvailable tools:\n"
+)
+
+
+def _format_tools_for_system_message(tools: Sequence[Any]) -> str:
+    """Render tool schemas into a plain-text block for the system message."""
+    schemas = "\n".join(json.dumps(tool, ensure_ascii=False) for tool in tools)
+    return f"{_TOOLS_PROMPT_HEADER}{schemas}\n\n"
 
 
 class ChatHuggingFace(BaseChatModel):
@@ -754,7 +790,7 @@ class ChatHuggingFace(BaseChatModel):
             }
             answer = self.llm.client.chat_completion(messages=message_dicts, **params)
             return self._create_chat_result(answer)
-        llm_input = self._to_chat_prompt(messages)
+        llm_input = self._to_chat_prompt(messages, tools=kwargs.get("tools"))
 
         if should_stream:
             stream_iter = self.llm._stream(
@@ -799,7 +835,7 @@ class ChatHuggingFace(BaseChatModel):
         if _is_huggingface_pipeline(self.llm):
             msg = "async generation is not supported with HuggingFacePipeline"
             raise NotImplementedError(msg)
-        llm_input = self._to_chat_prompt(messages)
+        llm_input = self._to_chat_prompt(messages, tools=kwargs.get("tools"))
         llm_result = await self.llm._agenerate(
             prompts=[llm_input], stop=stop, run_manager=run_manager, **kwargs
         )
@@ -882,7 +918,7 @@ class ChatHuggingFace(BaseChatModel):
                     )
                 yield generation_chunk
         else:
-            llm_input = self._to_chat_prompt(messages)
+            llm_input = self._to_chat_prompt(messages, tools=kwargs.get("tools"))
             stream_iter = self.llm._stream(
                 llm_input, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -952,8 +988,15 @@ class ChatHuggingFace(BaseChatModel):
     def _to_chat_prompt(
         self,
         messages: list[BaseMessage],
+        tools: Sequence[Any] | None = None,
     ) -> str:
-        """Convert a list of messages into a prompt format expected by wrapped LLM."""
+        """Convert a list of messages into a prompt format expected by wrapped LLM.
+
+        When tools are bound and the tokenizer's chat template supports a
+        ``tools`` variable, they are passed to ``apply_chat_template``
+        natively. Otherwise they are injected into the first system message
+        (or a new one) as a fallback so local models still see the schemas.
+        """
         if not messages:
             msg = "At least one HumanMessage must be provided!"
             raise ValueError(msg)
@@ -964,8 +1007,38 @@ class ChatHuggingFace(BaseChatModel):
 
         messages_dicts = [self._to_chatml_format(m) for m in messages]
 
+        if not tools:
+            return self.tokenizer.apply_chat_template(
+                messages_dicts, tokenize=False, add_generation_prompt=True
+            )
+
+        if _template_supports_tools(self.tokenizer):
+            return self.tokenizer.apply_chat_template(
+                messages_dicts,
+                tokenize=False,
+                add_generation_prompt=True,
+                tools=list(tools),
+            )
+
+        flattened_tools = [
+            tool.get("function", tool) if isinstance(tool, Mapping) else tool
+            for tool in tools
+        ]
+        tool_block = _format_tools_for_system_message(flattened_tools)
+        injected = False
+        rendered_messages = []
+        for message_dict in messages_dicts:
+            if not injected and message_dict["role"] == "system":
+                message_dict = {
+                    **message_dict,
+                    "content": f"{tool_block}{message_dict['content']}",
+                }
+                injected = True
+            rendered_messages.append(message_dict)
+        if not injected:
+            rendered_messages.insert(0, {"role": "system", "content": tool_block})
         return self.tokenizer.apply_chat_template(
-            messages_dicts, tokenize=False, add_generation_prompt=True
+            rendered_messages, tokenize=False, add_generation_prompt=True
         )
 
     def _to_chatml_format(self, message: BaseMessage) -> dict:

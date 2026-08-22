@@ -9,14 +9,15 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatResult, Generation, LLMResult
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel, Field
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
     _convert_dict_to_message,
 )
-from langchain_huggingface.llms import HuggingFaceEndpoint
+from langchain_huggingface.llms import HuggingFaceEndpoint, HuggingFacePipeline
 
 
 @pytest.fixture
@@ -222,6 +223,129 @@ def test_bind_tools(chat_hugging_face: Any) -> None:
         _, kwargs = mock_super_bind.call_args
         assert kwargs["tools"] == tools
         assert kwargs["tool_choice"] == "auto"
+
+
+class GetWeather(BaseModel):
+    """Get the current weather in a given location."""
+
+    location: str = Field(..., description="The city name")
+
+
+class _StubTokenizer:
+    def __init__(self, chat_template: str | None) -> None:
+        self.chat_template = chat_template
+        self.calls: list[dict[str, Any]] = []
+
+    def apply_chat_template(
+        self, messages: list[dict[str, Any]], **kwargs: Any
+    ) -> str:
+        self.calls.append({"messages": messages, **kwargs})
+        return "rendered prompt"
+
+
+def _pipeline_chat_with_tokenizer(stub_tokenizer: Any) -> ChatHuggingFace:
+    pipeline_llm = Mock(spec=HuggingFacePipeline)
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.ChatHuggingFace."
+        "_resolve_model_id"
+    ):
+        return ChatHuggingFace(llm=pipeline_llm, tokenizer=stub_tokenizer)
+
+
+def test_to_chat_prompt_passes_tools_when_template_supports_them() -> None:
+    stub = _StubTokenizer(
+        "{%- for tool in tools %}{{ tool|tojson }}{%- endfor %}"
+    )
+    chat = _pipeline_chat_with_tokenizer(stub)
+    bound_tools = list(chat.bind_tools([GetWeather]).kwargs["tools"])
+    messages = [
+        SystemMessage(content="You are helpful."),
+        HumanMessage(content="What is the weather in Paris?"),
+    ]
+
+    prompt = chat._to_chat_prompt(messages, tools=bound_tools)
+
+    assert prompt == "rendered prompt"
+    assert len(stub.calls) == 1
+    assert stub.calls[0]["tools"] == bound_tools
+    assert stub.calls[0]["messages"] == [
+        {"role": "system", "content": "You are helpful."},
+        {"role": "user", "content": "What is the weather in Paris?"},
+    ]
+
+
+def test_to_chat_prompt_injects_tool_block_into_system_message() -> None:
+    stub = _StubTokenizer(
+        "{{ messages[0]['content'] }}{% for m in messages %}{% endfor %}"
+    )
+    chat = _pipeline_chat_with_tokenizer(stub)
+    bound_tools = list(chat.bind_tools([GetWeather]).kwargs["tools"])
+    messages = [
+        SystemMessage(content="You are helpful."),
+        HumanMessage(content="What is the weather in Paris?"),
+    ]
+
+    prompt = chat._to_chat_prompt(messages, tools=bound_tools)
+
+    assert prompt == "rendered prompt"
+    call_messages = stub.calls[0]["messages"]
+    assert len(call_messages) == 2
+    system_content = call_messages[0]["content"]
+    assert system_content.startswith("In this environment you have access")
+    assert '"name": "GetWeather"' in system_content
+    assert '"location"' in system_content
+    assert system_content.endswith("You are helpful.")
+    assert "tools" not in stub.calls[0]
+
+
+def test_to_chat_prompt_prepends_tool_block_without_system_message() -> None:
+    stub = _StubTokenizer("plain template without tools support")
+    chat = _pipeline_chat_with_tokenizer(stub)
+    bound_tools = list(chat.bind_tools([GetWeather]).kwargs["tools"])
+    messages = [HumanMessage(content="What is the weather in Paris?")]
+
+    chat._to_chat_prompt(messages, tools=bound_tools)
+
+    call_messages = stub.calls[0]["messages"]
+    assert len(call_messages) == 2
+    assert call_messages[0]["role"] == "system"
+    assert '"name": "GetWeather"' in call_messages[0]["content"]
+    assert call_messages[1] == {
+        "role": "user",
+        "content": "What is the weather in Paris?",
+    }
+
+
+def test_to_chat_prompt_no_tools_keeps_original_template_call(
+    chat_hugging_face: Any,
+) -> None:
+    stub = _StubTokenizer("any template")
+    chat_hugging_face.tokenizer = stub
+    messages = [HumanMessage(content="Hi")]
+
+    chat_hugging_face._to_chat_prompt(messages)
+
+    assert stub.calls == [
+        {
+            "messages": [{"role": "user", "content": "Hi"}],
+            "tokenize": False,
+            "add_generation_prompt": True,
+        }
+    ]
+
+
+def test_bound_tools_reach_local_pipeline_prompt() -> None:
+    stub = _StubTokenizer("{% for tool in tools %}{{ tool|tojson }}{% endfor %}")
+    chat = _pipeline_chat_with_tokenizer(stub)
+    chat.llm._generate.return_value = LLMResult(
+        generations=[[Generation(text="calling GetWeather")]], llm_output={}
+    )
+    bound = chat.bind_tools([GetWeather])
+
+    result = bound.invoke([HumanMessage(content="Weather in Paris?")])
+
+    assert result.content == "calling GetWeather"
+    assert stub.calls[-1]["tools"] == list(bound.kwargs["tools"])
 
 
 def test_property_inheritance_integration(chat_hugging_face: Any) -> None:
