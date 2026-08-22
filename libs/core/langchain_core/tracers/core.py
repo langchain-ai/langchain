@@ -350,12 +350,28 @@ class _TracerCore(ABC):
         return llm_run
 
     def _attach_gateway_metadata(self, run: Run, response: LLMResult) -> None:
-        """Promote LangSmith gateway metadata from the response to run metadata."""
+        """Promote LangSmith gateway metadata from the response to run metadata.
+
+        When a request is routed through the LangSmith gateway, the resolved
+        provider and model may differ from the static values captured in the
+        run's `ls_provider` / `ls_model_name` at start time. When the gateway
+        reports them, they take precedence so the trace reflects what actually
+        served the request.
+        """
         gateway_metadata = _extract_gateway_metadata(response)
         if gateway_metadata is None:
             return
         metadata = run.extra.setdefault("metadata", {})
         metadata[_GATEWAY_RUN_METADATA_KEY] = gateway_metadata
+
+        provider = gateway_metadata.get("provider")
+        if provider:
+            metadata["ls_provider"] = provider
+        # Route-based calls report the served model as `selected_model`; simple
+        # calls report it as `model`.
+        model = gateway_metadata.get("selected_model") or gateway_metadata.get("model")
+        if model:
+            metadata["ls_model_name"] = model
 
     def _errored_llm_run(
         self, error: BaseException, run_id: UUID, response: LLMResult | None = None
