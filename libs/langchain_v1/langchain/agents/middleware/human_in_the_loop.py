@@ -327,7 +327,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             return (
                 ToolCall(
                     type="tool_call",
-                    name=edited_action["name"],
+                    name=edited_action.get("name") or tool_call["name"],
                     args=edited_action["args"],
                     id=tool_call["id"],
                 ),
@@ -482,6 +482,30 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
 
         # Update the AI message to only include approved tool calls
         last_ai_msg.tool_calls = revised_tool_calls
+
+        # If any tool calls were edited, we need to sync additional_kwargs if they exist
+        # to avoid confusing the LLM with conflicting information in the history.
+        if (
+            "tool_calls" in last_ai_msg.additional_kwargs
+            and isinstance(last_ai_msg.additional_kwargs["tool_calls"], list)
+        ):
+            new_raw_tool_calls = []
+            revised_by_id = {tc["id"]: tc for tc in revised_tool_calls}
+            
+            for raw_tc in last_ai_msg.additional_kwargs["tool_calls"]:
+                tc_id = raw_tc.get("id")
+                if tc_id in revised_by_id:
+                    revised = revised_by_id[tc_id]
+                    # Update the raw tool call with edited args
+                    import json
+                    new_raw_tc = raw_tc.copy()
+                    if "function" in new_raw_tc:
+                        new_raw_tc["function"] = new_raw_tc["function"].copy()
+                        new_raw_tc["function"]["arguments"] = json.dumps(revised["args"])
+                        new_raw_tc["function"]["name"] = revised["name"]
+                    new_raw_tool_calls.append(new_raw_tc)
+            
+            last_ai_msg.additional_kwargs["tool_calls"] = new_raw_tool_calls
 
         return {"messages": [last_ai_msg, *artificial_tool_messages]}
 
