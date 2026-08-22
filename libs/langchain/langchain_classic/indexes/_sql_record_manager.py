@@ -90,7 +90,7 @@ class SQLRecordManager(RecordManager):
         namespace: str,
         *,
         engine: Engine | AsyncEngine | None = None,
-        db_url: None | str | URL = None,
+        db_url: str | URL | None = None,
         engine_kwargs: dict[str, Any] | None = None,
         async_mode: bool = False,
     ) -> None:

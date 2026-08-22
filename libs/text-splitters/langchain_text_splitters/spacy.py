@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from importlib import import_module
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
@@ -55,13 +54,13 @@ def _make_spacy_pipeline_for_splitting(
     pipeline: str, *, max_length: int = 1_000_000
 ) -> Language:
     try:
-        spacy = cast("Any", import_module("spacy"))
-        english_cls = cast("Any", import_module("spacy.lang.en")).English
+        import spacy  # noqa: PLC0415
+        from spacy.lang.en import English  # noqa: PLC0415
     except ImportError as err:
         msg = "Spacy is not installed, please install it with `pip install spacy`."
         raise ImportError(msg) from err
     if pipeline == "sentencizer":
-        sentencizer: Language = english_cls()
+        sentencizer = English()
         sentencizer.add_pipe("sentencizer")
     else:
         sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])

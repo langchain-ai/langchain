@@ -40,10 +40,10 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 lint = [
-    "ruff>=0.15.0,<0.17.0",
+    "ruff>=0.16.0,<0.17.0",
 ]
 typing = [
-    "ty>=0.0.56,<0.1.0",
+    "ty==0.0.74",
     "lxml-stubs>=0.5.1,<1.0.0",
     "types-requests>=2.31.0.20240218,<3.0.0.0",
     "spacy>=3.8.13,<4.0.0",
