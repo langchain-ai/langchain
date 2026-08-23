@@ -472,6 +472,25 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        if language == Language.PERL:
+            return [
+                "\npackage ",
+                "\nsub ",
+                "\nuse ",
+                "\nrequire ",
+                "\ndo ",
+                "\neval ",
+                "\nif ",
+                "\nunless ",
+                "\nwhile ",
+                "\nuntil ",
+                "\nfor ",
+                "\nforeach ",
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         if language == Language.SCALA:
             return [
                 # Split along class definitions

@@ -1289,6 +1289,13 @@ fn main() {
     assert chunks == ["fn main() {", 'println!("Hello', ",", 'World!");', "}"]
 
 
+def test_perl_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.PERL, chunk_size=CHUNK_SIZE, chunk_overlap=0
+    )
+    assert splitter.split_text("package Demo;\nsub greet {\n    return 1;\n}")
+
+
 def test_r_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.R, chunk_size=CHUNK_SIZE, chunk_overlap=0

@@ -69,6 +69,19 @@ def test_update_with_maxsize() -> None:
     assert cache.lookup(prompt3, llm_string3) == generations3
 
 
+def test_update_existing_key_does_not_evict_at_maxsize() -> None:
+    cache = InMemoryCache(maxsize=2)
+    prompt1, llm_string1, generations1 = cache_item(1)
+    prompt2, llm_string2, generations2 = cache_item(2)
+    cache.update(prompt1, llm_string1, generations1)
+    cache.update(prompt2, llm_string2, generations2)
+
+    cache.update(prompt2, llm_string2, [Generation(text="updated")])
+
+    assert cache.lookup(prompt1, llm_string1) == generations1
+    assert cache.lookup(prompt2, llm_string2) == [Generation(text="updated")]
+
+
 def test_clear(cache: InMemoryCache) -> None:
     """Test the clear method of InMemoryCache."""
     prompt, llm_string, generations = cache_item(1)
