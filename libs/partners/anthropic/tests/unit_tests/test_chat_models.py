@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 import os
 import warnings
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from types import SimpleNamespace
 from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
@@ -2683,6 +2683,120 @@ def test_streaming_cache_token_reporting() -> None:
     assert delta_chunk.usage_metadata["input_tokens"] == 135
     assert delta_chunk.usage_metadata["output_tokens"] == 50
     assert delta_chunk.usage_metadata["total_tokens"] == 185
+
+
+def _stream_events() -> list[Any]:
+    """Build a realistic raw event stream ending with final usage info."""
+    from anthropic.types import (
+        Message,
+        RawMessageDeltaEvent,
+        RawMessageStartEvent,
+        TextBlock,
+        Usage,
+    )
+    from anthropic.types.raw_message_delta_event import Delta as RawMessageDelta
+    from anthropic.types.raw_message_delta_event import (
+        MessageDeltaUsage as RawMessageDeltaUsage,
+    )
+
+    return [
+        RawMessageStartEvent(
+            message=Message(
+                id="msg_01",
+                type="message",
+                role="assistant",
+                model=MODEL_NAME,
+                content=[TextBlock(type="text", text="Paris")],
+                stop_reason=None,
+                stop_sequence=None,
+                usage=Usage(input_tokens=12, output_tokens=1),
+            ),
+            type="message_start",
+        ),
+        RawMessageDeltaEvent(
+            delta=RawMessageDelta(stop_reason="max_tokens", stop_sequence=None),
+            type="message_delta",
+            usage=RawMessageDeltaUsage(
+                output_tokens=50,
+                input_tokens=10,
+                cache_read_input_tokens=0,
+                cache_creation_input_tokens=0,
+            ),
+        ),
+    ]
+
+
+async def _collect_stream(llm: ChatAnthropic) -> AIMessageChunk | None:
+    """Stream 'hi' through `llm` with a stubbed transport and sum the chunks."""
+    events = _stream_events()
+
+    async def event_iter() -> AsyncIterator[Any]:
+        for event in events:
+            yield event
+
+    async def mock_acreate(_payload: Any) -> Any:
+        return event_iter()
+
+    with patch.object(llm, "_acreate", mock_acreate):
+        full: AIMessageChunk | None = None
+        async for chunk in llm.astream("hi"):
+            full = chunk if full is None else full + chunk
+    return full
+
+
+def test_stream_usage_false_keeps_stop_reason_and_model_name() -> None:
+    """Non-usage response metadata survives `stream_usage=False`.
+
+    `stream_usage=False` means "don't report token counts", not "strip
+    everything": `model_name`, `stop_reason`, and `stop_sequence` must still
+    reach `response_metadata`,     matching the non-streaming path (#39713).
+    """
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    events = iter(_stream_events())
+
+    start_chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        next(events),
+        stream_usage=False,
+        coerce_content_to_string=True,
+        block_start_event=None,
+    )
+    assert start_chunk is not None
+    assert start_chunk.response_metadata["model_name"] == MODEL_NAME
+
+    delta_chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        next(events),
+        stream_usage=False,
+        coerce_content_to_string=True,
+        block_start_event=None,
+    )
+    assert delta_chunk is not None
+    assert delta_chunk.response_metadata["stop_reason"] == "max_tokens"
+    assert delta_chunk.response_metadata["stop_sequence"] is None
+    assert delta_chunk.usage_metadata is None
+
+
+async def test_stream_usage_false_astream_metadata_matches_non_streaming() -> None:
+    """Aggregated astream chunks keep non-usage metadata when usage is off."""
+    llm = ChatAnthropic(model=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
+
+    full = await _collect_stream(llm)
+
+    assert full is not None
+    assert full.response_metadata["model_name"] == MODEL_NAME
+    assert full.response_metadata["stop_reason"] == "max_tokens"
+    assert full.usage_metadata is None
+
+
+async def test_stream_usage_true_astream_still_reports_usage() -> None:
+    """Default (`stream_usage=True`) behavior is unchanged by the fix above."""
+    llm = ChatAnthropic(model=MODEL_NAME, stream_usage=True)  # type: ignore[call-arg]
+
+    full = await _collect_stream(llm)
+
+    assert full is not None
+    assert full.response_metadata["stop_reason"] == "max_tokens"
+    assert full.usage_metadata is not None
+    assert full.usage_metadata["output_tokens"] == 50
 
 
 def _aggregate_anthropic_events(

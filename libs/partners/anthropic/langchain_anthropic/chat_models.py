@@ -1822,6 +1822,8 @@ class ChatAnthropic(BaseChatModel):
         Args:
             event: Raw streaming event from Anthropic SDK
             stream_usage: Whether to include usage metadata in the output chunks.
+                Non-usage response metadata (`model_name`, `stop_reason`,
+                `stop_sequence`) is included regardless.
             coerce_content_to_string: Whether to convert structured content to plain
                 text strings.
 
@@ -1845,7 +1847,7 @@ class ChatAnthropic(BaseChatModel):
         message_chunk: AIMessageChunk | None = None
         # Reference: Anthropic SDK streaming implementation
         # https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
-        if event.type == "message_start" and stream_usage:
+        if event.type == "message_start":
             # Capture model name, but don't include usage_metadata yet
             # as it will be properly reported in message_delta with complete info
             if hasattr(event.message, "model"):
@@ -1999,8 +2001,7 @@ class ChatAnthropic(BaseChatModel):
                 message_chunk = AIMessageChunk(content=[content_block])
 
         # Process final usage metadata and completion info
-        elif event.type == "message_delta" and stream_usage:
-            usage_metadata = _create_usage_metadata(event.usage)
+        elif event.type == "message_delta":
             response_metadata = {
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
@@ -2014,6 +2015,9 @@ class ChatAnthropic(BaseChatModel):
                 container := getattr(message_delta, "container", None)
             ):
                 response_metadata["container"] = container.model_dump(mode="json")
+            usage_metadata = (
+                _create_usage_metadata(event.usage) if stream_usage else None
+            )
             message_chunk = AIMessageChunk(
                 content="" if coerce_content_to_string else [],
                 usage_metadata=usage_metadata,
