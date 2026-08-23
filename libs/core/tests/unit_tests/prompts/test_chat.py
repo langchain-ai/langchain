@@ -2004,3 +2004,41 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
     )
     result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
     assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]
+
+
+async def test_aformat_uses_dict_prompt_aformat() -> None:
+    """DictPromptTemplate.aformat should be awaited, not bypassed by sync format.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/39835
+    """
+    from unittest.mock import patch
+
+    from langchain_core.prompts.dict import DictPromptTemplate
+
+    calls: list[str] = []
+
+    real_format = DictPromptTemplate.format
+    real_aformat = DictPromptTemplate.aformat
+
+    def traced_format(self: DictPromptTemplate, **kwargs: Any) -> dict:
+        calls.append("format")
+        return real_format(self, **kwargs)
+
+    async def traced_aformat(self: DictPromptTemplate, **kwargs: Any) -> dict:
+        calls.append("aformat")
+        return await real_aformat(self, **kwargs)
+
+    dpt = DictPromptTemplate(
+        template={"type": "text", "text": "{foo}"}, template_format="f-string"
+    )
+    prompt = HumanMessagePromptTemplate(prompt=[dpt])
+
+    with (
+        patch.object(DictPromptTemplate, "format", traced_format),
+        patch.object(DictPromptTemplate, "aformat", traced_aformat),
+    ):
+        result = await prompt.aformat_messages(foo="bar")
+
+    # aformat must be the entry point; it delegates to sync format internally
+    assert "aformat" in calls
+    assert result[0].content == [{"type": "text", "text": "bar"}]
