@@ -94,8 +94,8 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "accounts/fireworks/models/deepseek-v4-pro-0813": {
         "name": "DeepSeek V4 Pro 0813",
         "release_date": "2026-08-12",
-        "last_updated": "2026-08-12",
-        "open_weights": False,
+        "last_updated": "2026-08-22",
+        "open_weights": True,
         "max_input_tokens": 1000000,
         "max_output_tokens": 384000,
         "text_inputs": True,
