@@ -667,8 +667,9 @@ class Runnable(ABC, Generic[Input, Output]):
         Raises:
             TypeError: If `other` cannot be coerced to a `Runnable`. This method does
                 not return `NotImplemented`, to avoid delegating LCEL composition to
-                unrelated reflected `|` implementations. To interoperate, implement
-                `Runnable`, make the object callable, or define `__or__` on the left.
+                an unrelated `__ror__` on `other`. To interoperate, implement
+                `Runnable`, make the object callable, or put the object on the left
+                of `|` and define `__or__` on it.
         """
         return RunnableSequence(self, coerce_to_runnable(other))
 
@@ -715,9 +716,10 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Raises:
             TypeError: If `other` cannot be coerced to a `Runnable`. This method does
-                not return `NotImplemented`, to avoid delegating LCEL composition to
-                unrelated reflected `|` implementations. To interoperate, implement
-                `Runnable`, make the object callable, or define `__or__` on the left.
+                not return `NotImplemented`, which would normally replace this error
+                with Python's generic `unsupported operand type(s) for |`. To
+                interoperate, implement `Runnable`, make the object callable, or
+                define `__or__` on the left operand.
         """
         return RunnableSequence(coerce_to_runnable(other), self)
 
