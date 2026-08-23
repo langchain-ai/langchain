@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bookworm
+FROM python:3.14-slim-bookworm
 
 # Set environment variables for Python and uv
 ENV PYTHONUNBUFFERED=1 \
