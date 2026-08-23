@@ -92,10 +92,10 @@ test_integration = [
     "cassio>=0.1.0,<1.0.0; python_version < '3.14'",
 ]
 lint = [
-    "ruff>=0.15.0,<0.16.0",
+    "ruff>=0.15.0,<0.17.0",
 ]
 typing = [
-    "mypy>=2.1.0,<2.2.0",
+    "mypy>=2.1.0,<2.4.0",
     "mypy-protobuf>=3.0.0,<6.0.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "types-requests>=2.28.11.5,<3.0.0.0",
