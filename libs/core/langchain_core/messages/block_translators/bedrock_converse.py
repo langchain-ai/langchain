@@ -159,13 +159,19 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
         # Converse outputs multiple chunks containing response metadata
         return []
 
-    if isinstance(message.content, str):
-        message.content = [{"type": "text", "text": message.content}]
+    content = (
+        [{"type": "text", "text": message.content}]
+        if isinstance(message.content, str)
+        else message.content
+    )
 
     def _iter_blocks() -> Iterator[types.ContentBlock]:
-        for block in message.content:
-            if not isinstance(block, dict):
+        for raw_block in content:
+            if not isinstance(raw_block, dict):
                 continue
+            # Translating content must not mutate the message. In particular, the
+            # non-standard block path removes an ``index`` key while normalizing it.
+            block = raw_block.copy()
             block_type = block.get("type")
 
             if block_type == "text":

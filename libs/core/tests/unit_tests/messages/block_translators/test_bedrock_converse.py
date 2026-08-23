@@ -3,8 +3,7 @@ from langchain_core.messages import content as types
 
 
 def test_convert_to_v1_from_bedrock_converse() -> None:
-    message = AIMessage(
-        [
+    content = [
             {
                 "type": "reasoning_content",
                 "reasoning_content": {"text": "foo", "signature": "foo_signature"},
@@ -53,7 +52,9 @@ def test_convert_to_v1_from_bedrock_converse() -> None:
                 ],
             },
             {"type": "something_else", "foo": "bar"},
-        ],
+        ]
+    message = AIMessage(
+        content,
         response_metadata={"model_provider": "bedrock_converse"},
     )
     expected_content: list[types.ContentBlock] = [
@@ -122,7 +123,7 @@ def test_convert_to_v1_from_bedrock_converse() -> None:
     assert message.content_blocks == expected_content
 
     # Check no mutation
-    assert message.content != expected_content
+    assert message.content == content
 
 
 def test_convert_to_v1_from_converse_chunk() -> None:
