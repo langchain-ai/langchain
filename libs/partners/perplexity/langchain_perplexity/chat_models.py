@@ -237,7 +237,9 @@ def _translate_responses_input(message_dicts: list[dict[str, Any]]) -> list[Any]
             # as `function_call` items.
             text = _content_to_text(message.get("content"))
             if text:
-                translated.append({"role": "assistant", "content": text})
+                translated.append(
+                    {"type": "message", "role": "assistant", "content": text}
+                )
             for tool_call in message["tool_calls"]:
                 function = tool_call.get("function", {})
                 call_id = tool_call.get("id")
@@ -274,6 +276,8 @@ def _translate_responses_input(message_dicts: list[dict[str, Any]]) -> list[Any]
                     "output": output,
                 }
             )
+        elif role in {"assistant", "system", "user", "developer"}:
+            translated.append({**message, "type": "message"})
         else:
             translated.append(message)
     return translated
@@ -681,17 +685,32 @@ class ChatPerplexity(BaseChatModel):
         Responses-only field (`previous_response_id`, `instructions`, `input`,
         `include`) is supplied.
 
+        The Agent API uses its own model catalog (see
+        https://docs.perplexity.ai/docs/agent-api/models). Select routing by
+        passing either an explicit `model=` such as `"openai/gpt-5.6-sol"`, or a
+        Perplexity `preset` (`"fast"`, `"low"`, `"medium"`, `"high"`, `"xhigh"`,
+        or `"wide-research"`) through
+        `model_kwargs`. Perplexity's built-in tools and Agent-API-only fields
+        also go through `model_kwargs`:
+
         ```python
         from langchain_perplexity import ChatPerplexity
 
-        model = ChatPerplexity(model="sonar-pro", use_responses_api=True)
-        model.invoke("What is the capital of France?")
+        model = ChatPerplexity(
+            use_responses_api=True,
+            model_kwargs={
+                "preset": "medium",
+                "tools": [{"type": "web_search"}],
+            },
+        )
+        model.invoke("What did Perplexity announce most recently?")
         ```
 
-        Auto-detection example:
+        Auto-detection example (routes to the Agent API because a built-in
+        `web_search` tool is present):
 
         ```python
-        model = ChatPerplexity(model="sonar-pro")
+        model = ChatPerplexity(model="openai/gpt-5.6-sol")
         model.invoke(
             "Find recent news about AI.",
             tools=[{"type": "web_search"}],
