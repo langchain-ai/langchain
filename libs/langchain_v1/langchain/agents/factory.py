@@ -767,6 +767,79 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
+# Explicit `state_schema` overrides middleware state inference.
+# Heterogeneous middleware lists (e.g., AgentMiddleware[RichState, ...] mixed with
+# AgentMiddleware[AgentState, ...]) collapse to the common base type and fail type
+# checking. When `state_schema` is explicit, the middleware's state type is not
+# used for inference; the explicit schema carries the union of the middleware
+# channels, matching runtime behavior (which already merges correctly).
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
+    *,
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[Any, ContextT]] = (),
+    response_format: None = None,
+    state_schema: type[AgentState[ResponseT]],
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    name: str | None = None,
+    cache: BaseCache[Any] | None = None,
+    transformers: Sequence[TransformerFactory] | None = None,
+) -> CompiledStateGraph[AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]]: ...
+
+
+# Same heterogeneous-middleware relaxation for explicit `state_schema` combined with a
+# raw-dict `response_format`.
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
+    *,
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[Any, ContextT]] = (),
+    response_format: dict[str, Any],
+    state_schema: type[AgentState[ResponseT]],
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    name: str | None = None,
+    cache: BaseCache[Any] | None = None,
+    transformers: Sequence[TransformerFactory] | None = None,
+) -> CompiledStateGraph[AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]]: ...
+
+
+# Same heterogeneous-middleware relaxation for explicit `state_schema` combined with a
+# schema-typed `response_format`.
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable[..., Any] | dict[str, Any]] | None = None,
+    *,
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[Any, ContextT]] = (),
+    response_format: ResponseFormat[ResponseT] | type[ResponseT],
+    state_schema: type[AgentState[ResponseT]],
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    name: str | None = None,
+    cache: BaseCache[Any] | None = None,
+    transformers: Sequence[TransformerFactory] | None = None,
+) -> CompiledStateGraph[AgentState[ResponseT], ContextT, InputAgentState, OutputAgentState[ResponseT]]: ...
+
+
 # No `response_format`: there is no structured output, so `ResponseT` resolves to `Any`.
 @overload
 def create_agent(
