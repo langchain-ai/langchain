@@ -1,0 +1,23 @@
+libs/langchain_v1/langchain/mcp/client.py
+  s_2ce70a1527c068::t_ce1336edcc7eb2 9,92-93,109-128,152,154,167,234,236-238,240-263
+libs/langchain_v1/tests/integration_tests/mcp/servers/counting_server.py
+  s_2ce70a1527c068::t_c41addaf130e37 1-21
+libs/langchain_v1/tests/integration_tests/mcp/test_client.py
+  s_2ce70a1527c068::t_4bb2e409108c01 309-341
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "9a8fcc068d6e838aea9f8b6f99b2cc5a3969d303",
+  "prompts": {},
+  "sessions": {
+    "s_2ce70a1527c068": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dbce52e-70cd-4b5e-92a7-6fb480327deb",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
