@@ -48,7 +48,6 @@ from langchain_anthropic import ChatAnthropic
 from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
     _TOOL_CALL_ID_PATTERN,
-    _AnthropicResponse,
     _create_usage_metadata,
     _drop_unsupported_root_composition_tools,
     _format_image,
@@ -4778,8 +4777,8 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
         thinking={"type": "enabled", "budget_tokens": 1024},
     )
 
-    def mock_create(_payload: Any) -> _AnthropicResponse:
-        return _AnthropicResponse(events, {})
+    def mock_create(_payload: Any) -> Any:
+        return SimpleNamespace(parse=lambda: events)
 
     with patch.object(llm, "_create", mock_create):
         stream_events = list(llm.stream_events("Test query", version="v3"))

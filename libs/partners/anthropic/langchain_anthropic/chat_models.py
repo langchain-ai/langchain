@@ -9,7 +9,6 @@ import json
 import re
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
-from dataclasses import dataclass
 from functools import cached_property
 from operator import itemgetter
 from typing import Any, Final, Literal, TypeGuard, cast
@@ -98,14 +97,6 @@ _message_type_lookups = {
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
 _USER_AGENT: Final[str] = f"langchain-anthropic/{__version__}"
-
-
-@dataclass
-class _AnthropicResponse:
-    """A provider response and its generation metadata."""
-
-    response: Any
-    generation_info: dict[str, Any]
 
 
 def _add_gateway_metadata(generation_info: dict[str, Any], raw_response: Any) -> None:
@@ -1746,40 +1737,22 @@ class ChatAnthropic(BaseChatModel):
 
         return {k: v for k, v in payload.items() if v is not None}
 
-    def _create(self, payload: dict) -> _AnthropicResponse:
+    def _create(self, payload: dict) -> Any:
         try:
             if "betas" in payload:
-                raw_response = self._client.beta.messages.with_raw_response.create(
-                    **payload
-                )
-            else:
-                raw_response = self._client.messages.with_raw_response.create(**payload)
-            generation_info: dict[str, Any] = {}
-            if self._uses_gateway:
-                _add_gateway_metadata(generation_info, raw_response)
-            return _AnthropicResponse(raw_response.parse(), generation_info)
+                return self._client.beta.messages.with_raw_response.create(**payload)
+            return self._client.messages.with_raw_response.create(**payload)
         except TypeError as e:
             _raise_if_authentication_error(e)
             raise
 
-    async def _acreate(self, payload: dict) -> _AnthropicResponse:
+    async def _acreate(self, payload: dict) -> Any:
         try:
             if "betas" in payload:
-                raw_response = (
-                    await self._async_client.beta.messages.with_raw_response.create(
-                        **payload
-                    )
+                return await self._async_client.beta.messages.with_raw_response.create(
+                    **payload
                 )
-            else:
-                raw_response = (
-                    await self._async_client.messages.with_raw_response.create(
-                        **payload
-                    )
-                )
-            generation_info: dict[str, Any] = {}
-            if self._uses_gateway:
-                _add_gateway_metadata(generation_info, raw_response)
-            return _AnthropicResponse(raw_response.parse(), generation_info)
+            return await self._async_client.messages.with_raw_response.create(**payload)
         except TypeError as e:
             _raise_if_authentication_error(e)
             raise
@@ -1798,9 +1771,11 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            response = self._create(payload)
-            stream = response.response
-            base_generation_info = response.generation_info
+            raw_response = self._create(payload)
+            base_generation_info: dict[str, Any] = {}
+            if self._uses_gateway:
+                _add_gateway_metadata(base_generation_info, raw_response)
+            stream = raw_response.parse()
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -1846,9 +1821,11 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            response = await self._acreate(payload)
-            stream = response.response
-            base_generation_info = response.generation_info
+            raw_response = await self._acreate(payload)
+            base_generation_info: dict[str, Any] = {}
+            if self._uses_gateway:
+                _add_gateway_metadata(base_generation_info, raw_response)
+            stream = raw_response.parse()
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -2177,15 +2154,16 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            response = self._create(payload)
+            raw_response = self._create(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
         except anthropic.APIError as e:
             _handle_anthropic_api_error(e)
+        generation_info: dict[str, Any] = {}
+        if self._uses_gateway:
+            _add_gateway_metadata(generation_info, raw_response)
         return self._format_output(
-            response.response,
-            generation_info=response.generation_info,
-            **kwargs,
+            raw_response.parse(), generation_info=generation_info, **kwargs
         )
 
     async def _agenerate(
@@ -2197,15 +2175,16 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            response = await self._acreate(payload)
+            raw_response = await self._acreate(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
         except anthropic.APIError as e:
             _handle_anthropic_api_error(e)
+        generation_info: dict[str, Any] = {}
+        if self._uses_gateway:
+            _add_gateway_metadata(generation_info, raw_response)
         return self._format_output(
-            response.response,
-            generation_info=response.generation_info,
-            **kwargs,
+            raw_response.parse(), generation_info=generation_info, **kwargs
         )
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(
