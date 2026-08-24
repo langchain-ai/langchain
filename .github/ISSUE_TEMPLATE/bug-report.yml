@@ -68,6 +68,7 @@ body:
         - label: langchain-nomic
         - label: langchain-ollama
         - label: langchain-openrouter
+        - label: langchain-decodo
         - label: langchain-perplexity
         - label: langchain-qdrant
         - label: langchain-xai

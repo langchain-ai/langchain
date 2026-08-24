@@ -64,6 +64,7 @@ updates:
       - "/libs/partners/ollama/"
       - "/libs/partners/openai/"
       - "/libs/partners/openrouter/"
+      - "/libs/partners/decodo/"
       - "/libs/partners/perplexity/"
       - "/libs/partners/qdrant/"
       - "/libs/partners/xai/"

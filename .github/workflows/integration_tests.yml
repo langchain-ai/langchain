@@ -41,6 +41,7 @@ on:
           - "ollama"
           - "openai"
           - "openrouter"
+          - "decodo"
           - "perplexity"
           - "qdrant"
           - "xai"

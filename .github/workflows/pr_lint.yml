@@ -104,6 +104,7 @@ jobs:
             docs
             anthropic
             chroma
+            decodo
             deepseek
             exa
             fireworks

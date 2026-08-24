@@ -53,6 +53,7 @@ jobs:
               "langchain-nomic": "nomic",
               "langchain-ollama": "ollama",
               "langchain-openrouter": "openrouter",
+              "langchain-decodo": "decodo",
               "langchain-perplexity": "perplexity",
               "langchain-qdrant": "qdrant",
               "langchain-xai": "xai",
