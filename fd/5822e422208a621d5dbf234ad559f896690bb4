@@ -1,0 +1,86 @@
+libs/langchain_v1/tests/integration_tests/mcp/conftest.py
+  s_2ce70a1527c068::t_70b7f1965c8642 50,60
+  s_2ce70a1527c068::t_b1df8bc0d16676 1-49,51-59,61-64
+libs/langchain_v1/langchain/mcp/tools.py
+  s_2ce70a1527c068::t_d38b8510557b36 176,193,475,545
+  s_2ce70a1527c068::t_2858052c73c1cd 84,379,550
+  s_2ce70a1527c068::t_a2da8766b3ca22 1-83,85-175,177-192,194-378,380-474,476-544,546-549,551-565
+libs/langchain_v1/tests/integration_tests/mcp/utils.py
+  s_2ce70a1527c068::t_b1df8bc0d16676 1-22,25-33,35-47,49-53,55-87
+  s_2ce70a1527c068::t_70b7f1965c8642 23-24,34,48,54,88
+libs/langchain_v1/tests/integration_tests/mcp/test_interceptors.py
+  s_2ce70a1527c068::t_b1df8bc0d16676 1-133,135-160,162-319
+  s_2ce70a1527c068::t_70b7f1965c8642 134,161
+libs/langchain_v1/tests/integration_tests/mcp/test_elicitation.py
+  s_2ce70a1527c068::t_70b7f1965c8642 44,51
+  s_2ce70a1527c068::t_b1df8bc0d16676 1-43,45-50,52-159
+libs/langchain_v1/langchain/mcp/sessions.py
+  s_2ce70a1527c068::t_a2da8766b3ca22 1-185,187-196,198-387,389,391-424
+  s_2ce70a1527c068::t_d38b8510557b36 186,197,388,390
+libs/langchain_v1/tests/integration_tests/mcp/test_client.py
+  s_2ce70a1527c068::t_b1df8bc0d16676 1-79,81-130,132-200,202-240
+  s_2ce70a1527c068::t_70b7f1965c8642 80,131,201
+libs/langchain_v1/langchain/mcp/interceptors.py
+  s_2ce70a1527c068::t_a2da8766b3ca22 1-74,76-139
+  s_2ce70a1527c068::t_d38b8510557b36 75
+libs/langchain_v1/tests/integration_tests/mcp/test_callbacks.py
+  s_2ce70a1527c068::t_70b7f1965c8642 23,46,114
+  s_2ce70a1527c068::t_b1df8bc0d16676 1-22,24-45,47-113,115-137
+libs/langchain_v1/tests/unit_tests/mcp/test_resources.py
+  s_2ce70a1527c068::t_a2da8766b3ca22 1-23,25-131,133-136,138-159,161-179,182-224,226-259
+  s_2ce70a1527c068::t_70b7f1965c8642 24,132,137,160,180-181,225
+libs/langchain_v1/tests/unit_tests/mcp/test_prompts.py
+  s_2ce70a1527c068::t_a2da8766b3ca22 1-67,70-78
+  s_2ce70a1527c068::t_70b7f1965c8642 68-69
+libs/langchain_v1/tests/unit_tests/mcp/test_import.py
+  s_2ce70a1527c068::t_a2da8766b3ca22 1-9
+libs/langchain_v1/tests/integration_tests/mcp/test_tools.py
+  s_2ce70a1527c068::t_b1df8bc0d16676 1-52,54-84,86-119,121-138,140-144,146-439,441-472,474-524,526-601,603-611,613-801,803-884,888-1015,1018-1082,1084-1157
+  s_2ce70a1527c068::t_ac136196f94918 885-887,1016-1017
+  s_2ce70a1527c068::t_70b7f1965c8642 53,85,120,139,145,440,473,525,602,612,802,1083
+libs/langchain_v1/langchain/mcp/callbacks.py
+  s_2ce70a1527c068::t_a2da8766b3ca22 1-141
+libs/langchain_v1/pyproject.toml
+  s_2ce70a1527c068::t_64ac7a378a3ae6 79
+  s_2ce70a1527c068::t_00da9a105350d2 52
+  s_2ce70a1527c068::t_914215f125893c 124-131
+  s_2ce70a1527c068::t_ac136196f94918 170-184
+  s_2ce70a1527c068::t_94ddb6a7c2cb82 80
+  s_2ce70a1527c068::t_b1df8bc0d16676 81-83
+libs/langchain_v1/langchain/mcp/client.py
+  s_2ce70a1527c068::t_d38b8510557b36 17,91,108,246
+  s_2ce70a1527c068::t_a2da8766b3ca22 1-16,18-90,92-107,109-245,247-252,254-288
+  s_2ce70a1527c068::t_bb138b41a0903b 253
+libs/langchain_v1/langchain/mcp/prompts.py
+  s_2ce70a1527c068::t_d38b8510557b36 57
+  s_2ce70a1527c068::t_a2da8766b3ca22 1-56,58
+libs/langchain_v1/langchain/mcp/__init__.py
+  s_2ce70a1527c068::t_a2da8766b3ca22 1-6
+libs/langchain_v1/langchain/mcp/resources.py
+  s_2ce70a1527c068::t_d38b8510557b36 14,33,51
+  s_2ce70a1527c068::t_a2da8766b3ca22 1-13,15-32,34-50,52-98
+libs/langchain_v1/tests/integration_tests/mcp/servers/math_server.py
+  s_2ce70a1527c068::t_404996a4044cc3 1-38
+libs/langchain_v1/tests/integration_tests/mcp/servers/time_server.py
+  s_2ce70a1527c068::t_25e6b1a7fa55a1 1-13
+libs/langchain_v1/tests/integration_tests/mcp/servers/weather_server.py
+  s_2ce70a1527c068::t_68842ea5df9dbd 1-19
+libs/langchain_v1/uv.lock
+  s_2ce70a1527c068::t_ce785a2c6cd21f 1024-1032,1978-2005,2050-2053,2082,2085,2094,2097-2098,2134,2136,2138,2144,2147,2156,2159-2160,2316,2663,2671,3014-3038,4509-4517,4557-4581,4646-4660,4808-5068,5169-5181,5191-5203,5523-5536
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "fd5822e422208a621d5dbf234ad559f896690bb4",
+  "prompts": {},
+  "sessions": {
+    "s_2ce70a1527c068": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dbce52e-70cd-4b5e-92a7-6fb480327deb",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
