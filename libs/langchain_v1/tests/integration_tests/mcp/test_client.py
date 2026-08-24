@@ -306,3 +306,36 @@ def _create_time_server():
         return "5:20:00 PM EST"
 
     return server
+
+
+async def test_context_manager_reuses_one_connection_per_server(tmp_path):
+    """Entering the client holds connections open, so operations share one connection.
+
+    Counted by subprocess spawns: a stdio server starts once per connection, so a held
+    connection serves every operation from the same process.
+    """
+    log = tmp_path / "spawns.log"
+    server = os.path.join(Path(__file__).parent, "servers/counting_server.py")
+    config = {"time": {"command": "python3", "args": [server, str(log)], "transport": "stdio"}}
+    call = {"args": {}, "id": "1", "type": "tool_call"}
+
+    def spawns() -> int:
+        count = len(log.read_text().split()) if log.exists() else 0
+        log.unlink(missing_ok=True)
+        return count
+
+    async with MultiServerMCPClient(config) as client:
+        tools = {tool.name: tool for tool in await client.get_tools()}
+        await tools["get_time"].ainvoke(call)
+        await tools["get_time"].ainvoke(call)
+    held = spawns()
+
+    # Not entering still works, but opens a connection per operation.
+    unheld_client = MultiServerMCPClient(config)
+    tools = {tool.name: tool for tool in await unheld_client.get_tools()}
+    await tools["get_time"].ainvoke(call)
+    await tools["get_time"].ainvoke(call)
+    unheld = spawns()
+
+    assert held == 1, f"a held connection should start the server once, got {held}"
+    assert unheld > held, f"unheld should reconnect per operation, got {unheld}"

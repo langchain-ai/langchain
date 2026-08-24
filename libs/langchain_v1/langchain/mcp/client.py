@@ -6,8 +6,7 @@ to multiple MCP servers and loading tools, prompts, and resources from them.
 
 import asyncio
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
-from types import TracebackType
+from contextlib import AsyncExitStack, asynccontextmanager
 from typing import Any
 
 from langchain_core.documents.base import Blob
@@ -22,17 +21,6 @@ from langchain.mcp.prompts import load_mcp_prompt
 from langchain.mcp.resources import load_mcp_resources
 from langchain.mcp.sessions import Connection, create_session
 from langchain.mcp.tools import load_mcp_tools
-
-ASYNC_CONTEXT_MANAGER_ERROR = (
-    "As of langchain-mcp-adapters 0.1.0, MultiServerMCPClient cannot be used as a "
-    "context manager (e.g., async with MultiServerMCPClient(...)). "
-    "Instead, you can do one of the following:\n"
-    "1. client = MultiServerMCPClient(...)\n"
-    "   tools = await client.get_tools()\n"
-    "2. client = MultiServerMCPClient(...)\n"
-    "   async with client.session(server_name) as session:\n"
-    "       tools = await load_mcp_tools(session)"
-)
 
 
 class MultiServerMCPClient:
@@ -101,6 +89,8 @@ class MultiServerMCPClient:
         self.callbacks = callbacks or Callbacks()
         self.tool_interceptors = tool_interceptors or []
         self.tool_name_prefix = tool_name_prefix
+        self._sessions: dict[str, ClientSession] = {}
+        self._exit_stack: AsyncExitStack | None = None
 
     @asynccontextmanager
     async def session(self, server_name: str) -> AsyncIterator[ClientSession]:
@@ -116,21 +106,32 @@ class MultiServerMCPClient:
             An initialized `ClientSession`
 
         """
+        self._require_server(server_name)
+
+        if (held := self._sessions.get(server_name)) is not None:
+            yield held
+            return
+
+        async with create_session(
+            self.connections[server_name],
+            mcp_callbacks=self.callbacks.to_mcp_format(
+                context=CallbackContext(server_name=server_name)
+            ),
+        ) as session:
+            yield session
+
+    def _require_server(self, server_name: str) -> None:
+        """Raise if the server was not configured.
+
+        Raises:
+            ValueError: If the server name is not found in the connections.
+        """
         if server_name not in self.connections:
             msg = (
                 f"Couldn't find a server with name '{server_name}', "
                 f"expected one of '{list(self.connections.keys())}'"
             )
             raise ValueError(msg)
-
-        mcp_callbacks = self.callbacks.to_mcp_format(
-            context=CallbackContext(server_name=server_name)
-        )
-
-        async with create_session(
-            self.connections[server_name], mcp_callbacks=mcp_callbacks
-        ) as session:
-            yield session
 
     async def get_tools(self, *, server_name: str | None = None) -> list[BaseTool]:
         """Get a list of all tools from all connected servers.
@@ -148,14 +149,9 @@ class MultiServerMCPClient:
 
         """
         if server_name is not None:
-            if server_name not in self.connections:
-                msg = (
-                    f"Couldn't find a server with name '{server_name}', "
-                    f"expected one of '{list(self.connections.keys())}'"
-                )
-                raise ValueError(msg)
+            self._require_server(server_name)
             return await load_mcp_tools(
-                None,
+                self._sessions.get(server_name),
                 connection=self.connections[server_name],
                 callbacks=self.callbacks,
                 server_name=server_name,
@@ -168,7 +164,7 @@ class MultiServerMCPClient:
         for name, connection in self.connections.items():
             load_mcp_tool_task = asyncio.create_task(
                 load_mcp_tools(
-                    None,
+                    self._sessions.get(name),
                     connection=connection,
                     callbacks=self.callbacks,
                     server_name=name,
@@ -235,30 +231,36 @@ class MultiServerMCPClient:
         return all_resources
 
     async def __aenter__(self) -> Self:
-        """Async context manager entry point.
+        """Connect to every server and keep the connections open.
 
-        Raises:
-            NotImplementedError: Context manager support has been removed.
+        Optional: without it a session is opened per operation, which still works but
+        repeats the handshake on every call, and respawns the subprocess for stdio
+        servers. Entering once and reusing is the reason to do it.
         """
-        raise NotImplementedError(ASYNC_CONTEXT_MANAGER_ERROR)
+        stack = AsyncExitStack()
+        try:
+            for name, connection in self.connections.items():
+                self._sessions[name] = await stack.enter_async_context(
+                    create_session(
+                        connection,
+                        mcp_callbacks=self.callbacks.to_mcp_format(
+                            context=CallbackContext(server_name=name)
+                        ),
+                    )
+                )
+        except BaseException:
+            self._sessions.clear()
+            await stack.aclose()
+            raise
+        self._exit_stack = stack
+        return self
 
-    def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        """Async context manager exit point.
-
-        Args:
-            exc_type: Exception type if an exception occurred.
-            exc_val: Exception value if an exception occurred.
-            exc_tb: Exception traceback if an exception occurred.
-
-        Raises:
-            NotImplementedError: Context manager support has been removed.
-        """
-        raise NotImplementedError(ASYNC_CONTEXT_MANAGER_ERROR)
+    async def __aexit__(self, *exc_info: object) -> None:
+        """Close every connection opened on entry."""
+        stack, self._exit_stack = self._exit_stack, None
+        self._sessions.clear()
+        if stack is not None:
+            await stack.aclose()
 
 
 __all__ = [
