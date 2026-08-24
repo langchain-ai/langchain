@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, BaseMessage, ChatMessage, HumanMessage
+from langchain_core.messages.tool import InvalidToolCall, ToolCall
 from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_ollama.chat_models import (
@@ -1173,3 +1174,102 @@ def test_multimodal_message_content_has_no_leading_newline() -> None:
     ollama_messages = model._convert_messages_to_ollama_messages([message])
 
     assert ollama_messages[0]["content"] == "Extract all text from this image."
+
+
+def test_invalid_tool_calls_are_forwarded_with_valid_tool_calls() -> None:
+    """`AIMessage.invalid_tool_calls` should be forwarded alongside `tool_calls`.
+
+    Without this, a model never sees its own malformed tool call and can't
+    self-correct in a repair/retry loop.
+    """
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    valid_call: ToolCall = {
+        "name": "get_weather",
+        "args": {"location": "SF"},
+        "id": "call_valid",
+        "type": "tool_call",
+    }
+    invalid_call: InvalidToolCall = {
+        "name": "get_weather",
+        "args": "{location: SF",  # malformed JSON string
+        "id": "call_invalid",
+        "error": "Malformed args.",
+        "type": "invalid_tool_call",
+    }
+    message = AIMessage(
+        content="",
+        tool_calls=[valid_call],
+        invalid_tool_calls=[invalid_call],
+    )
+
+    ollama_messages = llm._convert_messages_to_ollama_messages([message])
+
+    tool_calls = ollama_messages[0]["tool_calls"]
+    assert tool_calls is not None
+    assert len(tool_calls) == 2
+    assert tool_calls[0]["id"] == "call_valid"
+    assert tool_calls[0]["function"]["arguments"] == {"location": "SF"}
+    assert tool_calls[1]["id"] == "call_invalid"
+    assert tool_calls[1]["function"]["arguments"] == "{location: SF"
+
+
+def test_only_valid_tool_calls_unaffected() -> None:
+    """Regression: an `AIMessage` with only valid tool calls behaves as before."""
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    valid_call: ToolCall = {
+        "name": "get_weather",
+        "args": {"location": "NYC"},
+        "id": "call_1",
+        "type": "tool_call",
+    }
+    message = AIMessage(content="", tool_calls=[valid_call])
+
+    ollama_messages = llm._convert_messages_to_ollama_messages([message])
+
+    tool_calls = ollama_messages[0]["tool_calls"]
+    assert tool_calls is not None
+    assert len(tool_calls) == 1
+    assert tool_calls[0]["id"] == "call_1"
+
+
+def test_no_tool_calls_yields_none() -> None:
+    """Regression: an `AIMessage` with neither kind of tool call has no key.
+
+    The `tool_calls` key is only set on the outgoing dict when truthy, so an
+    `AIMessage` with no tool calls at all should omit the key entirely (not
+    set it to `None` or `[]`).
+    """
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    message = AIMessage(content="Hello")
+
+    ollama_messages = llm._convert_messages_to_ollama_messages([message])
+
+    assert "tool_calls" not in ollama_messages[0]
+
+
+def test_invalid_tool_call_with_malformed_args_does_not_raise() -> None:
+    """An invalid tool call with a raw malformed-string `args` should not raise."""
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    invalid_call: InvalidToolCall = {
+        "name": "get_weather",
+        "args": "not even close to json {{{",
+        "id": "call_bad",
+        "error": "Malformed args.",
+        "type": "invalid_tool_call",
+    }
+    message = AIMessage(content="", invalid_tool_calls=[invalid_call])
+
+    ollama_messages = llm._convert_messages_to_ollama_messages([message])
+
+    tool_calls = ollama_messages[0]["tool_calls"]
+    assert tool_calls is not None
+    assert len(tool_calls) == 1
+    assert tool_calls[0]["function"]["arguments"] == "not even close to json {{{"

@@ -61,6 +61,7 @@ from langchain_core.messages import (
     BaseMessage,
     ChatMessage,
     HumanMessage,
+    InvalidToolCall,
     SystemMessage,
     ToolCall,
     ToolMessage,
@@ -227,8 +228,15 @@ def _get_tool_calls_from_response(
     return tool_calls
 
 
-def _lc_tool_call_to_openai_tool_call(tool_call_: ToolCall) -> dict:
-    """Convert a LangChain tool call to an OpenAI tool call format."""
+def _lc_tool_call_to_openai_tool_call(tool_call_: ToolCall | InvalidToolCall) -> dict:
+    """Convert a LangChain tool call to an OpenAI tool call format.
+
+    Accepts both `ToolCall` and `InvalidToolCall` so that invalid tool calls
+    can be forwarded to the model (e.g. so it can see and correct a
+    malformed call it previously emitted). Both TypedDicts share the `id`,
+    `name`, and `args` keys used here; `args` is a raw string for an
+    `InvalidToolCall`, and is passed through unchanged either way.
+    """
     return {
         "type": "function",
         "id": tool_call_["id"],
@@ -1005,12 +1013,16 @@ class ChatOllama(BaseChatModel):
                 role = "user"
             elif isinstance(message, AIMessage):
                 role = "assistant"
+                all_tool_calls = [
+                    *message.tool_calls,
+                    *message.invalid_tool_calls,
+                ]
                 tool_calls = (
                     [
                         _lc_tool_call_to_openai_tool_call(tool_call)
-                        for tool_call in message.tool_calls
+                        for tool_call in all_tool_calls
                     ]
-                    if message.tool_calls
+                    if all_tool_calls
                     else None
                 )
             elif isinstance(message, SystemMessage):
