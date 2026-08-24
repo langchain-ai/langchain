@@ -6,7 +6,19 @@ import warnings
 from typing import Any, Literal
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
+from langchain_core.exceptions import (
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.load import dumpd, dumps, load
 from langchain_core.messages import (
     AIMessage,
@@ -20,6 +32,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.runnables import RunnableBinding
+from openrouter import errors as openrouter_errors
 from pydantic import BaseModel, Field, SecretStr
 
 from langchain_openrouter.chat_models import (
@@ -244,6 +257,32 @@ class _MockAsyncStream:
         mock = MagicMock()
         mock.model_dump.return_value = chunk
         return mock
+
+
+class _MockErrorStream:
+    """Synchronous stream that fails during iteration."""
+
+    def __init__(self, error: Exception) -> None:
+        self.error = error
+
+    def __iter__(self) -> _MockErrorStream:
+        return self
+
+    def __next__(self) -> MagicMock:
+        raise self.error
+
+
+class _MockAsyncErrorStream:
+    """Asynchronous stream that fails during iteration."""
+
+    def __init__(self, error: Exception) -> None:
+        self.error = error
+
+    def __aiter__(self) -> _MockAsyncErrorStream:
+        return self
+
+    async def __anext__(self) -> MagicMock:
+        raise self.error
 
 
 # ===========================================================================
@@ -787,6 +826,131 @@ class TestSerialization:
 
 class TestMockedGenerate:
     """Tests for _generate / _agenerate with a mocked SDK client."""
+
+    @pytest.mark.parametrize(
+        ("status_code", "sdk_error_name", "model_error_type", "is_retryable"),
+        [
+            (400, "BadRequestResponseError", ModelInvalidRequestError, False),
+            (401, "UnauthorizedResponseError", ModelAuthenticationError, False),
+            (402, "PaymentRequiredResponseError", ModelPermissionDeniedError, False),
+            (403, "ForbiddenResponseError", ModelPermissionDeniedError, False),
+            (404, "NotFoundResponseError", ModelNotFoundError, False),
+            (408, "RequestTimeoutResponseError", ModelTimeoutError, True),
+            (413, "PayloadTooLargeResponseError", ModelInvalidRequestError, False),
+            (422, "UnprocessableEntityResponseError", ModelInvalidRequestError, False),
+            (429, "TooManyRequestsResponseError", ModelRateLimitError, True),
+            (500, "InternalServerResponseError", ModelAPIError, True),
+            (502, "BadGatewayResponseError", ModelAPIError, True),
+            (503, "ServiceUnavailableResponseError", ModelAPIError, True),
+            (524, "EdgeNetworkTimeoutResponseError", ModelTimeoutError, True),
+            (529, "ProviderOverloadedResponseError", ModelAPIError, True),
+        ],
+    )
+    def test_error_classification(
+        self,
+        status_code: int,
+        sdk_error_name: str,
+        model_error_type: type[ModelError],
+        *,
+        is_retryable: bool,
+    ) -> None:
+        """SDK failures retain their provider type and gain LangChain semantics."""
+        sdk_error_type = getattr(openrouter_errors, sdk_error_name)
+        sdk_error_data_type = getattr(openrouter_errors, f"{sdk_error_name}Data")
+        error_data_type = sdk_error_data_type.model_fields["error"].annotation
+        sdk_error = sdk_error_type(
+            sdk_error_data_type(
+                error=error_data_type(code=status_code, message="request failed")
+            ),
+            httpx.Response(
+                status_code,
+                request=httpx.Request("POST", "https://test"),
+                content=b"sensitive response",
+            ),
+        )
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.side_effect = sdk_error
+
+        with pytest.raises(sdk_error_type) as exc_info:
+            model.invoke("test")
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is is_retryable
+        assert "sensitive response" not in getattr(exc_info.value, "body", "")
+        assert exc_info.value.__cause__ is None
+
+    def test_connection_error_classification(self) -> None:
+        """Missing responses retain the SDK type and become retryable."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.side_effect = openrouter_errors.NoResponseError()
+
+        with pytest.raises(openrouter_errors.NoResponseError) as exc_info:
+            model.invoke("test")
+
+        assert isinstance(exc_info.value, ModelConnectionError)
+        assert exc_info.value.is_retryable is True
+
+    @pytest.mark.parametrize(
+        ("status_code", "model_error_type"),
+        [
+            (401, ModelAuthenticationError),
+            (429, ModelRateLimitError),
+            (499, ModelInvalidRequestError),
+            (599, ModelAPIError),
+        ],
+    )
+    def test_default_error_classification(
+        self, status_code: int, model_error_type: type[ModelError]
+    ) -> None:
+        """Unrecognized HTTP errors are classified by status family."""
+        response = httpx.Response(
+            status_code,
+            request=httpx.Request("POST", "https://test"),
+            content=b"sensitive response",
+        )
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.side_effect = openrouter_errors.OpenRouterDefaultError(
+            "request failed", response
+        )
+
+        with pytest.raises(model_error_type) as exc_info:
+            model.invoke("test")
+
+        assert isinstance(exc_info.value, openrouter_errors.OpenRouterDefaultError)
+        assert "sensitive response" not in str(exc_info.value)
+        assert "sensitive response" not in getattr(exc_info.value, "body", "")
+        assert exc_info.value.__cause__ is None
+
+    async def test_async_error_classification(self) -> None:
+        """Async requests classify SDK failures."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send_async = AsyncMock(
+            side_effect=openrouter_errors.NoResponseError()
+        )
+
+        with pytest.raises(ModelConnectionError):
+            await model.ainvoke("test")
+
+    @pytest.mark.parametrize("is_async", [False, True])
+    async def test_stream_error_classification(self, *, is_async: bool) -> None:
+        """Errors raised during stream iteration are classified."""
+        model = _make_model()
+        model.client = MagicMock()
+        error = openrouter_errors.NoResponseError()
+        if is_async:
+            model.client.chat.send_async = AsyncMock(
+                return_value=_MockAsyncErrorStream(error)
+            )
+            with pytest.raises(ModelConnectionError):
+                _ = [chunk async for chunk in model.astream("test")]
+        else:
+            model.client.chat.send.return_value = _MockErrorStream(error)
+            with pytest.raises(ModelConnectionError):
+                list(model.stream("test"))
 
     def test_invoke_basic(self) -> None:
         """Test basic invoke returns an AIMessage via mocked SDK."""
