@@ -4,7 +4,7 @@ This module provides functionality to convert MCP tools into LangChain-compatibl
 tools, handle tool execution, and manage tool conversion between the two formats.
 """
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from typing import Annotated, Any, TypedDict
 
 from langchain_core.messages import ToolMessage
@@ -340,7 +340,11 @@ def convert_mcp_tool_to_langchain_tool(
 
             # If headers were modified, create a new connection with updated headers
             modified_headers = request.headers
-            if modified_headers is not None and connection is not None:
+            if (
+                modified_headers is not None
+                and connection is not None
+                and isinstance(connection, Mapping)
+            ):
                 # Create a new connection config with updated headers
                 updated_connection = dict(connection)
                 if connection["transport"] in (
@@ -367,7 +371,6 @@ def convert_mcp_tool_to_langchain_tool(
                 async with create_session(
                     effective_connection, mcp_callbacks=mcp_callbacks
                 ) as tool_session:
-                    await tool_session.initialize()
                     try:
                         call_tool_result = await tool_session.call_tool(
                             tool_name,
@@ -473,7 +476,6 @@ async def load_mcp_tools(
             msg = "Either session or connection must be provided"
             raise ValueError(msg)
         async with create_session(connection, mcp_callbacks=mcp_callbacks) as tool_session:
-            await tool_session.initialize()
             tools = await _list_all_tools(tool_session)
     else:
         tools = await _list_all_tools(session)

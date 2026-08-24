@@ -1,310 +1,139 @@
-"""Session management for different MCP transport types.
+"""Connection configuration and session management for MCP servers.
 
-This module provides connection configurations and session management for various
-MCP transport types including stdio, SSE, and streamable HTTP.
+Connections are described with the MCP SDK's own types and opened with `create_session`,
+which builds an [`mcp.Client`][mcp.Client] and yields its session. Transports, protocol
+negotiation, and HTTP client construction all belong to that client.
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from contextlib import asynccontextmanager
-from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Literal, Protocol
+from typing import TYPE_CHECKING, Any, TypeAlias
 
-import httpx2
-from mcp import ClientSession, StdioServerParameters
+from mcp import Client, StdioServerParameters
+from mcp.client.session_group import (
+    ServerParameters,
+    SseServerParameters,
+    StreamableHttpParameters,
+)
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamable_http_client
 from mcp.shared._httpx_utils import create_mcp_http_client
-from typing_extensions import NotRequired, TypedDict
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
-    from pathlib import Path
+
+    from mcp import ClientSession
 
     from langchain.mcp.callbacks import _MCPCallbacks
 
-EncodingErrorHandler = Literal["strict", "ignore", "replace"]
+Connection: TypeAlias = ServerParameters | Mapping[str, Any] | Callable[[], Any]
+"""How to reach one MCP server.
 
-DEFAULT_ENCODING = "utf-8"
-DEFAULT_ENCODING_ERROR_HANDLER: EncodingErrorHandler = "strict"
+One of:
 
-DEFAULT_HTTP_TIMEOUT = 5
-DEFAULT_SSE_READ_TIMEOUT = 60 * 5
+- The MCP SDK's [`ServerParameters`][mcp.client.session_group.ServerParameters] —
+  `StdioServerParameters`, `SseServerParameters`, or `StreamableHttpParameters`.
+- A mapping of the same fields, selected by an optional `transport` key of `"stdio"`,
+  `"sse"`, or `"streamable_http"` and otherwise inferred from `command` or `url`. The
+  mapping additionally accepts `auth` and `http_client` for the HTTP transports, and any
+  [`Client`][mcp.Client] option such as `mode`, none of which the SDK's parameter models
+  describe.
+- A callable returning a transport or a `Client`, for anything the above cannot express.
+  It must be a callable rather than an instance, because a session is opened per
+  operation and both are single-use:
 
-DEFAULT_STREAMABLE_HTTP_TIMEOUT = timedelta(seconds=30)
-DEFAULT_STREAMABLE_HTTP_SSE_READ_TIMEOUT = timedelta(seconds=60 * 5)
+  ```python
+  lambda: streamable_http_client(url, http_client=authed_client)
+  lambda: Client(transport, mode="legacy", cache=cache_config)
+  ```
+"""
 
+_PARAMETERS_BY_TRANSPORT: dict[str, type[ServerParameters]] = {
+    "stdio": StdioServerParameters,
+    "sse": SseServerParameters,
+    "http": StreamableHttpParameters,
+    "streamable_http": StreamableHttpParameters,
+    "streamable-http": StreamableHttpParameters,
+}
 
-class McpHttpClientFactory(Protocol):
-    """Protocol for creating httpx2.AsyncClient instances for MCP connections."""
-
-    def __call__(
-        self,
-        headers: dict[str, str] | None = None,
-        timeout: httpx2.Timeout | None = None,
-        auth: httpx2.Auth | None = None,
-    ) -> httpx2.AsyncClient:
-        """Create an httpx2.AsyncClient instance.
-
-        Args:
-            headers: HTTP headers to include in requests.
-            timeout: Request timeout configuration.
-            auth: Authentication configuration.
-
-        Returns:
-            Configured httpx2.AsyncClient instance.
-        """
-        ...
-
-
-class StdioConnection(TypedDict):
-    """Configuration for stdio transport connections to MCP servers."""
-
-    transport: Literal["stdio"]
-
-    command: str
-    """The executable to run to start the server."""
-
-    args: list[str]
-    """Command line arguments to pass to the executable."""
-
-    env: NotRequired[dict[str, str] | None]
-    """The environment to use when spawning the process.
-
-    If not specified or set to None, a subset of the default environment
-    variables from the current process will be used.
-
-    Please refer to the MCP SDK documentation for details on which
-    environment variables are included by default. The behavior
-    varies by operating system.
-
-    https://github.com/modelcontextprotocol/python-sdk/blob/c47c767ff437ee88a19e6b9001e2472cb6f7d5ed/src/mcp/client/stdio/__init__.py#L51
-    """
-
-    cwd: NotRequired[str | Path | None]
-    """The working directory to use when spawning the process."""
-
-    encoding: NotRequired[str]
-    """The text encoding used when sending/receiving messages to the server.
-
-    Default is 'utf-8'.
-    """
-
-    encoding_error_handler: NotRequired[EncodingErrorHandler]
-    """
-    The text encoding error handler.
-
-    See https://docs.python.org/3/library/codecs.html#codec-base-classes for
-    explanations of possible values.
-
-    Default is 'strict', which raises an error on encoding/decoding errors.
-    """
-
-    session_kwargs: NotRequired[dict[str, Any] | None]
-    """Additional keyword arguments to pass to the ClientSession."""
+# Keys that configure the transport or the client rather than describing the server. The
+# SDK's parameter models ignore keys they do not declare, so these ride along in a mapping.
+_TRANSPORT_ONLY_KEYS = frozenset({"auth", "http_client"})
+_NOT_CLIENT_KEYS = frozenset({"transport", "session_kwargs"}) | _TRANSPORT_ONLY_KEYS
 
 
-class SSEConnection(TypedDict):
-    """Configuration for Server-Sent Events (SSE) transport connections to MCP."""
-
-    transport: Literal["sse"]
-
-    url: str
-    """The URL of the SSE endpoint to connect to."""
-
-    headers: NotRequired[dict[str, Any] | None]
-    """HTTP headers to send to the SSE endpoint."""
-
-    timeout: NotRequired[float]
-    """HTTP timeout.
-
-    Default is 5 seconds. If the server takes longer to respond,
-    you can increase this value.
-    """
-
-    sse_read_timeout: NotRequired[float]
-    """SSE read timeout.
-
-    Default is 300 seconds (5 minutes). This is how long the client will
-    wait for a new event before disconnecting.
-    """
-
-    session_kwargs: NotRequired[dict[str, Any] | None]
-    """Additional keyword arguments to pass to the ClientSession."""
-
-    httpx_client_factory: NotRequired[McpHttpClientFactory | None]
-    """Custom factory for httpx2.AsyncClient (optional)."""
-
-    auth: NotRequired[httpx2.Auth]
-    """Optional authentication for the HTTP client."""
-
-
-class StreamableHttpConnection(TypedDict):
-    """Connection configuration for Streamable HTTP transport."""
-
-    transport: Literal["streamable_http"]
-
-    url: str
-    """The URL of the endpoint to connect to."""
-
-    headers: NotRequired[dict[str, Any] | None]
-    """HTTP headers to send to the endpoint."""
-
-    timeout: NotRequired[timedelta]
-    """HTTP timeout."""
-
-    sse_read_timeout: NotRequired[timedelta]
-    """How long (in seconds) the client will wait for a new event before disconnecting.
-    All other HTTP operations are controlled by `timeout`."""
-
-    terminate_on_close: NotRequired[bool]
-    """Whether to terminate the session on close."""
-
-    session_kwargs: NotRequired[dict[str, Any] | None]
-    """Additional keyword arguments to pass to the ClientSession."""
-
-    httpx_client_factory: NotRequired[McpHttpClientFactory | None]
-    """Custom factory for httpx2.AsyncClient (optional)."""
-
-    auth: NotRequired[httpx2.Auth]
-    """Optional authentication for the HTTP client."""
-
-
-Connection = StdioConnection | SSEConnection | StreamableHttpConnection
-
-
-@asynccontextmanager
-async def _create_stdio_session(
+def _transport_from_parameters(
+    params: ServerParameters,
     *,
-    command: str,
-    args: list[str],
-    env: dict[str, str] | None = None,
-    cwd: str | Path | None = None,
-    encoding: str = DEFAULT_ENCODING,
-    encoding_error_handler: Literal["strict", "ignore", "replace"] = DEFAULT_ENCODING_ERROR_HANDLER,
-    session_kwargs: dict[str, Any] | None = None,
-) -> AsyncIterator[ClientSession]:
-    """Create a new session to an MCP server using stdio.
+    auth: Any = None,
+    http_client: Any = None,
+) -> Any:
+    """Build a transport from the SDK's connection parameters.
 
-    Args:
-        command: Command to execute.
-        args: Arguments for the command.
-        env: Environment variables for the command.
-            If not specified, inherits a subset of the current environment.
-            The details are implemented in the MCP sdk.
-        cwd: Working directory for the command.
-        encoding: Character encoding.
-        encoding_error_handler: How to handle encoding errors.
-        session_kwargs: Additional keyword arguments to pass to the ClientSession.
+    `auth` and `http_client` are taken separately because the SDK's HTTP parameter models
+    describe neither, and they are the usual reason to reach for a transport.
 
-    Yields:
-        An initialized ClientSession.
+    Raises:
+        ValueError: If the parameters are of an unrecognized type.
     """
-    server_params = StdioServerParameters(
-        command=command,
-        args=args,
-        env=env,
-        cwd=cwd,
-        encoding=encoding,
-        encoding_error_handler=encoding_error_handler,
-    )
+    if isinstance(params, StdioServerParameters):
+        return stdio_client(params)
+    if isinstance(params, SseServerParameters):
+        return sse_client(
+            params.url,
+            headers=params.headers,
+            timeout=params.timeout,
+            sse_read_timeout=params.sse_read_timeout,
+            auth=auth,
+        )
+    if isinstance(params, StreamableHttpParameters):
+        return streamable_http_client(
+            params.url,
+            http_client=http_client or create_mcp_http_client(headers=params.headers, auth=auth),
+            terminate_on_close=params.terminate_on_close,
+        )
+    msg = f"Unsupported server parameters: {type(params).__name__}"
+    raise ValueError(msg)
 
-    # Create and store the connection
-    async with (
-        stdio_client(server_params) as (read, write),
-        ClientSession(read, write, **(session_kwargs or {})) as session,
-    ):
-        yield session
 
+def _parse_mapping(config: Mapping[str, Any]) -> tuple[ServerParameters, dict[str, Any]]:
+    """Split a mapping into the SDK's server parameters and the client options around them.
 
-@asynccontextmanager
-async def _create_sse_session(
-    *,
-    url: str,
-    headers: dict[str, Any] | None = None,
-    timeout: float = DEFAULT_HTTP_TIMEOUT,
-    sse_read_timeout: float = DEFAULT_SSE_READ_TIMEOUT,
-    session_kwargs: dict[str, Any] | None = None,
-    httpx_client_factory: McpHttpClientFactory | None = None,
-    auth: httpx2.Auth | None = None,
-) -> AsyncIterator[ClientSession]:
-    """Create a new session to an MCP server using SSE.
-
-    Args:
-        url: URL of the SSE server.
-        headers: HTTP headers to send to the SSE endpoint.
-        timeout: HTTP timeout.
-        sse_read_timeout: SSE read timeout.
-        session_kwargs: Additional keyword arguments to pass to the ClientSession.
-        httpx_client_factory: Custom factory for httpx2.AsyncClient (optional).
-        auth: Authentication for the HTTP client.
-
-    Yields:
-        An initialized ClientSession.
+    Raises:
+        ValueError: If the transport is unknown.
     """
-    # Create and store the connection
-    kwargs = {}
-    if httpx_client_factory is not None:
-        kwargs["httpx_client_factory"] = httpx_client_factory
+    name = config.get("transport") or ("stdio" if "command" in config else "http")
+    model = _PARAMETERS_BY_TRANSPORT.get(name)
+    if model is None:
+        known = ", ".join(sorted(_PARAMETERS_BY_TRANSPORT))
+        msg = f"Unsupported transport: {name}. Must be one of: {known}"
+        raise ValueError(msg)
 
-    async with (
-        sse_client(url, headers, timeout, sse_read_timeout, auth=auth, **kwargs) as (
-            read,
-            write,
-        ),
-        ClientSession(read, write, **(session_kwargs or {})) as session,
-    ):
-        yield session
+    params = model.model_validate(config)
+    client_kwargs = {
+        key: value
+        for key, value in config.items()
+        if key not in _NOT_CLIENT_KEYS and key not in model.model_fields
+    }
+    client_kwargs.update(config.get("session_kwargs") or {})
+    return params, client_kwargs
 
 
-@asynccontextmanager
-async def _create_streamable_http_session(
-    *,
-    url: str,
-    headers: dict[str, Any] | None = None,
-    timeout: timedelta = DEFAULT_STREAMABLE_HTTP_TIMEOUT,
-    sse_read_timeout: timedelta = DEFAULT_STREAMABLE_HTTP_SSE_READ_TIMEOUT,
-    terminate_on_close: bool = True,
-    session_kwargs: dict[str, Any] | None = None,
-    httpx_client_factory: McpHttpClientFactory | None = None,
-    auth: httpx2.Auth | None = None,
-) -> AsyncIterator[ClientSession]:
-    """Create a new session to an MCP server using Streamable HTTP.
-
-    Args:
-        url: URL of the endpoint to connect to.
-        headers: HTTP headers to send to the endpoint.
-        timeout: HTTP timeout.
-        sse_read_timeout: How long the client will wait for a new event before
-            disconnecting.
-        terminate_on_close: Whether to terminate the session on close.
-        session_kwargs: Additional keyword arguments to pass to the ClientSession.
-        httpx_client_factory: Custom factory for httpx2.AsyncClient (optional).
-        auth: Authentication for the HTTP client.
-
-    Yields:
-        An initialized ClientSession.
-    """
-    # `streamable_http_client` no longer takes the HTTP options directly; they belong to
-    # the client it is handed, which `httpx_client_factory` may supply instead.
-    factory = httpx_client_factory or create_mcp_http_client
-    http_client = factory(
-        headers=headers,
-        timeout=httpx2.Timeout(timeout.total_seconds(), read=sse_read_timeout.total_seconds()),
-        auth=auth,
-    )
-
-    async with (
-        http_client,
-        streamable_http_client(
-            url,
-            http_client=http_client,
-            terminate_on_close=terminate_on_close,
-        ) as (read, write),
-        ClientSession(read, write, **(session_kwargs or {})) as session,
-    ):
-        yield session
+def _callback_kwargs(mcp_callbacks: _MCPCallbacks | None) -> dict[str, Any]:
+    """Client options for the callbacks the caller registered, if any."""
+    if mcp_callbacks is None:
+        return {}
+    return {
+        name: callback
+        for name, callback in (
+            ("logging_callback", mcp_callbacks.logging_callback),
+            ("elicitation_callback", mcp_callbacks.elicitation_callback),
+        )
+        if callback is not None
+    }
 
 
 @asynccontextmanager
@@ -314,56 +143,49 @@ async def create_session(
     """Create a new session to an MCP server.
 
     Args:
-        connection: Connection config to use to connect to the server
-        mcp_callbacks: mcp sdk compatible callbacks to use for the ClientSession
+        connection: How to reach the server. See `Connection`.
+        mcp_callbacks: mcp sdk compatible callbacks to use for the session
 
     Raises:
-        ValueError: If transport is not recognized
-        ValueError: If required parameters for the specified transport are missing
+        TypeError: If a transport or client instance is passed instead of a callable
+            returning one, or the connection is of an unusable type.
+        ValueError: If the transport is unknown.
 
     Yields:
         A ClientSession
     """
-    if "transport" not in connection:
-        msg = (
-            "Configuration error: Missing 'transport' key in server configuration. "
-            "Each server must include 'transport' with one of: "
-            "'stdio', 'sse', 'http'. "
-            "Please refer to the langchain-mcp-adapters documentation for more details."
+    callbacks = _callback_kwargs(mcp_callbacks)
+
+    if isinstance(connection, ServerParameters):
+        client = Client(_transport_from_parameters(connection), **callbacks)
+    elif isinstance(connection, Mapping):
+        params, options = _parse_mapping(connection)
+        transport = _transport_from_parameters(
+            params,
+            auth=connection.get("auth"),
+            http_client=connection.get("http_client"),
         )
-        raise ValueError(msg)
-
-    transport = connection["transport"]
-    params = {k: v for k, v in connection.items() if k != "transport"}
-
-    if mcp_callbacks is not None:
-        params["session_kwargs"] = params.get("session_kwargs", {})
-        if mcp_callbacks.logging_callback is not None:
-            params["session_kwargs"]["logging_callback"] = mcp_callbacks.logging_callback
-        if mcp_callbacks.elicitation_callback is not None:
-            params["session_kwargs"]["elicitation_callback"] = mcp_callbacks.elicitation_callback
-
-    if transport == "sse":
-        if "url" not in params:
-            msg = "'url' parameter is required for SSE connection"
-            raise ValueError(msg)
-        async with _create_sse_session(**params) as session:
-            yield session
-    elif transport in {"streamable_http", "streamable-http", "http"}:
-        if "url" not in params:
-            msg = "'url' parameter is required for Streamable HTTP connection"
-            raise ValueError(msg)
-        async with _create_streamable_http_session(**params) as session:
-            yield session
-    elif transport == "stdio":
-        if "command" not in params:
-            msg = "'command' parameter is required for stdio connection"
-            raise ValueError(msg)
-        if "args" not in params:
-            msg = "'args' parameter is required for stdio connection"
-            raise ValueError(msg)
-        async with _create_stdio_session(**params) as session:
-            yield session
+        client = Client(transport, **{**options, **callbacks})
+    elif hasattr(connection, "__aenter__"):
+        # Checked before the callable case, because transports and clients are context
+        # managers that also happen to be callable.
+        msg = (
+            "A transport or client cannot be used as a connection, because it can only "
+            "be entered once and a session is opened per operation. Pass a callable "
+            "returning a fresh one instead, such as "
+            "`lambda: streamable_http_client(url, http_client=...)`."
+        )
+        raise TypeError(msg)
+    elif callable(connection):
+        built = connection()
+        client = built if isinstance(built, Client) else Client(built, **callbacks)
     else:
-        msg = f"Unsupported transport: {transport}. Must be one of: 'stdio', 'sse', 'http'"
-        raise ValueError(msg)
+        msg = (
+            "Unsupported connection. Expected the MCP SDK's ServerParameters, a mapping "
+            "of the same fields, or a callable returning a transport or client; got "
+            f"{type(connection).__name__}."
+        )
+        raise TypeError(msg)
+
+    async with client:
+        yield client.session

@@ -1,13 +1,18 @@
 import os
 from pathlib import Path
 
+import pytest
 from langchain_core.documents.base import Blob
 from langchain_core.messages import AIMessage
 from langchain_core.tools import BaseTool
+from mcp import StdioServerParameters
+from mcp.client.streamable_http import streamable_http_client
+from mcp.server.mcpserver import MCPServer
+from mcp.shared._httpx_utils import create_mcp_http_client
 
 from langchain.mcp.client import MultiServerMCPClient
 from langchain.mcp.tools import load_mcp_tools
-from tests.integration_tests.mcp.utils import IsLangChainID
+from tests.integration_tests.mcp.utils import IsLangChainID, run_streamable_http
 
 
 async def test_multi_server_mcp_client(
@@ -238,3 +243,66 @@ async def test_get_resources_from_specific_server():
     assert len(weather_resources) == 1
     assert str(weather_resources[0].metadata["uri"]) == "weather://forecast"
     assert weather_resources[0].data == "Sunny with a chance of clouds"
+
+
+async def test_connections_accept_sdk_server_parameters():
+    """The MCP SDK's own parameter models work anywhere a connection mapping does."""
+    current_dir = Path(__file__).parent
+    math_server_path = os.path.join(current_dir, "servers/math_server.py")
+
+    client = MultiServerMCPClient(
+        {
+            "math": StdioServerParameters(
+                command="python3",
+                args=[math_server_path],
+            ),
+        },
+    )
+
+    tools = await client.get_tools()
+    assert {"add", "multiply"} <= {tool.name for tool in tools}
+
+
+async def test_connections_accept_a_transport_factory(socket_enabled):
+    """A factory composes a server endpoint with a fully configured HTTP client.
+
+    The SDK's own HTTP parameter models describe neither `auth` nor an `http_client`, so
+    this is how the two layers are brought together. It must be a factory rather than a
+    transport, because a session is opened per operation and transports are single-use.
+    """
+
+    def transport():
+        return streamable_http_client(
+            "http://localhost:8187/mcp",
+            http_client=create_mcp_http_client(headers={"X-Test": "1"}),
+        )
+
+    with run_streamable_http(_create_time_server, 8187):
+        client = MultiServerMCPClient({"time": transport})
+
+        tools = {tool.name: tool for tool in await client.get_tools()}
+        assert list(tools) == ["get_time"]
+
+        # A second operation opens another session, which is why a factory is required.
+        result = await tools["get_time"].ainvoke({"args": {}, "id": "1", "type": "tool_call"})
+        assert "5:20" in str(result.content)
+
+
+async def test_a_bare_transport_is_rejected(socket_enabled):
+    """Passing a transport directly would work once and then fail, so it is refused."""
+    client = MultiServerMCPClient(
+        {"time": streamable_http_client("http://localhost:8187/mcp")},
+    )
+    with pytest.raises(TypeError, match="can only be entered once"):
+        await client.get_tools()
+
+
+def _create_time_server():
+    server = MCPServer()
+
+    @server.tool()
+    def get_time() -> str:
+        """Get current time"""
+        return "5:20:00 PM EST"
+
+    return server

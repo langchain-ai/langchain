@@ -67,6 +67,7 @@ async def test_elicitation_callback_accept(socket_enabled) -> None:
                 "test": {
                     "url": "http://localhost:8184/mcp",
                     "transport": "http",
+                    "mode": "legacy",
                 }
             },
             callbacks=Callbacks(on_elicitation=on_elicitation),
@@ -113,6 +114,7 @@ async def test_elicitation_callback_decline(socket_enabled) -> None:
                 "test": {
                     "url": "http://localhost:8184/mcp",
                     "transport": "http",
+                    "mode": "legacy",
                 }
             },
             callbacks=Callbacks(on_elicitation=on_elicitation),
@@ -144,6 +146,7 @@ async def test_elicitation_callback_cancel(socket_enabled) -> None:
                 "test": {
                     "url": "http://localhost:8184/mcp",
                     "transport": "http",
+                    "mode": "legacy",
                 }
             },
             callbacks=Callbacks(on_elicitation=on_elicitation),

@@ -100,6 +100,7 @@ async def test_callbacks_with_mcp_tool_execution(socket_enabled) -> None:
                 "callback_test": {
                     "url": "http://localhost:8186/mcp",
                     "transport": "streamable_http",
+                    "mode": "legacy",
                 }
             },
             callbacks=callbacks,

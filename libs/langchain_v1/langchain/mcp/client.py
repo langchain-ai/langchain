@@ -20,14 +20,7 @@ from langchain.mcp.callbacks import CallbackContext, Callbacks
 from langchain.mcp.interceptors import ToolCallInterceptor
 from langchain.mcp.prompts import load_mcp_prompt
 from langchain.mcp.resources import load_mcp_resources
-from langchain.mcp.sessions import (
-    Connection,
-    McpHttpClientFactory,
-    SSEConnection,
-    StdioConnection,
-    StreamableHttpConnection,
-    create_session,
-)
+from langchain.mcp.sessions import Connection, create_session
 from langchain.mcp.tools import load_mcp_tools
 
 ASYNC_CONTEXT_MANAGER_ERROR = (
@@ -110,17 +103,11 @@ class MultiServerMCPClient:
         self.tool_name_prefix = tool_name_prefix
 
     @asynccontextmanager
-    async def session(
-        self,
-        server_name: str,
-        *,
-        auto_initialize: bool = True,
-    ) -> AsyncIterator[ClientSession]:
+    async def session(self, server_name: str) -> AsyncIterator[ClientSession]:
         """Connect to an MCP server and initialize a session.
 
         Args:
             server_name: Name to identify this server connection
-            auto_initialize: Whether to automatically initialize the session
 
         Raises:
             ValueError: If the server name is not found in the connections
@@ -143,8 +130,6 @@ class MultiServerMCPClient:
         async with create_session(
             self.connections[server_name], mcp_callbacks=mcp_callbacks
         ) as session:
-            if auto_initialize:
-                await session.initialize()
             yield session
 
     async def get_tools(self, *, server_name: str | None = None) -> list[BaseTool]:
@@ -278,9 +263,6 @@ class MultiServerMCPClient:
 
 __all__ = [
     "Callbacks",
-    "McpHttpClientFactory",
+    "Connection",
     "MultiServerMCPClient",
-    "SSEConnection",
-    "StdioConnection",
-    "StreamableHttpConnection",
 ]

@@ -585,105 +585,35 @@ def _create_status_server():
     return server
 
 
-# Tests for httpx_client_factory functionality
+# Tests for supplying an HTTP client
 
 
-async def test_load_mcp_tools_with_custom_httpx_client_factory(socket_enabled) -> None:
-    """Test load mcp tools with custom httpx client factory."""
-
-    # Custom httpx client factory
-    def custom_httpx_client_factory(
-        headers: dict[str, str] | None = None,
-        timeout: httpx2.Timeout | None = None,
-        auth: httpx2.Auth | None = None,
-    ) -> httpx2.AsyncClient:
-        """Custom factory for creating httpx2.AsyncClient with specific configuration."""
-        return httpx2.AsyncClient(
-            headers=headers,
-            timeout=timeout or httpx2.Timeout(30.0),
-            auth=auth,
-            # Custom configuration
-            limits=httpx2.Limits(max_keepalive_connections=5, max_connections=10),
-        )
+async def test_load_mcp_tools_with_supplied_http_client(socket_enabled) -> None:
+    """A caller-supplied HTTP client is used instead of one built from the config."""
+    http_client = httpx2.AsyncClient(
+        timeout=httpx2.Timeout(30.0),
+        limits=httpx2.Limits(max_keepalive_connections=5, max_connections=10),
+    )
 
     with run_streamable_http(_create_status_server, 8182):
-        # Initialize client with custom httpx_client_factory
         client = MultiServerMCPClient(
             {
                 "status": {
                     "url": "http://localhost:8182/mcp",
                     "transport": "streamable_http",
-                    "httpx_client_factory": custom_httpx_client_factory,
+                    "http_client": http_client,
                 },
             },
         )
 
         tools = await client.get_tools(server_name="status")
         assert len(tools) == 1
-        tool = tools[0]
-        assert tool.name == "get_status"
+        assert tools[0].name == "get_status"
 
-        # Test that the tool works correctly
-        result = await tool.ainvoke({"args": {}, "id": "1", "type": "tool_call"})
+        result = await tools[0].ainvoke({"args": {}, "id": "1", "type": "tool_call"})
         assert result.content == [
             {"type": "text", "text": "Server is running", "id": IsLangChainID}
         ]
-
-
-def _create_info_server():
-    server = MCPServer()
-
-    @server.tool()
-    def get_info() -> str:
-        """Get server info"""
-        return "SSE Server Info"
-
-    return server
-
-
-async def test_load_mcp_tools_with_custom_httpx_client_factory_sse(
-    socket_enabled,
-) -> None:
-    """Test load mcp tools with custom httpx client factory using SSE transport."""
-
-    # Custom httpx client factory
-    def custom_httpx_client_factory(
-        headers: dict[str, str] | None = None,
-        timeout: httpx2.Timeout | None = None,
-        auth: httpx2.Auth | None = None,
-    ) -> httpx2.AsyncClient:
-        """Custom factory for creating httpx2.AsyncClient with specific configuration."""
-        return httpx2.AsyncClient(
-            headers=headers,
-            timeout=timeout or httpx2.Timeout(30.0),
-            auth=auth,
-            # Custom configuration for SSE
-            limits=httpx2.Limits(max_keepalive_connections=3, max_connections=5),
-        )
-
-    with run_streamable_http(_create_info_server, 8183):
-        # Initialize client with custom httpx_client_factory for SSE
-        client = MultiServerMCPClient(
-            {
-                "info": {
-                    "url": "http://localhost:8183/sse",
-                    "transport": "sse",
-                    "httpx_client_factory": custom_httpx_client_factory,
-                },
-            },
-        )
-
-        # Note: This test may not work in practice since the server doesn't expose SSE
-        # endpoint,
-        # but it tests the configuration propagation
-        try:
-            tools = await client.get_tools(server_name="info")
-            # If we get here, the httpx_client_factory was properly passed
-            assert isinstance(tools, list)
-        except Exception:
-            # Expected to fail since server doesn't have SSE endpoint,
-            # but the important thing is that httpx_client_factory was passed correctly
-            pass
 
 
 async def test_convert_mcp_tool_metadata_variants():
