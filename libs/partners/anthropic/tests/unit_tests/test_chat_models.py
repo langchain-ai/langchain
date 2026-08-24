@@ -92,7 +92,7 @@ _MESSAGE_RESPONSE = {
     "usage": {"input_tokens": 2, "output_tokens": 1},
     "type": "message",
 }
-_STREAM_EVENTS = [
+_STREAM_EVENTS: list[dict[str, Any]] = [
     {
         "type": "message_start",
         "message": {
