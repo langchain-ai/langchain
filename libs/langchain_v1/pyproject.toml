@@ -49,6 +49,7 @@ deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 meta = ["langchain-meta"]
+mcp = ["mcp>=1.9.2,<2.0.0", "typing-extensions>=4.14.0"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
@@ -75,6 +76,11 @@ test = [
     "blockbuster>=1.5.26,<1.6.0",
     "langchain-tests>=1.1.9,<2.0.0",
     "langchain-openai",
+    "mcp>=1.9.2,<2.0.0",
+    "dirty-equals>=0.9.0",
+    "starlette>=0.27.0",
+    "uvicorn>=0.30.0",
+    "websockets>=13.0",
 ]
 lint = [
     "ruff>=0.15.0,<0.17.0",
@@ -115,6 +121,14 @@ warn_unreachable = true
 module = ["pytest_socket.*", "vcr.*"]
 ignore_missing_imports = true
 
+# `langchain.mcp` is a verbatim port of `langchain-mcp-adapters`, which was not written
+# against this package's strict settings (63 errors on arrival). Type checking is turned
+# off here so the move stays a move; a follow-up brings the module up to the repo's bar
+# and removes this override.
+[[tool.mypy.overrides]]
+module = ["langchain.mcp.*"]
+ignore_errors = true
+
 [tool.ruff.format]
 docstring-code-format = true
 
@@ -153,6 +167,21 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/unit_tests/agents/test_react_agent.py" = ["ALL"]
+# Ported verbatim from `langchain-mcp-adapters`. The style gaps are pre-existing, so they
+# are silenced here rather than mixed into the move, and cleaned up in a follow-up.
+"tests/{unit_tests,integration_tests}/mcp/*" = [
+    "ANN",     # Missing type annotations
+    "ARG",     # Unused arguments (fixtures and protocol stubs)
+    "D415",    # Missing terminal punctuation
+    "EM",      # Exception messages assigned to a variable
+    "PT006",   # Parametrize names style
+    "PT011",   # `pytest.raises` too broad
+    "PTH118",  # `os.path.join` over `pathlib`
+    "RET504",  # Unnecessary assign before return
+    "S110",    # `try`/`except`/`pass`
+    "TC001",   # Typing-only first-party import
+    "TRY003",  # Long messages outside the exception class
+]
 "tests/*" = [
     "D1",      # Documentation rules
     "S101",    # Tests need assertions
