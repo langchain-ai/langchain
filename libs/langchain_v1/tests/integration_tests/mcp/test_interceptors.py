@@ -2,7 +2,7 @@
 
 import pytest
 from langchain_core.messages import ToolMessage
-from mcp.server import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.types import (
     CallToolResult,
     TextContent,
@@ -17,7 +17,7 @@ from tests.integration_tests.mcp.utils import IsLangChainID, run_streamable_http
 
 def _create_math_server(port: int = 8200):
     """Create a math server with add and multiply tools."""
-    server = FastMCP(port=port)
+    server = MCPServer()
 
     @server.tool()
     def add(a: int, b: int) -> int:
@@ -116,7 +116,7 @@ class TestInterceptorModifiesResponse:
 
             return CallToolResult(
                 content=modified_content,
-                isError=result.isError,
+                isError=result.is_error,
             )
 
         with run_streamable_http(_create_math_server, 8203):

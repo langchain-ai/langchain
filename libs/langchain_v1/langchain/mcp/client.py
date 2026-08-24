@@ -26,7 +26,6 @@ from langchain.mcp.sessions import (
     SSEConnection,
     StdioConnection,
     StreamableHttpConnection,
-    WebsocketConnection,
     create_session,
 )
 from langchain.mcp.tools import load_mcp_tools
@@ -284,5 +283,4 @@ __all__ = [
     "SSEConnection",
     "StdioConnection",
     "StreamableHttpConnection",
-    "WebsocketConnection",
 ]

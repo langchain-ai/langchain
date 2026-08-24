@@ -49,7 +49,7 @@ deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 meta = ["langchain-meta"]
-mcp = ["mcp>=1.9.2,<2.0.0", "typing-extensions>=4.14.0"]
+mcp = ["mcp>=2.0.0,<3.0.0", "typing-extensions>=4.14.0"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
@@ -76,11 +76,9 @@ test = [
     "blockbuster>=1.5.26,<1.6.0",
     "langchain-tests>=1.1.9,<2.0.0",
     "langchain-openai",
-    "mcp>=1.9.2,<2.0.0",
+    "mcp>=2.0.0,<3.0.0",
     "dirty-equals>=0.9.0",
-    "starlette>=0.27.0",
     "uvicorn>=0.30.0",
-    "websockets>=13.0",
 ]
 lint = [
     "ruff>=0.15.0,<0.17.0",

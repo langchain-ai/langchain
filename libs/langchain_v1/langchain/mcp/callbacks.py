@@ -3,10 +3,10 @@
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
+from mcp.client.session import ClientRequestContext as MCPRequestContext
 from mcp.client.session import ElicitationFnT as MCPElicitationFnT
 from mcp.client.session import LoggingFnT as MCPLoggingFnT
-from mcp.shared.context import RequestContext as MCPRequestContext
-from mcp.shared.session import ProgressFnT as MCPProgressFnT
+from mcp.client.session import ProgressFnT as MCPProgressFnT
 from mcp.types import (
     ElicitRequestParams as MCPElicitRequestParams,
 )
@@ -51,7 +51,7 @@ class LoggingMessageCallback(Protocol):
 
 @runtime_checkable
 class ProgressCallback(Protocol):
-    """Light wrapper around the mcp.shared.session.ProgressFnT.
+    """Light wrapper around the mcp.client.session.ProgressFnT.
 
     Injects callback context as the last argument.
     """
