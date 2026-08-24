@@ -367,6 +367,11 @@ class HTMLHeaderTextSplitter:
                 yield doc
 
 
+# Internal sentinel used to mark sections that appear before the first
+# configured header. Never expose it in returned document metadata.
+_TITLE_SENTINEL = "#TITLE#"
+
+
 class HTMLSectionSplitter:
     """Splitting HTML files based on specified tag and font sizes.
 
@@ -440,12 +445,15 @@ class HTMLSectionSplitter:
         metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            for chunk in self.split_text(text):
+            for chunk in self._split_text_with_sentinel(text):
                 metadata = copy.deepcopy(metadatas_[i])
 
-                for key in chunk.metadata:
-                    if chunk.metadata[key] == "#TITLE#":
-                        chunk.metadata[key] = metadata["Title"]
+                for key in list(chunk.metadata):
+                    if chunk.metadata[key] == _TITLE_SENTINEL:
+                        if "Title" in metadata:
+                            chunk.metadata[key] = metadata["Title"]
+                        else:
+                            del chunk.metadata[key]
                 metadata = {**metadata, **chunk.metadata}
                 new_doc = Document(page_content=chunk.page_content, metadata=metadata)
                 documents.append(new_doc)
@@ -488,7 +496,7 @@ class HTMLSectionSplitter:
 
         for i, header in enumerate(headers):
             if i == 0:
-                current_header = "#TITLE#"
+                current_header = _TITLE_SENTINEL
                 current_header_tag = "h1"
                 section_content: list[str] = []
             else:
@@ -547,6 +555,14 @@ class HTMLSectionSplitter:
         result = transform(tree)
         return str(result)
 
+    def _split_text_with_sentinel(self, text: str) -> list[Document]:
+        """Split HTML text, keeping the internal title sentinel in metadata.
+
+        Pre-header sections carry the sentinel so that `create_documents`
+        can replace it with the parent document's `Title` when one exists.
+        """
+        return self._split_text_from_file_with_sentinel(StringIO(text))
+
     def split_text_from_file(self, file: StringIO) -> list[Document]:
         """Split HTML content from a file into a list of `Document` objects.
 
@@ -556,6 +572,20 @@ class HTMLSectionSplitter:
         Returns:
             A list of split `Document` objects.
         """
+        docs = self._split_text_from_file_with_sentinel(file)
+        return [
+            Document(
+                page_content=doc.page_content,
+                metadata={
+                    key: value
+                    for key, value in doc.metadata.items()
+                    if value != _TITLE_SENTINEL
+                },
+            )
+            for doc in docs
+        ]
+
+    def _split_text_from_file_with_sentinel(self, file: StringIO) -> list[Document]:
         file_content = file.getvalue()
         file_content = self.convert_possible_tags_to_header(file_content)
         sections = self.split_html_by_headers(file_content)

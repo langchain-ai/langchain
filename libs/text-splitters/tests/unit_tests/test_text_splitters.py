@@ -3280,6 +3280,69 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars() -> None:
     assert docs[2].metadata["Header 2"] == "Baz"
 
 
+_PRE_HEADER_HTML = """<!DOCTYPE html>
+    <html>
+    <body>
+        <p>Intro before header.</p>
+        <h1>Header</h1>
+        <p>Body.</p>
+    </body>
+    </html>"""
+
+
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
+def test_section_splitter_does_not_leak_title_sentinel() -> None:
+    """Pre-header content must not expose the internal title sentinel (#38142)."""
+    sec_splitter = HTMLSectionSplitter(headers_to_split_on=[("h1", "Header 1")])
+
+    docs = sec_splitter.split_text(_PRE_HEADER_HTML)
+
+    assert len(docs) == 2
+    assert docs[0].page_content == "Intro before header."
+    assert docs[0].metadata == {}
+    assert docs[1].metadata == {"Header 1": "Header"}
+    assert all("#TITLE#" not in doc.metadata.values() for doc in docs)
+
+
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
+def test_create_documents_without_title_key_does_not_raise() -> None:
+    """Missing parent `Title` must not raise `KeyError` (#38142)."""
+    sec_splitter = HTMLSectionSplitter(headers_to_split_on=[("h1", "Header 1")])
+
+    docs = sec_splitter.create_documents(
+        [_PRE_HEADER_HTML], metadatas=[{"source": "example"}]
+    )
+
+    assert len(docs) == 2
+    assert docs[0].metadata == {"source": "example"}
+    assert docs[1].metadata == {"source": "example", "Header 1": "Header"}
+
+
+@pytest.mark.requires("bs4")
+@pytest.mark.requires("lxml")
+def test_create_documents_with_title_key_replaces_sentinel() -> None:
+    """Parent `Title` still fills the pre-header chunk's configured key."""
+    sec_splitter = HTMLSectionSplitter(headers_to_split_on=[("h1", "Header 1")])
+
+    docs = sec_splitter.create_documents(
+        [_PRE_HEADER_HTML], metadatas=[{"source": "example", "Title": "My Doc"}]
+    )
+
+    assert len(docs) == 2
+    assert docs[0].metadata == {
+        "source": "example",
+        "Title": "My Doc",
+        "Header 1": "My Doc",
+    }
+    assert docs[1].metadata == {
+        "source": "example",
+        "Title": "My Doc",
+        "Header 1": "Header",
+    }
+
+
 @pytest.mark.requires("bs4")
 @pytest.mark.requires("lxml")
 def test_happy_path_splitting_with_duplicate_header_tag() -> None:
