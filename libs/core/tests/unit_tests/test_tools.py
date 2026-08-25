@@ -3694,6 +3694,29 @@ def test_tool_invoke_does_not_mutate_inputs() -> None:
     }
 
 
+@pytest.mark.parametrize("schema", [{}, {"type": "object"}])
+def test_tool_args_dict_schema_without_properties(schema: dict[str, Any]) -> None:
+    """`args` defaults to `{}` when a dict schema omits `properties`.
+
+    `properties` is optional in JSON Schema, and a tool that takes no arguments
+    may leave it out. Schemas authored outside LangChain do this in practice --
+    an MCP server's advertised `inputSchema`, or an OpenAPI import. Pydantic
+    always emits the key, so this only arises on the dict `args_schema` path.
+    """
+
+    def no_op() -> str:
+        return "good"
+
+    tool = StructuredTool(
+        name="sample_tool",
+        description="",
+        args_schema=schema,
+        func=no_op,
+    )
+
+    assert tool.args == {}
+
+
 def test_tool_args_schema_with_annotated_type() -> None:
     @tool
     def test_tool(

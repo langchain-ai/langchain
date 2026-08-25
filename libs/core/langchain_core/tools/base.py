@@ -619,7 +619,10 @@ class ChildTool(BaseTool):
                 json_schema = input_schema
             else:
                 json_schema = model_json_schema(input_schema)
-        return cast("dict[str, Any]", json_schema["properties"])
+        # `properties` is optional in JSON Schema, and a schema that takes no
+        # arguments may omit it entirely. Pydantic always emits the key, so this
+        # only matters for dict schemas authored outside LangChain.
+        return cast("dict[str, Any]", json_schema.get("properties", {}))
 
     _tool_call_schema_memo: ArgsSchema | None = PrivateAttr(default=None)
     """Memoized `tool_call_schema` result.
