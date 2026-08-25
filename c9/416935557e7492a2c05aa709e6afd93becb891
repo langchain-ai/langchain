@@ -1,0 +1,27 @@
+libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py
+  s_7655c4b4693b50::t_61c2e2f1d24418 107-108
+  s_7655c4b4693b50::t_e2374a7b13df44 340,342-346
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_human_in_the_loop.py
+  s_7655c4b4693b50::t_a8e89f15ea3d5e 463-465
+  s_7655c4b4693b50::t_1664a5b299ae05 1022-1024
+  s_7655c4b4693b50::t_44f50dd18aa1c9 206-210
+  s_7655c4b4693b50::t_6330d86936aecd 176-177
+libs/langchain_v1/uv.lock
+  s_7655c4b4693b50::t_6adab64ed07a3d 2123,2263,2266,2280,2467,2470,2478,2480,2502
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "c9416935557e7492a2c05aa709e6afd93becb891",
+  "prompts": {},
+  "sessions": {
+    "s_7655c4b4693b50": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea616d3d-886d-4ae7-bb9a-451551b0555c",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
