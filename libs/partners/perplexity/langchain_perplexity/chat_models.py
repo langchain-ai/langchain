@@ -38,6 +38,7 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.messages.ai import (
+    InputTokenDetails,
     OutputTokenDetails,
     UsageMetadata,
     subtract_usage,
@@ -95,6 +96,15 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
 
+    # Build input_token_details for cache token accounting
+    input_token_details: InputTokenDetails = {}
+    details = token_usage.get("input_tokens_details") or {}
+    if isinstance(details, dict):
+        if (cache_read := details.get("cache_read_input_tokens")) is not None:
+            input_token_details["cache_read"] = cache_read
+        if (cache_creation := details.get("cache_creation_input_tokens")) is not None:
+            input_token_details["cache_creation"] = cache_creation
+
     # Build output_token_details for Perplexity-specific fields
     output_token_details: OutputTokenDetails = {}
     if (reasoning := token_usage.get("reasoning_tokens")) is not None:
@@ -102,12 +112,15 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     if (citation_tokens := token_usage.get("citation_tokens")) is not None:
         output_token_details["citation_tokens"] = citation_tokens  # type: ignore[typeddict-unknown-key]
 
-    return UsageMetadata(
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-        total_tokens=total_tokens,
-        output_token_details=output_token_details,
-    )
+    kwargs: dict[str, Any] = {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+        "output_token_details": output_token_details,
+    }
+    if input_token_details:
+        kwargs["input_token_details"] = input_token_details
+    return UsageMetadata(**kwargs)
 
 
 _RESPONSES_ONLY_ARGS = frozenset(
@@ -354,11 +367,26 @@ def _convert_responses_usage(usage: Any) -> UsageMetadata | None:
     total_tokens = _get_attr(usage, "total_tokens", None)
     if total_tokens is None:
         total_tokens = input_tokens + output_tokens
-    return UsageMetadata(
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-        total_tokens=total_tokens,
-    )
+
+    # Extract cache token details from input_tokens_details sub-object
+    input_token_details: InputTokenDetails = {}
+    details = _get_attr(usage, "input_tokens_details", None)
+    if details is not None:
+        cache_read = _get_attr(details, "cache_read_input_tokens", None)
+        if cache_read is not None:
+            input_token_details["cache_read"] = cache_read
+        cache_creation = _get_attr(details, "cache_creation_input_tokens", None)
+        if cache_creation is not None:
+            input_token_details["cache_creation"] = cache_creation
+
+    kwargs: dict[str, Any] = {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+    }
+    if input_token_details:
+        kwargs["input_token_details"] = input_token_details
+    return UsageMetadata(**kwargs)
 
 
 def _extract_responses_text(response: Any) -> str:
