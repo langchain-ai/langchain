@@ -30,7 +30,7 @@ def convert_mcp_resource_to_langchain_blob(resource_uri: str, contents: Resource
         msg = f"Unsupported content type for URI {resource_uri}"
         raise TypeError(msg)
 
-    return Blob.from_data(data=data, mime_type=contents.mimeType, metadata={"uri": resource_uri})
+    return Blob.from_data(data=data, mime_type=contents.mime_type, metadata={"uri": resource_uri})
 
 
 async def get_mcp_resource(session: ClientSession, uri: str) -> list[Blob]:

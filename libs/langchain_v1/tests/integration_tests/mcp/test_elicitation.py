@@ -1,7 +1,7 @@
 """Tests for MCP elicitation callback support."""
 
-from mcp.server.fastmcp import Context, FastMCP
-from mcp.shared.context import RequestContext
+from mcp.client.session import ClientRequestContext as RequestContext
+from mcp.server.mcpserver import Context, MCPServer
 from mcp.types import ElicitRequestParams, ElicitResult
 from pydantic import BaseModel
 
@@ -14,7 +14,7 @@ def _create_elicitation_server():
         email: str
         age: int
 
-    server = FastMCP(port=8184)
+    server = MCPServer()
 
     # Track how many times code before elicit runs (should be exactly once)
     server._pre_elicit_call_count = 0

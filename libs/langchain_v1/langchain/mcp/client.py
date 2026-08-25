@@ -14,7 +14,7 @@ from langchain_core.documents.base import Blob
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import BaseTool
 from mcp import ClientSession
-from mcp.shared.session import ProgressFnT
+from mcp.client.session import ProgressFnT
 from typing_extensions import Self
 
 from langchain.mcp.prompts import load_mcp_prompt
@@ -25,7 +25,6 @@ from langchain.mcp.sessions import (
     SSEConnection,
     StdioConnection,
     StreamableHttpConnection,
-    WebsocketConnection,
     create_session,
 )
 from langchain.mcp.tools import load_mcp_tools
@@ -270,5 +269,4 @@ __all__ = [
     "SSEConnection",
     "StdioConnection",
     "StreamableHttpConnection",
-    "WebsocketConnection",
 ]

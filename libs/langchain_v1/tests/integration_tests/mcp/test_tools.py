@@ -1,17 +1,16 @@
 import typing
 from collections.abc import Callable, Sequence
-from typing import Annotated, Any
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
-import httpx
+import httpx2
 import pytest
-from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable
-from langchain_core.tools import BaseTool, InjectedToolArg, ToolException, tool
-from mcp.server import FastMCP
+from langchain_core.tools import BaseTool, ToolException
+from mcp.server.mcpserver import MCPServer
 from mcp.types import (
     AudioContent,
     BlobResourceContents,
@@ -24,7 +23,6 @@ from mcp.types import (
     ToolAnnotations,
 )
 from mcp.types import Tool as MCPTool
-from pydantic import BaseModel
 
 from langchain.mcp.client import MultiServerMCPClient
 from langchain.mcp.tools import (
@@ -32,7 +30,6 @@ from langchain.mcp.tools import (
     _convert_call_tool_result,
     convert_mcp_tool_to_langchain_tool,
     load_mcp_tools,
-    to_fastmcp,
 )
 from tests.integration_tests.mcp.utils import IsLangChainID, run_streamable_http
 
@@ -463,7 +460,7 @@ async def test_load_mcp_tools():
             inputSchema=tool_input_schema,
         ),
     ]
-    session.list_tools.return_value = MagicMock(tools=mcp_tools, nextCursor=None)
+    session.list_tools.return_value = MagicMock(tools=mcp_tools, next_cursor=None)
 
     # Mock call_tool to return different results for different tools
     async def mock_call_tool(tool_name, arguments, progress_callback=None):
@@ -518,7 +515,7 @@ async def test_load_mcp_tools():
 
 
 def _create_annotations_server():
-    server = FastMCP(port=8181)
+    server = MCPServer()
 
     @server.tool(
         annotations=ToolAnnotations(title="Get Time", readOnlyHint=True, idempotentHint=False),
@@ -576,92 +573,8 @@ async def test_load_mcp_tools_with_annotations(socket_enabled) -> None:
         }
 
 
-# Tests for to_fastmcp functionality
-
-
-@tool
-def add(a: int, b: int) -> int:
-    """Add two numbers"""
-    return a + b
-
-
-class AddInput(BaseModel):
-    """Add two numbers"""
-
-    a: int
-    b: int
-
-
-@tool("add", args_schema=AddInput)
-def add_with_schema(a: int, b: int) -> int:
-    return a + b
-
-
-@tool("add")
-def add_with_injection(a: int, b: int, injected_arg: Annotated[str, InjectedToolArg()]) -> int:
-    """Add two numbers"""
-    return a + b
-
-
-class AddTool(BaseTool):
-    name: str = "add"
-    description: str = "Add two numbers"
-    args_schema: type[BaseModel] | None = AddInput
-
-    def _run(self, a: int, b: int, run_manager: CallbackManagerForToolRun | None = None) -> int:
-        """Use the tool."""
-        return a + b
-
-    async def _arun(
-        self,
-        a: int,
-        b: int,
-        run_manager: CallbackManagerForToolRun | None = None,
-    ) -> int:
-        """Use the tool."""
-        return self._run(a, b, run_manager=run_manager)
-
-
-@pytest.mark.parametrize(
-    "tool_instance",
-    [add, add_with_schema, AddTool()],
-    ids=["tool", "tool_with_schema", "tool_class"],
-)
-async def test_convert_langchain_tool_to_fastmcp_tool(tool_instance):
-    fastmcp_tool = to_fastmcp(tool_instance)
-    assert fastmcp_tool.name == "add"
-    assert fastmcp_tool.description == "Add two numbers"
-    assert fastmcp_tool.parameters == {
-        "description": "Add two numbers",
-        "properties": {
-            "a": {"title": "A", "type": "integer"},
-            "b": {"title": "B", "type": "integer"},
-        },
-        "required": ["a", "b"],
-        "title": "add",
-        "type": "object",
-    }
-    assert fastmcp_tool.fn_metadata.arg_model.model_json_schema() == {
-        "properties": {
-            "a": {"title": "A", "type": "integer"},
-            "b": {"title": "B", "type": "integer"},
-        },
-        "required": ["a", "b"],
-        "title": "addArguments",
-        "type": "object",
-    }
-
-    arguments = {"a": 1, "b": 2}
-    assert await fastmcp_tool.run(arguments=arguments) == 3
-
-
-def test_convert_langchain_tool_to_fastmcp_tool_with_injection():
-    with pytest.raises(NotImplementedError):
-        to_fastmcp(add_with_injection)
-
-
 def _create_status_server():
-    server = FastMCP(port=8182)
+    server = MCPServer()
 
     @server.tool()
     def get_status() -> str:
@@ -680,16 +593,16 @@ async def test_load_mcp_tools_with_custom_httpx_client_factory(socket_enabled) -
     # Custom httpx client factory
     def custom_httpx_client_factory(
         headers: dict[str, str] | None = None,
-        timeout: httpx.Timeout | None = None,
-        auth: httpx.Auth | None = None,
-    ) -> httpx.AsyncClient:
-        """Custom factory for creating httpx.AsyncClient with specific configuration."""
-        return httpx.AsyncClient(
+        timeout: httpx2.Timeout | None = None,
+        auth: httpx2.Auth | None = None,
+    ) -> httpx2.AsyncClient:
+        """Custom factory for creating httpx2.AsyncClient with specific configuration."""
+        return httpx2.AsyncClient(
             headers=headers,
-            timeout=timeout or httpx.Timeout(30.0),
+            timeout=timeout or httpx2.Timeout(30.0),
             auth=auth,
             # Custom configuration
-            limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
+            limits=httpx2.Limits(max_keepalive_connections=5, max_connections=10),
         )
 
     with run_streamable_http(_create_status_server, 8182):
@@ -717,7 +630,7 @@ async def test_load_mcp_tools_with_custom_httpx_client_factory(socket_enabled) -
 
 
 def _create_info_server():
-    server = FastMCP(port=8183)
+    server = MCPServer()
 
     @server.tool()
     def get_info() -> str:
@@ -735,16 +648,16 @@ async def test_load_mcp_tools_with_custom_httpx_client_factory_sse(
     # Custom httpx client factory
     def custom_httpx_client_factory(
         headers: dict[str, str] | None = None,
-        timeout: httpx.Timeout | None = None,
-        auth: httpx.Auth | None = None,
-    ) -> httpx.AsyncClient:
-        """Custom factory for creating httpx.AsyncClient with specific configuration."""
-        return httpx.AsyncClient(
+        timeout: httpx2.Timeout | None = None,
+        auth: httpx2.Auth | None = None,
+    ) -> httpx2.AsyncClient:
+        """Custom factory for creating httpx2.AsyncClient with specific configuration."""
+        return httpx2.AsyncClient(
             headers=headers,
-            timeout=timeout or httpx.Timeout(30.0),
+            timeout=timeout or httpx2.Timeout(30.0),
             auth=auth,
             # Custom configuration for SSE
-            limits=httpx.Limits(max_keepalive_connections=3, max_connections=5),
+            limits=httpx2.Limits(max_keepalive_connections=3, max_connections=5),
         )
 
     with run_streamable_http(_create_info_server, 8183):
@@ -838,7 +751,7 @@ async def test_convert_mcp_tool_metadata_variants():
 
 
 def _create_increment_server():
-    server = FastMCP(port=8183)
+    server = MCPServer()
 
     @server.tool()
     def increment(value: int) -> str:
@@ -872,7 +785,7 @@ class FixedGenericFakeChatModel(GenericFakeChatModel):
 
 def _create_weather_search_server():
     """Create a weather server with a search tool."""
-    server = FastMCP(port=8185)
+    server = MCPServer()
 
     @server.tool()
     def search(query: str) -> str:
@@ -884,7 +797,7 @@ def _create_weather_search_server():
 
 def _create_flights_search_server():
     """Create a flights server with a search tool."""
-    server = FastMCP(port=8186)
+    server = MCPServer()
 
     @server.tool()
     def search(destination: str) -> str:

@@ -12,14 +12,13 @@ from tests.integration_tests.mcp.utils import IsLangChainID
 
 async def test_multi_server_mcp_client(
     socket_enabled,
-    websocket_server,
-    websocket_server_port: int,
 ):
     """Test that MultiServerMCPClient can connect to multiple servers and load tools."""
     # Get the absolute path to the server scripts
     current_dir = Path(__file__).parent
     math_server_path = os.path.join(current_dir, "servers/math_server.py")
     weather_server_path = os.path.join(current_dir, "servers/weather_server.py")
+    time_server_path = os.path.join(current_dir, "servers/time_server.py")
 
     client = MultiServerMCPClient(
         {
@@ -34,8 +33,9 @@ async def test_multi_server_mcp_client(
                 "transport": "stdio",
             },
             "time": {
-                "url": f"ws://127.0.0.1:{websocket_server_port}/ws",
-                "transport": "websocket",
+                "command": "python3",
+                "args": [time_server_path],
+                "transport": "stdio",
             },
         },
     )
@@ -92,13 +92,12 @@ async def test_multi_server_mcp_client(
 
 async def test_multi_server_connect_methods(
     socket_enabled,
-    websocket_server,
-    websocket_server_port: int,
 ):
     """Test the different connect methods for MultiServerMCPClient."""
     # Get the absolute path to the server scripts
     current_dir = Path(__file__).parent
     math_server_path = os.path.join(current_dir, "servers/math_server.py")
+    time_server_path = os.path.join(current_dir, "servers/time_server.py")
 
     # Initialize client without initial connections
     client = MultiServerMCPClient(
@@ -109,8 +108,9 @@ async def test_multi_server_connect_methods(
                 "transport": "stdio",
             },
             "time": {
-                "url": f"ws://127.0.0.1:{websocket_server_port}/ws",
-                "transport": "websocket",
+                "command": "python3",
+                "args": [time_server_path],
+                "transport": "stdio",
             },
         },
     )

@@ -4,7 +4,7 @@ This module provides functionality to convert MCP tools into LangChain-compatibl
 tools, handle tool execution, and manage tool conversion between the two formats.
 """
 
-from typing import Any, TypedDict, get_args
+from typing import Any, TypedDict
 
 from langchain_core.messages import ToolMessage
 from langchain_core.messages.content import (
@@ -17,15 +17,11 @@ from langchain_core.messages.content import (
 )
 from langchain_core.tools import (
     BaseTool,
-    InjectedToolArg,
     StructuredTool,
     ToolException,
 )
-from langchain_core.tools.base import get_all_basemodel_annotations
 from mcp import ClientSession
-from mcp.server.fastmcp.tools import Tool as FastMCPTool
-from mcp.server.fastmcp.utilities.func_metadata import ArgModelBase, FuncMetadata
-from mcp.shared.session import ProgressFnT
+from mcp.client.session import ProgressFnT
 from mcp.types import (
     AudioContent,
     BlobResourceContents,
@@ -33,12 +29,12 @@ from mcp.types import (
     ContentBlock,
     EmbeddedResource,
     ImageContent,
+    PaginatedRequestParams,
     ResourceLink,
     TextContent,
     TextResourceContents,
 )
 from mcp.types import Tool as MCPTool
-from pydantic import BaseModel, create_model
 
 from langchain.mcp.sessions import Connection, create_session
 
@@ -96,17 +92,17 @@ def _convert_mcp_content_to_lc_block(
         return create_text_block(text=content.text)
 
     if isinstance(content, ImageContent):
-        return create_image_block(base64=content.data, mime_type=content.mimeType)
+        return create_image_block(base64=content.data, mime_type=content.mime_type)
 
     if isinstance(content, AudioContent):
         msg = (
             "AudioContent conversion to LangChain content blocks is not yet "
-            f"supported. Received audio with mime type: {content.mimeType}"
+            f"supported. Received audio with mime type: {content.mime_type}"
         )
         raise NotImplementedError(msg)
 
     if isinstance(content, ResourceLink):
-        mime_type = content.mimeType or None
+        mime_type = content.mime_type or None
         if mime_type and mime_type.startswith("image/"):
             return create_image_block(url=str(content.uri), mime_type=mime_type)
         return create_file_block(url=str(content.uri), mime_type=mime_type)
@@ -116,7 +112,7 @@ def _convert_mcp_content_to_lc_block(
         if isinstance(resource, TextResourceContents):
             return create_text_block(text=resource.text)
         if isinstance(resource, BlobResourceContents):
-            mime_type = resource.mimeType or None
+            mime_type = resource.mime_type or None
             if mime_type and mime_type.startswith("image/"):
                 return create_image_block(base64=resource.blob, mime_type=mime_type)
             return create_file_block(base64=resource.blob, mime_type=mime_type)
@@ -160,7 +156,7 @@ def _convert_call_tool_result(
         _convert_mcp_content_to_lc_block(content) for content in call_tool_result.content
     ]
 
-    if call_tool_result.isError:
+    if call_tool_result.is_error:
         # Join text from all blocks
         error_parts = []
         for item in tool_content:
@@ -173,8 +169,8 @@ def _convert_call_tool_result(
 
     # Extract structured content and wrap in MCPToolArtifact
     artifact: MCPToolArtifact | None = None
-    if call_tool_result.structuredContent is not None:
-        artifact = MCPToolArtifact(structured_content=call_tool_result.structuredContent)
+    if call_tool_result.structured_content is not None:
+        artifact = MCPToolArtifact(structured_content=call_tool_result.structured_content)
 
     return tool_content, artifact
 
@@ -202,17 +198,18 @@ async def _list_all_tools(session: ClientSession) -> list[MCPTool]:
             msg = "Reached max of 1000 iterations while listing tools."
             raise RuntimeError(msg)
 
-        list_tools_page_result = await session.list_tools(cursor=current_cursor)
+        page = PaginatedRequestParams(cursor=current_cursor) if current_cursor else None
+        list_tools_page_result = await session.list_tools(params=page)
 
         if list_tools_page_result.tools:
             all_tools.extend(list_tools_page_result.tools)
 
         # Pagination spec: https://modelcontextprotocol.io/specification/2025-06-18/server/utilities/pagination
         # compatible with None or ""
-        if not list_tools_page_result.nextCursor:
+        if not list_tools_page_result.next_cursor:
             break
 
-        current_cursor = list_tools_page_result.nextCursor
+        current_cursor = list_tools_page_result.next_cursor
     return all_tools
 
 
@@ -313,7 +310,9 @@ def convert_mcp_tool_to_langchain_tool(
         return _convert_call_tool_result(await execute_tool())
 
     meta = getattr(tool, "meta", None)
-    base = tool.annotations.model_dump() if tool.annotations is not None else {}
+    # Dump by alias so these stay the specification's names (`readOnlyHint`), which
+    # mcp 2.x renamed to snake_case on the model itself.
+    base = tool.annotations.model_dump(by_alias=True) if tool.annotations is not None else {}
     meta = {"_meta": meta} if meta is not None else {}
     metadata = {**base, **meta} or None
 
@@ -325,7 +324,7 @@ def convert_mcp_tool_to_langchain_tool(
     return StructuredTool(
         name=lc_tool_name,
         description=tool.description or "",
-        args_schema=tool.inputSchema,
+        args_schema=tool.input_schema,
         coroutine=call_tool,
         response_format="content_and_artifact",
         metadata=metadata,
@@ -383,76 +382,3 @@ async def load_mcp_tools(
         )
         for tool in tools
     ]
-
-
-def _get_injected_args(tool: BaseTool) -> list[str]:
-    """Extract field names with InjectedToolArg annotation from tool schema.
-
-    Args:
-        tool: LangChain tool to inspect.
-
-    Returns:
-        List of field names marked as injected arguments.
-    """
-
-    def _is_injected_arg_type(type_: type) -> bool:
-        """Check if type annotation contains InjectedToolArg."""
-        return any(
-            isinstance(arg, InjectedToolArg)
-            or (isinstance(arg, type) and issubclass(arg, InjectedToolArg))
-            for arg in get_args(type_)[1:]
-        )
-
-    return [
-        field
-        for field, field_info in get_all_basemodel_annotations(tool.args_schema).items()
-        if _is_injected_arg_type(field_info)
-    ]
-
-
-def to_fastmcp(tool: BaseTool) -> FastMCPTool:
-    """Convert LangChain tool to FastMCP tool.
-
-    Args:
-        tool: LangChain tool to convert.
-
-    Returns:
-        FastMCP tool equivalent.
-
-    Raises:
-        TypeError: If args_schema is not BaseModel subclass.
-        NotImplementedError: If tool has injected arguments.
-    """
-    if not issubclass(tool.args_schema, BaseModel):
-        msg = (
-            "Tool args_schema must be a subclass of pydantic.BaseModel. "
-            "Tools with dict args schema are not supported."
-        )
-        raise TypeError(msg)
-
-    parameters = tool.tool_call_schema.model_json_schema()
-    field_definitions = {
-        field: (field_info.annotation, field_info)
-        for field, field_info in tool.tool_call_schema.model_fields.items()
-    }
-    arg_model = create_model(f"{tool.name}Arguments", **field_definitions, __base__=ArgModelBase)
-    fn_metadata = FuncMetadata(arg_model=arg_model)
-
-    # We'll use an Any type for the function return type.
-    # We're providing the parameters separately
-    async def fn(**arguments: dict[str, Any]) -> Any:
-        return await tool.ainvoke(arguments)
-
-    injected_args = _get_injected_args(tool)
-    if len(injected_args) > 0:
-        msg = "LangChain tools with injected arguments are not supported"
-        raise NotImplementedError(msg)
-
-    return FastMCPTool(
-        fn=fn,
-        name=tool.name,
-        description=tool.description,
-        parameters=parameters,
-        fn_metadata=fn_metadata,
-        is_async=True,
-    )
