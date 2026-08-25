@@ -96,20 +96,26 @@ def test_converted_tool_metadata_carries_every_server_field() -> None:
     metadata = convert_mcp_tool_to_langchain_tool(MagicMock(), mcp_tool).metadata
     assert metadata is not None
 
-    assert metadata["title"] == "Search"
-    assert metadata["readOnlyHint"] is True
-    assert metadata["outputSchema"] == {
+    # Namespaced so a server cannot collide with the application's own metadata keys.
+    mcp = metadata["mcp"]
+    assert mcp["title"] == "Search"
+    assert mcp["annotations"]["readOnlyHint"] is True
+    assert mcp["outputSchema"] == {
         "type": "object",
         "properties": {"hits": {"type": "integer"}},
     }
-    assert metadata["icons"][0]["src"] == "https://example.com/icon.png"
+    assert mcp["icons"][0]["src"] == "https://example.com/icon.png"
     # Non-spec extensions belong in `_meta`, which is the one place a server can put
     # them and have them survive validation.
-    assert metadata["_meta"] == {"integration": "slack", "default_interrupt": True}
+    assert mcp["_meta"] == {"integration": "slack", "default_interrupt": True}
 
 
-def test_tool_title_wins_over_annotations_title() -> None:
-    """Both are display names; the specification's canonical one is on the tool."""
+def test_both_titles_survive_namespacing() -> None:
+    """`Tool.title` and `ToolAnnotations.title` are distinct and both are kept.
+
+    Flattening forced one to win, since both serialize to `title`. Under the namespace
+    they sit at different paths, so neither has to be dropped.
+    """
     mcp_tool = MCPTool.model_validate(
         {
             "name": "search",
@@ -121,4 +127,5 @@ def test_tool_title_wins_over_annotations_title() -> None:
 
     metadata = convert_mcp_tool_to_langchain_tool(MagicMock(), mcp_tool).metadata
     assert metadata is not None
-    assert metadata["title"] == "Tool Title"
+    assert metadata["mcp"]["title"] == "Tool Title"
+    assert metadata["mcp"]["annotations"]["title"] == "Annotation Title"
