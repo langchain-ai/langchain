@@ -4,9 +4,8 @@ This module provides functionality to convert MCP tools into LangChain-compatibl
 tools, handle tool execution, and manage tool conversion between the two formats.
 """
 
-from typing import Any, TypedDict
+from typing import Any, TypedDict, assert_never
 
-from langchain_core.messages import ToolMessage
 from langchain_core.messages.content import (
     FileContentBlock,
     ImageContentBlock,
@@ -21,7 +20,10 @@ from langchain_core.tools import (
     ToolException,
 )
 from mcp import ClientSession
-from mcp.client.session import ProgressFnT
+
+# The SDK does not re-export this from its package root, but it is the documented
+# type for a progress handler.
+from mcp.client.session import ProgressFnT  # type: ignore[attr-defined]
 from mcp.types import (
     AudioContent,
     BlobResourceContents,
@@ -38,22 +40,14 @@ from mcp.types import Tool as MCPTool
 
 from langchain.mcp.sessions import Connection, create_session
 
-try:
-    # langgraph installed
-    from langgraph.types import Command
-
-    LANGGRAPH_PRESENT = True
-except ImportError:
-    LANGGRAPH_PRESENT = False
-
 # Type alias for LangChain content blocks used in ToolMessage
 ToolMessageContentBlock = TextContentBlock | ImageContentBlock | FileContentBlock
 
-# Conditional type based on langgraph availability
-if LANGGRAPH_PRESENT:
-    ConvertedToolResult = list[ToolMessageContentBlock] | ToolMessage | Command
-else:
-    ConvertedToolResult = list[ToolMessageContentBlock] | ToolMessage
+# Conversion always produces content blocks. It used to be able to return a
+# `ToolMessage` or a langgraph `Command`, which is why this was a union built around
+# an optional langgraph import, but nothing has produced either since tool call
+# interceptors were removed.
+ConvertedToolResult = list[ToolMessageContentBlock]
 
 MAX_ITERATIONS = 1000
 
@@ -116,11 +110,9 @@ def convert_mcp_content_to_lc_block(
             if mime_type and mime_type.startswith("image/"):
                 return create_image_block(base64=resource.blob, mime_type=mime_type)
             return create_file_block(base64=resource.blob, mime_type=mime_type)
-        msg = f"Unknown embedded resource type: {type(resource).__name__}"
-        raise ValueError(msg)
+        assert_never(resource)
 
-    msg = f"Unknown MCP content type: {type(content).__name__}"
-    raise ValueError(msg)
+    assert_never(content)
 
 
 def convert_call_tool_result(
@@ -157,13 +149,9 @@ def convert_call_tool_result(
     ]
 
     if call_tool_result.is_error:
-        # Join text from all blocks
-        error_parts = []
-        for item in tool_content:
-            if isinstance(item, str):
-                error_parts.append(item)
-            elif isinstance(item, dict) and item.get("type") == "text":
-                error_parts.append(item.get("text", ""))
+        # Join the text of every text block; anything else has no text to report.
+        # Compared against the literal `type` so the block union narrows.
+        error_parts = [item["text"] for item in tool_content if item["type"] == "text"]
         error_msg = "\n".join(error_parts) if error_parts else str(tool_content)
         raise ToolException(error_msg)
 

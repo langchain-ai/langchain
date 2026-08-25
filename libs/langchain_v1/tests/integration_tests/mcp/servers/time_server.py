@@ -5,7 +5,7 @@ mcp = MCPServer("time")
 
 @mcp.tool()
 def get_time() -> str:
-    """Get current time"""
+    """Get current time."""
     return "5:20:00 PM EST"
 
 

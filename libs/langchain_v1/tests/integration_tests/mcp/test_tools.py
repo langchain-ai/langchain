@@ -34,7 +34,7 @@ from langchain.mcp.tools import (
 from tests.integration_tests.mcp.utils import IsLangChainID, run_streamable_http
 
 
-def test_convert_empty_text_content():
+def test_convert_empty_text_content() -> None:
     # Test with a single text content
     result = CallToolResult(content=[], isError=False)
 
@@ -44,7 +44,7 @@ def test_convert_empty_text_content():
     assert artifact is None
 
 
-def test_convert_single_text_content():
+def test_convert_single_text_content() -> None:
     # Test with a single text content
     result = CallToolResult(content=[TextContent(type="text", text="test result")], isError=False)
 
@@ -54,7 +54,7 @@ def test_convert_single_text_content():
     assert artifact is None
 
 
-def test_convert_multiple_text_contents():
+def test_convert_multiple_text_contents() -> None:
     # Test with multiple text contents
     result = CallToolResult(
         content=[
@@ -73,7 +73,7 @@ def test_convert_multiple_text_contents():
     assert artifact is None
 
 
-def test_convert_with_non_text_content():
+def test_convert_with_non_text_content() -> None:
     # Test with non-text content (now converted to LangChain content blocks)
     image_content = ImageContent(type="image", mimeType="image/png", data="base64data")
     resource_content = EmbeddedResource(
@@ -111,7 +111,7 @@ def test_convert_with_non_text_content():
     assert artifact is None
 
 
-def test_convert_with_error():
+def test_convert_with_error() -> None:
     # Test with error
     result = CallToolResult(content=[TextContent(type="text", text="error message")], isError=True)
 
@@ -121,7 +121,7 @@ def test_convert_with_error():
     assert str(exc_info.value) == "error message"
 
 
-def test_convert_with_structured_content():
+def test_convert_with_structured_content() -> None:
     """Test that structuredContent is returned as MCPToolArtifact."""
     result = CallToolResult(
         content=[TextContent(type="text", text="text result")],
@@ -135,7 +135,7 @@ def test_convert_with_structured_content():
     assert artifact == MCPToolArtifact(structured_content={"key": "value", "nested": {"data": 123}})
 
 
-def test_convert_image_content():
+def test_convert_image_content() -> None:
     """Test ImageContent conversion to LangChain image block."""
     result = CallToolResult(
         content=[ImageContent(type="image", mimeType="image/jpeg", data="jpeg_base64_data")],
@@ -156,7 +156,7 @@ def test_convert_image_content():
     assert artifact is None
 
 
-def test_convert_resource_link():
+def test_convert_resource_link() -> None:
     """Test ResourceLink conversion to LangChain file block for non-image types."""
     result = CallToolResult(
         content=[
@@ -183,7 +183,7 @@ def test_convert_resource_link():
     assert artifact is None
 
 
-def test_convert_resource_link_image():
+def test_convert_resource_link_image() -> None:
     """Test ResourceLink with image mime type converts to image block with URL."""
     result = CallToolResult(
         content=[
@@ -210,7 +210,7 @@ def test_convert_resource_link_image():
     assert artifact is None
 
 
-def test_convert_resource_link_image_jpeg():
+def test_convert_resource_link_image_jpeg() -> None:
     """Test ResourceLink with JPEG image mime type converts to image block."""
     result = CallToolResult(
         content=[
@@ -237,7 +237,7 @@ def test_convert_resource_link_image_jpeg():
     assert artifact is None
 
 
-def test_convert_resource_link_text():
+def test_convert_resource_link_text() -> None:
     """Test ResourceLink with text mime type converts to file block (can't inline)."""
     result = CallToolResult(
         content=[
@@ -265,7 +265,7 @@ def test_convert_resource_link_text():
     assert artifact is None
 
 
-def test_convert_resource_link_no_mime_type():
+def test_convert_resource_link_no_mime_type() -> None:
     """Test ResourceLink without mime type converts to file block."""
     result = CallToolResult(
         content=[
@@ -290,7 +290,7 @@ def test_convert_resource_link_no_mime_type():
     assert artifact is None
 
 
-def test_convert_embedded_resource_blob_image():
+def test_convert_embedded_resource_blob_image() -> None:
     """Test EmbeddedResource with blob image converts to image block."""
     result = CallToolResult(
         content=[
@@ -319,7 +319,7 @@ def test_convert_embedded_resource_blob_image():
     assert artifact is None
 
 
-def test_convert_embedded_resource_blob_file():
+def test_convert_embedded_resource_blob_file() -> None:
     """Test EmbeddedResource with non-image blob converts to file block."""
     result = CallToolResult(
         content=[
@@ -348,7 +348,7 @@ def test_convert_embedded_resource_blob_file():
     assert artifact is None
 
 
-def test_convert_audio_content_raises():
+def test_convert_audio_content_raises() -> None:
     """Test that AudioContent raises NotImplementedError."""
     result = CallToolResult(
         content=[AudioContent(type="audio", mimeType="audio/wav", data="audio_data")],
@@ -362,7 +362,7 @@ def test_convert_audio_content_raises():
     assert "audio/wav" in str(exc_info.value)
 
 
-def test_convert_mixed_content_with_structured_content():
+def test_convert_mixed_content_with_structured_content() -> None:
     """Test mixed content with structuredContent returns both."""
     result = CallToolResult(
         content=[
@@ -389,7 +389,7 @@ def test_convert_mixed_content_with_structured_content():
     )
 
 
-async def test_convert_mcp_tool_to_langchain_tool():
+async def test_convert_mcp_tool_to_langchain_tool() -> None:
     tool_input_schema = {
         "properties": {
             "param1": {"title": "Param1", "type": "string"},
@@ -436,7 +436,7 @@ async def test_convert_mcp_tool_to_langchain_tool():
     assert result.content == [{"type": "text", "text": "tool result", "id": IsLangChainID}]
 
 
-async def test_load_mcp_tools():
+async def test_load_mcp_tools() -> None:
     tool_input_schema = {
         "properties": {
             "param1": {"title": "Param1", "type": "string"},
@@ -521,7 +521,7 @@ def _create_annotations_server():
         annotations=ToolAnnotations(title="Get Time", readOnlyHint=True, idempotentHint=False),
     )
     def get_time() -> str:
-        """Get current time"""
+        """Get current time."""
         return "5:20:00 PM EST"
 
     return server
@@ -590,7 +590,7 @@ def _create_status_server():
 
     @server.tool()
     def get_status() -> str:
-        """Get server status"""
+        """Get server status."""
         return "Server is running"
 
     return server
@@ -646,7 +646,7 @@ def _create_info_server():
 
     @server.tool()
     def get_info() -> str:
-        """Get server info"""
+        """Get server info."""
         return "SSE Server Info"
 
     return server
@@ -697,7 +697,7 @@ async def test_load_mcp_tools_with_custom_httpx_client_factory_sse(
             pass
 
 
-async def test_convert_mcp_tool_metadata_variants():
+async def test_convert_mcp_tool_metadata_variants() -> None:
     """Verify metadata merging rules in convert_mcp_tool_to_langchain_tool."""
     tool_input_schema = {
         "properties": {},
@@ -758,7 +758,7 @@ def _create_increment_server():
 
     @server.tool()
     def increment(value: int) -> str:
-        """Increment a counter"""
+        """Increment a counter."""
         return f"Incremented to {value + 1}"
 
     return server
@@ -792,7 +792,7 @@ def _create_weather_search_server():
 
     @server.tool()
     def search(query: str) -> str:
-        """Search for weather information"""
+        """Search for weather information."""
         return f"Weather results for: {query}"
 
     return server
@@ -804,7 +804,7 @@ def _create_flights_search_server():
 
     @server.tool()
     def search(destination: str) -> str:
-        """Search for flights"""
+        """Search for flights."""
         return f"Flight results to: {destination}"
 
     return server

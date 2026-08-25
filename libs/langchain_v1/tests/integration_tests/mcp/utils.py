@@ -47,7 +47,8 @@ def run_streamable_http(server_factory, server_port: int) -> Generator[None, Non
             time.sleep(0.1)
             attempt += 1
     else:
-        raise RuntimeError(f"Server failed to start after {max_attempts} attempts")
+        msg = f"Server failed to start after {max_attempts} attempts"
+        raise RuntimeError(msg)
 
     try:
         yield
@@ -56,4 +57,5 @@ def run_streamable_http(server_factory, server_port: int) -> Generator[None, Non
         proc.kill()
         proc.join(timeout=2)
         if proc.is_alive():
-            raise RuntimeError("Server process is still alive after attempting to terminate it")
+            msg = "Server process is still alive after attempting to terminate it"
+            raise RuntimeError(msg)

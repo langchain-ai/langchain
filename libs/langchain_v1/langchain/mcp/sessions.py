@@ -243,7 +243,7 @@ async def _create_sse_session(
         An initialized ClientSession.
     """
     # Create and store the connection
-    kwargs = {}
+    kwargs: dict[str, Any] = {}
     if httpx_client_factory is not None:
         kwargs["httpx_client_factory"] = httpx_client_factory
 
@@ -323,7 +323,7 @@ async def create_session(
         A ClientSession
     """
     if "transport" not in connection:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             "Configuration error: Missing 'transport' key in server configuration. "
             "Each server must include 'transport' with one of: "
             "'stdio', 'sse', 'http'. "
@@ -332,7 +332,7 @@ async def create_session(
         raise ValueError(msg)
 
     transport = connection["transport"]
-    params = {k: v for k, v in connection.items() if k != "transport"}
+    params: dict[str, Any] = {k: v for k, v in connection.items() if k != "transport"}
 
     if transport == "sse":
         if "url" not in params:

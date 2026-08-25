@@ -22,6 +22,7 @@ def convert_mcp_resource_to_langchain_blob(resource_uri: str, contents: Resource
         A LangChain Blob
 
     """
+    data: str | bytes
     if isinstance(contents, TextResourceContents):
         data = contents.text
     elif isinstance(contents, BlobResourceContents):

@@ -4,7 +4,7 @@ This module provides functionality to convert MCP prompt messages into LangChain
 message objects, handling both user and assistant message types.
 """
 
-from typing import Any
+from typing import Any, assert_never
 
 from langchain_core.messages import AIMessage, HumanMessage
 from mcp import ClientSession
@@ -28,8 +28,7 @@ def convert_mcp_prompt_message_to_langchain_message(
             return HumanMessage(content=message.content.text)
         if message.role == "assistant":
             return AIMessage(content=message.content.text)
-        msg = f"Unsupported prompt message role: {message.role}"
-        raise ValueError(msg)
+        assert_never(message.role)
 
     msg = f"Unsupported prompt message content type: {message.content.type}"
     raise ValueError(msg)

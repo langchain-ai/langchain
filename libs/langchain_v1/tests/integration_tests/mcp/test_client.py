@@ -12,7 +12,7 @@ from tests.integration_tests.mcp.utils import IsLangChainID
 
 async def test_multi_server_mcp_client(
     socket_enabled,
-):
+) -> None:
     """Test that MultiServerMCPClient can connect to multiple servers and load tools."""
     # Get the absolute path to the server scripts
     current_dir = Path(__file__).parent
@@ -92,7 +92,7 @@ async def test_multi_server_mcp_client(
 
 async def test_multi_server_connect_methods(
     socket_enabled,
-):
+) -> None:
     """Test the different connect methods for MultiServerMCPClient."""
     # Get the absolute path to the server scripts
     current_dir = Path(__file__).parent
@@ -136,7 +136,7 @@ async def test_multi_server_connect_methods(
     assert tool_names == {"add", "multiply", "get_time"}
 
 
-async def test_get_prompt():
+async def test_get_prompt() -> None:
     """Test retrieving prompts from MCP servers."""
     # Get the absolute path to the server scripts
     current_dir = Path(__file__).parent
@@ -165,7 +165,7 @@ async def test_get_prompt():
     assert "math, addition, multiplication" in messages[0].content
 
 
-async def test_get_resources_from_all_servers():
+async def test_get_resources_from_all_servers() -> None:
     """Test that get_resources loads resources from all servers."""
     current_dir = Path(__file__).parent
     math_server_path = os.path.join(current_dir, "servers/math_server.py")
@@ -206,7 +206,7 @@ async def test_get_resources_from_all_servers():
     assert weather_resource.data == "Sunny with a chance of clouds"
 
 
-async def test_get_resources_from_specific_server():
+async def test_get_resources_from_specific_server() -> None:
     """Test that get_resources loads resources from a specific server."""
     current_dir = Path(__file__).parent
     math_server_path = os.path.join(current_dir, "servers/math_server.py")

@@ -17,14 +17,14 @@ from langchain.mcp.prompts import (
 
 
 @pytest.mark.parametrize(
-    "role,text,expected_cls",
+    ("role", "text", "expected_cls"),
     [("assistant", "Hello", AIMessage), ("user", "Hello", HumanMessage)],
 )
 def test_convert_mcp_prompt_message_to_langchain_message_with_text_content(
     role: str,
     text: str,
     expected_cls: type,
-):
+) -> None:
     message = PromptMessage(role=role, content=TextContent(type="text", text=text))
     result = convert_mcp_prompt_message_to_langchain_message(message)
     assert isinstance(result, expected_cls)
@@ -34,7 +34,7 @@ def test_convert_mcp_prompt_message_to_langchain_message_with_text_content(
 @pytest.mark.parametrize("role", ["assistant", "user"])
 def test_convert_mcp_prompt_message_to_langchain_message_with_resource_content(
     role: str,
-):
+) -> None:
     message = PromptMessage(
         role=role,
         content=EmbeddedResource(
@@ -51,7 +51,7 @@ def test_convert_mcp_prompt_message_to_langchain_message_with_resource_content(
 
 
 @pytest.mark.parametrize("role", ["assistant", "user"])
-def test_convert_mcp_prompt_message_to_langchain_message_with_image_content(role: str):
+def test_convert_mcp_prompt_message_to_langchain_message_with_image_content(role: str) -> None:
     message = PromptMessage(
         role=role,
         content=ImageContent(type="image", mimeType="image/png", data="base64data"),
@@ -60,7 +60,7 @@ def test_convert_mcp_prompt_message_to_langchain_message_with_image_content(role
         convert_mcp_prompt_message_to_langchain_message(message)
 
 
-async def test_load_mcp_prompt():
+async def test_load_mcp_prompt() -> None:
     session = AsyncMock()
     session.get_prompt = AsyncMock(
         return_value=AsyncMock(

@@ -14,7 +14,10 @@ from langchain_core.documents.base import Blob
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import BaseTool
 from mcp import ClientSession
-from mcp.client.session import ProgressFnT
+
+# The SDK does not re-export this from its package root, but it is the documented
+# type for a progress handler.
+from mcp.client.session import ProgressFnT  # type: ignore[attr-defined]
 from typing_extensions import Self
 
 from langchain.mcp.prompts import load_mcp_prompt

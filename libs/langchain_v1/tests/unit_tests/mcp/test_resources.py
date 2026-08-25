@@ -19,7 +19,7 @@ from langchain.mcp.resources import (
 )
 
 
-def test_convert_mcp_resource_to_langchain_blob_with_text():
+def test_convert_mcp_resource_to_langchain_blob_with_text() -> None:
     uri = "file:///test.txt"
     contents = TextResourceContents(uri=uri, mimeType="text/plain", text="Hello, world!")
 
@@ -31,7 +31,7 @@ def test_convert_mcp_resource_to_langchain_blob_with_text():
     assert blob.metadata["uri"] == uri
 
 
-def test_convert_mcp_resource_to_langchain_blob():
+def test_convert_mcp_resource_to_langchain_blob() -> None:
     uri = "file:///test.png"
     original_data = b"binary-image-data"
     base64_blob = base64.b64encode(original_data).decode()
@@ -46,7 +46,7 @@ def test_convert_mcp_resource_to_langchain_blob():
     assert blob.metadata["uri"] == uri
 
 
-def test_convert_mcp_resource_to_langchain_blob_with_invalid_type():
+def test_convert_mcp_resource_to_langchain_blob_with_invalid_type() -> None:
     class DummyContent(ResourceContents):
         pass
 
@@ -54,7 +54,7 @@ def test_convert_mcp_resource_to_langchain_blob_with_invalid_type():
         convert_mcp_resource_to_langchain_blob("file:///dummy", DummyContent())
 
 
-async def test_get_mcp_resource_with_contents():
+async def test_get_mcp_resource_with_contents() -> None:
     session = AsyncMock()
     uri = "file:///test.txt"
 
@@ -75,7 +75,7 @@ async def test_get_mcp_resource_with_contents():
     assert blobs[1].data == "Content 2"
 
 
-async def test_get_mcp_resource_with_text_and_blob():
+async def test_get_mcp_resource_with_text_and_blob() -> None:
     session = AsyncMock()
     uri = "file:///mixed"
 
@@ -108,7 +108,7 @@ async def test_get_mcp_resource_with_text_and_blob():
     assert results[1].mimetype == "application/octet-stream"
 
 
-async def test_get_mcp_resource_with_empty_contents():
+async def test_get_mcp_resource_with_empty_contents() -> None:
     session = AsyncMock()
     uri = "file:///empty.txt"
 
@@ -120,7 +120,7 @@ async def test_get_mcp_resource_with_empty_contents():
     session.read_resource.assert_called_once_with(uri)
 
 
-async def test_load_mcp_resources_with_list_of_uris():
+async def test_load_mcp_resources_with_list_of_uris() -> None:
     session = AsyncMock()
     uri1 = "file:///test1.txt"
     uri2 = "file:///test2.txt"
@@ -150,7 +150,7 @@ async def test_load_mcp_resources_with_list_of_uris():
     assert session.read_resource.call_count == 2
 
 
-async def test_load_mcp_resources_with_single_uri_string():
+async def test_load_mcp_resources_with_single_uri_string() -> None:
     session = AsyncMock()
     uri = "file:///test.txt"
 
@@ -171,7 +171,7 @@ async def test_load_mcp_resources_with_single_uri_string():
     session.read_resource.assert_called_once_with(uri)
 
 
-async def test_load_mcp_resources_with_all_resources():
+async def test_load_mcp_resources_with_all_resources() -> None:
     session = AsyncMock()
 
     session.list_resources = AsyncMock(
@@ -214,7 +214,7 @@ async def test_load_mcp_resources_with_all_resources():
     assert session.read_resource.call_count == 2
 
 
-async def test_load_mcp_resources_with_error_handling():
+async def test_load_mcp_resources_with_error_handling() -> None:
     session = AsyncMock()
     uri1 = "file:///valid.txt"
     uri2 = "file:///error.txt"
@@ -233,7 +233,7 @@ async def test_load_mcp_resources_with_error_handling():
     assert "Error fetching resource" in str(exc_info.value)
 
 
-async def test_load_mcp_resources_with_blob_content():
+async def test_load_mcp_resources_with_blob_content() -> None:
     session = AsyncMock()
     uri = "file:///with_blob"
     original_data = b"binary data"

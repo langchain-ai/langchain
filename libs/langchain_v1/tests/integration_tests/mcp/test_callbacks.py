@@ -15,7 +15,7 @@ def _create_callback_server():
 
     @server.tool()
     async def execute_task(task: str, ctx: Context[ServerSession, None]) -> str:
-        """Execute a task with progress and logging"""
+        """Execute a task with progress and logging."""
         await ctx.info(f"Starting task: {task}")
         await ctx.report_progress(progress=0.0, total=1.0)
         await asyncio.sleep(0.01)
@@ -43,10 +43,10 @@ async def test_handlers_are_passed_straight_to_the_server_connection(socket_enab
     progress_calls = []
     logging_calls = []
 
-    async def progress_callback(progress, total, message):
+    async def progress_callback(progress, total, message) -> None:
         progress_calls.append((progress, message))
 
-    async def logging_callback(params):
+    async def logging_callback(params) -> None:
         logging_calls.append(params.level)
 
     with run_streamable_http(_create_callback_server, 8186):
