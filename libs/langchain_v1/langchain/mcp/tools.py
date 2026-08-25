@@ -25,6 +25,7 @@ from langchain_core.tools.base import get_all_basemodel_annotations
 from mcp import ClientSession
 from mcp.server.fastmcp.tools import Tool as FastMCPTool
 from mcp.server.fastmcp.utilities.func_metadata import ArgModelBase, FuncMetadata
+from mcp.shared.session import ProgressFnT
 from mcp.types import (
     AudioContent,
     BlobResourceContents,
@@ -39,7 +40,6 @@ from mcp.types import (
 from mcp.types import Tool as MCPTool
 from pydantic import BaseModel, create_model
 
-from langchain.mcp.callbacks import CallbackContext, Callbacks, _MCPCallbacks
 from langchain.mcp.sessions import Connection, create_session
 
 try:
@@ -221,7 +221,7 @@ def convert_mcp_tool_to_langchain_tool(
     tool: MCPTool,
     *,
     connection: Connection | None = None,
-    callbacks: Callbacks | None = None,
+    progress_callback: ProgressFnT | None = None,
     server_name: str | None = None,
     tool_name_prefix: bool = False,
 ) -> BaseTool:
@@ -234,7 +234,7 @@ def convert_mcp_tool_to_langchain_tool(
         tool: MCP tool to convert
         connection: Optional connection config to use to create a new session
                     if a `session` is not provided
-        callbacks: Optional callbacks for handling notifications and events
+        progress_callback: Optional handler for the server's progress notifications
         server_name: Name of the server this tool belongs to
         tool_name_prefix: If `True` and `server_name` is provided, the tool name will be
             prefixed w/ server name (e.g., `"weather_search"` instead of `"search"`)
@@ -260,13 +260,6 @@ def convert_mcp_tool_to_langchain_tool(
             - content: string, list of strings/content blocks, ToolMessage, or Command
             - artifact: MCPToolArtifact with structured_content if present, else None
         """
-        mcp_callbacks = (
-            callbacks.to_mcp_format(
-                context=CallbackContext(server_name=server_name, tool_name=tool.name)
-            )
-            if callbacks is not None
-            else _MCPCallbacks()
-        )
 
         async def execute_tool() -> CallToolResult:
             """Call the tool, opening a session first when one was not supplied.
@@ -288,15 +281,13 @@ def convert_mcp_tool_to_langchain_tool(
                     msg = "Either session or connection must be provided"
                     raise ValueError(msg)
 
-                async with create_session(
-                    effective_connection, mcp_callbacks=mcp_callbacks
-                ) as tool_session:
+                async with create_session(effective_connection) as tool_session:
                     await tool_session.initialize()
                     try:
                         call_tool_result = await tool_session.call_tool(
                             tool_name,
                             tool_args,
-                            progress_callback=mcp_callbacks.progress_callback,
+                            progress_callback=progress_callback,
                         )
                     except Exception as e:
                         # Capture exception to re-raise outside context manager
@@ -314,7 +305,7 @@ def convert_mcp_tool_to_langchain_tool(
                 call_tool_result = await session.call_tool(
                     tool_name,
                     tool_args,
-                    progress_callback=mcp_callbacks.progress_callback,
+                    progress_callback=progress_callback,
                 )
 
             return call_tool_result
@@ -345,7 +336,7 @@ async def load_mcp_tools(
     session: ClientSession | None,
     *,
     connection: Connection | None = None,
-    callbacks: Callbacks | None = None,
+    progress_callback: ProgressFnT | None = None,
     server_name: str | None = None,
     tool_name_prefix: bool = False,
 ) -> list[BaseTool]:
@@ -354,7 +345,7 @@ async def load_mcp_tools(
     Args:
         session: The MCP client session. If `None`, connection must be provided.
         connection: Connection config to create a new session if session is `None`.
-        callbacks: Optional `Callbacks` for handling notifications and events.
+        progress_callback: Optional handler for the server's progress notifications.
         server_name: Name of the server these tools belong to.
         tool_name_prefix: If `True` and `server_name` is provided, tool names will be
             prefixed w/ server name (e.g., `"weather_search"` instead of `"search"`).
@@ -370,18 +361,12 @@ async def load_mcp_tools(
         msg = "Either a session or a connection config must be provided"
         raise ValueError(msg)
 
-    mcp_callbacks = (
-        callbacks.to_mcp_format(context=CallbackContext(server_name=server_name))
-        if callbacks is not None
-        else _MCPCallbacks()
-    )
-
     if session is None:
         # If a session is not provided, we will create one on the fly
         if connection is None:
             msg = "Either session or connection must be provided"
             raise ValueError(msg)
-        async with create_session(connection, mcp_callbacks=mcp_callbacks) as tool_session:
+        async with create_session(connection) as tool_session:
             await tool_session.initialize()
             tools = await _list_all_tools(tool_session)
     else:
@@ -392,7 +377,7 @@ async def load_mcp_tools(
             session,
             tool,
             connection=connection,
-            callbacks=callbacks,
+            progress_callback=progress_callback,
             server_name=server_name,
             tool_name_prefix=tool_name_prefix,
         )

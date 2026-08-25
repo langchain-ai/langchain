@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
     import httpx
 
-    from langchain.mcp.callbacks import _MCPCallbacks
 
 EncodingErrorHandler = Literal["strict", "ignore", "replace"]
 
@@ -355,13 +354,12 @@ async def _create_websocket_session(
 
 @asynccontextmanager
 async def create_session(
-    connection: Connection, *, mcp_callbacks: _MCPCallbacks | None = None
+    connection: Connection,
 ) -> AsyncIterator[ClientSession]:
     """Create a new session to an MCP server.
 
     Args:
         connection: Connection config to use to connect to the server
-        mcp_callbacks: mcp sdk compatible callbacks to use for the ClientSession
 
     Raises:
         ValueError: If transport is not recognized
@@ -381,13 +379,6 @@ async def create_session(
 
     transport = connection["transport"]
     params = {k: v for k, v in connection.items() if k != "transport"}
-
-    if mcp_callbacks is not None:
-        params["session_kwargs"] = params.get("session_kwargs", {})
-        if mcp_callbacks.logging_callback is not None:
-            params["session_kwargs"]["logging_callback"] = mcp_callbacks.logging_callback
-        if mcp_callbacks.elicitation_callback is not None:
-            params["session_kwargs"]["elicitation_callback"] = mcp_callbacks.elicitation_callback
 
     if transport == "sse":
         if "url" not in params:

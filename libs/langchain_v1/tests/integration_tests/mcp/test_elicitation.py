@@ -5,7 +5,6 @@ from mcp.shared.context import RequestContext
 from mcp.types import ElicitRequestParams, ElicitResult
 from pydantic import BaseModel
 
-from langchain.mcp.callbacks import CallbackContext, Callbacks
 from langchain.mcp.client import MultiServerMCPClient
 from tests.integration_tests.mcp.utils import run_streamable_http
 
@@ -48,14 +47,13 @@ def _create_elicitation_server():
 
 async def test_elicitation_callback_accept(socket_enabled) -> None:
     """Test elicitation callback with user accepting and providing data."""
-    elicitation_requests: list[tuple[RequestContext, ElicitRequestParams, CallbackContext]] = []
+    elicitation_requests: list[tuple[RequestContext, ElicitRequestParams]] = []
 
     async def on_elicitation(
         mcp_context: RequestContext,
         params: ElicitRequestParams,
-        context: CallbackContext,
     ) -> ElicitResult:
-        elicitation_requests.append((mcp_context, params, context))
+        elicitation_requests.append((mcp_context, params))
         return ElicitResult(
             action="accept",
             content={"email": "alice@example.com", "age": 28},
@@ -67,9 +65,9 @@ async def test_elicitation_callback_accept(socket_enabled) -> None:
                 "test": {
                     "url": "http://localhost:8184/mcp",
                     "transport": "http",
+                    "session_kwargs": {"elicitation_callback": on_elicitation},
                 }
             },
-            callbacks=Callbacks(on_elicitation=on_elicitation),
         )
 
         tools = await client.get_tools()
@@ -83,10 +81,8 @@ async def test_elicitation_callback_accept(socket_enabled) -> None:
 
         # Verify elicitation callback was called
         assert len(elicitation_requests) == 1
-        _, params, context = elicitation_requests[0]
+        _, params = elicitation_requests[0]
         assert "Alice" in params.message
-        assert context.server_name == "test"
-        assert context.tool_name == "create_profile"
 
         # Verify result
         assert "alice@example.com" in str(result.content)
@@ -103,7 +99,6 @@ async def test_elicitation_callback_decline(socket_enabled) -> None:
     async def on_elicitation(
         mcp_context: RequestContext,
         params: ElicitRequestParams,
-        context: CallbackContext,
     ) -> ElicitResult:
         return ElicitResult(action="decline")
 
@@ -113,9 +108,9 @@ async def test_elicitation_callback_decline(socket_enabled) -> None:
                 "test": {
                     "url": "http://localhost:8184/mcp",
                     "transport": "http",
+                    "session_kwargs": {"elicitation_callback": on_elicitation},
                 }
             },
-            callbacks=Callbacks(on_elicitation=on_elicitation),
         )
 
         tools = await client.get_tools()
@@ -134,7 +129,6 @@ async def test_elicitation_callback_cancel(socket_enabled) -> None:
     async def on_elicitation(
         mcp_context: RequestContext,
         params: ElicitRequestParams,
-        context: CallbackContext,
     ) -> ElicitResult:
         return ElicitResult(action="cancel")
 
@@ -144,9 +138,9 @@ async def test_elicitation_callback_cancel(socket_enabled) -> None:
                 "test": {
                     "url": "http://localhost:8184/mcp",
                     "transport": "http",
+                    "session_kwargs": {"elicitation_callback": on_elicitation},
                 }
             },
-            callbacks=Callbacks(on_elicitation=on_elicitation),
         )
 
         tools = await client.get_tools()

@@ -14,9 +14,9 @@ from langchain_core.documents.base import Blob
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import BaseTool
 from mcp import ClientSession
+from mcp.shared.session import ProgressFnT
 from typing_extensions import Self
 
-from langchain.mcp.callbacks import CallbackContext, Callbacks
 from langchain.mcp.prompts import load_mcp_prompt
 from langchain.mcp.resources import load_mcp_resources
 from langchain.mcp.sessions import (
@@ -52,7 +52,7 @@ class MultiServerMCPClient:
         self,
         connections: dict[str, Connection] | None = None,
         *,
-        callbacks: Callbacks | None = None,
+        progress_callback: ProgressFnT | None = None,
         tool_name_prefix: bool = False,
     ) -> None:
         """Initialize a `MultiServerMCPClient` with MCP servers connections.
@@ -60,7 +60,7 @@ class MultiServerMCPClient:
         Args:
             connections: A `dict` mapping server names to connection configurations. If
                 `None`, no initial connections are established.
-            callbacks: Optional callbacks for handling notifications and events.
+            progress_callback: Optional handler for the servers' progress notifications.
             tool_name_prefix: If `True`, tool names are prefixed with the server name
                 using an underscore separator (e.g., `"weather_search"` instead of
                 `"search"`). This helps avoid conflicts when multiple servers have tools
@@ -102,7 +102,7 @@ class MultiServerMCPClient:
             ```
         """
         self.connections: dict[str, Connection] = connections if connections is not None else {}
-        self.callbacks = callbacks or Callbacks()
+        self.progress_callback = progress_callback
         self.tool_name_prefix = tool_name_prefix
 
     @asynccontextmanager
@@ -132,13 +132,7 @@ class MultiServerMCPClient:
             )
             raise ValueError(msg)
 
-        mcp_callbacks = self.callbacks.to_mcp_format(
-            context=CallbackContext(server_name=server_name)
-        )
-
-        async with create_session(
-            self.connections[server_name], mcp_callbacks=mcp_callbacks
-        ) as session:
+        async with create_session(self.connections[server_name]) as session:
             if auto_initialize:
                 await session.initialize()
             yield session
@@ -168,7 +162,7 @@ class MultiServerMCPClient:
             return await load_mcp_tools(
                 None,
                 connection=self.connections[server_name],
-                callbacks=self.callbacks,
+                progress_callback=self.progress_callback,
                 server_name=server_name,
                 tool_name_prefix=self.tool_name_prefix,
             )
@@ -180,7 +174,7 @@ class MultiServerMCPClient:
                 load_mcp_tools(
                     None,
                     connection=connection,
-                    callbacks=self.callbacks,
+                    progress_callback=self.progress_callback,
                     server_name=name,
                     tool_name_prefix=self.tool_name_prefix,
                 )
@@ -271,7 +265,6 @@ class MultiServerMCPClient:
 
 
 __all__ = [
-    "Callbacks",
     "McpHttpClientFactory",
     "MultiServerMCPClient",
     "SSEConnection",
