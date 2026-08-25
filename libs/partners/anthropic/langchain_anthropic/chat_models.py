@@ -161,6 +161,7 @@ _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "computer_20251124": "computer-use-2025-11-24",
     "tool_search_tool_regex_20251119": "advanced-tool-use-2025-11-20",
     "tool_search_tool_bm25_20251119": "advanced-tool-use-2025-11-20",
+    "advisor_20260301": "advisor-tool-2026-03-01",
 }
 """Mapping of tool type to required beta header.
 
