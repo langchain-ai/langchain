@@ -1,0 +1,15 @@
+====================================================================
+SYSTEM MASTER SPECIFICATION: BHT-1.0 (Bounty Hunter Tool)
+====================================================================
+1. PURPOSE & ARCHITECTURE
+- Self-contained, portable Python-based reconnaissance engine running via USB.
+- Designed to scan high-yield GitHub repositories for engineering tasks, grants, and paid bounties without rate-limit friction.
+
+2. CORE COMPONENTS
+- scanner.py: Pulls open issues, filters for target keywords/labels, applies date cutoffs, and outputs dual visual dashboards (bounties.html) and local records (bounties.txt / bounties.db).
+- guardrail.py: Pre-execution runtime gatekeeper enforcing session time-caps, pessimistic budget allocation, and scope restrictions (ALLOW/DENY/HITL).
+- run_scanner.bat: Automated environment configuration and secure token injection script.
+
+3. OPERATIONAL RULES
+- Authentication: Requires GitHub Personal Access Token (Classic) with public_repo scope (5,000 req/hr ceiling).
+- Safety Guardrail: No tool execution or financial spend occurs without prior verification through the ActionGuardrail pre-execution check.

@@ -1,0 +1,14 @@
+=== TARGETED CASH-BACKED USB BOUNTY DASHBOARD ===
+
+[langchain-ai/langchain] core: `MarkdownListOutputParser` silently drops `+` bullet items
+Payout / Status: Escrow Funded (See Body) | Updated: 2026-08-25
+URL: https://github.com/langchain-ai/langchain/issues/39900
+--------------------------------------------------
+[crewaiinc/crewai] [BUG] Truncated responses are detected in the Bedrock provider only; other providers accept them silently
+Payout / Status: Escrow Funded (See Body) | Updated: 2026-08-25
+URL: https://github.com/crewAIInc/crewAI/issues/7013
+--------------------------------------------------
+[crewaiinc/crewai] [BUG] Getting-started docs reference retired Gemini model ids that return 404
+Payout / Status: Escrow Funded (See Body) | Updated: 2026-08-25
+URL: https://github.com/crewAIInc/crewAI/issues/7002
+--------------------------------------------------
