@@ -27,7 +27,7 @@ from mcp.types import Tool as MCPTool
 from langchain.mcp.client import MultiServerMCPClient
 from langchain.mcp.tools import (
     MCPToolArtifact,
-    _convert_call_tool_result,
+    convert_call_tool_result,
     convert_mcp_tool_to_langchain_tool,
     load_mcp_tools,
 )
@@ -38,7 +38,7 @@ def test_convert_empty_text_content():
     # Test with a single text content
     result = CallToolResult(content=[], isError=False)
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     assert content == []
     assert artifact is None
@@ -48,7 +48,7 @@ def test_convert_single_text_content():
     # Test with a single text content
     result = CallToolResult(content=[TextContent(type="text", text="test result")], isError=False)
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     assert content == [{"type": "text", "text": "test result", "id": IsLangChainID}]
     assert artifact is None
@@ -64,7 +64,7 @@ def test_convert_multiple_text_contents():
         isError=False,
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     assert content == [
         {"type": "text", "text": "result 1", "id": IsLangChainID},
@@ -90,7 +90,7 @@ def test_convert_with_non_text_content():
         isError=False,
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     # With mixed content, we get a list of LangChain content blocks
     assert content == [
@@ -116,7 +116,7 @@ def test_convert_with_error():
     result = CallToolResult(content=[TextContent(type="text", text="error message")], isError=True)
 
     with pytest.raises(ToolException) as exc_info:
-        _convert_call_tool_result(result)
+        convert_call_tool_result(result)
 
     assert str(exc_info.value) == "error message"
 
@@ -129,7 +129,7 @@ def test_convert_with_structured_content():
         structuredContent={"key": "value", "nested": {"data": 123}},
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     assert content == [{"type": "text", "text": "text result", "id": IsLangChainID}]
     assert artifact == MCPToolArtifact(structured_content={"key": "value", "nested": {"data": 123}})
@@ -142,7 +142,7 @@ def test_convert_image_content():
         isError=False,
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     # Single non-text content returns as a list of content blocks
     assert content == [
@@ -170,7 +170,7 @@ def test_convert_resource_link():
         isError=False,
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     assert content == [
         {
@@ -197,7 +197,7 @@ def test_convert_resource_link_image():
         isError=False,
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     assert content == [
         {
@@ -224,7 +224,7 @@ def test_convert_resource_link_image_jpeg():
         isError=False,
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     assert content == [
         {
@@ -251,7 +251,7 @@ def test_convert_resource_link_text():
         isError=False,
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     # Text ResourceLinks become file blocks since we only have URL, not content
     assert content == [
@@ -278,7 +278,7 @@ def test_convert_resource_link_no_mime_type():
         isError=False,
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     assert content == [
         {
@@ -306,7 +306,7 @@ def test_convert_embedded_resource_blob_image():
         isError=False,
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     assert content == [
         {
@@ -335,7 +335,7 @@ def test_convert_embedded_resource_blob_file():
         isError=False,
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     assert content == [
         {
@@ -356,7 +356,7 @@ def test_convert_audio_content_raises():
     )
 
     with pytest.raises(NotImplementedError) as exc_info:
-        _convert_call_tool_result(result)
+        convert_call_tool_result(result)
 
     assert "AudioContent conversion" in str(exc_info.value)
     assert "audio/wav" in str(exc_info.value)
@@ -373,7 +373,7 @@ def test_convert_mixed_content_with_structured_content():
         structuredContent={"analysis": {"score": 0.95, "confidence": "high"}},
     )
 
-    content, artifact = _convert_call_tool_result(result)
+    content, artifact = convert_call_tool_result(result)
 
     assert content == [
         {"type": "text", "text": "Here's the analysis", "id": IsLangChainID},

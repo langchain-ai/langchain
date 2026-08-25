@@ -72,7 +72,7 @@ class MCPToolArtifact(TypedDict):
     structured_content: dict[str, Any]
 
 
-def _convert_mcp_content_to_lc_block(
+def convert_mcp_content_to_lc_block(
     content: ContentBlock,
 ) -> ToolMessageContentBlock:
     """Convert any MCP content block to a LangChain content block.
@@ -123,7 +123,7 @@ def _convert_mcp_content_to_lc_block(
     raise ValueError(msg)
 
 
-def _convert_call_tool_result(
+def convert_call_tool_result(
     call_tool_result: CallToolResult,
 ) -> tuple[ConvertedToolResult, MCPToolArtifact | None]:
     """Convert an MCP `CallToolResult` to LangChain tool result format.
@@ -153,7 +153,7 @@ def _convert_call_tool_result(
     """
     # Convert all MCP content blocks to LangChain content blocks
     tool_content: list[ToolMessageContentBlock] = [
-        _convert_mcp_content_to_lc_block(content) for content in call_tool_result.content
+        convert_mcp_content_to_lc_block(content) for content in call_tool_result.content
     ]
 
     if call_tool_result.is_error:
@@ -336,7 +336,7 @@ def convert_mcp_tool_to_langchain_tool(
 
             return call_tool_result
 
-        return _convert_call_tool_result(await execute_tool())
+        return convert_call_tool_result(await execute_tool())
 
     meta = getattr(tool, "meta", None)
     # Dump by alias so these stay the specification's names (`readOnlyHint`), which
