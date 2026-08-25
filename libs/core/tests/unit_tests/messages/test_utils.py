@@ -2,6 +2,7 @@ import base64
 import json
 import math
 import re
+import struct
 from collections.abc import Callable, Sequence
 from typing import Any, TypedDict
 
@@ -3146,3 +3147,137 @@ def test_convert_to_messages_lc_envelope_partial_shape_not_matched() -> None:
     # and dict `kwargs` too. Without all four, we fall through.
     with pytest.raises(ValueError, match="MESSAGE_COERCION_FAILURE"):
         convert_to_messages([{"lc": 1, "content": "missing other fields"}])
+
+
+def _make_png_data_uri(width: int, height: int) -> str:
+    raw = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+        + struct.pack(">II", width, height)
+        + b"\x08\x02\x00\x00\x00\x00\x00\x00\x00"
+    )
+    return f"data:image/png;base64,{base64.b64encode(raw).decode('utf-8')}"
+
+
+def _make_jpeg_data_uri(width: int, height: int) -> str:
+    raw = (
+        b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
+        b"\xff\xc0\x00\x11\x08"
+        + struct.pack(">HH", height, width)
+        + b"\x03\x01\x11\x00\x02\x11\x01\x03\x11\x01"
+    )
+    return f"data:image/jpeg;base64,{base64.b64encode(raw).decode('utf-8')}"
+
+
+def _make_webp_data_uri(width: int, height: int) -> str:
+    w_bytes = struct.pack("<I", width - 1)[:3]
+    h_bytes = struct.pack("<I", height - 1)[:3]
+    raw = (
+        b"RIFF\x20\x00\x00\x00WEBPVP8X\x0a\x00\x00\x00\x00\x00\x00\x00"
+        + w_bytes
+        + h_bytes
+    )
+    return f"data:image/webp;base64,{base64.b64encode(raw).decode('utf-8')}"
+
+
+@pytest.mark.parametrize(
+    ("make_uri", "width", "height", "expected_tokens"),
+    [
+        # 1 tile (100x100 -> 255 img + 4 msg = 259)
+        (_make_png_data_uri, 100, 100, 259),
+        (_make_jpeg_data_uri, 500, 500, 259),
+        (_make_webp_data_uri, 400, 400, 259),
+        # 4 tiles (1024x1024 -> 765 img + 4 msg = 769)
+        (_make_png_data_uri, 1024, 1024, 769),
+        (_make_jpeg_data_uri, 1500, 1500, 769),
+        (_make_webp_data_uri, 1024, 1024, 769),
+        # 6 tiles (2048x4096 -> 1105 img + 4 msg = 1109)
+        (_make_png_data_uri, 2048, 4096, 1109),
+    ],
+)
+def test_count_tokens_approximately_image_dimensions(
+    make_uri: Callable[[int, int], str],
+    width: int,
+    height: int,
+    expected_tokens: int,
+) -> None:
+    """Test resolution tile scaling for PNG, JPEG, and WebP images."""
+    msg = HumanMessage(
+        content=[{"type": "image_url", "image_url": {"url": make_uri(width, height)}}]
+    )
+    assert count_tokens_approximately([msg]) == expected_tokens
+
+
+def test_count_tokens_approximately_image_detail_low() -> None:
+    """Test detail='low' returns fixed low-res tokens regardless of image size."""
+    msg = HumanMessage(
+        content=[
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": _make_png_data_uri(2048, 2048),
+                    "detail": "low",
+                },
+            }
+        ]
+    )
+    assert count_tokens_approximately([msg]) == 89
+
+
+def test_count_tokens_approximately_image_fallbacks() -> None:
+    """Test graceful fallback for remote URLs, file IDs, and malformed base64."""
+    # Remote URL (no network call made)
+    url_msg = HumanMessage(
+        content=[
+            {"type": "image_url", "image_url": {"url": "https://example.com/test.png"}}
+        ]
+    )
+    assert count_tokens_approximately([url_msg]) == 89
+
+    # File ID
+    file_id_msg = HumanMessage(content=[{"type": "image", "file_id": "file-xyz-12345"}])
+    assert count_tokens_approximately([file_id_msg]) == 89
+
+    # Corrupt base64 (does not raise)
+    corrupt_msg = HumanMessage(
+        content=[
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/png;base64,invalid!@#"},
+            }
+        ]
+    )
+    assert count_tokens_approximately([corrupt_msg]) == 89
+
+
+def test_count_tokens_approximately_custom_tokens_per_image_override() -> None:
+    """Test that explicit tokens_per_image override takes precedence."""
+    msg = HumanMessage(
+        content=[
+            {"type": "image_url", "image_url": {"url": _make_png_data_uri(1024, 1024)}}
+        ]
+    )
+    assert count_tokens_approximately([msg], tokens_per_image=1600) == 1604
+
+
+def test_count_tokens_approximately_anthropic_and_standard_blocks() -> None:
+    """Test resolution estimation with Anthropic-style and ImageContentBlock."""
+    raw_b64 = _make_png_data_uri(1024, 1024).split(",", 1)[1]
+
+    anthropic_msg = HumanMessage(
+        content=[
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": raw_b64,
+                },
+            }
+        ]
+    )
+    assert count_tokens_approximately([anthropic_msg]) == 769
+
+    standard_msg = HumanMessage(
+        content=[{"type": "image", "mime_type": "image/png", "base64": raw_b64}]
+    )
+    assert count_tokens_approximately([standard_msg]) == 769

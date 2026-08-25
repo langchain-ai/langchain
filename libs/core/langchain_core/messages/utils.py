@@ -14,6 +14,8 @@ import inspect
 import json
 import logging
 import math
+import re
+import struct
 from collections.abc import Callable, Iterable, Sequence
 from functools import partial, wraps
 from typing import (
@@ -2241,6 +2243,186 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict[str, 
     ]
 
 
+_DEFAULT_TOKENS_PER_IMAGE = 85
+_MAX_IMAGE_LONG_SIDE = 2048
+_MAX_IMAGE_SHORT_SIDE = 768
+_IMAGE_TILE_SIZE = 512
+_TOKENS_PER_TILE = 170
+_MAX_B64_CHARS_INSPECT = 4096
+
+_PNG_MIN_BYTES = 24
+_WEBP_MIN_BYTES = 30
+_WEBP_VP8L_MIN_BYTES = 25
+_WEBP_VP8L_SIG = 0x2F
+_JPEG_MARKER_PREFIX = 0xFF
+_JPEG_SOS_MARKER = 0xDA
+_JPEG_RST_MIN = 0xD0
+_JPEG_RST_MAX = 0xD7
+_JPEG_MIN_HEADER_LEN = 2
+
+_SOF_MARKERS = {
+    0xC0,
+    0xC1,
+    0xC2,
+    0xC3,
+    0xC5,
+    0xC6,
+    0xC7,
+    0xC9,
+    0xCA,
+    0xCB,
+    0xCD,
+    0xCE,
+    0xCF,
+}
+
+_IMAGE_DATA_URI_REGEX = re.compile(r"^data:image/[^;]+;base64,(?P<data>.+)$")
+
+
+def _get_image_dimensions(data: bytes) -> tuple[int, int] | None:
+    """Extract (width, height) in pixels from raw image bytes (PNG, JPEG, WebP)."""
+    try:
+        # PNG: signature (8 bytes) + IHDR (16 bytes)
+        if data.startswith(b"\x89PNG\r\n\x1a\n") and len(data) >= _PNG_MIN_BYTES:
+            width, height = struct.unpack(">II", data[16:24])
+            if width > 0 and height > 0:
+                return width, height
+
+        # WebP: RIFF....WEBP
+        elif (
+            data.startswith(b"RIFF")
+            and len(data) >= _WEBP_MIN_BYTES
+            and data[8:12] == b"WEBP"
+        ):
+            sub_chunk = data[12:16]
+            if sub_chunk == b"VP8 " and data[23:26] == b"\x9d\x01\x2a":
+                w = struct.unpack("<H", data[26:28])[0] & 0x3FFF
+                h = struct.unpack("<H", data[28:30])[0] & 0x3FFF
+                if w > 0 and h > 0:
+                    return w, h
+            elif (
+                sub_chunk == b"VP8L"
+                and data[20] == _WEBP_VP8L_SIG
+                and len(data) >= _WEBP_VP8L_MIN_BYTES
+            ):
+                b0, b1, b2, b3 = data[21], data[22], data[23], data[24]
+                w = 1 + (b0 | ((b1 & 0x3F) << 8))
+                h = 1 + (((b1 & 0xC0) >> 6) | (b2 << 2) | ((b3 & 0x0F) << 10))
+                if w > 0 and h > 0:
+                    return w, h
+            elif sub_chunk == b"VP8X":
+                w = 1 + struct.unpack("<I", data[24:27] + b"\x00")[0]
+                h = 1 + struct.unpack("<I", data[27:30] + b"\x00")[0]
+                if w > 0 and h > 0:
+                    return w, h
+
+        # JPEG: SOI (\xff\xd8), scan markers until SOF
+        elif data.startswith(b"\xff\xd8"):
+            offset = 2
+            data_len = len(data)
+            while offset + 1 < data_len:
+                if data[offset] != _JPEG_MARKER_PREFIX:
+                    break
+                while offset < data_len and data[offset] == _JPEG_MARKER_PREFIX:
+                    offset += 1
+                if offset >= data_len:
+                    break
+                marker = data[offset]
+                offset += 1
+                if marker in {0xD8, 0xD9, 0x00} or (
+                    _JPEG_RST_MIN <= marker <= _JPEG_RST_MAX
+                ):
+                    continue
+                if marker in _SOF_MARKERS:
+                    if offset + 7 <= data_len:
+                        h = struct.unpack(">H", data[offset + 3 : offset + 5])[0]
+                        w = struct.unpack(">H", data[offset + 5 : offset + 7])[0]
+                        if w > 0 and h > 0:
+                            return w, h
+                    break
+                if marker == _JPEG_SOS_MARKER:
+                    break
+                if offset + _JPEG_MIN_HEADER_LEN <= data_len:
+                    length = struct.unpack(">H", data[offset : offset + 2])[0]
+                    if length < _JPEG_MIN_HEADER_LEN:
+                        break
+                    offset += length
+                else:
+                    break
+    except Exception:
+        return None
+    return None
+
+
+def _estimate_image_tokens(block: dict[str, Any], default_tokens: int) -> int:
+    """Estimate image tokens based on dimensions, falling back to default_tokens."""
+    try:
+        detail = block.get("detail")
+        image_url = block.get("image_url")
+        if isinstance(image_url, dict) and isinstance(image_url.get("detail"), str):
+            detail = image_url["detail"]
+        elif isinstance(block.get("extras"), dict):
+            detail = block["extras"].get("detail", detail)
+
+        if detail == "low":
+            return default_tokens
+
+        b64_str: str | None = None
+        if isinstance(block.get("base64"), str):
+            b64_str = block["base64"]
+        elif isinstance(block.get("source"), dict):
+            b64_str = block["source"].get("data")
+        elif isinstance(block.get("url"), str) and block["url"].startswith(
+            "data:image/"
+        ):
+            match = _IMAGE_DATA_URI_REGEX.match(block["url"])
+            if match:
+                b64_str = match.group("data")
+        elif isinstance(image_url, dict) and isinstance(image_url.get("url"), str):
+            if image_url["url"].startswith("data:image/"):
+                match = _IMAGE_DATA_URI_REGEX.match(image_url["url"])
+                if match:
+                    b64_str = match.group("data")
+        elif isinstance(image_url, str) and image_url.startswith("data:image/"):
+            match = _IMAGE_DATA_URI_REGEX.match(image_url)
+            if match:
+                b64_str = match.group("data")
+
+        if not b64_str:
+            return default_tokens
+
+        b64_slice = b64_str[:_MAX_B64_CHARS_INSPECT]
+        padding = (4 - len(b64_slice) % 4) % 4
+        raw_bytes = base64.b64decode(b64_slice + "=" * padding, validate=False)
+        dims = _get_image_dimensions(raw_bytes)
+        if not dims:
+            return default_tokens
+
+        width, height = dims
+        if width > _MAX_IMAGE_LONG_SIDE or height > _MAX_IMAGE_LONG_SIDE:
+            if width > height:
+                height = (height * _MAX_IMAGE_LONG_SIDE) // width
+                width = _MAX_IMAGE_LONG_SIDE
+            else:
+                width = (width * _MAX_IMAGE_LONG_SIDE) // height
+                height = _MAX_IMAGE_LONG_SIDE
+
+        if width > _MAX_IMAGE_SHORT_SIDE and height > _MAX_IMAGE_SHORT_SIDE:
+            if width > height:
+                width = (width * _MAX_IMAGE_SHORT_SIDE) // height
+                height = _MAX_IMAGE_SHORT_SIDE
+            else:
+                height = (height * _MAX_IMAGE_SHORT_SIDE) // width
+                width = _MAX_IMAGE_SHORT_SIDE
+
+        tiles = math.ceil(height / _IMAGE_TILE_SIZE) * math.ceil(
+            width / _IMAGE_TILE_SIZE
+        )
+        return default_tokens + _TOKENS_PER_TILE * tiles
+    except Exception:
+        return default_tokens
+
+
 def count_tokens_approximately(
     messages: Iterable[MessageLikeRepresentation],
     *,
@@ -2257,7 +2439,8 @@ def count_tokens_approximately(
 
     - For AI messages, the token count also includes stringified tool calls.
     - For tool messages, the token count also includes the tool call ID.
-    - For multimodal messages with images, applies a fixed token penalty per image
+    - For multimodal messages with images, applies a token estimate based on
+        resolution tile dimensions (or a fixed penalty fallback per image)
         instead of counting base64-encoded characters.
     - If tools are provided, the token count also includes stringified tool schemas.
 
@@ -2272,8 +2455,10 @@ def count_tokens_approximately(
             You can also specify `float` values for more fine-grained control.
             [See more here](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb).
         count_name: Whether to include message names in the count.
-        tokens_per_image: Fixed token cost per image (default: 85, aligned with
-            OpenAI's low-resolution image token cost).
+        tokens_per_image: Base/fallback token cost per image (default: 85, aligned with
+            OpenAI's low-resolution image token cost). When default (85), token counts
+            for base64/data-URI images are scaled based on resolution tile dimensions.
+            Specifying a non-default value acts as a fixed token penalty per image.
         use_usage_metadata_scaling: If True, and all AI messages have consistent
             `response_metadata['model_provider']`, scale the approximate token count
             using the **most recent** AI message that has
@@ -2291,9 +2476,9 @@ def count_tokens_approximately(
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
-        For multimodal messages containing images, a fixed token penalty is applied
-        per image instead of counting base64-encoded characters, which provides a
-        more realistic approximation.
+        For multimodal messages containing images, resolution-based tile scaling or
+        a fixed token penalty is applied per image instead of counting base64-encoded
+        characters, which provides a more realistic approximation.
 
     !!! version-added "Added in `langchain-core` 0.3.46"
     """
@@ -2345,9 +2530,14 @@ def count_tokens_approximately(
                 elif isinstance(block, dict):
                     block_type = block.get("type", "")
 
-                    # Apply fixed penalty for image blocks
+                    # Apply penalty for image blocks
                     if block_type in {"image", "image_url"}:
-                        token_count += tokens_per_image
+                        if tokens_per_image != _DEFAULT_TOKENS_PER_IMAGE:
+                            token_count += tokens_per_image
+                        else:
+                            token_count += _estimate_image_tokens(
+                                block, tokens_per_image
+                            )
                     # Count text blocks normally
                     elif block_type == "text":
                         text = block.get("text", "")
