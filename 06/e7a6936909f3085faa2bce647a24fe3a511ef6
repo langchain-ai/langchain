@@ -1,0 +1,18 @@
+libs/langchain_v1/langchain/__init__.py
+  h_152f5d9f78d224 3
+libs/langchain_v1/pyproject.toml
+  h_152f5d9f78d224 24
+libs/langchain_v1/uv.lock
+  h_152f5d9f78d224 1819
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "06e7a6936909f3085faa2bce647a24fe3a511ef6",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
