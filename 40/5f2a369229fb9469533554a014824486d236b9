@@ -1,0 +1,21 @@
+libs/langchain_v1/langchain/mcp/tools.py
+  s_2ce70a1527c068::t_42d4e90df9aeac 75,126,156,339
+libs/langchain_v1/tests/integration_tests/mcp/test_tools.py
+  s_2ce70a1527c068::t_2e885a48d84a5b 30,41,51,67,93,119,132,145,173,200,227,254,281,309,338,359,376
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "405f2a369229fb9469533554a014824486d236b9",
+  "prompts": {},
+  "sessions": {
+    "s_2ce70a1527c068": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dbce52e-70cd-4b5e-92a7-6fb480327deb",
+        "model": "claude-opus-5"
+      },
+      "human_author": null
+    }
+  }
+}
