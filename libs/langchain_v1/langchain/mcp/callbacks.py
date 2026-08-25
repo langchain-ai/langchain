@@ -17,6 +17,8 @@ from mcp.types import (
     LoggingMessageNotificationParams as MCPLoggingMessageNotificationParams,
 )
 
+from langchain.mcp.elicitation import ElicitationMode, interrupt_for_elicitation
+
 # Type aliases to avoid direct MCP type dependencies
 LoggingFnT = MCPLoggingFnT
 ProgressFnT = MCPProgressFnT
@@ -101,11 +103,28 @@ class Callbacks:
     on_progress: ProgressCallback | None = None
     on_elicitation: ElicitationCallback | None = None
 
-    def to_mcp_format(self, *, context: CallbackContext) -> _MCPCallbacks:
-        """Convert the LangChain MCP client callbacks to MCP SDK callbacks.
+    def to_mcp_format(
+        self,
+        *,
+        context: CallbackContext,
+        elicitation: ElicitationMode | None = None,
+    ) -> _MCPCallbacks:
+        """Convert LangChain callbacks to MCP SDK callbacks.
 
-        Injects the LangChain CallbackContext as the last argument.
+        Args:
+            context: Provenance to pass to LangChain callbacks.
+            elicitation: If `"interrupt"`, surface elicitation through a LangGraph
+                interrupt rather than a custom callback.
+
+        Returns:
+            MCP SDK-compatible callbacks.
+
+        Raises:
+            ValueError: If a custom elicitation callback and interrupt handling are both set.
         """
+        if elicitation == "interrupt" and self.on_elicitation is not None:
+            msg = 'Set either `on_elicitation` or `elicitation="interrupt"`, not both.'
+            raise ValueError(msg)
         if (on_logging_message := self.on_logging_message) is not None:
 
             async def mcp_logging_callback(
@@ -124,7 +143,14 @@ class Callbacks:
         else:
             mcp_progress_callback = None
 
-        if (on_elicitation := self.on_elicitation) is not None:
+        if elicitation == "interrupt":
+
+            async def mcp_elicitation_callback(
+                mcp_context: MCPRequestContext,  # noqa: ARG001
+                params: ElicitRequestParams,
+            ) -> MCPElicitResult:
+                return interrupt_for_elicitation(params, context)
+        elif (on_elicitation := self.on_elicitation) is not None:
 
             async def mcp_elicitation_callback(
                 mcp_context: MCPRequestContext,

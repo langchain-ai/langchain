@@ -10,6 +10,7 @@ def test_import() -> None:
     from langchain.mcp import (  # noqa: F401, PLC0415
         callbacks,
         client,
+        elicitation,
         prompts,
         resources,
         tools,

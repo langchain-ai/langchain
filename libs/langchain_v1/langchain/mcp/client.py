@@ -17,6 +17,7 @@ from mcp import ClientSession
 from typing_extensions import Self
 
 from langchain.mcp.callbacks import CallbackContext, Callbacks
+from langchain.mcp.elicitation import ElicitationMode
 from langchain.mcp.interceptors import ToolCallInterceptor
 from langchain.mcp.prompts import load_mcp_prompt
 from langchain.mcp.resources import load_mcp_resources
@@ -47,6 +48,7 @@ class MultiServerMCPClient:
         *,
         callbacks: Callbacks | None = None,
         tool_interceptors: list[ToolCallInterceptor] | None = None,
+        elicitation: ElicitationMode | None = None,
         tool_name_prefix: bool = False,
     ) -> None:
         """Initialize a `MultiServerMCPClient` with MCP servers connections.
@@ -57,6 +59,9 @@ class MultiServerMCPClient:
             callbacks: Optional callbacks for handling notifications and events.
             tool_interceptors: Optional list of tool call interceptors for modifying
                 requests and responses.
+            elicitation: If `"interrupt"`, surface server elicitation through LangGraph
+                interrupts when invoking tools. Legacy MCP server-initiated elicitation
+                requires the connection to use `mode="legacy"`.
             tool_name_prefix: If `True`, tool names are prefixed with the server name
                 using an underscore separator (e.g., `"weather_search"` instead of
                 `"search"`). This helps avoid conflicts when multiple servers have tools
@@ -100,6 +105,7 @@ class MultiServerMCPClient:
         self.connections: dict[str, Connection] = connections if connections is not None else {}
         self.callbacks = callbacks or Callbacks()
         self.tool_interceptors = tool_interceptors or []
+        self.elicitation = elicitation
         self.tool_name_prefix = tool_name_prefix
 
     @asynccontextmanager
@@ -124,7 +130,8 @@ class MultiServerMCPClient:
             raise ValueError(msg)
 
         mcp_callbacks = self.callbacks.to_mcp_format(
-            context=CallbackContext(server_name=server_name)
+            context=CallbackContext(server_name=server_name),
+            elicitation=self.elicitation,
         )
 
         async with create_session(
@@ -160,6 +167,7 @@ class MultiServerMCPClient:
                 callbacks=self.callbacks,
                 server_name=server_name,
                 tool_interceptors=self.tool_interceptors,
+                elicitation=self.elicitation,
                 tool_name_prefix=self.tool_name_prefix,
             )
 
@@ -173,6 +181,7 @@ class MultiServerMCPClient:
                     callbacks=self.callbacks,
                     server_name=name,
                     tool_interceptors=self.tool_interceptors,
+                    elicitation=self.elicitation,
                     tool_name_prefix=self.tool_name_prefix,
                 )
             )

@@ -36,7 +36,8 @@ from mcp.types import (
 )
 from mcp.types import Tool as MCPTool
 
-from langchain.mcp.callbacks import CallbackContext, Callbacks, _MCPCallbacks
+from langchain.mcp.callbacks import CallbackContext, Callbacks
+from langchain.mcp.elicitation import ElicitationMode
 from langchain.mcp.interceptors import (
     MCPToolCallRequest,
     MCPToolCallResult,
@@ -271,6 +272,7 @@ def convert_mcp_tool_to_langchain_tool(
     connection: Connection | None = None,
     callbacks: Callbacks | None = None,
     tool_interceptors: list[ToolCallInterceptor] | None = None,
+    elicitation: ElicitationMode | None = None,
     server_name: str | None = None,
     tool_name_prefix: bool = False,
 ) -> BaseTool:
@@ -285,6 +287,8 @@ def convert_mcp_tool_to_langchain_tool(
                     if a `session` is not provided
         callbacks: Optional callbacks for handling notifications and events
         tool_interceptors: Optional list of interceptors for tool call processing
+        elicitation: If `"interrupt"`, surface server elicitation through LangGraph
+            interrupts when invoking this tool.
         server_name: Name of the server this tool belongs to
         tool_name_prefix: If `True` and `server_name` is provided, the tool name will be
             prefixed w/ server name (e.g., `"weather_search"` instead of `"search"`)
@@ -295,6 +299,13 @@ def convert_mcp_tool_to_langchain_tool(
     """
     if session is None and connection is None:
         msg = "Either a session or a connection config must be provided"
+        raise ValueError(msg)
+    if session is not None and elicitation is not None:
+        msg = (
+            "`elicitation` requires a connection-backed tool so LangChain can configure "
+            'the MCP session. Configure `MultiServerMCPClient(elicitation="interrupt")` '
+            "before opening an explicit session instead."
+        )
         raise ValueError(msg)
 
     async def call_tool(
@@ -312,12 +323,9 @@ def convert_mcp_tool_to_langchain_tool(
             - content: string, list of strings/content blocks, ToolMessage, or Command
             - artifact: MCPToolArtifact with structured_content if present, else None
         """
-        mcp_callbacks = (
-            callbacks.to_mcp_format(
-                context=CallbackContext(server_name=server_name, tool_name=tool.name)
-            )
-            if callbacks is not None
-            else _MCPCallbacks()
+        mcp_callbacks = (callbacks or Callbacks()).to_mcp_format(
+            context=CallbackContext(server_name=server_name, tool_name=tool.name),
+            elicitation=elicitation,
         )
 
         # Create the innermost handler that actually executes the tool call
@@ -439,6 +447,7 @@ async def load_mcp_tools(
     connection: Connection | None = None,
     callbacks: Callbacks | None = None,
     tool_interceptors: list[ToolCallInterceptor] | None = None,
+    elicitation: ElicitationMode | None = None,
     server_name: str | None = None,
     tool_name_prefix: bool = False,
 ) -> list[BaseTool]:
@@ -449,6 +458,8 @@ async def load_mcp_tools(
         connection: Connection config to create a new session if session is `None`.
         callbacks: Optional `Callbacks` for handling notifications and events.
         tool_interceptors: Optional list of interceptors for tool call processing.
+        elicitation: If `"interrupt"`, surface server elicitation through LangGraph
+            interrupts when invoking the loaded tools.
         server_name: Name of the server these tools belong to.
         tool_name_prefix: If `True` and `server_name` is provided, tool names will be
             prefixed w/ server name (e.g., `"weather_search"` instead of `"search"`).
@@ -463,11 +474,17 @@ async def load_mcp_tools(
     if session is None and connection is None:
         msg = "Either a session or a connection config must be provided"
         raise ValueError(msg)
+    if session is not None and elicitation is not None:
+        msg = (
+            "`elicitation` requires a connection-backed tool so LangChain can configure "
+            'the MCP session. Configure `MultiServerMCPClient(elicitation="interrupt")` '
+            "before opening an explicit session instead."
+        )
+        raise ValueError(msg)
 
-    mcp_callbacks = (
-        callbacks.to_mcp_format(context=CallbackContext(server_name=server_name))
-        if callbacks is not None
-        else _MCPCallbacks()
+    mcp_callbacks = (callbacks or Callbacks()).to_mcp_format(
+        context=CallbackContext(server_name=server_name),
+        elicitation=elicitation,
     )
 
     if session is None:
@@ -487,6 +504,7 @@ async def load_mcp_tools(
             connection=connection,
             callbacks=callbacks,
             tool_interceptors=tool_interceptors,
+            elicitation=elicitation,
             server_name=server_name,
             tool_name_prefix=tool_name_prefix,
         )
