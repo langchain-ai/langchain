@@ -1,0 +1,21 @@
+libs/core/langchain_core/tools/base.py
+  s_2ce70a1527c068::t_f786e9944a5362 622-625
+libs/core/tests/unit_tests/test_tools.py
+  s_2ce70a1527c068::t_6798679db97398 3697-3719
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "ca83771986ed7d5d1c08aeb7a88bfd7d8eb86cdc",
+  "prompts": {},
+  "sessions": {
+    "s_2ce70a1527c068": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dbce52e-70cd-4b5e-92a7-6fb480327deb",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
