@@ -173,9 +173,8 @@ def test_human_in_the_loop_middleware_single_tool_rejection_reason() -> None:
         assert len(result["messages"]) == 2
         assert isinstance(result["messages"][0], AIMessage)
         assert isinstance(result["messages"][1], ToolMessage)
-        assert (
-            result["messages"][1].content
-            == "User rejected the tool call with reason: Custom response message"
+        assert result["messages"][1].content == (
+            "User rejected the tool call for `test_tool` with reason: Custom response message"
         )
         assert result["messages"][1].name == "test_tool"
         assert result["messages"][1].tool_call_id == "1"
@@ -204,7 +203,11 @@ def test_human_in_the_loop_middleware_default_rejection_message() -> None:
         assert len(result["messages"]) == 2
         tool_message = result["messages"][1]
         assert isinstance(tool_message, ToolMessage)
-        assert tool_message.content == "User rejected the tool call."
+        assert tool_message.content == (
+            "User rejected the tool call for `test_tool` with id 1. "
+            "The tool was not executed. Do not retry this tool call unless the user "
+            "explicitly requests it."
+        )
         assert tool_message.status == "error"
         assert tool_message.name == "test_tool"
         assert tool_message.tool_call_id == "1"
@@ -457,9 +460,9 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
         # Second message should be the tool message for the rejected tool call
         tool_message = result["messages"][1]
         assert isinstance(tool_message, ToolMessage)
-        assert (
-            tool_message.content
-            == "User rejected the tool call with reason: User rejected this tool call"
+        assert tool_message.content == (
+            "User rejected the tool call for `get_temperature` with reason: "
+            "User rejected this tool call"
         )
         assert tool_message.name == "get_temperature"
 
@@ -1016,7 +1019,9 @@ def test_human_in_the_loop_middleware_preserves_order_with_rejections() -> None:
         # Check rejection tool message
         tool_message = result["messages"][1]
         assert isinstance(tool_message, ToolMessage)
-        assert tool_message.content == "User rejected the tool call with reason: Rejected tool B"
+        assert tool_message.content == (
+            "User rejected the tool call for `tool_b` with reason: Rejected tool B"
+        )
         assert tool_message.tool_call_id == "id_b"
 
 

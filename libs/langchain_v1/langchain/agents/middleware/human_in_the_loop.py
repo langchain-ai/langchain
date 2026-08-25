@@ -104,7 +104,8 @@ class RejectDecision(TypedDict):
     """The human-provided reason for rejecting the action.
 
     The reason is framed as a user rejection when sent to the model. If omitted,
-    the model is told only that the user rejected the tool call.
+    the model is told that the tool was not executed and should not retry the same
+    tool call unless the user asks for it.
     """
 
 
@@ -336,9 +337,13 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         if decision["type"] == "reject" and "reject" in allowed_decisions:
             reason = decision.get("message")
             content = (
-                f"User rejected the tool call with reason: {reason}"
+                f"User rejected the tool call for `{tool_call['name']}` with reason: {reason}"
                 if reason
-                else "User rejected the tool call."
+                else (
+                    f"User rejected the tool call for `{tool_call['name']}` with id "
+                    f"{tool_call['id']}. The tool was not executed. Do not retry this tool "
+                    "call unless the user explicitly requests it."
+                )
             )
             tool_message = ToolMessage(
                 content=content,
