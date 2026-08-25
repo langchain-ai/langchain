@@ -72,3 +72,53 @@ def test_converted_tool_args_for_schema_without_properties(
 
     assert lc_tool.args == {}
     assert lc_tool.args_schema == {"type": "object", "properties": {}}
+
+
+def test_converted_tool_metadata_carries_every_server_field() -> None:
+    """Everything the server says about a tool travels with it, under spec names.
+
+    `title`, `outputSchema`, `icons`, and `execution` were previously dropped, which
+    silently discarded the shape of a tool's structured output.
+    """
+    mcp_tool = MCPTool.model_validate(
+        {
+            "name": "search",
+            "title": "Search",
+            "description": "searches",
+            "inputSchema": {"type": "object", "properties": {}},
+            "outputSchema": {"type": "object", "properties": {"hits": {"type": "integer"}}},
+            "icons": [{"src": "https://example.com/icon.png", "mimeType": "image/png"}],
+            "annotations": {"readOnlyHint": True},
+            "_meta": {"integration": "slack", "default_interrupt": True},
+        }
+    )
+
+    metadata = convert_mcp_tool_to_langchain_tool(MagicMock(), mcp_tool).metadata
+    assert metadata is not None
+
+    assert metadata["title"] == "Search"
+    assert metadata["readOnlyHint"] is True
+    assert metadata["outputSchema"] == {
+        "type": "object",
+        "properties": {"hits": {"type": "integer"}},
+    }
+    assert metadata["icons"][0]["src"] == "https://example.com/icon.png"
+    # Non-spec extensions belong in `_meta`, which is the one place a server can put
+    # them and have them survive validation.
+    assert metadata["_meta"] == {"integration": "slack", "default_interrupt": True}
+
+
+def test_tool_title_wins_over_annotations_title() -> None:
+    """Both are display names; the specification's canonical one is on the tool."""
+    mcp_tool = MCPTool.model_validate(
+        {
+            "name": "search",
+            "title": "Tool Title",
+            "inputSchema": {},
+            "annotations": {"title": "Annotation Title"},
+        }
+    )
+
+    metadata = convert_mcp_tool_to_langchain_tool(MagicMock(), mcp_tool).metadata
+    assert metadata is not None
+    assert metadata["title"] == "Tool Title"

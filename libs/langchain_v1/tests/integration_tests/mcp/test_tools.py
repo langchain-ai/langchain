@@ -570,6 +570,15 @@ async def test_load_mcp_tools_with_annotations(socket_enabled) -> None:
             "idempotentHint": False,
             "destructiveHint": None,
             "openWorldHint": None,
+            # The server derives an output schema from the tool's return type. It
+            # describes the `structuredContent` a call returns, so it travels with
+            # the tool rather than being dropped.
+            "outputSchema": {
+                "properties": {"result": {"title": "Result", "type": "string"}},
+                "required": ["result"],
+                "title": "get_timeOutput",
+                "type": "object",
+            },
         }
 
 

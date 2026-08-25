@@ -338,12 +338,25 @@ def convert_mcp_tool_to_langchain_tool(
 
         return convert_call_tool_result(await execute_tool())
 
-    meta = getattr(tool, "meta", None)
     # Dump by alias so these stay the specification's names (`readOnlyHint`), which
     # mcp 2.x renamed to snake_case on the model itself.
-    base = tool.annotations.model_dump(by_alias=True) if tool.annotations is not None else {}
-    meta = {"_meta": meta} if meta is not None else {}
-    metadata = {**base, **meta} or None
+    tool_metadata: dict[str, Any] = (
+        tool.annotations.model_dump(by_alias=True) if tool.annotations is not None else {}
+    )
+
+    # Carry through everything else the server said about the tool, under the
+    # specification's own names. `name`, `description`, and `inputSchema` are left out
+    # because they already are the tool's name, description, and args schema.
+    #
+    # `title` is applied last deliberately. `ToolAnnotations.title` and `Tool.title` are
+    # both display names, and the specification moved the canonical one onto the tool
+    # itself, so the tool's wins when a server sends both.
+    dumped = tool.model_dump(by_alias=True, exclude_none=True)
+    for key in ("execution", "outputSchema", "icons", "_meta", "title"):
+        if key in dumped:
+            tool_metadata[key] = dumped[key]
+
+    metadata = tool_metadata or None
 
     # Apply server name prefix if requested
     lc_tool_name = tool.name
