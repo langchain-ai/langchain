@@ -4,8 +4,7 @@ This module provides functionality to convert MCP tools into LangChain-compatibl
 tools, handle tool execution, and manage tool conversion between the two formats.
 """
 
-from collections.abc import Awaitable, Callable
-from typing import Annotated, Any, TypedDict, get_args
+from typing import Any, TypedDict, get_args
 
 from langchain_core.messages import ToolMessage
 from langchain_core.messages.content import (
@@ -29,6 +28,7 @@ from mcp.server.fastmcp.utilities.func_metadata import ArgModelBase, FuncMetadat
 from mcp.types import (
     AudioContent,
     BlobResourceContents,
+    CallToolResult,
     ContentBlock,
     EmbeddedResource,
     ImageContent,
@@ -40,11 +40,6 @@ from mcp.types import Tool as MCPTool
 from pydantic import BaseModel, create_model
 
 from langchain.mcp.callbacks import CallbackContext, Callbacks, _MCPCallbacks
-from langchain.mcp.interceptors import (
-    MCPToolCallRequest,
-    MCPToolCallResult,
-    ToolCallInterceptor,
-)
 from langchain.mcp.sessions import Connection, create_session
 
 try:
@@ -133,9 +128,9 @@ def _convert_mcp_content_to_lc_block(
 
 
 def _convert_call_tool_result(
-    call_tool_result: MCPToolCallResult,
+    call_tool_result: CallToolResult,
 ) -> tuple[ConvertedToolResult, MCPToolArtifact | None]:
-    """Convert MCP MCPToolCallResult to LangChain tool result format.
+    """Convert an MCP `CallToolResult` to LangChain tool result format.
 
     Converts MCP content blocks to LangChain content blocks:
     - TextContent -> {"type": "text", "text": ...}
@@ -147,9 +142,7 @@ def _convert_call_tool_result(
     - AudioContent -> raises NotImplementedError
 
     Args:
-        call_tool_result: The result from calling an MCP tool. Can be either
-            a CallToolResult (MCP format), a ToolMessage (LangChain format),
-            or a Command (LangGraph format, if langgraph is installed).
+        call_tool_result: The result from calling an MCP tool.
 
     Returns:
         A tuple containing:
@@ -162,15 +155,6 @@ def _convert_call_tool_result(
         ToolException: If the tool call resulted in an error.
         NotImplementedError: If AudioContent is encountered.
     """
-    # If the interceptor returned a ToolMessage directly, return it as the content
-    # with None as the artifact to match the content_and_artifact format
-    if isinstance(call_tool_result, ToolMessage):
-        return call_tool_result, None
-
-    # If the interceptor returned a Command (LangGraph), return it directly
-    if LANGGRAPH_PRESENT and isinstance(call_tool_result, Command):
-        return call_tool_result, None
-
     # Convert all MCP content blocks to LangChain content blocks
     tool_content: list[ToolMessageContentBlock] = [
         _convert_mcp_content_to_lc_block(content) for content in call_tool_result.content
@@ -193,40 +177,6 @@ def _convert_call_tool_result(
         artifact = MCPToolArtifact(structured_content=call_tool_result.structuredContent)
 
     return tool_content, artifact
-
-
-def _build_interceptor_chain(
-    base_handler: Callable[[MCPToolCallRequest], Awaitable[MCPToolCallResult]],
-    tool_interceptors: list[ToolCallInterceptor] | None,
-) -> Callable[[MCPToolCallRequest], Awaitable[MCPToolCallResult]]:
-    """Build composed handler chain with interceptors in onion pattern.
-
-    Args:
-        base_handler: Innermost handler executing the actual tool call.
-        tool_interceptors: Optional list of interceptors to wrap the handler.
-
-    Returns:
-        Composed handler with all interceptors applied. First interceptor
-        in list becomes outermost layer.
-    """
-    handler = base_handler
-
-    if tool_interceptors:
-        for interceptor in reversed(tool_interceptors):
-            current_handler = handler
-
-            async def wrapped_handler(
-                req: MCPToolCallRequest,
-                _interceptor: ToolCallInterceptor = interceptor,
-                _handler: Callable[
-                    [MCPToolCallRequest], Awaitable[MCPToolCallResult]
-                ] = current_handler,
-            ) -> MCPToolCallResult:
-                return await _interceptor(req, _handler)
-
-            handler = wrapped_handler
-
-    return handler
 
 
 async def _list_all_tools(session: ClientSession) -> list[MCPTool]:
@@ -272,7 +222,6 @@ def convert_mcp_tool_to_langchain_tool(
     *,
     connection: Connection | None = None,
     callbacks: Callbacks | None = None,
-    tool_interceptors: list[ToolCallInterceptor] | None = None,
     server_name: str | None = None,
     tool_name_prefix: bool = False,
 ) -> BaseTool:
@@ -286,7 +235,6 @@ def convert_mcp_tool_to_langchain_tool(
         connection: Optional connection config to use to create a new session
                     if a `session` is not provided
         callbacks: Optional callbacks for handling notifications and events
-        tool_interceptors: Optional list of interceptors for tool call processing
         server_name: Name of the server this tool belongs to
         tool_name_prefix: If `True` and `server_name` is provided, the tool name will be
             prefixed w/ server name (e.g., `"weather_search"` instead of `"search"`)
@@ -300,13 +248,11 @@ def convert_mcp_tool_to_langchain_tool(
         raise ValueError(msg)
 
     async def call_tool(
-        runtime: Annotated[Any, InjectedToolArg()] = None,
         **arguments: dict[str, Any],
     ) -> tuple[ConvertedToolResult, MCPToolArtifact | None]:
-        """Execute tool call with interceptor chain and return formatted result.
+        """Execute the tool call and return the formatted result.
 
         Args:
-            runtime: LangGraph tool runtime if available, otherwise None.
             **arguments: Tool arguments as keyword args.
 
         Returns:
@@ -322,42 +268,18 @@ def convert_mcp_tool_to_langchain_tool(
             else _MCPCallbacks()
         )
 
-        # Create the innermost handler that actually executes the tool call
-        async def execute_tool(request: MCPToolCallRequest) -> MCPToolCallResult:
-            """Execute the actual MCP tool call with optional session creation.
-
-            Args:
-                request: Tool call request with name, args, headers, and context.
+        async def execute_tool() -> CallToolResult:
+            """Call the tool, opening a session first when one was not supplied.
 
             Returns:
-                MCPToolCallResult from MCP SDK.
+                The `CallToolResult` from the MCP SDK.
 
             Raises:
                 ValueError: If neither session nor connection provided.
-                RuntimeError: If tool call returns None.
             """
-            tool_name = request.name
-            tool_args = request.args
+            tool_name = tool.name
+            tool_args = arguments
             effective_connection = connection
-
-            # If headers were modified, create a new connection with updated headers
-            modified_headers = request.headers
-            if modified_headers is not None and connection is not None:
-                # Create a new connection config with updated headers
-                updated_connection = dict(connection)
-                if connection["transport"] in (
-                    "sse",
-                    "http",
-                    "streamable_http",
-                    "streamable-http",
-                ):
-                    existing_headers = connection.get("headers", {})
-                    updated_connection["headers"] = {
-                        **existing_headers,
-                        **modified_headers,
-                    }
-                    effective_connection = updated_connection
-
             captured_exception = None
 
             if session is None:
@@ -397,18 +319,7 @@ def convert_mcp_tool_to_langchain_tool(
 
             return call_tool_result
 
-        # Build and execute the interceptor chain
-        handler = _build_interceptor_chain(execute_tool, tool_interceptors)
-        request = MCPToolCallRequest(
-            name=tool.name,
-            args=arguments,
-            server_name=server_name or "unknown",
-            headers=None,
-            runtime=runtime,
-        )
-        call_tool_result = await handler(request)
-
-        return _convert_call_tool_result(call_tool_result)
+        return _convert_call_tool_result(await execute_tool())
 
     meta = getattr(tool, "meta", None)
     base = tool.annotations.model_dump() if tool.annotations is not None else {}
@@ -435,7 +346,6 @@ async def load_mcp_tools(
     *,
     connection: Connection | None = None,
     callbacks: Callbacks | None = None,
-    tool_interceptors: list[ToolCallInterceptor] | None = None,
     server_name: str | None = None,
     tool_name_prefix: bool = False,
 ) -> list[BaseTool]:
@@ -445,7 +355,6 @@ async def load_mcp_tools(
         session: The MCP client session. If `None`, connection must be provided.
         connection: Connection config to create a new session if session is `None`.
         callbacks: Optional `Callbacks` for handling notifications and events.
-        tool_interceptors: Optional list of interceptors for tool call processing.
         server_name: Name of the server these tools belong to.
         tool_name_prefix: If `True` and `server_name` is provided, tool names will be
             prefixed w/ server name (e.g., `"weather_search"` instead of `"search"`).
@@ -484,7 +393,6 @@ async def load_mcp_tools(
             tool,
             connection=connection,
             callbacks=callbacks,
-            tool_interceptors=tool_interceptors,
             server_name=server_name,
             tool_name_prefix=tool_name_prefix,
         )

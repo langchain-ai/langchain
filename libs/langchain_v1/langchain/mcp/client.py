@@ -17,7 +17,6 @@ from mcp import ClientSession
 from typing_extensions import Self
 
 from langchain.mcp.callbacks import CallbackContext, Callbacks
-from langchain.mcp.interceptors import ToolCallInterceptor
 from langchain.mcp.prompts import load_mcp_prompt
 from langchain.mcp.resources import load_mcp_resources
 from langchain.mcp.sessions import (
@@ -54,7 +53,6 @@ class MultiServerMCPClient:
         connections: dict[str, Connection] | None = None,
         *,
         callbacks: Callbacks | None = None,
-        tool_interceptors: list[ToolCallInterceptor] | None = None,
         tool_name_prefix: bool = False,
     ) -> None:
         """Initialize a `MultiServerMCPClient` with MCP servers connections.
@@ -63,8 +61,6 @@ class MultiServerMCPClient:
             connections: A `dict` mapping server names to connection configurations. If
                 `None`, no initial connections are established.
             callbacks: Optional callbacks for handling notifications and events.
-            tool_interceptors: Optional list of tool call interceptors for modifying
-                requests and responses.
             tool_name_prefix: If `True`, tool names are prefixed with the server name
                 using an underscore separator (e.g., `"weather_search"` instead of
                 `"search"`). This helps avoid conflicts when multiple servers have tools
@@ -107,7 +103,6 @@ class MultiServerMCPClient:
         """
         self.connections: dict[str, Connection] = connections if connections is not None else {}
         self.callbacks = callbacks or Callbacks()
-        self.tool_interceptors = tool_interceptors or []
         self.tool_name_prefix = tool_name_prefix
 
     @asynccontextmanager
@@ -175,7 +170,6 @@ class MultiServerMCPClient:
                 connection=self.connections[server_name],
                 callbacks=self.callbacks,
                 server_name=server_name,
-                tool_interceptors=self.tool_interceptors,
                 tool_name_prefix=self.tool_name_prefix,
             )
 
@@ -188,7 +182,6 @@ class MultiServerMCPClient:
                     connection=connection,
                     callbacks=self.callbacks,
                     server_name=name,
-                    tool_interceptors=self.tool_interceptors,
                     tool_name_prefix=self.tool_name_prefix,
                 )
             )
