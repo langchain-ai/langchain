@@ -28,6 +28,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message_template,
 )
+from langchain_core.prompts.dict import DictPromptTemplate
 from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
@@ -1983,3 +1984,37 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
     )
     result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
     assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]
+
+
+async def test_chat_tmpl_dict_prompt_awaits_aformat() -> None:
+    """`aformat_messages` must await `DictPromptTemplate.aformat`.
+
+    The sibling `StringPromptTemplate` and `ImagePromptTemplate` branches await their
+    async formatters, so a `DictPromptTemplate` subclass that overrides `aformat` with
+    real async work was silently bypassed on the async path.
+    """
+
+    class AsyncDictPromptTemplate(DictPromptTemplate):
+        """Records which formatter ran so the async path can be asserted on."""
+
+        def format(self, **kwargs: Any) -> dict[str, Any]:
+            return {**super().format(**kwargs), "via": "sync"}
+
+        async def aformat(self, **kwargs: Any) -> dict[str, Any]:
+            return {**super().format(**kwargs), "via": "async"}
+
+    template = HumanMessagePromptTemplate(
+        prompt=[
+            AsyncDictPromptTemplate(
+                template={"type": "text", "text": "{greeting}"},
+                template_format="f-string",
+            )
+        ]
+    )
+
+    async_message = await template.aformat(greeting="hello")
+    assert async_message.content == [{"type": "text", "text": "hello", "via": "async"}]
+
+    # The synchronous path must keep using `format`.
+    sync_message = template.format(greeting="hello")
+    assert sync_message.content == [{"type": "text", "text": "hello", "via": "sync"}]
