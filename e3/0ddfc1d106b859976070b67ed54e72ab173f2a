@@ -1,0 +1,19 @@
+libs/langchain_v1/langchain/mcp/tools.py
+  s_2ce70a1527c068::t_42d4e90df9aeac 75,126,156,339
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "e30ddfc1d106b859976070b67ed54e72ab173f2a",
+  "prompts": {},
+  "sessions": {
+    "s_2ce70a1527c068": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dbce52e-70cd-4b5e-92a7-6fb480327deb",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
