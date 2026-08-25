@@ -213,6 +213,35 @@ async def _list_all_tools(session: ClientSession) -> list[MCPTool]:
     return all_tools
 
 
+def _normalize_input_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Fill in structural defaults an MCP server may leave out of a tool schema.
+
+    `type` and `properties` are both optional in JSON Schema, and servers
+    legitimately omit them for a tool that takes no arguments -- `{}` and
+    `{"type": "object"}` are valid ways to say "an object with no required
+    fields". Provider APIs are stricter than the spec about the shape of a tool
+    schema, so normalize here, at the boundary where a remote schema enters
+    LangChain, rather than relying on each provider to be lenient.
+
+    Defaults are only applied when a key is absent, so a server's own values are
+    never overridden -- including a `type` other than `"object"`. A server that
+    advertises a non-object schema is violating the MCP specification, and
+    surfacing the provider's rejection names the offending tool, which is more
+    useful than silently rewriting what the server asked for.
+
+    Args:
+        schema: The `inputSchema` advertised by the MCP server.
+
+    Returns:
+        A new schema dict. The input is never mutated, since it belongs to the
+            server's `Tool` object.
+    """
+    normalized = dict(schema)
+    normalized.setdefault("type", "object")
+    normalized.setdefault("properties", {})
+    return normalized
+
+
 def convert_mcp_tool_to_langchain_tool(
     session: ClientSession | None,
     tool: MCPTool,
@@ -324,7 +353,7 @@ def convert_mcp_tool_to_langchain_tool(
     return StructuredTool(
         name=lc_tool_name,
         description=tool.description or "",
-        args_schema=tool.input_schema,
+        args_schema=_normalize_input_schema(tool.input_schema),
         coroutine=call_tool,
         response_format="content_and_artifact",
         metadata=metadata,
