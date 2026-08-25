@@ -14,6 +14,7 @@ import inspect
 import json
 import logging
 import math
+import struct
 from collections.abc import Callable, Iterable, Sequence
 from functools import partial, wraps
 from typing import (
@@ -2241,13 +2242,232 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict[str, 
     ]
 
 
+_IMAGE_BASE_TOKENS = 85
+"""Base token cost of an image, also used when dimensions cannot be determined."""
+
+_IMAGE_TILE_TOKENS = 170
+_IMAGE_TILE_SIZE = 512
+_IMAGE_MAX_EDGE = 2048
+_IMAGE_MIN_EDGE = 768
+
+# PNG and WebP dimensions sit in the first few bytes, so only a tiny prefix is decoded
+# rather than a whole payload just to measure it.
+_IMAGE_HEADER_BYTES = 64
+
+# JPEG frame headers follow any metadata segments, which can be large, so the window
+# widens only if a smaller one came up short. Payloads whose frame header lies beyond
+# the largest window fall back to the fixed cost.
+_JPEG_SCAN_WINDOWS = (4_096, 131_072)
+
+# Real payloads reach the frame header in well under ten segments, so a low cap keeps
+# malformed input from being scanned at length.
+_JPEG_MAX_SEGMENTS = 64
+
+_PNG_HEADER_SIZE = 24
+_WEBP_HEADER_SIZE = 30
+_WEBP_VP8L_HEADER_SIZE = 25
+
+_JPEG_FILL_BYTE = 0xFF
+_JPEG_EOI_MARKER = 0xD9
+_JPEG_MIN_SEGMENT_LENGTH = 2
+
+# SOF0-SOF15, excluding DHT (0xC4), JPG (0xC8) and DAC (0xCC), which are not frames.
+_JPEG_SOF_MARKERS = frozenset(range(0xC0, 0xD0)) - {0xC4, 0xC8, 0xCC}
+
+# SOI, TEM and the restart markers carry no length field.
+_JPEG_STANDALONE_MARKERS = frozenset({0x01, 0xD8}) | frozenset(range(0xD0, 0xD8))
+
+
+def _decode_image_header(data: str, max_bytes: int) -> bytes:
+    """Decode a bounded prefix of a base64 payload.
+
+    Args:
+        data: Base64 encoded image data.
+        max_bytes: Approximate maximum number of bytes to decode.
+
+    Returns:
+        The decoded prefix, or empty bytes if it could not be decoded.
+    """
+    prefix = data[: (max_bytes // 3 + 1) * 4]
+    prefix = prefix[: len(prefix) - len(prefix) % 4]
+    try:
+        return base64.b64decode(prefix)
+    except (ValueError, TypeError):
+        return b""
+
+
+def _image_size_from_header(data: bytes) -> tuple[int, int] | None:
+    """Read image dimensions from a file header.
+
+    Args:
+        data: The leading bytes of an image file.
+
+    Returns:
+        A `(width, height)` tuple, or `None` if the format is not recognized.
+    """
+    if (
+        data[:8] == b"\x89PNG\r\n\x1a\n"
+        and data[12:16] == b"IHDR"
+        and len(data) >= _PNG_HEADER_SIZE
+    ):
+        width, height = struct.unpack(">II", data[16:24])
+        return width, height
+
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        fourcc = data[12:16]
+        if fourcc == b"VP8X" and len(data) >= _WEBP_HEADER_SIZE:
+            width = int.from_bytes(data[24:27], "little") + 1
+            height = int.from_bytes(data[27:30], "little") + 1
+            return width, height
+        if (
+            fourcc == b"VP8 "
+            and data[23:26] == b"\x9d\x01\x2a"
+            and len(data) >= _WEBP_HEADER_SIZE
+        ):
+            width, height = struct.unpack("<HH", data[26:30])
+            return width & 0x3FFF, height & 0x3FFF
+        if fourcc == b"VP8L" and len(data) >= _WEBP_VP8L_HEADER_SIZE:
+            bits = int.from_bytes(data[21:25], "little")
+            return (bits & 0x3FFF) + 1, ((bits >> 14) & 0x3FFF) + 1
+        return None
+
+    if data[:2] == b"\xff\xd8":
+        index = 2
+        for _ in range(_JPEG_MAX_SEGMENTS):
+            if index + 9 > len(data):
+                return None
+            if data[index] != _JPEG_FILL_BYTE:
+                # Segments start with a fill byte, so anything else is malformed
+                return None
+            marker = data[index + 1]
+            if marker == _JPEG_FILL_BYTE:
+                index += 1
+                continue
+            if marker in _JPEG_STANDALONE_MARKERS:
+                index += 2
+                continue
+            if marker == _JPEG_EOI_MARKER:
+                return None
+            if marker in _JPEG_SOF_MARKERS:
+                height, width = struct.unpack(">HH", data[index + 5 : index + 9])
+                return width, height
+            segment_length = int.from_bytes(data[index + 2 : index + 4], "big")
+            if segment_length < _JPEG_MIN_SEGMENT_LENGTH:
+                return None
+            index += segment_length + _JPEG_MIN_SEGMENT_LENGTH
+
+    return None
+
+
+def _image_size_from_base64(data: str) -> tuple[int, int] | None:
+    """Read image dimensions from a base64 payload.
+
+    Args:
+        data: Base64 encoded image data.
+
+    Returns:
+        A `(width, height)` tuple, or `None` if the dimensions cannot be read.
+    """
+    header = _decode_image_header(data, _IMAGE_HEADER_BYTES)
+    if header[:2] != b"\xff\xd8":
+        return _image_size_from_header(header)
+
+    for window in _JPEG_SCAN_WINDOWS:
+        header = _decode_image_header(data, window)
+        size = _image_size_from_header(header)
+        if size is not None:
+            return size
+        if len(header) < window:
+            # The whole payload has been scanned already
+            break
+
+    return None
+
+
+def _estimate_image_tokens(width: int, height: int) -> int:
+    """Estimate the token cost of an image from its dimensions.
+
+    Args:
+        width: Image width in pixels.
+        height: Image height in pixels.
+
+    Returns:
+        Approximate number of tokens the image will occupy.
+    """
+    if width <= 0 or height <= 0:
+        return _IMAGE_BASE_TOKENS
+
+    longest = max(width, height)
+    if longest > _IMAGE_MAX_EDGE:
+        scale = _IMAGE_MAX_EDGE / longest
+        width, height = round(width * scale), round(height * scale)
+
+    shortest = min(width, height)
+    if shortest > _IMAGE_MIN_EDGE:
+        scale = _IMAGE_MIN_EDGE / shortest
+        width, height = round(width * scale), round(height * scale)
+
+    tiles = math.ceil(width / _IMAGE_TILE_SIZE) * math.ceil(height / _IMAGE_TILE_SIZE)
+    return _IMAGE_TILE_TOKENS * tiles + _IMAGE_BASE_TOKENS
+
+
+def _image_base64(block: dict[str, Any]) -> str:
+    """Extract the base64 payload from an image content block.
+
+    Args:
+        block: A content block dictionary.
+
+    Returns:
+        The base64 payload, or an empty string if the block carries none.
+    """
+    data = block.get("base64")
+    if isinstance(data, str) and data:
+        return data
+
+    url = block.get("url")
+    if isinstance(url, str) and url.startswith("data:"):
+        return url.partition(",")[2]
+
+    image_url = block.get("image_url")
+    if isinstance(image_url, dict):
+        url = image_url.get("url")
+        if isinstance(url, str) and url.startswith("data:"):
+            return url.partition(",")[2]
+    elif isinstance(image_url, str) and image_url.startswith("data:"):
+        return image_url.partition(",")[2]
+
+    return ""
+
+
+def _count_image_tokens(block: dict[str, Any], tokens_per_image: int | None) -> int:
+    """Count the tokens contributed by a single image block.
+
+    Args:
+        block: An `image` or `image_url` content block.
+        tokens_per_image: Caller-supplied fixed cost, which takes precedence when set.
+
+    Returns:
+        Approximate number of tokens for the block.
+    """
+    if tokens_per_image is not None:
+        return tokens_per_image
+
+    data = _image_base64(block)
+    if data:
+        size = _image_size_from_base64(data)
+        if size is not None:
+            return _estimate_image_tokens(*size)
+
+    return _IMAGE_BASE_TOKENS
+
+
 def count_tokens_approximately(
     messages: Iterable[MessageLikeRepresentation],
     *,
     chars_per_token: float = 4.0,
     extra_tokens_per_message: float = 3.0,
     count_name: bool = True,
-    tokens_per_image: int = 85,
+    tokens_per_image: int | None = None,
     use_usage_metadata_scaling: bool = False,
     tools: list[BaseTool | dict[str, Any]] | None = None,
 ) -> int:
@@ -2257,8 +2477,9 @@ def count_tokens_approximately(
 
     - For AI messages, the token count also includes stringified tool calls.
     - For tool messages, the token count also includes the tool call ID.
-    - For multimodal messages with images, applies a fixed token penalty per image
-        instead of counting base64-encoded characters.
+    - For multimodal messages with images, estimates the token cost from the image
+        dimensions where they can be read from the payload, instead of counting
+        base64-encoded characters.
     - If tools are provided, the token count also includes stringified tool schemas.
 
     Args:
@@ -2272,8 +2493,10 @@ def count_tokens_approximately(
             You can also specify `float` values for more fine-grained control.
             [See more here](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb).
         count_name: Whether to include message names in the count.
-        tokens_per_image: Fixed token cost per image (default: 85, aligned with
-            OpenAI's low-resolution image token cost).
+        tokens_per_image: Fixed token cost per image. When set, it is applied to
+            every image and no dimensions are read. When `None` (default), the
+            cost is estimated from the image's dimensions, falling back to 85 if
+            they cannot be determined.
         use_usage_metadata_scaling: If True, and all AI messages have consistent
             `response_metadata['model_provider']`, scale the approximate token count
             using the **most recent** AI message that has
@@ -2291,9 +2514,10 @@ def count_tokens_approximately(
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
-        For multimodal messages containing images, a fixed token penalty is applied
-        per image instead of counting base64-encoded characters, which provides a
-        more realistic approximation.
+        For multimodal messages containing images, the cost is estimated from the
+        image dimensions read out of the payload header rather than from the length
+        of its base64 encoding. Images whose dimensions cannot be read, such as
+        URL-only blocks and `file_id` references, fall back to a fixed penalty.
 
     !!! version-added "Added in `langchain-core` 0.3.46"
     """
@@ -2347,7 +2571,7 @@ def count_tokens_approximately(
 
                     # Apply fixed penalty for image blocks
                     if block_type in {"image", "image_url"}:
-                        token_count += tokens_per_image
+                        token_count += _count_image_tokens(block, tokens_per_image)
                     # Count text blocks normally
                     elif block_type == "text":
                         text = block.get("text", "")
