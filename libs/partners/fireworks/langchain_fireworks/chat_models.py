@@ -370,6 +370,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             # If function call only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
+        if reasoning_content := message.additional_kwargs.get("reasoning_content"):
+            message_dict["reasoning_content"] = reasoning_content
         if message.tool_calls or message.invalid_tool_calls:
             message_dict["tool_calls"] = [
                 _lc_tool_call_to_fireworks_tool_call(tc) for tc in message.tool_calls
@@ -506,6 +508,8 @@ def _convert_chunk_to_message_chunk(
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: dict = {}
     tool_call_chunks: list[ToolCallChunk] = []
+    if reasoning_content := _dict.get("reasoning_content"):
+        additional_kwargs["reasoning_content"] = reasoning_content
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:

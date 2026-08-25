@@ -134,6 +134,136 @@ def test_convert_dict_to_message_without_reasoning_content() -> None:
     assert "reasoning_content" not in message.additional_kwargs
 
 
+def test_convert_chunk_to_message_chunk_with_reasoning_content() -> None:
+    """Test reasoning_content is captured from streaming deltas.
+
+    Regression test for the streaming converter dropping reasoning_content
+    that the non-streaming converter (_convert_dict_to_message) already
+    captures.  Thinking models on Fireworks (Kimi, Qwen, DeepSeek, GLM)
+    emit ``reasoning_content`` alongside ``content`` in each SSE delta.
+    """
+    chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": "",
+                    "reasoning_content": "Thinking step 1...",
+                },
+                "index": 0,
+            }
+        ],
+    }
+
+    message = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+
+    assert isinstance(message, AIMessageChunk)
+    assert "reasoning_content" in message.additional_kwargs
+    assert message.additional_kwargs["reasoning_content"] == "Thinking step 1..."
+
+
+def test_convert_chunk_to_message_chunk_reasoning_accumulates() -> None:
+    """Test that reasoning_content from multiple streaming chunks is captured."""
+    chunks = [
+        {
+            "choices": [
+                {"delta": {"role": "assistant", "reasoning_content": "Step 1. "}, "index": 0}
+            ],
+        },
+        {
+            "choices": [
+                {"delta": {"reasoning_content": "Step 2. "}, "index": 0}
+            ],
+        },
+        {
+            "choices": [
+                {"delta": {"reasoning_content": "Step 3.", "content": "42"}, "index": 0}
+            ],
+        },
+    ]
+
+    reasoning_parts: list[str] = []
+    content_parts: list[str] = []
+    for chunk in chunks:
+        msg = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+        rc = msg.additional_kwargs.get("reasoning_content")
+        if rc:
+            reasoning_parts.append(rc)
+        if msg.content:
+            content_parts.append(msg.content)
+
+    assert "".join(reasoning_parts) == "Step 1. Step 2. Step 3."
+    assert "".join(content_parts) == "42"
+
+
+def test_convert_chunk_to_message_chunk_without_reasoning_content() -> None:
+    """Test that chunks without reasoning_content work correctly."""
+    chunk = {
+        "choices": [
+            {"delta": {"role": "assistant", "content": "Hello"}, "index": 0}
+        ],
+    }
+
+    message = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+
+    assert isinstance(message, AIMessageChunk)
+    assert "reasoning_content" not in message.additional_kwargs
+    assert message.content == "Hello"
+
+
+def test_convert_message_to_dict_forwards_reasoning_content() -> None:
+    """Test reasoning_content is forwarded in outbound message conversion.
+
+    When an AIMessage carrying reasoning_content in additional_kwargs is
+    sent back to the Fireworks API (multi-turn conversations), the outbound
+    converter must preserve it so the model retains its chain-of-thought.
+    """
+    message = AIMessage(
+        content="The answer is 42.",
+        additional_kwargs={"reasoning_content": "I reasoned about this."},
+    )
+
+    result = _convert_message_to_dict(message)
+
+    assert result["role"] == "assistant"
+    assert result["content"] == "The answer is 42."
+    assert result["reasoning_content"] == "I reasoned about this."
+
+
+def test_convert_message_to_dict_without_reasoning_content() -> None:
+    """Test that outbound conversion doesn't add reasoning_content when absent."""
+    message = AIMessage(content="The answer is 42.")
+
+    result = _convert_message_to_dict(message)
+
+    assert "reasoning_content" not in result
+
+
+def test_convert_message_to_dict_reasoning_with_tool_calls() -> None:
+    """Test reasoning_content coexists with tool_calls in outbound conversion."""
+    message = AIMessage(
+        content="",
+        additional_kwargs={
+            "reasoning_content": "I need to call a tool.",
+            "tool_calls": [
+                {
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {"name": "get_weather", "arguments": '{"city": "SF"}'},
+                }
+            ],
+        },
+        tool_calls=[
+            {"name": "get_weather", "args": {"city": "SF"}, "id": "call_1", "type": "tool_call"}
+        ],
+    )
+
+    result = _convert_message_to_dict(message)
+
+    assert result["reasoning_content"] == "I need to call a tool."
+    assert "tool_calls" in result
+
+
 def test_metadata_versions() -> None:
     """Test that metadata reports the correct version info."""
     os.environ.setdefault("FIREWORKS_API_KEY", "fake-key")
