@@ -28,6 +28,7 @@ from __future__ import annotations
 import inspect
 import logging
 import re
+from collections.abc import Mapping
 from functools import lru_cache
 from typing import Any
 
@@ -97,7 +98,7 @@ def _route_unsupported_sampling_params(payload: dict[str, Any]) -> dict[str, Any
         return payload
 
     extra_body = payload.get("extra_body")
-    if extra_body is not None and not isinstance(extra_body, dict):
+    if extra_body is not None and not isinstance(extra_body, Mapping):
         # A value the SDK would reject anyway. Leave the payload untouched
         # rather than relocating params into something that cannot hold them.
         return payload

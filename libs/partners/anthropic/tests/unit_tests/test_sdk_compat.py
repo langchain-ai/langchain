@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+from types import MappingProxyType
 from typing import Any
 from unittest.mock import patch
 
@@ -80,6 +81,18 @@ def test_explicit_extra_body_wins_over_relocated_params() -> None:
         )
 
     assert payload == {"extra_body": {"temperature": 0.1, "foo": "bar"}}
+
+
+def test_non_dict_mapping_extra_body_still_receives_relocated_params() -> None:
+    """`extra_body` accepts any Mapping, not just `dict`."""
+    with patch.object(
+        _sdk_compat, "_unsupported_sampling_params", lambda: frozenset({"temperature"})
+    ):
+        payload = _route_unsupported_sampling_params(
+            {"temperature": 0.5, "extra_body": MappingProxyType({"foo": "bar"})}
+        )
+
+    assert payload == {"extra_body": {"temperature": 0.5, "foo": "bar"}}
 
 
 def test_non_dict_extra_body_leaves_payload_untouched() -> None:
