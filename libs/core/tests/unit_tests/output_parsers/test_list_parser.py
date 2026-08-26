@@ -160,6 +160,18 @@ def test_markdown_list() -> None:
         assert list(parser.transform(iter([text]))) == expectedlist
 
 
+def test_markdown_list_plus_bullet() -> None:
+    """Test that + bullet markers are parsed correctly (CommonMark spec)."""
+    parser = MarkdownListOutputParser()
+
+    # + bullets
+    assert parser.parse("+ a\n+ b") == ["a", "b"]
+    # mixed markers
+    assert parser.parse("- a\n* b\n+ c") == ["a", "b", "c"]
+    # + with indentation
+    assert parser.parse("Items:\n+ apple\n+ banana") == ["apple", "banana"]
+
+
 T = TypeVar("T")
 
 
