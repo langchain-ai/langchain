@@ -4362,9 +4362,7 @@ def _create_usage_metadata(
             for k, v in prompt_tokens_details.items()
             if k not in {"audio_tokens", "cached_tokens", "cache_write_tokens"}
         }
-    )
-
-    
+    )  
     output_token_details: dict = {
         "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
             "audio_tokens"
