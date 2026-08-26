@@ -29,6 +29,12 @@ try:
     )
     from fastmcp.exceptions import ToolError
     from fastmcp.mcp_config import MCPConfig, infer_transport_type_from_url
+
+    # The MCP SDK's own server type, which `fastmcp.Client` also accepts
+    # in-process. It arrives with the fastmcp client install, and was named
+    # `FastMCP` under `mcp.server.fastmcp` before mcp 2.x — the line FastMCP 4
+    # requires.
+    from mcp.server.mcpserver import MCPServer
 except ImportError as _import_error:
     msg = (
         "Please install the fastmcp client to use `MCPAdapter` — "
@@ -36,25 +42,12 @@ except ImportError as _import_error:
     )
     raise ImportError(msg) from _import_error
 
-try:
-    # FastMCP 1.x servers shipped inside the MCP SDK as `mcp.server.fastmcp`. The
-    # SDK renamed it to `MCPServer` in mcp 2.x (required by FastMCP 4), so this is
-    # a best-effort import: it only feeds the `MCPAdapterTarget` alias, and
-    # `fastmcp.Client` still infers a transport for whichever object arrives.
-    from mcp.server.fastmcp import FastMCP as FastMCP1Server
-except ImportError:
-    try:
-        from mcp.server.mcpserver import MCPServer as FastMCP1Server
-    except ImportError:
-        FastMCP1Server = Any
-
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from types import TracebackType
 
     from fastmcp import FastMCP
-    from fastmcp.client.elicitation import ElicitationHandler
 else:
     # In-process FastMCP servers live in the server half of FastMCP, which the
     # lightweight `fastmcp-slim[client]` install does not pull in. FastMCP degrades
@@ -66,7 +59,7 @@ MCPAdapterTarget: TypeAlias = (
     FastMCPClient[Any]
     | ClientTransport
     | FastMCP
-    | FastMCP1Server
+    | MCPServer
     | AnyUrl
     | Path
     | MCPConfig
@@ -112,10 +105,6 @@ class MCPAdapter:
     Args:
         target: MCP target accepted by `fastmcp.Client`, including an existing
             FastMCP client.
-        elicitation_handler: FastMCP elicitation handler invoked when a server
-            requests input mid-call. Without one, FastMCP declines elicitation
-            requests. Cannot be combined with a pre-built client, which carries
-            its own handler.
 
     Example:
         ```python
@@ -128,25 +117,12 @@ class MCPAdapter:
         ```
     """
 
-    def __init__(
-        self,
-        target: MCPAdapterTarget,
-        *,
-        elicitation_handler: ElicitationHandler | None = None,
-    ) -> None:
+    def __init__(self, target: MCPAdapterTarget) -> None:
         """Initialize the adapter around a FastMCP target or client."""
         if isinstance(target, FastMCPClient):
-            if elicitation_handler is not None:
-                msg = (
-                    "`elicitation_handler` cannot be combined with a pre-built "
-                    "`fastmcp.Client`. Pass the handler to the client instead."
-                )
-                raise ValueError(msg)
             self._client: FastMCPClient[Any] = target
         else:
-            self._client = FastMCPClient(
-                _client_target(target), elicitation_handler=elicitation_handler
-            )
+            self._client = FastMCPClient(_client_target(target))
         self._lifecycle_lock = asyncio.Lock()
         self._active_uses = 0
         self._closed = False

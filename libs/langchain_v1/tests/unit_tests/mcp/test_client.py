@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Self
 
 import pytest
-from fastmcp import Client, Context, FastMCP
+from fastmcp import Client, FastMCP
 from fastmcp.client.transports import (
     FastMCPTransport,
     PythonStdioTransport,
@@ -142,46 +142,6 @@ def test_prebuilt_client_is_used_as_is() -> None:
     client: Client[Any] = Client("https://example.com/mcp")
 
     assert MCPAdapter(client).client is client
-
-
-def test_prebuilt_client_rejects_an_elicitation_handler() -> None:
-    async def handler(*_: object) -> dict[str, Any]:
-        return {}
-
-    with pytest.raises(ValueError, match="cannot be combined with a pre-built"):
-        MCPAdapter(Client("https://example.com/mcp"), elicitation_handler=handler)
-
-
-@pytest.mark.asyncio
-async def test_elicitation_handler_is_forwarded_to_fastmcp() -> None:
-    """A server-initiated elicitation is answered by the handler, not interrupted."""
-    server: FastMCP[None] = FastMCP("elicit")
-    prompts: list[str] = []
-
-    @server.tool
-    async def confirm(context: Context) -> str:
-        result = await context.elicit("Proceed?", response_type=None)
-        return result.action
-
-    async def handler(
-        message: str,
-        _response_type: type[Any] | None,
-        _params: Any,
-        _context: Any,
-    ) -> dict[str, Any]:
-        prompts.append(message)
-        return {}
-
-    adapter = MCPAdapter(server, elicitation_handler=handler)
-    [tool] = await adapter.get_tools()
-    message = await tool.ainvoke(
-        {"name": "confirm", "args": {}, "id": "call-1", "type": "tool_call"}
-    )
-
-    assert prompts == ["Proceed?"]
-    assert message.content == [
-        {"type": "text", "text": "accept", "annotations": None, "_meta": None}
-    ]
 
 
 @pytest.mark.asyncio
