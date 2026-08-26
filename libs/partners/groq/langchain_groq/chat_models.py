@@ -872,21 +872,20 @@ class ChatGroq(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
-                    if k in overall_token_usage and v is not None:
-                        # Handle nested dictionaries
-                        if isinstance(v, dict):
-                            if k not in overall_token_usage:
-                                overall_token_usage[k] = {}
-                            for nested_k, nested_v in v.items():
-                                if (
-                                    nested_k in overall_token_usage[k]
-                                    and nested_v is not None
-                                ):
-                                    overall_token_usage[k][nested_k] += nested_v
-                                else:
-                                    overall_token_usage[k][nested_k] = nested_v
-                        else:
-                            overall_token_usage[k] += v
+                    if v is None:
+                        continue
+                    # Handle nested dictionaries
+                    if isinstance(v, dict):
+                        existing = overall_token_usage.setdefault(k, {})
+                        for nested_k, nested_v in v.items():
+                            if nested_v is None:
+                                continue
+                            if nested_k in existing:
+                                existing[nested_k] += nested_v
+                            else:
+                                existing[nested_k] = nested_v
+                    elif k in overall_token_usage:
+                        overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
