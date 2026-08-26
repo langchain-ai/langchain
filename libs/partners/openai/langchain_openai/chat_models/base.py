@@ -4356,6 +4356,15 @@ def _create_usage_metadata(
             "cache_write_tokens"
         ),
     }
+    input_token_details.update(
+        {
+            k: v
+            for k, v in prompt_tokens_details.items()
+            if k not in {"audio_tokens", "cached_tokens", "cache_write_tokens"}
+        }
+    )
+
+    
     output_token_details: dict = {
         "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
             "audio_tokens"
@@ -4364,6 +4373,14 @@ def _create_usage_metadata(
             oai_token_usage.get("completion_tokens_details") or {}
         ).get("reasoning_tokens"),
     }
+    output_token_details.update(
+        {
+            k: v
+            for k, v in (oai_token_usage.get("completion_tokens_details") or {}).items()
+            if k not in {"audio_tokens", "reasoning_tokens"}
+        }
+    )
+
     if service_tier is not None:
         # Avoid counting cache-read and reasoning tokens towards the service tier
         # token counts, since service tier tokens are already priced differently
