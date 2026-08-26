@@ -23,6 +23,8 @@ MIN_VERSION_LIBS = [
     "langchain-text-splitters",
     "numpy",
     "SQLAlchemy",
+    "anthropic",
+    "openai",
 ]
 
 # some libs only get checked on release because of simultaneous changes in
