@@ -140,7 +140,7 @@ async def test_astream() -> None:
         "model": MODEL_NAME,
         "max_tokens": 1024,
         "messages": [{"role": "user", "content": "hi"}],
-        "temperature": 0.0,
+        "extra_body": {"temperature": 0.0},
     }
     stream = await async_client.messages.create(**params, stream=True)
     async for event in stream:

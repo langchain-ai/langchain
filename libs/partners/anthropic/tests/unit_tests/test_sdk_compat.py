@@ -82,8 +82,12 @@ def test_explicit_extra_body_wins_over_relocated_params() -> None:
     assert payload == {"extra_body": {"temperature": 0.1, "foo": "bar"}}
 
 
-def test_non_dict_extra_body_is_left_alone() -> None:
-    """A malformed `extra_body` is the SDK's to reject, not ours to merge into."""
+def test_non_dict_extra_body_leaves_payload_untouched() -> None:
+    """A malformed `extra_body` is the SDK's to reject, not ours to merge into.
+
+    Crucially the sampling params must survive: relocating them into a value
+    that cannot hold them would drop them silently.
+    """
     with patch.object(
         _sdk_compat, "_unsupported_sampling_params", lambda: frozenset({"temperature"})
     ):
@@ -91,7 +95,7 @@ def test_non_dict_extra_body_is_left_alone() -> None:
             {"temperature": 0.5, "extra_body": "not-a-dict"}
         )
 
-    assert payload == {"extra_body": "not-a-dict"}
+    assert payload == {"temperature": 0.5, "extra_body": "not-a-dict"}
 
 
 def test_unsupported_sampling_params_falls_back_when_introspection_fails(

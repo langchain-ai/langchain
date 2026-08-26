@@ -93,18 +93,20 @@ def _route_unsupported_sampling_params(payload: dict[str, Any]) -> dict[str, Any
         The same payload.
     """
     unsupported = _unsupported_sampling_params()
+    if not unsupported:
+        return payload
+
+    extra_body = payload.get("extra_body")
+    if extra_body is not None and not isinstance(extra_body, dict):
+        # A value the SDK would reject anyway. Leave the payload untouched
+        # rather than relocating params into something that cannot hold them.
+        return payload
+
     relocated = {k: payload.pop(k) for k in unsupported if k in payload}
     if not relocated:
         return payload
 
-    extra_body = payload.get("extra_body")
-    if not isinstance(extra_body, dict):
-        # Absent, or a value the SDK would reject anyway -- don't second-guess it.
-        if extra_body is not None:
-            return payload
-        extra_body = {}
-
-    payload["extra_body"] = {**relocated, **extra_body}
+    payload["extra_body"] = {**relocated, **(extra_body or {})}
     return payload
 
 
