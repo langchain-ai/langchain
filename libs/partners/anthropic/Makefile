@@ -11,10 +11,20 @@ TEST_FILE ?= tests/unit_tests/
 PYTEST_EXTRA ?=
 integration_test integration_tests: TEST_FILE=tests/integration_tests/
 
+# A single canonical live request, reused to smoke both supported anthropic
+# majors in `integration_test` (see below).
+SDK_SMOKE_TEST = tests/integration_tests/test_chat_models.py::test_stream
+
 test tests:
 	uv run --group test pytest -vvv $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
+# Runs the full integration suite against the locked SDK, then smokes a single
+# live request on each supported anthropic major -- anthropic 0.x (backed by
+# `httpx`) and anthropic 1.x (backed by `httpx2`) -- so both transport paths
+# stay covered regardless of which version uv.lock currently resolves.
 integration_test integration_tests:
+	uv run --with 'anthropic>=0.120.0,<1.0.0' --group test --group test_integration pytest -v --tb=short $(SDK_SMOKE_TEST)
+	uv run --with 'anthropic>=1.0.0,<2.0.0' --group test --group test_integration pytest -v --tb=short $(SDK_SMOKE_TEST)
 	uv run --group test --group test_integration pytest -v --tb=short -n auto --benchmark-disable --timeout 30 --retries 3 --retry-delay 1 $(TEST_FILE)
 
 test_watch:
