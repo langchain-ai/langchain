@@ -312,3 +312,29 @@ async def test_markdown_list_async() -> None:
         assert [
             a async for a in parser.atransform(aiter_from_iter([text]))
         ] == expectedlist
+
+
+def test_markdown_list_plus_bullet() -> None:
+    """Regression test for #39900: MarkdownListOutputParser silently drops '+' bullets.
+
+    CommonMark defines ``-``, ``*``, and ``+`` as bullet list markers.
+    Previously only ``-`` and ``*`` were matched.
+    """
+    parser = MarkdownListOutputParser()
+    text = "+ foo\n+ bar\n+ baz"
+    expected = ["foo", "bar", "baz"]
+
+    assert parser.parse(text) == expected
+    assert list(parser.transform(t for t in text)) == [[a] for a in expected]
+
+
+async def test_markdown_list_plus_bullet_async() -> None:
+    """Async regression test for #39900."""
+    parser = MarkdownListOutputParser()
+    text = "+ foo\n+ bar\n+ baz"
+    expected = ["foo", "bar", "baz"]
+
+    assert await parser.aparse(text) == expected
+    assert [
+        a async for a in parser.atransform(aiter_from_iter(t for t in text))
+    ] == [[a] for a in expected]
