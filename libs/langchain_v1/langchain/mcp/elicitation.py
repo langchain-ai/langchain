@@ -14,7 +14,7 @@ this module's own frame lets it propagate.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, TypeVar
 
 import anyio
 from langgraph.types import interrupt
@@ -29,8 +29,13 @@ from mcp.types import (
 from typing_extensions import NotRequired
 
 if TYPE_CHECKING:
+    from collections.abc import Coroutine
+
     from fastmcp.client import Client
     from mcp.types import InputRequest
+
+
+_ResultT = TypeVar("_ResultT")
 
 
 _STILL_WORKING_SLEEP_SECONDS = 0.05
@@ -191,6 +196,26 @@ def _build_responses(
     return responses
 
 
+async def _await_monitored(client: Client[Any], coro: Coroutine[Any, Any, _ResultT]) -> _ResultT:
+    """Await a session request so a dying session cannot leave it hanging.
+
+    `fastmcp.Client.call_tool` races every request against the background task
+    that owns the session, so a transport failure raises instead of leaving the
+    caller waiting on a reply that can never arrive. Driving the input-required
+    loop directly means reaching for the same guard: without it a broken
+    connection mid-elicitation hangs the tool call.
+
+    FastMCP exposes this only privately, so fall back to a plain await if the
+    helper moves. The consequence of the fallback is the hang it prevents, not
+    incorrect behavior.
+    """
+    monitored = getattr(client, "_await_with_session_monitoring", None)
+    if monitored is None:
+        return await coro
+    result: _ResultT = await monitored(coro)
+    return result
+
+
 async def _call_tool_with_interrupts(
     client: Client[Any],
     tool_name: str,
@@ -225,7 +250,9 @@ async def _call_tool_with_interrupts(
         ValueError: If a resumed answer is missing or malformed.
     """
     session = client.session
-    result = await session.call_tool(tool_name, arguments, allow_input_required=True)
+    result = await _await_monitored(
+        client, session.call_tool(tool_name, arguments, allow_input_required=True)
+    )
 
     while isinstance(result, InputRequiredResult):
         responses: InputResponses | None = None
@@ -244,13 +271,16 @@ async def _call_tool_with_interrupts(
             # interrupted for that; just pause so the retry is not a spin.
             await anyio.sleep(_STILL_WORKING_SLEEP_SECONDS)
 
-        result = await session.call_tool(
-            tool_name,
-            arguments,
-            input_responses=responses,
-            # Opaque to us: echoed back byte-exact, never inspected.
-            request_state=result.request_state,
-            allow_input_required=True,
+        result = await _await_monitored(
+            client,
+            session.call_tool(
+                tool_name,
+                arguments,
+                input_responses=responses,
+                # Opaque to us: echoed back byte-exact, never inspected.
+                request_state=result.request_state,
+                allow_input_required=True,
+            ),
         )
 
     return result

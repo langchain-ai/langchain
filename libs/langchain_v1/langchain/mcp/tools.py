@@ -238,11 +238,13 @@ def convert_mcp_tool_to_langchain_tool(
     Args:
         tool: An MCP tool, as returned by `fastmcp.Client.list_tools`.
         client: The FastMCP client to call the tool through.
-        elicitation: How to answer a server that asks for input mid-call. By
-            default such a request is left to `client`, which declines it
-            unless it was built with its own handler. Pass `'interrupt'` to
-            raise a LangGraph `interrupt()` instead, so a human answers and the
-            call resumes — see `langchain.mcp.elicitation`.
+        elicitation: Whether this tool can answer a server that needs input
+            mid-call. Pass `'interrupt'` to raise a LangGraph `interrupt()` when
+            a server asks, so a human answers and the call resumes — see
+            `langchain.mcp.elicitation`. Answering also requires `client` to
+            declare the elicitation capability, which FastMCP does only for a
+            client built with an `elicitation_handler`. By default the request
+            is left to `client` and its own handler, if it has one.
 
     Returns:
         A LangChain tool that invokes the MCP tool asynchronously.
