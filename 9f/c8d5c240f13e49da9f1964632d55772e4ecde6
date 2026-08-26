@@ -1,0 +1,40 @@
+libs/langchain_v1/tests/unit_tests/mcp/test_client.py
+  s_d241044b04e409::t_597112a88b92ff 11
+  s_d241044b04e409::t_ad10e200e2a67a 73-74,76-77,177-179,182-184
+  s_d241044b04e409::t_c02589bbf6d44b 7-10,123-124,126
+  s_d241044b04e409::t_83786a07638b1d 180
+  s_d241044b04e409::t_d8038e14c6b2a2 125,127-133,136-138
+  s_d241044b04e409::t_2ba5dd02023e7f 6,15,18-20,46,101-105,107-108,116-122,141-142,144,147-149,151-152,155-176,181,187-193
+libs/langchain_v1/langchain/mcp/adapter.py
+  s_d241044b04e409::t_c30dd79c44eb7a 31,86,88-92,147-149
+  s_d241044b04e409::t_abde6881de1dc4 11
+  s_d241044b04e409::t_6220be268a3a57 126
+  s_11258e92ea818e::t_9f6f43c1b7915f 39-45,47-50
+  s_d241044b04e409::t_9ebb8efd879983 52-54,56-75,78-81,108-111,115-125,127-128,135,138-146
+libs/langchain_v1/langchain/mcp/tools.py
+  s_d241044b04e409::t_8be844cf5ddb99 1,6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "9fc8d5c240f13e49da9f1964632d55772e4ecde6",
+  "prompts": {},
+  "sessions": {
+    "s_11258e92ea818e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b0d87676-caca-4325-947a-4dafdaef4699",
+        "model": "claude-opus-5"
+      },
+      "human_author": null
+    },
+    "s_d241044b04e409": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "151c6ebb-e70f-4ac6-a703-97081c824b55",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
