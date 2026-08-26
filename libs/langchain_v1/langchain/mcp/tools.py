@@ -7,7 +7,7 @@ package.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypedDict, assert_never
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict, assert_never
 
 from langchain_core.messages.content import (
     FileContentBlock,
@@ -28,10 +28,24 @@ from mcp.types import (
     TextResourceContents,
 )
 
+from langchain.mcp.elicitation import _call_tool_with_interrupts
+
 if TYPE_CHECKING:
     from fastmcp.client import Client
-    from fastmcp.client.client import CallToolResult
     from mcp.types import Tool
+
+
+class _ToolCallResult(Protocol):
+    """The result fields this module reads.
+
+    FastMCP's `CallToolResult` dataclass and the MCP SDK's own pydantic
+    `CallToolResult` both satisfy this, and elicitation-driven calls return the
+    latter.
+    """
+
+    content: list[ContentBlock]
+    structured_content: dict[str, Any] | None
+    is_error: bool
 
 
 ToolMessageContentBlock = TextContentBlock | ImageContentBlock | FileContentBlock
@@ -169,7 +183,7 @@ def _convert_content_block(content: ContentBlock) -> ToolMessageContentBlock:
 
 
 def _convert_call_tool_result(
-    result: CallToolResult,
+    result: _ToolCallResult,
 ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
     """Split an MCP tool result into model-visible content and an artifact.
 
@@ -204,7 +218,12 @@ def _tool_metadata(tool: Tool) -> dict[str, Any] | None:
     return metadata or None
 
 
-def convert_mcp_tool_to_langchain_tool(tool: Tool, client: Client[Any]) -> BaseTool:
+def convert_mcp_tool_to_langchain_tool(
+    tool: Tool,
+    client: Client[Any],
+    *,
+    elicitation: Literal["interrupt"] | None = None,
+) -> BaseTool:
     """Convert one MCP tool into a LangChain tool.
 
     The returned tool calls the MCP tool through `client` on every invocation.
@@ -219,6 +238,11 @@ def convert_mcp_tool_to_langchain_tool(tool: Tool, client: Client[Any]) -> BaseT
     Args:
         tool: An MCP tool, as returned by `fastmcp.Client.list_tools`.
         client: The FastMCP client to call the tool through.
+        elicitation: How to answer a server that asks for input mid-call. By
+            default such a request is left to `client`, which declines it
+            unless it was built with its own handler. Pass `'interrupt'` to
+            raise a LangGraph `interrupt()` instead, so a human answers and the
+            call resumes — see `langchain.mcp.elicitation`.
 
     Returns:
         A LangChain tool that invokes the MCP tool asynchronously.
@@ -240,11 +264,15 @@ def convert_mcp_tool_to_langchain_tool(tool: Tool, client: Client[Any]) -> BaseT
         **arguments: Any,
     ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
         """Call the captured MCP tool and convert its result."""
+        result: _ToolCallResult
         async with client:
-            # `raise_on_error=False` keeps the `isError=True` result intact so
-            # the server's error content can reach the model, rather than being
-            # flattened into a FastMCP `ToolError` string.
-            result = await client.call_tool(tool.name, arguments, raise_on_error=False)
+            if elicitation == "interrupt":
+                result = await _call_tool_with_interrupts(client, tool.name, arguments)
+            else:
+                # `raise_on_error=False` keeps the `isError=True` result intact
+                # so the server's error content can reach the model, rather
+                # than being flattened into a FastMCP `ToolError` string.
+                result = await client.call_tool(tool.name, arguments, raise_on_error=False)
         return _convert_call_tool_result(result)
 
     return StructuredTool(

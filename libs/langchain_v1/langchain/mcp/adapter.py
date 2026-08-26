@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
 from pydantic import AnyUrl
 from typing_extensions import Self
@@ -60,6 +60,23 @@ form), or a string that FastMCP infers a transport from — plus a pre-built
 """
 
 
+async def _declare_elicitation_capability(*_: object) -> dict[str, Any]:
+    """Stand in for an elicitation handler so the client advertises the capability.
+
+    Reaching this means a server asked for input over the legacy
+    server-initiated path, which cannot be answered with an interrupt: FastMCP
+    turns whatever a handler raises into an MCP error, so the `GraphInterrupt`
+    would never leave the callback.
+    """
+    msg = (
+        "This MCP server asked for input over the legacy server-initiated "
+        "path, which `elicitation='interrupt'` cannot answer. Interrupt-based "
+        "elicitation needs a server that returns its input requests as an "
+        "`InputRequiredResult`."
+    )
+    raise NotImplementedError(msg)
+
+
 class MCPAdapter:
     """Adapt an MCP target into LangChain tools.
 
@@ -74,6 +91,12 @@ class MCPAdapter:
     Args:
         target: MCP target accepted by `fastmcp.Client`, including an existing
             FastMCP client.
+        elicitation: How the adapted tools answer a server that asks for input
+            mid-call. By default such a request is declined. Pass `'interrupt'`
+            to raise a LangGraph `interrupt()` instead, so a human answers and
+            the run resumes — see `langchain.mcp.elicitation`. With a pre-built
+            client, that client must itself declare the elicitation capability
+            by carrying an `elicitation_handler`, or servers will not ask.
 
     Example:
         ```python
@@ -86,11 +109,28 @@ class MCPAdapter:
         ```
     """
 
-    def __init__(self, target: MCPAdapterTarget) -> None:
+    def __init__(
+        self,
+        target: MCPAdapterTarget,
+        *,
+        elicitation: Literal["interrupt"] | None = None,
+    ) -> None:
         """Initialize the adapter around a FastMCP target or client."""
-        self._client: FastMCPClient[Any] = (
-            target if isinstance(target, FastMCPClient) else FastMCPClient(target)
-        )
+        if isinstance(target, FastMCPClient):
+            self._client: FastMCPClient[Any] = target
+        else:
+            # A client only advertises the elicitation capability when it
+            # carries a handler, and servers will not ask without it. The
+            # handler itself is never used: elicitation answers are driven by
+            # `call_tool_with_interrupts`, which reads the requests off the
+            # result rather than through this callback.
+            self._client = FastMCPClient(
+                target,
+                elicitation_handler=(
+                    _declare_elicitation_capability if elicitation == "interrupt" else None
+                ),
+            )
+        self._elicitation = elicitation
         self._closed = False
 
     @property
@@ -131,7 +171,10 @@ class MCPAdapter:
         self._ensure_open()
         async with self._client:
             remote_tools = await self._client.list_tools()
-        return [convert_mcp_tool_to_langchain_tool(tool, self._client) for tool in remote_tools]
+        return [
+            convert_mcp_tool_to_langchain_tool(tool, self._client, elicitation=self._elicitation)
+            for tool in remote_tools
+        ]
 
     def _ensure_open(self) -> None:
         """Raise a consistent error before using an explicitly closed adapter."""
