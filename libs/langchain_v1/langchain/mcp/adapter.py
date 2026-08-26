@@ -7,13 +7,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeAlias
 
-if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
-    from types import TracebackType
-
-    from fastmcp import FastMCP
-
 from langchain_core.tools import BaseTool, StructuredTool, ToolException
+from pydantic import AnyUrl
 from typing_extensions import Self
 
 from langchain.mcp.tools import (
@@ -23,7 +18,6 @@ from langchain.mcp.tools import (
     _tool_metadata,
     _tool_result_artifact,
     _tool_result_content,
-    interrupt_for_elicitation,
 )
 
 try:
@@ -31,11 +25,10 @@ try:
     from fastmcp.client.transports import (
         ClientTransport,
         SSETransport,
-        StdioTransport,
         StreamableHttpTransport,
     )
     from fastmcp.exceptions import ToolError
-    from fastmcp.mcp_config import infer_transport_type_from_url
+    from fastmcp.mcp_config import MCPConfig, infer_transport_type_from_url
 except ImportError as _import_error:
     msg = (
         "Please install the fastmcp client to use `MCPAdapter` — "
@@ -43,32 +36,60 @@ except ImportError as _import_error:
     )
     raise ImportError(msg) from _import_error
 
-
-# In-process FastMCP servers live in the server half of FastMCP. The lightweight
-# `fastmcp-slim[client]` install does not ship it, so guard the import separately.
-# The alias widens to `Any` in that environment; passing an in-process server is
-# then impossible at runtime anyway.
-if not TYPE_CHECKING:
+try:
+    # FastMCP 1.x servers shipped inside the MCP SDK as `mcp.server.fastmcp`. The
+    # SDK renamed it to `MCPServer` in mcp 2.x (required by FastMCP 4), so this is
+    # a best-effort import: it only feeds the `MCPAdapterTarget` alias, and
+    # `fastmcp.Client` still infers a transport for whichever object arrives.
+    from mcp.server.fastmcp import FastMCP as FastMCP1Server
+except ImportError:
     try:
-        from fastmcp import FastMCP
-    except ImportError:  # pragma: no cover
-        FastMCP = Any
+        from mcp.server.mcpserver import MCPServer as FastMCP1Server
+    except ImportError:
+        FastMCP1Server = Any
 
 
-MCPAdapterTarget: TypeAlias = FastMCPClient[Any] | ClientTransport | FastMCP | Path | str
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+    from types import TracebackType
+
+    from fastmcp import FastMCP
+    from fastmcp.client.elicitation import ElicitationHandler
+else:
+    # In-process FastMCP servers live in the server half of FastMCP, which the
+    # lightweight `fastmcp-slim[client]` install does not pull in. FastMCP degrades
+    # this annotation the same way in `fastmcp.client.transports.inference`.
+    FastMCP = Any
+
+
+MCPAdapterTarget: TypeAlias = (
+    FastMCPClient[Any]
+    | ClientTransport
+    | FastMCP
+    | FastMCP1Server
+    | AnyUrl
+    | Path
+    | MCPConfig
+    | dict[str, Any]
+    | str
+)
 """Anything `MCPAdapter` accepts as its `target` argument.
 
-This may be a pre-built `fastmcp.Client`, a `ClientTransport`, an in-process
-FastMCP server, a URL/path string, or a script `Path`.
+Mirrors the targets `fastmcp.Client` itself accepts — a `ClientTransport`, an
+in-process FastMCP server, a URL, a script `Path`, an `MCPConfig` (or its dict
+form), or a string that FastMCP infers a transport from — plus a pre-built
+`fastmcp.Client`.
 """
 
 
 def _client_target(target: Any) -> Any:
-    """Turn URL strings into transports before FastMCP performs path inference.
+    """Resolve URL strings to a transport before handing the target to FastMCP.
 
-    FastMCP also supports script paths expressed as strings. Those are deliberately
-    left alone here so its stdio inference remains available after the adapter's
-    explicit stdio policy check.
+    FastMCP infers a transport by first checking whether the target names an
+    existing script, which stats the filesystem. Adapters are routinely built
+    inside a running event loop, so URLs take FastMCP's own URL inference
+    directly rather than blocking on a filesystem call that cannot match. Every
+    other target is passed through untouched for FastMCP to infer.
     """
     if not isinstance(target, str) or not target.startswith(("http://", "https://")):
         return target
@@ -84,39 +105,51 @@ class MCPAdapter:
     then converts discovered MCP tools into asynchronous LangChain tools. The
     resulting tools can be passed directly to `create_agent`.
 
+    Transport inference is delegated to `fastmcp.Client`, so a target may be a URL,
+    a local script path (launched over stdio), an in-process server, or an already
+    constructed client.
+
     Args:
         target: MCP target accepted by `fastmcp.Client`, including an existing
             FastMCP client.
-        allow_stdio: Whether a target that launches a local stdio subprocess is
-            allowed. Disabled by default because it executes a local program.
+        elicitation_handler: FastMCP elicitation handler invoked when a server
+            requests input mid-call. Without one, FastMCP declines elicitation
+            requests. Cannot be combined with a pre-built client, which carries
+            its own handler.
+
+    Example:
+        ```python
+        from langchain.agents import create_agent
+        from langchain.mcp import MCPAdapter
+
+        async with MCPAdapter("https://example.com/mcp") as adapter:
+            agent = create_agent("anthropic:claude-sonnet-5", await adapter.get_tools())
+            result = await agent.ainvoke({"messages": [{"role": "user", "content": "..."}]})
+        ```
     """
 
     def __init__(
         self,
         target: MCPAdapterTarget,
         *,
-        allow_stdio: bool = False,
+        elicitation_handler: ElicitationHandler | None = None,
     ) -> None:
         """Initialize the adapter around a FastMCP target or client."""
-        self._validate_target(target, allow_stdio=allow_stdio)
-        self._client = (
-            target
-            if isinstance(target, FastMCPClient)
-            else FastMCPClient(_client_target(target), elicitation_handler=self._handle_elicitation)
-        )
+        if isinstance(target, FastMCPClient):
+            if elicitation_handler is not None:
+                msg = (
+                    "`elicitation_handler` cannot be combined with a pre-built "
+                    "`fastmcp.Client`. Pass the handler to the client instead."
+                )
+                raise ValueError(msg)
+            self._client: FastMCPClient[Any] = target
+        else:
+            self._client = FastMCPClient(
+                _client_target(target), elicitation_handler=elicitation_handler
+            )
         self._lifecycle_lock = asyncio.Lock()
         self._active_uses = 0
         self._closed = False
-
-    async def _handle_elicitation(
-        self,
-        _message: str,
-        _response_type: type[Any] | None,
-        params: Any,
-        _context: Any,
-    ) -> dict[str, Any]:
-        """Surface FastMCP elicitation through LangGraph's interrupt mechanism."""
-        return interrupt_for_elicitation(params)
 
     @property
     def client(self) -> FastMCPClient[Any]:
@@ -230,22 +263,6 @@ class MCPAdapter:
         if duplicates:
             msg = f"MCP returned duplicate tool names: {', '.join(duplicates)}."
             raise ValueError(msg)
-
-    @staticmethod
-    def _validate_target(target: MCPAdapterTarget, *, allow_stdio: bool) -> None:
-        """Reject subprocess-spawning targets unless callers explicitly opt in."""
-        if allow_stdio:
-            return
-        target_transport = getattr(target, "transport", target)
-        if isinstance(target_transport, (Path, StdioTransport)):
-            msg = "Stdio MCP targets require `allow_stdio=True`."
-            raise ValueError(msg)  # noqa: TRY004
-        if isinstance(target, str):
-            try:
-                infer_transport_type_from_url(target)
-            except ValueError as error:
-                msg = "Stdio MCP targets require `allow_stdio=True`."
-                raise ValueError(msg) from error
 
     def _ensure_open(self) -> None:
         """Raise a consistent error before using an explicitly closed adapter."""

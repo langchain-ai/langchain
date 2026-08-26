@@ -2,20 +2,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Self
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from langchain.mcp import MCPElicitation, MCPElicitationResponse, MCPElicitationResume
-
 import pytest
-from fastmcp.client.transports import StreamableHttpTransport
+from fastmcp import Client, Context, FastMCP
+from fastmcp.client.transports import (
+    FastMCPTransport,
+    PythonStdioTransport,
+)
+from fastmcp.client.transports.config import MCPConfigTransport
 from mcp.types import CallToolResult, TextContent, Tool
 
-from langchain import mcp
 from langchain.agents import create_agent
-from langchain.mcp.adapter import MCPAdapter
-from langchain.mcp.tools import _to_fastmcp_result
+from langchain.mcp import MCPAdapter
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class FakeClient:
@@ -42,7 +43,7 @@ class FakeClient:
 
 
 def make_adapter(client: FakeClient) -> MCPAdapter:
-    adapter = MCPAdapter(StreamableHttpTransport("https://example.com/mcp"))
+    adapter = MCPAdapter("https://example.com/mcp")
     adapter._client = client  # type: ignore[assignment]
     return adapter
 
@@ -69,10 +70,11 @@ async def test_get_tools_converts_schema_metadata_and_results() -> None:
         "properties": {"a": {"type": "integer"}},
     }
     assert tool.metadata == {"mcp": {"title": "Add numbers"}}
-    assert await tool.coroutine(a=1, b=2) == (
-        [{"type": "text", "text": "3", "annotations": None, "_meta": None}],
-        {"mcp": {"structured_content": {"sum": 3}}},
+    message = await tool.ainvoke(
+        {"name": "add", "args": {"a": 1, "b": 2}, "id": "call-1", "type": "tool_call"}
     )
+    assert message.content == [{"type": "text", "text": "3", "annotations": None, "_meta": None}]
+    assert message.artifact == {"mcp": {"structured_content": {"sum": 3}}}
     assert client.calls == [("add", {"a": 1, "b": 2})]
 
 
@@ -96,27 +98,6 @@ async def test_tools_work_directly_with_create_agent() -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_tools_caches_discovery_until_refreshed() -> None:
-    remote_tool = Tool(name="add", inputSchema={})
-    client = FakeClient([remote_tool], CallToolResult(content=[TextContent(type="text", text="3")]))
-    adapter = make_adapter(client)
-
-    first = await adapter.get_tools()
-    second = await adapter.get_tools()
-    refreshed = await adapter.get_tools(refresh=True)
-
-    assert first is second
-    assert refreshed is not first
-    assert client.enter_count == 2
-    assert client.exit_count == 2
-
-
-@pytest.mark.asyncio
-async def test_url_target_can_be_constructed_from_an_async_context() -> None:
-    MCPAdapter("https://example.com/mcp")
-
-
-@pytest.mark.asyncio
 async def test_get_tools_rejects_duplicate_names() -> None:
     client = FakeClient(
         [Tool(name="duplicate", inputSchema={}), Tool(name="duplicate", inputSchema={})],
@@ -127,39 +108,86 @@ async def test_get_tools_rejects_duplicate_names() -> None:
         await make_adapter(client).get_tools()
 
 
-def test_elicitation_types_are_exported_from_langchain_mcp() -> None:
-    assert mcp.MCPElicitation is not None
-    assert mcp.MCPElicitationResponse is not None
-    assert mcp.MCPElicitationResume is not None
-
-    request: MCPElicitation = {
-        "type": "mcp_elicitation",
-        "mode": "url",
-        "server": "weather",
-        "message": "Sign in to continue.",
-        "url": "https://example.com/authorize",
-    }
-    response: MCPElicitationResponse = {"action": "decline"}
-    resume: MCPElicitationResume = {"request-1": response}
-
-    assert request["server"] == "weather"
-    assert isinstance(resume, dict)
-    assert resume["request-1"]["action"] == "decline"
+@pytest.mark.asyncio
+async def test_url_target_can_be_constructed_from_an_async_context() -> None:
+    MCPAdapter("https://example.com/mcp")
 
 
-def test_elicitation_resume_is_converted_for_fastmcp() -> None:
-    assert _to_fastmcp_result({"action": "accept", "content": {"approved": True}}, mode="form") == {
-        "action": "accept",
-        "content": {"approved": True},
-    }
-    assert _to_fastmcp_result({"action": "decline"}, mode="url") == {"action": "decline"}
-
-
-def test_stdio_target_requires_explicit_opt_in(tmp_path: Path) -> None:
+def test_target_inference_is_delegated_to_fastmcp(tmp_path: Path) -> None:
+    """Targets FastMCP understands are accepted without adapter-side gatekeeping."""
     script = tmp_path / "server.py"
     script.touch()
 
-    with pytest.raises(ValueError, match="allow_stdio=True"):
-        MCPAdapter(script)
+    assert isinstance(MCPAdapter(script).client.transport, PythonStdioTransport)
+    assert isinstance(MCPAdapter(FastMCP("in-process")).client.transport, FastMCPTransport)
 
-    MCPAdapter(script, allow_stdio=True)
+
+def test_one_adapter_can_serve_several_servers() -> None:
+    """An MCP config mounts every named server behind a single client."""
+    adapter = MCPAdapter(
+        {
+            "mcpServers": {
+                "notes": {"command": "python", "args": ["notes_server.py"]},
+                "web": {"url": "https://example.com/mcp"},
+            }
+        }
+    )
+
+    transport = adapter.client.transport
+    assert isinstance(transport, MCPConfigTransport)
+    assert sorted(transport.config.mcpServers) == ["notes", "web"]
+
+
+def test_prebuilt_client_is_used_as_is() -> None:
+    client: Client[Any] = Client("https://example.com/mcp")
+
+    assert MCPAdapter(client).client is client
+
+
+def test_prebuilt_client_rejects_an_elicitation_handler() -> None:
+    async def handler(*_: object) -> dict[str, Any]:
+        return {}
+
+    with pytest.raises(ValueError, match="cannot be combined with a pre-built"):
+        MCPAdapter(Client("https://example.com/mcp"), elicitation_handler=handler)
+
+
+@pytest.mark.asyncio
+async def test_elicitation_handler_is_forwarded_to_fastmcp() -> None:
+    """A server-initiated elicitation is answered by the handler, not interrupted."""
+    server: FastMCP[None] = FastMCP("elicit")
+    prompts: list[str] = []
+
+    @server.tool
+    async def confirm(context: Context) -> str:
+        result = await context.elicit("Proceed?", response_type=None)
+        return result.action
+
+    async def handler(
+        message: str,
+        _response_type: type[Any] | None,
+        _params: Any,
+        _context: Any,
+    ) -> dict[str, Any]:
+        prompts.append(message)
+        return {}
+
+    adapter = MCPAdapter(server, elicitation_handler=handler)
+    [tool] = await adapter.get_tools()
+    message = await tool.ainvoke(
+        {"name": "confirm", "args": {}, "id": "call-1", "type": "tool_call"}
+    )
+
+    assert prompts == ["Proceed?"]
+    assert message.content == [
+        {"type": "text", "text": "accept", "annotations": None, "_meta": None}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_closed_adapter_rejects_further_use() -> None:
+    adapter = make_adapter(FakeClient([], CallToolResult(content=[])))
+    await adapter.aclose()
+
+    with pytest.raises(RuntimeError, match="closed"):
+        await adapter.get_tools()
