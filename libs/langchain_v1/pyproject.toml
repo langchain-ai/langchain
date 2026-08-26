@@ -49,7 +49,7 @@ deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 meta = ["langchain-meta"]
-mcp = ["fastmcp-slim[client]>=3.0.0,<5.0.0"]
+mcp = ["fastmcp-slim[client]>=4.0.0b4,<5.0.0"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
@@ -76,7 +76,7 @@ test = [
     "blockbuster>=1.5.26,<1.6.0",
     "langchain-tests>=1.1.9,<2.0.0",
     "langchain-openai",
-    "fastmcp>=3.0.0,<5.0.0",
+    "fastmcp>=4.0.0b4,<5.0.0",
 ]
 lint = [
     "ruff>=0.15.0,<0.17.0",
@@ -84,7 +84,7 @@ lint = [
 typing = [
     "mypy>=2.1.0,<2.2.0",
     "types-toml>=0.10.8.20240310,<1.0.0.0",
-    "fastmcp>=3.0.0,<5.0.0",
+    "fastmcp>=4.0.0b4,<5.0.0",
 ]
 
 test_integration = [
@@ -97,6 +97,8 @@ test_integration = [
 
 [tool.uv]
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
+# FastMCP 4 is still in beta; allow its prerelease to resolve.
+prerelease = "allow"
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
