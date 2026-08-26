@@ -84,6 +84,10 @@ from langchain_anthropic._client_utils import (
     _get_default_httpx_client,
 )
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
+from langchain_anthropic._sdk_compat import (
+    _aparse,
+    _route_unsupported_sampling_params,
+)
 from langchain_anthropic.data._profiles import _PROFILES
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -1735,7 +1739,9 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = [required_beta]
 
-        return {k: v for k, v in payload.items() if v is not None}
+        return _route_unsupported_sampling_params(
+            {k: v for k, v in payload.items() if v is not None}
+        )
 
     def _create(self, payload: dict) -> Any:
         try:
@@ -1825,7 +1831,7 @@ class ChatAnthropic(BaseChatModel):
             base_generation_info: dict[str, Any] = {}
             if self._uses_gateway:
                 _add_gateway_metadata(base_generation_info, raw_response)
-            stream = raw_response.parse()
+            stream = await _aparse(raw_response)
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -2184,7 +2190,7 @@ class ChatAnthropic(BaseChatModel):
         if self._uses_gateway:
             _add_gateway_metadata(generation_info, raw_response)
         return self._format_output(
-            raw_response.parse(), generation_info=generation_info, **kwargs
+            await _aparse(raw_response), generation_info=generation_info, **kwargs
         )
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(
