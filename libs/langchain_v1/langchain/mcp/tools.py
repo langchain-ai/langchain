@@ -1,86 +1,261 @@
-"""Convert MCP tool models and results into LangChain-native values."""
+"""Convert MCP tools and tool results into LangChain-native values.
+
+The conversion rules here follow `langchain-mcp-adapters`, so tools discovered
+through `langchain.mcp` reach a model in the same shape as tools loaded by that
+package.
+"""
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypedDict, assert_never
+
+from langchain_core.messages.content import (
+    FileContentBlock,
+    ImageContentBlock,
+    TextContentBlock,
+    create_file_block,
+    create_image_block,
+    create_text_block,
+)
+from langchain_core.tools import BaseTool, StructuredTool, ToolException
+from mcp.types import (
+    AudioContent,
+    ContentBlock,
+    EmbeddedResource,
+    ImageContent,
+    ResourceLink,
+    TextContent,
+    TextResourceContents,
+)
+
+if TYPE_CHECKING:
+    from fastmcp.client import Client
+    from fastmcp.client.client import CallToolResult
+    from mcp.types import Tool
 
 
-def _normalize_input_schema(schema: Mapping[str, Any] | None) -> dict[str, Any]:
-    """Return a provider-compatible copy of a remote MCP input schema."""
-    normalized = dict(schema or {})
-    normalized.setdefault("type", "object")
-    normalized.setdefault("properties", {})
-    return normalized
+ToolMessageContentBlock = TextContentBlock | ImageContentBlock | FileContentBlock
+"""LangChain content blocks an MCP tool result can convert into."""
 
 
-def _tool_input_schema(tool: Any) -> Mapping[str, Any] | None:
-    """Read the schema across FastMCP's supported tool model versions."""
-    schema = getattr(tool, "input_schema", None)
-    if schema is None:
-        schema = getattr(tool, "inputSchema", None)
-    return schema if isinstance(schema, Mapping) else None
+class MCPToolArtifact(TypedDict):
+    """Artifact attached to the `ToolMessage` produced by an MCP tool call.
+
+    Wrapping the structured content in a `TypedDict` leaves room for further
+    MCP result fields without changing the artifact's shape.
+
+    Attributes:
+        structured_content: The `structuredContent` of the MCP tool result.
+    """
+
+    structured_content: Any
 
 
-def _tool_metadata(tool: Any) -> dict[str, Any] | None:
-    """Keep server-controlled tool fields in a non-colliding metadata namespace."""
-    model_dump = getattr(tool, "model_dump", None)
-    if not callable(model_dump):
-        return None
+def _summarize_tool_error(tool_content: list[ToolMessageContentBlock]) -> str:
+    """Build a readable message from the content blocks of a failed tool call.
 
-    dumped = model_dump(by_alias=True, exclude_none=True)
-    if not isinstance(dumped, dict):
-        return None
+    Only text blocks carry readable error detail. Image and file blocks are
+    summarized by count rather than interpolated, so a base64 payload never
+    lands in an exception message.
 
-    metadata = {
-        key: dumped[key]
-        for key in ("annotations", "title", "outputSchema", "icons", "execution", "_meta")
-        if key in dumped
-    }
-    return {"mcp": metadata} if metadata else None
+    Args:
+        tool_content: Converted content blocks from an `isError=True` result.
 
-
-def _tool_result_content(result: Any) -> Any:
-    """Extract model-visible content from a FastMCP tool result."""
-    content = getattr(result, "content", None)
-    if content is None:
-        return str(getattr(result, "data", result))
-    if isinstance(content, str):
-        return content
-
-    converted: list[Any] = []
-    for block in content:
-        model_dump = getattr(block, "model_dump", None)
-        converted.append(model_dump(by_alias=True) if callable(model_dump) else block)
-    return converted
+    Returns:
+        The joined text of every text block, a count if the error carried only
+        non-text blocks, or a placeholder if it carried no content at all.
+    """
+    error_parts = [block["text"] for block in tool_content if block["type"] == "text"]
+    if error_parts:
+        return "\n".join(error_parts)
+    if tool_content:
+        return (
+            "The MCP tool reported an error with no text content "
+            f"({len(tool_content)} non-text content block(s))."
+        )
+    return "The MCP tool reported an error with empty content."
 
 
-def _tool_error_message(result: Any) -> str | None:
-    """Return an MCP-declared tool error without exposing arbitrary result metadata."""
-    model_dump = getattr(result, "model_dump", None)
-    dumped = model_dump(by_alias=True) if callable(model_dump) else {}
-    is_error = dumped.get("isError", False) if isinstance(dumped, dict) else False
-    if not is_error:
-        return None
+class _MCPToolExecutionError(ToolException):
+    """An MCP tool that ran and reported failure, as `isError=True`.
 
-    content = getattr(result, "content", ())
-    messages: list[str] = []
-    for block in content:
-        text = getattr(block, "text", None)
-        if isinstance(text, str):
-            messages.append(text)
-    return "\n".join(messages) or "The MCP server reported that the tool call failed."
+    Carries the already-converted content blocks so `_handle_mcp_tool_error`
+    can hand the server's own error detail to the model instead of ending the
+    run. The message is derived once at construction, so `tool_content` should
+    be treated as read-only afterward.
+
+    Deliberately narrow: only `isError=True` results raise this. Transport
+    failures and content-conversion errors are not `ToolException` subclasses
+    and therefore bypass error handling entirely.
+    """
+
+    def __init__(self, tool_content: list[ToolMessageContentBlock]) -> None:
+        super().__init__(_summarize_tool_error(tool_content))
+        self.tool_content = tool_content
 
 
-def _tool_result_artifact(result: Any) -> dict[str, Any] | None:
-    """Extract non-model-facing structured data from a FastMCP result."""
-    model_dump = getattr(result, "model_dump", None)
-    dumped = model_dump(by_alias=True) if callable(model_dump) else {}
-    structured_content = dumped.get("structuredContent") if isinstance(dumped, dict) else None
-    if structured_content is None:
-        data = getattr(result, "data", None)
-        if isinstance(data, (dict, list)):
-            structured_content = data
-    if structured_content is None:
-        return None
-    return {"mcp": {"structured_content": structured_content}}
+def _handle_mcp_tool_error(error: ToolException) -> list[ToolMessageContentBlock]:
+    """Surface an MCP execution error to the model as failed tool output.
+
+    Wired as `handle_tool_error` on the generated tool. LangChain routes only
+    `ToolException` here, so conversion failures (`NotImplementedError`,
+    `ValueError`) and transport failures never reach it.
+
+    Args:
+        error: The exception raised while executing the tool.
+
+    Returns:
+        The content blocks carried by the error, so the caller builds a
+            `ToolMessage` with `status="error"` holding the server's own detail.
+
+    Raises:
+        ToolException: Re-raised for any other `ToolException`, which the
+            adapter never produces itself but a caller's tool wrapper might.
+    """
+    if isinstance(error, _MCPToolExecutionError):
+        if error.tool_content:
+            return error.tool_content
+        # An empty `ToolMessage` is a fragile shape for some providers, so
+        # substitute a placeholder rather than pass no content at all.
+        return [create_text_block(text=str(error))]
+    raise error
+
+
+def _convert_content_block(content: ContentBlock) -> ToolMessageContentBlock:
+    """Convert one MCP content block into its LangChain equivalent.
+
+    Args:
+        content: An MCP `TextContent`, `ImageContent`, `AudioContent`,
+            `ResourceLink`, or `EmbeddedResource`.
+
+    Returns:
+        The equivalent LangChain content block.
+
+    Raises:
+        NotImplementedError: If the block is audio, which has no LangChain
+            content block yet.
+    """
+    if isinstance(content, TextContent):
+        return create_text_block(text=content.text)
+
+    if isinstance(content, ImageContent):
+        return create_image_block(base64=content.data, mime_type=content.mime_type)
+
+    if isinstance(content, AudioContent):
+        msg = (
+            "Converting MCP audio content to a LangChain content block is not yet "
+            f"supported. Received audio with mime type: {content.mime_type}"
+        )
+        raise NotImplementedError(msg)
+
+    if isinstance(content, ResourceLink):
+        mime_type = content.mime_type or None
+        if mime_type and mime_type.startswith("image/"):
+            return create_image_block(url=content.uri, mime_type=mime_type)
+        return create_file_block(url=content.uri, mime_type=mime_type)
+
+    if isinstance(content, EmbeddedResource):
+        resource = content.resource
+        if isinstance(resource, TextResourceContents):
+            return create_text_block(text=resource.text)
+        mime_type = resource.mime_type or None
+        if mime_type and mime_type.startswith("image/"):
+            return create_image_block(base64=resource.blob, mime_type=mime_type)
+        return create_file_block(base64=resource.blob, mime_type=mime_type)
+
+    # `ContentBlock` is a closed union, so a block reaching here means the MCP
+    # SDK grew a content type this conversion has not been taught yet.
+    assert_never(content)
+
+
+def _convert_call_tool_result(
+    result: CallToolResult,
+) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
+    """Split an MCP tool result into model-visible content and an artifact.
+
+    Args:
+        result: The result of a FastMCP tool call.
+
+    Returns:
+        The converted content blocks, and an `MCPToolArtifact` when the result
+            carried structured content.
+
+    Raises:
+        _MCPToolExecutionError: If the result is an MCP-declared tool error.
+    """
+    tool_content = [_convert_content_block(block) for block in result.content]
+
+    if result.is_error:
+        raise _MCPToolExecutionError(tool_content)
+
+    artifact: MCPToolArtifact | None = None
+    if result.structured_content is not None:
+        artifact = MCPToolArtifact(structured_content=result.structured_content)
+    return tool_content, artifact
+
+
+def _tool_metadata(tool: Tool) -> dict[str, Any] | None:
+    """Collect the server-controlled tool fields worth keeping on the LangChain tool."""
+    metadata: dict[str, Any] = {}
+    if tool.annotations is not None:
+        metadata.update(tool.annotations.model_dump(by_alias=True, exclude_none=True))
+    if tool.meta is not None:
+        metadata["_meta"] = tool.meta
+    return metadata or None
+
+
+def convert_mcp_tool_to_langchain_tool(tool: Tool, client: Client[Any]) -> BaseTool:
+    """Convert one MCP tool into a LangChain tool.
+
+    The returned tool calls the MCP tool through `client` on every invocation.
+    FastMCP clients are reentrant, so the tool can open the client itself
+    whether or not a connection is already held elsewhere.
+
+    An MCP tool that runs and reports failure reaches the model as a
+    `ToolMessage` with `status="error"`, carrying the server's own error
+    content, so an agent can correct itself and retry. Transport failures and
+    unconvertible content propagate instead, since a model cannot act on them.
+
+    Args:
+        tool: An MCP tool, as returned by `fastmcp.Client.list_tools`.
+        client: The FastMCP client to call the tool through.
+
+    Returns:
+        A LangChain tool that invokes the MCP tool asynchronously.
+
+    Example:
+        ```python
+        from fastmcp import Client
+
+        from langchain.mcp import convert_mcp_tool_to_langchain_tool
+
+        client = Client("https://example.com/mcp")
+        async with client:
+            mcp_tools = await client.list_tools()
+        tools = [convert_mcp_tool_to_langchain_tool(t, client) for t in mcp_tools]
+        ```
+    """
+
+    async def call_tool(
+        **arguments: Any,
+    ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
+        """Call the captured MCP tool and convert its result."""
+        async with client:
+            # `raise_on_error=False` keeps the `isError=True` result intact so
+            # the server's error content can reach the model, rather than being
+            # flattened into a FastMCP `ToolError` string.
+            result = await client.call_tool(tool.name, arguments, raise_on_error=False)
+        return _convert_call_tool_result(result)
+
+    return StructuredTool(
+        name=tool.name,
+        description=tool.description or "",
+        args_schema=tool.input_schema,
+        coroutine=call_tool,
+        response_format="content_and_artifact",
+        metadata=_tool_metadata(tool),
+        handle_tool_error=_handle_mcp_tool_error,
+    )
+
+
+__all__ = ["MCPToolArtifact", "convert_mcp_tool_to_langchain_tool"]
