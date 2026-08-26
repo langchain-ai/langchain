@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "langchain-core"
+name = "langchain-core>=0.2.0"
 description = "Building applications with LLMs through composability"
 license = {text = "MIT"}
 readme = "README.md"
