@@ -1,4 +1,5 @@
 import json
+from collections.abc import AsyncIterator
 from typing import Any, cast
 from unittest.mock import MagicMock
 
@@ -8,6 +9,7 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     ToolMessage,
 )
 from langchain_core.runnables import RunnableBinding
@@ -157,6 +159,90 @@ def test_perplexity_stream_includes_videos_and_reasoning(mocker: MockerFixture) 
         first_chunk.additional_kwargs["reasoning_steps"][0]["thought"]
         == "I should search"
     )
+
+
+def _usage_bearing_chunks() -> list[dict[str, Any]]:
+    """Three chunks, each carrying cumulative usage.
+
+    Perplexity reports aggregate usage on every chunk -- that is what the
+    `prev_total_usage` / `subtract_usage` bookkeeping in `_stream` and `_astream`
+    exists for -- so single-valued metadata must only be emitted once.
+    """
+    return [
+        {
+            "model": "sonar",
+            "choices": [{"delta": {"content": "Hello "}, "finish_reason": None}],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 1,
+                "total_tokens": 11,
+                "num_search_queries": 2,
+                "search_context_size": "low",
+            },
+        },
+        {
+            "model": "sonar",
+            "choices": [{"delta": {"content": "world"}, "finish_reason": None}],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 2,
+                "total_tokens": 12,
+                "num_search_queries": 2,
+                "search_context_size": "low",
+            },
+        },
+        {
+            "model": "sonar",
+            "choices": [{"delta": {}, "finish_reason": "stop"}],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 3,
+                "total_tokens": 13,
+                "num_search_queries": 2,
+                "search_context_size": "low",
+            },
+        },
+    ]
+
+
+def test_perplexity_stream_emits_single_valued_usage_metadata_once() -> None:
+    llm = ChatPerplexity(model="sonar", api_key="test", timeout=30)
+    mock_stream = MagicMock()
+    mock_stream.__iter__.return_value = _usage_bearing_chunks()
+    llm.client.chat.completions.create = MagicMock(return_value=mock_stream)
+
+    full: BaseMessageChunk | None = None
+    for chunk in llm.stream("Hello"):
+        full = chunk if full is None else full + chunk
+
+    assert full is not None
+    assert full.response_metadata["search_context_size"] == "low"
+    assert full.response_metadata["num_search_queries"] == 2
+    assert full.response_metadata["model_name"] == "sonar"
+
+
+@pytest.mark.asyncio
+async def test_perplexity_astream_emits_single_valued_usage_metadata_once() -> None:
+    """`search_context_size` is a string, so repeating it concatenates on merge."""
+    llm = ChatPerplexity(model="sonar", api_key="test", timeout=30)
+
+    async def _chunk_iter() -> AsyncIterator[dict[str, Any]]:
+        for chunk in _usage_bearing_chunks():
+            yield chunk
+
+    async def _create(**kwargs: Any) -> AsyncIterator[dict[str, Any]]:
+        return _chunk_iter()
+
+    llm.async_client.chat.completions.create = _create
+
+    full: BaseMessageChunk | None = None
+    async for chunk in llm.astream("Hello"):
+        full = chunk if full is None else full + chunk
+
+    assert full is not None
+    assert full.response_metadata["search_context_size"] == "low"
+    assert full.response_metadata["num_search_queries"] == 2
+    assert full.response_metadata["model_name"] == "sonar"
 
 
 def test_create_usage_metadata_basic() -> None:
