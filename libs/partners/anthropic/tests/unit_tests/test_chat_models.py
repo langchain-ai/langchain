@@ -3421,6 +3421,7 @@ def test_advisor_is_builtin_tool() -> None:
         **bound.kwargs,  # type: ignore[attr-defined]
     )
     assert advisor_tool in payload["tools"]
+    assert "advisor-tool-2026-03-01" in payload["betas"]
 
 
 def test_tool_search_beta_headers() -> None:
