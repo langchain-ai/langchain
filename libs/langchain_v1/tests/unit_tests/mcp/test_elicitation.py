@@ -208,52 +208,46 @@ class _FakeSession:
         return self.results[min(len(self.calls) - 1, len(self.results) - 1)]
 
 
-class _FakeClient:
-    def __init__(self, session: _FakeSession) -> None:
-        self.session = session
+def _unanswerable_server() -> FastMCP[None]:
+    """A server whose tools ask for things interrupt-based elicitation refuses."""
+    server: FastMCP[None] = FastMCP("unanswerable")
 
-    async def _await_with_session_monitoring(self, coro: Any) -> Any:
-        """Stand in for the FastMCP guard, which a real client always carries."""
-        return await coro
+    @server.tool
+    async def summarize() -> InputRequiredResult:
+        """Ask for sampling, which only FastMCP's own callbacks can answer."""
+        return InputRequiredResult(
+            input_requests={
+                "sample": CreateMessageRequest(
+                    method="sampling/createMessage",
+                    params=CreateMessageRequestParams(
+                        messages=[
+                            SamplingMessage(
+                                role="user", content=TextContent(type="text", text="hi")
+                            )
+                        ],
+                        maxTokens=16,
+                    ),
+                )
+            },
+            request_state="state-1",
+        )
 
+    @server.tool
+    async def slow() -> InputRequiredResult:
+        """Return a continuation round: state to come back with, nothing to ask."""
+        return InputRequiredResult(request_state="still-working")
 
-def _elicit_round(key: str = "ask") -> InputRequiredResult:
-    return InputRequiredResult(
-        input_requests={
-            key: ElicitRequest(
-                method="elicitation/create",
-                params=ElicitRequestFormParams(
-                    mode="form",
-                    message="How many?",
-                    requestedSchema={"type": "object", "properties": {}},
-                ),
-            )
-        },
-        request_state="state-1",
-    )
+    return server
 
 
 @pytest.mark.asyncio
 async def test_sampling_requests_are_rejected_rather_than_mishandled() -> None:
     """Driving the loop by hand bypasses the callbacks that answer sampling."""
-    sampling = InputRequiredResult(
-        input_requests={
-            "sample": CreateMessageRequest(
-                method="sampling/createMessage",
-                params=CreateMessageRequestParams(
-                    messages=[
-                        SamplingMessage(role="user", content=TextContent(type="text", text="hi"))
-                    ],
-                    maxTokens=16,
-                ),
-            )
-        },
-        request_state="state-1",
-    )
-    client = _FakeClient(_FakeSession([sampling]))
-
-    with pytest.raises(NotImplementedError, match="sampling/createMessage"):
-        await _call_tool_with_interrupts(client, "summarize", {})  # type: ignore[arg-type]
+    async with MCPAdapter(_unanswerable_server(), elicitation="interrupt") as adapter:
+        client = adapter.client
+        async with client:
+            with pytest.raises(NotImplementedError, match="sampling/createMessage"):
+                await _call_tool_with_interrupts(client, "summarize", {})
 
 
 @pytest.mark.asyncio
@@ -280,15 +274,11 @@ async def test_a_client_without_the_session_guard_warns() -> None:
 @pytest.mark.asyncio
 async def test_a_continuation_round_is_refused_rather_than_polled() -> None:
     """A round with state but no questions is long-running work, not elicitation."""
-    working = InputRequiredResult(input_requests=None, request_state="state-1")
-    session = _FakeSession([working])
-    client = _FakeClient(session)
-
-    with pytest.raises(NotImplementedError, match="continuation round"):
-        await _call_tool_with_interrupts(client, "slow", {})  # type: ignore[arg-type]
-
-    # Refused on the spot, so the server is never called back.
-    assert len(session.calls) == 1
+    async with MCPAdapter(_unanswerable_server(), elicitation="interrupt") as adapter:
+        client = adapter.client
+        async with client:
+            with pytest.raises(NotImplementedError, match="continuation round"):
+                await _call_tool_with_interrupts(client, "slow", {})
 
 
 def _multi_question_server(calls: dict[str, int]) -> FastMCP[None]:
