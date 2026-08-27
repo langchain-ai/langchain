@@ -18,6 +18,7 @@ from langgraph.runtime import Runtime
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.shell_tool import (
+    CommandExecutionResult,
     HostExecutionPolicy,
     RedactionRule,
     ShellSession,
@@ -113,6 +114,28 @@ def test_timeout_returns_error(tmp_path: Path) -> None:
         assert "timed out" in result.lower()
     finally:
         middleware.after_agent(state, runtime)
+
+
+def test_timeout_reruns_startup_commands() -> None:
+    policy = HostExecutionPolicy(command_timeout=0.5)
+    middleware = ShellToolMiddleware(execution_policy=policy)
+    session = Mock()
+    session.execute.return_value = CommandExecutionResult(
+        output="",
+        exit_code=None,
+        timed_out=True,
+        truncated_by_lines=False,
+        truncated_by_bytes=False,
+        total_lines=0,
+        total_bytes=0,
+    )
+    resources = _SessionResources(session=session, tempdir=None, policy=policy)  # type: ignore[arg-type]
+    middleware._run_startup_commands = Mock()
+    result = middleware._run_shell_tool(resources, {"command": "timeout"}, tool_call_id=None)
+    assert "timed out" in result.lower()
+    assert "restarted" in result.lower()
+    middleware._run_startup_commands.assert_called_once_with(session)
+    resources.finalizer()
 
 
 def test_redaction_policy_applies(tmp_path: Path) -> None:

@@ -836,7 +836,16 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
 
         if result.timed_out:
             timeout_seconds = self._execution_policy.command_timeout
-            message = f"Error: Command timed out after {timeout_seconds:.1f} seconds."
+            try:
+                self._run_startup_commands(session)
+            except BaseException as err:
+                LOGGER.exception("Re-running startup commands after timeout failed.")
+                msg = "Failed to restore shell session after command timeout."
+                raise ToolException(msg) from err
+            message = (
+                f"Error: Command timed out after {timeout_seconds:.1f} seconds. "
+                "The shell session was restarted."
+            )
             return self._format_tool_message(
                 message,
                 tool_call_id,
