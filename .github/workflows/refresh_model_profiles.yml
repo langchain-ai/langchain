@@ -1,0 +1,159 @@
+# Refreshes model profile data for in-monorepo partner integrations by
+# pulling the latest metadata from models.dev via the `langchain-profiles` CLI.
+#
+# Creates a pull request with any changes. Runs daily (all providers) and can
+# be triggered manually from the Actions UI with an optional provider filter.
+# Uses a fixed branch so each run supersedes any stale PR from a previous run.
+
+name: "🔄 Refresh Model Profiles"
+
+on:
+  schedule:
+    - cron: "0 8 * * *" # daily at 08:00 UTC
+  workflow_dispatch:
+    inputs:
+      provider:
+        type: choice
+        description: "Provider package to refresh (select from dropdown)"
+        default: all
+        # models.dev provider IDs — must match the `provider` keys in
+        # ALL_PROVIDERS below. When adding a package, update both lists.
+        options:
+          - all
+          - anthropic
+          - deepseek
+          - fireworks-ai
+          - groq
+          - huggingface
+          - mistral
+          - openai
+          - openrouter
+          - perplexity
+          - xai
+      providers-override:
+        type: string
+        required: false
+        description: >-
+          Optional comma-separated provider IDs override (e.g. openai,anthropic).
+          Takes precedence over the dropdown. Accepts models.dev IDs; package
+          aliases fireworks and mistralai are also accepted.
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  resolve-providers:
+    name: resolve providers
+    if: github.repository_owner == 'langchain-ai'
+    runs-on: ubuntu-latest
+    outputs:
+      providers: ${{ steps.resolve.outputs.providers }}
+      pr-title: ${{ steps.resolve.outputs.pr-title }}
+      pr-body: ${{ steps.resolve.outputs.pr-body }}
+    steps:
+      - name: "🎯 Resolve provider filter"
+        id: resolve
+        env:
+          # Scheduled runs have no inputs — default to all providers.
+          PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.provider || 'all' }}
+          # Bracket access required: bare `inputs.providers-override` is parsed as subtraction.
+          PROVIDERS_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs['providers-override'] || '' }}
+        run: |
+          set -euo pipefail
+
+          ALL_PROVIDERS='[
+            {"provider":"anthropic",    "data_dir":"libs/partners/anthropic/langchain_anthropic/data"},
+            {"provider":"deepseek",     "data_dir":"libs/partners/deepseek/langchain_deepseek/data"},
+            {"provider":"fireworks-ai", "data_dir":"libs/partners/fireworks/langchain_fireworks/data"},
+            {"provider":"groq",         "data_dir":"libs/partners/groq/langchain_groq/data"},
+            {"provider":"huggingface",  "data_dir":"libs/partners/huggingface/langchain_huggingface/data"},
+            {"provider":"mistral",      "data_dir":"libs/partners/mistralai/langchain_mistralai/data"},
+            {"provider":"openai",       "data_dir":"libs/partners/openai/langchain_openai/data"},
+            {"provider":"openrouter",   "data_dir":"libs/partners/openrouter/langchain_openrouter/data"},
+            {"provider":"perplexity",   "data_dir":"libs/partners/perplexity/langchain_perplexity/data"},
+            {"provider":"xai",          "data_dir":"libs/partners/xai/langchain_xai/data"}
+          ]'
+
+          normalize_provider() {
+            case "$1" in
+              fireworks) echo "fireworks-ai" ;;
+              mistralai) echo "mistral" ;;
+              *) echo "$1" ;;
+            esac
+          }
+
+          selected=()
+          # Prefer free-text override when non-empty; otherwise use dropdown.
+          if [ -n "${PROVIDERS_OVERRIDE//[[:space:]]/}" ]; then
+            while IFS= read -r raw; do
+              [ -z "${raw}" ] && continue
+              selected+=("$(normalize_provider "${raw}")")
+            done < <(
+              echo "${PROVIDERS_OVERRIDE}" \
+                | tr ',' '\n' \
+                | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
+                | grep -v '^$' || true
+            )
+          elif [ "${PROVIDER}" != "all" ]; then
+            selected+=("$(normalize_provider "${PROVIDER}")")
+          fi
+
+          if [ ${#selected[@]} -eq 0 ]; then
+            filtered="$(echo "${ALL_PROVIDERS}" | jq -c .)"
+            label="all in-monorepo partner integrations"
+            title="chore(model-profiles): refresh model profile data"
+          else
+            ids_json="$(printf '%s\n' "${selected[@]}" | jq -R . | jq -s -c .)"
+            unknown="$(echo "${ALL_PROVIDERS}" | jq -r --argjson ids "${ids_json}" '
+              ($ids - map(.provider)) | join(", ")
+            ')"
+            if [ -n "${unknown}" ]; then
+              known="$(echo "${ALL_PROVIDERS}" | jq -r 'map(.provider) | join(", ")')"
+              echo "::error::Unknown provider ID(s): ${unknown}. Known: ${known}"
+              exit 1
+            fi
+
+            filtered="$(echo "${ALL_PROVIDERS}" | jq -c --argjson ids "${ids_json}" '
+              map(select(.provider as $p | ($ids | index($p)) != null))
+            ')"
+            names="$(echo "${filtered}" | jq -r 'map(.provider) | join(", ")')"
+            label="${names}"
+            if [ "$(echo "${filtered}" | jq 'length')" -eq 1 ]; then
+              title="chore(model-profiles): refresh ${names} model profile data"
+            else
+              title="chore(model-profiles): refresh model profile data (${names})"
+            fi
+          fi
+
+          count="$(echo "${filtered}" | jq 'length')"
+          if [ "${count}" -eq 0 ]; then
+            echo "::error::No providers matched the filter"
+            exit 1
+          fi
+
+          {
+            echo "providers=${filtered}"
+            echo "pr-title=${title}"
+            echo "pr-body<<EOF_BODY"
+            echo "Automated refresh of model profile data for ${label} via \`langchain-profiles refresh\`."
+            echo
+            echo "🤖 Generated by the [\`refresh_model_profiles\` workflow](https://github.com/langchain-ai/langchain/blob/master/.github/workflows/refresh_model_profiles.yml)."
+            echo "EOF_BODY"
+          } >> "${GITHUB_OUTPUT}"
+
+          echo "### Providers to refresh" >> "${GITHUB_STEP_SUMMARY}"
+          echo "${filtered}" | jq -r '.[].provider' | sed 's/^/- /' >> "${GITHUB_STEP_SUMMARY}"
+
+  refresh-profiles:
+    needs: resolve-providers
+    uses: ./.github/workflows/_refresh_model_profiles.yml
+    with:
+      providers: ${{ needs.resolve-providers.outputs.providers }}
+      cli-path: libs/model-profiles
+      add-paths: libs/partners/**/data/_profiles.py
+      pr-title: ${{ needs.resolve-providers.outputs.pr-title }}
+      pr-body: ${{ needs.resolve-providers.outputs.pr-body }}
+    secrets:
+      MODEL_PROFILE_BOT_CLIENT_ID: ${{ secrets.MODEL_PROFILE_BOT_CLIENT_ID }}
+      MODEL_PROFILE_BOT_PRIVATE_KEY: ${{ secrets.MODEL_PROFILE_BOT_PRIVATE_KEY }}

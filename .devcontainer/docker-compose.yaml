@@ -1,0 +1,13 @@
+version: '3'
+services:
+  langchain:
+    build:
+      dockerfile: libs/langchain/dev.Dockerfile
+      context: ..
+
+    networks:
+      - langchain-network
+
+networks:
+  langchain-network:
+    driver: bridge

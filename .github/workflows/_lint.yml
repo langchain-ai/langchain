@@ -1,0 +1,81 @@
+# Runs linting.
+#
+# Uses the package's Makefile to run the checks, specifically the
+# `lint_package` and `lint_tests` targets.
+#
+# Called as part of check_diffs.yml workflow.
+
+name: "🧹 Linting"
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: "From which folder this pipeline executes"
+      python-version:
+        required: true
+        type: string
+        description: "Python version to use"
+
+permissions:
+  contents: read
+
+env:
+  WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
+
+  # This env var allows us to get inline annotations when ruff has complaints.
+  RUFF_OUTPUT_FORMAT: github
+
+  UV_FROZEN: "true"
+
+jobs:
+  # Linting job - runs quality checks on package and test code
+  build:
+    name: "Python ${{ inputs.python-version }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+
+      - name: "🐍 Set up Python ${{ inputs.python-version }} + UV"
+        uses: "./.github/actions/uv_setup"
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache-suffix: lint-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
+
+      # - name: "🔒 Verify Lockfile is Up-to-Date"
+      #   working-directory: ${{ inputs.working-directory }}
+      #   run: |
+      #     unset UV_FROZEN
+      #     uv lock --check
+
+      - name: "📦 Install Lint & Typing Dependencies"
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          uv sync --group lint --group typing
+
+      - name: "🔍 Analyze Package Code with Linters"
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          make lint_package
+
+      - name: "📦 Install Test Dependencies (non-partners)"
+        # (For directories NOT starting with libs/partners/)
+        if: ${{ ! startsWith(inputs.working-directory, 'libs/partners/') }}
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          uv sync --inexact --group test
+      - name: "📦 Install Test Dependencies"
+        if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          uv sync --inexact --group test --group test_integration
+
+      - name: "🔍 Analyze Test Code with Linters"
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          make lint_tests

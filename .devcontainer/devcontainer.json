@@ -1,0 +1,58 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
+{
+  // Name for the dev container
+  "name": "langchain",
+  // Point to a Docker Compose file
+  "dockerComposeFile": "./docker-compose.yaml",
+  // Required when using Docker Compose. The name of the service to connect to once running
+  "service": "langchain",
+  // The optional 'workspaceFolder' property is the path VS Code should open by default when
+  // connected. This is typically a file mount in .devcontainer/docker-compose.yml
+  "workspaceFolder": "/workspaces/langchain",
+  "mounts": [
+    "source=langchain-workspaces,target=/workspaces/langchain,type=volume"
+  ],
+  // Prevent the container from shutting down
+  "overrideCommand": true,
+  // Features to add to the dev container. More info: https://containers.dev/features
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "containerEnv": {
+    "UV_LINK_MODE": "copy"
+  },
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // "forwardPorts": [],
+  // Run commands after the container is created
+  "postCreateCommand": "cd libs/langchain_v1 && uv sync && echo 'LangChain (Python) dev environment ready!'",
+  // Configure tool-specific properties.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.debugpy",
+        "ms-python.mypy-type-checker",
+        "ms-python.isort",
+        "unifiedjs.vscode-mdx",
+        "davidanson.vscode-markdownlint",
+        "ms-toolsai.jupyter",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "libs/langchain_v1/.venv/bin/python",
+        "python.formatting.provider": "none",
+        "[python]": {
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+          }
+        }
+      }
+    }
+  }
+  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+  // "remoteUser": "root"
+}

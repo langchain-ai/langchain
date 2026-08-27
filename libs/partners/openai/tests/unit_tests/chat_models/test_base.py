@@ -1,0 +1,5219 @@
+"""Test OpenAI Chat API wrapper."""
+
+from __future__ import annotations
+
+import json
+import warnings
+from functools import partial
+from types import TracebackType
+from typing import Any, Literal, cast
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import httpx
+import httpx2
+import openai
+import pytest
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
+from langchain_core.load import dumps, loads
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    FunctionMessage,
+    HumanMessage,
+    InvalidToolCall,
+    SystemMessage,
+    ToolCall,
+    ToolMessage,
+    message_chunk_to_message,
+)
+from langchain_core.messages import content as types
+from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.block_translators.openai import (
+    _convert_from_v03_ai_message,
+)
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables.base import RunnableBinding, RunnableSequence
+from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
+from openai.types.responses import (
+    ResponseApplyPatchToolCall,
+    ResponseApplyPatchToolCallOutput,
+    ResponseOutputMessage,
+    ResponseReasoningItem,
+    ResponseTextDeltaEvent,
+)
+from openai.types.responses.response import IncompleteDetails, Response
+from openai.types.responses.response_apply_patch_tool_call import OperationCreateFile
+from openai.types.responses.response_error import ResponseError
+from openai.types.responses.response_file_search_tool_call import (
+    ResponseFileSearchToolCall,
+    Result,
+)
+from openai.types.responses.response_function_tool_call import ResponseFunctionToolCall
+from openai.types.responses.response_function_web_search import (
+    ActionSearch,
+    ResponseFunctionWebSearch,
+)
+from openai.types.responses.response_output_refusal import ResponseOutputRefusal
+from openai.types.responses.response_output_text import ResponseOutputText
+from openai.types.responses.response_reasoning_item import Summary
+from openai.types.responses.response_usage import (
+    InputTokensDetails,
+    OutputTokensDetails,
+    ResponseUsage,
+)
+from pydantic import BaseModel, Field, SecretStr
+from typing_extensions import Self, TypedDict
+
+from langchain_openai import ChatOpenAI
+from langchain_openai.chat_models._compat import (
+    _FUNCTION_CALL_IDS_MAP_KEY,
+    _convert_from_v1_to_chat_completions,
+    _convert_from_v1_to_responses,
+    _convert_to_v03_ai_message,
+)
+from langchain_openai.chat_models.base import (
+    OpenAIRefusalError,
+    _construct_lc_result_from_responses_api,
+    _construct_responses_api_input,
+    _convert_dict_to_message,
+    _convert_message_to_dict,
+    _convert_responses_chunk_to_generation_chunk,
+    _convert_to_openai_response_format,
+    _create_usage_metadata,
+    _create_usage_metadata_responses,
+    _format_message_content,
+    _get_last_messages,
+    _make_computer_call_output_from_message,
+    _model_prefers_responses_api,
+    _oai_structured_outputs_parser,
+    _resize,
+)
+
+OPENAI_TEST_MODEL = "gpt-5.5"
+OPENAI_TEMPERATURE_CAPABLE_TEST_MODEL = "gpt-4o-mini"
+
+
+def test_openai_model_param() -> None:
+    llm = ChatOpenAI(model="foo")
+    assert llm.model_name == "foo"
+    assert llm.model == "foo"
+    llm = ChatOpenAI(model_name="foo")  # type: ignore[call-arg]
+    assert llm.model_name == "foo"
+    assert llm.model == "foo"
+
+    llm = ChatOpenAI(max_tokens=10)  # type: ignore[call-arg]
+    assert llm.max_tokens == 10
+    llm = ChatOpenAI(max_completion_tokens=10)
+    assert llm.max_tokens == 10
+
+
+@pytest.mark.parametrize("async_api", [True, False])
+def test_streaming_attribute_should_stream(async_api: bool) -> None:
+    llm = ChatOpenAI(model="foo", streaming=True)
+    assert llm._should_stream(async_api=async_api)
+
+
+def test_openai_client_caching() -> None:
+    """Test that the OpenAI client is cached."""
+    llm1 = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    llm2 = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert llm1.root_client._client is llm2.root_client._client
+
+    llm3 = ChatOpenAI(model=OPENAI_TEST_MODEL, base_url="foo")
+    assert llm1.root_client._client is not llm3.root_client._client
+
+    llm4 = ChatOpenAI(model=OPENAI_TEST_MODEL, timeout=None)
+    assert llm1.root_client._client is llm4.root_client._client
+
+    llm5 = ChatOpenAI(model=OPENAI_TEST_MODEL, timeout=3)
+    assert llm1.root_client._client is not llm5.root_client._client
+
+    llm6 = ChatOpenAI(
+        model=OPENAI_TEST_MODEL, timeout=httpx.Timeout(timeout=60.0, connect=5.0)
+    )
+    assert llm1.root_client._client is not llm6.root_client._client
+
+    llm7 = ChatOpenAI(model=OPENAI_TEST_MODEL, timeout=(5, 1))
+    assert llm1.root_client._client is not llm7.root_client._client
+
+
+def test_profile() -> None:
+    model = ChatOpenAI(model="gpt-5.2-pro")
+    assert model.profile
+    assert not model.profile["structured_output"]
+
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile
+    assert model.profile["structured_output"]
+    assert model.profile["tool_calling"]
+
+    # Test overwriting a field
+    model.profile["tool_calling"] = False
+    assert not model.profile["tool_calling"]
+
+    # Test we didn't mutate
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile
+    assert model.profile["tool_calling"]
+
+    # Test passing in profile
+    model = ChatOpenAI(model="gpt-5", profile={"tool_calling": False})
+    assert model.profile == {"tool_calling": False}
+
+    # Test overrides for gpt-5 input tokens
+    model = ChatOpenAI(model="gpt-5")
+    assert model.profile["max_input_tokens"] == 272_000
+
+
+def test_gpt_5_3_chat_latest_profile_has_no_reasoning_effort() -> None:
+    model = ChatOpenAI(model="gpt-5.3-chat-latest")
+
+    assert model.profile
+    assert model.profile["reasoning_output"] is False
+    assert "reasoning_effort_levels" not in model.profile
+
+
+def test_function_message_dict_to_function_message() -> None:
+    content = json.dumps({"result": "Example #1"})
+    name = "test_function"
+    result = _convert_dict_to_message(
+        {"role": "function", "name": name, "content": content}
+    )
+    assert isinstance(result, FunctionMessage)
+    assert result.name == name
+    assert result.content == content
+
+
+def test__convert_dict_to_message_human() -> None:
+    message = {"role": "user", "content": "foo"}
+    result = _convert_dict_to_message(message)
+    expected_output = HumanMessage(content="foo")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_human_with_name() -> None:
+    message = {"role": "user", "content": "foo", "name": "test"}
+    result = _convert_dict_to_message(message)
+    expected_output = HumanMessage(content="foo", name="test")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_ai() -> None:
+    message = {"role": "assistant", "content": "foo"}
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(content="foo")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_ai_with_name() -> None:
+    message = {"role": "assistant", "content": "foo", "name": "test"}
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(content="foo", name="test")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_system() -> None:
+    message = {"role": "system", "content": "foo"}
+    result = _convert_dict_to_message(message)
+    expected_output = SystemMessage(content="foo")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_developer() -> None:
+    message = {"role": "developer", "content": "foo"}
+    result = _convert_dict_to_message(message)
+    expected_output = SystemMessage(
+        content="foo", additional_kwargs={"__openai_role__": "developer"}
+    )
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_system_with_name() -> None:
+    message = {"role": "system", "content": "foo", "name": "test"}
+    result = _convert_dict_to_message(message)
+    expected_output = SystemMessage(content="foo", name="test")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_tool() -> None:
+    message = {"role": "tool", "content": "foo", "tool_call_id": "bar"}
+    result = _convert_dict_to_message(message)
+    expected_output = ToolMessage(content="foo", tool_call_id="bar")
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_dict_to_message_tool_call() -> None:
+    raw_tool_call = {
+        "id": "call_wm0JY6CdwOMZ4eTxHWUThDNz",
+        "function": {
+            "arguments": '{"name": "Sally", "hair_color": "green"}',
+            "name": "GenerateUsername",
+        },
+        "type": "function",
+    }
+    message = {"role": "assistant", "content": None, "tool_calls": [raw_tool_call]}
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(
+        content="",
+        tool_calls=[
+            ToolCall(
+                name="GenerateUsername",
+                args={"name": "Sally", "hair_color": "green"},
+                id="call_wm0JY6CdwOMZ4eTxHWUThDNz",
+                type="tool_call",
+            )
+        ],
+    )
+    assert result == expected_output
+    assert _convert_message_to_dict(expected_output) == message
+
+    # Test malformed tool call
+    raw_tool_calls: list = [
+        {
+            "id": "call_wm0JY6CdwOMZ4eTxHWUThDNz",
+            "function": {"arguments": "oops", "name": "GenerateUsername"},
+            "type": "function",
+        },
+        {
+            "id": "call_abc123",
+            "function": {
+                "arguments": '{"name": "Sally", "hair_color": "green"}',
+                "name": "GenerateUsername",
+            },
+            "type": "function",
+        },
+    ]
+    raw_tool_calls = sorted(raw_tool_calls, key=lambda x: x["id"])
+    message = {"role": "assistant", "content": None, "tool_calls": raw_tool_calls}
+    result = _convert_dict_to_message(message)
+    expected_output = AIMessage(
+        content="",
+        invalid_tool_calls=[
+            InvalidToolCall(
+                name="GenerateUsername",
+                args="oops",
+                id="call_wm0JY6CdwOMZ4eTxHWUThDNz",
+                error=(
+                    "Function GenerateUsername arguments:\n\noops\n\nare not "
+                    "valid JSON. Received JSONDecodeError Expecting value: line 1 "
+                    "column 1 (char 0)\nFor troubleshooting, visit: https://docs"
+                    ".langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE "
+                ),
+                type="invalid_tool_call",
+            )
+        ],
+        tool_calls=[
+            ToolCall(
+                name="GenerateUsername",
+                args={"name": "Sally", "hair_color": "green"},
+                id="call_abc123",
+                type="tool_call",
+            )
+        ],
+    )
+    assert result == expected_output
+    reverted_message_dict = _convert_message_to_dict(expected_output)
+    reverted_message_dict["tool_calls"] = sorted(
+        reverted_message_dict["tool_calls"], key=lambda x: x["id"]
+    )
+    assert reverted_message_dict == message
+
+
+class MockAsyncContextManager:
+    def __init__(self, chunk_list: list) -> None:
+        self.current_chunk = 0
+        self.chunk_list = chunk_list
+        self.chunk_num = len(chunk_list)
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        pass
+
+    def __aiter__(self) -> MockAsyncContextManager:
+        return self
+
+    async def __anext__(self) -> dict:
+        if self.current_chunk < self.chunk_num:
+            chunk = self.chunk_list[self.current_chunk]
+            self.current_chunk += 1
+            return chunk
+        raise StopAsyncIteration
+
+
+class MockSyncContextManager:
+    def __init__(self, chunk_list: list) -> None:
+        self.current_chunk = 0
+        self.chunk_list = chunk_list
+        self.chunk_num = len(chunk_list)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        pass
+
+    def __iter__(self) -> MockSyncContextManager:
+        return self
+
+    def __next__(self) -> dict:
+        if self.current_chunk < self.chunk_num:
+            chunk = self.chunk_list[self.current_chunk]
+            self.current_chunk += 1
+            return chunk
+        raise StopIteration
+
+
+GLM4_STREAM_META = """{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u4eba\u5de5\u667a\u80fd"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u52a9\u624b"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"，"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u4f60\u53ef\u4ee5"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u53eb\u6211"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"AI"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u52a9\u624b"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"。"}}]}
+{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"finish_reason":"stop","delta":{"role":"assistant","content":""}}],"usage":{"prompt_tokens":13,"completion_tokens":10,"total_tokens":23}}
+[DONE]"""  # noqa: E501
+
+
+@pytest.fixture
+def mock_glm4_completion() -> list:
+    list_chunk_data = GLM4_STREAM_META.split("\n")
+    result_list = []
+    for msg in list_chunk_data:
+        if msg != "[DONE]":
+            result_list.append(json.loads(msg))
+
+    return result_list
+
+
+async def test_glm4_astream(mock_glm4_completion: list) -> None:
+    llm_name = "glm-4"
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = AsyncMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(mock_glm4_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_glm4_completion[-1]
+
+    usage_metadata: UsageMetadata | None = None
+    with patch.object(llm, "async_client", mock_client):
+        async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+
+def test_glm4_stream(mock_glm4_completion: list) -> None:
+    llm_name = "glm-4"
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(mock_glm4_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_glm4_completion[-1]
+
+    usage_metadata: UsageMetadata | None = None
+    with patch.object(llm, "client", mock_client):
+        for chunk in llm.stream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+
+DEEPSEEK_STREAM_DATA = """{"id":"d3610c24e6b42518a7883ea57c3ea2c3","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":null,"logprobs":null}],"created":1721630271,"model":"deepseek-chat","system_fingerprint":"fp_7e0991cad4","object":"chat.completion.chunk","usage":null}
+{"choices":[{"delta":{"content":"我是","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"Deep","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"Seek","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":" Chat","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"，","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"一个","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"由","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"深度","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"求","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"索","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"公司","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"开发的","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"智能","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"助手","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"。","role":"assistant"},"finish_reason":null,"index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":null}
+{"choices":[{"delta":{"content":"","role":null},"finish_reason":"stop","index":0,"logprobs":null}],"created":1721630271,"id":"d3610c24e6b42518a7883ea57c3ea2c3","model":"deepseek-chat","object":"chat.completion.chunk","system_fingerprint":"fp_7e0991cad4","usage":{"completion_tokens":15,"prompt_tokens":11,"total_tokens":26}}
+[DONE]"""  # noqa: E501
+
+
+@pytest.fixture
+def mock_deepseek_completion() -> list[dict]:
+    list_chunk_data = DEEPSEEK_STREAM_DATA.split("\n")
+    result_list = []
+    for msg in list_chunk_data:
+        if msg != "[DONE]":
+            result_list.append(json.loads(msg))
+
+    return result_list
+
+
+async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
+    llm_name = "deepseek-chat"
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = AsyncMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(mock_deepseek_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_deepseek_completion[-1]
+    usage_metadata: UsageMetadata | None = None
+    with patch.object(llm, "async_client", mock_client):
+        async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+
+def test_deepseek_stream(mock_deepseek_completion: list) -> None:
+    llm_name = "deepseek-chat"
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(mock_deepseek_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_deepseek_completion[-1]
+    usage_metadata: UsageMetadata | None = None
+    with patch.object(llm, "client", mock_client):
+        for chunk in llm.stream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+
+OPENAI_STREAM_DATA = """{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"我是"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"助手"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{"content":"。"},"logprobs":null,"finish_reason":null}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null}
+{"id":"chatcmpl-9nhARrdUiJWEMd5plwV1Gc9NCjb9M","object":"chat.completion.chunk","created":1721631035,"model":"gpt-5.5","system_fingerprint":"fp_18cc0f1fa0","choices":[],"usage":{"prompt_tokens":14,"completion_tokens":3,"total_tokens":17}}
+[DONE]"""  # noqa: E501
+
+
+@pytest.fixture
+def mock_openai_completion() -> list[dict]:
+    list_chunk_data = OPENAI_STREAM_DATA.split("\n")
+    result_list = []
+    for msg in list_chunk_data:
+        if msg != "[DONE]":
+            result_list.append(json.loads(msg))
+
+    return result_list
+
+
+async def test_openai_astream(mock_openai_completion: list) -> None:
+    llm_name = OPENAI_TEST_MODEL
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    assert llm.stream_usage
+    mock_client = AsyncMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(mock_openai_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_openai_completion[-1]
+    usage_metadata: UsageMetadata | None = None
+    with patch.object(llm, "async_client", mock_client):
+        async for chunk in llm.astream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert usage_metadata is not None
+
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+
+def test_openai_stream(mock_openai_completion: list) -> None:
+    llm_name = OPENAI_TEST_MODEL
+    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    assert llm.stream_usage
+    mock_client = MagicMock()
+
+    call_kwargs = []
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        call_kwargs.append(kwargs)
+        return MockSyncContextManager(mock_openai_completion)
+
+    mock_client.create = mock_create
+    usage_chunk = mock_openai_completion[-1]
+    usage_metadata: UsageMetadata | None = None
+    with patch.object(llm, "client", mock_client):
+        for chunk in llm.stream("你的名字叫什么？只回答名字"):
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                usage_metadata = chunk.usage_metadata
+
+    assert call_kwargs[-1]["stream_options"] == {"include_usage": True}
+    assert usage_metadata is not None
+    assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
+    assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
+    assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+    # Verify no streaming outside of default base URL or clients
+    for param, value in {
+        "stream_usage": False,
+        "openai_proxy": "http://localhost:7890",
+        "openai_api_base": "https://example.com/v1",
+        "base_url": "https://example.com/v1",
+        "client": mock_client,
+        "root_client": mock_client,
+        "async_client": mock_client,
+        "root_async_client": mock_client,
+        "http_client": httpx.Client(),
+        "http_async_client": httpx.AsyncClient(),
+    }.items():
+        llm = ChatOpenAI(model=llm_name, **{param: value})  # type: ignore[arg-type]
+        assert not llm.stream_usage
+        with patch.object(llm, "client", mock_client):
+            _ = list(llm.stream("..."))
+        assert "stream_options" not in call_kwargs[-1]
+
+
+def test_openai_stream_events_v3_lifecycle(mock_openai_completion: list) -> None:
+    """`stream_events(version="v3")` on chat completions emits a valid lifecycle."""
+    from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(mock_openai_completion)
+
+    mock_client.create = mock_create
+    with patch.object(llm, "client", mock_client):
+        events = list(llm.stream_events("你的名字叫什么？只回答名字", version="v3"))
+
+    assert_valid_event_stream(events)
+    # At minimum, a text block with the accumulated answer.
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    assert len(finishes) >= 1
+    text_finishes = [f for f in finishes if f["content"]["type"] == "text"]
+    assert len(text_finishes) == 1
+
+
+@pytest.fixture
+def mock_completion() -> dict:
+    return {
+        "id": "chatcmpl-7fcZavknQda3SQ",
+        "object": "chat.completion",
+        "created": 1689989000,
+        "model": OPENAI_TEST_MODEL,
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": "Bar Baz", "name": "Erick"},
+                "finish_reason": "stop",
+            }
+        ],
+    }
+
+
+@pytest.fixture
+def mock_client(mock_completion: dict) -> MagicMock:
+    rtn = MagicMock()
+
+    mock_create = MagicMock()
+
+    mock_resp = MagicMock()
+    mock_resp.headers = {"content-type": "application/json"}
+    mock_resp.parse.return_value = mock_completion
+    mock_create.return_value = mock_resp
+
+    rtn.with_raw_response.create = mock_create
+    rtn.create.return_value = mock_completion
+    return rtn
+
+
+@pytest.fixture
+def mock_async_client(mock_completion: dict) -> AsyncMock:
+    rtn = AsyncMock()
+
+    mock_create = AsyncMock()
+    mock_resp = MagicMock()
+    mock_resp.parse.return_value = mock_completion
+    mock_create.return_value = mock_resp
+
+    rtn.with_raw_response.create = mock_create
+    rtn.create.return_value = mock_completion
+    return rtn
+
+
+def test_openai_invoke(mock_client: MagicMock) -> None:
+    llm = ChatOpenAI()
+
+    with patch.object(llm, "client", mock_client):
+        res = llm.invoke("bar")
+        assert res.content == "Bar Baz"
+
+        # headers are not in response_metadata if include_response_headers not set
+        assert "headers" not in res.response_metadata
+    assert mock_client.with_raw_response.create.called
+
+
+async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
+    llm = ChatOpenAI()
+
+    with patch.object(llm, "async_client", mock_async_client):
+        res = await llm.ainvoke("bar")
+        assert res.content == "Bar Baz"
+
+        # headers are not in response_metadata if include_response_headers not set
+        assert "headers" not in res.response_metadata
+    assert mock_async_client.with_raw_response.create.called
+
+
+class _GatewayMetadataTracer(BaseTracer):
+    """Captures gateway metadata promoted onto completed LLM runs."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.gateway_metadata: dict | None = None
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op; runs are inspected as they complete."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        metadata = run.extra.get("metadata", {})
+        if "ls_gateway_info" in metadata:
+            self.gateway_metadata = metadata["ls_gateway_info"]
+
+
+_GATEWAY_METADATA_HEADERS = httpx2.Headers(
+    {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
+)
+
+_RESPONSES_API_COMPLETION = Response(
+    id="resp_123",
+    created_at=1234567890,
+    model=OPENAI_TEST_MODEL,
+    object="response",
+    parallel_tool_calls=True,
+    tools=[],
+    tool_choice="auto",
+    output=[
+        ResponseOutputMessage(
+            type="message",
+            id="msg_123",
+            content=[
+                ResponseOutputText(type="output_text", text="Bar Baz", annotations=[])
+            ],
+            role="assistant",
+            status="completed",
+        )
+    ],
+)
+
+_RESPONSES_API_STREAM = [
+    ResponseTextDeltaEvent(
+        content_index=0,
+        delta="Bar Baz",
+        item_id="msg_123",
+        output_index=0,
+        sequence_number=0,
+        logprobs=[],
+        type="response.output_text.delta",
+    ),
+]
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_openai_invoke_surfaces_gateway_metadata(
+    mock_completion: dict, *, use_responses_api: bool
+) -> None:
+    """Gateway metadata header is surfaced on `generation_info`, not the message."""
+    llm = ChatOpenAI(use_responses_api=use_responses_api)
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = _RESPONSES_API_COMPLETION
+        mock_client.responses.with_raw_response.create.return_value = mock_resp
+        client_attr = "root_client"
+    else:
+        mock_resp.parse.return_value = mock_completion
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "client"
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, client_attr, mock_client):
+        res = llm.invoke("bar", config={"callbacks": [tracer]})
+
+    # Gateway metadata reaches the tracer via `generation_info`...
+    assert tracer.gateway_metadata == {"provider": "openai"}
+    # ...but is kept off the user-facing message `response_metadata`.
+    assert GATEWAY_METADATA_RESPONSE_KEY not in res.response_metadata
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_openai_stream_surfaces_gateway_metadata(
+    mock_openai_completion: list, *, use_responses_api: bool
+) -> None:
+    """Gateway metadata reaches the tracer for a gateway-routed stream."""
+    # A LangSmith API key signals gateway routing, so streaming fetches raw
+    # headers.
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key="lsv2_pt_example",  # type: ignore[arg-type]
+        use_responses_api=use_responses_api,
+    )
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = MockSyncContextManager(_RESPONSES_API_STREAM)
+        mock_client.with_raw_response.responses.create.return_value = mock_resp
+        mock_client.responses.create.return_value = MockSyncContextManager(
+            _RESPONSES_API_STREAM
+        )
+        client_attr = "root_client"
+    else:
+        mock_resp.parse.return_value = MockSyncContextManager(mock_openai_completion)
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "client"
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, client_attr, mock_client):
+        for chunk in llm.stream("what is your name?", config={"callbacks": [tracer]}):
+            # Gateway metadata is kept off the user-facing chunk metadata.
+            assert GATEWAY_METADATA_RESPONSE_KEY not in chunk.response_metadata
+
+    assert tracer.gateway_metadata == {"provider": "openai"}
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+async def test_openai_astream_surfaces_gateway_metadata(
+    mock_openai_completion: list, *, use_responses_api: bool
+) -> None:
+    """Gateway metadata reaches the tracer for a gateway-routed async stream."""
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key="lsv2_pt_example",  # type: ignore[arg-type]
+        use_responses_api=use_responses_api,
+    )
+    mock_client = AsyncMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = MockAsyncContextManager(_RESPONSES_API_STREAM)
+        mock_client.with_raw_response.responses.create.return_value = mock_resp
+        mock_client.responses.create.return_value = MockAsyncContextManager(
+            _RESPONSES_API_STREAM
+        )
+        client_attr = "root_async_client"
+    else:
+        mock_resp.parse.return_value = MockAsyncContextManager(mock_openai_completion)
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "async_client"
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, client_attr, mock_client):
+        async for chunk in llm.astream(
+            "what is your name?", config={"callbacks": [tracer]}
+        ):
+            # Gateway metadata is kept off the user-facing chunk metadata.
+            assert GATEWAY_METADATA_RESPONSE_KEY not in chunk.response_metadata
+
+    assert tracer.gateway_metadata == {"provider": "openai"}
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        OPENAI_TEST_MODEL,
+        "gpt-5-nano",
+        "o3",
+        "gpt-5.2",
+    ],
+)
+def test__get_encoding_model(model: str) -> None:
+    ChatOpenAI(model=model)._get_encoding_model()
+
+
+def test_openai_invoke_name(mock_client: MagicMock) -> None:
+    llm = ChatOpenAI()
+
+    with patch.object(llm, "client", mock_client):
+        messages = [HumanMessage(content="Foo", name="Katie")]
+        res = llm.invoke(messages)
+        call_args, call_kwargs = mock_client.with_raw_response.create.call_args
+        assert len(call_args) == 0  # no positional args
+        call_messages = call_kwargs["messages"]
+        assert len(call_messages) == 1
+        assert call_messages[0]["role"] == "user"
+        assert call_messages[0]["content"] == "Foo"
+        assert call_messages[0]["name"] == "Katie"
+
+        # check return type has name
+        assert res.content == "Bar Baz"
+        assert res.name == "Erick"
+
+
+def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
+    # Test that we ignore function calls if tool_calls are present
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    tool_call_message = AIMessage(
+        content="",
+        additional_kwargs={
+            "function_call": {
+                "name": "get_weather",
+                "arguments": '{"location": "Boston"}',
+            }
+        },
+        tool_calls=[
+            {
+                "name": "get_weather",
+                "args": {"location": "Boston"},
+                "id": "abc123",
+                "type": "tool_call",
+            }
+        ],
+    )
+    messages = [
+        HumanMessage("What's the weather in Boston?"),
+        tool_call_message,
+        ToolMessage(content="It's sunny.", name="get_weather", tool_call_id="abc123"),
+    ]
+    with patch.object(llm, "client", mock_client):
+        _ = llm.invoke(messages)
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
+        call_messages = call_kwargs["messages"]
+        tool_call_message_payload = call_messages[1]
+        assert "tool_calls" in tool_call_message_payload
+        assert "function_call" not in tool_call_message_payload
+
+    # Test we don't ignore function calls if tool_calls are not present
+    cast(AIMessage, messages[1]).tool_calls = []
+    with patch.object(llm, "client", mock_client):
+        _ = llm.invoke(messages)
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
+        call_messages = call_kwargs["messages"]
+        tool_call_message_payload = call_messages[1]
+        assert "function_call" in tool_call_message_payload
+        assert "tool_calls" not in tool_call_message_payload
+
+
+def test_custom_token_counting() -> None:
+    def token_encoder(text: str) -> list[int]:
+        return [1, 2, 3]
+
+    llm = ChatOpenAI(custom_get_token_ids=token_encoder)
+    assert llm.get_token_ids("foo") == [1, 2, 3]
+
+
+def test_format_message_content() -> None:
+    content: Any = "hello"
+    assert content == _format_message_content(content)
+
+    content = None
+    assert content == _format_message_content(content)
+
+    content = []
+    assert content == _format_message_content(content)
+
+    content = [
+        {"type": "text", "text": "What is in this image?"},
+        {"type": "image_url", "image_url": {"url": "url.com"}},
+    ]
+    assert content == _format_message_content(content)
+
+    content = [
+        {"type": "text", "text": "hello"},
+        {
+            "type": "tool_use",
+            "id": "toolu_01A09q90qw90lq917835lq9",
+            "name": "get_weather",
+            "input": {"location": "San Francisco, CA", "unit": "celsius"},
+        },
+    ]
+    assert _format_message_content(content) == [{"type": "text", "text": "hello"}]
+
+    # Standard multi-modal inputs
+    contents = [
+        {"type": "image", "source_type": "url", "url": "https://..."},  # v0
+        {"type": "image", "url": "https://..."},  # v1
+    ]
+    expected = [{"type": "image_url", "image_url": {"url": "https://..."}}]
+    for content in contents:
+        assert expected == _format_message_content([content])
+
+    contents = [
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "image/png",
+        },
+        {"type": "image", "base64": "<base64 data>", "mime_type": "image/png"},
+    ]
+    expected = [
+        {
+            "type": "image_url",
+            "image_url": {"url": "data:image/png;base64,<base64 data>"},
+        }
+    ]
+    for content in contents:
+        assert expected == _format_message_content([content])
+
+    contents = [
+        {
+            "type": "file",
+            "source_type": "base64",
+            "data": "<base64 data>",
+            "mime_type": "application/pdf",
+            "filename": "my_file",
+        },
+        {
+            "type": "file",
+            "base64": "<base64 data>",
+            "mime_type": "application/pdf",
+            "filename": "my_file",
+        },
+    ]
+    expected = [
+        {
+            "type": "file",
+            "file": {
+                "filename": "my_file",
+                "file_data": "data:application/pdf;base64,<base64 data>",
+            },
+        }
+    ]
+    for content in contents:
+        assert expected == _format_message_content([content])
+
+    # Test warn if PDF is missing a filename and that we add a default filename
+    pdf_block = {
+        "type": "file",
+        "base64": "<base64 data>",
+        "mime_type": "application/pdf",
+    }
+    expected = [
+        {
+            "type": "file",
+            "file": {
+                "file_data": "data:application/pdf;base64,<base64 data>",
+                "filename": "LC_AUTOGENERATED",
+            },
+        }
+    ]
+    with pytest.warns(match="filename"):
+        assert expected == _format_message_content([pdf_block])
+
+    contents = [
+        {"type": "file", "source_type": "id", "id": "file-abc123"},
+        {"type": "file", "file_id": "file-abc123"},
+    ]
+    expected = [{"type": "file", "file": {"file_id": "file-abc123"}}]
+    for content in contents:
+        assert expected == _format_message_content([content])
+
+
+class GenerateUsername(BaseModel):
+    "Get a username based on someone's name and hair color."
+
+    name: str
+    hair_color: str
+
+
+class MakeASandwich(BaseModel):
+    "Make a sandwich given a list of ingredients."
+
+    bread_type: str
+    cheese_type: str
+    condiments: list[str]
+    vegetables: list[str]
+
+
+@pytest.mark.parametrize(
+    "tool_choice",
+    [
+        "any",
+        "none",
+        "auto",
+        "required",
+        "GenerateUsername",
+        {"type": "function", "function": {"name": "MakeASandwich"}},
+        False,
+        None,
+    ],
+)
+@pytest.mark.parametrize("strict", [True, False, None])
+def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
+    """Test passing in manually construct tool call message."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    llm.bind_tools(
+        tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice, strict=strict
+    )
+
+
+def test_bind_tools_response_format_defaults_strict() -> None:
+    """Test that strict defaults to True when response_format is provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(
+        tools=[GenerateUsername],
+        response_format=MakeASandwich,
+    )
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert tools[0]["function"]["strict"] is True
+
+
+def test_bind_tools_response_format_respects_strict_false() -> None:
+    """Test that strict=False is respected even when response_format is provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(
+        tools=[GenerateUsername],
+        response_format=MakeASandwich,
+        strict=False,
+    )
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert tools[0]["function"]["strict"] is False
+
+
+def test_bind_tools_no_response_format_keeps_strict_none() -> None:
+    """Test that strict stays None when response_format is not provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(tools=[GenerateUsername])
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert "strict" not in tools[0]["function"]
+
+
+@pytest.mark.parametrize(
+    "schema", [GenerateUsername, GenerateUsername.model_json_schema()]
+)
+@pytest.mark.parametrize("method", ["json_schema", "function_calling", "json_mode"])
+@pytest.mark.parametrize("include_raw", [True, False])
+@pytest.mark.parametrize("strict", [True, False, None])
+def test_with_structured_output(
+    schema: type | dict[str, Any] | None,
+    method: Literal["function_calling", "json_mode", "json_schema"],
+    include_raw: bool,
+    strict: bool | None,
+) -> None:
+    """Test passing in manually construct tool call message."""
+    if method == "json_mode":
+        strict = None
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    llm.with_structured_output(
+        schema, method=method, strict=strict, include_raw=include_raw
+    )
+
+
+def test_get_num_tokens_from_messages() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    messages = [
+        SystemMessage("you're a good assistant"),
+        HumanMessage("how are you"),
+        HumanMessage(
+            [
+                {"type": "text", "text": "what's in this image"},
+                {"type": "image_url", "image_url": {"url": "https://foobar.com"}},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "https://foobar.com", "detail": "low"},
+                },
+            ]
+        ),
+        AIMessage("a nice bird"),
+        AIMessage(
+            "",
+            tool_calls=[
+                ToolCall(id="foo", name="bar", args={"arg1": "arg1"}, type="tool_call")
+            ],
+        ),
+        AIMessage(
+            "",
+            additional_kwargs={
+                "function_call": {
+                    "arguments": json.dumps({"arg1": "arg1"}),
+                    "name": "fun",
+                }
+            },
+        ),
+        AIMessage(
+            "text",
+            tool_calls=[
+                ToolCall(id="foo", name="bar", args={"arg1": "arg1"}, type="tool_call")
+            ],
+        ),
+        ToolMessage("foobar", tool_call_id="foo"),
+    ]
+    expected = 431  # Updated to match token count with mocked 100x100 image
+
+    # Mock _url_to_size to avoid PIL dependency in unit tests
+    with patch("langchain_openai.chat_models.base._url_to_size") as mock_url_to_size:
+        mock_url_to_size.return_value = (100, 100)  # 100x100 pixel image
+        actual = llm.get_num_tokens_from_messages(messages)
+
+    assert expected == actual
+
+    # Test file inputs
+    messages = [
+        HumanMessage(
+            [
+                "Summarize this document.",
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "my file",
+                        "file_data": "data:application/pdf;base64,<data>",
+                    },
+                },
+            ]
+        )
+    ]
+    actual = 0
+    with pytest.warns(match="file inputs are not supported"):
+        actual = llm.get_num_tokens_from_messages(messages)
+    assert actual == 13
+
+    # Test Responses
+    messages = [
+        AIMessage(
+            [
+                {
+                    "type": "function_call",
+                    "name": "multiply",
+                    "arguments": '{"x":5,"y":4}',
+                    "call_id": "call_abc123",
+                    "id": "fc_abc123",
+                    "status": "completed",
+                },
+            ],
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "name": "multiply",
+                    "args": {"x": 5, "y": 4},
+                    "id": "call_abc123",
+                }
+            ],
+        )
+    ]
+    actual = llm.get_num_tokens_from_messages(messages)
+    assert actual
+
+
+@pytest.mark.parametrize(
+    "model", ["o1", "o1-preview", "o1-mini", "o3", "o3-mini", "o4-mini"]
+)
+def test_get_num_tokens_from_messages_o_series(model: str) -> None:
+    """o-series models use the same message token format as gpt-4/gpt-5.
+
+    Regression test: these raised NotImplementedError.
+    """
+    llm = ChatOpenAI(model=model)
+    messages = [
+        SystemMessage("you're a good assistant"),
+        HumanMessage("how are you"),
+    ]
+    actual = llm.get_num_tokens_from_messages(messages)
+    expected = ChatOpenAI(model=OPENAI_TEST_MODEL).get_num_tokens_from_messages(
+        messages
+    )
+    assert actual == expected
+
+
+class Foo(BaseModel):
+    bar: int
+
+
+# class FooV1(BaseModelV1):
+#     bar: int
+
+
+@pytest.mark.parametrize(
+    "schema",
+    [
+        Foo
+        # FooV1
+    ],
+)
+def test_schema_from_with_structured_output(schema: type) -> None:
+    """Test schema from with_structured_output."""
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+
+    structured_llm = llm.with_structured_output(
+        schema, method="json_schema", strict=True
+    )
+
+    expected = {
+        "properties": {"bar": {"title": "Bar", "type": "integer"}},
+        "required": ["bar"],
+        "title": schema.__name__,
+        "type": "object",
+    }
+    output_schema = cast("type[BaseModel]", structured_llm.get_output_schema())
+    actual = output_schema.model_json_schema()
+    assert actual == expected
+
+
+def test__create_usage_metadata() -> None:
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": None,
+        "completion_tokens_details": None,
+        "prompt_tokens": 11,
+        "total_tokens": 26,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result == UsageMetadata(
+        output_tokens=15,
+        input_tokens=11,
+        total_tokens=26,
+        input_token_details={},
+        output_token_details={},
+    )
+
+
+def test__create_usage_metadata_zero_total_tokens() -> None:
+    """Test that explicit total_tokens=0 is preserved, not replaced by sum."""
+    usage_metadata = {
+        "prompt_tokens": 10,
+        "completion_tokens": 5,
+        "total_tokens": 0,
+        "prompt_tokens_details": None,
+        "completion_tokens_details": None,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["total_tokens"] == 0
+
+
+def test__create_usage_metadata_cache_write_tokens() -> None:
+    """`cache_write_tokens` is surfaced under the standard `cache_creation` key."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        # OpenAI's `cache_write_tokens` maps to core's `cache_creation`
+        "prompt_tokens_details": {"cached_tokens": 50, "cache_write_tokens": 25},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {
+        "cache_read": 50,
+        "cache_creation": 25,
+    }
+
+
+def test__create_usage_metadata_cache_read_only() -> None:
+    """Responses without `cache_write_tokens` emit no `cache_creation` key."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": {"cached_tokens": 50},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {"cache_read": 50}
+
+
+def test__create_usage_metadata_cache_tokens_zero_retained() -> None:
+    """Explicit zero cache counts are retained (filtered on `None`, not falsiness)."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {
+        "cache_read": 0,
+        "cache_creation": 0,
+    }
+
+
+def test__create_usage_metadata_service_tier_excludes_cache_read_tokens() -> None:
+    """Tier counts exclude cache reads but not overlapping cache writes."""
+    usage_metadata = {
+        "completion_tokens": 50,
+        "prompt_tokens_details": {
+            "cached_tokens": 256,
+            "cache_write_tokens": 3072,
+        },
+        "completion_tokens_details": {"reasoning_tokens": 10},
+        "prompt_tokens": 2304,
+        "total_tokens": 2354,
+    }
+    result = _create_usage_metadata(usage_metadata, service_tier="priority")
+    assert result["input_token_details"] == {
+        "priority_cache_read": 256,
+        "priority_cache_creation": 3072,
+        "priority": 2048,
+    }
+    assert result["output_token_details"] == {
+        "priority_reasoning": 10,
+        "priority": 40,  # 50 - 10 (reasoning)
+    }
+
+
+def test__create_usage_metadata_service_tier_without_detail_fields() -> None:
+    """Tier arithmetic tolerates missing cache/reasoning fields (no TypeError)."""
+    usage_metadata = {
+        "completion_tokens": 50,
+        "prompt_tokens_details": None,
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata(usage_metadata, service_tier="flex")
+    assert result["input_token_details"] == {"flex": 100}
+    assert result["output_token_details"] == {"flex": 50}
+
+
+def test__create_usage_metadata_responses() -> None:
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": {"cached_tokens": 50},
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10},
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(response_usage_metadata)
+
+    assert result == UsageMetadata(
+        output_tokens=50,
+        input_tokens=100,
+        total_tokens=150,
+        input_token_details={"cache_read": 50},
+        output_token_details={"reasoning": 10},
+    )
+
+
+def test__create_usage_metadata_responses_cache_write_tokens() -> None:
+    """Responses usage maps `cache_write_tokens` to the `cache_creation` key."""
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": {"cached_tokens": 50, "cache_write_tokens": 25},
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10},
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(response_usage_metadata)
+
+    assert result == UsageMetadata(
+        output_tokens=50,
+        input_tokens=100,
+        total_tokens=150,
+        input_token_details={"cache_read": 50, "cache_creation": 25},
+        output_token_details={"reasoning": 10},
+    )
+
+
+def test__create_usage_metadata_responses_service_tier_cache_write_overlap() -> None:
+    """Tier counts exclude cache reads but not overlapping cache writes."""
+    response_usage_metadata = {
+        "input_tokens": 2304,
+        "input_tokens_details": {
+            "cached_tokens": 256,
+            "cache_write_tokens": 3072,
+        },
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10},
+        "total_tokens": 2354,
+    }
+    result = _create_usage_metadata_responses(
+        response_usage_metadata, service_tier="flex"
+    )
+    assert result["input_token_details"] == {
+        "flex_cache_read": 256,
+        "flex_cache_creation": 3072,
+        "flex": 2048,
+    }
+    assert result["output_token_details"] == {
+        "flex_reasoning": 10,
+        "flex": 40,  # 50 - 10 (reasoning)
+    }
+
+
+def test__create_usage_metadata_responses_service_tier_without_detail_fields() -> None:
+    """Tier arithmetic tolerates missing cache/reasoning fields (no TypeError)."""
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": None,
+        "output_tokens": 50,
+        "output_tokens_details": None,
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(
+        response_usage_metadata, service_tier="priority"
+    )
+    assert result["input_token_details"] == {"priority": 100}
+    assert result["output_token_details"] == {"priority": 50}
+
+
+def test__resize_caps_dimensions_preserving_ratio() -> None:
+    """Larger side capped at 2048 then smaller at 768 keeping aspect ratio."""
+    assert _resize(2048, 4096) == (768, 1536)
+    assert _resize(4096, 2048) == (1536, 768)
+
+
+def test__convert_to_openai_response_format() -> None:
+    # Test response formats that aren't tool-like.
+    response_format: dict = {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "math_reasoning",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "steps": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "explanation": {"type": "string"},
+                                "output": {"type": "string"},
+                            },
+                            "required": ["explanation", "output"],
+                            "additionalProperties": False,
+                        },
+                    },
+                    "final_answer": {"type": "string"},
+                },
+                "required": ["steps", "final_answer"],
+                "additionalProperties": False,
+            },
+            "strict": True,
+        },
+    }
+
+    actual = _convert_to_openai_response_format(response_format)
+    assert actual == response_format
+
+    actual = _convert_to_openai_response_format(response_format["json_schema"])
+    assert actual == response_format
+
+    actual = _convert_to_openai_response_format(response_format, strict=True)
+    assert actual == response_format
+
+    with pytest.raises(ValueError):
+        _convert_to_openai_response_format(response_format, strict=False)
+
+
+@pytest.mark.parametrize("method", ["function_calling", "json_schema"])
+@pytest.mark.parametrize("strict", [True, None])
+def test_structured_output_strict(
+    method: Literal["function_calling", "json_schema"], strict: bool | None
+) -> None:
+    """Test to verify structured output with strict=True."""
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+
+    class Joke(BaseModel):
+        """Joke to tell user."""
+
+        setup: str = Field(description="question to set up a joke")
+        punchline: str = Field(description="answer to resolve the joke")
+
+    llm.with_structured_output(Joke, method=method, strict=strict)
+    # Schema
+    llm.with_structured_output(Joke.model_json_schema(), method=method, strict=strict)
+
+
+def test_nested_structured_output_strict() -> None:
+    """Test to verify structured output with strict=True for nested object."""
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+
+    class SelfEvaluation(TypedDict):
+        score: int
+        text: str
+
+    class JokeWithEvaluation(TypedDict):
+        """Joke to tell user."""
+
+        setup: str
+        punchline: str
+        _evaluation: SelfEvaluation
+
+    llm.with_structured_output(JokeWithEvaluation, method="json_schema")
+
+
+def test__get_request_payload() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    messages: list = [
+        SystemMessage("hello"),
+        SystemMessage("bye", additional_kwargs={"__openai_role__": "developer"}),
+        SystemMessage(content=[{"type": "text", "text": "hello!"}]),
+        {"role": "human", "content": "how are you"},
+        {"role": "user", "content": [{"type": "text", "text": "feeling today"}]},
+    ]
+    expected = {
+        "messages": [
+            {"role": "system", "content": "hello"},
+            {"role": "developer", "content": "bye"},
+            {"role": "system", "content": [{"type": "text", "text": "hello!"}]},
+            {"role": "user", "content": "how are you"},
+            {"role": "user", "content": [{"type": "text", "text": "feeling today"}]},
+        ],
+        "model": OPENAI_TEST_MODEL,
+        "stream": False,
+    }
+    payload = llm._get_request_payload(messages)
+    assert payload == expected
+
+    # Test we coerce to developer role for o-series models
+    llm = ChatOpenAI(model="o3")
+    payload = llm._get_request_payload(messages)
+    expected = {
+        "messages": [
+            {"role": "developer", "content": "hello"},
+            {"role": "developer", "content": "bye"},
+            {"role": "developer", "content": [{"type": "text", "text": "hello!"}]},
+            {"role": "user", "content": "how are you"},
+            {"role": "user", "content": [{"type": "text", "text": "feeling today"}]},
+        ],
+        "model": "o3",
+        "stream": False,
+    }
+    assert payload == expected
+
+    # Test we ignore reasoning blocks from other providers
+    reasoning_messages: list = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "reasoning_content", "reasoning_content": "reasoning..."},
+                {"type": "text", "text": "reasoned response"},
+            ],
+        },
+        {
+            "role": "user",
+            "content": [
+                {"type": "thinking", "thinking": "thinking..."},
+                {"type": "text", "text": "thoughtful response"},
+            ],
+        },
+    ]
+    expected = {
+        "messages": [
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": "reasoned response"}],
+            },
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": "thoughtful response"}],
+            },
+        ],
+        "model": "o3",
+        "stream": False,
+    }
+    payload = llm._get_request_payload(reasoning_messages)
+    assert payload == expected
+
+
+def test_sanitize_chat_completions_text_blocks() -> None:
+    messages = [
+        ToolMessage(
+            content=[{"type": "text", "text": "foo", "id": "lc_abc123"}],
+            tool_call_id="def456",
+        ),
+    ]
+    payload = ChatOpenAI(model="gpt-5.2")._get_request_payload(messages)
+    assert payload["messages"] == [
+        {
+            "content": [{"type": "text", "text": "foo"}],
+            "role": "tool",
+            "tool_call_id": "def456",
+        }
+    ]
+
+
+def test_init_o1() -> None:
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("error")  # Treat warnings as errors
+        ChatOpenAI(model=OPENAI_TEST_MODEL, reasoning_effort="medium")
+
+    assert len(record) == 0
+
+
+def test_init_minimal_reasoning_effort() -> None:
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("error")
+        ChatOpenAI(model="gpt-5", reasoning_effort="minimal")
+
+    assert len(record) == 0
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+@pytest.mark.parametrize("use_max_completion_tokens", [True, False])
+def test_minimal_reasoning_effort_payload(
+    use_max_completion_tokens: bool, use_responses_api: bool
+) -> None:
+    """Test that minimal reasoning effort is included in request payload."""
+    if use_max_completion_tokens:
+        kwargs = {"max_completion_tokens": 100}
+    else:
+        kwargs = {"max_tokens": 100}
+
+    init_kwargs: dict[str, Any] = {
+        "model": "gpt-5",
+        "reasoning_effort": "minimal",
+        "use_responses_api": use_responses_api,
+        **kwargs,
+    }
+
+    llm = ChatOpenAI(**init_kwargs)
+
+    messages = [
+        {"role": "developer", "content": "respond with just 'test'"},
+        {"role": "user", "content": "hello"},
+    ]
+
+    payload = llm._get_request_payload(messages, stop=None)
+
+    # When using responses API, reasoning_effort becomes reasoning.effort
+    if use_responses_api:
+        assert "reasoning" in payload
+        assert payload["reasoning"] == {"effort": "minimal"}
+        # For responses API, tokens param becomes max_output_tokens
+        assert payload["max_output_tokens"] == 100
+    else:
+        # For non-responses API, reasoning_effort remains as is
+        assert payload["reasoning_effort"] == "minimal"
+        if use_max_completion_tokens:
+            assert payload["max_completion_tokens"] == 100
+        else:
+            # max_tokens gets converted to max_completion_tokens in non-responses API
+            assert payload["max_completion_tokens"] == 100
+
+
+@pytest.mark.parametrize("via_invoke", [False, True])
+def test_responses_api_payload_excludes_stop(via_invoke: bool) -> None:
+    """The Responses API rejects `stop`, so it must be dropped from the payload.
+
+    Covers `stop` supplied both at construction time and at invoke time, since
+    they reach the payload through different code paths.
+    """
+    if via_invoke:
+        llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+        payload = llm._get_request_payload(
+            [HumanMessage(content="Hello")], stop=["END"]
+        )
+    else:
+        llm = ChatOpenAI(  # type: ignore[call-arg]
+            model=OPENAI_TEST_MODEL, stop=["END"], use_responses_api=True
+        )
+        payload = llm._get_request_payload([HumanMessage(content="Hello")])
+
+    assert "stop" not in payload
+
+
+def test_chat_completions_payload_includes_stop() -> None:
+    """`stop` must be preserved for the Chat Completions API, which supports it.
+
+    Guards against an over-broad change dropping `stop` outside the Responses API.
+    """
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, stop=["END"])  # type: ignore[call-arg]
+
+    payload = llm._get_request_payload([HumanMessage(content="Hello")])
+
+    assert payload["stop"] == ["END"]
+
+
+def test_output_version_compat() -> None:
+    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
+    assert llm._use_responses_api({}) is True
+
+
+def test_convert_chunk_to_generation_chunk_v1_keeps_string_content() -> None:
+    """v1 streaming keeps content as '' (not []) and stamps output_version.
+
+    Covers both the usage-only (empty-choices) chunk and a content-bearing
+    chunk carrying a tool-call delta; the latter pins the per-content-chunk
+    `output_version` propagation.
+    """
+    llm = ChatOpenAI(model="gpt-4o", output_version="v1")
+
+    # Empty-choices chunk (usage-only)
+    empty_chunk: dict[str, Any] = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "gpt-4o",
+        "choices": [],
+        "usage": {"prompt_tokens": 5, "completion_tokens": 3, "total_tokens": 8},
+    }
+    gen = llm._convert_chunk_to_generation_chunk(empty_chunk, AIMessageChunk, None)
+    assert gen is not None
+    assert gen.message.content == ""  # NOT []
+    assert gen.message.response_metadata.get("output_version") == "v1"
+
+    # Content-bearing chunk with tool_call delta
+    tool_chunk: dict[str, Any] = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "gpt-4o",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "index": 0,
+                            "id": "call_abc",
+                            "function": {"name": "get_weather", "arguments": ""},
+                        }
+                    ],
+                },
+                "logprobs": None,
+                "finish_reason": None,
+            }
+        ],
+        "usage": None,
+    }
+    gen = llm._convert_chunk_to_generation_chunk(tool_chunk, AIMessageChunk, None)
+    assert gen is not None
+    assert isinstance(gen.message.content, str)
+    assert gen.message.response_metadata.get("output_version") == "v1"
+    assert gen.message.response_metadata.get("model_provider") == "openai"
+
+
+def test_v1_streaming_tool_calls_in_content_blocks() -> None:
+    """End-to-end: streaming chunks with tool calls produce correct content_blocks."""
+    stream_chunks: list[dict[str, Any]] = [
+        # Initial empty-choices chunk
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": ""},
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Text token streamed before the tool call
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"content": "Let me check the weather."},
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Tool call start
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "id": "call_abc",
+                                "function": {
+                                    "name": "get_weather",
+                                    "arguments": '{"loc',
+                                },
+                            }
+                        ]
+                    },
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Tool call args continuation
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "function": {"arguments": 'ation": "SF"}'},
+                            }
+                        ]
+                    },
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ],
+            "usage": None,
+        },
+        # Finish
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {},
+                    "logprobs": None,
+                    "finish_reason": "tool_calls",
+                }
+            ],
+            "usage": None,
+        },
+        # Usage chunk
+        {
+            "id": "chatcmpl-test",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+            },
+        },
+    ]
+
+    llm = ChatOpenAI(model="gpt-4o", output_version="v1")
+
+    aggregated: AIMessageChunk | None = None
+    for raw_chunk in stream_chunks:
+        gen = llm._convert_chunk_to_generation_chunk(raw_chunk, AIMessageChunk, None)
+        if gen is None:
+            continue
+        chunk = cast(AIMessageChunk, gen.message)
+        aggregated = chunk if aggregated is None else aggregated + chunk
+
+    assert aggregated is not None
+    # Tool calls should be present
+    assert len(aggregated.tool_call_chunks) == 1
+    assert aggregated.tool_call_chunks[0]["name"] == "get_weather"
+
+    # While still a chunk, content_blocks should include both the streamed text
+    # and the in-progress tool_call_chunk (text deltas must survive alongside
+    # tool calls through the merge).
+    blocks = aggregated.content_blocks
+    block_types = {b["type"] for b in blocks}
+    assert "tool_call_chunk" in block_types
+    assert "text" in block_types
+
+    # Once finalized into a non-chunk AIMessage, the in-progress tool_call_chunk
+    # resolves to a normalized v1 `tool_call` block with parsed args. This is
+    # the cross-provider view downstream consumers code against.
+    final = message_chunk_to_message(aggregated)
+    final_blocks = final.content_blocks
+    assert {"type": "text", "text": "Let me check the weather."} in final_blocks
+    assert {
+        "type": "tool_call",
+        "name": "get_weather",
+        "args": {"location": "SF"},
+        "id": "call_abc",
+    } in final_blocks
+
+
+def test_verbosity_parameter_payload() -> None:
+    """Test verbosity parameter is included in request payload for Responses API."""
+    llm = ChatOpenAI(model="gpt-5", verbosity="high", use_responses_api=True)
+
+    messages = [{"role": "user", "content": "hello"}]
+    payload = llm._get_request_payload(messages, stop=None)
+
+    assert payload["text"]["verbosity"] == "high"
+
+
+def test_responses_payload_does_not_mutate_text_model_kwargs() -> None:
+    text = {"verbosity": "low"}
+    llm = ChatOpenAI(
+        model="gpt-5",
+        api_key=SecretStr("test"),
+        use_responses_api=True,
+        model_kwargs={"text": text},
+    )
+
+    payload = llm._get_request_payload("hello", response_format={"type": "json_object"})
+
+    assert payload["text"]["format"] == {"type": "json_object"}
+    assert text == {"verbosity": "low"}
+    assert llm._get_request_payload("hello")["text"] == {"verbosity": "low"}
+
+
+def test_structured_output_legacy_model() -> None:
+    class Output(TypedDict):
+        """output."""
+
+        foo: str
+
+    with pytest.warns(match="Cannot use method='json_schema'"):
+        llm = ChatOpenAI(model="gpt-3-legacy").with_structured_output(Output)
+    # assert tool calling was used instead of json_schema
+    assert "tools" in llm.steps[0].kwargs  # type: ignore
+    assert "response_format" not in llm.steps[0].kwargs  # type: ignore
+
+
+def test_structured_outputs_parser() -> None:
+    parsed_response = GenerateUsername(name="alice", hair_color="black")
+    llm_output = ChatGeneration(
+        message=AIMessage(
+            content='{"name": "alice", "hair_color": "black"}',
+            additional_kwargs={"parsed": parsed_response},
+        )
+    )
+    output_parser = RunnableLambda(
+        partial(_oai_structured_outputs_parser, schema=GenerateUsername)
+    )
+    serialized = dumps(llm_output)
+    deserialized = loads(serialized, allowed_objects=[ChatGeneration, AIMessage])
+    assert isinstance(deserialized, ChatGeneration)
+    result = output_parser.invoke(cast(AIMessage, deserialized.message))
+    assert result == parsed_response
+
+
+def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
+    """Chat Completions structured output must not emit a serializer warning.
+
+    Built via the SDK's own `parse_chat_completion` (the path
+    `client.beta.chat.completions.parse(...)` uses) so the test exercises the real
+    `ParsedChatCompletion` typing (openai/openai-python#2872).
+    """
+    from openai.lib._parsing._completions import parse_chat_completion
+    from openai.types.chat import ChatCompletion
+    from openai.types.chat.chat_completion import Choice
+    from openai.types.chat.chat_completion_message import ChatCompletionMessage
+
+    class ModelOutput(BaseModel):
+        output: str
+
+    raw_response = ChatCompletion(
+        id="chatcmpl-1",
+        object="chat.completion",
+        created=0,
+        model=OPENAI_TEST_MODEL,
+        choices=[
+            Choice(
+                index=0,
+                finish_reason="stop",
+                message=ChatCompletionMessage(
+                    role="assistant", content='{"output": "Paris"}'
+                ),
+            )
+        ],
+    )
+    response = parse_chat_completion(
+        response_format=ModelOutput,
+        input_tools=openai.omit,
+        chat_completion=raw_response,
+    )
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        result = llm._create_chat_result(response)
+
+    warning_messages = [str(warning.message) for warning in caught_warnings]
+    assert not any(
+        "PydanticSerializationUnexpectedValue" in message
+        for message in warning_messages
+    )
+    assert result.generations[0].message.additional_kwargs["parsed"] == ModelOutput(
+        output="Paris"
+    )
+
+
+def test_create_chat_result_raises_on_unexpected_response_type() -> None:
+    """A non-JSON response body must surface a clear error, not an `AttributeError`."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+
+    with pytest.raises(ValueError, match="got str") as exc_info:
+        llm._create_chat_result("<html><body>Moved</body></html>")  # type: ignore[arg-type]
+    assert "Moved" in str(exc_info.value)
+
+    with pytest.raises(ValueError, match="got object"):
+        llm._create_chat_result(object())  # type: ignore[arg-type]
+
+
+def test_create_chat_result_truncates_unexpected_response_body() -> None:
+    """A large response body must not be echoed in full in the error message."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    body = "<html>" + "x" * 5000 + "</html>"
+
+    with pytest.raises(ValueError, match="got str") as exc_info:
+        llm._create_chat_result(body)  # type: ignore[arg-type]
+    message = str(exc_info.value)
+    assert len(message) < len(body)
+    assert message.endswith("...")
+
+
+@pytest.mark.skipif(
+    (PYDANTIC_VERSION.major, PYDANTIC_VERSION.minor) < (2, 8),
+    reason=(
+        "Serializing the generic `ParsedResponse` raises a `MockValSer` TypeError on "
+        "pydantic<2.8, independent of the warning under test."
+    ),
+)
+def test__construct_lc_result_from_responses_api_avoids_parsed_dump_warning() -> None:
+    """Responses API structured output must not emit serializer warnings.
+
+    With `use_responses_api=True` and structured output, the SDK returns a
+    `ParsedResponse` whose output items don't match their declared field/union types.
+    Dumping it for response metadata previously emitted a spurious
+    `PydanticSerializationUnexpectedValue` warning (openai/openai-python#2872).
+    """
+    from openai.lib._parsing._responses import parse_response
+
+    class DocumentScoreResult(BaseModel):
+        reasoning: str
+        relevance_score: int
+
+    # Build the object the way `client.responses.parse(text_format=...)` does, so the
+    # test exercises the real `ParsedResponse` typing rather than a hand-rolled mock.
+    raw_response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                status="completed",
+                role="assistant",
+                content=[
+                    ResponseOutputText(
+                        type="output_text",
+                        text='{"reasoning": "relevant", "relevance_score": 1}',
+                        annotations=[],
+                    )
+                ],
+            )
+        ],
+    )
+    parsed_response = parse_response(
+        text_format=DocumentScoreResult,
+        input_tools=openai.omit,
+        response=raw_response,
+    )
+
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        result = _construct_lc_result_from_responses_api(
+            parsed_response, schema=DocumentScoreResult
+        )
+
+    warning_messages = [str(warning.message) for warning in caught_warnings]
+    assert not any(
+        "PydanticSerializationUnexpectedValue" in message
+        for message in warning_messages
+    )
+    assert result.generations[0].message.additional_kwargs[
+        "parsed"
+    ] == DocumentScoreResult(reasoning="relevant", relevance_score=1)
+
+
+def test_structured_outputs_parser_valid_falsy_response() -> None:
+    class LunchBox(BaseModel):
+        sandwiches: list[str]
+
+        def __len__(self) -> int:
+            return len(self.sandwiches)
+
+    # prepare a valid *but falsy* response object, an empty LunchBox
+    parsed_response = LunchBox(sandwiches=[])
+    assert len(parsed_response) == 0
+    llm_output = AIMessage(
+        content='{"sandwiches": []}', additional_kwargs={"parsed": parsed_response}
+    )
+    output_parser = RunnableLambda(
+        partial(_oai_structured_outputs_parser, schema=LunchBox)
+    )
+    result = output_parser.invoke(llm_output)
+    assert result == parsed_response
+
+
+def test__construct_lc_result_from_responses_api_error_handling() -> None:
+    """Test that errors in the response are properly raised."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        error=ResponseError(message="Test error", code="server_error"),
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[],
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        _construct_lc_result_from_responses_api(response)
+
+    assert "Test error" in str(excinfo.value)
+
+
+def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
+    """Test a basic text response with no tools or special features."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="Hello, world!", annotations=[]
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+        usage=ResponseUsage(
+            input_tokens=10,
+            output_tokens=3,
+            total_tokens=13,
+            input_tokens_details=InputTokensDetails(
+                cache_write_tokens=0, cached_tokens=0
+            ),
+            output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
+        ),
+    )
+
+    # v0
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    assert isinstance(result, ChatResult)
+    assert len(result.generations) == 1
+    assert isinstance(result.generations[0], ChatGeneration)
+    assert isinstance(result.generations[0].message, AIMessage)
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "Hello, world!", "annotations": []}
+    ]
+    assert result.generations[0].message.id == "msg_123"
+    assert result.generations[0].message.usage_metadata
+    assert result.generations[0].message.usage_metadata["input_tokens"] == 10
+    assert result.generations[0].message.usage_metadata["output_tokens"] == 3
+    assert result.generations[0].message.usage_metadata["total_tokens"] == 13
+    assert result.generations[0].message.response_metadata["id"] == "resp_123"
+    assert (
+        result.generations[0].message.response_metadata["model_name"]
+        == OPENAI_TEST_MODEL
+    )
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(response)
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "Hello, world!", "annotations": [], "id": "msg_123"}
+    ]
+    assert result.generations[0].message.id == "resp_123"
+    assert result.generations[0].message.response_metadata["id"] == "resp_123"
+
+
+def test__construct_lc_result_from_responses_api_multiple_text_blocks() -> None:
+    """Test a response with multiple text blocks."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="First part", annotations=[]
+                    ),
+                    ResponseOutputText(
+                        type="output_text", text="Second part", annotations=[]
+                    ),
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    assert len(result.generations[0].message.content) == 2
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "First part", "annotations": []},
+        {"type": "text", "text": "Second part", "annotations": []},
+    ]
+
+
+def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
+    """Test a response with multiple text blocks."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(type="output_text", text="foo", annotations=[])
+                ],
+                role="assistant",
+                status="completed",
+            ),
+            ResponseReasoningItem(
+                type="reasoning",
+                id="rs_123",
+                summary=[Summary(type="summary_text", text="reasoning foo")],
+            ),
+            ResponseOutputMessage(
+                type="message",
+                id="msg_234",
+                content=[
+                    ResponseOutputText(type="output_text", text="bar", annotations=[])
+                ],
+                role="assistant",
+                status="completed",
+            ),
+        ],
+    )
+
+    # v0
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "foo", "annotations": []},
+        {"type": "text", "text": "bar", "annotations": []},
+    ]
+    assert result.generations[0].message.additional_kwargs == {
+        "reasoning": {
+            "type": "reasoning",
+            "summary": [{"type": "summary_text", "text": "reasoning foo"}],
+            "id": "rs_123",
+        }
+    }
+    assert result.generations[0].message.id == "msg_234"
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(response)
+
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "foo", "annotations": [], "id": "msg_123"},
+        {
+            "type": "reasoning",
+            "summary": [{"type": "summary_text", "text": "reasoning foo"}],
+            "id": "rs_123",
+        },
+        {"type": "text", "text": "bar", "annotations": [], "id": "msg_234"},
+    ]
+    assert result.generations[0].message.id == "resp_123"
+
+
+def test__construct_lc_result_from_responses_api_refusal_response() -> None:
+    """Test a response with a refusal."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputRefusal(
+                        type="refusal", refusal="I cannot assist with that request."
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+    )
+
+    # v0
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    assert result.generations[0].message.additional_kwargs["refusal"] == (
+        "I cannot assist with that request."
+    )
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(response)
+    assert result.generations[0].message.content == [
+        {
+            "type": "refusal",
+            "refusal": "I cannot assist with that request.",
+            "id": "msg_123",
+        }
+    ]
+
+
+def test__construct_lc_result_from_responses_api_function_call_valid_json() -> None:
+    """Test a response with a valid function call."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="get_weather",
+                arguments='{"location": "New York", "unit": "celsius"}',
+            )
+        ],
+    )
+
+    # v0
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    msg: AIMessage = cast(AIMessage, result.generations[0].message)
+    assert len(msg.tool_calls) == 1
+    assert msg.tool_calls[0]["type"] == "tool_call"
+    assert msg.tool_calls[0]["name"] == "get_weather"
+    assert msg.tool_calls[0]["id"] == "call_123"
+    assert msg.tool_calls[0]["args"] == {"location": "New York", "unit": "celsius"}
+    assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
+    assert (
+        result.generations[0].message.additional_kwargs[_FUNCTION_CALL_IDS_MAP_KEY][
+            "call_123"
+        ]
+        == "func_123"
+    )
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(response)
+    msg = cast(AIMessage, result.generations[0].message)
+    assert msg.tool_calls
+    assert msg.content == [
+        {
+            "type": "function_call",
+            "id": "func_123",
+            "name": "get_weather",
+            "arguments": '{"location": "New York", "unit": "celsius"}',
+            "call_id": "call_123",
+        }
+    ]
+
+
+def test__construct_lc_result_from_responses_api_function_call_invalid_json() -> None:
+    """Test a response with an invalid JSON function call."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="get_weather",
+                arguments='{"location": "New York", "unit": "celsius"',
+                # Missing closing brace
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    msg: AIMessage = cast(AIMessage, result.generations[0].message)
+    assert len(msg.invalid_tool_calls) == 1
+    assert msg.invalid_tool_calls[0]["type"] == "invalid_tool_call"
+    assert msg.invalid_tool_calls[0]["name"] == "get_weather"
+    assert msg.invalid_tool_calls[0]["id"] == "call_123"
+    assert (
+        msg.invalid_tool_calls[0]["args"]
+        == '{"location": "New York", "unit": "celsius"'
+    )
+    assert "error" in msg.invalid_tool_calls[0]
+    assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
+
+
+def test__construct_lc_result_from_responses_api_complex_response() -> None:
+    """Test a complex response with multiple output types."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text",
+                        text="Here's the information you requested:",
+                        annotations=[],
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            ),
+            ResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="get_weather",
+                arguments='{"location": "New York"}',
+            ),
+        ],
+        metadata={"key1": "value1", "key2": "value2"},
+        incomplete_details=IncompleteDetails(reason="max_output_tokens"),
+        status="completed",
+        user="user_123",
+    )
+
+    # v0
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    # Check message content
+    assert result.generations[0].message.content == [
+        {
+            "type": "text",
+            "text": "Here's the information you requested:",
+            "annotations": [],
+        }
+    ]
+
+    # Check tool calls
+    msg: AIMessage = cast(AIMessage, result.generations[0].message)
+    assert len(msg.tool_calls) == 1
+    assert msg.tool_calls[0]["name"] == "get_weather"
+
+    # Check metadata
+    assert result.generations[0].message.response_metadata["id"] == "resp_123"
+    assert result.generations[0].message.response_metadata["metadata"] == {
+        "key1": "value1",
+        "key2": "value2",
+    }
+    assert result.generations[0].message.response_metadata["incomplete_details"] == {
+        "reason": "max_output_tokens"
+    }
+    assert result.generations[0].message.response_metadata["status"] == "completed"
+    assert result.generations[0].message.response_metadata["user"] == "user_123"
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(response)
+    msg = cast(AIMessage, result.generations[0].message)
+    assert msg.response_metadata["metadata"] == {"key1": "value1", "key2": "value2"}
+    assert msg.content == [
+        {
+            "type": "text",
+            "text": "Here's the information you requested:",
+            "annotations": [],
+            "id": "msg_123",
+        },
+        {
+            "type": "function_call",
+            "id": "func_123",
+            "call_id": "call_123",
+            "name": "get_weather",
+            "arguments": '{"location": "New York"}',
+        },
+    ]
+
+
+def test__construct_lc_result_from_responses_api_no_usage_metadata() -> None:
+    """Test a response without usage metadata."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="Hello, world!", annotations=[]
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            )
+        ],
+        # No usage field
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    assert cast(AIMessage, result.generations[0].message).usage_metadata is None
+
+
+def test__construct_lc_result_from_responses_api_apply_patch_response() -> None:
+    """Test a response with apply_patch output."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseApplyPatchToolCall(
+                id="apply_patch_123",
+                type="apply_patch_call",
+                call_id="call_123",
+                operation=OperationCreateFile(
+                    type="create_file",
+                    path="hello.txt",
+                    diff="+hello\n",
+                ),
+                status="completed",
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    message = cast(AIMessage, result.generations[0].message)
+    assert message.content == [
+        {
+            "type": "apply_patch_call",
+            "id": "apply_patch_123",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\n",
+            },
+            "status": "completed",
+        }
+    ]
+    assert message.tool_calls == []
+    assert message.invalid_tool_calls == []
+
+
+def test__construct_lc_result_from_responses_api_apply_patch_call_output() -> None:
+    """Test a response with apply_patch_call_output output."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseApplyPatchToolCallOutput(
+                id="apply_patch_output_123",
+                type="apply_patch_call_output",
+                call_id="call_123",
+                status="completed",
+                output="Created hello.txt",
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    message = result.generations[0].message
+    assert message.content == [
+        {
+            "type": "apply_patch_call_output",
+            "id": "apply_patch_output_123",
+            "call_id": "call_123",
+            "status": "completed",
+            "output": "Created hello.txt",
+        }
+    ]
+
+
+def test__construct_responses_api_input_apply_patch_round_trip() -> None:
+    """Test apply_patch content blocks are preserved when sent back as input."""
+    messages = [
+        AIMessage(
+            content=[
+                {
+                    "type": "apply_patch_call",
+                    "call_id": "call_123",
+                    "operation": {
+                        "type": "create_file",
+                        "path": "hello.txt",
+                        "diff": "+hello\\n",
+                    },
+                    "status": "completed",
+                }
+            ]
+        ),
+        HumanMessage(
+            content=[
+                {
+                    "type": "apply_patch_call_output",
+                    "call_id": "call_123",
+                    "status": "completed",
+                    "output": "Created hello.txt",
+                }
+            ]
+        ),
+    ]
+
+    result = _construct_responses_api_input(messages)
+
+    assert result == [
+        {
+            "type": "apply_patch_call",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\\n",
+            },
+            "status": "completed",
+        },
+        {
+            "type": "apply_patch_call_output",
+            "call_id": "call_123",
+            "status": "completed",
+            "output": "Created hello.txt",
+        },
+    ]
+
+
+def test__convert_responses_chunk_to_generation_chunk_apply_patch_response() -> None:
+    """Test streamed apply_patch output item is preserved in message chunks."""
+    chunk = MagicMock()
+    chunk.type = "response.output_item.done"
+    chunk.output_index = 0
+    chunk.item = ResponseApplyPatchToolCall(
+        id="apply_patch_123",
+        type="apply_patch_call",
+        call_id="call_123",
+        operation=OperationCreateFile(
+            type="create_file",
+            path="hello.txt",
+            diff="+hello\n",
+        ),
+        status="completed",
+    )
+
+    _, _, _, generation_chunk = _convert_responses_chunk_to_generation_chunk(
+        chunk,
+        current_index=-1,
+        current_output_index=-1,
+        current_sub_index=-1,
+    )
+
+    assert generation_chunk is not None
+    assert generation_chunk.message.content == [
+        {
+            "type": "apply_patch_call",
+            "id": "apply_patch_123",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\n",
+            },
+            "status": "completed",
+            "index": 0,
+        }
+    ]
+
+
+def test__construct_lc_result_from_responses_api_web_search_response() -> None:
+    """Test a response with web search output."""
+    from openai.types.responses.response_function_web_search import (
+        ResponseFunctionWebSearch,
+    )
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionWebSearch(
+                id="websearch_123",
+                type="web_search_call",
+                status="completed",
+                action=ActionSearch(type="search", query="search query"),
+            )
+        ],
+    )
+
+    # v0
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    assert "tool_outputs" in result.generations[0].message.additional_kwargs
+    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["type"]
+        == "web_search_call"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["id"]
+        == "websearch_123"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["status"]
+        == "completed"
+    )
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(response)
+    assert result.generations[0].message.content == [
+        {
+            "type": "web_search_call",
+            "id": "websearch_123",
+            "status": "completed",
+            "action": {"query": "search query", "type": "search"},
+        }
+    ]
+
+
+def test__construct_lc_result_from_responses_api_file_search_response() -> None:
+    """Test a response with file search output."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFileSearchToolCall(
+                id="filesearch_123",
+                type="file_search_call",
+                status="completed",
+                queries=["python code", "langchain"],
+                results=[
+                    Result(
+                        file_id="file_123",
+                        filename="example.py",
+                        score=0.95,
+                        text="def hello_world() -> None:\n    print('Hello, world!')",
+                        attributes={"language": "python", "size": 42},
+                    )
+                ],
+            )
+        ],
+    )
+
+    # v0
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    assert "tool_outputs" in result.generations[0].message.additional_kwargs
+    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["type"]
+        == "file_search_call"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["id"]
+        == "filesearch_123"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["status"]
+        == "completed"
+    )
+    assert result.generations[0].message.additional_kwargs["tool_outputs"][0][
+        "queries"
+    ] == ["python code", "langchain"]
+    assert (
+        len(
+            result.generations[0].message.additional_kwargs["tool_outputs"][0][
+                "results"
+            ]
+        )
+        == 1
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["results"][
+            0
+        ]["file_id"]
+        == "file_123"
+    )
+    assert (
+        result.generations[0].message.additional_kwargs["tool_outputs"][0]["results"][
+            0
+        ]["score"]
+        == 0.95
+    )
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(response)
+    assert result.generations[0].message.content == [
+        {
+            "type": "file_search_call",
+            "id": "filesearch_123",
+            "status": "completed",
+            "queries": ["python code", "langchain"],
+            "results": [
+                {
+                    "file_id": "file_123",
+                    "filename": "example.py",
+                    "score": 0.95,
+                    "text": "def hello_world() -> None:\n    print('Hello, world!')",
+                    "attributes": {"language": "python", "size": 42},
+                }
+            ],
+        }
+    ]
+
+
+def test__construct_lc_result_from_responses_api_mixed_search_responses() -> None:
+    """Test a response with both web search and file search outputs."""
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="Here's what I found:", annotations=[]
+                    )
+                ],
+                role="assistant",
+                status="completed",
+            ),
+            ResponseFunctionWebSearch(
+                id="websearch_123",
+                type="web_search_call",
+                status="completed",
+                action=ActionSearch(type="search", query="search query"),
+            ),
+            ResponseFileSearchToolCall(
+                id="filesearch_123",
+                type="file_search_call",
+                status="completed",
+                queries=["python code"],
+                results=[
+                    Result(
+                        file_id="file_123",
+                        filename="example.py",
+                        score=0.95,
+                        text="def hello_world() -> None:\n    print('Hello, world!')",
+                    )
+                ],
+            ),
+        ],
+    )
+
+    # v0
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+
+    # Check message content
+    assert result.generations[0].message.content == [
+        {"type": "text", "text": "Here's what I found:", "annotations": []}
+    ]
+
+    # Check tool outputs
+    assert "tool_outputs" in result.generations[0].message.additional_kwargs
+    assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 2
+
+    # Check web search output
+    web_search = next(
+        output
+        for output in result.generations[0].message.additional_kwargs["tool_outputs"]
+        if output["type"] == "web_search_call"
+    )
+    assert web_search["id"] == "websearch_123"
+    assert web_search["status"] == "completed"
+
+    # Check file search output
+    file_search = next(
+        output
+        for output in result.generations[0].message.additional_kwargs["tool_outputs"]
+        if output["type"] == "file_search_call"
+    )
+    assert file_search["id"] == "filesearch_123"
+    assert file_search["queries"] == ["python code"]
+    assert file_search["results"][0]["filename"] == "example.py"
+
+    # responses/v1
+    result = _construct_lc_result_from_responses_api(response)
+    assert result.generations[0].message.content == [
+        {
+            "type": "text",
+            "text": "Here's what I found:",
+            "annotations": [],
+            "id": "msg_123",
+        },
+        {
+            "type": "web_search_call",
+            "id": "websearch_123",
+            "status": "completed",
+            "action": {"type": "search", "query": "search query"},
+        },
+        {
+            "type": "file_search_call",
+            "id": "filesearch_123",
+            "queries": ["python code"],
+            "results": [
+                {
+                    "file_id": "file_123",
+                    "filename": "example.py",
+                    "score": 0.95,
+                    "text": "def hello_world() -> None:\n    print('Hello, world!')",
+                }
+            ],
+            "status": "completed",
+        },
+    ]
+
+
+def test__construct_responses_api_input_human_message_with_text_blocks_conversion() -> (
+    None
+):
+    """Test that human messages with text blocks are properly converted."""
+    messages: list = [
+        HumanMessage(content=[{"type": "text", "text": "What's in this image?"}])
+    ]
+    result = _construct_responses_api_input(messages)
+
+    assert len(result) == 1
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "user"
+    assert isinstance(result[0]["content"], list)
+    assert len(result[0]["content"]) == 1
+    assert result[0]["content"][0]["type"] == "input_text"
+    assert result[0]["content"][0]["text"] == "What's in this image?"
+
+
+def test__construct_responses_api_input_multiple_message_components() -> None:
+    """Test that human messages with text blocks are properly converted."""
+    # v0
+    messages = [
+        AIMessage(
+            content=[{"type": "text", "text": "foo"}, {"type": "text", "text": "bar"}],
+            id="msg_123",
+            response_metadata={"id": "resp_123"},
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+    assert result == [
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+                {"type": "output_text", "text": "foo", "annotations": []},
+                {"type": "output_text", "text": "bar", "annotations": []},
+            ],
+            "id": "msg_123",
+        }
+    ]
+
+    # responses/v1
+    messages = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "foo", "id": "msg_123"},
+                {"type": "text", "text": "bar", "id": "msg_123"},
+                {"type": "refusal", "refusal": "I refuse.", "id": "msg_123"},
+                {"type": "text", "text": "baz", "id": "msg_234"},
+            ]
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+
+    assert result == [
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+                {"type": "output_text", "text": "foo", "annotations": []},
+                {"type": "output_text", "text": "bar", "annotations": []},
+                {"type": "refusal", "refusal": "I refuse."},
+            ],
+            "id": "msg_123",
+        },
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "baz", "annotations": []}],
+            "id": "msg_234",
+        },
+    ]
+
+
+def test__construct_responses_api_input_skips_blocks_without_text() -> None:
+    """Test that blocks without 'text' key are skipped."""
+    # Test case: block with type "text" but missing "text" key
+    messages = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "valid text", "id": "msg_123"},
+                {"type": "text", "id": "msg_123"},  # Missing "text" key
+                {"type": "output_text", "text": "valid output", "id": "msg_123"},
+                {"type": "output_text", "id": "msg_123"},  # Missing "text" key
+            ]
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+
+    # Should only include blocks with valid text content
+    assert len(result) == 1
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "assistant"
+    assert len(result[0]["content"]) == 2
+    assert result[0]["content"][0] == {
+        "type": "output_text",
+        "text": "valid text",
+        "annotations": [],
+    }
+    assert result[0]["content"][1] == {
+        "type": "output_text",
+        "text": "valid output",
+        "annotations": [],
+    }
+
+
+def test_responses_api_payload_drops_lc_auto_ids() -> None:
+    """LangChain-auto-generated (`lc_`) IDs must not be forwarded to OpenAI.
+
+    The Responses API validates provider-issued message IDs (expects `msg_...`),
+    so synthetic AI messages built from `create_text_block` (which assigns an
+    `lc_`-prefixed ID) previously triggered a 400. See issue #39113.
+    """
+    text_block = types.create_text_block("The capital of France is Paris.")
+    assert text_block["id"].startswith("lc_")
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    payload = llm._get_request_payload([AIMessage(content_blocks=[text_block])])
+
+    input_ = payload["input"]
+    assert len(input_) == 1
+    assert input_[0]["type"] == "message"
+    assert input_[0]["role"] == "assistant"
+    # The `lc_` ID is dropped rather than forwarded to OpenAI.
+    assert "id" not in input_[0]
+    assert input_[0]["content"] == [
+        {
+            "type": "output_text",
+            "text": "The capital of France is Paris.",
+            "annotations": [],
+        }
+    ]
+
+
+def test__construct_responses_api_input_human_message_with_image_url_conversion() -> (
+    None
+):
+    """Test that human messages with image_url blocks are properly converted."""
+    messages: list = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://example.com/image.jpg",
+                        "detail": "high",
+                    },
+                },
+            ]
+        )
+    ]
+    result = _construct_responses_api_input(messages)
+
+    assert len(result) == 1
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "user"
+    assert isinstance(result[0]["content"], list)
+    assert len(result[0]["content"]) == 2
+
+    # Check text block conversion
+    assert result[0]["content"][0]["type"] == "input_text"
+    assert result[0]["content"][0]["text"] == "What's in this image?"
+
+    # Check image block conversion
+    assert result[0]["content"][1]["type"] == "input_image"
+    assert result[0]["content"][1]["image_url"] == "https://example.com/image.jpg"
+    assert result[0]["content"][1]["detail"] == "high"
+
+
+def test__construct_responses_api_input_store_false_replays_stateless_history() -> None:
+    ai_message = AIMessage(
+        content=[
+            # Dropped: no encrypted content to replay, in both shapes it can take.
+            {"type": "reasoning", "id": "rs_123", "summary": []},
+            {"type": "reasoning", "encrypted_content": ""},
+            {
+                "type": "reasoning",
+                "id": "rs_789",
+                "summary": [],
+                "encrypted_content": "encrypted-reasoning",
+            },
+            {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+        ],
+        response_metadata={"id": "resp_123"},
+    )
+
+    result = _construct_responses_api_input([ai_message], store=False)
+
+    assert result == [
+        {
+            "type": "reasoning",
+            "id": "rs_789",
+            "summary": [],
+            "encrypted_content": "encrypted-reasoning",
+        },
+        {
+            "type": "message",
+            "content": [
+                {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+            ],
+            "role": "assistant",
+        },
+    ]
+
+
+@pytest.mark.parametrize("store", [None, True])
+def test__construct_responses_api_input_store_enabled_keeps_item_ids(
+    store: bool | None,
+) -> None:
+    ai_message = AIMessage(
+        content=[
+            {"type": "reasoning", "id": "rs_123", "summary": []},
+            {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+        ],
+        response_metadata={"id": "resp_123"},
+    )
+
+    result = _construct_responses_api_input([ai_message], store=store)
+
+    assert result == [
+        {"type": "reasoning", "id": "rs_123", "summary": []},
+        {
+            "type": "message",
+            "content": [
+                {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+            ],
+            "role": "assistant",
+            "id": "msg_123",
+        },
+    ]
+
+
+def test__construct_responses_api_input_store_false_keeps_full_tool_call_items() -> (
+    None
+):
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "function_call",
+                "name": "get_weather",
+                "arguments": '{"location": "San Francisco"}',
+                "call_id": "call_123",
+                "id": "fc_456",
+            }
+        ],
+        tool_calls=[
+            {
+                "id": "call_123",
+                "name": "get_weather",
+                "args": {"location": "San Francisco"},
+                "type": "tool_call",
+            }
+        ],
+    )
+
+    result = _construct_responses_api_input([ai_message], store=False)
+
+    assert result == [
+        {
+            "type": "function_call",
+            "name": "get_weather",
+            "arguments": '{"location": "San Francisco"}',
+            "call_id": "call_123",
+            "id": "fc_456",
+        }
+    ]
+
+
+def test__construct_responses_api_input_ai_message_with_tool_calls() -> None:
+    """Test that AI messages with tool calls are properly converted."""
+    tool_calls = [
+        {
+            "id": "call_123",
+            "name": "get_weather",
+            "args": {"location": "San Francisco"},
+            "type": "tool_call",
+        }
+    ]
+
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "function_call",
+                "name": "get_weather",
+                "arguments": '{"location": "San Francisco"}',
+                "call_id": "call_123",
+                "id": "fc_456",
+            }
+        ],
+        tool_calls=tool_calls,
+    )
+
+    result = _construct_responses_api_input([ai_message])
+
+    assert len(result) == 1
+    assert result[0]["type"] == "function_call"
+    assert result[0]["name"] == "get_weather"
+    assert result[0]["arguments"] == '{"location": "San Francisco"}'
+    assert result[0]["call_id"] == "call_123"
+    assert result[0]["id"] == "fc_456"
+
+    # Message with only tool calls attribute provided
+    ai_message = AIMessage(content="", tool_calls=tool_calls)
+
+    result = _construct_responses_api_input([ai_message])
+
+    assert len(result) == 1
+    assert result[0]["type"] == "function_call"
+    assert result[0]["name"] == "get_weather"
+    assert result[0]["arguments"] == '{"location": "San Francisco"}'
+    assert result[0]["call_id"] == "call_123"
+    assert "id" not in result[0]
+
+
+def test__construct_responses_api_input_ai_message_with_tool_calls_and_content() -> (
+    None
+):
+    """Test that AI messages with both tool calls and content are properly converted."""
+    tool_calls = [
+        {
+            "id": "call_123",
+            "name": "get_weather",
+            "args": {"location": "San Francisco"},
+            "type": "tool_call",
+        }
+    ]
+
+    # Content blocks
+    ai_message = AIMessage(
+        content=[
+            {"type": "text", "text": "I'll check the weather for you."},
+            {
+                "type": "function_call",
+                "name": "get_weather",
+                "arguments": '{"location": "San Francisco"}',
+                "call_id": "call_123",
+                "id": "fc_456",
+            },
+        ],
+        tool_calls=tool_calls,
+    )
+
+    result = _construct_responses_api_input([ai_message])
+
+    assert len(result) == 2
+
+    assert result[0]["role"] == "assistant"
+    assert result[0]["content"] == [
+        {
+            "type": "output_text",
+            "text": "I'll check the weather for you.",
+            "annotations": [],
+        }
+    ]
+
+    assert result[1]["type"] == "function_call"
+    assert result[1]["name"] == "get_weather"
+    assert result[1]["arguments"] == '{"location": "San Francisco"}'
+    assert result[1]["call_id"] == "call_123"
+    assert result[1]["id"] == "fc_456"
+
+    # String content
+    ai_message = AIMessage(
+        content="I'll check the weather for you.", tool_calls=tool_calls
+    )
+
+    result = _construct_responses_api_input([ai_message])
+
+    assert len(result) == 2
+
+    assert result[0]["role"] == "assistant"
+    assert result[0]["content"] == [
+        {
+            "type": "output_text",
+            "text": "I'll check the weather for you.",
+            "annotations": [],
+        }
+    ]
+
+    assert result[1]["type"] == "function_call"
+    assert result[1]["name"] == "get_weather"
+    assert result[1]["arguments"] == '{"location": "San Francisco"}'
+    assert result[1]["call_id"] == "call_123"
+    assert "id" not in result[1]
+
+
+def test__construct_responses_api_input_tool_message_conversion() -> None:
+    """Test that tool messages are properly converted to function_call_output."""
+    messages = [
+        ToolMessage(
+            content='{"temperature": 72, "conditions": "sunny"}',
+            tool_call_id="call_123",
+        )
+    ]
+
+    result = _construct_responses_api_input(messages)
+
+    assert len(result) == 1
+    assert result[0]["type"] == "function_call_output"
+    assert result[0]["output"] == '{"temperature": 72, "conditions": "sunny"}'
+    assert result[0]["call_id"] == "call_123"
+
+
+def test__construct_responses_api_input_multiple_message_types() -> None:
+    """Test conversion of a conversation with multiple message types."""
+    messages = [
+        SystemMessage(content="You are a helpful assistant."),
+        SystemMessage(
+            content=[{"type": "text", "text": "You are a very helpful assistant!"}]
+        ),
+        HumanMessage(content="What's the weather in San Francisco?"),
+        HumanMessage(
+            content=[{"type": "text", "text": "What's the weather in San Francisco?"}]
+        ),
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "id": "call_123",
+                    "name": "get_weather",
+                    "args": {"location": "San Francisco"},
+                }
+            ],
+        ),
+        ToolMessage(
+            content='{"temperature": 72, "conditions": "sunny"}',
+            tool_call_id="call_123",
+        ),
+        AIMessage(content="The weather in San Francisco is 72°F and sunny."),
+        AIMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "The weather in San Francisco is 72°F and sunny.",
+                }
+            ]
+        ),
+    ]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
+
+    result = _construct_responses_api_input(messages)
+
+    assert len(result) == len(messages)
+
+    # Check system message
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "system"
+    assert result[0]["content"] == "You are a helpful assistant."
+
+    assert result[1]["type"] == "message"
+    assert result[1]["role"] == "system"
+    assert result[1]["content"] == [
+        {"type": "input_text", "text": "You are a very helpful assistant!"}
+    ]
+
+    # Check human message
+    assert result[2]["type"] == "message"
+    assert result[2]["role"] == "user"
+    assert result[2]["content"] == "What's the weather in San Francisco?"
+    assert result[3]["type"] == "message"
+    assert result[3]["role"] == "user"
+    assert result[3]["content"] == [
+        {"type": "input_text", "text": "What's the weather in San Francisco?"}
+    ]
+
+    # Check function call
+    assert result[4]["type"] == "function_call"
+    assert result[4]["name"] == "get_weather"
+    assert result[4]["arguments"] == '{"location": "San Francisco"}'
+    assert result[4]["call_id"] == "call_123"
+
+    # Check function call output
+    assert result[5]["type"] == "function_call_output"
+    assert result[5]["output"] == '{"temperature": 72, "conditions": "sunny"}'
+    assert result[5]["call_id"] == "call_123"
+
+    assert result[6]["role"] == "assistant"
+    assert result[6]["content"] == [
+        {
+            "type": "output_text",
+            "text": "The weather in San Francisco is 72°F and sunny.",
+            "annotations": [],
+        }
+    ]
+
+    assert result[7]["role"] == "assistant"
+    assert result[7]["content"] == [
+        {
+            "type": "output_text",
+            "text": "The weather in San Francisco is 72°F and sunny.",
+            "annotations": [],
+        }
+    ]
+
+    # assert no mutation has occurred
+    assert messages_copy == messages
+
+    # Test dict messages
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    message_dicts: list = [
+        {"role": "developer", "content": "This is a developer message."},
+        {
+            "role": "developer",
+            "content": [{"type": "text", "text": "This is a developer message!"}],
+        },
+    ]
+    payload = llm._get_request_payload(message_dicts)
+    result = payload["input"]
+    assert len(result) == 2
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "developer"
+    assert result[0]["content"] == "This is a developer message."
+    assert result[1]["type"] == "message"
+    assert result[1]["role"] == "developer"
+    assert result[1]["content"] == [
+        {"type": "input_text", "text": "This is a developer message!"}
+    ]
+
+
+def test__construct_responses_api_input_message_type_on_all_roles() -> None:
+    """Test that user/system/developer messages include type: 'message'.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/35688.
+    Strict OpenAI-compatible endpoints (e.g. Azure AI Foundry) require the
+    'type' field on every input item; omitting it causes HTTP 400.
+    """
+    messages: list = [
+        SystemMessage(content="You are helpful."),
+        HumanMessage(content="Hello"),
+        HumanMessage(content=[{"type": "text", "text": "Hello again"}]),
+    ]
+    result = _construct_responses_api_input(messages)
+
+    assert len(result) == 3
+    for item in result:
+        assert item["type"] == "message", (
+            f"Expected type='message' for role={item['role']}, got {item.get('type')!r}"
+        )
+
+    # Also test developer messages via dict input
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    payload = llm._get_request_payload(
+        [{"role": "developer", "content": "Translate English to Italian"}]
+    )
+    result = payload["input"]
+    assert len(result) == 1
+    assert result[0]["type"] == "message"
+    assert result[0]["role"] == "developer"
+
+
+def test_service_tier() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, service_tier="flex")
+    payload = llm._get_request_payload([HumanMessage("Hello")])
+    assert payload["service_tier"] == "flex"
+
+
+class FakeTracer(BaseTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.chat_model_start_inputs: list = []
+
+    def _persist_run(self, run: Run) -> None:
+        """Persist a run."""
+
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
+        self.chat_model_start_inputs.append({"args": args, "kwargs": kwargs})
+        return super().on_chat_model_start(*args, **kwargs)
+
+
+def test_mcp_tracing() -> None:
+    # Test we exclude sensitive information from traces
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL, use_responses_api=True, output_version="responses/v1"
+    )
+
+    tracer = FakeTracer()
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MagicMock:
+        mock_raw_response = MagicMock()
+        mock_raw_response.parse.return_value = Response(
+            id="resp_123",
+            created_at=1234567890,
+            model=OPENAI_TEST_MODEL,
+            object="response",
+            parallel_tool_calls=True,
+            tools=[],
+            tool_choice="auto",
+            output=[
+                ResponseOutputMessage(
+                    type="message",
+                    id="msg_123",
+                    content=[
+                        ResponseOutputText(
+                            type="output_text", text="Test response", annotations=[]
+                        )
+                    ],
+                    role="assistant",
+                    status="completed",
+                )
+            ],
+        )
+        return mock_raw_response
+
+    mock_client.responses.with_raw_response.create = mock_create
+    input_message = HumanMessage("Test query")
+    tools = [
+        {
+            "type": "mcp",
+            "server_label": "deepwiki",
+            "server_url": "https://mcp.deepwiki.com/mcp",
+            "require_approval": "always",
+            "headers": {"Authorization": "Bearer HEADER_SECRET"},
+            "authorization": "Bearer AUTHORIZATION_SECRET",
+        }
+    ]
+    with patch.object(llm, "root_client", mock_client):
+        llm_with_tools = llm.bind_tools(tools)
+        _ = llm_with_tools.invoke([input_message], config={"callbacks": [tracer]})
+
+    # Test credentials are not traced
+    assert len(tracer.chat_model_start_inputs) == 1
+    invocation_params = tracer.chat_model_start_inputs[0]["kwargs"]["invocation_params"]
+    assert invocation_params["tools"][0]["headers"] == "**REDACTED**"
+    assert invocation_params["tools"][0]["authorization"] == "**REDACTED**"
+    for substring in [
+        "Authorization",
+        "Bearer",
+        "HEADER_SECRET",
+        "AUTHORIZATION_SECRET",
+    ]:
+        assert substring not in str(tracer.chat_model_start_inputs)
+
+    # Test credentials are correctly propagated to request
+    payload = llm_with_tools._get_request_payload([input_message], tools=tools)  # type: ignore[attr-defined]
+    assert payload["tools"][0]["headers"]["Authorization"] == "Bearer HEADER_SECRET"
+    assert payload["tools"][0]["authorization"] == "Bearer AUTHORIZATION_SECRET"
+
+
+def test_compat_responses_v03() -> None:
+    # Check compatibility with v0.3 message format
+    message_v03 = AIMessage(
+        content=[
+            {"type": "text", "text": "Hello, world!", "annotations": [{"type": "foo"}]}
+        ],
+        additional_kwargs={
+            "reasoning": {
+                "type": "reasoning",
+                "id": "rs_123",
+                "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
+            },
+            "tool_outputs": [
+                {
+                    "type": "web_search_call",
+                    "id": "websearch_123",
+                    "status": "completed",
+                }
+            ],
+            "refusal": "I cannot assist with that.",
+        },
+        response_metadata={"id": "resp_123"},
+        id="msg_123",
+    )
+
+    message = _convert_from_v03_ai_message(message_v03)
+    expected = AIMessage(
+        content=[
+            {
+                "type": "reasoning",
+                "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
+                "id": "rs_123",
+            },
+            {
+                "type": "text",
+                "text": "Hello, world!",
+                "annotations": [{"type": "foo"}],
+                "id": "msg_123",
+            },
+            {"type": "refusal", "refusal": "I cannot assist with that."},
+            {"type": "web_search_call", "id": "websearch_123", "status": "completed"},
+        ],
+        response_metadata={"id": "resp_123"},
+        id="resp_123",
+    )
+    assert message == expected
+
+    ## Check no mutation
+    assert message != message_v03
+    assert len(message_v03.content) == 1
+    assert all(
+        item in message_v03.additional_kwargs
+        for item in ["reasoning", "tool_outputs", "refusal"]
+    )
+
+    # Convert back
+    message_v03_output = _convert_to_v03_ai_message(message)
+    assert message_v03_output == message_v03
+    assert message_v03_output is not message_v03
+
+
+def test_compat_responses_v03_apply_patch_tool_outputs() -> None:
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "Done.", "id": "msg_123"},
+            {
+                "type": "apply_patch_call",
+                "id": "apply_patch_123",
+                "call_id": "call_123",
+                "operation": {
+                    "type": "create_file",
+                    "path": "hello.txt",
+                    "diff": "+hello\n",
+                },
+                "status": "completed",
+            },
+            {
+                "type": "apply_patch_call_output",
+                "id": "apply_patch_output_123",
+                "call_id": "call_123",
+                "status": "completed",
+                "output": "Created hello.txt",
+            },
+        ],
+        id="resp_123",
+    )
+
+    message_v03_output = _convert_to_v03_ai_message(message)
+
+    assert message_v03_output.content == [{"type": "text", "text": "Done."}]
+    assert message_v03_output.additional_kwargs["tool_outputs"] == [
+        {
+            "type": "apply_patch_call",
+            "id": "apply_patch_123",
+            "call_id": "call_123",
+            "operation": {
+                "type": "create_file",
+                "path": "hello.txt",
+                "diff": "+hello\n",
+            },
+            "status": "completed",
+        },
+        {
+            "type": "apply_patch_call_output",
+            "id": "apply_patch_output_123",
+            "call_id": "call_123",
+            "status": "completed",
+            "output": "Created hello.txt",
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    ("message_v1", "expected"),
+    [
+        (
+            AIMessage(
+                [
+                    {"type": "reasoning", "reasoning": "Reasoning text"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "invalid_tool_call",
+                        "id": "call_234",
+                        "name": "get_weather",
+                        "args": '{"location":',
+                        "error": "Failed to parse tool call arguments as JSON",
+                    },
+                    {
+                        "type": "text",
+                        "text": "Hello, world!",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"}
+                        ],
+                    },
+                ],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+                invalid_tool_calls=[
+                    InvalidToolCall(
+                        id="call_234",
+                        name="get_weather",
+                        args='{"location":',
+                        error="Failed to parse tool call arguments as JSON",
+                        type="invalid_tool_call",
+                    )
+                ],
+            ),
+            AIMessage(
+                [{"type": "text", "text": "Hello, world!"}],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+                invalid_tool_calls=[
+                    InvalidToolCall(
+                        id="call_234",
+                        name="get_weather",
+                        args='{"location":',
+                        error="Failed to parse tool call arguments as JSON",
+                        type="invalid_tool_call",
+                    )
+                ],
+            ),
+        )
+    ],
+)
+def test_convert_from_v1_to_chat_completions(
+    message_v1: AIMessage, expected: AIMessage
+) -> None:
+    result = _convert_from_v1_to_chat_completions(message_v1)
+    assert result == expected
+    assert result.tool_calls == message_v1.tool_calls  # tool calls remain cached
+    assert result.invalid_tool_calls == message_v1.invalid_tool_calls
+
+    # Check no mutation
+    assert message_v1 != result
+
+
+@pytest.mark.parametrize(
+    ("message_v1", "expected"),
+    [
+        (
+            AIMessage(
+                content_blocks=[
+                    {"type": "reasoning", "id": "abc123"},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_2",
+                        "args": {"location": "New York"},
+                        "extras": {"item_id": "fc_123"},
+                    },
+                    {"type": "text", "text": "Hello "},
+                    {
+                        "type": "text",
+                        "text": "world",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"},
+                            {
+                                "type": "citation",
+                                "title": "my doc",
+                                "extras": {"file_id": "file_123", "index": 1},
+                            },
+                            {
+                                "type": "non_standard_annotation",
+                                "value": {"bar": "baz"},
+                            },
+                        ],
+                    },
+                    {"type": "image", "base64": "...", "id": "ig_123"},
+                    {
+                        "type": "server_tool_call",
+                        "name": "file_search",
+                        "id": "fs_123",
+                        "args": {"queries": ["query for file search"]},
+                    },
+                    {
+                        "type": "server_tool_result",
+                        "tool_call_id": "fs_123",
+                        "output": [{"file_id": "file-123"}],
+                        "status": "success",
+                    },
+                    {
+                        "type": "non_standard",
+                        "value": {"type": "something_else", "foo": "bar"},
+                    },
+                ],
+                id="resp123",
+            ),
+            [
+                {"type": "reasoning", "id": "abc123", "summary": []},
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "summary": [
+                        {"type": "summary_text", "text": "foo "},
+                        {"type": "summary_text", "text": "bar"},
+                    ],
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_123",
+                    "name": "get_weather",
+                    "arguments": '{"location":"San Francisco"}',
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_234",
+                    "name": "get_weather_2",
+                    "arguments": '{"location":"New York"}',
+                    "id": "fc_123",
+                },
+                {"type": "text", "text": "Hello "},
+                {
+                    "type": "text",
+                    "text": "world",
+                    "annotations": [
+                        {"type": "url_citation", "url": "https://example.com"},
+                        {
+                            "type": "file_citation",
+                            "filename": "my doc",
+                            "index": 1,
+                            "file_id": "file_123",
+                        },
+                        {"bar": "baz"},
+                    ],
+                },
+                {"type": "image_generation_call", "id": "ig_123", "result": "..."},
+                {
+                    "type": "file_search_call",
+                    "id": "fs_123",
+                    "queries": ["query for file search"],
+                    "results": [{"file_id": "file-123"}],
+                    "status": "completed",
+                },
+                {"type": "something_else", "foo": "bar"},
+            ],
+        )
+    ],
+)
+def test_convert_from_v1_to_responses(
+    message_v1: AIMessage, expected: list[dict[str, Any]]
+) -> None:
+    tcs: list[types.ToolCall] = [
+        {
+            "type": "tool_call",
+            "name": tool_call["name"],
+            "args": tool_call["args"],
+            "id": tool_call.get("id"),
+        }
+        for tool_call in message_v1.tool_calls
+    ]
+    result = _convert_from_v1_to_responses(message_v1.content_blocks, tcs)
+    assert result == expected
+
+    # Check no mutation
+    assert message_v1 != result
+
+
+def test_convert_from_v1_to_responses_preserves_reasoning_item_boundaries() -> None:
+    content: list[types.ContentBlock] = [
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "reasoning": "first ",
+            "extras": {
+                "encrypted_content": "encrypted-123",
+                "status": "completed",
+            },
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "reasoning": "second",
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_456",
+            "reasoning": "third",
+            "extras": {
+                "encrypted_content": "encrypted-456",
+                "status": "incomplete",
+            },
+        },
+        {"type": "reasoning", "reasoning": "legacy "},
+        {"type": "reasoning", "reasoning": "reasoning"},
+        {"type": "reasoning", "id": "rs_789", "reasoning": "last"},
+        cast(
+            types.ContentBlock,
+            {
+                "type": "reasoning",
+                "id": "rs_native",
+                "summary": [{"type": "summary_text", "text": "already native"}],
+                "encrypted_content": "encrypted-native",
+            },
+        ),
+    ]
+
+    result = _convert_from_v1_to_responses(content, [])
+
+    assert result == [
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "summary": [
+                {"type": "summary_text", "text": "first "},
+                {"type": "summary_text", "text": "second"},
+            ],
+            "encrypted_content": "encrypted-123",
+            "status": "completed",
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_456",
+            "summary": [{"type": "summary_text", "text": "third"}],
+            "encrypted_content": "encrypted-456",
+            "status": "incomplete",
+        },
+        {
+            "type": "reasoning",
+            "summary": [
+                {"type": "summary_text", "text": "legacy "},
+                {"type": "summary_text", "text": "reasoning"},
+            ],
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_789",
+            "summary": [{"type": "summary_text", "text": "last"}],
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_native",
+            "summary": [{"type": "summary_text", "text": "already native"}],
+            "encrypted_content": "encrypted-native",
+        },
+    ]
+
+
+def test_convert_from_v1_to_responses_missing_type() -> None:
+    """Regression: blocks without 'type' should be skipped, not raise KeyError."""
+    content: list = [
+        {"type": "text", "text": "Hello", "annotations": []},
+        {"summary": [{"type": "summary_text", "text": "..."}]},  # no "type" key
+        {"index": 0},  # no "type" key
+    ]
+    result = _convert_from_v1_to_responses(content, [])
+    # Blocks without "type" should be skipped
+    assert len(result) == 1
+    assert result[0] == {"type": "text", "text": "Hello", "annotations": []}
+
+
+def test_v03_reasoning_without_type_roundtrip() -> None:
+    """Regression: v0.3 reasoning stored without 'type' key should roundtrip."""
+    message_v03 = AIMessage(
+        content=[
+            {"type": "text", "text": "Hello!", "annotations": []},
+        ],
+        additional_kwargs={
+            # Reasoning stored without "type" (as produced by streaming v0.3 path)
+            "reasoning": {
+                "id": "rs_123",
+                "summary": [{"type": "summary_text", "text": "Thinking..."}],
+            },
+        },
+        response_metadata={"id": "resp_123"},
+        id="msg_123",
+    )
+
+    converted = _convert_from_v03_ai_message(message_v03)
+
+    # Reasoning block should have "type" restored
+    reasoning_blocks = [
+        b
+        for b in converted.content
+        if isinstance(b, dict) and b.get("type") == "reasoning"
+    ]
+    assert len(reasoning_blocks) == 1
+    assert reasoning_blocks[0]["type"] == "reasoning"
+
+    # Full pipeline should not raise
+    result = _construct_responses_api_input([converted])
+    assert len(result) > 0
+
+
+def test_get_last_messages() -> None:
+    messages: list[BaseMessage] = [HumanMessage("Hello")]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    assert last_messages == [HumanMessage("Hello")]
+    assert previous_response_id is None
+
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+    ]
+
+    last_messages, previous_response_id = _get_last_messages(messages)
+    assert last_messages == [HumanMessage("How are you?")]
+    assert previous_response_id == "resp_123"
+
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+        AIMessage("Well thanks.", response_metadata={"id": "resp_456"}),
+        HumanMessage("Great."),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    assert last_messages == [HumanMessage("Great.")]
+    assert previous_response_id == "resp_456"
+
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("What's the weather?"),
+        AIMessage(
+            "",
+            response_metadata={"id": "resp_456"},
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "name": "get_weather",
+                    "id": "call_123",
+                    "args": {"location": "San Francisco"},
+                }
+            ],
+        ),
+        ToolMessage("It's sunny.", tool_call_id="call_123"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    assert last_messages == [ToolMessage("It's sunny.", tool_call_id="call_123")]
+    assert previous_response_id == "resp_456"
+
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+        AIMessage("Well thanks.", response_metadata={"id": "resp_456"}),
+        HumanMessage("Good."),
+        HumanMessage("Great."),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    assert last_messages == [HumanMessage("Good."), HumanMessage("Great.")]
+    assert previous_response_id == "resp_456"
+
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+    ]
+    last_messages, response_id = _get_last_messages(messages)
+    assert last_messages == []
+    assert response_id == "resp_123"
+
+
+def test_get_last_messages_with_mixed_response_metadata() -> None:
+    """Test that _get_last_messages correctly skips AIMessages without response_id."""
+    # Test case where the most recent AIMessage has no response_id,
+    # but an earlier AIMessage does have one
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),  # No response_metadata
+        HumanMessage("What's up?"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    # Should return messages after the AIMessage
+    # with response_id (not the most recent one)
+
+    assert last_messages == [
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),
+        HumanMessage("What's up?"),
+    ]
+    assert previous_response_id == "resp_123"
+
+    # Test case where no AIMessage has response_id
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!"),  # No response_metadata
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),  # No response_metadata
+        HumanMessage("What's up?"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    # Should return all messages when no AIMessage has response_id
+    assert last_messages == messages
+    assert previous_response_id is None
+
+
+def test_get_request_payload_use_previous_response_id() -> None:
+    # Default - don't use previous_response ID
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL, use_responses_api=True, output_version="responses/v1"
+    )
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+    ]
+    payload = llm._get_request_payload(messages)
+    assert "previous_response_id" not in payload
+    assert len(payload["input"]) == 3
+
+    # Use previous response ID
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        # Specifying use_previous_response_id automatically engages Responses API
+        use_previous_response_id=True,
+    )
+    payload = llm._get_request_payload(messages)
+    assert payload["previous_response_id"] == "resp_123"
+    assert len(payload["input"]) == 1
+
+    # Check single message
+    messages = [HumanMessage("Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "previous_response_id" not in payload
+    assert len(payload["input"]) == 1
+
+
+def test_make_computer_call_output_from_message() -> None:
+    # List content
+    tool_message = ToolMessage(
+        content=[
+            {"type": "input_image", "image_url": "data:image/png;base64,<image_data>"}
+        ],
+        tool_call_id="call_abc123",
+        additional_kwargs={"type": "computer_call_output"},
+    )
+    result = _make_computer_call_output_from_message(tool_message)
+
+    assert result == {
+        "type": "computer_call_output",
+        "call_id": "call_abc123",
+        "output": {
+            "type": "input_image",
+            "image_url": "data:image/png;base64,<image_data>",
+        },
+    }
+
+    # String content
+    tool_message = ToolMessage(
+        content="data:image/png;base64,<image_data>",
+        tool_call_id="call_abc123",
+        additional_kwargs={"type": "computer_call_output"},
+    )
+    result = _make_computer_call_output_from_message(tool_message)
+
+    assert result == {
+        "type": "computer_call_output",
+        "call_id": "call_abc123",
+        "output": {
+            "type": "input_image",
+            "image_url": "data:image/png;base64,<image_data>",
+        },
+    }
+
+    # Safety checks
+    tool_message = ToolMessage(
+        content=[
+            {"type": "input_image", "image_url": "data:image/png;base64,<image_data>"}
+        ],
+        tool_call_id="call_abc123",
+        additional_kwargs={
+            "type": "computer_call_output",
+            "acknowledged_safety_checks": [
+                {
+                    "id": "cu_sc_abc234",
+                    "code": "malicious_instructions",
+                    "message": "Malicious instructions detected.",
+                }
+            ],
+        },
+    )
+    result = _make_computer_call_output_from_message(tool_message)
+
+    assert result == {
+        "type": "computer_call_output",
+        "call_id": "call_abc123",
+        "output": {
+            "type": "input_image",
+            "image_url": "data:image/png;base64,<image_data>",
+        },
+        "acknowledged_safety_checks": [
+            {
+                "id": "cu_sc_abc234",
+                "code": "malicious_instructions",
+                "message": "Malicious instructions detected.",
+            }
+        ],
+    }
+
+
+def test_lc_tool_call_to_openai_tool_call_unicode() -> None:
+    """Test that Unicode characters in tool call args are preserved correctly."""
+    from langchain_openai.chat_models.base import _lc_tool_call_to_openai_tool_call
+
+    tool_call = ToolCall(
+        id="call_123",
+        name="create_customer",
+        args={"customer_name": "你好啊集团"},
+        type="tool_call",
+    )
+
+    result = _lc_tool_call_to_openai_tool_call(tool_call)
+
+    assert result["type"] == "function"
+    assert result["id"] == "call_123"
+    assert result["function"]["name"] == "create_customer"
+
+    # Ensure Unicode characters are preserved, not escaped as \\uXXXX
+    arguments_str = result["function"]["arguments"]
+    parsed_args = json.loads(arguments_str)
+    assert parsed_args["customer_name"] == "你好啊集团"
+    # Also ensure the raw JSON string contains Unicode, not escaped sequences
+    assert "你好啊集团" in arguments_str
+    assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
+
+
+def test_extra_body_parameter() -> None:
+    """Test that extra_body parameter is properly included in request payload."""
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key=SecretStr(
+            "test-api-key"
+        ),  # Set a fake API key to avoid validation error
+        extra_body={"ttl": 300, "custom_param": "test_value"},
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+
+    # Verify extra_body is included in the payload
+    assert "extra_body" in payload
+    assert payload["extra_body"]["ttl"] == 300
+    assert payload["extra_body"]["custom_param"] == "test_value"
+
+
+def test_extra_body_with_model_kwargs() -> None:
+    """Test that extra_body and model_kwargs work together correctly."""
+    llm = ChatOpenAI(
+        model=OPENAI_TEMPERATURE_CAPABLE_TEST_MODEL,
+        api_key=SecretStr(
+            "test-api-key"
+        ),  # Set a fake API key to avoid validation error
+        temperature=0.5,
+        extra_body={"ttl": 600},
+        model_kwargs={"custom_non_openai_param": "test_value"},
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+
+    # Verify both extra_body and model_kwargs are in payload
+    assert payload["extra_body"]["ttl"] == 600
+    assert payload["custom_non_openai_param"] == "test_value"
+    assert payload["temperature"] == 0.5
+
+
+@pytest.mark.parametrize("verbosity_format", ["model_kwargs", "top_level"])
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize("schema_format", ["pydantic", "dict"])
+def test_structured_output_verbosity(
+    verbosity_format: str, streaming: bool, schema_format: str
+) -> None:
+    class MySchema(BaseModel):
+        foo: str
+
+    if verbosity_format == "model_kwargs":
+        init_params: dict[str, Any] = {"model_kwargs": {"text": {"verbosity": "high"}}}
+    else:
+        init_params = {"verbosity": "high"}
+
+    if streaming:
+        init_params["streaming"] = True
+
+    llm = ChatOpenAI(model="gpt-5", use_responses_api=True, **init_params)
+
+    if schema_format == "pydantic":
+        schema: Any = MySchema
+    else:
+        schema = MySchema.model_json_schema()
+
+    structured_llm = llm.with_structured_output(schema)
+    sequence = cast(RunnableSequence, structured_llm)
+    binding = cast(RunnableBinding, sequence.first)
+    bound_llm = cast(ChatOpenAI, binding.bound)
+    bound_kwargs = binding.kwargs
+
+    messages = [HumanMessage(content="Hello")]
+    payload = bound_llm._get_request_payload(messages, **bound_kwargs)
+
+    # Verify that verbosity is present in `text` param
+    assert "text" in payload
+    assert "verbosity" in payload["text"]
+    assert payload["text"]["verbosity"] == "high"
+
+    # Verify that schema is passed correctly
+    if schema_format == "pydantic" and not streaming:
+        assert payload["text_format"] == schema
+    else:
+        assert "format" in payload["text"]
+        assert payload["text"]["format"]["type"] == "json_schema"
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_temperature(use_responses_api: bool) -> None:
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL, temperature=0.5, use_responses_api=use_responses_api
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload  # not supported for gpt-5 family models
+
+    llm = ChatOpenAI(
+        model="gpt-5-chat", temperature=0.5, use_responses_api=use_responses_api
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5  # gpt-5-chat is exception
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "GPT-5-NANO",
+        "GPT-5-2025-01-01",
+        "Gpt-5-Turbo",
+        "gPt-5-mini",
+    ],
+)
+def test_gpt_5_temperature_case_insensitive(
+    use_responses_api: bool, model_name: str
+) -> None:
+    llm = ChatOpenAI(
+        model=model_name, temperature=0.5, use_responses_api=use_responses_api
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    for chat_model in ["GPT-5-CHAT", "Gpt-5-Chat", "gpt-5-chat"]:
+        llm = ChatOpenAI(
+            model=chat_model, temperature=0.7, use_responses_api=use_responses_api
+        )
+        messages = [HumanMessage(content="Hello")]
+        payload = llm._get_request_payload(messages)
+        assert payload["temperature"] == 0.7
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_1_temperature_with_reasoning_effort_none(
+    use_responses_api: bool,
+) -> None:
+    """Test that temperature is preserved when reasoning_effort is explicitly 'none'."""
+    # Test with reasoning_effort='none' explicitly set
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning_effort="none",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test with reasoning={'effort': 'none'}
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning={"effort": "none"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5
+
+    # Test that temperature is restricted by default (no reasoning_effort)
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test that temperature is still restricted when reasoning_effort is something else
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning_effort="low",
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+    # Test with reasoning={'effort': 'low'}
+    llm = ChatOpenAI(
+        model="gpt-5.1",
+        temperature=0.5,
+        reasoning={"effort": "low"},
+        use_responses_api=use_responses_api,
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload
+
+
+def test_model_prefers_responses_api() -> None:
+    # Pro models (with and without date snapshots): Responses API only
+    assert _model_prefers_responses_api("gpt-5-pro")
+    assert _model_prefers_responses_api("gpt-5-pro-2025-10-06")
+    assert _model_prefers_responses_api("gpt-5.2-pro")
+    assert _model_prefers_responses_api("gpt-5.2-pro-2025-12-11")
+    assert _model_prefers_responses_api("gpt-5.4-pro")
+    assert _model_prefers_responses_api("gpt-5.4-pro-2026-03-05")
+    # Codex models: Responses API only
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    assert _model_prefers_responses_api("gpt-5.3-codex")
+    # These should not match
+    assert not _model_prefers_responses_api("gpt-5")
+    assert not _model_prefers_responses_api("gpt-5.1")
+    assert not _model_prefers_responses_api("gpt-5.4")
+    assert not _model_prefers_responses_api("o3-pro")
+    assert not _model_prefers_responses_api("gpt-4.1")
+    assert not _model_prefers_responses_api(None)
+
+
+def test_openai_structured_output_refusal_handling_responses_api() -> None:
+    """
+    Test that _oai_structured_outputs_parser raises OpenAIRefusalError
+    when the AIMessage contains a refusal block from OpenAI's Responses API.
+    """
+    ai_msg = AIMessage(
+        content=[
+            {
+                "id": "rs_fake_id",
+                "summary": [],
+                "type": "reasoning",
+                "encrypted_content": "fake_encrypted_content",
+            },
+            {
+                "type": "refusal",
+                "refusal": "refused content in string",
+                "id": "msg_fake_id",
+            },
+        ],
+    )
+
+    # schema does not matter in this issue
+    class MySchema(BaseModel):
+        foo: int
+
+    try:
+        _oai_structured_outputs_parser(ai_msg, MySchema)
+    except OpenAIRefusalError:
+        # OpenAIRefusalError was raised. This is the proper behavior.
+        pass
+    except ValueError as e:
+        pytest.fail(f"This is a wrong behavior. Error details: {e}")
+
+
+# Test fixtures for context overflow error tests
+_CONTEXT_OVERFLOW_ERROR_BODY = {
+    "error": {
+        "message": (
+            "Input tokens exceed the configured limit of 272000 tokens. Your messages "
+            "resulted in 300007 tokens. Please reduce the length of the messages."
+        ),
+        "type": "invalid_request_error",
+        "param": "messages",
+        "code": "context_length_exceeded",
+    }
+}
+_CONTEXT_OVERFLOW_BAD_REQUEST_ERROR = openai.BadRequestError(
+    message=_CONTEXT_OVERFLOW_ERROR_BODY["error"]["message"],
+    response=MagicMock(status_code=400),
+    body=_CONTEXT_OVERFLOW_ERROR_BODY,
+)
+_CONTEXT_OVERFLOW_API_ERROR = openai.APIError(
+    message=(
+        "Your input exceeds the context window of this model. Please adjust your input "
+        "and try again."
+    ),
+    request=MagicMock(),
+    body=None,
+)
+
+
+def test_context_overflow_error_invoke_sync() -> None:
+    """Test context overflow error on invoke (sync, chat completions API)."""
+    llm = ChatOpenAI()
+
+    with (  # noqa: PT012
+        patch.object(llm.client, "with_raw_response") as mock_client,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_client.create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    assert "Input tokens exceed the configured limit" in str(exc_info.value)
+
+
+def test_context_overflow_error_invoke_sync_responses_api() -> None:
+    """Test context overflow error on invoke (sync, responses API)."""
+    llm = ChatOpenAI(use_responses_api=True)
+
+    with (  # noqa: PT012
+        patch.object(llm.root_client.responses, "with_raw_response") as mock_client,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_client.create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    assert "Input tokens exceed the configured limit" in str(exc_info.value)
+
+
+async def test_context_overflow_error_invoke_async() -> None:
+    """Test context overflow error on invoke (async, chat completions API)."""
+    llm = ChatOpenAI()
+
+    with (  # noqa: PT012
+        patch.object(llm.async_client, "with_raw_response") as mock_client,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_client.create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        await llm.ainvoke([HumanMessage(content="test")])
+
+    assert "Input tokens exceed the configured limit" in str(exc_info.value)
+
+
+async def test_context_overflow_error_invoke_async_responses_api() -> None:
+    """Test context overflow error on invoke (async, responses API)."""
+    llm = ChatOpenAI(use_responses_api=True)
+
+    with (  # noqa: PT012
+        patch.object(
+            llm.root_async_client.responses, "with_raw_response"
+        ) as mock_client,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_client.create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        await llm.ainvoke([HumanMessage(content="test")])
+
+    assert "Input tokens exceed the configured limit" in str(exc_info.value)
+
+
+def test_context_overflow_error_stream_sync() -> None:
+    """Test context overflow error on stream (sync, chat completions API)."""
+    llm = ChatOpenAI()
+
+    with (  # noqa: PT012
+        patch.object(llm.client, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        list(llm.stream([HumanMessage(content="test")]))
+
+    assert "Input tokens exceed the configured limit" in str(exc_info.value)
+
+
+def test_context_overflow_error_stream_sync_responses_api() -> None:
+    """Test context overflow error on stream (sync, responses API)."""
+    llm = ChatOpenAI(use_responses_api=True)
+
+    with (  # noqa: PT012
+        patch.object(llm.root_client.responses, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_API_ERROR
+        list(llm.stream([HumanMessage(content="test")]))
+
+    assert "exceeds the context window" in str(exc_info.value)
+
+
+async def test_context_overflow_error_stream_async() -> None:
+    """Test context overflow error on stream (async, chat completions API)."""
+    llm = ChatOpenAI()
+
+    with (  # noqa: PT012
+        patch.object(llm.async_client, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        async for _ in llm.astream([HumanMessage(content="test")]):
+            pass
+
+    assert "Input tokens exceed the configured limit" in str(exc_info.value)
+
+
+async def test_context_overflow_error_stream_async_responses_api() -> None:
+    """Test context overflow error on stream (async, responses API)."""
+    llm = ChatOpenAI(use_responses_api=True)
+
+    with (  # noqa: PT012
+        patch.object(llm.root_async_client.responses, "create") as mock_create,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_create.side_effect = _CONTEXT_OVERFLOW_API_ERROR
+        async for _ in llm.astream([HumanMessage(content="test")]):
+            pass
+
+    assert "exceeds the context window" in str(exc_info.value)
+
+
+def test_context_overflow_error_prompt_too_long() -> None:
+    """Test context overflow error triggered by 'prompt is too long' message."""
+    error_body = {
+        "error": {
+            "message": "prompt is too long: 300000 tokens > 200000 maximum",
+            "type": "invalid_request_error",
+            "param": "messages",
+            "code": "invalid_request_error",
+        }
+    }
+    bad_request_error = openai.BadRequestError(
+        message=error_body["error"]["message"],
+        response=MagicMock(status_code=400),
+        body=error_body,
+    )
+    llm = ChatOpenAI()
+
+    with (  # noqa: PT012
+        patch.object(llm.client, "with_raw_response") as mock_client,
+        pytest.raises(ContextOverflowError) as exc_info,
+    ):
+        mock_client.create.side_effect = bad_request_error
+        llm.invoke([HumanMessage(content="test")])
+
+    assert "prompt is too long" in str(exc_info.value)
+
+
+def test_context_overflow_error_context_window_exceeded() -> None:
+    """Test context overflow error triggered by ContextWindowExceededError."""
+    error_body = {
+        "error": {
+            "message": "ContextWindowExceededError: maximum context length exceeded",
+            "type": "invalid_request_error",
+            "param": "messages",
+            "code": "invalid_request_error",
+        }
+    }
+    bad_request_error = openai.BadRequestError(
+        message=error_body["error"]["message"],
+        response=MagicMock(status_code=400),
+        body=error_body,
+    )
+    llm = ChatOpenAI()
+
+    with patch.object(llm.client, "with_raw_response") as mock_client:
+        mock_client.create.side_effect = bad_request_error
+        with pytest.raises(ContextOverflowError) as exc_info:
+            llm.invoke([HumanMessage(content="test")])
+
+    assert "ContextWindowExceededError" in str(exc_info.value)
+
+
+def test_context_overflow_error_backwards_compatibility() -> None:
+    """Test that ContextOverflowError can be caught as BadRequestError."""
+    llm = ChatOpenAI()
+
+    with (  # noqa: PT012
+        patch.object(llm.client, "with_raw_response") as mock_client,
+        pytest.raises(openai.BadRequestError) as exc_info,
+    ):
+        mock_client.create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    # Verify it's both types (multiple inheritance)
+    assert isinstance(exc_info.value, openai.BadRequestError)
+    assert isinstance(exc_info.value, ContextOverflowError)
+
+
+@pytest.mark.parametrize(
+    ("status_code", "sdk_error_type", "model_error_type", "is_retryable"),
+    [
+        (400, openai.BadRequestError, ModelInvalidRequestError, False),
+        (401, openai.AuthenticationError, ModelAuthenticationError, False),
+        (403, openai.PermissionDeniedError, ModelPermissionDeniedError, False),
+        (404, openai.NotFoundError, ModelNotFoundError, False),
+        (429, openai.RateLimitError, ModelRateLimitError, True),
+        (500, openai.InternalServerError, ModelAPIError, True),
+    ],
+)
+def test_openai_error_classification(
+    status_code: int,
+    sdk_error_type: type[openai.APIStatusError],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Provider errors are raised as both the SDK type and the LangChain type."""
+    request = httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")
+    response = httpx2.Response(status_code, request=request)
+    sdk_error = sdk_error_type("model request failed", response=response, body=None)
+    model = ChatOpenAI(api_key=SecretStr("test"))
+
+    with patch.object(model.client, "with_raw_response") as mock_client:
+        mock_client.create.side_effect = sdk_error
+        with pytest.raises(sdk_error_type) as exc_info:
+            model.invoke("test")
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_openai_transport_error_classification() -> None:
+    """Timeout and connection failures are classified without a status code."""
+    request = httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")
+    model = ChatOpenAI(api_key=SecretStr("test"))
+
+    for sdk_error, model_error_type in (
+        (openai.APITimeoutError(request), ModelTimeoutError),
+        (openai.APIConnectionError(request=request), ModelConnectionError),
+    ):
+        with patch.object(model.client, "with_raw_response") as mock_client:
+            mock_client.create.side_effect = sdk_error
+            with pytest.raises(type(sdk_error)) as exc_info:
+                model.invoke("test")
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is True
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatOpenAI()
+    assert llm.metadata is not None
+    versions = llm.metadata["lc_versions"]
+    assert "langchain-core" in versions
+    assert "langchain-openai" in versions
+
+
+def test_get_request_payload_responses_api_input_file_blocks_passthrough() -> None:
+    llm = ChatOpenAI(model="gpt-5", use_responses_api=True)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage(
+                content=[
+                    {
+                        "type": "input_text",
+                        "text": "Analyze the letter and summarize key points.",
+                    },
+                    {
+                        "type": "input_file",
+                        "file_url": "https://www.berkshirehathaway.com/letters/2024ltr.pdf",
+                    },
+                    {
+                        "type": "input_file",
+                        "file_id": "file-6F2ksmvXxt4VdoqmHRw6kL",
+                    },
+                    {
+                        "type": "input_file",
+                        "filename": "draconomicon.pdf",
+                        "file_data": "data:application/pdf;base64,Zm9v",
+                    },
+                ]
+            )
+        ]
+    )
+
+    assert payload["input"] == [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": "Analyze the letter and summarize key points.",
+                },
+                {
+                    "type": "input_file",
+                    "file_url": "https://www.berkshirehathaway.com/letters/2024ltr.pdf",
+                },
+                {
+                    "type": "input_file",
+                    "file_id": "file-6F2ksmvXxt4VdoqmHRw6kL",
+                },
+                {
+                    "type": "input_file",
+                    "filename": "draconomicon.pdf",
+                    "file_data": "data:application/pdf;base64,Zm9v",
+                },
+            ],
+        }
+    ]
+
+
+def test_apply_patch_passthrough() -> None:
+    """Test that apply_patch dict is passed through as a built-in tool."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test-api-key"))
+    bound = llm.bind_tools([{"type": "apply_patch"}])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert {"type": "apply_patch"} in payload["tools"]
+    assert "input" in payload
+
+
+def test_tool_search_passthrough() -> None:
+    """Test that tool_search dict is passed through as a built-in tool."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    tool_search = {"type": "tool_search"}
+    bound = llm.bind_tools([tool_search])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert {"type": "tool_search"} in payload["tools"]
+    assert "input" in payload
+
+
+def test_tool_search_with_defer_loading_extras() -> None:
+    """Test that defer_loading from BaseTool extras is merged into tool defs."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"defer_loading": True})
+    def get_weather(location: str) -> str:
+        """Get weather for a location."""
+        return f"Weather in {location}"
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    bound = llm.bind_tools([get_weather, {"type": "tool_search"}])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    weather_tool = None
+    for t in payload["tools"]:
+        if t.get("type") == "function" and t.get("name") == "get_weather":
+            weather_tool = t
+            break
+    assert weather_tool is not None
+    assert weather_tool["defer_loading"] is True
+    assert {"type": "tool_search"} in payload["tools"]
+
+
+def test_namespace_passthrough() -> None:
+    """Test that namespace tool dicts are passed through unchanged."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    namespace_tool = {
+        "type": "namespace",
+        "name": "crm",
+        "description": "CRM tools.",
+        "tools": [
+            {
+                "type": "function",
+                "name": "list_orders",
+                "description": "List orders.",
+                "defer_loading": True,
+                "parameters": {
+                    "type": "object",
+                    "properties": {"customer_id": {"type": "string"}},
+                    "required": ["customer_id"],
+                },
+            }
+        ],
+    }
+    bound = llm.bind_tools([namespace_tool, {"type": "tool_search"}])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    ns = None
+    for t in payload["tools"]:
+        if t.get("type") == "namespace":
+            ns = t
+            break
+    assert ns is not None
+    assert ns["name"] == "crm"
+    assert ns["tools"][0]["defer_loading"] is True
+    assert {"type": "tool_search"} in payload["tools"]
+
+
+def test_reasoning_effort_responses_api_maps_to_effort_only() -> None:
+    """Test `reasoning_effort` maps to `reasoning.effort` alone, no `summary`.
+
+    `summary` is a separate concern, configured via the `reasoning` param
+    directly (e.g. `reasoning={"effort": "high", "summary": "auto"}`) rather
+    than implied by `reasoning_effort`.
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    payload = _construct_responses_api_payload([], {"reasoning_effort": "high"})
+
+    assert payload["reasoning"] == {"effort": "high"}
+    assert "reasoning_effort" not in payload
+
+
+def test_reasoning_effort_responses_api_preserves_existing_reasoning() -> None:
+    """Test that an already-present `reasoning` dict is not overwritten."""
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    payload = _construct_responses_api_payload(
+        [],
+        {
+            "reasoning_effort": "high",
+            "reasoning": {"effort": "low", "summary": "concise"},
+        },
+    )
+
+    assert payload["reasoning"] == {"effort": "low", "summary": "concise"}
+    # The unused `reasoning_effort` kwarg is left untouched in this case, since
+    # the guard requires `"reasoning" not in payload` before popping it.
+    assert payload["reasoning_effort"] == "high"
+
+
+def test_defer_loading_in_responses_api_payload() -> None:
+    """Test that defer_loading is preserved in Responses API tool format."""
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    messages: list = []
+    payload = {
+        "model": OPENAI_TEST_MODEL,
+        "tools": [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string"}},
+                    },
+                },
+                "defer_loading": True,
+            },
+            {"type": "tool_search"},
+        ],
+    }
+    result = _construct_responses_api_payload(messages, payload)
+    weather_tool = None
+    for t in result["tools"]:
+        if t.get("name") == "get_weather":
+            weather_tool = t
+            break
+    assert weather_tool is not None
+    assert weather_tool["defer_loading"] is True
+    assert weather_tool["type"] == "function"
+    assert {"type": "tool_search"} in result["tools"]
+
+
+def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://gateway.smith.langchain.com/openai/v1"
+    assert llm.stream_usage is True
+
+
+def test_langsmith_gateway_false(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base is None
+
+
+def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base is None
+
+
+def test_langsmith_gateway_custom_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://my-gateway.example.com/")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://my-gateway.example.com/openai/v1"
+
+
+def test_langsmith_gateway_provider_env_overrides_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://api.openai.com/v1"
+
+
+def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_api_key_not_used_without_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+def test_langsmith_gateway_api_key_overrides_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_provider_base_url_uses_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Provider-specific wiring check: base URL overridden away from the gateway
+    # -> provider key wins over the gateway key. Full precedence matrix lives in
+    # core's test_gateway.py.
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert llm.openai_api_base == "https://api.openai.com/v1"
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "provider-key"

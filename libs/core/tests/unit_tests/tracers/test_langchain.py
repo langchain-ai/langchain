@@ -1,0 +1,951 @@
+import concurrent.futures
+import threading
+import time
+import unittest.mock
+import uuid
+from typing import Any
+from uuid import UUID
+
+import pytest
+from langsmith import Client
+from langsmith.run_trees import RunTree
+from langsmith.utils import get_env_var, get_tracer_project
+
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.tracers.langchain import (
+    LangChainTracer,
+    _get_usage_metadata_from_generations,
+    _patch_missing_metadata,
+)
+from langchain_core.tracers.schemas import Run
+
+
+def test_example_id_assignment_threadsafe() -> None:
+    """Test that example assigned at callback start/end is honored."""
+    example_ids = {}
+
+    def mock_create_run(**kwargs: Any) -> Any:
+        example_ids[kwargs.get("id")] = kwargs.get("reference_example_id")
+        return unittest.mock.MagicMock()
+
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    client.create_run = mock_create_run
+    tracer = LangChainTracer(client=client)
+    old_persist_run_single = tracer._persist_run_single
+
+    def new_persist_run_single(run: Run) -> None:
+        time.sleep(0.01)
+        old_persist_run_single(run)
+
+    with unittest.mock.patch.object(
+        tracer, "_persist_run_single", new=new_persist_run_single
+    ):
+        run_id_1 = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+        run_id_2 = UUID("f1f9fa53-8b2f-4742-bdbc-38215f7bd1e1")
+        run_id_3 = UUID("f1f9fa53-8b2f-4742-bdbc-38215f7cd1e1")
+        example_id_1 = UUID("57e42c57-8c79-4d9f-8765-bf6cd3a98055")
+        tracer.example_id = example_id_1
+        tracer.on_llm_start({"name": "example_1"}, ["foo"], run_id=run_id_1)
+        tracer.on_llm_end(LLMResult(generations=[], llm_output={}), run_id=run_id_1)
+        example_id_2 = UUID("4f31216e-7c26-4027-a5fd-0bbf9ace17dc")
+        tracer.example_id = example_id_2
+        tracer.on_llm_start({"name": "example_2"}, ["foo"], run_id=run_id_2)
+        tracer.on_llm_end(LLMResult(generations=[], llm_output={}), run_id=run_id_2)
+        tracer.example_id = None
+        tracer.on_chain_start(
+            {"name": "no_examples"}, {"inputs": (i for i in range(10))}, run_id=run_id_3
+        )
+        tracer.on_chain_error(ValueError("Foo bar"), run_id=run_id_3)
+        expected_example_ids = {
+            run_id_1: example_id_1,
+            run_id_2: example_id_2,
+            run_id_3: None,
+        }
+        tracer.wait_for_futures()
+        assert example_ids == expected_example_ids
+
+
+def test_tracer_with_run_tree_parent() -> None:
+    mock_session = unittest.mock.MagicMock()
+    client = Client(session=mock_session, api_key="test")
+    parent = RunTree(name="parent", inputs={"input": "foo"}, ls_client=client)
+    run_id = uuid.uuid4()
+    tracer = LangChainTracer(client=client)
+    tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
+    tracer.run_map[str(parent.id)] = parent
+    tracer.on_chain_start(
+        {"name": "child"}, {"input": "bar"}, run_id=run_id, parent_run_id=parent.id
+    )
+    tracer.on_chain_end({}, run_id=run_id)
+    assert parent.child_runs
+    assert len(parent.child_runs) == 1
+    assert parent.child_runs[0].id == run_id
+    assert parent.child_runs[0].trace_id == parent.id
+    assert parent.child_runs[0].parent_run_id == parent.id
+
+
+def test_log_lock() -> None:
+    """Test that example assigned at callback start/end is honored."""
+    client = unittest.mock.MagicMock(spec=Client)
+    tracer = LangChainTracer(client=client)
+
+    with unittest.mock.patch.object(tracer, "_persist_run_single", new=lambda _: _):
+        run_id_1 = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+        lock = threading.Lock()
+        tracer.on_chain_start({"name": "example_1"}, {"input": lock}, run_id=run_id_1)
+        tracer.on_chain_end({}, run_id=run_id_1)
+        tracer.wait_for_futures()
+
+
+@pytest.mark.parametrize(
+    ("envvars", "expected_project_name"),
+    [
+        (
+            {},
+            "default",
+        ),
+        (
+            {"LANGCHAIN_SESSION": "old_timey_session"},
+            "old_timey_session",
+        ),
+        (
+            {
+                "LANGCHAIN_SESSION": "old_timey_session",
+                "LANGCHAIN_PROJECT": "modern_session",
+            },
+            "modern_session",
+        ),
+    ],
+    ids=[
+        "default to 'default' when no project provided",
+        "use session_name for legacy tracers",
+        "use LANGCHAIN_PROJECT over SESSION_NAME",
+    ],
+)
+def test_correct_get_tracer_project(
+    envvars: dict[str, str], expected_project_name: str
+) -> None:
+    if hasattr(get_env_var, "cache_clear"):
+        get_env_var.cache_clear()  # type: ignore[attr-defined]
+    if hasattr(get_tracer_project, "cache_clear"):
+        get_tracer_project.cache_clear()
+    with pytest.MonkeyPatch.context() as mp:
+        for k, v in envvars.items():
+            mp.setenv(k, v)
+
+        client = unittest.mock.MagicMock(spec=Client)
+        tracer = LangChainTracer(client=client)
+        projects = []
+
+        def mock_create_run(**kwargs: Any) -> Any:
+            projects.append(kwargs.get("session_name"))
+            return unittest.mock.MagicMock()
+
+        client.create_run = mock_create_run
+
+        tracer.on_llm_start(
+            {"name": "example_1"},
+            ["foo"],
+            run_id=UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a"),
+        )
+        tracer.wait_for_futures()
+        assert projects == [expected_project_name]
+
+
+@pytest.mark.parametrize(
+    ("generations", "expected"),
+    [
+        # Returns None for non-serialized message usage_metadata shape
+        # (earlier regression)
+        (
+            [
+                [
+                    {
+                        "text": "Hello!",
+                        "message": {
+                            "content": "Hello!",
+                            "usage_metadata": {
+                                "input_tokens": 10,
+                                "output_tokens": 20,
+                                "total_tokens": 30,
+                            },
+                        },
+                    }
+                ]
+            ],
+            None,
+        ),
+        # Returns usage_metadata when message is serialized via dumpd
+        (
+            [
+                [
+                    {
+                        "text": "Hello!",
+                        "message": {
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "Hello!",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 10,
+                                    "output_tokens": 20,
+                                    "total_tokens": 30,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
+                            },
+                        },
+                    }
+                ]
+            ],
+            {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30},
+        ),
+        # Returns None when no usage_metadata
+        ([[{"text": "Hello!", "message": {"content": "Hello!"}}]], None),
+        # Returns None when no message
+        ([[{"text": "Hello!"}]], None),
+        # Returns None for empty generations
+        ([], None),
+        ([[]], None),
+        # Aggregates usage_metadata across multiple generations
+        (
+            [
+                [
+                    {
+                        "text": "First",
+                        "message": {
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "First",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 5,
+                                    "output_tokens": 10,
+                                    "total_tokens": 15,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
+                            },
+                        },
+                    },
+                    {
+                        "text": "Second",
+                        "message": {
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "Second",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 50,
+                                    "output_tokens": 100,
+                                    "total_tokens": 150,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
+                            },
+                        },
+                    },
+                ]
+            ],
+            {"input_tokens": 55, "output_tokens": 110, "total_tokens": 165},
+        ),
+        # Finds usage_metadata across multiple batches
+        (
+            [
+                [{"text": "No message here"}],
+                [
+                    {
+                        "text": "Has message",
+                        "message": {
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": ["langchain", "schema", "messages", "AIMessage"],
+                            "kwargs": {
+                                "content": "Has message",
+                                "type": "ai",
+                                "usage_metadata": {
+                                    "input_tokens": 10,
+                                    "output_tokens": 20,
+                                    "total_tokens": 30,
+                                },
+                                "tool_calls": [],
+                                "invalid_tool_calls": [],
+                            },
+                        },
+                    }
+                ],
+            ],
+            {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30},
+        ),
+    ],
+    ids=[
+        "returns_none_when_non_serialized_message_shape",
+        "returns_usage_metadata_when_message_serialized",
+        "returns_none_when_no_usage_metadata",
+        "returns_none_when_no_message",
+        "returns_none_for_empty_list",
+        "returns_none_for_empty_batch",
+        "aggregates_across_multiple_generations",
+        "finds_across_multiple_batches",
+    ],
+)
+def test_get_usage_metadata_from_generations(
+    generations: list[list[dict[str, Any]]], expected: dict[str, Any] | None
+) -> None:
+    """Test `_get_usage_metadata_from_generations` utility function."""
+    result = _get_usage_metadata_from_generations(generations)
+    assert result == expected
+
+
+def test_on_llm_end_stores_usage_metadata_in_run_extra() -> None:
+    """Test that `usage_metadata` is stored in `run.extra.metadata` on llm end."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    run = tracer.run_map[str(run_id)]
+    usage_metadata = {"input_tokens": 100, "output_tokens": 200, "total_tokens": 300}
+    run.outputs = {
+        "generations": [
+            [
+                {
+                    "text": "Hello!",
+                    "message": {
+                        "lc": 1,
+                        "type": "constructor",
+                        "id": ["langchain", "schema", "messages", "AIMessage"],
+                        "kwargs": {
+                            "content": "Hello!",
+                            "type": "ai",
+                            "usage_metadata": usage_metadata,
+                            "tool_calls": [],
+                            "invalid_tool_calls": [],
+                        },
+                    },
+                }
+            ]
+        ]
+    }
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    assert "metadata" in captured_run.extra
+    assert captured_run.extra["metadata"]["usage_metadata"] == usage_metadata
+
+
+def test_on_llm_end_stores_usage_metadata_from_serialized_outputs() -> None:
+    """Store `usage_metadata` from serialized generation message outputs."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("d94d0ff8-cf5a-4100-ab11-1a0efaa8d8d0")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    usage_metadata = {"input_tokens": 100, "output_tokens": 200, "total_tokens": 300}
+    response = LLMResult(
+        generations=[
+            [
+                ChatGeneration(
+                    message=AIMessage(content="Hello!", usage_metadata=usage_metadata)
+                )
+            ]
+        ]
+    )
+    run = tracer._complete_llm_run(response=response, run_id=run_id)
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    assert "metadata" in captured_run.extra
+    assert captured_run.extra["metadata"]["usage_metadata"] == usage_metadata
+
+
+def test_on_llm_end_no_usage_metadata_when_not_present() -> None:
+    """Test that no `usage_metadata` is added when not present in outputs."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start({"name": "test_llm"}, ["foo"], run_id=run_id)
+
+    run = tracer.run_map[str(run_id)]
+    run.outputs = {
+        "generations": [
+            [
+                {
+                    "text": "Hello!",
+                    "message": {
+                        "lc": 1,
+                        "type": "constructor",
+                        "id": ["langchain", "schema", "messages", "AIMessage"],
+                        "kwargs": {
+                            "content": "Hello!",
+                            "type": "ai",
+                            "tool_calls": [],
+                            "invalid_tool_calls": [],
+                        },
+                    },
+                }
+            ]
+        ]
+    }
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    extra_metadata = captured_run.extra.get("metadata", {})
+    assert "usage_metadata" not in extra_metadata
+
+
+def test_on_llm_end_preserves_existing_metadata() -> None:
+    """Test that existing metadata is preserved when adding `usage_metadata`."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_llm_start(
+        {"name": "test_llm"},
+        ["foo"],
+        run_id=run_id,
+        metadata={"existing_key": "existing_value"},
+    )
+
+    run = tracer.run_map[str(run_id)]
+    usage_metadata = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
+    run.outputs = {
+        "generations": [
+            [
+                {
+                    "text": "Hello!",
+                    "message": {
+                        "lc": 1,
+                        "type": "constructor",
+                        "id": ["langchain", "schema", "messages", "AIMessage"],
+                        "kwargs": {
+                            "content": "Hello!",
+                            "type": "ai",
+                            "usage_metadata": usage_metadata,
+                            "tool_calls": [],
+                            "invalid_tool_calls": [],
+                        },
+                    },
+                }
+            ]
+        ]
+    }
+
+    captured_run = None
+
+    def capture_run(r: Run) -> None:
+        nonlocal captured_run
+        captured_run = r
+
+    with unittest.mock.patch.object(tracer, "_update_run_single", capture_run):
+        tracer._on_llm_end(run)
+
+    assert captured_run is not None
+    assert "metadata" in captured_run.extra
+    assert captured_run.extra["metadata"]["usage_metadata"] == usage_metadata
+    assert captured_run.extra["metadata"]["existing_key"] == "existing_value"
+
+
+def test_on_chain_start_skips_persist_when_defers_inputs() -> None:
+    """Test that `_on_chain_start` skips persist when `defers_inputs` is set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    # Pass defers_inputs=True to signal deferred inputs
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": ""},
+        run_id=run_id,
+        defers_inputs=True,
+    )
+
+    run = tracer.run_map[str(run_id)]
+
+    persist_called = False
+
+    def mock_persist() -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    with unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist):
+        tracer._on_chain_start(run)
+
+    # Should NOT call persist when defers_inputs is set
+    assert not persist_called
+
+
+def test_on_chain_start_persists_when_not_defers_inputs() -> None:
+    """Test that `_on_chain_start` persists when `defers_inputs` is not set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    # Normal chain start without defers_inputs
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": "hello"},
+        run_id=run_id,
+    )
+
+    run = tracer.run_map[str(run_id)]
+
+    persist_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    with unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist):
+        tracer._on_chain_start(run)
+
+    # Should call persist when defers_inputs is not set
+    assert persist_called
+
+
+def test_on_chain_end_persists_when_defers_inputs() -> None:
+    """Test that `_on_chain_end` calls persist (POST) when `defers_inputs` is set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": ""},
+        run_id=run_id,
+        defers_inputs=True,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.outputs = {"output": "result"}
+    run.inputs = {"input": "realized input"}
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_end(run)
+
+    # Should call persist (POST), not update (PATCH) for deferred inputs
+    assert persist_called
+    assert not update_called
+
+
+def test_on_chain_end_updates_when_not_defers_inputs() -> None:
+    """Tests `_on_chain_end` calls update (PATCH) when `defers_inputs` is not set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": "hello"},
+        run_id=run_id,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.outputs = {"output": "result"}
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_end(run)
+
+    # Should call update (PATCH), not persist (POST) for normal inputs
+    assert not persist_called
+    assert update_called
+
+
+def test_on_chain_error_persists_when_defers_inputs() -> None:
+    """Test that `_on_chain_error` calls persist (POST) when `defers_inputs` is set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": ""},
+        run_id=run_id,
+        defers_inputs=True,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.error = "Test error"
+    run.inputs = {"input": "realized input"}
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_error(run)
+
+    # Should call persist (POST), not update (PATCH) for deferred inputs
+    assert persist_called
+    assert not update_called
+
+
+def test_on_chain_error_updates_when_not_defers_inputs() -> None:
+    """Tests `_on_chain_error` calls update (PATCH) when `defers_inputs` is not set."""
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+
+    run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+    tracer.on_chain_start(
+        {"name": "test_chain"},
+        {"input": "hello"},
+        run_id=run_id,
+    )
+
+    run = tracer.run_map[str(run_id)]
+    run.error = "Test error"
+
+    persist_called = False
+    update_called = False
+
+    def mock_persist(_: Any) -> None:
+        nonlocal persist_called
+        persist_called = True
+
+    def mock_update(_: Any) -> None:
+        nonlocal update_called
+        update_called = True
+
+    with (
+        unittest.mock.patch.object(tracer, "_persist_run_single", mock_persist),
+        unittest.mock.patch.object(tracer, "_update_run_single", mock_update),
+    ):
+        tracer._on_chain_error(run)
+
+    # Should call update (PATCH), not persist (POST) for normal inputs
+    assert not persist_called
+    assert update_called
+
+
+class TestPatchMissingMetadata:
+    """Tests for `_patch_missing_metadata` and tracer metadata behavior."""
+
+    @staticmethod
+    def _make_tracer(
+        metadata: dict[str, str] | None = None,
+    ) -> LangChainTracer:
+        client = unittest.mock.MagicMock(spec=Client)
+        client.tracing_queue = None
+        return LangChainTracer(client=client, metadata=metadata)
+
+    @staticmethod
+    def _make_run(
+        metadata: dict[str, Any] | None = None,
+    ) -> Run:
+        return Run(
+            id=uuid.uuid4(),
+            name="test",
+            inputs={},
+            run_type="chain",
+            extra={"metadata": metadata or {}},
+        )
+
+    def test_adds_metadata_when_run_has_none(self) -> None:
+        """Tracer metadata fills in when the run has no matching keys."""
+        tracer = self._make_tracer(metadata={"env": "prod", "service": "api"})
+        run = self._make_run()
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata["env"] == "prod"
+        assert run.metadata["service"] == "api"
+
+    def test_does_not_overwrite_existing_keys(self) -> None:
+        """Config metadata takes precedence over tracer metadata."""
+        tracer = self._make_tracer(metadata={"env": "prod", "service": "api"})
+        run = self._make_run(metadata={"env": "staging"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata["env"] == "staging"
+        assert run.metadata["service"] == "api"
+
+    def test_noop_when_tracer_has_no_metadata(self) -> None:
+        """No-op when the tracer has no metadata configured."""
+        tracer = self._make_tracer(metadata=None)
+        run = self._make_run(metadata={"existing": "value"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata == {"existing": "value"}
+
+    def test_noop_when_all_keys_already_present(self) -> None:
+        """No-op when every tracer key already exists in the run."""
+        tracer = self._make_tracer(metadata={"env": "prod"})
+        run = self._make_run(metadata={"env": "dev"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata == {"env": "dev"}
+
+    def test_merges_disjoint_keys(self) -> None:
+        """Disjoint keys from tracer and config are all present after patching."""
+        tracer = self._make_tracer(metadata={"tracer_key": "tracer_val"})
+        run = self._make_run(metadata={"config_key": "config_val"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata == {
+            "tracer_key": "tracer_val",
+            "config_key": "config_val",
+        }
+
+    def test_persist_run_single_applies_tracer_metadata(self) -> None:
+        """End-to-end: `_persist_run_single` calls `_patch_missing_metadata`."""
+        tracer = self._make_tracer(metadata={"env": "prod"})
+        run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a")
+        tracer.on_chain_start(
+            {"name": "test_chain"},
+            {"input": "hello"},
+            run_id=run_id,
+        )
+        run = tracer.run_map[str(run_id)]
+
+        with unittest.mock.patch.object(Run, "post"):
+            tracer._persist_run_single(run)
+
+        assert run.metadata.get("env") == "prod"
+
+    def test_persist_run_single_config_metadata_wins(self) -> None:
+        """Config metadata is not overwritten by tracer metadata during persist."""
+        tracer = self._make_tracer(metadata={"env": "prod", "extra": "from_tracer"})
+        run_id = UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160b")
+        tracer.on_chain_start(
+            {"name": "test_chain"},
+            {"input": "hello"},
+            run_id=run_id,
+            metadata={"env": "staging"},
+        )
+        run = tracer.run_map[str(run_id)]
+
+        with unittest.mock.patch.object(Run, "post"):
+            tracer._persist_run_single(run)
+
+        assert run.metadata["env"] == "staging"
+        assert run.metadata["extra"] == "from_tracer"
+
+    def test_allowlisted_key_overrides_existing_run_metadata(self) -> None:
+        """Allowlisted LangSmith keys override existing run metadata."""
+        tracer = self._make_tracer(metadata={"ls_agent_type": "subagent"})
+        run = self._make_run(metadata={"ls_agent_type": "root", "other": "keep"})
+
+        _patch_missing_metadata(tracer, run)
+
+        assert run.metadata["ls_agent_type"] == "subagent"
+        assert run.metadata["other"] == "keep"
+
+    def test_allowlisted_key_noop_when_values_match(self) -> None:
+        """Allowlisted keys do not clone run metadata when the value is unchanged."""
+        original = {"ls_agent_type": "root"}
+        tracer = self._make_tracer(metadata={"ls_agent_type": "root"})
+        run = self._make_run(metadata=original)
+
+        _patch_missing_metadata(tracer, run)
+
+        # No-op: the shared dict should not be replaced with a copy.
+        assert run.extra["metadata"] is original
+        assert run.metadata == {"ls_agent_type": "root"}
+
+
+class TestTracerMetadataCloning:
+    """Tests for LangChainTracer metadata cloning helpers."""
+
+    @staticmethod
+    def _make_tracer(
+        metadata: dict[str, str] | None = None,
+    ) -> LangChainTracer:
+        client = unittest.mock.MagicMock(spec=Client)
+        client.tracing_queue = None
+        return LangChainTracer(client=client, metadata=metadata)
+
+    def test_copy_with_metadata_defaults_copies_configuration(self) -> None:
+        """Copied tracer keeps stable configuration but not identity."""
+        tracer = self._make_tracer(metadata={"env": "staging"})
+        tracer.project_name = "project"
+        tracer.tags = ["tag"]
+
+        copied = tracer.copy_with_metadata_defaults(metadata={"service": "api"})
+
+        assert copied is not tracer
+        assert copied.client is tracer.client
+        assert copied.project_name == "project"
+        assert copied.tags == ["tag"]
+        assert copied.tags is tracer.tags
+        assert copied.tracing_metadata == {"env": "staging", "service": "api"}
+        assert copied.run_map is tracer.run_map
+        assert copied.order_map is tracer.order_map
+        assert copied.run_has_token_event_map == {}
+
+    def test_copy_with_metadata_defaults_does_not_mutate_original(self) -> None:
+        """Metadata-default cloning leaves the source tracer unchanged."""
+        tracer = self._make_tracer(metadata={"env": "staging"})
+
+        copied = tracer.copy_with_metadata_defaults(metadata={"service": "api"})
+
+        assert tracer.tracing_metadata == {"env": "staging"}
+        assert copied.tracing_metadata == {"env": "staging", "service": "api"}
+
+    def test_copy_with_metadata_defaults_none_preserves_configuration(self) -> None:
+        """Copying without new metadata preserves metadata and shared run state."""
+        tracer = self._make_tracer(metadata={"env": "staging"})
+        copied = tracer.copy_with_metadata_defaults(metadata=None)
+
+        assert copied is not tracer
+        assert copied.tracing_metadata == {"env": "staging"}
+        assert copied.run_map is tracer.run_map
+        assert copied.order_map is tracer.order_map
+
+    def test_copy_with_metadata_defaults_threadsafe(self) -> None:
+        """Concurrent metadata-default copies do not mutate each other or the source."""
+        tracer = self._make_tracer(metadata={"env": "staging"})
+
+        def copy_for_service(service: str) -> dict[str, str]:
+            copied = tracer.copy_with_metadata_defaults(metadata={"service": service})
+            assert copied is not tracer
+            return copied.tracing_metadata or {}
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            metadata_values = list(executor.map(copy_for_service, ["api", "worker"]))
+
+        assert tracer.tracing_metadata == {"env": "staging"}
+        assert {metadata["service"] for metadata in metadata_values} == {
+            "api",
+            "worker",
+        }
+        assert all(metadata["env"] == "staging" for metadata in metadata_values)
+
+    def test_copy_with_metadata_defaults_threadsafe_with_existing_shared_state(
+        self,
+    ) -> None:
+        """Concurrent copies preserve pre-populated shared run state."""
+        tracer = self._make_tracer(metadata={"env": "staging"})
+        run_id = uuid.uuid4()
+        tracer.run_map["existing"] = unittest.mock.MagicMock()
+        tracer.order_map[run_id] = (run_id, f"prefix.{run_id}")
+
+        def copy_for_service(service: str) -> LangChainTracer:
+            copied = tracer.copy_with_metadata_defaults(metadata={"service": service})
+            assert copied.run_map is tracer.run_map
+            assert copied.order_map is tracer.order_map
+            return copied
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            copied_tracers = list(executor.map(copy_for_service, ["api", "worker"]))
+
+        assert tracer.run_map.keys() == {"existing"}
+        assert tracer.order_map == {run_id: (run_id, f"prefix.{run_id}")}
+        copied_services = {
+            copied.tracing_metadata["service"]
+            for copied in copied_tracers
+            if copied.tracing_metadata is not None
+        }
+        assert copied_services == {"api", "worker"}
+
+    def test_copy_with_metadata_defaults_regular_keys_first_wins(self) -> None:
+        """Regular (non-allowlisted) metadata keys keep "first wins" semantics."""
+        tracer = self._make_tracer(metadata={"env": "staging", "service": "orig"})
+
+        copied = tracer.copy_with_metadata_defaults(
+            metadata={"env": "prod", "service": "new"},
+        )
+
+        assert copied.tracing_metadata == {"env": "staging", "service": "orig"}
+
+    def test_copy_with_metadata_defaults_allowlisted_key_overrides(self) -> None:
+        """Allowlisted LangSmith keys are overridden by nested caller metadata."""
+        tracer = self._make_tracer(
+            metadata={"ls_agent_type": "root", "env": "staging"},
+        )
+
+        copied = tracer.copy_with_metadata_defaults(
+            metadata={"ls_agent_type": "subagent", "env": "prod"},
+        )
+
+        # Allowlisted key is overridden, non-allowlisted keeps first-wins.
+        assert copied.tracing_metadata == {
+            "ls_agent_type": "subagent",
+            "env": "staging",
+        }

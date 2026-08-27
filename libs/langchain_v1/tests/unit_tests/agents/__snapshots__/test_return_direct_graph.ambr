@@ -1,0 +1,69 @@
+# serializer version: 1
+# name: test_agent_graph_with_mixed_tools
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model(model)
+  	tools(tools)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> model;
+  	model -.-> __end__;
+  	model -.-> tools;
+  	tools -.-> __end__;
+  	tools -.-> model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_agent_graph_with_return_direct_tool
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model(model)
+  	tools(tools)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> model;
+  	model -.-> __end__;
+  	model -.-> tools;
+  	tools -.-> __end__;
+  	tools -.-> model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_agent_graph_without_return_direct_tools
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model(model)
+  	tools(tools)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> model;
+  	model -.-> __end__;
+  	model -.-> tools;
+  	tools -.-> model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---

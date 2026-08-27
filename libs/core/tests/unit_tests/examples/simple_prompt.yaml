@@ -1,0 +1,7 @@
+_type: prompt
+input_variables:
+    ["adjective"]
+partial_variables:
+    content: dogs
+template: 
+    Tell me a {adjective} joke about {content}.

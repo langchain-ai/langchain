@@ -1,0 +1,10 @@
+Given some text, extract a list of facts from the text.
+
+Format your output as a bulleted list.
+
+Text:
+"""
+{summary}
+"""
+
+Facts:

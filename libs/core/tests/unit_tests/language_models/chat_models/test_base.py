@@ -1,0 +1,1938 @@
+"""Test base chat model."""
+
+import uuid
+import warnings
+from collections.abc import AsyncIterator, Iterator
+from contextlib import contextmanager
+from importlib.metadata import PackageNotFoundError
+from typing import TYPE_CHECKING, Any, Literal, get_type_hints
+from unittest.mock import patch
+
+import pytest
+from langsmith.env import get_langchain_env_var_metadata
+from pydantic import Field, model_validator
+from typing_extensions import Self, override
+
+from langchain_core._api import LangChainDeprecationWarning
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    BaseCallbackHandler,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models import (
+    BaseChatModel,
+    FakeListChatModel,
+    ParrotFakeChatModel,
+)
+from langchain_core.language_models._utils import (
+    _filter_invocation_params_for_tracing,
+    _normalize_messages,
+)
+from langchain_core.language_models.base import _get_langchain_version
+from langchain_core.language_models.chat_models import (
+    SimpleChatModel,
+    _generate_response_from_error,
+)
+from langchain_core.language_models.fake_chat_models import (
+    FakeListChatModelError,
+    GenericFakeChatModel,
+)
+from langchain_core.language_models.model_profile import ModelProfile
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs.llm_result import LLMResult
+from langchain_core.tracers import LogStreamCallbackHandler
+from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
+from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.context import collect_runs
+from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
+from langchain_core.tracers.langchain import LangChainTracer
+from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
+from langchain_core.version import VERSION
+from tests.unit_tests.fake.callbacks import (
+    BaseFakeCallbackHandler,
+    FakeAsyncCallbackHandler,
+    FakeCallbackHandler,
+)
+from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
+
+if TYPE_CHECKING:
+    from langchain_core.outputs.llm_result import LLMResult
+    from langchain_core.runnables.config import RunnableConfig
+
+
+def _content_blocks_equal_ignore_id(
+    actual: str | list[Any], expected: str | list[Any]
+) -> bool:
+    """Compare content blocks, ignoring auto-generated `id` fields.
+
+    Args:
+        actual: Actual content from response (string or list of content blocks).
+        expected: Expected content to compare against (string or list of blocks).
+
+    Returns:
+        True if content matches (excluding `id` fields), `False` otherwise.
+
+    """
+    if isinstance(actual, str) or isinstance(expected, str):
+        return actual == expected
+
+    if len(actual) != len(expected):
+        return False
+    for actual_block, expected_block in zip(actual, expected, strict=False):
+        actual_without_id = (
+            {k: v for k, v in actual_block.items() if k != "id"}
+            if isinstance(actual_block, dict) and "id" in actual_block
+            else actual_block
+        )
+
+        if actual_without_id != expected_block:
+            return False
+
+    return True
+
+
+def test_asdict_replaces_deprecated_dict() -> None:
+    model = FakeListChatModel(responses=["foo"])
+
+    expected = {"responses": ["foo"], "_type": "fake-list-chat-model"}
+    assert model.asdict() == expected
+    with pytest.warns(LangChainDeprecationWarning, match="asdict"):
+        assert model.dict() == expected
+
+
+def test_base_chat_model_type_hints_resolve() -> None:
+    assert get_type_hints(BaseChatModel.asdict)["return"] == dict[str, Any]
+
+
+def test_invoke_preserves_deprecated_dict_override() -> None:
+    """Invoking should preserve `dict()` overrides until `dict()` is removed."""
+
+    class CustomDictChatModel(FakeListChatModel):
+        @override
+        def dict(self, **kwargs: Any) -> dict[str, Any]:
+            data = super().dict(**kwargs)
+            data["custom_trace_param"] = "custom"
+            return data
+
+    model = CustomDictChatModel(responses=["foo"])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        with collect_runs() as cb:
+            assert model.invoke("hello").content == "foo"
+
+    assert cb.traced_runs[0].extra is not None
+    assert cb.traced_runs[0].extra["invocation_params"]["custom_trace_param"] == (
+        "custom"
+    )
+
+
+@pytest.fixture
+def messages() -> list[BaseMessage]:
+    return [
+        SystemMessage(content="You are a test user."),
+        HumanMessage(content="Hello, I am a test user."),
+    ]
+
+
+@pytest.fixture
+def messages_2() -> list[BaseMessage]:
+    return [
+        SystemMessage(content="You are a test user."),
+        HumanMessage(content="Hello, I not a test user."),
+    ]
+
+
+def test_batch_size(messages: list[BaseMessage], messages_2: list[BaseMessage]) -> None:
+    # The base endpoint doesn't support native batching,
+    # so we expect batch_size to always be 1
+    llm = FakeListChatModel(responses=[str(i) for i in range(100)])
+    with collect_runs() as cb:
+        llm.batch([messages, messages_2], {"callbacks": [cb]})
+        assert len(cb.traced_runs) == 2
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
+    with collect_runs() as cb:
+        llm.batch([messages], {"callbacks": [cb]})
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
+        assert len(cb.traced_runs) == 1
+
+    with collect_runs() as cb:
+        llm.invoke(messages)
+        assert len(cb.traced_runs) == 1
+        assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
+
+    with collect_runs() as cb:
+        list(llm.stream(messages))
+        assert len(cb.traced_runs) == 1
+        assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
+
+
+async def test_async_batch_size(
+    messages: list[BaseMessage], messages_2: list[BaseMessage]
+) -> None:
+    llm = FakeListChatModel(responses=[str(i) for i in range(100)])
+    # The base endpoint doesn't support native batching,
+    # so we expect batch_size to always be 1
+    with collect_runs() as cb:
+        await llm.abatch([messages, messages_2], {"callbacks": [cb]})
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
+        assert len(cb.traced_runs) == 2
+    with collect_runs() as cb:
+        await llm.abatch([messages], {"callbacks": [cb]})
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
+        assert len(cb.traced_runs) == 1
+
+    with collect_runs() as cb:
+        await llm.ainvoke(messages)
+        assert len(cb.traced_runs) == 1
+        assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
+
+    with collect_runs() as cb:
+        async for _ in llm.astream(messages):
+            pass
+        assert len(cb.traced_runs) == 1
+        assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
+
+
+@pytest.mark.xfail(reason="This test is failing due to a bug in the testing code")
+async def test_stream_error_callback() -> None:
+    message = "test"
+
+    def eval_response(callback: BaseFakeCallbackHandler, i: int) -> None:
+        assert callback.errors == 1
+        assert len(callback.errors_args) == 1
+        llm_result: LLMResult = callback.errors_args[0]["kwargs"]["response"]
+        if i == 0:
+            assert llm_result.generations == []
+        else:
+            assert llm_result.generations[0][0].text == message[:i]
+
+    for i in range(len(message)):
+        llm = FakeListChatModel(
+            responses=[message],
+            error_on_chunk_number=i,
+        )
+        cb_async = FakeAsyncCallbackHandler()
+        llm_astream = llm.astream("Dummy message", config={"callbacks": [cb_async]})
+        for _ in range(i):
+            await anext(llm_astream)
+        with pytest.raises(FakeListChatModelError):
+            await anext(llm_astream)
+        eval_response(cb_async, i)
+
+        cb_sync = FakeCallbackHandler()
+        llm_stream = llm.stream("Dumy message", config={"callbacks": [cb_sync]})
+        for _ in range(i):
+            next(llm_stream)
+        with pytest.raises(FakeListChatModelError):
+            next(llm_stream)
+        eval_response(cb_sync, i)
+
+
+async def test_astream_fallback_to_ainvoke() -> None:
+    """Test `astream()` uses appropriate implementation."""
+
+    class ModelWithGenerate(BaseChatModel):
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            """Top Level call."""
+            message = AIMessage(content="hello")
+            generation = ChatGeneration(message=message)
+            return ChatResult(generations=[generation])
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model"
+
+    model = ModelWithGenerate()
+    chunks = list(model.stream("anything"))
+    # BaseChatModel.stream is typed to return Iterator[BaseMessageChunk].
+    # When streaming is disabled, it returns Iterator[BaseMessage], so the type hint
+    # is not strictly correct.
+    # LangChain documents a pattern of adding BaseMessageChunks to accumulate a stream.
+    # This may be better done with `reduce(operator.add, chunks)`.
+    assert chunks == [_any_id_ai_message(content="hello")]
+
+    chunks = [chunk async for chunk in model.astream("anything")]
+    assert chunks == [_any_id_ai_message(content="hello")]
+
+
+async def test_astream_implementation_fallback_to_stream() -> None:
+    """Test astream uses appropriate implementation."""
+
+    class ModelWithSyncStream(BaseChatModel):
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            """Top Level call."""
+            raise NotImplementedError
+
+        @override
+        def _stream(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> Iterator[ChatGenerationChunk]:
+            """Stream the output of the model."""
+            yield ChatGenerationChunk(message=AIMessageChunk(content="a"))
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(content="b", chunk_position="last")
+            )
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model"
+
+    model = ModelWithSyncStream()
+    chunks = list(model.stream("anything"))
+    assert chunks == [
+        _any_id_ai_message_chunk(
+            content="a",
+        ),
+        _any_id_ai_message_chunk(content="b", chunk_position="last"),
+    ]
+    assert len({chunk.id for chunk in chunks}) == 1
+    assert type(model)._astream == BaseChatModel._astream
+    astream_chunks = [chunk async for chunk in model.astream("anything")]
+    assert astream_chunks == [
+        _any_id_ai_message_chunk(
+            content="a",
+        ),
+        _any_id_ai_message_chunk(content="b", chunk_position="last"),
+    ]
+    assert len({chunk.id for chunk in astream_chunks}) == 1
+
+
+async def test_astream_implementation_uses_astream() -> None:
+    """Test astream uses appropriate implementation."""
+
+    class ModelWithAsyncStream(BaseChatModel):
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            """Top Level call."""
+            raise NotImplementedError
+
+        @override
+        async def _astream(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,  # type: ignore[override]
+            **kwargs: Any,
+        ) -> AsyncIterator[ChatGenerationChunk]:
+            """Stream the output of the model."""
+            yield ChatGenerationChunk(message=AIMessageChunk(content="a"))
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(content="b", chunk_position="last")
+            )
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model"
+
+    model = ModelWithAsyncStream()
+    chunks = [chunk async for chunk in model.astream("anything")]
+    assert chunks == [
+        _any_id_ai_message_chunk(
+            content="a",
+        ),
+        _any_id_ai_message_chunk(content="b", chunk_position="last"),
+    ]
+    assert len({chunk.id for chunk in chunks}) == 1
+
+
+class FakeTracer(BaseTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.traced_run_ids: list[uuid.UUID] = []
+
+    def _persist_run(self, run: Run) -> None:
+        """Persist a run."""
+        self.traced_run_ids.append(run.id)
+
+
+class LangChainTracerRunCollector:
+    def __init__(self) -> None:
+        self.tracer = LangChainTracer()
+        self.runs: list[Run] = []
+
+    @contextmanager
+    def tracing_callback(self) -> Iterator[LangChainTracer]:
+        def collect_tracer_run(_: LangChainTracer, run: Run) -> None:
+            self.runs.append(run)
+
+        with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
+            yield self.tracer
+
+
+def test_pass_run_id() -> None:
+    llm = FakeListChatModel(responses=["a", "b", "c"])
+    cb = FakeTracer()
+    uid1 = uuid.uuid4()
+    llm.invoke("Dummy message", {"callbacks": [cb], "run_id": uid1})
+    assert cb.traced_run_ids == [uid1]
+    uid2 = uuid.uuid4()
+    list(llm.stream("Dummy message", {"callbacks": [cb], "run_id": uid2}))
+    assert cb.traced_run_ids == [uid1, uid2]
+    uid3 = uuid.uuid4()
+    llm.batch([["Dummy message"]], {"callbacks": [cb], "run_id": uid3})
+    assert cb.traced_run_ids == [uid1, uid2, uid3]
+
+
+async def test_async_pass_run_id() -> None:
+    llm = FakeListChatModel(responses=["a", "b", "c"])
+    cb = FakeTracer()
+    uid1 = uuid.uuid4()
+    await llm.ainvoke("Dummy message", {"callbacks": [cb], "run_id": uid1})
+    assert cb.traced_run_ids == [uid1]
+    uid2 = uuid.uuid4()
+    async for _ in llm.astream("Dummy message", {"callbacks": [cb], "run_id": uid2}):
+        pass
+    assert cb.traced_run_ids == [uid1, uid2]
+
+    uid3 = uuid.uuid4()
+    await llm.abatch([["Dummy message"]], {"callbacks": [cb], "run_id": uid3})
+    assert cb.traced_run_ids == [uid1, uid2, uid3]
+
+
+class NoStreamingModel(BaseChatModel):
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage("invoke"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "model1"
+
+
+class StreamingModel(NoStreamingModel):
+    streaming: bool = False
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        yield ChatGenerationChunk(message=AIMessageChunk(content="stream"))
+
+
+class SanitizingStreamingModel(StreamingModel):
+    received_secrets: list[str] = Field(default_factory=list)
+
+    @override
+    def _get_invocation_params(
+        self, stop: list[str] | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
+        params = super()._get_invocation_params(stop=stop, **kwargs)
+        if "secret" in params:
+            params["secret"] = "**REDACTED**"
+        return params
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        self.received_secrets.append(kwargs["secret"])
+        yield from super()._stream(messages, stop, run_manager, **kwargs)
+
+
+class ModelStartTracer(FakeTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.start_kwargs: list[dict[str, Any]] = []
+
+    @override
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
+        self.start_kwargs.append(kwargs)
+        return super().on_chat_model_start(*args, **kwargs)
+
+
+@pytest.mark.parametrize("stream_events", [False, True])
+def test_streaming_options_use_sanitized_invocation_params(
+    *, stream_events: bool
+) -> None:
+    model = SanitizingStreamingModel()
+    tracer = ModelStartTracer()
+
+    if stream_events:
+        stream = model.stream_events(
+            [], version="v3", config={"callbacks": [tracer]}, secret="raw-secret"
+        )
+        _ = stream.output
+    else:
+        list(model.stream([], config={"callbacks": [tracer]}, secret="raw-secret"))
+
+    assert model.received_secrets == ["raw-secret"]
+    assert tracer.start_kwargs[0]["invocation_params"]["secret"] == "**REDACTED**"
+    assert tracer.start_kwargs[0]["options"]["secret"] == "**REDACTED**"
+    assert "raw-secret" not in str(tracer.start_kwargs)
+
+
+@pytest.mark.parametrize("stream_events", [False, True])
+async def test_async_streaming_options_use_sanitized_invocation_params(
+    *, stream_events: bool
+) -> None:
+    model = SanitizingStreamingModel()
+    tracer = ModelStartTracer()
+
+    if stream_events:
+        stream = await model.astream_events(
+            [], version="v3", config={"callbacks": [tracer]}, secret="raw-secret"
+        )
+        _ = await stream
+    else:
+        _ = [
+            chunk
+            async for chunk in model.astream(
+                [], config={"callbacks": [tracer]}, secret="raw-secret"
+            )
+        ]
+
+    assert model.received_secrets == ["raw-secret"]
+    assert tracer.start_kwargs[0]["invocation_params"]["secret"] == "**REDACTED**"
+    assert tracer.start_kwargs[0]["options"]["secret"] == "**REDACTED**"
+    assert "raw-secret" not in str(tracer.start_kwargs)
+
+
+@pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
+def test_disable_streaming(
+    *,
+    disable_streaming: bool | Literal["tool_calling"],
+) -> None:
+    model = StreamingModel(disable_streaming=disable_streaming)
+    assert model.invoke([]).content == "invoke"
+
+    expected = "invoke" if disable_streaming is True else "stream"
+    assert next(model.stream([])).content == expected
+    assert (
+        model.invoke([], config={"callbacks": [LogStreamCallbackHandler()]}).content
+        == expected
+    )
+
+    expected = "invoke" if disable_streaming in {"tool_calling", True} else "stream"
+    assert next(model.stream([], tools=[{"type": "function"}])).content == expected
+    assert (
+        model.invoke(
+            [], config={"callbacks": [LogStreamCallbackHandler()]}, tools=[{}]
+        ).content
+        == expected
+    )
+
+
+@pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
+async def test_disable_streaming_async(
+    *,
+    disable_streaming: bool | Literal["tool_calling"],
+) -> None:
+    model = StreamingModel(disable_streaming=disable_streaming)
+    assert (await model.ainvoke([])).content == "invoke"
+
+    expected = "invoke" if disable_streaming is True else "stream"
+    async for c in model.astream([]):
+        assert c.content == expected
+        break
+    assert (
+        await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == expected
+
+    expected = "invoke" if disable_streaming in {"tool_calling", True} else "stream"
+    async for c in model.astream([], tools=[{}]):
+        assert c.content == expected
+        break
+    assert (
+        await model.ainvoke(
+            [], config={"callbacks": [_AstreamEventsCallbackHandler()]}, tools=[{}]
+        )
+    ).content == expected
+
+
+async def test_streaming_attribute_overrides_streaming_callback() -> None:
+    model = StreamingModel(streaming=False)
+    assert (
+        await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == "invoke"
+
+
+class _FakeV2Handler(BaseCallbackHandler, _V2StreamingCallbackHandler):
+    """Minimal v2 handler marker for routing tests; records nothing."""
+
+
+async def test_streaming_attribute_overrides_v2_callback() -> None:
+    """`self.streaming=False` must opt out of the v2 event path too.
+
+    `_should_use_protocol_streaming` shares the `_streaming_disabled` opt-outs with
+    `_should_stream`, so an instance-level `streaming=False` takes
+    precedence over an attached `_V2StreamingCallbackHandler`.
+    """
+    model = StreamingModel(streaming=False)
+    assert (
+        await model.ainvoke([], config={"callbacks": [_FakeV2Handler()]})
+    ).content == "invoke"
+    assert (
+        model.invoke([], config={"callbacks": [_FakeV2Handler()]})
+    ).content == "invoke"
+
+
+@pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
+def test_disable_streaming_no_streaming_model(
+    *,
+    disable_streaming: bool | Literal["tool_calling"],
+) -> None:
+    model = NoStreamingModel(disable_streaming=disable_streaming)
+    assert model.invoke([]).content == "invoke"
+    assert next(model.stream([])).content == "invoke"
+    assert (
+        model.invoke([], config={"callbacks": [LogStreamCallbackHandler()]}).content
+        == "invoke"
+    )
+    assert next(model.stream([], tools=[{}])).content == "invoke"
+
+
+@pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
+async def test_disable_streaming_no_streaming_model_async(
+    *,
+    disable_streaming: bool | Literal["tool_calling"],
+) -> None:
+    model = NoStreamingModel(disable_streaming=disable_streaming)
+    assert (await model.ainvoke([])).content == "invoke"
+    async for c in model.astream([]):
+        assert c.content == "invoke"
+        break
+    assert (
+        await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == "invoke"
+    async for c in model.astream([], tools=[{}]):
+        assert c.content == "invoke"
+        break
+
+
+class FakeChatModelStartTracer(FakeTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.messages: list[list[list[BaseMessage]]] = []
+
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
+        _, messages = args
+        self.messages.append(messages)
+        return super().on_chat_model_start(
+            *args,
+            **kwargs,
+        )
+
+
+def test_trace_images_in_openai_format() -> None:
+    """Test that images are traced in OpenAI Chat Completions format."""
+    llm = ParrotFakeChatModel()
+    messages = [
+        {
+            "role": "user",
+            # v0 format
+            "content": [
+                {
+                    "type": "image",
+                    "source_type": "url",
+                    "url": "https://example.com/image.png",
+                }
+            ],
+        }
+    ]
+    tracer = FakeChatModelStartTracer()
+    llm.invoke(messages, config={"callbacks": [tracer]})
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "https://example.com/image.png"},
+                        }
+                    ]
+                )
+            ]
+        ]
+    ]
+
+
+def test_trace_pdfs() -> None:
+    # For backward compat
+    llm = ParrotFakeChatModel()
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "file",
+                    "mime_type": "application/pdf",
+                    "base64": "<base64 string>",
+                }
+            ],
+        }
+    ]
+    tracer = FakeChatModelStartTracer()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        llm.invoke(messages, config={"callbacks": [tracer]})
+
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "file",
+                            "mime_type": "application/pdf",
+                            "source_type": "base64",
+                            "data": "<base64 string>",
+                        }
+                    ]
+                )
+            ]
+        ]
+    ]
+
+
+def test_content_block_transformation_v0_to_v1_image() -> None:
+    """Test that v0 format image content blocks are transformed to v1 format."""
+    # Create a message with v0 format image content
+    image_message = AIMessage(
+        content=[
+            {
+                "type": "image",
+                "source_type": "url",
+                "url": "https://example.com/image.png",
+            }
+        ]
+    )
+
+    llm = GenericFakeChatModel(messages=iter([image_message]), output_version="v1")
+    response = llm.invoke("test")
+
+    # With v1 output_version, .content should be transformed
+    # Check structure, ignoring auto-generated IDs
+    assert len(response.content) == 1
+    content_block = response.content[0]
+    if isinstance(content_block, dict) and "id" in content_block:
+        # Remove auto-generated id for comparison
+        content_without_id = {k: v for k, v in content_block.items() if k != "id"}
+        expected_content = {
+            "type": "image",
+            "url": "https://example.com/image.png",
+        }
+        assert content_without_id == expected_content
+    else:
+        assert content_block == {
+            "type": "image",
+            "url": "https://example.com/image.png",
+        }
+
+
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_trace_content_blocks_with_no_type_key(output_version: str) -> None:
+    """Test behavior of content blocks that don't have a `type` key.
+
+    Only for blocks with one key, in which case, the name of the key is used as `type`.
+
+    """
+    llm = ParrotFakeChatModel(output_version=output_version)
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Hello",
+                },
+                {
+                    "cachePoint": {"type": "default"},
+                },
+            ],
+        }
+    ]
+    tracer = FakeChatModelStartTracer()
+    response = llm.invoke(messages, config={"callbacks": [tracer]})
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    [
+                        {
+                            "type": "text",
+                            "text": "Hello",
+                        },
+                        {
+                            "type": "cachePoint",
+                            "cachePoint": {"type": "default"},
+                        },
+                    ]
+                )
+            ]
+        ]
+    ]
+
+    if output_version == "v0":
+        assert response.content == [
+            {
+                "type": "text",
+                "text": "Hello",
+            },
+            {
+                "cachePoint": {"type": "default"},
+            },
+        ]
+    else:
+        assert response.content == [
+            {
+                "type": "text",
+                "text": "Hello",
+            },
+            {
+                "type": "non_standard",
+                "value": {
+                    "cachePoint": {"type": "default"},
+                },
+            },
+        ]
+
+    assert response.content_blocks == [
+        {
+            "type": "text",
+            "text": "Hello",
+        },
+        {
+            "type": "non_standard",
+            "value": {
+                "cachePoint": {"type": "default"},
+            },
+        },
+    ]
+
+
+def test_extend_support_to_openai_multimodal_formats() -> None:
+    """Test normalizing OpenAI audio, image, and file inputs to v1."""
+    # Audio and file only (chat model default)
+    messages = HumanMessage(
+        content=[
+            {"type": "text", "text": "Hello"},
+            {  # audio-base64
+                "type": "input_audio",
+                "input_audio": {
+                    "format": "wav",
+                    "data": "<base64 string>",
+                },
+            },
+            {  # file-base64
+                "type": "file",
+                "file": {
+                    "filename": "draconomicon.pdf",
+                    "file_data": "data:application/pdf;base64,<base64 string>",
+                },
+            },
+            {  # file-id
+                "type": "file",
+                "file": {"file_id": "<file id>"},
+            },
+        ]
+    )
+
+    expected_content_messages = HumanMessage(
+        content=[
+            {"type": "text", "text": "Hello"},  # TextContentBlock
+            {  # AudioContentBlock
+                "type": "audio",
+                "base64": "<base64 string>",
+                "mime_type": "audio/wav",
+            },
+            {  # FileContentBlock
+                "type": "file",
+                "base64": "<base64 string>",
+                "mime_type": "application/pdf",
+                "extras": {"filename": "draconomicon.pdf"},
+            },
+            {  # ...
+                "type": "file",
+                "file_id": "<file id>",
+            },
+        ]
+    )
+
+    normalized_content = _normalize_messages([messages])
+
+    # Check structure, ignoring auto-generated IDs
+    assert len(normalized_content) == 1
+    normalized_message = normalized_content[0]
+    assert len(normalized_message.content) == len(expected_content_messages.content)
+
+    assert _content_blocks_equal_ignore_id(
+        normalized_message.content, expected_content_messages.content
+    )
+
+    messages = HumanMessage(
+        content=[
+            {"type": "text", "text": "Hello"},
+            {  # image-url
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/image.png"},
+            },
+            {  # image-base64
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."},
+            },
+            {  # audio-base64
+                "type": "input_audio",
+                "input_audio": {
+                    "format": "wav",
+                    "data": "<base64 string>",
+                },
+            },
+            {  # file-base64
+                "type": "file",
+                "file": {
+                    "filename": "draconomicon.pdf",
+                    "file_data": "data:application/pdf;base64,<base64 string>",
+                },
+            },
+            {  # file-id
+                "type": "file",
+                "file": {"file_id": "<file id>"},
+            },
+        ]
+    )
+
+    expected_content_messages = HumanMessage(
+        content=[
+            {"type": "text", "text": "Hello"},  # TextContentBlock
+            {  # image-url passes through
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/image.png"},
+            },
+            {  # image-url passes through with inline data
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."},
+            },
+            {  # AudioContentBlock
+                "type": "audio",
+                "base64": "<base64 string>",
+                "mime_type": "audio/wav",
+            },
+            {  # FileContentBlock
+                "type": "file",
+                "base64": "<base64 string>",
+                "mime_type": "application/pdf",
+                "extras": {"filename": "draconomicon.pdf"},
+            },
+            {  # ...
+                "type": "file",
+                "file_id": "<file id>",
+            },
+        ]
+    )
+
+    normalized_content = _normalize_messages([messages])
+
+    # Check structure, ignoring auto-generated IDs
+    assert len(normalized_content) == 1
+    normalized_message = normalized_content[0]
+    assert len(normalized_message.content) == len(expected_content_messages.content)
+
+    assert _content_blocks_equal_ignore_id(
+        normalized_message.content, expected_content_messages.content
+    )
+
+
+def test_normalize_messages_edge_cases() -> None:
+    # Test behavior of malformed/unrecognized content blocks
+
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "input_image",  # Responses API type; not handled
+                    "image_url": "uri",
+                },
+                {
+                    # Standard OpenAI Chat Completions type but malformed structure
+                    "type": "input_audio",
+                    "input_audio": "uri",  # Should be nested in `audio`
+                },
+                {
+                    "type": "file",
+                    "file": "uri",  # `file` should be a dict for Chat Completions
+                },
+                {
+                    "type": "input_file",  # Responses API type; not handled
+                    "file_data": "uri",
+                    "filename": "file-name",
+                },
+            ]
+        )
+    ]
+
+    assert messages == _normalize_messages(messages)
+
+
+def test_normalize_messages_v1_content_blocks_unchanged() -> None:
+    """Test passing v1 content blocks to `_normalize_messages()` leaves unchanged."""
+    input_messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "Hello world",
+                },
+                {
+                    "type": "image",
+                    "url": "https://example.com/image.png",
+                    "mime_type": "image/png",
+                },
+                {
+                    "type": "audio",
+                    "base64": "base64encodedaudiodata",
+                    "mime_type": "audio/wav",
+                },
+                {
+                    "type": "file",
+                    "id": "file_123",
+                },
+                {
+                    "type": "reasoning",
+                    "reasoning": "Let me think about this...",
+                },
+            ]
+        )
+    ]
+
+    result = _normalize_messages(input_messages)
+
+    # Verify the result is identical to the input (message should not be copied)
+    assert len(result) == 1
+    assert result[0] is input_messages[0]
+    assert result[0].content == input_messages[0].content
+
+
+def test_output_version_invoke(monkeypatch: Any) -> None:
+    messages = [AIMessage("hello")]
+
+    llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
+    response = llm.invoke("hello")
+    assert response.content == [{"type": "text", "text": "hello"}]
+    assert response.response_metadata["output_version"] == "v1"
+
+    llm = GenericFakeChatModel(messages=iter(messages))
+    response = llm.invoke("hello")
+    assert response.content == "hello"
+
+    monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
+    llm = GenericFakeChatModel(messages=iter(messages))
+    response = llm.invoke("hello")
+    assert response.content == [{"type": "text", "text": "hello"}]
+    assert response.response_metadata["output_version"] == "v1"
+
+
+# -- v1 output version tests --
+
+
+async def test_output_version_ainvoke(monkeypatch: Any) -> None:
+    messages = [AIMessage("hello")]
+
+    # v0
+    llm = GenericFakeChatModel(messages=iter(messages))
+    response = await llm.ainvoke("hello")
+    assert response.content == "hello"
+
+    # v1
+    llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
+    response = await llm.ainvoke("hello")
+    assert response.content == [{"type": "text", "text": "hello"}]
+    assert response.response_metadata["output_version"] == "v1"
+
+    # v1 from env var
+    monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
+    llm = GenericFakeChatModel(messages=iter(messages))
+    response = await llm.ainvoke("hello")
+    assert response.content == [{"type": "text", "text": "hello"}]
+    assert response.response_metadata["output_version"] == "v1"
+
+
+class _AnotherFakeChatModel(BaseChatModel):
+    responses: Iterator[AIMessage]
+    """Responses for _generate."""
+
+    chunks: Iterator[AIMessageChunk]
+    """Responses for _stream."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "another-fake-chat-model"
+
+    def _generate(
+        self,
+        *_args: Any,
+        **_kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
+
+    async def _agenerate(
+        self,
+        *_args: Any,
+        **_kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
+
+    def _stream(
+        self,
+        *_args: Any,
+        **_kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        for chunk in self.chunks:
+            yield ChatGenerationChunk(message=chunk)
+
+    async def _astream(
+        self,
+        *_args: Any,
+        **_kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        for chunk in self.chunks:
+            yield ChatGenerationChunk(message=chunk)
+
+
+def test_output_version_stream(monkeypatch: Any) -> None:
+    messages = [AIMessage("foo bar")]
+
+    # v0
+    llm = GenericFakeChatModel(messages=iter(messages))
+    full = None
+    for chunk in llm.stream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, str)
+        assert chunk.content
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.content == "foo bar"
+
+    # v1
+    llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
+    full_v1: AIMessageChunk | None = None
+    for chunk in llm.stream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, list)
+        assert len(chunk.content) == 1
+        block = chunk.content[0]
+        assert isinstance(block, dict)
+        assert block["type"] == "text"
+        assert block["text"]
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.response_metadata["output_version"] == "v1"
+
+    assert full_v1.content == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test text blocks
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(
+            [
+                AIMessageChunk(content="foo "),
+                AIMessageChunk(content="bar"),
+            ]
+        ),
+        output_version="v1",
+    )
+    full_v1 = None
+    for chunk in llm_with_rich_content.stream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test content blocks of different types
+    chunks = [
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "<rea"}),
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "soning>"}),
+        AIMessageChunk(content="<some "),
+        AIMessageChunk(content="text>"),
+    ]
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    full_v1 = None
+    for chunk in llm_with_rich_content.stream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
+
+    # Test invoke with stream=True
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    response_v1 = llm_with_rich_content.invoke("hello", stream=True)
+    assert response_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
+
+    # v1 from env var
+    monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
+    llm = GenericFakeChatModel(messages=iter(messages))
+    full_env = None
+    for chunk in llm.stream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, list)
+        assert len(chunk.content) == 1
+        block = chunk.content[0]
+        assert isinstance(block, dict)
+        assert block["type"] == "text"
+        assert block["text"]
+        full_env = chunk if full_env is None else full_env + chunk
+    assert isinstance(full_env, AIMessageChunk)
+    assert full_env.response_metadata["output_version"] == "v1"
+
+
+async def test_output_version_astream(monkeypatch: Any) -> None:
+    messages = [AIMessage("foo bar")]
+
+    # v0
+    llm = GenericFakeChatModel(messages=iter(messages))
+    full = None
+    async for chunk in llm.astream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, str)
+        assert chunk.content
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.content == "foo bar"
+
+    # v1
+    llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
+    full_v1: AIMessageChunk | None = None
+    async for chunk in llm.astream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, list)
+        assert len(chunk.content) == 1
+        block = chunk.content[0]
+        assert isinstance(block, dict)
+        assert block["type"] == "text"
+        assert block["text"]
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.response_metadata["output_version"] == "v1"
+
+    assert full_v1.content == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test text blocks
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(
+            [
+                AIMessageChunk(content="foo "),
+                AIMessageChunk(content="bar"),
+            ]
+        ),
+        output_version="v1",
+    )
+    full_v1 = None
+    async for chunk in llm_with_rich_content.astream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test content blocks of different types
+    chunks = [
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "<rea"}),
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "soning>"}),
+        AIMessageChunk(content="<some "),
+        AIMessageChunk(content="text>"),
+    ]
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    full_v1 = None
+    async for chunk in llm_with_rich_content.astream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
+
+    # Test invoke with stream=True
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    response_v1 = await llm_with_rich_content.ainvoke("hello", stream=True)
+    assert response_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
+
+    # v1 from env var
+    monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
+    llm = GenericFakeChatModel(messages=iter(messages))
+    full_env = None
+    async for chunk in llm.astream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, list)
+        assert len(chunk.content) == 1
+        block = chunk.content[0]
+        assert isinstance(block, dict)
+        assert block["type"] == "text"
+        assert block["text"]
+        full_env = chunk if full_env is None else full_env + chunk
+    assert isinstance(full_env, AIMessageChunk)
+    assert full_env.response_metadata["output_version"] == "v1"
+    assert messages == _normalize_messages(messages)
+
+
+def test_get_ls_params() -> None:
+    class LSParamsModel(BaseChatModel):
+        model: str = "foo"
+        temperature: float = 0.1
+        max_tokens: int = 1024
+
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            raise NotImplementedError
+
+        @override
+        def _stream(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> Iterator[ChatGenerationChunk]:
+            raise NotImplementedError
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model"
+
+    llm = LSParamsModel()
+
+    # Test standard tracing params
+    ls_params = llm._get_ls_params()
+    assert ls_params == {
+        "ls_provider": "lsparamsmodel",
+        "ls_model_type": "chat",
+        "ls_model_name": "foo",
+        "ls_temperature": 0.1,
+        "ls_max_tokens": 1024,
+    }
+
+    ls_params = llm._get_ls_params(model="bar")
+    assert ls_params["ls_model_name"] == "bar"
+
+    ls_params = llm._get_ls_params(temperature=0.2)
+    assert ls_params["ls_temperature"] == 0.2
+
+    # Test integer temperature values (regression test for issue #35300)
+    ls_params = llm._get_ls_params(temperature=0)
+    assert ls_params["ls_temperature"] == 0
+
+    ls_params = llm._get_ls_params(temperature=1)
+    assert ls_params["ls_temperature"] == 1
+
+    ls_params = llm._get_ls_params(max_tokens=2048)
+    assert ls_params["ls_max_tokens"] == 2048
+
+    ls_params = llm._get_ls_params(stop=["stop"])
+    assert ls_params["ls_stop"] == ["stop"]
+
+
+class _VersionedFakeModel(FakeListChatModel):
+    """Fake model that adds a version via `_add_version`."""
+
+    def model_post_init(self, _context: Any, /) -> None:
+        super().model_post_init(_context)
+        self._add_version("langchain-fake", "0.1.0")
+
+
+def test_user_lc_versions_metadata_survives_merge() -> None:
+    """User-provided `lc_versions` metadata should merge with model versions."""
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"lc_versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        llm.invoke([HumanMessage(content="hi")], config=user_config)
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert "my-app" in run_metadata["lc_versions"]
+        assert run_metadata["lc_versions"]["my-app"] == "2.0"
+        assert "langchain-fake" in run_metadata["lc_versions"]
+        assert "langchain-core" in run_metadata["lc_versions"]
+
+
+def test_user_versions_metadata_remains_user_owned() -> None:
+    """User-owned `versions` metadata is not used for package version tracking."""
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        llm.invoke([HumanMessage(content="hi")], config=user_config)
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert run_metadata["versions"] == {"my-app": "2.0"}
+        assert "langchain-fake" not in run_metadata["versions"]
+        assert "langchain-core" not in run_metadata["versions"]
+        assert "langchain-fake" in run_metadata["lc_versions"]
+        assert "langchain-core" in run_metadata["lc_versions"]
+
+
+async def test_user_lc_versions_metadata_survives_merge_async() -> None:
+    """Async variant: user-provided `lc_versions` metadata merges with model's."""
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"lc_versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        await llm.ainvoke([HumanMessage(content="hi")], config=user_config)
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert "my-app" in run_metadata["lc_versions"]
+        assert "langchain-fake" in run_metadata["lc_versions"]
+        assert "langchain-core" in run_metadata["lc_versions"]
+
+
+def test_user_lc_versions_metadata_survives_merge_stream() -> None:
+    """Stream variant: user-provided `lc_versions` metadata merges with model's."""
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"lc_versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        for _ in llm.stream([HumanMessage(content="hi")], config=user_config):
+            pass
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert "my-app" in run_metadata["lc_versions"]
+        assert "langchain-fake" in run_metadata["lc_versions"]
+        assert "langchain-core" in run_metadata["lc_versions"]
+
+
+async def test_user_lc_versions_metadata_survives_merge_astream() -> None:
+    """Async stream variant: user-provided `lc_versions` metadata merges."""
+    llm = _VersionedFakeModel(responses=["hello"])
+    user_config: RunnableConfig = {"metadata": {"lc_versions": {"my-app": "2.0"}}}
+
+    with collect_runs() as cb:
+        async for _ in llm.astream([HumanMessage(content="hi")], config=user_config):
+            pass
+        assert len(cb.traced_runs) == 1
+        run_metadata = cb.traced_runs[0].extra["metadata"]
+        assert "my-app" in run_metadata["lc_versions"]
+        assert "langchain-fake" in run_metadata["lc_versions"]
+        assert "langchain-core" in run_metadata["lc_versions"]
+
+
+def test_add_version_with_none_metadata() -> None:
+    """Model constructed with metadata=None should still get `lc_versions`."""
+    llm = FakeListChatModel(responses=["x"], metadata=None)
+    assert llm.metadata is not None
+    assert "langchain-core" in llm.metadata["lc_versions"]
+
+
+def test_add_version_with_non_dict_lc_versions() -> None:
+    """Non-dict `lc_versions` value is replaced with a warning."""
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        llm = FakeListChatModel(responses=["x"], metadata={"lc_versions": "garbage"})
+        assert any("expected a dict" in str(warning.message) for warning in w)
+    assert llm.metadata is not None
+    assert isinstance(llm.metadata["lc_versions"], dict)
+    assert "langchain-core" in llm.metadata["lc_versions"]
+
+
+def test_langchain_version_in_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When `langchain` is installed, its version appears in metadata."""
+
+    def _fake_version(pkg: str) -> str:
+        if pkg == "langchain":
+            return "1.2.13"
+        raise PackageNotFoundError(pkg)
+
+    monkeypatch.setattr("importlib.metadata.version", _fake_version)
+    _get_langchain_version.cache_clear()
+    try:
+        llm = FakeListChatModel(responses=["x"])
+        assert llm.metadata is not None
+        assert llm.metadata["lc_versions"]["langchain"] == "1.2.13"
+        assert "langchain-core" in llm.metadata["lc_versions"]
+    finally:
+        _get_langchain_version.cache_clear()
+
+
+def test_langchain_version_missing_when_not_installed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """When `langchain` is not installed, metadata.lc_versions has no entry.
+
+    The lookup raises `PackageNotFoundError` (the real not-installed signal), which
+    `_get_langchain_version` must swallow without dropping the rest of the dict.
+    """
+
+    def _raise_not_found(pkg: str) -> str:
+        raise PackageNotFoundError(pkg)
+
+    monkeypatch.setattr("importlib.metadata.version", _raise_not_found)
+    _get_langchain_version.cache_clear()
+    try:
+        llm = FakeListChatModel(responses=["x"])
+        assert llm.metadata is not None
+        assert "langchain" not in llm.metadata["lc_versions"]
+        assert "langchain-core" in llm.metadata["lc_versions"]
+    finally:
+        _get_langchain_version.cache_clear()
+
+
+def test_version_validator_coexists_with_core_seed() -> None:
+    """A `model_validator(mode="after")` calling `_add_version` keeps the core seed.
+
+    Mirrors the real partner pattern (a validator, not a `model_post_init`
+    override) and confirms the validator-added entry and the core-seeded
+    `langchain-core` entry accumulate rather than clobber one another.
+    """
+
+    class _ValidatorVersionedModel(FakeListChatModel):
+        @model_validator(mode="after")
+        def _set_fake_version(self) -> Self:
+            self._add_version("langchain-fake", "0.1.0")
+            return self
+
+    llm = _ValidatorVersionedModel(responses=["x"])
+    assert llm.metadata is not None
+    versions = llm.metadata["lc_versions"]
+    assert versions["langchain-core"] == VERSION
+    assert versions["langchain-fake"] == "0.1.0"
+
+
+def test_subclass_unique_validator_names_accumulate() -> None:
+    """Parent and child uniquely-named validators must both contribute entries.
+
+    Regression guard for the documented Pydantic footgun: same-named
+    `model_validator` methods *replace* rather than chain across a class
+    hierarchy. As long as each layer uses a unique validator name, a subclass
+    must not silently drop its parent's version entry.
+    """
+
+    class _ParentModel(FakeListChatModel):
+        @model_validator(mode="after")
+        def _set_parent_version(self) -> Self:
+            self._add_version("langchain-parent", "1.0.0")
+            return self
+
+    class _ChildModel(_ParentModel):
+        @model_validator(mode="after")
+        def _set_child_version(self) -> Self:
+            self._add_version("langchain-child", "2.0.0")
+            return self
+
+    llm = _ChildModel(responses=["x"])
+    assert llm.metadata is not None
+    versions = llm.metadata["lc_versions"]
+    assert versions["langchain-core"] == VERSION
+    assert versions["langchain-parent"] == "1.0.0"
+    assert versions["langchain-child"] == "2.0.0"
+
+
+def test_model_profiles() -> None:
+    model = GenericFakeChatModel(messages=iter([]))
+    assert model.profile is None
+
+    model_with_profile = GenericFakeChatModel(
+        messages=iter([]), profile={"max_input_tokens": 100}
+    )
+    assert model_with_profile.profile == {"max_input_tokens": 100}
+
+
+def test_resolve_model_profile_hook_populates_profile() -> None:
+    """_resolve_model_profile is called when profile is None."""
+
+    class ResolverModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            return {"max_input_tokens": 500}
+
+    model = ResolverModel(messages=iter([]))
+    assert model.profile == {"max_input_tokens": 500}
+
+
+def test_resolve_model_profile_hook_skipped_when_explicit() -> None:
+    """_resolve_model_profile is NOT called when profile is set explicitly."""
+
+    class ResolverModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            return {"max_input_tokens": 500}
+
+    model = ResolverModel(messages=iter([]), profile={"max_input_tokens": 999})
+    assert model.profile is not None
+    assert model.profile["max_input_tokens"] == 999
+
+
+def test_resolve_model_profile_hook_exception_is_caught() -> None:
+    """Model is still usable if _resolve_model_profile raises."""
+
+    class BrokenProfileModel(GenericFakeChatModel):
+        def _resolve_model_profile(self) -> ModelProfile | None:
+            msg = "profile file not found"
+            raise RuntimeError(msg)
+
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        model = BrokenProfileModel(messages=iter([]))
+
+    assert model.profile is None
+
+
+def test_check_profile_keys_runs_despite_partner_override() -> None:
+    """Verify _check_profile_keys fires even when _set_model_profile is overridden.
+
+    Because _check_profile_keys has a distinct validator name from
+    _set_model_profile, a partner override of the latter does not suppress
+    the key-checking validator.
+    """
+
+    class PartnerModel(GenericFakeChatModel):
+        """Simulates a partner that overrides _set_model_profile."""
+
+        @model_validator(mode="after")
+        def _set_model_profile(self) -> Self:
+            if self.profile is None:
+                profile: dict[str, Any] = {
+                    "max_input_tokens": 100,
+                    "partner_only_field": True,
+                }
+                self.profile = profile  # type: ignore[assignment]
+            return self
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        model = PartnerModel(messages=iter([]))
+
+    assert model.profile is not None
+    assert model.profile.get("partner_only_field") is True
+    profile_warnings = [x for x in w if "Unrecognized keys" in str(x.message)]
+    assert len(profile_warnings) == 1
+    assert "partner_only_field" in str(profile_warnings[0].message)
+
+
+class MockResponse:
+    """Mock response for testing _generate_response_from_error."""
+
+    def __init__(
+        self,
+        status_code: int = 400,
+        headers: dict[str, str] | None = None,
+        json_data: dict[str, Any] | None = None,
+        json_raises: type[Exception] | None = None,
+        text_raises: type[Exception] | None = None,
+    ):
+        self.status_code = status_code
+        self.headers = headers or {}
+        self._json_data = json_data
+        self._json_raises = json_raises
+        self._text_raises = text_raises
+
+    def json(self) -> dict[str, Any]:
+        if self._json_raises:
+            msg = "JSON parsing failed"
+            raise self._json_raises(msg)
+        return self._json_data or {}
+
+    @property
+    def text(self) -> str:
+        if self._text_raises:
+            msg = "Text access failed"
+            raise self._text_raises(msg)
+        return ""
+
+
+class MockAPIError(Exception):
+    """Mock API error with response attribute."""
+
+    def __init__(self, message: str, response: MockResponse | None = None):
+        super().__init__(message)
+        self.message = message
+        if response is not None:
+            self.response = response
+
+
+def test_generate_response_from_error_with_valid_json() -> None:
+    """Test `_generate_response_from_error` with valid JSON response."""
+    response = MockResponse(
+        status_code=400,
+        headers={"content-type": "application/json"},
+        json_data={"error": {"message": "Bad request", "type": "invalid_request"}},
+    )
+    error = MockAPIError("API Error", response=response)
+
+    generations = _generate_response_from_error(error)
+
+    assert len(generations) == 1
+    generation = generations[0]
+    assert isinstance(generation, ChatGeneration)
+    assert isinstance(generation.message, AIMessage)
+    assert generation.message.content == ""
+
+    metadata = generation.message.response_metadata
+    assert metadata["body"] == {
+        "error": {"message": "Bad request", "type": "invalid_request"}
+    }
+    assert metadata["headers"] == {"content-type": "application/json"}
+    assert metadata["status_code"] == 400
+
+
+def test_generate_response_from_error_surfaces_gateway_metadata() -> None:
+    """Gateway metadata from an error response is available for tracing."""
+    response = MockResponse(
+        headers={"X-LangSmith-Gateway-Metadata": '{"outcome": "blocked"}'},
+    )
+
+    generations = _generate_response_from_error(
+        MockAPIError("API Error", response=response)
+    )
+
+    assert generations[0].generation_info == {
+        GATEWAY_METADATA_RESPONSE_KEY: {"outcome": "blocked"}
+    }
+
+
+def test_generate_response_from_error_handles_streaming_response_failure() -> None:
+    # Simulates scenario where accessing response.json() or response.text
+    # raises ResponseNotRead on streaming responses
+    response = MockResponse(
+        status_code=400,
+        headers={"content-type": "application/json"},
+        json_raises=Exception,  # Simulates ResponseNotRead or similar
+        text_raises=Exception,
+    )
+    error = MockAPIError("API Error", response=response)
+
+    # This should NOT raise an exception, but should handle it gracefully
+    generations = _generate_response_from_error(error)
+
+    assert len(generations) == 1
+    generation = generations[0]
+    metadata = generation.message.response_metadata
+
+    # When both fail, body should be None instead of raising an exception
+    assert metadata["body"] is None
+    assert metadata["headers"] == {"content-type": "application/json"}
+    assert metadata["status_code"] == 400
+
+
+def test_filter_invocation_params_for_tracing() -> None:
+    """Test that large fields are filtered from invocation params for tracing."""
+    params = {
+        "temperature": 0.7,
+        "tools": [{"name": "test_tool"}],
+        "functions": [{"name": "test_function"}],
+        "messages": [{"role": "system", "content": "test"}],
+        "response_format": {"type": "json_object"},
+    }
+    filtered = _filter_invocation_params_for_tracing(params)
+
+    # Should include temperature
+    assert "temperature" in filtered
+    assert filtered["temperature"] == 0.7
+
+    # Should exclude these large fields
+    assert "tools" not in filtered
+    assert "functions" not in filtered
+    assert "messages" not in filtered
+    assert "response_format" not in filtered
+
+
+class FakeChatModelWithInvocationParams(SimpleChatModel):
+    """Fake chat model with invocation params for testing tracing."""
+
+    temperature: float = 0.7
+
+    @property
+    @override
+    def _llm_type(self) -> str:
+        return "fake-chat-model-with-invocation-params"
+
+    @property
+    @override
+    def _identifying_params(self) -> dict[str, Any]:
+        return {
+            "temperature": self.temperature,
+            "tools": [{"name": "test_tool"}],
+            "functions": [{"name": "test_function"}],
+            "messages": [{"role": "system", "content": "test"}],
+            "response_format": {"type": "json_object"},
+        }
+
+    @override
+    def _call(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> str:
+        return "test response"
+
+
+class FakeStreamingChatModelWithInvocationParams(FakeChatModelWithInvocationParams):
+    """Streaming counterpart for tracer metadata tests."""
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(message=AIMessageChunk(content="test response"))
+
+    @override
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(message=AIMessageChunk(content="test response"))
+
+
+def test_invocation_params_passed_to_tracer_metadata() -> None:
+    """Test that invocation params are passed to tracer metadata."""
+    llm = FakeChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        llm.invoke([HumanMessage(content="Hello")], config={"callbacks": [tracer]})
+
+    assert len(collector.runs) == 1
+    run = collector.runs[0]
+
+    # LangSmith injects environment-derived keys (e.g. `revision_id`,
+    # `LANGCHAIN_TESTS_USER_AGENT`, `LANGSMITH_*`) into run metadata. These vary
+    # by environment and are not the subject of this test, so strip them before
+    # the exact-equality comparison.
+    for env_key in get_langchain_env_var_metadata():
+        run.extra["metadata"].pop(env_key, None)
+
+    assert run.extra == {
+        "batch_size": 1,
+        "invocation_params": {
+            "_type": "fake-chat-model-with-invocation-params",
+            "functions": [{"name": "test_function"}],
+            "messages": [{"content": "test", "role": "system"}],
+            "response_format": {"type": "json_object"},
+            "stop": None,
+            "temperature": 0.7,
+            "tools": [{"name": "test_tool"}],
+        },
+        "metadata": {
+            "_type": "fake-chat-model-with-invocation-params",
+            "ls_integration": "langchain_chat_model",
+            "ls_model_type": "chat",
+            "ls_provider": "fakechatmodelwithinvocationparams",
+            "ls_temperature": 0.7,
+            "stop": None,
+            "temperature": 0.7,
+            "lc_versions": {"langchain-core": VERSION},
+        },
+        "options": {"stop": None},
+        "runtime": run.extra["runtime"],
+    }
+    assert run.metadata == run.extra["metadata"]
+
+
+def test_stream_events_v3_invocation_params_passed_to_tracer_metadata() -> None:
+    """`stream_events(version="v3")` preserves filtered invocation params."""
+    llm = FakeStreamingChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        _ = llm.stream_events(
+            [HumanMessage(content="Hello")],
+            config={"callbacks": [tracer]},
+            stop=["done"],
+            version="v3",
+        ).output
+
+    assert len(collector.runs) == 1
+    metadata = collector.runs[0].extra["metadata"]
+
+    assert metadata["_type"] == "fake-chat-model-with-invocation-params"
+    assert metadata["stop"] == ["done"]
+    assert metadata["temperature"] == 0.7
+
+
+async def test_astream_events_v3_invocation_params_passed_to_tracer_metadata() -> None:
+    """`astream_events(version="v3")` preserves filtered invocation params."""
+    llm = FakeStreamingChatModelWithInvocationParams()
+    collector = LangChainTracerRunCollector()
+
+    with collector.tracing_callback() as tracer:
+        stream = await llm.astream_events(
+            [HumanMessage(content="Hello")],
+            config={"callbacks": [tracer]},
+            stop=["done"],
+            version="v3",
+        )
+        _ = await stream
+
+    assert len(collector.runs) == 1
+    metadata = collector.runs[0].extra["metadata"]
+
+    assert metadata["_type"] == "fake-chat-model-with-invocation-params"
+    assert metadata["stop"] == ["done"]
+    assert metadata["temperature"] == 0.7

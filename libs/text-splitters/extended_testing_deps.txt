@@ -1,0 +1,2 @@
+lxml>=6.1.0,<7.0
+beautifulsoup4>=4.12.3,<5

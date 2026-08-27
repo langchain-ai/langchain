@@ -1,0 +1,1948 @@
+"""Base classes and utilities for LangChain tools."""
+
+from __future__ import annotations
+
+import functools
+import inspect
+import json
+import logging
+import typing
+import warnings
+from abc import ABC, abstractmethod
+from collections.abc import Callable, Mapping, Sequence
+from inspect import signature
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Literal,
+    TypeVar,
+    cast,
+    get_args,
+    get_origin,
+)
+
+import typing_extensions
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    PydanticDeprecationWarning,
+    SkipValidation,
+    ValidationError,
+    validate_arguments,
+)
+from pydantic.fields import FieldInfo
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
+from pydantic.v1 import validate_arguments as validate_arguments_v1
+from typing_extensions import Self, get_type_hints, override
+
+from langchain_core.callbacks import (
+    AsyncCallbackManager,
+    CallbackManager,
+    Callbacks,
+)
+from langchain_core.messages.tool import ToolCall, ToolMessage, ToolOutputMixin
+from langchain_core.runnables import (
+    RunnableConfig,
+    RunnableSerializable,
+    ensure_config,
+    patch_config,
+    run_in_executor,
+)
+from langchain_core.runnables.config import set_config_context
+from langchain_core.runnables.utils import coro_with_context
+from langchain_core.utils.function_calling import (
+    _parse_google_docstring,
+    _py_38_safe_origin,
+)
+from langchain_core.utils.pydantic import (
+    TypeBaseModel,
+    _create_subset_model,
+    get_fields,
+    is_basemodel_subclass,
+    is_pydantic_v1_subclass,
+    is_pydantic_v2_subclass,
+    model_json_schema,
+)
+
+if TYPE_CHECKING:
+    import uuid
+
+FILTERED_ARGS = ("run_manager", "callbacks")
+TOOL_MESSAGE_BLOCK_TYPES = (
+    "text",
+    "image_url",
+    "image",
+    "json",
+    "search_result",
+    "custom_tool_call_output",
+    "document",
+    "file",
+)
+
+_logger = logging.getLogger(__name__)
+
+
+class SchemaAnnotationError(TypeError):
+    """Raised when `args_schema` is missing or has an incorrect type annotation."""
+
+
+def _is_annotated_type(typ: type[Any]) -> bool:
+    """Check if a type is an `Annotated` type.
+
+    Args:
+        typ: The type to check.
+
+    Returns:
+        `True` if the type is an `Annotated` type, `False` otherwise.
+    """
+    return get_origin(typ) in {typing.Annotated, typing_extensions.Annotated}
+
+
+def _get_annotation_description(arg_type: type) -> str | None:
+    """Extract description from an `Annotated` type.
+
+    Checks for string annotations and `FieldInfo` objects with descriptions.
+
+    Args:
+        arg_type: The type to extract description from.
+
+    Returns:
+        The description string if found, `None` otherwise.
+    """
+    if _is_annotated_type(arg_type):
+        annotated_args = get_args(arg_type)
+        for annotation in annotated_args[1:]:
+            if isinstance(annotation, str):
+                return annotation
+            if isinstance(annotation, FieldInfo) and annotation.description:
+                return annotation.description
+    return None
+
+
+def _parse_python_function_docstring(
+    function: Callable[..., Any],
+    annotations: dict[str, Any],
+    *,
+    error_on_invalid_docstring: bool = False,
+) -> tuple[str, dict[str, str]]:
+    """Parse function and argument descriptions from a docstring.
+
+    Assumes the function docstring follows Google Python style guide.
+
+    Args:
+        function: The function to parse the docstring from.
+        annotations: Type annotations for the function parameters.
+        error_on_invalid_docstring: Whether to raise an error on invalid docstring.
+
+    Returns:
+        A tuple containing the function description and argument descriptions.
+    """
+    docstring = inspect.getdoc(function)
+    return _parse_google_docstring(
+        docstring,
+        list(annotations),
+        error_on_invalid_docstring=error_on_invalid_docstring,
+    )
+
+
+def _validate_docstring_args_against_annotations(
+    arg_descriptions: dict[str, str], annotations: dict[str, Any]
+) -> None:
+    """Validate that docstring arguments match function annotations.
+
+    Args:
+        arg_descriptions: Arguments described in the docstring.
+        annotations: Type annotations from the function signature.
+
+    Raises:
+        ValueError: If a docstring argument is not found in function signature.
+    """
+    for docstring_arg in arg_descriptions:
+        if docstring_arg not in annotations:
+            msg = f"Arg {docstring_arg} in docstring not found in function signature."
+            raise ValueError(msg)
+
+
+def _infer_arg_descriptions(
+    fn: Callable[..., Any],
+    *,
+    parse_docstring: bool = False,
+    error_on_invalid_docstring: bool = False,
+) -> tuple[str, dict[str, str]]:
+    """Infer argument descriptions from function docstring and annotations.
+
+    Args:
+        fn: The function to infer descriptions from.
+        parse_docstring: Whether to parse the docstring for descriptions.
+        error_on_invalid_docstring: Whether to raise error on invalid docstring.
+
+    Returns:
+        A tuple containing the function description and argument descriptions.
+    """
+    annotations = get_type_hints(fn, include_extras=True)
+    if parse_docstring:
+        description, arg_descriptions = _parse_python_function_docstring(
+            fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
+        )
+    else:
+        description = inspect.getdoc(fn) or ""
+        arg_descriptions = {}
+    if parse_docstring:
+        _validate_docstring_args_against_annotations(arg_descriptions, annotations)
+    for arg, arg_type in annotations.items():
+        if arg in arg_descriptions:
+            continue
+        if desc := _get_annotation_description(arg_type):
+            arg_descriptions[arg] = desc
+    return description, arg_descriptions
+
+
+def _is_pydantic_annotation(annotation: Any, pydantic_version: str = "v2") -> bool:
+    """Check if a type annotation is a Pydantic model.
+
+    Args:
+        annotation: The type annotation to check.
+        pydantic_version: The Pydantic version to check against (`'v1'` or `'v2'`).
+
+    Returns:
+        `True` if the annotation is a Pydantic model, `False` otherwise.
+    """
+    base_model_class = BaseModelV1 if pydantic_version == "v1" else BaseModel
+    try:
+        return issubclass(annotation, base_model_class)
+    except TypeError:
+        return False
+
+
+def _function_annotations_are_pydantic_v1(
+    signature: inspect.Signature, func: Callable[..., Any]
+) -> bool:
+    """Check if all Pydantic annotations in a function are from v1.
+
+    Args:
+        signature: The function signature to check.
+        func: The function being checked.
+
+    Returns:
+        True if all Pydantic annotations are from v1, `False` otherwise.
+
+    Raises:
+        NotImplementedError: If the function contains mixed v1 and v2 annotations.
+    """
+    any_v1_annotations = any(
+        _is_pydantic_annotation(parameter.annotation, pydantic_version="v1")
+        for parameter in signature.parameters.values()
+    )
+    any_v2_annotations = any(
+        _is_pydantic_annotation(parameter.annotation, pydantic_version="v2")
+        for parameter in signature.parameters.values()
+    )
+    if any_v1_annotations and any_v2_annotations:
+        msg = (
+            f"Function {func} contains a mix of Pydantic v1 and v2 annotations. "
+            "Only one version of Pydantic annotations per function is supported."
+        )
+        raise NotImplementedError(msg)
+    return any_v1_annotations and not any_v2_annotations
+
+
+class _SchemaConfig:
+    """Configuration for Pydantic models generated from function signatures."""
+
+    extra: str = "forbid"
+    """Whether to allow extra fields in the model."""
+
+    arbitrary_types_allowed: bool = True
+    """Whether to allow arbitrary types in the model."""
+
+
+def create_schema_from_function(
+    model_name: str,
+    func: Callable[..., Any],
+    *,
+    filter_args: Sequence[str] | None = None,
+    parse_docstring: bool = False,
+    error_on_invalid_docstring: bool = False,
+    include_injected: bool = True,
+) -> TypeBaseModel:
+    """Create a Pydantic schema from a function's signature.
+
+    Args:
+        model_name: Name to assign to the generated Pydantic schema.
+        func: Function to generate the schema from.
+        filter_args: Optional list of arguments to exclude from the schema.
+
+            Defaults to `FILTERED_ARGS`.
+        parse_docstring: Whether to parse the function's docstring for descriptions
+            for each argument.
+        error_on_invalid_docstring: If `parse_docstring` is provided, configure
+            whether to raise `ValueError` on invalid Google Style docstrings.
+        include_injected: Whether to include injected arguments in the schema.
+
+            Defaults to `True`, since we want to include them in the schema when
+            *validating* tool inputs.
+
+    Returns:
+        A Pydantic model with the same arguments as the function.
+    """
+    sig = inspect.signature(func)
+
+    if _function_annotations_are_pydantic_v1(sig, func):
+        validated = validate_arguments_v1(func, config=_SchemaConfig)  # type: ignore[call-overload]
+    else:
+        # https://docs.pydantic.dev/latest/usage/validation_decorator/
+        with warnings.catch_warnings():
+            # We are using deprecated functionality here.
+            # This code should be re-written to simply construct a Pydantic model
+            # using inspect.signature and create_model.
+            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
+            validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]
+
+    # Let's ignore `self` and `cls` arguments for class and instance methods
+    # If qualified name has a ".", then it likely belongs in a class namespace
+    in_class = bool(func.__qualname__ and "." in func.__qualname__)
+
+    has_args = False
+    has_kwargs = False
+
+    for param in sig.parameters.values():
+        if param.kind == param.VAR_POSITIONAL:
+            has_args = True
+        elif param.kind == param.VAR_KEYWORD:
+            has_kwargs = True
+
+    inferred_model = validated.model
+
+    if filter_args:
+        # Copy to avoid mutating the caller's sequence below.
+        filter_args_ = list(filter_args)
+    else:
+        # Handle classmethods and instance methods
+        existing_params: list[str] = list(sig.parameters.keys())
+        if existing_params and existing_params[0] in {"self", "cls"} and in_class:
+            filter_args_ = [existing_params[0], *list(FILTERED_ARGS)]
+        else:
+            filter_args_ = list(FILTERED_ARGS)
+
+    # Exclude injected args from the schema regardless of whether `filter_args`
+    # was provided. Injected args (e.g. `InjectedToolArg`, `ToolRuntime`) are
+    # supplied at runtime rather than by the model, so they should not appear in
+    # the generated schema.
+    if not include_injected:
+        for existing_param in sig.parameters:
+            if (
+                _is_injected_arg_type(sig.parameters[existing_param].annotation)
+                and existing_param not in filter_args_
+            ):
+                filter_args_.append(existing_param)
+
+    description, arg_descriptions = _infer_arg_descriptions(
+        func,
+        parse_docstring=parse_docstring,
+        error_on_invalid_docstring=error_on_invalid_docstring,
+    )
+    # Pydantic adds placeholder virtual fields we need to strip
+    valid_properties = []
+    for field in get_fields(inferred_model):
+        if not has_args and field == "args":
+            continue
+        if not has_kwargs and field == "kwargs":
+            continue
+
+        if field == "v__duplicate_kwargs":  # Internal pydantic field
+            continue
+
+        if field not in filter_args_:
+            valid_properties.append(field)
+
+    return _create_subset_model(
+        model_name,
+        inferred_model,
+        list(valid_properties),
+        descriptions=arg_descriptions,
+        fn_description=description,
+    )
+
+
+class ToolException(Exception):  # noqa: N818
+    """Exception thrown when a tool execution error occurs.
+
+    This exception allows tools to signal errors without stopping the agent.
+
+    The error is handled according to the tool's `handle_tool_error` setting, and the
+    result is returned as an observation to the agent.
+    """
+
+
+ArgsSchema = TypeBaseModel | dict[str, Any]
+MessageContentBlock = str | dict[str, Any]
+"""A single message content block: plain text or a structured block.
+
+A dict block is only considered valid at runtime when its `type` key is one of
+`TOOL_MESSAGE_BLOCK_TYPES` (see `_is_message_content_block`); the static type
+intentionally stays broad because block payloads vary by provider format.
+"""
+ToolExceptionHandlerOutput = str | Sequence[MessageContentBlock]
+"""Content returned by a `handle_tool_error` callable.
+
+Error handlers may return plain text or a sequence of structured message
+content blocks. When the original tool call includes a `tool_call_id`, this
+content is normalized to the content of a `ToolMessage` with `status="error"`.
+"""
+
+_EMPTY_SET: frozenset[str] = frozenset()
+
+
+_TOOL_CALL_SCHEMA_FIELDS = frozenset({"name", "description", "args_schema"})
+"""Fields the memoized `tool_call_schema` is built from; reassignment clears it."""
+
+
+def _patch_json_schema_cache(model_cls: type) -> None:
+    """Patch `model_json_schema` (or `schema` for pydantic v1) to cache.
+
+    Pydantic regenerates the full JSON-schema dict on every
+    `model_json_schema()` call — there is no per-class cache.  When the
+    model class is stable (memoized on a `BaseTool` instance), this patch
+    caches the dict on the class so repeated calls return instantly.
+
+    Only calls with all-default arguments are cached; any explicit arguments
+    bypass the cache and delegate to the original method.
+    """
+    method_name = (
+        "model_json_schema" if hasattr(model_cls, "model_json_schema") else "schema"
+    )
+    orig = getattr(model_cls, method_name)
+
+    def _cached_json_schema(cls: type, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        if not args and not kwargs:
+            cached = cls.__dict__.get("_json_schema_cache")
+            if cached is not None:
+                return cast("dict[str, Any]", cached)
+        result = orig(*args, **kwargs)
+        if not args and not kwargs:
+            cls._json_schema_cache = result  # type: ignore[attr-defined]
+        return cast("dict[str, Any]", result)
+
+    setattr(model_cls, method_name, classmethod(_cached_json_schema))
+
+
+class BaseTool(RunnableSerializable[str | dict[str, Any] | ToolCall, Any]):
+    """Base class for all LangChain tools.
+
+    This abstract class defines the interface that all LangChain tools must implement.
+
+    Tools are components that can be called by agents to perform specific actions.
+    """
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Validate the tool class definition during subclass creation.
+
+        Args:
+            **kwargs: Additional keyword arguments passed to the parent class.
+
+        Raises:
+            SchemaAnnotationError: If `args_schema` has incorrect type annotation.
+        """
+        super().__init_subclass__(**kwargs)
+
+        args_schema_type = cls.__annotations__.get("args_schema", None)
+
+        if args_schema_type is not None and args_schema_type == BaseModel:
+            # Throw errors for common mis-annotations.
+            # TODO: Use get_args / get_origin and fully
+            # specify valid annotations.
+            typehint_mandate = """
+class ChildTool(BaseTool):
+    ...
+    args_schema: Type[BaseModel] = SchemaClass
+    ..."""
+            name = cls.__name__
+            msg = (
+                f"Tool definition for {name} must include valid type annotations"
+                f" for argument 'args_schema' to behave as expected.\n"
+                f"Expected annotation of 'Type[BaseModel]'"
+                f" but got '{args_schema_type}'.\n"
+                f"Expected class looks like:\n"
+                f"{typehint_mandate}"
+            )
+            raise SchemaAnnotationError(msg)
+
+    name: str
+    """The unique name of the tool that clearly communicates its purpose."""
+
+    description: str
+    """Used to tell the model how/when/why to use the tool.
+
+    You can provide few-shot examples as a part of the description.
+    """
+
+    args_schema: Annotated[ArgsSchema | None, SkipValidation()] = Field(
+        default=None, description="The tool schema."
+    )
+    """Pydantic model class to validate and parse the tool's input arguments.
+
+    Args schema should be either:
+
+    - A subclass of `pydantic.BaseModel`.
+    - A subclass of `pydantic.v1.BaseModel` if accessing v1 namespace in pydantic 2
+    - A JSON schema dict
+    """
+
+    return_direct: bool = False
+    """Whether to return the tool's output directly.
+
+    Setting this to `True` means that after the tool is called, the `AgentExecutor` will
+    stop looping.
+    """
+
+    verbose: bool = False
+    """Whether to log the tool's progress."""
+
+    callbacks: Callbacks = Field(default=None, exclude=True)
+    """Callbacks to be called during tool execution."""
+
+    tags: list[str] | None = None
+    """Optional list of tags associated with the tool.
+
+    These tags will be associated with each call to this tool,
+    and passed as arguments to the handlers defined in `callbacks`.
+
+    You can use these to, e.g., identify a specific instance of a tool with its use
+    case.
+    """
+
+    metadata: dict[str, Any] | None = None
+    """Optional metadata associated with the tool.
+
+    This metadata will be associated with each call to this tool,
+    and passed as arguments to the handlers defined in `callbacks`.
+
+    You can use these to, e.g., identify a specific instance of a tool with its usecase.
+    """
+
+    handle_tool_error: (
+        bool | str | Callable[[ToolException], ToolExceptionHandlerOutput] | None
+    ) = False
+    """Handle `ToolException` raised by tool execution.
+
+    If `False`, the exception is re-raised. If `True`, the exception message is
+    returned as tool output. If a string is passed, that string is returned
+    as tool output. If a callable is passed, it receives the exception and
+    its return value is used as the tool output.
+
+    Callable handlers may return either a string or a list of message
+    content blocks. If the tool was invoked with a `tool_call_id`, the handled
+    content is wrapped in a `ToolMessage` with `status="error"`.
+    """
+
+    handle_validation_error: (
+        bool | str | Callable[[ValidationError | ValidationErrorV1], str] | None
+    ) = False
+    """Handle the content of the `ValidationError` thrown."""
+
+    response_format: Literal["content", "content_and_artifact"] = "content"
+    """The tool response format.
+
+    If `'content'` then the output of the tool is interpreted as the contents of a
+    `ToolMessage`. If `'content_and_artifact'` then the output is expected to be a
+    two-tuple corresponding to the `(content, artifact)` of a `ToolMessage`.
+    """
+
+    extras: dict[str, Any] | None = None
+    """Optional provider-specific extra fields for the tool.
+
+    This is used to pass provider-specific configuration that doesn't fit into
+    standard tool fields.
+
+    Example:
+        Anthropic-specific fields like [`cache_control`](https://docs.langchain.com/oss/python/integrations/chat/anthropic#prompt-caching),
+        [`defer_loading`](https://docs.langchain.com/oss/python/integrations/chat/anthropic#tool-search),
+        or `input_examples`.
+
+        ```python
+        @tool(extras={"defer_loading": True, "cache_control": {"type": "ephemeral"}})
+        def my_tool(x: str) -> str:
+            return x
+        ```
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the tool.
+
+        Raises:
+            TypeError: If `args_schema` is not a subclass of pydantic `BaseModel` or
+                `dict`.
+        """
+        if (
+            "args_schema" in kwargs
+            and kwargs["args_schema"] is not None
+            and not is_basemodel_subclass(kwargs["args_schema"])
+            and not isinstance(kwargs["args_schema"], dict)
+        ):
+            msg = (
+                "args_schema must be a subclass of pydantic BaseModel or "
+                f"a JSON schema dict. Got: {kwargs['args_schema']}."
+            )
+            raise TypeError(msg)
+        super().__init__(**kwargs)
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    @property
+    def is_single_input(self) -> bool:
+        """Check if the tool accepts only a single input argument.
+
+        Returns:
+            `True` if the tool has only one input argument, `False` otherwise.
+        """
+        keys = {k for k in self.args if k != "kwargs"}
+        return len(keys) == 1
+
+    @property
+    def args(self) -> dict[str, Any]:
+        """Get the tool's input arguments schema.
+
+        Returns:
+            `dict` containing the tool's argument properties.
+        """
+        if isinstance(self.args_schema, dict):
+            json_schema = self.args_schema
+        else:
+            input_schema = self.tool_call_schema
+            if isinstance(input_schema, dict):
+                json_schema = input_schema
+            else:
+                json_schema = model_json_schema(input_schema)
+        return cast("dict[str, Any]", json_schema["properties"])
+
+    _tool_call_schema_memo: ArgsSchema | None = PrivateAttr(default=None)
+    """Memoized `tool_call_schema` result.
+
+    Building the subset model is expensive, and pydantic does not cache
+    `model_json_schema()` per class, so agent loops would otherwise pay full
+    schema generation for every tool on every model call. The subset model
+    class is memoized here and its `model_json_schema`/`schema` method is
+    patched to cache the generated dict, so both costs are paid only once per
+    tool instance.
+    Cleared whenever `name`, `description`, or `args_schema` is reassigned (see
+    `__setattr__` and `model_copy`).
+    """
+
+    @override
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Clear the tool-call schema memo when an input to it is reassigned."""
+        super().__setattr__(name, value)
+        if name in _TOOL_CALL_SCHEMA_FIELDS and self.__pydantic_private__ is not None:
+            self._tool_call_schema_memo = None
+
+    @override
+    def model_copy(
+        self, *, update: Mapping[str, Any] | None = None, deep: bool = False
+    ) -> Self:
+        """Copy the tool, clearing the schema memo if `update` affects it.
+
+        `model_copy` writes `update` directly to the copy's `__dict__` without
+        going through `__setattr__`, and private attributes (including the
+        memo) carry over to the copy, so the memo is cleared here when the
+        update touches one of the fields the schema is built from.
+        """
+        copied = super().model_copy(update=update, deep=deep)
+        if update and not _TOOL_CALL_SCHEMA_FIELDS.isdisjoint(update):
+            copied._tool_call_schema_memo = None  # noqa: SLF001
+        return copied
+
+    def __getstate__(self) -> dict[Any, Any]:
+        """Drop the tool-call schema memo when pickling.
+
+        The memoized subset model is a dynamically created class that cannot be
+        pickled by reference; it is rebuilt lazily on next access.
+        """
+        state = super().__getstate__()
+        private = state.get("__pydantic_private__")
+        if private and private.get("_tool_call_schema_memo") is not None:
+            state = dict(state)
+            state["__pydantic_private__"] = {
+                **private,
+                "_tool_call_schema_memo": None,
+            }
+        return state
+
+    @property
+    def tool_call_schema(self) -> ArgsSchema:
+        """Get the schema for tool calls, excluding injected arguments.
+
+        Returns:
+            The schema that should be used for tool calls from language models.
+
+            The returned model class is memoized per tool instance (invalidated
+            when `name`, `description`, or `args_schema` is reassigned) so
+            repeated access does not regenerate the class. The class's
+            `model_json_schema` method is also patched to cache the generated
+            schema dict, since pydantic does not cache it per class.
+        """
+        if isinstance(self.args_schema, dict):
+            if self.description:
+                return {
+                    **self.args_schema,
+                    "description": self.description,
+                }
+
+            return self.args_schema
+
+        if (memo := self._tool_call_schema_memo) is not None:
+            return memo
+
+        full_schema = self.get_input_schema()
+        fields = []
+
+        # Accommodates a condition where forward references were not resolved
+        # during model construction. At introspection time, we fail fast if
+        # the model schema is not complete so the underlying serialized schema
+        # doesn't narrow the propreties in the tool json schema to an empty dict
+        if (
+            is_pydantic_v2_subclass(full_schema)
+            and not full_schema.__pydantic_complete__
+        ):
+            full_schema.model_rebuild()
+
+        for name, type_ in get_all_basemodel_annotations(full_schema).items():
+            if not _is_injected_arg_type(type_):
+                fields.append(name)
+        subset_model = _create_subset_model(
+            self.name, full_schema, fields, fn_description=self.description
+        )
+        _patch_json_schema_cache(subset_model)
+        self._tool_call_schema_memo = subset_model
+        return subset_model
+
+    @functools.cached_property
+    def _injected_args_keys(self) -> frozenset[str]:
+        # Inspect the tool's `_run` (falling back to `_arun` for async-only
+        # subclasses) for directly injected args like `ToolRuntime` or args
+        # annotated with `InjectedToolArg`. These are supplied at call time
+        # rather than by the model, so they must be excluded from the schema and
+        # re-injected during execution. `StructuredTool` overrides this to
+        # inspect its wrapped `func`/`coroutine` instead.
+        for method in (self._run, self._arun):
+            keys = _get_injected_args_keys_from_signature(method)
+            if keys:
+                return keys
+        return _EMPTY_SET
+
+    # --- Runnable ---
+
+    @override
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
+        """The tool's input schema.
+
+        Args:
+            config: The configuration for the tool.
+
+        Returns:
+            The input schema for the tool.
+        """
+        if self.args_schema is not None:
+            if isinstance(self.args_schema, dict):
+                return super().get_input_schema(config)
+            return self.args_schema
+        return create_schema_from_function(self.name, self._run)
+
+    @override
+    def invoke(
+        self,
+        input: str | dict[str, Any] | ToolCall,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        tool_input, kwargs = _prep_run_args(input, config, **kwargs)
+        return self.run(tool_input, **kwargs)
+
+    @override
+    async def ainvoke(
+        self,
+        input: str | dict[str, Any] | ToolCall,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        tool_input, kwargs = _prep_run_args(input, config, **kwargs)
+        return await self.arun(tool_input, **kwargs)
+
+    # --- Tool ---
+
+    def _parse_input(
+        self, tool_input: str | dict[str, Any], tool_call_id: str | None
+    ) -> str | dict[str, Any]:
+        """Parse and validate tool input using the args schema.
+
+        Args:
+            tool_input: The raw input to the tool.
+            tool_call_id: The ID of the tool call, if available.
+
+        Returns:
+            The parsed and validated input.
+
+        Raises:
+            ValueError: If `string` input is provided with JSON schema `args_schema`.
+            ValueError: If `InjectedToolCallId` is required but `tool_call_id` is not
+                provided.
+            TypeError: If `args_schema` is not a Pydantic `BaseModel` or dict.
+        """
+        input_args = self.args_schema
+
+        if isinstance(tool_input, str):
+            if input_args is not None:
+                if isinstance(input_args, dict):
+                    msg = (
+                        "String tool inputs are not allowed when "
+                        "using tools with JSON schema args_schema."
+                    )
+                    raise ValueError(msg)
+                key_ = next(iter(get_fields(input_args).keys()))
+                if issubclass(input_args, BaseModel):
+                    input_args.model_validate({key_: tool_input})
+                elif issubclass(input_args, BaseModelV1):
+                    input_args.parse_obj({key_: tool_input})
+                else:
+                    msg = f"args_schema must be a Pydantic BaseModel, got {input_args}"  # type: ignore[unreachable]
+                    raise TypeError(msg)
+            return tool_input
+
+        if input_args is not None:
+            if isinstance(input_args, dict):
+                return tool_input
+            result: BaseModel | BaseModelV1
+            if issubclass(input_args, BaseModel):
+                # Check args_schema for InjectedToolCallId
+                for k, v in get_all_basemodel_annotations(input_args).items():
+                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
+                        if tool_call_id is None:
+                            msg = (
+                                "When tool includes an InjectedToolCallId "
+                                "argument, tool must always be invoked with a full "
+                                "model ToolCall of the form: {'args': {...}, "
+                                "'name': '...', 'type': 'tool_call', "
+                                "'tool_call_id': '...'}"
+                            )
+                            raise ValueError(msg)
+                        tool_input[k] = tool_call_id
+                result_v2 = input_args.model_validate(tool_input)
+                result_dict = result_v2.model_dump()
+                provided_fields = result_v2.model_fields_set
+                result = result_v2
+            elif issubclass(input_args, BaseModelV1):
+                # Check args_schema for InjectedToolCallId
+                for k, v in get_all_basemodel_annotations(input_args).items():
+                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
+                        if tool_call_id is None:
+                            msg = (
+                                "When tool includes an InjectedToolCallId "
+                                "argument, tool must always be invoked with a full "
+                                "model ToolCall of the form: {'args': {...}, "
+                                "'name': '...', 'type': 'tool_call', "
+                                "'tool_call_id': '...'}"
+                            )
+                            raise ValueError(msg)
+                        tool_input[k] = tool_call_id
+                result_v1 = input_args.parse_obj(tool_input)
+                result_dict = result_v1.dict()
+                provided_fields = result_v1.__fields_set__
+                result = result_v1
+            else:
+                msg = (  # type: ignore[unreachable]
+                    f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
+                )
+                raise NotImplementedError(msg)
+
+            # Include fields from tool_input, fields provided through Pydantic aliases,
+            # plus fields with explicit defaults. This applies Pydantic defaults (like
+            # Field(default=1)) while excluding synthetic "args"/"kwargs" fields that
+            # Pydantic creates for *args/**kwargs.
+            field_info = get_fields(input_args)
+            validated_input = {}
+            for k in result_dict:
+                if k in tool_input:
+                    # Field was provided in input - include it (validated)
+                    validated_input[k] = getattr(result, k)
+                elif k in provided_fields:
+                    # Field was provided through a Pydantic alias - include it.
+                    validated_input[k] = getattr(result, k)
+                elif k in field_info and k not in {"args", "kwargs"}:
+                    # Check if field has an explicit default defined in the schema.
+                    # Exclude "args"/"kwargs" as these are synthetic fields for variadic
+                    # parameters that should not be passed as keyword arguments.
+                    fi = field_info[k]
+                    # Pydantic v2 uses is_required() method, v1 uses required attribute
+                    has_default = (
+                        not fi.is_required()
+                        if hasattr(fi, "is_required")
+                        else not getattr(fi, "required", True)
+                    )
+                    if has_default:
+                        validated_input[k] = getattr(result, k)
+
+            for k in self._injected_args_keys:
+                if k in tool_input:
+                    validated_input[k] = tool_input[k]
+                elif k == "tool_call_id":
+                    if tool_call_id is None:
+                        msg = (
+                            "When tool includes an InjectedToolCallId "
+                            "argument, tool must always be invoked with a full "
+                            "model ToolCall of the form: {'args': {...}, "
+                            "'name': '...', 'type': 'tool_call', "
+                            "'tool_call_id': '...'}"
+                        )
+                        raise ValueError(msg)
+                    validated_input[k] = tool_call_id
+
+            return validated_input
+
+        return tool_input
+
+    @abstractmethod
+    def _run(self, *args: Any, **kwargs: Any) -> Any:
+        """Use the tool.
+
+        Add `run_manager: CallbackManagerForToolRun | None = None` to child
+        implementations to enable tracing.
+
+        Returns:
+            The result of the tool execution.
+        """
+
+    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
+        """Use the tool asynchronously.
+
+        Add `run_manager: AsyncCallbackManagerForToolRun | None = None` to child
+        implementations to enable tracing.
+
+        Returns:
+            The result of the tool execution.
+        """
+        if kwargs.get("run_manager") and signature(self._run).parameters.get(
+            "run_manager"
+        ):
+            kwargs["run_manager"] = kwargs["run_manager"].get_sync()
+        return await run_in_executor(None, self._run, *args, **kwargs)
+
+    def _filter_injected_args(self, tool_input: dict[str, Any]) -> dict[str, Any]:
+        """Filter out injected tool arguments from the input dictionary.
+
+        Injected arguments are those annotated with `InjectedToolArg` or its
+        subclasses, or arguments in `FILTERED_ARGS` like `run_manager` and callbacks.
+
+        Args:
+            tool_input: The tool input dictionary to filter.
+
+        Returns:
+            A filtered dictionary with injected arguments removed.
+        """
+        # Start with filtered args from the constant
+        filtered_keys = set[str](FILTERED_ARGS)
+
+        # Add injected args from function signature (e.g., ToolRuntime parameters)
+        filtered_keys.update(self._injected_args_keys)
+
+        # If we have an args_schema, use it to identify injected args
+        # Skip if args_schema is a dict (JSON Schema) as it's not a Pydantic model
+        if self.args_schema is not None and not isinstance(self.args_schema, dict):
+            try:
+                annotations = get_all_basemodel_annotations(self.args_schema)
+                for field_name, field_type in annotations.items():
+                    if _is_injected_arg_type(field_type):
+                        filtered_keys.add(field_name)
+            except Exception:
+                # If we can't get annotations, just use FILTERED_ARGS
+                _logger.debug(
+                    "Failed to get args_schema annotations for filtering.",
+                    exc_info=True,
+                )
+
+        # Filter out the injected keys from tool_input
+        return {k: v for k, v in tool_input.items() if k not in filtered_keys}
+
+    def _to_args_and_kwargs(
+        self, tool_input: str | dict[str, Any], tool_call_id: str | None
+    ) -> tuple[tuple[str, ...], dict[str, Any]]:
+        """Convert tool input to positional and keyword arguments.
+
+        Args:
+            tool_input: The input to the tool.
+            tool_call_id: The ID of the tool call, if available.
+
+        Returns:
+            A tuple of `(positional_args, keyword_args)` for the tool.
+
+        Raises:
+            TypeError: If the tool input type is invalid.
+        """
+        if (
+            self.args_schema is not None
+            and isinstance(self.args_schema, type)
+            and is_basemodel_subclass(self.args_schema)
+            and not get_fields(self.args_schema)
+        ):
+            # StructuredTool with no args
+            return (), {}
+        tool_input = self._parse_input(tool_input, tool_call_id)
+        # For backwards compatibility, if run_input is a string,
+        # pass as a positional argument.
+        if isinstance(tool_input, str):
+            return (tool_input,), {}
+        if isinstance(tool_input, dict):
+            # Make a shallow copy of the input to allow downstream code
+            # to modify the root level of the input without affecting the
+            # original input.
+            # This is used by the tool to inject run time information like
+            # the callback manager.
+            return (), tool_input.copy()
+        # This code path is not expected to be reachable.
+        msg = f"Invalid tool input type: {type(tool_input)}"  # type: ignore[unreachable]
+        raise TypeError(msg)
+
+    def run(
+        self,
+        tool_input: str | dict[str, Any],
+        verbose: bool | None = None,  # noqa: FBT001
+        start_color: str | None = "green",
+        color: str | None = "green",
+        callbacks: Callbacks = None,
+        *,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        run_name: str | None = None,
+        run_id: uuid.UUID | None = None,
+        config: RunnableConfig | None = None,
+        tool_call_id: str | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run the tool.
+
+        Args:
+            tool_input: The input to the tool.
+            verbose: Whether to log the tool's progress.
+            start_color: The color to use when starting the tool.
+            color: The color to use when ending the tool.
+            callbacks: Callbacks to be called during tool execution.
+            tags: Optional list of tags associated with the tool.
+            metadata: Optional metadata associated with the tool.
+            run_name: The name of the run.
+            run_id: The id of the run.
+            config: The configuration for the tool.
+            tool_call_id: The id of the tool call.
+            **kwargs: Keyword arguments to be passed to tool callbacks (event handler)
+
+        Returns:
+            The output of the tool.
+
+        Raises:
+            ToolException: If an error occurs during tool execution.
+        """
+        callback_manager = CallbackManager.configure(
+            callbacks,
+            self.callbacks,
+            self.verbose or bool(verbose),
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
+        )
+
+        # Filter out injected arguments from callback inputs
+        filtered_tool_input = (
+            self._filter_injected_args(tool_input)
+            if isinstance(tool_input, dict)
+            else None
+        )
+
+        # Use filtered inputs for the input_str parameter as well
+        tool_input_str = (
+            tool_input
+            if isinstance(tool_input, str)
+            else str(
+                filtered_tool_input if filtered_tool_input is not None else tool_input
+            )
+        )
+
+        run_manager = callback_manager.on_tool_start(
+            {"name": self.name, "description": self.description},
+            tool_input_str,
+            color=start_color,
+            name=run_name,
+            run_id=run_id,
+            inputs=filtered_tool_input,
+            tool_call_id=tool_call_id,
+            **kwargs,
+        )
+
+        content = None
+        artifact = None
+        status = "success"
+        error_to_raise: Exception | KeyboardInterrupt | None = None
+        try:
+            child_config = patch_config(config, callbacks=run_manager.get_child())
+            with set_config_context(child_config) as context:
+                tool_args, tool_kwargs = self._to_args_and_kwargs(
+                    tool_input, tool_call_id
+                )
+                if signature(self._run).parameters.get("run_manager"):
+                    tool_kwargs |= {"run_manager": run_manager}
+                if config_param := _get_runnable_config_param(self._run):
+                    tool_kwargs |= {config_param: config}
+                response = context.run(self._run, *tool_args, **tool_kwargs)
+            if self.response_format == "content_and_artifact":
+                msg = (
+                    "Since response_format='content_and_artifact' "
+                    "a two-tuple of the message content and raw tool output is "
+                    f"expected. Instead, generated response is of type: "
+                    f"{type(response)}."
+                )
+                if not isinstance(response, tuple):
+                    error_to_raise = ValueError(msg)
+                else:
+                    try:
+                        content, artifact = response
+                    except ValueError:
+                        error_to_raise = ValueError(msg)
+            else:
+                content = response
+        except (ValidationError, ValidationErrorV1) as e:
+            if not self.handle_validation_error:
+                error_to_raise = e
+            else:
+                content = _handle_validation_error(e, flag=self.handle_validation_error)
+                status = "error"
+        except ToolException as e:
+            if not self.handle_tool_error:
+                error_to_raise = e
+            else:
+                content = _handle_tool_error(e, flag=self.handle_tool_error)
+                status = "error"
+        except (Exception, KeyboardInterrupt) as e:
+            error_to_raise = e
+
+        if error_to_raise:
+            run_manager.on_tool_error(error_to_raise, tool_call_id=tool_call_id)
+            raise error_to_raise
+        output = _format_output(content, artifact, tool_call_id, self.name, status)
+        run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
+        return output
+
+    async def arun(
+        self,
+        tool_input: str | dict[str, Any],
+        verbose: bool | None = None,  # noqa: FBT001
+        start_color: str | None = "green",
+        color: str | None = "green",
+        callbacks: Callbacks = None,
+        *,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        run_name: str | None = None,
+        run_id: uuid.UUID | None = None,
+        config: RunnableConfig | None = None,
+        tool_call_id: str | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Run the tool asynchronously.
+
+        Args:
+            tool_input: The input to the tool.
+            verbose: Whether to log the tool's progress.
+            start_color: The color to use when starting the tool.
+            color: The color to use when ending the tool.
+            callbacks: Callbacks to be called during tool execution.
+            tags: Optional list of tags associated with the tool.
+            metadata: Optional metadata associated with the tool.
+            run_name: The name of the run.
+            run_id: The id of the run.
+            config: The configuration for the tool.
+            tool_call_id: The id of the tool call.
+            **kwargs: Keyword arguments to be passed to tool callbacks
+
+        Returns:
+            The output of the tool.
+
+        Raises:
+            ToolException: If an error occurs during tool execution.
+        """
+        callback_manager = AsyncCallbackManager.configure(
+            callbacks,
+            self.callbacks,
+            self.verbose or bool(verbose),
+            tags,
+            self.tags,
+            metadata,
+            self.metadata,
+        )
+
+        # Filter out injected arguments from callback inputs
+        filtered_tool_input = (
+            self._filter_injected_args(tool_input)
+            if isinstance(tool_input, dict)
+            else None
+        )
+
+        # Use filtered inputs for the input_str parameter as well
+        tool_input_str = (
+            tool_input
+            if isinstance(tool_input, str)
+            else str(
+                filtered_tool_input if filtered_tool_input is not None else tool_input
+            )
+        )
+
+        run_manager = await callback_manager.on_tool_start(
+            {"name": self.name, "description": self.description},
+            tool_input_str,
+            color=start_color,
+            name=run_name,
+            run_id=run_id,
+            inputs=filtered_tool_input,
+            tool_call_id=tool_call_id,
+            **kwargs,
+        )
+        content = None
+        artifact = None
+        status = "success"
+        error_to_raise: Exception | KeyboardInterrupt | None = None
+        try:
+            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
+            child_config = patch_config(config, callbacks=run_manager.get_child())
+            with set_config_context(child_config) as context:
+                func_to_check = (
+                    self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
+                )
+                if signature(func_to_check).parameters.get("run_manager"):
+                    tool_kwargs["run_manager"] = run_manager
+                if config_param := _get_runnable_config_param(func_to_check):
+                    tool_kwargs[config_param] = config
+
+                coro = self._arun(*tool_args, **tool_kwargs)
+                response = await coro_with_context(coro, context)
+            if self.response_format == "content_and_artifact":
+                msg = (
+                    "Since response_format='content_and_artifact' "
+                    "a two-tuple of the message content and raw tool output is "
+                    f"expected. Instead, generated response is of type: "
+                    f"{type(response)}."
+                )
+                if not isinstance(response, tuple):
+                    error_to_raise = ValueError(msg)
+                else:
+                    try:
+                        content, artifact = response
+                    except ValueError:
+                        error_to_raise = ValueError(msg)
+            else:
+                content = response
+        except (ValidationError, ValidationErrorV1) as e:
+            if not self.handle_validation_error:
+                error_to_raise = e
+            else:
+                content = _handle_validation_error(e, flag=self.handle_validation_error)
+                status = "error"
+        except ToolException as e:
+            if not self.handle_tool_error:
+                error_to_raise = e
+            else:
+                content = _handle_tool_error(e, flag=self.handle_tool_error)
+                status = "error"
+        except (Exception, KeyboardInterrupt) as e:
+            error_to_raise = e
+
+        if error_to_raise:
+            await run_manager.on_tool_error(error_to_raise, tool_call_id=tool_call_id)
+            raise error_to_raise
+
+        output = _format_output(content, artifact, tool_call_id, self.name, status)
+        await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
+        return output
+
+
+def _is_tool_call(x: Any) -> bool:
+    """Check if the input is a tool call dictionary.
+
+    Args:
+        x: The input to check.
+
+    Returns:
+        `True` if the input is a tool call, `False` otherwise.
+    """
+    return isinstance(x, dict) and x.get("type") == "tool_call"
+
+
+def _handle_validation_error(
+    e: ValidationError | ValidationErrorV1,
+    *,
+    flag: Literal[True] | str | Callable[[ValidationError | ValidationErrorV1], str],
+) -> str:
+    """Handle validation errors based on the configured flag.
+
+    Args:
+        e: The validation error that occurred.
+        flag: How to handle the error (`bool`, `str`, or `Callable`).
+
+    Returns:
+        The error message to return.
+
+    Raises:
+        ValueError: If the flag type is unexpected.
+    """
+    if isinstance(flag, bool):
+        content = "Tool input validation error"
+    elif isinstance(flag, str):
+        content = flag
+    elif callable(flag):
+        content = flag(e)
+    else:
+        msg = (  # type: ignore[unreachable]
+            f"Got unexpected type of `handle_validation_error`. Expected bool, "
+            f"str or callable. Received: {flag}"
+        )
+        raise ValueError(msg)  # noqa: TRY004
+    return content
+
+
+def _handle_tool_error(
+    e: ToolException,
+    *,
+    flag: Literal[True]
+    | str
+    | Callable[[ToolException], ToolExceptionHandlerOutput]
+    | None,
+) -> ToolExceptionHandlerOutput:
+    """Convert a `ToolException` into handled tool output content.
+
+    Args:
+        e: The tool exception that occurred.
+        flag: How to handle the error. `True` uses the exception message, a string
+            replaces the message, and a callable computes replacement content from
+            the exception.
+
+    Returns:
+        The handled error content. This may be plain text or structured message
+            content blocks; callers pass it through normal tool
+            output formatting.
+
+    Raises:
+        ValueError: If the flag type is unexpected.
+    """
+    if isinstance(flag, bool):
+        content = e.args[0] if e.args else "Tool execution error"
+    elif isinstance(flag, str):
+        content = flag
+    elif callable(flag):
+        content = flag(e)
+    else:
+        msg = (
+            f"Got unexpected type of `handle_tool_error`. Expected bool, str "
+            f"or callable. Received: {flag}"
+        )
+        raise ValueError(msg)  # noqa: TRY004
+    return content
+
+
+def _prep_run_args(
+    value: str | dict[str, Any] | ToolCall,
+    config: RunnableConfig | None,
+    **kwargs: Any,
+) -> tuple[str | dict[str, Any], dict[str, Any]]:
+    """Prepare arguments for tool execution.
+
+    Args:
+        value: The input value (`str`, `dict`, or `ToolCall`).
+        config: The runnable configuration.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        A tuple of `(tool_input, run_kwargs)`.
+    """
+    config = ensure_config(config)
+    tool_input: str | dict[str, Any]
+    if _is_tool_call(value):
+        tool_call_id: str | None = cast("ToolCall", value)["id"]
+        tool_input = cast("ToolCall", value)["args"].copy()
+    else:
+        tool_call_id = None
+        tool_input = cast("str | dict[str, Any]", value)
+    return (
+        tool_input,
+        dict(
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
+            config=config,
+            tool_call_id=tool_call_id,
+            **kwargs,
+        ),
+    )
+
+
+def _format_output(
+    content: Any,
+    artifact: Any,
+    tool_call_id: str | None,
+    name: str,
+    status: str,
+) -> ToolOutputMixin | Any:
+    """Format tool output as a `ToolMessage` if appropriate.
+
+    Args:
+        content: The main content of the tool output.
+        artifact: Any artifact data from the tool.
+        tool_call_id: The ID of the tool call.
+        name: The name of the tool.
+        status: The execution status.
+
+    Returns:
+        The formatted output, either as a `ToolMessage`, the original content,
+        or an unchanged list of `ToolOutputMixin` instances.
+    """
+    if (
+        isinstance(content, list)
+        and content
+        and all(isinstance(item, ToolOutputMixin) for item in content)
+    ):
+        return content
+    if isinstance(content, ToolOutputMixin) or tool_call_id is None:
+        return content
+    normalized_content = _normalize_message_content(content)
+    content = _stringify(content) if normalized_content is None else normalized_content
+    return ToolMessage(
+        content,
+        artifact=artifact,
+        tool_call_id=tool_call_id,
+        name=name,
+        status=status,
+    )
+
+
+def _normalize_message_content(obj: Any) -> str | list[MessageContentBlock] | None:
+    """Coerce valid message content to the shape expected by `ToolMessage`.
+
+    A string passes through unchanged; any `Sequence` of valid content blocks
+    (e.g. a list or tuple) is materialized into a `list`. Returning `None`
+    signals the caller (`_format_output`) that `obj` is not message content and
+    should be stringified instead.
+
+    Args:
+        obj: The object to normalize.
+
+    Returns:
+        The normalized content, or `None` if `obj` is not valid message content.
+    """
+    if isinstance(obj, str):
+        return obj
+    # Validate lazily before materializing: `all` short-circuits on the first
+    # invalid element, so a large non-content sequence (e.g. `range(10**12)`)
+    # falls back to stringification without allocating it.
+    if isinstance(obj, Sequence) and all(_is_message_content_block(e) for e in obj):
+        return list(obj)
+    return None
+
+
+def _is_message_content_block(obj: Any) -> bool:
+    """Check if object is a valid message content block.
+
+    Validates content blocks for OpenAI or Anthropic format.
+
+    Args:
+        obj: The object to check.
+
+    Returns:
+        `True` if the object is a valid content block, `False` otherwise.
+    """
+    if isinstance(obj, str):
+        return True
+    if isinstance(obj, dict):
+        return obj.get("type", None) in TOOL_MESSAGE_BLOCK_TYPES
+    return False
+
+
+def _stringify(content: Any) -> str:
+    """Convert content to string, preferring JSON format.
+
+    Args:
+        content: The content to stringify.
+
+    Returns:
+        String representation of the content.
+    """
+    try:
+        return json.dumps(content, ensure_ascii=False)
+    except Exception:
+        return str(content)
+
+
+def _describe_callable(func: Any) -> str:
+    """Return a readable identifier for a callable, for use in log messages."""
+    return getattr(func, "__qualname__", None) or repr(func)
+
+
+def _get_type_hints(
+    func: Callable[..., Any], *, include_extras: bool = False
+) -> dict[str, type] | None:
+    """Get type hints from a function, handling partial functions.
+
+    Args:
+        func: The function to get type hints from.
+        include_extras: Whether to preserve `Annotated` metadata in the resolved
+            hints (e.g. to detect `Annotated[..., InjectedToolArg]`).
+
+    Returns:
+        `dict` of type hints, or `None` if extraction fails.
+    """
+    if isinstance(func, functools.partial):
+        func = func.func
+    try:
+        return get_type_hints(func, include_extras=include_extras)
+    except Exception:
+        _logger.debug(
+            "Failed to resolve type hints for %s.",
+            _describe_callable(func),
+            exc_info=True,
+        )
+        return None
+
+
+def _get_class_signature_source(cls: type) -> Callable[..., Any] | None:
+    """Return the callable whose parameters `signature(cls)` describes.
+
+    A class's own annotations describe its attributes, not its constructor
+    parameters, so a class is never its own annotation owner. Constructor
+    precedence mirrors `inspect.signature`: a metaclass `__call__` override,
+    then a `__new__`/`__init__` the class defines itself, then an inherited one.
+
+    Args:
+        cls: The class being inspected.
+
+    Returns:
+        The constructor whose annotations describe `signature(cls)`, or `None`
+        when only slot wrappers inherited from `object` are available.
+    """
+    metaclass = type(cls)
+    if metaclass is not type:
+        metaclass_call = inspect.getattr_static(metaclass, "__call__", None)
+        if inspect.isfunction(metaclass_call):
+            return metaclass_call
+    for attr in ("__new__", "__init__"):
+        if attr in cls.__dict__:
+            return cast("Callable[..., Any]", getattr(cls, attr))
+    for attr in ("__new__", "__init__"):
+        # `object.__new__`/`object.__init__` are slot wrappers carrying no
+        # useful annotations, so only inherited Python constructors qualify.
+        inherited = getattr(cls, attr, None)
+        if inspect.isfunction(inherited):
+            return cast("Callable[..., Any]", inherited)
+    return None
+
+
+def _get_type_hints_source(
+    func: Callable[..., Any],
+) -> Callable[..., Any] | None:
+    """Return the callable that owns the annotations for an effective signature.
+
+    Unwrapping stops as soon as a callable declares its own `__signature__` (or
+    is a bound method), because that declaration -- not the annotations of
+    whatever it wraps -- defines the effective signature.
+
+    Args:
+        func: The callable being inspected.
+
+    Returns:
+        The function or method whose annotations describe `signature(func)`, or
+        `None` when an explicit `__signature__` supplies the annotations or no
+        annotation owner can be identified.
+    """
+    func = inspect.unwrap(
+        func,
+        stop=lambda wrapped: (
+            hasattr(wrapped, "__signature__") or inspect.ismethod(wrapped)
+        ),
+    )
+    if inspect.ismethod(func):
+        return _get_type_hints_source(func.__func__)
+    if getattr(func, "__signature__", None) is not None:
+        return None
+    if isinstance(func, functools.partial):
+        return _get_type_hints_source(func.func)
+    if inspect.isclass(func):
+        constructor = _get_class_signature_source(func)
+        if constructor is None:
+            return None
+        return _get_type_hints_source(constructor)
+    if not inspect.isroutine(func):
+        callable_obj = cast("Any", func)
+        return _get_type_hints_source(cast("Callable[..., Any]", callable_obj.__call__))
+    return func
+
+
+def _get_callable_globals(func: Callable[..., Any]) -> dict[str, Any]:
+    """Return the globals namespace associated with a callable.
+
+    Explicit `__signature__` objects store annotations separately from a
+    callable's `__annotations__`. String annotations on such signatures
+    still need the callable's defining globals to be resolved.
+
+    Args:
+        func: The callable whose defining globals to locate.
+
+    Returns:
+        The callable's globals namespace, or an empty `dict` when none can be
+        located (e.g. classes, builtins, and other C-implemented callables), in
+        which case no string annotation will resolve.
+    """
+    if isinstance(func, functools.partial):
+        return _get_callable_globals(func.func)
+    if inspect.ismethod(func):
+        return _get_callable_globals(func.__func__)
+    globalns = getattr(func, "__globals__", None)
+    if isinstance(globalns, dict):
+        return globalns
+    if not inspect.isroutine(func) and not inspect.isclass(func):
+        callable_obj = cast("Any", func)
+        return _get_callable_globals(cast("Callable[..., Any]", callable_obj.__call__))
+    return {}
+
+
+def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozenset[str]:
+    """Identify injected-argument parameters of a callable.
+
+    Resolve annotations with `get_type_hints` (rather than reading raw
+    `signature` annotations) so postponed annotations -- e.g. from
+    `from __future__ import annotations` or quoted forward references -- are
+    recognized. `get_type_hints` resolves every annotation at once and raises
+    on the first failure, so any parameter it leaves uncovered is retried on its
+    own: an unrelated unresolvable forward reference must not disable injection
+    for parameters whose annotations do resolve. Each distinct string annotation
+    is resolved at most once per call, failures included.
+
+    A *string* annotation naming a type that exists only in the callable's
+    defining local scope cannot be resolved here, since only globals are
+    available. Such a parameter keeps its raw string annotation, which
+    `_is_injected_arg_type` never classifies as injected, so it stays visible to
+    the model rather than being injected at call time. Non-string annotations
+    are unaffected, since `signature` yields the live object.
+
+    Args:
+        func: The function (or bound method) whose signature to inspect.
+
+    Returns:
+        `frozenset` of parameter names annotated as injected arguments.
+    """
+    params = signature(func).parameters
+    hint_source = _get_type_hints_source(func)
+    hints = (
+        _get_type_hints(hint_source, include_extras=True)
+        if hint_source is not None
+        else None
+    ) or {}
+    globalns: dict[str, Any] | None = None
+    resolved_annotations: dict[str, Any] = {}
+    keys = set()
+    for name, param in params.items():
+        annotation = hints.get(name, param.annotation)
+        if isinstance(annotation, str):
+            if globalns is None:
+                globalns = _get_callable_globals(
+                    func if hint_source is None else hint_source
+                )
+            if annotation not in resolved_annotations:
+                resolved_annotations[annotation] = _resolve_forward_ref(
+                    annotation, globalns
+                )
+            resolved = resolved_annotations[annotation]
+            if resolved is None:
+                _logger.debug(
+                    "Could not resolve annotation %r for parameter %r of %s; it "
+                    "will not be treated as an injected argument.",
+                    annotation,
+                    name,
+                    _describe_callable(func),
+                )
+            else:
+                annotation = resolved
+        if _is_injected_arg_type(annotation):
+            keys.add(name)
+    return frozenset(keys)
+
+
+def _resolve_forward_ref(annotation: str, globalns: dict[str, Any]) -> Any:
+    """Resolve a single string annotation, returning `None` on failure.
+
+    Uses a temporary annotated function so each annotation can be passed through
+    the public `get_type_hints` API independently.
+
+    Args:
+        annotation: The raw string annotation to resolve.
+        globalns: The globals namespace to resolve names against.
+
+    Returns:
+        The resolved type, or `None` if the annotation cannot be resolved.
+    """
+
+    def _annotation_holder() -> None:
+        pass
+
+    _annotation_holder.__annotations__ = {"value": annotation}
+    try:
+        return get_type_hints(
+            _annotation_holder,
+            globalns=globalns,
+            include_extras=True,
+        )["value"]
+    except Exception:
+        _logger.debug("Failed to resolve annotation %r.", annotation, exc_info=True)
+        return None
+
+
+def _get_runnable_config_param(func: Callable[..., Any]) -> str | None:
+    """Find the parameter name for `RunnableConfig` in a function.
+
+    Args:
+        func: The function to check.
+
+    Returns:
+        The parameter name for `RunnableConfig`, or `None` if not found.
+    """
+    type_hints = _get_type_hints(func)
+    if not type_hints:
+        return None
+    for name, type_ in type_hints.items():
+        if type_ is RunnableConfig:
+            return name
+    return None
+
+
+class InjectedToolArg:
+    """Annotation for tool arguments that are injected at runtime.
+
+    Tool arguments annotated with this class are not included in the tool
+    schema sent to language models and are instead injected during execution.
+    """
+
+
+class _DirectlyInjectedToolArg:
+    """Annotation for tool arguments that are injected at runtime.
+
+    Injected via direct type annotation, rather than annotated metadata.
+
+    For example, `ToolRuntime` is a directly injected argument.
+
+    Note the direct annotation rather than the verbose alternative:
+    `Annotated[ToolRuntime, InjectedRuntime]`
+
+    ```python
+    from langchain_core.tools import tool, ToolRuntime
+
+
+    @tool
+    def foo(x: int, runtime: ToolRuntime) -> str:
+        # use runtime.state, runtime.context, runtime.store, etc.
+        ...
+    ```
+    """
+
+
+class InjectedToolCallId(InjectedToolArg):
+    """Annotation for injecting the tool call ID.
+
+    This annotation is used to mark a tool parameter that should receive the tool call
+    ID at runtime.
+
+    ```python
+    from typing import Annotated
+    from langchain_core.messages import ToolMessage
+    from langchain_core.tools import tool, InjectedToolCallId
+
+    @tool
+    def foo(
+        x: int, tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> ToolMessage:
+        \"\"\"Return x.\"\"\"
+        return ToolMessage(
+            str(x),
+            artifact=x,
+            name="foo",
+            tool_call_id=tool_call_id
+        )
+    ```
+    """
+
+
+def _is_directly_injected_arg_type(type_: Any) -> bool:
+    """Check if a type annotation indicates a directly injected argument.
+
+    This is currently only used for `ToolRuntime`.
+
+    Checks if either the annotation itself is a subclass of `_DirectlyInjectedToolArg`
+    or the origin of the annotation is a subclass of `_DirectlyInjectedToolArg`.
+
+    For example, `ToolRuntime` or `ToolRuntime[ContextT, StateT]` would both return
+    `True`.
+    """
+    return (
+        isinstance(type_, type) and issubclass(type_, _DirectlyInjectedToolArg)
+    ) or (
+        (origin := get_origin(type_)) is not None
+        and isinstance(origin, type)
+        and issubclass(origin, _DirectlyInjectedToolArg)
+    )
+
+
+def _is_injected_arg_type(
+    type_: type | TypeVar, injected_type: type[InjectedToolArg] | None = None
+) -> bool:
+    """Check if a type annotation indicates an injected argument.
+
+    Args:
+        type_: The type annotation to check.
+        injected_type: The specific injected type to check for.
+
+    Returns:
+        `True` if the type is an injected argument, `False` otherwise.
+    """
+    if injected_type is None:
+        # if no injected type is specified,
+        # check if the type is a directly injected argument
+        if _is_directly_injected_arg_type(type_):
+            return True
+        injected_type = InjectedToolArg
+
+    # if the type is an Annotated type, check if annotated metadata
+    # is an intance or subclass of the injected type
+    return any(
+        isinstance(arg, injected_type)
+        or (isinstance(arg, type) and issubclass(arg, injected_type))
+        for arg in get_args(type_)[1:]
+    )
+
+
+def get_all_basemodel_annotations(
+    cls: TypeBaseModel | Any, *, default_to_bound: bool = True
+) -> dict[str, type | TypeVar]:
+    """Get all annotations from a Pydantic `BaseModel` and its parents.
+
+    Args:
+        cls: The Pydantic `BaseModel` class.
+        default_to_bound: Whether to default to the bound of a `TypeVar` if it exists.
+
+    Returns:
+        `dict` of field names to their type annotations.
+    """
+    orig_bases: tuple[type, ...]
+    # cls has no subscript: cls = FooBar
+    if isinstance(cls, type):
+        fields = get_fields(cls)
+        alias_map = {field.alias: name for name, field in fields.items() if field.alias}
+
+        annotations: dict[str, type | TypeVar] = {}
+        for name, param in inspect.signature(cls).parameters.items():
+            # Exclude hidden init args added by pydantic Config. For example if
+            # BaseModel(extra="allow") then "extra_data" will part of init sig.
+            if name not in fields and name not in alias_map:
+                continue
+            field_name = alias_map.get(name, name)
+            annotations[field_name] = param.annotation
+        orig_bases = getattr(cls, "__orig_bases__", ())
+    # cls has subscript: cls = FooBar[int]
+    else:
+        annotations = get_all_basemodel_annotations(
+            get_origin(cls), default_to_bound=False
+        )
+        orig_bases = (cls,)
+
+    # Pydantic v2 automatically resolves inherited generics, Pydantic v1 does not.
+    if not (isinstance(cls, type) and is_pydantic_v2_subclass(cls)):
+        # if cls = FooBar inherits from Baz[str], orig_bases will contain Baz[str]
+        # if cls = FooBar inherits from Baz, orig_bases will contain Baz
+        # if cls = FooBar[int], orig_bases will contain FooBar[int]
+        for parent in orig_bases:
+            # if class = FooBar inherits from Baz, parent = Baz
+            if isinstance(parent, type) and is_pydantic_v1_subclass(parent):
+                annotations.update(
+                    get_all_basemodel_annotations(parent, default_to_bound=False)
+                )
+                continue
+
+            parent_origin = get_origin(parent)
+
+            # if class = FooBar inherits from non-pydantic class
+            if not parent_origin:
+                continue
+
+            # if class = FooBar inherits from Baz[str]:
+            # parent = class Baz[str],
+            # parent_origin = class Baz,
+            # generic_type_vars = (type vars in Baz)
+            # generic_map = {type var in Baz: str}
+            generic_type_vars: tuple[TypeVar, ...] = getattr(
+                parent_origin, "__parameters__", ()
+            )
+            generic_map = dict(zip(generic_type_vars, get_args(parent), strict=False))
+            for field in getattr(parent_origin, "__annotations__", {}):
+                annotations[field] = _replace_type_vars(
+                    annotations[field], generic_map, default_to_bound=default_to_bound
+                )
+
+    return {
+        k: _replace_type_vars(v, default_to_bound=default_to_bound)
+        for k, v in annotations.items()
+    }
+
+
+def _replace_type_vars(
+    type_: type | TypeVar,
+    generic_map: dict[TypeVar, type] | None = None,
+    *,
+    default_to_bound: bool = True,
+) -> type | TypeVar:
+    """Replace `TypeVar`s in a type annotation with concrete types.
+
+    Args:
+        type_: The type annotation to process.
+        generic_map: Mapping of `TypeVar`s to concrete types.
+        default_to_bound: Whether to use `TypeVar` bounds as defaults.
+
+    Returns:
+        The type with `TypeVar`s replaced.
+    """
+    generic_map = generic_map or {}
+    if isinstance(type_, TypeVar):
+        if type_ in generic_map:
+            return generic_map[type_]
+        if default_to_bound:
+            return type_.__bound__ if type_.__bound__ is not None else Any
+        return type_
+    if (origin := get_origin(type_)) and (args := get_args(type_)):
+        new_args = tuple(
+            _replace_type_vars(arg, generic_map, default_to_bound=default_to_bound)
+            for arg in args
+        )
+        return cast("type", _py_38_safe_origin(origin)[new_args])  # type: ignore[index]
+    return type_
+
+
+class BaseToolkit(BaseModel, ABC):
+    """Base class for toolkits containing related tools.
+
+    A toolkit is a collection of related tools that can be used together to accomplish a
+    specific task or work with a particular system.
+    """
+
+    @abstractmethod
+    def get_tools(self) -> list[BaseTool]:
+        """Get all tools in the toolkit.
+
+        Returns:
+            List of tools contained in this toolkit.
+        """

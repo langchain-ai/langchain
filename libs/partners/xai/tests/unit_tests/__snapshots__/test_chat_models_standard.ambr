@@ -1,0 +1,31 @@
+# serializer version: 1
+# name: TestXAIStandard.test_serdes[serialized]
+  dict({
+    'id': list([
+      'langchain_xai',
+      'chat_models',
+      'ChatXAI',
+    ]),
+    'kwargs': dict({
+      'max_retries': 2,
+      'max_tokens': 100,
+      'model_name': 'grok-4',
+      'request_timeout': 60.0,
+      'stop': list([
+      ]),
+      'stream_usage': True,
+      'temperature': 0.0,
+      'xai_api_base': 'https://api.x.ai/v1/',
+      'xai_api_key': dict({
+        'id': list([
+          'XAI_API_KEY',
+        ]),
+        'lc': 1,
+        'type': 'secret',
+      }),
+    }),
+    'lc': 1,
+    'name': 'ChatXAI',
+    'type': 'constructor',
+  })
+# ---

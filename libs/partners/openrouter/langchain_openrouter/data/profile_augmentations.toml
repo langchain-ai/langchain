@@ -1,0 +1,4 @@
+provider = "openrouter"
+
+[overrides]
+tool_call_streaming = true
