@@ -32,11 +32,11 @@ reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.1"]
 max_input_tokens = 272000
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+reasoning_effort_levels = ["none", "low", "medium", "high"]
 
 [overrides."gpt-5-nano"]
 max_input_tokens = 272000
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+reasoning_effort_levels = ["minimal", "low", "medium", "high"]
 
 [overrides."gpt-5-codex"]
 max_input_tokens = 272000
@@ -44,7 +44,7 @@ reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5-mini"]
 max_input_tokens = 272000
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+reasoning_effort_levels = ["minimal", "low", "medium", "high"]
 
 [overrides."gpt-5.1-codex-max"]
 max_input_tokens = 272000
@@ -56,7 +56,7 @@ reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5"]
 max_input_tokens = 272000
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+reasoning_effort_levels = ["minimal", "low", "medium", "high"]
 
 [overrides."gpt-5-pro"]
 max_input_tokens = 272000
