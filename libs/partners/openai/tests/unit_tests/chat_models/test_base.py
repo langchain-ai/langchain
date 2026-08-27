@@ -181,6 +181,23 @@ def test_profile() -> None:
     assert model.profile["max_input_tokens"] == 272_000
 
 
+def test_gpt_5_reasoning_effort_levels() -> None:
+    """GPT-5 and GPT-5.1 predate `xhigh`, and GPT-5 supports `minimal`."""
+    for model_name in ("gpt-5", "gpt-5-mini", "gpt-5-nano"):
+        model = ChatOpenAI(model=model_name)
+        assert model.profile
+        assert model.profile["reasoning_effort_levels"] == [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+        ]
+
+    model = ChatOpenAI(model="gpt-5.1")
+    assert model.profile
+    assert model.profile["reasoning_effort_levels"] == ["none", "low", "medium", "high"]
+
+
 def test_gpt_5_3_chat_latest_profile_has_no_reasoning_effort() -> None:
     model = ChatOpenAI(model="gpt-5.3-chat-latest")
 

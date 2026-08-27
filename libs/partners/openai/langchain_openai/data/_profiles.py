@@ -371,11 +371,10 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
         "tool_call_streaming": True,
         "reasoning_effort_levels": [
-            "none",
+            "minimal",
             "low",
             "medium",
             "high",
-            "xhigh",
         ],
     },
     "gpt-5-chat-latest": {
@@ -437,11 +436,10 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
         "tool_call_streaming": True,
         "reasoning_effort_levels": [
-            "none",
+            "minimal",
             "low",
             "medium",
             "high",
-            "xhigh",
         ],
     },
     "gpt-5-nano": {
@@ -471,11 +469,10 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
         "tool_call_streaming": True,
         "reasoning_effort_levels": [
-            "none",
+            "minimal",
             "low",
             "medium",
             "high",
-            "xhigh",
         ],
     },
     "gpt-5-pro": {
@@ -543,7 +540,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "low",
             "medium",
             "high",
-            "xhigh",
         ],
     },
     "gpt-5.1-chat-latest": {
