@@ -12,16 +12,17 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
-from _servers import free_port, serve_http, weather_server
+from _servers import run_weather_http, weather_server
+from fastmcp.utilities.tests import run_server_in_process
 
-from langchain.mcp import MCPAdapter
+from langchain.mcp import MCPAdapter, MCPAdapterTarget
 
 _STDIO_SERVER = Path(__file__).parent / "_stdio_server.py"
 
 
-async def show(label: str, target: object) -> None:
+async def show(label: str, target: MCPAdapterTarget) -> None:
     """Adapt one target and call the tool it exposes."""
-    async with MCPAdapter(target) as adapter:  # type: ignore[arg-type]
+    async with MCPAdapter(target) as adapter:
         [forecast] = await adapter.get_tools()
         # An MCP result arrives as LangChain content blocks, not a bare string.
         [block] = await forecast.ainvoke({"city": "Oslo"})
@@ -36,9 +37,10 @@ async def main() -> None:
     # A script path is launched over stdio, one subprocess per adapter.
     await show("stdio", _STDIO_SERVER)
 
-    # A URL is reached over streamable HTTP.
-    with serve_http(weather_server(), free_port()) as url:
-        await show("http", url)
+    # A URL is reached over streamable HTTP. FastMCP's own test helper runs the
+    # server in a subprocess and hands back its URL.
+    with run_server_in_process(run_weather_http) as url:
+        await show("http", f"{url}/mcp")
 
 
 if __name__ == "__main__":

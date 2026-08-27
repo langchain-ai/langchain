@@ -1,6 +1,13 @@
-"""The weather server as a standalone script, for the stdio example."""
+"""Run one of the shared servers over stdio, chosen by argv.
 
-from _servers import weather_server
+`MCPAdapter` launches this as a subprocess; it is not part of the API being
+demonstrated.
+"""
+
+import sys
+
+from _servers import run_calculator_stdio, run_weather_stdio
 
 if __name__ == "__main__":
-    weather_server().run()
+    which = sys.argv[1] if len(sys.argv) > 1 else "weather"
+    (run_calculator_stdio if which == "calculator" else run_weather_stdio)()

@@ -24,18 +24,18 @@ from __future__ import annotations
 
 import asyncio
 
-from _servers import free_port, serve_http
 from fastmcp import FastMCP
 from fastmcp.client import Client
 from fastmcp.server.auth.providers.in_memory import InMemoryOAuthProvider
 from fastmcp.server.dependencies import get_access_token
+from fastmcp.utilities.tests import run_server_in_process
 from mcp.server.auth.settings import ClientRegistrationOptions
 
 from langchain.mcp import MCPAdapter
 
 
-def oauth_server(port: int) -> FastMCP[None]:
-    """A calendar server that mints its own tokens."""
+def run_oauth_server(host: str, port: int) -> None:
+    """Serve a calendar server that mints its own tokens."""
     # `base_url` must match the URL clients actually reach: it is advertised in
     # discovery and used as the OAuth `resource`.
     auth = InMemoryOAuthProvider(
@@ -57,18 +57,17 @@ def oauth_server(port: int) -> FastMCP[None]:
             return "unauthenticated"
         return f"client_id={token.client_id} scopes={token.scopes}"
 
-    return mcp
+    mcp.run(transport="http", host=host, port=port, show_banner=False, log_level="warning")
 
 
 async def main() -> None:
     """Register, authorize, and call the guarded tool."""
-    port = free_port()
-    with serve_http(oauth_server(port), port) as url:
+    with run_server_in_process(run_oauth_server) as url:
         # "oauth" runs discovery, dynamic registration, the browser redirect,
         # and the token exchange. Tokens are held in memory, so each run
         # repeats the browser step; pass `OAuth(..., token_storage=...)` to
         # persist them.
-        async with MCPAdapter(Client(url, auth="oauth")) as adapter:
+        async with MCPAdapter(Client(f"{url}/mcp", auth="oauth")) as adapter:
             [whoami] = await adapter.get_tools()
             [block] = await whoami.ainvoke({})
             print("authenticated as:", block["text"])

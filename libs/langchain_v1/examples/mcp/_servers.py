@@ -1,17 +1,12 @@
 """Tiny MCP servers the examples share, so each example stays about one idea.
 
-Nothing here is specific to LangChain — these are plain FastMCP servers.
+Nothing here is specific to LangChain — these are plain FastMCP servers. The
+`run_*` functions exist because a server reached over stdio or HTTP has to be
+started as its own process, and that entry point cannot be a lambda.
 """
 
 from __future__ import annotations
 
-import contextlib
-import socket
-import threading
-import time
-from typing import TYPE_CHECKING
-
-import uvicorn
 from fastmcp import Context, FastMCP
 from mcp.types import (
     ElicitRequest,
@@ -20,9 +15,6 @@ from mcp.types import (
     InputRequiredResult,
     TextContent,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 
 def weather_server() -> FastMCP[None]:
@@ -53,34 +45,6 @@ def calculator_server() -> FastMCP[None]:
         return str(numerator / denominator)
 
     return mcp
-
-
-def free_port() -> int:
-    """Pick an unused loopback port."""
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        return int(sock.getsockname()[1])
-
-
-@contextlib.contextmanager
-def serve_http(mcp: FastMCP[None], port: int) -> Iterator[str]:
-    """Serve `mcp` over streamable HTTP for the duration of the block.
-
-    Yields the URL to point a client at. Runs uvicorn on a daemon thread so the
-    example stays a single straightforward script.
-    """
-    server = uvicorn.Server(
-        uvicorn.Config(mcp.http_app(), host="127.0.0.1", port=port, log_level="error")
-    )
-    thread = threading.Thread(target=server.run, daemon=True)
-    thread.start()
-    while not server.started:
-        time.sleep(0.01)
-    try:
-        yield f"http://127.0.0.1:{port}/mcp"
-    finally:
-        server.should_exit = True
-        thread.join(timeout=5)
 
 
 def booking_server() -> FastMCP[None]:
@@ -123,3 +87,20 @@ def booking_server() -> FastMCP[None]:
         return [TextContent(type="text", text=f"Booked a table for {party_size} on {date}.")]
 
     return mcp
+
+
+def run_weather_stdio() -> None:
+    """Entry point for a weather server spoken to over stdio."""
+    weather_server().run()
+
+
+def run_calculator_stdio() -> None:
+    """Entry point for a calculator server spoken to over stdio."""
+    calculator_server().run()
+
+
+def run_weather_http(host: str, port: int) -> None:
+    """Entry point for a weather server served over HTTP."""
+    weather_server().run(
+        transport="http", host=host, port=port, show_banner=False, log_level="warning"
+    )
