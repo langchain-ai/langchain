@@ -1340,6 +1340,30 @@ def test__create_usage_metadata() -> None:
     )
 
 
+def test__create_usage_metadata_provider_specific_fields() -> None:
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": {
+            "cached_tokens": 5,
+            "text_tokens": 11,
+        },
+        "completion_tokens_details": {
+            "reasoning_tokens": 10,
+            "accepted_prediction_tokens": 2,
+        },
+        "prompt_tokens": 11,
+        "total_tokens": 26,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result == UsageMetadata(
+        output_tokens=15,
+        input_tokens=11,
+        total_tokens=26,
+        input_token_details={"cache_read": 5, "text_tokens": 11},
+        output_token_details={"reasoning": 10, "accepted_prediction_tokens": 2},
+    )
+
+
 def test__create_usage_metadata_zero_total_tokens() -> None:
     """Test that explicit total_tokens=0 is preserved, not replaced by sum."""
     usage_metadata = {
@@ -1453,6 +1477,25 @@ def test__create_usage_metadata_responses() -> None:
         total_tokens=150,
         input_token_details={"cache_read": 50},
         output_token_details={"reasoning": 10},
+    )
+
+
+def test__create_usage_metadata_responses_provider_specific_fields() -> None:
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": {"cached_tokens": 50, "text_tokens": 50},
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10, "accepted_prediction_tokens": 2},
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(response_usage_metadata)
+
+    assert result == UsageMetadata(
+        output_tokens=50,
+        input_tokens=100,
+        total_tokens=150,
+        input_token_details={"cache_read": 50, "text_tokens": 50},
+        output_token_details={"reasoning": 10, "accepted_prediction_tokens": 2},
     )
 
 

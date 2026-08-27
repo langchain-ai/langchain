@@ -4413,11 +4413,17 @@ def _create_usage_metadata_responses(
     if service_tier not in {"priority", "flex"}:
         service_tier = None
     service_tier_prefix = f"{service_tier}_" if service_tier else ""
+    output_tokens_details = oai_token_usage.get("output_tokens_details") or {}
     output_token_details: dict = {
-        f"{service_tier_prefix}reasoning": (
-            oai_token_usage.get("output_tokens_details") or {}
-        ).get("reasoning_tokens")
+        f"{service_tier_prefix}reasoning": output_tokens_details.get("reasoning_tokens")
     }
+    output_token_details.update(
+        {
+            k: v
+            for k, v in output_tokens_details.items()
+            if k not in {"reasoning_tokens"}
+        }
+    )
     input_tokens_details = oai_token_usage.get("input_tokens_details") or {}
     input_token_details: dict = {
         f"{service_tier_prefix}cache_read": input_tokens_details.get("cached_tokens"),
@@ -4425,6 +4431,13 @@ def _create_usage_metadata_responses(
             "cache_write_tokens"
         ),
     }
+    input_token_details.update(
+        {
+            k: v
+            for k, v in input_tokens_details.items()
+            if k not in {"cached_tokens", "cache_write_tokens"}
+        }
+    )
     if service_tier is not None:
         # Avoid counting cache-read and reasoning tokens towards the service tier
         # token counts, since service tier tokens are already priced differently
