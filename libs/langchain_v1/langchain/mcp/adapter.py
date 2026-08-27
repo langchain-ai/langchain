@@ -146,7 +146,6 @@ class MCPAdapter:
                 ),
             )
         self._elicitation = elicitation
-        self._closed = False
 
     @property
     def client(self) -> FastMCPClient[Any]:
@@ -155,7 +154,6 @@ class MCPAdapter:
 
     async def __aenter__(self) -> Self:
         """Connect the underlying client for the duration of the context."""
-        self._ensure_open()
         await self._client.__aenter__()  # type: ignore[no-untyped-call]
         return self
 
@@ -168,10 +166,6 @@ class MCPAdapter:
         """Release this context's hold on the underlying client."""
         await self._client.__aexit__(exc_type, exc_value, traceback)  # type: ignore[no-untyped-call]
 
-    async def aclose(self) -> None:
-        """Retire the adapter so it can no longer discover tools."""
-        self._closed = True
-
     async def get_tools(self) -> list[BaseTool]:
         """Discover and adapt MCP tools for use with LangChain.
 
@@ -179,23 +173,13 @@ class MCPAdapter:
             LangChain tools that invoke the corresponding MCP tools
                 asynchronously. Each holds the adapter's client, so the tools
                 stay callable after this adapter's context exits.
-
-        Raises:
-            RuntimeError: If the adapter has been closed.
         """
-        self._ensure_open()
         async with self._client:
             remote_tools = await self._client.list_tools()
         return [
             convert_mcp_tool_to_langchain_tool(tool, self._client, elicitation=self._elicitation)
             for tool in remote_tools
         ]
-
-    def _ensure_open(self) -> None:
-        """Raise a consistent error before using an explicitly closed adapter."""
-        if self._closed:
-            msg = "MCPAdapter is closed and cannot be used. Create a new adapter instead."
-            raise RuntimeError(msg)
 
 
 __all__ = ["MCPAdapter", "MCPAdapterTarget"]

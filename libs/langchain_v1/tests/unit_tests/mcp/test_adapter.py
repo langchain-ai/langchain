@@ -101,12 +101,3 @@ def test_prebuilt_client_is_used_as_is() -> None:
     client: Client[Any] = Client("https://example.com/mcp")
 
     assert MCPAdapter(client).client is client
-
-
-@pytest.mark.asyncio
-async def test_closed_adapter_rejects_further_use() -> None:
-    adapter = MCPAdapter(_calculator())
-    await adapter.aclose()
-
-    with pytest.raises(RuntimeError, match="closed"):
-        await adapter.get_tools()
