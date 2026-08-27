@@ -440,7 +440,7 @@ def mock_glm4_completion() -> list:
 
 
 async def test_glm4_astream(mock_glm4_completion: list) -> None:
-    llm_name = "glm-4"
+    llm_name = "glm-4"  # foo
     llm = ChatOpenAI(model=llm_name, stream_usage=True)
     mock_client = AsyncMock()
 
