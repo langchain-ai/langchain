@@ -737,7 +737,9 @@ jobs:
           # Run tests
           uv sync --group test --group test_integration
           uv pip install $PRERELEASE_FLAG ../../core/dist/*.whl
-          make test
+
+          env -u LANGSMITH_GATEWAY -u LANGSMITH_GATEWAY_API_KEY -u OPENAI_API_KEY make test
+
           make integration_tests
 
   # Test external packages that depend on langchain-core/langchain against the new release
