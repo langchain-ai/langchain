@@ -222,6 +222,25 @@ def _allowed_content_part_keys() -> frozenset[str]:
 _ALLOWED_CONTENT_PART_KEYS: frozenset[str] = _allowed_content_part_keys()
 
 
+_DROPPED_CONTENT_BLOCK_TYPES: frozenset[str] = frozenset(
+    {
+        "tool_use",
+        "thinking",
+        "reasoning",
+        "reasoning_content",
+        "function_call",
+        "code_interpreter_call",
+    }
+)
+"""Content block types the chat completions wire format does not carry.
+
+These arise from provider-specific or canonical v1 content (e.g. Anthropic
+`tool_use`/`thinking` blocks, or a `reasoning` block on an AIMessage) that
+reaches `_convert_message_to_dict` as conversation history. Fireworks rejects
+them, so they are dropped rather than forwarded.
+"""
+
+
 def _sanitize_chat_completions_content(content: Any) -> Any:
     """Strip non-wire keys from content blocks before serializing to Fireworks.
 
@@ -292,14 +311,7 @@ def _format_message_content(content: Any) -> Any:
     for block in content:
         if isinstance(block, dict) and "type" in block:
             btype = block["type"]
-            if btype in (
-                "tool_use",
-                "thinking",
-                "reasoning",
-                "reasoning_content",
-                "function_call",
-                "code_interpreter_call",
-            ):
+            if btype in _DROPPED_CONTENT_BLOCK_TYPES:
                 continue
             if is_data_content_block(block):
                 formatted.append(

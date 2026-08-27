@@ -44,6 +44,7 @@ from langchain_core.messages import (
 from langchain_fireworks import ChatFireworks
 from langchain_fireworks.chat_models import (
     _ALLOWED_CONTENT_PART_KEYS,
+    _DROPPED_CONTENT_BLOCK_TYPES,
     FireworksContextOverflowError,
     _acompletion_with_retry,
     _completion_with_retry,
@@ -402,17 +403,23 @@ def test_format_message_content_passes_through_existing_image_url() -> None:
     assert formatted == blocks
 
 
-@pytest.mark.parametrize(
-    "btype",
-    [
+def test_dropped_content_block_types_membership() -> None:
+    """Pin the drop-list so a removal is a deliberate, visible change.
+
+    The parametrized test below derives its cases from the constant, so it
+    tracks additions for free but cannot catch a deletion.
+    """
+    assert {
         "tool_use",
         "thinking",
         "reasoning",
         "reasoning_content",
         "function_call",
         "code_interpreter_call",
-    ],
-)
+    } == _DROPPED_CONTENT_BLOCK_TYPES
+
+
+@pytest.mark.parametrize("btype", sorted(_DROPPED_CONTENT_BLOCK_TYPES))
 def test_format_message_content_drops_unsupported_block_types(btype: str) -> None:
     """Block types not part of the OpenAI chat completions wire format are stripped."""
     blocks = [
