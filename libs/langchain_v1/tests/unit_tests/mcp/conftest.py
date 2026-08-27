@@ -1,6 +1,6 @@
 """Test configuration for the MCP adapter tests."""
 
-import jsonschema  # noqa: F401  # imported for its side effect, see below
+import jsonschema  # type: ignore[import-untyped]  # noqa: F401  # side effect, see below
 import pytest
 from blockbuster import BlockBuster
 

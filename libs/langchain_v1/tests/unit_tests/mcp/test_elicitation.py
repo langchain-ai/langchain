@@ -20,6 +20,7 @@ from mcp.types import (
     CreateMessageRequestParams,
     ElicitRequest,
     ElicitRequestFormParams,
+    ElicitResult,
     InputRequiredResult,
     SamplingMessage,
     TextContent,
@@ -310,8 +311,8 @@ def _multi_question_server(calls: dict[str, int]) -> FastMCP[None]:
         """Plan a trip, asking for whatever is still unknown."""
         known: dict[str, str] = json.loads(ctx.request_state) if ctx.request_state else {}
         for key, answer in (ctx.input_responses or {}).items():
-            if answer.action == "accept" and answer.content:
-                known[key] = answer.content["answer"]
+            if isinstance(answer, ElicitResult) and answer.action == "accept" and answer.content:
+                known[key] = str(answer.content["answer"])
 
         # Round one: two questions at the same time.
         if "city" not in known or "month" not in known:

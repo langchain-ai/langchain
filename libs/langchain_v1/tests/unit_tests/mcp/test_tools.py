@@ -96,7 +96,7 @@ def test_result_without_structured_content_has_no_artifact() -> None:
         )
     )
 
-    assert [block["text"] for block in content] == ["hello"]
+    assert [block["text"] for block in content if block["type"] == "text"] == ["hello"]
     assert artifact is None
 
 
@@ -174,6 +174,7 @@ def test_resource_link_type_follows_its_mime_type(
     )
 
     assert block["type"] == expected_type
+    assert block["type"] != "text"  # narrows to the blocks that carry a URL
     assert block["url"] == "https://example.com/report"
 
 
@@ -206,6 +207,7 @@ def test_embedded_blob_resource_type_follows_its_mime_type(
     )
 
     assert block["type"] == expected_type
+    assert block["type"] != "text"  # narrows to the blocks that carry base64
     assert block["base64"] == "AAAA"
 
 
