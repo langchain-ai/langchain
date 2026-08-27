@@ -1,3 +1,7 @@
+from typing import Any
+
+import pytest
+
 from langchain_core.messages import HumanMessage
 from langchain_core.messages import content as types
 from langchain_core.messages.block_translators.langchain_v0 import (
@@ -111,3 +115,61 @@ def test_convert_with_extras_on_v0_block() -> None:
     }
 
     assert _convert_legacy_v0_content_block_to_v1(block) == expected_output
+
+
+@pytest.mark.parametrize(
+    ("block", "expected"),
+    [
+        (
+            {
+                "type": "image",
+                "source_type": "url",
+                "url": "https://example.com/image.png",
+                "id": "block-1",
+            },
+            {"type": "image", "url": "https://example.com/image.png", "id": "block-1"},
+        ),
+        (
+            {
+                "type": "audio",
+                "source_type": "base64",
+                "data": "<base64 data>",
+                "mime_type": "audio/mpeg",
+                "id": "block-2",
+            },
+            {
+                "type": "audio",
+                "base64": "<base64 data>",
+                "mime_type": "audio/mpeg",
+                "id": "block-2",
+            },
+        ),
+        (
+            {
+                "type": "file",
+                "source_type": "text",
+                "url": "some text",
+                "id": "block-3",
+            },
+            {
+                "type": "text-plain",
+                "text": "some text",
+                "mime_type": "text/plain",
+                "id": "block-3",
+            },
+        ),
+    ],
+)
+def test_convert_v0_block_carrying_a_block_id(
+    block: dict[str, Any], expected: dict[str, Any]
+) -> None:
+    """A block id must not also be swept into extras and passed twice."""
+    assert _convert_legacy_v0_content_block_to_v1(block) == expected
+
+
+def test_convert_v0_id_source_still_maps_to_file_id() -> None:
+    """For `source_type` of `id` the id is the file reference, not a block id."""
+    converted = _convert_legacy_v0_content_block_to_v1(
+        {"type": "image", "source_type": "id", "id": "file-123"}
+    )
+    assert converted == {"type": "image", "file_id": "file-123"}
