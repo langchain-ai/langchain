@@ -4985,3 +4985,81 @@ def test_unrelated_type_error_propagates_unchanged() -> None:
         llm.invoke([HumanMessage(content="test")])
 
     assert exc_info.value is unrelated_error
+
+
+_CODE_EXECUTION_TOOL = [{"type": "code_execution_20250825", "name": "code_execution"}]
+_PPTX_SKILL = [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]
+
+
+def test_container_init_param() -> None:
+    """`container` set at construction is included in the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello, world!")], tools=_CODE_EXECUTION_TOOL
+    )
+    assert payload["container"] == {"skills": _PPTX_SKILL}
+
+
+def test_container_runtime_overrides_init() -> None:
+    """A call-time `container` takes precedence over the init value."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello, world!")],
+        tools=_CODE_EXECUTION_TOOL,
+        container="container_runtime",
+    )
+    assert payload["container"] == "container_runtime"
+
+
+def test_container_merged_with_reused_container() -> None:
+    """`reuse_last_container` supplies an ID without dropping other keys."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, container={"skills": _PPTX_SKILL}, reuse_last_container=True
+    )
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Now edit it."),
+    ]
+    payload = llm._get_request_payload(messages, tools=_CODE_EXECUTION_TOOL)
+    assert payload["container"] == {"id": "container_123", "skills": _PPTX_SKILL}
+
+
+def test_reuse_last_container_without_container_param() -> None:
+    """Without a `container`, a reused container is passed as a bare ID."""
+    llm = ChatAnthropic(model=MODEL_NAME, reuse_last_container=True)
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Again."),
+    ]
+    payload = llm._get_request_payload(messages, tools=_CODE_EXECUTION_TOOL)
+    assert payload["container"] == "container_123"
+
+
+def test_reuse_last_container_does_not_override_explicit_id() -> None:
+    """An explicitly passed container ID wins over `reuse_last_container`."""
+    llm = ChatAnthropic(model=MODEL_NAME, reuse_last_container=True)
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Again."),
+    ]
+    payload = llm._get_request_payload(
+        messages, tools=_CODE_EXECUTION_TOOL, container="container_explicit"
+    )
+    assert payload["container"] == "container_explicit"
+
+
+def test_container_absent_by_default() -> None:
+    """When unset, `container` is stripped from the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "container" not in payload
+
+
+def test_skills_without_code_execution_tool_warns() -> None:
+    """Skills are inert without a code execution tool, so warn."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    with pytest.warns(UserWarning, match="code execution tool"):
+        llm._get_request_payload([HumanMessage("Hello, world!")])
