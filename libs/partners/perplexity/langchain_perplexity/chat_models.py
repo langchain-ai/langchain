@@ -38,6 +38,7 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.messages.ai import (
+    InputTokenDetails,
     OutputTokenDetails,
     UsageMetadata,
     subtract_usage,
@@ -344,6 +345,10 @@ def _convert_responses_usage(usage: Any) -> UsageMetadata | None:
     Returns `None` if `usage` itself is missing or if either token field is
     absent — emitting zeroed `UsageMetadata` would silently undercount usage
     in downstream cost dashboards.
+
+    Cache hits and cache writes reported under `input_tokens_details` are mapped
+    onto the standard `InputTokenDetails` slots so downstream consumers can tell
+    cached input from fresh input.
     """
     if usage is None:
         return None
@@ -354,10 +359,22 @@ def _convert_responses_usage(usage: Any) -> UsageMetadata | None:
     total_tokens = _get_attr(usage, "total_tokens", None)
     if total_tokens is None:
         total_tokens = input_tokens + output_tokens
+
+    input_token_details: InputTokenDetails = {}
+    details = _get_attr(usage, "input_tokens_details", None)
+    if details is not None:
+        cache_read = _get_attr(details, "cache_read_input_tokens", None)
+        if cache_read is not None:
+            input_token_details["cache_read"] = cache_read
+        cache_creation = _get_attr(details, "cache_creation_input_tokens", None)
+        if cache_creation is not None:
+            input_token_details["cache_creation"] = cache_creation
+
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
+        input_token_details=input_token_details,
     )
 
 
@@ -1318,6 +1335,7 @@ class ChatPerplexity(BaseChatModel):
 
         added_model_name: bool = False
         added_search_queries: bool = False
+        added_search_context_size: bool = False
         async for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1341,8 +1359,10 @@ class ChatPerplexity(BaseChatModel):
                     if not added_search_queries:
                         generation_info["num_search_queries"] = num_search_queries
                         added_search_queries = True
-                if search_context_size := total_usage.get("search_context_size"):
-                    generation_info["search_context_size"] = search_context_size
+                if not added_search_context_size:
+                    if search_context_size := total_usage.get("search_context_size"):
+                        generation_info["search_context_size"] = search_context_size
+                        added_search_context_size = True
 
             choices = chunk.get("choices") or []
             if len(choices) == 0:
