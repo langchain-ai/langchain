@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 from pydantic import AnyUrl
 from typing_extensions import Self
 
+from langchain.mcp.elicitation import _declare_elicitation_capability
 from langchain.mcp.tools import convert_mcp_tool_to_langchain_tool
 
 try:
@@ -54,24 +55,6 @@ MCPAdapterTarget: TypeAlias = (
 
 Every transport `fastmcp.Client` accepts, plus a pre-built `fastmcp.Client`.
 """
-
-
-async def _declare_elicitation_capability(*_: object) -> dict[str, Any]:
-    """Stand in for an elicitation handler so the client advertises the capability.
-
-    FastMCP declares `elicitation` only when the callback differs by identity
-    from its own default. Interrupt-driven elicitation answers from the tool
-    call rather than from a callback, so this exists only to make that
-    declaration — running it means a server used the legacy server-initiated
-    path instead, which an interrupt cannot answer.
-    """
-    msg = (
-        "This MCP server asked for input over the legacy server-initiated "
-        "path, which `elicitation='interrupt'` cannot answer. Interrupt-based "
-        "elicitation needs a server that returns its input requests as an "
-        "`InputRequiredResult`."
-    )
-    raise NotImplementedError(msg)
 
 
 class MCPAdapter:
@@ -124,7 +107,7 @@ class MCPAdapter:
             # A client only advertises the elicitation capability when it
             # carries a handler, and servers will not ask without it. The
             # handler itself is never used: elicitation answers are driven by
-            # `call_tool_with_interrupts`, which reads the requests off the
+            # `_call_tool_with_interrupts`, which reads the requests off the
             # result rather than through this callback.
             self._client = FastMCPClient(
                 target,

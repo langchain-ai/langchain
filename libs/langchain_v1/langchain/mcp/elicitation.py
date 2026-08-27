@@ -185,6 +185,24 @@ def _build_responses(
     return responses
 
 
+async def _declare_elicitation_capability(*_: object) -> dict[str, Any]:
+    """Stand in for an elicitation handler so the client advertises the capability.
+
+    FastMCP declares `elicitation` only when the callback differs by identity
+    from its own default. Interrupt-driven elicitation answers from the tool
+    call rather than from a callback, so this exists only to make that
+    declaration — running it means a server used the legacy server-initiated
+    path instead, which an interrupt cannot answer.
+    """
+    msg = (
+        "This MCP server asked for input over the legacy server-initiated "
+        "path, which `elicitation='interrupt'` cannot answer. Interrupt-based "
+        "elicitation needs a server that returns its input requests as an "
+        "`InputRequiredResult`."
+    )
+    raise NotImplementedError(msg)
+
+
 async def _await_monitored(client: Client[Any], coro: Coroutine[Any, Any, _ResultT]) -> _ResultT:
     """Await a session request so a dying session cannot leave it hanging.
 
