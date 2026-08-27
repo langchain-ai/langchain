@@ -1,3 +1,3 @@
 """Main entrypoint into LangChain."""
 
-__version__ = "1.3.17"
+__version__ = "1.3.18"
