@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 from typing import TYPE_CHECKING, Any
+from unittest.mock import ANY
 
 import pytest
 from fastmcp import Client, FastMCP
@@ -101,6 +103,58 @@ def test_one_adapter_can_serve_several_servers() -> None:
     # exposing the same tool name stay distinguishable through one adapter
     # rather than colliding in the tool list handed to a model.
     assert transport.name_as_prefix is True
+
+
+_STDIO_SERVER = """
+import sys
+from mcp.server.mcpserver import MCPServer
+
+mcp = MCPServer("{name}")
+
+
+@mcp.tool()
+def whoami() -> str:
+    \"\"\"Name the server answering this call.\"\"\"
+    return "{name}"
+
+
+mcp.run()
+"""
+
+
+@pytest.fixture
+def two_stdio_servers(tmp_path: Path) -> dict[str, Any]:
+    """Write two single-tool stdio servers and return a config naming both."""
+    servers = {}
+    for name in ("alpha", "beta"):
+        script = tmp_path / f"{name}.py"
+        script.write_text(_STDIO_SERVER.format(name=name))
+        servers[name] = {"command": sys.executable, "args": [str(script)]}
+    return {"mcpServers": servers}
+
+
+@pytest.mark.asyncio
+async def test_several_servers_connect_and_keep_their_prefixes(
+    two_stdio_servers: dict[str, Any],
+) -> None:
+    """A multi-server config connects, and each backend's tools stay namespaced.
+
+    Connecting is the point. Mounting several backends behind one client needs
+    the server half of FastMCP, which a client-only install does not provide —
+    a config that builds a valid transport can still fail the moment it dials.
+    So this drives real servers rather than asserting on the transport.
+    """
+    config = two_stdio_servers
+
+    async with MCPAdapter(config) as adapter:
+        tools = await adapter.get_tools()
+
+    assert sorted(tool.name for tool in tools) == ["alpha_whoami", "beta_whoami"]
+
+    by_name = {tool.name: tool for tool in tools}
+    assert await by_name["alpha_whoami"].ainvoke({}) == [
+        {"type": "text", "text": "alpha", "id": ANY}
+    ]
 
 
 def test_prebuilt_client_is_used_as_is() -> None:
