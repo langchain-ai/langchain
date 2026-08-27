@@ -7,7 +7,7 @@ package.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict, assert_never
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict
 
 from langchain_core.messages.content import (
     FileContentBlock,
@@ -27,6 +27,7 @@ from mcp.types import (
     TextContent,
     TextResourceContents,
 )
+from typing_extensions import assert_never
 
 from langchain.mcp.elicitation import _call_tool_with_interrupts
 
