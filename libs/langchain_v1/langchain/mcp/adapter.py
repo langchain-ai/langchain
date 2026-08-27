@@ -15,10 +15,9 @@ try:
     from fastmcp.client.transports import ClientTransport
     from fastmcp.mcp_config import MCPConfig
 
-    # The MCP SDK's own server type, which `fastmcp.Client` also accepts
-    # in-process. It arrives with the fastmcp client install, and was named
-    # `FastMCP` under `mcp.server.fastmcp` before mcp 2.x — the line FastMCP 4
-    # requires.
+    # `fastmcp.Client` accepts the MCP SDK's own server type in-process, and
+    # aliases it as `SDKServer`. Imported from the SDK because that alias is
+    # not an explicit re-export.
     from mcp.server.mcpserver import MCPServer
 except ImportError as _import_error:
     msg = (
@@ -51,12 +50,9 @@ MCPAdapterTarget: TypeAlias = (
     | dict[str, Any]
     | str
 )
-"""Anything `MCPAdapter` accepts as its `target` argument.
+"""Anything `MCPAdapter` accepts as its `target`.
 
-Mirrors the targets `fastmcp.Client` itself accepts — a `ClientTransport`, an
-in-process FastMCP server, a URL, a script `Path`, an `MCPConfig` (or its dict
-form), or a string that FastMCP infers a transport from — plus a pre-built
-`fastmcp.Client`.
+Every transport `fastmcp.Client` accepts, plus a pre-built `fastmcp.Client`.
 """
 
 
