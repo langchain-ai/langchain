@@ -12,7 +12,6 @@ from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic
-import httpx
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
@@ -45,6 +44,7 @@ from pydantic import BaseModel, Field, RootModel, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
+from langchain_anthropic._sdk_compat import _unsupported_sampling_params
 from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
     _TOOL_CALL_ID_PATTERN,
@@ -58,6 +58,7 @@ from langchain_anthropic.chat_models import (
     _thinking_in_params,
     convert_to_anthropic_tool,
 )
+from tests.unit_tests._httpx_compat import httpx
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
@@ -118,8 +119,10 @@ _STREAM_EVENTS: list[dict[str, Any]] = [
 
 def _gateway_handler(
     expected_beta: str | None,
-) -> Callable[[httpx.Request], httpx.Response]:
-    def handler(request: httpx.Request) -> httpx.Response:
+) -> Callable[[Any], Any]:
+    # Annotated `Any`: the concrete request/response classes come from `httpx`
+    # or `httpx2` depending on the installed anthropic SDK.
+    def handler(request: Any) -> Any:
         assert request.headers.get("anthropic-beta") == expected_beta
         headers = {"x-langsmith-gateway-metadata": json.dumps(_GATEWAY_METADATA)}
         if json.loads(request.content).get("stream"):
@@ -2505,6 +2508,24 @@ def test_mcp_tracing() -> None:
     # Test headers are correctly propagated to request
     payload = llm._get_request_payload([input_message])
     assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
+
+
+def test_sampling_params_reach_the_request_payload() -> None:
+    """`temperature`/`top_p`/`top_k` land wherever the installed SDK accepts them.
+
+    `anthropic>=1` dropped them as named arguments, so they are relocated to
+    `extra_body`; the resulting wire payload is the same on both majors.
+    """
+    llm = ChatAnthropic(model=MODEL_NAME, temperature=0, top_p=0.9, top_k=5)
+    payload = llm._get_request_payload([HumanMessage("foo")])
+
+    sampling = {"temperature": 0, "top_p": 0.9, "top_k": 5}
+    if _unsupported_sampling_params():
+        assert payload["extra_body"] == sampling
+        assert not sampling.keys() & payload.keys()
+    else:
+        assert {k: payload[k] for k in sampling} == sampling
+        assert "extra_body" not in payload
 
 
 def test_cache_control_kwarg() -> None:
