@@ -1592,10 +1592,10 @@ class SandboxIntegrationTests(BaseStandardTests):
         assert result.error is None
         assert result.matches == []
 
-    def test_glob_with_directories(
+    def test_glob_excludes_directories(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
     ) -> None:
-        """Glob should include directories and mark them with `is_dir`."""
+        """Glob should only match files and explicitly exclude directories."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -1609,11 +1609,14 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         assert result.error is None
         assert result.matches is not None
-        assert len(result.matches) == 3
+        
+        # Should only find 'file.txt', ignoring 'dir1' and 'dir2'
+        assert len(result.matches) == 1
         dir_count = sum(1 for info in result.matches if info["is_dir"])
         file_count = sum(1 for info in result.matches if not info["is_dir"])
-        assert dir_count == 2
+        assert dir_count == 0
         assert file_count == 1
+
 
     def test_glob_hidden_files_explicitly(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
