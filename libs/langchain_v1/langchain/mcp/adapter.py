@@ -21,10 +21,7 @@ try:
     # not an explicit re-export.
     from mcp.server.mcpserver import MCPServer
 except ImportError as _import_error:
-    msg = (
-        "Please install the fastmcp client to use `MCPAdapter` — "
-        '`pip install "fastmcp-slim[client]"`.'
-    )
+    msg = "Please install FastMCP to use `MCPAdapter` — `pip install fastmcp`."
     raise ImportError(msg) from _import_error
 
 
@@ -34,10 +31,16 @@ if TYPE_CHECKING:
     from fastmcp import FastMCP
     from langchain_core.tools import BaseTool
 else:
-    # In-process FastMCP servers live in the server half of FastMCP, which the
-    # lightweight `fastmcp-slim[client]` install does not pull in. FastMCP degrades
-    # this annotation the same way in `fastmcp.client.transports.inference`.
-    FastMCP = Any
+    try:
+        from fastmcp import FastMCP
+    except ImportError:
+        # In-process FastMCP servers, and multi-server `MCPConfig` targets, live
+        # in the server half of FastMCP. The `mcp` extra installs it, but a
+        # caller who reached this module through a client-only install
+        # (`fastmcp-slim[client]`) can still use every other target type — so
+        # the annotation degrades rather than the import failing, the same way
+        # FastMCP degrades it in `fastmcp.client.transports.inference`.
+        FastMCP = Any
 
 
 MCPAdapterTarget: TypeAlias = (
