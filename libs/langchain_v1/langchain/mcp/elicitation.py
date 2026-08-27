@@ -14,7 +14,7 @@ this module's own frame lets it propagate.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict, TypeVar
 
 import anyio
 from langgraph.types import interrupt
@@ -41,7 +41,7 @@ _ResultT = TypeVar("_ResultT")
 _STILL_WORKING_SLEEP_SECONDS = 0.05
 """Pause before retrying a round that asked nothing, so the retry is not a spin."""
 
-ELICITATION_INTERRUPT_TYPE = "mcp_elicitation"
+ELICITATION_INTERRUPT_TYPE: Final = "mcp_elicitation"
 """Discriminator on the interrupt payload, so a handler can recognize it."""
 
 
@@ -259,7 +259,7 @@ async def _call_tool_with_interrupts(
         if result.input_requests:
             requests = _elicit_requests(result.input_requests, tool_name)
             request: MCPElicitationInterrupt = {
-                "type": "mcp_elicitation",
+                "type": ELICITATION_INTERRUPT_TYPE,
                 "tool_name": tool_name,
                 "requests": [_describe_request(key, req) for key, req in requests.items()],
             }
