@@ -68,16 +68,8 @@ class MCPToolArtifact(TypedDict):
 def _summarize_tool_error(tool_content: list[ToolMessageContentBlock]) -> str:
     """Build a readable message from the content blocks of a failed tool call.
 
-    Only text blocks carry readable error detail. Image and file blocks are
-    summarized by count rather than interpolated, so a base64 payload never
-    lands in an exception message.
-
-    Args:
-        tool_content: Converted content blocks from an `isError=True` result.
-
-    Returns:
-        The joined text of every text block, a count if the error carried only
-        non-text blocks, or a placeholder if it carried no content at all.
+    Image and file blocks are summarized by count rather than interpolated, so a
+    base64 payload never lands in an exception message.
     """
     error_parts = [block["text"] for block in tool_content if block["type"] == "text"]
     if error_parts:
@@ -93,14 +85,11 @@ def _summarize_tool_error(tool_content: list[ToolMessageContentBlock]) -> str:
 class _MCPToolExecutionError(ToolException):
     """An MCP tool that ran and reported failure, as `isError=True`.
 
-    Carries the already-converted content blocks so `_handle_mcp_tool_error`
-    can hand the server's own error detail to the model instead of ending the
-    run. The message is derived once at construction, so `tool_content` should
-    be treated as read-only afterward.
+    Carries the converted content blocks so `_handle_mcp_tool_error` can hand the
+    server's own error detail to the model instead of ending the run.
 
-    Deliberately narrow: only `isError=True` results raise this. Transport
-    failures and content-conversion errors are not `ToolException` subclasses
-    and therefore bypass error handling entirely.
+    Deliberately narrow: only `isError=True` results raise this. Transport and
+    conversion failures are not `ToolException`s, so they bypass error handling.
     """
 
     def __init__(self, tool_content: list[ToolMessageContentBlock]) -> None:
@@ -111,20 +100,9 @@ class _MCPToolExecutionError(ToolException):
 def _handle_mcp_tool_error(error: ToolException) -> list[ToolMessageContentBlock]:
     """Surface an MCP execution error to the model as failed tool output.
 
-    Wired as `handle_tool_error` on the generated tool. LangChain routes only
-    `ToolException` here, so conversion failures (`NotImplementedError`,
-    `ValueError`) and transport failures never reach it.
-
-    Args:
-        error: The exception raised while executing the tool.
-
-    Returns:
-        The content blocks carried by the error, so the caller builds a
-            `ToolMessage` with `status="error"` holding the server's own detail.
-
-    Raises:
-        ToolException: Re-raised for any other `ToolException`, which the
-            adapter never produces itself but a caller's tool wrapper might.
+    Wired as `handle_tool_error`, so what this returns becomes a `ToolMessage`
+    with `status="error"` carrying the server's own detail. Any other
+    `ToolException` is re-raised.
     """
     if isinstance(error, _MCPToolExecutionError):
         if error.tool_content:
@@ -136,19 +114,7 @@ def _handle_mcp_tool_error(error: ToolException) -> list[ToolMessageContentBlock
 
 
 def _convert_content_block(content: ContentBlock) -> ToolMessageContentBlock:
-    """Convert one MCP content block into its LangChain equivalent.
-
-    Args:
-        content: An MCP `TextContent`, `ImageContent`, `AudioContent`,
-            `ResourceLink`, or `EmbeddedResource`.
-
-    Returns:
-        The equivalent LangChain content block.
-
-    Raises:
-        NotImplementedError: If the block is audio, which has no LangChain
-            content block yet.
-    """
+    """Convert one MCP content block into its LangChain equivalent."""
     if isinstance(content, TextContent):
         return create_text_block(text=content.text)
 
@@ -185,18 +151,7 @@ def _convert_content_block(content: ContentBlock) -> ToolMessageContentBlock:
 def _convert_call_tool_result(
     result: _ToolCallResult,
 ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
-    """Split an MCP tool result into model-visible content and an artifact.
-
-    Args:
-        result: The result of a FastMCP tool call.
-
-    Returns:
-        The converted content blocks, and an `MCPToolArtifact` when the result
-            carried structured content.
-
-    Raises:
-        _MCPToolExecutionError: If the result is an MCP-declared tool error.
-    """
+    """Split an MCP tool result into model-visible content and an artifact."""
     tool_content = [_convert_content_block(block) for block in result.content]
 
     if result.is_error:
@@ -238,13 +193,12 @@ def convert_mcp_tool_to_langchain_tool(
     Args:
         tool: An MCP tool, as returned by `fastmcp.Client.list_tools`.
         client: The FastMCP client to call the tool through.
-        elicitation: Whether this tool can answer a server that needs input
-            mid-call. Pass `'interrupt'` to raise a LangGraph `interrupt()` when
-            a server asks, so a human answers and the call resumes — see
-            `langchain.mcp.elicitation`. Answering also requires `client` to
-            declare the elicitation capability, which FastMCP does only for a
-            client built with an `elicitation_handler`. By default the request
-            is left to `client` and its own handler, if it has one.
+        elicitation: Pass `'interrupt'` to answer a server that needs input
+            mid-call with a LangGraph `interrupt()`, so a human answers and the
+            call resumes — see `langchain.mcp.elicitation`. Also requires
+            `client` to have been built with an `elicitation_handler`, since
+            FastMCP declares the capability only then. By default the request is
+            left to `client` and its own handler, if it has one.
 
     Returns:
         A LangChain tool that invokes the MCP tool asynchronously.

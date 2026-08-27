@@ -134,17 +134,8 @@ def _elicit_requests(
 ) -> dict[str, ElicitRequest]:
     """Narrow a round's requests to elicitations, rejecting what is unsupported.
 
-    Args:
-        requests: Every input request the server embedded in this round.
-        tool_name: The tool being called, for the error message.
-
-    Returns:
-        The elicitation requests, keyed as the server keyed them.
-
-    Raises:
-        NotImplementedError: If the server asked for sampling or roots.
-            Answering those is FastMCP's job, and driving this loop by hand
-            bypasses the callbacks that would do it.
+    Answering sampling or roots is FastMCP's job, and driving this loop by hand
+    bypasses the callbacks that would do it, so those raise instead.
     """
     unsupported = sorted(
         f"{key} ({request.method})"
@@ -168,16 +159,8 @@ def _build_responses(
 ) -> InputResponses:
     """Turn resumed answers into the responses the server is expecting.
 
-    Args:
-        requests: The elicitation requests this round.
-        answers: Answers keyed by request key, as resumed from the interrupt.
-        tool_name: The tool being called, for the error message.
-
-    Returns:
-        One `ElicitResult` per request, under the server's own keys.
-
-    Raises:
-        ValueError: If an answer is missing, or carries an unknown action.
+    Every request needs an answer under its own key; a missing or malformed one
+    raises rather than being silently dropped from the reply.
     """
     missing = sorted(set(requests) - set(answers))
     if missing:
@@ -205,15 +188,10 @@ def _build_responses(
 async def _await_monitored(client: Client[Any], coro: Coroutine[Any, Any, _ResultT]) -> _ResultT:
     """Await a session request so a dying session cannot leave it hanging.
 
-    `fastmcp.Client.call_tool` races every request against the background task
-    that owns the session, so a transport failure raises instead of leaving the
-    caller waiting on a reply that can never arrive. Driving the input-required
-    loop directly means reaching for the same guard: without it a broken
-    connection mid-elicitation hangs the tool call.
-
-    FastMCP exposes this only privately, so fall back to a plain await if the
-    helper moves. The consequence of the fallback is the hang it prevents, not
-    incorrect behavior.
+    On HTTP transports a server error surfaces in the background session task,
+    not in the coroutine awaiting the reply, so `fastmcp.Client` races the two.
+    Driving this loop by hand means reaching for the same guard, which FastMCP
+    exposes only privately — hence the fallback if the helper ever moves.
     """
     monitored = getattr(client, "_await_with_session_monitoring", None)
     if monitored is None:
@@ -229,20 +207,17 @@ async def _call_tool_with_interrupts(
 ) -> CallToolResult:
     """Call an MCP tool, answering any input it asks for with an interrupt.
 
-    Drives the server's multi-round-trip loop directly: each round of requests
-    becomes one `interrupt()`, and the answers are sent back on a retry that
-    echoes the server's opaque `request_state`.
+    Each round of requests becomes one `interrupt()`, and the answers are sent
+    back on a retry echoing the server's opaque `request_state`.
 
     Because `interrupt()` unwinds the whole tool call, the call is re-issued
-    from its first round when the run resumes. A server that asks for input
-    before doing any work — the shape the protocol is designed around — repeats
-    nothing. A server that works first and asks later repeats that work once per
-    round of questions.
+    from its first round when the run resumes. A server that asks before doing
+    any work — the shape the protocol is designed around — repeats nothing. One
+    that works first and asks later repeats that work once per round.
 
     Args:
-        client: A connected FastMCP client. It must have been built with an
-            `elicitation_handler` so it advertises the elicitation capability,
-            or servers will refuse to ask.
+        client: A connected FastMCP client, built with an `elicitation_handler`
+            so it advertises the capability, or servers will refuse to ask.
         tool_name: The MCP tool to call.
         arguments: Arguments for the tool.
 

@@ -59,15 +59,11 @@ Every transport `fastmcp.Client` accepts, plus a pre-built `fastmcp.Client`.
 async def _declare_elicitation_capability(*_: object) -> dict[str, Any]:
     """Stand in for an elicitation handler so the client advertises the capability.
 
-    FastMCP declares `elicitation` in the client's capabilities only when it was
-    given a handler — the SDK compares the callback against its own default by
-    identity and declares the capability when they differ. Interrupt-driven
-    elicitation answers from the tool call rather than from a callback, so this
-    exists to make that declaration, and is not expected to run.
-
-    Reaching it means a server asked for input over the legacy server-initiated
-    path, which an interrupt cannot answer: FastMCP converts whatever a handler
-    raises into an MCP error, so the `GraphInterrupt` would never leave here.
+    FastMCP declares `elicitation` only when the callback differs by identity
+    from its own default. Interrupt-driven elicitation answers from the tool
+    call rather than from a callback, so this exists only to make that
+    declaration — running it means a server used the legacy server-initiated
+    path instead, which an interrupt cannot answer.
     """
     msg = (
         "This MCP server asked for input over the legacy server-initiated "
@@ -93,21 +89,16 @@ class MCPAdapter:
         target: MCP target accepted by `fastmcp.Client`, including an existing
             FastMCP client.
         elicitation: Whether these tools can answer a server that needs input
-            mid-call. Pass `'interrupt'` to raise a LangGraph `interrupt()` when
-            a server asks, so a human answers and the run resumes — see
-            `langchain.mcp.elicitation`.
+            mid-call. Pass `'interrupt'` to raise a LangGraph `interrupt()` so a
+            human answers and the run resumes — see `langchain.mcp.elicitation`.
 
-            This is a promise made on the wire, which is why it is a choice
-            rather than a default. A client declares up front whether it can be
-            asked questions, and servers only build flows that depend on it once
-            a client says yes. An agent with no way to reach a human cannot keep
-            that promise, so by default nothing is declared and a server does
-            not ask — which also means a server whose tool *requires* an answer
-            will refuse the call outright rather than run without one.
-
-            With a pre-built client, the declaration is that client's to make:
-            it must carry an `elicitation_handler` of its own, or servers will
-            not ask no matter what is passed here.
+            Declaring the capability is a promise made on the wire, which is why
+            it is a choice rather than a default: an agent with no way to reach
+            a human cannot keep it. Left unset, nothing is declared, and a
+            server whose tool *requires* an answer refuses the call outright
+            rather than running without one. With a pre-built client the
+            declaration is that client's to make, through its own
+            `elicitation_handler`.
 
     Example:
         ```python
