@@ -140,7 +140,7 @@ async def test_astream() -> None:
         "model": MODEL_NAME,
         "max_tokens": 1024,
         "messages": [{"role": "user", "content": "hi"}],
-        "temperature": 0.0,
+        "extra_body": {"temperature": 0.0},
     }
     stream = await async_client.messages.create(**params, stream=True)
     async for event in stream:
@@ -1884,17 +1884,22 @@ def test_code_execution_old(output_version: Literal["v0", "v1"]) -> None:
     )
 
 
+def _collect_file_ids(content: Any) -> list[str]:
+    """Recursively collect `file_id` values from response content."""
+    if isinstance(content, dict):
+        found = [content["file_id"]] if "file_id" in content else []
+        return found + [fid for v in content.values() for fid in _collect_file_ids(v)]
+    if isinstance(content, list):
+        return [fid for item in content for fid in _collect_file_ids(item)]
+    return []
+
+
 @pytest.mark.default_cassette("test_code_execution.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
-    """Note: this is a beta feature.
-
-    TODO: Update to remove beta once generally available.
-    """
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
-        betas=["code-execution-2025-08-25"],
         output_version=output_version,
     )
 
@@ -1950,6 +1955,61 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     _ = llm_with_tools.invoke(
         [input_message, full, next_message],
     )
+
+
+@pytest.mark.default_cassette("test_skills.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_skills(output_version: Literal["v0", "v1"]) -> None:
+    """Load an Anthropic skill into the code execution container."""
+    skills = [{"type": "anthropic", "skill_id": "xlsx"}]
+    code_execution = {"type": "code_execution_20250825", "name": "code_execution"}
+    llm = ChatAnthropic(
+        model=MODEL_NAME,  # type: ignore[call-arg]
+        container={"skills": skills},
+        reuse_last_container=True,
+        output_version=output_version,
+    )
+    llm_with_tools = llm.bind_tools([code_execution])
+
+    input_message = {
+        "role": "user",
+        "content": "Create an xlsx file with a single cell containing the number 42.",
+    }
+
+    # Stream the first turn. `.output` blocks until the stream finishes and
+    # returns the aggregated message.
+    # `stream_events` is typed as `Iterator[Any]` on a bound model; the v3
+    # protocol returns a `ChatModelStream`.
+    stream = cast("Any", llm_with_tools.stream_events([input_message], version="v3"))
+    first_response = stream.output
+
+    # The skill ran in the container and wrote a file.
+    container_id = first_response.response_metadata["container"]["id"]
+    assert container_id
+    assert _collect_file_ids(first_response.content)
+
+    # `reuse_last_container` supplies the container ID on the next turn without
+    # dropping the skills.
+    messages: list = [
+        input_message,
+        first_response,
+        {"role": "user", "content": "Now change the cell to 43."},
+    ]
+    payload = llm._get_request_payload(messages, tools=[code_execution])
+    assert payload["container"] == {"id": container_id, "skills": skills}
+
+    # The aggregated stream is valid history, so the follow-up round-trips.
+    second_response = llm_with_tools.invoke(messages)
+    block_types = {block["type"] for block in second_response.content}  # type: ignore[index]
+    if output_version == "v0":
+        assert {
+            "text",
+            "server_tool_use",
+            "bash_code_execution_tool_result",
+        } <= block_types
+    else:
+        assert {"text", "server_tool_call", "server_tool_result"} <= block_types
 
 
 @pytest.mark.default_cassette("test_remote_mcp.yaml.gz")

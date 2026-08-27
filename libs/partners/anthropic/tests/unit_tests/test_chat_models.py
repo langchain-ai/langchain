@@ -12,7 +12,6 @@ from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic
-import httpx
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
@@ -45,6 +44,7 @@ from pydantic import BaseModel, Field, RootModel, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
+from langchain_anthropic._sdk_compat import _unsupported_sampling_params
 from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
     _TOOL_CALL_ID_PATTERN,
@@ -58,6 +58,7 @@ from langchain_anthropic.chat_models import (
     _thinking_in_params,
     convert_to_anthropic_tool,
 )
+from tests.unit_tests._httpx_compat import httpx
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
@@ -118,8 +119,10 @@ _STREAM_EVENTS: list[dict[str, Any]] = [
 
 def _gateway_handler(
     expected_beta: str | None,
-) -> Callable[[httpx.Request], httpx.Response]:
-    def handler(request: httpx.Request) -> httpx.Response:
+) -> Callable[[Any], Any]:
+    # Annotated `Any`: the concrete request/response classes come from `httpx`
+    # or `httpx2` depending on the installed anthropic SDK.
+    def handler(request: Any) -> Any:
         assert request.headers.get("anthropic-beta") == expected_beta
         headers = {"x-langsmith-gateway-metadata": json.dumps(_GATEWAY_METADATA)}
         if json.loads(request.content).get("stream"):
@@ -2505,6 +2508,24 @@ def test_mcp_tracing() -> None:
     # Test headers are correctly propagated to request
     payload = llm._get_request_payload([input_message])
     assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
+
+
+def test_sampling_params_reach_the_request_payload() -> None:
+    """`temperature`/`top_p`/`top_k` land wherever the installed SDK accepts them.
+
+    `anthropic>=1` dropped them as named arguments, so they are relocated to
+    `extra_body`; the resulting wire payload is the same on both majors.
+    """
+    llm = ChatAnthropic(model=MODEL_NAME, temperature=0, top_p=0.9, top_k=5)
+    payload = llm._get_request_payload([HumanMessage("foo")])
+
+    sampling = {"temperature": 0, "top_p": 0.9, "top_k": 5}
+    if _unsupported_sampling_params():
+        assert payload["extra_body"] == sampling
+        assert not sampling.keys() & payload.keys()
+    else:
+        assert {k: payload[k] for k in sampling} == sampling
+        assert "extra_body" not in payload
 
 
 def test_cache_control_kwarg() -> None:
@@ -4964,3 +4985,99 @@ def test_unrelated_type_error_propagates_unchanged() -> None:
         llm.invoke([HumanMessage(content="test")])
 
     assert exc_info.value is unrelated_error
+
+
+_CODE_EXECUTION_TOOL = [{"type": "code_execution_20250825", "name": "code_execution"}]
+_PPTX_SKILL = [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]
+
+
+def test_container_init_param() -> None:
+    """`container` set at construction is included in the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello, world!")], tools=_CODE_EXECUTION_TOOL
+    )
+    assert payload["container"] == {"skills": _PPTX_SKILL}
+
+
+def test_container_runtime_overrides_init() -> None:
+    """A call-time `container` takes precedence over the init value."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello, world!")],
+        tools=_CODE_EXECUTION_TOOL,
+        container="container_runtime",
+    )
+    assert payload["container"] == "container_runtime"
+
+
+def test_container_merged_with_reused_container() -> None:
+    """`reuse_last_container` supplies an ID without dropping other keys."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, container={"skills": _PPTX_SKILL}, reuse_last_container=True
+    )
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Now edit it."),
+    ]
+    payload = llm._get_request_payload(messages, tools=_CODE_EXECUTION_TOOL)
+    assert payload["container"] == {"id": "container_123", "skills": _PPTX_SKILL}
+
+
+def test_reuse_last_container_without_container_param() -> None:
+    """Without a `container`, a reused container is passed as a bare ID."""
+    llm = ChatAnthropic(model=MODEL_NAME, reuse_last_container=True)
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Again."),
+    ]
+    payload = llm._get_request_payload(messages, tools=_CODE_EXECUTION_TOOL)
+    assert payload["container"] == "container_123"
+
+
+def test_reuse_last_container_does_not_override_explicit_id() -> None:
+    """An explicitly passed container ID wins over `reuse_last_container`."""
+    llm = ChatAnthropic(model=MODEL_NAME, reuse_last_container=True)
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Again."),
+    ]
+    payload = llm._get_request_payload(
+        messages, tools=_CODE_EXECUTION_TOOL, container="container_explicit"
+    )
+    assert payload["container"] == "container_explicit"
+
+
+def test_container_absent_by_default() -> None:
+    """When unset, `container` is stripped from the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "container" not in payload
+
+
+def test_skills_without_code_execution_tool_warns() -> None:
+    """Skills are inert without a code execution tool, so warn."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    with pytest.warns(UserWarning, match="code execution tool"):
+        llm._get_request_payload([HumanMessage("Hello, world!")])
+
+
+def test_thinking_display_updates_enables_beta() -> None:
+    """`display="updates"` auto-enables its beta, routing through beta.messages."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, thinking={"type": "adaptive", "display": "updates"}
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "thinking-display-updates-2026-08-18" in payload["betas"]
+
+
+def test_thinking_display_summarized_does_not_enable_beta() -> None:
+    """Other `display` values are generally available."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, thinking={"type": "adaptive", "display": "summarized"}
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "betas" not in payload
