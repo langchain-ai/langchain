@@ -12,6 +12,7 @@ import pytest
 from fastmcp import Context, FastMCP
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
+from mcp import InputRequiredRoundsExceededError
 from mcp.server.mcpserver import Elicit, MCPServer, Resolve
 from mcp.shared.exceptions import MCPError
 from mcp.types import (
@@ -173,8 +174,9 @@ class _FakeSession:
 
 
 class _FakeClient:
-    def __init__(self, session: _FakeSession) -> None:
+    def __init__(self, session: _FakeSession, max_rounds: int = 10) -> None:
         self.session = session
+        self.input_required_max_rounds = max_rounds
 
 
 def _elicit_round(key: str = "ask") -> InputRequiredResult:
@@ -230,6 +232,20 @@ async def test_a_state_only_round_is_retried_without_asking_anyone() -> None:
     assert result is done
     assert session.calls[1]["request_state"] == "state-1"
     assert session.calls[1]["input_responses"] is None
+
+
+@pytest.mark.asyncio
+async def test_a_server_that_never_finishes_is_cut_off() -> None:
+    """State-only rounds are bounded, so a stalled server cannot spin forever."""
+    working = InputRequiredResult(input_requests=None, request_state="state-1")
+    session = _FakeSession([working])
+    client = _FakeClient(session, max_rounds=3)
+
+    with pytest.raises(InputRequiredRoundsExceededError):
+        await _call_tool_with_interrupts(client, "stalled", {})  # type: ignore[arg-type]
+
+    # The initial call plus one retry per permitted round, and no more.
+    assert len(session.calls) == 4
 
 
 def _multi_question_server(calls: dict[str, int]) -> FastMCP[None]:
