@@ -1,12 +1,8 @@
-import os
-
 import pytest
 from langchain_core.outputs import GenerationChunk
 
 from langchain_openai import OpenAI
 from langchain_openai.llms.base import _stream_response_to_generation_chunk
-
-os.environ["OPENAI_API_KEY"] = "foo"
 
 OPENAI_LLM_TEST_MODEL = "gpt-3.5-turbo-instruct"
 
