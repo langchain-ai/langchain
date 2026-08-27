@@ -22,6 +22,7 @@ than half-served.
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, TypedDict, TypeVar
 
 from langgraph.types import interrupt
@@ -251,6 +252,17 @@ async def _await_monitored(client: Client[Any], coro: Coroutine[Any, Any, _Resul
     """
     monitored = getattr(client, "_await_with_session_monitoring", None)
     if monitored is None:
+        # Without the race, a server error raised in the background session task
+        # leaves this waiting on a reply that never arrives. Warn rather than
+        # let a FastMCP rename turn into an unexplained hang.
+        warnings.warn(
+            "This version of FastMCP does not expose "
+            "`Client._await_with_session_monitoring`, so an MCP elicitation "
+            "round cannot be raced against the session task. A transport "
+            "failure mid-elicitation may hang instead of raising.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
         return await coro
     result: _ResultT = await monitored(coro)
     return result

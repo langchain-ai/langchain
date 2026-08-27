@@ -15,6 +15,7 @@ from langgraph.types import Command
 from mcp.server.mcpserver import Elicit, MCPServer, Resolve
 from mcp.shared.exceptions import MCPError
 from mcp.types import (
+    CallToolResult,
     CreateMessageRequest,
     CreateMessageRequestParams,
     ElicitRequest,
@@ -140,6 +141,25 @@ async def test_declining_leaves_the_tool_unrun() -> None:
 
 
 @pytest.mark.asyncio
+async def test_the_opt_in_declares_the_capability_on_the_wire() -> None:
+    """Pin the capability declaration, which rides on a sentinel handler.
+
+    FastMCP declares `elicitation` only when the client's callback differs by
+    identity from the SDK's default, so `elicitation='interrupt'` installs a
+    sentinel purely to trip that comparison. Assert the negotiated capability
+    directly: if FastMCP ever changes how it decides, servers would quietly stop
+    asking, and every other test here would still pass.
+    """
+    adapter = MCPAdapter(_restaurant_server({"resolver": 0, "body": 0}), elicitation="interrupt")
+
+    async with adapter:
+        capabilities = adapter.client.session._build_capabilities("2026-07-28")
+
+    assert capabilities.elicitation is not None
+    assert capabilities.elicitation.form is not None
+
+
+@pytest.mark.asyncio
 async def test_without_the_opt_in_the_capability_is_never_declared() -> None:
     """The default stays non-interactive, and a server needing input says so.
 
@@ -174,6 +194,10 @@ class _FakeSession:
 class _FakeClient:
     def __init__(self, session: _FakeSession) -> None:
         self.session = session
+
+    async def _await_with_session_monitoring(self, coro: Any) -> Any:
+        """Stand in for the FastMCP guard, which a real client always carries."""
+        return await coro
 
 
 def _elicit_round(key: str = "ask") -> InputRequiredResult:
@@ -213,6 +237,27 @@ async def test_sampling_requests_are_rejected_rather_than_mishandled() -> None:
 
     with pytest.raises(NotImplementedError, match="sampling/createMessage"):
         await _call_tool_with_interrupts(client, "summarize", {})  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_a_client_without_the_session_guard_warns() -> None:
+    """The guard is FastMCP-private, so losing it must not fail silently.
+
+    Without it a transport failure mid-elicitation hangs instead of raising, and
+    a hang is the worst way to discover a renamed helper.
+    """
+    done = CallToolResult(content=[TextContent(type="text", text="done")])
+
+    class _UnguardedClient:
+        """A client from a FastMCP that no longer exposes the guard."""
+
+        def __init__(self, session: _FakeSession) -> None:
+            self.session = session
+
+    client = _UnguardedClient(_FakeSession([done]))
+
+    with pytest.warns(RuntimeWarning, match="_await_with_session_monitoring"):
+        await _call_tool_with_interrupts(client, "greet", {})  # type: ignore[arg-type]
 
 
 @pytest.mark.asyncio
