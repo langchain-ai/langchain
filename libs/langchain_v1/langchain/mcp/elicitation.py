@@ -60,25 +60,46 @@ way to the server — a wider annotation would promise more than the wire takes.
 """
 
 
-class MCPElicitationRequest(TypedDict):
-    """One question an MCP server is asking before it can finish a tool call.
+class MCPElicitationFormRequest(TypedDict):
+    """A request for data matching a schema.
 
     Attributes:
         key: The server's identifier for this request. An answer must be
             returned under the same key.
         message: The server's prompt, intended for a human to read.
-        mode: `'form'` when the server wants data matching `requested_schema`,
-            `'url'` when it wants the human to visit `url`.
-        requested_schema: JSON schema the answer's `content` must satisfy, for
-            a `'form'` request.
-        url: The address the human should visit, for a `'url'` request.
+        mode: Always `'form'`.
+        requested_schema: JSON schema the answer's `content` must satisfy.
     """
 
     key: str
     message: str
-    mode: Literal["form", "url"]
-    requested_schema: NotRequired[dict[str, Any]]
-    url: NotRequired[str]
+    mode: Literal["form"]
+    requested_schema: dict[str, Any]
+
+
+class MCPElicitationUrlRequest(TypedDict):
+    """A request for the human to visit an address.
+
+    Attributes:
+        key: The server's identifier for this request. An answer must be
+            returned under the same key.
+        message: The server's prompt, intended for a human to read.
+        mode: Always `'url'`.
+        url: The address the human should visit.
+    """
+
+    key: str
+    message: str
+    mode: Literal["url"]
+    url: str
+
+
+MCPElicitationRequest: TypeAlias = MCPElicitationFormRequest | MCPElicitationUrlRequest
+"""One question an MCP server is asking before it can finish a tool call.
+
+One member per mode, so narrowing on `mode` yields exactly the fields that mode
+carries — a form request always has its schema, and a URL request its address.
+"""
 
 
 class MCPElicitationInterrupt(TypedDict):
@@ -153,13 +174,13 @@ def _describe_request(key: str, request: ElicitRequest) -> MCPElicitationRequest
     """Render one server request as a payload a human can act on."""
     params = request.params
     if isinstance(params, ElicitRequestFormParams):
-        return MCPElicitationRequest(
+        return MCPElicitationFormRequest(
             key=key,
             message=params.message,
             mode="form",
             requested_schema=params.requested_schema,
         )
-    return MCPElicitationRequest(
+    return MCPElicitationUrlRequest(
         key=key,
         message=params.message,
         mode="url",
@@ -348,9 +369,11 @@ __all__ = [
     "MCPElicitationAccept",
     "MCPElicitationCancel",
     "MCPElicitationDecline",
+    "MCPElicitationFormRequest",
     "MCPElicitationInterrupt",
     "MCPElicitationRequest",
     "MCPElicitationResponse",
     "MCPElicitationResume",
+    "MCPElicitationUrlRequest",
     "MCPFormContent",
 ]
