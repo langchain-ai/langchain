@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
+from unittest.mock import AsyncMock
 
 import pytest
 from fastmcp import Client, FastMCP
@@ -29,12 +30,19 @@ def _blocks_without_ids(content: Any) -> list[dict[str, Any]]:
     return [{key: value for key, value in block.items() if key != "id"} for block in content]
 
 
-async def _one_tool(server: FastMCP[None]) -> tuple[Any, Client[Any]]:
+async def _one_tool(
+    server: FastMCP[None],
+    *,
+    elicitation: Literal["interrupt"] | None = None,
+) -> tuple[Any, Client[Any]]:
     """Convert the single tool an in-process server exposes."""
     client: Client[Any] = Client(server)
     async with client:
         [mcp_tool] = await client.list_tools()
-    return convert_mcp_tool_to_langchain_tool(mcp_tool, client), client
+    return (
+        convert_mcp_tool_to_langchain_tool(mcp_tool, client, elicitation=elicitation),
+        client,
+    )
 
 
 @pytest.mark.asyncio
@@ -65,8 +73,11 @@ async def test_text_result_becomes_content_blocks_and_structured_artifact() -> N
 
 
 @pytest.mark.asyncio
-async def test_tool_error_reaches_the_model_as_failed_output() -> None:
-    """A tool that fails server-side must not end the run."""
+@pytest.mark.parametrize("elicitation", [None, "interrupt"], ids=["fastmcp", "interrupt"])
+async def test_tool_error_reaches_the_model_as_failed_output(
+    elicitation: Literal["interrupt"] | None,
+) -> None:
+    """An MCP `isError` result is model-visible rather than ending the run."""
     server: FastMCP[None] = FastMCP("flaky")
 
     @server.tool
@@ -75,7 +86,7 @@ async def test_tool_error_reaches_the_model_as_failed_output() -> None:
         msg = "the widget is jammed"
         raise ToolError(msg)
 
-    tool, _ = await _one_tool(server)
+    tool, _ = await _one_tool(server, elicitation=elicitation)
 
     message = await tool.ainvoke(
         {"name": "explode", "args": {}, "id": "call-1", "type": "tool_call"}
@@ -85,6 +96,26 @@ async def test_tool_error_reaches_the_model_as_failed_output() -> None:
     [block] = _blocks_without_ids(message.content)
     assert block["type"] == "text"
     assert "the widget is jammed" in block["text"]
+
+
+@pytest.mark.asyncio
+async def test_client_failure_raises_instead_of_becoming_tool_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Failures without an MCP result must retain normal tool error behavior."""
+    server: FastMCP[None] = FastMCP("unavailable")
+
+    @server.tool
+    def ping() -> str:
+        """Return a response."""
+        return "pong"
+
+    tool, client = await _one_tool(server)
+    msg = "connection lost"
+    monkeypatch.setattr(client, "call_tool", AsyncMock(side_effect=RuntimeError(msg)))
+
+    with pytest.raises(RuntimeError, match=msg):
+        await tool.ainvoke({"name": "ping", "args": {}, "id": "call-1", "type": "tool_call"})
 
 
 def test_result_without_structured_content_has_no_artifact() -> None:

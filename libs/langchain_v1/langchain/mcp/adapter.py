@@ -79,9 +79,9 @@ class MCPAdapter:
             it is a choice rather than a default: an agent with no way to reach
             a human cannot keep it. Left unset, nothing is declared, and a
             server whose tool *requires* an answer refuses the call outright
-            rather than running without one. With a pre-built client the
-            declaration is that client's to make, through its own
-            `elicitation_handler`.
+            rather than running without one. With a pre-built client, interrupt
+            mode configures a clone so the caller's own handlers are not
+            replaced.
 
     Example:
         ```python
@@ -102,7 +102,13 @@ class MCPAdapter:
     ) -> None:
         """Initialize the adapter around a FastMCP target or client."""
         if isinstance(target, FastMCPClient):
-            self._client: FastMCPClient[Any] = target
+            if elicitation == "interrupt":
+                # Configure an adapter-owned client so interrupt mode does not
+                # replace a callback on the caller's client.
+                self._client = target.new()
+                self._client.set_elicitation_callback(_declare_elicitation_capability)
+            else:
+                self._client = target
         else:
             # A client only advertises the elicitation capability when it
             # carries a handler, and servers will not ask without it. The
