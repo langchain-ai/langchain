@@ -407,6 +407,7 @@ def test_format_message_content_passes_through_existing_image_url() -> None:
     [
         "tool_use",
         "thinking",
+        "reasoning",
         "reasoning_content",
         "function_call",
         "code_interpreter_call",

@@ -295,6 +295,7 @@ def _format_message_content(content: Any) -> Any:
             if btype in (
                 "tool_use",
                 "thinking",
+                "reasoning",
                 "reasoning_content",
                 "function_call",
                 "code_interpreter_call",
