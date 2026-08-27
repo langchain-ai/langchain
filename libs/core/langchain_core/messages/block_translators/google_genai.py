@@ -296,6 +296,27 @@ def _convert_to_v1_from_genai_input(
     return list(_iter_blocks())
 
 
+def _tool_call_indices(message: AIMessage) -> dict[str, int | str]:
+    """Map tool call id to its streaming index.
+
+    ChatGoogleGenerativeAI AIMessage .content does not carry function call parts, so
+    we recover sequencing information from the tool_call_chunks field.
+
+    Args:
+        message: The message whose tool call chunks should be indexed.
+
+    Returns:
+        Mapping of tool call id to index, for chunks that have both.
+    """
+    indices: dict[str, int | str] = {}
+    for chunk in getattr(message, "tool_call_chunks", None) or []:
+        id_ = chunk.get("id")
+        index = chunk.get("index")
+        if id_ and index is not None:
+            indices[id_] = index
+    return indices
+
+
 def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
     """Convert Google GenAI message content to v1 format.
 
@@ -321,6 +342,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
             for block in string_blocks
             if isinstance(block, dict) and block.get("type") == "tool_call"
         }
+        tool_call_indices = _tool_call_indices(message)
         for tool_call in message.tool_calls:
             id_ = tool_call.get("id")
             if id_ and id_ not in content_tool_call_ids:
@@ -330,6 +352,8 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     "name": tool_call["name"],
                     "args": tool_call["args"],
                 }
+                if (index := tool_call_indices.get(id_)) is not None:
+                    string_tool_call_block["index"] = index
                 string_blocks.append(string_tool_call_block)
 
         # Handle audio from additional_kwargs if present (for empty content cases)
@@ -361,6 +385,8 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
     converted_blocks: list[types.ContentBlock] = []
 
     for item in message.content:
+        # Where this item's blocks start, so they can inherit its `index` below.
+        block_start = len(converted_blocks)
         if isinstance(item, str):
             # Conversation history strings
 
@@ -487,6 +513,16 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
             # Non-dict, non-string content
             converted_blocks.append({"type": "non_standard", "value": item})  # type: ignore[unreachable]
 
+        # Each item yields exactly one block today. Guarded, not assumed:
+        # duplicate indices would merge the blocks back together.
+        new_blocks = converted_blocks[block_start:]
+        if (
+            len(new_blocks) == 1
+            and isinstance(item, dict)
+            and (index := item.get("index")) is not None
+        ):
+            new_blocks[0].setdefault("index", index)
+
     grounding_metadata = message.response_metadata.get("grounding_metadata")
     if grounding_metadata:
         citations = translate_grounding_metadata_to_citations(grounding_metadata)
@@ -513,6 +549,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
         for block in converted_blocks
         if isinstance(block, dict) and block.get("type") == "tool_call"
     }
+    tool_call_indices = _tool_call_indices(message)
     for tool_call in message.tool_calls:
         id_ = tool_call.get("id")
         if id_ and id_ not in content_tool_call_ids:
@@ -522,6 +559,8 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                 "name": tool_call["name"],
                 "args": tool_call["args"],
             }
+            if (index := tool_call_indices.get(id_)) is not None:
+                missing_tool_call_block["index"] = index
             converted_blocks.append(missing_tool_call_block)
 
     return converted_blocks
