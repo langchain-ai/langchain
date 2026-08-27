@@ -1888,13 +1888,8 @@ def test_code_execution_old(output_version: Literal["v0", "v1"]) -> None:
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
-    """Note: this is a beta feature.
-
-    TODO: Update to remove beta once generally available.
-    """
     llm = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
-        betas=["code-execution-2025-08-25"],
         output_version=output_version,
     )
 
