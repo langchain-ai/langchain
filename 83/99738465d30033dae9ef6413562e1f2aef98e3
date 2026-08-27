@@ -1,0 +1,23 @@
+libs/langchain_v1/langchain/agents/middleware/pii.py
+  s_75fbcc89344fa4::t_84b0bc201366b2 320-321,323,327
+  s_75fbcc89344fa4::t_5fd7a6ae8b12b4 52-146
+  s_75fbcc89344fa4::t_f67fdb3cb68d9a 714,738,811
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_pii.py
+  s_75fbcc89344fa4::t_1657e23e3b83ba 592-622
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "8399738465d30033dae9ef6413562e1f2aef98e3",
+  "prompts": {},
+  "sessions": {
+    "s_75fbcc89344fa4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4312d504-2033-4b40-959d-839a46b08a39",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
