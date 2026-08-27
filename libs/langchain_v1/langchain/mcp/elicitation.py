@@ -13,16 +13,18 @@ callback, run concurrently in a task group. LangGraph matches resume values to
 would scramble that matching — and FastMCP converts any exception a callback
 raises into an MCP error, swallowing the `GraphInterrupt` that suspends the
 graph. Calling `interrupt()` from this module's own frame keeps one interrupt
-per round and lets it propagate. The retry bounds mirror the SDK driver's.
+per round and lets it propagate.
+
+Only elicitation is answered here. A server asking for sampling or roots, or
+returning a continuation round to resume long-running work, is refused rather
+than half-served.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, TypedDict, TypeVar
 
-import anyio
 from langgraph.types import interrupt
-from mcp import InputRequiredRoundsExceededError
 from mcp.types import (
     CallToolResult,
     ElicitRequest,
@@ -42,10 +44,6 @@ if TYPE_CHECKING:
 
 _ResultT = TypeVar("_ResultT")
 
-
-_STATE_ONLY_BACKOFF_INITIAL_SECONDS = 0.05
-_STATE_ONLY_BACKOFF_CAP_SECONDS = 0.25
-"""Backoff for rounds that ask nothing, matching the SDK's own driver."""
 
 ELICITATION_INTERRUPT_TYPE: Final = "mcp_elicitation"
 """Discriminator on the interrupt payload, so a handler can recognize it."""
@@ -273,42 +271,38 @@ async def _call_tool_with_interrupts(
     Raises:
         GraphInterrupt: Every time the server asks something that has not been
             answered yet. This is the mechanism, not a failure.
-        InputRequiredRoundsExceededError: If the server keeps asking past
-            `client.input_required_max_rounds`, so a server that never reaches
-            a terminal result cannot loop forever.
-        NotImplementedError: If the server asks for sampling or roots.
+        NotImplementedError: If the server asks for sampling or roots, or
+            returns a continuation round rather than a question.
         ValueError: If a resumed answer is missing or malformed.
     """
     session = client.session
-    max_rounds = client.input_required_max_rounds
     result = await _await_monitored(
         client, session.call_tool(tool_name, arguments, allow_input_required=True)
     )
 
-    rounds = 0
-    state_only_delay = _STATE_ONLY_BACKOFF_INITIAL_SECONDS
     while isinstance(result, InputRequiredResult):
-        rounds += 1
-        if rounds > max_rounds:
-            raise InputRequiredRoundsExceededError(max_rounds)
+        if not result.input_requests:
+            # A round carrying only `request_state` is the protocol's
+            # continuation channel: the server is still working and wants to be
+            # called back. There is no question, so there is nobody to
+            # interrupt, and answering it would mean polling a remote server
+            # from inside a tool call. Refused for the same reason sampling is.
+            msg = (
+                f"The MCP tool {tool_name!r} returned a continuation round with "
+                "no input requests. Interrupt-based elicitation only answers "
+                "elicitation requests, not long-running work that resumes over "
+                "several round trips."
+            )
+            raise NotImplementedError(msg)
 
-        responses: InputResponses | None = None
-        if result.input_requests:
-            state_only_delay = _STATE_ONLY_BACKOFF_INITIAL_SECONDS
-            requests = _elicit_requests(result.input_requests, tool_name)
-            request: MCPElicitationInterrupt = {
-                "type": ELICITATION_INTERRUPT_TYPE,
-                "tool_name": tool_name,
-                "requests": [_describe_request(key, req) for key, req in requests.items()],
-            }
-            resume: MCPElicitationResume = interrupt(request)
-            responses = _build_responses(requests, resume["responses"], tool_name)
-        else:
-            # A round carrying only `request_state` means the server is still
-            # working and wants to be asked again. Nobody needs to be
-            # interrupted for that; just back off so the retry is not a spin.
-            await anyio.sleep(state_only_delay)
-            state_only_delay = min(state_only_delay * 2, _STATE_ONLY_BACKOFF_CAP_SECONDS)
+        requests = _elicit_requests(result.input_requests, tool_name)
+        request: MCPElicitationInterrupt = {
+            "type": ELICITATION_INTERRUPT_TYPE,
+            "tool_name": tool_name,
+            "requests": [_describe_request(key, req) for key, req in requests.items()],
+        }
+        resume: MCPElicitationResume = interrupt(request)
+        responses = _build_responses(requests, resume["responses"], tool_name)
 
         result = await _await_monitored(
             client,
