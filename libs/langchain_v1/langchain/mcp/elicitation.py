@@ -107,22 +107,34 @@ class MCPElicitationAccept(TypedDict):
     content: NotRequired[MCPFormContent | None]
 
 
-class MCPElicitationRefusal(TypedDict):
-    """A refusal to answer an `MCPElicitationRequest`.
+class MCPElicitationDecline(TypedDict):
+    """A refusal to answer an `MCPElicitationRequest`, leaving the call to go on.
 
     Attributes:
-        action: `'decline'` to refuse the question, or `'cancel'` to abandon the
-            tool call.
+        action: Always `'decline'`.
     """
 
-    action: Literal["decline", "cancel"]
+    action: Literal["decline"]
 
 
-MCPElicitationResponse: TypeAlias = MCPElicitationAccept | MCPElicitationRefusal
+class MCPElicitationCancel(TypedDict):
+    """A refusal that abandons the tool call rather than just the question.
+
+    Attributes:
+        action: Always `'cancel'`.
+    """
+
+    action: Literal["cancel"]
+
+
+MCPElicitationResponse: TypeAlias = (
+    MCPElicitationAccept | MCPElicitationDecline | MCPElicitationCancel
+)
 """One answer to an `MCPElicitationRequest`.
 
-Split so that only an accept can carry content, matching what is actually sent:
-content on a refusal is dropped rather than forwarded.
+One member per action, so a handler can narrow on `action` alone. Only an accept
+carries content, matching what is actually sent: content on a refusal is dropped
+rather than forwarded.
 """
 
 
@@ -322,8 +334,9 @@ async def _call_tool_with_interrupts(
 __all__ = [
     "ELICITATION_INTERRUPT_TYPE",
     "MCPElicitationAccept",
+    "MCPElicitationCancel",
+    "MCPElicitationDecline",
     "MCPElicitationInterrupt",
-    "MCPElicitationRefusal",
     "MCPElicitationRequest",
     "MCPElicitationResponse",
     "MCPElicitationResume",
