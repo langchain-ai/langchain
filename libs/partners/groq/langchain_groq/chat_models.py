@@ -999,7 +999,7 @@ class ChatGroq(BaseChatModel):
                 support which methods [here](https://console.groq.com/docs/structured-outputs).
 
                 !!! warning
-                    `'json_mode'` does not support streaming responses stop sequences.
+                    `'json_mode'` does not support streaming responses or stop sequences.
 
             include_raw:
                 If `False` then only the parsed structured output is returned.
