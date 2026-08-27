@@ -226,9 +226,7 @@ def convert_mcp_tool_to_langchain_tool(
             if elicitation == "interrupt":
                 result = await _call_tool_with_interrupts(client, tool.name, arguments)
             else:
-                # `raise_on_error=False` keeps the `isError=True` result intact
-                # so the server's error content can reach the model, rather
-                # than being flattened into a FastMCP `ToolError` string.
+                # Preserve MCP error results for conversion into failed tool messages.
                 result = await client.call_tool(tool.name, arguments, raise_on_error=False)
         return _convert_call_tool_result(result)
 
@@ -239,6 +237,9 @@ def convert_mcp_tool_to_langchain_tool(
         coroutine=call_tool,
         response_format="content_and_artifact",
         metadata=_tool_metadata(tool),
+        # MCP `isError` is a model-visible tool result, not a transport
+        # exception. `BaseTool`'s narrow `ToolException` path preserves the
+        # result content while formatting it as `ToolMessage(status="error")`.
         handle_tool_error=_handle_mcp_tool_error,
     )
 
