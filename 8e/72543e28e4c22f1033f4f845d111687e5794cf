@@ -1,0 +1,24 @@
+libs/langchain_v1/tests/unit_tests/mcp/test_elicitation.py
+  s_7ab4c661d7e226::t_6e7bec6bacf4ae 23
+  s_7ab4c661d7e226::t_5e8c7493a97646 314-315
+libs/langchain_v1/tests/unit_tests/mcp/conftest.py
+  s_7ab4c661d7e226::t_ceba6b77ebf5e7 3
+libs/langchain_v1/tests/unit_tests/mcp/test_tools.py
+  s_7ab4c661d7e226::t_7b4e8784bbf49a 99,177,210
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "8e72543e28e4c22f1033f4f845d111687e5794cf",
+  "prompts": {},
+  "sessions": {
+    "s_7ab4c661d7e226": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bffc60b0-f0a4-422a-80fc-f925cef7488d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
