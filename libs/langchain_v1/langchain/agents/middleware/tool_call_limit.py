@@ -350,12 +350,15 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
         if not messages:
             return None
 
-        # Find the last AIMessage
+        # Find the last AIMessage and any tool calls already answered after it.
         last_ai_message = None
+        answered_tool_call_ids: set[str] = set()
         for message in reversed(messages):
             if isinstance(message, AIMessage):
                 last_ai_message = message
                 break
+            if isinstance(message, ToolMessage):
+                answered_tool_call_ids.add(message.tool_call_id)
 
         if not last_ai_message or not last_ai_message.tool_calls:
             return None
@@ -417,6 +420,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
                 status="error",
             )
             for tool_call in blocked_calls
+            if tool_call["id"] not in answered_tool_call_ids
         ]
 
         if self.exit_behavior == "end":
@@ -424,7 +428,9 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], Con
             # pending calls so none are executed and the message history stays valid.
             blocked_ids = {tool_call["id"] for tool_call in blocked_calls}
             pending_tool_calls = [
-                tc for tc in last_ai_message.tool_calls if tc["id"] not in blocked_ids
+                tc
+                for tc in last_ai_message.tool_calls
+                if tc["id"] not in blocked_ids and tc["id"] not in answered_tool_call_ids
             ]
             artificial_messages.extend(
                 ToolMessage(

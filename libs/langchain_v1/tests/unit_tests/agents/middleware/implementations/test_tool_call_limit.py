@@ -787,6 +787,61 @@ def test_middleware_end_behavior_with_allowed_and_blocked_parallel_calls() -> No
     )
 
 
+def test_continue_behavior_does_not_duplicate_answered_blocked_call() -> None:
+    """Do not emit a second response for a blocked call answered by middleware."""
+    middleware = ToolCallLimitMiddleware(run_limit=1, exit_behavior="continue")
+    runtime = None
+    state = ToolCallLimitState(
+        messages=[
+            AIMessage(
+                "Response",
+                tool_calls=[
+                    {"name": "search", "args": {}, "id": "call_1"},
+                    {"name": "search", "args": {}, "id": "call_2"},
+                ],
+            ),
+            ToolMessage(content="Already handled", tool_call_id="call_2"),
+        ],
+        thread_tool_call_count={"__all__": 1},
+        run_tool_call_count={"__all__": 1},
+    )
+
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+
+    assert result is not None
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert [msg.tool_call_id for msg in tool_messages] == ["call_1"]
+    assert result["run_tool_call_count"] == {"__all__": 3}
+
+
+def test_end_behavior_does_not_duplicate_answered_pending_call() -> None:
+    """Do not emit a second response for a pending call answered by middleware."""
+    middleware = ToolCallLimitMiddleware(thread_limit=1, exit_behavior="end")
+    runtime = None
+    state = ToolCallLimitState(
+        messages=[
+            AIMessage(
+                "Response",
+                tool_calls=[
+                    {"name": "search", "args": {}, "id": "call_1"},
+                    {"name": "search", "args": {}, "id": "call_2"},
+                ],
+            ),
+            ToolMessage(content="Already handled", tool_call_id="call_1"),
+        ],
+        thread_tool_call_count={},
+        run_tool_call_count={},
+    )
+
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+
+    assert result is not None
+    assert result["jump_to"] == "end"
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert [msg.tool_call_id for msg in tool_messages] == ["call_2"]
+    assert result["thread_tool_call_count"] == {"__all__": 0}
+
+
 def test_parallel_mixed_tool_calls_with_specific_tool_limit() -> None:
     """Test parallel calls to different tools when limiting a specific tool.
 
