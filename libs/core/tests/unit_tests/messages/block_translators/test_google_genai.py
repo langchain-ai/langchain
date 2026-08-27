@@ -266,7 +266,31 @@ def test_content_blocks_preserve_index_for_parallel_tool_calls() -> None:
 
     assert [block["type"] for block in blocks] == ["tool_call", "tool_call"]
     assert [block.get("id") for block in blocks] == ["id-1", "id-2"]
-    assert [block.get("index") for block in blocks] == [0, 1]
+    assert [block.get("index") for block in blocks] == ["lc_tc_0", "lc_tc_1"]
+
+
+def test_content_blocks_tool_call_index_cannot_collide_with_content() -> None:
+    """Tool call indices must not land in the content block index namespace.
+
+    Tool call indices count from zero independently of content block indices, so
+    an unprefixed copy lets an image at index 0 and the first tool call share a
+    wire block -- the image starts the block and the tool call finishes it,
+    silently dropping the image. A per-message translator cannot dedupe against
+    indices used by earlier chunks, so the namespaces must be disjoint.
+    """
+    image_chunk = _genai_chunk(content=[_image_block("QUFBQQ==", 0)])
+    tool_chunk = _genai_chunk(
+        content=[],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="f1", args='{"a": 1}', id="id-1", index=0)
+        ],
+    )
+
+    image_index = image_chunk.content_blocks[0]["index"]
+    tool_index = tool_chunk.content_blocks[0]["index"]
+
+    assert image_index == 0
+    assert tool_index != image_index
 
 
 def test_content_blocks_omit_index_when_source_has_none() -> None:

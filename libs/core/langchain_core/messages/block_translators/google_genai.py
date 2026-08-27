@@ -296,7 +296,7 @@ def _convert_to_v1_from_genai_input(
     return list(_iter_blocks())
 
 
-def _tool_call_indices(message: AIMessage) -> dict[str, int | str]:
+def _tool_call_indices(message: AIMessage) -> dict[str, str]:
     """Map tool call id to its streaming index.
 
     ChatGoogleGenerativeAI AIMessage .content does not carry function call parts, so
@@ -306,14 +306,14 @@ def _tool_call_indices(message: AIMessage) -> dict[str, int | str]:
         message: The message whose tool call chunks should be indexed.
 
     Returns:
-        Mapping of tool call id to index, for chunks that have both.
+        Mapping of tool call id to prefixed index, for chunks that have both.
     """
-    indices: dict[str, int | str] = {}
+    indices: dict[str, str] = {}
     for chunk in getattr(message, "tool_call_chunks", None) or []:
         id_ = chunk.get("id")
         index = chunk.get("index")
         if id_ and index is not None:
-            indices[id_] = index
+            indices[id_] = f"lc_tc_{index}"  # prefix to keep disjoint w other indices
     return indices
 
 
