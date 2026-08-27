@@ -1,0 +1,21 @@
+libs/langchain_v1/langchain/mcp/adapter.py
+  s_7ab4c661d7e226::t_3c7effa3699768 11,110
+libs/langchain_v1/langchain/mcp/elicitation.py
+  s_7ab4c661d7e226::t_3c7effa3699768 188-205
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "2c1386e901367a022c3c629b7ee710dd22475982",
+  "prompts": {},
+  "sessions": {
+    "s_7ab4c661d7e226": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bffc60b0-f0a4-422a-80fc-f925cef7488d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
