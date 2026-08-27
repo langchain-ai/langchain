@@ -18,7 +18,7 @@ per round and lets it propagate. The retry bounds mirror the SDK driver's.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Final, Literal, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, TypedDict, TypeVar
 
 import anyio
 from langgraph.types import interrupt
@@ -49,6 +49,16 @@ _STATE_ONLY_BACKOFF_CAP_SECONDS = 0.25
 
 ELICITATION_INTERRUPT_TYPE: Final = "mcp_elicitation"
 """Discriminator on the interrupt payload, so a handler can recognize it."""
+
+_ACTIONS: Final = ("accept", "decline", "cancel")
+"""Actions the wire accepts, for validating a resumed answer."""
+
+MCPFormContent: TypeAlias = dict[str, str | int | float | bool | list[str] | None]
+"""Values a form answer may carry.
+
+As narrow as `mcp.types.ElicitResult.content`, which validates the answer on its
+way to the server — a wider annotation would promise more than the wire takes.
+"""
 
 
 class MCPElicitationRequest(TypedDict):
@@ -86,18 +96,36 @@ class MCPElicitationInterrupt(TypedDict):
     requests: list[MCPElicitationRequest]
 
 
-class MCPElicitationResponse(TypedDict):
-    """One answer to an `MCPElicitationRequest`.
+class MCPElicitationAccept(TypedDict):
+    """An answer to an `MCPElicitationRequest`.
 
     Attributes:
-        action: `'accept'` to answer, `'decline'` to refuse the question, or
-            `'cancel'` to abandon the tool call.
+        action: Always `'accept'`.
         content: The answer itself, matching the request's `requested_schema`.
-            Required when accepting a `'form'` request.
+            Expected for a `'form'` request; a `'url'` request carries none.
     """
 
-    action: Literal["accept", "decline", "cancel"]
-    content: NotRequired[dict[str, Any] | None]
+    action: Literal["accept"]
+    content: NotRequired[MCPFormContent | None]
+
+
+class MCPElicitationRefusal(TypedDict):
+    """A refusal to answer an `MCPElicitationRequest`.
+
+    Attributes:
+        action: `'decline'` to refuse the question, or `'cancel'` to abandon the
+            tool call.
+    """
+
+    action: Literal["decline", "cancel"]
+
+
+MCPElicitationResponse: TypeAlias = MCPElicitationAccept | MCPElicitationRefusal
+"""One answer to an `MCPElicitationRequest`.
+
+Split so that only an accept can carry content, matching what is actually sent:
+content on a refusal is dropped rather than forwarded.
+"""
 
 
 class MCPElicitationResume(TypedDict):
@@ -174,7 +202,7 @@ def _build_responses(
     for key in requests:
         answer = answers[key]
         action = answer.get("action")
-        if action not in ("accept", "decline", "cancel"):
+        if action not in _ACTIONS:
             msg = (
                 f"Elicitation answer for {key!r} has action {action!r}; expected "
                 "'accept', 'decline', or 'cancel'."
@@ -273,8 +301,8 @@ async def _call_tool_with_interrupts(
                 "tool_name": tool_name,
                 "requests": [_describe_request(key, req) for key, req in requests.items()],
             }
-            answers = interrupt(request)["responses"]
-            responses = _build_responses(requests, answers, tool_name)
+            resume: MCPElicitationResume = interrupt(request)
+            responses = _build_responses(requests, resume["responses"], tool_name)
         else:
             # A round carrying only `request_state` means the server is still
             # working and wants to be asked again. Nobody needs to be
@@ -299,8 +327,11 @@ async def _call_tool_with_interrupts(
 
 __all__ = [
     "ELICITATION_INTERRUPT_TYPE",
+    "MCPElicitationAccept",
     "MCPElicitationInterrupt",
+    "MCPElicitationRefusal",
     "MCPElicitationRequest",
     "MCPElicitationResponse",
     "MCPElicitationResume",
+    "MCPFormContent",
 ]
