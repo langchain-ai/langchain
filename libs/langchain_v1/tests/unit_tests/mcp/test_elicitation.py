@@ -9,7 +9,7 @@ import json
 from typing import Annotated, Any
 
 import pytest
-from fastmcp import Context, FastMCP
+from fastmcp import Client, Context, FastMCP
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 from mcp.server.mcpserver import Elicit, MCPServer, Resolve
@@ -158,6 +158,22 @@ async def test_the_opt_in_declares_the_capability_on_the_wire() -> None:
 
     assert capabilities.elicitation is not None
     assert capabilities.elicitation.form is not None
+
+
+@pytest.mark.asyncio
+async def test_prebuilt_client_declares_elicitation_without_mutating_the_original() -> None:
+    """Interrupt mode configures an adapter-owned clone of a pre-built client."""
+    client = Client(_restaurant_server({"resolver": 0, "body": 0}))
+    adapter = MCPAdapter(client, elicitation="interrupt")
+
+    assert adapter.client is not client
+    async with adapter:
+        adapter_capabilities = adapter.client.session._build_capabilities("2026-07-28")
+    async with client:
+        original_capabilities = client.session._build_capabilities("2026-07-28")
+
+    assert adapter_capabilities.elicitation is not None
+    assert original_capabilities.elicitation is None
 
 
 @pytest.mark.asyncio
