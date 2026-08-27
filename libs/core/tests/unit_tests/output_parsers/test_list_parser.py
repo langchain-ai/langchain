@@ -160,6 +160,24 @@ def test_markdown_list() -> None:
         assert list(parser.transform(iter([text]))) == expectedlist
 
 
+def test_markdown_list_plus_prefix() -> None:
+    """Test that MarkdownListOutputParser handles '+' prefixed items."""
+    parser = MarkdownListOutputParser()
+    text1 = "+ foo\n+ bar\n+ baz"
+    text2 = "Items:\n+ apple\n+ banana\n+ cherry"
+    text3 = "Mixed:\n- dash\n+ plus\n* star"
+
+    for text, expected in [
+        (text1, ["foo", "bar", "baz"]),
+        (text2, ["apple", "banana", "cherry"]),
+        (text3, ["dash", "plus", "star"]),
+    ]:
+        expectedlist = [[a] for a in expected]
+        assert parser.parse(text) == expected
+        assert add(parser.transform(t for t in text)) == (expected or None)
+        assert list(parser.transform(t for t in text)) == expectedlist
+
+
 T = TypeVar("T")
 
 
@@ -311,4 +329,26 @@ async def test_markdown_list_async() -> None:
         ] == expectedlist
         assert [
             a async for a in parser.atransform(aiter_from_iter([text]))
+        ] == expectedlist
+
+
+async def test_markdown_list_plus_prefix_async() -> None:
+    """Test that MarkdownListOutputParser handles '+' prefixed items (async)."""
+    parser = MarkdownListOutputParser()
+    text1 = "+ foo\n+ bar\n+ baz"
+    text2 = "Items:\n+ apple\n+ banana\n+ cherry"
+    text3 = "Mixed:\n- dash\n+ plus\n* star"
+
+    for text, expected in [
+        (text1, ["foo", "bar", "baz"]),
+        (text2, ["apple", "banana", "cherry"]),
+        (text3, ["dash", "plus", "star"]),
+    ]:
+        expectedlist = [[a] for a in expected]
+        assert await parser.aparse(text) == expected
+        assert await aadd(parser.atransform(aiter_from_iter(t for t in text))) == (
+            expected or None
+        )
+        assert [
+            a async for a in parser.atransform(aiter_from_iter(t for t in text))
         ] == expectedlist
