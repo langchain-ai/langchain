@@ -20,6 +20,7 @@ from langchain_core.messages.content import (
 from langchain_core.tools import BaseTool, StructuredTool, ToolException
 from mcp.types import (
     AudioContent,
+    BlobResourceContents,
     ContentBlock,
     EmbeddedResource,
     ImageContent,
@@ -27,7 +28,6 @@ from mcp.types import (
     TextContent,
     TextResourceContents,
 )
-from typing_extensions import assert_never
 
 from langchain.mcp.elicitation import _call_tool_with_interrupts
 
@@ -139,14 +139,27 @@ def _convert_content_block(content: ContentBlock) -> ToolMessageContentBlock:
         resource = content.resource
         if isinstance(resource, TextResourceContents):
             return create_text_block(text=resource.text)
-        mime_type = resource.mime_type or None
-        if mime_type and mime_type.startswith("image/"):
-            return create_image_block(base64=resource.blob, mime_type=mime_type)
-        return create_file_block(base64=resource.blob, mime_type=mime_type)
+        if isinstance(resource, BlobResourceContents):
+            mime_type = resource.mime_type or None
+            if mime_type and mime_type.startswith("image/"):
+                return create_image_block(base64=resource.blob, mime_type=mime_type)
+            return create_file_block(base64=resource.blob, mime_type=mime_type)
+        # Unreachable while the SDK's resource union holds; see the note below.
+        msg = f"Unknown embedded resource type: {type(resource).__name__}"  # type: ignore[unreachable]
+        raise ValueError(msg)
 
-    # `ContentBlock` is a closed union, so a block reaching here means the MCP
-    # SDK grew a content type this conversion has not been taught yet.
-    assert_never(content)
+    # Both unions are closed at type-check time, so mypy proves these two lines
+    # unreachable — and the `unreachable` ignores become unused-ignore errors the
+    # moment the SDK grows a member, which is what keeps this exhaustive.
+    #
+    # The runtime guards still earn their place: a union is only as closed as the
+    # installed `mcp`, and a caller on a newer SDK is better served by a named
+    # type than by the bare `AssertionError` an `assert_never` would raise.
+    msg = (  # type: ignore[unreachable]
+        f"Unknown MCP content type: {type(content).__name__}. This usually means "
+        "the installed `mcp` is newer than the version this adapter supports."
+    )
+    raise ValueError(msg)
 
 
 def _convert_call_tool_result(
