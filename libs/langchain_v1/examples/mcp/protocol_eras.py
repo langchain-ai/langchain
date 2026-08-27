@@ -7,10 +7,11 @@ can end up in the same agent and nothing on this side has to know which is
 which.
 
 Note the shape: one adapter per server, not one `MCPConfig` fleet naming both.
-A fleet is composed behind a single client, and that composite speaks one era —
-whichever its oldest backend requires — so a handshake-era backend pulls the
-modern one down with it. Separate adapters are what let each connection keep
-the best era its server supports.
+A fleet is composed behind a single client, and that composite negotiates one
+era for everything it holds. A fleet of modern servers does negotiate the modern
+era — but add a backend that only speaks the handshake era and the whole fleet
+drops to it. Separate adapters are what let each connection keep the best era
+its own server supports.
 
     uv run examples/mcp/protocol_eras.py
 """
