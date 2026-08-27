@@ -1787,6 +1787,16 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = [required_beta]
 
+        # Auto-append required beta for the `updates` thinking display mode
+        thinking = payload.get("thinking")
+        if isinstance(thinking, dict) and thinking.get("display") == "updates":
+            required_beta = "thinking-display-updates-2026-08-18"
+            if payload.get("betas"):
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
         # Auto-append required beta for user_profile_id
         if payload.get("user_profile_id"):
             required_beta = "user-profiles-2026-03-24"

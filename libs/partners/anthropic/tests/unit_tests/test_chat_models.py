@@ -5063,3 +5063,21 @@ def test_skills_without_code_execution_tool_warns() -> None:
     llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
     with pytest.warns(UserWarning, match="code execution tool"):
         llm._get_request_payload([HumanMessage("Hello, world!")])
+
+
+def test_thinking_display_updates_enables_beta() -> None:
+    """`display="updates"` auto-enables its beta, routing through beta.messages."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, thinking={"type": "adaptive", "display": "updates"}
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "thinking-display-updates-2026-08-18" in payload["betas"]
+
+
+def test_thinking_display_summarized_does_not_enable_beta() -> None:
+    """Other `display` values are generally available."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, thinking={"type": "adaptive", "display": "summarized"}
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "betas" not in payload
