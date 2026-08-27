@@ -6,6 +6,12 @@ era negotiates with an `initialize` handshake, the 2026-07-28 era with
 can end up in the same agent and nothing on this side has to know which is
 which.
 
+Note the shape: one adapter per server, not one `MCPConfig` fleet naming both.
+A fleet is composed behind a single client, and that composite speaks one era —
+whichever its oldest backend requires — so a handshake-era backend pulls the
+modern one down with it. Separate adapters are what let each connection keep
+the best era its server supports.
+
     uv run examples/mcp/protocol_eras.py
 """
 
@@ -24,7 +30,7 @@ from langchain.mcp import MCPAdapter
 async def main() -> None:
     """Discover tools over each era, then hand them all to one agent."""
     # `mode` picks the era. "legacy" pins the handshake; "auto" negotiates the
-    # newest the server understands.
+    # newest the server understands. Each client negotiates independently.
     legacy: Client[Any] = Client(weather_server(), mode="legacy")
     modern: Client[Any] = Client(calculator_server(), mode="auto")
 
