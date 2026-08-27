@@ -998,17 +998,6 @@ class ChatGroq(BaseChatModel):
                 Learn more about the differences between the methods and which models
                 support which methods [here](https://console.groq.com/docs/structured-outputs).
 
-            method:
-                The method for steering model generation, either `'function_calling'`
-                or `'json_mode'`. If `'function_calling'` then the schema will be converted
-                to an OpenAI function and the returned model will make use of the
-                function-calling API. If `'json_mode'` then JSON mode will be used.
-
-                !!! note
-                    If using `'json_mode'` then you must include instructions for formatting
-                    the output into the desired schema into the model call. (either via the
-                    prompt itself or in the system message/prompt/instructions).
-
                 !!! warning
                     `'json_mode'` does not support streaming responses stop sequences.
 
