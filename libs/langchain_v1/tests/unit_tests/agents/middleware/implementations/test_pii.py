@@ -148,6 +148,48 @@ class TestIPDetection:
         assert matches[0]["type"] == "ip"
         assert matches[0]["value"] == "192.168.1.1"
 
+    def test_detect_valid_ipv6(self) -> None:
+        content = "Server IP: 2001:db8::1"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["type"] == "ip"
+        assert matches[0]["value"] == "2001:db8::1"
+
+    def test_detect_ipv6_loopback(self) -> None:
+        content = "Localhost: ::1"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "::1"
+
+    def test_detect_ipv6_link_local(self) -> None:
+        content = "Interface: fe80::1"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "fe80::1"
+
+    def test_detect_full_ipv6(self) -> None:
+        content = "Address: 2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+
+    def test_detect_ipv4_mapped_ipv6(self) -> None:
+        content = "Address: ::ffff:192.168.1.1"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "::ffff:192.168.1.1"
+
+    def test_ipv6_like_text_not_detected(self) -> None:
+        content = "Use std::collections or foo::bar"
+        matches = detect_ip(content)
+
+        assert len(matches) == 0
+
     def test_detect_multiple_ips(self) -> None:
         content = "Connect to 10.0.0.1 or 8.8.8.8"
         matches = detect_ip(content)

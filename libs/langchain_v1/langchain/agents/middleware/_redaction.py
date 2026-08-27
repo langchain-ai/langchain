@@ -105,14 +105,24 @@ def detect_ip(content: str) -> list[PIIMatch]:
         A list of detected IP address matches.
     """
     matches: list[PIIMatch] = []
-    ipv4_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
 
-    for match in re.finditer(ipv4_pattern, content):
+    ipv4_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
+    ipv4_mapped_ipv6_pattern = (
+        r"(?<![\w:])::ffff:"
+        r"(?:[0-9]{1,3}\.){3}[0-9]{1,3}"
+        r"(?![\w:])"
+    )
+    ipv6_pattern = r"(?<![\w:])(?:[0-9A-Fa-f]{0,4}:){1,7}[0-9A-Fa-f]{0,4}(?![\w:])"
+
+    # Detect IPv4-mapped IPv6 addresses first.
+    for match in re.finditer(ipv4_mapped_ipv6_pattern, content):
         ip_candidate = match.group()
+
         try:
             ipaddress.ip_address(ip_candidate)
         except ValueError:
             continue
+
         matches.append(
             PIIMatch(
                 type="ip",
@@ -122,7 +132,59 @@ def detect_ip(content: str) -> list[PIIMatch]:
             )
         )
 
-    return matches
+    # Detect regular IPv6 addresses.
+    for match in re.finditer(ipv6_pattern, content):
+        ip_candidate = match.group()
+
+        # Skip candidates that overlap an already detected IPv4-mapped IPv6 address.
+        if any(
+            existing["start"] <= match.start()
+            and match.end() <= existing["end"]
+            for existing in matches
+        ):
+            continue
+
+        try:
+            ipaddress.ip_address(ip_candidate)
+        except ValueError:
+            continue
+
+        matches.append(
+            PIIMatch(
+                type="ip",
+                value=ip_candidate,
+                start=match.start(),
+                end=match.end(),
+            )
+        )
+
+    # Detect IPv4 addresses.
+    for match in re.finditer(ipv4_pattern, content):
+        # Skip IPv4 addresses that are part of an already detected IPv6 address.
+        if any(
+            existing["start"] <= match.start()
+            and match.end() <= existing["end"]
+            for existing in matches
+        ):
+            continue
+
+        ip_candidate = match.group()
+
+        try:
+            ipaddress.ip_address(ip_candidate)
+        except ValueError:
+            continue
+
+        matches.append(
+            PIIMatch(
+                type="ip",
+                value=ip_candidate,
+                start=match.start(),
+                end=match.end(),
+            )
+        )
+
+    return sorted(matches, key=lambda match: match["start"])
 
 
 def detect_mac_address(content: str) -> list[PIIMatch]:
