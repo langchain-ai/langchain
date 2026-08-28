@@ -2352,6 +2352,14 @@ def count_tokens_approximately(
                     elif block_type == "text":
                         text = block.get("text", "")
                         message_chars += len(text)
+                    # Count only readable text for reasoning/thinking blocks,
+                    # ignoring provider metadata like encrypted_content/signature
+                    elif block_type in {"reasoning", "thinking"}:
+                        reasoning_text = block.get(
+                            "reasoning", block.get("thinking", "")
+                        )
+                        if reasoning_text:
+                            message_chars += len(reasoning_text)
                     # Conservative estimate for unknown block types
                     else:
                         message_chars += len(repr(block))

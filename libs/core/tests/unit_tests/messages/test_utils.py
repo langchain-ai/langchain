@@ -2879,6 +2879,56 @@ def test_count_tokens_approximately_with_unknown_block_type() -> None:
     assert mixed > text_only
 
 
+def test_count_tokens_approximately_with_reasoning_block() -> None:
+    """Test that reasoning blocks only count readable text, not extras metadata."""
+    reasoning_text = "I should inspect the staging model."
+    ciphertext = "g" * 4000
+
+    block_with_extras = {
+        "type": "reasoning",
+        "id": "rs_abc",
+        "reasoning": reasoning_text,
+        "extras": {"content": [], "encrypted_content": ciphertext},
+    }
+    block_without_extras = {
+        "type": "reasoning",
+        "id": "rs_abc",
+        "reasoning": reasoning_text,
+    }
+
+    with_extras = count_tokens_approximately(
+        [AIMessage(content=[block_with_extras], id="ai-1")]
+    )
+    without_extras = count_tokens_approximately(
+        [AIMessage(content=[block_without_extras], id="ai-1")]
+    )
+
+    # Both should produce the same token count since extras are ignored
+    assert with_extras == without_extras
+
+    # Token count should be based on reasoning text length, not the full repr
+    # reasoning_text is 35 chars + 9 role chars = 44 chars / 4 = 11 + 3 = 14 tokens
+    assert with_extras < 20
+
+
+def test_count_tokens_approximately_with_thinking_block() -> None:
+    """Test that thinking blocks (Anthropic raw format) count only the text."""
+    thinking_text = "Let me analyze this step by step."
+    signature = "s" * 2000
+
+    block = {
+        "type": "thinking",
+        "thinking": thinking_text,
+        "signature": signature,
+    }
+
+    result = count_tokens_approximately([AIMessage(content=[block], id="ai-1")])
+
+    # Should count only the thinking text, not the signature
+    # thinking_text is 33 chars + 9 role chars = 42 chars / 4 = 11 + 3 = 14 tokens
+    assert result < 20
+
+
 def test_count_tokens_approximately_ai_tool_calls_skipped_for_list_content() -> None:
     """Test that tool_calls aren't double-counted for list (Anthropic-style) content."""
     tool_calls = [
