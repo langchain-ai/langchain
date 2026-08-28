@@ -13,7 +13,7 @@ from typing import (
     Literal,
 )
 
-from pydantic import Field, SkipValidation
+from pydantic import Field, PlainSerializer, SkipValidation
 from typing_extensions import override
 
 # Cannot move to TYPE_CHECKING as _run/_arun parameter annotations are needed at runtime
@@ -27,14 +27,67 @@ from langchain_core.tools.base import (
     FILTERED_ARGS,
     ArgsSchema,
     BaseTool,
+    _get_injected_args_keys_from_signature,
     _get_runnable_config_param,
-    _is_injected_arg_type,
     create_schema_from_function,
 )
-from langchain_core.utils.pydantic import is_basemodel_subclass
+from langchain_core.utils.pydantic import is_basemodel_subclass, model_json_schema
 
 if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
+    from langchain_core.utils.pydantic import TypeBaseModel
+
+
+def _serialize_as_str(value: Any) -> str:
+    """Stringify a value that has no JSON form.
+
+    A plain function rather than the `str` builtin: Pydantic < 2.9 inspects the
+    serializer's signature, and `inspect.signature` raises for C builtins.
+    """
+    return str(value)
+
+
+@functools.lru_cache(maxsize=256)
+def _model_json_schema(args_schema: TypeBaseModel, _rebuild_token: object) -> Any:
+    """Ask a v1 or v2 model class for its JSON schema, or fall back to its repr.
+
+    Cached because pydantic does not memoize this per class and it dominates the
+    dump -- 1.10 ms against 0.02 ms for an eight-tool payload -- which tracing
+    pays on every run.
+
+    `_rebuild_token` is the class's validator, which `model_rebuild()` replaces.
+    Keying on it retires the entry for a rebuilt schema, and for one whose
+    forward reference was still unresolved when it was first dumped. Mutating a
+    class in place without rebuilding it is not detected.
+    """
+    try:
+        return model_json_schema(args_schema)
+    except Exception:  # a schema holding an arbitrary type has no JSON schema
+        return str(args_schema)
+
+
+def _serialize_args_schema(args_schema: ArgsSchema) -> Any:
+    """Represent a schema class by its JSON schema when dumping to JSON.
+
+    A Pydantic model class has no JSON form, so leaving it to the default
+    serializer raises `PydanticSerializationError`. Its own JSON schema is the
+    shape a dict schema already has, and a dict is returned unchanged.
+    """
+    if isinstance(args_schema, dict):
+        return args_schema
+    return _model_json_schema(
+        args_schema, getattr(args_schema, "__pydantic_validator__", None)
+    )
+
+
+# Attached to the fields via `Annotated` rather than declared with
+# `@field_serializer`, which would take the field's one serializer slot and make
+# any subclass that declares its own serializer for the same field fail at class
+# creation with `PydanticUserError: Multiple field serializer functions ...`.
+_JsonSchemaFallback = PlainSerializer(
+    _serialize_args_schema, when_used="json-unless-none"
+)
+_JsonCallableFallback = PlainSerializer(_serialize_as_str, when_used="json-unless-none")
 
 
 class StructuredTool(BaseTool):
@@ -42,15 +95,17 @@ class StructuredTool(BaseTool):
 
     description: str = ""
 
-    args_schema: Annotated[ArgsSchema, SkipValidation()] = Field(
+    args_schema: Annotated[ArgsSchema, SkipValidation(), _JsonSchemaFallback] = Field(
         ..., description="The tool schema."
     )
     """The input arguments' schema."""
 
-    func: Callable[..., Any] | None = None
+    func: Annotated[Callable[..., Any] | None, _JsonCallableFallback] = None
     """The function to run when the tool is called."""
 
-    coroutine: Callable[..., Awaitable[Any]] | None = None
+    coroutine: Annotated[
+        Callable[..., Awaitable[Any]] | None, _JsonCallableFallback
+    ] = None
     """The asynchronous version of the function."""
 
     # --- Runnable ---
@@ -256,11 +311,7 @@ class StructuredTool(BaseTool):
         fn = self.func or self.coroutine
         if fn is None:
             return _EMPTY_SET
-        return frozenset(
-            k
-            for k, v in signature(fn).parameters.items()
-            if _is_injected_arg_type(v.annotation)
-        )
+        return _get_injected_args_keys_from_signature(fn)
 
 
 def _filter_schema_args(func: Callable[..., Any]) -> list[str]:

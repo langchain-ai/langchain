@@ -225,6 +225,14 @@ def test_message_chunks() -> None:
     assert (default_id_chunk + provider_chunk).id == meaningful_id
 
 
+def test_message_chunks_bool_additional_kwargs_raises() -> None:
+    """Differing booleans (e.g. `refusal`) must not silently coerce to `int`."""
+    a = AIMessageChunk(content="", additional_kwargs={"refusal": True})
+    b = AIMessageChunk(content="", additional_kwargs={"refusal": False})
+    with pytest.raises(TypeError, match="unsupported type"):
+        a + b
+
+
 def test_chat_message_chunks() -> None:
     assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(
         role="User", content=" indeed."

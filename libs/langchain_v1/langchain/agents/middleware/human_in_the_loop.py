@@ -101,10 +101,11 @@ class RejectDecision(TypedDict):
     """The type of response when a human rejects the action."""
 
     message: NotRequired[str]
-    """The message sent to the model explaining why the action was rejected.
+    """The human-provided reason for rejecting the action.
 
-    If omitted, the model is told that the tool was not executed and should not
-    retry the same tool call unless the user asks for it.
+    The reason is framed as a user rejection when sent to the model. If omitted,
+    the model is told that the tool was not executed and should not retry the same
+    tool call unless the user asks for it.
     """
 
 
@@ -246,6 +247,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 requested.
 
                 Not used if a tool has a `description` in its `InterruptOnConfig`.
+
+        Raises:
+            ValueError: If a tool's `InterruptOnConfig` does not have a non-empty
+                `allowed_decisions` list (e.g. a misspelled key or an empty list).
+                An interrupt config without decisions would otherwise be silently
+                dropped, disabling the approval gate for that tool.
         """
         super().__init__()
         resolved_configs: dict[str, InterruptOnConfig] = {}
@@ -257,6 +264,15 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                     )
             elif tool_config.get("allowed_decisions"):
                 resolved_configs[tool_name] = tool_config
+            else:
+                msg = (
+                    f"Invalid `interrupt_on` config for tool '{tool_name}': "
+                    "`allowed_decisions` must be a non-empty list of decision types "
+                    "(e.g. ['approve', 'reject']). Got config with keys "
+                    f"{sorted(tool_config.keys())} and "
+                    f"allowed_decisions={tool_config.get('allowed_decisions')!r}."
+                )
+                raise ValueError(msg)
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix
 
@@ -319,10 +335,15 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 None,
             )
         if decision["type"] == "reject" and "reject" in allowed_decisions:
-            content = decision.get("message") or (
-                f"User rejected the tool call for `{tool_call['name']}` with id {tool_call['id']}. "
-                "The tool was not executed. Do not retry this tool call unless the user "
-                "explicitly requests it."
+            reason = decision.get("message")
+            content = (
+                f"User rejected the tool call for `{tool_call['name']}` with reason: {reason}"
+                if reason
+                else (
+                    f"User rejected the tool call for `{tool_call['name']}` with id "
+                    f"{tool_call['id']}. The tool was not executed. Do not retry this tool "
+                    "call unless the user explicitly requests it."
+                )
             )
             tool_message = ToolMessage(
                 content=content,

@@ -11,14 +11,25 @@ import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Final, Literal, cast
+from typing import Any, Final, Literal, TypeGuard, cast
 
 import anthropic
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import ContextOverflowError, OutputParserException
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+    OutputParserException,
+)
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -36,7 +47,11 @@ from langchain_core.messages import (
     is_data_content_block,
 )
 from langchain_core.messages import content as types
-from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -49,7 +64,11 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names
-from langchain_core.utils._gateway import _apply_gateway_config
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_RESPONSE_KEY,
+    _apply_gateway_config,
+    _parse_gateway_metadata,
+)
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -65,6 +84,10 @@ from langchain_anthropic._client_utils import (
     _get_default_httpx_client,
 )
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
+from langchain_anthropic._sdk_compat import (
+    _aparse,
+    _route_unsupported_sampling_params,
+)
 from langchain_anthropic.data._profiles import _PROFILES
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -78,6 +101,21 @@ _message_type_lookups = {
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
 _USER_AGENT: Final[str] = f"langchain-anthropic/{__version__}"
+
+
+def _add_gateway_metadata(generation_info: dict[str, Any], raw_response: Any) -> None:
+    """Add parsed LangSmith gateway metadata to `generation_info`, if present.
+
+    Args:
+        generation_info: Generation info to mutate in place.
+        raw_response: The raw provider response, or None.
+    """
+    headers = getattr(raw_response, "headers", None)
+    if headers is None:
+        return
+    gateway_metadata = _parse_gateway_metadata(headers)
+    if gateway_metadata is not None:
+        generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -139,13 +177,13 @@ class AnthropicTool(TypedDict):
 _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "web_fetch_20250910": "web-fetch-2025-09-10",
     "code_execution_20250522": "code-execution-2025-05-22",
-    "code_execution_20250825": "code-execution-2025-08-25",
     "mcp_toolset": "mcp-client-2025-11-20",
     "memory_20250818": "context-management-2025-06-27",
     "computer_20250124": "computer-use-2025-01-24",
     "computer_20251124": "computer-use-2025-11-24",
     "tool_search_tool_regex_20251119": "advanced-tool-use-2025-11-20",
     "tool_search_tool_bm25_20251119": "advanced-tool-use-2025-11-20",
+    "advisor_20260301": "advisor-tool-2026-03-01",
 }
 """Mapping of tool type to required beta header.
 
@@ -175,7 +213,7 @@ _ANTHROPIC_EXTRA_FIELDS: set[str] = {
 """Valid Anthropic-specific extra fields"""
 
 
-def _is_builtin_tool(tool: Any) -> bool:
+def _is_builtin_tool(tool: Any) -> TypeGuard[dict[str, Any]]:
     """Check if a tool is a built-in (server-side) Anthropic tool.
 
     `tool` must be a `dict` and have a `type` key starting with one of the known
@@ -668,6 +706,23 @@ def _format_messages(
                                 },
                             ),
                         )
+                    elif block["type"] == "tool_search_tool_result":
+                        # Omit streaming-only fields, such as `index`, from results.
+                        content.append(
+                            _normalize_block_tool_use_id(
+                                {
+                                    k: v
+                                    for k, v in block.items()
+                                    if k
+                                    in (
+                                        "type",
+                                        "content",
+                                        "tool_use_id",
+                                        "cache_control",
+                                    )
+                                },
+                            ),
+                        )
                     elif block["type"] == "tool_result":
                         # Regular tool results that need content formatting
                         tool_content = _format_messages(
@@ -758,6 +813,15 @@ def _format_messages(
             continue
         formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
+
+
+def _container_id(container: Any) -> str | None:
+    """Return the container ID from either accepted `container` shape."""
+    if isinstance(container, str):
+        return container
+    if isinstance(container, dict):
+        return container.get("id")
+    return None
 
 
 def _collect_code_execution_tool_ids(formatted_messages: list[dict]) -> set[str]:
@@ -889,6 +953,60 @@ class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowEr
     """BadRequestError raised when input exceeds Anthropic's context limit."""
 
 
+class AnthropicAuthenticationError(
+    anthropic.AuthenticationError, ModelAuthenticationError
+):
+    """Anthropic authentication error classified as a LangChain model error."""
+
+
+class AnthropicPermissionDeniedError(
+    anthropic.PermissionDeniedError, ModelPermissionDeniedError
+):
+    """Anthropic permission error classified as a LangChain model error."""
+
+
+class AnthropicInvalidRequestError(anthropic.BadRequestError, ModelInvalidRequestError):
+    """Anthropic bad-request error classified as a LangChain model error."""
+
+
+class AnthropicModelNotFoundError(anthropic.NotFoundError, ModelNotFoundError):
+    """Anthropic not-found error classified as a LangChain model error."""
+
+
+class AnthropicRateLimitError(anthropic.RateLimitError, ModelRateLimitError):
+    """Anthropic rate-limit error classified as a LangChain model error."""
+
+
+class AnthropicAPIError(anthropic.InternalServerError, ModelAPIError):
+    """Anthropic server error classified as a LangChain model error."""
+
+
+class AnthropicOverloadedError(anthropic.OverloadedError, ModelAPIError):
+    """Anthropic overloaded error (HTTP 529) classified as a LangChain model error."""
+
+
+class AnthropicConnectionError(anthropic.APIConnectionError, ModelConnectionError):
+    """Anthropic connection error classified as a LangChain model error."""
+
+
+class AnthropicTimeoutError(anthropic.APITimeoutError, ModelTimeoutError):
+    """Anthropic timeout error classified as a LangChain model error."""
+
+
+def _raise_if_authentication_error(e: TypeError) -> None:
+    """Re-raise anthropic SDK's missing-credentials `TypeError` with guidance."""
+    if "Could not resolve authentication method" in str(e):
+        msg = (
+            "Anthropic authentication failed: no API key or authorization "
+            "credentials were provided. Set the ANTHROPIC_API_KEY environment "
+            "variable, pass api_key=... to ChatAnthropic, or provide "
+            'credentials via default_headers={"Authorization": ...}. If you '
+            "are routing through the LangSmith gateway, set LANGSMITH_GATEWAY "
+            "and LANGSMITH_GATEWAY_API_KEY."
+        )
+        raise TypeError(msg) from e
+
+
 def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     """Handle Anthropic BadRequestError."""
     if "prompt is too long" in e.message:
@@ -898,7 +1016,42 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     if ("messages: at least one message is required") in e.message:
         message = "Received only system message(s). "
         warnings.warn(message, stacklevel=2)
-        raise e
+    raise AnthropicInvalidRequestError(
+        message=e.message, response=e.response, body=e.body
+    ) from e
+
+
+def _handle_anthropic_api_error(e: anthropic.APIError) -> None:
+    """Re-raise an Anthropic SDK error as its LangChain-classified equivalent."""
+    if isinstance(e, anthropic.AuthenticationError):
+        raise AnthropicAuthenticationError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.PermissionDeniedError):
+        raise AnthropicPermissionDeniedError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.NotFoundError):
+        raise AnthropicModelNotFoundError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.RateLimitError):
+        raise AnthropicRateLimitError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.OverloadedError):
+        raise AnthropicOverloadedError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.InternalServerError):
+        raise AnthropicAPIError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    # `APITimeoutError` subclasses `APIConnectionError`, so check it first.
+    if isinstance(e, anthropic.APITimeoutError):
+        raise AnthropicTimeoutError(e.request) from e
+    if isinstance(e, anthropic.APIConnectionError):
+        raise AnthropicConnectionError(message=e.message, request=e.request) from e
     raise
 
 
@@ -1110,6 +1263,28 @@ class ChatAnthropic(BaseChatModel):
     [context management](https://platform.claude.com/docs/en/build-with-claude/context-editing).
     """
 
+    container: dict[str, Any] | str | None = None
+    """Code execution container for the request.
+
+    Either a container ID from a previous response, or a dict of container
+    parameters — notably
+    [skills](https://platform.claude.com/docs/en/build-with-claude/skills-guide)
+    to load into the container. Skills require a
+    [code execution](https://docs.langchain.com/oss/python/integrations/chat/anthropic#code-execution)
+    tool to be bound.
+
+    ```python
+    model = ChatAnthropic(
+        model="claude-opus-5",
+        container={
+            "skills": [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]
+        },
+    ).bind_tools([{"type": "code_execution_20260521", "name": "code_execution"}])
+    ```
+
+    Can also be passed at call time, which overrides the value set here.
+    """
+
     reuse_last_container: bool | None = None
     """Automatically reuse container from most recent response (code execution).
 
@@ -1126,6 +1301,17 @@ class ChatAnthropic(BaseChatModel):
     docs for more information.
     """
 
+    user_profile_id: str | None = None
+    """User profile ID to attribute the request to.
+
+    Use when acting on behalf of a party other than your organization. Setting this
+    automatically enables the required `user-profiles` beta, routing the request
+    through `client.beta.messages.create`.
+
+    Can also be passed at call time, which overrides the value set here (for example,
+    `model.invoke(..., user_profile_id="uprof_...")`).
+    """
+
     @property
     def effort(self) -> Literal["max", "xhigh", "high", "medium", "low"] | None:
         """Alias for `reasoning_effort`."""
@@ -1135,6 +1321,11 @@ class ChatAnthropic(BaseChatModel):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "anthropic-chat"
+
+    @property
+    def _uses_gateway(self) -> bool:
+        """Whether requests are routed through the LangSmith gateway."""
+        return self.anthropic_api_key.get_secret_value().startswith("lsv2_")
 
     @property
     def lc_secrets(self) -> dict[str, str]:
@@ -1421,6 +1612,8 @@ class ChatAnthropic(BaseChatModel):
             "betas": self.betas,
             "context_management": self.context_management,
             "mcp_servers": self.mcp_servers,
+            "container": self.container,
+            "user_profile_id": self.user_profile_id,
             "system": system,
             **self.model_kwargs,
             **kwargs,
@@ -1505,18 +1698,42 @@ class ChatAnthropic(BaseChatModel):
             output_config = payload.setdefault("output_config", {})
             output_config["format"] = payload.pop("output_format")
 
-        if self.reuse_last_container:
-            # Check for most recent AIMessage with container set in response_metadata
-            # and set as a top-level param on the request
+        container = payload.get("container")
+
+        if self.reuse_last_container and not _container_id(container):
+            # Reuse the container from the most recent response (code execution)
             for message in reversed(messages):
                 if (
                     isinstance(message, AIMessage)
-                    and (container := message.response_metadata.get("container"))
-                    and isinstance(container, dict)
-                    and (container_id := container.get("id"))
+                    and isinstance(
+                        last_container := message.response_metadata.get("container"),
+                        dict,
+                    )
+                    and (container_id := last_container.get("id"))
                 ):
-                    payload["container"] = container_id
+                    payload["container"] = (
+                        {**container, "id": container_id}
+                        if isinstance(container, dict)
+                        else container_id
+                    )
                     break
+
+        if (
+            isinstance(container, dict)
+            and container.get("skills")
+            and not any(
+                isinstance(tool, dict)
+                and str(tool.get("type", "")).startswith("code_execution")
+                for tool in (payload.get("tools") or [])
+            )
+        ):
+            warnings.warn(
+                "Skills require a code execution tool to be bound, e.g. "
+                '`bind_tools([{"type": "code_execution_20260521", '
+                '"name": "code_execution"}])`.',
+                UserWarning,
+                stacklevel=2,
+            )
 
         # Note: Beta headers are no longer required for structured outputs
         # (output_config.format or strict tool use) as they are now generally available
@@ -1569,17 +1786,48 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = [required_beta]
 
-        return {k: v for k, v in payload.items() if v is not None}
+        # Auto-append required beta for the `updates` thinking display mode
+        thinking = payload.get("thinking")
+        if isinstance(thinking, dict) and thinking.get("display") == "updates":
+            required_beta = "thinking-display-updates-2026-08-18"
+            if payload.get("betas"):
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
+        # Auto-append required beta for user_profile_id
+        if payload.get("user_profile_id"):
+            required_beta = "user-profiles-2026-03-24"
+            if payload.get("betas"):
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
+        return _route_unsupported_sampling_params(
+            {k: v for k, v in payload.items() if v is not None}
+        )
 
     def _create(self, payload: dict) -> Any:
-        if "betas" in payload:
-            return self._client.beta.messages.create(**payload)
-        return self._client.messages.create(**payload)
+        try:
+            if "betas" in payload:
+                return self._client.beta.messages.with_raw_response.create(**payload)
+            return self._client.messages.with_raw_response.create(**payload)
+        except TypeError as e:
+            _raise_if_authentication_error(e)
+            raise
 
     async def _acreate(self, payload: dict) -> Any:
-        if "betas" in payload:
-            return await self._async_client.beta.messages.create(**payload)
-        return await self._async_client.messages.create(**payload)
+        try:
+            if "betas" in payload:
+                return await self._async_client.beta.messages.with_raw_response.create(
+                    **payload
+                )
+            return await self._async_client.messages.with_raw_response.create(**payload)
+        except TypeError as e:
+            _raise_if_authentication_error(e)
+            raise
 
     def _stream(
         self,
@@ -1595,7 +1843,11 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            stream = self._create(payload)
+            raw_response = self._create(payload)
+            base_generation_info: dict[str, Any] = {}
+            if self._uses_gateway:
+                _add_gateway_metadata(base_generation_info, raw_response)
+            stream = raw_response.parse()
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -1603,6 +1855,7 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            is_first_chunk = True
             for event in stream:
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
@@ -1611,12 +1864,20 @@ class ChatAnthropic(BaseChatModel):
                     block_start_event=block_start_event,
                 )
                 if msg is not None:
-                    chunk = ChatGenerationChunk(message=msg)
+                    chunk = ChatGenerationChunk(
+                        message=msg,
+                        generation_info=base_generation_info
+                        if is_first_chunk
+                        else None,
+                    )
+                    is_first_chunk = False
                     if run_manager and isinstance(msg.content, str):
                         run_manager.on_llm_new_token(msg.content, chunk=chunk)
                     yield chunk
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
 
     async def _astream(
         self,
@@ -1632,7 +1893,11 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            stream = await self._acreate(payload)
+            raw_response = await self._acreate(payload)
+            base_generation_info: dict[str, Any] = {}
+            if self._uses_gateway:
+                _add_gateway_metadata(base_generation_info, raw_response)
+            stream = await _aparse(raw_response)
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -1640,6 +1905,7 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            is_first_chunk = True
             async for event in stream:
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
@@ -1648,12 +1914,20 @@ class ChatAnthropic(BaseChatModel):
                     block_start_event=block_start_event,
                 )
                 if msg is not None:
-                    chunk = ChatGenerationChunk(message=msg)
+                    chunk = ChatGenerationChunk(
+                        message=msg,
+                        generation_info=base_generation_info
+                        if is_first_chunk
+                        else None,
+                    )
+                    is_first_chunk = False
                     if run_manager and isinstance(msg.content, str):
                         await run_manager.on_llm_new_token(msg.content, chunk=chunk)
                     yield chunk
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
 
     def _make_message_chunk_from_anthropic_event(
         self,
@@ -1877,7 +2151,13 @@ class ChatAnthropic(BaseChatModel):
             message_chunk.response_metadata["model_provider"] = "anthropic"
         return message_chunk, block_start_event
 
-    def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
+    def _format_output(
+        self,
+        data: Any,
+        *,
+        generation_info: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
         """Format the output from the Anthropic API to LC."""
         data_dict = data.model_dump()
         content = data_dict["content"]
@@ -1931,7 +2211,9 @@ class ChatAnthropic(BaseChatModel):
             msg = AIMessage(content=content, response_metadata=response_metadata)
         msg.usage_metadata = _create_usage_metadata(data.usage)
         return ChatResult(
-            generations=[ChatGeneration(message=msg)],
+            generations=[
+                ChatGeneration(message=msg, generation_info=generation_info or None)
+            ],
             llm_output=llm_output,
         )
 
@@ -1944,10 +2226,17 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            data = self._create(payload)
+            raw_response = self._create(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
-        return self._format_output(data, **kwargs)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
+        generation_info: dict[str, Any] = {}
+        if self._uses_gateway:
+            _add_gateway_metadata(generation_info, raw_response)
+        return self._format_output(
+            raw_response.parse(), generation_info=generation_info, **kwargs
+        )
 
     async def _agenerate(
         self,
@@ -1958,10 +2247,17 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            data = await self._acreate(payload)
+            raw_response = await self._acreate(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
-        return self._format_output(data, **kwargs)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
+        generation_info: dict[str, Any] = {}
+        if self._uses_gateway:
+            _add_gateway_metadata(generation_info, raw_response)
+        return self._format_output(
+            await _aparse(raw_response), generation_info=generation_info, **kwargs
+        )
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(
         self,
@@ -2023,6 +2319,15 @@ class ChatAnthropic(BaseChatModel):
                 See the [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#strict-tool-use) for more info.
             kwargs: Any additional parameters are passed directly to `bind`.
 
+        Raises:
+            ValueError: If every tool in `tools` was dropped for using top-level
+                schema composition, leaving the model with no callable tool.
+            ValueError: If `tool_choice` forces tool use (a specific tool, or
+                `'any'`) while any tool was dropped, since the forced tool may be
+                unreachable. Does not apply when `thinking` is enabled, as the
+                forced choice is discarded before the request is sent.
+            ValueError: If `tool_choice` is neither a `dict`, a `str`, nor `None`.
+
         Example:
             ```python
             from langchain_anthropic import ChatAnthropic
@@ -2059,16 +2364,88 @@ class ChatAnthropic(BaseChatModel):
         # Allows built-in tools either by their:
         # - Raw `dict` format
         # - Extracting extras["provider_tool_definition"] if provided on a BaseTool
-        formatted_tools = [
+        formatted_tools: list[Mapping[str, Any]] = [
             tool
             if _is_builtin_tool(tool)
             else convert_to_anthropic_tool(tool, strict=strict)
             for tool in tools
         ]
+        formatted_tools, dropped_tool_names = _drop_unsupported_root_composition_tools(
+            formatted_tools
+        )
+
+        # Dropping salvages a request when usable tools remain. If every tool was
+        # dropped there is nothing to salvage: the caller asked for a model with
+        # tools and would get one that cannot call any, so fail loudly instead of
+        # letting it surface later as a tool call that never happens.
+        if tools and not formatted_tools:
+            msg = (
+                f"All {len(tools)} bound tool(s) use a top-level "
+                f"{'/'.join(_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS)} in their "
+                f"input_schema, which the Anthropic API rejects: "
+                f"{sorted(dropped_tool_names)}. No tool is left for the model to "
+                "call. If you control the schema, move the combinator under "
+                "`properties`; for structured output, `with_structured_output(..., "
+                "method='json_schema')` accepts these schemas directly. Otherwise "
+                "these tools cannot be used with Anthropic -- bind a subset that "
+                "excludes them, or raise it with the tool's author."
+            )
+            raise ValueError(msg)
+
+        # Reconcile tool_choice with the filtered list: forcing a tool that was
+        # dropped, or forcing tool use at all when the set the caller depends on
+        # has silently shrunk, still produces a 400 or a stuck agent loop.
+        if tool_choice and dropped_tool_names:
+            choice_type: str | None = None
+            choice_name: str | None = None
+            if isinstance(tool_choice, dict):
+                choice_type = tool_choice.get("type")
+                choice_name = tool_choice.get("name")
+            elif isinstance(tool_choice, str):
+                if tool_choice in ("any", "auto"):
+                    choice_type = tool_choice
+                else:
+                    choice_type, choice_name = "tool", tool_choice
+            # Thinking discards forced choices before the request is sent, so
+            # they need not refer to a tool that remains after filtering.
+            thinking_discards_forced_choice = (
+                self.thinking is not None
+                and self.thinking.get("type") in ("enabled", "adaptive")
+                and choice_type in ("any", "tool")
+            )
+            if not thinking_discards_forced_choice:
+                if choice_type == "tool" and choice_name in dropped_tool_names:
+                    msg = (
+                        f"tool_choice forces {choice_name!r}, but that tool was "
+                        "dropped because its input_schema uses a top-level "
+                        f"{'/'.join(_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS)}, which "
+                        "the Anthropic API rejects. Stop forcing it, or -- if you "
+                        "control the schema -- move the combinator under "
+                        "`properties`. For structured output, "
+                        "`with_structured_output(..., method='json_schema')` "
+                        "accepts these schemas directly."
+                    )
+                    raise ValueError(msg)
+                if choice_type == "any":
+                    # Forcing tool use means the caller depends on a specific
+                    # reachable tool set, so losing any member of it is fatal --
+                    # not just losing all of them.
+                    msg = (
+                        "tool_choice='any' forces the model to call a tool, but "
+                        f"{sorted(dropped_tool_names)} were dropped because their "
+                        "input_schema uses a top-level "
+                        f"{'/'.join(_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS)}, which "
+                        "the Anthropic API rejects, so the model can no longer "
+                        "call them. Use tool_choice='auto' to proceed with the "
+                        "remaining tools, or -- if you control the schema -- move "
+                        "the combinator under `properties`."
+                    )
+                    raise ValueError(msg)
+
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
-            kwargs["tool_choice"] = tool_choice
+            kwargs["tool_choice"] = tool_choice.copy()
         elif isinstance(tool_choice, str) and tool_choice in ("any", "auto"):
             kwargs["tool_choice"] = {"type": tool_choice}
         elif isinstance(tool_choice, str):
@@ -2347,7 +2724,11 @@ class ChatAnthropic(BaseChatModel):
         if isinstance(formatted_system, str):
             kwargs["system"] = formatted_system
         if tools:
-            kwargs["tools"] = [convert_to_anthropic_tool(tool) for tool in tools]
+            # Filter the same schemas `bind_tools` drops, so counting tokens and
+            # sending a request agree on which tools the API will accept.
+            kwargs["tools"], _ = _drop_unsupported_root_composition_tools(
+                [convert_to_anthropic_tool(tool) for tool in tools]
+            )
         if self.context_management is not None:
             kwargs["context_management"] = self.context_management
 
@@ -2365,6 +2746,56 @@ class ChatAnthropic(BaseChatModel):
             **kwargs,
         )
         return response.input_tokens
+
+
+_TOP_LEVEL_SCHEMA_COMPOSITION_KEYS = ("oneOf", "anyOf")
+
+
+def _drop_unsupported_root_composition_tools(
+    tools: Sequence[Mapping[str, Any]],
+) -> tuple[list[Mapping[str, Any]], set[str]]:
+    """Drop tools whose root `input_schema` uses `oneOf`/`anyOf`.
+
+    The Anthropic API rejects these at request validation, failing the entire
+    request. A tool is dropped only if its `input_schema` is a mapping carrying
+    a root combinator, so built-in (server-side) tools -- which have no
+    `input_schema` -- and tools whose combinators are nested under `properties`
+    are passed through as the same objects, unmodified.
+
+    A `UserWarning` is emitted per dropped tool.
+
+    Args:
+        tools: Already-formatted tool definitions, as built by `bind_tools`.
+
+    Returns:
+        The retained tools, and the names of the dropped tools. A dropped tool
+        with no string `name` contributes no entry to the name set.
+    """
+    kept: list[Mapping[str, Any]] = []
+    dropped_tool_names: set[str] = set()
+    for tool in tools:
+        input_schema = tool.get("input_schema")
+        offending_keys = (
+            [k for k in _TOP_LEVEL_SCHEMA_COMPOSITION_KEYS if k in input_schema]
+            if isinstance(input_schema, Mapping)
+            else []
+        )
+        if not offending_keys:
+            kept.append(tool)
+            continue
+        tool_name = tool.get("name")
+        if isinstance(tool_name, str):
+            dropped_tool_names.add(tool_name)
+            described = repr(tool_name)
+        else:
+            described = "with no name"
+        warnings.warn(
+            f"Dropping tool {described}: its input_schema has a "
+            f"top-level {'/'.join(offending_keys)}, which the Anthropic API does "
+            "not support. The tool will not be available to the model.",
+            stacklevel=3,
+        )
+    return kept, dropped_tool_names
 
 
 def convert_to_anthropic_tool(
@@ -2540,7 +2971,18 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
     )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0) or 0
 
-    return UsageMetadata(
+    # Reasoning (thinking) tokens are a decomposition of `output_tokens` (not
+    # additive), reported by Anthropic via `output_tokens_details.thinking_tokens`.
+    # Older models omit `output_tokens_details` entirely, so guard with `getattr`.
+    output_token_details: dict = {
+        "reasoning": getattr(
+            getattr(anthropic_usage, "output_tokens_details", None),
+            "thinking_tokens",
+            None,
+        ),
+    }
+
+    usage_metadata = UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=input_tokens + output_tokens,
@@ -2548,3 +2990,13 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
             **{k: v for k, v in input_token_details.items() if v is not None},
         ),
     )
+
+    filtered_output_token_details = {
+        k: v for k, v in output_token_details.items() if v is not None
+    }
+    if filtered_output_token_details:
+        usage_metadata["output_token_details"] = OutputTokenDetails(
+            **filtered_output_token_details,
+        )
+
+    return usage_metadata

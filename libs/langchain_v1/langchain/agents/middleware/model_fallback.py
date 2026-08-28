@@ -17,6 +17,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.tools import BaseTool
+from langgraph.errors import GraphBubbleUp
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -394,6 +395,8 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         last_exception: Exception
         try:
             return handler(request)
+        except GraphBubbleUp:
+            raise
         except Exception as e:
             last_exception = e
 
@@ -405,6 +408,8 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             fallback_request = _sanitize_request_for_fallback(request, fallback_model)
             try:
                 return handler(fallback_request.override(model=fallback_model))
+            except GraphBubbleUp:
+                raise
             except Exception as e:
                 last_exception = e
                 continue
@@ -432,6 +437,8 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         last_exception: Exception
         try:
             return await handler(request)
+        except GraphBubbleUp:
+            raise
         except Exception as e:
             last_exception = e
 
@@ -443,6 +450,8 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             fallback_request = _sanitize_request_for_fallback(request, fallback_model)
             try:
                 return await handler(fallback_request.override(model=fallback_model))
+            except GraphBubbleUp:
+                raise
             except Exception as e:
                 last_exception = e
                 continue

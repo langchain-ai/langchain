@@ -10,6 +10,10 @@ UV_FROZEN = true
 TEST_FILE ?= tests/unit_tests/
 PYTEST_EXTRA ?=
 
+# A single canonical live request, reused to smoke both supported openai
+# majors in `integration_test` (see below).
+SDK_SMOKE_TEST = tests/integration_tests/chat_models/test_responses_standard.py::TestOpenAIResponses::test_invoke
+
 integration_test integration_tests: TEST_FILE=tests/integration_tests/
 
 # unit tests are run with the --disable-socket flag to prevent network calls
@@ -24,7 +28,13 @@ test tests:
 	fi
 	TIKTOKEN_CACHE_DIR=tiktoken_cache uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
+# Runs the full integration suite against the locked SDK, then smokes a single
+# live request on each supported openai major so the httpx (2.x) and httpx2
+# (3.x) transport paths are always covered, regardless of which openai version
+# uv.lock currently resolves.
 integration_test integration_tests:
+	uv run --with 'openai>=2.45.0,<3.0.0' --group test --group test_integration pytest -v --tb=short $(SDK_SMOKE_TEST)
+	uv run --with 'openai>=3.0.0,<4.0.0' --group test --group test_integration pytest -v --tb=short $(SDK_SMOKE_TEST)
 	uv run --group test --group test_integration pytest -v --tb=short -n auto --benchmark-disable $(TEST_FILE)
 
 # Run VCR cassette-backed integration tests in playback-only mode (no API keys needed).

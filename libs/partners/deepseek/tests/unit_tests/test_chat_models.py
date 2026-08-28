@@ -5,10 +5,12 @@ from __future__ import annotations
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
-from openai.types.chat import ChatCompletionMessage
+from openai.types import CompletionUsage
+from openai.types.chat import ChatCompletion, ChatCompletionMessage
+from openai.types.chat.chat_completion import Choice
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field, SecretStr
 
@@ -432,9 +434,207 @@ class TestChatDeepSeekAzureToolChoice:
         assert bound_model is not None
 
 
+PROMPT_TOKENS = 100
+COMPLETION_TOKENS = 10
+TOTAL_TOKENS = 110
+CACHE_HIT_TOKENS = 64
+CACHE_MISS_TOKENS = 36
+GATEWAY_CACHED_TOKENS = 50
+
+
+class TestChatDeepSeekPromptCacheUsage:
+    """Tests for DeepSeek's top-level prompt-cache token counts.
+
+    DeepSeek reports context-cache usage as top-level `prompt_cache_hit_tokens`
+    and `prompt_cache_miss_tokens` fields on `usage`, rather than OpenAI's nested
+    `prompt_tokens_details.cached_tokens`. The base class reads only the nested
+    form, so the counts are dropped unless `ChatDeepSeek` maps them explicitly.
+
+    Only cache hits are mapped: DeepSeek defines
+    `prompt_tokens = prompt_cache_hit_tokens + prompt_cache_miss_tokens`, so a
+    miss is an ordinary uncached input token rather than a cache write.
+    """
+
+    def _get_model(self) -> ChatDeepSeek:
+        """Build a model instance with credentials that are never used."""
+        return ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+    @staticmethod
+    def _usage(**overrides: Any) -> dict[str, Any]:
+        """Build a usage payload mirroring DeepSeek's documented response."""
+        return {
+            "prompt_tokens": PROMPT_TOKENS,
+            "completion_tokens": COMPLETION_TOKENS,
+            "total_tokens": TOTAL_TOKENS,
+            "prompt_cache_hit_tokens": CACHE_HIT_TOKENS,
+            "prompt_cache_miss_tokens": CACHE_MISS_TOKENS,
+            **overrides,
+        }
+
+    @staticmethod
+    def _completion(usage: dict[str, Any]) -> ChatCompletion:
+        """Wrap a usage payload in an otherwise ordinary completion."""
+        return ChatCompletion(
+            id="chatcmpl-test",
+            created=0,
+            model=MODEL_NAME,
+            object="chat.completion",
+            choices=[
+                Choice(
+                    finish_reason="stop",
+                    index=0,
+                    message=ChatCompletionMessage(role="assistant", content="Hi"),
+                ),
+            ],
+            usage=CompletionUsage(**usage),
+        )
+
+    def test_cache_hit_tokens_mapped_to_cache_read(self) -> None:
+        """Test that `prompt_cache_hit_tokens` populates `cache_read`."""
+        response = self._completion(self._usage())
+
+        result = self._get_model()._create_chat_result(response)
+
+        message = result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata is not None
+        assert message.usage_metadata["input_tokens"] == PROMPT_TOKENS
+        assert (
+            message.usage_metadata["input_token_details"]["cache_read"]
+            == CACHE_HIT_TOKENS
+        )
+
+    def test_full_cache_miss_reports_zero_cache_read(self) -> None:
+        """Test that a total cache miss is reported as zero, not omitted."""
+        response = self._completion(
+            self._usage(
+                prompt_cache_hit_tokens=0,
+                prompt_cache_miss_tokens=PROMPT_TOKENS,
+            ),
+        )
+
+        result = self._get_model()._create_chat_result(response)
+
+        message = result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata is not None
+        assert message.usage_metadata["input_token_details"]["cache_read"] == 0
+
+    def test_cache_miss_tokens_not_mapped_to_cache_creation(self) -> None:
+        """Test that misses are not counted as cache writes."""
+        response = self._completion(self._usage())
+
+        result = self._get_model()._create_chat_result(response)
+
+        message = result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata is not None
+        assert "cache_creation" not in message.usage_metadata["input_token_details"]
+
+    def test_usage_without_cache_fields_is_unaffected(self) -> None:
+        """Test that responses lacking the DeepSeek cache fields still work."""
+        response = self._completion(
+            {
+                "prompt_tokens": PROMPT_TOKENS,
+                "completion_tokens": COMPLETION_TOKENS,
+                "total_tokens": TOTAL_TOKENS,
+            },
+        )
+
+        result = self._get_model()._create_chat_result(response)
+
+        message = result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata is not None
+        assert message.usage_metadata["input_tokens"] == PROMPT_TOKENS
+        assert "cache_read" not in message.usage_metadata["input_token_details"]
+
+    def test_nested_cached_tokens_take_precedence(self) -> None:
+        """Test that an OpenAI-style nested count is not overwritten.
+
+        DeepSeek served through an OpenAI-compatible gateway may report the
+        nested form instead, which the base class already handles correctly.
+        """
+        response = self._completion(
+            self._usage(
+                prompt_tokens_details={"cached_tokens": GATEWAY_CACHED_TOKENS},
+            ),
+        )
+
+        result = self._get_model()._create_chat_result(response)
+
+        message = result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata is not None
+        assert (
+            message.usage_metadata["input_token_details"]["cache_read"]
+            == GATEWAY_CACHED_TOKENS
+        )
+
+    def test_streaming_usage_only_chunk_maps_cache_read(self) -> None:
+        """Test that the trailing usage-only chunk carries `cache_read`.
+
+        DeepSeek sends token usage in a final chunk with no choices, so the
+        mapping cannot depend on a choices entry being present.
+        """
+        chunk: dict[str, Any] = {"choices": [], "usage": self._usage()}
+
+        generation_chunk = self._get_model()._convert_chunk_to_generation_chunk(
+            chunk,
+            AIMessageChunk,
+            None,
+        )
+
+        assert generation_chunk is not None
+        message = generation_chunk.message
+        assert isinstance(message, AIMessageChunk)
+        assert message.usage_metadata is not None
+        assert (
+            message.usage_metadata["input_token_details"]["cache_read"]
+            == CACHE_HIT_TOKENS
+        )
+
+    def test_streaming_usage_alongside_choices_maps_cache_read(self) -> None:
+        """Test that usage delivered with a content delta is also mapped."""
+        chunk: dict[str, Any] = {
+            "choices": [{"delta": {"content": "Hi"}}],
+            "usage": self._usage(),
+        }
+
+        generation_chunk = self._get_model()._convert_chunk_to_generation_chunk(
+            chunk,
+            AIMessageChunk,
+            None,
+        )
+
+        assert generation_chunk is not None
+        message = generation_chunk.message
+        assert isinstance(message, AIMessageChunk)
+        assert message.usage_metadata is not None
+        assert (
+            message.usage_metadata["input_token_details"]["cache_read"]
+            == CACHE_HIT_TOKENS
+        )
+
+    def test_streaming_content_chunk_without_usage_is_unaffected(self) -> None:
+        """Test that ordinary content chunks carry no usage metadata."""
+        chunk: dict[str, Any] = {"choices": [{"delta": {"content": "Hi"}}]}
+
+        generation_chunk = self._get_model()._convert_chunk_to_generation_chunk(
+            chunk,
+            AIMessageChunk,
+            None,
+        )
+
+        assert generation_chunk is not None
+        message = generation_chunk.message
+        assert isinstance(message, AIMessageChunk)
+        assert message.usage_metadata is None
+
+
 def test_profile() -> None:
     """Test that model profile is loaded correctly."""
-    model = ChatDeepSeek(model="deepseek-reasoner", api_key=SecretStr("test_key"))
+    model = ChatDeepSeek(model="deepseek-v4-pro", api_key=SecretStr("test_key"))
     assert model.profile is not None
     assert model.profile["reasoning_output"]
 

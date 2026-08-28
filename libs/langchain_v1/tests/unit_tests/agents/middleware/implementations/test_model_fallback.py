@@ -11,6 +11,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.tools import BaseTool, tool
+from langgraph.errors import GraphInterrupt
 from typing_extensions import override
 
 from langchain.agents.factory import create_agent
@@ -240,6 +241,48 @@ def _assert_request_is_sanitized(request: ModelRequest) -> None:
     assert "cache_control" not in dict_tool
     dict_tool_extras = dict_tool.get("extras")
     assert dict_tool_extras == {"defer_loading": True}
+
+
+@pytest.mark.parametrize("interrupt_stage", ["primary", "fallback"])
+def test_model_fallback_reraises_graph_bubble_up(interrupt_stage: str) -> None:
+    """Graph control-flow signals propagate from primary and fallback calls."""
+    fallback_model = GenericFakeChatModel(messages=iter([]))
+    middleware = ModelFallbackMiddleware(fallback_model)
+    calls = 0
+
+    def handler(_request: ModelRequest) -> ModelResponse:
+        nonlocal calls
+        calls += 1
+        if interrupt_stage == "fallback" and calls == 1:
+            msg = "try fallback"
+            raise ValueError(msg)
+        raise GraphInterrupt
+
+    with pytest.raises(GraphInterrupt):
+        middleware.wrap_model_call(_make_request(), handler)
+
+    assert calls == (2 if interrupt_stage == "fallback" else 1)
+
+
+@pytest.mark.parametrize("interrupt_stage", ["primary", "fallback"])
+async def test_model_fallback_async_reraises_graph_bubble_up(interrupt_stage: str) -> None:
+    """Async graph signals propagate from primary and fallback calls."""
+    fallback_model = GenericFakeChatModel(messages=iter([]))
+    middleware = ModelFallbackMiddleware(fallback_model)
+    calls = 0
+
+    async def handler(_request: ModelRequest) -> ModelResponse:
+        nonlocal calls
+        calls += 1
+        if interrupt_stage == "fallback" and calls == 1:
+            msg = "try fallback"
+            raise ValueError(msg)
+        raise GraphInterrupt
+
+    with pytest.raises(GraphInterrupt):
+        await middleware.awrap_model_call(_make_request(), handler)
+
+    assert calls == (2 if interrupt_stage == "fallback" else 1)
 
 
 def test_fallback_sanitizes_cache_markers_sync() -> None:

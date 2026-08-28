@@ -18,18 +18,33 @@ from typing import (
 import httpx
 from fireworks import (
     APIConnectionError,
+    APIError,
+    APITimeoutError,
     AsyncFireworks,
+    AuthenticationError,
     BadRequestError,
     Fireworks,
     FireworksError,
     InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
     RateLimitError,
 )
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -207,6 +222,25 @@ def _allowed_content_part_keys() -> frozenset[str]:
 _ALLOWED_CONTENT_PART_KEYS: frozenset[str] = _allowed_content_part_keys()
 
 
+_DROPPED_CONTENT_BLOCK_TYPES: frozenset[str] = frozenset(
+    {
+        "tool_use",
+        "thinking",
+        "reasoning",
+        "reasoning_content",
+        "function_call",
+        "code_interpreter_call",
+    }
+)
+"""Content block types the chat completions wire format does not carry.
+
+These arise from provider-specific or canonical v1 content (e.g. Anthropic
+`tool_use`/`thinking` blocks, or a `reasoning` block on an AIMessage) that
+reaches `_convert_message_to_dict` as conversation history. Fireworks rejects
+them, so they are dropped rather than forwarded.
+"""
+
+
 def _sanitize_chat_completions_content(content: Any) -> Any:
     """Strip non-wire keys from content blocks before serializing to Fireworks.
 
@@ -277,13 +311,7 @@ def _format_message_content(content: Any) -> Any:
     for block in content:
         if isinstance(block, dict) and "type" in block:
             btype = block["type"]
-            if btype in (
-                "tool_use",
-                "thinking",
-                "reasoning_content",
-                "function_call",
-                "code_interpreter_call",
-            ):
+            if btype in _DROPPED_CONTENT_BLOCK_TYPES:
                 continue
             if is_data_content_block(block):
                 formatted.append(
@@ -471,8 +499,6 @@ def _convert_chunk_to_message_chunk(
 ) -> BaseMessageChunk:
     choices = chunk.get("choices") or []
     response_metadata: dict[str, Any] = {"model_provider": "fireworks"}
-    if service_tier := chunk.get("service_tier"):
-        response_metadata["service_tier"] = service_tier
     if not choices:
         # Final chunk emitted when `stream_options.include_usage=True`:
         # `choices` is empty and the chunk carries only `usage`.
@@ -567,12 +593,70 @@ class FireworksContextOverflowError(BadRequestError, ContextOverflowError):
     """`BadRequestError` raised when input exceeds Fireworks's context limit."""
 
 
+class FireworksAuthenticationError(AuthenticationError, ModelAuthenticationError):
+    """Fireworks authentication error classified as a LangChain model error."""
+
+
+class FireworksPermissionDeniedError(PermissionDeniedError, ModelPermissionDeniedError):
+    """Fireworks permission error classified as a LangChain model error."""
+
+
+class FireworksInvalidRequestError(BadRequestError, ModelInvalidRequestError):
+    """Fireworks bad-request error classified as a LangChain model error."""
+
+
+class FireworksModelNotFoundError(NotFoundError, ModelNotFoundError):
+    """Fireworks not-found error classified as a LangChain model error."""
+
+
+class FireworksRateLimitError(RateLimitError, ModelRateLimitError):
+    """Fireworks rate-limit error classified as a LangChain model error."""
+
+
+class FireworksAPIError(InternalServerError, ModelAPIError):
+    """Fireworks server error classified as a LangChain model error."""
+
+
+class FireworksConnectionError(APIConnectionError, ModelConnectionError):
+    """Fireworks connection error classified as a LangChain model error."""
+
+
+class FireworksTimeoutError(APITimeoutError, ModelTimeoutError):
+    """Fireworks timeout error classified as a LangChain model error."""
+
+
 def _handle_fireworks_invalid_request(e: BadRequestError) -> NoReturn:
     """Promote prompt-too-long errors to `FireworksContextOverflowError`."""
     if "prompt is too long" in str(e):
         raise FireworksContextOverflowError(
             str(e), response=e.response, body=e.body
         ) from e
+    raise FireworksInvalidRequestError(str(e), response=e.response, body=e.body) from e
+
+
+def _handle_fireworks_api_error(e: APIError) -> NoReturn:
+    """Re-raise a Fireworks SDK error as its LangChain-classified equivalent."""
+    if isinstance(e, AuthenticationError):
+        raise FireworksAuthenticationError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, PermissionDeniedError):
+        raise FireworksPermissionDeniedError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, NotFoundError):
+        raise FireworksModelNotFoundError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, RateLimitError):
+        raise FireworksRateLimitError(str(e), response=e.response, body=e.body) from e
+    if isinstance(e, InternalServerError):
+        raise FireworksAPIError(str(e), response=e.response, body=e.body) from e
+    # `APITimeoutError` subclasses `APIConnectionError`, so check it first.
+    if isinstance(e, APITimeoutError):
+        raise FireworksTimeoutError(e.request) from e
+    if isinstance(e, APIConnectionError):
+        raise FireworksConnectionError(message=str(e), request=e.request) from e
     raise e
 
 
@@ -1092,6 +1176,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1103,6 +1189,8 @@ class ChatFireworks(BaseChatModel):
                 if finish_reason := choice.get("finish_reason"):
                     generation_info["finish_reason"] = finish_reason
                     generation_info["model_name"] = self.model_name
+                    if service_tier := chunk.get("service_tier"):
+                        generation_info["service_tier"] = service_tier
                 logprobs = choice.get("logprobs")
                 if logprobs:
                     generation_info["logprobs"] = logprobs
@@ -1142,6 +1230,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         return self._create_chat_result(response)
 
     def _create_message_dicts(
@@ -1203,6 +1293,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1214,6 +1306,8 @@ class ChatFireworks(BaseChatModel):
                 if finish_reason := choice.get("finish_reason"):
                     generation_info["finish_reason"] = finish_reason
                     generation_info["model_name"] = self.model_name
+                    if service_tier := chunk.get("service_tier"):
+                        generation_info["service_tier"] = service_tier
                 logprobs = choice.get("logprobs")
                 if logprobs:
                     generation_info["logprobs"] = logprobs
@@ -1256,6 +1350,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         return self._create_chat_result(response)
 
     @property

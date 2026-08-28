@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import copy
+import json
 import os
 import warnings
 from collections.abc import Callable
+from types import SimpleNamespace
 from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
 
@@ -13,7 +15,18 @@ import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -26,14 +39,17 @@ from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from pydantic import BaseModel, Field, SecretStr, ValidationError
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
+from pydantic import BaseModel, Field, RootModel, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
+from langchain_anthropic._sdk_compat import _unsupported_sampling_params
 from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
     _TOOL_CALL_ID_PATTERN,
     _create_usage_metadata,
+    _drop_unsupported_root_composition_tools,
     _format_image,
     _format_messages,
     _is_builtin_tool,
@@ -42,10 +58,204 @@ from langchain_anthropic.chat_models import (
     _thinking_in_params,
     convert_to_anthropic_tool,
 )
+from tests.unit_tests._httpx_compat import httpx
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
 MODEL_NAME = "claude-sonnet-4-5-20250929"
+
+
+class _GatewayMetadataTracer(BaseTracer):
+    """Captures gateway metadata promoted onto completed LLM runs."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.gateway_metadata: dict[str, Any] | None = None
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op; runs are inspected as they complete."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        metadata = run.extra.get("metadata", {})
+        gateway_metadata = metadata.get("ls_gateway_info")
+        if isinstance(gateway_metadata, dict):
+            self.gateway_metadata = gateway_metadata
+
+
+_GATEWAY_METADATA = {"provider": "anthropic"}
+_MESSAGE_RESPONSE = {
+    "id": "msg_123",
+    "content": [{"type": "text", "text": "Bar Baz", "citations": None}],
+    "model": MODEL_NAME,
+    "role": "assistant",
+    "stop_reason": "end_turn",
+    "stop_sequence": None,
+    "usage": {"input_tokens": 2, "output_tokens": 1},
+    "type": "message",
+}
+_STREAM_EVENTS: list[dict[str, Any]] = [
+    {
+        "type": "message_start",
+        "message": {
+            **_MESSAGE_RESPONSE,
+            "content": [],
+            "stop_reason": None,
+            "usage": {"input_tokens": 2, "output_tokens": 0},
+        },
+    },
+    {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {"type": "text_delta", "text": "Bar Baz"},
+    },
+    {
+        "type": "message_delta",
+        "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+        "usage": {"input_tokens": 2, "output_tokens": 1},
+    },
+    {"type": "message_stop"},
+]
+
+
+def _gateway_handler(
+    expected_beta: str | None,
+) -> Callable[[Any], Any]:
+    # Annotated `Any`: the concrete request/response classes come from `httpx`
+    # or `httpx2` depending on the installed anthropic SDK.
+    def handler(request: Any) -> Any:
+        assert request.headers.get("anthropic-beta") == expected_beta
+        headers = {"x-langsmith-gateway-metadata": json.dumps(_GATEWAY_METADATA)}
+        if json.loads(request.content).get("stream"):
+            stream = "".join(
+                f"event: {event['type']}\ndata: {json.dumps(event)}\n\n"
+                for event in _STREAM_EVENTS
+            )
+            return httpx.Response(
+                200,
+                text=stream,
+                headers={**headers, "content-type": "text/event-stream"},
+            )
+        return httpx.Response(200, json=_MESSAGE_RESPONSE, headers=headers)
+
+    return handler
+
+
+def _sync_gateway_client(betas: list[str] | None) -> anthropic.Client:
+    return anthropic.Client(
+        api_key="lsv2_pt_example",
+        http_client=httpx.Client(
+            transport=httpx.MockTransport(
+                _gateway_handler(",".join(betas) if betas else None)
+            )
+        ),
+    )
+
+
+def _async_gateway_client(betas: list[str] | None) -> anthropic.AsyncClient:
+    return anthropic.AsyncClient(
+        api_key="lsv2_pt_example",
+        http_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                _gateway_handler(",".join(betas) if betas else None)
+            )
+        ),
+    )
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+def test_anthropic_invoke_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Gateway metadata header is surfaced on `generation_info`, not the message."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _sync_gateway_client(betas)
+    tracer = _GatewayMetadataTracer()
+    try:
+        with patch.object(llm, "_client", client):
+            result = llm.invoke("bar", config={"callbacks": [tracer]})
+    finally:
+        client.close()
+
+    assert tracer.gateway_metadata == _GATEWAY_METADATA
+    assert GATEWAY_METADATA_RESPONSE_KEY not in result.response_metadata
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+async def test_anthropic_ainvoke_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Async gateway responses surface metadata on `generation_info`."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _async_gateway_client(betas)
+    tracer = _GatewayMetadataTracer()
+    try:
+        with patch.object(llm, "_async_client", client):
+            result = await llm.ainvoke("bar", config={"callbacks": [tracer]})
+    finally:
+        await client.close()
+
+    assert tracer.gateway_metadata == _GATEWAY_METADATA
+    assert GATEWAY_METADATA_RESPONSE_KEY not in result.response_metadata
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+def test_anthropic_stream_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Gateway metadata is attached to the first streaming generation chunk."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _sync_gateway_client(betas)
+    try:
+        with patch.object(llm, "_client", client):
+            chunks = list(llm._stream([HumanMessage("bar")]))
+    finally:
+        client.close()
+
+    assert [chunk.generation_info for chunk in chunks] == [
+        {GATEWAY_METADATA_RESPONSE_KEY: _GATEWAY_METADATA},
+        None,
+        None,
+    ]
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+async def test_anthropic_astream_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Async gateway metadata is attached to the first streaming chunk."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _async_gateway_client(betas)
+    try:
+        with patch.object(llm, "_async_client", client):
+            chunks = [chunk async for chunk in llm._astream([HumanMessage("bar")])]
+    finally:
+        await client.close()
+
+    assert [chunk.generation_info for chunk in chunks] == [
+        {GATEWAY_METADATA_RESPONSE_KEY: _GATEWAY_METADATA},
+        None,
+        None,
+    ]
 
 
 def test_initialization() -> None:
@@ -147,10 +357,6 @@ def test_set_default_max_tokens() -> None:
     # Test claude-sonnet-4-5 models
     llm = ChatAnthropic(model="claude-sonnet-4-5-20250929", anthropic_api_key="test")
     assert llm.max_tokens == 64000
-
-    # Test claude-opus-4-1 models
-    llm = ChatAnthropic(model="claude-opus-4-1-20250805", anthropic_api_key="test")
-    assert llm.max_tokens == 32000
 
     # Test claude-haiku-4-5 models
     llm = ChatAnthropic(model="claude-haiku-4-5-20251001", anthropic_api_key="test")
@@ -1603,6 +1809,360 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     }
 
 
+def test_anthropic_bind_tools_does_not_mutate_tool_choice() -> None:
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool_choice = {"type": "tool", "name": "GetWeather"}
+
+    chat_model_with_tools = chat_model.bind_tools(
+        [GetWeather], tool_choice=tool_choice, parallel_tool_calls=False
+    )
+
+    assert tool_choice == {"type": "tool", "name": "GetWeather"}
+    assert cast("RunnableBinding", chat_model_with_tools).kwargs["tool_choice"] == {
+        "type": "tool",
+        "name": "GetWeather",
+        "disable_parallel_tool_use": True,
+    }
+
+
+def test_bind_tools_drops_top_level_composition() -> None:
+    """Tools with a root `oneOf`/`anyOf` are dropped with a warning.
+
+    The Anthropic API rejects tool schemas carrying these keywords at the top
+    level, failing the whole request. MCP servers can emit them. See
+    https://github.com/langchain-ai/langchain/issues/39271.
+    """
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    valid_tool = {
+        "name": "search",
+        "description": "Search",
+        "input_schema": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+            "required": ["query"],
+        },
+    }
+    invalid_tool = {
+        "name": "notion_create_attachment",
+        "description": "Create an attachment",
+        "input_schema": {
+            "type": "object",
+            "anyOf": [
+                {
+                    "type": "object",
+                    "properties": {"content": {"type": "string"}},
+                    "required": ["content"],
+                },
+                {
+                    "type": "object",
+                    "properties": {"source_url": {"type": "string"}},
+                    "required": ["source_url"],
+                },
+            ],
+        },
+    }
+    with pytest.warns(UserWarning, match="notion_create_attachment"):
+        chat_model_with_tools = chat_model.bind_tools([valid_tool, invalid_tool])
+
+    bound = cast("RunnableBinding", chat_model_with_tools).kwargs["tools"]
+    assert [t["name"] for t in bound] == ["search"]
+
+
+def test_bind_tools_keeps_nested_composition_without_warning() -> None:
+    """Combinators nested under `properties` are valid and left untouched."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool = {
+        "name": "search",
+        "description": "Search",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "value": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+            },
+            "required": ["value"],
+        },
+    }
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # no warning expected
+        chat_model_with_tools = chat_model.bind_tools([tool])
+
+    bound = cast("RunnableBinding", chat_model_with_tools).kwargs["tools"]
+    assert [t["name"] for t in bound] == ["search"]
+    assert bound[0]["input_schema"] == tool["input_schema"]
+
+
+def _composition_tool(name: str, keyword: str = "anyOf") -> dict:
+    """A tool whose root `input_schema` uses a top-level combinator."""
+    return {
+        "name": name,
+        "description": "Root schema composition.",
+        "input_schema": {
+            "type": "object",
+            keyword: [
+                {
+                    "type": "object",
+                    "properties": {"content": {"type": "string"}},
+                    "required": ["content"],
+                }
+            ],
+        },
+    }
+
+
+def _plain_tool(name: str) -> dict:
+    """A tool with a supported root `input_schema`."""
+    return {
+        "name": name,
+        "description": "Supported.",
+        "input_schema": {"type": "object", "properties": {}},
+    }
+
+
+@pytest.mark.parametrize("keyword", ["oneOf", "anyOf"])
+def test_bind_tools_drops_each_root_combinator(keyword: str) -> None:
+    """Every combinator in the unsupported set is filtered and named in the warning."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    with pytest.warns(UserWarning, match=f"top-level {keyword}") as record:
+        bound = chat_model.bind_tools(
+            [_plain_tool("search"), _composition_tool("attach", keyword)]
+        )
+
+    assert [t["name"] for t in cast("RunnableBinding", bound).kwargs["tools"]] == [
+        "search"
+    ]
+    assert "attach" in str(record[0].message)
+
+
+def test_bind_tools_keeps_root_all_of_without_warning() -> None:
+    """A root `allOf` schema is supported and remains available to the model."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool = _composition_tool("attach", "allOf")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        bound = chat_model.bind_tools([tool])
+
+    bound_tools = cast("RunnableBinding", bound).kwargs["tools"]
+    assert [tool["name"] for tool in bound_tools] == ["attach"]
+    assert bound_tools[0]["input_schema"] == tool["input_schema"]
+
+
+def test_bind_tools_warning_names_every_offending_combinator() -> None:
+    """A schema with several root combinators reports all of them."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool = _composition_tool("attach")
+    tool["input_schema"]["oneOf"] = [{"type": "object", "properties": {}}]
+    with pytest.warns(UserWarning, match="top-level oneOf/anyOf"):
+        chat_model.bind_tools([_plain_tool("search"), tool])
+
+
+def test_bind_tools_passes_builtin_tools_through_unfiltered() -> None:
+    """Built-in server-side tools have no `input_schema` and are never dropped."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    builtin = {"type": "mcp_toolset", "mcp_server_name": "notion"}
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # no warning expected
+        bound = chat_model.bind_tools([builtin])
+
+    assert cast("RunnableBinding", bound).kwargs["tools"] == [builtin]
+
+
+def test_drop_unsupported_tools_describes_unnamed_tool() -> None:
+    """A dropped tool with no `name` is described, not rendered as `None`.
+
+    Exercised on the helper directly: `convert_to_anthropic_tool` rejects a
+    nameless tool before `bind_tools` could ever reach this branch.
+    """
+    unnamed = _composition_tool("attach")
+    del unnamed["name"]
+    with pytest.warns(UserWarning, match="Dropping tool with no name") as record:
+        kept, dropped_names = _drop_unsupported_root_composition_tools([unnamed])
+
+    assert kept == []
+    assert dropped_names == set()
+    assert "None" not in str(record[0].message)
+
+
+def test_bind_tools_all_tools_dropped_raises() -> None:
+    """No usable tool remains, so there is nothing to salvage by dropping."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    with (
+        pytest.warns(UserWarning, match="Dropping tool"),
+        pytest.raises(ValueError, match="All 1 bound tool"),
+    ):
+        chat_model.bind_tools([_composition_tool("attach")])
+
+
+def test_bind_tools_no_tools_does_not_claim_tools_were_dropped() -> None:
+    """An empty tool list is not a dropped tool list, and must not say so."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    bound = chat_model.bind_tools([], tool_choice="any")
+    assert cast("RunnableBinding", bound).kwargs["tools"] == []
+
+
+@pytest.mark.parametrize("tool_choice", ["attach", {"type": "tool", "name": "attach"}])
+def test_bind_tools_dropped_tool_forced_by_tool_choice_raises(
+    tool_choice: str | dict,
+) -> None:
+    """A dropped forced tool raises locally even when valid tools remain."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    with (
+        pytest.warns(UserWarning, match="Dropping tool"),
+        pytest.raises(ValueError, match="tool_choice forces 'attach'"),
+    ):
+        chat_model.bind_tools(
+            [_plain_tool("search"), _composition_tool("attach")],
+            tool_choice=tool_choice,
+        )
+
+
+@pytest.mark.parametrize("tool_choice", ["any", {"type": "any"}])
+def test_bind_tools_partial_drop_under_forced_any_raises(
+    tool_choice: str | dict,
+) -> None:
+    """Forcing tool use depends on the whole tool set, so losing any member is fatal.
+
+    Under `create_agent`'s `ToolStrategy`, `tool_choice='any'` plus a dropped
+    structured-output tool would otherwise loop until `GraphRecursionError`.
+    """
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    with (
+        pytest.warns(UserWarning, match="Dropping tool"),
+        pytest.raises(ValueError, match="tool_choice='any' forces the model"),
+    ):
+        chat_model.bind_tools(
+            [_plain_tool("search"), _composition_tool("attach")],
+            tool_choice=tool_choice,
+        )
+
+
+def test_bind_tools_unknown_forced_tool_choice_is_left_to_the_api() -> None:
+    """Names the client can't see are not rejected locally.
+
+    `mcp_toolset` tools expose no per-tool `name` -- the names live on the MCP
+    server -- so a forced choice naming one is only resolvable server-side.
+    """
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    bound = chat_model.bind_tools(
+        [{"type": "mcp_toolset", "mcp_server_name": "notion"}],
+        tool_choice="notion_create_attachment",
+    )
+    assert cast("RunnableBinding", bound).kwargs["tool_choice"] == {
+        "type": "tool",
+        "name": "notion_create_attachment",
+    }
+
+
+def test_with_structured_output_root_combinator_raises_actionable_error() -> None:
+    """A root-combinator schema fails at bind time, naming the real remedy."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+
+    class _Left(BaseModel):
+        a: int
+
+    class _Right(BaseModel):
+        b: str
+
+    class _Either(RootModel):
+        root: _Left | _Right
+
+    with (
+        pytest.warns(UserWarning, match="Dropping tool"),
+        pytest.raises(ValueError, match="method='json_schema'"),
+    ):
+        chat_model.with_structured_output(_Either, method="function_calling")
+
+
+def test_with_structured_output_root_combinator_raises_when_thinking_enabled() -> None:
+    """The thinking path must not degrade to a toolless request and a wrong error.
+
+    Without the bind-time raise, this spends an API call and then reports the
+    failure as a `thinking` limitation rather than a schema problem.
+    """
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking={"type": "enabled", "budget_tokens": 1024},
+    )
+
+    class _Left(BaseModel):
+        a: int
+
+    class _Right(BaseModel):
+        b: str
+
+    class _Either(RootModel):
+        root: _Left | _Right
+
+    with (
+        pytest.warns(UserWarning, match="Dropping tool"),
+        pytest.raises(ValueError, match="All 1 bound tool"),
+    ):
+        chat_model.with_structured_output(_Either, method="function_calling")
+
+
+def test_get_num_tokens_from_messages_filters_unsupported_tools() -> None:
+    """Token counting and sending agree on which tools the API will accept."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    counted: dict[str, Any] = {}
+
+    def _count_tokens(**kwargs: Any) -> Any:
+        counted.update(kwargs)
+        return SimpleNamespace(input_tokens=42)
+
+    with (
+        patch.object(chat_model._client.messages, "count_tokens", _count_tokens),
+        pytest.warns(UserWarning, match="Dropping tool"),
+    ):
+        chat_model.get_num_tokens_from_messages(
+            [HumanMessage("hi")],
+            tools=[_plain_tool("search"), _composition_tool("attach")],
+        )
+
+    assert [t["name"] for t in counted["tools"]] == ["search"]
+
+
 def test_fine_grained_tool_streaming_beta() -> None:
     """Test that fine-grained tool streaming beta can be enabled."""
     # Test with betas parameter at initialization
@@ -1642,13 +2202,15 @@ def test_fine_grained_tool_streaming_beta() -> None:
         "fine-grained-tool-streaming-2025-05-14",
     }
 
-    # Test that _create routes to beta client when betas are present
+    # Test that _create routes to the beta raw-response client when betas are present
     model = ChatAnthropic(
         model=MODEL_NAME, betas=["fine-grained-tool-streaming-2025-05-14"]
     )
     payload = {"betas": ["fine-grained-tool-streaming-2025-05-14"], "stream": True}
 
-    with patch.object(model._client.beta.messages, "create") as mock_beta_create:
+    with patch.object(
+        model._client.beta.messages.with_raw_response, "create"
+    ) as mock_beta_create:
         model._create(payload)
         mock_beta_create.assert_called_once_with(**payload)
 
@@ -1723,6 +2285,42 @@ def test_usage_metadata_standardization() -> None:
     assert result["input_tokens"] == 0
     assert result["output_tokens"] == 0
     assert result["total_tokens"] == 0
+
+
+def test_usage_metadata_reasoning_tokens() -> None:
+    """Reasoning tokens should be surfaced via `output_token_details.reasoning`.
+
+    Anthropic reports these through `output_tokens_details.thinking_tokens` as a
+    decomposition of `output_tokens` (not additive).
+    """
+
+    class OutputTokensDetails(BaseModel):
+        thinking_tokens: int = 20
+
+    class UsageWithReasoning(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 50
+        output_tokens_details: OutputTokensDetails | None = OutputTokensDetails()
+
+    # Case 1: reasoning tokens present
+    result = _create_usage_metadata(UsageWithReasoning())
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["total_tokens"] == 150
+    assert result.get("output_token_details") == {"reasoning": 20}
+
+    # Case 2: output_tokens_details explicitly None
+    result = _create_usage_metadata(UsageWithReasoning(output_tokens_details=None))
+    assert result["output_tokens"] == 50
+    assert "output_token_details" not in result
+
+    # Case 3: output_tokens_details field absent (older models)
+    class UsageNoDetails(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 50
+
+    result = _create_usage_metadata(UsageNoDetails())
+    assert "output_token_details" not in result
 
 
 def test_usage_metadata_cache_creation_ttl() -> None:
@@ -1910,6 +2508,24 @@ def test_mcp_tracing() -> None:
     # Test headers are correctly propagated to request
     payload = llm._get_request_payload([input_message])
     assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
+
+
+def test_sampling_params_reach_the_request_payload() -> None:
+    """`temperature`/`top_p`/`top_k` land wherever the installed SDK accepts them.
+
+    `anthropic>=1` dropped them as named arguments, so they are relocated to
+    `extra_body`; the resulting wire payload is the same on both majors.
+    """
+    llm = ChatAnthropic(model=MODEL_NAME, temperature=0, top_p=0.9, top_k=5)
+    payload = llm._get_request_payload([HumanMessage("foo")])
+
+    sampling = {"temperature": 0, "top_p": 0.9, "top_k": 5}
+    if _unsupported_sampling_params():
+        assert payload["extra_body"] == sampling
+        assert not sampling.keys() & payload.keys()
+    else:
+        assert {k: payload[k] for k in sampling} == sampling
+        assert "extra_body" not in payload
 
 
 def test_cache_control_kwarg() -> None:
@@ -2157,6 +2773,41 @@ def test_inference_geo_in_payload() -> None:
     input_message = HumanMessage("Hello, world!")
     payload = llm._get_request_payload([input_message])
     assert payload["inference_geo"] == "us"
+
+
+def test_user_profile_id_init_param() -> None:
+    """`user_profile_id` set at construction is included in the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME, user_profile_id="uprof_init")
+    input_message = HumanMessage("Hello, world!")
+    payload = llm._get_request_payload([input_message])
+    assert payload["user_profile_id"] == "uprof_init"
+    # Setting it auto-enables the required beta, routing through beta.messages.create.
+    assert "user-profiles-2026-03-24" in payload["betas"]
+
+
+def test_user_profile_id_runtime_param() -> None:
+    """`user_profile_id` passed at call time is included in the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    input_message = HumanMessage("Hello, world!")
+    payload = llm._get_request_payload([input_message], user_profile_id="uprof_runtime")
+    assert payload["user_profile_id"] == "uprof_runtime"
+    assert "user-profiles-2026-03-24" in payload["betas"]
+
+
+def test_user_profile_id_runtime_overrides_init() -> None:
+    """A call-time `user_profile_id` takes precedence over the init value."""
+    llm = ChatAnthropic(model=MODEL_NAME, user_profile_id="uprof_init")
+    input_message = HumanMessage("Hello, world!")
+    payload = llm._get_request_payload([input_message], user_profile_id="uprof_runtime")
+    assert payload["user_profile_id"] == "uprof_runtime"
+
+
+def test_user_profile_id_absent_by_default() -> None:
+    """When unset, `user_profile_id` is stripped from the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    input_message = HumanMessage("Hello, world!")
+    payload = llm._get_request_payload([input_message])
+    assert "user_profile_id" not in payload
 
 
 def test_anthropic_model_params() -> None:
@@ -2791,6 +3442,7 @@ def test_advisor_is_builtin_tool() -> None:
         **bound.kwargs,  # type: ignore[attr-defined]
     )
     assert advisor_tool in payload["tools"]
+    assert "advisor-tool-2026-03-01" in payload["betas"]
 
 
 def test_tool_search_beta_headers() -> None:
@@ -2931,6 +3583,35 @@ def test_tool_search_result_formatting() -> None:
     assert tool_result_block["content"][0]["tool_name"] == "get_weather"
     assert tool_result_block["content"][1]["type"] == "tool_reference"
     assert tool_result_block["content"][1]["tool_name"] == "weather_forecast"
+
+
+# Regression test for https://github.com/langchain-ai/langchain/issues/37584
+def test__format_messages_tool_search_result_drops_streaming_index() -> None:
+    """Test that streaming-only indexes are not sent to Anthropic."""
+    messages = [
+        AIMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "tool_search_tool_result",
+                    "tool_use_id": "srvtoolu_123",
+                    "content": [
+                        {"type": "tool_reference", "tool_name": "get_weather"},
+                    ],
+                    "index": 1,
+                },
+            ],
+        ),
+    ]
+
+    _, formatted = _format_messages(messages)
+
+    assert formatted[0]["content"][0] == {
+        "type": "tool_search_tool_result",
+        "tool_use_id": "srvtoolu_123",
+        "content": [
+            {"type": "tool_reference", "tool_name": "get_weather"},
+        ],
+    }
 
 
 def test_auto_append_betas_for_mcp_servers() -> None:
@@ -3590,12 +4271,72 @@ _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR = anthropic.BadRequestError(
 )
 
 
+@pytest.mark.parametrize(
+    ("status_code", "sdk_error_type", "model_error_type", "is_retryable"),
+    [
+        (400, anthropic.BadRequestError, ModelInvalidRequestError, False),
+        (401, anthropic.AuthenticationError, ModelAuthenticationError, False),
+        (403, anthropic.PermissionDeniedError, ModelPermissionDeniedError, False),
+        (404, anthropic.NotFoundError, ModelNotFoundError, False),
+        (429, anthropic.RateLimitError, ModelRateLimitError, True),
+        (500, anthropic.InternalServerError, ModelAPIError, True),
+        (529, anthropic.OverloadedError, ModelAPIError, True),
+    ],
+)
+def test_anthropic_error_classification(
+    status_code: int,
+    sdk_error_type: type[anthropic.APIStatusError],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Provider errors are raised as both the SDK type and the LangChain type."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    sdk_error = sdk_error_type(
+        "model request failed",
+        response=MagicMock(status_code=status_code),
+        body=None,
+    )
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
+        pytest.raises(sdk_error_type) as exc_info,
+    ):
+        mock_create.side_effect = sdk_error
+        llm.invoke([HumanMessage(content="test")])
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_anthropic_transport_error_classification() -> None:
+    """Timeout and connection failures are classified without a status code."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+
+    for sdk_error, model_error_type in (
+        (anthropic.APITimeoutError(request), ModelTimeoutError),
+        (anthropic.APIConnectionError(request=request), ModelConnectionError),
+    ):
+        with (  # noqa: PT012
+            patch.object(
+                llm._client.messages.with_raw_response, "create"
+            ) as mock_create,
+            pytest.raises(type(sdk_error)) as exc_info,
+        ):
+            mock_create.side_effect = sdk_error
+            llm.invoke([HumanMessage(content="test")])
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is True
+
+
 def test_context_overflow_error_invoke_sync() -> None:
     """Test context overflow error on invoke (sync)."""
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -3609,7 +4350,9 @@ async def test_context_overflow_error_invoke_async() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -3623,7 +4366,7 @@ def test_context_overflow_error_stream_sync() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -3637,7 +4380,9 @@ async def test_context_overflow_error_stream_async() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -3652,7 +4397,7 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(anthropic.BadRequestError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -3717,6 +4462,49 @@ def test_bind_tools_drops_forced_tool_choice_when_thinking_enabled() -> None:
         )
     assert "tool_choice" not in cast("RunnableBinding", result).kwargs
     assert len(w) == 1
+
+
+@pytest.mark.parametrize(
+    "thinking",
+    [
+        pytest.param({"type": "enabled", "budget_tokens": 5000}, id="enabled"),
+        pytest.param({"type": "adaptive"}, id="adaptive"),
+    ],
+)
+def test_bind_tools_drops_forced_choice_for_filtered_tool_when_thinking_enabled(
+    thinking: dict[str, Any],
+) -> None:
+    """Thinking takes precedence over forced-choice validation.
+
+    Thinking discards a forced `tool_choice` before the request is sent, so the
+    choice need not survive filtering. A usable tool must remain, though --
+    otherwise the all-tools-dropped guard applies regardless of thinking.
+    """
+    chat_model = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking=thinking,
+    )
+    unsupported_tool = {
+        "name": "unsupported_tool",
+        "description": "A tool with an unsupported root schema composition.",
+        "input_schema": {"oneOf": [{"type": "string"}, {"type": "number"}]},
+    }
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools(
+            [_plain_tool("search"), unsupported_tool],
+            tool_choice="unsupported_tool",
+        )
+
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert [t["name"] for t in cast("RunnableBinding", result).kwargs["tools"]] == [
+        "search"
+    ]
+    assert len(w) == 2
+    assert "unsupported_tool" in str(w[0].message)
+    assert "thinking is enabled" in str(w[1].message)
 
 
 def test_bind_tools_drops_forced_tool_choice_when_adaptive_thinking() -> None:
@@ -4011,8 +4799,8 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
         thinking={"type": "enabled", "budget_tokens": 1024},
     )
 
-    def mock_create(_payload: Any) -> list:
-        return events
+    def mock_create(_payload: Any) -> Any:
+        return SimpleNamespace(parse=lambda: events)
 
     with patch.object(llm, "_create", mock_create):
         stream_events = list(llm.stream_events("Test query", version="v3"))
@@ -4133,3 +4921,163 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     llm = ChatAnthropic(model=MODEL_NAME)
     assert llm.anthropic_api_url == "https://api.anthropic.com"
     assert llm.anthropic_api_key.get_secret_value() == "provider-key"
+
+
+_MISSING_CREDENTIALS_TYPE_ERROR = TypeError(
+    "Could not resolve authentication method. Expected one of api_key, "
+    "auth_token, or credentials to be set. Or for one of the `X-Api-Key` or "
+    "`Authorization` headers to be explicitly omitted"
+)
+
+
+def _clear_auth_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_URL", raising=False)
+    monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
+
+
+def test_missing_credentials_error_sync(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Missing credentials raise a `TypeError` with LangChain guidance."""
+    _clear_auth_env(monkeypatch)
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
+        pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
+    ):
+        mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    assert exc_info.value.__cause__ is _MISSING_CREDENTIALS_TYPE_ERROR
+
+
+async def test_missing_credentials_error_async(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing credentials raise a `TypeError` with LangChain guidance (async)."""
+    _clear_auth_env(monkeypatch)
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
+        pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
+    ):
+        mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
+        await llm.ainvoke([HumanMessage(content="test")])
+
+    assert exc_info.value.__cause__ is _MISSING_CREDENTIALS_TYPE_ERROR
+
+
+def test_unrelated_type_error_propagates_unchanged() -> None:
+    """A `TypeError` not about authentication is re-raised as-is."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    unrelated_error = TypeError("some unrelated client error")
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
+        pytest.raises(TypeError) as exc_info,
+    ):
+        mock_create.side_effect = unrelated_error
+        llm.invoke([HumanMessage(content="test")])
+
+    assert exc_info.value is unrelated_error
+
+
+_CODE_EXECUTION_TOOL = [{"type": "code_execution_20250825", "name": "code_execution"}]
+_PPTX_SKILL = [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]
+
+
+def test_container_init_param() -> None:
+    """`container` set at construction is included in the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello, world!")], tools=_CODE_EXECUTION_TOOL
+    )
+    assert payload["container"] == {"skills": _PPTX_SKILL}
+
+
+def test_container_runtime_overrides_init() -> None:
+    """A call-time `container` takes precedence over the init value."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello, world!")],
+        tools=_CODE_EXECUTION_TOOL,
+        container="container_runtime",
+    )
+    assert payload["container"] == "container_runtime"
+
+
+def test_container_merged_with_reused_container() -> None:
+    """`reuse_last_container` supplies an ID without dropping other keys."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, container={"skills": _PPTX_SKILL}, reuse_last_container=True
+    )
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Now edit it."),
+    ]
+    payload = llm._get_request_payload(messages, tools=_CODE_EXECUTION_TOOL)
+    assert payload["container"] == {"id": "container_123", "skills": _PPTX_SKILL}
+
+
+def test_reuse_last_container_without_container_param() -> None:
+    """Without a `container`, a reused container is passed as a bare ID."""
+    llm = ChatAnthropic(model=MODEL_NAME, reuse_last_container=True)
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Again."),
+    ]
+    payload = llm._get_request_payload(messages, tools=_CODE_EXECUTION_TOOL)
+    assert payload["container"] == "container_123"
+
+
+def test_reuse_last_container_does_not_override_explicit_id() -> None:
+    """An explicitly passed container ID wins over `reuse_last_container`."""
+    llm = ChatAnthropic(model=MODEL_NAME, reuse_last_container=True)
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Again."),
+    ]
+    payload = llm._get_request_payload(
+        messages, tools=_CODE_EXECUTION_TOOL, container="container_explicit"
+    )
+    assert payload["container"] == "container_explicit"
+
+
+def test_container_absent_by_default() -> None:
+    """When unset, `container` is stripped from the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "container" not in payload
+
+
+def test_skills_without_code_execution_tool_warns() -> None:
+    """Skills are inert without a code execution tool, so warn."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    with pytest.warns(UserWarning, match="code execution tool"):
+        llm._get_request_payload([HumanMessage("Hello, world!")])
+
+
+def test_thinking_display_updates_enables_beta() -> None:
+    """`display="updates"` auto-enables its beta, routing through beta.messages."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, thinking={"type": "adaptive", "display": "updates"}
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "thinking-display-updates-2026-08-18" in payload["betas"]
+
+
+def test_thinking_display_summarized_does_not_enable_beta() -> None:
+    """Other `display` values are generally available."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, thinking={"type": "adaptive", "display": "summarized"}
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "betas" not in payload

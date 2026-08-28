@@ -129,6 +129,18 @@ def test_check_package_version(
         # Other integer fields should still be summed (e.g., token counts)
         ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
         ({"count": 1}, {"count": 2}, {"count": 3}),
+        # Differing booleans must not silently coerce to `int` (e.g. `True + False`).
+        (
+            {"a": True},
+            {"a": False},
+            pytest.raises(
+                TypeError,
+                match=(
+                    "Additional kwargs key a already exists in left dict and value "
+                    r"has unsupported type .+bool.+."
+                ),
+            ),
+        ),
     ],
 )
 def test_merge_dicts(
@@ -436,6 +448,16 @@ def test_generation_chunk_addition_type_error() -> None:
             [{"no_index": "a"}],
             [{"no_index": "b"}],
             [{"no_index": "a"}, {"no_index": "b"}],
+        ),
+        # A string element whose text happens to contain the literal substring
+        # "index" must not be treated as index-keyed (it isn't a dict).
+        (
+            ["the index is here", {"index": 0, "reference_ids": ["a"]}],
+            [{"index": 0, "reference_ids": ["b"]}],
+            [
+                "the index is here",
+                {"index": 0, "reference_ids": ["a", "b"]},
+            ],
         ),
     ],
 )

@@ -87,6 +87,10 @@ from langchain_core.tracers._streaming import (
     _StreamingCallbackHandler,
     _V2StreamingCallbackHandler,
 )
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_RESPONSE_KEY,
+    _parse_gateway_metadata,
+)
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -109,6 +113,7 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
     if hasattr(error, "response"):
         response = error.response
         metadata: dict[str, Any] = {}
+        generation_info: dict[str, Any] = {}
         if hasattr(response, "json"):
             try:
                 metadata["body"] = response.json()
@@ -119,7 +124,11 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
                     metadata["body"] = None
         if hasattr(response, "headers"):
             try:
-                metadata["headers"] = dict(response.headers)
+                headers = response.headers
+                metadata["headers"] = dict(headers)
+                gateway_metadata = _parse_gateway_metadata(headers)
+                if gateway_metadata is not None:
+                    generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
             except Exception:
                 metadata["headers"] = None
         if hasattr(response, "status_code"):
@@ -127,7 +136,10 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
         if hasattr(error, "request_id"):
             metadata["request_id"] = error.request_id
         generations = [
-            ChatGeneration(message=AIMessage(content="", response_metadata=metadata))
+            ChatGeneration(
+                message=AIMessage(content="", response_metadata=metadata),
+                generation_info=generation_info or None,
+            )
         ]
     else:
         generations = []
@@ -737,7 +749,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             )
 
             params = self._get_invocation_params(stop=stop, **kwargs)
-            options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+            options = {
+                "stop": stop,
+                **{key: params[key] for key in kwargs if key in params},
+                **ls_structured_output_format_dict,
+            }
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
                 **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -866,7 +882,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+        options = {
+            "stop": stop,
+            **{key: params[key] for key in kwargs if key in params},
+            **ls_structured_output_format_dict,
+        }
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1001,7 +1021,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+        options = {
+            "stop": stop,
+            **{key: params[key] for key in kwargs if key in params},
+            **ls_structured_output_format_dict,
+        }
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1135,7 +1159,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         )
 
         params = self._get_invocation_params(stop=stop, **kwargs)
-        options = {"stop": stop, **kwargs, **ls_structured_output_format_dict}
+        options = {
+            "stop": stop,
+            **{key: params[key] for key in kwargs if key in params},
+            **ls_structured_output_format_dict,
+        }
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1872,9 +1900,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
-        check_cache = self.cache or self.cache is None
+        check_cache = self.cache is not False
         if check_cache:
-            if llm_cache:
+            if llm_cache is not None:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
                 normalized_messages = [
                     (
@@ -2016,7 +2044,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **result.llm_output,
                 **result.generations[0].message.response_metadata,
             }
-        if check_cache and llm_cache:
+        if check_cache and llm_cache is not None:
             llm_cache.update(prompt, llm_string, result.generations)
         return result
 
@@ -2031,9 +2059,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
-        check_cache = self.cache or self.cache is None
+        check_cache = self.cache is not False
         if check_cache:
-            if llm_cache:
+            if llm_cache is not None:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
                 normalized_messages = [
                     (
@@ -2173,7 +2201,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **result.llm_output,
                 **result.generations[0].message.response_metadata,
             }
-        if check_cache and llm_cache:
+        if check_cache and llm_cache is not None:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
 
@@ -2677,8 +2705,17 @@ class SimpleChatModel(BaseChatModel):
 def _gen_info_and_msg_metadata(
     generation: ChatGeneration | ChatGenerationChunk,
 ) -> dict[str, Any]:
+    """Extract metadata for the response metadata.
+
+    Removes GATEWAY_METADATA from the generation info.
+    """
+    generation_info = generation.generation_info or {}
     return {
-        **(generation.generation_info or {}),
+        **{
+            key: value
+            for key, value in generation_info.items()
+            if key != GATEWAY_METADATA_RESPONSE_KEY
+        },
         **generation.message.response_metadata,
     }
 
