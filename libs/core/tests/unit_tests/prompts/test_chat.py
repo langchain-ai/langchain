@@ -28,6 +28,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message_template,
 )
+from langchain_core.prompts.dict import DictPromptTemplate
 from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
@@ -2004,3 +2005,15 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
     )
     result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
     assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]
+
+
+async def test_multimodal_dict_prompt_template_aformat(mocker: Any) -> None:
+    """Test that DictPromptTemplate.aformat is called on async format paths."""
+    spy = mocker.spy(DictPromptTemplate, "aformat")
+    tmpl = ChatPromptTemplate.from_messages(
+        [("human", [{"type": "text", "text": "{q}"}, {"my_field": "{q}"}])]
+    )
+    messages = await tmpl.aformat_messages(q="hi")
+    assert messages[0].content == [{"type": "text", "text": "hi"}, {"my_field": "hi"}]
+    spy.assert_called_once()
+
