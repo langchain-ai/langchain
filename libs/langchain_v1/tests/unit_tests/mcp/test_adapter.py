@@ -10,6 +10,7 @@ from unittest.mock import ANY
 
 import pytest
 from fastmcp import Client, FastMCP
+from fastmcp.client.group import ClientGroup
 from fastmcp.client.transports import (
     FastMCPTransport,
     PythonStdioTransport,
@@ -21,6 +22,18 @@ from langchain_core.messages import ToolMessage
 from langchain.agents import create_agent
 from langchain.mcp import MCPAdapter
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+
+def _transport(adapter: MCPAdapter) -> Any:
+    """Return the transport of an adapter holding a single client.
+
+    `MCPAdapter.client` may also be a `ClientGroup`, which has no one transport
+    because it has one per member. Narrowing here keeps that out of every
+    single-client assertion.
+    """
+    client = adapter.client
+    assert isinstance(client, Client)
+    return client.transport
 
 
 def _calculator() -> FastMCP[None]:
@@ -80,14 +93,14 @@ def test_target_inference_is_delegated_to_fastmcp(tmp_path: Path) -> None:
     script = tmp_path / "server.py"
     script.touch()
 
-    assert isinstance(MCPAdapter(script).client.transport, PythonStdioTransport)
-    assert isinstance(MCPAdapter(FastMCP("in-process")).client.transport, FastMCPTransport)
+    assert isinstance(_transport(MCPAdapter(script)), PythonStdioTransport)
+    assert isinstance(_transport(MCPAdapter(FastMCP("in-process"))), FastMCPTransport)
 
 
 def test_url_strings_are_accepted() -> None:
     """The reading a string target is meant to have still works."""
     for url in ("https://example.com/mcp", "http://localhost:2024/mcp"):
-        assert isinstance(MCPAdapter(url).client.transport, StreamableHttpTransport)
+        assert isinstance(_transport(MCPAdapter(url)), StreamableHttpTransport)
 
 
 def test_a_string_naming_a_local_script_is_refused(tmp_path: Path) -> None:
@@ -99,7 +112,7 @@ def test_a_string_naming_a_local_script_is_refused(tmp_path: Path) -> None:
         MCPAdapter(str(script))
 
     # The same server, asked for explicitly, is still reachable.
-    assert isinstance(MCPAdapter(script).client.transport, PythonStdioTransport)
+    assert isinstance(_transport(MCPAdapter(script)), PythonStdioTransport)
 
 
 @pytest.mark.parametrize(
@@ -166,7 +179,7 @@ def test_one_adapter_can_serve_several_servers() -> None:
         }
     )
 
-    transport = adapter.client.transport
+    transport = _transport(adapter)
     assert isinstance(transport, MCPConfigTransport)
     assert sorted(transport.config.mcpServers) == ["notes", "web"]
     # FastMCP prefixes each backend's tools with its config key, so two servers
@@ -382,3 +395,163 @@ async def test_tools_from_both_protocol_eras_combine_into_one_agent() -> None:
         _tool_text(message) for message in result["messages"] if isinstance(message, ToolMessage)
     }
     assert answered == {"old", "-7"}
+
+
+@pytest.mark.asyncio
+async def test_a_client_group_namespaces_its_servers_and_routes_calls() -> None:
+    """A group's tools carry `{server}_{tool}` names and reach the right server.
+
+    Both members expose the identical `whoami` tool, so routing is only correct
+    if each namespaced name reaches the server that advertised it.
+    """
+    group = ClientGroup(
+        {
+            "old": Client(_self_identifying_server("old"), mode="legacy"),
+            "new": Client(_self_identifying_server("new"), mode="auto"),
+        }
+    )
+
+    async with MCPAdapter(group) as adapter:
+        tools = await adapter.get_tools()
+        by_name = {tool.name: tool for tool in tools}
+        assert sorted(by_name) == ["new_whoami", "old_whoami"]
+
+        answers = await asyncio.gather(
+            by_name["old_whoami"].ainvoke(
+                {"name": "old_whoami", "args": {}, "id": "c1", "type": "tool_call"}
+            ),
+            by_name["new_whoami"].ainvoke(
+                {"name": "new_whoami", "args": {}, "id": "c2", "type": "tool_call"}
+            ),
+        )
+        assert [_tool_text(message) for message in answers] == ["old", "new"]
+
+
+@pytest.mark.asyncio
+async def test_each_client_in_a_group_negotiates_its_own_protocol_era() -> None:
+    """Two servers on different protocol eras work through a single group.
+
+    This is the reason to prefer a group over a proxying `MCPConfig`, which
+    negotiates one era for every server behind it. Discovery and calling are
+    both exercised on each leg, since negotiating separately is only useful if
+    tools on both eras stay callable — and `initialize_result` is populated by
+    the handshake era alone, so it doubles as proof the eras really differ.
+    """
+    handshake_client: Client[Any] = Client(_self_identifying_server("old"), mode="legacy")
+    modern_client: Client[Any] = Client(_self_identifying_server("new"), mode="auto")
+    group = ClientGroup({"old": handshake_client, "new": modern_client})
+
+    async with MCPAdapter(group) as adapter:
+        tools = await adapter.get_tools()
+        by_name = {tool.name: tool for tool in tools}
+        assert sorted(by_name) == ["new_whoami", "old_whoami"]
+
+        assert handshake_client.protocol_version == _HANDSHAKE_ERA
+        assert modern_client.protocol_version == _MODERN_ERA
+        assert handshake_client.initialize_result is not None
+        assert modern_client.initialize_result is None
+
+        answers = await asyncio.gather(
+            by_name["old_whoami"].ainvoke(
+                {"name": "old_whoami", "args": {}, "id": "c1", "type": "tool_call"}
+            ),
+            by_name["new_whoami"].ainvoke(
+                {"name": "new_whoami", "args": {}, "id": "c2", "type": "tool_call"}
+            ),
+        )
+
+    # Each answer names its own server, so neither leg was served by the other.
+    assert [_tool_text(message) for message in answers] == ["old", "new"]
+
+
+@pytest.mark.asyncio
+async def test_group_tools_on_different_eras_combine_into_one_agent() -> None:
+    """One agent holds tools from both eras, reached through a single group."""
+    group = ClientGroup(
+        {
+            "old": Client(_self_identifying_server("old"), mode="legacy"),
+            "new": Client(_arithmetic_server("new"), mode="auto"),
+        }
+    )
+
+    async with MCPAdapter(group) as adapter:
+        tools = await adapter.get_tools()
+
+        agent = create_agent(
+            FakeToolCallingModel(
+                tool_calls=[
+                    [{"name": "old_whoami", "args": {}, "id": "call-1"}],
+                    [{"name": "new_negate", "args": {"a": 7}, "id": "call-2"}],
+                    [],
+                ]
+            ),
+            tools,
+        )
+        result = await agent.ainvoke({"messages": [{"role": "user", "content": "Use both."}]})
+
+    answered = {
+        _tool_text(message) for message in result["messages"] if isinstance(message, ToolMessage)
+    }
+    assert answered == {"old", "-7"}
+
+
+@pytest.mark.asyncio
+async def test_get_tools_inside_a_group_adapters_context_does_not_re_enter() -> None:
+    """`ClientGroup` refuses re-entry, unlike a reference-counted `Client`.
+
+    Discovery inside the adapter's own context is the documented usage, so it
+    must not trip that refusal.
+    """
+    group = ClientGroup({"calc": Client(_calculator())})
+
+    async with MCPAdapter(group) as adapter:
+        first = await adapter.get_tools()
+        # A second pass re-lists while still connected, the shape a caller
+        # refreshing a catalog would hit.
+        second = await adapter.get_tools()
+
+    assert [tool.name for tool in first] == [tool.name for tool in second] == ["calc_add"]
+
+
+@pytest.mark.asyncio
+async def test_group_tools_stay_callable_after_the_adapter_context_exits() -> None:
+    """A group's tools reconnect on demand, as a single client's tools do."""
+    group = ClientGroup({"calc": Client(_calculator())})
+
+    async with MCPAdapter(group) as adapter:
+        [tool] = await adapter.get_tools()
+
+    message = await tool.ainvoke(
+        {"name": "calc_add", "args": {"a": 2, "b": 3}, "id": "c1", "type": "tool_call"}
+    )
+
+    assert _tool_text(message) == "5"
+
+
+@pytest.mark.asyncio
+async def test_group_tools_are_discoverable_without_any_adapter_context() -> None:
+    """`get_tools()` connects the group itself when nobody else has."""
+    group = ClientGroup({"calc": Client(_calculator())})
+
+    tools = await MCPAdapter(group).get_tools()
+
+    assert [tool.name for tool in tools] == ["calc_add"]
+
+
+def test_a_group_is_used_as_is_without_elicitation() -> None:
+    group = ClientGroup({"calc": Client(_calculator())})
+
+    assert MCPAdapter(group).client is group
+
+
+def test_interrupt_mode_clones_a_group_rather_than_arming_the_callers_clients() -> None:
+    """Declaring elicitation is a wire promise, so it must not leak outward."""
+    member: Client[Any] = Client(_calculator())
+    group = ClientGroup({"calc": member})
+
+    adapted = MCPAdapter(group, elicitation="interrupt").client
+
+    assert isinstance(adapted, ClientGroup)
+    assert adapted is not group
+    assert sorted(adapted.clients) == ["calc"]
+    assert adapted.clients["calc"] is not member
