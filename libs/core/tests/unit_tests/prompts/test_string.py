@@ -88,3 +88,8 @@ def test_f_string_templates_allow_safe_format_specs(
 ) -> None:
     assert get_template_variables(template, "f-string") == expected_variables
     assert formatter.format(template, **kwargs) == expected_output
+
+
+def test_check_valid_template_mustache() -> None:
+    check_valid_template("Hello {{name}}", "mustache", ["name"])
+    check_valid_template("Hello {{user.name}}", "mustache", ["user"])

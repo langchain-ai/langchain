@@ -48,7 +48,7 @@ class StrictFormatter(Formatter):
         return super().vformat(format_string, args, kwargs)
 
     def validate_input_variables(
-        self, format_string: str, input_variables: list[str]
+        self, format_string: str, input_variables: Sequence[str]
     ) -> None:
         """Validate that input variables match the placeholders in a format string.
 
@@ -59,7 +59,7 @@ class StrictFormatter(Formatter):
         Args:
             format_string: A string containing replacement fields to validate
                 against (e.g., `'Hello, {name}!'`).
-            input_variables: List of variable names expected to fill the
+            input_variables: Sequence of variable names expected to fill the
                 replacement fields.
 
         Raises:

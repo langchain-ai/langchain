@@ -207,6 +207,31 @@ def _create_model_recursive(name: str, defs: Defs) -> type[BaseModel]:
     )
 
 
+def validate_mustache(template: str, input_variables: list[str]) -> None:
+    """Validate that the input variables are valid for the mustache template.
+
+    Issues a warning if missing or extra variables are found.
+
+    Args:
+        template: The template string.
+        input_variables: The input variables.
+    """
+    input_variables_set = set(input_variables)
+    valid_variables = mustache_template_vars(template)
+    missing_variables = valid_variables - input_variables_set
+    extra_variables = input_variables_set - valid_variables
+
+    warning_message = ""
+    if missing_variables:
+        warning_message += f"Missing variables: {missing_variables} "
+
+    if extra_variables:
+        warning_message += f"Extra variables: {extra_variables}"
+
+    if warning_message:
+        warnings.warn(warning_message.strip(), stacklevel=7)
+
+
 DEFAULT_FORMATTER_MAPPING: dict[str, Callable[..., str]] = {
     "f-string": formatter.format,
     "mustache": mustache_formatter,
@@ -215,6 +240,7 @@ DEFAULT_FORMATTER_MAPPING: dict[str, Callable[..., str]] = {
 
 DEFAULT_VALIDATOR_MAPPING: dict[str, Callable[[str, list[str]], None]] = {
     "f-string": formatter.validate_input_variables,
+    "mustache": validate_mustache,
     "jinja2": validate_jinja2,
 }
 
@@ -268,7 +294,7 @@ def check_valid_template(
         template: The template string.
         template_format: The template format.
 
-            Should be one of `'f-string'` or `'jinja2'`.
+            Should be one of `'f-string'`, `'mustache'`, or `'jinja2'`.
         input_variables: The input variables.
 
     Raises:
