@@ -68,8 +68,21 @@ def detect_email(content: str) -> list[PIIMatch]:
     ]
 
 
+# Card numbers are 13-19 digits (ISO/IEC 7812), written either as a single run of
+# digits or split into groups by single spaces or hyphens. Networks group them
+# differently - Visa and Mastercard use 4-4-4-4, American Express 4-6-5 and Diners
+# Club 4-6-4 - so rather than encode one grouping, accept any of them and let the
+# Luhn checksum in `_passes_luhn` reject values that are not card numbers. Bounds
+# are enforced there via `_CARD_NUMBER_MIN_DIGITS` / `_CARD_NUMBER_MAX_DIGITS`.
+_CARD_NUMBER_PATTERN = re.compile(r"\b(?:\d{13,19}|\d{2,13}(?:[\s-]\d{2,13}){1,5})\b")
+
+
 def detect_credit_card(content: str) -> list[PIIMatch]:
     """Detect credit card numbers in content using Luhn validation.
+
+    Detects card numbers between `_CARD_NUMBER_MIN_DIGITS` and
+    `_CARD_NUMBER_MAX_DIGITS` digits long, in the groupings used by the major card
+    networks, and validates every candidate with the Luhn checksum.
 
     Args:
         content: The text content to scan for credit card numbers.
@@ -77,10 +90,9 @@ def detect_credit_card(content: str) -> list[PIIMatch]:
     Returns:
         A list of detected credit card matches.
     """
-    pattern = r"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b"
     matches = []
 
-    for match in re.finditer(pattern, content):
+    for match in _CARD_NUMBER_PATTERN.finditer(content):
         card_number = match.group()
         if _passes_luhn(card_number):
             matches.append(
@@ -248,6 +260,34 @@ _UNMASKED_CHAR_NUMBER = 4
 _IPV4_PARTS_NUMBER = 4
 
 
+def _mask_card_number(value: str) -> str:
+    """Mask every digit of a card number except the last four.
+
+    Separator characters and the overall length are preserved so the masked value
+    keeps the shape of the original. Card numbers range from 13 to 19 digits with
+    network-specific groupings, so a fixed 4-4-4-4 template would misreport the
+    length of, for example, a 15-digit American Express number.
+
+    Args:
+        value: The card number as it appeared in the content, including any
+            spaces or hyphens used to group the digits.
+
+    Returns:
+        The card number with all but its final four digits replaced by `*`.
+    """
+    digit_count = sum(1 for char in value if char.isdigit())
+    first_unmasked = digit_count - _UNMASKED_CHAR_NUMBER
+    digits_seen = 0
+    chars: list[str] = []
+    for char in value:
+        if not char.isdigit():
+            chars.append(char)
+            continue
+        chars.append(char if digits_seen >= first_unmasked else "*")
+        digits_seen += 1
+    return "".join(chars)
+
+
 def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
     result = content
     for match in sorted(matches, key=operator.itemgetter("start"), reverse=True):
@@ -265,15 +305,7 @@ def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
             else:
                 masked = "****"
         elif pii_type == "credit_card":
-            digits_only = "".join(c for c in value if c.isdigit())
-            separator = "-" if "-" in value else " " if " " in value else ""
-            if separator:
-                masked = (
-                    f"****{separator}****{separator}****{separator}"
-                    f"{digits_only[-_UNMASKED_CHAR_NUMBER:]}"
-                )
-            else:
-                masked = f"************{digits_only[-_UNMASKED_CHAR_NUMBER:]}"
+            masked = _mask_card_number(value)
         elif pii_type == "ip":
             octets = value.split(".")
             masked = f"*.*.*.{octets[-1]}" if len(octets) == _IPV4_PARTS_NUMBER else "****"

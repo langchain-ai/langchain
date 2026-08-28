@@ -28,7 +28,12 @@ from langchain.agents import AgentState
 from langchain.agents import middleware as middleware_package
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware import PIIMatch as PublicPIIMatch
-from langchain.agents.middleware._redaction import RedactionRule
+from langchain.agents.middleware._redaction import (
+    _CARD_NUMBER_MAX_DIGITS,
+    _CARD_NUMBER_MIN_DIGITS,
+    RedactionRule,
+    _passes_luhn,
+)
 from langchain.agents.middleware.pii import (
     PIIDetectionError,
     PIIMatch,
@@ -135,6 +140,166 @@ class TestCreditCardDetection:
         content = "No cards here."
         matches = detect_credit_card(content)
         assert len(matches) == 0
+
+    @pytest.mark.parametrize(
+        "card",
+        [
+            "378282246310005",
+            "371449635398431",
+            "378734493671000",
+        ],
+    )
+    def test_detect_amex_15_digits(self, card: str) -> None:
+        """American Express numbers are 15 digits, not 16."""
+        matches = detect_credit_card(f"my card is {card} thanks")
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == card
+
+    @pytest.mark.parametrize(
+        "card",
+        [
+            "3782 822463 10005",
+            "3782-822463-10005",
+        ],
+    )
+    def test_detect_amex_in_native_grouping(self, card: str) -> None:
+        """Amex is grouped 4-6-5 rather than the 4-4-4-4 used by Visa."""
+        matches = detect_credit_card(f"my card is {card} thanks")
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == card
+
+    @pytest.mark.parametrize(
+        "card",
+        [
+            "30569309025904",
+            "38520000023237",
+            "3056 930902 5904",
+            "3056-930902-5904",
+        ],
+    )
+    def test_detect_diners_club_14_digits(self, card: str) -> None:
+        """Diners Club numbers are 14 digits, grouped 4-6-4."""
+        matches = detect_credit_card(f"my card is {card} thanks")
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == card
+
+    def test_detect_13_digit_visa(self) -> None:
+        """Legacy Visa numbers are 13 digits."""
+        matches = detect_credit_card("my card is 4222222222222 thanks")
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "4222222222222"
+
+    @pytest.mark.parametrize(
+        "card",
+        [
+            "4307418529637",
+            "43074185296302",
+            "430741852963072",
+            "4307418529630747",
+            "43074185296307416",
+            "430741852963074189",
+            "4307418529630741857",
+        ],
+    )
+    def test_detect_every_length_in_supported_range(self, card: str) -> None:
+        """Every length the Luhn check accepts must also be matched."""
+        assert _CARD_NUMBER_MIN_DIGITS <= len(card) <= _CARD_NUMBER_MAX_DIGITS
+        assert _passes_luhn(card)
+
+        matches = detect_credit_card(f"Card: {card}")
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == card
+
+    @pytest.mark.parametrize(
+        "number",
+        [
+            "430741852965",
+            "43074185296307418520",
+        ],
+    )
+    def test_lengths_outside_supported_range_not_detected(self, number: str) -> None:
+        """Digit runs shorter or longer than a card number are ignored.
+
+        Both values satisfy the Luhn checksum, so only the length bound keeps
+        them out.
+        """
+        assert not (_CARD_NUMBER_MIN_DIGITS <= len(number) <= _CARD_NUMBER_MAX_DIGITS)
+
+        assert detect_credit_card(f"Card: {number}") == []
+
+    def test_detector_range_matches_luhn_range(self) -> None:
+        """The pattern and the Luhn length bounds must not drift apart.
+
+        `_passes_luhn` accepts 13-19 digits. A pattern that only matches one
+        specific length silently turns the rest of that range into dead code, and
+        a card that is never matched is a card that is never redacted.
+        """
+        detected_lengths = {
+            len(matches[0]["value"])
+            for card in (
+                "4307418529637",
+                "43074185296302",
+                "430741852963072",
+                "4307418529630747",
+                "43074185296307416",
+                "430741852963074189",
+                "4307418529630741857",
+            )
+            if (matches := detect_credit_card(f"Card: {card}"))
+        }
+
+        assert detected_lengths == set(range(_CARD_NUMBER_MIN_DIGITS, _CARD_NUMBER_MAX_DIGITS + 1))
+
+    def test_reported_cards_from_issue_33924(self) -> None:
+        """Regression test for the numbers reported in #33924.
+
+        Every value below is a published test card number that satisfies the Luhn
+        checksum; the 15- and 14-digit ones were previously missed entirely.
+        """
+        cards = [
+            "378282246310005",
+            "371449635398431",
+            "378734493671000",
+            "5610591081018250",
+            "30569309025904",
+            "38520000023237",
+            "6011111111111117",
+            "6011000990139424",
+            "3530111333300000",
+            "3566002020360505",
+            "5555555555554444",
+            "5105105105105100",
+            "4111111111111111",
+            "4012888888881881",
+            "4222222222222",
+        ]
+
+        undetected = [card for card in cards if not detect_credit_card(f"my card number is {card}")]
+
+        assert undetected == []
+
+    def test_multiple_cards_of_mixed_lengths(self) -> None:
+        content = "primary 4111111111111111, backup 378282246310005"
+        matches = detect_credit_card(content)
+
+        assert [match["value"] for match in matches] == [
+            "4111111111111111",
+            "378282246310005",
+        ]
+
+    def test_match_offsets_are_exact(self) -> None:
+        """`start`/`end` must slice the card back out of the content."""
+        content = "card is 3782 822463 10005 ok"
+        matches = detect_credit_card(content)
+
+        assert len(matches) == 1
+        match = matches[0]
+        assert content[match["start"] : match["end"]] == match["value"]
 
 
 class TestIPDetection:
@@ -319,6 +484,48 @@ class TestMaskStrategy:
         content = result["messages"][0].content
         assert "0366" in content  # Last 4 digits visible
         assert "4532015112830366" not in content
+
+    def test_mask_credit_card_preserves_length(self) -> None:
+        """A 15-digit Amex must not be masked as though it had 16 digits."""
+        middleware = PIIMiddleware("credit_card", strategy="mask")
+        state = AgentState[Any](messages=[HumanMessage("Card: 378282246310005")])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert "Card: ***********0005" in content
+        assert "378282246310005" not in content
+
+    def test_mask_credit_card_preserves_grouping(self) -> None:
+        """Separator positions survive masking so the shape stays recognizable."""
+        middleware = PIIMiddleware("credit_card", strategy="mask")
+        state = AgentState[Any](messages=[HumanMessage("Card: 3782-822463-10005")])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert "Card: ****-******-*0005" in content
+        assert "3782-822463-10005" not in content
+
+    @pytest.mark.parametrize(
+        ("card", "expected"),
+        [
+            ("4532015112830366", "************0366"),
+            ("5425 2334 3010 9903", "**** **** **** 9903"),
+            ("4532-0151-1283-0366", "****-****-****-0366"),
+        ],
+    )
+    def test_mask_credit_card_16_digit_output_unchanged(self, card: str, expected: str) -> None:
+        """16-digit masking output is unchanged from the previous behavior."""
+        middleware = PIIMiddleware("credit_card", strategy="mask")
+        state = AgentState[Any](messages=[HumanMessage(f"Card: {card}")])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        assert f"Card: {expected}" in result["messages"][0].content
 
     def test_mask_ip(self) -> None:
         middleware = PIIMiddleware("ip", strategy="mask")
