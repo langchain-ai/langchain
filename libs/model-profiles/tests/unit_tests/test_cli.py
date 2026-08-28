@@ -468,3 +468,48 @@ class TestWarnUndeclaredProfileKeys:
             side_effect=TypeError("broken"),
         ):
             _warn_undeclared_profile_keys(profiles)
+
+
+def test_refresh_preserves_string_literals_containing_json_keywords(
+    tmp_path: Path,
+) -> None:
+    """Test that strings containing 'true', 'false', 'null' substrings are preserved."""
+    import runpy
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    payload = {
+        "anthropic": {
+            "id": "anthropic",
+            "name": "Anthropic",
+            "models": {
+                "null-model": {
+                    "id": "null-model",
+                    "name": "true false null",
+                    "tool_call": True,
+                    "limit": {"context": 200000, "output": 4096},
+                    "modalities": {"input": ["text"], "output": ["text"]},
+                }
+            },
+        }
+    }
+
+    mock_response = Mock()
+    mock_response.json.return_value = payload
+    mock_response.raise_for_status = Mock()
+
+    with (
+        patch("langchain_model_profiles.cli.httpx.get", return_value=mock_response),
+        patch("builtins.input", return_value="y"),
+    ):
+        refresh("anthropic", data_dir)
+
+    profiles_file = data_dir / "_profiles.py"
+    assert profiles_file.exists()
+
+    profiles = runpy.run_path(str(profiles_file))["_PROFILES"]
+    assert "null-model" in profiles
+    assert profiles["null-model"]["name"] == "true false null"
+    assert profiles["null-model"]["tool_calling"] is True
+

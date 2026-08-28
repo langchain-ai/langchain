@@ -1,10 +1,12 @@
 """CLI for refreshing model profile data from models.dev."""
 
 import argparse
+import io
 import json
 import re
 import sys
 import tempfile
+import tokenize
 import warnings
 from pathlib import Path
 from typing import Any, get_type_hints
@@ -258,6 +260,26 @@ https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-p
 """
 
 
+def _convert_json_literals_to_python(json_str: str) -> str:
+    """Convert unquoted JSON literal tokens (true, false, null) to Python literals.
+
+    Uses `tokenize` to ensure that string literals containing 'true', 'false',
+    or 'null' are preserved without corruption.
+    """
+    tokens = []
+    mapping = {"true": "True", "false": "False", "null": "None"}
+    for tok in tokenize.generate_tokens(io.StringIO(json_str).readline):
+        if tok.type == tokenize.NAME and tok.string in mapping:
+            tokens.append(
+                tokenize.TokenInfo(
+                    tok.type, mapping[tok.string], tok.start, tok.end, tok.line
+                )
+            )
+        else:
+            tokens.append(tok)
+    return tokenize.untokenize(tokens)
+
+
 def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     """Download and merge model profile data for a specific provider.
 
@@ -359,11 +381,7 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     module_content = [f'"""{MODULE_ADMONITION}"""\n\n', "from typing import Any\n\n"]
     module_content.append("_PROFILES: dict[str, dict[str, Any]] = ")
     json_str = json.dumps(dict(sorted(profiles.items())), indent=4)
-    json_str = (
-        json_str.replace("true", "True")
-        .replace("false", "False")
-        .replace("null", "None")
-    )
+    json_str = _convert_json_literals_to_python(json_str)
     # Add trailing commas for ruff format compliance
     json_str = re.sub(r"([^\s,{\[])(?=\n\s*[\}\]])", r"\1,", json_str)
     module_content.append(f"{json_str}\n")
