@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import sys
-from typing import TYPE_CHECKING, Any
+from pathlib import Path
+from typing import Any
 from unittest.mock import ANY
 
 import pytest
@@ -12,6 +13,7 @@ from fastmcp import Client, FastMCP
 from fastmcp.client.transports import (
     FastMCPTransport,
     PythonStdioTransport,
+    StreamableHttpTransport,
 )
 from fastmcp.client.transports.config import MCPConfigTransport
 from langchain_core.messages import ToolMessage
@@ -19,9 +21,6 @@ from langchain_core.messages import ToolMessage
 from langchain.agents import create_agent
 from langchain.mcp import MCPAdapter
 from tests.unit_tests.agents.model import FakeToolCallingModel
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 def _calculator() -> FastMCP[None]:
@@ -77,12 +76,83 @@ async def test_tools_stay_callable_after_the_adapter_context_exits() -> None:
 
 
 def test_target_inference_is_delegated_to_fastmcp(tmp_path: Path) -> None:
-    """Targets FastMCP understands are accepted without adapter-side gatekeeping."""
+    """Non-string targets FastMCP understands pass through without gatekeeping."""
     script = tmp_path / "server.py"
     script.touch()
 
     assert isinstance(MCPAdapter(script).client.transport, PythonStdioTransport)
     assert isinstance(MCPAdapter(FastMCP("in-process")).client.transport, FastMCPTransport)
+
+
+def test_url_strings_are_accepted() -> None:
+    """The reading a string target is meant to have still works."""
+    for url in ("https://example.com/mcp", "http://localhost:2024/mcp"):
+        assert isinstance(MCPAdapter(url).client.transport, StreamableHttpTransport)
+
+
+def test_a_string_naming_a_local_script_is_refused(tmp_path: Path) -> None:
+    """A string must not select subprocess execution just by existing on disk."""
+    script = tmp_path / "server.py"
+    script.touch()
+
+    with pytest.raises(ValueError, match="not a valid URL"):
+        MCPAdapter(str(script))
+
+    # The same server, asked for explicitly, is still reachable.
+    assert isinstance(MCPAdapter(script).client.transport, PythonStdioTransport)
+
+
+@pytest.mark.parametrize(
+    "target",
+    [
+        "server.py",
+        "./server.js",
+        "/usr/local/bin/server.py",
+        "example.com/mcp",
+        "",
+    ],
+)
+def test_strings_that_are_not_urls_are_refused(target: str) -> None:
+    with pytest.raises(ValueError, match="not a valid URL"):
+        MCPAdapter(target)
+
+
+@pytest.mark.parametrize(
+    ("target", "scheme"),
+    [
+        # `AnyUrl` reads the drive letter as a scheme and accepts this, while on
+        # Windows the path resolves and FastMCP launches it — so validating as a
+        # URL without pinning the scheme would still spawn a subprocess there.
+        (r"C:\Users\me\server.py", "c"),
+        # FastMCP cannot infer a transport from these either way. Refusing them
+        # by scheme only buys an error that names the problem.
+        ("file:///etc/passwd", "file"),
+        ("ws://example.com/mcp", "ws"),
+    ],
+)
+def test_strings_parsing_as_non_http_urls_are_refused(target: str, scheme: str) -> None:
+    with pytest.raises(ValueError, match=f"has scheme '{scheme}'"):
+        MCPAdapter(target)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="`:` is not legal in a Windows filename")
+def test_a_colon_in_a_filename_does_not_smuggle_a_path_past_url_parsing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The portable form of the drive-letter case, reachable on POSIX too.
+
+    A filename may contain a colon, so `AnyUrl` parses `a:b.py` as scheme `a`
+    and accepts it while FastMCP resolves the same string to a real file and
+    launches it. Pinning the scheme is what stands between those two readings,
+    so the file here genuinely exists on the path FastMCP would find.
+    """
+    (tmp_path / "a:b.py").touch()
+    monkeypatch.chdir(tmp_path)
+    assert Path("a:b.py").exists()
+
+    with pytest.raises(ValueError, match="has scheme 'a'"):
+        MCPAdapter("a:b.py")
 
 
 def test_one_adapter_can_serve_several_servers() -> None:
