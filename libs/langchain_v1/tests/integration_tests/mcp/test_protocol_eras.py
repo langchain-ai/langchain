@@ -136,11 +136,15 @@ async def test_a_handshake_era_backend_pulls_the_whole_fleet_onto_its_era() -> N
             }
         )
 
-        async with MCPAdapter(Client(transport)) as adapter:
+        client: Client[Any] = Client(transport)
+        async with MCPAdapter(client) as adapter:
             await adapter.get_tools()
 
             assert transport.legacy_only is True
-            assert adapter.client.protocol_version == _HANDSHAKE_ERA
+            # Read from the client this adapter was handed: `MCPAdapter.client`
+            # widens to `Client | ClientGroup`, and a group has one protocol
+            # version per member rather than one of its own.
+            assert client.protocol_version == _HANDSHAKE_ERA
 
 
 @pytest.mark.asyncio
