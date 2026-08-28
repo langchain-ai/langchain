@@ -7,10 +7,8 @@ package.
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict
 
-from fastmcp.client.group import ClientGroup
 from langchain_core.messages.content import (
     FileContentBlock,
     ImageContentBlock,
@@ -34,42 +32,8 @@ from mcp.types import (
 from langchain.mcp.elicitation import _call_tool_with_interrupts
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
-
     from fastmcp.client import Client
     from mcp.types import Tool
-
-
-MCPClient: TypeAlias = "Client[Any] | ClientGroup"
-"""A connection tools are called through.
-
-A `ClientGroup` keeps one client per server rather than composing them behind a
-proxy, so each negotiates its own protocol era and advertises its tools under a
-`{server}_{tool}` name.
-"""
-
-
-@asynccontextmanager
-async def _connected(client: MCPClient) -> AsyncIterator[None]:
-    """Hold `client` open for the body, entering it only if it is not already.
-
-    A `Client` context is reference counted, so entering one already held is
-    both safe and how tools stay callable after the adapter's own context
-    exits. A `ClientGroup` instead raises `RuntimeError` when re-entered, so
-    entering unconditionally would break the same nesting — `get_tools()` called
-    inside `async with MCPAdapter(...)`, and every tool call thereafter.
-
-    Readiness is judged by the group's clients rather than by the group, since
-    that is what its own operations require and it is what the public API
-    exposes.
-    """
-    if isinstance(client, ClientGroup) and all(
-        member.is_connected() for member in client.clients.values()
-    ):
-        yield
-        return
-    async with client:
-        yield
 
 
 class _ToolCallResult(Protocol):
@@ -225,15 +189,15 @@ def _tool_metadata(tool: Tool) -> dict[str, Any] | None:
 
 def convert_mcp_tool_to_langchain_tool(
     tool: Tool,
-    client: MCPClient,
+    client: Client[Any],
     *,
     elicitation: Literal["interrupt"] | None = None,
 ) -> BaseTool:
     """Convert one MCP tool into a LangChain tool.
 
-    The returned tool calls the MCP tool through `client` on every invocation,
-    opening the connection itself when one is not already held elsewhere. That
-    is what lets a tool outlive the context it was discovered in.
+    The returned tool calls the MCP tool through `client` on every invocation.
+    FastMCP clients are reentrant, so the tool can open the client itself
+    whether or not a connection is already held elsewhere.
 
     An MCP tool that runs and reports failure reaches the model as a
     `ToolMessage` with `status="error"`, carrying the server's own error
@@ -241,17 +205,14 @@ def convert_mcp_tool_to_langchain_tool(
     unconvertible content propagate instead, since a model cannot act on them.
 
     Args:
-        tool: An MCP tool, as returned by `fastmcp.Client.list_tools` or
-            `ClientGroup.list_tools`. A group reports each tool under its
-            `{server}_{tool}` name, which is also the name to call it by.
-        client: The FastMCP client, or `ClientGroup`, to call the tool through.
+        tool: An MCP tool, as returned by `fastmcp.Client.list_tools`.
+        client: The FastMCP client to call the tool through.
         elicitation: Pass `'interrupt'` to answer a server that needs input
             mid-call with a LangGraph `interrupt()`, so a human answers and the
             call resumes — see `langchain.mcp.elicitation`. Also requires
-            `client` to have been built with an `elicitation_handler` (every
-            member client, for a group), since FastMCP declares the capability
-            only then. By default the request is left to `client` and its own
-            handler, if it has one.
+            `client` to have been built with an `elicitation_handler`, since
+            FastMCP declares the capability only then. By default the request is
+            left to `client` and its own handler, if it has one.
 
     Returns:
         A LangChain tool that invokes the MCP tool asynchronously.
@@ -274,19 +235,9 @@ def convert_mcp_tool_to_langchain_tool(
     ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
         """Call the captured MCP tool and convert its result."""
         result: _ToolCallResult
-        async with _connected(client):
+        async with client:
             if elicitation == "interrupt":
-                if isinstance(client, ClientGroup):
-                    # The interrupt loop drives a session directly, which only a
-                    # single client has, and it speaks the server's own tool name
-                    # rather than the group's namespaced one. Resolving the route
-                    # yields both.
-                    route = await client.resolve_tool(tool.name)
-                    result = await _call_tool_with_interrupts(
-                        route.client, route.upstream_name, arguments
-                    )
-                else:
-                    result = await _call_tool_with_interrupts(client, tool.name, arguments)
+                result = await _call_tool_with_interrupts(client, tool.name, arguments)
             else:
                 # Preserve MCP error results for conversion into failed tool messages.
                 result = await client.call_tool(tool.name, arguments, raise_on_error=False)
@@ -306,4 +257,4 @@ def convert_mcp_tool_to_langchain_tool(
     )
 
 
-__all__ = ["MCPClient", "MCPToolArtifact", "convert_mcp_tool_to_langchain_tool"]
+__all__ = ["MCPToolArtifact", "convert_mcp_tool_to_langchain_tool"]
