@@ -484,12 +484,18 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                 yield server_tool_result
 
             else:
+                # Copy before popping `index`: `block` is the caller's own dict,
+                # still referenced by `message.content`. Popping from it would
+                # strip `index` out of the message itself, so a second read of
+                # `.content_blocks` would no longer see it. A shallow copy is
+                # enough because only the top-level `index` key is removed.
+                value = dict(block)
                 new_block: types.NonStandardContentBlock = {
                     "type": "non_standard",
-                    "value": block,
+                    "value": value,
                 }
-                if "index" in new_block["value"]:
-                    new_block["index"] = new_block["value"].pop("index")
+                if "index" in value:
+                    new_block["index"] = value.pop("index")
                 yield new_block
 
     return list(_iter_blocks())

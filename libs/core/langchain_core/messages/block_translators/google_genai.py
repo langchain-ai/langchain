@@ -505,7 +505,12 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     server_tool_result_block["extras"]["outcome"] = outcome
                 converted_blocks.append(server_tool_result_block)
             elif item_type == "text":
-                converted_blocks.append(cast("types.TextContentBlock", item))
+                # Copy: grounding citations are attached to the first text block
+                # further down by assigning `annotations`. Without a copy that
+                # assignment lands on the caller's own dict inside
+                # `message.content`, so merely reading `.content_blocks` would
+                # add an `annotations` key to the message.
+                converted_blocks.append(cast("types.TextContentBlock", dict(item)))
             else:
                 # Unknown type, preserve as non-standard
                 converted_blocks.append({"type": "non_standard", "value": item})

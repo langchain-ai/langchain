@@ -1,8 +1,11 @@
 """Tests for Google GenAI block translator."""
 
+from copy import deepcopy
 from typing import Any
 
-from langchain_core.messages import AIMessageChunk
+import pytest
+
+from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages.block_translators.google_genai import (
     translate_grounding_metadata_to_citations,
 )
@@ -331,3 +334,84 @@ def test_content_blocks_index_propagation_is_one_to_one() -> None:
 
     assert indices == [0, 1, 2]
     assert len(indices) == len(set(indices))
+
+
+_GROUNDING_METADATA = {
+    "grounding_chunks": [{"web": {"uri": "https://example.com", "title": "Example"}}],
+    "grounding_supports": [
+        {
+            "segment": {"start_index": 0, "end_index": 5},
+            "grounding_chunk_indices": [0],
+        }
+    ],
+}
+
+
+@pytest.mark.parametrize("provider", ["google_genai", "google_vertexai"])
+@pytest.mark.parametrize("message_class", [AIMessage, AIMessageChunk])
+def test_content_blocks_does_not_mutate_text_block(
+    provider: str, message_class: type[AIMessage]
+) -> None:
+    """Attaching grounding citations must not write into `message.content`.
+
+    The text branch passed the caller's dict straight through to the output, and
+    citations were then attached by assigning `annotations` onto it. That gave
+    `message.content` an `annotations` key it never had, purely as a side effect of
+    reading `.content_blocks`.
+
+    `google_vertexai` re-exports this translator unchanged, so both providers are
+    covered.
+    """
+    message = message_class(
+        content=[{"type": "text", "text": "hello"}],
+        response_metadata={
+            "model_provider": provider,
+            "grounding_metadata": _GROUNDING_METADATA,
+        },
+    )
+    original = deepcopy(message.content)
+
+    blocks = message.content_blocks
+
+    assert message.content == original
+    assert "annotations" not in message.content[0]
+
+    # The citations are still attached to the returned block.
+    assert blocks[0]["type"] == "text"
+    assert len(blocks[0]["annotations"]) == 1
+    assert blocks[0]["annotations"][0]["url"] == "https://example.com"
+
+
+def test_content_blocks_attaches_citations_to_first_text_block_only() -> None:
+    """Only the first text block is annotated, and neither original is modified."""
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "hello"},
+            {"type": "text", "text": "world"},
+        ],
+        response_metadata={
+            "model_provider": "google_genai",
+            "grounding_metadata": _GROUNDING_METADATA,
+        },
+    )
+    original = deepcopy(message.content)
+
+    blocks = message.content_blocks
+
+    assert message.content == original
+    assert "annotations" in blocks[0]
+    assert "annotations" not in blocks[1]
+
+
+def test_content_blocks_without_grounding_metadata_is_unchanged() -> None:
+    """No grounding metadata means no annotations and no mutation."""
+    message = AIMessage(
+        content=[{"type": "text", "text": "hello"}],
+        response_metadata={"model_provider": "google_genai"},
+    )
+    original = deepcopy(message.content)
+
+    blocks = message.content_blocks
+
+    assert message.content == original
+    assert "annotations" not in blocks[0]

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
@@ -572,3 +573,49 @@ def test_convert_to_v1_from_anthropic_malformed_citations() -> None:
             ],
         },
     ]
+
+
+def test_content_blocks_does_not_mutate_non_standard_block() -> None:
+    """Reading `.content_blocks` must leave `message.content` untouched.
+
+    The non-standard branch used to move `index` off the block with `pop`, but the
+    block it popped from was the caller's own dict, still referenced by
+    `message.content`. That stripped `index` out of the message as a side effect of
+    reading a property, so a second read no longer saw it.
+    """
+    message = AIMessage(
+        [
+            {"type": "text", "text": "hi"},
+            {"type": "custom", "payload": "value", "index": 3},
+        ],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    original = deepcopy(message.content)
+
+    first = message.content_blocks
+
+    assert message.content == original
+
+    # `index` is still lifted onto the standardized block ...
+    non_standard = first[-1]
+    assert non_standard["type"] == "non_standard"
+    assert non_standard["index"] == 3
+    # ... and removed from the copied value, not from the message.
+    assert non_standard["value"] == {"type": "custom", "payload": "value"}
+
+    # Reading again yields the same result rather than degrading.
+    assert message.content_blocks == first
+
+
+def test_content_blocks_chunk_does_not_mutate_non_standard_block() -> None:
+    """`AIMessageChunk` goes through the same non-standard branch."""
+    chunk = AIMessageChunk(
+        [{"type": "custom", "payload": "value", "index": 3}],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    original = deepcopy(chunk.content)
+
+    first = chunk.content_blocks
+
+    assert chunk.content == original
+    assert chunk.content_blocks == first

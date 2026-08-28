@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages import content as types
 
@@ -403,3 +405,33 @@ def test_convert_to_v1_from_bedrock_input() -> None:
     ]
 
     assert message.content_blocks == expected
+
+
+def test_content_blocks_does_not_mutate_non_standard_block() -> None:
+    """Bedrock reuses the Anthropic translator, so it inherited the same defect."""
+    message = AIMessage(
+        [{"type": "custom", "payload": "value", "index": 3}],
+        response_metadata={"model_provider": "bedrock"},
+    )
+    original = deepcopy(message.content)
+
+    first = message.content_blocks
+
+    assert message.content == original
+    assert message.content_blocks == first
+
+
+def test_content_blocks_chunk_does_not_mutate_non_standard_block() -> None:
+    chunk = AIMessageChunk(
+        [
+            {"type": "text", "text": "hi"},
+            {"type": "custom", "payload": "value", "index": 3},
+        ],
+        response_metadata={"model_provider": "bedrock"},
+    )
+    original = deepcopy(chunk.content)
+
+    first = chunk.content_blocks
+
+    assert chunk.content == original
+    assert chunk.content_blocks == first
