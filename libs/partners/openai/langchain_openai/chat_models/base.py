@@ -51,7 +51,17 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfileRegistry,
@@ -563,6 +573,40 @@ class OpenAIAPIContextOverflowError(openai.APIError, ContextOverflowError):
     """APIError raised when input exceeds OpenAI's context limit."""
 
 
+class OpenAIAuthenticationError(openai.AuthenticationError, ModelAuthenticationError):
+    """OpenAI authentication error classified as a LangChain model error."""
+
+
+class OpenAIPermissionDeniedError(
+    openai.PermissionDeniedError, ModelPermissionDeniedError
+):
+    """OpenAI permission error classified as a LangChain model error."""
+
+
+class OpenAIInvalidRequestError(openai.BadRequestError, ModelInvalidRequestError):
+    """OpenAI bad-request error classified as a LangChain model error."""
+
+
+class OpenAIModelNotFoundError(openai.NotFoundError, ModelNotFoundError):
+    """OpenAI not-found error classified as a LangChain model error."""
+
+
+class OpenAIRateLimitError(openai.RateLimitError, ModelRateLimitError):
+    """OpenAI rate-limit error classified as a LangChain model error."""
+
+
+class OpenAIAPIError(openai.InternalServerError, ModelAPIError):
+    """OpenAI server error classified as a LangChain model error."""
+
+
+class OpenAIConnectionError(openai.APIConnectionError, ModelConnectionError):
+    """OpenAI connection error classified as a LangChain model error."""
+
+
+class OpenAITimeoutError(openai.APITimeoutError, ModelTimeoutError):
+    """OpenAI timeout error classified as a LangChain model error."""
+
+
 def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     if (
         "context_length_exceeded" in str(e)
@@ -583,7 +627,9 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
             'specify `method="function_calling"`.'
         )
         warnings.warn(message)
-        raise e
+        raise OpenAIInvalidRequestError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
     if "Invalid schema for response_format" in e.message:
         message = (
             "Invalid schema for OpenAI's structured output feature, which is the "
@@ -593,8 +639,9 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
             "https://platform.openai.com/docs/guides/structured-outputs#supported-schemas"
         )
         warnings.warn(message)
-        raise e
-    raise
+    raise OpenAIInvalidRequestError(
+        message=e.message, response=e.response, body=e.body
+    ) from e
 
 
 def _handle_openai_api_error(e: openai.APIError) -> None:
@@ -603,6 +650,28 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
         raise OpenAIAPIContextOverflowError(
             message=e.message, request=e.request, body=e.body
         ) from e
+    if isinstance(e, openai.AuthenticationError):
+        raise OpenAIAuthenticationError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, openai.PermissionDeniedError):
+        raise OpenAIPermissionDeniedError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, openai.NotFoundError):
+        raise OpenAIModelNotFoundError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, openai.RateLimitError):
+        raise OpenAIRateLimitError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, openai.InternalServerError):
+        raise OpenAIAPIError(message=e.message, response=e.response, body=e.body) from e
+    if isinstance(e, openai.APITimeoutError):
+        raise OpenAITimeoutError(e.request) from e
+    if isinstance(e, openai.APIConnectionError):
+        raise OpenAIConnectionError(message=e.message, request=e.request) from e
     raise
 
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import os
 import warnings
 from collections.abc import Callable
@@ -14,7 +15,18 @@ import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -27,10 +39,12 @@ from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from pydantic import BaseModel, Field, RootModel, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
+from langchain_anthropic._sdk_compat import _unsupported_sampling_params
 from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
     _TOOL_CALL_ID_PATTERN,
@@ -44,10 +58,204 @@ from langchain_anthropic.chat_models import (
     _thinking_in_params,
     convert_to_anthropic_tool,
 )
+from tests.unit_tests._httpx_compat import httpx
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
 MODEL_NAME = "claude-sonnet-4-5-20250929"
+
+
+class _GatewayMetadataTracer(BaseTracer):
+    """Captures gateway metadata promoted onto completed LLM runs."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.gateway_metadata: dict[str, Any] | None = None
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op; runs are inspected as they complete."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        metadata = run.extra.get("metadata", {})
+        gateway_metadata = metadata.get("ls_gateway_info")
+        if isinstance(gateway_metadata, dict):
+            self.gateway_metadata = gateway_metadata
+
+
+_GATEWAY_METADATA = {"provider": "anthropic"}
+_MESSAGE_RESPONSE = {
+    "id": "msg_123",
+    "content": [{"type": "text", "text": "Bar Baz", "citations": None}],
+    "model": MODEL_NAME,
+    "role": "assistant",
+    "stop_reason": "end_turn",
+    "stop_sequence": None,
+    "usage": {"input_tokens": 2, "output_tokens": 1},
+    "type": "message",
+}
+_STREAM_EVENTS: list[dict[str, Any]] = [
+    {
+        "type": "message_start",
+        "message": {
+            **_MESSAGE_RESPONSE,
+            "content": [],
+            "stop_reason": None,
+            "usage": {"input_tokens": 2, "output_tokens": 0},
+        },
+    },
+    {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {"type": "text_delta", "text": "Bar Baz"},
+    },
+    {
+        "type": "message_delta",
+        "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+        "usage": {"input_tokens": 2, "output_tokens": 1},
+    },
+    {"type": "message_stop"},
+]
+
+
+def _gateway_handler(
+    expected_beta: str | None,
+) -> Callable[[Any], Any]:
+    # Annotated `Any`: the concrete request/response classes come from `httpx`
+    # or `httpx2` depending on the installed anthropic SDK.
+    def handler(request: Any) -> Any:
+        assert request.headers.get("anthropic-beta") == expected_beta
+        headers = {"x-langsmith-gateway-metadata": json.dumps(_GATEWAY_METADATA)}
+        if json.loads(request.content).get("stream"):
+            stream = "".join(
+                f"event: {event['type']}\ndata: {json.dumps(event)}\n\n"
+                for event in _STREAM_EVENTS
+            )
+            return httpx.Response(
+                200,
+                text=stream,
+                headers={**headers, "content-type": "text/event-stream"},
+            )
+        return httpx.Response(200, json=_MESSAGE_RESPONSE, headers=headers)
+
+    return handler
+
+
+def _sync_gateway_client(betas: list[str] | None) -> anthropic.Client:
+    return anthropic.Client(
+        api_key="lsv2_pt_example",
+        http_client=httpx.Client(
+            transport=httpx.MockTransport(
+                _gateway_handler(",".join(betas) if betas else None)
+            )
+        ),
+    )
+
+
+def _async_gateway_client(betas: list[str] | None) -> anthropic.AsyncClient:
+    return anthropic.AsyncClient(
+        api_key="lsv2_pt_example",
+        http_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                _gateway_handler(",".join(betas) if betas else None)
+            )
+        ),
+    )
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+def test_anthropic_invoke_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Gateway metadata header is surfaced on `generation_info`, not the message."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _sync_gateway_client(betas)
+    tracer = _GatewayMetadataTracer()
+    try:
+        with patch.object(llm, "_client", client):
+            result = llm.invoke("bar", config={"callbacks": [tracer]})
+    finally:
+        client.close()
+
+    assert tracer.gateway_metadata == _GATEWAY_METADATA
+    assert GATEWAY_METADATA_RESPONSE_KEY not in result.response_metadata
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+async def test_anthropic_ainvoke_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Async gateway responses surface metadata on `generation_info`."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _async_gateway_client(betas)
+    tracer = _GatewayMetadataTracer()
+    try:
+        with patch.object(llm, "_async_client", client):
+            result = await llm.ainvoke("bar", config={"callbacks": [tracer]})
+    finally:
+        await client.close()
+
+    assert tracer.gateway_metadata == _GATEWAY_METADATA
+    assert GATEWAY_METADATA_RESPONSE_KEY not in result.response_metadata
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+def test_anthropic_stream_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Gateway metadata is attached to the first streaming generation chunk."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _sync_gateway_client(betas)
+    try:
+        with patch.object(llm, "_client", client):
+            chunks = list(llm._stream([HumanMessage("bar")]))
+    finally:
+        client.close()
+
+    assert [chunk.generation_info for chunk in chunks] == [
+        {GATEWAY_METADATA_RESPONSE_KEY: _GATEWAY_METADATA},
+        None,
+        None,
+    ]
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+async def test_anthropic_astream_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Async gateway metadata is attached to the first streaming chunk."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _async_gateway_client(betas)
+    try:
+        with patch.object(llm, "_async_client", client):
+            chunks = [chunk async for chunk in llm._astream([HumanMessage("bar")])]
+    finally:
+        await client.close()
+
+    assert [chunk.generation_info for chunk in chunks] == [
+        {GATEWAY_METADATA_RESPONSE_KEY: _GATEWAY_METADATA},
+        None,
+        None,
+    ]
 
 
 def test_initialization() -> None:
@@ -1994,13 +2202,15 @@ def test_fine_grained_tool_streaming_beta() -> None:
         "fine-grained-tool-streaming-2025-05-14",
     }
 
-    # Test that _create routes to beta client when betas are present
+    # Test that _create routes to the beta raw-response client when betas are present
     model = ChatAnthropic(
         model=MODEL_NAME, betas=["fine-grained-tool-streaming-2025-05-14"]
     )
     payload = {"betas": ["fine-grained-tool-streaming-2025-05-14"], "stream": True}
 
-    with patch.object(model._client.beta.messages, "create") as mock_beta_create:
+    with patch.object(
+        model._client.beta.messages.with_raw_response, "create"
+    ) as mock_beta_create:
         model._create(payload)
         mock_beta_create.assert_called_once_with(**payload)
 
@@ -2298,6 +2508,24 @@ def test_mcp_tracing() -> None:
     # Test headers are correctly propagated to request
     payload = llm._get_request_payload([input_message])
     assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
+
+
+def test_sampling_params_reach_the_request_payload() -> None:
+    """`temperature`/`top_p`/`top_k` land wherever the installed SDK accepts them.
+
+    `anthropic>=1` dropped them as named arguments, so they are relocated to
+    `extra_body`; the resulting wire payload is the same on both majors.
+    """
+    llm = ChatAnthropic(model=MODEL_NAME, temperature=0, top_p=0.9, top_k=5)
+    payload = llm._get_request_payload([HumanMessage("foo")])
+
+    sampling = {"temperature": 0, "top_p": 0.9, "top_k": 5}
+    if _unsupported_sampling_params():
+        assert payload["extra_body"] == sampling
+        assert not sampling.keys() & payload.keys()
+    else:
+        assert {k: payload[k] for k in sampling} == sampling
+        assert "extra_body" not in payload
 
 
 def test_cache_control_kwarg() -> None:
@@ -3214,6 +3442,7 @@ def test_advisor_is_builtin_tool() -> None:
         **bound.kwargs,  # type: ignore[attr-defined]
     )
     assert advisor_tool in payload["tools"]
+    assert "advisor-tool-2026-03-01" in payload["betas"]
 
 
 def test_tool_search_beta_headers() -> None:
@@ -4042,12 +4271,72 @@ _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR = anthropic.BadRequestError(
 )
 
 
+@pytest.mark.parametrize(
+    ("status_code", "sdk_error_type", "model_error_type", "is_retryable"),
+    [
+        (400, anthropic.BadRequestError, ModelInvalidRequestError, False),
+        (401, anthropic.AuthenticationError, ModelAuthenticationError, False),
+        (403, anthropic.PermissionDeniedError, ModelPermissionDeniedError, False),
+        (404, anthropic.NotFoundError, ModelNotFoundError, False),
+        (429, anthropic.RateLimitError, ModelRateLimitError, True),
+        (500, anthropic.InternalServerError, ModelAPIError, True),
+        (529, anthropic.OverloadedError, ModelAPIError, True),
+    ],
+)
+def test_anthropic_error_classification(
+    status_code: int,
+    sdk_error_type: type[anthropic.APIStatusError],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Provider errors are raised as both the SDK type and the LangChain type."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    sdk_error = sdk_error_type(
+        "model request failed",
+        response=MagicMock(status_code=status_code),
+        body=None,
+    )
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
+        pytest.raises(sdk_error_type) as exc_info,
+    ):
+        mock_create.side_effect = sdk_error
+        llm.invoke([HumanMessage(content="test")])
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_anthropic_transport_error_classification() -> None:
+    """Timeout and connection failures are classified without a status code."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+
+    for sdk_error, model_error_type in (
+        (anthropic.APITimeoutError(request), ModelTimeoutError),
+        (anthropic.APIConnectionError(request=request), ModelConnectionError),
+    ):
+        with (  # noqa: PT012
+            patch.object(
+                llm._client.messages.with_raw_response, "create"
+            ) as mock_create,
+            pytest.raises(type(sdk_error)) as exc_info,
+        ):
+            mock_create.side_effect = sdk_error
+            llm.invoke([HumanMessage(content="test")])
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is True
+
+
 def test_context_overflow_error_invoke_sync() -> None:
     """Test context overflow error on invoke (sync)."""
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -4061,7 +4350,9 @@ async def test_context_overflow_error_invoke_async() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -4075,7 +4366,7 @@ def test_context_overflow_error_stream_sync() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -4089,7 +4380,9 @@ async def test_context_overflow_error_stream_async() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -4104,7 +4397,7 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(anthropic.BadRequestError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -4506,8 +4799,8 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
         thinking={"type": "enabled", "budget_tokens": 1024},
     )
 
-    def mock_create(_payload: Any) -> list:
-        return events
+    def mock_create(_payload: Any) -> Any:
+        return SimpleNamespace(parse=lambda: events)
 
     with patch.object(llm, "_create", mock_create):
         stream_events = list(llm.stream_events("Test query", version="v3"))
@@ -4651,7 +4944,7 @@ def test_missing_credentials_error_sync(monkeypatch: pytest.MonkeyPatch) -> None
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
     ):
         mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
@@ -4668,7 +4961,9 @@ async def test_missing_credentials_error_async(
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
         pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
     ):
         mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
@@ -4683,7 +4978,7 @@ def test_unrelated_type_error_propagates_unchanged() -> None:
     unrelated_error = TypeError("some unrelated client error")
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(TypeError) as exc_info,
     ):
         mock_create.side_effect = unrelated_error
@@ -4762,3 +5057,99 @@ def test_stream_usage_false_omits_usage_metadata_only() -> None:
 
     # The flag still governs usage metadata, and only usage metadata.
     assert delta_chunk.usage_metadata is None
+
+
+_CODE_EXECUTION_TOOL = [{"type": "code_execution_20250825", "name": "code_execution"}]
+_PPTX_SKILL = [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]
+
+
+def test_container_init_param() -> None:
+    """`container` set at construction is included in the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello, world!")], tools=_CODE_EXECUTION_TOOL
+    )
+    assert payload["container"] == {"skills": _PPTX_SKILL}
+
+
+def test_container_runtime_overrides_init() -> None:
+    """A call-time `container` takes precedence over the init value."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello, world!")],
+        tools=_CODE_EXECUTION_TOOL,
+        container="container_runtime",
+    )
+    assert payload["container"] == "container_runtime"
+
+
+def test_container_merged_with_reused_container() -> None:
+    """`reuse_last_container` supplies an ID without dropping other keys."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, container={"skills": _PPTX_SKILL}, reuse_last_container=True
+    )
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Now edit it."),
+    ]
+    payload = llm._get_request_payload(messages, tools=_CODE_EXECUTION_TOOL)
+    assert payload["container"] == {"id": "container_123", "skills": _PPTX_SKILL}
+
+
+def test_reuse_last_container_without_container_param() -> None:
+    """Without a `container`, a reused container is passed as a bare ID."""
+    llm = ChatAnthropic(model=MODEL_NAME, reuse_last_container=True)
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Again."),
+    ]
+    payload = llm._get_request_payload(messages, tools=_CODE_EXECUTION_TOOL)
+    assert payload["container"] == "container_123"
+
+
+def test_reuse_last_container_does_not_override_explicit_id() -> None:
+    """An explicitly passed container ID wins over `reuse_last_container`."""
+    llm = ChatAnthropic(model=MODEL_NAME, reuse_last_container=True)
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Again."),
+    ]
+    payload = llm._get_request_payload(
+        messages, tools=_CODE_EXECUTION_TOOL, container="container_explicit"
+    )
+    assert payload["container"] == "container_explicit"
+
+
+def test_container_absent_by_default() -> None:
+    """When unset, `container` is stripped from the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "container" not in payload
+
+
+def test_skills_without_code_execution_tool_warns() -> None:
+    """Skills are inert without a code execution tool, so warn."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    with pytest.warns(UserWarning, match="code execution tool"):
+        llm._get_request_payload([HumanMessage("Hello, world!")])
+
+
+def test_thinking_display_updates_enables_beta() -> None:
+    """`display="updates"` auto-enables its beta, routing through beta.messages."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, thinking={"type": "adaptive", "display": "updates"}
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "thinking-display-updates-2026-08-18" in payload["betas"]
+
+
+def test_thinking_display_summarized_does_not_enable_beta() -> None:
+    """Other `display` values are generally available."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, thinking={"type": "adaptive", "display": "summarized"}
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "betas" not in payload

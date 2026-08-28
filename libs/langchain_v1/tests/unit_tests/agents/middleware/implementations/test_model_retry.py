@@ -6,6 +6,10 @@ from typing import Any
 
 import pytest
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.exceptions import (
+    ModelAuthenticationError,
+    ModelRateLimitError,
+)
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.checkpoint.memory import InMemorySaver
@@ -68,6 +72,7 @@ class AlwaysFailingModel(FakeToolCallingModel):
 
     error_message: str = Field(default="Model error")
     error_type: type[Exception] = Field(default=ValueError)
+    attempts: int = Field(default=0)
 
     @override
     def _generate(
@@ -88,6 +93,7 @@ class AlwaysFailingModel(FakeToolCallingModel):
         Raises:
             Exception: Always raises the configured exception.
         """
+        self.attempts += 1
         raise self.error_type(self.error_message)
 
 
@@ -319,6 +325,67 @@ def test_model_retry_non_retryable_exception_reraises() -> None:
             {"messages": [HumanMessage("Hello")]},
             {"configurable": {"thread_id": "test"}},
         )
+
+
+@pytest.mark.parametrize(
+    "error_type",
+    [
+        # Retryable model errors use the full retry budget.
+        ModelRateLimitError,
+        # Exceptions the taxonomy does not classify keep retrying as before.
+        ValueError,
+    ],
+)
+def test_model_retry_retries_retryable_errors(error_type: type[Exception]) -> None:
+    """The default `retry_on` retries anything not marked non-retryable."""
+    model = AlwaysFailingModel(error_message="boom", error_type=error_type)
+    retry = ModelRetryMiddleware(
+        max_retries=2,
+        initial_delay=0,
+        jitter=False,
+        on_failure="continue",
+    )
+    agent = create_agent(
+        model=model,
+        tools=[],
+        middleware=[retry],
+        checkpointer=InMemorySaver(),
+    )
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Hello")]},
+        {"configurable": {"thread_id": "test"}},
+    )
+
+    assert model.attempts == 3
+    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
+    assert "3 attempts" in ai_messages[-1].content
+
+
+def test_model_retry_reraises_non_retryable_model_error() -> None:
+    """Model errors marked non-retryable fail on the first attempt."""
+    model = AlwaysFailingModel(error_message="boom", error_type=ModelAuthenticationError)
+    retry = ModelRetryMiddleware(
+        max_retries=2,
+        initial_delay=0,
+        jitter=False,
+        on_failure="continue",
+    )
+    agent = create_agent(
+        model=model,
+        tools=[],
+        middleware=[retry],
+        checkpointer=InMemorySaver(),
+    )
+
+    # Unmatched exceptions propagate without going through `on_failure`.
+    with pytest.raises(ModelAuthenticationError):
+        agent.invoke(
+            {"messages": [HumanMessage("Hello")]},
+            {"configurable": {"thread_id": "test"}},
+        )
+
+    assert model.attempts == 1
 
 
 def test_model_retry_custom_exception_filter() -> None:

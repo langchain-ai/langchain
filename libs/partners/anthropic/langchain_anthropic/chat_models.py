@@ -18,7 +18,18 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import ContextOverflowError, OutputParserException
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+    OutputParserException,
+)
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -53,7 +64,11 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names
-from langchain_core.utils._gateway import _apply_gateway_config
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_RESPONSE_KEY,
+    _apply_gateway_config,
+    _parse_gateway_metadata,
+)
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -69,6 +84,10 @@ from langchain_anthropic._client_utils import (
     _get_default_httpx_client,
 )
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
+from langchain_anthropic._sdk_compat import (
+    _aparse,
+    _route_unsupported_sampling_params,
+)
 from langchain_anthropic.data._profiles import _PROFILES
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -82,6 +101,21 @@ _message_type_lookups = {
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
 _USER_AGENT: Final[str] = f"langchain-anthropic/{__version__}"
+
+
+def _add_gateway_metadata(generation_info: dict[str, Any], raw_response: Any) -> None:
+    """Add parsed LangSmith gateway metadata to `generation_info`, if present.
+
+    Args:
+        generation_info: Generation info to mutate in place.
+        raw_response: The raw provider response, or None.
+    """
+    headers = getattr(raw_response, "headers", None)
+    if headers is None:
+        return
+    gateway_metadata = _parse_gateway_metadata(headers)
+    if gateway_metadata is not None:
+        generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -143,13 +177,13 @@ class AnthropicTool(TypedDict):
 _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "web_fetch_20250910": "web-fetch-2025-09-10",
     "code_execution_20250522": "code-execution-2025-05-22",
-    "code_execution_20250825": "code-execution-2025-08-25",
     "mcp_toolset": "mcp-client-2025-11-20",
     "memory_20250818": "context-management-2025-06-27",
     "computer_20250124": "computer-use-2025-01-24",
     "computer_20251124": "computer-use-2025-11-24",
     "tool_search_tool_regex_20251119": "advanced-tool-use-2025-11-20",
     "tool_search_tool_bm25_20251119": "advanced-tool-use-2025-11-20",
+    "advisor_20260301": "advisor-tool-2026-03-01",
 }
 """Mapping of tool type to required beta header.
 
@@ -781,6 +815,15 @@ def _format_messages(
     return system, formatted_messages
 
 
+def _container_id(container: Any) -> str | None:
+    """Return the container ID from either accepted `container` shape."""
+    if isinstance(container, str):
+        return container
+    if isinstance(container, dict):
+        return container.get("id")
+    return None
+
+
 def _collect_code_execution_tool_ids(formatted_messages: list[dict]) -> set[str]:
     """Collect `tool_use` IDs that were called by `code_execution`.
 
@@ -910,6 +953,46 @@ class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowEr
     """BadRequestError raised when input exceeds Anthropic's context limit."""
 
 
+class AnthropicAuthenticationError(
+    anthropic.AuthenticationError, ModelAuthenticationError
+):
+    """Anthropic authentication error classified as a LangChain model error."""
+
+
+class AnthropicPermissionDeniedError(
+    anthropic.PermissionDeniedError, ModelPermissionDeniedError
+):
+    """Anthropic permission error classified as a LangChain model error."""
+
+
+class AnthropicInvalidRequestError(anthropic.BadRequestError, ModelInvalidRequestError):
+    """Anthropic bad-request error classified as a LangChain model error."""
+
+
+class AnthropicModelNotFoundError(anthropic.NotFoundError, ModelNotFoundError):
+    """Anthropic not-found error classified as a LangChain model error."""
+
+
+class AnthropicRateLimitError(anthropic.RateLimitError, ModelRateLimitError):
+    """Anthropic rate-limit error classified as a LangChain model error."""
+
+
+class AnthropicAPIError(anthropic.InternalServerError, ModelAPIError):
+    """Anthropic server error classified as a LangChain model error."""
+
+
+class AnthropicOverloadedError(anthropic.OverloadedError, ModelAPIError):
+    """Anthropic overloaded error (HTTP 529) classified as a LangChain model error."""
+
+
+class AnthropicConnectionError(anthropic.APIConnectionError, ModelConnectionError):
+    """Anthropic connection error classified as a LangChain model error."""
+
+
+class AnthropicTimeoutError(anthropic.APITimeoutError, ModelTimeoutError):
+    """Anthropic timeout error classified as a LangChain model error."""
+
+
 def _raise_if_authentication_error(e: TypeError) -> None:
     """Re-raise anthropic SDK's missing-credentials `TypeError` with guidance."""
     if "Could not resolve authentication method" in str(e):
@@ -933,7 +1016,42 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     if ("messages: at least one message is required") in e.message:
         message = "Received only system message(s). "
         warnings.warn(message, stacklevel=2)
-        raise e
+    raise AnthropicInvalidRequestError(
+        message=e.message, response=e.response, body=e.body
+    ) from e
+
+
+def _handle_anthropic_api_error(e: anthropic.APIError) -> None:
+    """Re-raise an Anthropic SDK error as its LangChain-classified equivalent."""
+    if isinstance(e, anthropic.AuthenticationError):
+        raise AnthropicAuthenticationError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.PermissionDeniedError):
+        raise AnthropicPermissionDeniedError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.NotFoundError):
+        raise AnthropicModelNotFoundError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.RateLimitError):
+        raise AnthropicRateLimitError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.OverloadedError):
+        raise AnthropicOverloadedError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if isinstance(e, anthropic.InternalServerError):
+        raise AnthropicAPIError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    # `APITimeoutError` subclasses `APIConnectionError`, so check it first.
+    if isinstance(e, anthropic.APITimeoutError):
+        raise AnthropicTimeoutError(e.request) from e
+    if isinstance(e, anthropic.APIConnectionError):
+        raise AnthropicConnectionError(message=e.message, request=e.request) from e
     raise
 
 
@@ -1145,6 +1263,28 @@ class ChatAnthropic(BaseChatModel):
     [context management](https://platform.claude.com/docs/en/build-with-claude/context-editing).
     """
 
+    container: dict[str, Any] | str | None = None
+    """Code execution container for the request.
+
+    Either a container ID from a previous response, or a dict of container
+    parameters — notably
+    [skills](https://platform.claude.com/docs/en/build-with-claude/skills-guide)
+    to load into the container. Skills require a
+    [code execution](https://docs.langchain.com/oss/python/integrations/chat/anthropic#code-execution)
+    tool to be bound.
+
+    ```python
+    model = ChatAnthropic(
+        model="claude-opus-5",
+        container={
+            "skills": [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]
+        },
+    ).bind_tools([{"type": "code_execution_20260521", "name": "code_execution"}])
+    ```
+
+    Can also be passed at call time, which overrides the value set here.
+    """
+
     reuse_last_container: bool | None = None
     """Automatically reuse container from most recent response (code execution).
 
@@ -1181,6 +1321,11 @@ class ChatAnthropic(BaseChatModel):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "anthropic-chat"
+
+    @property
+    def _uses_gateway(self) -> bool:
+        """Whether requests are routed through the LangSmith gateway."""
+        return self.anthropic_api_key.get_secret_value().startswith("lsv2_")
 
     @property
     def lc_secrets(self) -> dict[str, str]:
@@ -1467,6 +1612,7 @@ class ChatAnthropic(BaseChatModel):
             "betas": self.betas,
             "context_management": self.context_management,
             "mcp_servers": self.mcp_servers,
+            "container": self.container,
             "user_profile_id": self.user_profile_id,
             "system": system,
             **self.model_kwargs,
@@ -1552,18 +1698,42 @@ class ChatAnthropic(BaseChatModel):
             output_config = payload.setdefault("output_config", {})
             output_config["format"] = payload.pop("output_format")
 
-        if self.reuse_last_container:
-            # Check for most recent AIMessage with container set in response_metadata
-            # and set as a top-level param on the request
+        container = payload.get("container")
+
+        if self.reuse_last_container and not _container_id(container):
+            # Reuse the container from the most recent response (code execution)
             for message in reversed(messages):
                 if (
                     isinstance(message, AIMessage)
-                    and (container := message.response_metadata.get("container"))
-                    and isinstance(container, dict)
-                    and (container_id := container.get("id"))
+                    and isinstance(
+                        last_container := message.response_metadata.get("container"),
+                        dict,
+                    )
+                    and (container_id := last_container.get("id"))
                 ):
-                    payload["container"] = container_id
+                    payload["container"] = (
+                        {**container, "id": container_id}
+                        if isinstance(container, dict)
+                        else container_id
+                    )
                     break
+
+        if (
+            isinstance(container, dict)
+            and container.get("skills")
+            and not any(
+                isinstance(tool, dict)
+                and str(tool.get("type", "")).startswith("code_execution")
+                for tool in (payload.get("tools") or [])
+            )
+        ):
+            warnings.warn(
+                "Skills require a code execution tool to be bound, e.g. "
+                '`bind_tools([{"type": "code_execution_20260521", '
+                '"name": "code_execution"}])`.',
+                UserWarning,
+                stacklevel=2,
+            )
 
         # Note: Beta headers are no longer required for structured outputs
         # (output_config.format or strict tool use) as they are now generally available
@@ -1616,6 +1786,16 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = [required_beta]
 
+        # Auto-append required beta for the `updates` thinking display mode
+        thinking = payload.get("thinking")
+        if isinstance(thinking, dict) and thinking.get("display") == "updates":
+            required_beta = "thinking-display-updates-2026-08-18"
+            if payload.get("betas"):
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
         # Auto-append required beta for user_profile_id
         if payload.get("user_profile_id"):
             required_beta = "user-profiles-2026-03-24"
@@ -1625,13 +1805,15 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = [required_beta]
 
-        return {k: v for k, v in payload.items() if v is not None}
+        return _route_unsupported_sampling_params(
+            {k: v for k, v in payload.items() if v is not None}
+        )
 
     def _create(self, payload: dict) -> Any:
         try:
             if "betas" in payload:
-                return self._client.beta.messages.create(**payload)
-            return self._client.messages.create(**payload)
+                return self._client.beta.messages.with_raw_response.create(**payload)
+            return self._client.messages.with_raw_response.create(**payload)
         except TypeError as e:
             _raise_if_authentication_error(e)
             raise
@@ -1639,8 +1821,10 @@ class ChatAnthropic(BaseChatModel):
     async def _acreate(self, payload: dict) -> Any:
         try:
             if "betas" in payload:
-                return await self._async_client.beta.messages.create(**payload)
-            return await self._async_client.messages.create(**payload)
+                return await self._async_client.beta.messages.with_raw_response.create(
+                    **payload
+                )
+            return await self._async_client.messages.with_raw_response.create(**payload)
         except TypeError as e:
             _raise_if_authentication_error(e)
             raise
@@ -1659,7 +1843,11 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            stream = self._create(payload)
+            raw_response = self._create(payload)
+            base_generation_info: dict[str, Any] = {}
+            if self._uses_gateway:
+                _add_gateway_metadata(base_generation_info, raw_response)
+            stream = raw_response.parse()
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -1667,6 +1855,7 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            is_first_chunk = True
             for event in stream:
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
@@ -1675,12 +1864,20 @@ class ChatAnthropic(BaseChatModel):
                     block_start_event=block_start_event,
                 )
                 if msg is not None:
-                    chunk = ChatGenerationChunk(message=msg)
+                    chunk = ChatGenerationChunk(
+                        message=msg,
+                        generation_info=base_generation_info
+                        if is_first_chunk
+                        else None,
+                    )
+                    is_first_chunk = False
                     if run_manager and isinstance(msg.content, str):
                         run_manager.on_llm_new_token(msg.content, chunk=chunk)
                     yield chunk
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
 
     async def _astream(
         self,
@@ -1696,7 +1893,11 @@ class ChatAnthropic(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            stream = await self._acreate(payload)
+            raw_response = await self._acreate(payload)
+            base_generation_info: dict[str, Any] = {}
+            if self._uses_gateway:
+                _add_gateway_metadata(base_generation_info, raw_response)
+            stream = await _aparse(raw_response)
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -1704,6 +1905,7 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            is_first_chunk = True
             async for event in stream:
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
@@ -1712,12 +1914,20 @@ class ChatAnthropic(BaseChatModel):
                     block_start_event=block_start_event,
                 )
                 if msg is not None:
-                    chunk = ChatGenerationChunk(message=msg)
+                    chunk = ChatGenerationChunk(
+                        message=msg,
+                        generation_info=base_generation_info
+                        if is_first_chunk
+                        else None,
+                    )
+                    is_first_chunk = False
                     if run_manager and isinstance(msg.content, str):
                         await run_manager.on_llm_new_token(msg.content, chunk=chunk)
                     yield chunk
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
 
     def _make_message_chunk_from_anthropic_event(
         self,
@@ -1943,7 +2153,13 @@ class ChatAnthropic(BaseChatModel):
             message_chunk.response_metadata["model_provider"] = "anthropic"
         return message_chunk, block_start_event
 
-    def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
+    def _format_output(
+        self,
+        data: Any,
+        *,
+        generation_info: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
         """Format the output from the Anthropic API to LC."""
         data_dict = data.model_dump()
         content = data_dict["content"]
@@ -1997,7 +2213,9 @@ class ChatAnthropic(BaseChatModel):
             msg = AIMessage(content=content, response_metadata=response_metadata)
         msg.usage_metadata = _create_usage_metadata(data.usage)
         return ChatResult(
-            generations=[ChatGeneration(message=msg)],
+            generations=[
+                ChatGeneration(message=msg, generation_info=generation_info or None)
+            ],
             llm_output=llm_output,
         )
 
@@ -2010,10 +2228,17 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            data = self._create(payload)
+            raw_response = self._create(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
-        return self._format_output(data, **kwargs)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
+        generation_info: dict[str, Any] = {}
+        if self._uses_gateway:
+            _add_gateway_metadata(generation_info, raw_response)
+        return self._format_output(
+            raw_response.parse(), generation_info=generation_info, **kwargs
+        )
 
     async def _agenerate(
         self,
@@ -2024,10 +2249,17 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
-            data = await self._acreate(payload)
+            raw_response = await self._acreate(payload)
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
-        return self._format_output(data, **kwargs)
+        except anthropic.APIError as e:
+            _handle_anthropic_api_error(e)
+        generation_info: dict[str, Any] = {}
+        if self._uses_gateway:
+            _add_gateway_metadata(generation_info, raw_response)
+        return self._format_output(
+            await _aparse(raw_response), generation_info=generation_info, **kwargs
+        )
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(
         self,

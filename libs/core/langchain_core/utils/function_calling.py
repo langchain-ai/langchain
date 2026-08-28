@@ -29,7 +29,6 @@ from pydantic.v1 import Field as Field_v1
 from pydantic.v1 import create_model as create_model_v1
 from typing_extensions import TypedDict, is_typeddict
 
-import langchain_core
 from langchain_core._api import beta
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.utils.json_schema import dereference_refs
@@ -225,8 +224,11 @@ def _convert_python_function_to_openai_function(
     Returns:
         The OpenAI function description.
     """
+    # Import locally to prevent circular import
+    from langchain_core.tools.base import create_schema_from_function  # noqa: PLC0415
+
     func_name = _get_python_function_name(function)
-    model = langchain_core.tools.base.create_schema_from_function(
+    model = create_schema_from_function(
         func_name,
         function,
         filter_args=(),
@@ -336,9 +338,10 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     Returns:
         The function description.
     """
-    is_simple_oai_tool = (
-        isinstance(tool, langchain_core.tools.simple.Tool) and not tool.args_schema
-    )
+    # Import locally to prevent circular import
+    from langchain_core.tools import Tool  # noqa: PLC0415
+
+    is_simple_oai_tool = isinstance(tool, Tool) and not tool.args_schema
     if tool.tool_call_schema and not is_simple_oai_tool:
         if isinstance(tool.tool_call_schema, dict):
             return _convert_json_schema_to_openai_function(
@@ -402,6 +405,9 @@ def convert_to_openai_function(
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
     """
+    # Import locally to prevent circular import
+    from langchain_core.tools import BaseTool  # noqa: PLC0415
+
     if strict and isinstance(function, dict):
         function = copy.deepcopy(function)
 
@@ -447,7 +453,7 @@ def convert_to_openai_function(
             "dict[str, Any]",
             _convert_typed_dict_to_openai_function(cast("type", function)),
         )
-    elif isinstance(function, langchain_core.tools.base.BaseTool):
+    elif isinstance(function, BaseTool):
         oai_function = cast("dict[str, Any]", _format_tool_to_openai_function(function))
     elif callable(function):
         oai_function = cast(

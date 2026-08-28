@@ -8,6 +8,15 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 from langchain_core.callbacks.base import BaseCallbackHandler
+from langchain_core.exceptions import (
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -27,16 +36,24 @@ if TYPE_CHECKING:
 from langchain_mistralai._compat import _convert_to_v1_from_mistral
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
+    _araise_on_error,
     _convert_chunk_to_message_chunk,
     _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
     _convert_tool_call_id_to_mistral_compatible,
     _format_message_content,
     _is_valid_mistral_tool_call_id,
+    _raise_on_error,
     _sanitize_chat_completions_content,
 )
 
 os.environ["MISTRAL_API_KEY"] = "foo"
+
+
+def _error_response(status_code: int) -> httpx.Response:
+    """Build a response with the given status for the error handlers."""
+    request = httpx.Request("POST", "https://api.mistral.ai/v1/chat/completions")
+    return httpx.Response(status_code, request=request, content=b'{"message": "boom"}')
 
 
 def test_sanitize_chat_completions_text_blocks_strips_id() -> None:
@@ -1094,3 +1111,54 @@ def test_metadata_versions() -> None:
     versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions
     assert "langchain-mistralai" in versions
+
+
+@pytest.mark.parametrize(
+    ("status_code", "model_error_type", "is_retryable"),
+    [
+        (400, ModelInvalidRequestError, False),
+        (401, ModelAuthenticationError, False),
+        (403, ModelPermissionDeniedError, False),
+        (404, ModelNotFoundError, False),
+        (422, ModelInvalidRequestError, False),
+        (429, ModelRateLimitError, True),
+        (500, ModelAPIError, True),
+        (503, ModelAPIError, True),
+    ],
+)
+def test_error_classification(
+    status_code: int,
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Errors are raised as both `httpx.HTTPStatusError` and the LangChain type."""
+    response = _error_response(status_code)
+
+    with pytest.raises(httpx.HTTPStatusError) as exc_info:
+        _raise_on_error(response)
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+    assert exc_info.value.response.status_code == status_code
+
+
+async def test_error_classification_async() -> None:
+    """The async response handler classifies errors the same way."""
+    with pytest.raises(httpx.HTTPStatusError) as exc_info:
+        await _araise_on_error(_error_response(429))
+
+    assert isinstance(exc_info.value, ModelRateLimitError)
+
+
+def test_unclassified_status_stays_a_plain_status_error() -> None:
+    """Status codes outside the taxonomy keep the previous behavior."""
+    with pytest.raises(httpx.HTTPStatusError) as exc_info:
+        _raise_on_error(_error_response(409))
+
+    assert not isinstance(exc_info.value, ModelError)
+
+
+def test_success_response_does_not_raise() -> None:
+    """A non-error response is left alone."""
+    _raise_on_error(_error_response(200))

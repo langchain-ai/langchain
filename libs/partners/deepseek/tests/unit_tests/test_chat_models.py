@@ -634,7 +634,7 @@ class TestChatDeepSeekPromptCacheUsage:
 
 def test_profile() -> None:
     """Test that model profile is loaded correctly."""
-    model = ChatDeepSeek(model="deepseek-reasoner", api_key=SecretStr("test_key"))
+    model = ChatDeepSeek(model="deepseek-v4-pro", api_key=SecretStr("test_key"))
     assert model.profile is not None
     assert model.profile["reasoning_output"]
 

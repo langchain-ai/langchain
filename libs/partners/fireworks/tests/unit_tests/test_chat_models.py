@@ -10,13 +10,28 @@ from unittest.mock import MagicMock
 import httpx
 import pytest
 from fireworks import (
+    APIConnectionError,
+    APITimeoutError,
     AuthenticationError,
     BadRequestError,
     FireworksError,
     InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
     RateLimitError,
 )
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -29,6 +44,7 @@ from langchain_core.messages import (
 from langchain_fireworks import ChatFireworks
 from langchain_fireworks.chat_models import (
     _ALLOWED_CONTENT_PART_KEYS,
+    _DROPPED_CONTENT_BLOCK_TYPES,
     FireworksContextOverflowError,
     _acompletion_with_retry,
     _completion_with_retry,
@@ -155,6 +171,44 @@ def test_sanitize_chat_completions_text_blocks_strips_id() -> None:
 
 def test_sanitize_chat_completions_content_passthrough_string() -> None:
     assert _sanitize_chat_completions_content("hello") == "hello"
+
+
+def test_convert_v1_message_filters_invalid_tool_call_content() -> None:
+    """Invalid tool calls remain diagnostic metadata, not content blocks."""
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "Let me check."},
+            {
+                "type": "invalid_tool_call",
+                "id": "call_invalid",
+                "name": "get_weather",
+                "args": '{"city":',
+                "error": "Invalid JSON",
+            },
+        ],
+        invalid_tool_calls=[
+            {
+                "type": "invalid_tool_call",
+                "id": "call_invalid",
+                "name": "get_weather",
+                "args": '{"city":',
+                "error": "Invalid JSON",
+            }
+        ],
+        response_metadata={"output_version": "v1"},
+    )
+
+    assert _convert_message_to_dict(message) == {
+        "role": "assistant",
+        "content": "Let me check.",
+        "tool_calls": [
+            {
+                "type": "function",
+                "id": "call_invalid",
+                "function": {"name": "get_weather", "arguments": '{"city":'},
+            }
+        ],
+    }
 
 
 def test_sanitize_chat_completions_content_passthrough_non_text_block() -> None:
@@ -349,16 +403,23 @@ def test_format_message_content_passes_through_existing_image_url() -> None:
     assert formatted == blocks
 
 
-@pytest.mark.parametrize(
-    "btype",
-    [
+def test_dropped_content_block_types_membership() -> None:
+    """Pin the drop-list so a removal is a deliberate, visible change.
+
+    The parametrized test below derives its cases from the constant, so it
+    tracks additions for free but cannot catch a deletion.
+    """
+    assert {
         "tool_use",
         "thinking",
+        "reasoning",
         "reasoning_content",
         "function_call",
         "code_interpreter_call",
-    ],
-)
+    } == _DROPPED_CONTENT_BLOCK_TYPES
+
+
+@pytest.mark.parametrize("btype", sorted(_DROPPED_CONTENT_BLOCK_TYPES))
 def test_format_message_content_drops_unsupported_block_types(btype: str) -> None:
     """Block types not part of the OpenAI chat completions wire format are stripped."""
     blocks = [
@@ -1788,6 +1849,59 @@ _CONTEXT_OVERFLOW_MESSAGE = (
     '"code": "invalid_request_error", "message": "The prompt is too long: '
     '500208, model maximum context length: 262143"}}'
 )
+
+
+@pytest.mark.parametrize(
+    ("status_code", "sdk_error_type", "model_error_type", "is_retryable"),
+    [
+        (400, BadRequestError, ModelInvalidRequestError, False),
+        (401, AuthenticationError, ModelAuthenticationError, False),
+        (403, PermissionDeniedError, ModelPermissionDeniedError, False),
+        (404, NotFoundError, ModelNotFoundError, False),
+        (429, RateLimitError, ModelRateLimitError, True),
+        (500, InternalServerError, ModelAPIError, True),
+    ],
+)
+def test_fireworks_error_classification(
+    status_code: int,
+    sdk_error_type: type[Exception],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Provider errors are raised as both the SDK type and the LangChain type."""
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(
+        sdk_error_type, "model request failed", status_code
+    )
+    llm.client = mock_client
+
+    with pytest.raises(sdk_error_type) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_fireworks_transport_error_classification() -> None:
+    """Timeout and connection failures are classified without a status code."""
+    request = httpx.Request("POST", "https://api.fireworks.ai/inference/v1")
+
+    for sdk_error, model_error_type in (
+        (APITimeoutError(request), ModelTimeoutError),
+        (APIConnectionError(request=request), ModelConnectionError),
+    ):
+        llm = _make_llm(max_retries=0)
+        mock_client = MagicMock()
+        mock_client.create.side_effect = sdk_error
+        llm.client = mock_client
+
+        with pytest.raises(type(sdk_error)) as exc_info:
+            llm.invoke([HumanMessage(content="test")])
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is True
 
 
 def test_context_overflow_error_invoke_sync() -> None:
