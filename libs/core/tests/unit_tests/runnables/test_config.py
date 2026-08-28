@@ -306,6 +306,24 @@ async def test_merge_config_callbacks() -> None:
         assert isinstance(merged.handlers[0], StdOutCallbackHandler)
 
 
+def test_merge_configs_preserves_explicit_default_recursion_limit() -> None:
+    merged = merge_configs(
+        {"configurable": {"thread_id": "test"}},
+        RunnableConfig(recursion_limit=25),
+    )
+
+    assert merged["recursion_limit"] == 25
+
+
+def test_merge_configs_omitted_recursion_limit_does_not_override() -> None:
+    merged = merge_configs(
+        RunnableConfig(recursion_limit=10),
+        {"configurable": {"thread_id": "test"}},
+    )
+
+    assert merged["recursion_limit"] == 10
+
+
 def test_config_arbitrary_keys() -> None:
     base: RunnablePassthrough[Any] = RunnablePassthrough()
     bound = base.with_config(my_custom_key="my custom value")

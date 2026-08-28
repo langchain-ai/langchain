@@ -440,7 +440,11 @@ def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     base: RunnableConfig = {}
     # Even though the keys aren't literals, this is correct
     # because both dicts are the same type
-    for config in (ensure_config(c) for c in configs if c is not None):
+    for raw_config in configs:
+        if raw_config is None:
+            continue
+        recursion_limit_was_set = raw_config.get("recursion_limit") is not None
+        config = ensure_config(raw_config)
         for key in config:
             if key == "metadata":
                 base["metadata"] = _merge_metadata_dicts(
@@ -485,7 +489,10 @@ def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
                         # base_callbacks is also a manager
                         base["callbacks"] = base_callbacks.merge(these_callbacks)
             elif key == "recursion_limit":
-                if config["recursion_limit"] != DEFAULT_RECURSION_LIMIT:
+                if (
+                    recursion_limit_was_set
+                    or config["recursion_limit"] != DEFAULT_RECURSION_LIMIT
+                ):
                     base["recursion_limit"] = config["recursion_limit"]
             elif key in COPIABLE_KEYS and config[key] is not None:  # type: ignore[literal-required]
                 base[key] = config[key].copy()  # type: ignore[literal-required]
