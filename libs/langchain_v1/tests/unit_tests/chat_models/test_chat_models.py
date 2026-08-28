@@ -400,7 +400,6 @@ def test_configurable_with_default() -> None:
             "container": None,
             "anthropic_api_key": SecretStr("bar"),
             "betas": None,
-            "container": None,
             "default_headers": None,
             "model_kwargs": {},
             "reuse_last_container": None,
