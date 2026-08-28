@@ -39,16 +39,6 @@ class PartySize(BaseModel):
     guests: int
 
 
-def _single_client(adapter: MCPAdapter) -> Client[Any]:
-    """Return the adapter's client, narrowed from the `ClientGroup` union.
-
-    Every test here drives a single server, so the group arm never occurs.
-    """
-    client = adapter.client
-    assert isinstance(client, Client)
-    return client
-
-
 def _restaurant_server(calls: dict[str, int]) -> MCPServer:
     """A server whose tool cannot run until a human supplies a party size."""
     server = MCPServer("restaurant")
@@ -164,7 +154,7 @@ async def test_the_opt_in_declares_the_capability_on_the_wire() -> None:
     adapter = MCPAdapter(_restaurant_server({"resolver": 0, "body": 0}), elicitation="interrupt")
 
     async with adapter:
-        capabilities = _single_client(adapter).session._build_capabilities("2026-07-28")
+        capabilities = adapter.client.session._build_capabilities("2026-07-28")
 
     assert capabilities.elicitation is not None
     assert capabilities.elicitation.form is not None
@@ -178,7 +168,7 @@ async def test_prebuilt_client_declares_elicitation_without_mutating_the_origina
 
     assert adapter.client is not client
     async with adapter:
-        adapter_capabilities = _single_client(adapter).session._build_capabilities("2026-07-28")
+        adapter_capabilities = adapter.client.session._build_capabilities("2026-07-28")
     async with client:
         original_capabilities = client.session._build_capabilities("2026-07-28")
 
@@ -254,7 +244,7 @@ def _unanswerable_server() -> FastMCP[None]:
 async def test_sampling_requests_are_rejected_rather_than_mishandled() -> None:
     """Driving the loop by hand bypasses the callbacks that answer sampling."""
     async with MCPAdapter(_unanswerable_server(), elicitation="interrupt") as adapter:
-        client = _single_client(adapter)
+        client = adapter.client
         async with client:
             with pytest.raises(NotImplementedError, match="sampling/createMessage"):
                 await _call_tool_with_interrupts(client, "summarize", {})
@@ -285,7 +275,7 @@ async def test_a_client_without_the_session_guard_warns() -> None:
 async def test_a_continuation_round_is_refused_rather_than_polled() -> None:
     """A round with state but no questions is long-running work, not elicitation."""
     async with MCPAdapter(_unanswerable_server(), elicitation="interrupt") as adapter:
-        client = _single_client(adapter)
+        client = adapter.client
         async with client:
             with pytest.raises(NotImplementedError, match="continuation round"):
                 await _call_tool_with_interrupts(client, "slow", {})
