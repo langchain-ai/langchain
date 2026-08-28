@@ -47,8 +47,21 @@ Detector = Callable[[str], list[PIIMatch]]
 """Callable signature for detectors that locate sensitive values."""
 
 
+# `\b` is Unicode-aware: CJK, Cyrillic, Arabic and accented Latin characters all
+# count as word characters, so `\b` does not fire between them and an adjacent
+# ASCII value. A detector anchored on `\b` therefore cannot see PII that sits
+# directly against non-English text, as in "联系alice@example.com". These
+# lookarounds reproduce `\b` exactly for ASCII input while treating every
+# non-ASCII character as a separator.
+_ASCII_BOUNDARY_START = r"(?<![0-9A-Za-z_])"
+_ASCII_BOUNDARY_END = r"(?![0-9A-Za-z_])"
+
+
 def detect_email(content: str) -> list[PIIMatch]:
     """Detect email addresses in content.
+
+    Addresses are detected even when they sit directly against non-ASCII text,
+    which is common in non-English conversations.
 
     Args:
         content: The text content to scan for email addresses.
@@ -56,7 +69,11 @@ def detect_email(content: str) -> list[PIIMatch]:
     Returns:
         A list of detected email matches.
     """
-    pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+    pattern = (
+        _ASCII_BOUNDARY_START
+        + r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+        + _ASCII_BOUNDARY_END
+    )
     return [
         PIIMatch(
             type="email",
@@ -105,7 +122,7 @@ def detect_ip(content: str) -> list[PIIMatch]:
         A list of detected IP address matches.
     """
     matches: list[PIIMatch] = []
-    ipv4_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
+    ipv4_pattern = _ASCII_BOUNDARY_START + r"(?:[0-9]{1,3}\.){3}[0-9]{1,3}" + _ASCII_BOUNDARY_END
 
     for match in re.finditer(ipv4_pattern, content):
         ip_candidate = match.group()
@@ -128,13 +145,15 @@ def detect_ip(content: str) -> list[PIIMatch]:
 def detect_mac_address(content: str) -> list[PIIMatch]:
     """Detect MAC addresses in content.
 
+    Addresses are detected even when they sit directly against non-ASCII text.
+
     Args:
         content: The text content to scan for MAC addresses.
 
     Returns:
         A list of detected MAC address matches.
     """
-    pattern = r"\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b"
+    pattern = _ASCII_BOUNDARY_START + r"([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}" + _ASCII_BOUNDARY_END
     return [
         PIIMatch(
             type="mac_address",

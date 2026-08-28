@@ -65,6 +65,18 @@ class TestPIIMatchPublicExport:
 # ============================================================================
 
 
+# Scripts whose characters Python's `re` treats as word characters, so a `\b`
+# anchored pattern will not fire between them and an adjacent ASCII value.
+NON_ASCII_NEIGHBORS = [
+    pytest.param("\u8054\u7cfb", id="chinese"),
+    pytest.param("\u30e1\u30fc\u30eb", id="japanese"),
+    pytest.param("\uc774\uba54\uc77c", id="korean"),
+    pytest.param("\u043f\u043e\u0447\u0442\u0430", id="cyrillic"),
+    pytest.param("\u0628\u0631\u064a\u062f", id="arabic"),
+    pytest.param("caf\u00e9", id="accented-latin"),
+]
+
+
 class TestEmailDetection:
     """Test email detection."""
 
@@ -85,6 +97,43 @@ class TestEmailDetection:
         assert len(matches) == 2
         assert matches[0]["value"] == "alice@test.com"
         assert matches[1]["value"] == "bob@company.org"
+
+    @pytest.mark.parametrize("neighbor", NON_ASCII_NEIGHBORS)
+    def test_detect_email_adjacent_to_non_ascii_text(self, neighbor: str) -> None:
+        r"""An address pressed against non-English text must still be detected.
+
+        `\\b` treats CJK, Cyrillic, Arabic and accented Latin characters as word
+        characters, so it never fired between them and the ASCII address. The
+        address was returned to the caller unredacted.
+        """
+        email = "alice@example.com"
+
+        for content in (
+            f"{neighbor}{email}",
+            f"{email}{neighbor}",
+            f"{neighbor}{email}{neighbor}",
+        ):
+            matches = detect_email(content)
+
+            assert len(matches) == 1, f"not detected in {content!r}"
+            assert email in matches[0]["value"]
+
+    def test_email_offsets_are_exact_next_to_non_ascii_text(self) -> None:
+        """Offsets must index the original string, not a normalized copy."""
+        content = "\u8054\u7cfbalice@example.com\u8054\u7cfb"
+        matches = detect_email(content)
+
+        assert len(matches) == 1
+        match = matches[0]
+        assert content[match["start"] : match["end"]] == match["value"]
+
+    def test_email_still_requires_an_ascii_boundary(self) -> None:
+        """ASCII behavior is unchanged: a run of ASCII letters is one token."""
+        assert detect_email("xalice@example.com")[0]["value"] == "xalice@example.com"
+
+    def test_email_tld_rejects_pipe_character(self) -> None:
+        """The TLD class was `[A-Z|a-z]`, which also accepted a literal `|`."""
+        assert detect_email("alice@example.c|m") == []
 
     def test_no_email(self) -> None:
         content = "This text has no email addresses."
@@ -170,6 +219,23 @@ class TestIPDetection:
         # This is acceptable behavior
         assert len(matches) >= 0
 
+    @pytest.mark.parametrize("neighbor", NON_ASCII_NEIGHBORS)
+    def test_detect_ip_adjacent_to_non_ascii_text(self, neighbor: str) -> None:
+        """An address pressed against non-English text must still be detected."""
+        ip = "192.168.1.100"
+        matches = detect_ip(f"{neighbor}{ip}")
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == ip
+
+    def test_ip_offsets_are_exact_next_to_non_ascii_text(self) -> None:
+        content = "\u30b5\u30fc\u30d0192.168.1.100"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        match = matches[0]
+        assert content[match["start"] : match["end"]] == match["value"]
+
     def test_no_ip(self) -> None:
         content = "No IP addresses here."
         matches = detect_ip(content)
@@ -210,6 +276,54 @@ class TestMACAddressDetection:
         content = "Partial: 00:1A:2B:3C"
         matches = detect_mac_address(content)
         assert len(matches) == 0
+
+
+class TestMACAddressNonAsciiDetection:
+    """MAC addresses adjacent to non-English text."""
+
+    @pytest.mark.parametrize("neighbor", NON_ASCII_NEIGHBORS)
+    def test_detect_mac_adjacent_to_non_ascii_text(self, neighbor: str) -> None:
+        mac = "00:1A:2B:3C:4D:5E"
+        matches = detect_mac_address(f"{neighbor}{mac}")
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == mac
+
+    def test_mac_offsets_are_exact_next_to_non_ascii_text(self) -> None:
+        content = "\u8054\u7cfb00:1A:2B:3C:4D:5E"
+        matches = detect_mac_address(content)
+
+        assert len(matches) == 1
+        match = matches[0]
+        assert content[match["start"] : match["end"]] == match["value"]
+
+
+class TestNonAsciiEndToEnd:
+    """The middleware strategies must act on non-ASCII-adjacent PII."""
+
+    def test_block_strategy_raises_for_non_ascii_adjacent_email(self) -> None:
+        """`block` previously let these through to the model silently."""
+        middleware = PIIMiddleware("email", strategy="block")
+        state = AgentState[Any](messages=[HumanMessage("\u8054\u7cfbalice@example.com")])
+
+        with pytest.raises(PIIDetectionError):
+            middleware.before_model(state, Runtime())
+
+    def test_redact_strategy_removes_non_ascii_adjacent_email(self) -> None:
+        middleware = PIIMiddleware("email", strategy="redact")
+        state = AgentState[Any](
+            messages=[HumanMessage("\u8054\u7cfbalice@example.com\u8054\u7cfb")]
+        )
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert "alice@example.com" not in content
+        assert "[REDACTED_EMAIL]" in content
+        # Surrounding text is preserved.
+        assert content.startswith("\u8054\u7cfb")
+        assert content.endswith("\u8054\u7cfb")
 
 
 class TestURLDetection:
