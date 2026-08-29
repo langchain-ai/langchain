@@ -97,6 +97,23 @@ class TestEmailDetection:
         # Should not match invalid formats
         assert len(matches) == 0
 
+    @pytest.mark.parametrize(
+        "prefix",
+        ["contact ", "联系", "メール", "이메일", "почта", "بريد", "café"],
+    )
+    def test_detect_email_adjacent_to_non_ascii(self, prefix: str) -> None:
+        matches = detect_email(prefix + "alice@example.com")
+        assert len(matches) == 1
+        assert matches[0]["value"] == "alice@example.com"
+
+    def test_detect_email_with_trailing_non_ascii(self) -> None:
+        matches = detect_email("alice@example.com联系")
+        assert len(matches) == 1
+        assert matches[0]["value"] == "alice@example.com"
+
+    def test_email_tld_does_not_accept_pipe(self) -> None:
+        assert detect_email("user@example.|com") == []
+
 
 class TestCreditCardDetection:
     """Test credit card detection with Luhn validation."""
@@ -175,6 +192,24 @@ class TestIPDetection:
         matches = detect_ip(content)
         assert len(matches) == 0
 
+    @pytest.mark.parametrize(
+        "prefix",
+        ["contact ", "联系", "メール", "이메일", "почта", "بريد", "café"],
+    )
+    def test_detect_ip_adjacent_to_non_ascii(self, prefix: str) -> None:
+        matches = detect_ip(prefix + "192.168.1.100")
+        assert len(matches) == 1
+        assert matches[0]["value"] == "192.168.1.100"
+
+    def test_detect_ip_with_trailing_non_ascii(self) -> None:
+        matches = detect_ip("192.168.1.100联系")
+        assert len(matches) == 1
+        assert matches[0]["value"] == "192.168.1.100"
+
+    def test_ip_glued_to_ascii_letter_not_detected(self) -> None:
+        assert detect_ip("192.168.1.100cafe") == []
+        assert detect_ip("192.168.1.100café") == []
+
 
 class TestMACAddressDetection:
     """Test MAC address detection."""
@@ -210,6 +245,20 @@ class TestMACAddressDetection:
         content = "Partial: 00:1A:2B:3C"
         matches = detect_mac_address(content)
         assert len(matches) == 0
+
+    @pytest.mark.parametrize(
+        "prefix",
+        ["contact ", "联系", "メール", "이메일", "почта", "بريد", "café"],
+    )
+    def test_detect_mac_adjacent_to_non_ascii(self, prefix: str) -> None:
+        matches = detect_mac_address(prefix + "00:1A:2B:3C:4D:5E")
+        assert len(matches) == 1
+        assert matches[0]["value"] == "00:1A:2B:3C:4D:5E"
+
+    def test_detect_mac_with_trailing_non_ascii(self) -> None:
+        matches = detect_mac_address("00:1A:2B:3C:4D:5E联系")
+        assert len(matches) == 1
+        assert matches[0]["value"] == "00:1A:2B:3C:4D:5E"
 
 
 class TestURLDetection:
