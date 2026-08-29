@@ -252,7 +252,7 @@ def test_chunks_to_events_block_transitions_keep_stable_indices() -> None:
     lifecycle = [
         (e["event"], e["index"])
         for e in events_any
-        if e["event"] in ("content-block-start", "content-block-finish")
+        if e["event"] in {"content-block-start", "content-block-finish"}
     ]
     assert lifecycle == [
         ("content-block-start", 0),

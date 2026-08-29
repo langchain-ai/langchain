@@ -277,7 +277,7 @@ class TestChainModelCallHandlers:
             test: str
 
         state_values = []
-        runtime_values = []
+        runtime_values: list[tuple[str, Runtime[Any]]] = []
 
         def outer(
             request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]

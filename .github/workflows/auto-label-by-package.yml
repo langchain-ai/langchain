@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   label-by-package:
+    if: github.repository_owner == 'langchain-ai'
     permissions:
       issues: write
     runs-on: ubuntu-latest

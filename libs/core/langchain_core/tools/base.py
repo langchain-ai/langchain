@@ -20,7 +20,6 @@ from typing import (
     cast,
     get_args,
     get_origin,
-    get_type_hints,
 )
 
 import typing_extensions
@@ -38,7 +37,7 @@ from pydantic.fields import FieldInfo
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
-from typing_extensions import Self, override
+from typing_extensions import Self, get_type_hints, override
 
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -184,7 +183,7 @@ def _infer_arg_descriptions(
     Returns:
         A tuple containing the function description and argument descriptions.
     """
-    annotations = typing.get_type_hints(fn, include_extras=True)
+    annotations = get_type_hints(fn, include_extras=True)
     if parse_docstring:
         description, arg_descriptions = _parse_python_function_docstring(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
@@ -319,7 +318,8 @@ def create_schema_from_function(
     inferred_model = validated.model
 
     if filter_args:
-        filter_args_ = filter_args
+        # Copy to avoid mutating the caller's sequence below.
+        filter_args_ = list(filter_args)
     else:
         # Handle classmethods and instance methods
         existing_params: list[str] = list(sig.parameters.keys())
@@ -328,9 +328,15 @@ def create_schema_from_function(
         else:
             filter_args_ = list(FILTERED_ARGS)
 
-        for existing_param in existing_params:
-            if not include_injected and _is_injected_arg_type(
-                sig.parameters[existing_param].annotation
+    # Exclude injected args from the schema regardless of whether `filter_args`
+    # was provided. Injected args (e.g. `InjectedToolArg`, `ToolRuntime`) are
+    # supplied at runtime rather than by the model, so they should not appear in
+    # the generated schema.
+    if not include_injected:
+        for existing_param in sig.parameters:
+            if (
+                _is_injected_arg_type(sig.parameters[existing_param].annotation)
+                and existing_param not in filter_args_
             ):
                 filter_args_.append(existing_param)
 
@@ -694,6 +700,17 @@ class ChildTool(BaseTool):
 
         full_schema = self.get_input_schema()
         fields = []
+
+        # Accommodates a condition where forward references were not resolved
+        # during model construction. At introspection time, we fail fast if
+        # the model schema is not complete so the underlying serialized schema
+        # doesn't narrow the propreties in the tool json schema to an empty dict
+        if (
+            is_pydantic_v2_subclass(full_schema)
+            and not full_schema.__pydantic_complete__
+        ):
+            full_schema.model_rebuild()
+
         for name, type_ in get_all_basemodel_annotations(full_schema).items():
             if not _is_injected_arg_type(type_):
                 fields.append(name)
@@ -706,7 +723,16 @@ class ChildTool(BaseTool):
 
     @functools.cached_property
     def _injected_args_keys(self) -> frozenset[str]:
-        # Base implementation doesn't manage injected args
+        # Inspect the tool's `_run` (falling back to `_arun` for async-only
+        # subclasses) for directly injected args like `ToolRuntime` or args
+        # annotated with `InjectedToolArg`. These are supplied at call time
+        # rather than by the model, so they must be excluded from the schema and
+        # re-injected during execution. `StructuredTool` overrides this to
+        # inspect its wrapped `func`/`coroutine` instead.
+        for method in (self._run, self._arun):
+            keys = _get_injected_args_keys_from_signature(method)
+            if keys:
+                return keys
         return _EMPTY_SET
 
     # --- Runnable ---
@@ -807,6 +833,7 @@ class ChildTool(BaseTool):
                         tool_input[k] = tool_call_id
                 result_v2 = input_args.model_validate(tool_input)
                 result_dict = result_v2.model_dump()
+                provided_fields = result_v2.model_fields_set
                 result = result_v2
             elif issubclass(input_args, BaseModelV1):
                 # Check args_schema for InjectedToolCallId
@@ -824,6 +851,7 @@ class ChildTool(BaseTool):
                         tool_input[k] = tool_call_id
                 result_v1 = input_args.parse_obj(tool_input)
                 result_dict = result_v1.dict()
+                provided_fields = result_v1.__fields_set__
                 result = result_v1
             else:
                 msg = (  # type: ignore[unreachable]
@@ -831,14 +859,18 @@ class ChildTool(BaseTool):
                 )
                 raise NotImplementedError(msg)
 
-            # Include fields from tool_input, plus fields with explicit defaults.
-            # This applies Pydantic defaults (like Field(default=1)) while excluding
-            # synthetic "args"/"kwargs" fields that Pydantic creates for *args/**kwargs.
+            # Include fields from tool_input, fields provided through Pydantic aliases,
+            # plus fields with explicit defaults. This applies Pydantic defaults (like
+            # Field(default=1)) while excluding synthetic "args"/"kwargs" fields that
+            # Pydantic creates for *args/**kwargs.
             field_info = get_fields(input_args)
             validated_input = {}
             for k in result_dict:
                 if k in tool_input:
                     # Field was provided in input - include it (validated)
+                    validated_input[k] = getattr(result, k)
+                elif k in provided_fields:
+                    # Field was provided through a Pydantic alias - include it.
                     validated_input[k] = getattr(result, k)
                 elif k in field_info and k not in {"args", "kwargs"}:
                     # Check if field has an explicit default defined in the schema.
@@ -1210,7 +1242,7 @@ class ChildTool(BaseTool):
                         error_to_raise = ValueError(msg)
             else:
                 content = response
-        except ValidationError as e:
+        except (ValidationError, ValidationErrorV1) as e:
             if not self.handle_validation_error:
                 error_to_raise = e
             else:
@@ -1451,11 +1483,20 @@ def _stringify(content: Any) -> str:
         return str(content)
 
 
-def _get_type_hints(func: Callable[..., Any]) -> dict[str, type] | None:
+def _describe_callable(func: Any) -> str:
+    """Return a readable identifier for a callable, for use in log messages."""
+    return getattr(func, "__qualname__", None) or repr(func)
+
+
+def _get_type_hints(
+    func: Callable[..., Any], *, include_extras: bool = False
+) -> dict[str, type] | None:
     """Get type hints from a function, handling partial functions.
 
     Args:
         func: The function to get type hints from.
+        include_extras: Whether to preserve `Annotated` metadata in the resolved
+            hints (e.g. to detect `Annotated[..., InjectedToolArg]`).
 
     Returns:
         `dict` of type hints, or `None` if extraction fails.
@@ -1463,8 +1504,204 @@ def _get_type_hints(func: Callable[..., Any]) -> dict[str, type] | None:
     if isinstance(func, functools.partial):
         func = func.func
     try:
-        return get_type_hints(func)
+        return get_type_hints(func, include_extras=include_extras)
     except Exception:
+        _logger.debug(
+            "Failed to resolve type hints for %s.",
+            _describe_callable(func),
+            exc_info=True,
+        )
+        return None
+
+
+def _get_class_signature_source(cls: type) -> Callable[..., Any] | None:
+    """Return the callable whose parameters `signature(cls)` describes.
+
+    A class's own annotations describe its attributes, not its constructor
+    parameters, so a class is never its own annotation owner. Constructor
+    precedence mirrors `inspect.signature`: a metaclass `__call__` override,
+    then a `__new__`/`__init__` the class defines itself, then an inherited one.
+
+    Args:
+        cls: The class being inspected.
+
+    Returns:
+        The constructor whose annotations describe `signature(cls)`, or `None`
+        when only slot wrappers inherited from `object` are available.
+    """
+    metaclass = type(cls)
+    if metaclass is not type:
+        metaclass_call = inspect.getattr_static(metaclass, "__call__", None)
+        if inspect.isfunction(metaclass_call):
+            return metaclass_call
+    for attr in ("__new__", "__init__"):
+        if attr in cls.__dict__:
+            return cast("Callable[..., Any]", getattr(cls, attr))
+    for attr in ("__new__", "__init__"):
+        # `object.__new__`/`object.__init__` are slot wrappers carrying no
+        # useful annotations, so only inherited Python constructors qualify.
+        inherited = getattr(cls, attr, None)
+        if inspect.isfunction(inherited):
+            return cast("Callable[..., Any]", inherited)
+    return None
+
+
+def _get_type_hints_source(
+    func: Callable[..., Any],
+) -> Callable[..., Any] | None:
+    """Return the callable that owns the annotations for an effective signature.
+
+    Unwrapping stops as soon as a callable declares its own `__signature__` (or
+    is a bound method), because that declaration -- not the annotations of
+    whatever it wraps -- defines the effective signature.
+
+    Args:
+        func: The callable being inspected.
+
+    Returns:
+        The function or method whose annotations describe `signature(func)`, or
+        `None` when an explicit `__signature__` supplies the annotations or no
+        annotation owner can be identified.
+    """
+    func = inspect.unwrap(
+        func,
+        stop=lambda wrapped: (
+            hasattr(wrapped, "__signature__") or inspect.ismethod(wrapped)
+        ),
+    )
+    if inspect.ismethod(func):
+        return _get_type_hints_source(func.__func__)
+    if getattr(func, "__signature__", None) is not None:
+        return None
+    if isinstance(func, functools.partial):
+        return _get_type_hints_source(func.func)
+    if inspect.isclass(func):
+        constructor = _get_class_signature_source(func)
+        if constructor is None:
+            return None
+        return _get_type_hints_source(constructor)
+    if not inspect.isroutine(func):
+        callable_obj = cast("Any", func)
+        return _get_type_hints_source(cast("Callable[..., Any]", callable_obj.__call__))
+    return func
+
+
+def _get_callable_globals(func: Callable[..., Any]) -> dict[str, Any]:
+    """Return the globals namespace associated with a callable.
+
+    Explicit `__signature__` objects store annotations separately from a
+    callable's `__annotations__`. String annotations on such signatures
+    still need the callable's defining globals to be resolved.
+
+    Args:
+        func: The callable whose defining globals to locate.
+
+    Returns:
+        The callable's globals namespace, or an empty `dict` when none can be
+        located (e.g. classes, builtins, and other C-implemented callables), in
+        which case no string annotation will resolve.
+    """
+    if isinstance(func, functools.partial):
+        return _get_callable_globals(func.func)
+    if inspect.ismethod(func):
+        return _get_callable_globals(func.__func__)
+    globalns = getattr(func, "__globals__", None)
+    if isinstance(globalns, dict):
+        return globalns
+    if not inspect.isroutine(func) and not inspect.isclass(func):
+        callable_obj = cast("Any", func)
+        return _get_callable_globals(cast("Callable[..., Any]", callable_obj.__call__))
+    return {}
+
+
+def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozenset[str]:
+    """Identify injected-argument parameters of a callable.
+
+    Resolve annotations with `get_type_hints` (rather than reading raw
+    `signature` annotations) so postponed annotations -- e.g. from
+    `from __future__ import annotations` or quoted forward references -- are
+    recognized. `get_type_hints` resolves every annotation at once and raises
+    on the first failure, so any parameter it leaves uncovered is retried on its
+    own: an unrelated unresolvable forward reference must not disable injection
+    for parameters whose annotations do resolve. Each distinct string annotation
+    is resolved at most once per call, failures included.
+
+    A *string* annotation naming a type that exists only in the callable's
+    defining local scope cannot be resolved here, since only globals are
+    available. Such a parameter keeps its raw string annotation, which
+    `_is_injected_arg_type` never classifies as injected, so it stays visible to
+    the model rather than being injected at call time. Non-string annotations
+    are unaffected, since `signature` yields the live object.
+
+    Args:
+        func: The function (or bound method) whose signature to inspect.
+
+    Returns:
+        `frozenset` of parameter names annotated as injected arguments.
+    """
+    params = signature(func).parameters
+    hint_source = _get_type_hints_source(func)
+    hints = (
+        _get_type_hints(hint_source, include_extras=True)
+        if hint_source is not None
+        else None
+    ) or {}
+    globalns: dict[str, Any] | None = None
+    resolved_annotations: dict[str, Any] = {}
+    keys = set()
+    for name, param in params.items():
+        annotation = hints.get(name, param.annotation)
+        if isinstance(annotation, str):
+            if globalns is None:
+                globalns = _get_callable_globals(
+                    func if hint_source is None else hint_source
+                )
+            if annotation not in resolved_annotations:
+                resolved_annotations[annotation] = _resolve_forward_ref(
+                    annotation, globalns
+                )
+            resolved = resolved_annotations[annotation]
+            if resolved is None:
+                _logger.debug(
+                    "Could not resolve annotation %r for parameter %r of %s; it "
+                    "will not be treated as an injected argument.",
+                    annotation,
+                    name,
+                    _describe_callable(func),
+                )
+            else:
+                annotation = resolved
+        if _is_injected_arg_type(annotation):
+            keys.add(name)
+    return frozenset(keys)
+
+
+def _resolve_forward_ref(annotation: str, globalns: dict[str, Any]) -> Any:
+    """Resolve a single string annotation, returning `None` on failure.
+
+    Uses a temporary annotated function so each annotation can be passed through
+    the public `get_type_hints` API independently.
+
+    Args:
+        annotation: The raw string annotation to resolve.
+        globalns: The globals namespace to resolve names against.
+
+    Returns:
+        The resolved type, or `None` if the annotation cannot be resolved.
+    """
+
+    def _annotation_holder() -> None:
+        pass
+
+    _annotation_holder.__annotations__ = {"value": annotation}
+    try:
+        return get_type_hints(
+            _annotation_holder,
+            globalns=globalns,
+            include_extras=True,
+        )["value"]
+    except Exception:
+        _logger.debug("Failed to resolve annotation %r.", annotation, exc_info=True)
         return None
 
 

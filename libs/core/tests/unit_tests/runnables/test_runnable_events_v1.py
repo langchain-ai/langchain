@@ -2144,11 +2144,6 @@ async def test_async_in_async_stream_lambdas() -> None:
     _assert_events_equal_allow_superset_metadata(events, EXPECTED_EVENTS)
 
 
-@pytest.mark.xfail(
-    reason="This test is failing due to missing functionality."
-    "Need to implement logic in _transform_stream_with_config that mimics the async "
-    "variant that uses tap_output_iter"
-)
 async def test_sync_in_sync_lambdas() -> None:
     """Test invoking nested runnable lambda."""
 

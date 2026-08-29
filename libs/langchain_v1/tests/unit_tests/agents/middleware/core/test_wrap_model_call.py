@@ -169,7 +169,7 @@ class TestRetryLogic:
             def __init__(self, max_retries: int = 3):
                 super().__init__()
                 self.max_retries = max_retries
-                self.attempts = []
+                self.attempts: list[int] = []
 
             def wrap_model_call(
                 self,
@@ -1195,7 +1195,7 @@ class TestWrapModelCallDecorator:
             messages: list[Any]
             custom_field: str
 
-        @wrap_model_call(state_schema=CustomState)
+        @wrap_model_call(state_schema=CustomState)  # type: ignore[type-var]
         def middleware_with_schema(
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],

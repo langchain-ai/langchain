@@ -854,8 +854,8 @@ class TestAsyncStreamAclose:
         stream = await model.astream_events("test", version="v3")
 
         # Pull the first delta so the producer enters the gated section.
-        aiter_ = stream.text.__aiter__()
-        first = await aiter_.__anext__()
+        aiter_ = aiter(stream.text)
+        first = await anext(aiter_)
         assert first == "first"
         assert stream._producer_task is not None
         assert not stream._producer_task.done()
@@ -870,8 +870,8 @@ class TestAsyncStreamAclose:
         gate = asyncio.Event()
         model = _GatedStreamModel(gate=gate)
         stream = await model.astream_events("test", version="v3")
-        aiter_ = stream.text.__aiter__()
-        await aiter_.__anext__()
+        aiter_ = aiter(stream.text)
+        await anext(aiter_)
 
         await stream.aclose()
         await stream.aclose()  # second call must not raise
@@ -884,8 +884,8 @@ class TestAsyncStreamAclose:
 
         async with stream as s:
             assert s is stream
-            aiter_ = stream.text.__aiter__()
-            await aiter_.__anext__()
+            aiter_ = aiter(stream.text)
+            await anext(aiter_)
 
         assert stream._producer_task is not None
         assert stream._producer_task.done()
@@ -907,8 +907,8 @@ class TestAsyncStreamAclose:
 
         # Prime the producer so it enters `_astream`'s forever-blocking
         # await.
-        aiter_ = stream.text.__aiter__()
-        await aiter_.__anext__()
+        aiter_ = aiter(stream.text)
+        await anext(aiter_)
 
         closer_returned_normally = False
 
@@ -1015,8 +1015,8 @@ class TestAsyncStreamAclose:
             "test", config={"callbacks": [handler]}, version="v3"
         )
 
-        aiter_ = stream.text.__aiter__()
-        await aiter_.__anext__()
+        aiter_ = aiter(stream.text)
+        await anext(aiter_)
 
         await stream.aclose()
 

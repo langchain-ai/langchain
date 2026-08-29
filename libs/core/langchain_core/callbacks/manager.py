@@ -123,7 +123,7 @@ def trace_as_chain_group(
     )
     try:
         yield group_cm
-    except Exception as e:
+    except BaseException as e:
         if not group_cm.ended:
             run_manager.on_chain_error(e)
         raise
@@ -206,7 +206,7 @@ async def atrace_as_chain_group(
     )
     try:
         yield group_cm
-    except Exception as e:
+    except BaseException as e:
         if not group_cm.ended:
             await run_manager.on_chain_error(e)
         raise
@@ -416,7 +416,7 @@ async def _ahandle_event_for_handler(
             elif handler.run_inline:
                 event(*args, **kwargs)
             else:
-                await asyncio.get_event_loop().run_in_executor(
+                await asyncio.get_running_loop().run_in_executor(
                     None,
                     functools.partial(copy_context().run, event, *args, **kwargs),
                 )

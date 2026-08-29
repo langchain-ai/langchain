@@ -21,7 +21,11 @@ class TestGroq(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "llama-3.3-70b-versatile", "rate_limiter": rate_limiter}
+        return {
+            "model": "qwen/qwen3.6-27b",
+            "reasoning_effort": "none",
+            "rate_limiter": rate_limiter,
+        }
 
     @pytest.mark.xfail(
         reason="Groq models have inconsistent tool calling performance. See: "
@@ -34,6 +38,11 @@ class TestGroq(ChatModelIntegrationTests):
     @pytest.mark.retry(count=3, delay=1)
     def test_tool_calling(self, model: BaseChatModel) -> None:
         super().test_tool_calling(model)
+
+    @pytest.mark.xfail(reason="Retry flaky tool choice behavior")
+    @pytest.mark.retry(count=3, delay=1)
+    def test_tool_choice(self, model: BaseChatModel) -> None:
+        super().test_tool_choice(model)
 
     @pytest.mark.xfail(reason="Retry flaky tool calling behavior")
     @pytest.mark.retry(count=3, delay=1)

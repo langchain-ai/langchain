@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 from langsmith.env import get_langchain_env_var_metadata
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from typing_extensions import Self, override
 
 from langchain_core._api import LangChainDeprecationWarning
@@ -54,6 +54,7 @@ from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from langchain_core.version import VERSION
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
@@ -446,6 +447,88 @@ class StreamingModel(NoStreamingModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         yield ChatGenerationChunk(message=AIMessageChunk(content="stream"))
+
+
+class SanitizingStreamingModel(StreamingModel):
+    received_secrets: list[str] = Field(default_factory=list)
+
+    @override
+    def _get_invocation_params(
+        self, stop: list[str] | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
+        params = super()._get_invocation_params(stop=stop, **kwargs)
+        if "secret" in params:
+            params["secret"] = "**REDACTED**"
+        return params
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        self.received_secrets.append(kwargs["secret"])
+        yield from super()._stream(messages, stop, run_manager, **kwargs)
+
+
+class ModelStartTracer(FakeTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.start_kwargs: list[dict[str, Any]] = []
+
+    @override
+    def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
+        self.start_kwargs.append(kwargs)
+        return super().on_chat_model_start(*args, **kwargs)
+
+
+@pytest.mark.parametrize("stream_events", [False, True])
+def test_streaming_options_use_sanitized_invocation_params(
+    *, stream_events: bool
+) -> None:
+    model = SanitizingStreamingModel()
+    tracer = ModelStartTracer()
+
+    if stream_events:
+        stream = model.stream_events(
+            [], version="v3", config={"callbacks": [tracer]}, secret="raw-secret"
+        )
+        _ = stream.output
+    else:
+        list(model.stream([], config={"callbacks": [tracer]}, secret="raw-secret"))
+
+    assert model.received_secrets == ["raw-secret"]
+    assert tracer.start_kwargs[0]["invocation_params"]["secret"] == "**REDACTED**"
+    assert tracer.start_kwargs[0]["options"]["secret"] == "**REDACTED**"
+    assert "raw-secret" not in str(tracer.start_kwargs)
+
+
+@pytest.mark.parametrize("stream_events", [False, True])
+async def test_async_streaming_options_use_sanitized_invocation_params(
+    *, stream_events: bool
+) -> None:
+    model = SanitizingStreamingModel()
+    tracer = ModelStartTracer()
+
+    if stream_events:
+        stream = await model.astream_events(
+            [], version="v3", config={"callbacks": [tracer]}, secret="raw-secret"
+        )
+        _ = await stream
+    else:
+        _ = [
+            chunk
+            async for chunk in model.astream(
+                [], config={"callbacks": [tracer]}, secret="raw-secret"
+            )
+        ]
+
+    assert model.received_secrets == ["raw-secret"]
+    assert tracer.start_kwargs[0]["invocation_params"]["secret"] == "**REDACTED**"
+    assert tracer.start_kwargs[0]["options"]["secret"] == "**REDACTED**"
+    assert "raw-secret" not in str(tracer.start_kwargs)
 
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
@@ -1646,6 +1729,21 @@ def test_generate_response_from_error_with_valid_json() -> None:
     }
     assert metadata["headers"] == {"content-type": "application/json"}
     assert metadata["status_code"] == 400
+
+
+def test_generate_response_from_error_surfaces_gateway_metadata() -> None:
+    """Gateway metadata from an error response is available for tracing."""
+    response = MockResponse(
+        headers={"X-LangSmith-Gateway-Metadata": '{"outcome": "blocked"}'},
+    )
+
+    generations = _generate_response_from_error(
+        MockAPIError("API Error", response=response)
+    )
+
+    assert generations[0].generation_info == {
+        GATEWAY_METADATA_RESPONSE_KEY: {"outcome": "blocked"}
+    }
 
 
 def test_generate_response_from_error_handles_streaming_response_failure() -> None:

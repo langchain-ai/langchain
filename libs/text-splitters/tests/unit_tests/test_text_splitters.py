@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 
     from bs4 import Tag
 
+
 FAKE_PYTHON_TEXT = """
 class Foo:
 
@@ -51,6 +52,133 @@ def testing_func():
 
 def bar():
 """
+
+
+def test_no_heavy_imports_on_package_load() -> None:
+    """Ensure importing the package does not eagerly import heavy dependencies.
+
+    Runs in a fresh interpreter so the result is unaffected by modules the test
+    session already imported. A `sys.meta_path` finder records any *attempt* to
+    import a heavy optional dependency, so the guard holds whether or not those
+    packages are installed in the current environment (a plain `sys.modules` check
+    would pass vacuously when the packages are absent).
+    """
+    import subprocess  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+
+    script = textwrap.dedent(
+        """
+        import sys
+
+        blocked = {
+            "nltk", "spacy", "sentence_transformers", "konlpy", "torch",
+            "transformers", "tiktoken",
+        }
+        attempted = []
+
+        class _Recorder:
+            def find_spec(self, name, path=None, target=None):
+                if name.split(".")[0] in blocked:
+                    attempted.append(name.split(".")[0])
+                return None  # defer to the real finders
+
+        sys.meta_path.insert(0, _Recorder())
+        import langchain_text_splitters  # noqa: F401
+        print(",".join(sorted(set(attempted))))
+        """
+    )
+    result = subprocess.run(  # noqa: S603  # list args, no shell; input is static
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+    assert result.returncode == 0, (
+        f"Importing langchain_text_splitters failed:\n{result.stderr}"
+    )
+    attempted = [p for p in result.stdout.strip().split(",") if p]
+    assert not attempted, (
+        f"Heavy packages imported at langchain_text_splitters load time: {attempted}"
+    )
+
+
+@pytest.mark.parametrize(
+    ("module_name", "expected_message"),
+    [
+        ("konlpy", "pip install konlpy"),
+        ("nltk", "pip install nltk"),
+        ("spacy", "pip install spacy"),
+        ("sentence_transformers", "pip install sentence-transformers"),
+    ],
+)
+def test_missing_optional_dependency_raises_importerror(
+    module_name: str,
+    expected_message: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Each splitter raises a helpful ImportError when its optional dep is missing.
+
+    The missing dependency is simulated by forcing its import to fail, so the test
+    is independent of whether the optional package is actually installed.
+    """
+    import sys  # noqa: PLC0415
+
+    from langchain_text_splitters.konlpy import KonlpyTextSplitter  # noqa: PLC0415
+    from langchain_text_splitters.nltk import NLTKTextSplitter  # noqa: PLC0415
+    from langchain_text_splitters.sentence_transformers import (  # noqa: PLC0415
+        SentenceTransformersTokenTextSplitter,
+    )
+    from langchain_text_splitters.spacy import SpacyTextSplitter  # noqa: PLC0415
+
+    constructors: dict[str, Callable[[], TextSplitter]] = {
+        "konlpy": KonlpyTextSplitter,
+        "nltk": NLTKTextSplitter,
+        "spacy": SpacyTextSplitter,
+        "sentence_transformers": SentenceTransformersTokenTextSplitter,
+    }
+
+    # `None` in sys.modules makes both `import x` and `import_module(x)` raise
+    # ImportError, exercising the splitter's missing-dependency branch.
+    monkeypatch.setitem(sys.modules, module_name, None)
+    with pytest.raises(ImportError, match=re.escape(expected_message)):
+        constructors[module_name]()
+
+
+@pytest.mark.parametrize(
+    "class_name",
+    [
+        "KonlpyTextSplitter",
+        "NLTKTextSplitter",
+        "SpacyTextSplitter",
+        "SentenceTransformersTokenTextSplitter",
+    ],
+)
+def test_lazy_getattr_resolves(class_name: str) -> None:
+    """`__getattr__` resolves lazy splitter classes from the package namespace."""
+    import langchain_text_splitters as lts  # noqa: PLC0415
+
+    try:
+        cls = getattr(lts, class_name)
+    except ImportError:
+        pytest.skip(f"Optional dependency for {class_name} not installed")
+    assert isinstance(cls, type), f"{class_name} should be a class, got {type(cls)}"
+
+
+def test_lazy_getattr_raises_for_unknown() -> None:
+    """Accessing an unknown attribute raises `AttributeError`."""
+    import langchain_text_splitters as lts  # noqa: PLC0415
+
+    with pytest.raises(AttributeError, match="no_such_thing"):
+        _ = lts.no_such_thing  # type: ignore[attr-defined]
+
+
+def test_lightweight_splitters_remain_eagerly_accessible() -> None:
+    """Lightweight splitters are still directly importable from the package."""
+    import langchain_text_splitters as lts  # noqa: PLC0415
+
+    assert issubclass(lts.RecursiveCharacterTextSplitter, lts.TextSplitter)
+    assert issubclass(lts.CharacterTextSplitter, lts.TextSplitter)
 
 
 def test_character_text_splitter() -> None:
@@ -3213,11 +3341,12 @@ def test_split_json() -> None:
     def random_val() -> str:
         return "".join(random.choices(string.ascii_letters, k=random.randint(4, 12)))
 
-    test_data: Any = {
+    val1: dict[str, Any] = {f"val1{i}": random_val() for i in range(100)}
+    val1["val16"] = {f"val16{i}": random_val() for i in range(100)}
+    test_data: dict[str, Any] = {
         "val0": random_val(),
-        "val1": {f"val1{i}": random_val() for i in range(100)},
+        "val1": val1,
     }
-    test_data["val1"]["val16"] = {f"val16{i}": random_val() for i in range(100)}
 
     # uses create_docs and split_text
     docs = splitter.create_documents(texts=[test_data])
@@ -3235,11 +3364,12 @@ def test_split_json_with_lists() -> None:
     def random_val() -> str:
         return "".join(random.choices(string.ascii_letters, k=random.randint(4, 12)))
 
-    test_data: Any = {
+    val1: dict[str, Any] = {f"val1{i}": random_val() for i in range(100)}
+    val1["val16"] = {f"val16{i}": random_val() for i in range(100)}
+    test_data: dict[str, Any] = {
         "val0": random_val(),
-        "val1": {f"val1{i}": random_val() for i in range(100)},
+        "val1": val1,
     }
-    test_data["val1"]["val16"] = {f"val16{i}": random_val() for i in range(100)}
 
     test_data_list: Any = {"testPreprocessing": [test_data]}
 
@@ -3372,6 +3502,65 @@ def test_split_json_empty_dict_value_in_large_payload() -> None:
                 found_empty = True
                 break
     assert found_empty, "Empty dict value was lost during splitting"
+
+
+@pytest.mark.parametrize(
+    ("data", "type_name"),
+    [
+        ([{"a": 1}, {"b": 2}], "list"),
+        ("hello world", "str"),
+        (123, "int"),
+        (True, "bool"),
+    ],
+)
+def test_split_json_non_dict_input_raises(data: object, type_name: str) -> None:
+    """Non-dict, non-convertible top-level input raises TypeError, not silent []."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    with pytest.raises(TypeError, match=type_name):
+        splitter.split_json(data)  # ty: ignore[invalid-argument-type]
+
+
+def test_split_json_list_without_convert_lists_error_mentions_escape_hatch() -> None:
+    """The error for a bare list should point users at convert_lists=True."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    with pytest.raises(TypeError, match="convert_lists=True"):
+        splitter.split_json([{"a": 1}, {"b": 2}])  # ty: ignore[invalid-argument-type]
+
+
+def test_split_json_list_with_convert_lists_still_works() -> None:
+    """Regression guard: convert_lists=True must keep working for top-level lists."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    data = [{"a": 1}, {"b": 2}]
+    chunks = splitter.split_json(data, convert_lists=True)  # ty: ignore[invalid-argument-type]
+
+    assert chunks == [{"0": {"a": 1}, "1": {"b": 2}}]
+
+
+def test_split_json_none_input_returns_empty_list() -> None:
+    """Regression guard: None stays a no-op (matches split_json({}) -> [])."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    assert splitter.split_json(None) == []  # ty: ignore[invalid-argument-type]
+
+
+def test_split_json_none_input_returns_empty_list_with_convert_lists() -> None:
+    """Regression guard: None stays a no-op even when convert_lists=True."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    assert splitter.split_json(None, convert_lists=True) == []  # ty: ignore[invalid-argument-type]
+
+
+def test_split_json_convert_lists_true_non_list_no_misleading_hint() -> None:
+    """The convert_lists=True hint shouldn't appear when it wouldn't help."""
+    splitter = RecursiveJsonSplitter(max_chunk_size=50)
+
+    with pytest.raises(TypeError, match="str") as exc_info:
+        splitter.split_json("hello world", convert_lists=True)  # ty: ignore[invalid-argument-type]
+
+    assert "convert_lists" not in str(exc_info.value)
 
 
 def test_powershell_code_splitter_short_code() -> None:

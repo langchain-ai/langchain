@@ -111,14 +111,16 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             return self.examples
         if self.example_selector is not None:
             return self.example_selector.select_examples(kwargs)
-        raise ValueError
+        msg = "One of 'examples' and 'example_selector' should be provided"
+        raise ValueError(msg)
 
     async def _aget_examples(self, **kwargs: Any) -> list[dict[str, Any]]:
         if self.examples is not None:
             return self.examples
         if self.example_selector is not None:
             return await self.example_selector.aselect_examples(kwargs)
-        raise ValueError
+        msg = "One of 'examples' and 'example_selector' should be provided"
+        raise ValueError(msg)
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.

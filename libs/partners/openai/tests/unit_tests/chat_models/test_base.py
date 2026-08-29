@@ -10,9 +10,21 @@ from typing import Any, Literal, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
+import httpx2
 import openai
 import pytest
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.load import dumps, loads
 from langchain_core.messages import (
     AIMessage,
@@ -36,11 +48,14 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from openai.types.responses import (
     ResponseApplyPatchToolCall,
     ResponseApplyPatchToolCallOutput,
     ResponseOutputMessage,
     ResponseReasoningItem,
+    ResponseTextDeltaEvent,
 )
 from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_apply_patch_tool_call import OperationCreateFile
@@ -164,6 +179,31 @@ def test_profile() -> None:
     # Test overrides for gpt-5 input tokens
     model = ChatOpenAI(model="gpt-5")
     assert model.profile["max_input_tokens"] == 272_000
+
+
+def test_gpt_5_reasoning_effort_levels() -> None:
+    """GPT-5 and GPT-5.1 predate `xhigh`, and GPT-5 supports `minimal`."""
+    for model_name in ("gpt-5", "gpt-5-mini", "gpt-5-nano"):
+        model = ChatOpenAI(model=model_name)
+        assert model.profile
+        assert model.profile["reasoning_effort_levels"] == [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+        ]
+
+    model = ChatOpenAI(model="gpt-5.1")
+    assert model.profile
+    assert model.profile["reasoning_effort_levels"] == ["none", "low", "medium", "high"]
+
+
+def test_gpt_5_3_chat_latest_profile_has_no_reasoning_effort() -> None:
+    model = ChatOpenAI(model="gpt-5.3-chat-latest")
+
+    assert model.profile
+    assert model.profile["reasoning_output"] is False
+    assert "reasoning_effort_levels" not in model.profile
 
 
 def test_function_message_dict_to_function_message() -> None:
@@ -713,6 +753,160 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
     assert mock_async_client.with_raw_response.create.called
 
 
+class _GatewayMetadataTracer(BaseTracer):
+    """Captures gateway metadata promoted onto completed LLM runs."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.gateway_metadata: dict | None = None
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op; runs are inspected as they complete."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        metadata = run.extra.get("metadata", {})
+        if "ls_gateway_info" in metadata:
+            self.gateway_metadata = metadata["ls_gateway_info"]
+
+
+_GATEWAY_METADATA_HEADERS = httpx2.Headers(
+    {"x-langsmith-gateway-metadata": '{"provider": "openai"}'}
+)
+
+_RESPONSES_API_COMPLETION = Response(
+    id="resp_123",
+    created_at=1234567890,
+    model=OPENAI_TEST_MODEL,
+    object="response",
+    parallel_tool_calls=True,
+    tools=[],
+    tool_choice="auto",
+    output=[
+        ResponseOutputMessage(
+            type="message",
+            id="msg_123",
+            content=[
+                ResponseOutputText(type="output_text", text="Bar Baz", annotations=[])
+            ],
+            role="assistant",
+            status="completed",
+        )
+    ],
+)
+
+_RESPONSES_API_STREAM = [
+    ResponseTextDeltaEvent(
+        content_index=0,
+        delta="Bar Baz",
+        item_id="msg_123",
+        output_index=0,
+        sequence_number=0,
+        logprobs=[],
+        type="response.output_text.delta",
+    ),
+]
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_openai_invoke_surfaces_gateway_metadata(
+    mock_completion: dict, *, use_responses_api: bool
+) -> None:
+    """Gateway metadata header is surfaced on `generation_info`, not the message."""
+    llm = ChatOpenAI(use_responses_api=use_responses_api)
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = _RESPONSES_API_COMPLETION
+        mock_client.responses.with_raw_response.create.return_value = mock_resp
+        client_attr = "root_client"
+    else:
+        mock_resp.parse.return_value = mock_completion
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "client"
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, client_attr, mock_client):
+        res = llm.invoke("bar", config={"callbacks": [tracer]})
+
+    # Gateway metadata reaches the tracer via `generation_info`...
+    assert tracer.gateway_metadata == {"provider": "openai"}
+    # ...but is kept off the user-facing message `response_metadata`.
+    assert GATEWAY_METADATA_RESPONSE_KEY not in res.response_metadata
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_openai_stream_surfaces_gateway_metadata(
+    mock_openai_completion: list, *, use_responses_api: bool
+) -> None:
+    """Gateway metadata reaches the tracer for a gateway-routed stream."""
+    # A LangSmith API key signals gateway routing, so streaming fetches raw
+    # headers.
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key="lsv2_pt_example",  # type: ignore[arg-type]
+        use_responses_api=use_responses_api,
+    )
+    mock_client = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = MockSyncContextManager(_RESPONSES_API_STREAM)
+        mock_client.with_raw_response.responses.create.return_value = mock_resp
+        mock_client.responses.create.return_value = MockSyncContextManager(
+            _RESPONSES_API_STREAM
+        )
+        client_attr = "root_client"
+    else:
+        mock_resp.parse.return_value = MockSyncContextManager(mock_openai_completion)
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "client"
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, client_attr, mock_client):
+        for chunk in llm.stream("what is your name?", config={"callbacks": [tracer]}):
+            # Gateway metadata is kept off the user-facing chunk metadata.
+            assert GATEWAY_METADATA_RESPONSE_KEY not in chunk.response_metadata
+
+    assert tracer.gateway_metadata == {"provider": "openai"}
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+async def test_openai_astream_surfaces_gateway_metadata(
+    mock_openai_completion: list, *, use_responses_api: bool
+) -> None:
+    """Gateway metadata reaches the tracer for a gateway-routed async stream."""
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key="lsv2_pt_example",  # type: ignore[arg-type]
+        use_responses_api=use_responses_api,
+    )
+    mock_client = AsyncMock()
+    mock_resp = MagicMock()
+    mock_resp.headers = _GATEWAY_METADATA_HEADERS
+    if use_responses_api:
+        mock_resp.parse.return_value = MockAsyncContextManager(_RESPONSES_API_STREAM)
+        mock_client.with_raw_response.responses.create.return_value = mock_resp
+        mock_client.responses.create.return_value = MockAsyncContextManager(
+            _RESPONSES_API_STREAM
+        )
+        client_attr = "root_async_client"
+    else:
+        mock_resp.parse.return_value = MockAsyncContextManager(mock_openai_completion)
+        mock_client.with_raw_response.create.return_value = mock_resp
+        client_attr = "async_client"
+
+    tracer = _GatewayMetadataTracer()
+    with patch.object(llm, client_attr, mock_client):
+        async for chunk in llm.astream(
+            "what is your name?", config={"callbacks": [tracer]}
+        ):
+            # Gateway metadata is kept off the user-facing chunk metadata.
+            assert GATEWAY_METADATA_RESPONSE_KEY not in chunk.response_metadata
+
+    assert tracer.gateway_metadata == {"provider": "openai"}
+
+
 @pytest.mark.parametrize(
     "model",
     [
@@ -943,6 +1137,37 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
     )
 
 
+def test_bind_tools_response_format_defaults_strict() -> None:
+    """Test that strict defaults to True when response_format is provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(
+        tools=[GenerateUsername],
+        response_format=MakeASandwich,
+    )
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert tools[0]["function"]["strict"] is True
+
+
+def test_bind_tools_response_format_respects_strict_false() -> None:
+    """Test that strict=False is respected even when response_format is provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(
+        tools=[GenerateUsername],
+        response_format=MakeASandwich,
+        strict=False,
+    )
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert tools[0]["function"]["strict"] is False
+
+
+def test_bind_tools_no_response_format_keeps_strict_none() -> None:
+    """Test that strict stays None when response_format is not provided."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, temperature=0)
+    bound = llm.bind_tools(tools=[GenerateUsername])
+    tools = bound.kwargs["tools"]  # type: ignore[attr-defined]
+    assert "strict" not in tools[0]["function"]
+
+
 @pytest.mark.parametrize(
     "schema", [GenerateUsername, GenerateUsername.model_json_schema()]
 )
@@ -1059,6 +1284,26 @@ def test_get_num_tokens_from_messages() -> None:
     assert actual
 
 
+@pytest.mark.parametrize(
+    "model", ["o1", "o1-preview", "o1-mini", "o3", "o3-mini", "o4-mini"]
+)
+def test_get_num_tokens_from_messages_o_series(model: str) -> None:
+    """o-series models use the same message token format as gpt-4/gpt-5.
+
+    Regression test: these raised NotImplementedError.
+    """
+    llm = ChatOpenAI(model=model)
+    messages = [
+        SystemMessage("you're a good assistant"),
+        HumanMessage("how are you"),
+    ]
+    actual = llm.get_num_tokens_from_messages(messages)
+    expected = ChatOpenAI(model=OPENAI_TEST_MODEL).get_num_tokens_from_messages(
+        messages
+    )
+    assert actual == expected
+
+
 class Foo(BaseModel):
     bar: int
 
@@ -1125,6 +1370,90 @@ def test__create_usage_metadata_zero_total_tokens() -> None:
     assert result["total_tokens"] == 0
 
 
+def test__create_usage_metadata_cache_write_tokens() -> None:
+    """`cache_write_tokens` is surfaced under the standard `cache_creation` key."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        # OpenAI's `cache_write_tokens` maps to core's `cache_creation`
+        "prompt_tokens_details": {"cached_tokens": 50, "cache_write_tokens": 25},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {
+        "cache_read": 50,
+        "cache_creation": 25,
+    }
+
+
+def test__create_usage_metadata_cache_read_only() -> None:
+    """Responses without `cache_write_tokens` emit no `cache_creation` key."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": {"cached_tokens": 50},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {"cache_read": 50}
+
+
+def test__create_usage_metadata_cache_tokens_zero_retained() -> None:
+    """Explicit zero cache counts are retained (filtered on `None`, not falsiness)."""
+    usage_metadata = {
+        "completion_tokens": 15,
+        "prompt_tokens_details": {"cached_tokens": 0, "cache_write_tokens": 0},
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 115,
+    }
+    result = _create_usage_metadata(usage_metadata)
+    assert result["input_token_details"] == {
+        "cache_read": 0,
+        "cache_creation": 0,
+    }
+
+
+def test__create_usage_metadata_service_tier_excludes_cache_read_tokens() -> None:
+    """Tier counts exclude cache reads but not overlapping cache writes."""
+    usage_metadata = {
+        "completion_tokens": 50,
+        "prompt_tokens_details": {
+            "cached_tokens": 256,
+            "cache_write_tokens": 3072,
+        },
+        "completion_tokens_details": {"reasoning_tokens": 10},
+        "prompt_tokens": 2304,
+        "total_tokens": 2354,
+    }
+    result = _create_usage_metadata(usage_metadata, service_tier="priority")
+    assert result["input_token_details"] == {
+        "priority_cache_read": 256,
+        "priority_cache_creation": 3072,
+        "priority": 2048,
+    }
+    assert result["output_token_details"] == {
+        "priority_reasoning": 10,
+        "priority": 40,  # 50 - 10 (reasoning)
+    }
+
+
+def test__create_usage_metadata_service_tier_without_detail_fields() -> None:
+    """Tier arithmetic tolerates missing cache/reasoning fields (no TypeError)."""
+    usage_metadata = {
+        "completion_tokens": 50,
+        "prompt_tokens_details": None,
+        "completion_tokens_details": None,
+        "prompt_tokens": 100,
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata(usage_metadata, service_tier="flex")
+    assert result["input_token_details"] == {"flex": 100}
+    assert result["output_token_details"] == {"flex": 50}
+
+
 def test__create_usage_metadata_responses() -> None:
     response_usage_metadata = {
         "input_tokens": 100,
@@ -1142,6 +1471,68 @@ def test__create_usage_metadata_responses() -> None:
         input_token_details={"cache_read": 50},
         output_token_details={"reasoning": 10},
     )
+
+
+def test__create_usage_metadata_responses_cache_write_tokens() -> None:
+    """Responses usage maps `cache_write_tokens` to the `cache_creation` key."""
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": {"cached_tokens": 50, "cache_write_tokens": 25},
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10},
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(response_usage_metadata)
+
+    assert result == UsageMetadata(
+        output_tokens=50,
+        input_tokens=100,
+        total_tokens=150,
+        input_token_details={"cache_read": 50, "cache_creation": 25},
+        output_token_details={"reasoning": 10},
+    )
+
+
+def test__create_usage_metadata_responses_service_tier_cache_write_overlap() -> None:
+    """Tier counts exclude cache reads but not overlapping cache writes."""
+    response_usage_metadata = {
+        "input_tokens": 2304,
+        "input_tokens_details": {
+            "cached_tokens": 256,
+            "cache_write_tokens": 3072,
+        },
+        "output_tokens": 50,
+        "output_tokens_details": {"reasoning_tokens": 10},
+        "total_tokens": 2354,
+    }
+    result = _create_usage_metadata_responses(
+        response_usage_metadata, service_tier="flex"
+    )
+    assert result["input_token_details"] == {
+        "flex_cache_read": 256,
+        "flex_cache_creation": 3072,
+        "flex": 2048,
+    }
+    assert result["output_token_details"] == {
+        "flex_reasoning": 10,
+        "flex": 40,  # 50 - 10 (reasoning)
+    }
+
+
+def test__create_usage_metadata_responses_service_tier_without_detail_fields() -> None:
+    """Tier arithmetic tolerates missing cache/reasoning fields (no TypeError)."""
+    response_usage_metadata = {
+        "input_tokens": 100,
+        "input_tokens_details": None,
+        "output_tokens": 50,
+        "output_tokens_details": None,
+        "total_tokens": 150,
+    }
+    result = _create_usage_metadata_responses(
+        response_usage_metadata, service_tier="priority"
+    )
+    assert result["input_token_details"] == {"priority": 100}
+    assert result["output_token_details"] == {"priority": 50}
 
 
 def test__resize_caps_dimensions_preserving_ratio() -> None:
@@ -1369,7 +1760,7 @@ def test_minimal_reasoning_effort_payload(
     # When using responses API, reasoning_effort becomes reasoning.effort
     if use_responses_api:
         assert "reasoning" in payload
-        assert payload["reasoning"]["effort"] == "minimal"
+        assert payload["reasoning"] == {"effort": "minimal"}
         # For responses API, tokens param becomes max_output_tokens
         assert payload["max_output_tokens"] == 100
     else:
@@ -1639,6 +2030,22 @@ def test_verbosity_parameter_payload() -> None:
     assert payload["text"]["verbosity"] == "high"
 
 
+def test_responses_payload_does_not_mutate_text_model_kwargs() -> None:
+    text = {"verbosity": "low"}
+    llm = ChatOpenAI(
+        model="gpt-5",
+        api_key=SecretStr("test"),
+        use_responses_api=True,
+        model_kwargs={"text": text},
+    )
+
+    payload = llm._get_request_payload("hello", response_format={"type": "json_object"})
+
+    assert payload["text"]["format"] == {"type": "json_object"}
+    assert text == {"verbosity": "low"}
+    assert llm._get_request_payload("hello")["text"] == {"verbosity": "low"}
+
+
 def test_structured_output_legacy_model() -> None:
     class Output(TypedDict):
         """output."""
@@ -1671,36 +2078,39 @@ def test_structured_outputs_parser() -> None:
 
 
 def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
+    """Chat Completions structured output must not emit a serializer warning.
+
+    Built via the SDK's own `parse_chat_completion` (the path
+    `client.beta.chat.completions.parse(...)` uses) so the test exercises the real
+    `ParsedChatCompletion` typing (openai/openai-python#2872).
+    """
+    from openai.lib._parsing._completions import parse_chat_completion
+    from openai.types.chat import ChatCompletion
+    from openai.types.chat.chat_completion import Choice
+    from openai.types.chat.chat_completion_message import ChatCompletionMessage
+
     class ModelOutput(BaseModel):
         output: str
 
-    class MockParsedMessage(openai.BaseModel):
-        role: Literal["assistant"] = "assistant"
-        content: str = '{"output": "Paris"}'
-        parsed: None = None
-        refusal: str | None = None
-
-    class MockChoice(openai.BaseModel):
-        index: int = 0
-        finish_reason: Literal["stop"] = "stop"
-        message: MockParsedMessage
-
-    class MockChatCompletion(openai.BaseModel):
-        id: str = "chatcmpl-1"
-        object: str = "chat.completion"
-        created: int = 0
-        model: str = OPENAI_TEST_MODEL
-        choices: list[MockChoice]
-        usage: dict[str, int] | None = None
-
-    parsed_response = ModelOutput(output="Paris")
-    response = MockChatCompletion.model_construct(
+    raw_response = ChatCompletion(
+        id="chatcmpl-1",
+        object="chat.completion",
+        created=0,
+        model=OPENAI_TEST_MODEL,
         choices=[
-            MockChoice.model_construct(
-                message=MockParsedMessage.model_construct(parsed=parsed_response)
+            Choice(
+                index=0,
+                finish_reason="stop",
+                message=ChatCompletionMessage(
+                    role="assistant", content='{"output": "Paris"}'
+                ),
             )
         ],
-        usage={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+    )
+    response = parse_chat_completion(
+        response_format=ModelOutput,
+        input_tools=openai.omit,
+        chat_completion=raw_response,
     )
 
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
@@ -1709,8 +2119,106 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
         result = llm._create_chat_result(response)
 
     warning_messages = [str(warning.message) for warning in caught_warnings]
-    assert not any("field_name='parsed'" in message for message in warning_messages)
-    assert result.generations[0].message.additional_kwargs["parsed"] == parsed_response
+    assert not any(
+        "PydanticSerializationUnexpectedValue" in message
+        for message in warning_messages
+    )
+    assert result.generations[0].message.additional_kwargs["parsed"] == ModelOutput(
+        output="Paris"
+    )
+
+
+def test_create_chat_result_raises_on_unexpected_response_type() -> None:
+    """A non-JSON response body must surface a clear error, not an `AttributeError`."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+
+    with pytest.raises(ValueError, match="got str") as exc_info:
+        llm._create_chat_result("<html><body>Moved</body></html>")  # type: ignore[arg-type]
+    assert "Moved" in str(exc_info.value)
+
+    with pytest.raises(ValueError, match="got object"):
+        llm._create_chat_result(object())  # type: ignore[arg-type]
+
+
+def test_create_chat_result_truncates_unexpected_response_body() -> None:
+    """A large response body must not be echoed in full in the error message."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    body = "<html>" + "x" * 5000 + "</html>"
+
+    with pytest.raises(ValueError, match="got str") as exc_info:
+        llm._create_chat_result(body)  # type: ignore[arg-type]
+    message = str(exc_info.value)
+    assert len(message) < len(body)
+    assert message.endswith("...")
+
+
+@pytest.mark.skipif(
+    (PYDANTIC_VERSION.major, PYDANTIC_VERSION.minor) < (2, 8),
+    reason=(
+        "Serializing the generic `ParsedResponse` raises a `MockValSer` TypeError on "
+        "pydantic<2.8, independent of the warning under test."
+    ),
+)
+def test__construct_lc_result_from_responses_api_avoids_parsed_dump_warning() -> None:
+    """Responses API structured output must not emit serializer warnings.
+
+    With `use_responses_api=True` and structured output, the SDK returns a
+    `ParsedResponse` whose output items don't match their declared field/union types.
+    Dumping it for response metadata previously emitted a spurious
+    `PydanticSerializationUnexpectedValue` warning (openai/openai-python#2872).
+    """
+    from openai.lib._parsing._responses import parse_response
+
+    class DocumentScoreResult(BaseModel):
+        reasoning: str
+        relevance_score: int
+
+    # Build the object the way `client.responses.parse(text_format=...)` does, so the
+    # test exercises the real `ParsedResponse` typing rather than a hand-rolled mock.
+    raw_response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseOutputMessage(
+                type="message",
+                id="msg_123",
+                status="completed",
+                role="assistant",
+                content=[
+                    ResponseOutputText(
+                        type="output_text",
+                        text='{"reasoning": "relevant", "relevance_score": 1}',
+                        annotations=[],
+                    )
+                ],
+            )
+        ],
+    )
+    parsed_response = parse_response(
+        text_format=DocumentScoreResult,
+        input_tools=openai.omit,
+        response=raw_response,
+    )
+
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        result = _construct_lc_result_from_responses_api(
+            parsed_response, schema=DocumentScoreResult
+        )
+
+    warning_messages = [str(warning.message) for warning in caught_warnings]
+    assert not any(
+        "PydanticSerializationUnexpectedValue" in message
+        for message in warning_messages
+    )
+    assert result.generations[0].message.additional_kwargs[
+        "parsed"
+    ] == DocumentScoreResult(reasoning="relevant", relevance_score=1)
 
 
 def test_structured_outputs_parser_valid_falsy_response() -> None:
@@ -1780,7 +2288,9 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
             input_tokens=10,
             output_tokens=3,
             total_tokens=13,
-            input_tokens_details=InputTokensDetails(cached_tokens=0),
+            input_tokens_details=InputTokensDetails(
+                cache_write_tokens=0, cached_tokens=0
+            ),
             output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
         ),
     )
@@ -2704,6 +3214,34 @@ def test__construct_responses_api_input_skips_blocks_without_text() -> None:
     }
 
 
+def test_responses_api_payload_drops_lc_auto_ids() -> None:
+    """LangChain-auto-generated (`lc_`) IDs must not be forwarded to OpenAI.
+
+    The Responses API validates provider-issued message IDs (expects `msg_...`),
+    so synthetic AI messages built from `create_text_block` (which assigns an
+    `lc_`-prefixed ID) previously triggered a 400. See issue #39113.
+    """
+    text_block = types.create_text_block("The capital of France is Paris.")
+    assert text_block["id"].startswith("lc_")
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    payload = llm._get_request_payload([AIMessage(content_blocks=[text_block])])
+
+    input_ = payload["input"]
+    assert len(input_) == 1
+    assert input_[0]["type"] == "message"
+    assert input_[0]["role"] == "assistant"
+    # The `lc_` ID is dropped rather than forwarded to OpenAI.
+    assert "id" not in input_[0]
+    assert input_[0]["content"] == [
+        {
+            "type": "output_text",
+            "text": "The capital of France is Paris.",
+            "annotations": [],
+        }
+    ]
+
+
 def test__construct_responses_api_input_human_message_with_image_url_conversion() -> (
     None
 ):
@@ -2738,6 +3276,105 @@ def test__construct_responses_api_input_human_message_with_image_url_conversion(
     assert result[0]["content"][1]["type"] == "input_image"
     assert result[0]["content"][1]["image_url"] == "https://example.com/image.jpg"
     assert result[0]["content"][1]["detail"] == "high"
+
+
+def test__construct_responses_api_input_store_false_replays_stateless_history() -> None:
+    ai_message = AIMessage(
+        content=[
+            # Dropped: no encrypted content to replay, in both shapes it can take.
+            {"type": "reasoning", "id": "rs_123", "summary": []},
+            {"type": "reasoning", "encrypted_content": ""},
+            {
+                "type": "reasoning",
+                "id": "rs_789",
+                "summary": [],
+                "encrypted_content": "encrypted-reasoning",
+            },
+            {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+        ],
+        response_metadata={"id": "resp_123"},
+    )
+
+    result = _construct_responses_api_input([ai_message], store=False)
+
+    assert result == [
+        {
+            "type": "reasoning",
+            "id": "rs_789",
+            "summary": [],
+            "encrypted_content": "encrypted-reasoning",
+        },
+        {
+            "type": "message",
+            "content": [
+                {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+            ],
+            "role": "assistant",
+        },
+    ]
+
+
+@pytest.mark.parametrize("store", [None, True])
+def test__construct_responses_api_input_store_enabled_keeps_item_ids(
+    store: bool | None,
+) -> None:
+    ai_message = AIMessage(
+        content=[
+            {"type": "reasoning", "id": "rs_123", "summary": []},
+            {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+        ],
+        response_metadata={"id": "resp_123"},
+    )
+
+    result = _construct_responses_api_input([ai_message], store=store)
+
+    assert result == [
+        {"type": "reasoning", "id": "rs_123", "summary": []},
+        {
+            "type": "message",
+            "content": [
+                {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+            ],
+            "role": "assistant",
+            "id": "msg_123",
+        },
+    ]
+
+
+def test__construct_responses_api_input_store_false_keeps_full_tool_call_items() -> (
+    None
+):
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "function_call",
+                "name": "get_weather",
+                "arguments": '{"location": "San Francisco"}',
+                "call_id": "call_123",
+                "id": "fc_456",
+            }
+        ],
+        tool_calls=[
+            {
+                "id": "call_123",
+                "name": "get_weather",
+                "args": {"location": "San Francisco"},
+                "type": "tool_call",
+            }
+        ],
+    )
+
+    result = _construct_responses_api_input([ai_message], store=False)
+
+    assert result == [
+        {
+            "type": "function_call",
+            "name": "get_weather",
+            "arguments": '{"location": "San Francisco"}',
+            "call_id": "call_123",
+            "id": "fc_456",
+        }
+    ]
 
 
 def test__construct_responses_api_input_ai_message_with_tool_calls() -> None:
@@ -3085,25 +3722,31 @@ def test_mcp_tracing() -> None:
             "server_label": "deepwiki",
             "server_url": "https://mcp.deepwiki.com/mcp",
             "require_approval": "always",
-            "headers": {"Authorization": "Bearer PLACEHOLDER"},
+            "headers": {"Authorization": "Bearer HEADER_SECRET"},
+            "authorization": "Bearer AUTHORIZATION_SECRET",
         }
     ]
     with patch.object(llm, "root_client", mock_client):
         llm_with_tools = llm.bind_tools(tools)
         _ = llm_with_tools.invoke([input_message], config={"callbacks": [tracer]})
 
-    # Test headers are not traced
+    # Test credentials are not traced
     assert len(tracer.chat_model_start_inputs) == 1
     invocation_params = tracer.chat_model_start_inputs[0]["kwargs"]["invocation_params"]
-    for tool in invocation_params["tools"]:
-        if "headers" in tool:
-            assert tool["headers"] == "**REDACTED**"
-    for substring in ["Authorization", "Bearer", "PLACEHOLDER"]:
+    assert invocation_params["tools"][0]["headers"] == "**REDACTED**"
+    assert invocation_params["tools"][0]["authorization"] == "**REDACTED**"
+    for substring in [
+        "Authorization",
+        "Bearer",
+        "HEADER_SECRET",
+        "AUTHORIZATION_SECRET",
+    ]:
         assert substring not in str(tracer.chat_model_start_inputs)
 
-    # Test headers are correctly propagated to request
+    # Test credentials are correctly propagated to request
     payload = llm_with_tools._get_request_payload([input_message], tools=tools)  # type: ignore[attr-defined]
-    assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"
+    assert payload["tools"][0]["headers"]["Authorization"] == "Bearer HEADER_SECRET"
+    assert payload["tools"][0]["authorization"] == "Bearer AUTHORIZATION_SECRET"
 
 
 def test_compat_responses_v03() -> None:
@@ -3232,6 +3875,13 @@ def test_compat_responses_v03_apply_patch_tool_outputs() -> None:
                         "args": {"location": "San Francisco"},
                     },
                     {
+                        "type": "invalid_tool_call",
+                        "id": "call_234",
+                        "name": "get_weather",
+                        "args": '{"location":',
+                        "error": "Failed to parse tool call arguments as JSON",
+                    },
+                    {
                         "type": "text",
                         "text": "Hello, world!",
                         "annotations": [
@@ -3241,11 +3891,29 @@ def test_compat_responses_v03_apply_patch_tool_outputs() -> None:
                 ],
                 id="chatcmpl-123",
                 response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+                invalid_tool_calls=[
+                    InvalidToolCall(
+                        id="call_234",
+                        name="get_weather",
+                        args='{"location":',
+                        error="Failed to parse tool call arguments as JSON",
+                        type="invalid_tool_call",
+                    )
+                ],
             ),
             AIMessage(
                 [{"type": "text", "text": "Hello, world!"}],
                 id="chatcmpl-123",
                 response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+                invalid_tool_calls=[
+                    InvalidToolCall(
+                        id="call_234",
+                        name="get_weather",
+                        args='{"location":',
+                        error="Failed to parse tool call arguments as JSON",
+                        type="invalid_tool_call",
+                    )
+                ],
             ),
         )
     ],
@@ -3256,6 +3924,7 @@ def test_convert_from_v1_to_chat_completions(
     result = _convert_from_v1_to_chat_completions(message_v1)
     assert result == expected
     assert result.tool_calls == message_v1.tool_calls  # tool calls remain cached
+    assert result.invalid_tool_calls == message_v1.invalid_tool_calls
 
     # Check no mutation
     assert message_v1 != result
@@ -3388,6 +4057,86 @@ def test_convert_from_v1_to_responses(
 
     # Check no mutation
     assert message_v1 != result
+
+
+def test_convert_from_v1_to_responses_preserves_reasoning_item_boundaries() -> None:
+    content: list[types.ContentBlock] = [
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "reasoning": "first ",
+            "extras": {
+                "encrypted_content": "encrypted-123",
+                "status": "completed",
+            },
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "reasoning": "second",
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_456",
+            "reasoning": "third",
+            "extras": {
+                "encrypted_content": "encrypted-456",
+                "status": "incomplete",
+            },
+        },
+        {"type": "reasoning", "reasoning": "legacy "},
+        {"type": "reasoning", "reasoning": "reasoning"},
+        {"type": "reasoning", "id": "rs_789", "reasoning": "last"},
+        cast(
+            types.ContentBlock,
+            {
+                "type": "reasoning",
+                "id": "rs_native",
+                "summary": [{"type": "summary_text", "text": "already native"}],
+                "encrypted_content": "encrypted-native",
+            },
+        ),
+    ]
+
+    result = _convert_from_v1_to_responses(content, [])
+
+    assert result == [
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "summary": [
+                {"type": "summary_text", "text": "first "},
+                {"type": "summary_text", "text": "second"},
+            ],
+            "encrypted_content": "encrypted-123",
+            "status": "completed",
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_456",
+            "summary": [{"type": "summary_text", "text": "third"}],
+            "encrypted_content": "encrypted-456",
+            "status": "incomplete",
+        },
+        {
+            "type": "reasoning",
+            "summary": [
+                {"type": "summary_text", "text": "legacy "},
+                {"type": "summary_text", "text": "reasoning"},
+            ],
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_789",
+            "summary": [{"type": "summary_text", "text": "last"}],
+        },
+        {
+            "type": "reasoning",
+            "id": "rs_native",
+            "summary": [{"type": "summary_text", "text": "already native"}],
+            "encrypted_content": "encrypted-native",
+        },
+    ]
 
 
 def test_convert_from_v1_to_responses_missing_type() -> None:
@@ -4095,6 +4844,31 @@ def test_context_overflow_error_prompt_too_long() -> None:
     assert "prompt is too long" in str(exc_info.value)
 
 
+def test_context_overflow_error_context_window_exceeded() -> None:
+    """Test context overflow error triggered by ContextWindowExceededError."""
+    error_body = {
+        "error": {
+            "message": "ContextWindowExceededError: maximum context length exceeded",
+            "type": "invalid_request_error",
+            "param": "messages",
+            "code": "invalid_request_error",
+        }
+    }
+    bad_request_error = openai.BadRequestError(
+        message=error_body["error"]["message"],
+        response=MagicMock(status_code=400),
+        body=error_body,
+    )
+    llm = ChatOpenAI()
+
+    with patch.object(llm.client, "with_raw_response") as mock_client:
+        mock_client.create.side_effect = bad_request_error
+        with pytest.raises(ContextOverflowError) as exc_info:
+            llm.invoke([HumanMessage(content="test")])
+
+    assert "ContextWindowExceededError" in str(exc_info.value)
+
+
 def test_context_overflow_error_backwards_compatibility() -> None:
     """Test that ContextOverflowError can be caught as BadRequestError."""
     llm = ChatOpenAI()
@@ -4109,6 +4883,57 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     # Verify it's both types (multiple inheritance)
     assert isinstance(exc_info.value, openai.BadRequestError)
     assert isinstance(exc_info.value, ContextOverflowError)
+
+
+@pytest.mark.parametrize(
+    ("status_code", "sdk_error_type", "model_error_type", "is_retryable"),
+    [
+        (400, openai.BadRequestError, ModelInvalidRequestError, False),
+        (401, openai.AuthenticationError, ModelAuthenticationError, False),
+        (403, openai.PermissionDeniedError, ModelPermissionDeniedError, False),
+        (404, openai.NotFoundError, ModelNotFoundError, False),
+        (429, openai.RateLimitError, ModelRateLimitError, True),
+        (500, openai.InternalServerError, ModelAPIError, True),
+    ],
+)
+def test_openai_error_classification(
+    status_code: int,
+    sdk_error_type: type[openai.APIStatusError],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Provider errors are raised as both the SDK type and the LangChain type."""
+    request = httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")
+    response = httpx2.Response(status_code, request=request)
+    sdk_error = sdk_error_type("model request failed", response=response, body=None)
+    model = ChatOpenAI(api_key=SecretStr("test"))
+
+    with patch.object(model.client, "with_raw_response") as mock_client:
+        mock_client.create.side_effect = sdk_error
+        with pytest.raises(sdk_error_type) as exc_info:
+            model.invoke("test")
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_openai_transport_error_classification() -> None:
+    """Timeout and connection failures are classified without a status code."""
+    request = httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")
+    model = ChatOpenAI(api_key=SecretStr("test"))
+
+    for sdk_error, model_error_type in (
+        (openai.APITimeoutError(request), ModelTimeoutError),
+        (openai.APIConnectionError(request=request), ModelConnectionError),
+    ):
+        with patch.object(model.client, "with_raw_response") as mock_client:
+            mock_client.create.side_effect = sdk_error
+            with pytest.raises(type(sdk_error)) as exc_info:
+                model.invoke("test")
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is True
 
 
 def test_metadata_versions() -> None:
@@ -4262,6 +5087,39 @@ def test_namespace_passthrough() -> None:
     assert {"type": "tool_search"} in payload["tools"]
 
 
+def test_reasoning_effort_responses_api_maps_to_effort_only() -> None:
+    """Test `reasoning_effort` maps to `reasoning.effort` alone, no `summary`.
+
+    `summary` is a separate concern, configured via the `reasoning` param
+    directly (e.g. `reasoning={"effort": "high", "summary": "auto"}`) rather
+    than implied by `reasoning_effort`.
+    """
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    payload = _construct_responses_api_payload([], {"reasoning_effort": "high"})
+
+    assert payload["reasoning"] == {"effort": "high"}
+    assert "reasoning_effort" not in payload
+
+
+def test_reasoning_effort_responses_api_preserves_existing_reasoning() -> None:
+    """Test that an already-present `reasoning` dict is not overwritten."""
+    from langchain_openai.chat_models.base import _construct_responses_api_payload
+
+    payload = _construct_responses_api_payload(
+        [],
+        {
+            "reasoning_effort": "high",
+            "reasoning": {"effort": "low", "summary": "concise"},
+        },
+    )
+
+    assert payload["reasoning"] == {"effort": "low", "summary": "concise"}
+    # The unused `reasoning_effort` kwarg is left untouched in this case, since
+    # the guard requires `"reasoning" not in payload` before popping it.
+    assert payload["reasoning_effort"] == "high"
+
+
 def test_defer_loading_in_responses_api_payload() -> None:
     """Test that defer_loading is preserved in Responses API tool format."""
     from langchain_openai.chat_models.base import _construct_responses_api_payload
@@ -4295,3 +5153,84 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert weather_tool["defer_loading"] is True
     assert weather_tool["type"] == "function"
     assert {"type": "tool_search"} in result["tools"]
+
+
+def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://gateway.smith.langchain.com/openai/v1"
+    assert llm.stream_usage is True
+
+
+def test_langsmith_gateway_false(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base is None
+
+
+def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base is None
+
+
+def test_langsmith_gateway_custom_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://my-gateway.example.com/")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://my-gateway.example.com/openai/v1"
+
+
+def test_langsmith_gateway_provider_env_overrides_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    assert llm.openai_api_base == "https://api.openai.com/v1"
+
+
+def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_api_key_not_used_without_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+def test_langsmith_gateway_api_key_overrides_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_provider_base_url_uses_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Provider-specific wiring check: base URL overridden away from the gateway
+    # -> provider key wins over the gateway key. Full precedence matrix lives in
+    # core's test_gateway.py.
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    assert llm.openai_api_base == "https://api.openai.com/v1"
+    assert isinstance(llm.openai_api_key, SecretStr)
+    assert llm.openai_api_key.get_secret_value() == "provider-key"

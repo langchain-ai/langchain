@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any
 from unittest.mock import MagicMock
@@ -9,13 +10,28 @@ from unittest.mock import MagicMock
 import httpx
 import pytest
 from fireworks import (
+    APIConnectionError,
+    APITimeoutError,
     AuthenticationError,
     BadRequestError,
     FireworksError,
     InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
     RateLimitError,
 )
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -28,6 +44,7 @@ from langchain_core.messages import (
 from langchain_fireworks import ChatFireworks
 from langchain_fireworks.chat_models import (
     _ALLOWED_CONTENT_PART_KEYS,
+    _DROPPED_CONTENT_BLOCK_TYPES,
     FireworksContextOverflowError,
     _acompletion_with_retry,
     _completion_with_retry,
@@ -36,6 +53,7 @@ from langchain_fireworks.chat_models import (
     _convert_message_to_dict,
     _format_message_content,
     _sanitize_chat_completions_content,
+    _update_token_usage,
     _usage_to_metadata,
 )
 
@@ -153,6 +171,44 @@ def test_sanitize_chat_completions_text_blocks_strips_id() -> None:
 
 def test_sanitize_chat_completions_content_passthrough_string() -> None:
     assert _sanitize_chat_completions_content("hello") == "hello"
+
+
+def test_convert_v1_message_filters_invalid_tool_call_content() -> None:
+    """Invalid tool calls remain diagnostic metadata, not content blocks."""
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "Let me check."},
+            {
+                "type": "invalid_tool_call",
+                "id": "call_invalid",
+                "name": "get_weather",
+                "args": '{"city":',
+                "error": "Invalid JSON",
+            },
+        ],
+        invalid_tool_calls=[
+            {
+                "type": "invalid_tool_call",
+                "id": "call_invalid",
+                "name": "get_weather",
+                "args": '{"city":',
+                "error": "Invalid JSON",
+            }
+        ],
+        response_metadata={"output_version": "v1"},
+    )
+
+    assert _convert_message_to_dict(message) == {
+        "role": "assistant",
+        "content": "Let me check.",
+        "tool_calls": [
+            {
+                "type": "function",
+                "id": "call_invalid",
+                "function": {"name": "get_weather", "arguments": '{"city":'},
+            }
+        ],
+    }
 
 
 def test_sanitize_chat_completions_content_passthrough_non_text_block() -> None:
@@ -347,16 +403,23 @@ def test_format_message_content_passes_through_existing_image_url() -> None:
     assert formatted == blocks
 
 
-@pytest.mark.parametrize(
-    "btype",
-    [
+def test_dropped_content_block_types_membership() -> None:
+    """Pin the drop-list so a removal is a deliberate, visible change.
+
+    The parametrized test below derives its cases from the constant, so it
+    tracks additions for free but cannot catch a deletion.
+    """
+    assert {
         "tool_use",
         "thinking",
+        "reasoning",
         "reasoning_content",
         "function_call",
         "code_interpreter_call",
-    ],
-)
+    } == _DROPPED_CONTENT_BLOCK_TYPES
+
+
+@pytest.mark.parametrize("btype", sorted(_DROPPED_CONTENT_BLOCK_TYPES))
 def test_format_message_content_drops_unsupported_block_types(btype: str) -> None:
     """Block types not part of the OpenAI chat completions wire format are stripped."""
     blocks = [
@@ -1066,6 +1129,199 @@ class TestUsageToMetadata:
         result = _usage_to_metadata({})
         assert result == {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
 
+    def test_explicit_none_fields_coerced_to_zero(self) -> None:
+        """Provider may send explicit `None` values; coerce them to `0`.
+
+        Guards the `or`-based fallbacks against a `.get(key, default)` regression,
+        which would preserve `None` for a present-but-null key.
+        """
+        result = _usage_to_metadata(
+            {
+                "prompt_tokens": None,
+                "completion_tokens": None,
+                "total_tokens": None,
+            }
+        )
+        assert result == {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
+
+    def test_total_tokens_falls_back_to_sum_when_none(self) -> None:
+        """A null `total_tokens` falls back to `input + output`."""
+        result = _usage_to_metadata(
+            {"prompt_tokens": 7, "completion_tokens": 3, "total_tokens": None}
+        )
+        assert result == {"input_tokens": 7, "output_tokens": 3, "total_tokens": 10}
+
+    def test_cached_prompt_tokens_mapped_to_cache_read(self) -> None:
+        result = _usage_to_metadata(
+            {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+                "prompt_tokens_details": {"cached_tokens": 7},
+            }
+        )
+        assert result == {
+            "input_tokens": 10,
+            "output_tokens": 5,
+            "total_tokens": 15,
+            "input_token_details": {"cache_read": 7},
+        }
+
+    def test_cached_tokens_zero_preserved(self) -> None:
+        """A genuine `0` cache hit is reported, not dropped.
+
+        Guards the `is not None` check against a truthiness (`if cached_tokens:`)
+        regression that would silently omit `cache_read` for a real zero.
+        """
+        result = _usage_to_metadata(
+            {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+                "prompt_tokens_details": {"cached_tokens": 0},
+            }
+        )
+        assert result["input_token_details"] == {"cache_read": 0}
+
+    def test_prompt_tokens_details_without_cached_tokens_omits_detail(self) -> None:
+        """A details dict lacking (or nulling) `cached_tokens` adds no detail."""
+        assert "input_token_details" not in _usage_to_metadata(
+            {"prompt_tokens": 5, "prompt_tokens_details": {}}
+        )
+        assert "input_token_details" not in _usage_to_metadata(
+            {"prompt_tokens": 5, "prompt_tokens_details": {"cached_tokens": None}}
+        )
+
+
+class TestCombineLLMOutputs:
+    """Tests for combining raw provider token usage across generations."""
+
+    def test_combines_nested_token_usage(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                {
+                    "token_usage": {
+                        "prompt_tokens": 32,
+                        "completion_tokens": 51,
+                        "total_tokens": 83,
+                        "prompt_tokens_details": {"cached_tokens": 0},
+                    },
+                    "system_fingerprint": "fp-1",
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens": 44341,
+                        "completion_tokens": 10,
+                        "total_tokens": 44351,
+                        "prompt_tokens_details": {"cached_tokens": 41518},
+                    },
+                },
+            ]
+        )
+        assert result == {
+            "token_usage": {
+                "prompt_tokens": 44373,
+                "completion_tokens": 61,
+                "total_tokens": 44434,
+                "prompt_tokens_details": {"cached_tokens": 41518},
+            },
+            "model_name": MODEL_NAME,
+            "system_fingerprint": "fp-1",
+        }
+
+    def test_preserves_prior_nested_token_usage_keys(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {
+                            "audio_tokens": 4,
+                            "cached_tokens": 8,
+                        },
+                    },
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {
+                            "audio_tokens": 6,
+                        },
+                    },
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {
+                            "cached_tokens": None,
+                        },
+                    },
+                },
+            ]
+        )
+
+        assert result["token_usage"] == {
+            "prompt_tokens_details": {
+                "audio_tokens": 10,
+                "cached_tokens": 8,
+            },
+        }
+
+    def test_skips_none_token_usage_values(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                {"token_usage": {"prompt_tokens_details": None}},
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {"cached_tokens": 8},
+                    }
+                },
+            ]
+        )
+        assert result["token_usage"] == {"prompt_tokens_details": {"cached_tokens": 8}}
+
+    def test_skips_none_streaming_outputs(self) -> None:
+        """`None` entries (produced during streaming) are skipped, not dereferenced."""
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [None, {"token_usage": {"prompt_tokens": 5, "total_tokens": 5}}, None]
+        )
+        assert result["token_usage"] == {"prompt_tokens": 5, "total_tokens": 5}
+
+
+class TestUpdateTokenUsage:
+    """Tests for the recursive `_update_token_usage` merge helper.
+
+    The type-mismatch and unexpected-type branches are unreachable with today's
+    stable Fireworks payloads, so they are exercised directly here to lock in the
+    behavior: mismatches raise, while a wholly unexpected leaf type is logged and
+    passed through rather than failing the response.
+    """
+
+    def test_int_accumulator_with_dict_value_raises(self) -> None:
+        with pytest.raises(ValueError, match="Got different types for token usage"):
+            _update_token_usage(5, {"cached_tokens": 1})
+
+    def test_dict_accumulator_with_int_value_raises(self) -> None:
+        with pytest.raises(ValueError, match="Got different types for token usage"):
+            _update_token_usage({"cached_tokens": 1}, 5)
+
+    def test_unexpected_value_type_warns_and_passes_through(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        with caplog.at_level(logging.WARNING):
+            result = _update_token_usage(0, 1.5)  # type: ignore[arg-type]
+        assert result == 1.5
+        assert "Unexpected type for token usage" in caplog.text
+
+    def test_first_seen_nested_dict_value_merges(self) -> None:
+        """A first-seen nested `dict` node seeds as a dict instead of raising."""
+        result = _update_token_usage(
+            {"details": {"a": 1}},
+            {"details": {"a": 2, "nested": {"b": 3}}},
+        )
+        assert result == {"details": {"a": 3, "nested": {"b": 3}}}
+
 
 class TestConvertChunkToMessageChunk:
     """Tests for `_convert_chunk_to_message_chunk` empty-choices handling."""
@@ -1107,6 +1363,117 @@ class TestConvertChunkToMessageChunk:
             "output_tokens": 2,
             "total_tokens": 3,
         }
+
+    def test_usage_chunk_maps_cached_prompt_tokens(self) -> None:
+        chunk = {
+            "choices": [],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 2,
+                "total_tokens": 12,
+                "prompt_tokens_details": {"cached_tokens": 6},
+            },
+        }
+        result = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+        assert isinstance(result, AIMessageChunk)
+        assert result.usage_metadata == {
+            "input_tokens": 10,
+            "output_tokens": 2,
+            "total_tokens": 12,
+            "input_token_details": {"cache_read": 6},
+        }
+
+
+class TestCreateChatResult:
+    """Tests for converting Fireworks responses into chat generations."""
+
+    def test_maps_cached_prompt_tokens_to_message_usage_metadata(self) -> None:
+        model = _make_model()
+        chat_result = model._create_chat_result(
+            {
+                "choices": [
+                    {
+                        "message": {"role": "assistant", "content": "ok"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 20,
+                    "completion_tokens": 3,
+                    "total_tokens": 23,
+                    "prompt_tokens_details": {"cached_tokens": 11},
+                },
+            }
+        )
+        message = chat_result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata == {
+            "input_tokens": 20,
+            "output_tokens": 3,
+            "total_tokens": 23,
+            "input_token_details": {"cache_read": 11},
+        }
+
+
+class TestExtraHeaders:
+    """Tests for request-specific HTTP header plumbing."""
+
+    def test_extra_headers_forwarded_to_sync_create(self) -> None:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "ok"}}],
+            "usage": {},
+        }
+        headers = {
+            "x-session-affinity": "thread-123",
+            "x-multi-turn-session-id": "thread-123",
+        }
+
+        model.invoke("Hello", extra_headers=headers)
+
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["extra_headers"] == headers
+        # `extra_headers` must reach the SDK at the top level, not be folded
+        # into `extra_body` by `_prepare_sdk_kwargs`.
+        assert "extra_headers" not in call_kwargs.get("extra_body", {})
+
+    async def test_extra_headers_forwarded_to_async_create(self) -> None:
+        model = _make_model()
+        model.async_client = MagicMock()
+        headers = {
+            "x-session-affinity": "thread-123",
+            "x-multi-turn-session-id": "thread-123",
+        }
+
+        async def _create(**_kwargs: Any) -> dict[str, Any]:
+            return {
+                "choices": [{"message": {"role": "assistant", "content": "ok"}}],
+                "usage": {},
+            }
+
+        model.async_client.create = MagicMock(side_effect=_create)
+
+        await model.ainvoke("Hello", extra_headers=headers)
+
+        call_kwargs = model.async_client.create.call_args[1]
+        assert call_kwargs["extra_headers"] == headers
+
+    def test_extra_headers_forwarded_when_streaming(self) -> None:
+        """`extra_headers` must also survive the separate streaming param path."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = iter(list(_STREAM_CHUNKS))
+        headers = {
+            "x-session-affinity": "thread-123",
+            "x-multi-turn-session-id": "thread-123",
+        }
+
+        list(model.stream("Hello", extra_headers=headers))
+
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["extra_headers"] == headers
+        assert "extra_headers" not in call_kwargs.get("extra_body", {})
 
 
 class TestStreamUsage:
@@ -1218,6 +1585,90 @@ class TestStreamUsage:
         }
 
 
+class TestReasoningEffort:
+    """Tests for the `reasoning_effort` field plumbing."""
+
+    def test_reasoning_effort_omitted_by_default(self) -> None:
+        model = _make_model()
+        assert "reasoning_effort" not in model._default_params
+
+    def test_reasoning_effort_in_default_params_when_set(self) -> None:
+        model = _make_model(reasoning_effort="high")
+        assert model._default_params["reasoning_effort"] == "high"
+
+    def test_reasoning_effort_passed_to_client_when_set(self) -> None:
+        model = _make_model(reasoning_effort="high")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "high"
+
+    def test_reasoning_effort_not_passed_when_unset(self) -> None:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert "reasoning_effort" not in call_kwargs
+
+    def test_reasoning_effort_as_call_time_kwarg(self) -> None:
+        """`reasoning_effort` also works as a call-time keyword argument.
+
+        This is the standard `reasoning_effort` param shared across chat model
+        integrations, so it must work via `model.invoke(..., reasoning_effort=...)`
+        without requiring it to be set on the model instance.
+        """
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello", reasoning_effort="low")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "low"
+
+    def test_reasoning_effort_call_time_kwarg_overrides_construction_time(
+        self,
+    ) -> None:
+        model = _make_model(reasoning_effort="low")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello", reasoning_effort="high")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "high"
+
+
 class TestServiceTier:
     """Tests for the `service_tier` field plumbing."""
 
@@ -1278,12 +1729,16 @@ class TestServiceTier:
         assert isinstance(result, AIMessage)
         assert result.response_metadata["service_tier"] == "priority"
 
-    def test_service_tier_echoed_in_stream_chunks(self) -> None:
+    def test_service_tier_echoed_once_in_stream_chunks(self) -> None:
         model = _make_model(service_tier="priority")
         model.client = MagicMock()
         chunks: list[dict[str, Any]] = [
             {
                 "choices": [{"delta": {"role": "assistant", "content": "hi"}}],
+                "service_tier": "priority",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop"}],
                 "service_tier": "priority",
             },
             {
@@ -1297,10 +1752,42 @@ class TestServiceTier:
             },
         ]
         model.client.create.return_value = iter(chunks)
-        out = list(model.stream("Hello"))
-        tagged = [c for c in out if c.response_metadata.get("service_tier")]
-        assert tagged
-        assert all(c.response_metadata["service_tier"] == "priority" for c in tagged)
+        output = list(model.stream("Hello"))
+        tagged = [c for c in output if c.response_metadata.get("service_tier")]
+        assert len(tagged) == 1
+        assert tagged[0].response_metadata["service_tier"] == "priority"
+
+        combined = output[0]
+        for chunk in output[1:]:
+            combined += chunk
+        assert combined.response_metadata["service_tier"] == "priority"
+
+    async def test_service_tier_echoed_once_in_async_stream_chunks(self) -> None:
+        model = _make_model(service_tier="priority")
+        model.async_client = MagicMock()
+        chunks: list[dict[str, Any]] = [
+            {
+                "choices": [{"delta": {"role": "assistant", "content": "hi"}}],
+                "service_tier": "priority",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop"}],
+                "service_tier": "priority",
+            },
+        ]
+
+        async def _aiter() -> Any:
+            for chunk in chunks:
+                yield chunk
+
+        async def _create(**_kwargs: Any) -> Any:
+            return _aiter()
+
+        model.async_client.create = MagicMock(side_effect=_create)
+        output = [chunk async for chunk in model.astream("Hello")]
+        tagged = [c for c in output if c.response_metadata.get("service_tier")]
+        assert len(tagged) == 1
+        assert tagged[0].response_metadata["service_tier"] == "priority"
 
     def test_service_tier_absent_when_not_in_response(self) -> None:
         model = _make_model()
@@ -1362,6 +1849,59 @@ _CONTEXT_OVERFLOW_MESSAGE = (
     '"code": "invalid_request_error", "message": "The prompt is too long: '
     '500208, model maximum context length: 262143"}}'
 )
+
+
+@pytest.mark.parametrize(
+    ("status_code", "sdk_error_type", "model_error_type", "is_retryable"),
+    [
+        (400, BadRequestError, ModelInvalidRequestError, False),
+        (401, AuthenticationError, ModelAuthenticationError, False),
+        (403, PermissionDeniedError, ModelPermissionDeniedError, False),
+        (404, NotFoundError, ModelNotFoundError, False),
+        (429, RateLimitError, ModelRateLimitError, True),
+        (500, InternalServerError, ModelAPIError, True),
+    ],
+)
+def test_fireworks_error_classification(
+    status_code: int,
+    sdk_error_type: type[Exception],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Provider errors are raised as both the SDK type and the LangChain type."""
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(
+        sdk_error_type, "model request failed", status_code
+    )
+    llm.client = mock_client
+
+    with pytest.raises(sdk_error_type) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_fireworks_transport_error_classification() -> None:
+    """Timeout and connection failures are classified without a status code."""
+    request = httpx.Request("POST", "https://api.fireworks.ai/inference/v1")
+
+    for sdk_error, model_error_type in (
+        (APITimeoutError(request), ModelTimeoutError),
+        (APIConnectionError(request=request), ModelConnectionError),
+    ):
+        llm = _make_llm(max_retries=0)
+        mock_client = MagicMock()
+        mock_client.create.side_effect = sdk_error
+        llm.client = mock_client
+
+        with pytest.raises(type(sdk_error)) as exc_info:
+            llm.invoke([HumanMessage(content="test")])
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is True
 
 
 def test_context_overflow_error_invoke_sync() -> None:
@@ -1530,3 +2070,67 @@ def test_request_timeout_tuple_normalized_to_httpx_timeout(
     assert forwarded.connect == 5.0
     assert forwarded.read == 30.0
     assert async_mock.call_args.kwargs["timeout"] == forwarded
+
+
+def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://gateway.smith.langchain.com/fireworks"
+
+
+def test_langsmith_gateway_false(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
+    llm = _make_model()
+    assert llm.fireworks_api_base is None
+
+
+def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
+    llm = _make_model()
+    assert llm.fireworks_api_base is None
+
+
+def test_langsmith_gateway_custom_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://my-gateway.example.com/")
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://my-gateway.example.com/fireworks"
+
+
+def test_langsmith_gateway_provider_env_overrides_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("FIREWORKS_API_BASE", "https://api.fireworks.ai/inference/v1")
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://api.fireworks.ai/inference/v1"
+
+
+def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.delenv("FIREWORKS_API_KEY", raising=False)
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_api_key_not_used_without_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "provider-key"
+
+
+def test_langsmith_gateway_api_key_overrides_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "gateway-key"

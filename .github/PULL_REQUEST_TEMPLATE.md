@@ -27,6 +27,9 @@ Thank you for contributing to LangChain! Follow these steps to have your pull re
   - If there are any breaking changes, please clearly describe them.
   - If this PR depends on another PR being merged first, please include "Depends on #PR_NUMBER" in the description.
 
+## Release note
+<!-- Required for net new features or behavior-changing bugfixes. State the user-visible change in release-note-ready language. Omit this section for chores, refactors, or test-only changes. -->
+
 3. Run `make format`, `make lint` and `make test` from the root of the package(s) you've modified.
 
   - We will not consider a PR unless these three are passing in CI.

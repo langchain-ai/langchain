@@ -31,10 +31,12 @@ class ParrotMultiplyArtifactTool(BaseTool):
 
 
 class TestParrotMultiplyToolUnit(ToolsUnitTests):
+    @override
     @property
     def tool_constructor(self) -> type[ParrotMultiplyTool]:
         return ParrotMultiplyTool
 
+    @override
     @property
     def tool_constructor_params(self) -> dict[str, Any]:
         # if your tool constructor instead required initialization arguments like
@@ -42,6 +44,7 @@ class TestParrotMultiplyToolUnit(ToolsUnitTests):
         # as a dictionary, e.g.: `return {'some_arg': 42}`
         return {}
 
+    @override
     @property
     def tool_invoke_params_example(self) -> dict[str, Any]:
         """Returns a dictionary representing the "args" of an example tool call.
@@ -53,10 +56,12 @@ class TestParrotMultiplyToolUnit(ToolsUnitTests):
 
 
 class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
+    @override
     @property
     def tool_constructor(self) -> type[ParrotMultiplyTool]:
         return ParrotMultiplyTool
 
+    @override
     @property
     def tool_constructor_params(self) -> dict[str, Any]:
         # if your tool constructor instead required initialization arguments like
@@ -64,6 +69,7 @@ class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
         # as a dictionary, e.g.: `return {'some_arg': 42}`
         return {}
 
+    @override
     @property
     def tool_invoke_params_example(self) -> dict[str, Any]:
         """Returns a dictionary representing the "args" of an example tool call.
@@ -75,10 +81,12 @@ class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
 
 
 class TestParrotMultiplyArtifactToolIntegration(ToolsIntegrationTests):
+    @override
     @property
     def tool_constructor(self) -> type[ParrotMultiplyArtifactTool]:
         return ParrotMultiplyArtifactTool
 
+    @override
     @property
     def tool_constructor_params(self) -> dict[str, Any]:
         # if your tool constructor instead required initialization arguments like
@@ -86,6 +94,7 @@ class TestParrotMultiplyArtifactToolIntegration(ToolsIntegrationTests):
         # as a dictionary, e.g.: `return {'some_arg': 42}`
         return {}
 
+    @override
     @property
     def tool_invoke_params_example(self) -> dict[str, Any]:
         """Returns a dictionary representing the "args" of an example tool call.

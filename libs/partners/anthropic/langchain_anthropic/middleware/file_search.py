@@ -35,13 +35,15 @@ def _expand_include_patterns(pattern: str) -> list[str] | None:
 
         end = current.find("}", start)
         if end == -1:
-            raise ValueError
+            msg = f"Unbalanced brace in pattern: '{current}' is missing a '}}'."
+            raise ValueError(msg)
 
         prefix = current[:start]
         suffix = current[end + 1 :]
         inner = current[start + 1 : end]
         if not inner:
-            raise ValueError
+            msg = f"Empty brace expansion in pattern: '{current}'."
+            raise ValueError(msg)
 
         for option in inner.split(","):
             _expand(prefix + option + suffix)
@@ -297,7 +299,11 @@ class StateFileSearchMiddleware(AgentMiddleware):
         results: dict[str, list[tuple[int, str]]] = {}
 
         for file_path, file_data in files.items():
-            if not file_path.startswith(base_path):
+            if (
+                base_path != "/"  # noqa: PLR1714
+                and file_path != base_path
+                and not file_path.startswith(base_path + "/")
+            ):
                 continue
 
             # Check include filter

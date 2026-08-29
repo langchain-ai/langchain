@@ -15,7 +15,7 @@ def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
                 if block_type == "text":
                     # Strip annotations
                     new_content.append({"type": "text", "text": block["text"]})
-                elif block_type in ("reasoning", "tool_call"):
+                elif block_type in ("reasoning", "tool_call", "invalid_tool_call"):
                     pass
                 else:
                     new_content.append(block)

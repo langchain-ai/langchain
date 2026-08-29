@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pytest
-from langchain_core.messages import ChatMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, ChatMessage, HumanMessage, SystemMessage
 
 import langchain_openai.chat_models.codex as codex_module
 from langchain_openai.chat_models.base import ChatOpenAI
@@ -287,6 +287,89 @@ def test_request_payload_sends_store_false_and_stream_true() -> None:
     payload = model._get_request_payload([HumanMessage("hi")])
     assert payload["store"] is False
     assert payload["stream"] is True
+
+
+def test_request_payload_with_store_false_drops_reasoning_item_references() -> None:
+    model = _build_model()
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Explain recursive file search."),
+            AIMessage(
+                content=[
+                    {"type": "reasoning", "id": "rs_123", "summary": []},
+                    {
+                        "type": "reasoning",
+                        "id": "rs_456",
+                        "summary": [],
+                        "encrypted_content": "encrypted-context",
+                    },
+                    {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
+                ],
+                response_metadata={"id": "resp_123"},
+            ),
+            HumanMessage("Make it shorter."),
+        ]
+    )
+
+    assert payload["store"] is False
+    assert [item.get("type") for item in payload["input"]] == [
+        "message",
+        "reasoning",
+        "message",
+        "message",
+    ]
+    assert payload["input"][1] == {
+        "type": "reasoning",
+        "id": "rs_456",
+        "summary": [],
+        "encrypted_content": "encrypted-context",
+    }
+    assert payload["input"][2]["content"] == [
+        {"type": "output_text", "text": "Use pathlib.rglob.", "annotations": []}
+    ]
+    assert "id" not in payload["input"][2]
+
+
+def test_request_payload_with_store_false_drops_image_call_references() -> None:
+    model = _build_model()
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Draw a word."),
+            AIMessage(
+                content=[
+                    {"type": "image_generation_call", "id": "ig_reference_only"},
+                    {
+                        "type": "image_generation_call",
+                        "id": "ig_with_result",
+                        "result": "base64-image",
+                        "status": "completed",
+                        "index": 0,
+                    },
+                    {"type": "text", "text": "Done.", "id": "msg_123"},
+                ],
+                response_metadata={"id": "resp_123"},
+            ),
+            HumanMessage("Change the color."),
+        ]
+    )
+
+    assert payload["store"] is False
+    assert [item.get("type") for item in payload["input"]] == [
+        "message",
+        "image_generation_call",
+        "message",
+        "message",
+    ]
+    assert payload["input"][1] == {
+        "type": "image_generation_call",
+        "id": "ig_with_result",
+        "result": "base64-image",
+        "status": "completed",
+    }
+    assert payload["input"][2]["content"] == [
+        {"type": "output_text", "text": "Done.", "annotations": []}
+    ]
+    assert "id" not in payload["input"][2]
 
 
 def test_request_payload_sets_default_instructions() -> None:

@@ -270,7 +270,7 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     stripped: CompatBlock = {k: v for k, v in block.items() if k not in _HEAVY_FIELDS}
     # Restore required-but-heavy fields with minimal placeholders so the
     # start event still validates against the CDDL shape of the block type.
-    if btype in ("tool_call", "server_tool_call"):
+    if btype in {"tool_call", "server_tool_call"}:
         stripped["args"] = {}
     elif btype == "non_standard":
         stripped["value"] = {}
@@ -289,7 +289,7 @@ def _should_emit_delta(block: CompatBlock) -> bool:
         return bool(block.get("text"))
     if btype == "reasoning":
         return bool(block.get("reasoning"))
-    if btype in ("tool_call_chunk", "server_tool_call_chunk"):
+    if btype in {"tool_call_chunk", "server_tool_call_chunk"}:
         return bool(
             block.get("args") or block.get("id") or block.get("name"),
         )
@@ -315,7 +315,7 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
         # on later deltas. Merging (not replacing) keeps earlier keys
         # intact while picking up these late-arriving fields.
         for key, value in delta.items():
-            if key in ("type", "text") or value is None:
+            if key in {"type", "text"} or value is None:
                 continue
             if key == "extras" and isinstance(value, dict):
                 state["extras"] = {**(state.get("extras") or {}), **value}
@@ -328,13 +328,13 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
         # as `extras.signature`; merging (not replacing) keeps earlier
         # keys intact.
         for key, value in delta.items():
-            if key in ("type", "reasoning") or value is None:
+            if key in {"type", "reasoning"} or value is None:
                 continue
             if key == "extras" and isinstance(value, dict):
                 state["extras"] = {**(state.get("extras") or {}), **value}
             else:
                 state[key] = value
-    elif btype in ("tool_call_chunk", "server_tool_call_chunk") and dtype == btype:
+    elif btype in {"tool_call_chunk", "server_tool_call_chunk"} and dtype == btype:
         state["args"] = (state.get("args", "") or "") + (delta.get("args") or "")
         if delta.get("id") is not None:
             state["id"] = delta["id"]
@@ -343,7 +343,7 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
     elif btype == dtype and "data" in delta:
         state["data"] = (state.get("data", "") or "") + (delta.get("data") or "")
         for key, value in delta.items():
-            if key in ("type", "data") or value is None:
+            if key in {"type", "data"} or value is None:
                 continue
             if key == "extras" and isinstance(value, dict):
                 state["extras"] = {**(state.get("extras") or {}), **value}
@@ -432,7 +432,7 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
     their terminal shape.
     """
     btype = block.get("type")
-    if btype in ("tool_call_chunk", "server_tool_call_chunk"):
+    if btype in {"tool_call_chunk", "server_tool_call_chunk"}:
         # Carry provider-specific fields from the accumulated chunk onto
         # the finalized block. Drop the chunk-only keys we rewrite
         # explicitly. `index` is stripped on client-side
@@ -445,7 +445,7 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
         client_tool_call = btype == "tool_call_chunk"
         extras_drop = {"type", "id", "name", "args"}
         if client_tool_call:
-            extras_drop = extras_drop | {"index"}
+            extras_drop |= {"index"}
         extras = {
             k: v for k, v in block.items() if k not in extras_drop and v is not None
         }
@@ -666,10 +666,10 @@ def chunks_to_events(
                 blocks[key] = (wire_idx, _accumulate(existing, block))
             if _should_emit_delta(block):
                 wire_idx, current = blocks[key]
-                is_block_delta = block.get("type") in (
+                is_block_delta = block.get("type") in {
                     "tool_call_chunk",
                     "server_tool_call_chunk",
-                )
+                }
                 delta_source = current if is_block_delta else block
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
@@ -746,10 +746,10 @@ async def achunks_to_events(
                 blocks[key] = (wire_idx, _accumulate(existing, block))
             if _should_emit_delta(block):
                 wire_idx, current = blocks[key]
-                is_block_delta = block.get("type") in (
+                is_block_delta = block.get("type") in {
                     "tool_call_chunk",
                     "server_tool_call_chunk",
-                )
+                }
                 delta_source = current if is_block_delta else block
                 yield ContentBlockDeltaData(
                     event="content-block-delta",

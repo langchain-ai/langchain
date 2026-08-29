@@ -663,6 +663,12 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Returns:
             A new `Runnable`.
+
+        Raises:
+            TypeError: If `other` cannot be coerced to a `Runnable`. This method does
+                not return `NotImplemented`, to avoid delegating LCEL composition to
+                unrelated reflected `|` implementations. To interoperate, implement
+                `Runnable`, make the object callable, or define `__or__` on the left.
         """
         return RunnableSequence(self, coerce_to_runnable(other))
 
@@ -706,6 +712,12 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Returns:
             A new `Runnable`.
+
+        Raises:
+            TypeError: If `other` cannot be coerced to a `Runnable`. This method does
+                not return `NotImplemented`, to avoid delegating LCEL composition to
+                unrelated reflected `|` implementations. To interoperate, implement
+                `Runnable`, make the object callable, or define `__or__` on the left.
         """
         return RunnableSequence(coerce_to_runnable(other), self)
 
@@ -4276,8 +4288,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                 for future in completed_futures:
                     (step_name, generator) = futures.pop(future)
                     try:
-                        chunk = AddableDict({step_name: future.result()})
-                        yield chunk
+                        yield AddableDict({step_name: future.result()})
                         futures[executor.submit(next, generator)] = (
                             step_name,
                             generator,
@@ -4349,8 +4360,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             for task in completed_tasks:
                 (step_name, generator) = tasks.pop(task)
                 try:
-                    chunk = AddableDict({step_name: task.result()})
-                    yield chunk
+                    yield AddableDict({step_name: task.result()})
                     new_task = asyncio.create_task(get_next_chunk(generator))
                     tasks[new_task] = (step_name, generator)
                 except StopAsyncIteration:

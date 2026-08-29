@@ -33,7 +33,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
       - name: Resolve current and latest uv versions
         id: versions
@@ -75,10 +75,13 @@ jobs:
           BRANCH: ${{ steps.versions.outputs.branch }}
         run: |
           set -euo pipefail
-          count=$(gh pr list --head "$BRANCH" --state open --json number --jq 'length')
+          existing_json=$(gh pr list --head "$BRANCH" --state open --json number,url)
+          count=$(printf '%s' "$existing_json" | jq 'length')
           echo "count=$count" >> "$GITHUB_OUTPUT"
           if [ "$count" -gt 0 ]; then
+            pr_url=$(printf '%s' "$existing_json" | jq -r '.[0].url')
             echo "Open PR already exists for $BRANCH; skipping."
+            echo "::notice::Open uv bump PR already exists: $pr_url"
           fi
 
       - name: Wait for astral mirror to replicate
@@ -198,8 +201,10 @@ jobs:
             printf 'Opened automatically by `bump_uv_pin.yml`. Mirror availability on `releases.astral.sh` was verified before this PR was created, so CI should not race the fallback.\n'
           } > "$body_file"
 
-          gh pr create \
+          pr_url=$(gh pr create \
             --head "$BRANCH" \
             --base "$DEFAULT_BRANCH" \
             --title "chore(deps): bump uv to $LATEST" \
-            --body-file "$body_file"
+            --body-file "$body_file")
+          echo "Opened uv bump PR: $pr_url"
+          echo "::notice::Opened uv bump PR: $pr_url"

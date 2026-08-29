@@ -91,6 +91,22 @@ class ModelProfile(TypedDict, total=False):
     reasoning_output: bool
     """Whether the model supports [reasoning / chain-of-thought](https://docs.langchain.com/oss/python/langchain/models#reasoning)."""
 
+    reasoning_effort_levels: list[str]
+    """Supported reasoning-effort levels (e.g. `['low', 'medium', 'high']`).
+
+    Absent or empty if the model does not support a configurable reasoning
+    effort. Only meaningful when `reasoning_output` is `True`.
+    """
+
+    reasoning_effort_default: str
+    """The provider's documented default reasoning-effort level, if known.
+
+    Absent when no default is documented. Only meaningful when
+    `reasoning_effort_levels` is non-empty; not necessarily a member of
+    `reasoning_effort_levels` itself (a model may default to unconfigurable
+    behavior distinct from any explicit level).
+    """
+
     text_outputs: bool
     """Whether text outputs are supported."""
 

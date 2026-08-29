@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins  # noqa: TC003  # runtime-evaluated; subclass `dict()` shadows the builtin
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
@@ -38,13 +39,6 @@ from langchain_core.runnables import Runnable, RunnableSerializable
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
 
-try:
-    from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
-
-    _HAS_TRANSFORMERS = True
-except ImportError:
-    _HAS_TRANSFORMERS = False
-
 
 class LangSmithParams(TypedDict, total=False):
     """LangSmith parameters for tracing."""
@@ -73,6 +67,27 @@ class LangSmithParams(TypedDict, total=False):
     """Integration that created the trace."""
 
 
+@cache
+def _get_tokenizer_module() -> Callable[[str], Any] | None:
+    """Get the `from_pretrained` function from `GPT2TokenizerFast`.
+
+    Imported lazily so that merely importing this module doesn't pull in
+    `transformers` (and, transitively, `pytorch`). Cached so the cost is paid once.
+
+    Returns:
+        The `GPT2TokenizerFast.from_pretrained` function, or `None` if
+        `transformers` is not installed.
+
+    """
+    try:
+        from transformers import (  # type: ignore[import-not-found] # noqa: PLC0415
+            GPT2TokenizerFast,
+        )
+    except ImportError:
+        return None
+    return cast("Callable[[str], Any]", GPT2TokenizerFast.from_pretrained)
+
+
 @cache  # Cache the tokenizer
 def get_tokenizer() -> Any:
     """Get a GPT-2 tokenizer instance.
@@ -86,7 +101,8 @@ def get_tokenizer() -> Any:
         The GPT-2 tokenizer instance.
 
     """
-    if not _HAS_TRANSFORMERS:
+    loader_impl = _get_tokenizer_module()
+    if loader_impl is None:
         msg = (
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
@@ -94,7 +110,7 @@ def get_tokenizer() -> Any:
         )
         raise ImportError(msg)
     # create a GPT-2 tokenizer instance
-    return GPT2TokenizerFast.from_pretrained("gpt2")
+    return loader_impl("gpt2")
 
 
 _GPT2_TOKENIZER_WARNED = False
@@ -191,7 +207,7 @@ class BaseLanguageModel(
     tags: list[str] | None = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
 
-    metadata: dict[str, Any] | None = Field(default=None, exclude=True)
+    metadata: builtins.dict[str, Any] | None = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
 
     custom_get_token_ids: Callable[[str], list[int]] | None = Field(

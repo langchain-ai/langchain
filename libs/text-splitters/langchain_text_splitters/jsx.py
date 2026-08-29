@@ -3,6 +3,8 @@
 import re
 from typing import Any
 
+from typing_extensions import override
+
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
@@ -43,6 +45,7 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
         super().__init__(chunk_size=chunk_size, chunk_overlap=chunk_overlap, **kwargs)
         self._separators = separators or []
 
+    @override
     def split_text(self, text: str) -> list[str]:
         """Split text into chunks.
 

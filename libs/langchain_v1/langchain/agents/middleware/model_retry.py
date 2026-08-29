@@ -7,11 +7,13 @@ import time
 from typing import TYPE_CHECKING
 
 from langchain_core.messages import AIMessage
+from langgraph.errors import GraphBubbleUp
 
 from langchain.agents.middleware._retry import (
     OnFailure,
     RetryOn,
     calculate_delay,
+    default_retry_on,
     should_retry_exception,
     validate_retry_params,
 )
@@ -58,12 +60,15 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
 
         !!! example "Custom exception filtering"
 
+            Exceptions for which the callable returns `False` propagate to the caller.
+            They are not passed to `on_failure`.
+
             ```python
             from anthropic import APIStatusError
 
 
             def should_retry(exc: Exception) -> bool:
-                # Only retry on 5xx errors
+                # Retry 5xx; anything else propagates
                 if isinstance(exc, APIStatusError):
                     return 500 <= exc.status_code < 600
                 return False
@@ -112,7 +117,7 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
         self,
         *,
         max_retries: int = 2,
-        retry_on: RetryOn = (Exception,),
+        retry_on: RetryOn = default_retry_on,
         on_failure: OnFailure = "continue",
         backoff_factor: float = 2.0,
         initial_delay: float = 1.0,
@@ -128,7 +133,9 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
             retry_on: Either a tuple of exception types to retry on, or a callable
                 that takes an exception and returns `True` if it should be retried.
 
-                Default is to retry on all exceptions.
+                By default, retryable model errors and all unclassified exceptions are
+                retried. Exceptions that do not match propagate immediately and are not
+                handled by `on_failure`.
             on_failure: Behavior when all retries are exhausted.
 
                 Options:
@@ -226,19 +233,23 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
             `ModelResponse` or `AIMessage` (the final result).
 
         Raises:
+            Exception: Any exception not matched by `retry_on` is re-raised immediately,
+                without being passed to `on_failure`.
             RuntimeError: If the retry loop completes without returning. (This should not happen.)
         """
         # Initial attempt + retries
         for attempt in range(self.max_retries + 1):
             try:
                 return handler(request)
+            except GraphBubbleUp:
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
-                    # Exception is not retryable, handle failure immediately
-                    return self._handle_failure(exc, attempts_made)
+                    # Exception is not retryable, re-raise immediately
+                    raise
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
@@ -276,19 +287,23 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
             `ModelResponse` or `AIMessage` (the final result).
 
         Raises:
+            Exception: Any exception not matched by `retry_on` is re-raised immediately,
+                without being passed to `on_failure`.
             RuntimeError: If the retry loop completes without returning. (This should not happen.)
         """
         # Initial attempt + retries
         for attempt in range(self.max_retries + 1):
             try:
                 return await handler(request)
+            except GraphBubbleUp:
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
-                    # Exception is not retryable, handle failure immediately
-                    return self._handle_failure(exc, attempts_made)
+                    # Exception is not retryable, re-raise immediately
+                    raise
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
