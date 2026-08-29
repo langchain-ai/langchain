@@ -28,7 +28,11 @@ from langchain.agents import AgentState
 from langchain.agents import middleware as middleware_package
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware import PIIMatch as PublicPIIMatch
-from langchain.agents.middleware._redaction import RedactionRule
+from langchain.agents.middleware._redaction import (
+    RedactionRule,
+    _CARD_NUMBER_MAX_DIGITS,
+    _CARD_NUMBER_MIN_DIGITS,
+)
 from langchain.agents.middleware.pii import (
     PIIDetectionError,
     PIIMatch,
@@ -135,6 +139,73 @@ class TestCreditCardDetection:
         content = "No cards here."
         matches = detect_credit_card(content)
         assert len(matches) == 0
+
+    def test_detect_amex_15_digit(self) -> None:
+        content = "Card: 378282246310005"
+        matches = detect_credit_card(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "378282246310005"
+
+    def test_detect_diners_club_14_digit(self) -> None:
+        content = "Card: 30569309025904"
+        matches = detect_credit_card(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "30569309025904"
+
+    def test_detect_visa_legacy_13_digit(self) -> None:
+        content = "Card: 4222222222222"
+        matches = detect_credit_card(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "4222222222222"
+
+    def test_pattern_covers_luhn_length_bounds(self) -> None:
+        """The pattern and the Luhn length bounds must not drift apart."""
+        detected_lengths = {
+            len(matches[0]["value"])
+            for card in (
+                "4307418529637",
+                "43074185296302",
+                "430741852963072",
+                "4307418529630747",
+                "43074185296307416",
+                "430741852963074189",
+                "4307418529630741857",
+            )
+            if (matches := detect_credit_card(f"Card: {card}"))
+        }
+
+        assert detected_lengths == set(
+            range(_CARD_NUMBER_MIN_DIGITS, _CARD_NUMBER_MAX_DIGITS + 1)
+        )
+
+    def test_reported_cards_from_issue_33924(self) -> None:
+        """Regression test for the numbers reported in #33924."""
+        cards = [
+            "378282246310005",
+            "371449635398431",
+            "378734493671000",
+            "5610591081018250",
+            "30569309025904",
+            "38520000023237",
+            "6011111111111117",
+            "6011000990139424",
+            "3530111333300000",
+            "3566002020360505",
+            "5555555555554444",
+            "5105105105105100",
+            "4111111111111111",
+            "4012888888881881",
+            "4222222222222",
+        ]
+
+        undetected = [
+            card for card in cards if not detect_credit_card(f"my card number is {card}")
+        ]
+
+        assert undetected == []
 
 
 class TestIPDetection:
@@ -319,6 +390,28 @@ class TestMaskStrategy:
         content = result["messages"][0].content
         assert "0366" in content  # Last 4 digits visible
         assert "4532015112830366" not in content
+
+    def test_mask_credit_card_preserves_length(self) -> None:
+        middleware = PIIMiddleware("credit_card", strategy="mask")
+        state = AgentState[Any](messages=[HumanMessage("Card: 378282246310005")])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert "Card: ***********0005" in content
+        assert "378282246310005" not in content
+
+    def test_mask_credit_card_preserves_grouping(self) -> None:
+        middleware = PIIMiddleware("credit_card", strategy="mask")
+        state = AgentState[Any](messages=[HumanMessage("Card: 3782-822463-10005")])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert "Card: ****-******-*0005" in content
+        assert "3782-822463-10005" not in content
 
     def test_mask_ip(self) -> None:
         middleware = PIIMiddleware("ip", strategy="mask")
