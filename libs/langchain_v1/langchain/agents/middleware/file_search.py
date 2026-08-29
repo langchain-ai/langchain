@@ -14,7 +14,7 @@ import re
 import subprocess
 from contextlib import suppress
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Literal
 
 from langchain_core.tools import tool
@@ -271,8 +271,9 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         if not path.startswith("/"):
             path = "/" + path
 
-        # Check for path traversal
-        if ".." in path or "~" in path:
+        # Check for path traversal. Only a full `..` segment escapes the
+        # root; names that merely contain dots (e.g. `src..old`) are valid.
+        if ".." in PurePosixPath(path).parts or "~" in path:
             msg = "Path traversal not allowed"
             raise ValueError(msg)
 

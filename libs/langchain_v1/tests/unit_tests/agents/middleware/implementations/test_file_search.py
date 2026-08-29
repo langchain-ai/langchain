@@ -308,6 +308,36 @@ class TestPathTraversalSecurity:
 
         assert result == "No files found"
 
+    def test_path_with_dotted_segment_is_allowed(self, tmp_path: Path) -> None:
+        """Names that merely contain dots (e.g. `src..old`) are not traversal."""
+        (tmp_path / "src..old").mkdir()
+        (tmp_path / "src..old" / "file.py").write_text("content", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="*.py", path="/src..old")
+
+        assert result == "/src..old/file.py"
+
+    def test_dotted_name_does_not_open_traversal(self, tmp_path: Path) -> None:
+        """A traversal segment must stay blocked even next to dotted names."""
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        with pytest.raises(ValueError, match="Path traversal not allowed"):
+            middleware._validate_and_resolve_path("/src..old/../secret")
+
+    def test_validate_path_rejects_full_dotdot_segment(self, tmp_path: Path) -> None:
+        """Only a full `..` segment is traversal, not dots inside a name."""
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        resolved = middleware._validate_and_resolve_path("/src..old/file.py")
+        assert resolved == tmp_path / "src..old" / "file.py"
+
+        with pytest.raises(ValueError, match="Path traversal not allowed"):
+            middleware._validate_and_resolve_path("/..")
+
     def test_grep_path_traversal_protection(self, tmp_path: Path) -> None:
         """Test that grep also protects against path traversal."""
         (tmp_path / "allowed").mkdir()
