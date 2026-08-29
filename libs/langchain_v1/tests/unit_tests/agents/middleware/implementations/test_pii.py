@@ -175,6 +175,53 @@ class TestIPDetection:
         matches = detect_ip(content)
         assert len(matches) == 0
 
+    def test_detect_valid_ipv6(self) -> None:
+        content = "Server IP: 2001:db8::1"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["type"] == "ip"
+        assert matches[0]["value"] == "2001:db8::1"
+
+    def test_detect_ipv6_loopback(self) -> None:
+        content = "Bound to ::1 on startup"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "::1"
+
+    def test_detect_link_local_ipv6(self) -> None:
+        content = "Neighbour fe80::1 is unreachable"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "fe80::1"
+
+    def test_ipv4_still_detected_next_to_stray_colons(self) -> None:
+        # The leading colons make the whole span look like an IPv6 candidate.
+        # It fails validation, and the IPv4 inside it must still be reported.
+        content = "my ip is :::192.168.1.100 ok"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "192.168.1.100"
+
+    def test_scope_token_not_detected(self) -> None:
+        # ``d::`` on its own is a valid IPv6 address, so ``std::vector`` must not
+        # be taken as a candidate.
+        content = "std::vector<int> v; server at 10.1.2.3"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "10.1.2.3"
+
+    def test_ipv4_mapped_address_reported_once(self) -> None:
+        content = "Client ::ffff:192.168.1.1 connected"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "::ffff:192.168.1.1"
+
 
 class TestMACAddressDetection:
     """Test MAC address detection."""
@@ -330,6 +377,30 @@ class TestMaskStrategy:
         content = result["messages"][0].content
         assert "*.*.*.100" in content
         assert "192.168.1.100" not in content
+
+    def test_mask_ipv6(self) -> None:
+        middleware = PIIMiddleware("ip", strategy="mask")
+        state = AgentState[Any](messages=[HumanMessage("IP: 2001:db8::1")])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert "****" in content
+        assert "2001:db8::1" not in content
+
+    def test_mask_ipv4_mapped_ipv6(self) -> None:
+        # Splitting on "." would otherwise mask this as if it were IPv4.
+        middleware = PIIMiddleware("ip", strategy="mask")
+        state = AgentState[Any](messages=[HumanMessage("IP: ::ffff:192.168.1.1")])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert "****" in content
+        assert "*.*.*.1" not in content
+        assert "192.168.1.1" not in content
 
 
 class TestHashStrategy:

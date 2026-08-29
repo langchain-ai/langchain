@@ -104,24 +104,49 @@ def detect_ip(content: str) -> list[PIIMatch]:
     Returns:
         A list of detected IP address matches.
     """
-    matches: list[PIIMatch] = []
     ipv4_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
+    # Take any colon-bearing run of IPv6 characters as a candidate and let
+    # ``ipaddress`` decide. The lookaround keeps scope tokens such as
+    # ``std::vector`` out, which would otherwise validate as ``d::``.
+    ipv6_pattern = r"(?<![0-9A-Za-z:.])[0-9A-Fa-f:.]*:[0-9A-Fa-f:.]*(?![0-9A-Za-z])"
 
-    for match in re.finditer(ipv4_pattern, content):
-        ip_candidate = match.group()
+    matches: list[PIIMatch] = []
+
+    for match in re.finditer(ipv6_pattern, content):
         try:
-            ipaddress.ip_address(ip_candidate)
+            ipaddress.IPv6Address(match.group())
         except ValueError:
             continue
         matches.append(
             PIIMatch(
                 type="ip",
-                value=ip_candidate,
+                value=match.group(),
                 start=match.start(),
                 end=match.end(),
             )
         )
 
+    ipv6_spans = [(match["start"], match["end"]) for match in matches]
+
+    for match in re.finditer(ipv4_pattern, content):
+        try:
+            ipaddress.IPv4Address(match.group())
+        except ValueError:
+            continue
+        # An IPv4-mapped address such as ``::ffff:192.168.1.1`` is already
+        # covered by the IPv6 match containing it.
+        if any(start <= match.start() and match.end() <= end for start, end in ipv6_spans):
+            continue
+        matches.append(
+            PIIMatch(
+                type="ip",
+                value=match.group(),
+                start=match.start(),
+                end=match.end(),
+            )
+        )
+
+    matches.sort(key=operator.itemgetter("start"))
     return matches
 
 
@@ -276,7 +301,11 @@ def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
                 masked = f"************{digits_only[-_UNMASKED_CHAR_NUMBER:]}"
         elif pii_type == "ip":
             octets = value.split(".")
-            masked = f"*.*.*.{octets[-1]}" if len(octets) == _IPV4_PARTS_NUMBER else "****"
+            masked = (
+                f"*.*.*.{octets[-1]}"
+                if ":" not in value and len(octets) == _IPV4_PARTS_NUMBER
+                else "****"
+            )
         elif pii_type == "mac_address":
             separator = ":" if ":" in value else "-"
             masked = (
