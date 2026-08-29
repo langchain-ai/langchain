@@ -252,6 +252,34 @@ def test_content_blocks_preserve_index_for_images() -> None:
     assert [block.get("index") for block in blocks] == [0, 1]
 
 
+def test_content_blocks_does_not_mutate_text_for_grounding_citations() -> None:
+    content = [{"type": "text", "text": "hello"}]
+    message = AIMessageChunk(
+        response_metadata={
+            "model_provider": "google_genai",
+            "grounding_metadata": {
+                "grounding_chunks": [
+                    {"web": {"uri": "https://example.com", "title": "Example"}}
+                ],
+                "grounding_supports": [
+                    {
+                        "segment": {"start_index": 0, "end_index": 5},
+                        "grounding_chunk_indices": [0],
+                    }
+                ],
+            },
+        },
+        content=content,
+    )
+
+    first = message.content_blocks
+    second = message.content_blocks
+
+    assert message.content == content
+    assert first[0]["annotations"]
+    assert second[0]["annotations"]
+
+
 def test_content_blocks_preserve_index_for_parallel_tool_calls() -> None:
     """Tool calls rebuilt from `tool_calls` must recover their chunk index."""
     message = _genai_chunk(

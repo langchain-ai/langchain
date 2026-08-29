@@ -192,6 +192,24 @@ def test_convert_to_v1_from_anthropic() -> None:
     assert message.content != expected_content  # check no mutation
 
 
+def test_convert_to_v1_from_anthropic_does_not_mutate_index() -> None:
+    content = [{"type": "custom", "payload": "value", "index": 3}]
+    message = AIMessage(
+        content=content, response_metadata={"model_provider": "anthropic"}
+    )
+
+    first = message.content_blocks
+    second = message.content_blocks
+
+    assert message.content == content
+    assert first == second
+    assert first[0] == {
+        "type": "non_standard",
+        "value": {"type": "custom", "payload": "value"},
+        "index": 3,
+    }
+
+
 def test_convert_to_v1_from_anthropic_chunk() -> None:
     chunks = [
         AIMessageChunk(

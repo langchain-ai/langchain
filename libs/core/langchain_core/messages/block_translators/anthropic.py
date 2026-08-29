@@ -241,19 +241,20 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
         for block in content:
             if not isinstance(block, dict):
                 continue
-            block_type = block.get("type")
+            block_copy = block.copy()
+            block_type = block_copy.get("type")
 
             if block_type == "text":
-                if citations := block.get("citations"):
+                if citations := block_copy.get("citations"):
                     text_block: types.TextContentBlock = {
                         "type": "text",
-                        "text": block.get("text", ""),
+                        "text": block_copy.get("text", ""),
                         "annotations": [_convert_citation_to_v1(a) for a in citations],
                     }
                 else:
-                    text_block = {"type": "text", "text": block["text"]}
-                if "index" in block:
-                    text_block["index"] = block["index"]
+                    text_block = {"type": "text", "text": block_copy["text"]}
+                if "index" in block_copy:
+                    text_block["index"] = block_copy["index"]
                 yield text_block
 
             elif block_type == "thinking":
@@ -486,10 +487,10 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
             else:
                 new_block: types.NonStandardContentBlock = {
                     "type": "non_standard",
-                    "value": block,
+                    "value": block_copy,
                 }
-                if "index" in new_block["value"]:
-                    new_block["index"] = new_block["value"].pop("index")
+                if "index" in block_copy:
+                    new_block["index"] = block_copy.pop("index")
                 yield new_block
 
     return list(_iter_blocks())

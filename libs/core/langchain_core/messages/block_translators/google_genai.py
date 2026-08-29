@@ -385,6 +385,8 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
     converted_blocks: list[types.ContentBlock] = []
 
     for item in message.content:
+        if isinstance(item, dict):
+            item = item.copy()  # noqa: PLW2901
         # Where this item's blocks start, so they can inherit its `index` below.
         block_start = len(converted_blocks)
         if isinstance(item, str):
