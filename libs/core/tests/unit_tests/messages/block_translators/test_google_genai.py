@@ -1,8 +1,9 @@
 """Tests for Google GenAI block translator."""
 
+from copy import deepcopy
 from typing import Any
 
-from langchain_core.messages import AIMessageChunk
+from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages.block_translators.google_genai import (
     translate_grounding_metadata_to_citations,
 )
@@ -331,3 +332,34 @@ def test_content_blocks_index_propagation_is_one_to_one() -> None:
 
     assert indices == [0, 1, 2]
     assert len(indices) == len(set(indices))
+
+
+def test_content_blocks_do_not_mutate_message_content_with_grounding() -> None:
+    """Grounding citations must not mutate the original message.content text block."""
+    grounding_metadata = {
+        "grounding_chunks": [
+            {"web": {"uri": "https://example.com", "title": "Example"}}
+        ],
+        "grounding_supports": [
+            {
+                "segment": {"start_index": 0, "end_index": 5},
+                "grounding_chunk_indices": [0],
+            }
+        ],
+    }
+    message = AIMessage(
+        content=[{"type": "text", "text": "hello"}],
+        response_metadata={
+            "model_provider": "google_genai",
+            "grounding_metadata": grounding_metadata,
+        },
+    )
+
+    original = deepcopy(message.content)
+    blocks = message.content_blocks
+
+    assert message.content == original
+    assert blocks[0]["type"] == "text"
+    assert blocks[0]["text"] == "hello"
+    assert "annotations" in blocks[0]
+    assert "annotations" not in message.content[0]  # type: ignore[index]
