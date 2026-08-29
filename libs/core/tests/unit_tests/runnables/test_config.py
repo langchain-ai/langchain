@@ -414,3 +414,8 @@ class TestMergeMetadataDicts:
         assert merged["metadata"] == {
             "lc_versions": {"a": "1", "b": "2", "c": "3"},
         }
+def test_merge_configs_recursion_limit() -> None:
+    config1 = {"recursion_limit": 25}
+    config2 = {}
+    merged = merge_configs(config1, config2)
+    assert merged["recursion_limit"] == 25

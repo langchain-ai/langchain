@@ -485,7 +485,7 @@ def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
                         # base_callbacks is also a manager
                         base["callbacks"] = base_callbacks.merge(these_callbacks)
             elif key == "recursion_limit":
-                if config["recursion_limit"] != DEFAULT_RECURSION_LIMIT:
+                if config["recursion_limit"] is not None:
                     base["recursion_limit"] = config["recursion_limit"]
             elif key in COPIABLE_KEYS and config[key] is not None:  # type: ignore[literal-required]
                 base[key] = config[key].copy()  # type: ignore[literal-required]
