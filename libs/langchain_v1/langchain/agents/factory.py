@@ -1698,10 +1698,11 @@ def create_agent(
             tools_to_model_destinations,
         )
 
-        # Include all possible destinations returned by _make_model_to_tools_edge.
-        # The router can return loop_entry_node when tool calls are already satisfied
-        # by synthetic ToolMessages injected by middleware.
-        model_to_tools_destinations = ["tools", exit_node, loop_entry_node]
+        # Include loop_entry_node when middleware can inject synthetic tool
+        # messages, or when structured output or after-model hooks can reroute there.
+        model_to_tools_destinations = ["tools", exit_node]
+        if response_format or loop_exit_node != "model" or middleware_w_wrap_model_call:
+            model_to_tools_destinations.append(loop_entry_node)
 
         graph.add_conditional_edges(
             loop_exit_node,
