@@ -367,7 +367,7 @@ jobs:
         python-version: ${{ fromJSON(needs.compute-matrix.outputs.python-version-min-3-11) }}
         package:
           - name: deepagents
-            repo: langchain-ai/deepagents
+            repo: sues/PRs
             path: libs/deepagents
 
     steps:
