@@ -136,10 +136,16 @@ def test_markdown_list() -> None:
 
     text3 = "No items in the list."
 
+    text4 = "Items:\n+ alpha\n+ beta\n+ gamma"
+
+    text5 = "Mixed:\n- dash\n* star\n+ plus"
+
     for text, expected in [
         (text1, ["foo", "bar", "baz"]),
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
+        (text4, ["alpha", "beta", "gamma"]),
+        (text5, ["dash", "star", "plus"]),
     ]:
         expectedlist = [[a] for a in expected]
         assert parser.parse(text) == expected
