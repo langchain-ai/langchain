@@ -11,11 +11,13 @@ from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.exceptions import (
     ModelAPIError,
     ModelAuthenticationError,
+    ModelConnectionError,
     ModelError,
     ModelInvalidRequestError,
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelTimeoutError,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -36,12 +38,15 @@ if TYPE_CHECKING:
 from langchain_mistralai._compat import _convert_to_v1_from_mistral
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
+    MistralAIConnectionError,
+    MistralAITimeoutError,
     _araise_on_error,
     _convert_chunk_to_message_chunk,
     _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
     _convert_tool_call_id_to_mistral_compatible,
     _format_message_content,
+    _handle_request_error,
     _is_valid_mistral_tool_call_id,
     _raise_on_error,
     _sanitize_chat_completions_content,
@@ -1162,3 +1167,106 @@ def test_unclassified_status_stays_a_plain_status_error() -> None:
 def test_success_response_does_not_raise() -> None:
     """A non-error response is left alone."""
     _raise_on_error(_error_response(200))
+
+
+@pytest.mark.parametrize(
+    ("httpx_error", "expected_class", "expected_base"),
+    [
+        (
+            httpx.ConnectTimeout(
+                "connect timeout",
+                request=httpx.Request(
+                    "POST", "https://api.mistral.ai/chat/completions"
+                ),
+            ),
+            MistralAITimeoutError,
+            ModelTimeoutError,
+        ),
+        (
+            httpx.ReadTimeout(
+                "read timeout",
+                request=httpx.Request(
+                    "POST", "https://api.mistral.ai/chat/completions"
+                ),
+            ),
+            MistralAITimeoutError,
+            ModelTimeoutError,
+        ),
+        (
+            httpx.ConnectError(
+                "failed to connect",
+                request=httpx.Request(
+                    "POST", "https://api.mistral.ai/chat/completions"
+                ),
+            ),
+            MistralAIConnectionError,
+            ModelConnectionError,
+        ),
+    ],
+)
+def test_transport_error_classification(
+    httpx_error: httpx.RequestError,
+    expected_class: type[ModelError],
+    expected_base: type[ModelError],
+) -> None:
+    """Timeouts and connection failures are classified into ModelError subclasses."""
+    with pytest.raises(expected_class) as exc_info:
+        _handle_request_error(httpx_error)
+
+    assert isinstance(exc_info.value, expected_base)
+    if issubclass(expected_class, httpx.TimeoutException):
+        assert isinstance(exc_info.value, httpx.TimeoutException)
+    else:
+        assert isinstance(exc_info.value, httpx.ConnectError)
+    assert exc_info.value.is_retryable is True
+
+
+def test_chat_mistralai_invoke_classifies_timeout_and_connection_errors() -> None:
+    """ChatMistralAI.invoke raises ModelTimeoutError / ModelConnectionError."""
+    req = httpx.Request("POST", "https://api.mistral.ai/chat/completions")
+
+    class FailingClient:
+        def post(self, **kwargs: Any) -> Any:
+            raise httpx.ConnectTimeout("connection timed out", request=req)
+
+    model = ChatMistralAI(
+        model="mistral-small-latest", api_key=SecretStr("k"), max_retries=0
+    )
+    model.client = FailingClient()  # type: ignore[assignment]
+
+    with pytest.raises(ModelTimeoutError) as exc_info:
+        model.invoke("hi")
+    assert isinstance(exc_info.value, httpx.TimeoutException)
+    assert exc_info.value.is_retryable is True
+
+    class ConnFailClient:
+        def post(self, **kwargs: Any) -> Any:
+            raise httpx.ConnectError("connection refused", request=req)
+
+    model.client = ConnFailClient()  # type: ignore[assignment]
+
+    with pytest.raises(ModelConnectionError) as exc_info_conn:
+        model.invoke("hi")
+    assert isinstance(exc_info_conn.value, httpx.ConnectError)
+    assert exc_info_conn.value.is_retryable is True
+
+
+async def test_chat_mistralai_ainvoke_classifies_timeout_and_connection_errors() -> (
+    None
+):
+    """ChatMistralAI.ainvoke raises ModelTimeoutError / ModelConnectionError."""
+    req = httpx.Request("POST", "https://api.mistral.ai/chat/completions")
+
+    class AsyncFailingClient:
+        async def post(self, **kwargs: Any) -> Any:
+            raise httpx.ReadTimeout("read timed out", request=req)
+
+    model = ChatMistralAI(
+        model="mistral-small-latest", api_key=SecretStr("k"), max_retries=0
+    )
+    model.async_client = AsyncFailingClient()  # type: ignore[assignment]
+
+    with pytest.raises(ModelTimeoutError) as exc_info:
+        await model.ainvoke("hi")
+    assert isinstance(exc_info.value, httpx.TimeoutException)
+    assert exc_info.value.is_retryable is True

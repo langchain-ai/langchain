@@ -26,10 +26,12 @@ from langchain_core.callbacks import (
 from langchain_core.exceptions import (
     ModelAPIError,
     ModelAuthenticationError,
+    ModelConnectionError,
     ModelInvalidRequestError,
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelTimeoutError,
 )
 from langchain_core.language_models import (
     LanguageModelInput,
@@ -251,6 +253,14 @@ class MistralAIAPIError(httpx.HTTPStatusError, ModelAPIError):
     """Mistral AI server error classified as a LangChain model error."""
 
 
+class MistralAITimeoutError(httpx.TimeoutException, ModelTimeoutError):
+    """Mistral AI timeout classified as a LangChain model error."""
+
+
+class MistralAIConnectionError(httpx.ConnectError, ModelConnectionError):
+    """Mistral AI connection failure classified as a LangChain model error."""
+
+
 _STATUS_ERROR_TYPES: dict[int, type[httpx.HTTPStatusError]] = {
     400: MistralAIInvalidRequestError,
     401: MistralAIAuthenticationError,
@@ -309,16 +319,30 @@ async def _araise_on_error(response: httpx.Response) -> None:
         )
 
 
+def _handle_request_error(e: httpx.RequestError) -> None:
+    """Classify transport-level request errors into LangChain model errors."""
+    if isinstance(e, (MistralAITimeoutError, MistralAIConnectionError)):
+        raise e
+    if isinstance(e, httpx.TimeoutException):
+        raise MistralAITimeoutError(str(e), request=e.request) from e
+    if isinstance(e, httpx.ConnectError):
+        raise MistralAIConnectionError(str(e), request=e.request) from e
+    raise e
+
+
 async def _aiter_sse(
     event_source_mgr: AbstractAsyncContextManager[EventSource],
 ) -> AsyncIterator[dict]:
     """Iterate over the server-sent events."""
-    async with event_source_mgr as event_source:
-        await _araise_on_error(event_source.response)
-        async for event in event_source.aiter_sse():
-            if event.data == "[DONE]":
-                return
-            yield event.json()
+    try:
+        async with event_source_mgr as event_source:
+            await _araise_on_error(event_source.response)
+            async for event in event_source.aiter_sse():
+                if event.data == "[DONE]":
+                    return
+                yield event.json()
+    except httpx.RequestError as e:
+        _handle_request_error(e)
 
 
 async def acompletion_with_retry(
@@ -335,15 +359,24 @@ async def acompletion_with_retry(
             kwargs["stream"] = False
         stream = kwargs["stream"]
         if stream:
-            event_source = aconnect_sse(
-                llm.async_client, "POST", "/chat/completions", json=kwargs
-            )
+            try:
+                event_source = aconnect_sse(
+                    llm.async_client, "POST", "/chat/completions", json=kwargs
+                )
+            except httpx.RequestError as e:
+                _handle_request_error(e)
             return _aiter_sse(event_source)
-        response = await llm.async_client.post(url="/chat/completions", json=kwargs)
+        try:
+            response = await llm.async_client.post(url="/chat/completions", json=kwargs)
+        except httpx.RequestError as e:
+            _handle_request_error(e)
         await _araise_on_error(response)
         return response.json()
 
-    return await _completion_with_retry(**kwargs)
+    try:
+        return await _completion_with_retry(**kwargs)
+    except httpx.RequestError as e:
+        _handle_request_error(e)
 
 
 def _convert_chunk_to_message_chunk(
@@ -733,21 +766,30 @@ class ChatMistralAI(BaseChatModel):
             if stream:
 
                 def iter_sse() -> Iterator[dict]:
-                    with connect_sse(
-                        self.client, "POST", "/chat/completions", json=kwargs
-                    ) as event_source:
-                        _raise_on_error(event_source.response)
-                        for event in event_source.iter_sse():
-                            if event.data == "[DONE]":
-                                return
-                            yield event.json()
+                    try:
+                        with connect_sse(
+                            self.client, "POST", "/chat/completions", json=kwargs
+                        ) as event_source:
+                            _raise_on_error(event_source.response)
+                            for event in event_source.iter_sse():
+                                if event.data == "[DONE]":
+                                    return
+                                yield event.json()
+                    except httpx.RequestError as e:
+                        _handle_request_error(e)
 
                 return iter_sse()
-            response = self.client.post(url="/chat/completions", json=kwargs)
+            try:
+                response = self.client.post(url="/chat/completions", json=kwargs)
+            except httpx.RequestError as e:
+                _handle_request_error(e)
             _raise_on_error(response)
             return response.json()
 
-        return _completion_with_retry(**kwargs)
+        try:
+            return _completion_with_retry(**kwargs)
+        except httpx.RequestError as e:
+            _handle_request_error(e)
 
     def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:
         overall_token_usage: dict = {}
