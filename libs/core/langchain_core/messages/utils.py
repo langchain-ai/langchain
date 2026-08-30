@@ -2245,6 +2245,9 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict[str, 
 _IMAGE_BASE_TOKENS = 85
 """Base token cost of an image, also used when dimensions cannot be determined."""
 
+# Providers charge a flat rate for low-detail images, so dimensions are irrelevant.
+_IMAGE_DETAIL_LOW = "low"
+
 _IMAGE_TILE_TOKENS = 170
 _IMAGE_TILE_SIZE = 512
 _IMAGE_MAX_EDGE = 2048
@@ -2439,6 +2442,23 @@ def _image_base64(block: dict[str, Any]) -> str:
     return ""
 
 
+def _image_detail(block: dict[str, Any]) -> str:
+    """Extract the detail control from an image content block.
+
+    Args:
+        block: A content block dictionary.
+
+    Returns:
+        The lowercased `detail` value, or an empty string if the block sets none.
+    """
+    detail = block.get("detail")
+    if not isinstance(detail, str):
+        image_url = block.get("image_url")
+        detail = image_url.get("detail") if isinstance(image_url, dict) else None
+
+    return detail.lower() if isinstance(detail, str) else ""
+
+
 def _count_image_tokens(block: dict[str, Any], tokens_per_image: int | None) -> int:
     """Count the tokens contributed by a single image block.
 
@@ -2451,6 +2471,9 @@ def _count_image_tokens(block: dict[str, Any], tokens_per_image: int | None) -> 
     """
     if tokens_per_image is not None:
         return tokens_per_image
+
+    if _image_detail(block) == _IMAGE_DETAIL_LOW:
+        return _IMAGE_BASE_TOKENS
 
     data = _image_base64(block)
     if data:
@@ -2479,7 +2502,7 @@ def count_tokens_approximately(
     - For tool messages, the token count also includes the tool call ID.
     - For multimodal messages with images, estimates the token cost from the image
         dimensions where they can be read from the payload, instead of counting
-        base64-encoded characters.
+        base64-encoded characters. Images marked as low detail are fixed-cost.
     - If tools are provided, the token count also includes stringified tool schemas.
 
     Args:
@@ -2496,7 +2519,7 @@ def count_tokens_approximately(
         tokens_per_image: Fixed token cost per image. When set, it is applied to
             every image and no dimensions are read. When `None` (default), the
             cost is estimated from the image's dimensions, falling back to 85 if
-            they cannot be determined.
+            they cannot be determined or if the image is marked as low detail.
         use_usage_metadata_scaling: If True, and all AI messages have consistent
             `response_metadata['model_provider']`, scale the approximate token count
             using the **most recent** AI message that has

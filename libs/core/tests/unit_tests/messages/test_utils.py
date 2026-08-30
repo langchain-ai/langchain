@@ -3020,6 +3020,49 @@ def test_count_tokens_approximately_image_block_shapes() -> None:
     assert counts.pop() > 700
 
 
+def test_count_tokens_approximately_low_detail_image_is_fixed_cost() -> None:
+    """Low-detail images are charged a flat rate, so dimensions must be ignored."""
+    encoded = base64.b64encode(_png_bytes(1920, 1080)).decode()
+    data_url = f"data:image/png;base64,{encoded}"
+
+    high_detail = count_tokens_approximately(
+        [HumanMessage(content=[{"type": "image_url", "image_url": {"url": data_url}}])]
+    )
+    assert high_detail > 1000
+
+    # Both the raw Chat Completions shape and the normalized block carry `detail`
+    nested = HumanMessage(
+        content=[{"type": "image_url", "image_url": {"url": data_url, "detail": "low"}}]
+    )
+    top_level = HumanMessage(
+        content=[
+            {
+                "type": "image",
+                "base64": encoded,
+                "mime_type": "image/png",
+                "detail": "low",
+            }
+        ]
+    )
+
+    for message in (nested, top_level):
+        assert count_tokens_approximately([message]) < 100
+
+
+def test_count_tokens_approximately_high_and_auto_detail_use_dimensions() -> None:
+    """Only low detail is fixed-cost; other values still estimate from dimensions."""
+    encoded = base64.b64encode(_png_bytes(1920, 1080)).decode()
+    data_url = f"data:image/png;base64,{encoded}"
+
+    for detail in ("high", "auto", "HIGH"):
+        message = HumanMessage(
+            content=[
+                {"type": "image_url", "image_url": {"url": data_url, "detail": detail}}
+            ]
+        )
+        assert count_tokens_approximately([message]) > 1000
+
+
 def test_count_tokens_approximately_image_without_dimensions() -> None:
     """Images with no readable dimensions should fall back to the fixed penalty."""
     remote = HumanMessage(
