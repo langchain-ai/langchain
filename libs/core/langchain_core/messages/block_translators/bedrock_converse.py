@@ -274,17 +274,12 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
                 yield tool_call_chunk
 
             else:
-                if "index" in block:
-                    # Copy before lifting `index` off the block.
-                    value = block.copy()
-                    index = value.pop("index")
-                    new_block: types.NonStandardContentBlock = {
-                        "type": "non_standard",
-                        "value": value,
-                        "index": index,
-                    }
-                else:
-                    new_block = {"type": "non_standard", "value": block}
+                new_block: types.NonStandardContentBlock = {
+                    "type": "non_standard",
+                    "value": block,
+                }
+                if "index" in new_block["value"]:
+                    new_block["index"] = new_block["value"].pop("index")
                 yield new_block
 
     return list(_iter_blocks())

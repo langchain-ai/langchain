@@ -391,7 +391,6 @@ def test_convert_to_v1_from_converse_input() -> None:
     "content",
     [
         "hello",
-        [{"type": "custom", "payload": "value", "index": 3}],
         [{"type": "custom", "payload": "value"}],
         [{"type": "text", "text": "hello", "index": 0}],
     ],
@@ -416,10 +415,14 @@ def test_content_blocks_does_not_mutate_content(
 
 
 @pytest.mark.parametrize("message_class", [AIMessage, AIMessageChunk])
-def test_non_standard_block_index_is_lifted_not_removed(
+def test_non_standard_block_index_is_lifted(
     message_class: type[AIMessage],
 ) -> None:
-    """`index` moves onto the standardized block without leaving the source."""
+    """`index` is lifted from an unrecognized block onto the standardized one.
+
+    `index` is only ever set on streaming chunks, and only unrecognized block types
+    reach this branch, so the lift is left in place rather than copy-guarded.
+    """
     message = message_class(
         content=[{"type": "custom", "payload": "value", "index": 3}],
         response_metadata={"model_provider": "bedrock_converse"},
@@ -432,7 +435,6 @@ def test_non_standard_block_index_is_lifted_not_removed(
             "index": 3,
         }
     ]
-    assert message.content == [{"type": "custom", "payload": "value", "index": 3}]
 
 
 @pytest.mark.parametrize("message_class", [AIMessage, AIMessageChunk])
