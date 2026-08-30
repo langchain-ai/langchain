@@ -209,6 +209,11 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "prompt_values",
         "PromptValue",
     ),
+    ("langchain", "schema", "prompt", "ImagePromptValue"): (
+        "langchain_core",
+        "prompt_values",
+        "ImagePromptValue",
+    ),
     ("langchain", "schema", "runnable", "RunnableBinding"): (
         "langchain_core",
         "runnables",
@@ -903,6 +908,11 @@ OLD_CORE_NAMESPACES_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "langchain_core",
         "prompt_values",
         "ChatPromptValueConcrete",
+    ),
+    ("langchain_core", "prompt_values", "ImagePromptValue"): (
+        "langchain_core",
+        "prompt_values",
+        "ImagePromptValue",
     ),
     ("langchain_core", "runnables", "base", "RunnableBindingBase"): (
         "langchain_core",
