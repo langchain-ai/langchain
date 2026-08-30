@@ -427,11 +427,10 @@ def _get_key(
                 if resolved_scope in (0, False):
                     return resolved_scope
                 return resolved_scope or ""
-        except (AttributeError, KeyError, IndexError, ValueError, TypeError):
-            # We couldn't find the key in the current scope
-            # TypeError: Attempted to traverse into non-dict/list type
-            # We'll try again on the next pass
-            pass
+        except (AttributeError, KeyError, IndexError, ValueError, TypeError, RecursionError) as e:
+            # Re-raise exceptions to prevent silent failures on malformed templates
+            msg = f"Error rendering mustache template key {key!r}"
+            raise type(e)(msg) from e
 
     # We couldn't find the key in any of the scopes
 

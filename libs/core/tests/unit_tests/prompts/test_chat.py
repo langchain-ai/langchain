@@ -1973,7 +1973,7 @@ def test_fstring_rejects_nested_replacement_field_in_image_url() -> None:
 
 
 def test_mustache_template_attribute_access_vulnerability() -> None:
-    """Test that Mustache template injection is blocked.
+    """Test that Mustache template injection is blocked and raises an exception.
 
     Verify the fix for security vulnerability GHSA-6qv9-48xg-fc7f
 
@@ -1981,8 +1981,8 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
     dangerous attributes like __class__, __globals__, etc.
 
     The fix adds isinstance checks that reject non-dict/list types.
-    When templates try to traverse Python objects, they get empty string
-    per Mustache spec (better than the previous behavior of exposing internals).
+    When templates try to traverse Python objects, they now raise a TypeError
+    instead of failing silently.
     """
     msg = HumanMessage("howdy")
 
@@ -1992,10 +1992,9 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
         template_format="mustache",
     )
 
-    # After the fix: returns empty string (attack blocked!)
-    # Previously would return "HumanMessage" via getattr()
-    result = prompt.invoke({"question": msg})
-    assert result.messages[0].content == ""  # type: ignore[attr-defined]
+    # After the fix: raises TypeError (attack blocked and error surfaced!)
+    with pytest.raises(TypeError, match="Error rendering mustache template key 'question.__class__.__name__'"):
+        prompt.invoke({"question": msg})
 
     # Mustache still works correctly with actual dicts
     prompt_dict = ChatPromptTemplate.from_messages(
@@ -2004,3 +2003,15 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
     )
     result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
     assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]
+
+def test_mustache_malicious_payload_raises() -> None:
+    """Test that malicious nested payloads raise an exception instead of silently failing."""
+    prompt = ChatPromptTemplate.from_messages(
+        [("human", "{{person.address.city}}")],
+        template_format="mustache",
+    )
+    
+    # Missing nested key throws a KeyError instead of silently returning empty string
+    with pytest.raises(KeyError, match="Error rendering mustache template key 'person.address.city'"):
+        prompt.invoke({"person": {"name": "Bob"}})
+

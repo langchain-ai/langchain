@@ -64,6 +64,26 @@ def test_validate_url_sync_blocks_metadata_without_allowlist() -> None:
         validate_url_sync("http://metadata.google.internal/path", policy)
 
 
+def test_validate_url_sync_blocks_malformed_ip() -> None:
+    policy = SSRFPolicy()
+
+    # 0177.0.0.1 is an octal representation of 127.0.0.1 which raises ValueError
+    # in python's ipaddress but is successfully parsed by underlying C libs (inet_aton).
+    with pytest.raises(SSRFBlockedError, match="malformed IP address"):
+        validate_url_sync("http://0177.0.0.1/path", policy)
+
+    # test hex IP
+    with pytest.raises(SSRFBlockedError, match="malformed IP address"):
+        validate_url_sync("http://0x7f.0.0.1/path", policy)
+
+    # Valid hostnames should NOT be blocked by this check
+    try:
+        validate_url_sync("http://github.com/", policy)
+    except SSRFBlockedError as e:
+        if str(e) == "malformed IP address":
+            pytest.fail("Valid hostname was incorrectly blocked as a malformed IP")
+
+
 class _RecordingAsyncTransport(httpx.AsyncBaseTransport):
     def __init__(self) -> None:
         self.requests: list[httpx.Request] = []
