@@ -136,10 +136,16 @@ def test_markdown_list() -> None:
 
     text3 = "No items in the list."
 
+    text4 = "Items with plus bullets:\n+ item1\n    + item2\n+ item3"
+
+    text5 = "Mixed bullets:\n- dash\n* asterisk\n+ plus"
+
     for text, expected in [
         (text1, ["foo", "bar", "baz"]),
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
+        (text4, ["item1", "item2", "item3"]),
+        (text5, ["dash", "asterisk", "plus"]),
     ]:
         expectedlist = [[a] for a in expected]
         assert parser.parse(text) == expected
@@ -282,10 +288,16 @@ async def test_markdown_list_async() -> None:
 
     text3 = "No items in the list."
 
+    text4 = "Items with plus bullets:\n+ item1\n+ item2\n+ item3"
+
+    text5 = "Mixed bullets:\n- dash\n* asterisk\n+ plus"
+
     for text, expected in [
         (text1, ["foo", "bar", "baz"]),
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
+        (text4, ["item1", "item2", "item3"]),
+        (text5, ["dash", "asterisk", "plus"]),
     ]:
         expectedlist = [[a] for a in expected]
         assert await parser.aparse(text) == expected
