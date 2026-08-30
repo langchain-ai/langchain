@@ -221,8 +221,11 @@ class NumberedListOutputParser(ListOutputParser):
 class MarkdownListOutputParser(ListOutputParser):
     """Parse a Markdown list."""
 
-    pattern: str = r"^\s*[-*]\s([^\n]+)$"
-    """The pattern to match a Markdown list item."""
+    pattern: str = r"^\s*[-*+]\s([^\n]+)$"
+    """The pattern to match a Markdown list item.
+
+    Matches the three CommonMark bullet list markers (``-``, ``*``, ``+``).
+    """
 
     @override
     def get_format_instructions(self) -> str:
