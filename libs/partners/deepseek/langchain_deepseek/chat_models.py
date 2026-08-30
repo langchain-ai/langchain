@@ -334,6 +334,32 @@ class ChatDeepSeek(BaseChatOpenAI):
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None
 
+    def _with_beta_api_base(self) -> Self:
+        """Return a copy of this model that targets DeepSeek's beta endpoint.
+
+        DeepSeek only honors `strict` tool schemas on its beta endpoint, so
+        `bind_tools()` and `with_structured_output()` retarget the model when
+        `strict=True`.
+
+        `model_copy()` does not re-run validators and carries the `openai`
+        clients over by reference, so updating `api_base` alone would leave the
+        copy issuing requests against the original base URL. The clients are
+        cleared so `validate_environment()` rebuilds them against the beta
+        endpoint.
+        """
+        beta_model = self.model_copy(
+            update={
+                "api_base": DEFAULT_BETA_API_BASE,
+                "client": None,
+                "async_client": None,
+                "root_client": None,
+                "root_async_client": None,
+            }
+        )
+        # Pydantic exposes the decorated validator as a descriptor proxy, which
+        # mypy does not consider callable; invoking it directly is intentional.
+        return beta_model.validate_environment()  # type: ignore[operator]
+
     def _get_request_payload(
         self,
         input_: LanguageModelInput,
@@ -521,7 +547,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
             # Create a new instance with beta endpoint
-            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            beta_model = self._with_beta_api_base()
             return beta_model.bind_tools(
                 tools,
                 tool_choice=tool_choice,
@@ -627,7 +653,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
             # Create a new instance with beta endpoint
-            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            beta_model = self._with_beta_api_base()
             return beta_model.with_structured_output(
                 schema,
                 method=method,
