@@ -527,10 +527,15 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
     if grounding_metadata:
         citations = translate_grounding_metadata_to_citations(grounding_metadata)
 
-        for block in converted_blocks:
+        for i, block in enumerate(converted_blocks):
             if block["type"] == "text" and citations:
-                # Add citations to text blocks (only the first text block)
-                block["annotations"] = cast("list[types.Annotation]", citations)
+                # Add citations to text blocks (only the first text block).
+                # Replaced rather than assigned into: `block` is the caller's own
+                # dict from `message.content`.
+                converted_blocks[i] = cast(
+                    "types.TextContentBlock",
+                    {**block, "annotations": citations},
+                )
                 break
 
     # Audio is stored on the message.additional_kwargs
