@@ -160,6 +160,13 @@ def test_markdown_list() -> None:
         assert list(parser.transform(iter([text]))) == expectedlist
 
 
+def test_markdown_list_plus_bullet() -> None:
+    parser = MarkdownListOutputParser()
+    assert parser.parse("+ a\n+ b") == ["a", "b"]
+    assert parser.parse("+ a\n- b\n* c") == ["a", "b", "c"]
+    assert parser.parse("  + indented") == ["indented"]
+
+
 T = TypeVar("T")
 
 
