@@ -438,9 +438,17 @@ def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
         The merged config.
     """
     base: RunnableConfig = {}
+    # Record which raw configs explicitly supply recursion_limit before
+    # ensure_config fills in the default, so an explicit value equal to
+    # DEFAULT_RECURSION_LIMIT is not silently discarded.
+    non_none = [c for c in configs if c is not None]
+    has_explicit_limit = [
+        "recursion_limit" in c and c["recursion_limit"] is not None
+        for c in non_none
+    ]
     # Even though the keys aren't literals, this is correct
     # because both dicts are the same type
-    for config in (ensure_config(c) for c in configs if c is not None):
+    for idx, config in enumerate(ensure_config(c) for c in non_none):
         for key in config:
             if key == "metadata":
                 base["metadata"] = _merge_metadata_dicts(
@@ -485,7 +493,10 @@ def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
                         # base_callbacks is also a manager
                         base["callbacks"] = base_callbacks.merge(these_callbacks)
             elif key == "recursion_limit":
-                if config["recursion_limit"] != DEFAULT_RECURSION_LIMIT:
+                if (
+                    has_explicit_limit[idx]
+                    or config["recursion_limit"] != DEFAULT_RECURSION_LIMIT
+                ):
                     base["recursion_limit"] = config["recursion_limit"]
             elif key in COPIABLE_KEYS and config[key] is not None:  # type: ignore[literal-required]
                 base[key] = config[key].copy()  # type: ignore[literal-required]

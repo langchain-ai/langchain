@@ -406,6 +406,31 @@ class TestMergeMetadataDicts:
         )
         assert merged["metadata"] == {"lc_versions": {"a": "1"}}
 
+    def test_merge_configs_explicit_default_recursion_limit(self) -> None:
+        from langchain_core.runnables.config import DEFAULT_RECURSION_LIMIT
+
+        merged = merge_configs(
+            {"configurable": {"thread_id": "test"}},
+            RunnableConfig(recursion_limit=DEFAULT_RECURSION_LIMIT),
+        )
+        assert merged.get("recursion_limit") == DEFAULT_RECURSION_LIMIT
+
+    def test_merge_configs_omitted_limit_does_not_overwrite_custom(self) -> None:
+        merged = merge_configs(
+            RunnableConfig(recursion_limit=50),
+            {"configurable": {"thread_id": "test"}},
+        )
+        assert merged.get("recursion_limit") == 50
+
+    def test_merge_configs_explicit_default_overwrites_custom(self) -> None:
+        from langchain_core.runnables.config import DEFAULT_RECURSION_LIMIT
+
+        merged = merge_configs(
+            RunnableConfig(recursion_limit=50),
+            RunnableConfig(recursion_limit=DEFAULT_RECURSION_LIMIT),
+        )
+        assert merged.get("recursion_limit") == DEFAULT_RECURSION_LIMIT
+
     def test_three_config_merge_accumulates_lc_versions(self) -> None:
         c1: RunnableConfig = {"metadata": {"lc_versions": {"a": "1"}}}
         c2: RunnableConfig = {"metadata": {"lc_versions": {"b": "2"}}}
