@@ -14,7 +14,11 @@ from openai.types.chat.chat_completion import Choice
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field, SecretStr
 
-from langchain_deepseek.chat_models import DEFAULT_API_BASE, ChatDeepSeek
+from langchain_deepseek.chat_models import (
+    DEFAULT_API_BASE,
+    DEFAULT_BETA_API_BASE,
+    ChatDeepSeek,
+)
 
 MODEL_NAME = "deepseek-chat"
 
@@ -262,6 +266,29 @@ class SampleTool(PydanticBaseModel):
     value: str = Field(description="A test value")
 
 
+_MAX_RUNNABLE_DEPTH = 6
+
+
+def _find_chat_model(runnable: Any, depth: int = 0) -> ChatDeepSeek | None:
+    """Walk a composed runnable and return the first `ChatDeepSeek` found."""
+    if isinstance(runnable, ChatDeepSeek):
+        return runnable
+    if depth > _MAX_RUNNABLE_DEPTH:
+        return None
+    for attr in ("bound", "first", "last", "runnable", "steps", "steps__"):
+        value = getattr(runnable, attr, None)
+        if value is None:
+            continue
+        candidates = value if isinstance(value, (list, tuple)) else [value]
+        if isinstance(value, dict):
+            candidates = list(value.values())
+        for candidate in candidates:
+            found = _find_chat_model(candidate, depth + 1)
+            if found is not None:
+                return found
+    return None
+
+
 class TestChatDeepSeekStrictMode:
     """Tests for DeepSeek strict mode support.
 
@@ -283,10 +310,41 @@ class TestChatDeepSeekStrictMode:
         # Bind tools with strict=True
         bound_model = llm.bind_tools([SampleTool], strict=True)
 
-        # The bound model should have its internal model using beta endpoint
-        # We can't directly access the internal model, but we can verify the behavior
-        # by checking that the binding operation succeeds
-        assert bound_model is not None
+        # The bound model must target the beta endpoint, and so must the client
+        # that actually issues the request — updating `api_base` alone leaves
+        # the inherited `openai` clients pointing at the default base URL.
+        beta_model = _find_chat_model(bound_model)
+        assert beta_model is not None
+        assert beta_model.api_base == DEFAULT_BETA_API_BASE
+        assert str(beta_model.root_client.base_url).startswith(DEFAULT_BETA_API_BASE)
+        assert str(beta_model.root_async_client.base_url).startswith(
+            DEFAULT_BETA_API_BASE
+        )
+
+        # The original model is left untouched
+        assert llm.api_base == DEFAULT_API_BASE
+        assert str(llm.root_client.base_url).startswith(DEFAULT_API_BASE)
+
+    def test_beta_copy_rebuilds_clients(self) -> None:
+        """The beta copy must not share the default-endpoint clients.
+
+        `model_copy()` does not re-run validators, so a copy that only updates
+        `api_base` keeps the parent's `openai` clients and still calls the
+        default endpoint.
+        """
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
+        )
+
+        beta_model = llm._with_beta_api_base()
+
+        assert beta_model.root_client is not llm.root_client
+        assert beta_model.root_async_client is not llm.root_async_client
+        assert str(beta_model.root_client.base_url).startswith(DEFAULT_BETA_API_BASE)
+        assert str(beta_model.root_async_client.base_url).startswith(
+            DEFAULT_BETA_API_BASE
+        )
 
     def test_bind_tools_without_strict_mode_uses_default_endpoint(self) -> None:
         """Test bind_tools without strict or with strict=False uses default endpoint."""
@@ -316,8 +374,16 @@ class TestChatDeepSeekStrictMode:
         # Create structured output with strict=True
         structured_model = llm.with_structured_output(SampleTool, strict=True)
 
-        # The structured model should work with beta endpoint
-        assert structured_model is not None
+        # Walk the resulting runnable to the underlying model and assert that
+        # the client it would call is pointed at the beta endpoint.
+        beta_model = _find_chat_model(structured_model)
+        assert beta_model is not None
+        assert beta_model.api_base == DEFAULT_BETA_API_BASE
+        assert str(beta_model.root_client.base_url).startswith(DEFAULT_BETA_API_BASE)
+
+        # The original model is left untouched
+        assert llm.api_base == DEFAULT_API_BASE
+        assert str(llm.root_client.base_url).startswith(DEFAULT_API_BASE)
 
 
 class TestChatDeepSeekAzureToolChoice:
