@@ -14,7 +14,11 @@ from openai.types.chat.chat_completion import Choice
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field, SecretStr
 
-from langchain_deepseek.chat_models import DEFAULT_API_BASE, ChatDeepSeek
+from langchain_deepseek.chat_models import (
+    DEFAULT_API_BASE,
+    DEFAULT_BETA_API_BASE,
+    ChatDeepSeek,
+)
 
 MODEL_NAME = "deepseek-chat"
 
@@ -271,7 +275,7 @@ class TestChatDeepSeekStrictMode:
     """
 
     def test_bind_tools_with_strict_mode_uses_beta_endpoint(self) -> None:
-        """Test that bind_tools with strict=True uses the beta endpoint."""
+        """Test that bind_tools with strict=True routes to the beta endpoint."""
         llm = ChatDeepSeek(
             model="deepseek-chat",
             api_key=SecretStr("test_key"),
@@ -283,10 +287,20 @@ class TestChatDeepSeekStrictMode:
         # Bind tools with strict=True
         bound_model = llm.bind_tools([SampleTool], strict=True)
 
-        # The bound model should have its internal model using beta endpoint
-        # We can't directly access the internal model, but we can verify the behavior
-        # by checking that the binding operation succeeds
-        assert bound_model is not None
+        # The strict path copies the model and must rebuild its OpenAI clients
+        # against the beta base URL: model_copy does not re-run validators, so
+        # without the rebuild the carried-over clients would keep issuing
+        # requests to the default endpoint, where strict mode is unavailable.
+        beta_model = bound_model.bound
+        assert isinstance(beta_model, ChatDeepSeek)
+        assert beta_model.api_base == DEFAULT_BETA_API_BASE
+        assert str(beta_model.root_client.base_url).rstrip("/") == DEFAULT_BETA_API_BASE
+        assert (
+            str(beta_model.root_async_client.base_url).rstrip("/")
+            == DEFAULT_BETA_API_BASE
+        )
+        # The original model is untouched.
+        assert str(llm.root_client.base_url).rstrip("/") == DEFAULT_API_BASE
 
     def test_bind_tools_without_strict_mode_uses_default_endpoint(self) -> None:
         """Test bind_tools without strict or with strict=False uses default endpoint."""
@@ -297,11 +311,14 @@ class TestChatDeepSeekStrictMode:
 
         # Test with strict=False
         bound_model_false = llm.bind_tools([SampleTool], strict=False)
-        assert bound_model_false is not None
+        assert bound_model_false.bound is llm
 
         # Test with strict=None (default)
         bound_model_none = llm.bind_tools([SampleTool])
-        assert bound_model_none is not None
+        assert bound_model_none.bound is llm
+
+        # No client rebuild happened: still the default endpoint.
+        assert str(llm.root_client.base_url).rstrip("/") == DEFAULT_API_BASE
 
     def test_with_structured_output_strict_mode_uses_beta_endpoint(self) -> None:
         """Test that with_structured_output with strict=True uses beta endpoint."""
@@ -316,8 +333,32 @@ class TestChatDeepSeekStrictMode:
         # Create structured output with strict=True
         structured_model = llm.with_structured_output(SampleTool, strict=True)
 
-        # The structured model should work with beta endpoint
-        assert structured_model is not None
+        # The structured-output chain is `bound_llm | parser`; its first step
+        # wraps the beta model, whose OpenAI clients must target the beta
+        # base URL.
+        inner = structured_model.first.bound
+        assert isinstance(inner, ChatDeepSeek)
+        assert inner.api_base == DEFAULT_BETA_API_BASE
+        assert str(inner.root_client.base_url).rstrip("/") == DEFAULT_BETA_API_BASE
+        assert (
+            str(inner.root_async_client.base_url).rstrip("/") == DEFAULT_BETA_API_BASE
+        )
+
+    def test_strict_mode_with_custom_api_base_keeps_custom_endpoint(self) -> None:
+        """A custom (non-default) api_base is never overridden by the switch."""
+        custom_base = "https://deepseek.example.com/v1"
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
+            base_url=custom_base,
+        )
+
+        bound_model = llm.bind_tools([SampleTool], strict=True)
+
+        beta_model = bound_model.bound
+        assert isinstance(beta_model, ChatDeepSeek)
+        assert beta_model.api_base == custom_base
+        assert str(beta_model.root_client.base_url).rstrip("/") == custom_base
 
 
 class TestChatDeepSeekAzureToolChoice:

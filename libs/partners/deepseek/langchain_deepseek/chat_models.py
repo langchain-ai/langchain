@@ -34,6 +34,41 @@ from langchain_deepseek.data._profiles import _PROFILES
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 DEFAULT_BETA_API_BASE = "https://api.deepseek.com/beta"
 
+
+def _rebuild_clients(model: ChatDeepSeek) -> None:
+    """Build the OpenAI clients of *model* against its current `api_base`.
+
+    Existing clients are preserved; only missing ones are created. Shared by
+    `validate_environment` and the strict-mode beta switch, whose `model_copy`
+    does not re-run validators — without an explicit rebuild the copied
+    model's clients would keep issuing requests to the old base URL.
+    """
+    client_params: dict = {
+        k: v
+        for k, v in {
+            "api_key": model.api_key.get_secret_value() if model.api_key else None,
+            "base_url": model.api_base,
+            "timeout": model.request_timeout,
+            "max_retries": model.max_retries,
+            "default_headers": model.default_headers,
+            "default_query": model.default_query,
+        }.items()
+        if v is not None
+    }
+
+    if not (model.client or None):
+        sync_specific: dict = {"http_client": model.http_client}
+        model.root_client = openai.OpenAI(**client_params, **sync_specific)
+        model.client = model.root_client.chat.completions
+    if not (model.async_client or None):
+        async_specific: dict = {"http_client": model.http_async_client}
+        model.root_async_client = openai.AsyncOpenAI(
+            **client_params,
+            **async_specific,
+        )
+        model.async_client = model.root_async_client.chat.completions
+
+
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel]
 _DictOrPydantic: TypeAlias = dict[str, Any] | BaseModel
 
@@ -305,34 +340,28 @@ class ChatDeepSeek(BaseChatOpenAI):
         ):
             msg = "If using default api base, DEEPSEEK_API_KEY must be set."
             raise ValueError(msg)
-        client_params: dict = {
-            k: v
-            for k, v in {
-                "api_key": self.api_key.get_secret_value() if self.api_key else None,
-                "base_url": self.api_base,
-                "timeout": self.request_timeout,
-                "max_retries": self.max_retries,
-                "default_headers": self.default_headers,
-                "default_query": self.default_query,
-            }.items()
-            if v is not None
-        }
-
-        if not (self.client or None):
-            sync_specific: dict = {"http_client": self.http_client}
-            self.root_client = openai.OpenAI(**client_params, **sync_specific)
-            self.client = self.root_client.chat.completions
-        if not (self.async_client or None):
-            async_specific: dict = {"http_client": self.http_async_client}
-            self.root_async_client = openai.AsyncOpenAI(
-                **client_params,
-                **async_specific,
-            )
-            self.async_client = self.root_async_client.chat.completions
+        _rebuild_clients(self)
         return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None
+
+    def _with_beta_api_base(self) -> Self:
+        """Copy this model pointed at the beta API base with rebuilt clients.
+
+        Pydantic v2's `model_copy` does not re-run validators, so the OpenAI
+        clients are carried over by reference still bound to the default API
+        base — the switch would change only the `api_base` field while the
+        request kept going to the default endpoint. Clearing the clients and
+        rebuilding pins the copy to the beta base URL.
+        """
+        beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+        beta_model.client = None
+        beta_model.async_client = None
+        beta_model.root_client = None
+        beta_model.root_async_client = None
+        _rebuild_clients(beta_model)
+        return beta_model
 
     def _get_request_payload(
         self,
@@ -521,7 +550,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
             # Create a new instance with beta endpoint
-            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            beta_model = self._with_beta_api_base()
             return beta_model.bind_tools(
                 tools,
                 tool_choice=tool_choice,
@@ -627,7 +656,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
             # Create a new instance with beta endpoint
-            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            beta_model = self._with_beta_api_base()
             return beta_model.with_structured_output(
                 schema,
                 method=method,
