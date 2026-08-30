@@ -301,8 +301,14 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         if not base_full.exists():
             return {}
 
+        # Resolve the ripgrep binary to an absolute path so the search does not
+        # rely on (and cannot be redirected via) the process `PATH`.
+        rg_path = shutil.which("rg")
+        if rg_path is None:
+            return self._python_search(pattern, base_path, include)
+
         # Build ripgrep command
-        cmd = ["rg", "--json"]
+        cmd = [rg_path, "--json"]
 
         if include:
             # Convert glob pattern to ripgrep glob
@@ -317,6 +323,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                 text=True,
                 timeout=30,
                 check=False,
+                shell=False,
             )
         except (subprocess.TimeoutExpired, FileNotFoundError):
             # Fallback to Python search if ripgrep unavailable or times out
