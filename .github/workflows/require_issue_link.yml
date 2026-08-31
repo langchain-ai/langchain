@@ -35,6 +35,7 @@ jobs:
     # Skip entirely when the PR already carries "trusted-contributor" or
     # "bypass-issue-check".
     if: >-
+      github.repository_owner == 'langchain-ai' &&
       !contains(github.event.pull_request.labels.*.name, 'trusted-contributor') &&
       !contains(github.event.pull_request.labels.*.name, 'bypass-issue-check') &&
       (

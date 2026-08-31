@@ -7,6 +7,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.tool_call_limit import (
+    ExitBehavior,
     ToolCallLimitExceededError,
     ToolCallLimitMiddleware,
     ToolCallLimitState,
@@ -34,7 +35,8 @@ def test_middleware_initialization_validation() -> None:
     assert middleware.run_limit is None
 
     # Test exit behaviors
-    for behavior in ["error", "end", "continue"]:
+    behaviors: tuple[ExitBehavior, ...] = ("error", "end", "continue")
+    for behavior in behaviors:
         middleware = ToolCallLimitMiddleware(thread_limit=5, exit_behavior=behavior)
         assert middleware.exit_behavior == behavior
 
@@ -161,12 +163,10 @@ def test_middleware_unit_functionality() -> None:
 def test_middleware_end_behavior_with_unrelated_parallel_tool_calls() -> None:
     """Test middleware 'end' behavior with unrelated parallel tool calls.
 
-    Test that 'end' behavior raises NotImplementedError when there are parallel calls
-    to unrelated tools.
-
-    When limiting a specific tool with "end" behavior and the model proposes parallel calls
-    to BOTH the limited tool AND other tools, we can't handle this scenario (we'd be stopping
-    execution while other tools should run).
+    When limiting a specific tool with "end" behavior and the model proposes parallel
+    calls to BOTH the limited tool AND other tools, execution still stops immediately,
+    but the unrelated call gets an explanatory `ToolMessage` instead of being executed,
+    so it isn't left orphaned in the message history.
     """
     # Limit search tool specifically
     middleware = ToolCallLimitMiddleware(tool_name="search", thread_limit=1, exit_behavior="end")
@@ -187,10 +187,22 @@ def test_middleware_end_behavior_with_unrelated_parallel_tool_calls() -> None:
         run_tool_call_count={"search": 1},
     )
 
-    with pytest.raises(
-        NotImplementedError, match="Cannot end execution with other tool calls pending"
-    ):
-        middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+    assert result["jump_to"] == "end"
+
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert len(tool_messages) == 2, "Both the exceeded call and the unrelated call get a message"
+
+    search_msg = next(msg for msg in tool_messages if msg.tool_call_id == "1")
+    calculator_msg = next(msg for msg in tool_messages if msg.tool_call_id == "2")
+    assert search_msg.status == "error"
+    assert "Tool call limit exceeded" in search_msg.content
+    assert calculator_msg.status == "error"
+    assert "exceeded the limit" in calculator_msg.content
+    assert result["thread_tool_call_count"] == {"search": 1}, (
+        "Thread count shouldn't advance since the blocked call never executed"
+    )
 
 
 def test_middleware_with_specific_tool() -> None:
@@ -684,71 +696,95 @@ def test_parallel_tool_calls_with_limit_continue_mode() -> None:
 def test_parallel_tool_calls_with_limit_end_mode() -> None:
     """Test parallel tool calls with a limit of 1 in 'end' mode.
 
-    When the model proposes 3 tool calls with a limit of 1:
-    - The first call would be allowed (within limit)
-    - The 2nd and 3rd calls exceed the limit and get blocked with error ToolMessages
-    - Execution stops immediately (jump_to: end) so NO tools actually execute
-    - An AI message explains why execution stopped
+    When the model proposes 3 tool calls with a limit of 1, the first call would be
+    allowed (within limit) while the 2nd and 3rd exceed it. Jumping to "end" skips the
+    tool-execution node entirely, so `ToolCallLimitMiddleware` gives the allowed call
+    an explanatory `ToolMessage` too (instead of executing it, or leaving it
+    "orphaned" with no response at all).
     """
+    middleware = ToolCallLimitMiddleware(thread_limit=1, exit_behavior="end")
+    runtime = None
 
-    @tool
-    def search(query: str) -> str:
-        """Search for information."""
-        return f"Results: {query}"
-
-    # Model proposes 3 parallel search calls
-    model = FakeToolCallingModel(
-        tool_calls=[
-            [
-                ToolCall(name="search", args={"query": "q1"}, id="1"),
-                ToolCall(name="search", args={"query": "q2"}, id="2"),
-                ToolCall(name="search", args={"query": "q3"}, id="3"),
-            ],
-            [],
-        ]
+    state = ToolCallLimitState(
+        messages=[
+            AIMessage(
+                "Response",
+                tool_calls=[
+                    {"name": "search", "args": {"query": "q1"}, "id": "1"},
+                    {"name": "search", "args": {"query": "q2"}, "id": "2"},
+                    {"name": "search", "args": {"query": "q3"}, "id": "3"},
+                ],
+            ),
+        ],
+        thread_tool_call_count={},
+        run_tool_call_count={},
     )
 
-    limiter = ToolCallLimitMiddleware(thread_limit=1, exit_behavior="end")
-    agent = create_agent(
-        model=model, tools=[search], middleware=[limiter], checkpointer=InMemorySaver()
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+    assert result["jump_to"] == "end"
+
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert len(tool_messages) == 3, "Every tool call gets a matching ToolMessage"
+    assert {msg.tool_call_id for msg in tool_messages} == {"1", "2", "3"}
+    assert all(msg.status == "error" for msg in tool_messages)
+
+    exceeded_msgs = [msg for msg in tool_messages if msg.tool_call_id in {"2", "3"}]
+    allowed_msg = next(msg for msg in tool_messages if msg.tool_call_id == "1")
+    assert all("Tool call limit exceeded" in msg.content for msg in exceeded_msgs)
+    assert "exceeded the limit" in allowed_msg.content
+
+    # None of the 3 calls actually ran (jump_to="end" skips the tool node), including
+    # call "1" which `_separate_tool_calls` classified as "allowed" — so the thread
+    # count must stay at its pre-batch value, not be incremented for that call.
+    assert result["thread_tool_call_count"] == {"__all__": 0}, (
+        "Thread count shouldn't advance for calls that never actually executed"
     )
 
-    result = agent.invoke(
-        {"messages": [HumanMessage("Test")]}, {"configurable": {"thread_id": "test"}}
+
+def test_middleware_end_behavior_with_allowed_and_blocked_parallel_calls() -> None:
+    """Regression test for orphaned tool_calls when tool_name is unset (langchain#34159).
+
+    When `exit_behavior="end"` and the middleware limits all tools (`tool_name=None`),
+    a single `AIMessage` with parallel tool calls can have some calls allowed (under
+    the limit) and some blocked (over the limit). Previously, only the blocked call
+    got a `ToolMessage`, so the allowed call was left without a matching response — an
+    invalid message history that raises a 400 error on the next turn. The allowed call
+    must now get an explanatory `ToolMessage` too.
+    """
+    middleware = ToolCallLimitMiddleware(run_limit=2, exit_behavior="end")
+    runtime = None
+
+    state = ToolCallLimitState(
+        messages=[
+            AIMessage(
+                "Response",
+                tool_calls=[
+                    {"name": "get_summarized_eda_data", "args": {}, "id": "call_1"},
+                    {"name": "get_org_psych_analysis", "args": {}, "id": "call_2"},
+                ],
+            ),
+        ],
+        thread_tool_call_count={"__all__": 1},
+        run_tool_call_count={"__all__": 1},
     )
-    messages = result["messages"]
 
-    # Verify tool message counts
-    # With "end" behavior, when we jump to end, NO tools execute (not even allowed ones)
-    # We only get error ToolMessages for the 2 blocked calls
-    tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
-    successful_tool_messages = [msg for msg in tool_messages if msg.status != "error"]
-    error_tool_messages = [msg for msg in tool_messages if msg.status == "error"]
+    result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
+    assert result is not None
+    assert result["jump_to"] == "end"
 
-    assert len(successful_tool_messages) == 0, "No tools execute when we jump to end"
-    assert len(error_tool_messages) == 2, "Should have 2 blocked tool messages (q2, q3)"
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert {msg.tool_call_id for msg in tool_messages} == {"call_1", "call_2"}, (
+        "Every tool call on the AIMessage must get a matching ToolMessage"
+    )
+    assert all(msg.status == "error" for msg in tool_messages)
 
-    # Verify error tool messages (sent to model - include "Do not" instruction)
-    for error_msg in error_tool_messages:
-        assert "Tool call limit exceeded" in error_msg.content
-        assert "Do not" in error_msg.content
-
-    # Verify AI message explaining why execution stopped
-    # (displayed to user - includes thread/run details)
-    ai_limit_messages = []
-    for msg in messages:
-        if not isinstance(msg, AIMessage):
-            continue
-        assert isinstance(msg.content, str)
-        if "limit" in msg.content.lower() and not msg.tool_calls:
-            ai_limit_messages.append(msg)
-    assert len(ai_limit_messages) == 1, "Should have exactly one AI message explaining the limit"
-
-    ai_msg_content = ai_limit_messages[0].content
-    assert isinstance(ai_msg_content, str)
-    assert "thread limit exceeded" in ai_msg_content.lower() or (
-        "run limit exceeded" in ai_msg_content.lower()
-    ), "AI message should include thread/run limit details for the user"
+    # `call_1` was "allowed" by `_separate_tool_calls`, but it never actually
+    # executes once we jump to "end", so it must not permanently consume the
+    # thread's quota — the count should stay at its pre-batch value (1).
+    assert result["thread_tool_call_count"] == {"__all__": 1}, (
+        "Thread count shouldn't advance for a call that never actually executed"
+    )
 
 
 def test_parallel_mixed_tool_calls_with_specific_tool_limit() -> None:

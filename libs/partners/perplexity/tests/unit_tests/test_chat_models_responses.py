@@ -600,7 +600,7 @@ def test_to_responses_payload_renames_and_drops_keys() -> None:
         },
     )
 
-    assert payload["input"] == [{"role": "user", "content": "hi"}]
+    assert payload["input"] == [{"type": "message", "role": "user", "content": "hi"}]
     assert payload["model"] == "sonar-pro"
     assert payload["max_output_tokens"] == 128
     assert "max_tokens" not in payload
@@ -814,15 +814,17 @@ def test_to_responses_payload_raises_for_non_dict_extra_body() -> None:
 
 def test_to_responses_payload_preserves_existing_extra_body() -> None:
     llm = ChatPerplexity(model="sonar-pro", api_key="test")
+    extra_body = {"caller_set": True}
     payload = llm._to_responses_payload(
         [{"role": "user", "content": "hi"}],
         {
             "model": "sonar-pro",
-            "extra_body": {"caller_set": True},
+            "extra_body": extra_body,
             "search_mode": "academic",
         },
     )
     assert payload["extra_body"] == {"caller_set": True, "search_mode": "academic"}
+    assert extra_body == {"caller_set": True}
 
 
 # ---------------------------------------------------------------------------
@@ -846,6 +848,123 @@ def test_convert_responses_usage_derives_total_when_absent() -> None:
     assert result["input_tokens"] == 5
     assert result["output_tokens"] == 7
     assert result["total_tokens"] == 12
+
+
+def test_convert_responses_usage_maps_cache_token_details() -> None:
+    details = _make_response_obj(
+        cache_read_input_tokens=800, cache_creation_input_tokens=150
+    )
+    usage = _make_response_obj(
+        input_tokens=1000,
+        output_tokens=50,
+        total_tokens=1050,
+        input_tokens_details=details,
+    )
+    result = _convert_responses_usage(usage)
+    assert result is not None
+    assert result["input_token_details"] == {"cache_read": 800, "cache_creation": 150}
+
+
+def test_convert_responses_usage_maps_cache_token_details_from_mapping() -> None:
+    """`_get_attr` accepts dict payloads, so a mapping must map identically."""
+    usage = {
+        "input_tokens": 1000,
+        "output_tokens": 50,
+        "total_tokens": 1050,
+        "input_tokens_details": {
+            "cache_read_input_tokens": 800,
+            "cache_creation_input_tokens": 150,
+        },
+    }
+    result = _convert_responses_usage(usage)
+    assert result is not None
+    assert result["input_token_details"] == {"cache_read": 800, "cache_creation": 150}
+
+
+def test_convert_responses_usage_maps_only_reported_cache_fields() -> None:
+    details = _make_response_obj(
+        cache_read_input_tokens=800, cache_creation_input_tokens=None
+    )
+    usage = _make_response_obj(
+        input_tokens=1000,
+        output_tokens=50,
+        total_tokens=1050,
+        input_tokens_details=details,
+    )
+    result = _convert_responses_usage(usage)
+    assert result is not None
+    assert result["input_token_details"] == {"cache_read": 800}
+
+
+def test_convert_responses_usage_omits_cache_details_when_not_reported() -> None:
+    usage = _make_response_obj(input_tokens=10, output_tokens=2, total_tokens=12)
+    result = _convert_responses_usage(usage)
+    assert result is not None
+    assert result["input_token_details"] == {}
+
+
+def test_convert_responses_to_chat_result_includes_cache_token_details() -> None:
+    details = _make_response_obj(
+        cache_read_input_tokens=800, cache_creation_input_tokens=150
+    )
+    usage = _make_response_obj(
+        input_tokens=1000,
+        output_tokens=50,
+        total_tokens=1050,
+        input_tokens_details=details,
+    )
+    response = _make_response_obj(
+        id="resp_cache",
+        model="sonar-pro",
+        status="completed",
+        object="response",
+        output_text="hi",
+        output=[],
+        usage=usage,
+        citations=None,
+        images=None,
+        related_questions=None,
+        search_results=None,
+    )
+
+    result = _convert_responses_to_chat_result(response)
+    message = result.generations[0].message
+
+    assert isinstance(message, AIMessage)
+    assert message.usage_metadata is not None
+    assert message.usage_metadata["input_token_details"] == {
+        "cache_read": 800,
+        "cache_creation": 150,
+    }
+
+
+def test_stream_event_conversion_for_completed_includes_cache_token_details() -> None:
+    details = _make_response_obj(
+        cache_read_input_tokens=800, cache_creation_input_tokens=150
+    )
+    usage = _make_response_obj(
+        input_tokens=1000,
+        output_tokens=50,
+        total_tokens=1050,
+        input_tokens_details=details,
+    )
+    response = _make_response_obj(
+        id="resp_cache_stream",
+        model="sonar-pro",
+        status="completed",
+        object="response",
+        usage=usage,
+    )
+    chunk = _convert_responses_stream_event_to_chunk(
+        _make_event("response.completed", response=response)
+    )
+    assert chunk is not None
+    assert isinstance(chunk.message, AIMessageChunk)
+    assert chunk.message.usage_metadata is not None
+    assert chunk.message.usage_metadata["input_token_details"] == {
+        "cache_read": 800,
+        "cache_creation": 150,
+    }
 
 
 # ---------------------------------------------------------------------------

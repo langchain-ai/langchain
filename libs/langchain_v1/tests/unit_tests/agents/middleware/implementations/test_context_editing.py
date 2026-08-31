@@ -37,14 +37,14 @@ class _TokenCountingChatModel(FakeChatModel):
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
-        tools: Sequence | None = None,
+        tools: Sequence[Any] | None = None,
     ) -> int:
         return sum(_count_message_tokens(message) for message in messages)
 
 
 def _count_message_tokens(message: MessageLikeRepresentation) -> int:
     if isinstance(message, (AIMessage, ToolMessage)):
-        return _count_content(message.content)
+        return _count_content(cast("MessageLikeRepresentation", message.content))
     if isinstance(message, str):
         return len(message)
     return len(str(message))
@@ -468,3 +468,113 @@ async def test_exclude_tools_prevents_clearing_async() -> None:
 
     assert isinstance(calc_tool, ToolMessage)
     assert calc_tool.content == "[cleared]"
+
+
+def test_custom_token_counter_forces_clearing() -> None:
+    """A custom token counter is used to evaluate edit triggers."""
+    tool_call_id = "call-custom"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    # Tiny output: approximate counting would stay far below the trigger.
+    tool_message = ToolMessage(content="12345", tool_call_id=tool_call_id)
+
+    _state, request = _make_state_and_request([ai_message, tool_message])
+
+    counted_batches: list[int] = []
+
+    def fake_counter(messages: Sequence[BaseMessage]) -> int:
+        counted_batches.append(len(messages))
+        return 1_000
+
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=50, keep=0, placeholder="[cleared]")],
+        token_counter=fake_counter,
+    )
+
+    modified_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal modified_request
+        modified_request = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert counted_batches, "custom token counter was not called"
+    assert modified_request is not None
+    cleared_tool = modified_request.messages[1]
+    assert isinstance(cleared_tool, ToolMessage)
+    assert cleared_tool.content == "[cleared]"
+
+
+def test_custom_token_counter_takes_precedence_over_method() -> None:
+    """When provided, the custom counter overrides `token_count_method`."""
+    tool_call_id = "call-custom-low"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    # Large output: approximate counting would exceed the trigger and clear.
+    tool_message = ToolMessage(content="x" * 200, tool_call_id=tool_call_id)
+
+    _state, request = _make_state_and_request([ai_message, tool_message])
+
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=50, keep=0, placeholder="[cleared]")],
+        token_count_method="approximate",  # noqa: S106
+        token_counter=lambda _messages: 10,
+    )
+
+    modified_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal modified_request
+        modified_request = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert modified_request is not None
+    untouched_tool = modified_request.messages[1]
+    assert isinstance(untouched_tool, ToolMessage)
+    assert untouched_tool.content == "x" * 200
+
+
+async def test_custom_token_counter_forces_clearing_async() -> None:
+    """Async version: a custom token counter is used to evaluate edit triggers."""
+    tool_call_id = "call-custom"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    tool_message = ToolMessage(content="12345", tool_call_id=tool_call_id)
+
+    _state, request = _make_state_and_request([ai_message, tool_message])
+
+    counted_batches: list[int] = []
+
+    def fake_counter(messages: Sequence[BaseMessage]) -> int:
+        counted_batches.append(len(messages))
+        return 1_000
+
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=50, keep=0, placeholder="[cleared]")],
+        token_counter=fake_counter,
+    )
+
+    modified_request = None
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal modified_request
+        modified_request = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    await middleware.awrap_model_call(request, mock_handler)
+
+    assert counted_batches, "custom token counter was not called"
+    assert modified_request is not None
+    cleared_tool = modified_request.messages[1]
+    assert isinstance(cleared_tool, ToolMessage)
+    assert cleared_tool.content == "[cleared]"

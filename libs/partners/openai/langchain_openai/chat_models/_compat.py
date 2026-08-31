@@ -165,7 +165,7 @@ def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
                 if block_type == "text":
                     # Strip annotations
                     new_content.append({"type": "text", "text": block["text"]})
-                elif block_type in ("reasoning", "tool_call"):
+                elif block_type in ("reasoning", "tool_call", "invalid_tool_call"):
                     pass
                 else:
                     new_content.append(block)
@@ -212,6 +212,15 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
     return dict(annotation)
 
 
+def _same_reasoning_item(first: dict[str, Any], second: dict[str, Any]) -> bool:
+    """Return whether two reasoning fragments share an item identity."""
+    first_has_id = "id" in first
+    second_has_id = "id" in second
+    return first_has_id == second_has_id and (
+        not first_has_id or first["id"] == second["id"]
+    )
+
+
 def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str, Any]]:
     i = 0
     n = len(blocks)
@@ -249,7 +258,11 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
         i += 1
         while i < n:
             next_ = blocks[i]
-            if next_.get("type") == "reasoning" and "reasoning" in next_:
+            if (
+                next_.get("type") == "reasoning"
+                and "reasoning" in next_
+                and _same_reasoning_item(block, next_)
+            ):
                 summary.append(
                     {"type": "summary_text", "text": next_.get("reasoning", "")}
                 )

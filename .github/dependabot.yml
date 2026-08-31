@@ -117,3 +117,23 @@ updates:
           - "*"
         update-types:
           - "major"
+
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/.devcontainer/"
+      - "/libs/langchain/"
+    schedule:
+      interval: "monthly"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"

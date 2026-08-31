@@ -23,6 +23,14 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import (
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+)
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -146,6 +154,42 @@ def _convert_tool_call_id_to_mistral_compatible(tool_call_id: str) -> str:
     return base62_str.rjust(9, "0")
 
 
+def _normalize_mistral_content(content: Any) -> str | list[str | dict]:
+    """Normalize Mistral content so reference blocks are visible to .text.
+
+    Mistral citation responses return content as a list of typed chunks where
+    `reference` blocks carry visible answer text alongside citation metadata.
+    The core `.text` accessor only concatenates blocks whose type is
+    `"text"`, so preserving `reference` as-is would drop cited answer spans
+    from `message.text` and `ChatGeneration.text`.
+
+    To keep the answer text visible while preserving citation metadata, rewrite
+    each `reference` block to `type: "text"` and move the original block
+    (including `reference_ids`) under a `"reference"` key. The `_compat.py`
+    translator reads that key to produce standard `Citation` annotations.
+    """
+    if not isinstance(content, list):
+        return content or ""
+    has_reference = False
+    new_blocks: list[str | dict] = []
+    for block in content:
+        if isinstance(block, dict) and block.get("type") == "reference":
+            has_reference = True
+            new_block = {
+                "type": "text",
+                "text": block.get("text", ""),
+                "reference": {
+                    k: v for k, v in block.items() if k not in ("type", "text")
+                },
+            }
+            if "index" in block:
+                new_block["index"] = block["index"]
+            new_blocks.append(new_block)
+        else:
+            new_blocks.append(block)
+    return new_blocks if has_reference else content
+
+
 def _convert_mistral_chat_message_to_message(
     _message: dict,
 ) -> BaseMessage:
@@ -153,8 +197,11 @@ def _convert_mistral_chat_message_to_message(
     if role != "assistant":
         msg = f"Expected role to be 'assistant', got {role}"
         raise ValueError(msg)
-    # Mistral returns None for tool invocations
-    content = _message.get("content", "") or ""
+    # Mistral returns None for tool invocations. When citations are enabled,
+    # content is a list of typed chunks (text and reference). Normalize
+    # reference blocks so their answer text is visible via .text while
+    # citation metadata is preserved for _compat.py to translate.
+    content = _normalize_mistral_content(_message.get("content", ""))
 
     additional_kwargs: dict = {}
     tool_calls = []
@@ -180,6 +227,58 @@ def _convert_mistral_chat_message_to_message(
     )
 
 
+class MistralAIAuthenticationError(httpx.HTTPStatusError, ModelAuthenticationError):
+    """Mistral AI authentication error classified as a LangChain model error."""
+
+
+class MistralAIPermissionDeniedError(httpx.HTTPStatusError, ModelPermissionDeniedError):
+    """Mistral AI permission error classified as a LangChain model error."""
+
+
+class MistralAIInvalidRequestError(httpx.HTTPStatusError, ModelInvalidRequestError):
+    """Mistral AI invalid-request error classified as a LangChain model error."""
+
+
+class MistralAIModelNotFoundError(httpx.HTTPStatusError, ModelNotFoundError):
+    """Mistral AI not-found error classified as a LangChain model error."""
+
+
+class MistralAIRateLimitError(httpx.HTTPStatusError, ModelRateLimitError):
+    """Mistral AI rate-limit error classified as a LangChain model error."""
+
+
+class MistralAIAPIError(httpx.HTTPStatusError, ModelAPIError):
+    """Mistral AI server error classified as a LangChain model error."""
+
+
+_STATUS_ERROR_TYPES: dict[int, type[httpx.HTTPStatusError]] = {
+    400: MistralAIInvalidRequestError,
+    401: MistralAIAuthenticationError,
+    403: MistralAIPermissionDeniedError,
+    404: MistralAIModelNotFoundError,
+    422: MistralAIInvalidRequestError,
+    429: MistralAIRateLimitError,
+}
+"""HTTP status codes the Mistral AI API reports, keyed to LangChain error types."""
+
+
+def _status_error_type(status_code: int) -> type[httpx.HTTPStatusError]:
+    """Return the error type to raise for an HTTP status code.
+
+    Args:
+        status_code: The HTTP status code of the error response.
+
+    Returns:
+        The classified error type, or plain `httpx.HTTPStatusError` for status codes
+        the taxonomy does not cover.
+    """
+    if error_type := _STATUS_ERROR_TYPES.get(status_code):
+        return error_type
+    if status_code >= 500:
+        return MistralAIAPIError
+    return httpx.HTTPStatusError
+
+
 def _raise_on_error(response: httpx.Response) -> None:
     """Raise an error if the response is an error."""
     if httpx.codes.is_error(response.status_code):
@@ -188,7 +287,7 @@ def _raise_on_error(response: httpx.Response) -> None:
             f"Error response {response.status_code} "
             f"while fetching {response.url}: {error_message}"
         )
-        raise httpx.HTTPStatusError(
+        raise _status_error_type(response.status_code)(
             msg,
             request=response.request,
             response=response,
@@ -203,7 +302,7 @@ async def _araise_on_error(response: httpx.Response) -> None:
             f"Error response {response.status_code} "
             f"while fetching {response.url}: {error_message}"
         )
-        raise httpx.HTTPStatusError(
+        raise _status_error_type(response.status_code)(
             msg,
             request=response.request,
             response=response,
@@ -260,11 +359,13 @@ def _convert_chunk_to_message_chunk(
     content = _delta.get("content") or ""
     if output_version == "v1" and isinstance(content, str):
         content = [{"type": "text", "text": content}]
+    content = _normalize_mistral_content(content)
     if isinstance(content, list):
         for block in content:
             if isinstance(block, dict):
-                if "type" in block and block["type"] != index_type:
-                    index_type = block["type"]
+                block_type = "reference" if "reference" in block else block.get("type")
+                if block_type is not None and block_type != index_type:
+                    index_type = block_type
                     index = index + 1
                 if "index" not in block:
                     block["index"] = index
@@ -278,7 +379,7 @@ def _convert_chunk_to_message_chunk(
         return HumanMessageChunk(content=content), index, index_type
     if role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: dict = {}
-        response_metadata = {}
+        response_metadata: dict[str, Any] = {}
         if raw_tool_calls := _delta.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
             try:
@@ -360,7 +461,10 @@ def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) ->
 
 
 def _clean_block(block: dict) -> dict:
-    # Remove "index" key added for message aggregation in langchain-core
+    # Remove internal keys added by LangChain or by provider response normalization.
+    if block.get("type") == "text" and "text" in block:
+        return {"type": "text", "text": block["text"]}
+
     new_block = {k: v for k, v in block.items() if k != "index"}
     if block.get("type") == "thinking" and isinstance(block.get("thinking"), list):
         new_block["thinking"] = [
@@ -480,9 +584,7 @@ def _convert_message_to_mistral_chat_message(
 
         elif isinstance(content, list):
             content = [
-                _clean_block(block)
-                if isinstance(block, dict) and "index" in block
-                else block
+                _clean_block(block) if isinstance(block, dict) else block
                 for block in content
             ]
         else:

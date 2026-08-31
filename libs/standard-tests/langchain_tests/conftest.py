@@ -97,8 +97,7 @@ class CustomPersister:
         if not cassette_path.is_file():
             msg = f"Cassette file {cassette_path} does not exist."
             raise CassetteNotFoundError(msg)
-        with cassette_path.open(mode="rb") as f:
-            data = f.read()
+        data = cassette_path.read_bytes()
         deser = serializer.deserialize(data)
         return deser["requests"], deser["responses"]
 
@@ -115,8 +114,7 @@ class CustomPersister:
         cassette_folder = cassette_path.parent
         if not cassette_folder.exists():
             cassette_folder.mkdir(parents=True)
-        with cassette_path.open("wb") as f:
-            f.write(data)
+        cassette_path.write_bytes(data)
 
 
 # A list of headers that should be filtered out of the cassettes.

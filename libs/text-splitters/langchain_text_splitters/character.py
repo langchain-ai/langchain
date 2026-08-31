@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from typing import Any, Literal
 
+from typing_extensions import override
+
 from langchain_text_splitters.base import Language, TextSplitter
 
 
@@ -22,6 +24,7 @@ class CharacterTextSplitter(TextSplitter):
         self._separator = separator
         self._is_separator_regex = is_separator_regex
 
+    @override
     def split_text(self, text: str) -> list[str]:
         """Split into chunks without re-inserting lookaround separators.
 
@@ -146,6 +149,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             final_chunks.extend(merged_text)
         return final_chunks
 
+    @override
     def split_text(self, text: str) -> list[str]:
         """Split the input text into smaller chunks based on predefined separators.
 

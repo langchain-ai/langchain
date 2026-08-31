@@ -41,6 +41,23 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     return default.copy()
 
 
+def _model_rejects_stop(model_name: str) -> bool:
+    """Whether an *unprofiled* xAI model rejects the `stop` parameter.
+
+    Used only as a fallback when no model profile is available; profiled models
+    defer to their `reasoning_output` flag, which is authoritative. The flag and
+    the name cannot be reconciled by string matching alone: the API accepts
+    `stop` for `grok-4.20-0309-non-reasoning` but rejects it for
+    `grok-4-fast-non-reasoning`, despite both containing `non-reasoning`.
+
+    Every current `grok-3`, `grok-4`, and `grok-code-fast` model that is not in
+    the generated profiles rejects `stop`, so the fallback drops it for those
+    families. Dropping a `stop` the API would reject degrades more gracefully
+    than letting the request fail outright.
+    """
+    return model_name.startswith(("grok-3", "grok-4")) or "grok-code-fast" in model_name
+
+
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     r"""ChatXAI chat model.
 
@@ -426,6 +443,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     """
 
     openai_api_key: SecretStr | None = None
+
     openai_api_base: str | None = None
 
     model_config = ConfigDict(
@@ -546,6 +564,40 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None
 
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> dict:
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        if payload.get("stop") is not None:
+            # xAI rejects `stop` for reasoning models. The model profile is
+            # authoritative when available (it correctly distinguishes models
+            # that only differ from each other by profile, not by name); the
+            # name-based check is a fallback for aliases absent from the
+            # generated profiles.
+            model_profile = self._resolve_model_profile()
+            rejects_stop = (
+                bool(model_profile.get("reasoning_output"))
+                if model_profile is not None
+                else _model_rejects_stop(self.model_name)
+            )
+            if rejects_stop:
+                payload.pop("stop", None)
+
+        # xAI expects `reasoning_effort` in `extra_body`, not as a top-level field.
+        # Move it there so it reaches the API.
+        reasoning_effort = payload.pop("reasoning_effort", None)
+        if reasoning_effort is not None:
+            extra_body = payload.get("extra_body")
+            if not isinstance(extra_body, dict):
+                extra_body = {}
+            payload["extra_body"] = {**extra_body, "reasoning_effort": reasoning_effort}
+
+        return payload
+
     def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
         """Route to Chat Completions or Responses API."""
         if self._use_responses_api({**kwargs, **self.model_kwargs}):
@@ -600,6 +652,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             rtn.generations[0].message.usage_metadata["output_tokens"] += (  # type: ignore[attr-defined]
                 reasoning_tokens
             )
+            # Keep the documented UsageMetadata invariant
+            # total_tokens == input_tokens + output_tokens (gh #39634).
+            usage_metadata["total_tokens"] = (
+                usage_metadata["input_tokens"] + usage_metadata["output_tokens"]
+            )
 
         return rtn
 
@@ -648,6 +705,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
         ):
             generation_chunk.message.usage_metadata["output_tokens"] += reasoning_tokens  # type: ignore[attr-defined]
+            # Keep the documented UsageMetadata invariant
+            # total_tokens == input_tokens + output_tokens (gh #39634).
+            usage_metadata["total_tokens"] = (
+                usage_metadata["input_tokens"] + usage_metadata["output_tokens"]
+            )
         return generation_chunk
 
     def with_structured_output(

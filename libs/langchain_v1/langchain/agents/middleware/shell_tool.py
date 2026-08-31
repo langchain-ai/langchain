@@ -15,7 +15,7 @@ import uuid
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, overload
 
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import run_in_executor
@@ -403,11 +403,40 @@ class ShellSession:
             return
 
         if hasattr(os, "killpg"):
-            with contextlib.suppress(ProcessLookupError):
-                os.killpg(os.getpgid(self._process.pid), signal.SIGKILL)
-        else:  # pragma: no cover
-            with contextlib.suppress(ProcessLookupError):
-                self._process.kill()
+            try:
+                child_pgid = os.getpgid(self._process.pid)
+                # Only send a group kill when the child has a dedicated process group.
+                # If the child shares our group, killpg would terminate the caller too,
+                # so fall through to the direct kill below. That direct kill reaps only
+                # the immediate child, so any descendants it spawned may be orphaned.
+                # This applies to HostExecutionPolicy(create_process_group=False), the
+                # only policy that runs the shell in the caller's process group.
+                if child_pgid != os.getpgrp():
+                    os.killpg(child_pgid, signal.SIGKILL)
+                    return
+            except ProcessLookupError:
+                # Process already gone; nothing left to kill.
+                return
+            except OSError:
+                # e.g. EPERM while querying or signaling the group. Don't leak the
+                # child silently; fall through to a direct kill.
+                LOGGER.warning(
+                    "Group kill failed; falling back to direct kill.",
+                    exc_info=True,
+                )
+
+        try:
+            self._process.kill()
+        except ProcessLookupError:
+            # Process exited between the check above and this kill; nothing to do.
+            pass
+        except OSError:
+            # The fallback kill can hit the same condition (e.g. EPERM) that routed us
+            # here. Log rather than let it escape the session shutdown path.
+            LOGGER.warning(
+                "Direct kill failed.",
+                exc_info=True,
+            )
 
     def _enqueue_stream(self, stream: Any, label: str) -> None:
         for line in iter(stream.readline, ""):
@@ -758,6 +787,24 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
                 matches_by_type.setdefault(rule.pii_type, []).extend(matches)
         return updated, matches_by_type
 
+    @overload
+    def _run_shell_tool(
+        self,
+        resources: _SessionResources,
+        payload: dict[str, Any],
+        *,
+        tool_call_id: str,
+    ) -> ToolMessage: ...
+
+    @overload
+    def _run_shell_tool(
+        self,
+        resources: _SessionResources,
+        payload: dict[str, Any],
+        *,
+        tool_call_id: None,
+    ) -> str: ...
+
     def _run_shell_tool(
         self,
         resources: _SessionResources,
@@ -852,6 +899,26 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
             status=final_status,
             artifact=artifact,
         )
+
+    @overload
+    def _format_tool_message(
+        self,
+        content: str,
+        tool_call_id: str,
+        *,
+        status: Literal["success", "error"],
+        artifact: dict[str, Any] | None = None,
+    ) -> ToolMessage: ...
+
+    @overload
+    def _format_tool_message(
+        self,
+        content: str,
+        tool_call_id: None,
+        *,
+        status: Literal["success", "error"],
+        artifact: dict[str, Any] | None = None,
+    ) -> str: ...
 
     def _format_tool_message(
         self,

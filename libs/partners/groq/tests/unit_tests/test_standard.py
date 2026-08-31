@@ -17,4 +17,4 @@ class TestGroqStandard(ChatModelUnitTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "llama-3.1-8b-instant"}
+        return {"model": "openai/gpt-oss-20b"}

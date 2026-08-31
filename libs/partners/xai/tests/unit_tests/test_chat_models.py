@@ -3,6 +3,7 @@ import json
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     FunctionMessage,
     HumanMessage,
     SystemMessage,
@@ -11,6 +12,13 @@ from langchain_core.messages import (
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
+)
+from openai.types.chat import ChatCompletion
+from openai.types.chat.chat_completion import Choice
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.completion_usage import (
+    CompletionTokensDetails,
+    CompletionUsage,
 )
 from pydantic import SecretStr
 
@@ -82,6 +90,113 @@ def test_chat_xai_api_base_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     assert llm.xai_api_base == "http://env.example.test/v1"
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        # Profiled reasoning models (`reasoning_output=True`).
+        "grok-4.3",
+        "grok-4.20-0309-reasoning",
+        # Unprofiled families that the live API rejects `stop` on. `grok-4`
+        # base and `grok-4-fast-non-reasoning` lack the substring "reasoning"
+        # yet still reject `stop`; `grok-code-fast` is a separate family.
+        "grok-3",
+        "grok-3-mini",
+        "grok-4",
+        "grok-4-0709",
+        "grok-4-fast-reasoning",
+        "grok-4-fast-non-reasoning",
+        "grok-code-fast-1",
+    ],
+)
+def test_reasoning_model_payload_drops_stop(model: str) -> None:
+    llm = ChatXAI(
+        model=model,
+        api_key=SecretStr("test-api-key"),
+        stop_sequences=["END"],
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert "stop" not in payload
+
+
+def test_non_reasoning_model_payload_keeps_stop() -> None:
+    # `grok-4.20-0309-non-reasoning` is profiled with `reasoning_output=False`
+    # and the live API accepts `stop` for it, even though its name contains
+    # "non-reasoning" like the unprofiled `grok-4-fast-non-reasoning` that does
+    # not. The profile must take precedence over the name-based fallback.
+    llm = ChatXAI(
+        model="grok-4.20-0309-non-reasoning",
+        api_key=SecretStr("test-api-key"),
+        stop_sequences=["END"],
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert payload["stop"] == ["END"]
+
+
+def test_reasoning_effort_moved_to_extra_body() -> None:
+    """`reasoning_effort` (inherited from `BaseChatOpenAI`) must reach xAI's
+    API via `extra_body`, since xAI does not accept it as a top-level field.
+    """
+    llm = ChatXAI(
+        model="grok-3-mini",
+        api_key=SecretStr("test-api-key"),
+        reasoning_effort="high",
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert "reasoning_effort" not in payload
+    assert payload["extra_body"]["reasoning_effort"] == "high"
+
+
+def test_reasoning_effort_as_call_time_kwarg() -> None:
+    """`reasoning_effort` also works as a call-time keyword argument.
+
+    This is the standard `reasoning_effort` param shared across chat model
+    integrations, so it must work via `model.invoke(..., reasoning_effort=...)`
+    without requiring it to be set on the model instance.
+    """
+    llm = ChatXAI(model="grok-3-mini", api_key=SecretStr("test-api-key"))
+
+    payload = llm._get_request_payload("hello", reasoning_effort="low")
+
+    assert "reasoning_effort" not in payload
+    assert payload["extra_body"]["reasoning_effort"] == "low"
+
+
+def test_reasoning_effort_preserves_existing_extra_body() -> None:
+    """Moving `reasoning_effort` into `extra_body` must not drop sibling keys."""
+    llm = ChatXAI(
+        model="grok-3-mini",
+        api_key=SecretStr("test-api-key"),
+        reasoning_effort="high",
+        extra_body={"some_other_field": "value"},
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert payload["extra_body"] == {
+        "some_other_field": "value",
+        "reasoning_effort": "high",
+    }
+
+
+def test_no_reasoning_effort_leaves_extra_body_untouched() -> None:
+    llm = ChatXAI(
+        model="grok-3-mini",
+        api_key=SecretStr("test-api-key"),
+        extra_body={"some_other_field": "value"},
+    )
+
+    payload = llm._get_request_payload("hello")
+
+    assert payload["extra_body"] == {"some_other_field": "value"}
+    assert "reasoning_effort" not in payload
 
 
 def test_function_dict_to_message_function_message() -> None:
@@ -171,3 +286,85 @@ def test_metadata_versions() -> None:
     assert "langchain-core" in versions
     assert "langchain-xai" in versions
     assert "langchain-openai" in versions
+
+
+def test_create_chat_result_recomputes_total_tokens_for_reasoning() -> None:
+    """Adding reasoning tokens to output_tokens must keep total_tokens consistent.
+
+    xAI reports reasoning tokens separately from completion tokens, so ChatXAI
+    adds them into output_tokens. total_tokens must be recomputed afterwards to
+    preserve the UsageMetadata invariant total_tokens == input + output
+    (gh #39634).
+    """
+    llm = ChatXAI(model=MODEL_NAME)
+    response = ChatCompletion(
+        id="chatcmpl-1",
+        object="chat.completion",
+        created=0,
+        model=MODEL_NAME,
+        choices=[
+            Choice(
+                index=0,
+                finish_reason="stop",
+                message=ChatCompletionMessage(
+                    role="assistant",
+                    content="Test response",
+                ),
+            )
+        ],
+        usage=CompletionUsage(
+            prompt_tokens=32,
+            completion_tokens=9,
+            total_tokens=41,
+            completion_tokens_details=CompletionTokensDetails(reasoning_tokens=5),
+        ),
+    )
+
+    result = llm._create_chat_result(response)
+
+    message = result.generations[0].message
+    assert isinstance(message, AIMessage)
+    usage_metadata = message.usage_metadata
+    assert usage_metadata is not None
+    assert usage_metadata["input_tokens"] == 32
+    assert usage_metadata["output_tokens"] == 14  # 9 completion + 5 reasoning
+    assert usage_metadata["total_tokens"] == 46  # 32 + 14, invariant holds
+    assert usage_metadata["output_token_details"]["reasoning"] == 5
+
+
+def test_convert_chunk_recomputes_total_tokens_for_reasoning() -> None:
+    """Streaming chunks must keep the total_tokens invariant as well (gh #39634)."""
+    llm = ChatXAI(model=MODEL_NAME)
+    chunk = {
+        "id": "chatcmpl-1",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": MODEL_NAME,
+        "choices": [
+            {
+                "index": 0,
+                "delta": {"role": "assistant", "content": "Test"},
+                "finish_reason": None,
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 32,
+            "completion_tokens": 9,
+            "total_tokens": 41,
+            "completion_tokens_details": {"reasoning_tokens": 5},
+        },
+    }
+
+    generation_chunk = llm._convert_chunk_to_generation_chunk(
+        chunk, AIMessageChunk, None
+    )
+    assert generation_chunk is not None
+
+    message = generation_chunk.message
+    assert isinstance(message, AIMessageChunk)
+    usage_metadata = message.usage_metadata
+    assert usage_metadata is not None
+    assert usage_metadata["input_tokens"] == 32
+    assert usage_metadata["output_tokens"] == 14  # 9 completion + 5 reasoning
+    assert usage_metadata["total_tokens"] == 46  # 32 + 14, invariant holds
+    assert usage_metadata["output_token_details"]["reasoning"] == 5

@@ -11,24 +11,40 @@ from typing import (
     Any,
     Literal,
     NoReturn,
+    TypeAlias,
     cast,
 )
 
 import httpx
 from fireworks import (
     APIConnectionError,
+    APIError,
+    APITimeoutError,
     AsyncFireworks,
+    AuthenticationError,
     BadRequestError,
     Fireworks,
     FireworksError,
     InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
     RateLimitError,
 )
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -58,6 +74,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    UsageMetadata,
     is_data_content_block,
 )
 from langchain_core.messages.block_translators.openai import (
@@ -83,12 +100,13 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
+from langchain_core.utils._gateway import _apply_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -204,6 +222,25 @@ def _allowed_content_part_keys() -> frozenset[str]:
 _ALLOWED_CONTENT_PART_KEYS: frozenset[str] = _allowed_content_part_keys()
 
 
+_DROPPED_CONTENT_BLOCK_TYPES: frozenset[str] = frozenset(
+    {
+        "tool_use",
+        "thinking",
+        "reasoning",
+        "reasoning_content",
+        "function_call",
+        "code_interpreter_call",
+    }
+)
+"""Content block types the chat completions wire format does not carry.
+
+These arise from provider-specific or canonical v1 content (e.g. Anthropic
+`tool_use`/`thinking` blocks, or a `reasoning` block on an AIMessage) that
+reaches `_convert_message_to_dict` as conversation history. Fireworks rejects
+them, so they are dropped rather than forwarded.
+"""
+
+
 def _sanitize_chat_completions_content(content: Any) -> Any:
     """Strip non-wire keys from content blocks before serializing to Fireworks.
 
@@ -274,13 +311,7 @@ def _format_message_content(content: Any) -> Any:
     for block in content:
         if isinstance(block, dict) and "type" in block:
             btype = block["type"]
-            if btype in (
-                "tool_use",
-                "thinking",
-                "reasoning_content",
-                "function_call",
-                "code_interpreter_call",
-            ):
+            if btype in _DROPPED_CONTENT_BLOCK_TYPES:
                 continue
             if is_data_content_block(block):
                 formatted.append(
@@ -395,14 +426,72 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _usage_to_metadata(usage: Mapping[str, Any]) -> dict[str, int]:
-    input_tokens = usage.get("prompt_tokens", 0)
-    output_tokens = usage.get("completion_tokens", 0)
-    return {
+def _usage_to_metadata(usage: Mapping[str, Any]) -> UsageMetadata:
+    input_tokens = usage.get("prompt_tokens") or 0
+    output_tokens = usage.get("completion_tokens") or 0
+    usage_metadata: UsageMetadata = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
-        "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
+        "total_tokens": usage.get("total_tokens") or input_tokens + output_tokens,
     }
+    cached_tokens = (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
+    if cached_tokens is not None:
+        usage_metadata["input_token_details"] = {"cache_read": cached_tokens}
+    return usage_metadata
+
+
+TokenUsageTree: TypeAlias = "int | dict[str, TokenUsageTree]"
+"""Raw provider token usage: a tree of `int` leaves and nested `dict` nodes
+(e.g. `prompt_tokens_details`).
+
+Modeled as a recursive alias so the merge helper's signature carries the shape
+rather than leaving it to `Any`.
+"""
+
+
+def _update_token_usage(
+    overall_token_usage: TokenUsageTree, new_usage: TokenUsageTree
+) -> TokenUsageTree:
+    """Recursively merge raw provider token usage across generations.
+
+    Token usage is a tree of `int` leaves (summed) and `dict` nodes such as
+    `prompt_tokens_details` (merged key-by-key, skipping `None` values).
+
+    A type mismatch between the accumulator and the incoming value (e.g. an
+    `int` on one side and a `dict` on the other) indicates malformed provider
+    data and is raised rather than silently coerced. An entirely unexpected
+    leaf type (neither `int` nor `dict`) is logged and passed through, so a
+    telemetry anomaly degrades gracefully instead of failing the response.
+    """
+    if isinstance(new_usage, int):
+        if not isinstance(overall_token_usage, int):
+            msg = (
+                "Got different types for token usage: "
+                f"{new_usage!r} ({type(new_usage).__name__}) and "
+                f"{overall_token_usage!r} ({type(overall_token_usage).__name__})"
+            )
+            raise ValueError(msg)
+        return overall_token_usage + new_usage
+    if isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            msg = (
+                "Got different types for token usage: "
+                f"{new_usage!r} ({type(new_usage).__name__}) and "
+                f"{overall_token_usage!r} ({type(overall_token_usage).__name__})"
+            )
+            raise ValueError(msg)
+        updated_token_usage = dict(overall_token_usage)
+        for key, value in new_usage.items():
+            if value is not None:
+                # Seed a first-seen key with an empty node of the same kind so a
+                # nested `dict` value merges rather than colliding with an `int`.
+                default: TokenUsageTree = {} if isinstance(value, dict) else 0
+                updated_token_usage[key] = _update_token_usage(
+                    overall_token_usage.get(key, default), value
+                )
+        return updated_token_usage
+    logger.warning("Unexpected type for token usage: %s", type(new_usage).__name__)
+    return new_usage
 
 
 def _convert_chunk_to_message_chunk(
@@ -410,8 +499,6 @@ def _convert_chunk_to_message_chunk(
 ) -> BaseMessageChunk:
     choices = chunk.get("choices") or []
     response_metadata: dict[str, Any] = {"model_provider": "fireworks"}
-    if service_tier := chunk.get("service_tier"):
-        response_metadata["service_tier"] = service_tier
     if not choices:
         # Final chunk emitted when `stream_options.include_usage=True`:
         # `choices` is empty and the chunk carries only `usage`.
@@ -423,7 +510,7 @@ def _convert_chunk_to_message_chunk(
         usage_metadata = _usage_to_metadata(usage) if usage else None
         return AIMessageChunk(
             content="",
-            usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            usage_metadata=usage_metadata,
             response_metadata=response_metadata,
         )
     choice = choices[0]
@@ -458,7 +545,7 @@ def _convert_chunk_to_message_chunk(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,
-            usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            usage_metadata=usage_metadata,
             response_metadata=response_metadata,
         )
     if role == "system" or default_class == SystemMessageChunk:
@@ -506,12 +593,70 @@ class FireworksContextOverflowError(BadRequestError, ContextOverflowError):
     """`BadRequestError` raised when input exceeds Fireworks's context limit."""
 
 
+class FireworksAuthenticationError(AuthenticationError, ModelAuthenticationError):
+    """Fireworks authentication error classified as a LangChain model error."""
+
+
+class FireworksPermissionDeniedError(PermissionDeniedError, ModelPermissionDeniedError):
+    """Fireworks permission error classified as a LangChain model error."""
+
+
+class FireworksInvalidRequestError(BadRequestError, ModelInvalidRequestError):
+    """Fireworks bad-request error classified as a LangChain model error."""
+
+
+class FireworksModelNotFoundError(NotFoundError, ModelNotFoundError):
+    """Fireworks not-found error classified as a LangChain model error."""
+
+
+class FireworksRateLimitError(RateLimitError, ModelRateLimitError):
+    """Fireworks rate-limit error classified as a LangChain model error."""
+
+
+class FireworksAPIError(InternalServerError, ModelAPIError):
+    """Fireworks server error classified as a LangChain model error."""
+
+
+class FireworksConnectionError(APIConnectionError, ModelConnectionError):
+    """Fireworks connection error classified as a LangChain model error."""
+
+
+class FireworksTimeoutError(APITimeoutError, ModelTimeoutError):
+    """Fireworks timeout error classified as a LangChain model error."""
+
+
 def _handle_fireworks_invalid_request(e: BadRequestError) -> NoReturn:
     """Promote prompt-too-long errors to `FireworksContextOverflowError`."""
     if "prompt is too long" in str(e):
         raise FireworksContextOverflowError(
             str(e), response=e.response, body=e.body
         ) from e
+    raise FireworksInvalidRequestError(str(e), response=e.response, body=e.body) from e
+
+
+def _handle_fireworks_api_error(e: APIError) -> NoReturn:
+    """Re-raise a Fireworks SDK error as its LangChain-classified equivalent."""
+    if isinstance(e, AuthenticationError):
+        raise FireworksAuthenticationError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, PermissionDeniedError):
+        raise FireworksPermissionDeniedError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, NotFoundError):
+        raise FireworksModelNotFoundError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, RateLimitError):
+        raise FireworksRateLimitError(str(e), response=e.response, body=e.body) from e
+    if isinstance(e, InternalServerError):
+        raise FireworksAPIError(str(e), response=e.response, body=e.body) from e
+    # `APITimeoutError` subclasses `APIConnectionError`, so check it first.
+    if isinstance(e, APITimeoutError):
+        raise FireworksTimeoutError(e.request) from e
+    if isinstance(e, APIConnectionError):
+        raise FireworksConnectionError(message=str(e), request=e.request) from e
     raise e
 
 
@@ -664,8 +809,27 @@ class ChatFireworks(BaseChatModel):
         ```python
         from langchain_fireworks.chat_models import ChatFireworks
 
-        fireworks = ChatFireworks(model_name="accounts/fireworks/models/gpt-oss-120b")
+        model = ChatFireworks(model_name="accounts/fireworks/models/gpt-oss-120b")
         ```
+
+    Fireworks request headers can be passed with `extra_headers`. For prompt
+    caching, `x-session-affinity` pins requests to a replica so related calls can
+    reuse the same prompt-cache session:
+
+    ```python
+    model.invoke(
+        "Hello",
+        extra_headers={"x-session-affinity": "user-42"},
+    )
+    ```
+
+    The Fireworks SDK also accepts a typed `prompt_cache_key` field (passed as a
+    regular keyword argument), which it treats as the preferred alternative to
+    the raw `x-session-affinity` header:
+
+    ```python
+    model.invoke("Hello", prompt_cache_key="user-42")
+    ```
     """
 
     @property
@@ -735,27 +899,20 @@ class ChatFireworks(BaseChatModel):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
-    fireworks_api_key: SecretStr = Field(
-        alias="api_key",
-        default_factory=secret_from_env(
-            "FIREWORKS_API_KEY",
-            error_message=(
-                "You must specify an api key. "
-                "You can pass it an argument as `api_key=...` or "
-                "set the environment variable `FIREWORKS_API_KEY`."
-            ),
-        ),
-    )
+    fireworks_api_key: SecretStr = Field(default=SecretStr(""), alias="api_key")
     """Fireworks API key.
 
     Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
+
+    If `LANGSMITH_GATEWAY` is enabled and the base URL points at the gateway,
+    `LANGSMITH_GATEWAY_API_KEY` is used instead.
     """
 
-    fireworks_api_base: str | None = Field(
-        alias="base_url", default_factory=from_env("FIREWORKS_API_BASE", default=None)
-    )
+    fireworks_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service
     emulator.
+
+    If `LANGSMITH_GATEWAY` is set, it is used as a fallback after `FIREWORKS_API_BASE`.
     """
 
     request_timeout: float | tuple[float, float] | Any | None = Field(
@@ -816,6 +973,15 @@ class ChatFireworks(BaseChatModel):
 
     !!! version-added "Added in `langchain-fireworks` 1.3.0"
     """
+    reasoning_effort: str | None = None
+    """Reasoning effort.
+
+    Forwarded as the `reasoning_effort` request field. Supported values vary by
+    model; see the model's `profile.reasoning_effort_levels`.
+
+    Can also be passed at call time, e.g.
+    `model.invoke(..., reasoning_effort="high")`.
+    """
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -827,6 +993,36 @@ class ChatFireworks(BaseChatModel):
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _resolve_gateway(cls, values: Any) -> Any:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        An explicit ``base_url``/``api_key`` always wins. Otherwise the base URL
+        falls back to ``FIREWORKS_API_BASE``, then the LangSmith gateway. The
+        gateway key is preferred only when the base URL came from the gateway;
+        for any other endpoint the provider key wins, and the gateway key is a
+        candidate only when the gateway is enabled.
+        """
+        if isinstance(values, dict):
+            config = _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="fireworks_api_base",
+                api_key_field="fireworks_api_key",
+                provider_path="fireworks",
+                base_url_env="FIREWORKS_API_BASE",
+                api_key_env="FIREWORKS_API_KEY",
+            )
+            if config.api_key is None:
+                msg = (
+                    "You must specify an api key. "
+                    "You can pass it an argument as `api_key=...` or "
+                    "set the environment variable `FIREWORKS_API_KEY`."
+                )
+                raise ValueError(msg)
+        return values
 
     @model_validator(mode="after")
     def _set_fireworks_chat_version(self) -> Self:
@@ -915,6 +1111,8 @@ class ChatFireworks(BaseChatModel):
             params["max_tokens"] = self.max_tokens
         if self.service_tier is not None:
             params["service_tier"] = self.service_tier
+        if self.reasoning_effort is not None:
+            params["reasoning_effort"] = self.reasoning_effort
         return params
 
     def _get_ls_params(
@@ -941,11 +1139,15 @@ class ChatFireworks(BaseChatModel):
             if output is None:
                 # Happens in streaming
                 continue
-            token_usage = output["token_usage"]
+            token_usage = output.get("token_usage")
             if token_usage is not None:
                 for k, v in token_usage.items():
+                    if v is None:
+                        continue
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
@@ -974,6 +1176,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -985,6 +1189,8 @@ class ChatFireworks(BaseChatModel):
                 if finish_reason := choice.get("finish_reason"):
                     generation_info["finish_reason"] = finish_reason
                     generation_info["model_name"] = self.model_name
+                    if service_tier := chunk.get("service_tier"):
+                        generation_info["service_tier"] = service_tier
                 logprobs = choice.get("logprobs")
                 if logprobs:
                     generation_info["logprobs"] = logprobs
@@ -1024,6 +1230,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         return self._create_chat_result(response)
 
     def _create_message_dicts(
@@ -1045,11 +1253,7 @@ class ChatFireworks(BaseChatModel):
             message = _convert_dict_to_message(res["message"])
             if isinstance(message, AIMessage):
                 if token_usage:
-                    message.usage_metadata = {
-                        "input_tokens": token_usage.get("prompt_tokens", 0),
-                        "output_tokens": token_usage.get("completion_tokens", 0),
-                        "total_tokens": token_usage.get("total_tokens", 0),
-                    }
+                    message.usage_metadata = _usage_to_metadata(token_usage)
                     message.response_metadata["model_provider"] = "fireworks"
                     message.response_metadata["model_name"] = self.model_name
                 if service_tier:
@@ -1089,6 +1293,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1100,6 +1306,8 @@ class ChatFireworks(BaseChatModel):
                 if finish_reason := choice.get("finish_reason"):
                     generation_info["finish_reason"] = finish_reason
                     generation_info["model_name"] = self.model_name
+                    if service_tier := chunk.get("service_tier"):
+                        generation_info["service_tier"] = service_tier
                 logprobs = choice.get("logprobs")
                 if logprobs:
                     generation_info["logprobs"] = logprobs
@@ -1142,6 +1350,8 @@ class ChatFireworks(BaseChatModel):
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         return self._create_chat_result(response)
 
     @property

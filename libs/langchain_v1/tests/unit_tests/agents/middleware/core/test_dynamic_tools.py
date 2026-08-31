@@ -6,23 +6,30 @@ that are not declared upfront when creating the agent.
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
+    AgentState,
+    InputAgentState,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
+    OutputAgentState,
     ToolCallRequest,
 )
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
 
 
 @tool
@@ -156,7 +163,7 @@ class ConditionalDynamicToolMiddleware(AgentMiddleware):
 
     def _should_add_tool(self, request: ModelRequest) -> bool:
         messages = request.state.get("messages", [])
-        return messages and "calculator" in str(messages[-1].content).lower()
+        return bool(messages) and "calculator" in str(messages[-1].content).lower()
 
     def wrap_model_call(
         self,
@@ -205,10 +212,15 @@ def get_tool_messages(result: dict[str, Any]) -> list[ToolMessage]:
     return [m for m in result["messages"] if isinstance(m, ToolMessage)]
 
 
-async def invoke_agent(agent: Any, message: str, *, use_async: bool) -> dict[str, Any]:
+async def invoke_agent(
+    agent: CompiledStateGraph[AgentState[Any], None, InputAgentState, OutputAgentState[Any]],
+    message: str,
+    *,
+    use_async: bool,
+) -> dict[str, Any]:
     """Invoke agent synchronously or asynchronously based on flag."""
-    input_data = {"messages": [HumanMessage(message)]}
-    config = {"configurable": {"thread_id": "test"}}
+    input_data: InputAgentState = {"messages": [HumanMessage(message)]}
+    config: RunnableConfig = {"configurable": {"thread_id": "test"}}
     if use_async:
         return await agent.ainvoke(input_data, config)
     # Run sync invoke in thread pool to avoid blocking the event loop
@@ -240,7 +252,7 @@ async def test_dynamic_tool_basic(*, use_async: bool, tools: list[Any] | None) -
 
     agent = create_agent(
         model=model,
-        tools=tools,  # type: ignore[arg-type]
+        tools=tools,
         middleware=[DynamicToolMiddleware()],
         checkpointer=InMemorySaver(),
     )

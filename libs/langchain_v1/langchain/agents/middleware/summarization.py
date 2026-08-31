@@ -1,5 +1,6 @@
 """Summarization middleware."""
 
+import logging
 import uuid
 import warnings
 from collections.abc import Callable, Iterable, Mapping
@@ -25,8 +26,14 @@ from langgraph.graph.message import (
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
+from langchain.agents.middleware.internal_call_transformer import (
+    InternalCallTransformer,
+    internal_call_metadata,
+)
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 from langchain.chat_models import BaseChatModel, init_chat_model
+
+logger = logging.getLogger(__name__)
 
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
 
@@ -76,6 +83,17 @@ Respond ONLY with the extracted context. Do not include any additional informati
 Messages to summarize:
 {messages}
 </messages>"""  # noqa: E501
+"""Default prompt used to summarize conversation history.
+
+The `<messages>` marker (on its own line) and the `{messages}` placeholder are
+part of this constant's public contract, not just cosmetic formatting.
+Downstream consumers depend on them: for example, deep agents'
+`SummarizationMiddleware` splices an extra instruction block in immediately
+before the `<messages>` marker via `str.replace`. Removing, renaming, or
+reformatting the marker (or the `{messages}` placeholder) is a breaking change
+for those consumers even though it does not alter any function signature, so
+treat edits to it accordingly.
+"""
 
 _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
@@ -86,6 +104,12 @@ _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 # accept known aliases per `ls_provider`.
 _LS_PROVIDER_ALIASES: dict[str, frozenset[str]] = {
     "amazon_bedrock": frozenset({"bedrock", "bedrock_converse"}),
+    # ChatOpenAIMantle traces under ls_provider="openai-mantle" but its messages
+    # inherit model_provider="openai" from BaseChatOpenAI.
+    "openai-mantle": frozenset({"openai"}),
+    # ChatAnthropicMantle traces under ls_provider="anthropic-mantle" but its
+    # messages inherit model_provider="anthropic" from BaseChatAnthropic.
+    "anthropic-mantle": frozenset({"anthropic"}),
 }
 
 
@@ -211,6 +235,18 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     This middleware monitors message token counts and automatically summarizes older
     messages when a threshold is reached, preserving recent messages and maintaining
     context continuity by ensuring AI/Tool message pairs remain together.
+
+    Transient summary-generation errors (rate limits, timeouts) are retried
+    in-process, up to 3 attempts total, via `Runnable.with_retry`. If a summary call
+    still fails after those attempts, the underlying error propagates rather than
+    fabricating a summary.
+    """
+
+    transformers = (InternalCallTransformer,)
+    """Keeps the summarization model call's tokens out of `run.messages`.
+
+    Registered only when this middleware is used — see
+    `InternalCallTransformer` for why the call needs tagging and filtering.
     """
 
     def __init__(
@@ -318,6 +354,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             model = init_chat_model(model)
 
         self.model = model
+        # Retry transient errors (rate limits, timeouts) in-process, up to 3 attempts
+        # total, before giving up. See `Runnable.with_retry`.
+        self._summary_model = self.model.with_retry()
 
         self.trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None = (
             self._copy_trigger(trigger)
@@ -367,6 +406,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         Returns:
             An updated state with summarized messages if summarization was performed.
+
+        Raises:
+            Exception: If summary generation still fails once retries are exhausted.
         """
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -405,6 +447,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         Returns:
             An updated state with summarized messages if summarization was performed.
+
+        Raises:
+            Exception: If summary generation still fails once retries are exhausted.
         """
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -789,6 +834,13 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         Args:
             messages_to_summarize: Messages to summarize.
+
+        Returns:
+            The generated summary.
+
+        Raises:
+            Exception: If the summary model call still fails once retries (see
+                `Runnable.with_retry`) are exhausted.
         """
         if not messages_to_summarize:
             return "No previous conversation history."
@@ -797,24 +849,28 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
-        # Format messages to avoid token inflation from metadata when str() is called on
-        # message objects
-        formatted_messages = get_buffer_string(trimmed_messages)
+        # Serialize as XML so URL-based multimodal blocks remain visible in the summary
+        # prompt while excluding raw message metadata from the token budget.
+        formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
-        try:
-            response = self.model.invoke(
-                self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization"}},
-            )
-            return response.text.strip()
-        except Exception as e:
-            return f"Error generating summary: {e!s}"
+        response = self._summary_model.invoke(
+            self.summary_prompt.format(messages=formatted_messages).rstrip(),
+            config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
+        )
+        return response.text.strip()
 
     async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages.
 
         Args:
             messages_to_summarize: Messages to summarize.
+
+        Returns:
+            The generated summary.
+
+        Raises:
+            Exception: If the summary model call still fails once retries (see
+                `Runnable.with_retry`) are exhausted.
         """
         if not messages_to_summarize:
             return "No previous conversation history."
@@ -823,18 +879,15 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
-        # Format messages to avoid token inflation from metadata when str() is called on
-        # message objects
-        formatted_messages = get_buffer_string(trimmed_messages)
+        # Serialize as XML so URL-based multimodal blocks remain visible in the summary
+        # prompt while excluding raw message metadata from the token budget.
+        formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
-        try:
-            response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization"}},
-            )
-            return response.text.strip()
-        except Exception as e:
-            return f"Error generating summary: {e!s}"
+        response = await self._summary_model.ainvoke(
+            self.summary_prompt.format(messages=formatted_messages).rstrip(),
+            config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
+        )
+        return response.text.strip()
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
         """Trim messages to fit within summary generation limits."""

@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Awaitable, Callable
-from typing import Annotated, Any, Generic
+from typing import TYPE_CHECKING, Annotated, Any
 
 import pytest
 from langchain_core.language_models import GenericFakeChatModel
@@ -9,21 +9,23 @@ from langchain_core.tools import InjectedToolCallId, tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.runtime import Runtime
+from langgraph.types import Command
 from pydantic import BaseModel, Field
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware import InputAgentState
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ExtendedModelResponse,
     ModelCallResult,
     ModelRequest,
     ModelResponse,
     OmitFromInput,
     OmitFromOutput,
     PrivateStateAttr,
-    ResponseT,
     after_agent,
     after_model,
     before_agent,
@@ -34,6 +36,9 @@ from langchain.agents.structured_output import ToolStrategy
 from langchain.tools import InjectedState
 from tests.unit_tests.agents.messages import _AnyIdHumanMessage, _AnyIdToolMessage
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
 
 
 def test_create_agent_invoke(
@@ -96,8 +101,8 @@ def test_create_agent_invoke(
         checkpointer=sync_checkpointer,
     )
 
-    thread1 = {"configurable": {"thread_id": "1"}}
-    assert agent_one.invoke({"messages": ["hello"]}, thread1) == {
+    thread1: RunnableConfig = {"configurable": {"thread_id": "1"}}
+    assert agent_one.invoke({"messages": [HumanMessage("hello")]}, thread1) == {
         "messages": [
             _AnyIdHumanMessage(content="hello"),
             AIMessage(
@@ -138,6 +143,54 @@ def test_create_agent_invoke(
         "NoopEight.after_model",
         "NoopSeven.after_model",
     ]
+
+
+def test_create_agent_synthetic_tool_messages_reroute_to_model() -> None:
+    class SyntheticToolMessageMiddleware(AgentMiddleware):
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
+            response = handler(request)
+            message = response.result[0]
+            if isinstance(message, AIMessage) and message.tool_calls:
+                synthetic_messages = [
+                    ToolMessage(
+                        content="synthetic result",
+                        name=tool_call["name"],
+                        tool_call_id=tool_call["id"],
+                    )
+                    for tool_call in message.tool_calls
+                ]
+                return ExtendedModelResponse(
+                    model_response=response,
+                    command=Command(update={"messages": synthetic_messages}),
+                )
+            return response
+
+    @tool
+    def my_tool(value: str) -> str:
+        """A great tool."""
+        return value.upper()
+
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                [ToolCall(id="1", name="my_tool", args={"value": "yo"})],
+                [],
+            ],
+        ),
+        tools=[my_tool],
+        middleware=[SyntheticToolMessageMiddleware()],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage(content="hello")]})
+
+    assert any(
+        isinstance(message, ToolMessage) and message.tool_call_id == "1"
+        for message in result["messages"]
+    )
 
 
 def test_create_agent_jump(
@@ -201,8 +254,8 @@ def test_create_agent_jump(
     if isinstance(sync_checkpointer, InMemorySaver):
         assert agent_one.get_graph().draw_mermaid() == snapshot
 
-    thread1 = {"configurable": {"thread_id": "1"}}
-    assert agent_one.invoke({"messages": []}, thread1) == {"messages": []}
+    thread1: RunnableConfig = {"configurable": {"thread_id": "1"}}
+    assert agent_one.invoke(InputAgentState(messages=[]), thread1) == {"messages": []}
     assert calls == ["NoopSeven.before_model", "NoopEight.before_model"]
 
 
@@ -368,6 +421,11 @@ def test_public_private_state_for_custom_middleware() -> None:
         omit_output: Annotated[str, OmitFromOutput]
         private_state: Annotated[str, PrivateStateAttr]
 
+    class CustomInputState(InputAgentState):
+        omit_input: str
+        omit_output: str
+        private_state: str
+
     class CustomMiddleware(AgentMiddleware[CustomState]):
         state_schema: type[CustomState] = CustomState
 
@@ -380,12 +438,12 @@ def test_public_private_state_for_custom_middleware() -> None:
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Hello")],
-            "omit_input": "test in",
-            "private_state": "test in",
-            "omit_output": "test in",
-        }
+        CustomInputState(
+            messages=[HumanMessage("Hello")],
+            omit_input="test in",
+            private_state="test in",
+            omit_output="test in",
+        )
     )
     assert "omit_input" in result
     assert "omit_output" not in result
@@ -420,7 +478,11 @@ def test_runtime_injected_into_middleware() -> None:
 # custom state w/in a function
 
 
-class CustomState(AgentState[ResponseT], Generic[ResponseT]):
+class CustomState(AgentState[Any]):
+    custom_state: str
+
+
+class _CustomInputState(InputAgentState):
     custom_state: str
 
 
@@ -457,10 +519,10 @@ agent = create_agent(
 def test_injected_state_in_middleware_agent() -> None:
     """Test that custom state is properly injected into tools when using middleware."""
     result = agent.invoke(
-        {
-            "custom_state": "I love pizza",
-            "messages": [HumanMessage("Call the test state tool")],
-        }
+        _CustomInputState(
+            messages=[HumanMessage("Call the test state tool")],
+            custom_state="I love pizza",
+        )
     )
 
     messages = result["messages"]

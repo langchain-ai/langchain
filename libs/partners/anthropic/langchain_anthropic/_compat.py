@@ -140,6 +140,9 @@ def _convert_from_v1_to_anthropic(
                 }
             )
 
+        elif block["type"] == "invalid_tool_call":
+            continue
+
         elif block["type"] == "reasoning" and model_provider == "anthropic":
             new_block = {}
             if "reasoning" in block:

@@ -16,7 +16,45 @@ def _convert_from_v1_to_mistral(
     new_content: list = []
     for block in content:
         if block["type"] == "text":
-            new_content.append({"text": block.get("text", ""), "type": "text"})
+            annotations = block.get("annotations")
+            if model_provider == "mistralai" and isinstance(annotations, list):
+                reference_meta: dict[str, Any] = {}
+                has_reference = False
+                for annotation in annotations:
+                    if not isinstance(annotation, dict):
+                        continue
+                    ann_type = annotation.get("type")
+                    if ann_type == "non_standard_annotation":
+                        value = annotation.get("value")
+                        if isinstance(value, dict) and value.get("type") == "reference":
+                            reference_meta.update(
+                                {
+                                    k: v
+                                    for k, v in value.items()
+                                    if k not in ("type", "text", "index")
+                                }
+                            )
+                            has_reference = True
+                    elif ann_type == "citation":
+                        extras = annotation.get("extras", {})
+                        if isinstance(extras, dict):
+                            reference_meta.update(extras)
+                        cited_text = annotation.get("cited_text")
+                        if cited_text and cited_text != block.get("text", ""):
+                            reference_meta["cited_text"] = cited_text
+                        has_reference = True
+                if has_reference:
+                    new_content.append(
+                        {
+                            "type": "text",
+                            "text": block.get("text", ""),
+                            "reference": reference_meta,
+                        }
+                    )
+                else:
+                    new_content.append({"type": "text", "text": block.get("text", "")})
+            else:
+                new_content.append({"text": block.get("text", ""), "type": "text"})
 
         elif (
             block["type"] == "reasoning"
@@ -66,6 +104,22 @@ def _convert_to_v1_from_mistral(message: AIMessage) -> list[types.ContentBlock]:
                     }
                     if "index" in block:
                         text_block["index"] = block["index"]
+                    # If the text block carries reference metadata (from a
+                    # normalized Mistral citation chunk), attach it as a
+                    # Citation annotation so downstream consumers can map
+                    # answer fragments back to source documents.
+                    if "reference" in block:
+                        citation: types.Citation = {"type": "citation"}
+                        ref_meta = block.get("reference")
+                        if isinstance(ref_meta, dict):
+                            if cited_text := ref_meta.get("cited_text"):
+                                citation["cited_text"] = cited_text
+                            extras = {
+                                k: v for k, v in ref_meta.items() if k != "cited_text"
+                            }
+                            if extras:
+                                citation["extras"] = extras
+                        text_block["annotations"] = [citation]
                     content_blocks.append(text_block)
 
                 elif block.get("type") == "thinking" and isinstance(

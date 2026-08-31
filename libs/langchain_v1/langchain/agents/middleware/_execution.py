@@ -220,7 +220,7 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
             env=env,
             cwd=workspace,
             preexec_fn=None,
-            start_new_session=False,
+            start_new_session=True,
         )
 
     def _build_command(self, command: Sequence[str]) -> list[str]:
@@ -325,7 +325,7 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
             env=host_env,
             cwd=workspace,
             preexec_fn=None,
-            start_new_session=False,
+            start_new_session=True,
         )
 
     def _build_command(

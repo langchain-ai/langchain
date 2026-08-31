@@ -11,6 +11,7 @@ from langchain_core.language_models.base import (
     LanguageModelInput,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -23,14 +24,21 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import count_tokens_approximately, get_buffer_string
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import Runtime
 from pydantic import Field
 from typing_extensions import override
 
-from langchain.agents import AgentState
+from langchain.agents import AgentState, create_agent
+from langchain.agents.middleware.internal_call_transformer import (
+    INTERNAL_CALL_METADATA_KEY,
+    internal_call_metadata,
+)
 from langchain.agents.middleware.summarization import (
+    ContextSize,
     SummarizationMiddleware,
+    TriggerClause,
     _provider_matches,
 )
 from langchain.chat_models import init_chat_model
@@ -239,14 +247,237 @@ def test_summarization_middleware_summary_creation() -> None:
             return "mock"
 
     middleware_error = SummarizationMiddleware(model=ErrorModel(), trigger=("tokens", 1000))
-    summary = middleware_error._create_summary(messages)
-    assert "Error generating summary: Model error" in summary
+    # Bypass the retry wrapper so this test isn't slowed by real backoff delay; retry
+    # behavior itself is covered by test_summarization_middleware_retries_transient_failure_in_call.
+    middleware_error._summary_model = middleware_error.model
+    with pytest.raises(ValueError, match="Model error"):
+        middleware_error._create_summary(messages)
 
     # Test we raise warning if max_tokens_before_summary or messages_to_keep is specified
     with pytest.warns(DeprecationWarning, match="max_tokens_before_summary is deprecated"):
         SummarizationMiddleware(model=MockChatModel(), max_tokens_before_summary=500)
     with pytest.warns(DeprecationWarning, match="messages_to_keep is deprecated"):
         SummarizationMiddleware(model=MockChatModel(), messages_to_keep=5)
+
+
+def test_summarization_middleware_retries_transient_failure_in_call() -> None:
+    """A transient failure must be retried in-process via `Runnable.with_retry`.
+
+    A single `_create_summary` call must succeed if the underlying model recovers
+    within 3 attempts, without the caller ever observing a failure.
+    """
+
+    class FlakyModel(BaseChatModel):
+        """Model that fails a fixed number of times, then succeeds."""
+
+        fail_count: int = Field(default=0)
+        attempts: int = Field(default=0)
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            self.attempts += 1
+            if self.attempts <= self.fail_count:
+                msg = "429 Too Many Requests (simulated transient failure)"
+                raise RuntimeError(msg)
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary."))])
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    model = FlakyModel(fail_count=2)
+    middleware = SummarizationMiddleware(model=model, trigger=("messages", 2))
+    # No delay between attempts so the test runs fast and deterministically; the
+    # retry count itself (3, `Runnable.with_retry`'s own default) is untouched.
+    middleware._summary_model.wait_exponential_jitter = False  # type: ignore[attr-defined]
+
+    summary = middleware._create_summary([HumanMessage(content="hi")])
+
+    assert summary == "Summary."
+    assert model.attempts == 3
+
+
+class _AlwaysFailingModel(BaseChatModel):
+    """Chat model whose sync and async summary calls always raise."""
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        msg = "429 Too Many Requests"
+        raise RuntimeError(msg)
+
+    @override
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        msg = "429 Too Many Requests"
+        raise RuntimeError(msg)
+
+    @property
+    def _llm_type(self) -> str:
+        return "mock"
+
+
+def _skip_retry(middleware: SummarizationMiddleware) -> None:
+    """Bypass the retry wrapper so failure-path tests aren't slowed by real backoff.
+
+    Retry behavior itself is covered by
+    `test_summarization_middleware_retries_transient_failure_in_call`.
+    """
+    middleware._summary_model = middleware.model
+
+
+def test_create_summary_raises_on_failure() -> None:
+    """`_create_summary` must raise, never fabricate a fake summary string."""
+    middleware = SummarizationMiddleware(model=_AlwaysFailingModel())
+    _skip_retry(middleware)
+
+    with pytest.raises(RuntimeError, match="429 Too Many Requests"):
+        middleware._create_summary([HumanMessage(content="hi")])
+
+
+async def test_acreate_summary_raises_on_failure() -> None:
+    """Async: `_acreate_summary` must raise on failure."""
+    middleware = SummarizationMiddleware(model=_AlwaysFailingModel())
+    _skip_retry(middleware)
+
+    with pytest.raises(RuntimeError, match="429 Too Many Requests"):
+        await middleware._acreate_summary([HumanMessage(content="hi")])
+
+
+def test_summarization_middleware_before_model_raises_on_summary_failure() -> None:
+    """A failed summary generation must raise, never fabricate a summary or delete history."""
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(), trigger=("messages", 2), keep=("messages", 1)
+    )
+    _skip_retry(middleware)
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+        HumanMessage(content="how are you", id="h1"),
+    ]
+    state = AgentState[Any](messages=messages)
+
+    with pytest.raises(RuntimeError, match="429 Too Many Requests"):
+        middleware.before_model(state, Runtime())
+
+    # The original message list is untouched - no fabricated summary, no deletion.
+    assert state["messages"] == messages
+
+
+async def test_summarization_middleware_abefore_model_raises_on_summary_failure() -> None:
+    """Async: same raise-on-failure behavior as `before_model`."""
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(), trigger=("messages", 2), keep=("messages", 1)
+    )
+    _skip_retry(middleware)
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+        HumanMessage(content="how are you", id="h1"),
+    ]
+    state = AgentState[Any](messages=messages)
+
+    with pytest.raises(RuntimeError, match="429 Too Many Requests"):
+        await middleware.abefore_model(state, Runtime())
+
+    assert state["messages"] == messages
+
+
+def test_summarization_middleware_e2e_failure_raises_without_corrupting_history() -> None:
+    """End-to-end regression test.
+
+    Verifies that exhausted summary retries raise an error without corrupting
+    checkpointed history, and that summarization succeeds on a later invocation
+    once the model recovers.
+    """
+
+    class TemporarilyFailingSummaryModel(BaseChatModel):
+        """Summary-only model that fails until `working` is set to `True`."""
+
+        working: bool = Field(default=False)
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            if not self.working:
+                msg = "429 Too Many Requests (simulated persistent failure)"
+                raise RuntimeError(msg)
+            summary = AIMessage(content="Summary of the conversation so far.")
+            return ChatResult(generations=[ChatGeneration(message=summary)])
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    main_model = FakeToolCallingModel()
+    summary_model = TemporarilyFailingSummaryModel()
+    middleware = SummarizationMiddleware(
+        model=summary_model, trigger=("messages", 6), keep=("messages", 2)
+    )
+    _skip_retry(middleware)
+
+    agent = create_agent(
+        model=main_model,
+        tools=[],
+        middleware=[middleware],
+        checkpointer=InMemorySaver(),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "e2e-summary-failure"}}
+
+    # Build up history below the ("messages", 6) trigger threshold.
+    for i in range(3):
+        agent.invoke({"messages": [HumanMessage(f"turn {i}")]}, config)
+
+    messages_below_threshold = agent.get_state(config).values["messages"]
+    assert len(messages_below_threshold) == 6
+
+    # This turn triggers summarization, which fails and raises. The new human
+    # message is checkpointed, but no AI response, summary, or message removal occurs.
+    with pytest.raises(RuntimeError, match="429 Too Many Requests"):
+        agent.invoke({"messages": [HumanMessage("turn 3")]}, config)
+
+    messages_after_failed_summary = agent.get_state(config).values["messages"]
+    assert messages_after_failed_summary[:-1] == messages_below_threshold
+    assert messages_after_failed_summary[-1].content == "turn 3"
+    assert not any(
+        "Error generating summary" in (m.content or "") for m in messages_after_failed_summary
+    )
+
+    # Once the summarizer is fixed, retrying the same turn must succeed and
+    # actually summarize, proving the earlier failure didn't corrupt anything.
+    summary_model.working = True
+    agent.invoke({"messages": [HumanMessage("turn 3")]}, config)
+
+    messages_after_recovered_summary = agent.get_state(config).values["messages"]
+    assert len(messages_after_recovered_summary) < len(messages_after_failed_summary)
+    assert any(
+        "summary of the conversation" in (m.content or "").lower()
+        for m in messages_after_recovered_summary
+    )
+    assert not any(m.content == "turn 0" for m in messages_after_recovered_summary), (
+        "history should actually be trimmed once summarization succeeds"
+    )
 
 
 def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
@@ -934,9 +1165,10 @@ async def test_summarization_middleware_async_error_handling() -> None:
             return "mock"
 
     middleware = SummarizationMiddleware(model=ErrorAsyncModel(), trigger=("messages", 5))
+    _skip_retry(middleware)
     messages: list[AnyMessage] = [HumanMessage(content="test")]
-    summary = await middleware._acreate_summary(messages)
-    assert "Error generating summary: Async model error" in summary
+    with pytest.raises(ValueError, match="Async model error"):
+        await middleware._acreate_summary(messages)
 
 
 def test_summarization_middleware_cutoff_at_boundary() -> None:
@@ -1153,8 +1385,8 @@ def test_summarization_middleware_cutoff_at_start_of_tool_sequence() -> None:
 def test_trigger_copies_mutable_inputs() -> None:
     """Test caller mutations do not change stored trigger configuration."""
     model = FakeToolCallingModel()
-    clause = {"tokens": 1000}
-    trigger = [clause]
+    clause: TriggerClause = {"tokens": 1000}
+    trigger: list[ContextSize | TriggerClause] = [clause]
 
     middleware = SummarizationMiddleware(
         model=model,
@@ -1171,7 +1403,7 @@ def test_trigger_copies_mutable_inputs() -> None:
         return 500
 
     middleware.token_counter = token_counter_low
-    state = {"messages": [HumanMessage(content="1"), HumanMessage(content="2")]}
+    state = AgentState(messages=[HumanMessage(content="1"), HumanMessage(content="2")])
     result = middleware.before_model(state, Runtime())
     assert result is None
 
@@ -1231,13 +1463,13 @@ def test_and_trigger_conditions() -> None:
         return 1500  # Above token threshold
 
     middleware.token_counter = token_counter_high
-    state = {
-        "messages": [
+    state = AgentState(
+        messages=[
             HumanMessage(content="1"),
             AIMessage(content="2"),
             HumanMessage(content="3"),
         ]
-    }
+    )
     result = middleware.before_model(state, Runtime())
     assert result is None, "Should not summarize when only tokens condition is met"
 
@@ -1247,8 +1479,8 @@ def test_and_trigger_conditions() -> None:
         return 500  # Below token threshold
 
     middleware.token_counter = token_counter_low
-    state = {
-        "messages": [
+    state = AgentState(
+        messages=[
             HumanMessage(content="1"),
             AIMessage(content="2"),
             HumanMessage(content="3"),
@@ -1256,7 +1488,7 @@ def test_and_trigger_conditions() -> None:
             HumanMessage(content="5"),
             AIMessage(content="6"),
         ]
-    }
+    )
     result = middleware.before_model(state, Runtime())
     assert result is None, "Should not summarize when only messages condition is met"
 
@@ -1289,14 +1521,14 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
         return 5500
 
     middleware.token_counter = token_counter_5500
-    state = {
-        "messages": [
+    state = AgentState(
+        messages=[
             HumanMessage(content="1"),
             AIMessage(content="2"),
             HumanMessage(content="3"),
             AIMessage(content="4"),
         ]
-    }
+    )
     result = middleware.before_model(state, Runtime())
     assert result is not None, "Should summarize when first OR clause is met"
 
@@ -1306,7 +1538,7 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
         return 3500
 
     middleware.token_counter = token_counter_3500
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(7)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(7)])
     result = middleware.before_model(state, Runtime())
     assert result is not None, "Should summarize when second OR clause is met"
 
@@ -1318,14 +1550,14 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
         return 4500
 
     middleware.token_counter = token_counter_4500
-    state = {
-        "messages": [
+    state = AgentState(
+        messages=[
             HumanMessage(content="1"),
             AIMessage(content="2"),
             HumanMessage(content="3"),
             AIMessage(content="4"),
         ]
-    }
+    )
     result = middleware.before_model(state, Runtime())
     assert result is None, "Should not summarize when no complete clause is met"
 
@@ -1337,7 +1569,7 @@ async def test_and_trigger_conditions_async() -> None:
         trigger={"tokens": 1000, "messages": 5},
         keep=("messages", 2),
     )
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(6)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(6)])
 
     # Only the messages threshold met (tokens below) -> should not summarize.
     def token_counter_low(_messages: Iterable[MessageLikeRepresentation]) -> int:
@@ -1367,7 +1599,7 @@ async def test_or_trigger_conditions_with_and_clauses_async() -> None:
         ],
         keep=("messages", 2),
     )
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(4)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(4)])
 
     # First clause met (tokens = 5500, messages = 4) -> should summarize.
     def token_counter_5500(_messages: Iterable[MessageLikeRepresentation]) -> int:
@@ -1401,7 +1633,7 @@ def test_backward_compatibility_tuple_trigger() -> None:
         return 1500
 
     middleware_single.token_counter = token_counter_high
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(3)])
     result = middleware_single.before_model(state, Runtime())
     assert result is not None, "Single tuple trigger should work"
 
@@ -1414,7 +1646,7 @@ def test_backward_compatibility_tuple_trigger() -> None:
 
     # Should trigger with high tokens (first condition met)
     middleware_list.token_counter = token_counter_high
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(3)])
     result = middleware_list.before_model(state, Runtime())
     assert result is not None, "List of tuples should trigger when any condition met"
 
@@ -1423,7 +1655,7 @@ def test_backward_compatibility_tuple_trigger() -> None:
         return 100
 
     middleware_list.token_counter = token_counter_low
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(6)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(6)])
     result = middleware_list.before_model(state, Runtime())
     assert result is not None, "List of tuples should trigger when second condition met"
 
@@ -1447,7 +1679,7 @@ def test_mixed_and_or_conditions() -> None:
         return 4500
 
     middleware.token_counter = token_counter_high
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(12)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(12)])
     result = middleware.before_model(state, Runtime())
     assert result is not None, "Should trigger when AND clause is met"
 
@@ -1456,13 +1688,13 @@ def test_mixed_and_or_conditions() -> None:
         return 1000
 
     middleware.token_counter = token_counter_low
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(55)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(55)])
     result = middleware.before_model(state, Runtime())
     assert result is not None, "Should trigger when simple messages condition is met"
 
     # Test case 3: Neither condition met
     middleware.token_counter = token_counter_low
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(8)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(8)])
     result = middleware.before_model(state, Runtime())
     assert result is None, "Should not trigger when no condition is met"
 
@@ -1484,21 +1716,21 @@ def test_fraction_in_and_trigger() -> None:
     # Test case 1: Both conditions met
     # 5 messages * 200 = 1000 tokens (profile max is 1000)
     # 1000 / 1000 = 1.0 >= 0.8  AND messages = 5 >= 5
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(5)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(5)])
     result = middleware.before_model(state, Runtime())
     assert result is not None, "Should trigger when both fraction and messages conditions met"
 
     # Test case 2: Only messages condition met
     # 3 messages * 200 = 600 tokens
     # 600 / 1000 = 0.6 < 0.8 and messages = 3 < 5
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(3)])
     result = middleware.before_model(state, Runtime())
     assert result is None, "Should not trigger when neither condition is fully met"
 
     # Test case 3: High fraction but not enough messages
     # 4 messages * 200 = 800 tokens
     # 800 / 1000 = 0.8 >= 0.8 but messages = 4 < 5
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(4)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(4)])
     result = middleware.before_model(state, Runtime())
     assert result is None, "Should not trigger when only fraction condition is met"
 
@@ -1511,7 +1743,7 @@ def test_trigger_validation_errors() -> None:
     with pytest.raises(ValueError, match="Unsupported trigger metric"):
         SummarizationMiddleware(
             model=model,
-            trigger={"invalid_metric": 100},
+            trigger={"invalid_metric": 100},  # type: ignore[arg-type]
         )
 
     # Invalid fraction value (> 1) — shares the tuple path's message via
@@ -1547,21 +1779,21 @@ def test_trigger_validation_errors() -> None:
     with pytest.raises(ValueError, match="Fraction trigger values must be numeric"):
         SummarizationMiddleware(
             model=model,
-            trigger={"fraction": "invalid"},
+            trigger={"fraction": "invalid"},  # type: ignore[arg-type]
         )
 
     # Float value for an integer metric is rejected (no silent truncation)
     with pytest.raises(ValueError, match="tokens trigger values must be integers"):
         SummarizationMiddleware(
             model=model,
-            trigger={"tokens": 1000.5},
+            trigger={"tokens": 1000.5},  # type: ignore[arg-type]
         )
 
     # Numeric string for an integer metric is rejected (no silent coercion)
     with pytest.raises(ValueError, match="messages trigger values must be integers"):
         SummarizationMiddleware(
             model=model,
-            trigger={"messages": "10"},
+            trigger={"messages": "10"},  # type: ignore[arg-type]
         )
 
     # Boolean is rejected (bool is an int subclass)
@@ -1575,7 +1807,7 @@ def test_trigger_validation_errors() -> None:
     with pytest.raises(TypeError, match="Unsupported trigger item type"):
         SummarizationMiddleware(
             model=model,
-            trigger=["invalid"],
+            trigger=["invalid"],  # type: ignore[list-item]
         )
 
     # Unsupported top-level trigger type (not a tuple, dict, or list)
@@ -1616,7 +1848,7 @@ def test_empty_list_trigger_never_summarizes() -> None:
         token_counter=lambda _: 10_000,
     )
     assert middleware._trigger_conditions == []
-    state = {"messages": [HumanMessage(content=str(i)) for i in range(50)]}
+    state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(50)])
     assert middleware.before_model(state, Runtime()) is None
 
 
@@ -1763,6 +1995,78 @@ def test_create_summary_uses_get_buffer_string_format() -> None:
     )
 
 
+class PromptCapturingModel(BaseChatModel):
+    """Mock model that captures the prompt input passed to invoke/ainvoke."""
+
+    captured_inputs: list[LanguageModelInput] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_inputs.append(input)
+        return AIMessage(content="Summary")
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_inputs.append(input)
+        return AIMessage(content="Summary")
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "prompt-capturing"
+
+
+@pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
+async def test_create_summary_preserves_image_urls(use_async: bool) -> None:  # noqa: FBT001
+    """Test that URL-backed image content is serialized into the summary prompt."""
+    model = PromptCapturingModel()
+    middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
+    image_url = "https://example.com/shared-image.png"
+    messages: list[AnyMessage] = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "What is in this image?"},
+                {"type": "image_url", "image_url": {"url": image_url}},
+            ]
+        ),
+        AIMessage(content="The image shows a cat."),
+    ]
+
+    if use_async:
+        summary = await middleware._acreate_summary(messages)
+    else:
+        summary = middleware._create_summary(messages)
+
+    assert summary == "Summary"
+    prompt = model.captured_inputs[0]
+    assert isinstance(prompt, str)
+    # Preserve the URL in the serialized history passed to the summarizer.
+    assert image_url in prompt
+
+
 @pytest.mark.requires("langchain_anthropic")
 def test_usage_metadata_trigger() -> None:
     model = init_chat_model("anthropic:claude-sonnet-4-5")
@@ -1841,21 +2145,32 @@ def test_usage_metadata_trigger() -> None:
 
 
 def test_provider_matches() -> None:
-    """Direct equality matches, plus Bedrock aliases under amazon_bedrock."""
+    """Direct equality matches, plus provider aliases (Bedrock, Mantle)."""
     assert _provider_matches("anthropic", "anthropic")
     assert _provider_matches("openai", "openai")
     # Bedrock chat models tag messages with model_provider="bedrock" or
     # "bedrock_converse" but trace under ls_provider="amazon_bedrock".
     assert _provider_matches("bedrock", "amazon_bedrock")
     assert _provider_matches("bedrock_converse", "amazon_bedrock")
+    # ChatOpenAIMantle tags messages with model_provider="openai" but traces
+    # under ls_provider="openai-mantle".
+    assert _provider_matches("openai", "openai-mantle")
     # Non-matches
     assert not _provider_matches("openai", "anthropic")
     assert not _provider_matches("bedrock", "anthropic")
+    assert not _provider_matches("anthropic", "openai-mantle")
     assert not _provider_matches("anthropic", None)
 
 
-class _MockBedrockChatModel(BaseChatModel):
-    """Mock model that mimics ChatBedrockConverse's ls_provider for tracing."""
+class _MockAliasedProviderChatModel(BaseChatModel):
+    """Mock model whose ls_provider differs from its messages' model_provider.
+
+    Mimics chat models (e.g. ChatBedrockConverse, ChatOpenAIMantle,
+    ChatAnthropicMantle) that trace under an ls_provider aliased in
+    ``_LS_PROVIDER_ALIASES``.
+    """
+
+    ls_provider: str = "amazon_bedrock"
 
     @override
     def _generate(
@@ -1869,21 +2184,33 @@ class _MockBedrockChatModel(BaseChatModel):
 
     @property
     def _llm_type(self) -> str:
-        return "amazon_bedrock_converse_chat"
+        return "mock_aliased_provider_chat"
 
     @override
     def _get_ls_params(self, stop: list[str] | None = None, **kwargs: Any) -> LangSmithParams:
-        return LangSmithParams(ls_provider="amazon_bedrock", ls_model_type="chat")
+        return LangSmithParams(ls_provider=self.ls_provider, ls_model_type="chat")
 
 
-def test_reported_tokens_trigger_for_bedrock_converse() -> None:
-    """Bedrock messages should satisfy the reported-token check.
+@pytest.mark.parametrize(
+    ("ls_provider", "model_provider"),
+    [
+        ("amazon_bedrock", "bedrock_converse"),
+        ("openai-mantle", "openai"),
+        ("anthropic-mantle", "anthropic"),
+    ],
+)
+def test_reported_tokens_trigger_for_aliased_provider(
+    ls_provider: str, model_provider: str
+) -> None:
+    """Aliased-provider messages should satisfy the reported-token check.
 
-    Despite the model_provider/ls_provider mismatch (bedrock_converse vs.
-    amazon_bedrock), the reported-token check should still trigger summarization.
+    Despite the model_provider/ls_provider mismatch (e.g. bedrock_converse vs.
+    amazon_bedrock, openai vs. openai-mantle, or anthropic vs.
+    anthropic-mantle), the reported-token check should still trigger
+    summarization.
     """
     middleware = SummarizationMiddleware(
-        model=_MockBedrockChatModel(),
+        model=_MockAliasedProviderChatModel(ls_provider=ls_provider),
         trigger=("tokens", 10_000),
         keep=("messages", 4),
     )
@@ -1891,7 +2218,7 @@ def test_reported_tokens_trigger_for_bedrock_converse() -> None:
         HumanMessage(content="msg1"),
         AIMessage(
             content="msg2",
-            response_metadata={"model_provider": "bedrock_converse"},
+            response_metadata={"model_provider": model_provider},
             usage_metadata={
                 "input_tokens": 7500,
                 "output_tokens": 2501,
@@ -1907,7 +2234,7 @@ def test_reported_tokens_trigger_for_bedrock_converse() -> None:
         HumanMessage(content="msg1"),
         AIMessage(
             content="msg2",
-            response_metadata={"model_provider": "anthropic"},
+            response_metadata={"model_provider": "some-other-provider"},
             usage_metadata={
                 "input_tokens": 7500,
                 "output_tokens": 2501,
@@ -2010,3 +2337,47 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     assert config is not None
     assert "metadata" in config
     assert config["metadata"]["lc_source"] == "summarization"
+    assert (
+        config["metadata"][INTERNAL_CALL_METADATA_KEY]
+        == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
+    )
+
+
+class TestSummarizationStreamingEndToEnd:
+    """End-to-end: a real summarization call must not leak into `run.messages`."""
+
+    async def test_summarization_call_excluded_from_messages_projection(self) -> None:
+        """Drives `create_agent` with a triggered summarization mid-run.
+
+        Uses `GenericFakeChatModel` for both the main agent and the
+        summarizer (it actually streams via `_astream`, unlike
+        `FakeToolCallingModel`), then asserts `run.messages` surfaces only
+        the agent's real answer.
+        """
+        main_model = GenericFakeChatModel(messages=iter([AIMessage(content="Final answer.")]))
+        summarizer_model = GenericFakeChatModel(
+            messages=iter([AIMessage(content="Summary of prior turns.")])
+        )
+        middleware = SummarizationMiddleware(model=summarizer_model, trigger=("messages", 1))
+
+        agent = create_agent(model=main_model, tools=[], middleware=[middleware])
+
+        run = await agent.astream_events(
+            {
+                "messages": [
+                    HumanMessage("hi"),
+                    HumanMessage("there"),
+                    HumanMessage("again"),
+                ]
+            },
+            version="v3",
+        )
+
+        texts: list[str] = []
+        async for msg in run.messages:
+            text = ""
+            async for chunk in msg.text:
+                text += chunk
+            texts.append(text)
+
+        assert texts == ["Final answer."]

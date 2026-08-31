@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from unittest import mock
 
 import pytest
@@ -13,6 +13,7 @@ from langchain.chat_models.base import _BUILTIN_PROVIDERS, _attempt_infer_model_
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
+    from langchain_openai import ChatOpenAI
 
 OPENAI_TEST_MODEL = "gpt-5.5"
 
@@ -53,6 +54,84 @@ def test_init_chat_model(model_name: str, model_provider: str | None) -> None:
         api_key="foo",
     )
     assert llm1.dict() == llm2.dict()
+
+
+@pytest.mark.requires("langchain_openai")
+@mock.patch.dict(
+    os.environ,
+    {
+        "LANGSMITH_GATEWAY_API_KEY": "gateway-key",
+        "LANGSMITH_API_KEY": "langsmith-key",
+    },
+    clear=True,
+)
+def test_init_chat_model_langsmith_defaults() -> None:
+    model = cast("ChatOpenAI", init_chat_model("langsmith:moonshotai/kimi-k3"))
+
+    assert model.model_name == "moonshotai/kimi-k3"
+    assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
+    assert isinstance(model.openai_api_key, SecretStr)
+    assert model.openai_api_key.get_secret_value() == "gateway-key"
+    assert model.use_responses_api is True
+
+
+@pytest.mark.requires("langchain_openai")
+@mock.patch.dict(os.environ, {"LANGSMITH_API_KEY": "langsmith-key"}, clear=True)
+def test_init_chat_model_langsmith_api_key_fallback() -> None:
+    model = cast("ChatOpenAI", init_chat_model("langsmith:moonshotai/kimi-k3"))
+
+    assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
+    assert isinstance(model.openai_api_key, SecretStr)
+    assert model.openai_api_key.get_secret_value() == "langsmith-key"
+
+
+@pytest.mark.requires("langchain_openai")
+@mock.patch.dict(
+    os.environ,
+    {
+        "LANGSMITH_GATEWAY": "https://eu.gateway.example.com/",
+        "LANGSMITH_API_KEY": "langsmith-key",
+    },
+    clear=True,
+)
+def test_init_chat_model_langsmith_custom_gateway() -> None:
+    model = cast(
+        "ChatOpenAI",
+        init_chat_model(
+            "moonshotai/kimi-k3",
+            model_provider="langsmith",
+            use_responses_api=False,
+        ),
+    )
+
+    assert model.openai_api_base == "https://eu.gateway.example.com/v1"
+    assert isinstance(model.openai_api_key, SecretStr)
+    assert model.openai_api_key.get_secret_value() == "langsmith-key"
+    assert model.use_responses_api is True
+
+
+@pytest.mark.requires("langchain_openai")
+@mock.patch.dict(
+    os.environ,
+    {
+        "LANGSMITH_GATEWAY": "https://eu.gateway.example.com",
+        "LANGSMITH_GATEWAY_API_KEY": "gateway-key",
+    },
+    clear=True,
+)
+def test_init_chat_model_langsmith_explicit_config() -> None:
+    model = cast(
+        "ChatOpenAI",
+        init_chat_model(
+            "langsmith:moonshotai/kimi-k3",
+            base_url="https://apac.gateway.example.com/v1",
+            api_key="explicit-key",
+        ),
+    )
+
+    assert model.openai_api_base == "https://apac.gateway.example.com/v1"
+    assert isinstance(model.openai_api_key, SecretStr)
+    assert model.openai_api_key.get_secret_value() == "explicit-key"
 
 
 def test_init_chat_model_rejects_model_object() -> None:
@@ -195,6 +274,7 @@ def test_configurable() -> None:
             "context_management": None,
             "include": None,
             "seed": None,
+            "prompt_cache_options": None,
             "service_tier": None,
             "logprobs": None,
             "top_logprobs": None,
@@ -303,7 +383,7 @@ def test_configurable_with_default() -> None:
         "bound": {
             "name": None,
             "disable_streaming": False,
-            "effort": None,
+            "reasoning_effort": None,
             "model": "claude-sonnet-4-5-20250929",
             "mcp_servers": None,
             "max_tokens": 64000,
@@ -317,12 +397,14 @@ def test_configurable_with_default() -> None:
             "anthropic_api_url": "https://api.anthropic.com",
             "anthropic_proxy": None,
             "context_management": None,
+            "container": None,
             "anthropic_api_key": SecretStr("bar"),
             "betas": None,
             "default_headers": None,
             "model_kwargs": {},
             "reuse_last_container": None,
             "inference_geo": None,
+            "user_profile_id": None,
             "streaming": False,
             "stream_usage": True,
             "output_version": None,

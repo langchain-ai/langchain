@@ -11,8 +11,9 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
-from langchain_core.runnables import Runnable
-from pydantic import BaseModel, Field
+from langchain_core.runnables import Runnable, RunnableConfig
+from langgraph.checkpoint.memory import InMemorySaver
+from pydantic import BaseModel, Field, field_validator
 from typing_extensions import TypedDict, override
 
 from langchain.agents import create_agent
@@ -684,6 +685,49 @@ class TestResponseFormatAsToolStrategy:
         ):
             agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
+    def test_structured_response_not_stale_across_checkpointed_turns(self) -> None:
+        """Test that a checkpointed turn doesn't reuse a previous turn's response.
+
+        Regression test for a bug where the routing edges checked for
+        `structured_response` key *presence* rather than freshness, so a turn whose
+        first attempt failed validation (and needed a retry) would exit early with
+        the previous turn's stale `structured_response` still sitting in the
+        checkpointed state.
+        """
+
+        class Answer(BaseModel):
+            text: str
+
+            @field_validator("text")
+            @classmethod
+            def not_bad(cls, v: str) -> str:
+                if v == "BAD":
+                    msg = "bad sentinel"
+                    raise ValueError(msg)
+                return v
+
+        tool_calls = [
+            [{"name": "Answer", "id": "1", "args": {"text": "Hi"}}],
+            [{"name": "Answer", "id": "2", "args": {"text": "BAD"}}],
+            [{"name": "Answer", "id": "3", "args": {"text": "Bye"}}],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(Answer, handle_errors=True),
+            checkpointer=InMemorySaver(),
+        )
+        thread: RunnableConfig = {"configurable": {"thread_id": "test-thread"}}
+
+        response_1 = agent.invoke({"messages": [HumanMessage("say hi")]}, config=thread)
+        response_2 = agent.invoke({"messages": [HumanMessage("say bye")]}, config=thread)
+
+        assert response_1["structured_response"] == Answer(text="Hi")
+        assert response_2["structured_response"] == Answer(text="Bye")
+
 
 class TestResponseFormatAsProviderStrategy:
     def test_pydantic_model(self) -> None:
@@ -901,6 +945,55 @@ def test_union_of_types() -> None:
     assert len(response["messages"]) == 5
 
 
+def test_wrap_model_call_narrows_response_format_tools() -> None:
+    """`wrap_model_call` narrowing `response_format` should restrict bound tools."""
+
+    class RecordingModel(GenericFakeChatModel):
+        bound_tool_names: list[list[str]] = Field(default_factory=list)
+
+        @override
+        def bind_tools(
+            self,
+            tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+            **kwargs: Any,
+        ) -> Runnable[LanguageModelInput, AIMessage]:
+            self.bound_tool_names.append(sorted(t.name for t in tools if isinstance(t, BaseTool)))
+            return self
+
+    model = RecordingModel(
+        messages=iter(
+            [
+                AIMessage(
+                    content="",
+                    tool_calls=[{"name": "WeatherBaseModel", "id": "1", "args": WEATHER_DATA}],
+                ),
+            ]
+        )
+    )
+
+    class NarrowToWeatherMiddleware(AgentMiddleware):
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
+            narrowed = request.override(response_format=ToolStrategy(WeatherBaseModel))
+            return handler(narrowed)
+
+    agent = create_agent(
+        model=model,
+        tools=[],
+        response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
+        middleware=[NarrowToWeatherMiddleware()],
+    )
+    response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+    # Only the narrowed tool should have been bound to the model, not the full
+    # union of originally-declared structured output tools.
+    assert model.bound_tool_names == [["WeatherBaseModel"]]
+
+
 class TestSupportsProviderStrategy:
     """Unit tests for `_supports_provider_strategy`."""
 
@@ -953,11 +1046,13 @@ class TestSupportsProviderStrategy:
             "gpt-5.1",
             "gpt-5.1-codex",
             "gpt-5.2",
+            "gpt-5.2-2025-12-01",
             "gpt-5.2-chat-latest",
             "gpt-5.2-codex",
             "gpt-5.3",
             "gpt-5.3-codex-spark",
             "gpt-5.4",
+            "gpt-5.4-2026-03-05",
             "gpt-5.4-mini",
             "gpt-5.4-nano",
             "gpt-5.5-pro",
