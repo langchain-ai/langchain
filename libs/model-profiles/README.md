@@ -42,6 +42,21 @@ langchain-profiles refresh --provider anthropic --data-dir ./langchain_anthropic
 
 This downloads the latest model data from models.dev, merges it with any augmentations defined in `profile_augmentations.toml`, and generates a `profiles.py` file.
 
+### Augmentations
+
+`profile_augmentations.toml` supports two kinds of per-model entries:
+
+- `[overrides."model-id"]` — field overrides applied to a model that **exists on models.dev**. If a model is removed upstream, its override becomes stale and should be deleted.
+- `[extra_models."model-id"]` — a model defined **purely here**, for models that models.dev does not track. These are intentional and are never flagged as stale.
+
+`refresh` warns when an `[overrides]` entry references a model that is absent from models.dev. To check this in CI without regenerating profiles:
+
+```bash
+langchain-profiles check-augmentations --provider anthropic --data-dir ./langchain_anthropic/data
+```
+
+This exits non-zero when any `[overrides]` entry references a model absent from models.dev, so CI can fail on stale augmentations.
+
 ## Resources
 
 - [LangChain Academy](https://academy.langchain.com/) — comprehensive, free courses on LangChain libraries and products, made by the LangChain team

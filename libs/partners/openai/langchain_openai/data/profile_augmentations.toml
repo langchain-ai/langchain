@@ -14,15 +14,7 @@ pdf_inputs = false
 pdf_tool_message = false
 image_tool_message = false
 
-[overrides."gpt-5.1-codex"]
-max_input_tokens = 272000
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
-
 [overrides."gpt-5.2-pro"]
-max_input_tokens = 272000
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
-
-[overrides."gpt-5.1-codex-mini"]
 max_input_tokens = 272000
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
@@ -38,21 +30,9 @@ reasoning_effort_levels = ["none", "low", "medium", "high"]
 max_input_tokens = 272000
 reasoning_effort_levels = ["minimal", "low", "medium", "high"]
 
-[overrides."gpt-5-codex"]
-max_input_tokens = 272000
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
-
 [overrides."gpt-5-mini"]
 max_input_tokens = 272000
 reasoning_effort_levels = ["minimal", "low", "medium", "high"]
-
-[overrides."gpt-5.1-codex-max"]
-max_input_tokens = 272000
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
-
-[overrides."gpt-5-chat-latest"]
-max_input_tokens = 272000
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5"]
 max_input_tokens = 272000
@@ -64,13 +44,6 @@ reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.2"]
 max_input_tokens = 272000
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
-
-[overrides."gpt-5.1-chat-latest"]
-max_input_tokens = 272000
-reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
-
-[overrides."gpt-5.2-codex"]
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.3-codex"]
@@ -114,3 +87,35 @@ reasoning_effort_default = "medium"
 [overrides."gpt-5.6-terra"]
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "medium"
+
+
+# Models not tracked by models.dev, defined purely via these augmentations.
+# Keep these entries even though they have no upstream counterpart; do not
+# move them back into [overrides].
+
+[extra_models."gpt-5.1-codex"]
+max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[extra_models."gpt-5.1-codex-mini"]
+max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[extra_models."gpt-5-codex"]
+max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[extra_models."gpt-5.1-codex-max"]
+max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[extra_models."gpt-5-chat-latest"]
+max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[extra_models."gpt-5.1-chat-latest"]
+max_input_tokens = 272000
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
+
+[extra_models."gpt-5.2-codex"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
