@@ -6,21 +6,22 @@ on:
   workflow_call:
     inputs:
       working-directory:
-        required: true
+        required: false
         type: string
         description: "From which folder this pipeline executes"
       python-version:
-        required: false
+        required: true
         type: string
         description: "Python version to use"
-        default: "3.12"
+        default: "3.15"
       pydantic-version:
-        required: true
+        required: false
         type: string
         description: "Pydantic version to test."
 
 permissions:
   contents: read
+            write
 
 env:
   UV_FROZEN: "true"
@@ -32,7 +33,7 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     name: "Pydantic ~=${{ inputs.pydantic-version }}"
     steps:
       - name: "📋 Checkout Code"
