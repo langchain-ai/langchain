@@ -100,10 +100,18 @@ def test_numbered_list() -> None:
 
     text3 = "No items in the list."
 
+    # Mid-line "N. " sequences must not be treated as list items.
+    text4 = "The answer is version 2. Something else."
+    text5 = "See fig. 1. for details"
+    text6 = "Chapter 1. Introduction\n2. Next"
+
     for text, expected in [
         (text1, ["foo", "bar", "baz"]),
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
+        (text4, []),
+        (text5, []),
+        (text6, ["Next"]),
     ]:
         expectedlist = [[a] for a in expected]
         assert parser.parse(text) == expected
@@ -239,10 +247,15 @@ async def test_numbered_list_async() -> None:
 
     text3 = "No items in the list."
 
+    text4 = "The answer is version 2. Something else."
+    text5 = "Chapter 1. Introduction\n2. Next"
+
     for text, expected in [
         (text1, ["foo", "bar", "baz"]),
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
+        (text4, []),
+        (text5, ["Next"]),
     ]:
         expectedlist = [[a] for a in expected]
         assert await parser.aparse(text) == expected

@@ -188,7 +188,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
 class NumberedListOutputParser(ListOutputParser):
     """Parse a numbered list."""
 
-    pattern: str = r"\d+\.\s([^\n]+)"
+    pattern: str = r"^\s*\d+\.\s([^\n]+)$"
     """The pattern to match a numbered list item."""
 
     @override
@@ -207,11 +207,11 @@ class NumberedListOutputParser(ListOutputParser):
         Returns:
             A list of strings.
         """
-        return re.findall(self.pattern, text)
+        return re.findall(self.pattern, text, re.MULTILINE)
 
     @override
     def parse_iter(self, text: str) -> Iterator[re.Match[str]]:
-        return re.finditer(self.pattern, text)
+        return re.finditer(self.pattern, text, re.MULTILINE)
 
     @property
     def _type(self) -> str:
