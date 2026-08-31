@@ -13,6 +13,7 @@ from langchain.mcp.tools import convert_mcp_tool_to_langchain_tool
 
 try:
     from fastmcp.client import Client as FastMCPClient
+    from fastmcp.client.group import ClientGroup
     from fastmcp.client.transports import ClientTransport
     from fastmcp.mcp_config import MCPConfig
 
@@ -45,6 +46,7 @@ else:
 
 MCPAdapterTarget: TypeAlias = (
     FastMCPClient[Any]
+    | ClientGroup
     | ClientTransport
     | FastMCP
     | MCPServer
@@ -61,7 +63,27 @@ Every transport `fastmcp.Client` accepts, plus a pre-built `fastmcp.Client`.
 A `str` target is the one member narrowed relative to `fastmcp.Client`: it must
 be an `http`/`https` URL. Local servers are reached through `Path`, an explicit
 transport, or `MCPConfig` — see `MCPAdapter`.
+
+`ClientGroup` is the one member `fastmcp.Client` does not accept at all, since a
+group is a peer of `Client` rather than a transport it could wrap.
 """
+
+
+def _group_declaring_elicitation(group: ClientGroup) -> ClientGroup:
+    """Rebuild `group` from clones that advertise the elicitation capability.
+
+    FastMCP declares the capability per client, so a group must declare it on
+    every member. Cloning rather than calling `set_elicitation_callback` on the
+    originals keeps the caller's own clients untouched, the same rule a
+    pre-built `Client` target follows.
+    """
+    clients = {}
+    for name, member in group.clients.items():
+        clone = member.new()
+        clone.set_elicitation_callback(_declare_elicitation_capability)
+        clients[name] = clone
+    return ClientGroup(clients)
+
 
 _URL_SCHEMES: Final = frozenset({"http", "https"})
 """Schemes a `str` target may carry.
@@ -169,8 +191,15 @@ class MCPAdapter:
         *,
         elicitation: Literal["interrupt"] | None = None,
     ) -> None:
-        """Initialize the adapter around a FastMCP target or client."""
-        if isinstance(target, FastMCPClient):
+        """Initialize the adapter around a FastMCP target, client, or group."""
+        self._depth = 0
+        if isinstance(target, ClientGroup):
+            # Interrupt mode arms clones, so the caller's own clients keep
+            # whatever handlers they were built with.
+            self._client: FastMCPClient[Any] | ClientGroup = (
+                _group_declaring_elicitation(target) if elicitation == "interrupt" else target
+            )
+        elif isinstance(target, FastMCPClient):
             if elicitation == "interrupt":
                 # Configure an adapter-owned client so interrupt mode does not
                 # replace a callback on the caller's client.
@@ -195,13 +224,21 @@ class MCPAdapter:
         self._elicitation = elicitation
 
     @property
-    def client(self) -> FastMCPClient[Any]:
-        """Return the underlying FastMCP client for advanced MCP operations."""
+    def client(self) -> FastMCPClient[Any] | ClientGroup:
+        """Return the underlying FastMCP client or group for advanced MCP operations."""
         return self._client
 
     async def __aenter__(self) -> Self:
-        """Connect the underlying client for the duration of the context."""
-        await self._client.__aenter__()  # type: ignore[no-untyped-call]
+        """Connect the underlying client or group for the duration of the context."""
+        if isinstance(self._client, ClientGroup):
+            # A `Client` counts its own nesting; a `ClientGroup` refuses re-entry
+            # outright, so the adapter counts for it. Without this, `get_tools()`
+            # called inside `async with MCPAdapter(group)` would raise.
+            if self._depth == 0:
+                await self._client.__aenter__()
+            self._depth += 1
+        else:
+            await self._client.__aenter__()  # type: ignore[no-untyped-call]
         return self
 
     async def __aexit__(
@@ -210,8 +247,13 @@ class MCPAdapter:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        """Release this context's hold on the underlying client."""
-        await self._client.__aexit__(exc_type, exc_value, traceback)  # type: ignore[no-untyped-call]
+        """Release this context's hold on the underlying client or group."""
+        if isinstance(self._client, ClientGroup):
+            self._depth -= 1
+            if self._depth == 0:
+                await self._client.__aexit__(exc_type, exc_value, traceback)
+        else:
+            await self._client.__aexit__(exc_type, exc_value, traceback)  # type: ignore[no-untyped-call]
 
     async def get_tools(self) -> list[BaseTool]:
         """Discover and adapt MCP tools for use with LangChain.
@@ -221,12 +263,41 @@ class MCPAdapter:
                 asynchronously. Each holds the adapter's client, so the tools
                 stay callable after this adapter's context exits.
         """
-        async with self._client:
+        # `async with self` rather than the client: it is what counts a group's
+        # nesting, and for a plain client it is the same reentrant hold as before.
+        async with self:
+            if isinstance(self._client, ClientGroup):
+                return await self._group_tools(self._client)
             remote_tools = await self._client.list_tools()
-        return [
-            convert_mcp_tool_to_langchain_tool(tool, self._client, elicitation=self._elicitation)
-            for tool in remote_tools
-        ]
+            return [
+                convert_mcp_tool_to_langchain_tool(
+                    tool, self._client, elicitation=self._elicitation
+                )
+                for tool in remote_tools
+            ]
+
+    async def _group_tools(self, group: ClientGroup) -> list[BaseTool]:
+        """Adapt a group's catalog, binding each tool to the client that serves it.
+
+        Tools hold the member client rather than the group, so a call never
+        re-enters the group — which is what lets them stay callable after this
+        adapter's context exits, exactly as they do for a single client.
+        """
+        tools = []
+        for tool in await group.list_tools():
+            # `list_tools` namespaces the catalog as `{server}_{tool}`, so the
+            # LangChain tool keeps the fleet-wide name while the call uses the
+            # name its own server knows.
+            route = await group.resolve_tool(tool.name)
+            tools.append(
+                convert_mcp_tool_to_langchain_tool(
+                    tool,
+                    route.client,
+                    elicitation=self._elicitation,
+                    upstream_name=route.upstream_name,
+                )
+            )
+        return tools
 
 
 __all__ = ["MCPAdapter", "MCPAdapterTarget"]
