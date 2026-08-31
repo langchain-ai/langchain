@@ -4736,8 +4736,10 @@ class RunnableLambda(Runnable[Input, Output]):
         await runnable.ainvoke(1)  # returns 2
         await runnable.abatch([1, 2, 3])  # returns [2, 3, 4]
 
+
         async def add_one_async(x: int) -> int:
             return x + 1
+
 
         # Alternatively, can provide both sync and async implementations
         runnable = RunnableLambda(func=add_one, afunc=add_one_async)
