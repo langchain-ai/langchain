@@ -10,6 +10,7 @@ from unittest.mock import ANY
 
 import pytest
 from fastmcp import Client, FastMCP
+from fastmcp.client.group import ClientGroup
 from fastmcp.client.transports import (
     FastMCPTransport,
     PythonStdioTransport,
@@ -46,6 +47,78 @@ async def test_get_tools_adapts_every_tool_a_server_exposes() -> None:
     tools = await MCPAdapter(server).get_tools()
 
     assert sorted(tool.name for tool in tools) == ["add", "negate"]
+
+
+def _greeter() -> FastMCP[None]:
+    """A second server whose tool name collides with the calculator's."""
+    server: FastMCP[None] = FastMCP("greet")
+
+    @server.tool
+    def add(a: int, b: int) -> str:
+        """Not arithmetic — same name, different server."""
+        return f"greetings {a} and {b}"
+
+    return server
+
+
+def _group() -> ClientGroup:
+    """Two in-process servers, each behind its own client."""
+    return ClientGroup({"calc": Client(_calculator()), "greet": Client(_greeter())})
+
+
+@pytest.mark.asyncio
+async def test_group_tools_are_namespaced_per_server() -> None:
+    tools = await MCPAdapter(_group()).get_tools()
+
+    assert sorted(tool.name for tool in tools) == ["calc_add", "greet_add"]
+
+
+@pytest.mark.asyncio
+async def test_colliding_tool_names_reach_their_own_server() -> None:
+    """The namespace is only useful if the call follows it."""
+    tools = {tool.name: tool for tool in await MCPAdapter(_group()).get_tools()}
+
+    [calc] = await tools["calc_add"].ainvoke({"a": 1, "b": 2})
+    [greet] = await tools["greet_add"].ainvoke({"a": 1, "b": 2})
+
+    assert calc["text"] == "3"
+    assert greet["text"] == "greetings 1 and 2"
+
+
+@pytest.mark.asyncio
+async def test_group_tools_stay_callable_after_the_adapter_context_exits() -> None:
+    """Tools hold their member client, which reconnects on its own."""
+    async with MCPAdapter(_group()) as adapter:
+        tools = {tool.name: tool for tool in await adapter.get_tools()}
+
+    [block] = await tools["calc_add"].ainvoke({"a": 2, "b": 3})
+
+    assert block["text"] == "5"
+
+
+@pytest.mark.asyncio
+async def test_get_tools_inside_a_group_context_does_not_re_enter() -> None:
+    """`ClientGroup` refuses re-entry, so the adapter counts nesting for it."""
+    adapter = MCPAdapter(_group())
+
+    async with adapter:
+        first = await adapter.get_tools()
+        # A second discovery inside the same context must not raise either.
+        second = await adapter.get_tools()
+
+    assert len(first) == len(second) == 2
+
+
+@pytest.mark.asyncio
+async def test_interrupt_mode_leaves_the_callers_group_untouched() -> None:
+    """Arming clones keeps a caller's own clients as they built them."""
+    group = _group()
+    adapter = MCPAdapter(group, elicitation="interrupt")
+
+    assert adapter.client is not group
+    assert set(adapter.client.clients) == set(group.clients)
+    for name, member in group.clients.items():
+        assert adapter.client.clients[name] is not member
 
 
 @pytest.mark.asyncio
