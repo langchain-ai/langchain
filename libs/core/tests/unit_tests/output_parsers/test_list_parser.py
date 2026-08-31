@@ -312,3 +312,10 @@ async def test_markdown_list_async() -> None:
         assert [
             a async for a in parser.atransform(aiter_from_iter([text]))
         ] == expectedlist
+
+def test_markdown_list_plus_bullet() -> None:
+    """Test that MarkdownListOutputParser handles plus (+) bullets correctly."""
+    parser = MarkdownListOutputParser()
+    text = "+ item 1\n+ item 2"
+    result = parser.parse(text)
+    assert result == ["item 1", "item 2"]
