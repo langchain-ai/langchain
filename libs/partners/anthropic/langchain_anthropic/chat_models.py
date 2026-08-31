@@ -84,6 +84,10 @@ from langchain_anthropic._client_utils import (
     _get_default_httpx_client,
 )
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
+from langchain_anthropic._sdk_compat import (
+    _aparse,
+    _route_unsupported_sampling_params,
+)
 from langchain_anthropic.data._profiles import _PROFILES
 from langchain_anthropic.output_parsers import extract_tool_calls
 
@@ -173,7 +177,6 @@ class AnthropicTool(TypedDict):
 _TOOL_TYPE_TO_BETA: dict[str, str] = {
     "web_fetch_20250910": "web-fetch-2025-09-10",
     "code_execution_20250522": "code-execution-2025-05-22",
-    "code_execution_20250825": "code-execution-2025-08-25",
     "mcp_toolset": "mcp-client-2025-11-20",
     "memory_20250818": "context-management-2025-06-27",
     "computer_20250124": "computer-use-2025-01-24",
@@ -812,6 +815,15 @@ def _format_messages(
     return system, formatted_messages
 
 
+def _container_id(container: Any) -> str | None:
+    """Return the container ID from either accepted `container` shape."""
+    if isinstance(container, str):
+        return container
+    if isinstance(container, dict):
+        return container.get("id")
+    return None
+
+
 def _collect_code_execution_tool_ids(formatted_messages: list[dict]) -> set[str]:
     """Collect `tool_use` IDs that were called by `code_execution`.
 
@@ -1251,6 +1263,28 @@ class ChatAnthropic(BaseChatModel):
     [context management](https://platform.claude.com/docs/en/build-with-claude/context-editing).
     """
 
+    container: dict[str, Any] | str | None = None
+    """Code execution container for the request.
+
+    Either a container ID from a previous response, or a dict of container
+    parameters — notably
+    [skills](https://platform.claude.com/docs/en/build-with-claude/skills-guide)
+    to load into the container. Skills require a
+    [code execution](https://docs.langchain.com/oss/python/integrations/chat/anthropic#code-execution)
+    tool to be bound.
+
+    ```python
+    model = ChatAnthropic(
+        model="claude-opus-5",
+        container={
+            "skills": [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]
+        },
+    ).bind_tools([{"type": "code_execution_20260521", "name": "code_execution"}])
+    ```
+
+    Can also be passed at call time, which overrides the value set here.
+    """
+
     reuse_last_container: bool | None = None
     """Automatically reuse container from most recent response (code execution).
 
@@ -1578,6 +1612,7 @@ class ChatAnthropic(BaseChatModel):
             "betas": self.betas,
             "context_management": self.context_management,
             "mcp_servers": self.mcp_servers,
+            "container": self.container,
             "user_profile_id": self.user_profile_id,
             "system": system,
             **self.model_kwargs,
@@ -1663,18 +1698,42 @@ class ChatAnthropic(BaseChatModel):
             output_config = payload.setdefault("output_config", {})
             output_config["format"] = payload.pop("output_format")
 
-        if self.reuse_last_container:
-            # Check for most recent AIMessage with container set in response_metadata
-            # and set as a top-level param on the request
+        container = payload.get("container")
+
+        if self.reuse_last_container and not _container_id(container):
+            # Reuse the container from the most recent response (code execution)
             for message in reversed(messages):
                 if (
                     isinstance(message, AIMessage)
-                    and (container := message.response_metadata.get("container"))
-                    and isinstance(container, dict)
-                    and (container_id := container.get("id"))
+                    and isinstance(
+                        last_container := message.response_metadata.get("container"),
+                        dict,
+                    )
+                    and (container_id := last_container.get("id"))
                 ):
-                    payload["container"] = container_id
+                    payload["container"] = (
+                        {**container, "id": container_id}
+                        if isinstance(container, dict)
+                        else container_id
+                    )
                     break
+
+        if (
+            isinstance(container, dict)
+            and container.get("skills")
+            and not any(
+                isinstance(tool, dict)
+                and str(tool.get("type", "")).startswith("code_execution")
+                for tool in (payload.get("tools") or [])
+            )
+        ):
+            warnings.warn(
+                "Skills require a code execution tool to be bound, e.g. "
+                '`bind_tools([{"type": "code_execution_20260521", '
+                '"name": "code_execution"}])`.',
+                UserWarning,
+                stacklevel=2,
+            )
 
         # Note: Beta headers are no longer required for structured outputs
         # (output_config.format or strict tool use) as they are now generally available
@@ -1727,6 +1786,16 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = [required_beta]
 
+        # Auto-append required beta for the `updates` thinking display mode
+        thinking = payload.get("thinking")
+        if isinstance(thinking, dict) and thinking.get("display") == "updates":
+            required_beta = "thinking-display-updates-2026-08-18"
+            if payload.get("betas"):
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
         # Auto-append required beta for user_profile_id
         if payload.get("user_profile_id"):
             required_beta = "user-profiles-2026-03-24"
@@ -1736,7 +1805,9 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = [required_beta]
 
-        return {k: v for k, v in payload.items() if v is not None}
+        return _route_unsupported_sampling_params(
+            {k: v for k, v in payload.items() if v is not None}
+        )
 
     def _create(self, payload: dict) -> Any:
         try:
@@ -1826,7 +1897,7 @@ class ChatAnthropic(BaseChatModel):
             base_generation_info: dict[str, Any] = {}
             if self._uses_gateway:
                 _add_gateway_metadata(base_generation_info, raw_response)
-            stream = raw_response.parse()
+            stream = await _aparse(raw_response)
             coerce_content_to_string = (
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
@@ -2185,7 +2256,7 @@ class ChatAnthropic(BaseChatModel):
         if self._uses_gateway:
             _add_gateway_metadata(generation_info, raw_response)
         return self._format_output(
-            raw_response.parse(), generation_info=generation_info, **kwargs
+            await _aparse(raw_response), generation_info=generation_info, **kwargs
         )
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(

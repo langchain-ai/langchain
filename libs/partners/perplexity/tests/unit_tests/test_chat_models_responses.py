@@ -850,6 +850,123 @@ def test_convert_responses_usage_derives_total_when_absent() -> None:
     assert result["total_tokens"] == 12
 
 
+def test_convert_responses_usage_maps_cache_token_details() -> None:
+    details = _make_response_obj(
+        cache_read_input_tokens=800, cache_creation_input_tokens=150
+    )
+    usage = _make_response_obj(
+        input_tokens=1000,
+        output_tokens=50,
+        total_tokens=1050,
+        input_tokens_details=details,
+    )
+    result = _convert_responses_usage(usage)
+    assert result is not None
+    assert result["input_token_details"] == {"cache_read": 800, "cache_creation": 150}
+
+
+def test_convert_responses_usage_maps_cache_token_details_from_mapping() -> None:
+    """`_get_attr` accepts dict payloads, so a mapping must map identically."""
+    usage = {
+        "input_tokens": 1000,
+        "output_tokens": 50,
+        "total_tokens": 1050,
+        "input_tokens_details": {
+            "cache_read_input_tokens": 800,
+            "cache_creation_input_tokens": 150,
+        },
+    }
+    result = _convert_responses_usage(usage)
+    assert result is not None
+    assert result["input_token_details"] == {"cache_read": 800, "cache_creation": 150}
+
+
+def test_convert_responses_usage_maps_only_reported_cache_fields() -> None:
+    details = _make_response_obj(
+        cache_read_input_tokens=800, cache_creation_input_tokens=None
+    )
+    usage = _make_response_obj(
+        input_tokens=1000,
+        output_tokens=50,
+        total_tokens=1050,
+        input_tokens_details=details,
+    )
+    result = _convert_responses_usage(usage)
+    assert result is not None
+    assert result["input_token_details"] == {"cache_read": 800}
+
+
+def test_convert_responses_usage_omits_cache_details_when_not_reported() -> None:
+    usage = _make_response_obj(input_tokens=10, output_tokens=2, total_tokens=12)
+    result = _convert_responses_usage(usage)
+    assert result is not None
+    assert result["input_token_details"] == {}
+
+
+def test_convert_responses_to_chat_result_includes_cache_token_details() -> None:
+    details = _make_response_obj(
+        cache_read_input_tokens=800, cache_creation_input_tokens=150
+    )
+    usage = _make_response_obj(
+        input_tokens=1000,
+        output_tokens=50,
+        total_tokens=1050,
+        input_tokens_details=details,
+    )
+    response = _make_response_obj(
+        id="resp_cache",
+        model="sonar-pro",
+        status="completed",
+        object="response",
+        output_text="hi",
+        output=[],
+        usage=usage,
+        citations=None,
+        images=None,
+        related_questions=None,
+        search_results=None,
+    )
+
+    result = _convert_responses_to_chat_result(response)
+    message = result.generations[0].message
+
+    assert isinstance(message, AIMessage)
+    assert message.usage_metadata is not None
+    assert message.usage_metadata["input_token_details"] == {
+        "cache_read": 800,
+        "cache_creation": 150,
+    }
+
+
+def test_stream_event_conversion_for_completed_includes_cache_token_details() -> None:
+    details = _make_response_obj(
+        cache_read_input_tokens=800, cache_creation_input_tokens=150
+    )
+    usage = _make_response_obj(
+        input_tokens=1000,
+        output_tokens=50,
+        total_tokens=1050,
+        input_tokens_details=details,
+    )
+    response = _make_response_obj(
+        id="resp_cache_stream",
+        model="sonar-pro",
+        status="completed",
+        object="response",
+        usage=usage,
+    )
+    chunk = _convert_responses_stream_event_to_chunk(
+        _make_event("response.completed", response=response)
+    )
+    assert chunk is not None
+    assert isinstance(chunk.message, AIMessageChunk)
+    assert chunk.message.usage_metadata is not None
+    assert chunk.message.usage_metadata["input_token_details"] == {
+        "cache_read": 800,
+        "cache_creation": 150,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Error and edge cases in conversion / streaming
 # ---------------------------------------------------------------------------

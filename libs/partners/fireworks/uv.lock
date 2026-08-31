@@ -818,7 +818,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.6.0"
+version = "1.6.1"
 source = { editable = "../../core" }
 dependencies = [
     { name = "httpx" },
@@ -882,7 +882,7 @@ typing = [
 
 [[package]]
 name = "langchain-fireworks"
-version = "1.6.0"
+version = "1.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
