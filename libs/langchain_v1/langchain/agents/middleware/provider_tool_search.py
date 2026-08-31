@@ -45,12 +45,14 @@ class _ServerToolSearchSpec(TypedDict):
 # re-verify against provider docs when updating:
 # - Anthropic: https://docs.langchain.com/oss/python/integrations/chat/anthropic#tool-search
 # - OpenAI: server-side `tool_search` tool.
+# - Azure: server-side `tool_search` tool (for compatible GPT-5.4+ deployments).
 _SERVER_TOOL_SEARCH_TOOLS: dict[str, _ServerToolSearchSpec] = {
     "anthropic": {
         "type": "tool_search_tool_bm25_20251119",
         "name": "tool_search_tool_bm25",
     },
     "openai": {"type": "tool_search"},
+    "azure": {"type": "tool_search"},
 }
 
 
@@ -67,7 +69,7 @@ class ProviderToolSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Contex
     or when it already carries `extras["defer_loading"] is True`.
 
     Only providers with server-side tool search are supported (currently
-    Anthropic and OpenAI). The provider is inferred from the bound model.
+    Anthropic, OpenAI, and Azure). The provider is inferred from the bound model.
 
     !!! warning
 
@@ -299,6 +301,8 @@ def _provider_from_class_name(class_name: str) -> str | None:
         return "anthropic"
     if class_name in {"ChatOpenAI", "OpenAIChat"}:
         return "openai"
+    if class_name in {"AzureChatOpenAI", "ChatAzureOpenAI"}:
+        return "azure"
     return None
 
 
