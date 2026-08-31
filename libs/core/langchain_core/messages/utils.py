@@ -47,6 +47,7 @@ from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
+from langchain_core.utils._merge import merge_dicts
 from langchain_core.utils.pydantic import model_json_schema as get_model_json_schema
 
 if TYPE_CHECKING:
@@ -1006,9 +1007,9 @@ def merge_message_runs(
 ) -> list[BaseMessage]:
     r"""Merge consecutive Messages of the same type.
 
-    !!! note
-        `ToolMessage` objects are not merged, as each has a distinct tool call id that
-        can't be merged.
+    **O(n)** in the total number of messages (and total content blocks).
+
+    `ToolMessage` objects are never merged, as each has a distinct tool call id.
 
     Args:
         messages: Sequence Message-like objects to merge.
@@ -1104,27 +1105,161 @@ def merge_message_runs(
     if not messages:
         return []
     messages = convert_to_messages(messages)
-    merged: list[BaseMessage] = []
+
+    runs: list[list[BaseMessage]] = []
     for msg in messages:
-        last = merged.pop() if merged else None
-        if not last:
-            merged.append(msg)
-        elif isinstance(msg, ToolMessage) or not isinstance(msg, last.__class__):
-            merged.extend([last, msg])
+        if (
+            runs
+            and not isinstance(msg, ToolMessage)
+            and isinstance(msg, runs[-1][0].__class__)
+        ):
+            runs[-1].append(msg)
         else:
-            last_chunk = _msg_to_chunk(last)
-            curr_chunk = _msg_to_chunk(msg)
-            if curr_chunk.response_metadata:
-                curr_chunk.response_metadata.clear()
-            if (
-                isinstance(last_chunk.content, str)
-                and isinstance(curr_chunk.content, str)
-                and last_chunk.content
-                and curr_chunk.content
-            ):
-                last_chunk.content += chunk_separator
-            merged.append(_chunk_to_msg(last_chunk + curr_chunk))
+            runs.append([msg])
+
+    result: list[BaseMessage] = []
+    for run in runs:
+        if len(run) == 1:
+            result.append(run[0])
+        else:
+            result.append(_merge_message_group(run, chunk_separator))
+    return result
+
+
+def _merge_contents(
+    contents: list[str | list[str | dict[Any, Any]]],
+    chunk_separator: str,
+) -> str | list[str | dict[Any, Any]]:
+    """Merge a sequence of message contents in O(total elements).
+
+    Replicates the semantics of the old pairwise ``merge_content`` calls:
+
+    * **string + string** → concatenated with *chunk_separator* between
+      non-empty parts.
+    * **list + list** → flat concatenation (``list.extend``).
+    * **string ↔ list** → the string becomes a list element and lists are
+      concatenated.
+    * ``chunk_separator`` is only inserted between consecutive **non-empty
+      string** contents.
+    """
+    all_string = all(isinstance(c, str) for c in contents)
+
+    if all_string:
+        # Fast path: join non-empty parts with separator.
+        non_empty = [c for c in contents if isinstance(c, str) and c]
+        if not non_empty:
+            return ""
+        return chunk_separator.join(non_empty)
+
+    # Mixed or all-list: build a flat list via extend — amortised O(1) per element
+    merged: list[str | dict[Any, Any]] = []
+    prev_was_nonempty_str = False
+
+    for content in contents:
+        if isinstance(content, str):
+            if content:
+                # Insert separator between consecutive non-empty string contents
+                if prev_was_nonempty_str and merged and isinstance(merged[-1], str):
+                    merged[-1] += chunk_separator + content
+                else:
+                    merged.append(content)
+                prev_was_nonempty_str = True
+            # empty string → skip, don't update the flag
+        else:
+            # list content → amortised O(1) per element over the whole run
+            merged.extend(content)
+            prev_was_nonempty_str = False
+
     return merged
+
+
+def _merge_message_group(
+    run: list[BaseMessage],
+    chunk_separator: str,
+) -> BaseMessage:
+    """Merge a run of ≥ 2 same-type messages into one message in O(len(run)).
+
+    Produces the same output as the old iterative chunk-based merge, but avoids
+    the O(n²) cost of repeated ``model_dump`` / ``merge_lists`` / reconstruction
+    by building the merged fields directly and calling ``model_copy`` once.
+    """
+    first = run[0]
+
+    # ── Content ────────────────────────────────────────────────────
+    merged_content = _merge_contents(
+        [m.content for m in run],
+        chunk_separator,
+    )
+
+    # ── additional_kwargs ──────────────────────────────────────────
+    # Variadic merge_dicts is one O(n) pass.
+    has_extra_kwargs = any(m.additional_kwargs for m in run[1:])
+    merged_kwargs: dict[Any, Any] = (
+        merge_dicts(*(m.additional_kwargs for m in run))
+        if has_extra_kwargs
+        else first.additional_kwargs
+    )
+
+    # ── Build the update dict ──────────────────────────────────────
+    # response_metadata: keep first message's only.  The old code called
+    # ``curr_chunk.response_metadata.clear()`` before every merge, so only
+    # the first message's metadata survived.
+    update: dict[str, Any] = {
+        "content": merged_content,
+        "additional_kwargs": merged_kwargs,
+    }
+
+    # ── Type-specific fields ───────────────────────────────────────
+    if isinstance(first, AIMessage):
+        all_tool_calls: list[Any] = []
+        all_invalid_tool_calls: list[Any] = []
+        merged_usage: dict[str, Any] | None = None
+
+        for m in run:
+            ai = cast("AIMessage", m)
+            if ai.tool_calls:
+                all_tool_calls.extend(ai.tool_calls)
+            if ai.invalid_tool_calls:
+                all_invalid_tool_calls.extend(ai.invalid_tool_calls)
+            if ai.usage_metadata:
+                if merged_usage is None:
+                    merged_usage = dict(ai.usage_metadata)
+                else:
+                    for k, v in ai.usage_metadata.items():
+                        if k in merged_usage and isinstance(v, (int, float)):
+                            merged_usage[k] = merged_usage[k] + v
+                        else:
+                            merged_usage[k] = v
+
+        update["tool_calls"] = all_tool_calls
+        update["invalid_tool_calls"] = all_invalid_tool_calls
+        if merged_usage is not None:
+            update["usage_metadata"] = merged_usage
+
+    elif isinstance(first, ChatMessage):
+        first_role = first.role
+        for m in run[1:]:
+            if cast("ChatMessage", m).role != first_role:
+                msg = "Cannot concatenate ChatMessageChunks with different roles."
+                raise ValueError(msg)
+
+    elif isinstance(first, FunctionMessage):
+        first_name = first.name
+        for m in run[1:]:
+            if cast("FunctionMessage", m).name != first_name:
+                msg = "Cannot concatenate FunctionMessageChunks with different names."
+                raise ValueError(msg)
+
+    # ── Produce the result ─────────────────────────────────────────
+    # model_copy: shallow copy + field overrides, called once → O(field count).
+    merged_msg = first.model_copy(update=update)
+
+    # If the input happened to be a chunk type, normalise to the base message
+    # type so the output matches the old _chunk_to_msg() behaviour.
+    if isinstance(merged_msg, BaseMessageChunk):
+        merged_msg = message_chunk_to_message(merged_msg)
+
+    return merged_msg
 
 
 # TODO: Update so validation errors (for token_counter, for example) are raised on
@@ -1786,13 +1921,8 @@ def convert_to_openai_messages(
                 ):
                     if block.get("file", {}).get("filename") is None:
                         logger.info("Generating a fallback filename.")
-                        formatted_block = {
-                            **block,
-                            "file": {**block["file"], "filename": "LC_AUTOGENERATED"},
-                        }
-                        content.append(formatted_block)
-                    else:
-                        content.append(block)
+                        block["file"]["filename"] = "LC_AUTOGENERATED"
+                    content.append(block)
                 # OpenAI audio format
                 elif (
                     block.get("type") == "input_audio"
