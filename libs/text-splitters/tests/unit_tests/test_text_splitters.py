@@ -1727,6 +1727,40 @@ def test_md_header_text_splitter_with_invisible_characters(characters: str) -> N
     assert output == expected_output
 
 
+def test_md_header_text_splitter_preserves_tab_and_nbsp() -> None:
+    """Tabs and NBSP must survive content sanitization (not treated as droppable)."""
+    headers_to_split_on = [("#", "Header 1")]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+
+    tab_docs = markdown_splitter.split_text("# Foo\n\nhello\tworld")
+    assert tab_docs == [
+        Document(page_content="hello\tworld", metadata={"Header 1": "Foo"}),
+    ]
+
+    nbsp_docs = markdown_splitter.split_text("# Foo\n\nhello\u00a0world")
+    assert nbsp_docs == [
+        Document(page_content="hello\u00a0world", metadata={"Header 1": "Foo"}),
+    ]
+
+
+def test_md_header_text_splitter_preserves_code_fence_indentation() -> None:
+    """Tab indentation inside fenced code blocks must not be stripped."""
+    headers_to_split_on = [("#", "Header 1")]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    markdown_document = "# Foo\n\n```python\ndef foo():\n\treturn 1\n```\n"
+    output = markdown_splitter.split_text(markdown_document)
+    assert output == [
+        Document(
+            page_content="```python\ndef foo():\n\treturn 1\n```",
+            metadata={"Header 1": "Foo"},
+        ),
+    ]
+
+
 def test_md_header_text_splitter_with_custom_headers() -> None:
     """Test markdown splitter with custom header patterns like **Header**."""
     markdown_document = """**Chapter 1**

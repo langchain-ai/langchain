@@ -85,6 +85,17 @@ class MarkdownHeaderTextSplitter:
                 return True
         return False
 
+    @staticmethod
+    def _strip_non_content_characters(text: str) -> str:
+        """Remove control/format characters while preserving tabs and NBSP.
+
+        ``str.isprintable()`` is false for tab and NBSP, so filtering with it alone
+        silently deletes meaningful whitespace (including indentation inside fenced
+        code blocks). BOM and other non-printable control characters are still
+        dropped.
+        """
+        return "".join(ch for ch in text if ch.isprintable() or ch in "\t\xa0")
+
     def aggregate_lines_to_chunks(self, lines: list[LineType]) -> list[Document]:
         """Combine lines with common metadata into chunks.
 
@@ -161,10 +172,7 @@ class MarkdownHeaderTextSplitter:
         opening_fence = ""
 
         for line in lines:
-            stripped_line = line.strip()
-            # Remove all non-printable characters from the string, keeping only visible
-            # text.
-            stripped_line = "".join(filter(str.isprintable, stripped_line))
+            stripped_line = self._strip_non_content_characters(line.strip())
             if not in_code_block:
                 # Exclude inline code spans
                 if stripped_line.startswith("```") and stripped_line.count("```") == 1:
@@ -178,7 +186,8 @@ class MarkdownHeaderTextSplitter:
                 opening_fence = ""
 
             if in_code_block:
-                current_content.append(stripped_line)
+                # Keep leading indentation inside fences (tabs/spaces).
+                current_content.append(self._strip_non_content_characters(line))
                 continue
 
             # Check each line against each of the header types (e.g., #, ##)
