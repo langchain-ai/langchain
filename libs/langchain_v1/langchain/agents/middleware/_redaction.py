@@ -56,7 +56,7 @@ def detect_email(content: str) -> list[PIIMatch]:
     Returns:
         A list of detected email matches.
     """
-    pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+    pattern = r"(?<![0-9A-Za-z_])([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,})(?![0-9A-Za-z_])"
     return [
         PIIMatch(
             type="email",
@@ -105,7 +105,7 @@ def detect_ip(content: str) -> list[PIIMatch]:
         A list of detected IP address matches.
     """
     matches: list[PIIMatch] = []
-    ipv4_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
+    ipv4_pattern = r"(?<![0-9A-Za-z_])([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})(?![0-9A-Za-z_])"
 
     for match in re.finditer(ipv4_pattern, content):
         ip_candidate = match.group()
@@ -134,7 +134,7 @@ def detect_mac_address(content: str) -> list[PIIMatch]:
     Returns:
         A list of detected MAC address matches.
     """
-    pattern = r"\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b"
+    pattern =r"(?<![0-9A-Za-z_])([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})(?![0-9A-Za-z_])"
     return [
         PIIMatch(
             type="mac_address",
