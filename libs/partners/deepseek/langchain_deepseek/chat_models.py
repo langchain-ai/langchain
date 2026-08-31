@@ -331,6 +331,29 @@ class ChatDeepSeek(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
+    def _with_beta_endpoint(self) -> Self:
+        """Return a copy configured for the beta API endpoint.
+
+        `model_copy` does not re-run Pydantic validators, so the cached OpenAI
+        clients are carried over by reference and would keep pointing at the
+        default `/v1` base. Clear them and re-run `validate_environment` so a
+        fresh client targets the beta base URL used for strict schema validation.
+        """
+        beta_model = self.model_copy(
+            update={
+                "client": None,
+                "async_client": None,
+                "root_client": None,
+                "root_async_client": None,
+                "api_base": DEFAULT_BETA_API_BASE,
+            }
+        )
+        # `validate_environment` is a pydantic `model_validator`, whose decorator
+        # makes the attribute appear non-callable to static analyzers; it is safe
+        # to invoke directly at runtime to rebuild the clients.
+        beta_model.validate_environment()  # type: ignore[operator]
+        return beta_model
+
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None
 
@@ -521,7 +544,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
             # Create a new instance with beta endpoint
-            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            beta_model = self._with_beta_endpoint()
             return beta_model.bind_tools(
                 tools,
                 tool_choice=tool_choice,
@@ -627,7 +650,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
             # Create a new instance with beta endpoint
-            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            beta_model = self._with_beta_endpoint()
             return beta_model.with_structured_output(
                 schema,
                 method=method,
