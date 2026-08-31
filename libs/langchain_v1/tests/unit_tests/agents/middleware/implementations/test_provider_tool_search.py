@@ -22,6 +22,7 @@ ANTHROPIC_SEARCH_TOOL = {
     "name": "tool_search_tool_bm25",
 }
 OPENAI_SEARCH_TOOL = {"type": "tool_search"}
+AZURE_SEARCH_TOOL = {"type": "tool_search"}
 OPENAI_TEST_MODEL = "gpt-5.5"
 OPENAI_REASONING_TEST_MODEL = "o3"
 
@@ -268,6 +269,24 @@ def test_raises_when_provider_cannot_be_determined() -> None:
     with pytest.raises(ValueError, match="could not determine the provider"):
         _invoke(middleware, request)
 
+@pytest.mark.parametrize(
+    ("provider", "expected_tool"),
+    [
+        ("anthropic", ANTHROPIC_SEARCH_TOOL),
+        ("openai", OPENAI_SEARCH_TOOL),
+        ("azure", AZURE_SEARCH_TOOL),
+    ],
+)
+def test_defers_tools_for_supported_providers(
+    provider: str, expected_tool: dict[str, str]
+) -> None:
+    """Every provider with server-side tool search support gets the matching search tool."""
+    request = _request(provider, [send_email])
+    middleware = ProviderToolSearchMiddleware(searchable_tools=["send_email"])
+
+    modified_request = _invoke(middleware, request)
+
+    assert expected_tool in modified_request.tools
 
 @pytest.mark.parametrize(
     ("model_factory", "expected_tool"),
