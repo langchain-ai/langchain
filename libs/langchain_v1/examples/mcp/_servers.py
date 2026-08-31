@@ -104,3 +104,10 @@ def run_weather_http(host: str, port: int) -> None:
     weather_server().run(
         transport="http", host=host, port=port, show_banner=False, log_level="warning"
     )
+
+
+def run_calculator_http(host: str, port: int) -> None:
+    """Entry point for a calculator server served over HTTP."""
+    calculator_server().run(
+        transport="http", host=host, port=port, show_banner=False, log_level="warning"
+    )

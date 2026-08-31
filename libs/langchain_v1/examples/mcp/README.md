@@ -14,6 +14,7 @@ uv run examples/mcp/transports.py
 | `transports.py` | one adapter over in-memory, stdio, and HTTP | | |
 | `remote_server.py` | pointing the adapter at a public MCP server | ✅ | ✅ |
 | `multi_server.py` | several servers behind one adapter, tools prefixed per server | ✅ | |
+| `graph_factory.py` | one long-lived adapter shared by every run of a `langgraph dev` graph | | |
 | `protocol_eras.py` | one agent holding tools from both MCP protocol eras | ✅ | |
 | `tool_errors.py` | a failing tool reaching the model so it can retry | ✅ | |
 | `elicitation.py` | a server asking a human mid-call, via `interrupt()` | ✅ | |
