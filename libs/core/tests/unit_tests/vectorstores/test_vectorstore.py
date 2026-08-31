@@ -179,6 +179,26 @@ def test_default_add_texts(vs_class: type[VectorStore]) -> None:
 
 
 @pytest.mark.parametrize(
+    "vs_class", [CustomAddDocumentsVectorstore]
+)
+def test_default_add_texts_ids_length_mismatch(vs_class: type[VectorStore]) -> None:
+    """Test that default add_texts raises ValueError when ids length mismatches texts."""
+    store = vs_class()
+
+    # Test too few ids
+    with pytest.raises(
+        ValueError, match="The number of ids must match the number of texts"
+    ):
+        store.add_texts(["a", "b"], ids=["only-one"])
+
+    # Test too many ids
+    with pytest.raises(
+        ValueError, match="The number of ids must match the number of texts"
+    ):
+        store.add_texts(["a"], ids=["id1", "id2"])
+
+
+@pytest.mark.parametrize(
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
 )
 async def test_default_aadd_documents(vs_class: type[VectorStore]) -> None:
@@ -234,6 +254,26 @@ async def test_default_aadd_texts(vs_class: type[VectorStore]) -> None:
         Document(id=ids_2[0], page_content="foo", metadata={"foo": "bar"}),
         Document(id=ids_2[1], page_content="bar", metadata={"foo": "bar"}),
     ]
+
+
+@pytest.mark.parametrize(
+    "vs_class", [CustomAddDocumentsVectorstore]
+)
+async def test_default_aadd_texts_ids_length_mismatch(vs_class: type[VectorStore]) -> None:
+    """Test that default aadd_texts raises ValueError when ids length mismatches texts."""
+    store = vs_class()
+
+    # Test too few ids
+    with pytest.raises(
+        ValueError, match="The number of ids must match the number of texts"
+    ):
+        await store.aadd_texts(["a", "b"], ids=["only-one"])
+
+    # Test too many ids
+    with pytest.raises(
+        ValueError, match="The number of ids must match the number of texts"
+    ):
+        await store.aadd_texts(["a"], ids=["id1", "id2"])
 
 
 @pytest.mark.parametrize(

@@ -220,3 +220,37 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+def test_inmemory_add_texts_ids_length_mismatch() -> None:
+    """Test that add_texts raises ValueError when ids length doesn't match texts."""
+    vectorstore = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=6))
+
+    # Test too few ids
+    with pytest.raises(
+        ValueError, match="The number of ids must match the number of texts"
+    ):
+        vectorstore.add_texts(["a", "b"], ids=["only-one"])
+
+    # Test too many ids
+    with pytest.raises(
+        ValueError, match="The number of ids must match the number of texts"
+    ):
+        vectorstore.add_texts(["a"], ids=["id1", "id2"])
+
+
+async def test_inmemory_aadd_texts_ids_length_mismatch() -> None:
+    """Test that aadd_texts raises ValueError when ids length doesn't match texts."""
+    vectorstore = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=6))
+
+    # Test too few ids
+    with pytest.raises(
+        ValueError, match="The number of ids must match the number of texts"
+    ):
+        await vectorstore.aadd_texts(["a", "b"], ids=["only-one"])
+
+    # Test too many ids
+    with pytest.raises(
+        ValueError, match="The number of ids must match the number of texts"
+    ):
+        await vectorstore.aadd_texts(["a"], ids=["id1", "id2"])
