@@ -24,6 +24,9 @@ We recommend you use LangChain if you want to quickly build agents and autonomou
 
 LangChain [agents](https://docs.langchain.com/oss/python/langchain/agents) are built on top of LangGraph in order to provide durable execution, streaming, human-in-the-loop, persistence, and more. (You do not need to know LangGraph for basic LangChain agent usage.)
 
+> [!TIP]
+> **Multi-Agent Consensus Pattern**: When building multi-agent round-tables or sequential consensus graphs, avoid the "role prompt constraint trap" at the terminal step by routing state through a dedicated **terminal synthesis node** before `END`. This ensures the final output is a synthesized, committed deliverable rather than an open critique.
+
 ## 📖 Documentation
 
 For full documentation, see the [API reference](https://reference.langchain.com/python/langchain/langchain/). For conceptual guides, tutorials, and examples on using LangChain, see the [LangChain Docs](https://docs.langchain.com/oss/python/langchain/overview). You can also chat with the docs using [Chat LangChain](https://chat.langchain.com).

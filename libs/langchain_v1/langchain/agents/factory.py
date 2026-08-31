@@ -990,6 +990,73 @@ def create_agent(
         for chunk in graph.stream(inputs, stream_mode="updates"):
             print(chunk)
         ```
+
+    Multi-Agent Systems and Terminal Synthesis:
+        When composing multiple agents into consensus, sequential, or round-table
+        topologies (e.g. using LangGraph or nested subgraphs), avoid the **role prompt
+        constraint trap** at the terminal step before `END`.
+
+        If the final node in a multi-agent workflow is bound to a specific functional
+        role (such as a `"Reviewer"`, `"Analyst"`, or `"Critic"`), the model will
+        optimize for fulfilling its role (e.g., offering commentary or critiques) rather
+        than synthesizing prior discussions into a committed, actionable deliverable.
+
+        To guarantee high-quality final answers, adopt one of the following patterns:
+
+        1. **Terminal Synthesis Node Pattern (Recommended)**: Explicitly route the graph
+           state to a dedicated synthesis agent or node right before `END`:
+
+        ```python
+        from langchain.agents import create_agent
+        from langgraph.graph import END, START, StateGraph
+
+        # 1. Specialized agents for domain tasks
+        analyst = create_agent(
+            model="openai:gpt-5.5",
+            system_prompt="You are a financial analyst. Provide in-depth financial breakdown.",
+            name="analyst",
+        )
+        reviewer = create_agent(
+            model="openai:gpt-5.5",
+            system_prompt="You are a business reviewer. Evaluate risks and trade-offs.",
+            name="reviewer",
+        )
+
+        # 2. Terminal synthesis agent unconstrained by specialized role prompts
+        synthesizer = create_agent(
+            model="openai:gpt-5.5",
+            system_prompt=(
+                "You are the terminal synthesis agent. Identify what prior analysis got right, "
+                "resolve open conflicts, and produce a complete, decisive final deliverable."
+            ),
+            name="synthesizer",
+        )
+
+        # 3. Wire the multi-agent graph with the synthesis node as the final step
+        builder = StateGraph(dict)
+        builder.add_node("analyst", analyst)
+        builder.add_node("reviewer", reviewer)
+        builder.add_node("synthesizer", synthesizer)
+
+        builder.add_edge(START, "analyst")
+        builder.add_edge("analyst", "reviewer")
+        builder.add_edge("reviewer", "synthesizer")
+        builder.add_edge("synthesizer", END)
+
+        multi_agent_graph = builder.compile()
+        ```
+
+        2. **Dynamic Role Override Pattern**: If keeping a flat graph topology without
+           an extra synthesis node, inject an explicit role-override instruction on the
+           final turn to release the agent from its role constraint:
+
+        ```python
+        SYNTHESIS_OVERRIDE = (
+            "OVERRIDE YOUR ROLE FUNCTION FOR THIS TURN. You are the terminal synthesis agent. "
+            "Identify what prior analysis got right, what it missed, and produce a COMPLETE, "
+            "DEFINITIVE final answer. Close every open question. Be decisive."
+        )
+        ```
     """
     # init chat model
     if isinstance(model, str):
