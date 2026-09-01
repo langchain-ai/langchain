@@ -32,7 +32,6 @@ from mcp.types import (
     TextResourceContents,
 )
 
-from langchain.mcp._client import _client_for_tool
 from langchain.mcp.elicitation import _call_tool_with_interrupts, _drives_interrupts
 
 if TYPE_CHECKING:
@@ -256,7 +255,7 @@ async def as_langchain_tool(
         tool_route = await client.resolve_tool(tool.name)
         requesting_client = tool_route.client
     else:
-        requesting_client = tool_route.client
+        requesting_client = client
     drives_interrupts = _drives_interrupts(requesting_client)
 
     async def call_tool(
