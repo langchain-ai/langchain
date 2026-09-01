@@ -1,0 +1,16 @@
+libs/langchain_v1/langchain/mcp/tools.py
+  h_152f5d9f78d224 3-7,182-190,192-194,196-208,273
+libs/langchain_v1/tests/unit_tests/mcp/test_tools.py
+  h_152f5d9f78d224 162,172-175,187-207
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "cb36d8d7d928167d273c361edeac229d9b2fa688",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
