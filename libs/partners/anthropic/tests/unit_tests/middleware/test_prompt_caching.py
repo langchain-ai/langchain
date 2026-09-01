@@ -52,6 +52,12 @@ class FakeToolCallingModel(BaseChatModel):
         return "fake-tool-call-model"
 
 
+def test_trace_inputs_are_omitted() -> None:
+    policy = AnthropicPromptCachingMiddleware.trace_policy
+    assert policy.process_inputs is not None
+    assert policy.process_inputs({"messages": [HumanMessage("secret")]}) == {}
+
+
 def test_anthropic_prompt_caching_middleware_initialization() -> None:
     """Test AnthropicPromptCachingMiddleware initialization."""
     # Test with custom values
