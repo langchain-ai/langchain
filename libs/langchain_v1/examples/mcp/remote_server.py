@@ -20,7 +20,7 @@ DEEPWIKI = "https://mcp.deepwiki.com/mcp"
 async def main() -> None:
     """Let an agent research a repository through a remote MCP server."""
     async with MCPAdapter(DEEPWIKI) as adapter:
-        tools = await adapter.get_tools()
+        tools = await adapter.list_tools()
 
     print("tools:", [tool.name for tool in tools])
 

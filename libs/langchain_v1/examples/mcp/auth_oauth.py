@@ -68,7 +68,7 @@ async def main() -> None:
         # repeats the browser step; pass `OAuth(..., token_storage=...)` to
         # persist them.
         async with MCPAdapter(Client(f"{url}/mcp", auth="oauth")) as adapter:
-            [whoami] = await adapter.get_tools()
+            [whoami] = await adapter.list_tools()
             [block] = await whoami.ainvoke({})
             print("authenticated as:", block["text"])
 

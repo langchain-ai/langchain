@@ -23,7 +23,7 @@ _STDIO_SERVER = Path(__file__).parent / "_stdio_server.py"
 async def show(label: str, target: MCPAdapterTarget) -> None:
     """Adapt one target and call the tool it exposes."""
     async with MCPAdapter(target) as adapter:
-        [forecast] = await adapter.get_tools()
+        [forecast] = await adapter.list_tools()
         # An MCP result arrives as LangChain content blocks, not a bare string.
         [block] = await forecast.ainvoke({"city": "Oslo"})
         print(f"{label:12} {forecast.name} -> {block['text']}")

@@ -36,7 +36,7 @@ async def main() -> None:
     modern: Client[Any] = Client(calculator_server(), mode="auto")
 
     async with MCPAdapter(legacy) as legacy_adapter, MCPAdapter(modern) as modern_adapter:
-        tools = await legacy_adapter.get_tools() + await modern_adapter.get_tools()
+        tools = await legacy_adapter.list_tools() + await modern_adapter.list_tools()
 
         # Only the handshake era populates `initialize_result`, so it doubles as
         # proof of which negotiation actually ran.

@@ -32,7 +32,7 @@ CONFIG = {
 async def main() -> None:
     """Give one agent the tools of two servers."""
     async with MCPAdapter(CONFIG) as adapter:
-        tools = await adapter.get_tools()
+        tools = await adapter.list_tools()
 
     print("tools:", [tool.name for tool in tools])
 

@@ -46,13 +46,13 @@ async def main() -> None:
         # `auth` takes a bearer token string, the literal "oauth", or any
         # `httpx2.Auth`. A config dict takes the same key per server.
         async with MCPAdapter(Client(f"{url}/mcp", auth=TOKEN)) as adapter:
-            [forecast] = await adapter.get_tools()
+            [forecast] = await adapter.list_tools()
             [block] = await forecast.ainvoke({"city": "Oslo"})
             print("with token:   ", block["text"])
 
         try:
             async with MCPAdapter(f"{url}/mcp") as adapter:
-                await adapter.get_tools()
+                await adapter.list_tools()
         except Exception as exc:
             print("without token:", type(exc).__name__)
 

@@ -26,7 +26,7 @@ from langchain.mcp import MCPAdapter
 async def main() -> None:
     """Book a table, answering the server's question from here."""
     async with MCPAdapter(booking_server(), elicitation="interrupt") as adapter:
-        tools = await adapter.get_tools()
+        tools = await adapter.list_tools()
 
     # Resuming needs persistence, so the interrupted run has somewhere to wait.
     agent = create_agent("anthropic:claude-sonnet-5", tools, checkpointer=InMemorySaver())

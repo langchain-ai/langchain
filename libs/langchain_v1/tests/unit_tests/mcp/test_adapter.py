@@ -36,7 +36,7 @@ def _calculator() -> FastMCP[None]:
 
 
 @pytest.mark.asyncio
-async def test_get_tools_adapts_every_tool_a_server_exposes() -> None:
+async def test_list_tools_adapts_every_tool_a_server_exposes() -> None:
     server = _calculator()
 
     @server.tool
@@ -44,7 +44,7 @@ async def test_get_tools_adapts_every_tool_a_server_exposes() -> None:
         """Negate a number."""
         return -a
 
-    tools = await MCPAdapter(server).get_tools()
+    tools = await MCPAdapter(server).list_tools()
 
     assert sorted(tool.name for tool in tools) == ["add", "negate"]
 
@@ -68,7 +68,7 @@ def _group() -> ClientGroup:
 
 @pytest.mark.asyncio
 async def test_group_tools_are_namespaced_per_server() -> None:
-    tools = await MCPAdapter(_group()).get_tools()
+    tools = await MCPAdapter(_group()).list_tools()
 
     assert sorted(tool.name for tool in tools) == ["calc_add", "greet_add"]
 
@@ -76,7 +76,7 @@ async def test_group_tools_are_namespaced_per_server() -> None:
 @pytest.mark.asyncio
 async def test_colliding_tool_names_reach_their_own_server() -> None:
     """The namespace is only useful if the call follows it."""
-    tools = {tool.name: tool for tool in await MCPAdapter(_group()).get_tools()}
+    tools = {tool.name: tool for tool in await MCPAdapter(_group()).list_tools()}
 
     [calc] = await tools["calc_add"].ainvoke({"a": 1, "b": 2})
     [greet] = await tools["greet_add"].ainvoke({"a": 1, "b": 2})
@@ -89,7 +89,7 @@ async def test_colliding_tool_names_reach_their_own_server() -> None:
 async def test_group_tools_stay_callable_after_the_adapter_context_exits() -> None:
     """Tools hold their member client, which reconnects on its own."""
     async with MCPAdapter(_group()) as adapter:
-        tools = {tool.name: tool for tool in await adapter.get_tools()}
+        tools = {tool.name: tool for tool in await adapter.list_tools()}
 
     [block] = await tools["calc_add"].ainvoke({"a": 2, "b": 3})
 
@@ -97,20 +97,20 @@ async def test_group_tools_stay_callable_after_the_adapter_context_exits() -> No
 
 
 @pytest.mark.asyncio
-async def test_get_tools_inside_a_group_context_does_not_re_enter() -> None:
+async def test_list_tools_inside_a_group_context_does_not_re_enter() -> None:
     """`ClientGroup` refuses re-entry, so the adapter counts nesting for it."""
     adapter = MCPAdapter(_group())
 
     async with adapter:
-        first = await adapter.get_tools()
+        first = await adapter.list_tools()
         # A second discovery inside the same context must not raise either.
-        second = await adapter.get_tools()
+        second = await adapter.list_tools()
 
     assert len(first) == len(second) == 2
 
 
 @pytest.mark.asyncio
-async def test_get_tools_forwards_cache_mode_to_a_single_client(
+async def test_list_tools_forwards_cache_mode_to_a_single_client(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """`cache_mode` reaches the client's discovery call, so a cache is honored.
@@ -129,14 +129,14 @@ async def test_get_tools_forwards_cache_mode_to_a_single_client(
 
     monkeypatch.setattr(adapter.client, "list_tools", spy)
 
-    await adapter.get_tools()
-    await adapter.get_tools(cache_mode="refresh")
+    await adapter.list_tools()
+    await adapter.list_tools(cache_mode="refresh")
 
     assert seen == ["use", "refresh"]
 
 
 @pytest.mark.asyncio
-async def test_get_tools_forwards_cache_mode_to_a_group(
+async def test_list_tools_forwards_cache_mode_to_a_group(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """A group hardcodes `refresh` on a bare call, so the adapter must pass it.
@@ -154,8 +154,8 @@ async def test_get_tools_forwards_cache_mode_to_a_group(
 
     monkeypatch.setattr(adapter.client, "list_tools", spy)
 
-    await adapter.get_tools()
-    await adapter.get_tools(cache_mode="bypass")
+    await adapter.list_tools()
+    await adapter.list_tools(cache_mode="bypass")
 
     assert seen == ["use", "bypass"]
 
@@ -178,7 +178,7 @@ async def test_tools_work_directly_with_create_agent() -> None:
         FakeToolCallingModel(
             tool_calls=[[{"name": "add", "args": {"a": 1, "b": 2}, "id": "call-1"}], []]
         ),
-        await MCPAdapter(_calculator()).get_tools(),
+        await MCPAdapter(_calculator()).list_tools(),
     )
 
     result = await agent.ainvoke({"messages": [{"role": "user", "content": "Add 1 and 2."}]})
@@ -190,7 +190,7 @@ async def test_tools_work_directly_with_create_agent() -> None:
 async def test_tools_stay_callable_after_the_adapter_context_exits() -> None:
     """Discovery inside a context must not leave the returned tools dead."""
     async with MCPAdapter(_calculator()) as adapter:
-        [tool] = await adapter.get_tools()
+        [tool] = await adapter.list_tools()
 
     message = await tool.ainvoke(
         {"name": "add", "args": {"a": 2, "b": 3}, "id": "c1", "type": "tool_call"}
@@ -341,7 +341,7 @@ async def test_several_servers_connect_and_keep_their_prefixes(
     config = two_stdio_servers
 
     async with MCPAdapter(config) as adapter:
-        tools = await adapter.get_tools()
+        tools = await adapter.list_tools()
 
     assert sorted(tool.name for tool in tools) == ["alpha_whoami", "beta_whoami"]
 
@@ -437,7 +437,7 @@ async def test_adapter_adapts_tools_on_either_protocol_era(
     client: Client[Any] = Client(_self_identifying_server("solo"), mode=mode)
 
     async with MCPAdapter(client) as adapter:
-        [tool] = await adapter.get_tools()
+        [tool] = await adapter.list_tools()
         message = await tool.ainvoke(
             {"name": "whoami", "args": {}, "id": "c1", "type": "tool_call"}
         )
@@ -464,8 +464,8 @@ async def test_servers_on_different_protocol_eras_are_usable_side_by_side() -> N
         MCPAdapter(handshake_client) as handshake_adapter,
         MCPAdapter(modern_client) as modern_adapter,
     ):
-        [handshake_tool] = await handshake_adapter.get_tools()
-        [modern_tool] = await modern_adapter.get_tools()
+        [handshake_tool] = await handshake_adapter.list_tools()
+        [modern_tool] = await modern_adapter.list_tools()
 
         call = {"name": "whoami", "args": {}, "id": "c1", "type": "tool_call"}
         answers = await asyncio.gather(handshake_tool.ainvoke(call), modern_tool.ainvoke(call))
@@ -486,8 +486,8 @@ async def test_tools_from_both_protocol_eras_combine_into_one_agent() -> None:
     """
     handshake_tools = await MCPAdapter(
         Client(_self_identifying_server("old"), mode="legacy")
-    ).get_tools()
-    modern_tools = await MCPAdapter(Client(_arithmetic_server("new"), mode="auto")).get_tools()
+    ).list_tools()
+    modern_tools = await MCPAdapter(Client(_arithmetic_server("new"), mode="auto")).list_tools()
 
     agent = create_agent(
         FakeToolCallingModel(

@@ -184,7 +184,7 @@ class MCPAdapter:
         from langchain.mcp import MCPAdapter
 
         async with MCPAdapter("https://example.com/mcp") as adapter:
-            agent = create_agent("anthropic:claude-sonnet-5", await adapter.get_tools())
+            agent = create_agent("anthropic:claude-sonnet-5", await adapter.list_tools())
             result = await agent.ainvoke({"messages": [{"role": "user", "content": "..."}]})
         ```
     """
@@ -236,7 +236,7 @@ class MCPAdapter:
         """Connect the underlying client or group for the duration of the context."""
         if isinstance(self._client, ClientGroup):
             # A `Client` counts its own nesting; a `ClientGroup` refuses re-entry
-            # outright, so the adapter counts for it. Without this, `get_tools()`
+            # outright, so the adapter counts for it. Without this, `list_tools()`
             # called inside `async with MCPAdapter(group)` would raise.
             if self._depth == 0:
                 await self._client.__aenter__()
@@ -259,7 +259,7 @@ class MCPAdapter:
         else:
             await self._client.__aexit__(exc_type, exc_value, traceback)  # type: ignore[no-untyped-call]
 
-    async def get_tools(self, *, cache_mode: CacheMode = "use") -> list[BaseTool]:
+    async def list_tools(self, *, cache_mode: CacheMode = "use") -> list[BaseTool]:
         """Discover and adapt MCP tools for use with LangChain.
 
         Args:

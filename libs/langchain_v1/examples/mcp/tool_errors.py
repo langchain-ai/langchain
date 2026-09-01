@@ -21,7 +21,7 @@ from langchain.mcp import MCPAdapter
 async def main() -> None:
     """Ask for a division by zero and watch the agent recover."""
     async with MCPAdapter(calculator_server()) as adapter:
-        tools = await adapter.get_tools()
+        tools = await adapter.list_tools()
 
     agent = create_agent(
         "anthropic:claude-sonnet-5",
