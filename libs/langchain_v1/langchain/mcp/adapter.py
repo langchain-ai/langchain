@@ -9,7 +9,7 @@ from pydantic import AnyUrl, TypeAdapter, ValidationError
 from typing_extensions import Self
 
 from langchain.mcp._client import _ReentrantClientGroup
-from langchain.mcp.elicitation import _declare_elicitation_capability
+from langchain.mcp.elicitation import _arm_for_interrupts
 from langchain.mcp.tools import as_langchain_tool
 
 try:
@@ -71,43 +71,25 @@ group is a peer of `Client` rather than a transport it could wrap.
 
 
 def _has_elicitation_handler(client: FastMCPClient[Any]) -> bool:
-    """Report whether `client` already carries an elicitation handler.
-
-    A client only advertises the elicitation capability when it carries a
-    handler, so this is what decides between honoring a caller's own handler and
-    injecting the interrupt-driving sentinel. The attribute is FastMCP-private,
-    so a missing one is read as "no handler" — the safe default, which just
-    installs the sentinel rather than silently skipping it.
-    """
+    """Report whether `client` already carries an elicitation handler."""
     return getattr(client, "_elicitation_callback", None) is not None
 
 
 def _client_driving_interrupts(client: FastMCPClient[Any]) -> FastMCPClient[Any]:
     """Return a client that answers elicitation with an interrupt.
 
-    A client the caller already armed with their own handler is returned
-    untouched, so their handler keeps answering the legacy way. One with no
-    handler is cloned — not mutated — and given the sentinel that makes FastMCP
-    advertise the capability, so a call can drive the interrupt loop. Cloning
-    keeps the caller's own client as they built it, the promise this module has
-    always made about a pre-built target.
+    A client with its own handler is returned untouched. One without is armed on
+    a clone, so the caller's client is never mutated.
     """
     if _has_elicitation_handler(client):
         return client
     clone = client.new()
-    clone.set_elicitation_callback(_declare_elicitation_capability)
+    _arm_for_interrupts(clone)
     return clone
 
 
 def _group_driving_interrupts(group: ClientGroup) -> _ReentrantClientGroup:
-    """Rebuild `group` so every member answers elicitation with an interrupt.
-
-    FastMCP declares the capability per client, so a group must arm every
-    member. Each is armed by `_client_driving_interrupts`, so a member the
-    caller already gave a handler is left alone and one without gets the
-    sentinel on a clone. The rebuilt group is wrapped in `_ReentrantClientGroup`
-    so nested and concurrent `list_tools()`/call use share one connection.
-    """
+    """Rebuild `group` with every member armed, wrapped for reentrancy."""
     armed = ClientGroup(
         {name: _client_driving_interrupts(member) for name, member in group.clients.items()}
     )
@@ -230,15 +212,9 @@ class MCPAdapter:
         else:
             if isinstance(target, str):
                 _validate_url_target(target)
-            # A client only advertises the elicitation capability when it
-            # carries a handler, and servers will not ask without it. The
-            # handler itself is never used: elicitation answers are driven by
-            # `_call_tool_with_interrupts`, which reads the requests off the
-            # result rather than through this callback.
-            self._client = FastMCPClient(
-                target,
-                elicitation_handler=_declare_elicitation_capability,
-            )
+            client = FastMCPClient(target)
+            _arm_for_interrupts(client)
+            self._client = client
 
     @property
     def client(self) -> FastMCPClient[Any] | ClientGroup:
