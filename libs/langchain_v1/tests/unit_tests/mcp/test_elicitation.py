@@ -28,8 +28,18 @@ from pydantic import BaseModel
 
 from langchain.agents import create_agent
 from langchain.mcp import MCPAdapter
-from langchain.mcp.elicitation import _call_tool_with_interrupts
+from langchain.mcp.elicitation import (
+    _call_tool_with_interrupts,
+    _declare_elicitation_capability,
+    _drives_interrupts,
+)
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+_HANDSHAKE_ERA = "2025-11-25"
+"""Latest protocol version that negotiates with the legacy `initialize` handshake."""
+
+_MODERN_ERA = "2026-07-28"
+"""Modern protocol version that carries the `InputRequiredResult` elicitation path."""
 
 
 class PartySize(BaseModel):
@@ -193,6 +203,40 @@ async def test_a_prebuilt_clients_own_handler_is_honored_not_overridden() -> Non
     adapter = MCPAdapter(client)
 
     assert adapter.client is client
+
+
+@pytest.mark.asyncio
+async def test_a_modern_server_drives_interrupts() -> None:
+    """An armed client on a modern-era connection routes through the loop."""
+    client = Client(
+        _restaurant_server({"resolver": 0, "body": 0}),
+        elicitation_handler=_declare_elicitation_capability,
+    )
+    async with client:
+        assert client.protocol_version == _MODERN_ERA
+        assert _drives_interrupts(cast("Client[Any]", client))
+
+
+@pytest.mark.asyncio
+async def test_a_legacy_server_does_not_drive_interrupts_despite_the_sentinel() -> None:
+    """The interrupt loop answers an `InputRequiredResult`, a modern-era feature.
+
+    Even armed with the sentinel, a legacy-era connection falls back to the
+    plain call: the loop would otherwise advertise interrupt-answering the
+    server would try to use over the legacy server-initiated path, which the
+    loop cannot answer.
+    """
+    server: FastMCP[None] = FastMCP("legacy")
+
+    @server.tool
+    def add(a: int, b: int) -> int:
+        """Add two numbers."""
+        return a + b
+
+    client = Client(server, mode="legacy", elicitation_handler=_declare_elicitation_capability)
+    async with client:
+        assert client.protocol_version == _HANDSHAKE_ERA
+        assert not _drives_interrupts(cast("Client[Any]", client))
 
 
 class _FakeSession:

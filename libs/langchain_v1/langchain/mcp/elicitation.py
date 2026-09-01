@@ -34,6 +34,7 @@ from mcp.types import (
     InputRequiredResult,
     InputResponses,
 )
+from mcp.types.version import LATEST_MODERN_VERSION, is_version_at_least
 from typing_extensions import NotRequired
 
 if TYPE_CHECKING:
@@ -253,28 +254,34 @@ async def _declare_elicitation_capability(*_: object) -> dict[str, Any]:
     call rather than from a callback, so this exists only to make that
     declaration — running it means a server used the legacy server-initiated
     path instead, which an interrupt cannot answer.
+
+    This is reachable on a legacy-era connection: the capability is declared
+    before the protocol version is known, so a legacy server can still initiate
+    elicitation the old way even though the interrupt loop only runs on a modern
+    era. The error names the two ways forward rather than degrading the call.
     """
     msg = (
         "This MCP server asked for input over the legacy server-initiated "
-        "path, which interrupt-based elicitation cannot answer. It needs a "
-        "server that returns its input requests as an `InputRequiredResult`."
+        "elicitation path, which the adapter's interrupt-based elicitation "
+        "cannot answer. Interrupt-based elicitation needs a server that returns "
+        "its input requests as an `InputRequiredResult` (modern protocol era). "
+        "To answer a legacy server's request instead, pass a pre-built client "
+        "built with your own `elicitation_handler`."
     )
     raise NotImplementedError(msg)
 
 
-def _drives_interrupts(client: Client[Any]) -> bool:
-    """Report whether `client` was armed to answer elicitation with an interrupt.
+def _carries_sentinel(client: Client[Any]) -> bool:
+    """Report whether `client` carries the interrupt-driving sentinel handler.
 
     A client armed by `MCPAdapter` carries `_declare_elicitation_capability` as
     its elicitation handler, purely to make FastMCP advertise the capability;
     the tool call, not this handler, drives the interrupt loop. FastMCP wraps
     the handler in a closure, so the sentinel is matched through that closure
-    rather than by direct identity. Any other handler is a caller's own and
-    answers the legacy way, so it does not drive interrupts.
+    rather than by direct identity. Any other handler is a caller's own.
 
     The wrapping is FastMCP-private, so a shape this cannot see through is read
-    as "not the sentinel" — the safe default, which routes through the plain
-    call rather than the interrupt loop.
+    as "not the sentinel" — the safe default.
     """
     callback = getattr(client, "_elicitation_callback", None)
     if callback is None:
@@ -285,6 +292,28 @@ def _drives_interrupts(client: Client[Any]) -> bool:
     freevars = getattr(getattr(callback, "__code__", None), "co_freevars", ())
     wrapped = dict(zip(freevars, (cell.cell_contents for cell in closure), strict=False))
     return wrapped.get("elicitation_handler") is _declare_elicitation_capability
+
+
+def _drives_interrupts(client: Client[Any]) -> bool:
+    """Report whether a call through `client` should drive the interrupt loop.
+
+    Two things must hold. The client must carry the interrupt-driving sentinel
+    `MCPAdapter` installs (rather than a caller's own handler, which answers the
+    legacy way). And the connection must have negotiated a modern protocol era,
+    since the `InputRequiredResult` the loop answers is a modern-era feature
+    (SEP-2322). A legacy server never returns one, so driving the loop there is
+    pointless — worse, it would advertise interrupt-answering the server would
+    then try to use over the legacy server-initiated path, which the loop cannot
+    answer. On legacy the call falls back to a plain `call_tool` instead.
+
+    `protocol_version` is only populated once connected, and this is read at
+    call time when the client is connected, so an unset version is read as "not
+    modern" — the safe default, which routes through the plain call.
+    """
+    if not _carries_sentinel(client):
+        return False
+    version = getattr(client, "protocol_version", None)
+    return version is not None and is_version_at_least(version, LATEST_MODERN_VERSION)
 
 
 async def _await_monitored(client: Client[Any], coro: Coroutine[Any, Any, _ResultT]) -> _ResultT:
