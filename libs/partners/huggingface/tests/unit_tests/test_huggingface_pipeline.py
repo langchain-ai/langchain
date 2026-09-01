@@ -45,3 +45,24 @@ def test_initialization_with_from_model_id(
     )
 
     assert llm.model_id == "mock-model-id"
+
+
+def test_generate_translation_pipeline() -> None:
+    """Test _generate with translation and language-specific translation pipelines."""
+    mock_pipe = MagicMock()
+    mock_pipe.task = "translation_en_to_fr"
+    mock_pipe.model.name_or_path = "mock-translation-model"
+    mock_pipe.return_value = [{"translation_text": "Bonjour le monde"}]
+
+    llm = HuggingFacePipeline(pipeline=mock_pipe)
+    result = llm._generate(["Hello world"])
+    assert result.generations[0][0].text == "Bonjour le monde"
+
+    mock_pipe_generic = MagicMock()
+    mock_pipe_generic.task = "translation"
+    mock_pipe_generic.model.name_or_path = "mock-translation-model"
+    mock_pipe_generic.return_value = [{"translation_text": "Hola mundo"}]
+
+    llm_generic = HuggingFacePipeline(pipeline=mock_pipe_generic)
+    result_generic = llm_generic._generate(["Hello world"])
+    assert result_generic.generations[0][0].text == "Hola mundo"
