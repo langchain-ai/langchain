@@ -1,8 +1,10 @@
 """Convert MCP tools and tool results into LangChain-native values.
 
-The conversion rules here follow `langchain-mcp-adapters`, so tools discovered
-through `langchain.mcp` reach a model in the same shape as tools loaded by that
-package.
+Tool results follow `langchain-mcp-adapters`, so a call made through
+`langchain.mcp` reaches a model in the same shape as one loaded by that
+package. Tool *metadata* is richer here: it is grouped under a single `mcp`
+namespace with the tool's annotations and `_meta` under `mcp.tool` and the
+serving server's identity under `mcp.server`.
 """
 
 from __future__ import annotations
@@ -177,14 +179,33 @@ def _convert_call_tool_result(
     return tool_content, artifact
 
 
-def _tool_metadata(tool: Tool) -> dict[str, Any] | None:
-    """Collect the server-controlled tool fields worth keeping on the LangChain tool."""
-    metadata: dict[str, Any] = {}
+def _tool_metadata(tool: Tool, client: Client[Any]) -> dict[str, Any] | None:
+    """Collect the MCP tool- and server-level metadata worth keeping.
+
+    Everything lives under a single `mcp` namespace so a consumer can tell an
+    MCP tool's provenance from any other metadata on the LangChain tool, and so
+    tool-level fields (`annotations`, `_meta`) stay distinct from the identity
+    of the server that served the tool.
+    """
+    tool_meta: dict[str, Any] = {}
     if tool.annotations is not None:
-        metadata.update(tool.annotations.model_dump(by_alias=True, exclude_none=True))
+        # Snake_case (no `by_alias`) reads naturally from Python, and matches
+        # what `langchain-mcp-adapters` produces.
+        tool_meta["annotations"] = tool.annotations.model_dump(exclude_none=True)
     if tool.meta is not None:
-        metadata["_meta"] = tool.meta
-    return metadata or None
+        # `_meta` is the MCP wire field name; keep it so the key matches the
+        # protocol and the server's payload stays in one nested place.
+        tool_meta["_meta"] = tool.meta
+
+    mcp: dict[str, Any] = {}
+    if tool_meta:
+        mcp["tool"] = tool_meta
+    # Server identity comes off the connection, not the tool — a `Tool` carries
+    # no server field. It is populated while the client is connected, which is
+    # the case at conversion time.
+    if client.server_info is not None:
+        mcp["server"] = client.server_info.model_dump(exclude_none=True)
+    return {"mcp": mcp} if mcp else None
 
 
 def as_langchain_tool(
@@ -249,7 +270,7 @@ def as_langchain_tool(
         args_schema=tool.input_schema,
         coroutine=call_tool,
         response_format="content_and_artifact",
-        metadata=_tool_metadata(tool),
+        metadata=_tool_metadata(tool, client),
         # MCP `isError` is a model-visible tool result, not a transport
         # exception. `BaseTool`'s narrow `ToolException` path preserves the
         # result content while formatting it as `ToolMessage(status="error")`.
