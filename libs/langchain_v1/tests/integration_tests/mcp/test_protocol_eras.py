@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from fastmcp import Client, FastMCP
@@ -140,7 +140,7 @@ async def test_a_handshake_era_backend_pulls_the_whole_fleet_onto_its_era() -> N
             await adapter.list_tools()
 
             assert transport.legacy_only is True
-            assert adapter.client.protocol_version == _HANDSHAKE_ERA
+            assert cast("Client[Any]", adapter.client).protocol_version == _HANDSHAKE_ERA
 
 
 @pytest.mark.asyncio
