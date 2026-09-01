@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Literal, cast
 from unittest.mock import AsyncMock
 
 import pytest
@@ -23,6 +23,14 @@ from mcp.types import (
 
 from langchain.mcp import convert_mcp_tool_to_langchain_tool
 from langchain.mcp.tools import _convert_call_tool_result, _convert_content_block
+
+
+class _VideoContent:
+    """Stand-in for an MCP content type newer than this adapter."""
+
+
+class _VideoResource:
+    """Stand-in for an embedded resource kind newer than this adapter."""
 
 
 def _blocks_without_ids(content: Any) -> list[dict[str, Any]]:
@@ -245,3 +253,27 @@ def test_embedded_blob_resource_type_follows_its_mime_type(
 def test_audio_content_is_not_yet_supported() -> None:
     with pytest.raises(NotImplementedError, match="audio"):
         _convert_content_block(AudioContent(type="audio", data="AAAA", mimeType="audio/wav"))
+
+
+def test_an_unknown_content_type_names_itself_rather_than_asserting() -> None:
+    """A content type the conversion has not been taught names itself.
+
+    `ContentBlock` is closed at type-check time, but only as closed at runtime as
+    the installed `mcp`. A caller on a newer SDK should learn which type arrived,
+    not catch a bare `AssertionError`.
+    """
+    with pytest.raises(ValueError, match="Unknown MCP content type: _VideoContent"):
+        _convert_content_block(cast("Any", _VideoContent()))
+
+
+def test_an_unknown_embedded_resource_type_names_itself() -> None:
+    """An embedded resource that is neither text nor blob raises rather than guessing."""
+    embedded = EmbeddedResource(
+        type="resource",
+        resource=TextResourceContents(uri="file:///notes.txt", text="notes"),
+    )
+    # Bypass validation to stand in for a resource kind the SDK might add later.
+    object.__setattr__(embedded, "resource", cast("Any", _VideoResource()))
+
+    with pytest.raises(ValueError, match="Unknown embedded resource type: _VideoResource"):
+        _convert_content_block(embedded)

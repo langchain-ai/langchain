@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any
+import sys
+from pathlib import Path
+from typing import Any
+from unittest.mock import ANY
 
 import pytest
 from fastmcp import Client, FastMCP
+from fastmcp.client.group import ClientGroup
 from fastmcp.client.transports import (
     FastMCPTransport,
     PythonStdioTransport,
+    StreamableHttpTransport,
 )
 from fastmcp.client.transports.config import MCPConfigTransport
 from langchain_core.messages import ToolMessage
@@ -17,9 +22,6 @@ from langchain_core.messages import ToolMessage
 from langchain.agents import create_agent
 from langchain.mcp import MCPAdapter
 from tests.unit_tests.agents.model import FakeToolCallingModel
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 def _calculator() -> FastMCP[None]:
@@ -45,6 +47,129 @@ async def test_get_tools_adapts_every_tool_a_server_exposes() -> None:
     tools = await MCPAdapter(server).get_tools()
 
     assert sorted(tool.name for tool in tools) == ["add", "negate"]
+
+
+def _greeter() -> FastMCP[None]:
+    """A second server whose tool name collides with the calculator's."""
+    server: FastMCP[None] = FastMCP("greet")
+
+    @server.tool
+    def add(a: int, b: int) -> str:
+        """Not arithmetic — same name, different server."""
+        return f"greetings {a} and {b}"
+
+    return server
+
+
+def _group() -> ClientGroup:
+    """Two in-process servers, each behind its own client."""
+    return ClientGroup({"calc": Client(_calculator()), "greet": Client(_greeter())})
+
+
+@pytest.mark.asyncio
+async def test_group_tools_are_namespaced_per_server() -> None:
+    tools = await MCPAdapter(_group()).get_tools()
+
+    assert sorted(tool.name for tool in tools) == ["calc_add", "greet_add"]
+
+
+@pytest.mark.asyncio
+async def test_colliding_tool_names_reach_their_own_server() -> None:
+    """The namespace is only useful if the call follows it."""
+    tools = {tool.name: tool for tool in await MCPAdapter(_group()).get_tools()}
+
+    [calc] = await tools["calc_add"].ainvoke({"a": 1, "b": 2})
+    [greet] = await tools["greet_add"].ainvoke({"a": 1, "b": 2})
+
+    assert calc["text"] == "3"
+    assert greet["text"] == "greetings 1 and 2"
+
+
+@pytest.mark.asyncio
+async def test_group_tools_stay_callable_after_the_adapter_context_exits() -> None:
+    """Tools hold their member client, which reconnects on its own."""
+    async with MCPAdapter(_group()) as adapter:
+        tools = {tool.name: tool for tool in await adapter.get_tools()}
+
+    [block] = await tools["calc_add"].ainvoke({"a": 2, "b": 3})
+
+    assert block["text"] == "5"
+
+
+@pytest.mark.asyncio
+async def test_get_tools_inside_a_group_context_does_not_re_enter() -> None:
+    """`ClientGroup` refuses re-entry, so the adapter counts nesting for it."""
+    adapter = MCPAdapter(_group())
+
+    async with adapter:
+        first = await adapter.get_tools()
+        # A second discovery inside the same context must not raise either.
+        second = await adapter.get_tools()
+
+    assert len(first) == len(second) == 2
+
+
+@pytest.mark.asyncio
+async def test_get_tools_forwards_cache_mode_to_a_single_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`cache_mode` reaches the client's discovery call, so a cache is honored.
+
+    Defaults to `use`, which is the whole point: a bare `list_tools` would
+    otherwise take the client's own default and a configured cache would sit
+    unused.
+    """
+    adapter = MCPAdapter(_calculator())
+    seen: list[str] = []
+    real = adapter.client.list_tools
+
+    async def spy(*args: Any, cache_mode: str = "use", **kwargs: Any) -> Any:
+        seen.append(cache_mode)
+        return await real(*args, cache_mode=cache_mode, **kwargs)
+
+    monkeypatch.setattr(adapter.client, "list_tools", spy)
+
+    await adapter.get_tools()
+    await adapter.get_tools(cache_mode="refresh")
+
+    assert seen == ["use", "refresh"]
+
+
+@pytest.mark.asyncio
+async def test_get_tools_forwards_cache_mode_to_a_group(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A group hardcodes `refresh` on a bare call, so the adapter must pass it.
+
+    Without this the group's own default (`refresh`) would win and per-user
+    caches keyed on the client would never be served.
+    """
+    adapter = MCPAdapter(_group())
+    seen: list[str] = []
+    real = adapter.client.list_tools
+
+    async def spy(*args: Any, cache_mode: str = "refresh", **kwargs: Any) -> Any:
+        seen.append(cache_mode)
+        return await real(*args, cache_mode=cache_mode, **kwargs)
+
+    monkeypatch.setattr(adapter.client, "list_tools", spy)
+
+    await adapter.get_tools()
+    await adapter.get_tools(cache_mode="bypass")
+
+    assert seen == ["use", "bypass"]
+
+
+@pytest.mark.asyncio
+async def test_interrupt_mode_leaves_the_callers_group_untouched() -> None:
+    """Arming clones keeps a caller's own clients as they built them."""
+    group = _group()
+    adapter = MCPAdapter(group, elicitation="interrupt")
+
+    assert adapter.client is not group
+    assert set(adapter.client.clients) == set(group.clients)
+    for name, member in group.clients.items():
+        assert adapter.client.clients[name] is not member
 
 
 @pytest.mark.asyncio
@@ -75,12 +200,83 @@ async def test_tools_stay_callable_after_the_adapter_context_exits() -> None:
 
 
 def test_target_inference_is_delegated_to_fastmcp(tmp_path: Path) -> None:
-    """Targets FastMCP understands are accepted without adapter-side gatekeeping."""
+    """Non-string targets FastMCP understands pass through without gatekeeping."""
     script = tmp_path / "server.py"
     script.touch()
 
     assert isinstance(MCPAdapter(script).client.transport, PythonStdioTransport)
     assert isinstance(MCPAdapter(FastMCP("in-process")).client.transport, FastMCPTransport)
+
+
+def test_url_strings_are_accepted() -> None:
+    """The reading a string target is meant to have still works."""
+    for url in ("https://example.com/mcp", "http://localhost:2024/mcp"):
+        assert isinstance(MCPAdapter(url).client.transport, StreamableHttpTransport)
+
+
+def test_a_string_naming_a_local_script_is_refused(tmp_path: Path) -> None:
+    """A string must not select subprocess execution just by existing on disk."""
+    script = tmp_path / "server.py"
+    script.touch()
+
+    with pytest.raises(ValueError, match="not a valid URL"):
+        MCPAdapter(str(script))
+
+    # The same server, asked for explicitly, is still reachable.
+    assert isinstance(MCPAdapter(script).client.transport, PythonStdioTransport)
+
+
+@pytest.mark.parametrize(
+    "target",
+    [
+        "server.py",
+        "./server.js",
+        "/usr/local/bin/server.py",
+        "example.com/mcp",
+        "",
+    ],
+)
+def test_strings_that_are_not_urls_are_refused(target: str) -> None:
+    with pytest.raises(ValueError, match="not a valid URL"):
+        MCPAdapter(target)
+
+
+@pytest.mark.parametrize(
+    ("target", "scheme"),
+    [
+        # `AnyUrl` reads the drive letter as a scheme and accepts this, while on
+        # Windows the path resolves and FastMCP launches it — so validating as a
+        # URL without pinning the scheme would still spawn a subprocess there.
+        (r"C:\Users\me\server.py", "c"),
+        # FastMCP cannot infer a transport from these either way. Refusing them
+        # by scheme only buys an error that names the problem.
+        ("file:///etc/passwd", "file"),
+        ("ws://example.com/mcp", "ws"),
+    ],
+)
+def test_strings_parsing_as_non_http_urls_are_refused(target: str, scheme: str) -> None:
+    with pytest.raises(ValueError, match=f"has scheme '{scheme}'"):
+        MCPAdapter(target)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="`:` is not legal in a Windows filename")
+def test_a_colon_in_a_filename_does_not_smuggle_a_path_past_url_parsing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The portable form of the drive-letter case, reachable on POSIX too.
+
+    A filename may contain a colon, so `AnyUrl` parses `a:b.py` as scheme `a`
+    and accepts it while FastMCP resolves the same string to a real file and
+    launches it. Pinning the scheme is what stands between those two readings,
+    so the file here genuinely exists on the path FastMCP would find.
+    """
+    (tmp_path / "a:b.py").touch()
+    monkeypatch.chdir(tmp_path)
+    assert Path("a:b.py").exists()
+
+    with pytest.raises(ValueError, match="has scheme 'a'"):
+        MCPAdapter("a:b.py")
 
 
 def test_one_adapter_can_serve_several_servers() -> None:
@@ -101,6 +297,58 @@ def test_one_adapter_can_serve_several_servers() -> None:
     # exposing the same tool name stay distinguishable through one adapter
     # rather than colliding in the tool list handed to a model.
     assert transport.name_as_prefix is True
+
+
+_STDIO_SERVER = """
+import sys
+from mcp.server.mcpserver import MCPServer
+
+mcp = MCPServer("{name}")
+
+
+@mcp.tool()
+def whoami() -> str:
+    \"\"\"Name the server answering this call.\"\"\"
+    return "{name}"
+
+
+mcp.run()
+"""
+
+
+@pytest.fixture
+def two_stdio_servers(tmp_path: Path) -> dict[str, Any]:
+    """Write two single-tool stdio servers and return a config naming both."""
+    servers = {}
+    for name in ("alpha", "beta"):
+        script = tmp_path / f"{name}.py"
+        script.write_text(_STDIO_SERVER.format(name=name))
+        servers[name] = {"command": sys.executable, "args": [str(script)]}
+    return {"mcpServers": servers}
+
+
+@pytest.mark.asyncio
+async def test_several_servers_connect_and_keep_their_prefixes(
+    two_stdio_servers: dict[str, Any],
+) -> None:
+    """A multi-server config connects, and each backend's tools stay namespaced.
+
+    Connecting is the point. Mounting several backends behind one client needs
+    the server half of FastMCP, which a client-only install does not provide —
+    a config that builds a valid transport can still fail the moment it dials.
+    So this drives real servers rather than asserting on the transport.
+    """
+    config = two_stdio_servers
+
+    async with MCPAdapter(config) as adapter:
+        tools = await adapter.get_tools()
+
+    assert sorted(tool.name for tool in tools) == ["alpha_whoami", "beta_whoami"]
+
+    by_name = {tool.name: tool for tool in tools}
+    assert await by_name["alpha_whoami"].ainvoke({}) == [
+        {"type": "text", "text": "alpha", "id": ANY}
+    ]
 
 
 def test_prebuilt_client_is_used_as_is() -> None:

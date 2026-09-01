@@ -1175,19 +1175,19 @@ wheels = [
 
 [[package]]
 name = "fastmcp"
-version = "4.0.0b4"
+version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastmcp-slim", extra = ["client", "server"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cd/a1/032858e40579c3047ac6f3eb1e97b59db7ad649234d55094a9bcf2d560c1/fastmcp-4.0.0b4.tar.gz", hash = "sha256:e3a8b0f4a8300b3da15584e7bff62d464fa5458b52903d86a6a2e149c61c3edb", size = 42180304, upload-time = "2026-08-26T22:59:07.827Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/02/4f53258f4fb2b88675246a022d1ed9f653d9129c0ddcc40f88479abde455/fastmcp-4.0.0.tar.gz", hash = "sha256:613d925f687609973575039afc6bd8874e60ab373e4f5b8c60f7860897063598", size = 42300863, upload-time = "2026-08-31T18:20:33.564Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/11/132d9030c8b3235784352e7132286bf2e4d010f4f295ba4b4ccf2c44ebd1/fastmcp-4.0.0b4-py3-none-any.whl", hash = "sha256:2996abab765172bfcf2e7d4bdde77438390ecd79af5b5a3af586e97eedf8f5e4", size = 8088, upload-time = "2026-08-26T22:59:04.265Z" },
+    { url = "https://files.pythonhosted.org/packages/24/6a/03160d06bcf2957caf02555d296b343136895e07a1160a6f4b85d0f672af/fastmcp-4.0.0-py3-none-any.whl", hash = "sha256:b041d669971f2325ab41797961bb4e729d1195d0da38d213bfbbcc6ddd65ca75", size = 8077, upload-time = "2026-08-31T18:20:31.342Z" },
 ]
 
 [[package]]
 name = "fastmcp-slim"
-version = "4.0.0b4"
+version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mcp-types" },
@@ -1198,9 +1198,9 @@ dependencies = [
     { name = "rich" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4c/1a/89f4ade73ba26c04b573464686a2bc656b1f910d3f92f6e0950971a7c64f/fastmcp_slim-4.0.0b4.tar.gz", hash = "sha256:9a57dfa7be461d6a65903f450af6e6b51d26266f50977bf7c30508fefaab8816", size = 679556, upload-time = "2026-08-26T22:58:39.69Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/29/b1/8abb7c56159cf817718c1fc6b4547fd0f35cb91f05659ffc1d4f5cee1198/fastmcp_slim-4.0.0.tar.gz", hash = "sha256:b6f78c26e369b4c29b485d7d7b662838d9631e765dc496b4560274762f144e6a", size = 683960, upload-time = "2026-08-31T18:20:09.778Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/15/7c/abf53a150e379563efc353e510ef412aae977929e7b289e1cd089002ffd3/fastmcp_slim-4.0.0b4-py3-none-any.whl", hash = "sha256:d20afd384efe388302d42280bdd2f5525af57d317e315f8e065a8de7517302b5", size = 852891, upload-time = "2026-08-26T22:58:38.348Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/4b/7bc65d74cc93684ec8b10d49a51fa14c5e4aa3a08120c7001a85bd2a159a/fastmcp_slim-4.0.0-py3-none-any.whl", hash = "sha256:75259ad8033af011f926f4b99cda9ce080b7853f9831d38f2056a392908e11c2", size = 857981, upload-time = "2026-08-31T18:20:07.951Z" },
 ]
 
 [package.optional-dependencies]
@@ -2286,7 +2286,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.3.18"
+version = "1.4.0a2"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -2329,7 +2329,7 @@ huggingface = [
     { name = "langchain-huggingface" },
 ]
 mcp = [
-    { name = "fastmcp-slim", extra = ["client"] },
+    { name = "fastmcp" },
 ]
 meta = [
     { name = "langchain-meta" },
@@ -2388,7 +2388,7 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastmcp-slim", extras = ["client"], marker = "extra == 'mcp'", specifier = ">=4.0.0b4,<5.0.0" },
+    { name = "fastmcp", marker = "extra == 'mcp'", specifier = ">=4.0.0,<5.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'", editable = "../partners/anthropic" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
     { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
@@ -2417,7 +2417,7 @@ provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-verte
 lint = [{ name = "ruff", specifier = ">=0.15.0,<0.17.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.26,<1.6.0" },
-    { name = "fastmcp", specifier = ">=4.0.0b4,<5.0.0" },
+    { name = "fastmcp", specifier = ">=4.0.0,<5.0.0" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
@@ -2439,14 +2439,14 @@ test-integration = [
     { name = "wrapt", specifier = ">=1.15.0,<3.0.0" },
 ]
 typing = [
-    { name = "fastmcp", specifier = ">=4.0.0b4,<5.0.0" },
+    { name = "fastmcp", specifier = ">=4.0.0,<5.0.0" },
     { name = "mypy", specifier = ">=2.1.0,<2.2.0" },
     { name = "types-toml", specifier = ">=0.10.8.20240310,<1.0.0.0" },
 ]
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.6.1"
+version = "1.7.0"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2456,7 +2456,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.120.0,<1.0.0" },
+    { name = "anthropic", specifier = ">=0.120.0,<2.0.0" },
     { name = "langchain-core", editable = "../core" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
@@ -2479,7 +2479,7 @@ test = [
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0,<4.0.0" },
     { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
-    { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
+    { name = "vcrpy", specifier = ">=8.2.0,<9.0.0" },
 ]
 test-integration = [{ name = "requests", specifier = ">=2.32.3,<3.0.0" }]
 typing = [
