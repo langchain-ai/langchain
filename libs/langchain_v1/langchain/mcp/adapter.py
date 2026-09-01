@@ -16,10 +16,6 @@ try:
     from fastmcp.client.group import ClientGroup
     from fastmcp.client.transports import ClientTransport
     from fastmcp.mcp_config import MCPConfig
-
-    # `fastmcp.Client` accepts the MCP SDK's own server type in-process, and
-    # aliases it as `SDKServer`. Imported from the SDK because that alias is
-    # not an explicit re-export.
     from mcp.server.mcpserver import MCPServer
 except ImportError as _import_error:
     msg = "Please install FastMCP to use `MCPAdapter` — `pip install fastmcp`."
@@ -71,22 +67,6 @@ transport, or `MCPConfig` — see `MCPAdapter`.
 `ClientGroup` is the one member `fastmcp.Client` does not accept at all, since a
 group is a peer of `Client` rather than a transport it could wrap.
 """
-
-
-def _group_declaring_elicitation(group: ClientGroup) -> ClientGroup:
-    """Rebuild `group` from clones that advertise the elicitation capability.
-
-    FastMCP declares the capability per client, so a group must declare it on
-    every member. Cloning rather than calling `set_elicitation_callback` on the
-    originals keeps the caller's own clients untouched, the same rule a
-    pre-built `Client` target follows.
-    """
-    clients = {}
-    for name, member in group.clients.items():
-        clone = member.new()
-        clone.set_elicitation_callback(_declare_elicitation_capability)
-        clients[name] = clone
-    return ClientGroup(clients)
 
 
 _URL_SCHEMES: Final = frozenset({"http", "https"})
@@ -198,17 +178,17 @@ class MCPAdapter:
         """Initialize the adapter around a FastMCP target, client, or group."""
         self._depth = 0
         if isinstance(target, ClientGroup):
-            # Interrupt mode arms clones, so the caller's own clients keep
-            # whatever handlers they were built with.
+            group = _group_declaring_elicitation(target) if elicitation == "interrupt" else target
             self._client: FastMCPClient[Any] | ClientGroup = (
-                _group_declaring_elicitation(target) if elicitation == "interrupt" else target
+                group if elicitation == "interrupt" else _ReentrantClientGroup(group)
             )
         elif isinstance(target, FastMCPClient):
             if elicitation == "interrupt":
                 # Configure an adapter-owned client so interrupt mode does not
                 # replace a callback on the caller's client.
-                self._client = target.new()
-                self._client.set_elicitation_callback(_declare_elicitation_capability)
+                client = target.new()
+                client.set_elicitation_callback(_declare_elicitation_capability)
+                self._client = client
             else:
                 self._client = target
         else:
@@ -225,7 +205,7 @@ class MCPAdapter:
                     _declare_elicitation_capability if elicitation == "interrupt" else None
                 ),
             )
-        self._elicitation = elicitation
+        self._elicitation: Literal["interrupt"] | None = elicitation
 
     @property
     def client(self) -> FastMCPClient[Any] | ClientGroup:
@@ -234,15 +214,7 @@ class MCPAdapter:
 
     async def __aenter__(self) -> Self:
         """Connect the underlying client or group for the duration of the context."""
-        if isinstance(self._client, ClientGroup):
-            # A `Client` counts its own nesting; a `ClientGroup` refuses re-entry
-            # outright, so the adapter counts for it. Without this, `list_tools()`
-            # called inside `async with MCPAdapter(group)` would raise.
-            if self._depth == 0:
-                await self._client.__aenter__()
-            self._depth += 1
-        else:
-            await self._client.__aenter__()  # type: ignore[no-untyped-call]
+        await self._client.__aenter__()
         return self
 
     async def __aexit__(
@@ -252,12 +224,7 @@ class MCPAdapter:
         traceback: TracebackType | None,
     ) -> None:
         """Release this context's hold on the underlying client or group."""
-        if isinstance(self._client, ClientGroup):
-            self._depth -= 1
-            if self._depth == 0:
-                await self._client.__aexit__(exc_type, exc_value, traceback)
-        else:
-            await self._client.__aexit__(exc_type, exc_value, traceback)  # type: ignore[no-untyped-call]
+        await self._client.__aexit__(exc_type, exc_value, traceback)
 
     async def list_tools(self, *, cache_mode: CacheMode = "use") -> list[BaseTool]:
         """Discover and adapt MCP tools for use with LangChain.
