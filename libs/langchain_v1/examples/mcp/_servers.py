@@ -7,6 +7,10 @@ started as its own process, and that entry point cannot be a lambda.
 
 from __future__ import annotations
 
+import json
+import os
+from pathlib import Path
+
 from fastmcp import Context, FastMCP
 from fastmcp.server.auth.providers.jwt import JWTVerifier, RSAKeyPair
 from fastmcp.server.dependencies import get_access_token
@@ -17,6 +21,7 @@ from mcp.types import (
     InputRequiredResult,
     TextContent,
 )
+from pydantic import SecretStr
 
 
 def weather_server() -> FastMCP[None]:
@@ -118,7 +123,24 @@ def run_calculator_http(host: str, port: int) -> None:
 ISSUER = "https://demo.issuer"
 AUDIENCE = "mcp-fleet"
 
-_KEYS = RSAKeyPair.generate()
+def _load_or_generate_keys() -> RSAKeyPair:
+    """Return one keypair shared across processes, or a fresh one per process.
+
+    A single process (the `run_server_in_process` examples) can generate its
+    own keypair and pass its public half to the server. A multi-process demo
+    cannot: the `langgraph dev` worker that mints tokens and the server process
+    that verifies them are different interpreters. Point both at the same PEM
+    file via `MCP_DEMO_KEYFILE` and they share one keypair; leave it unset and
+    every process keeps its own, exactly as before.
+    """
+    keyfile = os.environ.get("MCP_DEMO_KEYFILE")
+    if keyfile:
+        data = json.loads(Path(keyfile).read_text())
+        return RSAKeyPair(private_key=SecretStr(data["private_key"]), public_key=data["public_key"])
+    return RSAKeyPair.generate()
+
+
+_KEYS = _load_or_generate_keys()
 """Stands in for an identity provider, so the examples can mint real tokens."""
 
 PUBLIC_KEY = _KEYS.public_key

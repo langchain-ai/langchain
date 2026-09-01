@@ -19,7 +19,7 @@ our own, every client shares one response cache (SEP-2549) and carries a
 cache instead of the wire, and because the key includes the user, one user
 never sees another's catalog — the isolation a per-user fleet needs is a
 property of the key, not code we maintain. `cache_mode="use"` is what lets
-`get_tools` read the cache; a bare `ClientGroup.list_tools` would refresh it.
+`MCPAdapter.list_tools` read the cache; a bare `ClientGroup.list_tools` would refresh it.
 
 The cache only helps for servers that opt in (`cache_ttl`, `cache_scope`); see
 `_servers.py`. A server that sends no TTL hint is never cached, so a fleet of
@@ -35,7 +35,7 @@ Name it in a `langgraph.json`:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import httpx2
 from _servers import token_for
@@ -43,14 +43,19 @@ from fastmcp.client import Client
 from fastmcp.client.auth import BearerAuth
 from fastmcp.client.group import ClientGroup
 from fastmcp.client.transports import StreamableHttpTransport
+
+# These two are imported at runtime, not under TYPE_CHECKING: `langgraph dev`
+# classifies this factory by calling `typing.get_type_hints(make_graph)`, which
+# resolves every annotation on the function — including the return type. If
+# either name were only a type-checking import, that call raises `NameError`
+# and the server silently injects a config dict instead of the `ServerRuntime`,
+# so `runtime.user` fails at request time.
+from langgraph.graph.state import CompiledStateGraph  # noqa: TC002
+from langgraph_sdk.runtime import ServerRuntime  # noqa: TC002
 from mcp.client.caching import CacheConfig, InMemoryResponseCacheStore
 
 from langchain.agents import create_agent
 from langchain.mcp import MCPAdapter
-
-if TYPE_CHECKING:
-    from langgraph.graph.state import CompiledStateGraph
-    from langgraph_sdk.runtime import ServerRuntime
 
 SYSTEM_PROMPT = "You answer questions using the tools available to you."
 
@@ -123,7 +128,7 @@ async def make_graph(runtime: ServerRuntime) -> CompiledStateGraph:
     )
     # `cache_mode="use"` is the point: a bare `ClientGroup.list_tools` defaults
     # to `refresh` and would repopulate the cache instead of reading it.
-    tools = await MCPAdapter(group).get_tools(cache_mode="use")
+    tools = await MCPAdapter(group).list_tools(cache_mode="use")
     return create_agent(
         "anthropic:claude-sonnet-5",
         tools,

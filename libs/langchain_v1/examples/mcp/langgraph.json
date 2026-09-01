@@ -1,0 +1,10 @@
+{
+    "$schema": "https://langgra.ph/schema.json",
+    "dependencies": ["."],
+    "graphs": {
+        "fleet": "./graph_factory.py:make_graph"
+    },
+    "auth": {
+        "path": "./auth.py:auth"
+    }
+}
