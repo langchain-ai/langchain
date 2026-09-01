@@ -5911,6 +5911,56 @@ def test_runnable_parallel_uses_base_schema_for_v1_root_model() -> None:
         schema.parse_obj({"a": "not an int"})
 
 
+def test_runnable_parallel_input_schema_accepts_what_invoke_accepts() -> None:
+    """Steps that take any value must not add a required `root` key to the schema.
+
+    Regression test: the merged schema filtered out the Pydantic v1 root field name
+    (`__root__`) but not the v2 spelling (`root`), so the synthetic root of an
+    unconstrained step was merged in as if a caller had to supply it. That made the
+    input schema reject every value `invoke` accepts.
+    """
+    parallel = RunnableParallel(a=RunnablePassthrough(), b=RunnableLambda(lambda x: x))
+    schema = parallel.input_schema
+
+    for value in ({"k": 1}, "x", 5, [1]):
+        assert parallel.invoke(value) == {"a": value, "b": value}
+        assert schema.model_validate(value).root == value
+
+
+def test_runnable_parallel_input_schema_keeps_constraining_fields() -> None:
+    """An unconstrained step must not relax the fields a sibling step requires."""
+
+    class InputModel(BaseModel):
+        a: int
+
+    parallel = RunnableParallel(
+        foo=RunnablePassthrough(),
+        bar=_RunnableWithInputSchema(InputModel),
+    )
+    schema = cast("type[BaseModel]", parallel.input_schema)
+
+    assert schema.model_json_schema()["required"] == ["a"]
+    assert schema.model_validate({"a": 1}).a == 1
+    with pytest.raises(ValidationError):
+        schema.model_validate({"b": 1})
+
+
+def test_runnable_parallel_input_schema_preserves_field_named_root() -> None:
+    """A step may legitimately declare a field called `root`; it must survive."""
+
+    class InputModel(BaseModel):
+        root: str
+
+    parallel = RunnableParallel(
+        foo=RunnablePassthrough(),
+        bar=_RunnableWithInputSchema(InputModel),
+    )
+    schema = cast("type[BaseModel]", parallel.input_schema)
+
+    assert schema.model_json_schema()["required"] == ["root"]
+    assert schema.model_validate({"root": "x"}).root == "x"
+
+
 @skip_if_no_pydantic_v1
 def test_runnable_sequence_v1_input_schema() -> None:
     """A `RunnableSequence` exposes a Pydantic v1 first-step input schema.

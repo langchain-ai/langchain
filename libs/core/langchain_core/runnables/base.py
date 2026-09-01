@@ -102,6 +102,7 @@ from langchain_core.utils.pydantic import (
     TypeBaseModel,
     create_model_v2,
     get_fields,
+    is_pydantic_v2_subclass,
     model_json_schema,
 )
 
@@ -3069,6 +3070,19 @@ def _get_schema_field_definition(field: FieldInfo | ModelField) -> tuple[Any, An
     return (field.annotation, field.default)
 
 
+def _get_root_field_name(schema: TypeBaseModel) -> str | None:
+    """Return the name of `schema`'s synthetic root field, or `None` if it has none.
+
+    Root models wrap a single value in a synthetic field: `root` under Pydantic v2 and
+    `__root__` under v1. The v2 name is not reserved, so an ordinary model is free to
+    declare a real field called `root`; only the model being a `RootModel` tells the
+    two apart.
+    """
+    if is_pydantic_v2_subclass(schema):
+        return "root" if issubclass(schema, RootModel) else None
+    return "__root__" if "__root__" in get_fields(schema) else None
+
+
 _RUNNABLE_SEQUENCE_MIN_STEPS = 2
 
 
@@ -4033,25 +4047,46 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             s.get_input_jsonschema(config).get("type", "object") == "object"
             for s in self.steps__.values()
         ):
-            for step in self.steps__.values():
-                step_input_schema = step.get_input_schema(config)
-                fields = get_fields(step_input_schema)
-                root_field = fields.get("root")
-                if root_field is not None and root_field.annotation != Any:
+            # Each step's schema is paired with the name of its synthetic root field,
+            # if it has one.
+            step_schemas = [
+                (schema, _get_root_field_name(schema))
+                for schema in (
+                    step.get_input_schema(config) for step in self.steps__.values()
+                )
+            ]
+
+            for step_input_schema, root_name in step_schemas:
+                if root_name is None:
+                    continue
+                root_field = get_fields(step_input_schema)[root_name]
+                if root_field.annotation == Any:
+                    # The step takes any value, so it constrains nothing.
+                    continue
+                # The step constrains the input as a whole rather than by key, so
+                # there is nothing to merge with its siblings.
+                if is_pydantic_v2_subclass(step_input_schema):
                     return super().get_input_schema(config)
-                root_field = fields.get("__root__")
-                if root_field is not None and root_field.annotation != Any:
-                    return step_input_schema
+                return step_input_schema
+
+            # A synthetic root field describes how a step's schema is built, not a key
+            # the caller supplies, so it must not become a field of the merged model.
+            field_definitions = {
+                k: _get_schema_field_definition(v)
+                for step_input_schema, root_name in step_schemas
+                for k, v in get_fields(step_input_schema).items()
+                if k != root_name
+            }
+            if not field_definitions:
+                # Every step takes an unconstrained value, so the mapping as a whole
+                # accepts whatever its steps accept. Building an empty object model
+                # here would reject the non-mapping inputs that `invoke` handles.
+                return super().get_input_schema(config)
 
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model_v2(
                 self.get_name("Input"),
-                field_definitions={
-                    k: _get_schema_field_definition(v)
-                    for step in self.steps__.values()
-                    for k, v in get_fields(step.get_input_schema(config)).items()
-                    if k != "__root__"
-                },
+                field_definitions=field_definitions,
             )
 
         return super().get_input_schema(config)
