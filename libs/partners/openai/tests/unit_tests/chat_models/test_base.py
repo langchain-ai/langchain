@@ -5234,3 +5234,73 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     assert llm.openai_api_base == "https://api.openai.com/v1"
     assert isinstance(llm.openai_api_key, SecretStr)
     assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+def test_langsmith_gateway_marker_resolves_key_priority(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The serialized marker restores LangSmith gateway initialization semantics."""
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("LANGSMITH_API_KEY", "langsmith-key")
+
+    model = ChatOpenAI(model="custom/foo", use_langsmith_gateway=True)
+
+    assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
+    assert isinstance(model.openai_api_key, SecretStr)
+    assert model.openai_api_key.get_secret_value() == "gateway-key"
+    assert model.use_responses_api is True
+
+
+def test_langsmith_gateway_marker_falls_back_to_langsmith_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The general LangSmith key remains a fallback for gateway models."""
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY_API_KEY", raising=False)
+    monkeypatch.setenv("LANGSMITH_API_KEY", "langsmith-key")
+
+    model = ChatOpenAI(model="custom/foo", use_langsmith_gateway=True)
+
+    assert isinstance(model.openai_api_key, SecretStr)
+    assert model.openai_api_key.get_secret_value() == "langsmith-key"
+
+
+def test_langsmith_gateway_marker_requires_langsmith_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Gateway models fail clearly when neither supported key is configured."""
+    for key in (
+        "OPENAI_API_KEY",
+        "LANGSMITH_GATEWAY",
+        "LANGSMITH_GATEWAY_API_KEY",
+        "LANGSMITH_API_KEY",
+    ):
+        monkeypatch.delenv(key, raising=False)
+
+    with pytest.raises(openai.OpenAIError, match="Missing credentials"):
+        ChatOpenAI(model="custom/foo", use_langsmith_gateway=True)
+
+
+def test_langsmith_gateway_marker_survives_serialization(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Deserialization reruns gateway key resolution.
+
+    It does not require an OpenAI API key.
+    """
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    model = ChatOpenAI(model="custom/foo", use_langsmith_gateway=True)
+
+    serialized = dumps(model)
+    restored = loads(serialized, allowed_objects="all")
+
+    assert isinstance(restored, ChatOpenAI)
+    assert restored.use_langsmith_gateway is True
+    assert restored.openai_api_base == "https://gateway.smith.langchain.com/v1"
+    assert isinstance(restored.openai_api_key, SecretStr)
+    assert restored.openai_api_key.get_secret_value() == "gateway-key"

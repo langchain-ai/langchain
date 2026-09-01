@@ -34,6 +34,7 @@ def _init_langsmith(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
         api_key_env=("LANGSMITH_GATEWAY_API_KEY", "LANGSMITH_API_KEY"),
         default_base_url=_LANGSMITH_GATEWAY_DEFAULT_BASE,
     )
+    kwargs["use_langsmith_gateway"] = True
     kwargs["use_responses_api"] = True
     return cls(**kwargs)
 

@@ -72,6 +72,7 @@ def test_init_chat_model_langsmith_defaults() -> None:
     assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
     assert isinstance(model.openai_api_key, SecretStr)
     assert model.openai_api_key.get_secret_value() == "gateway-key"
+    assert model.use_langsmith_gateway is True
     assert model.use_responses_api is True
 
 

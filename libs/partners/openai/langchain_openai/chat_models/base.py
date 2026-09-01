@@ -173,6 +173,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_LANGSMITH_GATEWAY_DEFAULT_BASE = "https://gateway.smith.langchain.com/v1"
+
 # This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
@@ -1179,6 +1181,14 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in `langchain-openai` 0.3.26"
     """
 
+    use_langsmith_gateway: bool = False
+    """Whether to route requests through the LangSmith model gateway.
+
+    When enabled, the API key is resolved from `LANGSMITH_GATEWAY_API_KEY`,
+    falling back to `LANGSMITH_API_KEY`, and the Responses API is enabled by
+    default. An explicit `base_url` overrides the default LangSmith gateway URL.
+    """
+
     use_responses_api: bool | None = None
     """Whether to use the Responses API instead of the Chat API.
 
@@ -1318,13 +1328,27 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORGANIZATION")
         )
         # Resolve base URL and API key, applying LangSmith gateway settings.
-        _gateway_config = _resolve_gateway_config(
-            base_url=self.openai_api_base,
-            api_key=self.openai_api_key,
-            provider_path="openai/v1",
-            base_url_env="OPENAI_API_BASE",
-            api_key_env="OPENAI_API_KEY",
-        )
+        if self.use_langsmith_gateway:
+            _gateway_config = _resolve_gateway_config(
+                base_url=self.openai_api_base,
+                api_key=self.openai_api_key,
+                provider_path="v1",
+                api_key_env=(
+                    "LANGSMITH_GATEWAY_API_KEY",
+                    "LANGSMITH_API_KEY",
+                ),
+                default_base_url=_LANGSMITH_GATEWAY_DEFAULT_BASE,
+            )
+            if self.use_responses_api is None:
+                self.use_responses_api = True
+        else:
+            _gateway_config = _resolve_gateway_config(
+                base_url=self.openai_api_base,
+                api_key=self.openai_api_key,
+                provider_path="openai/v1",
+                base_url_env="OPENAI_API_BASE",
+                api_key_env="OPENAI_API_KEY",
+            )
         self.openai_api_base = _gateway_config.base_url
         self.openai_api_key = _gateway_config.api_key
         _base_url_from_gateway = _gateway_config.base_url_from_gateway
