@@ -101,7 +101,10 @@ class ChatOpenRouter(BaseChatModel):
         export OPENROUTER_API_KEY="your-api-key"
         ```
 
-    ??? info "Key init args — completion params"
+    ??? info
+
+    Note: The `timeout` parameter follows LangChain's convention of being in seconds.
+    It will be converted to milliseconds when passed to the OpenRouter API.o "Key init args — completion params"
 
         | Param | Type | Description |
         | ----- | ---- | ----------- |
