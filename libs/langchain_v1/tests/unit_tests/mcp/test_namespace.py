@@ -48,7 +48,7 @@ def test_the_public_names_survive_the_warning() -> None:
         "MCPAdapter",
         "MCPAdapterTarget",
         "MCPToolArtifact",
-        "convert_mcp_tool_to_langchain_tool",
+        "as_langchain_tool",
     ]
     for name in langchain.mcp.__all__:
         assert hasattr(langchain.mcp, name)

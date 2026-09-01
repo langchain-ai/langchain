@@ -21,7 +21,7 @@ from mcp.types import (
     ToolAnnotations,
 )
 
-from langchain.mcp import convert_mcp_tool_to_langchain_tool
+from langchain.mcp import as_langchain_tool
 from langchain.mcp.tools import _convert_call_tool_result, _convert_content_block
 
 
@@ -48,7 +48,7 @@ async def _one_tool(
     async with client:
         [mcp_tool] = await client.list_tools()
     return (
-        convert_mcp_tool_to_langchain_tool(mcp_tool, client, elicitation=elicitation),
+        as_langchain_tool(mcp_tool, client, elicitation=elicitation),
         client,
     )
 
@@ -167,7 +167,7 @@ def test_annotations_and_meta_are_kept_as_metadata() -> None:
         _meta={"origin": "crm"},
     )
 
-    tool = convert_mcp_tool_to_langchain_tool(mcp_tool, Client("https://example.com/mcp"))
+    tool = as_langchain_tool(mcp_tool, Client("https://example.com/mcp"))
 
     assert tool.metadata == {"destructiveHint": True, "_meta": {"origin": "crm"}}
 
@@ -175,7 +175,7 @@ def test_annotations_and_meta_are_kept_as_metadata() -> None:
 def test_tool_without_annotations_or_meta_has_no_metadata() -> None:
     mcp_tool = Tool(name="noop", inputSchema={"type": "object", "properties": {}})
 
-    tool = convert_mcp_tool_to_langchain_tool(mcp_tool, Client("https://example.com/mcp"))
+    tool = as_langchain_tool(mcp_tool, Client("https://example.com/mcp"))
 
     assert tool.metadata is None
     assert tool.description == ""

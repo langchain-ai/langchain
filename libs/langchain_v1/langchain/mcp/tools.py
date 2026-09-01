@@ -187,7 +187,7 @@ def _tool_metadata(tool: Tool) -> dict[str, Any] | None:
     return metadata or None
 
 
-def convert_mcp_tool_to_langchain_tool(
+def as_langchain_tool(
     tool: Tool,
     client: Client[Any],
     *,
@@ -221,12 +221,12 @@ def convert_mcp_tool_to_langchain_tool(
         ```python
         from fastmcp import Client
 
-        from langchain.mcp import convert_mcp_tool_to_langchain_tool
+        from langchain.mcp import as_langchain_tool
 
         client = Client("https://example.com/mcp")
         async with client:
             mcp_tools = await client.list_tools()
-        tools = [convert_mcp_tool_to_langchain_tool(t, client) for t in mcp_tools]
+        tools = [as_langchain_tool(t, client) for t in mcp_tools]
         ```
     """
 
@@ -257,4 +257,4 @@ def convert_mcp_tool_to_langchain_tool(
     )
 
 
-__all__ = ["MCPToolArtifact", "convert_mcp_tool_to_langchain_tool"]
+__all__ = ["MCPToolArtifact", "as_langchain_tool"]
