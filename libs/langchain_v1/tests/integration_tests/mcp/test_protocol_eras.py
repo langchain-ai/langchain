@@ -102,7 +102,7 @@ async def test_one_adapter_serves_a_fleet_spanning_both_protocol_eras() -> None:
         }
 
         async with MCPAdapter(config) as adapter:
-            tools = await adapter.get_tools()
+            tools = await adapter.list_tools()
             assert sorted(tool.name for tool in tools) == ["handshake_whoami", "modern_whoami"]
 
             answers = {
@@ -137,7 +137,7 @@ async def test_a_handshake_era_backend_pulls_the_whole_fleet_onto_its_era() -> N
         )
 
         async with MCPAdapter(Client(transport)) as adapter:
-            await adapter.get_tools()
+            await adapter.list_tools()
 
             assert transport.legacy_only is True
             assert adapter.client.protocol_version == _HANDSHAKE_ERA
@@ -154,8 +154,8 @@ async def test_separate_adapters_keep_their_own_protocol_era() -> None:
             MCPAdapter(handshake_client) as handshake_adapter,
             MCPAdapter(modern_client) as modern_adapter,
         ):
-            [handshake_tool] = await handshake_adapter.get_tools()
-            [modern_tool] = await modern_adapter.get_tools()
+            [handshake_tool] = await handshake_adapter.list_tools()
+            [modern_tool] = await modern_adapter.list_tools()
 
             call = {"name": "whoami", "args": {}, "id": "c1", "type": "tool_call"}
             answers = await asyncio.gather(handshake_tool.ainvoke(call), modern_tool.ainvoke(call))

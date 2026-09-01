@@ -67,7 +67,7 @@ def _agent(tools: list[Any]) -> Any:
 @pytest.mark.asyncio
 async def test_interrupt_carries_the_question_and_resume_completes_the_call() -> None:
     calls = {"resolver": 0, "body": 0}
-    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").get_tools()
+    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").list_tools()
     agent = _agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -100,7 +100,7 @@ async def test_interrupt_carries_the_question_and_resume_completes_the_call() ->
 async def test_the_tool_body_runs_once_despite_the_replay() -> None:
     """Resuming re-issues the call, but only the answered round reaches the body."""
     calls = {"resolver": 0, "body": 0}
-    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").get_tools()
+    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").list_tools()
     agent = _agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -123,7 +123,7 @@ async def test_the_tool_body_runs_once_despite_the_replay() -> None:
 @pytest.mark.asyncio
 async def test_declining_leaves_the_tool_unrun() -> None:
     calls = {"resolver": 0, "body": 0}
-    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").get_tools()
+    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").list_tools()
     agent = _agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -186,7 +186,7 @@ async def test_without_the_opt_in_the_capability_is_never_declared() -> None:
     silently running without one.
     """
     calls = {"resolver": 0, "body": 0}
-    tools = await MCPAdapter(_restaurant_server(calls)).get_tools()
+    tools = await MCPAdapter(_restaurant_server(calls)).list_tools()
     agent = _agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -362,7 +362,7 @@ def _accept_all(request: dict[str, Any], answer: str) -> dict[str, Any]:
 async def test_several_requests_in_one_round_share_a_single_interrupt() -> None:
     """Parallel questions arrive together, so one resume answers them all."""
     calls = {"round_1": 0, "round_2": 0, "body": 0}
-    tools = await MCPAdapter(_multi_question_server(calls), elicitation="interrupt").get_tools()
+    tools = await MCPAdapter(_multi_question_server(calls), elicitation="interrupt").list_tools()
     agent = _trip_agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -381,7 +381,7 @@ async def test_several_requests_in_one_round_share_a_single_interrupt() -> None:
 async def test_sequential_rounds_interrupt_once_each_and_resume_in_order() -> None:
     """Two rounds need two resumes, correlated by request key rather than by id."""
     calls = {"round_1": 0, "round_2": 0, "body": 0}
-    tools = await MCPAdapter(_multi_question_server(calls), elicitation="interrupt").get_tools()
+    tools = await MCPAdapter(_multi_question_server(calls), elicitation="interrupt").list_tools()
     agent = _trip_agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -407,7 +407,7 @@ async def test_sequential_rounds_interrupt_once_each_and_resume_in_order() -> No
 async def test_answering_only_some_of_a_round_is_rejected() -> None:
     """A partial answer must fail loudly rather than reach the server."""
     calls = {"round_1": 0, "round_2": 0, "body": 0}
-    tools = await MCPAdapter(_multi_question_server(calls), elicitation="interrupt").get_tools()
+    tools = await MCPAdapter(_multi_question_server(calls), elicitation="interrupt").list_tools()
     agent = _trip_agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -424,7 +424,7 @@ async def test_answering_only_some_of_a_round_is_rejected() -> None:
 @pytest.mark.asyncio
 async def test_an_unknown_action_is_rejected() -> None:
     calls = {"resolver": 0, "body": 0}
-    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").get_tools()
+    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").list_tools()
     agent = _agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
