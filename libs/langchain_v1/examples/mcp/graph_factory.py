@@ -25,36 +25,37 @@ The cache only helps for servers that opt in (`cache_ttl`, `cache_scope`); see
 `_servers.py`. A server that sends no TTL hint is never cached, so a fleet of
 arbitrary third-party servers would fall back to fetching every time.
 
-    uv run examples/mcp/graph_factory.py
-
-To serve it with `langgraph dev`, name the factory in a `langgraph.json` and
-pass the caller's identity as a run config value:
+`make_graph` is the factory `langgraph dev` calls per run. It reads the
+caller's identity off the injected `ServerRuntime` and mints that user's MCP
+token, so the fleet a run talks to is the fleet its user is allowed to see.
+Name it in a `langgraph.json`:
 
     {"dependencies": ["."], "graphs": {"fleet": "./examples/mcp/graph_factory.py:make_graph"}}
 """
 
 from __future__ import annotations
 
-import asyncio
 from typing import TYPE_CHECKING, Any
 
 import httpx2
-from _servers import PUBLIC_KEY, run_guarded_server, token_for
+from _servers import token_for
 from fastmcp.client import Client
 from fastmcp.client.auth import BearerAuth
 from fastmcp.client.group import ClientGroup
 from fastmcp.client.transports import StreamableHttpTransport
-from fastmcp.utilities.tests import run_server_in_process
 from mcp.client.caching import CacheConfig, InMemoryResponseCacheStore
 
 from langchain.agents import create_agent
 from langchain.mcp import MCPAdapter
 
 if TYPE_CHECKING:
-    from langchain_core.tools import BaseTool
     from langgraph.graph.state import CompiledStateGraph
+    from langgraph_sdk.runtime import ServerRuntime
 
 SYSTEM_PROMPT = "You answer questions using the tools available to you."
+
+SERVERS: dict[str, str] = {}
+"""Server name to URL. A deployment reads this from its own configuration."""
 
 _POOL = httpx2.AsyncHTTPTransport()
 """One connection pool, shared by every user and every server."""
@@ -83,9 +84,6 @@ def _client_factory(**kwargs: Any) -> httpx2.AsyncClient:
     return httpx2.AsyncClient(transport=_SharedPool(), **kwargs)
 
 
-SERVERS: dict[str, str] = {}
-"""Server name to URL. Populated by `main`; a deployment reads it from config."""
-
 _CACHE = InMemoryResponseCacheStore()
 """One response cache, shared by every client. Entries are partitioned by user.
 
@@ -96,14 +94,17 @@ into another's.
 """
 
 
-async def tools_for(user: str) -> list[BaseTool]:
-    """Return this user's tools, discovering them against that user's fleet.
+async def make_graph(runtime: ServerRuntime) -> CompiledStateGraph:
+    """Build the agent for one run, over that run's user's fleet.
 
-    Every client speaks as this user and reads the shared cache under this
-    user's key, so discovery is theirs alone: a server that filters by
-    authorization returns only the catalog this user is allowed to see, and a
-    repeat call is served from the cache rather than the wire.
+    The user comes off the `ServerRuntime` the server injects — the
+    authenticated caller when custom auth is configured, and `anonymous`
+    otherwise so the example still runs. Everything below is that user's alone:
+    their token on every request, and a response cache read under their key, so
+    an authorization-filtered server returns only the catalog they may see and
+    a repeat discovery is served from cache rather than the wire.
     """
+    user = runtime.user.identity if runtime.user is not None else "anonymous"
     auth = BearerAuth(token_for(user))
     group = ClientGroup(
         {
@@ -119,45 +120,9 @@ async def tools_for(user: str) -> list[BaseTool]:
     )
     # `cache_mode="use"` is the point: a bare `ClientGroup.list_tools` defaults
     # to `refresh` and would repopulate the cache instead of reading it.
-    return await MCPAdapter(group).get_tools(cache_mode="use")
-
-
-async def make_graph(config: dict[str, Any] | None = None) -> CompiledStateGraph:
-    """Build the agent for one run, over that run's user's fleet."""
-    user = (config or {}).get("configurable", {}).get("user_id", "anonymous")
+    tools = await MCPAdapter(group).get_tools(cache_mode="use")
     return create_agent(
         "anthropic:claude-sonnet-5",
-        await tools_for(user),
+        tools,
         system_prompt=SYSTEM_PROMPT,
     )
-
-
-async def main() -> None:
-    """Run two users through the fleet and show what each server saw."""
-    for user in ("alice", "bob"):
-        tools = {tool.name: tool for tool in await tools_for(user)}
-        for name in sorted(SERVERS):
-            [block] = await tools[f"{name}_whoami"].ainvoke({})
-            print(f"   run as {user:6} -> {name} says: {block['text']}")
-
-    # A second pass for alice reads her catalog straight from the cache: the
-    # entry count does not grow, because nothing new was fetched.
-    before = len(_CACHE._entries)  # noqa: SLF001
-    await tools_for("alice")
-    after = len(_CACHE._entries)  # noqa: SLF001
-
-    served = "no (served from cache)" if after == before else "yes"
-    print("\ncached catalogs, one per user :", after)
-    print("alice's repeat discovery fetched:", served)
-    print("shared pool connections       :", len(list(_POOL._pool.connections)))  # noqa: SLF001
-
-
-if __name__ == "__main__":
-    with (
-        run_server_in_process(
-            run_guarded_server, name="calendar", public_key=PUBLIC_KEY
-        ) as calendar,
-        run_server_in_process(run_guarded_server, name="docs", public_key=PUBLIC_KEY) as docs,
-    ):
-        SERVERS.update({"calendar": f"{calendar}/mcp", "docs": f"{docs}/mcp"})
-        asyncio.run(main())
