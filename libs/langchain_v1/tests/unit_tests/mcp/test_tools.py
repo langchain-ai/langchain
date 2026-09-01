@@ -159,7 +159,7 @@ async def test_tool_stays_callable_after_its_client_context_exits() -> None:
     assert _blocks_without_ids(message.content) == [{"type": "text", "text": "8"}]
 
 
-def test_annotations_and_meta_are_kept_as_metadata() -> None:
+def test_annotations_and_meta_are_kept_under_the_mcp_namespace() -> None:
     mcp_tool = Tool(
         name="delete",
         inputSchema={"type": "object", "properties": {}},
@@ -169,7 +169,10 @@ def test_annotations_and_meta_are_kept_as_metadata() -> None:
 
     tool = as_langchain_tool(mcp_tool, Client("https://example.com/mcp"))
 
-    assert tool.metadata == {"destructiveHint": True, "_meta": {"origin": "crm"}}
+    # Annotations are snake_case (no wire aliases) and grouped under `mcp.tool`.
+    assert tool.metadata == {
+        "mcp": {"tool": {"annotations": {"destructive_hint": True}, "_meta": {"origin": "crm"}}}
+    }
 
 
 def test_tool_without_annotations_or_meta_has_no_metadata() -> None:
@@ -179,6 +182,27 @@ def test_tool_without_annotations_or_meta_has_no_metadata() -> None:
 
     assert tool.metadata is None
     assert tool.description == ""
+
+
+@pytest.mark.asyncio
+async def test_server_identity_is_kept_under_the_mcp_namespace() -> None:
+    server: FastMCP[None] = FastMCP("crm", version="2.1.0")
+
+    @server.tool
+    def noop() -> str:
+        """Do nothing."""
+        return "ok"
+
+    # Convert while connected, as the adapter does: `server_info` is only
+    # populated for the life of the client's context.
+    client: Client[Any] = Client(server)
+    async with client:
+        [mcp_tool] = await client.list_tools()
+        tool = as_langchain_tool(mcp_tool, client)
+
+    assert tool.metadata is not None
+    assert tool.metadata["mcp"]["server"]["name"] == "crm"
+    assert tool.metadata["mcp"]["server"]["version"] == "2.1.0"
 
 
 def test_image_content_becomes_an_image_block() -> None:
