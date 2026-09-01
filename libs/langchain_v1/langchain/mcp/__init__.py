@@ -16,7 +16,7 @@ import warnings
 
 from langchain_core._api import LangChainBetaWarning
 
-from langchain.mcp.adapter import MCPAdapter, MCPAdapterTarget
+from langchain.mcp.adapter import MCPAdapter
 from langchain.mcp.tools import MCPToolArtifact, as_langchain_tool
 
 # Warned on import rather than through `@beta`, which annotates a function or
@@ -31,7 +31,6 @@ warnings.warn(
 
 __all__ = [
     "MCPAdapter",
-    "MCPAdapterTarget",
     "MCPToolArtifact",
     "as_langchain_tool",
 ]

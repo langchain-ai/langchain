@@ -11,11 +11,15 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from _servers import run_weather_http, weather_server
 from fastmcp.utilities.tests import run_server_in_process
 
-from langchain.mcp import MCPAdapter, MCPAdapterTarget
+from langchain.mcp import MCPAdapter
+
+if TYPE_CHECKING:
+    from langchain.mcp.adapter import MCPAdapterTarget
 
 _STDIO_SERVER = Path(__file__).parent / "_stdio_server.py"
 
