@@ -356,7 +356,9 @@ class HuggingFacePipeline(BaseLLM):
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
                     text = response["summary_text"]
-                elif self.pipeline.task in "translation":
+                elif self.pipeline.task == "translation" or (
+                    self.pipeline.task.startswith("translation_")
+                ):
                     text = response["translation_text"]
                 else:
                     msg = (
