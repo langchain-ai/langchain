@@ -29,7 +29,7 @@ def _model() -> FakeToolCallingModel:
 def test_trace_inputs_are_omitted() -> None:
     policy = ToolErrorMiddleware.trace_policy
     assert policy.process_inputs is not None
-    assert policy.process_inputs({"request": {"secret": "value"}}) == {}
+    assert policy.process_inputs({"request": {"foo": "bar"}}) == {}
 
 
 def test_tool_error_handled_returns_tool_message() -> None:
