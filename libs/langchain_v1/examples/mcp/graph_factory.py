@@ -1,19 +1,4 @@
-"""A per-user MCP fleet behind a `langgraph dev` graph factory.
-
-Each resource is shared at a different level:
-
-- connections: one `httpx` pool for everyone (lives in a transport clients
-  borrow, since FastMCP closes the client it's handed).
-- clients: one per user (credentials live on the transport, so a client speaks
-  as exactly one identity).
-- discovery: cached per user via `CacheConfig`; the user is folded into the
-  cache key, so one user never sees another's catalog.
-
-`make_graph` is the factory `langgraph dev` calls per run. Register it in a
-`langgraph.json`:
-
-    {"dependencies": ["."], "graphs": {"fleet": "./graph_factory.py:make_graph"}}
-"""
+"""A per-user MCP fleet behind a `langgraph dev` graph factory."""
 
 from __future__ import annotations
 
@@ -42,27 +27,22 @@ SERVERS = {
 }
 
 _POOL = httpx2.AsyncHTTPTransport()  # one pool, shared by everyone
-
-
-class _SharedPool(httpx2.AsyncBaseTransport):
-    """Lends `_POOL` out without letting a borrower close it."""
-
-    handle_async_request = _POOL.handle_async_request
-
-    async def aclose(self) -> None:
-        """The pool outlives any one client."""
-
-
-def _client_factory(**kwargs: Any) -> httpx2.AsyncClient:
-    # Forward `**kwargs` so the caller's `auth`/`headers` reach the request.
-    return httpx2.AsyncClient(transport=_SharedPool(), **kwargs)
-
-
 _CACHE = InMemoryResponseCacheStore()  # one cache, partitioned by user
 
 
+class _SharedPool(httpx2.AsyncBaseTransport):
+    # Lends `_POOL` out without letting a borrower close it.
+    handle_async_request = _POOL.handle_async_request
+
+    async def aclose(self) -> None: ...
+
+
+def _client_factory(**kwargs: Any) -> httpx2.AsyncClient:
+    return httpx2.AsyncClient(transport=_SharedPool(), **kwargs)
+
+
 async def make_graph(runtime: ServerRuntime) -> CompiledStateGraph:
-    """Build the agent for one run, over that run's user's fleet."""
+    """Build an agent over the calling user's MCP fleet (called per run)."""
     user = runtime.user.identity if runtime.user is not None else "anonymous"
     auth = BearerAuth(token_for(user))
     group = ClientGroup(
