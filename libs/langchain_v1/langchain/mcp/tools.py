@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol, TypedDict
 
+from fastmcp.client.group import ClientGroup
 from langchain_core.messages.content import (
     FileContentBlock,
     ImageContentBlock,
@@ -31,6 +32,7 @@ from mcp.types import (
     TextResourceContents,
 )
 
+from langchain.mcp._client import _client_for_tool
 from langchain.mcp.elicitation import _call_tool_with_interrupts, _drives_interrupts
 
 if TYPE_CHECKING:
@@ -179,7 +181,7 @@ def _convert_call_tool_result(
     return tool_content, artifact
 
 
-def _tool_metadata(tool: Tool, client: Client[Any]) -> dict[str, Any] | None:
+def _tool_metadata(tool: Tool, client: Client[Any] | None) -> dict[str, Any] | None:
     """Collect the MCP tool- and server-level metadata worth keeping.
 
     Everything lives under a single `mcp` namespace so a consumer can tell an
@@ -203,14 +205,14 @@ def _tool_metadata(tool: Tool, client: Client[Any]) -> dict[str, Any] | None:
     # Server identity comes off the connection, not the tool — a `Tool` carries
     # no server field. It is populated while the client is connected, which is
     # the case at conversion time.
-    if client.server_info is not None:
+    if client is not None and client.server_info is not None:
         mcp["server"] = client.server_info.model_dump(exclude_none=True)
     return {"mcp": mcp} if mcp else None
 
 
-def as_langchain_tool(
+async def as_langchain_tool(
     tool: Tool,
-    client: Client[Any],
+    client: Client[Any] | ClientGroup,
 ) -> BaseTool:
     """Convert one MCP tool into a LangChain tool.
 
@@ -247,13 +249,15 @@ def as_langchain_tool(
         client = Client("https://example.com/mcp")
         async with client:
             mcp_tools = await client.list_tools()
-        tools = [as_langchain_tool(t, client) for t in mcp_tools]
+        tools = [await as_langchain_tool(t, client) for t in mcp_tools]
         ```
     """
-    # Routing is read off the client: one armed with the interrupt-driving
-    # sentinel drives the loop, and any other handler is a caller's own that
-    # answers the legacy way through the plain call.
-    drives_interrupts = _drives_interrupts(client)
+    if isinstance(client, ClientGroup):
+        tool_route = await client.resolve_tool(tool.name)
+        requesting_client = tool_route.client
+    else:
+        requesting_client = tool_route.client
+    drives_interrupts = _drives_interrupts(requesting_client)
 
     async def call_tool(
         **arguments: Any,
@@ -274,10 +278,7 @@ def as_langchain_tool(
         args_schema=tool.input_schema,
         coroutine=call_tool,
         response_format="content_and_artifact",
-        metadata=_tool_metadata(tool, client),
-        # MCP `isError` is a model-visible tool result, not a transport
-        # exception. `BaseTool`'s narrow `ToolException` path preserves the
-        # result content while formatting it as `ToolMessage(status="error")`.
+        metadata=_tool_metadata(tool, requesting_client),
         handle_tool_error=_handle_mcp_tool_error,
     )
 

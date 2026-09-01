@@ -243,30 +243,8 @@ class MCPAdapter:
         # `async with self` rather than the client: it is what counts a group's
         # nesting, and for a plain client it is the same reentrant hold as before.
         async with self:
-            if isinstance(self._client, ClientGroup):
-                return await self._group_tools(self._client, cache_mode=cache_mode)
             remote_tools = await self._client.list_tools(cache_mode=cache_mode)
-            return [as_langchain_tool(tool, self._client) for tool in remote_tools]
-
-    async def _group_tools(self, group: ClientGroup, *, cache_mode: CacheMode) -> list[BaseTool]:
-        """Adapt a group's catalog, binding each tool to the client that serves it.
-
-        Tools hold the member client rather than the group, so a call never
-        re-enters the group — which is what lets them stay callable after this
-        adapter's context exits, exactly as they do for a single client.
-        """
-        tools = []
-        for listed in await group.list_tools(cache_mode=cache_mode):
-            route = await group.resolve_tool(listed.name)
-            # `list_tools` namespaces the catalog as `{server}_{tool}`, but the
-            # server only knows the tool by its own name. Convert against that
-            # name so the call is right, then publish under the fleet-wide one,
-            # which is what makes two servers' identically named tools distinct.
-            upstream = listed.model_copy(update={"name": route.upstream_name})
-            adapted = as_langchain_tool(upstream, route.client)
-            adapted.name = listed.name
-            tools.append(adapted)
-        return tools
+            return [await as_langchain_tool(tool, self._client) for tool in remote_tools]
 
 
 __all__ = ["MCPAdapter", "MCPAdapterTarget"]

@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from collections.abc import Coroutine
 
     from fastmcp.client import Client
+    from fastmcp.client.group import ClientGroup
     from mcp.types import InputRequest
 
 
@@ -284,7 +285,7 @@ async def _await_monitored(client: Client[Any], coro: Coroutine[Any, Any, _Resul
 
 
 async def _call_tool_with_interrupts(
-    client: Client[Any],
+    client: Client[Any] | ClientGroup,
     tool_name: str,
     arguments: dict[str, Any],
 ) -> CallToolResult:
@@ -307,9 +308,8 @@ async def _call_tool_with_interrupts(
         NotImplementedError: On a sampling/roots request or a continuation round.
         ValueError: If a resumed answer is missing or malformed.
     """
-    session = client.session
     result = await _await_monitored(
-        client, session.call_tool(tool_name, arguments, allow_input_required=True)
+        client, client.call_tool(tool_name, arguments, allow_input_required=True)
     )
 
     while isinstance(result, InputRequiredResult):
@@ -335,7 +335,7 @@ async def _call_tool_with_interrupts(
 
         result = await _await_monitored(
             client,
-            session.call_tool(
+            client.call_tool(
                 tool_name,
                 arguments,
                 input_responses=responses,
