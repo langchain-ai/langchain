@@ -572,3 +572,23 @@ def test_convert_to_v1_from_anthropic_malformed_citations() -> None:
             ],
         },
     ]
+
+
+def test_non_standard_block_does_not_mutate_message_content() -> None:
+    from copy import deepcopy
+
+    message = AIMessage(
+        content=[{"type": "custom", "payload": "value", "index": 3}],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    original = deepcopy(message.content)
+    blocks = message.content_blocks
+    assert blocks == [
+        {
+            "type": "non_standard",
+            "value": {"type": "custom", "payload": "value"},
+            "index": 3,
+        }
+    ]
+    assert message.content == original
+
