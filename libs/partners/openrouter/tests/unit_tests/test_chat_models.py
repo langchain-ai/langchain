@@ -2866,17 +2866,18 @@ class TestOpenRouterSpecificParams:
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["server_url"] == "https://custom.openrouter.ai/api/v1"
 
-    def test_timeout_passed_to_client(self) -> None:
-        """Test that timeout is passed as timeout_ms to the SDK client."""
+    @pytest.mark.parametrize(("timeout", "timeout_ms"), [(30, 30_000), (0.1, 100)])
+    def test_timeout_passed_to_client(self, timeout: float, timeout_ms: int) -> None:
+        """Test that timeout seconds are converted to milliseconds for the SDK."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
                 model=MODEL_NAME,
                 api_key=SecretStr("test-key"),
-                timeout=30000,
+                timeout=timeout,
             )
             call_kwargs = mock_cls.call_args[1]
-            assert call_kwargs["timeout_ms"] == 30000
+            assert call_kwargs["timeout_ms"] == timeout_ms
 
     def test_all_openrouter_params_in_single_payload(self) -> None:
         """Test that all OpenRouter-specific params coexist in a payload."""
