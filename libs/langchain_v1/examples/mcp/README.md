@@ -18,6 +18,7 @@ uv run examples/mcp/transports.py
 | `protocol_eras.py` | one agent holding tools from both MCP protocol eras | ✅ | |
 | `tool_errors.py` | a failing tool reaching the model so it can retry | ✅ | |
 | `elicitation.py` | a server asking a human mid-call, via `interrupt()` | ✅ | |
+| `destructive_interrupt.py` | gating destructive tools behind approval, from tool metadata | ✅ | |
 | `auth_bearer.py` | a server behind a static bearer token | | |
 | `auth_oauth.py` | a full OAuth 2.1 flow with dynamic client registration | | |
 

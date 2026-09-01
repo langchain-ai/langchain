@@ -20,6 +20,7 @@ from mcp.types import (
     ElicitResult,
     InputRequiredResult,
     TextContent,
+    ToolAnnotations,
 )
 from pydantic import SecretStr
 
@@ -50,6 +51,28 @@ def calculator_server() -> FastMCP[None]:
             msg = "Cannot divide by zero. Choose a non-zero denominator."
             raise ValueError(msg)
         return str(numerator / denominator)
+
+    return mcp
+
+
+def files_server() -> FastMCP[None]:
+    """A server with a read-only tool and a destructive one.
+
+    `delete_file` sets `destructiveHint=True`; the adapter surfaces that as
+    `metadata["mcp"]["tool"]["annotations"]["destructive_hint"]`, which
+    `destructive_interrupt.py` uses to gate the tool behind human approval.
+    """
+    mcp: FastMCP[None] = FastMCP("files")
+
+    @mcp.tool
+    def list_files() -> list[str]:
+        """List the files in the workspace."""
+        return ["report.md", "notes.txt"]
+
+    @mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
+    def delete_file(path: str) -> str:
+        """Delete a file from the workspace."""
+        return f"Deleted {path}."
 
     return mcp
 
