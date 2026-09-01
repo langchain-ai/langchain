@@ -12,6 +12,8 @@ from packaging import version
 from syrupy.assertion import SnapshotAssertion
 
 from langchain_core._api import LangChainDeprecationWarning
+from langchain_core.documents import Document
+from langchain_core.prompts.base import aformat_document, format_document
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
@@ -744,3 +746,24 @@ def test_prompt_template_add(
         variable="template",
         another_variable="other_template",
     )
+
+
+def test_format_document_page_content_precedence() -> None:
+    doc = Document(
+        page_content="Hello world",
+        metadata={"page_content": "OVERRIDDEN", "author": "Alice"},
+    )
+    prompt = PromptTemplate.from_template("Author: {author}, Content: {page_content}")
+    result = format_document(doc, prompt)
+    assert result == "Author: Alice, Content: Hello world"
+
+
+@pytest.mark.asyncio
+async def test_aformat_document_page_content_precedence() -> None:
+    doc = Document(
+        page_content="Hello world",
+        metadata={"page_content": "OVERRIDDEN", "author": "Alice"},
+    )
+    prompt = PromptTemplate.from_template("Author: {author}, Content: {page_content}")
+    result = await aformat_document(doc, prompt)
+    assert result == "Author: Alice, Content: Hello world"
