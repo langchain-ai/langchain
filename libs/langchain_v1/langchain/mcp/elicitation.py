@@ -256,11 +256,35 @@ async def _declare_elicitation_capability(*_: object) -> dict[str, Any]:
     """
     msg = (
         "This MCP server asked for input over the legacy server-initiated "
-        "path, which `elicitation='interrupt'` cannot answer. Interrupt-based "
-        "elicitation needs a server that returns its input requests as an "
-        "`InputRequiredResult`."
+        "path, which interrupt-based elicitation cannot answer. It needs a "
+        "server that returns its input requests as an `InputRequiredResult`."
     )
     raise NotImplementedError(msg)
+
+
+def _drives_interrupts(client: Client[Any]) -> bool:
+    """Report whether `client` was armed to answer elicitation with an interrupt.
+
+    A client armed by `MCPAdapter` carries `_declare_elicitation_capability` as
+    its elicitation handler, purely to make FastMCP advertise the capability;
+    the tool call, not this handler, drives the interrupt loop. FastMCP wraps
+    the handler in a closure, so the sentinel is matched through that closure
+    rather than by direct identity. Any other handler is a caller's own and
+    answers the legacy way, so it does not drive interrupts.
+
+    The wrapping is FastMCP-private, so a shape this cannot see through is read
+    as "not the sentinel" — the safe default, which routes through the plain
+    call rather than the interrupt loop.
+    """
+    callback = getattr(client, "_elicitation_callback", None)
+    if callback is None:
+        return False
+    if callback is _declare_elicitation_capability:
+        return True
+    closure = getattr(callback, "__closure__", None) or ()
+    freevars = getattr(getattr(callback, "__code__", None), "co_freevars", ())
+    wrapped = dict(zip(freevars, (cell.cell_contents for cell in closure), strict=False))
+    return wrapped.get("elicitation_handler") is _declare_elicitation_capability
 
 
 async def _await_monitored(client: Client[Any], coro: Coroutine[Any, Any, _ResultT]) -> _ResultT:

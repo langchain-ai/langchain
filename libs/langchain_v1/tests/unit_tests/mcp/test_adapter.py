@@ -175,10 +175,10 @@ async def test_list_tools_forwards_cache_mode_to_a_group(
 
 
 @pytest.mark.asyncio
-async def test_interrupt_mode_leaves_the_callers_group_untouched() -> None:
+async def test_arming_a_group_leaves_the_callers_clients_untouched() -> None:
     """Arming clones keeps a caller's own clients as they built them."""
     group = _group()
-    adapter = MCPAdapter(group, elicitation="interrupt")
+    adapter = MCPAdapter(group)
 
     assert adapter.client is not group
     adapter_group = cast("ClientGroup", adapter.client)
@@ -376,8 +376,21 @@ async def test_several_servers_connect_and_keep_their_prefixes(
     ]
 
 
-def test_prebuilt_client_is_used_as_is() -> None:
+def test_prebuilt_client_without_a_handler_is_armed_on_a_clone() -> None:
+    """A client with no elicitation handler is armed, on a clone not the original."""
     client: Client[Any] = Client("https://example.com/mcp")
+
+    adapted = MCPAdapter(client).client
+    assert adapted is not client
+
+
+def test_prebuilt_client_with_a_handler_is_used_as_is() -> None:
+    """A caller's own elicitation handler is honored: the client is left alone."""
+
+    async def own_handler(*_: Any) -> Any:
+        return None
+
+    client: Client[Any] = Client("https://example.com/mcp", elicitation_handler=own_handler)
 
     assert MCPAdapter(client).client is client
 
@@ -467,9 +480,13 @@ async def test_adapter_adapts_tools_on_either_protocol_era(
             {"name": "whoami", "args": {}, "id": "c1", "type": "tool_call"}
         )
 
+        # The adapter arms a clone of a handler-less client, so assert on the
+        # client it actually connected. `.new()` preserves `mode`, so the clone
+        # negotiates the same era.
+        armed = cast("Client[Any]", adapter.client)
         assert message.content[0]["text"] == "solo"
-        assert client.protocol_version == expected_version
-        assert (client.initialize_result is not None) is expects_handshake
+        assert armed.protocol_version == expected_version
+        assert (armed.initialize_result is not None) is expects_handshake
 
 
 @pytest.mark.asyncio
@@ -495,11 +512,16 @@ async def test_servers_on_different_protocol_eras_are_usable_side_by_side() -> N
         call = {"name": "whoami", "args": {}, "id": "c1", "type": "tool_call"}
         answers = await asyncio.gather(handshake_tool.ainvoke(call), modern_tool.ainvoke(call))
 
+        # The adapter arms a clone of each handler-less client, so assert on the
+        # clients it actually connected. Each clone keeps its own `mode`, so the
+        # two negotiated eras stay independent.
+        armed_handshake = cast("Client[Any]", handshake_adapter.client)
+        armed_modern = cast("Client[Any]", modern_adapter.client)
         assert [message.content[0]["text"] for message in answers] == ["old", "new"]
-        assert handshake_client.protocol_version == _HANDSHAKE_ERA
-        assert modern_client.protocol_version == _MODERN_ERA
-        assert handshake_client.initialize_result is not None
-        assert modern_client.initialize_result is None
+        assert armed_handshake.protocol_version == _HANDSHAKE_ERA
+        assert armed_modern.protocol_version == _MODERN_ERA
+        assert armed_handshake.initialize_result is not None
+        assert armed_modern.initialize_result is None
 
 
 @pytest.mark.asyncio
