@@ -3,10 +3,10 @@ revision = 3
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.15' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.15' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.14.*' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.13.*' and platform_python_implementation != 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation != 'PyPy'",
@@ -868,9 +868,10 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.5.3"
+version = "1.6.1"
 source = { editable = "../../core" }
 dependencies = [
+    { name = "httpx" },
     { name = "jsonpatch" },
     { name = "langchain-protocol" },
     { name = "langsmith" },
@@ -884,6 +885,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.23.0,<1.0.0" },
     { name = "jsonpatch", specifier = ">=1.33.0,<2.0.0" },
     { name = "langchain-protocol", specifier = ">=0.0.17" },
     { name = "langsmith", specifier = ">=0.3.45,<1.0.0" },
@@ -914,7 +916,7 @@ test = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
-    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<0.8.0" },
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
     { name = "responses", specifier = ">=0.25.0,<1.0.0" },
@@ -1376,10 +1378,10 @@ version = "2.3.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.15' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.14.*' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.13.*' and platform_python_implementation != 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation != 'PyPy'",
@@ -1517,10 +1519,10 @@ version = "1.24.4"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.15' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.14.*' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.13.*' and platform_python_implementation != 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation != 'PyPy'",
@@ -2287,11 +2289,11 @@ wheels = [
 
 [[package]]
 name = "python-dotenv"
-version = "1.2.2"
+version = "1.2.3"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/82/ed/0301aeeac3e5353ef3d94b6ec08bbcabd04a72018415dcb29e588514bba8/python_dotenv-1.2.2.tar.gz", hash = "sha256:2c371a91fbd7ba082c2c1dc1f8bf89ca22564a087c2c287cd9b662adde799cf3", size = 50135, upload-time = "2026-03-01T16:00:26.196Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6a/53/ed9d74092561d4b01a2ef1349d52cdbc135e526c245f366b089cfca6de49/python_dotenv-1.2.3.tar.gz", hash = "sha256:a20a594dabeaa385725aa239d5244871c143ecb356add8a20fcf23773a6c3a35", size = 58945, upload-time = "2026-08-16T16:54:54.067Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/d7/1959b9648791274998a9c3526f6d0ec8fd2233e4d4acce81bbae76b44b2a/python_dotenv-1.2.2-py3-none-any.whl", hash = "sha256:1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a", size = 22101, upload-time = "2026-03-01T16:00:25.09Z" },
+    { url = "https://files.pythonhosted.org/packages/0d/17/c5c6b53ddc18f297992099b3d9ec16c855c0ccc83263a21fe4d1c625ec6c/python_dotenv-1.2.3-py3-none-any.whl", hash = "sha256:904552145e8bfed22162c09dab1c2b9b54fefa7b23ba780f4f26ca0316b0f0d9", size = 22780, upload-time = "2026-08-16T16:54:52.473Z" },
 ]
 
 [[package]]
