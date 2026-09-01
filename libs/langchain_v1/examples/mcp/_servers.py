@@ -8,6 +8,8 @@ started as its own process, and that entry point cannot be a lambda.
 from __future__ import annotations
 
 from fastmcp import Context, FastMCP
+from fastmcp.server.auth.providers.jwt import JWTVerifier, RSAKeyPair
+from fastmcp.server.dependencies import get_access_token
 from mcp.types import (
     ElicitRequest,
     ElicitRequestFormParams,
@@ -111,3 +113,53 @@ def run_calculator_http(host: str, port: int) -> None:
     calculator_server().run(
         transport="http", host=host, port=port, show_banner=False, log_level="warning"
     )
+
+
+ISSUER = "https://demo.issuer"
+AUDIENCE = "mcp-fleet"
+
+_KEYS = RSAKeyPair.generate()
+"""Stands in for an identity provider, so the examples can mint real tokens."""
+
+PUBLIC_KEY = _KEYS.public_key
+"""Pass this to `run_guarded_server`; see why in its docstring."""
+
+
+def token_for(user: str) -> str:
+    """Mint an access token identifying `user`.
+
+    The stand-in for whatever a deployment already has: an OAuth gateway that
+    exchanges for a per-user token, or a provider from `fastmcp.client.auth` —
+    `OAuth(mcp_url=..., token_storage=<per-user store>)` runs the full
+    authorization-code flow per identity, which `auth_oauth.py` demonstrates.
+    """
+    return _KEYS.create_token(subject=user, issuer=ISSUER, audience=AUDIENCE)
+
+
+def run_guarded_server(host: str, port: int, name: str, public_key: str) -> None:
+    """Serve a token-guarded server whose one tool reports who called it.
+
+    The key is a parameter rather than read from this module: the server runs
+    in its own process, which re-imports this file and would otherwise mint a
+    second, unrelated key pair.
+    """
+    mcp: FastMCP[None] = FastMCP(
+        name,
+        auth=JWTVerifier(public_key=public_key, issuer=ISSUER, audience=AUDIENCE),
+        # Opt into client-side response caching (SEP-2549): the server stamps
+        # each cacheable result with this TTL and a `private` scope, so a client
+        # holding a `CacheConfig` can serve a repeat `tools/list` from its own
+        # store instead of the wire. Without these hints the server sends
+        # `ttlMs: 0` and nothing caches, which is why arbitrary third-party
+        # servers cannot be relied on for this.
+        cache_ttl=60,
+        cache_scope="private",
+    )
+
+    @mcp.tool
+    def whoami() -> str:
+        """Report the identity the server derived from the access token."""
+        token = get_access_token()
+        return "unauthenticated" if token is None else str(token.claims.get("sub"))
+
+    mcp.run(transport="http", host=host, port=port, show_banner=False, log_level="warning")
