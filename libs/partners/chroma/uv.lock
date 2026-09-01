@@ -3,10 +3,10 @@ revision = 3
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.15' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.15' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.14.*' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.13.*' and platform_python_implementation != 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation != 'PyPy'",
@@ -868,9 +868,10 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.5.3"
+version = "1.6.1"
 source = { editable = "../../core" }
 dependencies = [
+    { name = "httpx" },
     { name = "jsonpatch" },
     { name = "langchain-protocol" },
     { name = "langsmith" },
@@ -884,6 +885,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.23.0,<1.0.0" },
     { name = "jsonpatch", specifier = ">=1.33.0,<2.0.0" },
     { name = "langchain-protocol", specifier = ">=0.0.17" },
     { name = "langsmith", specifier = ">=0.3.45,<1.0.0" },
@@ -914,7 +916,7 @@ test = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
-    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<0.8.0" },
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
     { name = "responses", specifier = ">=0.25.0,<1.0.0" },
@@ -1376,10 +1378,10 @@ version = "2.3.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.15' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.14.*' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.13.*' and platform_python_implementation != 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation != 'PyPy'",
@@ -1517,10 +1519,10 @@ version = "1.24.4"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.15' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.14.*' and platform_python_implementation != 'PyPy'",
+    "python_full_version == '3.13.*' and platform_python_implementation == 'PyPy'",
     "python_full_version == '3.13.*' and platform_python_implementation != 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation != 'PyPy'",
@@ -1760,17 +1762,17 @@ wheels = [
 
 [[package]]
 name = "protobuf"
-version = "6.33.5"
+version = "6.33.6"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ba/25/7c72c307aafc96fa87062aa6291d9f7c94836e43214d43722e86037aac02/protobuf-6.33.5.tar.gz", hash = "sha256:6ddcac2a081f8b7b9642c09406bc6a4290128fce5f471cddd165960bb9119e5c", size = 444465, upload-time = "2026-01-29T21:51:33.494Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/66/70/e908e9c5e52ef7c3a6c7902c9dfbb34c7e29c25d2f81ade3856445fd5c94/protobuf-6.33.6.tar.gz", hash = "sha256:a6768d25248312c297558af96a9f9c929e8c4cee0659cb07e780731095f38135", size = 444531, upload-time = "2026-03-18T19:05:00.988Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b1/79/af92d0a8369732b027e6d6084251dd8e782c685c72da161bd4a2e00fbabb/protobuf-6.33.5-cp310-abi3-win32.whl", hash = "sha256:d71b040839446bac0f4d162e758bea99c8251161dae9d0983a3b88dee345153b", size = 425769, upload-time = "2026-01-29T21:51:21.751Z" },
-    { url = "https://files.pythonhosted.org/packages/55/75/bb9bc917d10e9ee13dee8607eb9ab963b7cf8be607c46e7862c748aa2af7/protobuf-6.33.5-cp310-abi3-win_amd64.whl", hash = "sha256:3093804752167bcab3998bec9f1048baae6e29505adaf1afd14a37bddede533c", size = 437118, upload-time = "2026-01-29T21:51:24.022Z" },
-    { url = "https://files.pythonhosted.org/packages/a2/6b/e48dfc1191bc5b52950246275bf4089773e91cb5ba3592621723cdddca62/protobuf-6.33.5-cp39-abi3-macosx_10_9_universal2.whl", hash = "sha256:a5cb85982d95d906df1e2210e58f8e4f1e3cdc088e52c921a041f9c9a0386de5", size = 427766, upload-time = "2026-01-29T21:51:25.413Z" },
-    { url = "https://files.pythonhosted.org/packages/4e/b1/c79468184310de09d75095ed1314b839eb2f72df71097db9d1404a1b2717/protobuf-6.33.5-cp39-abi3-manylinux2014_aarch64.whl", hash = "sha256:9b71e0281f36f179d00cbcb119cb19dec4d14a81393e5ea220f64b286173e190", size = 324638, upload-time = "2026-01-29T21:51:26.423Z" },
-    { url = "https://files.pythonhosted.org/packages/c5/f5/65d838092fd01c44d16037953fd4c2cc851e783de9b8f02b27ec4ffd906f/protobuf-6.33.5-cp39-abi3-manylinux2014_s390x.whl", hash = "sha256:8afa18e1d6d20af15b417e728e9f60f3aa108ee76f23c3b2c07a2c3b546d3afd", size = 339411, upload-time = "2026-01-29T21:51:27.446Z" },
-    { url = "https://files.pythonhosted.org/packages/9b/53/a9443aa3ca9ba8724fdfa02dd1887c1bcd8e89556b715cfbacca6b63dbec/protobuf-6.33.5-cp39-abi3-manylinux2014_x86_64.whl", hash = "sha256:cbf16ba3350fb7b889fca858fb215967792dc125b35c7976ca4818bee3521cf0", size = 323465, upload-time = "2026-01-29T21:51:28.925Z" },
-    { url = "https://files.pythonhosted.org/packages/57/bf/2086963c69bdac3d7cff1cc7ff79b8ce5ea0bec6797a017e1be338a46248/protobuf-6.33.5-py3-none-any.whl", hash = "sha256:69915a973dd0f60f31a08b8318b73eab2bd6a392c79184b3612226b0a3f8ec02", size = 170687, upload-time = "2026-01-29T21:51:32.557Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/9f/2f509339e89cfa6f6a4c4ff50438db9ca488dec341f7e454adad60150b00/protobuf-6.33.6-cp310-abi3-win32.whl", hash = "sha256:7d29d9b65f8afef196f8334e80d6bc1d5d4adedb449971fefd3723824e6e77d3", size = 425739, upload-time = "2026-03-18T19:04:48.373Z" },
+    { url = "https://files.pythonhosted.org/packages/76/5d/683efcd4798e0030c1bab27374fd13a89f7c2515fb1f3123efdfaa5eab57/protobuf-6.33.6-cp310-abi3-win_amd64.whl", hash = "sha256:0cd27b587afca21b7cfa59a74dcbd48a50f0a6400cfb59391340ad729d91d326", size = 437089, upload-time = "2026-03-18T19:04:50.381Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/01/a3c3ed5cd186f39e7880f8303cc51385a198a81469d53d0fdecf1f64d929/protobuf-6.33.6-cp39-abi3-macosx_10_9_universal2.whl", hash = "sha256:9720e6961b251bde64edfdab7d500725a2af5280f3f4c87e57c0208376aa8c3a", size = 427737, upload-time = "2026-03-18T19:04:51.866Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/90/b3c01fdec7d2f627b3a6884243ba328c1217ed2d978def5c12dc50d328a3/protobuf-6.33.6-cp39-abi3-manylinux2014_aarch64.whl", hash = "sha256:e2afbae9b8e1825e3529f88d514754e094278bb95eadc0e199751cdd9a2e82a2", size = 324610, upload-time = "2026-03-18T19:04:53.096Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/ca/25afc144934014700c52e05103c2421997482d561f3101ff352e1292fb81/protobuf-6.33.6-cp39-abi3-manylinux2014_s390x.whl", hash = "sha256:c96c37eec15086b79762ed265d59ab204dabc53056e3443e702d2681f4b39ce3", size = 339381, upload-time = "2026-03-18T19:04:54.616Z" },
+    { url = "https://files.pythonhosted.org/packages/16/92/d1e32e3e0d894fe00b15ce28ad4944ab692713f2e7f0a99787405e43533a/protobuf-6.33.6-cp39-abi3-manylinux2014_x86_64.whl", hash = "sha256:e9db7e292e0ab79dd108d7f1a94fe31601ce1ee3f7b79e0692043423020b0593", size = 323436, upload-time = "2026-03-18T19:04:55.768Z" },
+    { url = "https://files.pythonhosted.org/packages/c4/72/02445137af02769918a93807b2b7890047c32bfb9f90371cbc12688819eb/protobuf-6.33.6-py3-none-any.whl", hash = "sha256:77179e006c476e69bf8e8ce866640091ec42e1beb80b213c3900006ecfba6901", size = 170656, upload-time = "2026-03-18T19:04:59.826Z" },
 ]
 
 [[package]]
