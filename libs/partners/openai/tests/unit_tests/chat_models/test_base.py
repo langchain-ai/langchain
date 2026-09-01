@@ -5330,3 +5330,17 @@ def test_langsmith_gateway_serialization_preserves_langsmith_key_fallback(
     assert isinstance(restored, ChatOpenAI)
     assert isinstance(restored.openai_api_key, SecretStr)
     assert restored.openai_api_key.get_secret_value() == "langsmith-key"
+
+
+def test_gateway_environment_sets_serializable_marker(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Existing gateway configuration populates the public marker."""
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+
+    model = ChatOpenAI(model="gpt-5.5")
+
+    assert model.use_langsmith_gateway is True
+    assert "use_langsmith_gateway" in dumps(model)

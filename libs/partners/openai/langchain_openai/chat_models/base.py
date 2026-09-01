@@ -1181,12 +1181,16 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in `langchain-openai` 0.3.26"
     """
 
-    use_langsmith_gateway: bool = False
+    use_langsmith_gateway: bool = Field(
+        default=False, exclude_if=lambda value: not value
+    )
     """Whether to route requests through the LangSmith model gateway.
 
     When enabled, the API key is resolved from `LANGSMITH_GATEWAY_API_KEY`,
     falling back to `LANGSMITH_API_KEY`, and the Responses API is enabled by
     default. An explicit `base_url` overrides the default LangSmith gateway URL.
+    This is also enabled automatically when gateway environment configuration or
+    a LangSmith API key routes the model through the gateway.
     """
 
     use_responses_api: bool | None = None
@@ -1218,19 +1222,6 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     model_config = ConfigDict(populate_by_name=True)
-
-    @property
-    def _uses_gateway(self) -> bool:
-        """Whether requests are routed through the LangSmith gateway.
-
-        Detected from the resolved API key: LangSmith keys (used to authenticate
-        to the gateway) carry the `lsv2_` prefix. Callable keys cannot be
-        inspected without invoking them, so they are treated as non-gateway.
-        """
-        api_key = self.openai_api_key
-        if isinstance(api_key, SecretStr):
-            return api_key.get_secret_value().startswith("lsv2_")
-        return False
 
     @property
     def model(self) -> str:
@@ -1352,6 +1343,11 @@ class BaseChatOpenAI(BaseChatModel):
         self.openai_api_base = _gateway_config.base_url
         self.openai_api_key = _gateway_config.api_key
         _base_url_from_gateway = _gateway_config.base_url_from_gateway
+        if _base_url_from_gateway or (
+            isinstance(self.openai_api_key, SecretStr)
+            and self.openai_api_key.get_secret_value().startswith("lsv2_")
+        ):
+            self.use_langsmith_gateway = True
 
         # Enable stream_usage by default if using default base URL and client,
         # or when the base URL was set by the LangSmith gateway (which proxies
@@ -1625,7 +1621,7 @@ class BaseChatOpenAI(BaseChatModel):
         headers: dict = {}
         base_generation_info: dict = {}
         try:
-            if self.include_response_headers or self._uses_gateway:
+            if self.include_response_headers or self.use_langsmith_gateway:
                 raw_context_manager = (
                     self.root_client.with_raw_response.responses.create(**payload)
                 )
@@ -1691,7 +1687,7 @@ class BaseChatOpenAI(BaseChatModel):
         headers: dict = {}
         base_generation_info: dict = {}
         try:
-            if self.include_response_headers or self._uses_gateway:
+            if self.include_response_headers or self.use_langsmith_gateway:
                 raw_context_manager = (
                     await self.root_async_client.with_raw_response.responses.create(
                         **payload
@@ -1803,7 +1799,7 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 context_manager = response_stream
             else:
-                if self.include_response_headers or self._uses_gateway:
+                if self.include_response_headers or self.use_langsmith_gateway:
                     raw_response = self.client.with_raw_response.create(**payload)
                     response = raw_response.parse()
                     if self.include_response_headers:
@@ -2094,7 +2090,7 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 context_manager = response_stream
             else:
-                if self.include_response_headers or self._uses_gateway:
+                if self.include_response_headers or self.use_langsmith_gateway:
                     raw_response = await self.async_client.with_raw_response.create(
                         **payload
                     )
