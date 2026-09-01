@@ -54,7 +54,10 @@ if TYPE_CHECKING:
 
 SYSTEM_PROMPT = "You answer questions using the tools available to you."
 
-SERVERS: dict[str, str] = {}
+SERVERS = {
+    "calendar": "http://localhost:8001/mcp",
+    "docs": "http://localhost:8002/mcp",
+}
 """Server name to URL. A deployment reads this from its own configuration."""
 
 _POOL = httpx2.AsyncHTTPTransport()
