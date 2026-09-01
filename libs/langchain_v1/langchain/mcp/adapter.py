@@ -70,32 +70,6 @@ group is a peer of `Client` rather than a transport it could wrap.
 """
 
 
-def _has_elicitation_handler(client: FastMCPClient[Any]) -> bool:
-    """Report whether `client` already carries an elicitation handler."""
-    return getattr(client, "_elicitation_callback", None) is not None
-
-
-def _client_driving_interrupts(client: FastMCPClient[Any]) -> FastMCPClient[Any]:
-    """Return a client that answers elicitation with an interrupt.
-
-    A client with its own handler is returned untouched. One without is armed on
-    a clone, so the caller's client is never mutated.
-    """
-    if _has_elicitation_handler(client):
-        return client
-    clone = client.new()
-    _arm_for_interrupts(clone)
-    return clone
-
-
-def _group_driving_interrupts(group: ClientGroup) -> _ReentrantClientGroup:
-    """Rebuild `group` with every member armed, wrapped for reentrancy."""
-    armed = ClientGroup(
-        {name: _client_driving_interrupts(member) for name, member in group.clients.items()}
-    )
-    return _ReentrantClientGroup(armed)
-
-
 _URL_SCHEMES: Final = frozenset({"http", "https"})
 """Schemes a `str` target may carry.
 
@@ -201,14 +175,26 @@ class MCPAdapter:
     def __init__(self, target: MCPAdapterTarget) -> None:
         """Initialize the adapter around a FastMCP target, client, or group.
 
-        The underlying client is armed to answer elicitation with an interrupt
-        unless the caller supplied one that already has its own handler, which
-        is honored instead. See the class docstring.
+        Each underlying client is armed to answer elicitation with an interrupt,
+        unless it already carries the caller's own handler, which is honored
+        instead. A caller's client is cloned rather than mutated. See the class
+        docstring.
         """
+
+        def armed(client: FastMCPClient[Any]) -> FastMCPClient[Any]:
+            if getattr(client, "_elicitation_callback", None) is not None:
+                return client
+            clone = client.new()
+            _arm_for_interrupts(clone)
+            return clone
+
         if isinstance(target, ClientGroup):
-            self._client: FastMCPClient[Any] | ClientGroup = _group_driving_interrupts(target)
+            members = {name: armed(client) for name, client in target.clients.items()}
+            self._client: FastMCPClient[Any] | ClientGroup = _ReentrantClientGroup(
+                ClientGroup(members)
+            )
         elif isinstance(target, FastMCPClient):
-            self._client = _client_driving_interrupts(target)
+            self._client = armed(target)
         else:
             if isinstance(target, str):
                 _validate_url_target(target)
