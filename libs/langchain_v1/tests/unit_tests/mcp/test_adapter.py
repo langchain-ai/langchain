@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import ANY
 
 import pytest
@@ -22,6 +22,9 @@ from langchain_core.messages import ToolMessage
 from langchain.agents import create_agent
 from langchain.mcp import MCPAdapter
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from mcp.client.caching import CacheMode
 
 
 def _calculator() -> FastMCP[None]:
@@ -125,7 +128,7 @@ async def test_list_tools_forwards_cache_mode_to_a_single_client(
 
     async def spy(*args: Any, cache_mode: str = "use", **kwargs: Any) -> Any:
         seen.append(cache_mode)
-        return await real(*args, cache_mode=cache_mode, **kwargs)
+        return await real(*args, cache_mode=cast("CacheMode", cache_mode), **kwargs)
 
     monkeypatch.setattr(adapter.client, "list_tools", spy)
 
@@ -150,7 +153,7 @@ async def test_list_tools_forwards_cache_mode_to_a_group(
 
     async def spy(*args: Any, cache_mode: str = "refresh", **kwargs: Any) -> Any:
         seen.append(cache_mode)
-        return await real(*args, cache_mode=cache_mode, **kwargs)
+        return await real(*args, cache_mode=cast("CacheMode", cache_mode), **kwargs)
 
     monkeypatch.setattr(adapter.client, "list_tools", spy)
 
@@ -167,9 +170,10 @@ async def test_interrupt_mode_leaves_the_callers_group_untouched() -> None:
     adapter = MCPAdapter(group, elicitation="interrupt")
 
     assert adapter.client is not group
-    assert set(adapter.client.clients) == set(group.clients)
+    adapter_group = cast("ClientGroup", adapter.client)
+    assert set(adapter_group.clients) == set(group.clients)
     for name, member in group.clients.items():
-        assert adapter.client.clients[name] is not member
+        assert adapter_group.clients[name] is not member
 
 
 @pytest.mark.asyncio
@@ -204,14 +208,22 @@ def test_target_inference_is_delegated_to_fastmcp(tmp_path: Path) -> None:
     script = tmp_path / "server.py"
     script.touch()
 
-    assert isinstance(MCPAdapter(script).client.transport, PythonStdioTransport)
-    assert isinstance(MCPAdapter(FastMCP("in-process")).client.transport, FastMCPTransport)
+    assert isinstance(
+        cast("Client[Any]", MCPAdapter(script).client).transport, PythonStdioTransport
+    )
+    assert isinstance(
+        cast("Client[Any]", MCPAdapter(FastMCP("in-process")).client).transport,
+        FastMCPTransport,
+    )
 
 
 def test_url_strings_are_accepted() -> None:
     """The reading a string target is meant to have still works."""
     for url in ("https://example.com/mcp", "http://localhost:2024/mcp"):
-        assert isinstance(MCPAdapter(url).client.transport, StreamableHttpTransport)
+        assert isinstance(
+            cast("Client[Any]", MCPAdapter(url).client).transport,
+            StreamableHttpTransport,
+        )
 
 
 def test_a_string_naming_a_local_script_is_refused(tmp_path: Path) -> None:
@@ -223,7 +235,9 @@ def test_a_string_naming_a_local_script_is_refused(tmp_path: Path) -> None:
         MCPAdapter(str(script))
 
     # The same server, asked for explicitly, is still reachable.
-    assert isinstance(MCPAdapter(script).client.transport, PythonStdioTransport)
+    assert isinstance(
+        cast("Client[Any]", MCPAdapter(script).client).transport, PythonStdioTransport
+    )
 
 
 @pytest.mark.parametrize(
@@ -290,7 +304,7 @@ def test_one_adapter_can_serve_several_servers() -> None:
         }
     )
 
-    transport = adapter.client.transport
+    transport = cast("Client[Any]", adapter.client).transport
     assert isinstance(transport, MCPConfigTransport)
     assert sorted(transport.config.mcpServers) == ["notes", "web"]
     # FastMCP prefixes each backend's tools with its config key, so two servers
