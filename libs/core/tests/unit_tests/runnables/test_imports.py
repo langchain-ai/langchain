@@ -1,12 +1,15 @@
 from langchain_core.runnables import __all__
 
 EXPECTED_ALL = [
+    "CoalesceBackend",
+    "CoalesceStats",
     "chain",
     "AddableDict",
     "ConfigurableField",
     "ConfigurableFieldSingleOption",
     "ConfigurableFieldMultiOption",
     "ConfigurableFieldSpec",
+    "InMemoryCoalesceBackend",
     "ensure_config",
     "run_in_executor",
     "patch_config",

@@ -113,6 +113,7 @@ if TYPE_CHECKING:
         CallbackManagerForChainRun,
     )
     from langchain_core.prompts.base import BasePromptTemplate
+    from langchain_core.runnables.coalesce import CoalesceBackend
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
@@ -2262,6 +2263,33 @@ class Runnable(ABC, Generic[Input, Output]):
             exceptions_to_handle=exceptions_to_handle,
             exception_key=exception_key,
         )
+
+
+    def with_coalesce(
+        self,
+        *,
+        backend: CoalesceBackend | None = None,
+    ) -> Runnable[Input, Output]:
+        """Add request coalescing to a ``Runnable``, returning a new ``Runnable``.
+
+        When multiple concurrent callers invoke the runnable with the same
+        input, only one execution runs and all callers receive the result.
+
+        Args:
+            backend: A custom ``CoalesceBackend`` instance. When ``None``,
+                an ``InMemoryCoalesceBackend`` is used.
+
+        Returns:
+            A new ``Runnable`` that wraps the original with coalescing logic.
+        """
+        from langchain_core.runnables.coalesce import (  # noqa: PLC0415
+            InMemoryCoalesceBackend,
+            RunnableCoalesce,
+        )
+
+        if backend is None:
+            backend = InMemoryCoalesceBackend()
+        return RunnableCoalesce(bound=self, backend=backend)
 
     """ --- Helper methods for Subclasses --- """
 

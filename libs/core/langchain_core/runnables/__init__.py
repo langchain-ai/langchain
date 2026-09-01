@@ -35,6 +35,11 @@ if TYPE_CHECKING:
         chain,
     )
     from langchain_core.runnables.branch import RunnableBranch
+    from langchain_core.runnables.coalesce import (
+        CoalesceBackend,
+        CoalesceStats,
+        InMemoryCoalesceBackend,
+    )
     from langchain_core.runnables.config import (
         RunnableConfig,
         ensure_config,
@@ -62,10 +67,13 @@ if TYPE_CHECKING:
 
 __all__ = (
     "AddableDict",
+    "CoalesceBackend",
+    "CoalesceStats",
     "ConfigurableField",
     "ConfigurableFieldMultiOption",
     "ConfigurableFieldSingleOption",
     "ConfigurableFieldSpec",
+    "InMemoryCoalesceBackend",
     "RouterInput",
     "RouterRunnable",
     "Runnable",
@@ -103,6 +111,9 @@ _dynamic_imports = {
     "RunnableSequence": "base",
     "RunnableSerializable": "base",
     "RunnableBranch": "branch",
+    "CoalesceBackend": "coalesce",
+    "CoalesceStats": "coalesce",
+    "InMemoryCoalesceBackend": "coalesce",
     "RunnableConfig": "config",
     "ensure_config": "config",
     "get_config_list": "config",
