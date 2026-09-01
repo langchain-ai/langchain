@@ -22,7 +22,7 @@ from mcp.types import (
 )
 
 from langchain.mcp import as_langchain_tool
-from langchain.mcp.elicitation import _declare_elicitation_capability
+from langchain.mcp.elicitation import _arm_for_interrupts
 from langchain.mcp.tools import _convert_call_tool_result, _convert_content_block
 
 
@@ -47,14 +47,11 @@ async def _one_tool(
     """Convert the single tool an in-process server exposes.
 
     Routing is read off the client, so `elicitation='interrupt'` is exercised by
-    arming the client with the sentinel handler the adapter would install.
+    arming the client the way the adapter would.
     """
-    client: Client[Any] = Client(
-        server,
-        elicitation_handler=(
-            _declare_elicitation_capability if elicitation == "interrupt" else None
-        ),
-    )
+    client: Client[Any] = Client(server)
+    if elicitation == "interrupt":
+        _arm_for_interrupts(client)
     async with client:
         [mcp_tool] = await client.list_tools()
     return as_langchain_tool(mcp_tool, client), client

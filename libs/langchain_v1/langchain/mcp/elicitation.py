@@ -1,23 +1,17 @@
 """Answer MCP elicitation requests with a LangGraph interrupt.
 
-A server that needs input mid-call answers `tools/call` with an
-`InputRequiredResult` carrying the requests it wants fulfilled, and expects the
-call to be retried with the answers. This module drives that loop and sources
-each answer from `interrupt()`, so the human already reviewing an agent's work
-answers the server's question too.
+A server needing input mid-call returns an `InputRequiredResult` and expects the
+`tools/call` to be retried with answers. This module drives that loop, sourcing
+each answer from `interrupt()` so the human reviewing the agent answers too.
 
-The loop is driven here rather than through the SDK's own
-`run_input_required_driver` because that driver answers each request from a
-callback, run concurrently in a task group. LangGraph matches resume values to
-`interrupt()` calls by their order in the node, so firing them concurrently
-would scramble that matching — and FastMCP converts any exception a callback
-raises into an MCP error, swallowing the `GraphInterrupt` that suspends the
-graph. Calling `interrupt()` from this module's own frame keeps one interrupt
-per round and lets it propagate.
+We drive the loop here rather than via the SDK's `run_input_required_driver`
+because that driver answers from callbacks run concurrently in a task group:
+LangGraph matches resume values to `interrupt()` calls by order, so concurrent
+firing scrambles the matching, and FastMCP would swallow the `GraphInterrupt` as
+an MCP error. Calling `interrupt()` from this frame keeps one per round.
 
-Only elicitation is answered here. A server asking for sampling or roots, or
-returning a continuation round to resume long-running work, is refused rather
-than half-served.
+Only elicitation is answered. Sampling, roots, and continuation rounds are
+refused rather than half-served.
 """
 
 from __future__ import annotations
@@ -54,11 +48,7 @@ _ACTIONS: Final = ("accept", "decline", "cancel")
 """Actions the wire accepts, for validating a resumed answer."""
 
 MCPFormContent: TypeAlias = dict[str, str | int | float | bool | list[str] | None]
-"""Values a form answer may carry.
-
-As narrow as `mcp.types.ElicitResult.content`, which validates the answer on its
-way to the server — a wider annotation would promise more than the wire takes.
-"""
+"""Values a form answer may carry, as narrow as `mcp.types.ElicitResult.content`."""
 
 
 class MCPElicitationFormRequest(TypedDict):
@@ -96,11 +86,7 @@ class MCPElicitationUrlRequest(TypedDict):
 
 
 MCPElicitationRequest: TypeAlias = MCPElicitationFormRequest | MCPElicitationUrlRequest
-"""One question an MCP server is asking before it can finish a tool call.
-
-One member per mode, so narrowing on `mode` yields exactly the fields that mode
-carries — a form request always has its schema, and a URL request its address.
-"""
+"""One question an MCP server asks before finishing a tool call. Narrow on `mode`."""
 
 
 class MCPElicitationInterrupt(TypedDict):
@@ -153,12 +139,7 @@ class MCPElicitationCancel(TypedDict):
 MCPElicitationResponse: TypeAlias = (
     MCPElicitationAccept | MCPElicitationDecline | MCPElicitationCancel
 )
-"""One answer to an `MCPElicitationRequest`.
-
-One member per action, so a handler can narrow on `action` alone. Only an accept
-carries content, matching what is actually sent: content on a refusal is dropped
-rather than forwarded.
-"""
+"""One answer to an `MCPElicitationRequest`. Narrow on `action`; only accept carries content."""
 
 
 class MCPElicitationResume(TypedDict):
@@ -193,11 +174,7 @@ def _elicit_requests(
     requests: dict[str, InputRequest],
     tool_name: str,
 ) -> dict[str, ElicitRequest]:
-    """Narrow a round's requests to elicitations, rejecting what is unsupported.
-
-    Answering sampling or roots is FastMCP's job, and driving this loop by hand
-    bypasses the callbacks that would do it, so those raise instead.
-    """
+    """Narrow a round's requests to elicitations, raising on sampling or roots."""
     unsupported = sorted(
         f"{key} ({request.method})"
         for key, request in requests.items()
@@ -218,11 +195,7 @@ def _build_responses(
     answers: dict[str, MCPElicitationResponse],
     tool_name: str,
 ) -> InputResponses:
-    """Turn resumed answers into the responses the server is expecting.
-
-    Every request needs an answer under its own key; a missing or malformed one
-    raises rather than being silently dropped from the reply.
-    """
+    """Turn resumed answers into the server's responses, raising on any missing or malformed."""
     missing = sorted(set(requests) - set(answers))
     if missing:
         msg = (
@@ -246,89 +219,57 @@ def _build_responses(
     return responses
 
 
+_ARMED_MARKER: Final = "_langchain_mcp_interrupt_armed"
+"""Attribute stamped on a client the adapter armed for interrupt elicitation."""
+
+
 async def _declare_elicitation_capability(*_: object) -> dict[str, Any]:
-    """Stand in for an elicitation handler so the client advertises the capability.
+    """Elicitation handler that only exists to advertise the capability.
 
-    FastMCP declares `elicitation` only when the callback differs by identity
-    from its own default. Interrupt-driven elicitation answers from the tool
-    call rather than from a callback, so this exists only to make that
-    declaration — running it means a server used the legacy server-initiated
-    path instead, which an interrupt cannot answer.
-
-    This is reachable on a legacy-era connection: the capability is declared
-    before the protocol version is known, so a legacy server can still initiate
-    elicitation the old way even though the interrupt loop only runs on a modern
-    era. The error names the two ways forward rather than degrading the call.
+    FastMCP advertises `elicitation` only when a handler is set, so a client
+    that should drive the interrupt loop needs one. The loop answers from the
+    tool call, not this handler, so it never runs on a modern server. It only
+    fires when a legacy server initiates elicitation the old way — which the
+    interrupt loop cannot answer, hence the error.
     """
     msg = (
         "This MCP server asked for input over the legacy server-initiated "
-        "elicitation path, which the adapter's interrupt-based elicitation "
-        "cannot answer. Interrupt-based elicitation needs a server that returns "
-        "its input requests as an `InputRequiredResult` (modern protocol era). "
-        "To answer a legacy server's request instead, pass a pre-built client "
-        "built with your own `elicitation_handler`."
+        "elicitation path, which interrupt-based elicitation cannot answer. It "
+        "needs a server that returns its requests as an `InputRequiredResult`, "
+        "or a pre-built client with your own `elicitation_handler`."
     )
     raise NotImplementedError(msg)
 
 
-def _carries_sentinel(client: Client[Any]) -> bool:
-    """Report whether `client` carries the interrupt-driving sentinel handler.
-
-    A client armed by `MCPAdapter` carries `_declare_elicitation_capability` as
-    its elicitation handler, purely to make FastMCP advertise the capability;
-    the tool call, not this handler, drives the interrupt loop. FastMCP wraps
-    the handler in a closure, so the sentinel is matched through that closure
-    rather than by direct identity. Any other handler is a caller's own.
-
-    The wrapping is FastMCP-private, so a shape this cannot see through is read
-    as "not the sentinel" — the safe default.
-    """
-    callback = getattr(client, "_elicitation_callback", None)
-    if callback is None:
-        return False
-    if callback is _declare_elicitation_capability:
-        return True
-    closure = getattr(callback, "__closure__", None) or ()
-    freevars = getattr(getattr(callback, "__code__", None), "co_freevars", ())
-    wrapped = dict(zip(freevars, (cell.cell_contents for cell in closure), strict=False))
-    return wrapped.get("elicitation_handler") is _declare_elicitation_capability
+def _arm_for_interrupts(client: Client[Any]) -> None:
+    """Set the sentinel handler and mark the client as adapter-armed."""
+    client.set_elicitation_callback(_declare_elicitation_capability)
+    setattr(client, _ARMED_MARKER, True)
 
 
 def _drives_interrupts(client: Client[Any]) -> bool:
     """Report whether a call through `client` should drive the interrupt loop.
 
-    Two things must hold. The client must carry the interrupt-driving sentinel
-    `MCPAdapter` installs (rather than a caller's own handler, which answers the
-    legacy way). And the connection must have negotiated a modern protocol era,
-    since the `InputRequiredResult` the loop answers is a modern-era feature
-    (SEP-2322). A legacy server never returns one, so driving the loop there is
-    pointless — worse, it would advertise interrupt-answering the server would
-    then try to use over the legacy server-initiated path, which the loop cannot
-    answer. On legacy the call falls back to a plain `call_tool` instead.
-
-    `protocol_version` is only populated once connected, and this is read at
-    call time when the client is connected, so an unset version is read as "not
-    modern" — the safe default, which routes through the plain call.
+    True only for a client the adapter armed (not one carrying a caller's own
+    handler) that is connected to a modern-era server. The `InputRequiredResult`
+    the loop answers is a modern feature (SEP-2322); a legacy server never
+    returns one, so the call falls back to a plain `call_tool` there.
     """
-    if not _carries_sentinel(client):
+    if not getattr(client, _ARMED_MARKER, False):
         return False
     version = getattr(client, "protocol_version", None)
     return version is not None and is_version_at_least(version, LATEST_MODERN_VERSION)
 
 
 async def _await_monitored(client: Client[Any], coro: Coroutine[Any, Any, _ResultT]) -> _ResultT:
-    """Await a session request so a dying session cannot leave it hanging.
+    """Race a session request against the session task so an error can't hang it.
 
     On HTTP transports a server error surfaces in the background session task,
-    not in the coroutine awaiting the reply, so `fastmcp.Client` races the two.
-    Driving this loop by hand means reaching for the same guard, which FastMCP
-    exposes only privately — hence the fallback if the helper ever moves.
+    not in the awaiting coroutine. FastMCP's guard for this is private, so warn
+    and fall back if it ever moves.
     """
     monitored = getattr(client, "_await_with_session_monitoring", None)
     if monitored is None:
-        # Without the race, a server error raised in the background session task
-        # leaves this waiting on a reply that never arrives. Warn rather than
-        # let a FastMCP rename turn into an unexplained hang.
         warnings.warn(
             "This version of FastMCP does not expose "
             "`Client._await_with_session_monitoring`, so an MCP elicitation "
@@ -347,19 +288,14 @@ async def _call_tool_with_interrupts(
     tool_name: str,
     arguments: dict[str, Any],
 ) -> CallToolResult:
-    """Call an MCP tool, answering any input it asks for with an interrupt.
+    """Call an MCP tool, answering each round of requested input with an interrupt.
 
-    Each round of requests becomes one `interrupt()`, and the answers are sent
-    back on a retry echoing the server's opaque `request_state`.
-
-    Because `interrupt()` unwinds the whole tool call, the call is re-issued
-    from its first round when the run resumes. A server that asks before doing
-    any work — the shape the protocol is designed around — repeats nothing. One
-    that works first and asks later repeats that work once per round.
+    `interrupt()` unwinds the whole call, so on resume it is re-issued from the
+    first round. A server that asks before doing work repeats nothing; one that
+    works first repeats that work once per round.
 
     Args:
-        client: A connected FastMCP client, built with an `elicitation_handler`
-            so it advertises the capability, or servers will refuse to ask.
+        client: A connected client armed to advertise the elicitation capability.
         tool_name: The MCP tool to call.
         arguments: Arguments for the tool.
 
@@ -367,10 +303,8 @@ async def _call_tool_with_interrupts(
         The tool's terminal result.
 
     Raises:
-        GraphInterrupt: Every time the server asks something that has not been
-            answered yet. This is the mechanism, not a failure.
-        NotImplementedError: If the server asks for sampling or roots, or
-            returns a continuation round rather than a question.
+        GraphInterrupt: For each unanswered round. This is the mechanism.
+        NotImplementedError: On a sampling/roots request or a continuation round.
         ValueError: If a resumed answer is missing or malformed.
     """
     session = client.session
@@ -380,11 +314,8 @@ async def _call_tool_with_interrupts(
 
     while isinstance(result, InputRequiredResult):
         if not result.input_requests:
-            # A round carrying only `request_state` is the protocol's
-            # continuation channel: the server is still working and wants to be
-            # called back. There is no question, so there is nobody to
-            # interrupt, and answering it would mean polling a remote server
-            # from inside a tool call. Refused for the same reason sampling is.
+            # A round with only `request_state` is a continuation: the server is
+            # still working, with no question to interrupt on. Refused like sampling.
             msg = (
                 f"The MCP tool {tool_name!r} returned a continuation round with "
                 "no input requests. Interrupt-based elicitation only answers "
@@ -408,8 +339,7 @@ async def _call_tool_with_interrupts(
                 tool_name,
                 arguments,
                 input_responses=responses,
-                # Opaque to us: echoed back byte-exact, never inspected.
-                request_state=result.request_state,
+                request_state=result.request_state,  # opaque; echoed back verbatim
                 allow_input_required=True,
             ),
         )
