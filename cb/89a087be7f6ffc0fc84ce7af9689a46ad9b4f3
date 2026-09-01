@@ -1,0 +1,18 @@
+libs/langchain_v1/examples/mcp/README.md
+  h_152f5d9f78d224 21
+libs/langchain_v1/examples/mcp/_servers.py
+  h_152f5d9f78d224 23,58-79
+libs/langchain_v1/examples/mcp/destructive_interrupt.py
+  h_152f5d9f78d224 1-80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "cb89a087be7f6ffc0fc84ce7af9689a46ad9b4f3",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
