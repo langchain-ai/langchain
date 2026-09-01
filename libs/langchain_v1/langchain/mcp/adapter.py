@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Final, TypeAlias
 
 from pydantic import AnyUrl, TypeAdapter, ValidationError
 from typing_extensions import Self
 
+from langchain.mcp._client import _ReentrantClientGroup
 from langchain.mcp.elicitation import _declare_elicitation_capability
 from langchain.mcp.tools import as_langchain_tool
 
@@ -67,6 +68,50 @@ transport, or `MCPConfig` — see `MCPAdapter`.
 `ClientGroup` is the one member `fastmcp.Client` does not accept at all, since a
 group is a peer of `Client` rather than a transport it could wrap.
 """
+
+
+def _has_elicitation_handler(client: FastMCPClient[Any]) -> bool:
+    """Report whether `client` already carries an elicitation handler.
+
+    A client only advertises the elicitation capability when it carries a
+    handler, so this is what decides between honoring a caller's own handler and
+    injecting the interrupt-driving sentinel. The attribute is FastMCP-private,
+    so a missing one is read as "no handler" — the safe default, which just
+    installs the sentinel rather than silently skipping it.
+    """
+    return getattr(client, "_elicitation_callback", None) is not None
+
+
+def _client_driving_interrupts(client: FastMCPClient[Any]) -> FastMCPClient[Any]:
+    """Return a client that answers elicitation with an interrupt.
+
+    A client the caller already armed with their own handler is returned
+    untouched, so their handler keeps answering the legacy way. One with no
+    handler is cloned — not mutated — and given the sentinel that makes FastMCP
+    advertise the capability, so a call can drive the interrupt loop. Cloning
+    keeps the caller's own client as they built it, the promise this module has
+    always made about a pre-built target.
+    """
+    if _has_elicitation_handler(client):
+        return client
+    clone = client.new()
+    clone.set_elicitation_callback(_declare_elicitation_capability)
+    return clone
+
+
+def _group_driving_interrupts(group: ClientGroup) -> _ReentrantClientGroup:
+    """Rebuild `group` so every member answers elicitation with an interrupt.
+
+    FastMCP declares the capability per client, so a group must arm every
+    member. Each is armed by `_client_driving_interrupts`, so a member the
+    caller already gave a handler is left alone and one without gets the
+    sentinel on a clone. The rebuilt group is wrapped in `_ReentrantClientGroup`
+    so nested and concurrent `list_tools()`/call use share one connection.
+    """
+    armed = ClientGroup(
+        {name: _client_driving_interrupts(member) for name, member in group.clients.items()}
+    )
+    return _ReentrantClientGroup(armed)
 
 
 _URL_SCHEMES: Final = frozenset({"http", "https"})
@@ -143,20 +188,22 @@ class MCPAdapter:
         let it select local execution. Reach a local server through `Path`, a
         `fastmcp` transport, or an `MCPConfig`, all of which say so explicitly.
 
+    A server that needs input mid-call is answered with a LangGraph
+    `interrupt()`, so a human answers and the run resumes — see
+    `langchain.mcp.elicitation`. This is the default: the adapter arms every
+    client it builds to advertise the elicitation capability and drives the
+    interrupt loop on each call. A server that never asks for input is
+    unaffected, since the loop only runs when the server returns a request.
+
+    A pre-built client (or `ClientGroup`) that already carries its own
+    elicitation handler is honored rather than overridden: its handler keeps
+    answering, and the adapter leaves the client as the caller built it. Only a
+    client with no handler is armed, and it is cloned first so the caller's own
+    object is never mutated.
+
     Args:
         target: MCP target accepted by `fastmcp.Client`, including an existing
             FastMCP client. A `str` must be an `http`/`https` URL.
-        elicitation: Whether these tools can answer a server that needs input
-            mid-call. Pass `'interrupt'` to raise a LangGraph `interrupt()` so a
-            human answers and the run resumes — see `langchain.mcp.elicitation`.
-
-            Declaring the capability is a promise made on the wire, which is why
-            it is a choice rather than a default: an agent with no way to reach
-            a human cannot keep it. Left unset, nothing is declared, and a
-            server whose tool *requires* an answer refuses the call outright
-            rather than running without one. With a pre-built client, interrupt
-            mode configures a clone so the caller's own handlers are not
-            replaced.
 
     Example:
         ```python
@@ -169,28 +216,17 @@ class MCPAdapter:
         ```
     """
 
-    def __init__(
-        self,
-        target: MCPAdapterTarget,
-        *,
-        elicitation: Literal["interrupt"] | None = None,
-    ) -> None:
-        """Initialize the adapter around a FastMCP target, client, or group."""
-        self._depth = 0
+    def __init__(self, target: MCPAdapterTarget) -> None:
+        """Initialize the adapter around a FastMCP target, client, or group.
+
+        The underlying client is armed to answer elicitation with an interrupt
+        unless the caller supplied one that already has its own handler, which
+        is honored instead. See the class docstring.
+        """
         if isinstance(target, ClientGroup):
-            group = _group_declaring_elicitation(target) if elicitation == "interrupt" else target
-            self._client: FastMCPClient[Any] | ClientGroup = (
-                group if elicitation == "interrupt" else _ReentrantClientGroup(group)
-            )
+            self._client: FastMCPClient[Any] | ClientGroup = _group_driving_interrupts(target)
         elif isinstance(target, FastMCPClient):
-            if elicitation == "interrupt":
-                # Configure an adapter-owned client so interrupt mode does not
-                # replace a callback on the caller's client.
-                client = target.new()
-                client.set_elicitation_callback(_declare_elicitation_capability)
-                self._client = client
-            else:
-                self._client = target
+            self._client = _client_driving_interrupts(target)
         else:
             if isinstance(target, str):
                 _validate_url_target(target)
@@ -201,11 +237,8 @@ class MCPAdapter:
             # result rather than through this callback.
             self._client = FastMCPClient(
                 target,
-                elicitation_handler=(
-                    _declare_elicitation_capability if elicitation == "interrupt" else None
-                ),
+                elicitation_handler=_declare_elicitation_capability,
             )
-        self._elicitation: Literal["interrupt"] | None = elicitation
 
     @property
     def client(self) -> FastMCPClient[Any] | ClientGroup:
@@ -251,10 +284,7 @@ class MCPAdapter:
             if isinstance(self._client, ClientGroup):
                 return await self._group_tools(self._client, cache_mode=cache_mode)
             remote_tools = await self._client.list_tools(cache_mode=cache_mode)
-            return [
-                as_langchain_tool(tool, self._client, elicitation=self._elicitation)
-                for tool in remote_tools
-            ]
+            return [as_langchain_tool(tool, self._client) for tool in remote_tools]
 
     async def _group_tools(self, group: ClientGroup, *, cache_mode: CacheMode) -> list[BaseTool]:
         """Adapt a group's catalog, binding each tool to the client that serves it.
@@ -271,7 +301,7 @@ class MCPAdapter:
             # name so the call is right, then publish under the fleet-wide one,
             # which is what makes two servers' identically named tools distinct.
             upstream = listed.model_copy(update={"name": route.upstream_name})
-            adapted = as_langchain_tool(upstream, route.client, elicitation=self._elicitation)
+            adapted = as_langchain_tool(upstream, route.client)
             adapted.name = listed.name
             tools.append(adapted)
         return tools

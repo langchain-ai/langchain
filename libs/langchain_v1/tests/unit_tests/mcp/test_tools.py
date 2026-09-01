@@ -22,6 +22,7 @@ from mcp.types import (
 )
 
 from langchain.mcp import as_langchain_tool
+from langchain.mcp.elicitation import _declare_elicitation_capability
 from langchain.mcp.tools import _convert_call_tool_result, _convert_content_block
 
 
@@ -43,14 +44,20 @@ async def _one_tool(
     *,
     elicitation: Literal["interrupt"] | None = None,
 ) -> tuple[Any, Client[Any]]:
-    """Convert the single tool an in-process server exposes."""
-    client: Client[Any] = Client(server)
+    """Convert the single tool an in-process server exposes.
+
+    Routing is read off the client, so `elicitation='interrupt'` is exercised by
+    arming the client with the sentinel handler the adapter would install.
+    """
+    client: Client[Any] = Client(
+        server,
+        elicitation_handler=(
+            _declare_elicitation_capability if elicitation == "interrupt" else None
+        ),
+    )
     async with client:
         [mcp_tool] = await client.list_tools()
-    return (
-        as_langchain_tool(mcp_tool, client, elicitation=elicitation),
-        client,
-    )
+    return as_langchain_tool(mcp_tool, client), client
 
 
 @pytest.mark.asyncio
