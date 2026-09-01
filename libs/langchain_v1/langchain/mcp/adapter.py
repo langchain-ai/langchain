@@ -31,6 +31,10 @@ if TYPE_CHECKING:
 
     from fastmcp import FastMCP
     from langchain_core.tools import BaseTool
+
+    # `CacheMode` is the MCP SDK's own type (SEP-2549); FastMCP re-imports it
+    # rather than defining its own, so this is the canonical source.
+    from mcp.client.caching import CacheMode
 else:
     try:
         from fastmcp import FastMCP
@@ -255,8 +259,19 @@ class MCPAdapter:
         else:
             await self._client.__aexit__(exc_type, exc_value, traceback)  # type: ignore[no-untyped-call]
 
-    async def get_tools(self) -> list[BaseTool]:
+    async def get_tools(self, *, cache_mode: CacheMode = "use") -> list[BaseTool]:
         """Discover and adapt MCP tools for use with LangChain.
+
+        Args:
+            cache_mode: How discovery interacts with the client-side response
+                cache (SEP-2549). `use` serves a cached tool list when one is
+                present and still within the server's TTL hint, `refresh` calls
+                the server and repopulates the cache, and `bypass` skips the
+                cache entirely. The cache and its per-principal isolation are
+                configured on the client itself (`Client(cache=...)`); this only
+                selects how discovery reads it. Defaults to `use` so a
+                configured cache is honored — note this differs from a bare
+                `ClientGroup.list_tools()`, whose own default is `refresh`.
 
         Returns:
             LangChain tools that invoke the corresponding MCP tools
@@ -267,8 +282,8 @@ class MCPAdapter:
         # nesting, and for a plain client it is the same reentrant hold as before.
         async with self:
             if isinstance(self._client, ClientGroup):
-                return await self._group_tools(self._client)
-            remote_tools = await self._client.list_tools()
+                return await self._group_tools(self._client, cache_mode=cache_mode)
+            remote_tools = await self._client.list_tools(cache_mode=cache_mode)
             return [
                 convert_mcp_tool_to_langchain_tool(
                     tool, self._client, elicitation=self._elicitation
@@ -276,7 +291,9 @@ class MCPAdapter:
                 for tool in remote_tools
             ]
 
-    async def _group_tools(self, group: ClientGroup) -> list[BaseTool]:
+    async def _group_tools(
+        self, group: ClientGroup, *, cache_mode: CacheMode
+    ) -> list[BaseTool]:
         """Adapt a group's catalog, binding each tool to the client that serves it.
 
         Tools hold the member client rather than the group, so a call never
@@ -284,19 +301,18 @@ class MCPAdapter:
         adapter's context exits, exactly as they do for a single client.
         """
         tools = []
-        for tool in await group.list_tools():
-            # `list_tools` namespaces the catalog as `{server}_{tool}`, so the
-            # LangChain tool keeps the fleet-wide name while the call uses the
-            # name its own server knows.
-            route = await group.resolve_tool(tool.name)
-            tools.append(
-                convert_mcp_tool_to_langchain_tool(
-                    tool,
-                    route.client,
-                    elicitation=self._elicitation,
-                    upstream_name=route.upstream_name,
-                )
+        for listed in await group.list_tools(cache_mode=cache_mode):
+            route = await group.resolve_tool(listed.name)
+            # `list_tools` namespaces the catalog as `{server}_{tool}`, but the
+            # server only knows the tool by its own name. Convert against that
+            # name so the call is right, then publish under the fleet-wide one,
+            # which is what makes two servers' identically named tools distinct.
+            upstream = listed.model_copy(update={"name": route.upstream_name})
+            adapted = convert_mcp_tool_to_langchain_tool(
+                upstream, route.client, elicitation=self._elicitation
             )
+            adapted.name = listed.name
+            tools.append(adapted)
         return tools
 
 

@@ -110,6 +110,57 @@ async def test_get_tools_inside_a_group_context_does_not_re_enter() -> None:
 
 
 @pytest.mark.asyncio
+async def test_get_tools_forwards_cache_mode_to_a_single_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`cache_mode` reaches the client's discovery call, so a cache is honored.
+
+    Defaults to `use`, which is the whole point: a bare `list_tools` would
+    otherwise take the client's own default and a configured cache would sit
+    unused.
+    """
+    adapter = MCPAdapter(_calculator())
+    seen: list[str] = []
+    real = adapter.client.list_tools
+
+    async def spy(*args: Any, cache_mode: str = "use", **kwargs: Any) -> Any:
+        seen.append(cache_mode)
+        return await real(*args, cache_mode=cache_mode, **kwargs)
+
+    monkeypatch.setattr(adapter.client, "list_tools", spy)
+
+    await adapter.get_tools()
+    await adapter.get_tools(cache_mode="refresh")
+
+    assert seen == ["use", "refresh"]
+
+
+@pytest.mark.asyncio
+async def test_get_tools_forwards_cache_mode_to_a_group(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A group hardcodes `refresh` on a bare call, so the adapter must pass it.
+
+    Without this the group's own default (`refresh`) would win and per-user
+    caches keyed on the client would never be served.
+    """
+    adapter = MCPAdapter(_group())
+    seen: list[str] = []
+    real = adapter.client.list_tools
+
+    async def spy(*args: Any, cache_mode: str = "refresh", **kwargs: Any) -> Any:
+        seen.append(cache_mode)
+        return await real(*args, cache_mode=cache_mode, **kwargs)
+
+    monkeypatch.setattr(adapter.client, "list_tools", spy)
+
+    await adapter.get_tools()
+    await adapter.get_tools(cache_mode="bypass")
+
+    assert seen == ["use", "bypass"]
+
+
+@pytest.mark.asyncio
 async def test_interrupt_mode_leaves_the_callers_group_untouched() -> None:
     """Arming clones keeps a caller's own clients as they built them."""
     group = _group()

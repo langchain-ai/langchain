@@ -192,7 +192,6 @@ def convert_mcp_tool_to_langchain_tool(
     client: Client[Any],
     *,
     elicitation: Literal["interrupt"] | None = None,
-    upstream_name: str | None = None,
 ) -> BaseTool:
     """Convert one MCP tool into a LangChain tool.
 
@@ -214,10 +213,6 @@ def convert_mcp_tool_to_langchain_tool(
             `client` to have been built with an `elicitation_handler`, since
             FastMCP declares the capability only then. By default the request is
             left to `client` and its own handler, if it has one.
-        upstream_name: The name to call on the server, when it differs from the
-            name the LangChain tool carries. A `ClientGroup` namespaces its
-            catalog as `{server}_{tool}`, so a tool discovered through one is
-            named for the fleet but must be called by its own server's name.
 
     Returns:
         A LangChain tool that invokes the MCP tool asynchronously.
@@ -234,9 +229,6 @@ def convert_mcp_tool_to_langchain_tool(
         tools = [convert_mcp_tool_to_langchain_tool(t, client) for t in mcp_tools]
         ```
     """
-    # The name on the wire, which is the tool's own name unless the caller
-    # discovered it under a different one.
-    remote_name = upstream_name or tool.name
 
     async def call_tool(
         **arguments: Any,
@@ -245,10 +237,10 @@ def convert_mcp_tool_to_langchain_tool(
         result: _ToolCallResult
         async with client:
             if elicitation == "interrupt":
-                result = await _call_tool_with_interrupts(client, remote_name, arguments)
+                result = await _call_tool_with_interrupts(client, tool.name, arguments)
             else:
                 # Preserve MCP error results for conversion into failed tool messages.
-                result = await client.call_tool(remote_name, arguments, raise_on_error=False)
+                result = await client.call_tool(tool.name, arguments, raise_on_error=False)
         return _convert_call_tool_result(result)
 
     return StructuredTool(
