@@ -1,0 +1,14 @@
+libs/langchain_v1/langchain/mcp/adapter.py
+  h_152f5d9f78d224 288,292,307
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c0caa649c4fd42d55acf614a9400d8612c277887",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
