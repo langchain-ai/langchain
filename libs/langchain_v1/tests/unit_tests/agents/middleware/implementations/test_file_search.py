@@ -1,5 +1,6 @@
 """Unit tests for file search middleware."""
 
+import json
 import os
 from pathlib import Path
 from typing import Any
@@ -75,6 +76,52 @@ class TestFilesystemGrepSearch:
         assert "/file1.py" in result
         assert "/file3.txt" in result
         assert "/file2.py" not in result
+
+    def test_python_grep_emits_posix_virtual_paths(self, tmp_path: Path) -> None:
+        """The Python fallback reports nested matches with `/` separators."""
+        (tmp_path / "src" / "nested").mkdir(parents=True)
+        (tmp_path / "src" / "nested" / "deep.py").write_text("needle\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="needle")
+
+        assert "\\" not in result
+        assert "/src/nested/deep.py" in result
+
+    def test_ripgrep_emits_posix_virtual_paths(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Parsed ripgrep matches are keyed by `/`-separated virtual paths."""
+        nested = tmp_path / "src" / "nested"
+        nested.mkdir(parents=True)
+        deep = nested / "deep.py"
+        deep.write_text("needle\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=True)
+
+        class DummyResult:
+            stdout = json.dumps(
+                {
+                    "type": "match",
+                    "data": {
+                        "path": {"text": str(deep)},
+                        "line_number": 1,
+                        "lines": {"text": "needle\n"},
+                    },
+                }
+            )
+
+        monkeypatch.setattr(
+            "langchain.agents.middleware.file_search.subprocess.run",
+            lambda *_args, **_kwargs: DummyResult(),
+        )
+
+        results = middleware._ripgrep_search("needle", "/", None)
+
+        assert list(results) == ["/src/nested/deep.py"]
 
     def test_grep_with_include_filter(self, tmp_path: Path) -> None:
         """Test grep search with include pattern filter."""
@@ -172,6 +219,24 @@ class TestFilesystemGlobSearch:
         result = middleware.glob_search.func(pattern="**/*.py")
 
         assert "/src/test.py" in result
+        assert "/src/nested/deep.py" in result
+
+    def test_glob_emits_posix_virtual_paths(self, tmp_path: Path) -> None:
+        r"""Virtual paths use `/` regardless of the host separator.
+
+        Regression test: the virtual path was built with `str()`, which renders a
+        `Path` with the native separator, so Windows returned `/src\nested\deep.py`.
+        """
+        (tmp_path / "src" / "nested").mkdir(parents=True)
+        (tmp_path / "src" / "nested" / "deep.py").write_text("content", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path))
+
+        assert isinstance(middleware.glob_search, StructuredTool)
+        assert middleware.glob_search.func is not None
+        result = middleware.glob_search.func(pattern="**/*.py")
+
+        assert "\\" not in result
         assert "/src/nested/deep.py" in result
 
     def test_glob_with_subdirectory_path(self, tmp_path: Path) -> None:
