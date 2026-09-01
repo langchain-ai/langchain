@@ -285,15 +285,11 @@ class MCPAdapter:
                 return await self._group_tools(self._client, cache_mode=cache_mode)
             remote_tools = await self._client.list_tools(cache_mode=cache_mode)
             return [
-                as_langchain_tool(
-                    tool, self._client, elicitation=self._elicitation
-                )
+                as_langchain_tool(tool, self._client, elicitation=self._elicitation)
                 for tool in remote_tools
             ]
 
-    async def _group_tools(
-        self, group: ClientGroup, *, cache_mode: CacheMode
-    ) -> list[BaseTool]:
+    async def _group_tools(self, group: ClientGroup, *, cache_mode: CacheMode) -> list[BaseTool]:
         """Adapt a group's catalog, binding each tool to the client that serves it.
 
         Tools hold the member client rather than the group, so a call never
@@ -308,9 +304,7 @@ class MCPAdapter:
             # name so the call is right, then publish under the fleet-wide one,
             # which is what makes two servers' identically named tools distinct.
             upstream = listed.model_copy(update={"name": route.upstream_name})
-            adapted = as_langchain_tool(
-                upstream, route.client, elicitation=self._elicitation
-            )
+            adapted = as_langchain_tool(upstream, route.client, elicitation=self._elicitation)
             adapted.name = listed.name
             tools.append(adapted)
         return tools
