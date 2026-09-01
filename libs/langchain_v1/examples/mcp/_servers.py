@@ -146,6 +146,7 @@ def run_calculator_http(host: str, port: int) -> None:
 ISSUER = "https://demo.issuer"
 AUDIENCE = "mcp-fleet"
 
+
 def _load_or_generate_keys() -> RSAKeyPair:
     """Return one keypair shared across processes, or a fresh one per process.
 

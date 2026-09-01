@@ -75,8 +75,7 @@ async def _run_as(user: str) -> str:
                 {
                     "role": "user",
                     "content": (
-                        "Call both whoami tools. Reply with exactly: "
-                        "calendar=<value> docs=<value>."
+                        "Call both whoami tools. Reply with exactly: calendar=<value> docs=<value>."
                     ),
                 }
             ]
