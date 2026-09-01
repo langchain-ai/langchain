@@ -5291,16 +5291,42 @@ def test_langsmith_gateway_marker_survives_serialization(
 
     It does not require an OpenAI API key.
     """
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
     monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
     monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
     model = ChatOpenAI(model="custom/foo", use_langsmith_gateway=True)
 
     serialized = dumps(model)
-    restored = loads(serialized, allowed_objects="all")
+    assert "LANGSMITH_GATEWAY_API_KEY" in serialized
+    restored = loads(
+        serialized,
+        allowed_objects="all",
+        secrets_from_env=True,
+    )
 
     assert isinstance(restored, ChatOpenAI)
     assert restored.use_langsmith_gateway is True
     assert restored.openai_api_base == "https://gateway.smith.langchain.com/v1"
     assert isinstance(restored.openai_api_key, SecretStr)
     assert restored.openai_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_serialization_preserves_langsmith_key_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A missing gateway-specific key falls back after secret revival."""
+    monkeypatch.setenv("OPENAI_API_KEY", "provider-key")
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY_API_KEY", raising=False)
+    monkeypatch.setenv("LANGSMITH_API_KEY", "langsmith-key")
+    model = ChatOpenAI(model="custom/foo", use_langsmith_gateway=True)
+
+    restored = loads(
+        dumps(model),
+        allowed_objects="all",
+        secrets_from_env=True,
+    )
+
+    assert isinstance(restored, ChatOpenAI)
+    assert isinstance(restored.openai_api_key, SecretStr)
+    assert restored.openai_api_key.get_secret_value() == "langsmith-key"

@@ -3662,7 +3662,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     @property
     def lc_secrets(self) -> dict[str, str]:
         """Mapping of secret environment variables."""
-        return {"openai_api_key": "OPENAI_API_KEY"}
+        api_key_env = (
+            "LANGSMITH_GATEWAY_API_KEY"
+            if self.use_langsmith_gateway
+            else "OPENAI_API_KEY"
+        )
+        return {"openai_api_key": api_key_env}
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
