@@ -22,13 +22,16 @@ _DEFAULT_TRACE_POLICY: TracePolicy | None = None
 def configure_trace_policy(policy: TracePolicy | None) -> None:
     """Set the process-wide default `TracePolicy` for agent middleware hook spans.
 
-    Call once at startup. Fields set by a middleware's own `trace_policy` override
-    the corresponding global fields. Pass `None` to clear the default.
-
-    Fields omitted by the middleware continue to inherit from the global policy.
+    Call once at startup. A middleware's own `trace_policy` overrides this wholesale
+    (no field-level merge). Pass `None` to clear the default.
     """
     global _DEFAULT_TRACE_POLICY  # noqa: PLW0603 - process-wide default, set once at startup
     _DEFAULT_TRACE_POLICY = policy
+
+
+def _resolve(mw_policy: TracePolicy | None) -> TracePolicy | None:
+    """The effective policy: the middleware's own if set, else the global default."""
+    return mw_policy if mw_policy is not None else _DEFAULT_TRACE_POLICY
 
 
 def _resolved_transform(
@@ -43,9 +46,8 @@ def _resolved_transform(
     """
 
     def process(value: Any) -> Any:
-        fn = getattr(mw_policy, field) if mw_policy is not None else None
-        if fn is None and _DEFAULT_TRACE_POLICY is not None:
-            fn = getattr(_DEFAULT_TRACE_POLICY, field)
+        effective = _resolve(mw_policy)
+        fn = getattr(effective, field) if effective is not None else None
         return fn(value) if fn is not None else value
 
     return process
