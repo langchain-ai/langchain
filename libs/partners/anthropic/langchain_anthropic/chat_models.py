@@ -1530,6 +1530,12 @@ class ChatAnthropic(BaseChatModel):
                     "non-default values."
                 )
                 raise ValueError(msg)
+            if isinstance(thinking, Mapping) and thinking.get("type") == "disabled":
+                msg = (
+                    '`thinking={"type": "disabled"}` is not supported for '
+                    f"{self.model}; omit `thinking` to use adaptive thinking."
+                )
+                raise ValueError(msg)
 
         if (
             (self.model.startswith("claude-opus-5") or is_fable_model)
@@ -1540,17 +1546,6 @@ class ChatAnthropic(BaseChatModel):
                 '`thinking={"type": "enabled", "budget_tokens": ...}` is not '
                 f"supported for {self.model}; use adaptive thinking and "
                 "`output_config.effort` instead."
-            )
-            raise ValueError(msg)
-
-        if (
-            is_fable_model
-            and isinstance(thinking, Mapping)
-            and thinking.get("type") == "disabled"
-        ):
-            msg = (
-                '`thinking={"type": "disabled"}` is not supported for '
-                f"{self.model}; omit `thinking` to use adaptive thinking."
             )
             raise ValueError(msg)
 
