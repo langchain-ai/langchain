@@ -60,4 +60,4 @@ class ChatLangSmithGateway(ChatOpenAI):
     @override
     def get_lc_namespace(cls) -> list[str]:
         """Get the stable serialization namespace for LangSmith chat models."""
-        return ["langchain", "chat_models", "openai"]
+        return ["langchain", "chat_models", "langsmith"]

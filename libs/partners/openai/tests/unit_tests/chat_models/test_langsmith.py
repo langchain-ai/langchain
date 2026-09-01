@@ -29,7 +29,7 @@ def test_gateway_key_priority_and_serialization_round_trip(
     assert model.lc_id() == [
         "langchain",
         "chat_models",
-        "openai",
+        "langsmith",
         "ChatLangSmithGateway",
     ]
     assert '"id": ["LANGSMITH_GATEWAY_API_KEY"]' in serialized
