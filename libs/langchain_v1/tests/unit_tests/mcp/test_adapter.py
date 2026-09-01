@@ -77,9 +77,20 @@ async def test_group_tools_are_namespaced_per_server() -> None:
 
 
 @pytest.mark.asyncio
-async def test_colliding_tool_names_reach_their_own_server() -> None:
-    """The namespace is only useful if the call follows it."""
-    tools = {tool.name: tool for tool in await MCPAdapter(_group()).list_tools()}
+async def test_colliding_tool_names_reach_their_own_server(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Group-backed tools keep their names so FastMCP routes each invocation."""
+    adapter = MCPAdapter(_group())
+    seen: list[str] = []
+    real = adapter.client.call_tool
+
+    async def spy(name: str, *args: Any, **kwargs: Any) -> Any:
+        seen.append(name)
+        return await real(name, *args, **kwargs)
+
+    monkeypatch.setattr(adapter.client, "call_tool", spy)
+    tools = {tool.name: tool for tool in await adapter.list_tools()}
 
     [calc] = await tools["calc_add"].ainvoke({"a": 1, "b": 2})
     [greet] = await tools["greet_add"].ainvoke({"a": 1, "b": 2})
