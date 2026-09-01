@@ -874,8 +874,10 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
             msg = f"Path outside root directory: {path}"
             raise ValueError(msg) from None
 
-        # Check allowed prefixes
-        virtual_path = "/" + str(full_path.relative_to(self.root_path))
+        # Check allowed prefixes. `_is_within_allowed_prefix` compares on `/`
+        # boundaries, so the root-relative part has to be rendered as POSIX rather
+        # than with the host separator.
+        virtual_path = "/" + full_path.relative_to(self.root_path).as_posix()
         if self.allowed_prefixes and not _is_within_allowed_prefix(
             virtual_path, self.allowed_prefixes
         ):

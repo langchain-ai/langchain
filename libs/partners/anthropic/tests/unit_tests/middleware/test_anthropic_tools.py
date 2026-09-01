@@ -11,6 +11,7 @@ from langgraph.types import Command
 
 from langchain_anthropic.middleware.anthropic_tools import (
     AnthropicToolsState,
+    FilesystemClaudeMemoryMiddleware,
     FilesystemClaudeTextEditorMiddleware,
     StateClaudeMemoryMiddleware,
     StateClaudeTextEditorMiddleware,
@@ -357,6 +358,67 @@ class TestFileOperations:
         message = result.update["messages"][0]
         assert isinstance(message, ToolMessage)
         assert "renamed" in message.content
+
+
+class TestFilesystemAllowedPrefixes:
+    r"""Prefix checks on the filesystem-backed middleware are separator-agnostic.
+
+    Regression tests: the virtual path handed to `_is_within_allowed_prefix` was
+    built with `str()`, which renders a `Path` with the host separator. On Windows
+    `/workspace/nested/file.txt` became `/workspace\nested\file.txt`, which does not
+    match the `/`-boundary comparison, so every path below a prefix was rejected.
+    """
+
+    def test_nested_path_within_prefix_is_allowed(self) -> None:
+        """A file below the allowed prefix directory resolves."""
+        with tempfile.TemporaryDirectory() as root:
+            (Path(root) / "workspace" / "nested").mkdir(parents=True)
+            middleware = FilesystemClaudeTextEditorMiddleware(
+                root_path=root, allowed_prefixes=["/workspace"]
+            )
+
+            resolved = middleware._validate_and_resolve_path(
+                "/workspace/nested/file.txt"
+            )
+
+            expected = Path(root).resolve() / "workspace" / "nested" / "file.txt"
+            assert resolved == expected
+
+    def test_direct_child_of_prefix_is_allowed(self) -> None:
+        """A file directly inside the allowed prefix directory resolves."""
+        with tempfile.TemporaryDirectory() as root:
+            (Path(root) / "workspace").mkdir()
+            middleware = FilesystemClaudeTextEditorMiddleware(
+                root_path=root, allowed_prefixes=["/workspace"]
+            )
+
+            resolved = middleware._validate_and_resolve_path("/workspace/file.txt")
+
+            assert resolved == Path(root).resolve() / "workspace" / "file.txt"
+
+    def test_sibling_sharing_prefix_text_is_rejected(self) -> None:
+        """Normalizing separators must not weaken the segment-boundary check."""
+        with tempfile.TemporaryDirectory() as root:
+            (Path(root) / "workspace2").mkdir()
+            middleware = FilesystemClaudeTextEditorMiddleware(
+                root_path=root, allowed_prefixes=["/workspace"]
+            )
+
+            with pytest.raises(ValueError, match="Path must start with one of"):
+                middleware._validate_and_resolve_path("/workspace2/evil.txt")
+
+    def test_memory_middleware_shares_the_fix(self) -> None:
+        """`FilesystemClaudeMemoryMiddleware` uses the same base path validation."""
+        with tempfile.TemporaryDirectory() as root:
+            (Path(root) / "memories" / "nested").mkdir(parents=True)
+            middleware = FilesystemClaudeMemoryMiddleware(root_path=root)
+
+            resolved = middleware._validate_and_resolve_path(
+                "/memories/nested/note.txt"
+            )
+
+            expected = Path(root).resolve() / "memories" / "nested" / "note.txt"
+            assert resolved == expected
 
 
 class TestFilesystemRenameViaToolDispatch:
