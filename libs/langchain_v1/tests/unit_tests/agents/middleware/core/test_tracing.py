@@ -88,20 +88,17 @@ def test_global_default_applies_when_middleware_unset() -> None:
     assert _recorded_before_model_inputs(_NoopBeforeModel()) == {}
 
 
-def test_middleware_overrides_global_no_merge() -> None:
+def test_middleware_inherits_unset_global_field() -> None:
     configure_trace_policy(TracePolicy(process_inputs=omit_payload))
 
     class Override(AgentMiddleware):
-        # sets only process_outputs; per override-not-merge this replaces the global
-        # wholesale, so the global's input scrub does NOT apply -> inputs recorded raw
         trace_policy = TracePolicy(process_outputs=omit_payload)
 
         @override
         def before_model(self, state: AgentState[Any], runtime: Runtime) -> None:
             return None
 
-    recorded = _recorded_before_model_inputs(Override())
-    assert "messages" in recorded
+    assert _recorded_before_model_inputs(Override()) == {}
 
 
 def test_configure_after_create_agent_applies() -> None:
@@ -157,3 +154,13 @@ def test_wrap_trace_kwargs_inherits_global() -> None:
     # no middleware policy -> wrap hook inherits the global, still after the baseline
     process = _wrap_trace_kwargs(MW())["process_inputs"]
     assert process({"request": {"x": 1}, "handler": lambda: None}) == {}
+
+
+def test_wrap_trace_kwargs_inherits_unset_global_output() -> None:
+    configure_trace_policy(TracePolicy(process_outputs=omit_payload))
+
+    class MW(AgentMiddleware):
+        trace_policy = TracePolicy(process_inputs=omit_payload)
+
+    process = _wrap_trace_kwargs(MW())["process_outputs"]
+    assert process({"messages": [HumanMessage("secret")]}) == {}
