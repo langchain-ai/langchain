@@ -9,11 +9,15 @@ from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
 from langchain.chat_models import __all__, init_chat_model
-from langchain.chat_models.base import _BUILTIN_PROVIDERS, _attempt_infer_model_provider
+from langchain.chat_models.base import (
+    _BUILTIN_PROVIDERS,
+    _attempt_infer_model_provider,
+    _get_chat_model_creator,
+)
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
-    from langchain_openai import ChatOpenAI
+    from langchain_openai import ChatLangSmithGateway
 
 OPENAI_TEST_MODEL = "gpt-5.5"
 
@@ -66,20 +70,20 @@ def test_init_chat_model(model_name: str, model_provider: str | None) -> None:
     clear=True,
 )
 def test_init_chat_model_langsmith_defaults() -> None:
-    model = cast("ChatOpenAI", init_chat_model("langsmith:moonshotai/kimi-k3"))
+    model = cast("ChatLangSmithGateway", init_chat_model("langsmith:moonshotai/kimi-k3"))
 
     assert model.model_name == "moonshotai/kimi-k3"
     assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
     assert isinstance(model.openai_api_key, SecretStr)
     assert model.openai_api_key.get_secret_value() == "gateway-key"
-    assert model.use_langsmith_gateway is True
+    assert model.__class__.__name__ == "ChatLangSmithGateway"
     assert model.use_responses_api is True
 
 
 @pytest.mark.requires("langchain_openai")
 @mock.patch.dict(os.environ, {"LANGSMITH_API_KEY": "langsmith-key"}, clear=True)
 def test_init_chat_model_langsmith_api_key_fallback() -> None:
-    model = cast("ChatOpenAI", init_chat_model("langsmith:moonshotai/kimi-k3"))
+    model = cast("ChatLangSmithGateway", init_chat_model("langsmith:moonshotai/kimi-k3"))
 
     assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
     assert isinstance(model.openai_api_key, SecretStr)
@@ -97,7 +101,7 @@ def test_init_chat_model_langsmith_api_key_fallback() -> None:
 )
 def test_init_chat_model_langsmith_custom_gateway() -> None:
     model = cast(
-        "ChatOpenAI",
+        "ChatLangSmithGateway",
         init_chat_model(
             "moonshotai/kimi-k3",
             model_provider="langsmith",
@@ -122,7 +126,7 @@ def test_init_chat_model_langsmith_custom_gateway() -> None:
 )
 def test_init_chat_model_langsmith_explicit_config() -> None:
     model = cast(
-        "ChatOpenAI",
+        "ChatLangSmithGateway",
         init_chat_model(
             "langsmith:moonshotai/kimi-k3",
             base_url="https://apac.gateway.example.com/v1",
@@ -133,6 +137,28 @@ def test_init_chat_model_langsmith_explicit_config() -> None:
     assert model.openai_api_base == "https://apac.gateway.example.com/v1"
     assert isinstance(model.openai_api_key, SecretStr)
     assert model.openai_api_key.get_secret_value() == "explicit-key"
+
+
+@pytest.mark.requires("langchain_openai")
+@mock.patch.dict(os.environ, {"LANGSMITH_API_KEY": "langsmith-key"}, clear=True)
+def test_init_chat_model_langsmith_older_openai_compatibility() -> None:
+    openai_module = pytest.importorskip("langchain_openai")
+    legacy_module = mock.Mock(spec=["ChatOpenAI"])
+    legacy_module.ChatOpenAI = openai_module.ChatOpenAI
+    _get_chat_model_creator.cache_clear()
+    try:
+        with mock.patch(
+            "langchain.chat_models.base._import_module",
+            return_value=legacy_module,
+        ):
+            model = init_chat_model("langsmith:custom/model")
+    finally:
+        _get_chat_model_creator.cache_clear()
+
+    assert isinstance(model, openai_module.ChatOpenAI)
+    assert model.__class__.__name__ == "ChatOpenAI"
+    assert model.openai_api_base == "https://gateway.smith.langchain.com/v1"
+    assert model.use_responses_api is True
 
 
 def test_init_chat_model_rejects_model_object() -> None:

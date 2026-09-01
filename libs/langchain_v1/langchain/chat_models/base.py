@@ -25,21 +25,18 @@ _LANGSMITH_GATEWAY_DEFAULT_BASE = "https://gateway.smith.langchain.com/v1"
 
 
 def _init_langsmith(cls: type[BaseChatModel], **kwargs: Any) -> BaseChatModel:
-    _apply_gateway_config(
-        kwargs,
-        cls,
-        base_url_field="openai_api_base",
-        api_key_field="openai_api_key",
-        provider_path="v1",
-        api_key_env=("LANGSMITH_GATEWAY_API_KEY", "LANGSMITH_API_KEY"),
-        default_base_url=_LANGSMITH_GATEWAY_DEFAULT_BASE,
-    )
-    # Keep resolving the gateway config here for compatibility with older
-    # langchain-openai releases that predate the serialized marker. Newer
-    # ChatOpenAI versions resolve it again from these explicit values and retain
-    # the marker when the model is serialized.
-    if "use_langsmith_gateway" in cls.model_fields:
-        kwargs["use_langsmith_gateway"] = True
+    # `ChatLangSmithGateway` owns gateway resolution in current langchain-openai releases.
+    # Resolve here only for older releases, where the factory falls back to ChatOpenAI.
+    if cls.__name__ != "ChatLangSmithGateway":
+        _apply_gateway_config(
+            kwargs,
+            cls,
+            base_url_field="openai_api_base",
+            api_key_field="openai_api_key",
+            provider_path="v1",
+            api_key_env=("LANGSMITH_GATEWAY_API_KEY", "LANGSMITH_API_KEY"),
+            default_base_url=_LANGSMITH_GATEWAY_DEFAULT_BASE,
+        )
     kwargs["use_responses_api"] = True
     return cls(**kwargs)
 
@@ -88,7 +85,7 @@ _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
         "ChatWatsonx",
         lambda cls, model, **kwargs: cls(model_id=model, **kwargs),
     ),
-    "langsmith": ("langchain_openai", "ChatOpenAI", _init_langsmith),
+    "langsmith": ("langchain_openai", "ChatLangSmithGateway", _init_langsmith),
     "litellm": ("langchain_litellm", "ChatLiteLLM", _call),
     "meta": ("langchain_meta", "ChatMetaModel", _call),
     "mistralai": ("langchain_mistralai", "ChatMistralAI", _call),
@@ -193,7 +190,11 @@ def _get_chat_model_creator(
             # raise an error related to langchain-ollama
             raise e from None
 
-    cls = getattr(module, class_name)
+    if provider == "langsmith" and not hasattr(module, class_name):
+        # Compatibility with langchain-openai versions predating ChatLangSmithGateway.
+        cls = module.ChatOpenAI
+    else:
+        cls = getattr(module, class_name)
     return functools.partial(creator_func, cls=cls)
 
 

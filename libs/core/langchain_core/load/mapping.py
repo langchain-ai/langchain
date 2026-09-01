@@ -239,6 +239,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "base",
         "ChatOpenAI",
     ),
+    ("langchain", "chat_models", "openai", "ChatLangSmithGateway"): (
+        "langchain_openai",
+        "chat_models",
+        "langsmith",
+        "ChatLangSmithGateway",
+    ),
     ("langchain", "output_parsers", "list", "CommaSeparatedListOutputParser"): (
         "langchain_core",
         "output_parsers",

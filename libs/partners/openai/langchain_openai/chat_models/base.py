@@ -37,6 +37,7 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Literal,
     TypeAlias,
     TypeVar,
@@ -172,8 +173,6 @@ if TYPE_CHECKING:
     from openai.types.responses import Response
 
 logger = logging.getLogger(__name__)
-
-_LANGSMITH_GATEWAY_DEFAULT_BASE = "https://gateway.smith.langchain.com/v1"
 
 # This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
@@ -1181,18 +1180,6 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in `langchain-openai` 0.3.26"
     """
 
-    use_langsmith_gateway: bool = Field(
-        default=False, exclude_if=lambda value: not value
-    )
-    """Whether to route requests through the LangSmith model gateway.
-
-    When enabled, the API key is resolved from `LANGSMITH_GATEWAY_API_KEY`,
-    falling back to `LANGSMITH_API_KEY`, and the Responses API is enabled by
-    default. An explicit `base_url` overrides the default LangSmith gateway URL.
-    This is also enabled automatically when gateway environment configuration or
-    a LangSmith API key routes the model through the gateway.
-    """
-
     use_responses_api: bool | None = None
     """Whether to use the Responses API instead of the Chat API.
 
@@ -1222,6 +1209,19 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     model_config = ConfigDict(populate_by_name=True)
+
+    @property
+    def _uses_gateway(self) -> bool:
+        """Whether requests are routed through the LangSmith gateway.
+
+        Detected from the resolved API key: LangSmith keys (used to authenticate
+        to the gateway) carry the `lsv2_` prefix. Callable keys cannot be
+        inspected without invoking them, so they are treated as non-gateway.
+        """
+        api_key = self.openai_api_key
+        if isinstance(api_key, SecretStr):
+            return api_key.get_secret_value().startswith("lsv2_")
+        return False
 
     @property
     def model(self) -> str:
@@ -1319,35 +1319,16 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORGANIZATION")
         )
         # Resolve base URL and API key, applying LangSmith gateway settings.
-        if self.use_langsmith_gateway:
-            _gateway_config = _resolve_gateway_config(
-                base_url=self.openai_api_base,
-                api_key=self.openai_api_key,
-                provider_path="v1",
-                api_key_env=(
-                    "LANGSMITH_GATEWAY_API_KEY",
-                    "LANGSMITH_API_KEY",
-                ),
-                default_base_url=_LANGSMITH_GATEWAY_DEFAULT_BASE,
-            )
-            if self.use_responses_api is None:
-                self.use_responses_api = True
-        else:
-            _gateway_config = _resolve_gateway_config(
-                base_url=self.openai_api_base,
-                api_key=self.openai_api_key,
-                provider_path="openai/v1",
-                base_url_env="OPENAI_API_BASE",
-                api_key_env="OPENAI_API_KEY",
-            )
+        _gateway_config = _resolve_gateway_config(
+            base_url=self.openai_api_base,
+            api_key=self.openai_api_key,
+            provider_path="openai/v1",
+            base_url_env="OPENAI_API_BASE",
+            api_key_env="OPENAI_API_KEY",
+        )
         self.openai_api_base = _gateway_config.base_url
         self.openai_api_key = _gateway_config.api_key
         _base_url_from_gateway = _gateway_config.base_url_from_gateway
-        if _base_url_from_gateway or (
-            isinstance(self.openai_api_key, SecretStr)
-            and self.openai_api_key.get_secret_value().startswith("lsv2_")
-        ):
-            self.use_langsmith_gateway = True
 
         # Enable stream_usage by default if using default base URL and client,
         # or when the base URL was set by the LangSmith gateway (which proxies
@@ -1621,7 +1602,7 @@ class BaseChatOpenAI(BaseChatModel):
         headers: dict = {}
         base_generation_info: dict = {}
         try:
-            if self.include_response_headers or self.use_langsmith_gateway:
+            if self.include_response_headers or self._uses_gateway:
                 raw_context_manager = (
                     self.root_client.with_raw_response.responses.create(**payload)
                 )
@@ -1687,7 +1668,7 @@ class BaseChatOpenAI(BaseChatModel):
         headers: dict = {}
         base_generation_info: dict = {}
         try:
-            if self.include_response_headers or self.use_langsmith_gateway:
+            if self.include_response_headers or self._uses_gateway:
                 raw_context_manager = (
                     await self.root_async_client.with_raw_response.responses.create(
                         **payload
@@ -1799,7 +1780,7 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 context_manager = response_stream
             else:
-                if self.include_response_headers or self.use_langsmith_gateway:
+                if self.include_response_headers or self._uses_gateway:
                     raw_response = self.client.with_raw_response.create(**payload)
                     response = raw_response.parse()
                     if self.include_response_headers:
@@ -2090,7 +2071,7 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 context_manager = response_stream
             else:
-                if self.include_response_headers or self.use_langsmith_gateway:
+                if self.include_response_headers or self._uses_gateway:
                     raw_response = await self.async_client.with_raw_response.create(
                         **payload
                     )
@@ -3655,15 +3636,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     max_tokens: int | None = Field(default=None, alias="max_completion_tokens")
     """Maximum number of tokens to generate."""
 
+    _api_key_secret_env: ClassVar[str] = "OPENAI_API_KEY"  # noqa: S105
+
     @property
     def lc_secrets(self) -> dict[str, str]:
         """Mapping of secret environment variables."""
-        api_key_env = (
-            "LANGSMITH_GATEWAY_API_KEY"
-            if self.use_langsmith_gateway
-            else "OPENAI_API_KEY"
-        )
-        return {"openai_api_key": api_key_env}
+        return {"openai_api_key": self._api_key_secret_env}
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
