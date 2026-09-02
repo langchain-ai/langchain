@@ -14,7 +14,11 @@ from openai.types.chat.chat_completion import Choice
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field, SecretStr
 
-from langchain_deepseek.chat_models import DEFAULT_API_BASE, ChatDeepSeek
+from langchain_deepseek.chat_models import (
+    DEFAULT_API_BASE,
+    DEFAULT_BETA_API_BASE,
+    ChatDeepSeek,
+)
 
 MODEL_NAME = "deepseek-chat"
 
@@ -288,6 +292,18 @@ class TestChatDeepSeekStrictMode:
         # by checking that the binding operation succeeds
         assert bound_model is not None
 
+    def test_bind_tools_strict_mode_client_uses_beta_base_url(self) -> None:
+        """Regression: the openai client must be rebuilt with the beta base_url."""
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
+        )
+        bound_model = llm.bind_tools([SampleTool], strict=True)
+        # RunnableBinding wraps the underlying model
+        inner = getattr(bound_model, "bound", bound_model)
+        beta_base = DEFAULT_BETA_API_BASE.rstrip("/")
+        assert str(inner.root_client.base_url).rstrip("/") == beta_base
+
     def test_bind_tools_without_strict_mode_uses_default_endpoint(self) -> None:
         """Test bind_tools without strict or with strict=False uses default endpoint."""
         llm = ChatDeepSeek(
@@ -318,6 +334,24 @@ class TestChatDeepSeekStrictMode:
 
         # The structured model should work with beta endpoint
         assert structured_model is not None
+
+    def test_with_structured_output_strict_mode_client_uses_beta_base_url(self) -> None:
+        """Regression: the openai client must be rebuilt with the beta base_url."""
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
+        )
+        structured_model = llm.with_structured_output(SampleTool, strict=True)
+        # Navigate through RunnableSequence -> RunnableBinding -> ChatDeepSeek
+        inner = structured_model
+        while hasattr(inner, "bound"):
+            inner = inner.bound
+        if hasattr(inner, "steps"):
+            inner = inner.steps[0]
+        while hasattr(inner, "bound"):
+            inner = inner.bound
+        beta_base = DEFAULT_BETA_API_BASE.rstrip("/")
+        assert str(inner.root_client.base_url).rstrip("/") == beta_base
 
 
 class TestChatDeepSeekAzureToolChoice:
