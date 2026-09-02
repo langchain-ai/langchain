@@ -112,7 +112,7 @@ async def test_group_tools_stay_callable_after_the_adapter_context_exits() -> No
 
 @pytest.mark.asyncio
 async def test_list_tools_inside_a_group_context_does_not_re_enter() -> None:
-    """`ClientGroup` refuses re-entry, so the adapter counts nesting for it."""
+    """`ClientGroup` counts its own nesting, so discovery inside a context is safe."""
     adapter = MCPAdapter(_group())
 
     async with adapter:
