@@ -610,7 +610,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 formatted_image = prompt.format(**inputs)
                 content.append({"type": "image_url", "image_url": formatted_image})
             elif isinstance(prompt, DictPromptTemplate):
-                formatted_dict = prompt.format(**inputs)
+                formatted_dict = await prompt.aformat(**inputs)
                 content.append(formatted_dict)
         return self._msg_class(
             content=content, additional_kwargs=self.additional_kwargs
