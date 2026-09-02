@@ -2076,7 +2076,10 @@ def _add_middleware_edge(
             destinations.append(end_destination)
         if "tools" in can_jump_to:
             destinations.append("tools")
-        if "model" in can_jump_to and name != model_destination:
+        if "model" in can_jump_to and model_destination not in destinations:
+            # `model_destination` is the loop entry node, which is this very node
+            # when it is the first `before_model` hook. The router can still return
+            # it, so the self-edge has to be declared.
             destinations.append(model_destination)
 
         graph.add_conditional_edges(name, RunnableCallable(jump_edge, trace=False), destinations)

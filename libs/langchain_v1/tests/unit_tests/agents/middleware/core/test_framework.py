@@ -193,6 +193,52 @@ def test_create_agent_synthetic_tool_messages_reroute_to_model() -> None:
     )
 
 
+def test_before_model_can_jump_to_model() -> None:
+    """The first `before_model` hook may send `jump_to="model"`.
+
+    The model loop is entered at the first `before_model` node, so that hook's
+    `"model"` jump resolves to its own node name. Leaving that self-destination
+    out of the conditional edge's path map made LangGraph raise a bare
+    `KeyError` naming the node, with nothing pointing back at the middleware.
+    """
+    calls: list[str] = []
+
+    class RestartOnceMiddleware(AgentMiddleware):
+        @hook_config(can_jump_to=["model"])
+        @override
+        def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any] | None:
+            calls.append("before_model")
+            # Re-enter the loop once, then fall through to the model.
+            if len(calls) == 1:
+                return {"jump_to": "model"}
+            return None
+
+    @tool
+    def my_tool(value: str) -> str:
+        """A great tool."""
+        return value.upper()
+
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                [ToolCall(id="1", name="my_tool", args={"value": "yo"})],
+                [],
+            ],
+        ),
+        tools=[my_tool],
+        middleware=[RestartOnceMiddleware()],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage(content="hello")]})
+
+    # The jump re-runs the hook, so it is entered once more than the two model calls.
+    assert len(calls) == 3
+    assert any(
+        isinstance(message, ToolMessage) and message.tool_call_id == "1"
+        for message in result["messages"]
+    )
+
+
 def test_create_agent_jump(
     snapshot: SnapshotAssertion,
     sync_checkpointer: BaseCheckpointSaver[str],
