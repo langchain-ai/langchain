@@ -1453,6 +1453,7 @@ def test_pydantic_tools_parser_unknown_tool_raises_output_parser_exception(
     assert "Unknown tool type" in msg
     assert "UnknownTool" in msg
 
+
 def test_parse_tool_call_with_reasoning_tags_deepseek() -> None:
     """Test parse_tool_call strips reasoning tags from DeepSeek-R1 output.
 
@@ -1465,7 +1466,13 @@ def test_parse_tool_call_with_reasoning_tags_deepseek() -> None:
     raw_tool_call = {
         "function": {
             "name": "AnalysisResult",
-            "arguments": '<think>\nLet me analyze the corporate strategy...\n</think>\n<tool_call>\n{"result": [{"name": {"战略点名称": "促销优化"}, "information": {"战略点说明": "在成熟市场中利用促销手段"}}]}\n</tool_call>',
+            "arguments": (
+                "<think>\nLet me analyze...\n</think>\n"
+                "<tool_call>\n"
+                '{"result": [{"name": {"战略点名称": "促销优化"}, '
+                '"information": {"战略点说明": "在成熟市场中利用促销手段"}}]}\n'
+                "</tool_call>"
+            ),
         },
         "id": "call_deepseek_1",
         "type": "function",
@@ -1486,7 +1493,10 @@ def test_parse_tool_call_with_think_tags_only() -> None:
     raw_tool_call = {
         "function": {
             "name": "ExtractData",
-            "arguments": '<think>Processing the request</think>{"key": "value", "nested": {"field": 123}}',
+            "arguments": (
+                "<think>Processing the request</think>"
+                '{"key": "value", "nested": {"field": 123}}'
+            ),
         },
         "id": "call_123",
         "type": "function",
@@ -1522,7 +1532,11 @@ def test_parse_tool_call_with_both_think_and_tool_call_tags() -> None:
     raw_tool_call = {
         "function": {
             "name": "AnalyzeDocument",
-            "arguments": '<think>Analyzing the document structure\nLine 2 of thinking</think><tool_call>{"analysis": "complete", "score": 95}</tool_call>',
+            "arguments": (
+                "<think>Analyzing the document structure\n"
+                "Line 2 of thinking</think>"
+                '<tool_call>{"analysis": "complete", "score": 95}</tool_call>'
+            ),
         },
         "id": "call_789",
         "type": "function",
@@ -1558,7 +1572,9 @@ def test_parse_tool_call_with_whitespace_around_json() -> None:
     raw_tool_call = {
         "function": {
             "name": "TrimTest",
-            "arguments": '  \n  <think>thinking...</think>  \n\n  {"result": "success"}  \n  ',
+            "arguments": (
+                '  \n  <think>thinking...</think>  \n\n  {"result": "success"}  \n  '
+            ),
         },
         "id": "call_trim",
         "type": "function",

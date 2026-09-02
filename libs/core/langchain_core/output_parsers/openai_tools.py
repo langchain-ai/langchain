@@ -3,6 +3,7 @@
 import copy
 import json
 import logging
+import re
 from json import JSONDecodeError
 from typing import Annotated, Any
 
@@ -53,7 +54,6 @@ def parse_tool_call(
     # Some models wrap their thinking in tags like <think>...</think>.
     if isinstance(arguments, str):
         # Remove <think>...</think> blocks
-        import re
         arguments = re.sub(r"<think>.*?</think>", "", arguments, flags=re.DOTALL)
         # Remove <tool_call> wrapper tags
         arguments = re.sub(r"</?tool_call>", "", arguments)
