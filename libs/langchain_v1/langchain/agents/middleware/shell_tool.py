@@ -11,6 +11,8 @@ import subprocess
 import tempfile
 import threading
 import time
+import re
+import shlex
 import uuid
 import weakref
 from dataclasses import dataclass, field
@@ -20,10 +22,14 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, overload
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import run_in_executor
 from langchain_core.tools.base import ToolException
+from langchain_core.tools import BaseTool
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
 from pydantic.json_schema import SkipJsonSchema
 from typing_extensions import NotRequired, override
+from collections.abc import Callable
+
+from langgraph.prebuilt.tool_node import ToolCallRequest
 
 from langchain.agents.middleware._execution import (
     SHELL_TEMP_PREFIX,
@@ -49,7 +55,7 @@ from langchain.tools import ToolRuntime, tool
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
-
+    from langgraph.types import Command
     from langgraph.runtime import Runtime
 
 
@@ -540,6 +546,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         *,
         startup_commands: tuple[str, ...] | list[str] | str | None = None,
         shutdown_commands: tuple[str, ...] | list[str] | str | None = None,
+        allow_list: tuple[str, ...] | list[str] | str | None = None,
         execution_policy: BaseExecutionPolicy | None = None,
         redaction_rules: tuple[RedactionRule, ...] | list[RedactionRule] | None = None,
         tool_description: str | None = None,
@@ -557,6 +564,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
             startup_commands: Optional commands executed sequentially after the session
                 starts.
             shutdown_commands: Optional commands executed before the session shuts down.
+            allow_list: Optional list of allowed commands for the shell session.
             execution_policy: Execution policy controlling timeouts, output limits, and
                 resource configuration.
 
@@ -598,9 +606,11 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         )
         self._startup_commands = self._normalize_commands(startup_commands)
         self._shutdown_commands = self._normalize_commands(shutdown_commands)
+        self._allow_list = self._normalize_commands(allow_list)
 
         # Create a proper tool that executes directly (no interception needed)
         description = tool_description or DEFAULT_TOOL_DESCRIPTION
+
 
         @tool(self._tool_name, args_schema=_ShellToolInput, description=description)
         def shell_tool(
@@ -652,6 +662,134 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
                 raise TypeError(msg)
             normalized[key] = str(value)
         return normalized
+
+    DANGEROUS_SHELL_PATTERNS = (
+    "$(",  # Command substitution
+    "`",  # Backtick command substitution
+    "$'",  # ANSI-C quoting (can encode dangerous chars via escape sequences)
+    "\n",  # Newline (command injection)
+    "\r",  # Carriage return (command injection)
+    "\t",  # Tab (can be used for injection in some shells)
+    "<(",  # Process substitution (input)
+    ">(",  # Process substitution (output)
+    "<<<",  # Here-string
+    "<<",  # Here-doc (can embed commands)
+    ">>",  # Append redirect
+    ">",  # Output redirect
+    "<",  # Input redirect
+    "${",  # Variable expansion with braces (can run commands via ${var:-$(cmd)})
+    )
+    """Literal substrings that indicate shell injection risk.
+
+    Used by `_is_command_allowed` to reject commands that embed arbitrary
+    execution via redirects, substitution operators, or control characters — even
+    when the base command is on the allow-list.
+    """
+
+    def _contains_dangerous_pattern(self, command: str) -> bool:
+        """
+        Check if the command contains any dangerous shell patterns.
+
+        These patterns can be used to bypass allow-list validation by embedding
+        arbitrary commands within seemingly safe commands. The check includes
+        both literal substring patterns (redirects, substitution operators, etc.)
+        and regex patterns for bare variable expansion (`$VAR`) and the background
+        operator (`&`).
+
+        Args:
+            command: The shell command to check.
+
+        Returns:
+            True if dangerous patterns are found, False otherwise.
+        """
+        if any(pattern in command for pattern in ShellToolMiddleware.DANGEROUS_SHELL_PATTERNS):
+            return True
+
+        # Standalone & (background execution) changes the execution model and
+        # should not be allowed.  We check for & that is NOT part of &&.
+        return bool(re.search(r"(?<![&])&(?![&])", command))
+
+    def _is_command_allowed(self, command: str) -> tuple[bool, str]:
+        """ Check if a shell command is allowed based on command
+
+        SECURITY: For regular allow-lists, this function rejects commands containing
+        dangerous shell patterns (command substitution, redirects, process
+        substitution, etc.) BEFORE parsing, to prevent injection attacks that could
+        bypass the allow-list.
+
+        Args:
+            command (str): The shell command to check.
+
+        Returns:
+            tuple[bool, str]: (True, "") if allowed; (False, reason) if not.
+        """
+        if not self._allow_list or not command or not command.strip():
+            return True, ""
+
+        if self._contains_dangerous_pattern(command):
+            return False, "Contains dangerous shell patterns."
+
+        allow_set = set(self._allow_list)
+
+        # Split by compound operators first (&&, ||), then single-char operators (|, ;).
+        # Strip whitespaces
+        # Tokenize the segment to extract the executable name and check if it is in allow set
+        segments = re.split(r"&&|\|\||[|;]", command)
+
+        # Track if we found at least one valid command
+        found_command = False
+
+        for raw_segment in segments:
+            segment = raw_segment.strip()
+            if not segment:
+                continue
+
+            try:
+                # Try to parse as shell command to extract the executable name
+                tokens = shlex.split(segment)
+                if tokens:
+                    found_command = True
+                    cmd_name = tokens[0]
+                    # Check if this command is in the allow set
+                    if cmd_name not in allow_set:
+                        return False, f"'{cmd_name}' is not in the allow-list."
+            except ValueError as e:
+                return False, f"failed to tokenize segment '{segment}': {e}"
+
+        # All segments are allowed (and we found at least one command)
+        return found_command, [" haven't found at least one command", ""][found_command]
+
+    @override
+    def wrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        """Reject disallowed shell commands before execution.
+
+        Args:
+            request: Tool call request with call dict, `BaseTool`, state, and runtime.
+            handler: Callable to execute the tool.
+
+        Returns:
+            `ToolMessage` or `Command` (the final result).
+        """
+        tool_name = request.tool.name if request.tool else request.tool_call["name"]
+        if tool_name != self._tool_name:
+            return handler(request)
+
+        command = (request.tool_call.get("args") or {}).get("command")
+
+        if command:
+            is_allowed, reason = self._is_command_allowed(command)
+            if not is_allowed:
+                return ToolMessage(
+                    content=f"Rejected: `{command}` is not in the allow-list. Reason: {reason}",
+                    name=self._tool_name,
+                    tool_call_id=request.tool_call["id"],
+                    status="error",
+            )
+        return handler(request)
 
     @override
     def before_agent(
