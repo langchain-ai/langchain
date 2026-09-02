@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, Final, TypeAlias
 from pydantic import AnyUrl, TypeAdapter, ValidationError
 from typing_extensions import Self
 
-from langchain.mcp._client import _ReentrantClientGroup
 from langchain.mcp.elicitation import _arm_for_interrupts
 from langchain.mcp.tools import as_langchain_tool
 
@@ -190,9 +189,7 @@ class MCPAdapter:
 
         if isinstance(target, ClientGroup):
             members = {name: armed(client) for name, client in target.clients.items()}
-            self._client: FastMCPClient[Any] | ClientGroup = _ReentrantClientGroup(
-                ClientGroup(members)
-            )
+            self._client: FastMCPClient[Any] | ClientGroup = ClientGroup(members)
         elif isinstance(target, FastMCPClient):
             self._client = armed(target)
         else:
