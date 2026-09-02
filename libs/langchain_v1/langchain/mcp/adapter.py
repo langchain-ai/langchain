@@ -237,8 +237,6 @@ class MCPAdapter:
                 asynchronously. Each holds the adapter's client, so the tools
                 stay callable after this adapter's context exits.
         """
-        # `async with self` rather than the client: it is what counts a group's
-        # nesting, and for a plain client it is the same reentrant hold as before.
         async with self:
             remote_tools = await self._client.list_tools(cache_mode=cache_mode)
             return [await as_langchain_tool(tool, self._client) for tool in remote_tools]
