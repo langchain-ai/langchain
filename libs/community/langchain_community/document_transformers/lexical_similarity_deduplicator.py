@@ -48,6 +48,7 @@ class LexicalSimilarityDeduplicator:
 
     def _tokenize_to_ngrams(self, text: str) -> Set[str]:
         """Normalizes text and extracts word n-grams."""
+        # Normalize: lowercase, remove non-alphanumeric
         cleaned = re.sub(r"[^\w\s]", "", text.lower()).strip()
         words = cleaned.split()
 
