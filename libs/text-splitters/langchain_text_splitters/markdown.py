@@ -178,7 +178,7 @@ class MarkdownHeaderTextSplitter:
                 opening_fence = ""
 
             if in_code_block:
-                current_content.append(stripped_line)
+                current_content.append(line)
                 continue
 
             # Check each line against each of the header types (e.g., #, ##)

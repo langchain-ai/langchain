@@ -1461,6 +1461,29 @@ def test_md_header_text_splitter_1() -> None:
     ]
     assert output == expected_output
 
+def test_md_header_text_splitter_preserves_whitespace_in_code_blocks() -> None:
+    """Test that tabs and NBSP inside fenced code blocks are preserved.
+
+    Regression test for #40071: MarkdownHeaderTextSplitter was silently
+    stripping tabs and non-breaking spaces (NBSP) from lines inside fenced
+    code blocks, corrupting code formatting.
+    """
+    markdown_document = (
+        "# Title\n"
+        "```\n"
+        "\tindented\xa0line\n"
+        "```\n"
+    )
+    headers_to_split_on = [("#", "Header 1")]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    assert len(output) == 1
+    content = output[0].page_content
+    assert "\t" in content, "Tab character was stripped from code block"
+    assert "\xa0" in content, "NBSP character was stripped from code block"
 
 def test_md_header_text_splitter_2() -> None:
     """Test markdown splitter by header: Case 2."""
