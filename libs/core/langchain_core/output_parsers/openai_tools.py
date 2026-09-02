@@ -50,33 +50,50 @@ def parse_tool_call(
 
     arguments = raw_tool_call["function"]["arguments"]
 
-    # Strip reasoning tags from reasoning models (e.g., DeepSeek-R1, o1).
-    # Some models wrap their thinking in tags like <think>...</think>.
-    if isinstance(arguments, str):
-        # Remove <think>...</think> blocks
-        arguments = re.sub(r"<think>.*?</think>", "", arguments, flags=re.DOTALL)
-        # Remove <tool_call> wrapper tags
-        arguments = re.sub(r"</?tool_call>", "", arguments)
-        arguments = arguments.strip()
+    def _strip_reasoning_tags(s: str) -> str:
+        s = re.sub(r"<think>.*?</think>", "", s, flags=re.DOTALL)
+        s = re.sub(r"</?tool_call>", "", s)
+        return s.strip()
 
     if partial:
         try:
             function_args = parse_partial_json(arguments, strict=strict)
-        except (JSONDecodeError, TypeError):  # None args raise TypeError
-            return None
-    # Handle None or empty string arguments for parameter-less tools
+        except (JSONDecodeError, TypeError):
+            if isinstance(arguments, str):
+                cleaned_args = _strip_reasoning_tags(arguments)
+                try:
+                    function_args = parse_partial_json(cleaned_args, strict=strict)
+                except (JSONDecodeError, TypeError):
+                    return None
+            else:
+                return None
     elif not arguments:
         function_args = {}
     else:
         try:
             function_args = json.loads(arguments, strict=strict)
-        except JSONDecodeError as e:
-            msg = (
-                f"Function {raw_tool_call['function']['name']} arguments:\n\n"
-                f"{arguments}\n\nare not valid JSON. "
-                f"Received JSONDecodeError {e}"
-            )
-            raise OutputParserException(msg) from e
+        except (JSONDecodeError, TypeError) as e:
+            # Fallback: if arguments is a string containing reasoning tags (e.g. <think> or <tool_call>),
+            # strip those tags and try parsing again.
+            if isinstance(arguments, str):
+                cleaned_args = _strip_reasoning_tags(arguments)
+                try:
+                    function_args = json.loads(cleaned_args, strict=strict)
+                except (JSONDecodeError, TypeError) as inner_e:
+                    msg = (
+                        f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+                        f"{arguments}\n\nare not valid JSON. "
+                        f"Received JSONDecodeError {inner_e}"
+                    )
+                    raise OutputParserException(msg) from inner_e
+            else:
+                msg = (
+                    f"Function {raw_tool_call['function']['name']} arguments:\n\n"
+                    f"{arguments}\n\nare not valid JSON. "
+                    f"Received JSONDecodeError {e}"
+                )
+                raise OutputParserException(msg) from e
+
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},

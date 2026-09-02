@@ -1585,3 +1585,35 @@ def test_parse_tool_call_with_whitespace_around_json() -> None:
     assert result is not None
     assert result["name"] == "TrimTest"
     assert result["args"] == {"result": "success"}
+
+
+def test_parse_tool_call_preserves_tags_in_legitimate_json_content() -> None:
+    """Test parse_tool_call preserves <think> and <tool_call> inside valid JSON strings.
+
+    When argument content legitimately contains <think> or <tool_call> tags
+    inside a valid JSON string value (e.g. text summarization or code generation),
+    parse_tool_call MUST NOT strip or corrupt the data.
+    """
+    raw_tool_call = {
+        "function": {
+            "name": "SummarizeText",
+            "arguments": (
+                '{"prompt": "How do I use <think>tags</think> and '
+                '<tool_call>wrapper</tool_call> in HTML?"}'
+            ),
+        },
+        "id": "call_legit_tags",
+        "type": "function",
+    }
+
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "SummarizeText"
+    assert result["args"] == {
+        "prompt": (
+            "How do I use <think>tags</think> and "
+            "<tool_call>wrapper</tool_call> in HTML?"
+        )
+    }
+
