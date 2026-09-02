@@ -572,3 +572,32 @@ def test_convert_to_v1_from_anthropic_malformed_citations() -> None:
             ],
         },
     ]
+
+
+def test_convert_to_v1_from_anthropic_does_not_mutate_unknown_block() -> None:
+    """Translating a message must not mutate the original content blocks.
+
+    `_convert_to_v1_from_anthropic` lifted ``index`` off unrecognised blocks
+    with ``dict.pop``, which mutated the shared dict inside the AIMessage.
+    Calling ``translate_content`` (or accessing ``.content_blocks``) a second
+    time would then silently drop the ``index`` field.
+    """
+    from copy import deepcopy
+
+    original_block = {"type": "custom", "payload": "value", "index": 3}
+    message = AIMessage(content=[original_block])
+    snapshot = deepcopy(message.content)
+
+    # First access — triggers translation and previously popped "index"
+    _ = message.content_blocks
+
+    # The original content must be unchanged
+    assert message.content == snapshot, (
+        "translate_content mutated message.content: "
+        f"before={snapshot!r}, after={message.content!r}"
+    )
+
+    # Second access must return the same result as the first
+    blocks_1 = message.content_blocks
+    blocks_2 = message.content_blocks
+    assert blocks_1 == blocks_2, "content_blocks is not idempotent after mutation fix"

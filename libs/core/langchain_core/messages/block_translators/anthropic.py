@@ -486,7 +486,7 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
             else:
                 new_block: types.NonStandardContentBlock = {
                     "type": "non_standard",
-                    "value": block,
+                    "value": dict(block),  # copy so we don't mutate the original message
                 }
                 if "index" in new_block["value"]:
                     new_block["index"] = new_block["value"].pop("index")
