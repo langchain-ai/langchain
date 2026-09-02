@@ -5,6 +5,7 @@ import json
 import logging
 from json import JSONDecodeError
 from typing import Annotated, Any
+import re
 
 from pydantic import BaseModel, SkipValidation, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -49,6 +50,17 @@ def parse_tool_call(
 
     arguments = raw_tool_call["function"]["arguments"]
 
+    #  NEW: Strip reasoning tags from reasoning models (DeepSeek-R1, o1, etc.)
+    # Reasoning models like DeepSeek-R1 wrap their thinking in <think></think> tags
+    # before returning the actual tool call. We need to extract just the JSON.
+    if isinstance(arguments, str):
+        # Remove <think>...</think> blocks (handles multiline with re.DOTALL)
+        arguments = re.sub(r"<think>.*?</think>", "", arguments, flags=re.DOTALL)
+        # Remove <tool_call> wrapper tags if present
+        arguments = re.sub(r"</?tool_call>", "", arguments)
+        # Clean up extra whitespace
+        arguments = arguments.strip()
+
     if partial:
         try:
             function_args = parse_partial_json(arguments, strict=strict)
@@ -75,7 +87,6 @@ def parse_tool_call(
         parsed["id"] = raw_tool_call.get("id")
         parsed = create_tool_call(**parsed)  # type: ignore[assignment,arg-type]
     return parsed
-
 
 def make_invalid_tool_call(
     raw_tool_call: dict[str, Any],
