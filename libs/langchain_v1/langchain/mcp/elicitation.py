@@ -19,6 +19,7 @@ from __future__ import annotations
 import warnings
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, TypedDict, TypeVar
 
+from fastmcp.client.group import ClientGroup
 from langgraph.types import interrupt
 from mcp.types import (
     CallToolResult,
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
     from collections.abc import Coroutine
 
     from fastmcp.client import Client
-    from fastmcp.client.group import ClientGroup
+    from mcp.client.session import ClientSession
     from mcp.types import InputRequest
 
 
@@ -284,6 +285,30 @@ async def _await_monitored(client: Client[Any], coro: Coroutine[Any, Any, _Resul
     return result
 
 
+async def _resolve_session(
+    client: Client[Any] | ClientGroup, tool_name: str
+) -> tuple[Client[Any], ClientSession, str]:
+    """Resolve the member client, its session, and the server's name for a tool.
+
+    For a group, `list_tools` namespaces the catalog as `{server}_{tool}` but the
+    serving client only knows the tool by its own name; `resolve_tool` maps the
+    namespaced name back to that member and its upstream name. For a single
+    client the tool is already addressed by its own name.
+
+    Args:
+        client: The armed client or group serving the tool.
+        tool_name: The tool's name as this adapter published it.
+
+    Returns:
+        The member client, its connected session, and the name the member's
+        server knows the tool by.
+    """
+    if isinstance(client, ClientGroup):
+        route = await client.resolve_tool(tool_name)
+        return route.client, route.client.session, route.upstream_name
+    return client, client.session, tool_name
+
+
 async def _call_tool_with_interrupts(
     client: Client[Any] | ClientGroup,
     tool_name: str,
@@ -308,8 +333,15 @@ async def _call_tool_with_interrupts(
         NotImplementedError: On a sampling/roots request or a continuation round.
         ValueError: If a resumed answer is missing or malformed.
     """
+    # FastMCP's public `call_tool` no longer forwards `allow_input_required`; it
+    # drives the input-required loop itself via a concurrent driver, which is the
+    # exact behavior this module replaces with one `interrupt()` per round. So
+    # drive it against the member session, whose `call_tool` still returns the
+    # `InputRequiredResult` for us to answer.
+    member, session, upstream_name = await _resolve_session(client, tool_name)
+
     result = await _await_monitored(
-        client, client.call_tool(tool_name, arguments, allow_input_required=True)
+        member, session.call_tool(upstream_name, arguments, allow_input_required=True)
     )
 
     while isinstance(result, InputRequiredResult):
@@ -334,9 +366,9 @@ async def _call_tool_with_interrupts(
         responses = _build_responses(requests, resume["responses"], tool_name)
 
         result = await _await_monitored(
-            client,
-            client.call_tool(
-                tool_name,
+            member,
+            session.call_tool(
+                upstream_name,
                 arguments,
                 input_responses=responses,
                 request_state=result.request_state,  # opaque; echoed back verbatim

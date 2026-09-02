@@ -10,6 +10,7 @@ from typing import Annotated, Any, cast
 
 import pytest
 from fastmcp import Client, Context, FastMCP
+from fastmcp.client.group import ClientGroup
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 from mcp.server.mcpserver import Elicit, MCPServer, Resolve
@@ -148,6 +149,44 @@ async def test_declining_leaves_the_tool_unrun() -> None:
     tool_message = next(message for message in resumed["messages"] if message.type == "tool")
     assert tool_message.status == "error"
     assert calls["body"] == 0
+
+
+@pytest.mark.asyncio
+async def test_elicitation_through_a_group_resolves_the_member_session() -> None:
+    """A group namespaces the tool, so the loop must drive the member session.
+
+    The interrupt loop reads the raw `InputRequiredResult` from a client session,
+    which a group does not expose directly; it must resolve the namespaced name to
+    the member client that serves it. Covers that resolution end to end.
+    """
+    calls = {"resolver": 0, "body": 0}
+    group = ClientGroup({"dining": Client(_restaurant_server(calls))})
+    tools = await MCPAdapter(group).list_tools()
+    agent = create_agent(
+        FakeToolCallingModel(
+            tool_calls=[[{"name": "dining_book_table", "args": {}, "id": "c1"}], []]
+        ),
+        tools,
+        checkpointer=InMemorySaver(),
+    )
+    config: Any = {"configurable": {"thread_id": "t"}}
+
+    paused = await agent.ainvoke({"messages": [{"role": "user", "content": "book"}]}, config)
+    [pause] = paused["__interrupt__"]
+    assert pause.value["tool_name"] == "dining_book_table"
+    [question] = pause.value["requests"]
+    assert calls["body"] == 0
+
+    resumed = await agent.ainvoke(
+        Command(
+            resume={"responses": {question["key"]: {"action": "accept", "content": {"guests": 4}}}}
+        ),
+        config,
+    )
+
+    tool_message = next(message for message in resumed["messages"] if message.type == "tool")
+    assert tool_message.content[0]["text"] == "Booked a table for 4."
+    assert tool_message.status == "success"
 
 
 @pytest.mark.asyncio
