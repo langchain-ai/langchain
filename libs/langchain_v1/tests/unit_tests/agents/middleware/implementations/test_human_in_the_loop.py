@@ -1124,6 +1124,7 @@ def test_when_predicate_receives_correct_args() -> None:
     assert req.state is state
     assert isinstance(req.runtime, ToolRuntime)
     assert req.runtime.tool_call_id == "tc-1"
+    assert req.runtime.tools == []
     assert req.runtime.state is state
     assert req.runtime.context is runtime.context
     assert req.runtime.store is runtime.store
