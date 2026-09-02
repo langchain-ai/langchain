@@ -17,9 +17,7 @@ from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import parse_partial_json
-from langchain_core.utils.pydantic import (
-    TypeBaseModel,
-)
+from langchain_core.utils.pydantic import TypeBaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +71,8 @@ def parse_tool_call(
         try:
             function_args = json.loads(arguments, strict=strict)
         except (JSONDecodeError, TypeError) as e:
-            # Fallback: if arguments is a string containing reasoning tags (e.g. <think> or <tool_call>),
-            # strip those tags and try parsing again.
+            # Fallback: if arguments is a string containing reasoning tags
+            # (e.g. <think> or <tool_call>), strip those tags and try parsing again.
             if isinstance(arguments, str):
                 cleaned_args = _strip_reasoning_tags(arguments)
                 try:

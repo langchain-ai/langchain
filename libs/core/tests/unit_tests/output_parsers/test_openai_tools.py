@@ -1616,4 +1616,3 @@ def test_parse_tool_call_preserves_tags_in_legitimate_json_content() -> None:
             "<tool_call>wrapper</tool_call> in HTML?"
         )
     }
-
