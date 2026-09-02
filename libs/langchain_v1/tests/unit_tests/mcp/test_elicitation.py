@@ -66,6 +66,18 @@ def _restaurant_server(calls: dict[str, int]) -> MCPServer:
     return server
 
 
+def _plain_server(name: str) -> MCPServer:
+    """A legacy-era server whose one tool needs no input."""
+    server = MCPServer(name)
+
+    @server.tool()
+    def whoami() -> str:
+        """Report the server name."""
+        return name
+
+    return server
+
+
 def _agent(tools: list[Any]) -> Any:
     return create_agent(
         FakeToolCallingModel(tool_calls=[[{"name": "book_table", "args": {}, "id": "c1"}], []]),
@@ -167,6 +179,52 @@ async def test_elicitation_through_a_group_resolves_the_member_session() -> None
             tool_calls=[[{"name": "dining_book_table", "args": {}, "id": "c1"}], []]
         ),
         tools,
+        checkpointer=InMemorySaver(),
+    )
+    config: Any = {"configurable": {"thread_id": "t"}}
+
+    paused = await agent.ainvoke({"messages": [{"role": "user", "content": "book"}]}, config)
+    [pause] = paused["__interrupt__"]
+    assert pause.value["tool_name"] == "dining_book_table"
+    [question] = pause.value["requests"]
+    assert calls["body"] == 0
+
+    resumed = await agent.ainvoke(
+        Command(
+            resume={"responses": {question["key"]: {"action": "accept", "content": {"guests": 4}}}}
+        ),
+        config,
+    )
+
+    tool_message = next(message for message in resumed["messages"] if message.type == "tool")
+    assert tool_message.content[0]["text"] == "Booked a table for 4."
+    assert tool_message.status == "success"
+
+
+@pytest.mark.asyncio
+async def test_interrupt_fires_on_the_modern_member_of_a_mixed_era_group() -> None:
+    """A group can mix eras; the interrupt drives only the modern member.
+
+    Elicitation is a modern-era feature, so in a group holding one legacy and
+    one modern server the loop must resolve to the modern member and interrupt
+    there, while the legacy member coexists untouched. Covers the group +
+    mixed-era + interrupt path together.
+    """
+    calls = {"resolver": 0, "body": 0}
+    group = ClientGroup(
+        {
+            "info": Client(_plain_server("info-server"), mode="legacy"),
+            "dining": Client(_restaurant_server(calls), mode="auto"),
+        }
+    )
+    tools = {tool.name: tool for tool in await MCPAdapter(group).list_tools()}
+    assert sorted(tools) == ["dining_book_table", "info_whoami"]
+
+    agent = create_agent(
+        FakeToolCallingModel(
+            tool_calls=[[{"name": "dining_book_table", "args": {}, "id": "c1"}], []]
+        ),
+        list(tools.values()),
         checkpointer=InMemorySaver(),
     )
     config: Any = {"configurable": {"thread_id": "t"}}

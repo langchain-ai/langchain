@@ -525,6 +525,40 @@ async def test_servers_on_different_protocol_eras_are_usable_side_by_side() -> N
 
 
 @pytest.mark.asyncio
+async def test_one_group_spans_both_protocol_eras() -> None:
+    """A single `ClientGroup` keeps each member on its own negotiated era.
+
+    This is the whole reason to reach for a group over a multi-server `Client`
+    config: the config presents one aggregate endpoint on a single shared era,
+    while a group holds one connection per server, so a legacy and a modern
+    server stay in their native eras at the same time behind one adapter.
+    """
+    group = ClientGroup(
+        {
+            "old": Client(_self_identifying_server("old"), mode="legacy"),
+            "new": Client(_self_identifying_server("new"), mode="auto"),
+        }
+    )
+
+    async with MCPAdapter(group) as adapter:
+        tools = {tool.name: tool for tool in await adapter.list_tools()}
+
+        answers = await asyncio.gather(
+            tools["old_whoami"].ainvoke(
+                {"name": "old_whoami", "args": {}, "id": "c1", "type": "tool_call"}
+            ),
+            tools["new_whoami"].ainvoke(
+                {"name": "new_whoami", "args": {}, "id": "c2", "type": "tool_call"}
+            ),
+        )
+
+        armed = cast("ClientGroup", adapter.client)
+        assert [message.content[0]["text"] for message in answers] == ["old", "new"]
+        assert armed.clients["old"].protocol_version == _HANDSHAKE_ERA
+        assert armed.clients["new"].protocol_version == _MODERN_ERA
+
+
+@pytest.mark.asyncio
 async def test_tools_from_both_protocol_eras_combine_into_one_agent() -> None:
     """One agent can hold tools discovered over both protocol eras at once.
 
