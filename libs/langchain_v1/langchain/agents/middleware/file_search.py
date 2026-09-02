@@ -193,8 +193,9 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                 # Re-check containment after resolving so an in-root symlink that
                 # points outside the root is never enumerated.
                 if match.is_file() and _is_within_root(match, self.root_path):
-                    # Convert to virtual path
-                    virtual_path = "/" + str(match.relative_to(self.root_path))
+                    # Convert to virtual path using as_posix() so separators are
+                    # always forward slashes regardless of host OS.
+                    virtual_path = "/" + match.relative_to(self.root_path).as_posix()
                     stat = match.stat()
                     modified_at = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
                     matching.append((virtual_path, modified_at))
@@ -333,8 +334,8 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                     # outside the root (e.g. surfaced via an in-root symlink).
                     if not _is_within_root(Path(path), self.root_path):
                         continue
-                    # Convert to virtual path
-                    virtual_path = "/" + str(Path(path).relative_to(self.root_path))
+                    # Convert to virtual path using as_posix() for portable separators.
+                    virtual_path = "/" + Path(path).relative_to(self.root_path).as_posix()
                     line_num = data["data"]["line_number"]
                     line_text = data["data"]["lines"]["text"].rstrip("\n")
 
@@ -391,7 +392,8 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                 # Search content
                 for line_num, line in enumerate(content.splitlines(), 1):
                     if regex.search(line):
-                        virtual_path = "/" + str(file_path.relative_to(self.root_path))
+                        # Use as_posix() for portable forward-slash separators.
+                        virtual_path = "/" + file_path.relative_to(self.root_path).as_posix()
                         if virtual_path not in results:
                             results[virtual_path] = []
                         results[virtual_path].append((line_num, line))
