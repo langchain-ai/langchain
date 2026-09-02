@@ -64,7 +64,7 @@ def detect_email(content: str) -> list[PIIMatch]:
             start=match.start(),
             end=match.end(),
         )
-        for match in re.finditer(pattern, content)
+        for match in re.finditer(pattern, content, re.ASCII)
     ]
 
 
@@ -107,7 +107,7 @@ def detect_ip(content: str) -> list[PIIMatch]:
     matches: list[PIIMatch] = []
     ipv4_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
 
-    for match in re.finditer(ipv4_pattern, content):
+    for match in re.finditer(ipv4_pattern, content, re.ASCII):
         ip_candidate = match.group()
         try:
             ipaddress.ip_address(ip_candidate)
@@ -142,7 +142,7 @@ def detect_mac_address(content: str) -> list[PIIMatch]:
             start=match.start(),
             end=match.end(),
         )
-        for match in re.finditer(pattern, content)
+        for match in re.finditer(pattern, content, re.ASCII)
     ]
 
 

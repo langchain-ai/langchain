@@ -97,6 +97,22 @@ class TestEmailDetection:
         # Should not match invalid formats
         assert len(matches) == 0
 
+    def test_detect_email_adjacent_to_cjk(self) -> None:
+        r"""Regression: \b must fire between CJK and ASCII (issue #40002)."""
+        matches = detect_email("联系alice@example.com")
+        assert len(matches) == 1
+        assert matches[0]["value"] == "alice@example.com"
+
+    def test_detect_email_adjacent_to_cyrillic(self) -> None:
+        matches = detect_email("コンタalice@example.com")  # katakana prefix
+        assert len(matches) == 1
+        assert matches[0]["value"] == "alice@example.com"
+
+    def test_detect_email_adjacent_to_accented_latin(self) -> None:
+        matches = detect_email("café alice@example.com café")
+        assert len(matches) == 1
+        assert matches[0]["value"] == "alice@example.com"
+
 
 class TestCreditCardDetection:
     """Test credit card detection with Luhn validation."""
@@ -175,6 +191,12 @@ class TestIPDetection:
         matches = detect_ip(content)
         assert len(matches) == 0
 
+    def test_detect_ip_adjacent_to_cjk(self) -> None:
+        r"""Regression: \b must fire between CJK and ASCII (issue #40002)."""
+        matches = detect_ip("服务器192.168.1.1开放")
+        assert len(matches) == 1
+        assert matches[0]["value"] == "192.168.1.1"
+
 
 class TestMACAddressDetection:
     """Test MAC address detection."""
@@ -210,6 +232,12 @@ class TestMACAddressDetection:
         content = "Partial: 00:1A:2B:3C"
         matches = detect_mac_address(content)
         assert len(matches) == 0
+
+    def test_detect_mac_adjacent_to_cjk(self) -> None:
+        r"""Regression: \b must fire between CJK and ASCII (issue #40002)."""
+        matches = detect_mac_address("地址00:1A:2B:3C:4D:5E设备")
+        assert len(matches) == 1
+        assert matches[0]["value"] == "00:1A:2B:3C:4D:5E"
 
 
 class TestURLDetection:
