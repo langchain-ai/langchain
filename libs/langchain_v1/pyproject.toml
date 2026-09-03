@@ -169,6 +169,11 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
     "T201", # Scripts can print to the console
 ]
 
+"examples/*" = [
+    "INP",  # Examples are not in a package
+    "T201", # Examples print their output, which is the point
+]
+
 [tool.coverage.run]
 omit = ["tests/*"]
 
