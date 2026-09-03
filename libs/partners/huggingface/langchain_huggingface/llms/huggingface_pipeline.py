@@ -159,7 +159,9 @@ class HuggingFacePipeline(BaseLLM):
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
         if backend in {"openvino", "ipex"}:
-            if task not in VALID_TASKS:
+            if task not in VALID_TASKS and not (
+                isinstance(task, str) and task.startswith("translation_")
+            ):
                 msg = (
                     f"Got invalid task {task}, "
                     f"currently only {VALID_TASKS} are supported"
@@ -356,7 +358,10 @@ class HuggingFacePipeline(BaseLLM):
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
                     text = response["summary_text"]
-                elif self.pipeline.task in "translation":
+                elif self.pipeline.task == "translation" or (
+                    isinstance(self.pipeline.task, str)
+                    and self.pipeline.task.startswith("translation_")
+                ):
                     text = response["translation_text"]
                 else:
                     msg = (
