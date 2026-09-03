@@ -115,6 +115,47 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     assert result is None
 
 
+def test_human_in_the_loop_middleware_propagates_args_schema() -> None:
+    """Test that a configured `args_schema` is included in the interrupt payload."""
+    args_schema = {
+        "type": "object",
+        "properties": {"input": {"type": "string"}},
+        "required": ["input"],
+    }
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "test_tool": {
+                "allowed_decisions": ["approve", "edit"],
+                "args_schema": args_schema,
+            }
+        }
+    )
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+    interrupt_payloads: list[dict[str, Any]] = []
+
+    def mock_approve(payload: dict[str, Any]) -> dict[str, Any]:
+        interrupt_payloads.append(payload)
+        return {"decisions": [{"type": "approve"}]}
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        side_effect=mock_approve,
+    ):
+        middleware.after_model(state, Runtime())
+
+    assert interrupt_payloads[0]["review_configs"] == [
+        {
+            "action_name": "test_tool",
+            "allowed_decisions": ["approve", "edit"],
+            "args_schema": args_schema,
+        }
+    ]
+
+
 def test_human_in_the_loop_middleware_single_tool_edit() -> None:
     """Test HumanInTheLoopMiddleware with single tool edit response."""
     middleware = HumanInTheLoopMiddleware(

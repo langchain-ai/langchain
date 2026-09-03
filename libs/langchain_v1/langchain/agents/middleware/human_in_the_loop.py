@@ -304,11 +304,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         )
 
         # Create ReviewConfig
-        # eventually can get tool information and populate args_schema from there
         review_config = ReviewConfig(
             action_name=tool_name,
             allowed_decisions=config["allowed_decisions"],
         )
+        if "args_schema" in config:
+            review_config["args_schema"] = config["args_schema"]
 
         return action_request, review_config
 
