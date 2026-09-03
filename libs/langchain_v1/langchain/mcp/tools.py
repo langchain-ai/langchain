@@ -143,8 +143,10 @@ def _convert_content_block(content: ContentBlock) -> ToolMessageContentBlock:
         if isinstance(resource, TextResourceContents):
             return create_text_block(text=resource.text)
         if isinstance(resource, BlobResourceContents):
-            mime_type = resource.mime_type or None
-            if mime_type and mime_type.startswith("image/"):
+            # mimeType is optional per the MCP spec, but a base64 file block
+            # needs one, so fall back instead of crashing on valid output.
+            mime_type = resource.mime_type or "application/octet-stream"
+            if mime_type.startswith("image/"):
                 return create_image_block(base64=resource.blob, mime_type=mime_type)
             return create_file_block(base64=resource.blob, mime_type=mime_type)
         # Unreachable while the SDK's resource union holds; see the note below.

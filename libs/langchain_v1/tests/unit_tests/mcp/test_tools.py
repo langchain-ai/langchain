@@ -280,6 +280,20 @@ def test_embedded_blob_resource_type_follows_its_mime_type(
     assert block["base64"] == "AAAA"
 
 
+def test_embedded_blob_resource_without_mime_type_falls_back() -> None:
+    """A blob resource without a MIME type becomes a file block by default."""
+    block = _convert_content_block(
+        EmbeddedResource(
+            type="resource",
+            resource=BlobResourceContents(uri="file:///blob", blob="AAAA"),
+        )
+    )
+
+    assert block["type"] == "file"
+    assert block["base64"] == "AAAA"
+    assert block["mime_type"] == "application/octet-stream"
+
+
 def test_audio_content_is_not_yet_supported() -> None:
     with pytest.raises(NotImplementedError, match="audio"):
         _convert_content_block(AudioContent(type="audio", data="AAAA", mimeType="audio/wav"))
