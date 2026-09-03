@@ -1,5 +1,6 @@
 from typing import Any
 from unittest.mock import MagicMock, patch
+import re
 
 from packaging import version
 from pydantic import BaseModel
@@ -526,10 +527,25 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
 
 def test_graph_mermaid_to_safe_id() -> None:
     """Test that node labels are correctly preprocessed for draw_mermaid."""
+    # Labels needing no sanitizing are returned unchanged.
     assert _to_safe_id("foo") == "foo"
     assert _to_safe_id("foo-bar") == "foo-bar"
     assert _to_safe_id("foo_1") == "foo_1"
-    assert _to_safe_id("#foo*&!") == "\\23foo\\2a\\26\\21"
+
+    # Labels with disallowed characters are sanitized to `_` and get a
+    # deterministic hash suffix, so different labels never collide even
+    # if they sanitize to the same string.
+    assert _to_safe_id("#foo*&!") == "_foo____1a0ea7"
+
+    # Regression test for https://github.com/langchain-ai/langchain/issues/39816
+    # Backslash-escaping produced ids Mermaid could not parse for '[' / ']'.
+    safe = _to_safe_id("PIIMiddleware[email].before_model")
+    assert re.fullmatch(r"[A-Za-z0-9_-]+", safe)
+
+    # Regression test for the collision this hashing scheme must still avoid
+    # (the original motivation for replacing the naive `_` substitution
+    # in https://github.com/langchain-ai/langchain/pull/32857).
+    assert _to_safe_id("开") != _to_safe_id("始")
 
 
 def test_graph_mermaid_duplicate_nodes(snapshot: SnapshotAssertion) -> None:

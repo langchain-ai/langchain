@@ -7,6 +7,7 @@ import base64
 import random
 import re
 import string
+import hashlib
 import time
 import urllib.parse
 from dataclasses import asdict
@@ -123,11 +124,11 @@ def draw_mermaid(
 
     # Node formatting templates
     default_class_label = "default"
-    format_dict = {default_class_label: "{0}({1})"}
+    format_dict = {default_class_label: '{0}(["{1}"])'}
     if first_node is not None:
-        format_dict[first_node] = "{0}([{1}]):::first"
+        format_dict = {default_class_label: '{0}(["{1}"])'}
     if last_node is not None:
-        format_dict[last_node] = "{0}([{1}]):::last"
+        format_dict = {default_class_label: '{0}(["{1}"])'}
 
     def render_node(key: str, node: Node, indent: str = "\t") -> str:
         """Helper function to render a node with consistent formatting."""
@@ -251,19 +252,26 @@ def draw_mermaid(
         mermaid_graph += _generate_mermaid_graph_styles(node_styles or NodeStyles())
     return mermaid_graph
 
-
 def _to_safe_id(label: str) -> str:
     """Convert a string into a Mermaid-compatible node id.
 
-    Keep [a-zA-Z0-9_-] characters unchanged.
-    Map every other character -> backslash + lowercase hex codepoint.
-
-    Result is guaranteed to be unique and Mermaid-compatible,
-    so nodes with special characters always render correctly.
+    Keep [a-zA-Z0-9_-] characters unchanged. Any other character is
+    replaced with `_`. Because that collapsing can make two different
+    labels map to the same id (e.g. multiple non-ASCII characters all
+    becoming `_`), a short deterministic hash suffix of the original
+    label is appended whenever sanitizing changed anything. This keeps
+    ids both Mermaid-legal and unique, unlike the previous backslash-hex
+    escaping scheme, which produced ids Mermaid could not parse (e.g.
+    for `[` / `]`).
     """
     allowed = string.ascii_letters + string.digits + "_-"
-    out = [ch if ch in allowed else "\\" + format(ord(ch), "x") for ch in label]
-    return "".join(out)
+    sanitized = "".join(ch if ch in allowed else "_" for ch in label)
+
+    if sanitized == label:
+        return sanitized
+
+    digest = hashlib.sha256(label.encode("utf-8")).hexdigest()[:6]
+    return f"{sanitized}_{digest}"
 
 
 def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:
