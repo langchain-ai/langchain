@@ -161,7 +161,7 @@ def test_shell_tool_allow_list_permits_ls(tmp_path: Path) -> None:
     tool_messages = [msg for msg in result["messages"] if msg.type == "tool"]
     assert len(tool_messages) > 0, "Shell tool should have been called"
     tool_outputs = " ".join(msg.content for msg in tool_messages)
-    assert "Rejected" not in tool_outputs.lower(), "ls should be permitted by the allow_list"
+    assert "rejected" not in tool_outputs.lower(), "ls should be permitted by the allow_list"
 
 @pytest.mark.requires("langchain_openai")
 def test_shell_tool_allow_list_reject_env(tmp_path: Path) -> None:
@@ -183,4 +183,4 @@ def test_shell_tool_allow_list_reject_env(tmp_path: Path) -> None:
     tool_messages = [msg for msg in result["messages"] if msg.type == "tool"]
     assert len(tool_messages) > 0, "Shell tool should have been called"
     tool_outputs = " ".join(msg.content for msg in tool_messages)
-    assert "Rejected" in tool_outputs.lower(), "env command should be rejected by the allow_list"
+    assert "rejected" in tool_outputs.lower(), "env command should be rejected by the allow_list"
