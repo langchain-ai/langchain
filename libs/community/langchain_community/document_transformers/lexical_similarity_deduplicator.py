@@ -1,53 +1,79 @@
-"""
-Lexical Similarity Chunk Deduplicator for LangChain
-Filters out redundant, highly overlapping document chunks in RAG retrieval pipelines.
-"""
+"""Lexical similarity document chunk deduplicator."""
 
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Optional, Sequence, Set
+from typing import Any, Callable, List, Optional, Sequence, Set
+
+from pydantic import BaseModel, Field
+
+try:
+    from langchain_core.documents import BaseDocumentTransformer, Document
+except ImportError:
+    try:
+        from langchain_core.documents.base import Document
+        from langchain_core.documents.transformers import BaseDocumentTransformer
+    except ImportError:
+        class Document:  # type: ignore[no-redef]
+            def __init__(
+                self,
+                page_content: str,
+                metadata: Optional[dict[str, Any]] = None,
+            ) -> None:
+                self.page_content = page_content
+                self.metadata = metadata or {}
+
+        from abc import ABC
+        class BaseDocumentTransformer(ABC):  # type: ignore[no-redef]
+            pass
 
 
-class Document:
-    """Standard LangChain Document representation."""
-    def __init__(self, page_content: str, metadata: Optional[Dict[str, Any]] = None):
-        self.page_content = page_content
-        self.metadata = metadata or {}
+class LexicalSimilarityDeduplicator(BaseDocumentTransformer, BaseModel):
+    """Document transformer that deduplicates document chunks using lexical Jaccard similarity.
 
-    def __repr__(self) -> str:
-        return f"Document(page_content='{self.page_content[:30]}...', metadata={self.metadata})"
+    Filters out near-duplicate and highly overlapping document chunks retrieved
+    during RAG pipelines to prevent context window saturation and reduce token costs.
 
+    Example:
+        .. code-block:: python
 
-class LexicalSimilarityDeduplicator:
+            from langchain_community.document_transformers import LexicalSimilarityDeduplicator
+            from langchain_core.documents import Document
+
+            docs = [
+                Document(page_content="LangChain is a framework for developing applications powered by LLMs."),
+                Document(page_content="LangChain is a framework for developing applications powered by LLMs."),
+                Document(page_content="Python is a popular programming language.")
+            ]
+
+            deduplicator = LexicalSimilarityDeduplicator(similarity_threshold=0.8, ngram_size=2)
+            unique_docs = deduplicator.transform_documents(docs)
     """
-    Document transformer that filters near-duplicate document chunks from RAG context
-    using n-gram Jaccard lexical similarity.
 
-    Prevents context window pollution and reduces LLM inference token cost.
+    similarity_threshold: float = Field(
+        default=0.75,
+        ge=0.0,
+        le=1.0,
+        description="Jaccard similarity threshold above which chunks are considered duplicates.",
+    )
+    ngram_size: int = Field(
+        default=2,
+        ge=1,
+        description="Size of word n-grams used for lexical representation.",
+    )
 
-    Parameters:
-        similarity_threshold: Float between 0.0 and 1.0 (default 0.75).
-                              Documents with similarity >= threshold against already
-                              accepted documents are discarded as redundant.
-        ngram_size: Size of word n-grams for Jaccard calculation (default 2 for bigrams).
-    """
-
-    def __init__(
-        self,
-        similarity_threshold: float = 0.75,
-        ngram_size: int = 2,
-    ) -> None:
-        if not (0.0 <= similarity_threshold <= 1.0):
-            raise ValueError("similarity_threshold must be between 0.0 and 1.0")
-        if ngram_size < 1:
-            raise ValueError("ngram_size must be at least 1")
-
-        self.similarity_threshold = similarity_threshold
-        self.ngram_size = ngram_size
+    class Config:
+        arbitrary_types_allowed = True
 
     def _tokenize_to_ngrams(self, text: str) -> Set[str]:
-        """Normalizes text and extracts word n-grams."""
+        """Normalize text and extract word n-grams.
+
+        Args:
+            text: Input string to tokenize.
+
+        Returns:
+            Set of extracted n-gram strings.
+        """
         cleaned = re.sub(r"[^\w\s]", "", text.lower()).strip()
         words = cleaned.split()
 
@@ -57,15 +83,25 @@ class LexicalSimilarityDeduplicator:
         if len(words) < self.ngram_size:
             return {cleaned}
 
-        ngrams = set()
+        ngrams: Set[str] = set()
         for i in range(len(words) - self.ngram_size + 1):
             ngram = " ".join(words[i : i + self.ngram_size])
             ngrams.add(ngram)
 
         return ngrams
 
-    def _calculate_jaccard_similarity(self, set_a: Set[str], set_b: Set[str]) -> float:
-        """Calculates Jaccard similarity index between two n-gram sets."""
+    def _calculate_jaccard_similarity(
+        self, set_a: Set[str], set_b: Set[str]
+    ) -> float:
+        """Calculate Jaccard similarity coefficient between two sets.
+
+        Args:
+            set_a: First set of n-grams.
+            set_b: Second set of n-grams.
+
+        Returns:
+            Jaccard similarity index between 0.0 and 1.0.
+        """
         if not set_a and not set_b:
             return 1.0
         if not set_a or not set_b:
@@ -76,9 +112,16 @@ class LexicalSimilarityDeduplicator:
 
         return intersection / union if union > 0 else 0.0
 
-    def transform_documents(self, documents: Sequence[Document]) -> List[Document]:
-        """
-        Filters and returns a deduplicated list of documents.
+    def transform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Filter out duplicate document chunks based on lexical Jaccard similarity.
+
+        Args:
+            documents: Sequence of Document objects to deduplicate.
+
+        Returns:
+            Sequence of deduplicated Document objects preserving relative order.
         """
         unique_documents: List[Document] = []
         accepted_ngrams_list: List[Set[str]] = []
@@ -99,6 +142,15 @@ class LexicalSimilarityDeduplicator:
 
         return unique_documents
 
-    async def atransform_documents(self, documents: Sequence[Document]) -> List[Document]:
-        """Asynchronous document transformation wrapper."""
-        return self.transform_documents(documents)
+    async def atransform_documents(
+        self, documents: Sequence[Document], **kwargs: Any
+    ) -> Sequence[Document]:
+        """Asynchronously filter out duplicate document chunks.
+
+        Args:
+            documents: Sequence of Document objects to deduplicate.
+
+        Returns:
+            Sequence of deduplicated Document objects.
+        """
+        return self.transform_documents(documents, **kwargs)
