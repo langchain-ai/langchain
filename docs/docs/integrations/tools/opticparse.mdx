@@ -1,0 +1,82 @@
+---
+sidebar_label: OpticParse & PhishVision
+---
+
+# OpticParse & PhishVision
+
+[OpticParse](https://opticparse.com) is an edge-native, computer vision web scraper and token-optimized Markdown extractor designed specifically for LLMs and autonomous AI agent workflows.
+
+[PhishVision](https://opticparse.com/phishvision.html) is an AI-powered zero-day cybersecurity threat detector that protects AI agents from visiting credential harvesting kits, brand clones, and Web3 crypto drainers.
+
+## Installation
+
+Install the official LangChain community package from PyPI:
+
+```bash
+pip install -U langchain-opticparse
+```
+
+## Setup
+
+Set your OpticParse API key as an environment variable or pass it directly to the tool:
+
+```python
+import os
+
+os.environ["OPTICPARSE_API_KEY"] = "your-opticparse-api-key"
+```
+
+## Usage: Vision Web Scraping
+
+`OpticParseTool` allows autonomous agents to extract clean structured data from dynamic websites without breaking on changing CSS selectors:
+
+```python
+from langchain_opticparse import OpticParseTool
+
+scraper = OpticParseTool()
+
+# Extract structured content from dynamic web pages
+result = scraper.run({
+    "url": "https://news.ycombinator.com",
+    "query": "Extract top 5 stories with points and author"
+})
+
+print(result)
+```
+
+## Usage: PhishVision Threat Detection
+
+`PhishVisionTool` acts as an immune system for autonomous agents, scanning links before the agent clicks or interacts with them:
+
+```python
+from langchain_opticparse import PhishVisionTool
+
+scanner = PhishVisionTool()
+
+# Audit unknown or user-provided links for threats
+verdict = scanner.run({
+    "url": "https://suspicious-crypto-airdrop.xyz"
+})
+
+print(verdict)
+```
+
+## Multi-Agent Integration (CrewAI & LangChain Agents)
+
+```python
+from langchain.agents import initialize_agent, AgentType
+from langchain_openai import ChatOpenAI
+from langchain_opticparse import OpticParseTool, PhishVisionTool
+
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
+tools = [OpticParseTool(), PhishVisionTool()]
+
+agent = initialize_agent(
+    tools=tools,
+    llm=llm,
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose=True
+)
+
+agent.run("Inspect the target URL https://example.com for threats, and if safe, extract the main heading and content.")
+```
