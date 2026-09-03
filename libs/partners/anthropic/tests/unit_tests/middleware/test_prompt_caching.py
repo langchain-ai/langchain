@@ -1,8 +1,9 @@
 """Tests for Anthropic prompt caching middleware."""
 
 import warnings
+from types import ModuleType
 from typing import Any, cast
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
@@ -17,7 +18,10 @@ from langchain_core.tools import BaseTool, tool
 from langgraph.runtime import Runtime
 
 from langchain_anthropic.chat_models import ChatAnthropic
-from langchain_anthropic.middleware import AnthropicPromptCachingMiddleware
+from langchain_anthropic.middleware import (
+    AnthropicPromptCachingMiddleware,
+    prompt_caching,
+)
 
 
 class FakeToolCallingModel(BaseChatModel):
@@ -50,6 +54,18 @@ class FakeToolCallingModel(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "fake-tool-call-model"
+
+
+def test_trace_inputs_are_omitted() -> None:
+    policy = AnthropicPromptCachingMiddleware.trace_policy
+    assert policy.process_inputs is not None
+    assert policy.process_inputs({"messages": [HumanMessage("foo")]}) == {}
+
+
+def test_trace_policy_unsupported_langchain() -> None:
+    old_types = ModuleType("langchain.agents.middleware.types")
+    with patch.dict("sys.modules", {"langchain.agents.middleware.types": old_types}):
+        assert prompt_caching._get_trace_policy() is None
 
 
 def test_anthropic_prompt_caching_middleware_initialization() -> None:
