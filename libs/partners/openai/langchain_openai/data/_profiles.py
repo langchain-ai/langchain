@@ -642,6 +642,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "gpt-5.2-chat-latest": {
         "name": "GPT-5.2 Chat",
+        "status": "deprecated",
         "release_date": "2025-12-11",
         "last_updated": "2025-12-11",
         "open_weights": False,
@@ -725,6 +726,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "gpt-5.3-chat-latest": {
         "name": "GPT-5.3 Chat (latest)",
+        "status": "deprecated",
         "release_date": "2026-03-03",
         "last_updated": "2026-03-03",
         "open_weights": False,
