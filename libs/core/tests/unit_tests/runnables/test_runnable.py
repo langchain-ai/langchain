@@ -3254,14 +3254,7 @@ def test_map_stream() -> None:
     assert streamed_chunks_picked[0] in [
         {"llm": "i"},
         {"chat": _any_id_ai_message_chunk(content="i")},
-    ]
-    if not (
-        # TODO: Rewrite properly the statement above
-        streamed_chunks_picked[0] == {"llm": "i"}
-        or {"chat": _any_id_ai_message_chunk(content="i")}
-    ):
-        msg = f"Got an unexpected chunk: {streamed_chunks_picked[0]}"
-        raise AssertionError(msg)
+    ], f"Got an unexpected chunk: {streamed_chunks_picked[0]}"
 
     assert len(streamed_chunks_picked) == len(llm_res) + len(chat_res)
 
