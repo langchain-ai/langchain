@@ -30,10 +30,8 @@ class SustainableAgent:
             user_input=user_input + context_warning
         )
         
-        # In a real system, an LLM operates here (e.g., llm.invoke(formatted_prompt))
-        # For testing, we print the underlying system output to the screen:
-        print("\n--- FINAL PROMPT SENT TO AI ---")
-        print(formatted_prompt)
-        print("-------------------------------\n")
+        # In a production environment, invoke the LLM here.
+        # Example: return self.llm.invoke(formatted_prompt)
         
-        return "The agent has received the task and is working..."
+        print(f"[DEBUG] Prepared LLM Prompt:\n{formatted_prompt}")
+        return "Task dispatched successfully."
