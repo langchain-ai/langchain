@@ -9,8 +9,9 @@ serving server's identity under `mcp.server`.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict
+from typing import TYPE_CHECKING, Any, Protocol, TypedDict
 
+from fastmcp.client.group import ClientGroup
 from langchain_core.messages.content import (
     FileContentBlock,
     ImageContentBlock,
@@ -31,7 +32,7 @@ from mcp.types import (
     TextResourceContents,
 )
 
-from langchain.mcp.elicitation import _call_tool_with_interrupts
+from langchain.mcp.elicitation import _call_tool_with_interrupts, _drives_interrupts
 
 if TYPE_CHECKING:
     from fastmcp.client import Client
@@ -179,7 +180,7 @@ def _convert_call_tool_result(
     return tool_content, artifact
 
 
-def _tool_metadata(tool: Tool, client: Client[Any]) -> dict[str, Any] | None:
+def _tool_metadata(tool: Tool, client: Client[Any] | None) -> dict[str, Any] | None:
     """Collect the MCP tool- and server-level metadata worth keeping.
 
     Everything lives under a single `mcp` namespace so a consumer can tell an
@@ -203,22 +204,28 @@ def _tool_metadata(tool: Tool, client: Client[Any]) -> dict[str, Any] | None:
     # Server identity comes off the connection, not the tool — a `Tool` carries
     # no server field. It is populated while the client is connected, which is
     # the case at conversion time.
-    if client.server_info is not None:
+    if client is not None and client.server_info is not None:
         mcp["server"] = client.server_info.model_dump(exclude_none=True)
     return {"mcp": mcp} if mcp else None
 
 
-def as_langchain_tool(
+async def as_langchain_tool(
     tool: Tool,
-    client: Client[Any],
-    *,
-    elicitation: Literal["interrupt"] | None = None,
+    client: Client[Any] | ClientGroup,
 ) -> BaseTool:
     """Convert one MCP tool into a LangChain tool.
 
     The returned tool calls the MCP tool through `client` on every invocation.
     FastMCP clients are reentrant, so the tool can open the client itself
     whether or not a connection is already held elsewhere.
+
+    A server that needs input mid-call is answered with a LangGraph
+    `interrupt()` when `client` carries the interrupt-driving sentinel handler
+    that `MCPAdapter` installs — so a human answers and the call resumes, see
+    `langchain.mcp.elicitation`. A client that carries a different handler (a
+    caller's own) uses that handler instead, and one with no handler simply
+    never gets asked. Which path a call takes is read off the client, so the
+    behavior matches whatever it was armed with.
 
     An MCP tool that runs and reports failure reaches the model as a
     `ToolMessage` with `status="error"`, carrying the server's own error
@@ -228,12 +235,6 @@ def as_langchain_tool(
     Args:
         tool: An MCP tool, as returned by `fastmcp.Client.list_tools`.
         client: The FastMCP client to call the tool through.
-        elicitation: Pass `'interrupt'` to answer a server that needs input
-            mid-call with a LangGraph `interrupt()`, so a human answers and the
-            call resumes — see `langchain.mcp.elicitation`. Also requires
-            `client` to have been built with an `elicitation_handler`, since
-            FastMCP declares the capability only then. By default the request is
-            left to `client` and its own handler, if it has one.
 
     Returns:
         A LangChain tool that invokes the MCP tool asynchronously.
@@ -247,9 +248,15 @@ def as_langchain_tool(
         client = Client("https://example.com/mcp")
         async with client:
             mcp_tools = await client.list_tools()
-        tools = [as_langchain_tool(t, client) for t in mcp_tools]
+        tools = [await as_langchain_tool(t, client) for t in mcp_tools]
         ```
     """
+    if isinstance(client, ClientGroup):
+        tool_route = await client.resolve_tool(tool.name)
+        requesting_client = tool_route.client
+    else:
+        requesting_client = client
+    drives_interrupts = _drives_interrupts(requesting_client)
 
     async def call_tool(
         **arguments: Any,
@@ -257,7 +264,7 @@ def as_langchain_tool(
         """Call the captured MCP tool and convert its result."""
         result: _ToolCallResult
         async with client:
-            if elicitation == "interrupt":
+            if drives_interrupts:
                 result = await _call_tool_with_interrupts(client, tool.name, arguments)
             else:
                 # Preserve MCP error results for conversion into failed tool messages.
@@ -270,10 +277,7 @@ def as_langchain_tool(
         args_schema=tool.input_schema,
         coroutine=call_tool,
         response_format="content_and_artifact",
-        metadata=_tool_metadata(tool, client),
-        # MCP `isError` is a model-visible tool result, not a transport
-        # exception. `BaseTool`'s narrow `ToolException` path preserves the
-        # result content while formatting it as `ToolMessage(status="error")`.
+        metadata=_tool_metadata(tool, requesting_client),
         handle_tool_error=_handle_mcp_tool_error,
     )
 

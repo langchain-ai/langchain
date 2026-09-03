@@ -77,9 +77,20 @@ async def test_group_tools_are_namespaced_per_server() -> None:
 
 
 @pytest.mark.asyncio
-async def test_colliding_tool_names_reach_their_own_server() -> None:
-    """The namespace is only useful if the call follows it."""
-    tools = {tool.name: tool for tool in await MCPAdapter(_group()).list_tools()}
+async def test_colliding_tool_names_reach_their_own_server(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Group-backed tools keep their names so FastMCP routes each invocation."""
+    adapter = MCPAdapter(_group())
+    seen: list[str] = []
+    real = adapter.client.call_tool
+
+    async def spy(name: str, *args: Any, **kwargs: Any) -> Any:
+        seen.append(name)
+        return await real(name, *args, **kwargs)
+
+    monkeypatch.setattr(adapter.client, "call_tool", spy)
+    tools = {tool.name: tool for tool in await adapter.list_tools()}
 
     [calc] = await tools["calc_add"].ainvoke({"a": 1, "b": 2})
     [greet] = await tools["greet_add"].ainvoke({"a": 1, "b": 2})
@@ -101,7 +112,7 @@ async def test_group_tools_stay_callable_after_the_adapter_context_exits() -> No
 
 @pytest.mark.asyncio
 async def test_list_tools_inside_a_group_context_does_not_re_enter() -> None:
-    """`ClientGroup` refuses re-entry, so the adapter counts nesting for it."""
+    """`ClientGroup` counts its own nesting, so discovery inside a context is safe."""
     adapter = MCPAdapter(_group())
 
     async with adapter:
@@ -164,10 +175,10 @@ async def test_list_tools_forwards_cache_mode_to_a_group(
 
 
 @pytest.mark.asyncio
-async def test_interrupt_mode_leaves_the_callers_group_untouched() -> None:
+async def test_arming_a_group_leaves_the_callers_clients_untouched() -> None:
     """Arming clones keeps a caller's own clients as they built them."""
     group = _group()
-    adapter = MCPAdapter(group, elicitation="interrupt")
+    adapter = MCPAdapter(group)
 
     assert adapter.client is not group
     adapter_group = cast("ClientGroup", adapter.client)
@@ -365,8 +376,21 @@ async def test_several_servers_connect_and_keep_their_prefixes(
     ]
 
 
-def test_prebuilt_client_is_used_as_is() -> None:
+def test_prebuilt_client_without_a_handler_is_armed_on_a_clone() -> None:
+    """A client with no elicitation handler is armed, on a clone not the original."""
     client: Client[Any] = Client("https://example.com/mcp")
+
+    adapted = MCPAdapter(client).client
+    assert adapted is not client
+
+
+def test_prebuilt_client_with_a_handler_is_used_as_is() -> None:
+    """A caller's own elicitation handler is honored: the client is left alone."""
+
+    async def own_handler(*_: Any) -> Any:
+        return None
+
+    client: Client[Any] = Client("https://example.com/mcp", elicitation_handler=own_handler)
 
     assert MCPAdapter(client).client is client
 
@@ -456,9 +480,13 @@ async def test_adapter_adapts_tools_on_either_protocol_era(
             {"name": "whoami", "args": {}, "id": "c1", "type": "tool_call"}
         )
 
+        # The adapter arms a clone of a handler-less client, so assert on the
+        # client it actually connected. `.new()` preserves `mode`, so the clone
+        # negotiates the same era.
+        armed = cast("Client[Any]", adapter.client)
         assert message.content[0]["text"] == "solo"
-        assert client.protocol_version == expected_version
-        assert (client.initialize_result is not None) is expects_handshake
+        assert armed.protocol_version == expected_version
+        assert (armed.initialize_result is not None) is expects_handshake
 
 
 @pytest.mark.asyncio
@@ -484,11 +512,50 @@ async def test_servers_on_different_protocol_eras_are_usable_side_by_side() -> N
         call = {"name": "whoami", "args": {}, "id": "c1", "type": "tool_call"}
         answers = await asyncio.gather(handshake_tool.ainvoke(call), modern_tool.ainvoke(call))
 
+        # The adapter arms a clone of each handler-less client, so assert on the
+        # clients it actually connected. Each clone keeps its own `mode`, so the
+        # two negotiated eras stay independent.
+        armed_handshake = cast("Client[Any]", handshake_adapter.client)
+        armed_modern = cast("Client[Any]", modern_adapter.client)
         assert [message.content[0]["text"] for message in answers] == ["old", "new"]
-        assert handshake_client.protocol_version == _HANDSHAKE_ERA
-        assert modern_client.protocol_version == _MODERN_ERA
-        assert handshake_client.initialize_result is not None
-        assert modern_client.initialize_result is None
+        assert armed_handshake.protocol_version == _HANDSHAKE_ERA
+        assert armed_modern.protocol_version == _MODERN_ERA
+        assert armed_handshake.initialize_result is not None
+        assert armed_modern.initialize_result is None
+
+
+@pytest.mark.asyncio
+async def test_one_group_spans_both_protocol_eras() -> None:
+    """A single `ClientGroup` keeps each member on its own negotiated era.
+
+    This is the whole reason to reach for a group over a multi-server `Client`
+    config: the config presents one aggregate endpoint on a single shared era,
+    while a group holds one connection per server, so a legacy and a modern
+    server stay in their native eras at the same time behind one adapter.
+    """
+    group = ClientGroup(
+        {
+            "old": Client(_self_identifying_server("old"), mode="legacy"),
+            "new": Client(_self_identifying_server("new"), mode="auto"),
+        }
+    )
+
+    async with MCPAdapter(group) as adapter:
+        tools = {tool.name: tool for tool in await adapter.list_tools()}
+
+        answers = await asyncio.gather(
+            tools["old_whoami"].ainvoke(
+                {"name": "old_whoami", "args": {}, "id": "c1", "type": "tool_call"}
+            ),
+            tools["new_whoami"].ainvoke(
+                {"name": "new_whoami", "args": {}, "id": "c2", "type": "tool_call"}
+            ),
+        )
+
+        armed = cast("ClientGroup", adapter.client)
+        assert [message.content[0]["text"] for message in answers] == ["old", "new"]
+        assert armed.clients["old"].protocol_version == _HANDSHAKE_ERA
+        assert armed.clients["new"].protocol_version == _MODERN_ERA
 
 
 @pytest.mark.asyncio

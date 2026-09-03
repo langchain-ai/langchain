@@ -57,3 +57,8 @@ reasoning_effort_default = "high"
 structured_output = true
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "high"
+
+[overrides."claude-fable-5-1"]
+structured_output = true
+reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "high"

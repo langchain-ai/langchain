@@ -22,6 +22,7 @@ from mcp.types import (
 )
 
 from langchain.mcp import as_langchain_tool
+from langchain.mcp.elicitation import _arm_for_interrupts
 from langchain.mcp.tools import _convert_call_tool_result, _convert_content_block
 
 
@@ -43,14 +44,17 @@ async def _one_tool(
     *,
     elicitation: Literal["interrupt"] | None = None,
 ) -> tuple[Any, Client[Any]]:
-    """Convert the single tool an in-process server exposes."""
+    """Convert the single tool an in-process server exposes.
+
+    Routing is read off the client, so `elicitation='interrupt'` is exercised by
+    arming the client the way the adapter would.
+    """
     client: Client[Any] = Client(server)
+    if elicitation == "interrupt":
+        _arm_for_interrupts(client)
     async with client:
         [mcp_tool] = await client.list_tools()
-    return (
-        as_langchain_tool(mcp_tool, client, elicitation=elicitation),
-        client,
-    )
+    return await as_langchain_tool(mcp_tool, client), client
 
 
 @pytest.mark.asyncio
@@ -159,7 +163,8 @@ async def test_tool_stays_callable_after_its_client_context_exits() -> None:
     assert _blocks_without_ids(message.content) == [{"type": "text", "text": "8"}]
 
 
-def test_annotations_and_meta_are_kept_under_the_mcp_namespace() -> None:
+@pytest.mark.asyncio
+async def test_annotations_and_meta_are_kept_under_the_mcp_namespace() -> None:
     mcp_tool = Tool(
         name="delete",
         inputSchema={"type": "object", "properties": {}},
@@ -167,7 +172,7 @@ def test_annotations_and_meta_are_kept_under_the_mcp_namespace() -> None:
         _meta={"origin": "crm"},
     )
 
-    tool = as_langchain_tool(mcp_tool, Client("https://example.com/mcp"))
+    tool = await as_langchain_tool(mcp_tool, Client("https://example.com/mcp"))
 
     # Annotations are snake_case (no wire aliases) and grouped under `mcp.tool`.
     assert tool.metadata == {
@@ -175,10 +180,11 @@ def test_annotations_and_meta_are_kept_under_the_mcp_namespace() -> None:
     }
 
 
-def test_tool_without_annotations_or_meta_has_no_metadata() -> None:
+@pytest.mark.asyncio
+async def test_tool_without_annotations_or_meta_has_no_metadata() -> None:
     mcp_tool = Tool(name="noop", inputSchema={"type": "object", "properties": {}})
 
-    tool = as_langchain_tool(mcp_tool, Client("https://example.com/mcp"))
+    tool = await as_langchain_tool(mcp_tool, Client("https://example.com/mcp"))
 
     assert tool.metadata is None
     assert tool.description == ""
@@ -198,7 +204,7 @@ async def test_server_identity_is_kept_under_the_mcp_namespace() -> None:
     client: Client[Any] = Client(server)
     async with client:
         [mcp_tool] = await client.list_tools()
-        tool = as_langchain_tool(mcp_tool, client)
+        tool = await as_langchain_tool(mcp_tool, client)
 
     assert tool.metadata is not None
     assert tool.metadata["mcp"]["server"]["name"] == "crm"

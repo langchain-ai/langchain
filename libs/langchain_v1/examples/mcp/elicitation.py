@@ -1,11 +1,12 @@
 """A server that needs input mid-call, answered by a human.
 
-Some MCP tools cannot finish without asking something. `elicitation="interrupt"`
-surfaces the question as a LangGraph `interrupt()`, so the person already
-reviewing the agent's work answers it and the run resumes.
+Some MCP tools cannot finish without asking something. `MCPAdapter` surfaces the
+question as a LangGraph `interrupt()`, so the person already reviewing the
+agent's work answers it and the run resumes.
 
-The opt-in matters: declaring the capability is a promise on the wire, and a
-server only asks a client that made it.
+The adapter arms every client it builds to advertise the elicitation capability,
+so this works without any opt-in — a server only asks a client that made the
+promise on the wire, and the adapter makes it for you.
 
     uv run examples/mcp/elicitation.py
 """
@@ -25,7 +26,7 @@ from langchain.mcp import MCPAdapter
 
 async def main() -> None:
     """Book a table, answering the server's question from here."""
-    async with MCPAdapter(booking_server(), elicitation="interrupt") as adapter:
+    async with MCPAdapter(booking_server()) as adapter:
         tools = await adapter.list_tools()
 
     # Resuming needs persistence, so the interrupted run has somewhere to wait.

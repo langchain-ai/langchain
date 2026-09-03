@@ -10,10 +10,10 @@ from typing import Annotated, Any, cast
 
 import pytest
 from fastmcp import Client, Context, FastMCP
+from fastmcp.client.group import ClientGroup
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 from mcp.server.mcpserver import Elicit, MCPServer, Resolve
-from mcp.shared.exceptions import MCPError
 from mcp.types import (
     CallToolResult,
     CreateMessageRequest,
@@ -29,8 +29,18 @@ from pydantic import BaseModel
 
 from langchain.agents import create_agent
 from langchain.mcp import MCPAdapter
-from langchain.mcp.elicitation import _call_tool_with_interrupts
+from langchain.mcp.elicitation import (
+    _arm_for_interrupts,
+    _call_tool_with_interrupts,
+    _drives_interrupts,
+)
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+_HANDSHAKE_ERA = "2025-11-25"
+"""Latest protocol version that negotiates with the legacy `initialize` handshake."""
+
+_MODERN_ERA = "2026-07-28"
+"""Modern protocol version that carries the `InputRequiredResult` elicitation path."""
 
 
 class PartySize(BaseModel):
@@ -56,6 +66,18 @@ def _restaurant_server(calls: dict[str, int]) -> MCPServer:
     return server
 
 
+def _plain_server(name: str) -> MCPServer:
+    """A legacy-era server whose one tool needs no input."""
+    server = MCPServer(name)
+
+    @server.tool()
+    def whoami() -> str:
+        """Report the server name."""
+        return name
+
+    return server
+
+
 def _agent(tools: list[Any]) -> Any:
     return create_agent(
         FakeToolCallingModel(tool_calls=[[{"name": "book_table", "args": {}, "id": "c1"}], []]),
@@ -67,7 +89,7 @@ def _agent(tools: list[Any]) -> Any:
 @pytest.mark.asyncio
 async def test_interrupt_carries_the_question_and_resume_completes_the_call() -> None:
     calls = {"resolver": 0, "body": 0}
-    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").list_tools()
+    tools = await MCPAdapter(_restaurant_server(calls)).list_tools()
     agent = _agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -100,7 +122,7 @@ async def test_interrupt_carries_the_question_and_resume_completes_the_call() ->
 async def test_the_tool_body_runs_once_despite_the_replay() -> None:
     """Resuming re-issues the call, but only the answered round reaches the body."""
     calls = {"resolver": 0, "body": 0}
-    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").list_tools()
+    tools = await MCPAdapter(_restaurant_server(calls)).list_tools()
     agent = _agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -123,7 +145,7 @@ async def test_the_tool_body_runs_once_despite_the_replay() -> None:
 @pytest.mark.asyncio
 async def test_declining_leaves_the_tool_unrun() -> None:
     calls = {"resolver": 0, "body": 0}
-    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").list_tools()
+    tools = await MCPAdapter(_restaurant_server(calls)).list_tools()
     agent = _agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -142,16 +164,100 @@ async def test_declining_leaves_the_tool_unrun() -> None:
 
 
 @pytest.mark.asyncio
-async def test_the_opt_in_declares_the_capability_on_the_wire() -> None:
+async def test_elicitation_through_a_group_resolves_the_member_session() -> None:
+    """A group namespaces the tool, so the loop must drive the member session.
+
+    The interrupt loop reads the raw `InputRequiredResult` from a client session,
+    which a group does not expose directly; it must resolve the namespaced name to
+    the member client that serves it. Covers that resolution end to end.
+    """
+    calls = {"resolver": 0, "body": 0}
+    group = ClientGroup({"dining": Client(_restaurant_server(calls))})
+    tools = await MCPAdapter(group).list_tools()
+    agent = create_agent(
+        FakeToolCallingModel(
+            tool_calls=[[{"name": "dining_book_table", "args": {}, "id": "c1"}], []]
+        ),
+        tools,
+        checkpointer=InMemorySaver(),
+    )
+    config: Any = {"configurable": {"thread_id": "t"}}
+
+    paused = await agent.ainvoke({"messages": [{"role": "user", "content": "book"}]}, config)
+    [pause] = paused["__interrupt__"]
+    assert pause.value["tool_name"] == "dining_book_table"
+    [question] = pause.value["requests"]
+    assert calls["body"] == 0
+
+    resumed = await agent.ainvoke(
+        Command(
+            resume={"responses": {question["key"]: {"action": "accept", "content": {"guests": 4}}}}
+        ),
+        config,
+    )
+
+    tool_message = next(message for message in resumed["messages"] if message.type == "tool")
+    assert tool_message.content[0]["text"] == "Booked a table for 4."
+    assert tool_message.status == "success"
+
+
+@pytest.mark.asyncio
+async def test_interrupt_fires_on_the_modern_member_of_a_mixed_era_group() -> None:
+    """A group can mix eras; the interrupt drives only the modern member.
+
+    Elicitation is a modern-era feature, so in a group holding one legacy and
+    one modern server the loop must resolve to the modern member and interrupt
+    there, while the legacy member coexists untouched. Covers the group +
+    mixed-era + interrupt path together.
+    """
+    calls = {"resolver": 0, "body": 0}
+    group = ClientGroup(
+        {
+            "info": Client(_plain_server("info-server"), mode="legacy"),
+            "dining": Client(_restaurant_server(calls), mode="auto"),
+        }
+    )
+    tools = {tool.name: tool for tool in await MCPAdapter(group).list_tools()}
+    assert sorted(tools) == ["dining_book_table", "info_whoami"]
+
+    agent = create_agent(
+        FakeToolCallingModel(
+            tool_calls=[[{"name": "dining_book_table", "args": {}, "id": "c1"}], []]
+        ),
+        list(tools.values()),
+        checkpointer=InMemorySaver(),
+    )
+    config: Any = {"configurable": {"thread_id": "t"}}
+
+    paused = await agent.ainvoke({"messages": [{"role": "user", "content": "book"}]}, config)
+    [pause] = paused["__interrupt__"]
+    assert pause.value["tool_name"] == "dining_book_table"
+    [question] = pause.value["requests"]
+    assert calls["body"] == 0
+
+    resumed = await agent.ainvoke(
+        Command(
+            resume={"responses": {question["key"]: {"action": "accept", "content": {"guests": 4}}}}
+        ),
+        config,
+    )
+
+    tool_message = next(message for message in resumed["messages"] if message.type == "tool")
+    assert tool_message.content[0]["text"] == "Booked a table for 4."
+    assert tool_message.status == "success"
+
+
+@pytest.mark.asyncio
+async def test_the_adapter_declares_the_capability_on_the_wire() -> None:
     """Pin the capability declaration, which rides on a sentinel handler.
 
     FastMCP declares `elicitation` only when the client's callback differs by
-    identity from the SDK's default, so `elicitation='interrupt'` installs a
-    sentinel purely to trip that comparison. Assert the negotiated capability
-    directly: if FastMCP ever changes how it decides, servers would quietly stop
-    asking, and every other test here would still pass.
+    identity from the SDK's default, so the adapter installs a sentinel purely
+    to trip that comparison. Assert the negotiated capability directly: if
+    FastMCP ever changes how it decides, servers would quietly stop asking, and
+    every other test here would still pass.
     """
-    adapter = MCPAdapter(_restaurant_server({"resolver": 0, "body": 0}), elicitation="interrupt")
+    adapter = MCPAdapter(_restaurant_server({"resolver": 0, "body": 0}))
 
     async with adapter:
         capabilities = cast("Client[Any]", adapter.client).session._build_capabilities("2026-07-28")
@@ -162,9 +268,9 @@ async def test_the_opt_in_declares_the_capability_on_the_wire() -> None:
 
 @pytest.mark.asyncio
 async def test_prebuilt_client_declares_elicitation_without_mutating_the_original() -> None:
-    """Interrupt mode configures an adapter-owned clone of a pre-built client."""
+    """The adapter arms a clone of a pre-built client that has no handler."""
     client = Client(_restaurant_server({"resolver": 0, "body": 0}))
-    adapter = MCPAdapter(client, elicitation="interrupt")
+    adapter = MCPAdapter(client)
 
     assert adapter.client is not client
     async with adapter:
@@ -179,23 +285,51 @@ async def test_prebuilt_client_declares_elicitation_without_mutating_the_origina
 
 
 @pytest.mark.asyncio
-async def test_without_the_opt_in_the_capability_is_never_declared() -> None:
-    """The default stays non-interactive, and a server needing input says so.
+async def test_a_prebuilt_clients_own_handler_is_honored_not_overridden() -> None:
+    """A caller's own elicitation handler is respected: the client is left as-is.
 
-    Elicitation is only offered to a client that advertises the capability, and
-    only `elicitation='interrupt'` makes the adapter advertise it. A server whose
-    tool *requires* an answer therefore refuses the call outright rather than
-    silently running without one.
+    The adapter arms only a client that has no handler. One the caller already
+    built with a handler answers elicitation its own way, so the adapter uses it
+    untouched rather than cloning it or replacing the handler.
     """
-    calls = {"resolver": 0, "body": 0}
-    tools = await MCPAdapter(_restaurant_server(calls)).list_tools()
-    agent = _agent(tools)
-    config: Any = {"configurable": {"thread_id": "t"}}
 
-    with pytest.raises(MCPError, match="did not declare the form elicitation capability"):
-        await agent.ainvoke({"messages": [{"role": "user", "content": "book"}]}, config)
+    async def own_handler(*_: Any) -> Any:
+        return None
 
-    assert calls["body"] == 0
+    client = Client(_restaurant_server({"resolver": 0, "body": 0}), elicitation_handler=own_handler)
+    adapter = MCPAdapter(client)
+
+    assert adapter.client is client
+
+
+@pytest.mark.asyncio
+async def test_a_modern_server_drives_interrupts() -> None:
+    """An armed client on a modern-era connection routes through the loop."""
+    client = Client(_restaurant_server({"resolver": 0, "body": 0}))
+    _arm_for_interrupts(client)
+    async with client:
+        assert client.protocol_version == _MODERN_ERA
+        assert _drives_interrupts(cast("Client[Any]", client))
+
+
+@pytest.mark.asyncio
+async def test_a_legacy_server_does_not_drive_interrupts_despite_arming() -> None:
+    """The interrupt loop answers an `InputRequiredResult`, a modern-era feature.
+
+    Even when armed, a legacy-era connection falls back to the plain call.
+    """
+    server: FastMCP[None] = FastMCP("legacy")
+
+    @server.tool
+    def add(a: int, b: int) -> int:
+        """Add two numbers."""
+        return a + b
+
+    client = Client(server, mode="legacy")
+    _arm_for_interrupts(client)
+    async with client:
+        assert client.protocol_version == _HANDSHAKE_ERA
+        assert not _drives_interrupts(cast("Client[Any]", client))
 
 
 class _FakeSession:
@@ -245,7 +379,7 @@ def _unanswerable_server() -> FastMCP[None]:
 @pytest.mark.asyncio
 async def test_sampling_requests_are_rejected_rather_than_mishandled() -> None:
     """Driving the loop by hand bypasses the callbacks that answer sampling."""
-    async with MCPAdapter(_unanswerable_server(), elicitation="interrupt") as adapter:
+    async with MCPAdapter(_unanswerable_server()) as adapter:
         client = cast("Client[Any]", adapter.client)
         async with client:
             with pytest.raises(NotImplementedError, match="sampling/createMessage"):
@@ -276,7 +410,7 @@ async def test_a_client_without_the_session_guard_warns() -> None:
 @pytest.mark.asyncio
 async def test_a_continuation_round_is_refused_rather_than_polled() -> None:
     """A round with state but no questions is long-running work, not elicitation."""
-    async with MCPAdapter(_unanswerable_server(), elicitation="interrupt") as adapter:
+    async with MCPAdapter(_unanswerable_server()) as adapter:
         client = cast("Client[Any]", adapter.client)
         async with client:
             with pytest.raises(NotImplementedError, match="continuation round"):
@@ -364,7 +498,7 @@ def _accept_all(request: dict[str, Any], answer: str) -> dict[str, Any]:
 async def test_several_requests_in_one_round_share_a_single_interrupt() -> None:
     """Parallel questions arrive together, so one resume answers them all."""
     calls = {"round_1": 0, "round_2": 0, "body": 0}
-    tools = await MCPAdapter(_multi_question_server(calls), elicitation="interrupt").list_tools()
+    tools = await MCPAdapter(_multi_question_server(calls)).list_tools()
     agent = _trip_agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -383,7 +517,7 @@ async def test_several_requests_in_one_round_share_a_single_interrupt() -> None:
 async def test_sequential_rounds_interrupt_once_each_and_resume_in_order() -> None:
     """Two rounds need two resumes, correlated by request key rather than by id."""
     calls = {"round_1": 0, "round_2": 0, "body": 0}
-    tools = await MCPAdapter(_multi_question_server(calls), elicitation="interrupt").list_tools()
+    tools = await MCPAdapter(_multi_question_server(calls)).list_tools()
     agent = _trip_agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -409,7 +543,7 @@ async def test_sequential_rounds_interrupt_once_each_and_resume_in_order() -> No
 async def test_answering_only_some_of_a_round_is_rejected() -> None:
     """A partial answer must fail loudly rather than reach the server."""
     calls = {"round_1": 0, "round_2": 0, "body": 0}
-    tools = await MCPAdapter(_multi_question_server(calls), elicitation="interrupt").list_tools()
+    tools = await MCPAdapter(_multi_question_server(calls)).list_tools()
     agent = _trip_agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 
@@ -426,7 +560,7 @@ async def test_answering_only_some_of_a_round_is_rejected() -> None:
 @pytest.mark.asyncio
 async def test_an_unknown_action_is_rejected() -> None:
     calls = {"resolver": 0, "body": 0}
-    tools = await MCPAdapter(_restaurant_server(calls), elicitation="interrupt").list_tools()
+    tools = await MCPAdapter(_restaurant_server(calls)).list_tools()
     agent = _agent(tools)
     config: Any = {"configurable": {"thread_id": "t"}}
 

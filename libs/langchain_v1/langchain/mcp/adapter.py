@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Final, TypeAlias
 
 from pydantic import AnyUrl, TypeAdapter, ValidationError
 from typing_extensions import Self
 
-from langchain.mcp.elicitation import _declare_elicitation_capability
+from langchain.mcp.elicitation import _arm_for_interrupts
 from langchain.mcp.tools import as_langchain_tool
 
 try:
@@ -16,10 +16,6 @@ try:
     from fastmcp.client.group import ClientGroup
     from fastmcp.client.transports import ClientTransport
     from fastmcp.mcp_config import MCPConfig
-
-    # `fastmcp.Client` accepts the MCP SDK's own server type in-process, and
-    # aliases it as `SDKServer`. Imported from the SDK because that alias is
-    # not an explicit re-export.
     from mcp.server.mcpserver import MCPServer
 except ImportError as _import_error:
     msg = "Please install FastMCP to use `MCPAdapter` — `pip install fastmcp`."
@@ -71,22 +67,6 @@ transport, or `MCPConfig` — see `MCPAdapter`.
 `ClientGroup` is the one member `fastmcp.Client` does not accept at all, since a
 group is a peer of `Client` rather than a transport it could wrap.
 """
-
-
-def _group_declaring_elicitation(group: ClientGroup) -> ClientGroup:
-    """Rebuild `group` from clones that advertise the elicitation capability.
-
-    FastMCP declares the capability per client, so a group must declare it on
-    every member. Cloning rather than calling `set_elicitation_callback` on the
-    originals keeps the caller's own clients untouched, the same rule a
-    pre-built `Client` target follows.
-    """
-    clients = {}
-    for name, member in group.clients.items():
-        clone = member.new()
-        clone.set_elicitation_callback(_declare_elicitation_capability)
-        clients[name] = clone
-    return ClientGroup(clients)
 
 
 _URL_SCHEMES: Final = frozenset({"http", "https"})
@@ -163,20 +143,22 @@ class MCPAdapter:
         let it select local execution. Reach a local server through `Path`, a
         `fastmcp` transport, or an `MCPConfig`, all of which say so explicitly.
 
+    A server that needs input mid-call is answered with a LangGraph
+    `interrupt()`, so a human answers and the run resumes — see
+    `langchain.mcp.elicitation`. This is the default: the adapter arms every
+    client it builds to advertise the elicitation capability and drives the
+    interrupt loop on each call. A server that never asks for input is
+    unaffected, since the loop only runs when the server returns a request.
+
+    A pre-built client (or `ClientGroup`) that already carries its own
+    elicitation handler is honored rather than overridden: its handler keeps
+    answering, and the adapter leaves the client as the caller built it. Only a
+    client with no handler is armed, and it is cloned first so the caller's own
+    object is never mutated.
+
     Args:
         target: MCP target accepted by `fastmcp.Client`, including an existing
             FastMCP client. A `str` must be an `http`/`https` URL.
-        elicitation: Whether these tools can answer a server that needs input
-            mid-call. Pass `'interrupt'` to raise a LangGraph `interrupt()` so a
-            human answers and the run resumes — see `langchain.mcp.elicitation`.
-
-            Declaring the capability is a promise made on the wire, which is why
-            it is a choice rather than a default: an agent with no way to reach
-            a human cannot keep it. Left unset, nothing is declared, and a
-            server whose tool *requires* an answer refuses the call outright
-            rather than running without one. With a pre-built client, interrupt
-            mode configures a clone so the caller's own handlers are not
-            replaced.
 
     Example:
         ```python
@@ -189,43 +171,33 @@ class MCPAdapter:
         ```
     """
 
-    def __init__(
-        self,
-        target: MCPAdapterTarget,
-        *,
-        elicitation: Literal["interrupt"] | None = None,
-    ) -> None:
-        """Initialize the adapter around a FastMCP target, client, or group."""
-        self._depth = 0
+    def __init__(self, target: MCPAdapterTarget) -> None:
+        """Initialize the adapter around a FastMCP target, client, or group.
+
+        Each underlying client is armed to answer elicitation with an interrupt,
+        unless it already carries the caller's own handler, which is honored
+        instead. A caller's client is cloned rather than mutated. See the class
+        docstring.
+        """
+
+        def armed(client: FastMCPClient[Any]) -> FastMCPClient[Any]:
+            if getattr(client, "_elicitation_callback", None) is not None:
+                return client
+            clone = client.new()
+            _arm_for_interrupts(clone)
+            return clone
+
         if isinstance(target, ClientGroup):
-            # Interrupt mode arms clones, so the caller's own clients keep
-            # whatever handlers they were built with.
-            self._client: FastMCPClient[Any] | ClientGroup = (
-                _group_declaring_elicitation(target) if elicitation == "interrupt" else target
-            )
+            members = {name: armed(client) for name, client in target.clients.items()}
+            self._client: FastMCPClient[Any] | ClientGroup = ClientGroup(members)
         elif isinstance(target, FastMCPClient):
-            if elicitation == "interrupt":
-                # Configure an adapter-owned client so interrupt mode does not
-                # replace a callback on the caller's client.
-                self._client = target.new()
-                self._client.set_elicitation_callback(_declare_elicitation_capability)
-            else:
-                self._client = target
+            self._client = armed(target)
         else:
             if isinstance(target, str):
                 _validate_url_target(target)
-            # A client only advertises the elicitation capability when it
-            # carries a handler, and servers will not ask without it. The
-            # handler itself is never used: elicitation answers are driven by
-            # `_call_tool_with_interrupts`, which reads the requests off the
-            # result rather than through this callback.
-            self._client = FastMCPClient(
-                target,
-                elicitation_handler=(
-                    _declare_elicitation_capability if elicitation == "interrupt" else None
-                ),
-            )
-        self._elicitation = elicitation
+            client = FastMCPClient(target)
+            _arm_for_interrupts(client)
+            self._client = client
 
     @property
     def client(self) -> FastMCPClient[Any] | ClientGroup:
@@ -234,15 +206,7 @@ class MCPAdapter:
 
     async def __aenter__(self) -> Self:
         """Connect the underlying client or group for the duration of the context."""
-        if isinstance(self._client, ClientGroup):
-            # A `Client` counts its own nesting; a `ClientGroup` refuses re-entry
-            # outright, so the adapter counts for it. Without this, `list_tools()`
-            # called inside `async with MCPAdapter(group)` would raise.
-            if self._depth == 0:
-                await self._client.__aenter__()
-            self._depth += 1
-        else:
-            await self._client.__aenter__()  # type: ignore[no-untyped-call]
+        await self._client.__aenter__()
         return self
 
     async def __aexit__(
@@ -252,12 +216,7 @@ class MCPAdapter:
         traceback: TracebackType | None,
     ) -> None:
         """Release this context's hold on the underlying client or group."""
-        if isinstance(self._client, ClientGroup):
-            self._depth -= 1
-            if self._depth == 0:
-                await self._client.__aexit__(exc_type, exc_value, traceback)
-        else:
-            await self._client.__aexit__(exc_type, exc_value, traceback)  # type: ignore[no-untyped-call]
+        await self._client.__aexit__(exc_type, exc_value, traceback)
 
     async def list_tools(self, *, cache_mode: CacheMode = "use") -> list[BaseTool]:
         """Discover and adapt MCP tools for use with LangChain.
@@ -278,36 +237,9 @@ class MCPAdapter:
                 asynchronously. Each holds the adapter's client, so the tools
                 stay callable after this adapter's context exits.
         """
-        # `async with self` rather than the client: it is what counts a group's
-        # nesting, and for a plain client it is the same reentrant hold as before.
         async with self:
-            if isinstance(self._client, ClientGroup):
-                return await self._group_tools(self._client, cache_mode=cache_mode)
             remote_tools = await self._client.list_tools(cache_mode=cache_mode)
-            return [
-                as_langchain_tool(tool, self._client, elicitation=self._elicitation)
-                for tool in remote_tools
-            ]
-
-    async def _group_tools(self, group: ClientGroup, *, cache_mode: CacheMode) -> list[BaseTool]:
-        """Adapt a group's catalog, binding each tool to the client that serves it.
-
-        Tools hold the member client rather than the group, so a call never
-        re-enters the group — which is what lets them stay callable after this
-        adapter's context exits, exactly as they do for a single client.
-        """
-        tools = []
-        for listed in await group.list_tools(cache_mode=cache_mode):
-            route = await group.resolve_tool(listed.name)
-            # `list_tools` namespaces the catalog as `{server}_{tool}`, but the
-            # server only knows the tool by its own name. Convert against that
-            # name so the call is right, then publish under the fleet-wide one,
-            # which is what makes two servers' identically named tools distinct.
-            upstream = listed.model_copy(update={"name": route.upstream_name})
-            adapted = as_langchain_tool(upstream, route.client, elicitation=self._elicitation)
-            adapted.name = listed.name
-            tools.append(adapted)
-        return tools
+            return [await as_langchain_tool(tool, self._client) for tool in remote_tools]
 
 
 __all__ = ["MCPAdapter", "MCPAdapterTarget"]

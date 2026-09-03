@@ -1511,8 +1511,34 @@ class ChatAnthropic(BaseChatModel):
         if effort:
             output_config["effort"] = effort
 
+        is_fable_model = self.model.startswith("claude-fable-5")
+        if is_fable_model:
+            top_k = request_config.get("top_k", self.top_k)
+            top_p = request_config.get("top_p", self.top_p)
+            temperature = request_config.get("temperature", self.temperature)
+            if top_k is not None:
+                msg = f"`top_k` is not supported for {self.model}."
+                raise ValueError(msg)
+            if top_p is not None and top_p != 1:
+                msg = (
+                    f"`top_p` is not supported for {self.model} at non-default values."
+                )
+                raise ValueError(msg)
+            if temperature is not None and temperature != 1:
+                msg = (
+                    f"`temperature` is not supported for {self.model} at "
+                    "non-default values."
+                )
+                raise ValueError(msg)
+            if isinstance(thinking, Mapping) and thinking.get("type") == "disabled":
+                msg = (
+                    '`thinking={"type": "disabled"}` is not supported for '
+                    f"{self.model}; omit `thinking` to use adaptive thinking."
+                )
+                raise ValueError(msg)
+
         if (
-            self.model.startswith("claude-opus-5")
+            (self.model.startswith("claude-opus-5") or is_fable_model)
             and isinstance(thinking, Mapping)
             and thinking.get("type") == "enabled"
         ):
@@ -1625,6 +1651,10 @@ class ChatAnthropic(BaseChatModel):
             payload["thinking"] = self.thinking
         if self.inference_geo is not None:
             payload["inference_geo"] = self.inference_geo
+        if self.model.startswith("claude-fable-5"):
+            payload.pop("temperature", None)
+            payload.pop("top_k", None)
+            payload.pop("top_p", None)
 
         # Handle output_config and effort parameter
         # Priority: kwarg `effort`/`reasoning_effort` > kwarg `output_config`
