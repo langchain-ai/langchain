@@ -1,0 +1,7 @@
+[
+    {
+        "topic": "Python File Reading",
+        "mistake": "Forgetting to close the file by only opening with 'open(file)'.",
+        "correction": "You must always use the 'with open(file) as f:' block. Never forget to close the file!"
+    }
+]
