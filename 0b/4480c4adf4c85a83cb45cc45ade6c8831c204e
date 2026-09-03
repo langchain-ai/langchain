@@ -1,0 +1,130 @@
+.github/actions/uv_setup/action.yml
+  h_152f5d9f78d224 24
+.github/workflows/_release.yml
+  h_152f5d9f78d224 740-742
+libs/core/langchain_core/messages/block_translators/bedrock_converse.py
+  h_152f5d9f78d224 162-168,171,277-287
+libs/core/langchain_core/messages/block_translators/google_genai.py
+  h_152f5d9f78d224 530,532-538
+libs/core/tests/unit_tests/messages/block_translators/test_bedrock_converse.py
+  h_152f5d9f78d224 1-5,127-128,132,387-449
+libs/core/tests/unit_tests/messages/block_translators/test_google_genai.py
+  h_152f5d9f78d224 3,6,335-362
+libs/core/uv.lock
+  h_152f5d9f78d224 1215,1554,1559,1561,2981-2993
+libs/langchain/pyproject.toml
+  h_152f5d9f78d224 89
+libs/langchain/uv.lock
+  h_152f5d9f78d224 2861,3207,3638,3643,3645,5934-5946
+libs/langchain_v1/examples/mcp/elicitation.py
+  h_152f5d9f78d224 3-5,7-9,29
+libs/langchain_v1/langchain/__init__.py
+  h_152f5d9f78d224 3
+libs/langchain_v1/langchain/agents/factory.py
+  h_152f5d9f78d224 1701-1702,1704
+libs/langchain_v1/langchain/agents/middleware/tool_error.py
+  h_152f5d9f78d224 10-17,82-83
+libs/langchain_v1/langchain/mcp/adapter.py
+  h_152f5d9f78d224 6,11,146-158,174-189,191-192,194,198-200,209,219,242
+libs/langchain_v1/langchain/mcp/elicitation.py
+  h_152f5d9f78d224 3-14,22,32,39,53,91,144,179,200,224-227,229,231-235,239-241,246-265,267,270-271,288-311,313,317,319-321,324,332-333,336-342,344,349-350,369,371,374
+libs/langchain_v1/langchain/mcp/tools.py
+  h_152f5d9f78d224 12,14,35,183,207,212,214,222-229,251,254-259,267,280
+libs/langchain_v1/pyproject.toml
+  h_152f5d9f78d224 24,52,79,87,91
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_framework.py
+  h_152f5d9f78d224 12,22,148-195
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_tool_error.py
+  h_152f5d9f78d224 29-34
+libs/langchain_v1/tests/unit_tests/chat_models/test_chat_models.py
+  h_152f5d9f78d224 400
+libs/langchain_v1/tests/unit_tests/mcp/test_adapter.py
+  h_152f5d9f78d224 80-93,115,178,181,379-380,383-394,483-486,488-489,515-555,557-558
+libs/langchain_v1/tests/unit_tests/mcp/test_elicitation.py
+  h_152f5d9f78d224 13,32-36,39-44,69-80,92,125,148,167-251,255-258,260,271,273,288-289,291-293,296-297,299-332,382,413,501,520,546,563
+libs/langchain_v1/tests/unit_tests/mcp/test_tools.py
+  h_152f5d9f78d224 25,47-51,53-54,57,166-167,175,183-184,187,207
+libs/langchain_v1/uv.lock
+  h_152f5d9f78d224 1175,1180,1182,1187,1198,1200,2286,2388,2417,2435,2439
+libs/model-profiles/pyproject.toml
+  h_152f5d9f78d224 55
+libs/model-profiles/uv.lock
+  h_152f5d9f78d224 7,508,568,626,699,1636,1638,1640-1656,1670,1675,1677,1691,1697,1699-1754
+libs/partners/anthropic/langchain_anthropic/chat_models.py
+  h_152f5d9f78d224 1514-1539,1541,1654-1657
+libs/partners/anthropic/langchain_anthropic/data/_profiles.py
+  h_152f5d9f78d224 53-86
+libs/partners/anthropic/langchain_anthropic/data/profile_augmentations.toml
+  h_152f5d9f78d224 60-64
+libs/partners/anthropic/langchain_anthropic/middleware/prompt_caching.py
+  h_152f5d9f78d224 35-46,70-71
+libs/partners/anthropic/tests/unit_tests/middleware/test_prompt_caching.py
+  h_152f5d9f78d224 4,6,21-24,59-70
+libs/partners/anthropic/tests/unit_tests/test_chat_models.py
+  h_152f5d9f78d224 3914-3943
+libs/partners/chroma/pyproject.toml
+  h_152f5d9f78d224 69
+libs/partners/chroma/uv.lock
+  h_152f5d9f78d224 7,9,11-14,21,466,468,470,613-625,684-709,743,745,747,912,915,929,960,1017,1032,1037,1050,1052,1423,1425,1427-1430,1566,1568,1570-1573,1693-1760,1801,1803,1805-1811,2147,2149,2151,2328,2330,2332,2415,2423,2425,2763-2771,2795-2796,2815-2816
+libs/partners/fireworks/langchain_fireworks/_version.py
+  h_152f5d9f78d224 3
+libs/partners/fireworks/langchain_fireworks/chat_models.py
+  h_152f5d9f78d224 225-243,314
+libs/partners/fireworks/langchain_fireworks/data/_profiles.py
+  h_152f5d9f78d224 110-113,115-116,127,132-156,158
+libs/partners/fireworks/pyproject.toml
+  h_152f5d9f78d224 23
+libs/partners/fireworks/tests/unit_tests/test_chat_models.py
+  h_152f5d9f78d224 47,406-412,415,419-422
+libs/partners/fireworks/tests/unit_tests/test_standard.py
+  h_152f5d9f78d224 43
+libs/partners/fireworks/uv.lock
+  h_152f5d9f78d224 7,11,451,619-620,821,869,885,1004,1009,1022,1024,1376,1380,1479,1481,1483-1546
+libs/partners/groq/langchain_groq/chat_models.py
+  h_152f5d9f78d224 1002
+libs/partners/groq/langchain_groq/data/_profiles.py
+  h_152f5d9f78d224 288-308
+libs/partners/groq/tests/unit_tests/test_chat_models.py
+  h_152f5d9f78d224 1325-1332
+libs/partners/huggingface/langchain_huggingface/data/_profiles.py
+  h_152f5d9f78d224 1528-1549,1558,1568
+libs/partners/huggingface/uv.lock
+  h_152f5d9f78d224 7,653,655,657,873-885,910-935,958,960,962,1032,1155,1210,1244,1247,1261,1292,1421,1495,1500,1513,1515,1914,1999,2237-2304,3146,3154,3156,3345,3691,3693,3695-3703,3729,3743,3745,3767-3775
+libs/partners/openai/langchain_openai/chat_models/base.py
+  h_152f5d9f78d224 698
+libs/partners/openai/tests/unit_tests/chat_models/test_base.py
+  h_152f5d9f78d224 4619,4626-4627
+libs/partners/openai/tests/unit_tests/conftest.py
+  h_152f5d9f78d224 1-35
+libs/partners/openrouter/langchain_openrouter/data/_profiles.py
+  h_152f5d9f78d224 285-307,590,964,1074,1173,1206,1747,1984-2005,2028-2049,2072-2075,2077-2078,2087,2089,2100,2121-2122,2320,2342,2386,3146-3147,3587-3588,5919,6029,6205,6838-6841,6843-6844,6853-6854,6860-6863,6865-6866,6932,7488,7510,7552-7553,7565,7712,7865-7886,7892-7893,7904
+libs/partners/xai/langchain_xai/chat_models.py
+  h_152f5d9f78d224 770
+libs/standard-tests/pyproject.toml
+  h_152f5d9f78d224 31
+libs/standard-tests/uv.lock
+  h_152f5d9f78d224 344,410,892-893,895,897,1074,1077,1080,1082,1253,1255,1257-1273,1287,1292,1294
+libs/text-splitters/extended_testing_deps.txt
+  h_152f5d9f78d224 1
+libs/text-splitters/langchain_text_splitters/base.py
+  h_152f5d9f78d224 262,349
+libs/text-splitters/langchain_text_splitters/nltk.py
+  h_152f5d9f78d224 5,57-59
+libs/text-splitters/langchain_text_splitters/spacy.py
+  h_152f5d9f78d224 64,67
+libs/text-splitters/scripts/check_imports.py
+  h_152f5d9f78d224 5,13-19
+libs/text-splitters/uv.lock
+  h_152f5d9f78d224 1330,1596,1601,1603,3151-3171,3471,3475,3496-3536,3818,3823,3825-3840,3932,3934,3936-3944,3970,3984,3986,4010-4030
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0b4480c4adf4c85a83cb45cc45ade6c8831c204e",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
