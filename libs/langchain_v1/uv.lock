@@ -16,9 +16,6 @@ resolution-markers = [
     "python_full_version < '3.11' and platform_python_implementation == 'PyPy'",
 ]
 
-[options]
-prerelease-mode = "allow"
-
 [manifest]
 constraints = [
     { name = "pygments", specifier = ">=2.20.0" },
