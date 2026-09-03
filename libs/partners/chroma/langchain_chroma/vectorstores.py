@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    cast,
 )
 
 import chromadb
@@ -1231,13 +1232,34 @@ class Chroma(VectorStore):
             ValueError: If the embedding function is not provided.
         """
         text = [document.page_content for document in documents]
-        metadata = [document.metadata for document in documents]
+        metadata = [document.metadata or None for document in documents]
         if self._embedding_function is None:
             msg = "For update, you must specify an embedding function on creation."
             raise ValueError(
                 msg,
             )
         embeddings = self._embedding_function.embed_documents(text)
+
+        # Chroma rejects empty metadata dicts on update, so documents without
+        # metadata are updated separately, omitting the `metadatas` argument.
+        with_idx = [i for i, m in enumerate(metadata) if m is not None]
+        without_idx = [i for i, m in enumerate(metadata) if m is None]
+        groups: list[
+            tuple[list[str], list[dict] | None, list[str], list[list[float]]]
+        ] = [
+            (
+                [ids[i] for i in with_idx],
+                cast("list[dict]", [metadata[i] for i in with_idx]),
+                [text[i] for i in with_idx],
+                [embeddings[i] for i in with_idx],
+            ),
+            (
+                [ids[i] for i in without_idx],
+                None,
+                [text[i] for i in without_idx],
+                [embeddings[i] for i in without_idx],
+            ),
+        ]
 
         if hasattr(
             self._client,
@@ -1248,26 +1270,32 @@ class Chroma(VectorStore):
         ):  # for Chroma 0.4.10 and above
             from chromadb.utils.batch_utils import create_batches
 
-            for batch in create_batches(
-                api=self._client,
-                ids=ids,
-                metadatas=metadata,  # type: ignore[arg-type]
-                documents=text,
-                embeddings=embeddings,  # type: ignore[arg-type]
-            ):
-                self._collection.update(
-                    ids=batch[0],
-                    embeddings=batch[1],
-                    documents=batch[3],
-                    metadatas=batch[2],
-                )
+            for group_ids, group_metadatas, group_texts, group_embeddings in groups:
+                if not group_ids:
+                    continue
+                for batch in create_batches(
+                    api=self._client,
+                    ids=group_ids,
+                    metadatas=group_metadatas,  # type: ignore[arg-type]
+                    documents=group_texts,
+                    embeddings=group_embeddings,  # type: ignore[arg-type]
+                ):
+                    self._collection.update(
+                        ids=batch[0],
+                        embeddings=batch[1],
+                        documents=batch[3],
+                        metadatas=batch[2],
+                    )
         else:
-            self._collection.update(
-                ids=ids,
-                embeddings=embeddings,  # type: ignore[arg-type]
-                documents=text,
-                metadatas=metadata,  # type: ignore[arg-type]
-            )
+            for group_ids, group_metadatas, group_texts, group_embeddings in groups:
+                if not group_ids:
+                    continue
+                self._collection.update(
+                    ids=group_ids,
+                    embeddings=group_embeddings,  # type: ignore[arg-type]
+                    documents=group_texts,
+                    metadatas=group_metadatas,  # type: ignore[arg-type]
+                )
 
     @classmethod
     def from_texts(
