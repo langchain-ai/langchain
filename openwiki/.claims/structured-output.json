@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:94885a8043502300eae424ea3f016be44eb925bbaf0ad6297fdd741c3280ee69",
+  "claims": [
+    {
+      "id": "claim_150a5dc8a9c14fc19c3597a746649ba0",
+      "statement": "Structured output is a mechanism that constrains LLM responses to match a JSON schema, implemented via tool-based, provider-native, or automatically-detected strategies; parsing and validation occurs after model invocation via TypeAdapter or JSON deserialization.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1010-L1040",
+          "version": "repo-lines-v1:sha256:4883fa8d811b089eb3e2165b55a49c8c85e90aedbe15ccefeb0941ddab887303:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZTA0NTJmNzY0NWFhYjhiN2UxZDg5NTk5MTVmOTc4NDRkODIwOWVmOTJiZDVmZjQwNDE1Y2QwNjc4ODBmNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMmEwZGZiNjkyOGUwOTYzZGEzM2JkMTlhZDIxNzg3YzgwZGMyZjkxYjNhZDIyOWM2MzFkZmY3MWQ3ZjBmZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyNjM3MDgzNzA0N2VkYzNmOTZlNTY1MjI5NjZiZWFhYTExYjM5YTEyYTg0ZWZmZWZjYWNhMWFmN2ZmNWQ1ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2YWE4MTIzZjM5ZDM4YTNhNWU5Y2IxODk3NmUzMmMzNTBkMmI0YzE0NzUwNzIwZjNmZWNjMjQ2NzBmOTE4ZjMifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1194-L1296",
+          "version": "repo-lines-v1:sha256:42ca8ea665535b713f1ff2651387e04941608ec55a949c4f1cf00b8febc38c66:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyYmRmNGQzMWNjY2QxYzBjYmY1ZWRkZjNlZWMxNDZlNDUwYjExMTdhNjJmZGExZDlhMzBkYTBjMzI2YTI2YTJiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyYzkyOTk3NTc2NmYwNzM5NTNlNTA5YzIyYjI0ODBiNjE0NjQzN2FhZmIzMmYyOWJkNTJjMGM4M2E1Y2ViZjU5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmZjc4ZDc2OWUzNzBlMjA1NmU3MmI2YTU1OTkzMWIzYzVhODNjMGE2YWI2YWFmYjhmZTkzOGE3NTY3Y2Y4ZDNkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5ZjgxNDM1OTIzMTAwNThkODUzZTY3NzM5YTExNzY2NTkyNjdhODM1MTIxYTc0OWI5Nzk1ODU2M2UyZWU3MmVlIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L1-L30",
+          "version": "repo-lines-v1:sha256:693412cf6c327d186daf9729527ef849ad6964bbd168898f4a8acb1a55d5cd05:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMWNiNjk2YWNlYjJkZDE0NTcyMjdlZjljZGJjZjgzYWM2NTgxYjhlYjgwMWU1OTFjZDc2OTdjM2M1MzI2OTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjZTU5N2QxNTAwMTVhYTg1MWFmNjdkZTllNmI0ZDk2OWYwOWI5ZjE5ODVhYzBhODAwYTA3MmI2NDQwMjZkY2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1NDU1YzM5NzYyNGE1ZTUxYTMxYTAzNDM2NTVjOTk1YmNkOTUwZjEwY2JkODVhOTIyYmM1ZjdiYjFiOWIxNDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dd15e4e31633414d9b7bd9464173ee1f",
+      "statement": "Three response format strategies are available: ToolStrategy (converts schema to artificial tool, forces tool calling), ProviderStrategy (delegates validation to model provider's native API), and AutoStrategy (defers selection until runtime based on model capabilities).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1357-L1371",
+          "version": "repo-lines-v1:sha256:effe05ad891c32593f450b159ca6b9be43e82e647f5b20d3f881dd1e19397d2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNGVkNjJhMWI2MTAxZmQ4ODEwMDA5MjY3MjY4MGFlNWY4ZmUzZGY4YjFjZjVhZDk5Nzg4MDllOGQ3MjZmNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiYWY5MGU2ZDFlZjIxMjViNTk4NDE5YWU0MWVmOGQ4ZDRiZTU1ODkyNmE2Yzc4ZWE3YWU1MThlNmRhZjc0YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0MzdhYTE2ZGIzNDFjYTYzODYyMDk3MjYwZTk1YmQyNjhiZjFmOTRlODEzNzY1MzA4OWUzYTIyMTMyOTQwODgifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L195-L268",
+          "version": "repo-lines-v1:sha256:ae3d02df362c23e8591cd85cee5c99b563537b965a3858bc1ea0f60bf6729a2e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YTRmMGQ5MjI5ZGZjYTRhYzUwOWU0NzQ5ZDI0YWJkYjEzODY0YjBhZWYyYjE1ZWJiZDk4OWQ1ODI2OGNkNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjZGUxODBiYWZlMDUxZjUyMGMxMGJhZDdmODg1YzIxZjA4MWI5OGU3NjMyYWU0ODEyNWM5OTA4NzNmOTNhMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2Y2Y2Y2M1MTRjMzY1YzJjN2FmYjIzMDI0ZGJhY2Q4YTUwNzY2ZDI2NzZiNDU3MjU5MDdlNmYwMGI4MTkzZWMifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L270-L315",
+          "version": "repo-lines-v1:sha256:14177b9e9910690b3e94ebb730f43d4b82948d60529b33fa060f50c828ea596a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YTRmMGQ5MjI5ZGZjYTRhYzUwOWU0NzQ5ZDI0YWJkYjEzODY0YjBhZWYyYjE1ZWJiZDk4OWQ1ODI2OGNkNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4MzBlMTZiMWMxYWFmODIwNmY1NmM3NmM2MmE2OGQ3ODY5ZWM2MjY0MjZlYzI4MjdiZjQ3ZWRkZGUwMGRmZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4ZjY1Yjk4ZDlhYjA5N2MwNzExZGIxMzYwN2RhNDJlZmRiZjI5YThiNmVkYjdlMDAyYzM4NTg5ZDZlNjUzODcifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L457-L472",
+          "version": "repo-lines-v1:sha256:d14862e850ca6d067c9a914b6b4e407915172e3643735c814bccdf2ed76fffc5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiZjA5NDJjNTBkOWIzZGExOTk1MDczYzlkOTA4NjZjOGMzMGJmZjc3MzJlYzNlMWNmMGFiNDk4Yzg1OWZjZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwN2RkNjc5OWVlZGRhZmI0Yzk3MjU5M2Q4NGEwYmFlN2JjNWEzNjRmNjVlNDVhY2RhYTIxNDY3NWYzMDc0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwMDVmMzRlYmNmY2ZiZTZjYjNjODAxODg3YmJjZGQyYTJkYzRhOWRhN2YzMGUwYjM2YzNlNzJhNjdmZTBiN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_131ad8c43ffd427ca47673533b2e53ee",
+      "statement": "ToolStrategy wraps schema as StructuredTool with JSON schema as args_schema, adds tool to model with tool_choice='any', parses model's tool call arguments via TypeAdapter, and returns parsed result in structured_response state with optional validation error retry.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1032-L1036",
+          "version": "repo-lines-v1:sha256:3ec24b486f5df997997f29facefed0ae53e4695227ede4eabf041adcb06aaf36:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTQ5ZTU5NWYyMmRkMDg3ZjAwMTAyYTU5MTAxYzYwN2VmODJiZmQ3ZmViYTg2NmZkYjFhYWUwMmYxZWIyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTIyNmE0MzMzZjdmZGY4OGFiY2I5NDhjOTZiZjgyNzllZDY3MThkNjE1NWVmMWZkNGIzNDYyN2M3MzJhMTBkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDg0ZmFiN2U1OGQ4ZDYzYzUzOGNkYjNlZDYyZjdmYWI0NjZiMDY5OTFhMmQwMGQ4MjY3NjdhNGFhODJhZTIzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTBkN2Q2NjIwMjg1OTU4MjljZGIzZTg5ZmVmMjlkNzMyNjFjZmQ1NWVmZTE1N2M0MmZmYzE1ZDVlMDZmNDQ5YSJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1222-L1294",
+          "version": "repo-lines-v1:sha256:985117da091c7dfdb4e1d1a3e0b1f3128312043fddd281707bcc47d29a24bc2e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3OGFiMDE1YTZkN2FhZDQ2MWM3NDgzODFjOTkzODIxMjg0MTRiZGYzZWRmNmNkN2Q1YWZkN2IwNDY4YjExNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViYTg3NWUwYTNlNzlkYTkwZjdiY2ZhYzYxOWU1ZjU4MWM4MmEwYjU2YzUyMTI3Y2E3YTdmYWM5NzJiNDIxMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmZWQ2MTVlZmExMWYwYTYyZTBiZmQ2MDZhZDE1NmM3NWU2NTYxNTBlMWYyZmNlODkwZjgxYjVlMjk1YWY5ODUifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L317-L370",
+          "version": "repo-lines-v1:sha256:9cf6911a903241dab87c21a3a65ca9d974d31481aa878640386d02218f3c6bf6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZmJhZTBiOTFkNDRmYzBkNDlmNWRlNjkxZGE2ZmM0MzFmMjYwMTM0YmY3MzFlMGUyMWY3NjQ4MDk0MzM0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmZTRkNjc1MDQ3ZjBlZWY2ZDlkZmU2YjJkMmE1OWNlNDM0NmQzMmIyYThmNzM5YjdiYWFmZmU1MGM0MmViMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZDNlYWY4NWNhOGZkMGI2OWM5NjFjNjJjNDM4MmNhZjAwY2M5Njg5NTRhNTVhY2EwOTJiM2RkZDdlZDQ4NWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e29c5860257747bd971341c989fbb2ef",
+      "statement": "ProviderStrategy sends schema in provider-specific format (e.g., OpenAI's response_format with json_schema type) via model.bind(), receives JSON response, parses via json.loads(), validates against schema via TypeAdapter, and stores in structured_response; no validation retry occurs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1205-L1220",
+          "version": "repo-lines-v1:sha256:d08adb0beb5d1f3445e47357718cab2751dc93ad5fa34065440339646407790e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNzQyYmE5NDI5N2Y0NGZkMzU3YTlkYWU2NzllZmVjY2NiNzE4NGNhOWY2ZjExMTFjMjdhMjM0OTcyYzZmZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5OWY4YTdmNDhmODAyNDQ0YzlkOTZmYzQ2YjgzZDRlOTYzODgwNDJmZjkyMzQyZGNjOTIxYWU5NTRkNGQyNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1YTFiNDhkZDY3NGQ0NzUwOGY0NTcwMDZhNzM1ZDY2MjIyZWMwZjc5MzE1NTdkNDQ1YzczZThlMzZjMmVhZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3NzI5N2M3YWQ1OTljNmExN2JhOTFmNzQzOGU2ZTJiMDA2YjFmNzE4OGFhZjc5NzRjNjNhNTIzYjIxYTNkYjcifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L295-L315",
+          "version": "repo-lines-v1:sha256:53e1c1b06cbbf41080d2f073f84b2eb1edfdc68e8cd26db7a2fc2302974be904:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4YTliNGE1YjkxOTBmYTUzNDllZjJjY2EwMTFlOWM4NDI2YjEwY2E4M2MzY2ZiMzZkODgyZWFlNGMwYTlmYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NjUxNjRiZDhjNDc4NTZlMjcwMjVlMWEzNTNkOGJlZGQzNzIxOGYxYjk5MjBlN2I4ZjIyNzZjOWM2M2Y2MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4ZjY1Yjk4ZDlhYjA5N2MwNzExZGIxMzYwN2RhNDJlZmRiZjI5YThiNmVkYjdlMDAyYzM4NTg5ZDZlNjUzODcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_139468bfd71741bc8502700f319767ac",
+      "statement": "Supported schema types are Pydantic BaseModel, dataclass, TypedDict, and raw JSON schema dict; _SchemaSpec normalizes these by extracting name/description and computing JSON Schema via TypeAdapter; dict schemas skip validation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L106-L193",
+          "version": "repo-lines-v1:sha256:97b580993fe9832e499db71338047965638ba04d553de9b102698fabb6d87952:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YTRmMGQ5MjI5ZGZjYTRhYzUwOWU0NzQ5ZDI0YWJkYjEzODY0YjBhZWYyYjE1ZWJiZDk4OWQ1ODI2OGNkNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5OWJhM2QxMmYxMDk5NTEzYzhjNGE2MTY1N2E3MjUxNDFjNDViMTEzYWJlMWQwNjIyMzkwMjVmYTRmMDM2YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyZTZlN2MxYzk4ODIyZmM2NzhkMzMyM2E3OGFiNjgwMDNkZDQ0MmZkYjViMjQxMjEzZDBmMGYxNDYyMDJmYWYifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L77-L104",
+          "version": "repo-lines-v1:sha256:9650b8d7835c0edc52ceb1fa347de6e492f1c2e2aee23ba02a039bfdcf38495e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NGIzZjliOTY3MGNlYzg0MDM0NGY0NjYyM2IxMjkzMDhkNTUwYzFiNTQ2YjllZjg4Y2ExYjNlOTg5ZjVkNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2MzE2MjEwYTE2YTEwMWU2MWIyYzUwZTRlNTM0NDc5ZmQ5NTUyNDZkMTI2NTM2ZTI2NDI0NjllYWNlOWQ3Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0NzMwOTFhZWEzMDVkNjE4ODEyNzkxNGNjOTBiMjliNmI0YjVmZjJhN2E4YzIwYjEzOTc5YTdhN2Y5NjYzNzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a927f85cb80244c8a5d55db362b6757d",
+      "statement": "OutputToolBinding stores mapping of schema to tool: original schema, schema_kind classification, and StructuredTool instance; parse() method reconstructs original type from tool call arguments using TypeAdapter or returns dict as-is for raw JSON schemas.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1032-L1036",
+          "version": "repo-lines-v1:sha256:3ec24b486f5df997997f29facefed0ae53e4695227ede4eabf041adcb06aaf36:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTQ5ZTU5NWYyMmRkMDg3ZjAwMTAyYTU5MTAxYzYwN2VmODJiZmQ3ZmViYTg2NmZkYjFhYWUwMmYxZWIyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTIyNmE0MzMzZjdmZGY4OGFiY2I5NDhjOTZiZjgyNzllZDY3MThkNjE1NWVmMWZkNGIzNDYyN2M3MzJhMTBkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDg0ZmFiN2U1OGQ4ZDYzYzUzOGNkYjNlZDYyZjdmYWI0NjZiMDY5OTFhMmQwMGQ4MjY3NjdhNGFhODJhZTIzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTBkN2Q2NjIwMjg1OTU4MjljZGIzZTg5ZmVmMjlkNzMyNjFjZmQ1NWVmZTE1N2M0MmZmYzE1ZDVlMDZmNDQ5YSJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L317-L370",
+          "version": "repo-lines-v1:sha256:9cf6911a903241dab87c21a3a65ca9d974d31481aa878640386d02218f3c6bf6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZmJhZTBiOTFkNDRmYzBkNDlmNWRlNjkxZGE2ZmM0MzFmMjYwMTM0YmY3MzFlMGUyMWY3NjQ4MDk0MzM0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmZTRkNjc1MDQ3ZjBlZWY2ZDlkZmU2YjJkMmE1OWNlNDM0NmQzMmIyYThmNzM5YjdiYWFmZmU1MGM0MmViMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZDNlYWY4NWNhOGZkMGI2OWM5NjFjNjJjNDM4MmNhZjAwY2M5Njg5NTRhNTVhY2EwOTJiM2RkZDdlZDQ4NWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5bb393468624409b8ec58f0401f8fa8e",
+      "statement": "AutoStrategy defers strategy selection to model invocation time; _supports_provider_strategy() checks model profile for structured_output capability and model name patterns; if supported, ProviderStrategy is chosen; otherwise ToolStrategy is used (tools pre-built at agent creation).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1357-L1371",
+          "version": "repo-lines-v1:sha256:effe05ad891c32593f450b159ca6b9be43e82e647f5b20d3f881dd1e19397d2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNGVkNjJhMWI2MTAxZmQ4ODEwMDA5MjY3MjY4MGFlNWY4ZmUzZGY4YjFjZjVhZDk5Nzg4MDllOGQ3MjZmNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiYWY5MGU2ZDFlZjIxMjViNTk4NDE5YWU0MWVmOGQ4ZDRiZTU1ODkyNmE2Yzc4ZWE3YWU1MThlNmRhZjc0YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0MzdhYTE2ZGIzNDFjYTYzODYyMDk3MjYwZTk1YmQyNjhiZjFmOTRlODEzNzY1MzA4OWUzYTIyMTMyOTQwODgifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L560-L605",
+          "version": "repo-lines-v1:sha256:5597a2118ceefb9335a013a037ae3e915f63d766f22ac599754aa4ee792dc3ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmOWU0YjE2Zjc0YTRiNzA0ZWFlN2Y0MjUwZDZhOTU0OTkxYmQ4ZTZjNThmYzdjYThlYTMzNzJmZGQ3ZGNmNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhMDdiNjdjZmI3YjEzMWE1ZmNjYzgwNTY3Mzc3YTY5MzJmNzM5MTM3MjgwZDgyODU2ZDgxZGQ3OGMxYzdlZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyN2U2YmMwMDFhZjczNjE3M2YxMzZjNTkwODg1NGQzM2YxNzQ3NmZlNzJmZDczMDQ3OTJkNGM0YTI4Zjg2OWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_95984a54e631494e9326e91624899d8b",
+      "statement": "StructuredOutputError base exception stores AIMessage; MultipleStructuredOutputsError raised when model calls multiple structured output tools; StructuredOutputValidationError raised on parse failure; handle_errors parameter (True/False/str/exception type/callable) controls ToolStrategy retry behavior.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L628-L656",
+          "version": "repo-lines-v1:sha256:00fd5f0b9df0762ae54ede2d60f5bbeb785b3055f04eeebf87c015e0171088de:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmM2JjYWUzMzhlZjQxNGQ2NmFhM2Q4MTUxNjA5MmE2MWMxNGZhNTllZGExMTMxMmVlMzgwM2UwNDNjZDAyMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjViNTk4NTM5MWU3MTAyMWY1ZDZiYjczZTE1YzgzZDYwNmJmNTNhMTVhYzM1NGRhMGI0OWM3YzZjYWZlM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5OWMwMTM5N2U5ODE1NGMzY2ZmMDZlZWY2MzhmNjAwODc0NjA1NTA0OTUzNTJlMmQwMDFkMTU4OThmYmUxODEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L210-L231",
+          "version": "repo-lines-v1:sha256:e252cc76fcf4722f8c58272db6776a145dacaa594e39c861920f3a1ca4681b40:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5MTYzZmIxYWZmYmZjMzdhZTRhYjBhZmI5YmVhNmM3OWJmNTc3NjRmNmRhOTU0NGVlYjljYTAyYTE2MWZhOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4ZDZkNjIxNjkzY2EwNzU0MmQxYmJmZmYyMDlmMjI3Y2ZiNDE0ZDJlMTRjYTBjNGRkNjhmNDJmNDdiYjRhMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMzEwOTVkNWZkOTQ5N2Y0M2RkNjkwMWE5M2Y3NDNiYjY1NTUwNmEwNTBlMTVjMjgxNWJmMWM5ZDRmMTMyOTgifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L35-L75",
+          "version": "repo-lines-v1:sha256:a2bf4a871ace64be067a760bc8e146b3d70258e22e7e520cda7efd6ffad87876:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMDMxYTdmMWVlMzQwZjU3N2FmMGJiOGU5NjBmNmFiODFhNGQyYmI0ZWViZmM1Mzg3MmNmNDNmYjFhNzliNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYWJhYzAxYTBiNDQwZDU2NzA4Y2RkOTBiOTljYzg4OGNmZTgyNWQ1ZTQ4M2Q2ZDQ2OWUyZDU2MmFkOWViZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5NTMxNDczZjMyM2I3NjQ2ZDU3MTIzYTZhMGViZTIwMTFmZjc2MTMzNmMwZjFkN2U3OWYxNWUwMDdjZDc2YzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_27ff2db347af43bab1b671b2b8c9aeae",
+      "statement": "When ToolStrategy validation fails and handle_errors is enabled, _handle_structured_output_error() determines retry and generates error message; error message wrapped in ToolMessage is appended to conversation, allowing model to correct output on next turn.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1277-L1294",
+          "version": "repo-lines-v1:sha256:efddcbf95e4f6ce70a8cf505c15f90b7ad95673dd3d6ec4f6083cad1406c8fd0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMmE3NTE0MjYxMzE3YzRhOTI2ZDFiYWIxMGZjOTAwNWE3NDZmYmQ0ODk5MTgwNmQ4ODk4NTQ5NWQ1NzU4NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwOGY3OWZlNTIwMjJhY2E3ZDgzNGM2ZTBjNmEzMjU4M2ZlMGFkZDc1OWI3ODVjZDc4NTY3NThjMGExOWEzZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmZWQ2MTVlZmExMWYwYTYyZTBiZmQ2MDZhZDE1NmM3NWU2NTYxNTBlMWYyZmNlODkwZjgxYjVlMjk1YWY5ODUifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L628-L656",
+          "version": "repo-lines-v1:sha256:00fd5f0b9df0762ae54ede2d60f5bbeb785b3055f04eeebf87c015e0171088de:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmM2JjYWUzMzhlZjQxNGQ2NmFhM2Q4MTUxNjA5MmE2MWMxNGZhNTllZGExMTMxMmVlMzgwM2UwNDNjZDAyMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjViNTk4NTM5MWU3MTAyMWY1ZDZiYjczZTE1YzgzZDYwNmJmNTNhMTVhYzM1NGRhMGI0OWM3YzZjYWZlM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5OWMwMTM5N2U5ODE1NGMzY2ZmMDZlZWY2MzhmNjAwODc0NjA1NTA0OTUzNTJlMmQwMDFkMTU4OThmYmUxODEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9b70b8b8ed2b46f9bb445b9a2a64238a",
+      "statement": "create_agent() wraps raw schemas in AutoStrategy, pre-builds OutputToolBinding instances for ToolStrategy upfront, normalizes response_format at model invocation time in _get_bound_model(), and dispatches response parsing in _handle_model_output() based on effective strategy.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1010-L1036",
+          "version": "repo-lines-v1:sha256:46ca7abe64408d9241323b742fd554652a4ee0181fe59e35bf62c09fb5599f2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZTA0NTJmNzY0NWFhYjhiN2UxZDg5NTk5MTVmOTc4NDRkODIwOWVmOTJiZDVmZjQwNDE1Y2QwNjc4ODBmNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMjZhNDMzM2Y3ZmRmODhhYmNiOTQ4Yzk2YmY4Mjc5ZWQ2NzE4ZDYxNTVlZjFmZDRiMzQ2MjdjNzMyYTEwZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyNjM3MDgzNzA0N2VkYzNmOTZlNTY1MjI5NjZiZWFhYTExYjM5YTEyYTg0ZWZmZWZjYWNhMWFmN2ZmNWQ1ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwZDdkNjYyMDI4NTk1ODI5Y2RiM2U4OWZlZjI5ZDczMjYxY2ZkNTVlZmUxNTdjNDJmZmMxNWQ1ZTA2ZjQ0OWEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1194-L1296",
+          "version": "repo-lines-v1:sha256:42ca8ea665535b713f1ff2651387e04941608ec55a949c4f1cf00b8febc38c66:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyYmRmNGQzMWNjY2QxYzBjYmY1ZWRkZjNlZWMxNDZlNDUwYjExMTdhNjJmZGExZDlhMzBkYTBjMzI2YTI2YTJiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyYzkyOTk3NTc2NmYwNzM5NTNlNTA5YzIyYjI0ODBiNjE0NjQzN2FhZmIzMmYyOWJkNTJjMGM4M2E1Y2ViZjU5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmZjc4ZDc2OWUzNzBlMjA1NmU3MmI2YTU1OTkzMWIzYzVhODNjMGE2YWI2YWFmYjhmZTkzOGE3NTY3Y2Y4ZDNkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5ZjgxNDM1OTIzMTAwNThkODUzZTY3NzM5YTExNzY2NTkyNjdhODM1MTIxYTc0OWI5Nzk1ODU2M2UyZWU3MmVlIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1298-L1440",
+          "version": "repo-lines-v1:sha256:a9262c2fd1ed4c970da50f7898b4bb2a19482839aef74c97348f9f14383141b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4ZjU5YzFiMTk4OWE4MWFiOGFlOTg1NzI5MDJmYTdlOTE3NjcyM2Q3ZDJmNzMzM2I4YzUzZWRhOTE5YWQzMDIxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxZmVkNjE1ZWZhMTFmMGE2MmUwYmZkNjA2YWQxNTZjNzVlNjU2MTUwZTFmMmZjZTg5MGY4MWI1ZTI5NWFmOTg1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4ZWJhMTg0ZDc1NzZmY2VlMDFhM2JkYjVlY2QyOTdiMWI0MTgxMWFlMWMyNGJhMThiM2YxNGJjNjRhNWQwNjNmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_0fa32e0b43b74b6ea027931573865fc5",
+      "statement": "Structured response is stored in agent state's structured_response field alongside messages; field is cleared on error retry to avoid stale checkpointed values; raw schemas are passed to middleware via ModelRequest.response_format.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1219-L1276",
+          "version": "repo-lines-v1:sha256:2e1c8d13f173b0360296f6ff989dfdc681e2c292a53ec116d98d9845e6b2b630:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZjcwYWU2MjNjMmI5NWNjYzNjNTcxYmY4ZWUxYmE1ZWM5NmNmZjQzOTk2OTk2NGRmOGM4MjMwNTY1NzU5ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxMzdjYjlhZDVlNGY3Y2FhZGFkMjU1MTVhZmEwY2QxMWVjYmVhMGZjMmI1YTZjZTE1ODc0M2I4NWFiYzM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxNzVlNWQ2YTFlYjM2OTBmYzQ5NTg1MTZmODlmMjJjYTIxNWZlNGEzZjgyYjg2YWZhNTVhNzRiZjE1YWQ0M2IifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L226-L242",
+          "version": "repo-lines-v1:sha256:606c549102e85beab88d502650be6ab116496d3959d6cff46a7d1b0520fdc7d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1ZmNmMDEwNDNmMTVhNGRhZGJkNjI5ODdiOWM3OWI4ODg1MjQzNDI2ZWY5ZDBiMzNjMzk0OWVlMzRlYzAyYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDVmOGU1OGIxNGViNTlkNzMxNTJhNGM1MGI1ZTg2OTBmZmNjNDcxOGQxYmQzZWUyYTU0Y2ZhYjhkNzc1MDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNjg0OWY2ZTA0YTdiZGI3NTc4MTM2YTJkOWU0N2E2YjBiZjMxYmMxNTczMGFhODM4NmJjOWExNDIwZWFiYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5YTdjY2ZmMjEyMmJiZmMxZDEwOTZjZTZkODFlMDY4NDY0NjM0ZDA0MjA2OTBlYzVhZTE5YTFmMGYxOWNkMGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_370cae046f494a418956d1a5e1bd6e2c",
+      "statement": "For ToolStrategy, model is bound with tool_choice='any' to force structured output tool selection; for ProviderStrategy, response_format kwargs are passed via model.bind(); narrowed tool lists ensure middleware-restricted schemas limit model's tool choices.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1372-L1430",
+          "version": "repo-lines-v1:sha256:aa1b0852667814ce2bfcfc79603aa740f7e057317ce6a299249e22f4563fb099:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjYWIwZmMxZjgzMDgyN2VmMGY5ODM4MDczZDYxODM2OTg4NjgwZjA5MjI2YWMzMzk5ZDAwYjg5MmZhOTlhYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwYzQ4NWVlOGQ0ZTMwMTY0MDZkYzIyYjY4NmQwNGQ1ZDRmZjVjY2QzYjk2MWY4OTM3YTFhZjdiYjU5NDVhOGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyYmNjYmEyMzkzNDhmYzJiNzY1ZWZmOTRlOWJlODllN2Y5NGU1YmRmYzA0MjliMGUwYWE5MWZhOWY2YTgwYWUifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1391-L1404",
+          "version": "repo-lines-v1:sha256:5dc5210e993db7baf4a03bcd9eba1c00e7bcba0fbac3983f27c5f7c9babe2e5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNzQyYmE5NDI5N2Y0NGZkMzU3YTlkYWU2NzllZmVjY2NiNzE4NGNhOWY2ZjExMTFjMjdhMjM0OTcyYzZmZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyODE2NDcyYWRkNWM2NWU2NTg0ZTk3MmJjMThmZTBiZDc0MTVmYzMxMjBmZTFhYjY4NzY4ZTY3MzNkNWZjYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiZWUyODBhNWU4M2I3NDk5YTE3YmY1MjAwYjAyMTc5YWQzOTNiMWRjZDBlNTY5M2UxNjIwZGQ1OTMyNTMyYjAifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-03T15:18:34.589Z"
+  }
+}

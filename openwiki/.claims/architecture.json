@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:4d075dd399f2c74cd6a1d03563dd5d1695887843ca5c5b920422838e41870e43",
+  "claims": [
+    {
+      "id": "claim_d872799ce6874d76b63667fe912b7616",
+      "statement": "LangChain is organized as a three-layer architecture: langchain-core (stable abstractions), langchain (orchestration and agents), and partners (provider integrations).",
+      "evidence": [
+        {
+          "resource": "repo://libs/README.md",
+          "version": "repo-file-v1:sha256:9fa04aa8e3984518023a2cf3aa48b0bb893c0d91fb3dae26b606f3c0b7099e73"
+        },
+        {
+          "resource": "repo://libs/core/README.md",
+          "version": "repo-file-v1:sha256:3c67a493620030266af259b872e6f179bdbdcaaae1bb2469c0f7b8b00a3cd8fe"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/README.md",
+          "version": "repo-file-v1:sha256:21aa3f971ec38e4424df7461974da00798a679f2171e0d898dd6d4e30eff122a"
+        },
+        {
+          "resource": "repo://libs/partners/README.md",
+          "version": "repo-file-v1:sha256:104a04a55977ae78550d262f195ad3b51ddbbf9f321318e17c39376aa2c683bb"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf4afec1395b4acbbf413fe2928daab6",
+      "statement": "langchain-core (v1.6.1) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1-L50",
+          "version": "repo-lines-v1:sha256:ec4a224a2f0eaacffa422fe7c6e3ce9e3d1046a9ca9e78f1023c2e32ab8e6077:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZDFjY2U5NjgzYzRiOGE0NjJhN2Q0NDBjYjk2ZGE3NDk3YWQ2NDYwNTE0ZjNkYWI0NDlmZjgzMzllYjY5ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMWY5ZjBhODYyNjliNDk3Mjc1ZTgxYzJiMWNiMmVmYzIxNjdlNjFjNjFkZWExOTk1MTE4ZTdiODkxZTI0NTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYWJlNjk0Nzc1ZmI3OTg1MjcwYjNmMTRjNjNiOWZhZTk0MDBmNTczY2E0N2NhZWE3OGMwZTVhYmIxNjg3NDUifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L133-L150",
+          "version": "repo-lines-v1:sha256:c8bf75fa83bb019f5e36f97570d3008efc38453777efb44cf677783d57340d21:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNjY0MDE5YzkwN2RmODUwZWE5ZTA1OGYxMmIxOTIzNzRiZWIzZmNjYWIwNjE5MDMwYzY4ZTY1NDhhZDgxNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMjc0Yjc2ZDllMTBkNzNmMjA1NDc5ZDlmYzBhMTU3YmUyMzM3YjMwYWE3N2RjZWMwNmViY2IyNjY1NmUxOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxODA4NTVkNTMwZmRiNTgzMjI0MjNhNmZkZGRlOWEzYjJhNGEwOTYyNWE1ZGIzNzQzZTg5N2MwNTJiYmJkZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3YmE3ZGEzOGU0NjFlM2FkZDk2MjFlYWNkYzMzZDU2NzExMTRiMzY5YWVlYzJhYTE4MjkzNTljNTRkOWYxZTQifQ"
+        },
+        {
+          "resource": "repo://libs/core/pyproject.toml#L24-L24",
+          "version": "repo-lines-v1:sha256:238e7ddf7f3fadccf53502477ac331715e5fc6a3aada4c63ceefaa35ec509859:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjM4ZTdkZGY3ZjNmYWRjY2Y1MzUwMjQ3N2FjMzMxNzE1ZTVmYzZhM2FhZGE0YzYzY2VlZmFhMzVlYzUwOTg1OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjM4ZTdkZGY3ZjNmYWRjY2Y1MzUwMjQ3N2FjMzMxNzE1ZTVmYzZhM2FhZGE0YzYzY2VlZmFhMzVlYzUwOTg1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGEyM2RmNzFkODljMGE5NmUzNWFhZjk1ZTdjZTllYTczYTRiN2FlZjQyNDZjN2Q3YzAzZjhlM2EwMTJiZjliNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_54ce93defa3a454f9a4a03bc2d6ef614",
+      "statement": "langchain (v1.4.0) depends on langchain-core and LangGraph, and provides the Agent Factory, agent middleware system, and init_chat_model for high-level orchestration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1-L50",
+          "version": "repo-lines-v1:sha256:37c541026ea7a52554d7ef187d5ebb63de7262e3fbd5ab31e15895e63f83ee0b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiODk5ZDMyOGM3OWUzYTI0NzBmNDgxMDRjMGNhMjgyYmMyYTU2ODZlMmU3ZDhmOTdmOGEzMzFmOTQ1MzAxOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMDExN2RlMmQ0N2YyNmMzOWIwNTkzNDEwNzYzYmI4NTBmNjMzMzUyOGQ2MGE3YWFmNDZmN2NmM2RkOWEzMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyNGRlMmE2YTc3N2ZiNWRjOTk4MmUwNDBlYzY3M2VmNWEwOGVhZmRkMTEyM2JiNWQwMWZiODk4MTZmNzI0MzUifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L40-L100",
+          "version": "repo-lines-v1:sha256:0df6b02c264382e864de70c5639df298325600f5ae5d73c025c60952ed7ac692:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhZThiZWVkZDRkNzFkMTk1MDM2NTk3YjQxNTY0OTFhYjA3MTYyNGQzNWFiYWJlZDBiYjc5YzIyZWZkNWU0ZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhNWM3YzdlOTc3NDFmYzU0NWViODQ4YzY1MGEwZWE0NTI1Y2VhYWU0ZTgxOWJkNjQ3NzgzZjA5NzlmYzJhMmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmN2Q5MTY0Mzc2YzZkMThkZDZkMTNiN2U2MTZlNzdjMTc2MDBjZTQ4YWVlNTA0MGJlZTJjNmRiOWUxMmM1NzUifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/pyproject.toml#L24-L30",
+          "version": "repo-lines-v1:sha256:f1e9208403e3c9fd13366581d5ade2b9c624606c9a35e4bee2b4f08fbea1eb4a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI0NzFjMzU4MDRjYjhkMDM3M2M4ODY1MTEyNWE2ODdjYzRmZDUzNWE5MzZkMjA0Y2QyZDFkZmIxZjM0NDgyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQyZWY1NmY0YTJjOWRmNjRkZDllM2VmMDBjZmZhYjIxNzM3ZjA1MWFjNTZjNzNkMGM2YTA3NDk0NDI2OGVhZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0495f8fc5fa4400cb6f6a1a655997d39",
+      "statement": "Partner packages (langchain-openai, langchain-anthropic, etc.) implement core abstractions (BaseChatModel, embeddings, tools) and depend only on langchain-core, enabling independent release cycles.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/README.md",
+          "version": "repo-file-v1:sha256:104a04a55977ae78550d262f195ad3b51ddbbf9f321318e17c39376aa2c683bb"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
+          "version": "repo-file-v1:sha256:d08e06dea1f954a477fa8951e2a8387a10396d07b92a3a60fdced307c136a84f"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1-L50",
+          "version": "repo-lines-v1:sha256:b972f9928545904dc248d138c943fc37ce04364c9f3ed8a4461915e774ca44b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMWZkYTIxNjI4MGFjNjg0ZmI1ZGQ4NjIxYmE5NTJiMjU3YzhjZTVlMDExM2U2N2JjMTJkZDBlZGU1ZTg2MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyODFhMDEyZDkwNWU4YzQwNTdiNzJmNGY2NWQ5ODBjZWUyNTAxMmU2MTgzM2E2MDM1N2JiZjk2ODY5ODk1ZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NDcxNTMyNmUwZDYxNDlkYWE3YTYzZDFkMDE3MmVlMWM1Yjk1NzlkZTliOTQ0NDBjZGM4MjFiNzVhYmNjMWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_76087920b42a4f648602e9ba38bc7257",
+      "statement": "init_chat_model() dynamically loads and instantiates chat models by provider name and model identifier (e.g., 'openai:gpt-4o'), implementing lazy provider discovery and on-demand import.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L40-L100",
+          "version": "repo-lines-v1:sha256:0df6b02c264382e864de70c5639df298325600f5ae5d73c025c60952ed7ac692:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhZThiZWVkZDRkNzFkMTk1MDM2NTk3YjQxNTY0OTFhYjA3MTYyNGQzNWFiYWJlZDBiYjc5YzIyZWZkNWU0ZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhNWM3YzdlOTc3NDFmYzU0NWViODQ4YzY1MGEwZWE0NTI1Y2VhYWU0ZTgxOWJkNjQ3NzgzZjA5NzlmYzJhMmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmN2Q5MTY0Mzc2YzZkMThkZDZkMTNiN2U2MTZlNzdjMTc2MDBjZTQ4YWVlNTA0MGJlZTJjNmRiOWUxMmM1NzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_511c0c1f76e34bac9a84a80985df132e",
+      "statement": "create_agent() constructs a compiled LangGraph state machine that orchestrates the agentic loop with model invocation, tool binding, structured output parsing, and middleware composition.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1-L50",
+          "version": "repo-lines-v1:sha256:37c541026ea7a52554d7ef187d5ebb63de7262e3fbd5ab31e15895e63f83ee0b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiODk5ZDMyOGM3OWUzYTI0NzBmNDgxMDRjMGNhMjgyYmMyYTU2ODZlMmU3ZDhmOTdmOGEzMzFmOTQ1MzAxOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMDExN2RlMmQ0N2YyNmMzOWIwNTkzNDEwNzYzYmI4NTBmNjMzMzUyOGQ2MGE3YWFmNDZmN2NmM2RkOWEzMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyNGRlMmE2YTc3N2ZiNWRjOTk4MmUwNDBlYzY3M2VmNWEwOGVhZmRkMTEyM2JiNWQwMWZiODk4MTZmNzI0MzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b8efad0f42a84e1bb166defa5b475278",
+      "statement": "Agent middleware composes vertically via hooks (wrap_model_call, wrap_tool_call, before_agent, after_agent) enabling orthogonal cross-cutting concerns like logging, validation, and rate-limiting.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1-L50",
+          "version": "repo-lines-v1:sha256:37c541026ea7a52554d7ef187d5ebb63de7262e3fbd5ab31e15895e63f83ee0b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiODk5ZDMyOGM3OWUzYTI0NzBmNDgxMDRjMGNhMjgyYmMyYTU2ODZlMmU3ZDhmOTdmOGEzMzFmOTQ1MzAxOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMDExN2RlMmQ0N2YyNmMzOWIwNTkzNDEwNzYzYmI4NTBmNjMzMzUyOGQ2MGE3YWFmNDZmN2NmM2RkOWEzMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyNGRlMmE2YTc3N2ZiNWRjOTk4MmUwNDBlYzY3M2VmNWEwOGVhZmRkMTEyM2JiNWQwMWZiODk4MTZmNzI0MzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2f4f0387590e4a5a9a12f07d3bf0e6c5",
+      "statement": "AgentState is a TypedDict with messages (reducer-based accumulation), jump_to (ephemeral middleware control), and structured_response (parsed output), extensible via middleware state_schema declarations.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py",
+          "version": "repo-file-v1:sha256:56688206dce0334e7ca82125d7b809c23427890c234dfd69123dad038a387f31"
+        }
+      ]
+    },
+    {
+      "id": "claim_04b9d894ec7f407399bc3e2adfe68ef6",
+      "statement": "langchain-classic (v1.0.8) is legacy and depends on langchain-core; new projects should use langchain instead.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain/README.md#L1-L30",
+          "version": "repo-lines-v1:sha256:44cb1bfcadf8fed46c15e030140879628d970b883ceaa268a8ed2a0eb91f0848:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkNDNjNTE1NzI0MDZkMTFiMWMxNjVlMzcyYTM3MjdmMjE3Y2ZlMjg5OWZiZTJiM2QyNzRiZjY5NDRmM2NhYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5MDZjNjU1OTZhOGYwMjMzZDZlNzZkZmQ2ZDc0MWY1ZGE4ZjJiNDk0MTg0NmMwZDk0ZDlmMzFmNTk3ZDk5ODkifQ"
+        },
+        {
+          "resource": "repo://libs/langchain/pyproject.toml#L1-L30",
+          "version": "repo-lines-v1:sha256:76462a1d57f7056ae2847a3103a265411c9ddc9f5c4960f7a1aafb8a1e60866b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NTY5OTQ2YWM5YmJlN2NiMmNkZWMzZjhiZWNmMzQzNzUwYzU4YjliMzIxZWMyMTk1YmZiYWFiMmFhOGM0YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ZDEwODE0MWExNDcyNzA1OGEzMDJmMDhlYzA1YzM3MzVkNGYzNjA4NjJjOGIzZmIyZWQ5YjdmMGFhMGVlZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiZTY5MjM0ZGI0YjFmMmQ1NTgyMDZiMjBiOTQ2MGRjMjE5N2IyNmYyOWE0ZDVjNDlmMTQ1YzcwN2VlMGMxYWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_34b02e543c5a4e54a935719f329e47e9",
+      "statement": "langchain-core maintains stable versioning with advance notice of breaking changes; langchain and partner packages are released independently.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/README.md#L39-L42",
+          "version": "repo-lines-v1:sha256:2270c5c730eb95d2262ac4fdfd81f01dc541ca375c255d4fa2ac1b445c7ddce9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRjNThlMGJjY2M5YjcwMjI1MDZlOGQ5OTE1OGIwMzY0ZGE4Y2M1MTcwYTE1MmNiYTAwZDcxNTM0MjQ5OGE3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2IxNjc4OWJmMDRmNzQwZmQ0NGE4ZDc1ODViN2E1ZjM5NmY0MGM1Mzk1NTlmMmM4MDEyYjU3MDc3NTdiMDU2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGEyM2RkZTBjNjFmY2NmZTA5ZTE3OTFiMzUzYjAzODI1ODU3MjNiNDlkOTliNmEyMTUyZWNmMzZmY2YzMDc2MCJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/README.md#L31-L33",
+          "version": "repo-lines-v1:sha256:8dfabf0afb2a34a0d10ef2d5bd39d19322131ad902c8e6b1f5339fbd5cc11e1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRjNThlMGJjY2M5YjcwMjI1MDZlOGQ5OTE1OGIwMzY0ZGE4Y2M1MTcwYTE1MmNiYTAwZDcxNTM0MjQ5OGE3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTExMjY3N2NlN2U0YjczZGU3YzlmYjI5MWU4ODkyODNiYzk3NzM4Y2VhYjEwMDI5YTg3N2FhYWM2ZWI4ZTJmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWM1OWViZTEyOTE2YzBlYTg1MjNlZGMwNWNjM2YwYjJkMDhlMWQwZGVjMzdjYWYxNWUzZTVjMTQ3MTY0MjYwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWU2OTgzY2FkY2E1MTk3MWNmMDJkNmRjOTZhMGRiNjlmNzJlMDNiOTkwZTEzMGQ5ZTBlNDA0YTA3NTFhZWNlOCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-03T15:18:34.589Z"
+  }
+}
