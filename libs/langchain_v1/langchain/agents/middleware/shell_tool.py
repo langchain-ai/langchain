@@ -686,7 +686,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
     when the base command is on the allow-list.
     """
 
-    def _contains_dangerous_pattern(self, command: str) -> bool:
+    def _contains_dangerous_pattern(self, command: str) -> tuple[bool, str | None]:
         """
         Check if the command contains any dangerous shell patterns.
 
@@ -700,14 +700,19 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
             command: The shell command to check.
 
         Returns:
-            True if dangerous patterns are found, False otherwise.
+            A tuple of (is_dangerous, pattern), where `pattern` is the dangerous pattern that was found, or None if no dangerous pattern was found.
         """
-        if any(pattern in command for pattern in ShellToolMiddleware.DANGEROUS_SHELL_PATTERNS):
-            return True
+
+        for pattern in ShellToolMiddleware.DANGEROUS_SHELL_PATTERNS:
+            if pattern in command:
+                return True, pattern
 
         # Standalone & (background execution) changes the execution model and
         # should not be allowed.  We check for & that is NOT part of &&.
-        return bool(re.search(r"(?<![&])&(?![&])", command))
+        if re.search(r"(?<![&])&(?![&])", command):
+            return True, "& (background execution)"
+
+        return False, None
 
     def _is_command_allowed(self, command: str) -> tuple[bool, str]:
         """ Check if a shell command is allowed based on command
@@ -726,8 +731,9 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         if not self._allow_list or not command or not command.strip():
             return True, ""
 
-        if self._contains_dangerous_pattern(command):
-            return False, "Contains dangerous shell patterns."
+        is_dangerous, pattern = self._contains_dangerous_pattern(command)
+        if is_dangerous:
+            return False, f"Contains dangerous shell pattern: '{pattern}'"
 
         allow_set = set(self._allow_list)
 
@@ -784,7 +790,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
             is_allowed, reason = self._is_command_allowed(command)
             if not is_allowed:
                 return ToolMessage(
-                    content=f"Rejected: `{command}` is not in the allow-list. Reason: {reason}",
+                    content=f"Rejected: `{command}`. Reason: {reason}",
                     name=self._tool_name,
                     tool_call_id=request.tool_call["id"],
                     status="error",
