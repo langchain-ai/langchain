@@ -5074,7 +5074,12 @@ def _construct_lc_result_from_responses_api(
                         refusal_block["phase"] = phase
                     content_blocks.append(refusal_block)
         elif output.type == "function_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            function_call_block = output.model_dump(exclude_none=True, mode="json")
+            # The SDK names the reserved word `async_`; content blocks carry the
+            # wire name so it round-trips on the next request.
+            if "async_" in function_call_block:
+                function_call_block["async"] = function_call_block.pop("async_")
+            content_blocks.append(function_call_block)
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
