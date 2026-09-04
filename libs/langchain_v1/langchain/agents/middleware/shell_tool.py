@@ -27,7 +27,7 @@ from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
 from pydantic.json_schema import SkipJsonSchema
 from typing_extensions import NotRequired, override
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 
 from langgraph.prebuilt.tool_node import ToolCallRequest
 
@@ -796,6 +796,38 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
                     status="error",
             )
         return handler(request)
+
+    @override
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
+        """Reject disallowed shell commands before execution.
+
+        Args:
+            request: Tool call request with call dict, `BaseTool`, state, and runtime.
+            handler: Callable to execute the tool.
+
+        Returns:
+            `ToolMessage` or `Command` (the final result).
+        """
+        tool_name = request.tool.name if request.tool else request.tool_call["name"]
+        if tool_name != self._tool_name:
+            return await handler(request)
+
+        command = (request.tool_call.get("args") or {}).get("command")
+
+        if command:
+            is_allowed, reason = self._is_command_allowed(command)
+            if not is_allowed:
+                return ToolMessage(
+                    content=f"Rejected: `{command}`. Reason: {reason}",
+                    name=self._tool_name,
+                    tool_call_id=request.tool_call["id"],
+                    status="error",
+            )
+        return await handler(request)
 
     @override
     def before_agent(
