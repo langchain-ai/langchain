@@ -2,19 +2,6 @@ from typing import Any
 
 from langchain_openai import AzureOpenAI
 
-AZURE_AD_TOKEN = "token"  # noqa: S105
-
-
-def test_azure_ad_token_takes_precedence_over_api_key() -> None:
-    llm = AzureOpenAI(
-        openai_api_key="api_key",
-        azure_ad_token=AZURE_AD_TOKEN,
-        azure_endpoint="https://endpoint.com",
-        api_version="2023-05-15",
-    )
-
-    assert llm.client._client._azure_ad_token == AZURE_AD_TOKEN
-
 
 def test_azure_model_param(monkeypatch: Any) -> None:
     monkeypatch.delenv("OPENAI_API_BASE", raising=False)

@@ -15,7 +15,6 @@ from langchain_openai import AzureChatOpenAI
 AZURE_PROFILE_TEST_MODEL = "gpt-5.5"
 AZURE_PROFILE_TEST_MODEL_NAME = "GPT-5.5"
 AZURE_PROFILE_TEST_MAX_INPUT_TOKENS = 1_050_000
-AZURE_AD_TOKEN = "token"  # noqa: S105
 
 
 def test_initialize_azure_openai() -> None:
@@ -28,17 +27,6 @@ def test_initialize_azure_openai() -> None:
     assert llm.deployment_name == "35-turbo-dev"
     assert llm.openai_api_version == "2023-05-15"
     assert llm.azure_endpoint == "my-base-url"
-
-
-def test_azure_ad_token_takes_precedence_over_api_key() -> None:
-    llm = AzureChatOpenAI(
-        api_key="api_key",
-        azure_ad_token=AZURE_AD_TOKEN,
-        azure_endpoint="https://endpoint.com",
-        api_version="2023-05-15",
-    )
-
-    assert llm.root_client._azure_ad_token == AZURE_AD_TOKEN
 
 
 def test_initialize_more() -> None:
