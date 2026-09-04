@@ -555,6 +555,34 @@ def test_jump_to_is_ephemeral() -> None:
     assert "jump_to" not in result
 
 
+def test_first_before_model_can_jump_to_model() -> None:
+    """Regression test for https://github.com/langchain-ai/langchain/issues/40136.
+
+    When the sole (or first) before_model middleware uses @hook_config(can_jump_to=["model"])
+    and returns jump_to="model", the middleware node IS itself the loop_entry_node.
+    _add_middleware_edge previously omitted model_destination from the conditional edge
+    map when name == model_destination, causing KeyError at runtime.
+    """
+
+    class RestartOnce(AgentMiddleware):
+        restart_count: int = 0
+
+        @hook_config(can_jump_to=["model"])
+        @override
+        def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
+            if self.restart_count == 0:
+                self.restart_count += 1
+                return {"jump_to": "model"}
+            return {}
+
+    middleware = RestartOnce()
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[middleware])
+    # This must not raise KeyError: 'RestartOnce.before_model'
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    assert result is not None
+    assert middleware.restart_count == 1
+
+
 def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> None:
     """Test that sync invoke with only async middleware works via run_in_executor."""
 

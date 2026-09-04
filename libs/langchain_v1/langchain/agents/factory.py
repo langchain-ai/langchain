@@ -2076,10 +2076,16 @@ def _add_middleware_edge(
             destinations.append(end_destination)
         if "tools" in can_jump_to:
             destinations.append("tools")
-        if "model" in can_jump_to and name != model_destination:
+        if "model" in can_jump_to:
             destinations.append(model_destination)
 
-        graph.add_conditional_edges(name, RunnableCallable(jump_edge, trace=False), destinations)
+        # De-duplicate while preserving order: when name == model_destination (the
+        # first before_model node is itself the loop_entry_node), model_destination
+        # would otherwise be missing from the edge map even though jump_edge can
+        # return it, causing KeyError at runtime. dict.fromkeys keeps insertion order.
+        unique_destinations = list(dict.fromkeys(destinations))
+
+        graph.add_conditional_edges(name, RunnableCallable(jump_edge, trace=False), unique_destinations)
 
     else:
         graph.add_edge(name, default_destination)
