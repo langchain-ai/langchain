@@ -871,7 +871,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
             raise ValueError(msg) from None
 
         # Check allowed prefixes
-        virtual_path = "/" + str(full_path.relative_to(self.root_path))
+        virtual_path = "/" + full_path.relative_to(self.root_path).as_posix()
         if self.allowed_prefixes and not _is_within_allowed_prefix(
             virtual_path, self.allowed_prefixes
         ):
