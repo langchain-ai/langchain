@@ -132,7 +132,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "accounts/fireworks/models/glm-5p3": {
         "name": "GLM 5.3",
         "release_date": "2026-08-14",
-        "last_updated": "2026-08-28",
+        "last_updated": "2026-09-04",
         "open_weights": True,
         "max_input_tokens": 1000000,
         "max_output_tokens": 131072,
@@ -154,7 +154,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "accounts/fireworks/models/glm-5p3-flash": {
         "name": "GLM 5.3 Flash",
         "release_date": "2026-08-26",
-        "last_updated": "2026-08-26",
+        "last_updated": "2026-09-04",
         "open_weights": False,
         "max_input_tokens": 1000000,
         "max_output_tokens": 131072,
