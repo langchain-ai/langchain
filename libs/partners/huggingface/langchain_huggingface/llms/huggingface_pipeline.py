@@ -14,7 +14,6 @@ from typing_extensions import Self
 from langchain_huggingface._version import __version__
 from langchain_huggingface.utils.import_utils import (
     IMPORT_ERROR,
-    is_ipex_available,
     is_openvino_available,
     is_optimum_intel_available,
     is_optimum_intel_version,
@@ -158,7 +157,7 @@ class HuggingFacePipeline(BaseLLM):
             _model_kwargs["device_map"] = device_map
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
-        if backend in {"openvino", "ipex"}:
+        if backend == "openvino":
             if task not in VALID_TASKS:
                 msg = (
                     f"Got invalid task {task}, "
@@ -170,51 +169,26 @@ class HuggingFacePipeline(BaseLLM):
             if not is_optimum_intel_available():
                 raise ImportError(err_msg)
 
-            # TODO: upgrade _MIN_OPTIMUM_VERSION to 1.22 after release
-            min_optimum_version = (
-                "1.22"
-                if backend == "ipex" and task != "text-generation"
-                else _MIN_OPTIMUM_VERSION
-            )
-            if is_optimum_intel_version("<", min_optimum_version):
+            if is_optimum_intel_version("<", _MIN_OPTIMUM_VERSION):
                 msg = (
                     f"Backend: {backend} requires optimum-intel>="
-                    f"{min_optimum_version}. You can install it with pip: "
+                    f"{_MIN_OPTIMUM_VERSION}. You can install it with pip: "
                     "`pip install --upgrade --upgrade-strategy eager "
                     f"`optimum[{backend}]`."
                 )
                 raise ImportError(msg)
 
-            if backend == "openvino":
-                if not is_openvino_available():
-                    raise ImportError(err_msg)
+            if not is_openvino_available():
+                raise ImportError(err_msg)
 
-                from optimum.intel import (  # type: ignore[import]
-                    OVModelForCausalLM,
-                    OVModelForSeq2SeqLM,
-                )
+            from optimum.intel import (  # type: ignore[import]
+                OVModelForCausalLM,
+                OVModelForSeq2SeqLM,
+            )
 
-                model_cls = (
-                    OVModelForCausalLM
-                    if task == "text-generation"
-                    else OVModelForSeq2SeqLM
-                )
-            else:
-                if not is_ipex_available():
-                    raise ImportError(err_msg)
-
-                if task == "text-generation":
-                    from optimum.intel import (
-                        IPEXModelForCausalLM,  # type: ignore[import]
-                    )
-
-                    model_cls = IPEXModelForCausalLM
-                else:
-                    from optimum.intel import (
-                        IPEXModelForSeq2SeqLM,  # type: ignore[import]
-                    )
-
-                    model_cls = IPEXModelForSeq2SeqLM
+            model_cls = (
+                OVModelForCausalLM if task == "text-generation" else OVModelForSeq2SeqLM
+            )
 
         else:
             model_cls = (
