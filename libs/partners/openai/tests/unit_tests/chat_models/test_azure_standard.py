@@ -31,7 +31,6 @@ class TestOpenAIStandard(ChatModelUnitTests):
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
         return (
             {
-                "AZURE_OPENAI_API_KEY": "api_key",
                 "AZURE_OPENAI_ENDPOINT": "https://endpoint.com",
                 "AZURE_OPENAI_AD_TOKEN": "token",
                 "OPENAI_ORG_ID": "org_id",
@@ -40,7 +39,6 @@ class TestOpenAIStandard(ChatModelUnitTests):
             },
             {},
             {
-                "openai_api_key": "api_key",
                 "azure_endpoint": "https://endpoint.com",
                 "azure_ad_token": "token",
                 "openai_organization": "org_id",

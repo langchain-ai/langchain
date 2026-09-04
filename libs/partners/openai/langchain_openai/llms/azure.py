@@ -181,6 +181,8 @@ class AzureOpenAI(BaseOpenAI):
             },
             "default_query": self.default_query,
         }
+        if self.azure_ad_token or self.azure_ad_token_provider:
+            client_params["api_key"] = None
         if not self.client:
             sync_specific = {"http_client": self.http_client}
             self.client = openai.AzureOpenAI(

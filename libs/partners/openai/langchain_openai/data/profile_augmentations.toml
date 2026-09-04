@@ -114,3 +114,21 @@ reasoning_effort_default = "medium"
 [overrides."gpt-5.6-terra"]
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "medium"
+
+[overrides."gpt-6-astra"]
+name = "GPT-6 Astra"
+release_date = "2026-09-03"
+last_updated = "2026-09-03"
+open_weights = false
+max_input_tokens = 1050000
+max_output_tokens = 128000
+text_inputs = true
+image_inputs = true
+text_outputs = true
+reasoning_output = true
+tool_calling = true
+structured_output = true
+attachment = true
+temperature = false
+reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "medium"

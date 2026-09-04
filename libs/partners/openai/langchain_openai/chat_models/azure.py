@@ -683,6 +683,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             },
             "default_query": self.default_query,
         }
+        if self.azure_ad_token or self.azure_ad_token_provider:
+            client_params["api_key"] = None
         if self.max_retries is not None:
             client_params["max_retries"] = self.max_retries
 
