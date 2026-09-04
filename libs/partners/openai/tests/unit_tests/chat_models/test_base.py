@@ -5157,6 +5157,154 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert {"type": "tool_search"} in result["tools"]
 
 
+def test__construct_lc_result_from_responses_api_async_tool_call() -> None:
+    """Test that `async` on a `function_call` item reaches `tool_call` extras."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_1",
+                    "call_id": "call_A",
+                    "name": "lookup_price",
+                    "arguments": '{"sku": "WIDGET"}',
+                    "async": True,
+                }
+            ),
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_2",
+                    "call_id": "call_B",
+                    "name": "get_time",
+                    "arguments": "{}",
+                }
+            ),
+        ],
+    )
+    message = cast(
+        AIMessage,
+        _construct_lc_result_from_responses_api(response).generations[0].message,
+    )
+    extras: dict[Any, dict[str, Any]] = {
+        block.get("id"): cast(dict[str, Any], block.get("extras") or {})
+        for block in message.content_blocks
+    }
+    assert extras["call_A"]["async"] is True
+    assert "async" not in extras["call_B"]
+    # The flag is metadata only; both remain ordinary tool calls.
+    assert [tc["id"] for tc in message.tool_calls] == ["call_A", "call_B"]
+
+
+def test_async_tool_call_round_trips_to_next_request() -> None:
+    """Test that `async` survives response -> message -> next request."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"async": True})
+    def lookup_price(sku: str) -> str:
+        """Look up a price."""
+        return "1200"
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_1",
+                    "call_id": "call_A",
+                    "name": "lookup_price",
+                    "arguments": '{"sku": "WIDGET"}',
+                    "async": True,
+                }
+            )
+        ],
+    )
+    for output_version in ("responses/v1", "v1"):
+        message = (
+            _construct_lc_result_from_responses_api(
+                response, output_version=output_version
+            )
+            .generations[0]
+            .message
+        )
+        llm = ChatOpenAI(
+            model=OPENAI_TEST_MODEL,
+            use_responses_api=True,
+            output_version=output_version,
+        )
+        bound = llm.bind_tools([lookup_price])
+        payload = bound._get_request_payload(  # type: ignore[attr-defined]
+            [HumanMessage("price?"), message, HumanMessage("anything else?")],
+            **bound.kwargs,  # type: ignore[attr-defined]
+        )
+        function_calls = [
+            item for item in payload["input"] if item.get("type") == "function_call"
+        ]
+        # Without the flag the Responses API rejects the turn for a missing output.
+        assert function_calls[0]["async"] is True, output_version
+
+
+def test_async_tool_from_extras_in_payload() -> None:
+    """Test that `async` from `BaseTool.extras` reaches the Responses tool def."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"async": True})
+    def lookup_price(sku: str) -> str:
+        """Look up a price."""
+        return "1200"
+
+    @tool
+    def get_time() -> str:
+        """Get the current time."""
+        return "14:05"
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    bound = llm.bind_tools([lookup_price, get_time])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    tools_by_name = {t["name"]: t for t in payload["tools"]}
+    assert tools_by_name["lookup_price"]["async"] is True
+    # Tools that don't opt in are unaffected.
+    assert "async" not in tools_by_name["get_time"]
+
+
+def test_async_tool_raw_dict_passthrough() -> None:
+    """Test that `async` on a raw tool dict is preserved."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    raw_tool = {
+        "type": "function",
+        "name": "lookup_price",
+        "description": "Look up a price.",
+        "async": True,
+        "parameters": {
+            "type": "object",
+            "properties": {"sku": {"type": "string"}},
+        },
+    }
+    bound = llm.bind_tools([raw_tool])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["tools"][0]["async"] is True
+
+
 def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
