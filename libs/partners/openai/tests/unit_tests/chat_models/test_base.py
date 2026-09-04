@@ -5157,6 +5157,53 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert {"type": "tool_search"} in result["tools"]
 
 
+def test_async_tool_from_extras_in_payload() -> None:
+    """Test that `async` from `BaseTool.extras` reaches the Responses tool def."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"async": True})
+    def lookup_price(sku: str) -> str:
+        """Look up a price."""
+        return "1200"
+
+    @tool
+    def get_time() -> str:
+        """Get the current time."""
+        return "14:05"
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    bound = llm.bind_tools([lookup_price, get_time])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    tools_by_name = {t["name"]: t for t in payload["tools"]}
+    assert tools_by_name["lookup_price"]["async"] is True
+    # Tools that don't opt in are unaffected.
+    assert "async" not in tools_by_name["get_time"]
+
+
+def test_async_tool_raw_dict_passthrough() -> None:
+    """Test that `async` on a raw tool dict is preserved."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    raw_tool = {
+        "type": "function",
+        "name": "lookup_price",
+        "description": "Look up a price.",
+        "async": True,
+        "parameters": {
+            "type": "object",
+            "properties": {"sku": {"type": "string"}},
+        },
+    }
+    bound = llm.bind_tools([raw_tool])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["tools"][0]["async"] is True
+
+
 def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))

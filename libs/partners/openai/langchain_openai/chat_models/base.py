@@ -211,6 +211,8 @@ WellKnownTools = (
     "apply_patch",
 )
 
+_TOOL_EXTRAS_PASSTHROUGH = ("defer_loading", "async")
+
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
@@ -2441,9 +2443,10 @@ class BaseChatOpenAI(BaseChatModel):
                 isinstance(original, BaseTool)
                 and hasattr(original, "extras")
                 and isinstance(original.extras, dict)
-                and "defer_loading" in original.extras
             ):
-                formatted["defer_loading"] = original.extras["defer_loading"]
+                for key in _TOOL_EXTRAS_PASSTHROUGH:
+                    if key in original.extras:
+                        formatted[key] = original.extras[key]
         tool_names = []
         for tool in formatted_tools:
             if "function" in tool:
