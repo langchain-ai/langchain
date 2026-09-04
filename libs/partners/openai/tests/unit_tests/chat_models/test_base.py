@@ -5197,6 +5197,61 @@ def test__construct_lc_result_from_responses_api_async_tool_call() -> None:
     assert [tc["id"] for tc in message.tool_calls] == ["call_A", "call_B"]
 
 
+def test_async_tool_call_round_trips_to_next_request() -> None:
+    """Test that `async` survives response -> message -> next request."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"async": True})
+    def lookup_price(sku: str) -> str:
+        """Look up a price."""
+        return "1200"
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_1",
+                    "call_id": "call_A",
+                    "name": "lookup_price",
+                    "arguments": '{"sku": "WIDGET"}',
+                    "async": True,
+                }
+            )
+        ],
+    )
+    for output_version in ("responses/v1", "v1"):
+        message = (
+            _construct_lc_result_from_responses_api(
+                response, output_version=output_version
+            )
+            .generations[0]
+            .message
+        )
+        llm = ChatOpenAI(
+            model=OPENAI_TEST_MODEL,
+            use_responses_api=True,
+            output_version=output_version,
+        )
+        bound = llm.bind_tools([lookup_price])
+        payload = bound._get_request_payload(  # type: ignore[attr-defined]
+            [HumanMessage("price?"), message, HumanMessage("anything else?")],
+            **bound.kwargs,  # type: ignore[attr-defined]
+        )
+        function_calls = [
+            item for item in payload["input"] if item.get("type") == "function_call"
+        ]
+        # Without the flag the Responses API rejects the turn for a missing output.
+        assert function_calls[0]["async"] is True, output_version
+
+
 def test_async_tool_from_extras_in_payload() -> None:
     """Test that `async` from `BaseTool.extras` reaches the Responses tool def."""
     from langchain_core.tools import tool
