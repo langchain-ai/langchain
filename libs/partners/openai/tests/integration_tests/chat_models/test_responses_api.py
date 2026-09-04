@@ -647,6 +647,7 @@ def test_configuration_update_block() -> None:
     )
 
 
+@pytest.mark.skip(reason="Requires data retention.")
 def test_stateful_api() -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = llm.invoke("how are you, my name is Bobo")
