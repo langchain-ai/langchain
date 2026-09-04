@@ -5189,8 +5189,14 @@ def test__construct_lc_result_from_responses_api_async_tool_call() -> None:
             ),
         ],
     )
-    message = _construct_lc_result_from_responses_api(response).generations[0].message
-    extras = {b["id"]: b.get("extras", {}) for b in message.content_blocks}
+    message = cast(
+        AIMessage,
+        _construct_lc_result_from_responses_api(response).generations[0].message,
+    )
+    extras: dict[Any, dict[str, Any]] = {
+        block.get("id"): cast(dict[str, Any], block.get("extras") or {})
+        for block in message.content_blocks
+    }
     assert extras["call_A"]["async"] is True
     assert "async" not in extras["call_B"]
     # The flag is metadata only; both remain ordinary tool calls.
