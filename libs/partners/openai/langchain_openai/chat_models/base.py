@@ -5362,8 +5362,11 @@ def _convert_responses_chunk_to_generation_chunk(
         if getattr(chunk.item, "namespace", None) is not None:
             function_call_content["namespace"] = chunk.item.namespace
         # SDKs expose the reserved word as `async_`; older ones keep it in extras.
-        if getattr(chunk.item, "async_", None) or getattr(chunk.item, "async", None):
-            function_call_content["async"] = True
+        async_flag = getattr(chunk.item, "async_", None)
+        if async_flag is None:
+            async_flag = getattr(chunk.item, "async", None)
+        if async_flag is not None:
+            function_call_content["async"] = async_flag
         content.append(function_call_content)
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
