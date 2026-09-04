@@ -221,13 +221,13 @@ class NumberedListOutputParser(ListOutputParser):
 class MarkdownListOutputParser(ListOutputParser):
     """Parse a Markdown list."""
 
-    pattern: str = r"^\s*[-*]\s([^\n]+)$"
+    pattern: str = r"^\s*[-*+]\s([^\n]+)$"
     """The pattern to match a Markdown list item."""
 
     @override
     def get_format_instructions(self) -> str:
         """Return the format instructions for the Markdown list output."""
-        return "Your response should be a markdown list, eg: `- foo\n- bar\n- baz`"
+        return "Your response should be a markdown list, eg: `- foo\n- bar\n- baz` (supports `-`, `*`, or `+` bullets)"
 
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.

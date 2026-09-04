@@ -271,6 +271,26 @@ async def test_numbered_list_async() -> None:
         ] == expectedlist
 
 
+def test_markdown_list_plus_bullet() -> None:
+    """Test that MarkdownListOutputParser supports plus (+) bullet items."""
+    parser = MarkdownListOutputParser()
+    
+    # Test with plus bullets
+    text_plus = "+ item 1\n+ item 2\n+ item 3"
+    expected = ["item 1", "item 2", "item 3"]
+    assert parser.parse(text_plus) == expected
+    
+    # Test with mixed bullet types
+    text_mixed = "- dash item\n* star item\n+ plus item"
+    expected_mixed = ["dash item", "star item", "plus item"]
+    assert parser.parse(text_mixed) == expected_mixed
+    
+    # Test with indentation
+    text_indented = "  + indented item\n    + deeply indented"
+    expected_indented = ["indented item", "deeply indented"]
+    assert parser.parse(text_indented) == expected_indented
+
+
 async def test_markdown_list_async() -> None:
     parser = MarkdownListOutputParser()
     text1 = (
