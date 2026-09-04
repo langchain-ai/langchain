@@ -881,6 +881,27 @@ class BaseChatOpenAI(BaseChatModel):
     Currently supported values are `'minimal'`, `'low'`, `'medium'`, and
     `'high'`. Reducing reasoning effort can result in faster responses and fewer
     tokens used on reasoning in a response.
+
+    !!! note "Changing reasoning effort mid-conversation"
+
+        Changing this value part-way through a conversation changes a request-level
+        parameter, which invalidates the cached prompt prefix.
+
+        Models that support it (currently GPT-6) can instead carry the new effort
+        in a `configuration_update` item attached to the message that should start
+        using it:
+
+        ```python
+        HumanMessage(
+            [
+                {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                {"type": "text", "text": "Analyze the failure modes."},
+            ]
+        )
+        ```
+
+        The new effort applies from that message onward, until another update
+        overrides it.
     """
 
     reasoning: dict[str, Any] | None = None
@@ -4945,6 +4966,7 @@ def _construct_responses_api_input(
                     "mcp_approval_response",
                     "tool_search_output",
                     "apply_patch_call_output",
+                    "configuration_update",
                 )
                 for block in msg["content"]:
                     if block["type"] in ("text", "image_url", "file"):

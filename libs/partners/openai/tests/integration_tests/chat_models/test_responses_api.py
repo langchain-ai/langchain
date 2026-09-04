@@ -610,6 +610,43 @@ def test_reasoning(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
             assert block_types == ["reasoning", "text"]
 
 
+@pytest.mark.vcr
+def test_configuration_update_block() -> None:
+    """A `configuration_update` block changes reasoning effort mid-conversation.
+
+    The model is left at `low`, so the higher effort can only come from the item.
+    """
+    llm = ChatOpenAI(
+        model="gpt-6-astra", use_responses_api=True, reasoning_effort="low"
+    )
+    question = "How many distinct 5-card poker hands are a full house? Number only."
+
+    first = llm.invoke("Say hi.")
+    assert isinstance(first, AIMessage)
+
+    history: list = ["Say hi.", first]
+    baseline = llm.invoke([*history, HumanMessage(question)])
+    raised = llm.invoke(
+        [
+            *history,
+            HumanMessage(
+                [
+                    {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                    {"type": "text", "text": question},
+                ]
+            ),
+        ]
+    )
+
+    assert isinstance(raised, AIMessage)
+    assert raised.usage_metadata is not None
+    assert baseline.usage_metadata is not None
+    reasoning_tokens = raised.usage_metadata["output_token_details"]["reasoning"]
+    assert (
+        reasoning_tokens > baseline.usage_metadata["output_token_details"]["reasoning"]
+    )
+
+
 def test_stateful_api() -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = llm.invoke("how are you, my name is Bobo")

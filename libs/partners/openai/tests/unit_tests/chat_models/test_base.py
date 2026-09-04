@@ -5236,3 +5236,83 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     assert llm.openai_api_base == "https://api.openai.com/v1"
     assert isinstance(llm.openai_api_key, SecretStr)
     assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+def test_configuration_update_block_becomes_input_item() -> None:
+    """A `configuration_update` block is hoisted out of the message content.
+
+    The Responses API expects it as a top-level input item preceding the message
+    it applies to, not as a content block nested inside one.
+    """
+    llm = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage(
+                [
+                    {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                    {"type": "text", "text": "Hello"},
+                ]
+            )
+        ]
+    )
+
+    assert payload["input"] == [
+        {"type": "configuration_update", "reasoning": {"effort": "high"}},
+        {
+            "role": "user",
+            "content": [{"type": "input_text", "text": "Hello"}],
+            "type": "message",
+        },
+    ]
+
+
+def test_configuration_update_block_keeps_position_across_turns() -> None:
+    """The item stays put as the conversation grows, so the prefix stays cacheable.
+
+    Re-deriving the item per request would shift it forward each turn and truncate
+    the cached prefix to whatever precedes it.
+    """
+    llm = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+    messages: list = [
+        HumanMessage("First question"),
+        AIMessage("First answer", response_metadata={"id": "resp_123"}),
+        HumanMessage(
+            [
+                {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                {"type": "text", "text": "Second question"},
+            ]
+        ),
+    ]
+    first = llm._get_request_payload(messages)
+    assert [item.get("role") or item["type"] for item in first["input"]] == [
+        "user",
+        "assistant",
+        "configuration_update",
+        "user",
+    ]
+
+    messages += [
+        AIMessage("Second answer", response_metadata={"id": "resp_456"}),
+        HumanMessage("Third question"),
+    ]
+    second = llm._get_request_payload(messages)
+    assert second["input"][: len(first["input"])] == first["input"]
+
+
+def test_configuration_update_block_without_text() -> None:
+    """An update with no accompanying text still yields the input item."""
+    llm = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage("Earlier question"),
+            AIMessage("Earlier answer", response_metadata={"id": "resp_123"}),
+            HumanMessage(
+                [{"type": "configuration_update", "reasoning": {"effort": "low"}}]
+            ),
+        ]
+    )
+
+    assert payload["input"][-1] == {
+        "type": "configuration_update",
+        "reasoning": {"effort": "low"},
+    }

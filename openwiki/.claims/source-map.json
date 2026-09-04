@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3b35861ca57c848ef54b88056e826fb29f242c92d428ce186f1ae6001df177ca",
+  "claims": [
+    {
+      "id": "claim_c71edae5b0f64c8fa79c17ef1aca0f6b",
+      "statement": "The Agent Factory is implemented in factory.py, which constructs compiled LangGraph state machines for agentic loops that orchestrate model invocation, tool execution, and middleware composition.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
+          "version": "repo-file-v1:sha256:2e1855c669ed50df9795b1f73ca690d7664d0ef58a1c4080d0f6504076ebea97"
+        }
+      ]
+    },
+    {
+      "id": "claim_0587839e54be45c8924d9154860a0345",
+      "statement": "Agent middleware system is implemented in the middleware directory, providing pluggable hooks for injecting logic at model, tool, and lifecycle boundaries.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py",
+          "version": "repo-file-v1:sha256:56688206dce0334e7ca82125d7b809c23427890c234dfd69123dad038a387f31"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ca5cc3aa2d44f1aaa11eafd8fa56fb9",
+      "statement": "BaseChatModel abstract base class and unified provider interface are implemented in langchain_core/language_models/chat_models.py, handling streaming, batching, token counting, and structured output marshaling.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py",
+          "version": "repo-file-v1:sha256:a2c769b852868ee63985025e519a25bb988b8c987f5958033c7c97d832a70d11"
+        }
+      ]
+    },
+    {
+      "id": "claim_f5a9f756fd1b4f3b843ef1551cfd2263",
+      "statement": "Message types (AIMessage, HumanMessage, SystemMessage, ToolMessage) and content blocks are defined in langchain_core/messages/, providing unified message representation across all provider integrations.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/messages/base.py",
+          "version": "repo-file-v1:sha256:7398bb4db990af959df71dd81243e04b1a5f665602155a6f808271d910c4a62d"
+        }
+      ]
+    },
+    {
+      "id": "claim_41da34bd04da40ffb6c3ac4c336123be",
+      "statement": "The Runnable protocol is the foundational abstraction for composable units, implemented in langchain_core/runnables/base.py, defining invoke(), stream(), batch(), and async variants, with composition operators for piping, branching, fallback, and retry.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py",
+          "version": "repo-file-v1:sha256:35840ef0581e472f34bb15d172ea90ed8e35aaf447a4e6d0104df97cca5dd8d0"
+        }
+      ]
+    },
+    {
+      "id": "claim_de27d6d3996d46669d55a5294a6cb6a7",
+      "statement": "BaseTool abstraction and tool conversion utilities are implemented in langchain_core/tools/, supporting sync/async invocation, schema generation from docstrings and Pydantic models, and structured argument parsing.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py",
+          "version": "repo-file-v1:sha256:259da69b2ca5e171f4cc58acec2190352e7091f4d96a20158ce51feed4a78a02"
+        }
+      ]
+    },
+    {
+      "id": "claim_b6a938d67cf04329abc2cce336bd6a08",
+      "statement": "Prompt templates are implemented in langchain_core/prompts/, including chat prompts, few-shot examples, image prompts, and structured prompt abstractions.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/base.py",
+          "version": "repo-file-v1:sha256:f2f608fba240b0d596889a9ca96ca1f8f4f49690bc24abd094f1b87c776c7f30"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a3cb18e1ffc46afbc05b276bc1dda11",
+      "statement": "Callback manager infrastructure for instrumentation and LangSmith integration is implemented in langchain_core/callbacks/, providing base handlers and streaming output callbacks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py",
+          "version": "repo-file-v1:sha256:1f934c3718231ac3bd4213224886d00bad2c2295a8da1095cdfa400365f45a58"
+        }
+      ]
+    },
+    {
+      "id": "claim_bb74dbecd28347a68d235dc352fd1fef",
+      "statement": "The init_chat_model() factory function for dynamic model discovery and instantiation by provider:model identifier is implemented in langchain/chat_models/base.py.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py",
+          "version": "repo-file-v1:sha256:7cad65a9057208ebc0fc0fe49b0d818ae4a8fd568e3e42d09bbf1d9e12555d94"
+        }
+      ]
+    },
+    {
+      "id": "claim_27f57c927a0e4ae3964bc8a835fbec5e",
+      "statement": "Provider-specific implementations such as ChatOpenAI are located in libs/partners/<provider>/ directories, each implementing core abstractions and released independently.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py",
+          "version": "repo-file-v1:sha256:44b224c3be9dbc6308a585e6415624a7f5faa5cf0c168c551027ef237532563b"
+        }
+      ]
+    },
+    {
+      "id": "claim_3b029c6ea6b141ea86e8c4f56420a82b",
+      "statement": "LLM behavior and capability profiles are implemented in libs/model-profiles/langchain_model_profiles/, providing metadata about model capabilities and configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/model-profiles/langchain_model_profiles/__init__.py",
+          "version": "repo-file-v1:sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "id": "claim_00c705d2ed384205a4c87452106b2842",
+      "statement": "Model Context Protocol (MCP) adapter, tools, and elicitation are implemented in langchain/mcp/, providing MCP-based model integrations.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/adapter.py",
+          "version": "repo-file-v1:sha256:9a93363b3b18055d06778bf0508f63b85f382a829f9588b98257e014be45c88e"
+        }
+      ]
+    },
+    {
+      "id": "claim_4debd15d45c545a798d12cf25ccfa03a",
+      "statement": "Schema definition and response marshaling for typed agent outputs is implemented in langchain/agents/structured_output.py.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py",
+          "version": "repo-file-v1:sha256:e3d5032f156d07531da71620710f0bb0231b3ba8ab241a5417759ebb810b71cf"
+        }
+      ]
+    },
+    {
+      "id": "claim_a663419859ee445c871c8b614e26dc85",
+      "statement": "Tests are organized as unit_tests/ and integration_tests/ within each package (core, langchain_v1, partners), with shared test contracts in libs/standard-tests/.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/test_tools.py",
+          "version": "repo-file-v1:sha256:18a0d8474908b28ccd2940f35efbb04e43dfd9d4df93c0a1ad2f65777a165ece"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/test_imports.py",
+          "version": "repo-file-v1:sha256:1ac3e45f3bfc2b66ab87e2b6d5902cc90570f0f207ce067c40a7943a6fadebe4"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/base.py",
+          "version": "repo-file-v1:sha256:62a5d5e75b59be001165917da5164c60bbdb07394b364df2ea1b949916ba3cab"
+        }
+      ]
+    },
+    {
+      "id": "claim_691d6cb116a343ed92077ddb6a6078bd",
+      "statement": "Configuration files include pyproject.toml in each package for dependencies and metadata, pre-commit configuration at repo root for git hooks, and Makefile in libs/ for multi-package build coordination.",
+      "evidence": [
+        {
+          "resource": "repo://.pre-commit-config.yaml",
+          "version": "repo-file-v1:sha256:f6173b7f48573811a6a8ca9f0691ecb2d79c331ac1676af11542ab5cdcf68deb"
+        },
+        {
+          "resource": "repo://libs/Makefile",
+          "version": "repo-file-v1:sha256:b703a85cdfdb60e98c41ec8261d9b78f0e7137105ee9da36b8cb919b2d35858b"
+        },
+        {
+          "resource": "repo://libs/core/pyproject.toml",
+          "version": "repo-file-v1:sha256:325931f1a0825e70a5f7c0228e9a98e3bd6e2395ea23db6d7a0dffce70087408"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/pyproject.toml",
+          "version": "repo-file-v1:sha256:0603b7b9a70d40e53ad2ebf8eeecab8636c471895728511b2e5685b6bd232aa8"
+        }
+      ]
+    },
+    {
+      "id": "claim_458d709b604149fa8fb9639025882358",
+      "statement": "LangChain uses a three-layer architecture: langchain-core (v1.6.1) for base abstractions, langchain (v1.4.0) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/pyproject.toml",
+          "version": "repo-file-v1:sha256:325931f1a0825e70a5f7c0228e9a98e3bd6e2395ea23db6d7a0dffce70087408"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/pyproject.toml",
+          "version": "repo-file-v1:sha256:0603b7b9a70d40e53ad2ebf8eeecab8636c471895728511b2e5685b6bd232aa8"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-03T15:18:34.589Z"
+  }
+}
