@@ -1,0 +1,77 @@
+name: OpenWiki Update
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # Full history so `openwiki code --update` can diff HEAD against the
+          # commit it last documented; a shallow clone hides that commit and the
+          # update runs against an empty change summary.
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+
+      - name: Install OpenWiki
+        # mermaid + jsdom are optional; they add high-fidelity validation of Mermaid diagrams. Remove if your wiki has none.
+        run: npm install --global openwiki@0.5.0 mermaid@11.16.0 jsdom@29.1.1
+
+      - name: Run OpenWiki
+        id: openwiki
+        continue-on-error: true
+        run: openwiki code --update --print
+        env:
+          OPENWIKI_PROVIDER: anthropic
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENWIKI_MODEL_ID: "claude-haiku-4-5"
+          # Required for the LangSmith connector's code-mode pull to authenticate.
+          # For extra workspaces, add OPENWIKI_LANGSMITH_API_KEY_2, _3, ... as repo
+          # secrets and env entries here.
+          OPENWIKI_LANGSMITH_API_KEY: ${{ secrets.OPENWIKI_LANGSMITH_API_KEY }}
+          # Optional: also trace this workflow's own OpenWiki run to LangSmith.
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGCHAIN_PROJECT: openwiki
+          LANGCHAIN_TRACING_V2: "true"
+
+      - name: Remove transient OpenWiki run state
+        if: ${{ !cancelled() }}
+        run: rm -f -- openwiki/.run.json
+
+      - name: Create OpenWiki update pull request
+        if: ${{ !cancelled() }}
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
+        with:
+          add-paths: |
+            openwiki
+            AGENTS.md
+            CLAUDE.md
+            .github/workflows/openwiki-update.yml
+          branch: openwiki/update
+          commit-message: "docs: update OpenWiki"
+          title: "docs: update OpenWiki"
+          body: |
+            Automated OpenWiki documentation update.
+
+            OpenWiki result: ${{ steps.openwiki.outcome }}
+
+            When the result is `failure`, this PR intentionally preserves only the
+            pages completed before the failure. Merge it to make that progress the
+            baseline for the next scheduled run.
+
+      - name: Propagate OpenWiki failure
+        if: ${{ steps.openwiki.outcome == 'failure' }}
+        run: exit 1

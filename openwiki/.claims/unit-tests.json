@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7f15b0e6bb2c95e703a2e0c8f6fe04091727b2cb26ae3a3260124cd43f1394e0",
+  "claims": [
+    {
+      "id": "claim_bdde90f4e5f6413f8214fe7e80b66a9a",
+      "statement": "Unit tests live in tests/unit_tests/ directories organized by feature mirrors source code structure, integration tests in tests/integration_tests/, and benchmarks in tests/benchmarks/, with each test package running unit tests via 'make test' with --disable-socket and -n auto for parallelization.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L13-L20",
+          "version": "repo-lines-v1:sha256:ab8103f9ee7c85d9fb1c9d3d0cbe6264d1384aac292f90c74f84c77c06ed5398:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDliMzBjZTkzZjhkMmVlNmQ2NDdlYjNhN2RhYjQ0NjRiNWQ5Yjc5ZGExOTI4ZGE2MDY4MDQ3M2QyY2Y0ZTY4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ2M2RlMzg2ZTA3OTFhZGQ1MmUzZjZlM2EwOWYyYmY2NDhmZTQzMTMxOGUxOTE1YjdlNWRlOTlmN2E1ODQ1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzNzQ1ZTU1YTIzYmI0MzZjYTUxMGFiMTgwNGQyODMwMjhhNTJlNzc5MjE5YmNlNzAyODRkOWY3YjEwMDcxMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_20d69ecaf7e34bfd922eda9176b4adba",
+      "statement": "The conftest.py blockbuster fixture (autouse=True) prevents blocking I/O in async code by registering allowed blocking calls in specific functions like os.stat in langchain_core/_api/internal.py and os.path.abspath in runnables/base.py.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/conftest.py#L12-L32",
+          "version": "repo-lines-v1:sha256:aeb3791f6f39690343a2afea35c9e4e3af46496f963132474d552d66b44088d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDg2NmY0MDExZTU4NWZmYzA5MDkyZWRmMDgzMmUxN2I1MmY0YzkwYzRjYTBiNDJkY2ZhMDUwZmEzNzViNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0YTIxOTliM2NlOTNkNThiMzk2NmUzMzFjMWFhOTQ4M2U1OGYwODQ4NDJjNzFmNTVkNDNmZTk0ZDAzNTVjMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4MDI2ZjhmYzBhNmUzYzQ1NDk0ZDhmZGI5ODgwNmUwNzNiODI3NjgxYzViMzk4ZjE1ZjI0NWQ2ZmU1MDEyZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzZjUyMTNiYWM0NDkxODk2ZmJhZmQ0OTI4ZjM5MWZlMWViMWRiOGNlMWU1NjU4NDdhZDNkOTc1NmQ1ODY5ZGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0aa8ee2a92104476b6ad8c29cee63cd5",
+      "statement": "The pytest_collection_modifyitems hook implements @pytest.mark.requires(package_name) to automatically skip tests when optional dependencies are missing, checking with importlib.util.find_spec and supporting --only-extended and --only-core command-line flags.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/conftest.py#L49-L112",
+          "version": "repo-lines-v1:sha256:95b649751061636bd40423bcb3a5223521d72cd21006b700e58264716a0a8676:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYzYwZGExMTM1NTc1OTRhYTlhZmUyNjJmYjUxZjNhM2RlMWNhYTdjNDdhNTg4NTExYjdlYjA0MjY3OTY0ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZWYyZmFhYjFjY2ZhMmQyZDI0MDZmMmUzMWI3MjM5MGY0MDFlMjFiMTRhNzIwNjUyYzkyM2E2N2I2NTdjNDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxYzE0MjZiZWE3ZmFiYTA1YTEyYzFlMWM4NjBkYTY3YzYxNzM4ZmZjY2NjYTRmNjc2ZTRiOTI2ZGVhNjZlMDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c85d4a54ea54ec0ac2244faba08cbb6",
+      "statement": "The deterministic_uuids fixture replaces uuid.uuid4() with a deterministic generator (00000000-0000-4000-8000-{i:012}) for snapshot testing, enabling stable message and trace comparisons across test runs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/conftest.py#L115-L120",
+          "version": "repo-lines-v1:sha256:170766da8ca0c06791c54c297209de43b5b78f554afa3a942c9960fa1c20cd77:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNmMzY2YjliZDlhOGQwZjM0MGEyYmMwYmUxZTIyZWVhMjA1NjhkZDc4YTQ1MjgxYjcyMWIzMGYyMmQwODdmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE1ZDM5NjBjNmY1NDc2MmJkZjI1ZWZkYzY0ZmJhOTUzNTA1MTAwMTQ5MWIyMTNmZDc3OWMyZmFmNTM2MzRhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmU5ZDFlNWRiMjczOTlkM2NkOGMzN2NiMzhiZWFhYmViZDllMjQ0Njg0M2ZlM2Y2NDhlOTZlMjMwYzk2ZmM1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_69fa7a0282f74dacb02b906474eb001e",
+      "statement": "ChatModelUnitTests in langchain_tests.unit_tests tests chat model initialization, sync/async invoke, streaming, tool binding, structured output, serialization, and message handling; implementations override chat_model_class (required) and chat_model_params (required) properties plus feature flags like has_tool_calling, has_structured_output, supports_image_inputs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/unit_tests/chat_models.py#L277-L340",
+          "version": "repo-lines-v1:sha256:1f718c2c9f4f47dbab87594675c8ec1115ece927acebc63636acaec7f640bbfd:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYjg1ODY3YTRhNWZiNGJlMjFhOGNjMTg3ZjY3NmM3MjQ0OGFlN2EzNTdlMWZlMTlhNGZmYmFmMDQ2YTFlMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMjJkZDMxZjcxNWVmZGQ4YjAxZGYyYTY0Mzc3OGI1MDIxN2RhMmE1Nzc0ZTBlYzA2MDNlZjczNDhjYmE1MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczM2U4NDg3Yzg1ZGZkY2Y5ZmE3YjkzYzc0NmM5NDYyNWFlNDdlMTIwYzc5N2U3OTFlNzM3ZjllZDdmZmM3M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmYzRkMTFjMzdiMmJiZTI3MDBjNDk3NGY5NGNhZGY3NGE2YjU1ODZhNjU3Y2ZlZTNjZmI1ZTQwNTlhODEyZGQifQ"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/unit_tests/chat_models.py#L43-L114",
+          "version": "repo-lines-v1:sha256:c89ea4f0203e8faedc0a38d530353b239af1c28047c7e25f6afd1d4277c0c67b:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzMmJhYzM2ZjYyMmI5OGI2NTFhZGRkZGQ1OGMwZjYxY2IwYjNhMzEzMDkxODgxZGMwNTVhNjU3NmZmZDk5MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlYzk2NzJmN2E5MTgzNDY3YmY3MGFlOWU2ZWNkOGZlNGI3MzY4OGNhNGRhM2JkYzI3Mzk5OWRlZGUwOTlmY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiODI4NzI0ZjFkZDg1M2ZiOWZkZTYwMTAwNDlmODk2ZDczNzYyMmZkZTczOGY3YjE5YzlkMWVhZDFjYmRmNzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c28a970c23243bfae5b52f84fff9f40",
+      "statement": "EmbeddingsUnitTests in langchain_tests.unit_tests tests model initialization, single and batch embedding, and environment variable initialization; implementations override embeddings_class (required), embedding_model_params, and optionally init_from_env_params.",
+      "evidence": [
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/unit_tests/embeddings.py#L34-L137",
+          "version": "repo-lines-v1:sha256:42d46123afc278b109c06bc60c58cdf02b678c9dd74bc43a089144ef1d2d52f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwZWQ5MjJkMTJmODRhMDFjMDQyZGI1ODVmMWNjODFlYjdlZjQxNzhlNWVlYjk0MjZmMzM5NmIxYzFhYWQ2NTZkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmOWEwZmUxMDkyOGQyZTU3OWM0MTI4NzExMTlhODMzYWMwYjc3ZTUzZTg1MWFkMWU5MTkxNDQ4ZGQxMmM1MjFiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlZDFiOTVjNTFiNzg3NjE5NjhjNzMxZTgxYjM0MjJhMjkyNmE1ZWEwNzE3NDRmYjM5MTMyZmIxODQyZjFhODNhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_14899da35b584370acfb982299389923",
+      "statement": "ToolsUnitTests in langchain_tests.unit_tests tests tool initialization, invocation with example parameters, schema generation, and environment variable initialization; implementations override tool_constructor (required), tool_constructor_params, tool_invoke_params_example, and optionally init_from_env_params.",
+      "evidence": [
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/unit_tests/tools.py#L58-L99",
+          "version": "repo-lines-v1:sha256:6717ce0c9225e740ec2b325bfb649d78b3e5249f205d5d18effc28235aadff26:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMTcxNDY4YzQzNjBkM2NhNzJhODg5ZTIzNzM5Y2NhZTNkYjU1ZDY4ODQ5YTc4NmFmN2ZhYTcyMTZlM2I4NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YTBmZTEwOTI4ZDJlNTc5YzQxMjg3MTExOWE4MzNhYzBiNzdlNTNlODUxYWQxZTkxOTE0NDhkZDEyYzUyMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhNDNkZDhmMGE4MDFmZGQzYmFmZTE0MzJjZjg4MGJiOWU0ZjVlNmQ3ZTE2NTI0YTZkM2ZiYmUwMGM2OGJlMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0OGNjYTY1YjQxMDE3MWFhNmVkY2E2Mjg0MDZiNGVkYmQxNzVkMDEzNGVjMjkxMDhiNjM5MTNiNjFmY2UwYzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_181512f0db394d50b54bbaca6cbab961",
+      "statement": "BaseStandardTests enforces that subclasses implement all standard tests without overriding them without @pytest.mark.xfail(reason='...'), preventing accidental test deletion or modification and ensuring consistent test coverage.",
+      "evidence": [
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/base.py#L4-L70",
+          "version": "repo-lines-v1:sha256:1f2cb064b27316502f65d806163631654d1f8627609dafc40f46fa11505c1c51:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0YzJlNmY3MDI2Yjg0Y2NiY2VhZTBhZTkwZTY5YmY3ZDFlZDc2NDIzZjNkMWJhZTJkOGU3ZDI2YjkwYWU3N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwNDlmNjM1NmEwNGI0OTExNDYwMTg0OTIwNGZlOGVlOGU0NGM2ZWIzNWU1YWE3YjI2ODJiNWZhZTNmZTRlZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_84ceee7523804c2eaf1897c4f9bebfaa",
+      "statement": "FakeChatModel classes (FakeListChatModel, GenericFakeChatModel, ParrotFakeChatModel) in langchain_core.language_models cycle through pre-defined message responses for testing without API calls; FakeListChatModel uses string responses, GenericFakeChatModel uses AIMessage objects enabling streaming tests, and ParrotFakeChatModel echoes input.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/fake/test_fake_chat_model.py#L27-L49",
+          "version": "repo-lines-v1:sha256:d5f4e4912eaa2d57220322a7a05b20b26d9c9d44ebcecd81480292ad59fda079:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3OTI5ZDk3NjYyODhhNzNhMGJjYzFlOGJmM2FjYjJiMDRhMDI5Njg5NDI3N2JmNTFiYzg4MTRiZmMyOThiZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3ZDA4NTQ1NGRmMjUyODkyNTY2NmVhYTY1MmQwMGFjNmQzODNmY2JkZTlkNjllMzU5ZThjMjg1NWE2OGJhNzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_78a2ce40e5f148b99a301a3ed6098017",
+      "statement": "FakeCallbackHandler in tests.unit_tests.fake.callbacks counts callback events (llm_starts, chain_starts, tool_starts, etc.) with granular per-component counters and total start/end/error counts, enabling assertions on callback invocation patterns.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/fake/callbacks.py#L119-L150",
+          "version": "repo-lines-v1:sha256:9586cf86900e318ac9f00979847d7020d99d637acdb178fe1decb4ac79ba71a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MGQ4YzU0OGUyMzNhNDNhODY3ZGIxYjA0YTdmYTNhN2JkMzkwMzk5MjgzNzQ2ODYwNzI1N2NkOTkyMzQ3OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExYzkwZGFhMGJmOGUyNDMyNmM0YWRmNTJkZDRmODVkNzFjYTFiODZkOWY0MGUwZjBhOWYwNjU0MDI3MDU0MjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyNzZmODYzMmM0ZWUzYTMyNTFlYzVmZWYzNDdhZTFkYzQ1ZmNiMjE3MjJkZjA4ZjRiYjQ1NTVhZjVhZjAzMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_06aadf17726d432894978250d3e768d6",
+      "statement": "Test stub helpers (stubs.py) provide _any_id_ai_message, _any_id_ai_message_chunk, _any_id_human_message, and AnyStr class to match messages with any ID value, enabling assertions on message content independent of generated UUIDs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/stubs.py",
+          "version": "repo-file-v1:sha256:3d42d384f2ef72708c96fc0dd013c0571cbf102d84024d4fd0f6b511ad1185c0"
+        }
+      ]
+    },
+    {
+      "id": "claim_6e34471dd7954dc1967350cf8e8bdcea",
+      "statement": "@pytest.mark.parametrize allows testing multiple input/output combinations in a single test function, reducing code duplication and enabling clear failure isolation when one parameter set fails.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L13-L20",
+          "version": "repo-lines-v1:sha256:ab8103f9ee7c85d9fb1c9d3d0cbe6264d1384aac292f90c74f84c77c06ed5398:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDliMzBjZTkzZjhkMmVlNmQ2NDdlYjNhN2RhYjQ0NjRiNWQ5Yjc5ZGExOTI4ZGE2MDY4MDQ3M2QyY2Y0ZTY4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ2M2RlMzg2ZTA3OTFhZGQ1MmUzZjZlM2EwOWYyYmY2NDhmZTQzMTMxOGUxOTE1YjdlNWRlOTlmN2E1ODQ1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzNzQ1ZTU1YTIzYmI0MzZjYTUxMGFiMTgwNGQyODMwMjhhNTJlNzc5MjE5YmNlNzAyODRkOWY3YjEwMDcxMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_176e1b33a51245668c26568a36aa346c",
+      "statement": "Syrupy snapshot testing captures complex output (traces, serialized objects, nested structures) and compares against baseline snapshots, with snapshots stored in __snapshots__/ directories and updated via pytest --snapshot-update or make test_watch.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L1-L50",
+          "version": "repo-lines-v1:sha256:28f44b5941f0ec19fc995d7f3313b8eb55ecae1b3a6d383f4d96d598f5620f16:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzNGM5Y2RkNDJmOGQ4OGMwNDQyNTM3M2E3MzM2MjA5ZjZiMmEyZGNlYmVjMzJiNGQ0MDU5M2Y5MGJlMmJiMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MTUyOWViMzIyNzY4NTdiMjVmNmVkMzYzNWJjOGE3YjU2ODI1NzA4YmY0OWZiNTFlMWY3YThhNWZlMjQyMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxYTc5Y2ZkNWJhMzg1ZTcyZDI1YTRjMWUzNDBlMjk5M2FhZmFhNTcyMmIyYmQ5Y2ZiOTgxMDdmNmYxNjQ2NDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f597397dfd2c414b8908e7ba6f7ce8c9",
+      "statement": "CallbackManager and CallbackManagerForToolRun enable tests to inject FakeCallbackHandler to verify callback firing, chain execution order, and event counts without side effects.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/callbacks/test_async_callback_manager.py#L22-L75",
+          "version": "repo-lines-v1:sha256:c7ee525cbf75243640d9986b7a26d73489005f5142d7bd74af88598b9d563daa:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiYjQzZjQwMmVhN2UxYjA3NTU3YjdhYTRjZDFjYjlhZDIxMjMxNmRhYWMwZDBlN2U0MTg0Mzg0NmJlM2MwZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMjg0YzA1OTJjMDQzZGE1N2EyYmM0ODNmYWFhZDU1OTE4ZmUwZmU5YmY5NDFmMzQ2NzdlOGY3OTk1MjE1OWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjOGJjNjA3OTc4ZWEzMWU3Y2M2ODVlNzhhZWM3MDc3OTVhZWFkNDc3N2M4OWIzYmUzYWYyZTVlNjMwZWI0YTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7009493c8cb4da793e4e9b18abf3480",
+      "statement": "Type checking via mypy is integrated into 'make lint' alongside ruff checks and format validation; mypy checks all Python files in the package and is run with --cache-dir to speed repeated checks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L60-L67",
+          "version": "repo-lines-v1:sha256:933d456111de08e7749ab0a4195bf01d0fa573cccd86ef29d442e390779caa54:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQyYzczODUyODNkZDhlODQzNjZjMDk5MWU5ODI2NWUyZWU1MmZjY2VhZTdhMDJmODE5YzI4NzA0ZjQ3MGJiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI2NGUxNzEyMGQxMDU3NjNiYTkzYjkyYWEwN2M3YzRmYjE5MzM0NzMzMWZlNWMwNDI5MmM5MDk4OTE5NWZmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWE5YzU2ZjhiMTIzYjdiZjQ0ZjgxMjU4MTA4NmE4ZGU1YjBjYTk2NWZjMDYwYjAyZTA1MWFlOWU5NDMwODY1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWU2NDJiYTYwOTY2OTA4MDMzOTY3ZGE2OTUzZDdlYzkwMzM3YzkwMDZmNWJiZGVjMTIwZmZiZTM3ZTg5N2NiYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_58af02bb87b043a38a43f54d9c0d4436",
+      "statement": "The runnables conftest.py fixture (_disable_local_langsmith_tracing) sets LANGSMITH_TRACING=false and removes developer LangSmith environment variables at session scope to keep runnable unit tests independent of local LangSmith configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/conftest.py#L10-L37",
+          "version": "repo-lines-v1:sha256:fed3cc99412a88ab0c021986da4fe9a311939e8d66b9023fb7552c25d0937869:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ODgyNDQ3MDY4YzMzYjJmMzJlNDVmYWM0Y2UxYWZhYzQ5ODNkYzA3MzBlNmZhOWEwMzdlYWM5Y2ZhMjM3NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhYzMxNGZmOWYwZTBhOTU0NzNiNjlmYzcyMzA3MWI0MzU4ZGI1ZDQ4MmQ5YWM2NmI1MGQ5Y2IwZmJkZDRmMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5ZTQwMTYzYTRkMzhjNmFmNzg1OThmNzdkZTQ4ZWUzMzFlYzdhNTI0YzU4NmViY2QwYTA5YTkwZWY1Njg1MjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_655f1ee7e72547218e865ae9f01d6173",
+      "statement": "Async tests use async def and are marked with @pytest.mark.asyncio; tests await ainvoke() and astream() to verify async execution without blocking, enabling testing of concurrent model invocation and stream handling.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/fake/test_fake_chat_model.py#L39-L73",
+          "version": "repo-lines-v1:sha256:089d7cc7803d27b58295722b1a0ac24c4c7af09bc39df303b4fe1ed715112fed:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NzUxNjU1NGVjYjQzYzIxMjA3M2IyMzM2MTQ4OTc0NjFhMTBlMDQ0MjRjNWU5MDYyOWJjMjdmY2M1OTA1NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YzVlMDIzMTJiNjVhZTU1M2IwNzEyMmJkMmQ4ZTM0OWIxMDBhYzYyYTY2ODY0MGQwMjAxNDk0MGMwMDk3MzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0MTU1YjJlMGE3NjA1ZWQ1NmM4ZWU2NDI3NjdhMWIwOTU4NjIwNTM3M2NkNWJmYzk3ZjIyODFlMzIyODhhN2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwODE2YTliMmE2MzViYjIwMmY4MmY4NDM3YmZhOWRkMTJiZDI3NzQxNzE0OWMzOWFlMzRmZTM4MmM4ZWU0OWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_290be57f0f2e489c8fe914e8716e6cbb",
+      "statement": "pydantic_utils.py provides schema normalization (_normalize_schema, _schema) to handle Pydantic v1 vs v2 differences in JSON schema format, ensuring tests work across Pydantic versions; skip_if_no_pydantic_v1 marks tests for Pydantic v1 compatibility.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/pydantic_utils.py",
+          "version": "repo-file-v1:sha256:c80ecf32bea0b4e7d5a86ae816614622e63f082e45bf2dc665118ddcb8400d87"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-03T15:18:34.589Z"
+  }
+}
