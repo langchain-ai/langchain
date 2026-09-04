@@ -812,7 +812,7 @@ typing = [
 requires-dist = [
     { name = "certifi", specifier = ">=2024.6.2" },
     { name = "langchain-core", editable = "../../core" },
-    { name = "openai", specifier = ">=3.8.0,<4.0.0" },
+    { name = "openai", specifier = ">=2.45.0,<4.0.0" },
     { name = "tiktoken", specifier = ">=0.7.0,<1.0.0" },
 ]
 
