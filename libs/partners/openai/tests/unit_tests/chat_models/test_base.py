@@ -5157,6 +5157,46 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert {"type": "tool_search"} in result["tools"]
 
 
+def test__construct_lc_result_from_responses_api_async_tool_call() -> None:
+    """Test that `async` on a `function_call` item reaches `tool_call` extras."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_1",
+                    "call_id": "call_A",
+                    "name": "lookup_price",
+                    "arguments": '{"sku": "WIDGET"}',
+                    "async": True,
+                }
+            ),
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_2",
+                    "call_id": "call_B",
+                    "name": "get_time",
+                    "arguments": "{}",
+                }
+            ),
+        ],
+    )
+    message = _construct_lc_result_from_responses_api(response).generations[0].message
+    extras = {b["id"]: b.get("extras", {}) for b in message.content_blocks}
+    assert extras["call_A"]["async"] is True
+    assert "async" not in extras["call_B"]
+    # The flag is metadata only; both remain ordinary tool calls.
+    assert [tc["id"] for tc in message.tool_calls] == ["call_A", "call_B"]
+
+
 def test_async_tool_from_extras_in_payload() -> None:
     """Test that `async` from `BaseTool.extras` reaches the Responses tool def."""
     from langchain_core.tools import tool
