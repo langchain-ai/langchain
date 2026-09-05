@@ -10,11 +10,29 @@ from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, SecretStr
 from typing_extensions import TypedDict
 
-from langchain_openai import AzureChatOpenAI
+from langchain_openai import AzureChatOpenAI, AzureOpenAI, AzureOpenAIEmbeddings
 
 AZURE_PROFILE_TEST_MODEL = "gpt-5.5"
 AZURE_PROFILE_TEST_MODEL_NAME = "GPT-5.5"
 AZURE_PROFILE_TEST_MAX_INPUT_TOKENS = 1_050_000
+
+
+@pytest.mark.parametrize(
+    "azure_class", [AzureChatOpenAI, AzureOpenAIEmbeddings, AzureOpenAI]
+)
+def test_initialize_azure_openai_with_async_token_provider(azure_class: type) -> None:
+    async def token() -> str:
+        return "token"
+
+    model = azure_class(
+        azure_endpoint="https://endpoint.openai.azure.com",
+        api_version="2024-10-21",
+        api_key="key",
+        azure_ad_async_token_provider=token,
+    )
+
+    assert model.async_client is not None
+    assert model.client is None
 
 
 def test_initialize_azure_openai() -> None:
