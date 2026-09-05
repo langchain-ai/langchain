@@ -753,6 +753,131 @@ def test_trim_messages_token_counter_shortcut_with_options() -> None:
     assert messages == messages_copy
 
 
+def test_trim_messages_last_drops_orphaned_tool_messages() -> None:
+    """Orphaned ToolMessages (no preceding AIMessage with matching tool_call)
+    should be dropped when strategy='last'.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/33245
+    """
+    messages = [
+        HumanMessage("What's the weather in Florida?"),
+        AIMessage(
+            [
+                {"type": "text", "text": "Let's check the weather in Florida"},
+                {
+                    "type": "tool_use",
+                    "id": "abc123",
+                    "name": "get_weather",
+                    "input": {"location": "Florida"},
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "Florida"},
+                    "id": "abc123",
+                    "type": "tool_call",
+                },
+            ],
+        ),
+        ToolMessage("It's sunny.", name="get_weather", tool_call_id="abc123"),
+        HumanMessage("I see"),
+        AIMessage("Do you want to know anything else?"),
+        HumanMessage("No, thanks"),
+        AIMessage("You're welcome! Have a great day!"),
+    ]
+
+    # With max_tokens=5 (counting messages), the last 5 messages would include
+    # the orphaned ToolMessage.  After the fix, it should be dropped.
+    result = trim_messages(
+        messages,
+        strategy="last",
+        token_counter=len,
+        max_tokens=5,
+    )
+
+    # The orphaned ToolMessage should be removed
+    assert not any(isinstance(m, ToolMessage) for m in result)
+    # Result should contain the last valid messages without the orphaned tool msg
+    expected = [
+        HumanMessage("I see"),
+        AIMessage("Do you want to know anything else?"),
+        HumanMessage("No, thanks"),
+        AIMessage("You're welcome! Have a great day!"),
+    ]
+    assert result == expected
+
+
+def test_trim_messages_last_keeps_valid_tool_messages() -> None:
+    """ToolMessages that DO have a preceding AIMessage with matching tool_call
+    should be kept."""
+    messages = [
+        HumanMessage("Hi"),
+        AIMessage(
+            "Let me check.",
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "NYC"},
+                    "id": "tc1",
+                    "type": "tool_call",
+                },
+            ],
+        ),
+        ToolMessage("Sunny", name="get_weather", tool_call_id="tc1"),
+        HumanMessage("Thanks"),
+        AIMessage("You're welcome!"),
+    ]
+
+    result = trim_messages(
+        messages,
+        strategy="last",
+        token_counter=len,
+        max_tokens=5,
+    )
+
+    # All messages fit within limit; ToolMessage has its AIMessage => kept
+    assert len(result) == 5
+    assert any(isinstance(m, ToolMessage) for m in result)
+
+
+def test_trim_messages_last_multiple_tool_calls() -> None:
+    """When an AIMessage has multiple tool_calls, all matching ToolMessages
+    should be preserved, but orphaned ones dropped."""
+    messages = [
+        HumanMessage("Query"),
+        AIMessage(
+            "Calling tools.",
+            tool_calls=[
+                {"name": "t1", "args": {}, "id": "id1", "type": "tool_call"},
+                {"name": "t2", "args": {}, "id": "id2", "type": "tool_call"},
+            ],
+        ),
+        ToolMessage("r1", name="t1", tool_call_id="id1"),
+        ToolMessage("r2", name="t2", tool_call_id="id2"),
+        HumanMessage("Got it"),
+        AIMessage("Done!"),
+    ]
+
+    # max_tokens=4 (counting messages): last 4 => [TM(id2), H, AI, _]
+    # After dropping orphaned: TM(id1) and TM(id2) are both orphaned since
+    # the AIMessage with tool_calls was trimmed away
+    result = trim_messages(
+        messages,
+        strategy="last",
+        token_counter=len,
+        max_tokens=4,
+    )
+
+    # No orphaned ToolMessages should remain
+    assert not any(isinstance(m, ToolMessage) for m in result)
+    expected = [
+        HumanMessage("Got it"),
+        AIMessage("Done!"),
+    ]
+    assert result == expected
+
+
 class FakeTokenCountingModel(FakeChatModel):
     @override
     def get_num_tokens_from_messages(
