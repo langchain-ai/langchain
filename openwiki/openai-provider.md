@@ -1,10 +1,11 @@
 ---
 type: "Reference"
-title: "Use async methods (ainvoke, astream)"
-openwiki_generated: true
+title: "OpenAI Chat Model Provider Integration"
+description: "ChatOpenAI class for OpenAI's Chat Completions and Responses APIs with support for tool calling, structured output, vision, streaming, and model profiles."
+tags: ["openai", "chat-model", "api-integration", "tool-calling", "structured-output"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-05T08:22:37.860Z
 sources:
   - id: openwiki-source-1e66a9da38565f8901e651f4
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
@@ -12,7 +13,7 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-74e5bef080f1af7da12371cf
     resource: repo://libs/partners/openai/langchain_openai/data/_profiles.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-05T08:22:37.860Z" }
 ---
 
 
@@ -34,7 +35,7 @@ The OpenAI integration (`langchain-openai`) provides production-ready chat model
 
 **Package**: `repo://libs/partners/openai/langchain_openai/`
 
-**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2799-L2900`
+**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2823`
 
 **Exports**: `repo://libs/partners/openai/langchain_openai/__init__.py`
 

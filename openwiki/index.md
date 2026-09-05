@@ -17,7 +17,7 @@ okf_version: "0.2"
 - [Message Types and Content Representation](messages.md) - Document the message abstraction, standardized content blocks for multimodal LLM I/O, message hierarchy, and provider-specific block translators.
 - [Middleware](middleware.md)
 - [Chat Model Initialization with init_chat_model](model-initialization.md) - Factory function for instantiating chat models from provider strings with unified configuration and runtime model switching.
-- [Use async methods (ainvoke, astream)](openai-provider.md)
+- [OpenAI Chat Model Provider Integration](openai-provider.md) - ChatOpenAI class for OpenAI's Chat Completions and Responses APIs with support for tool calling, structured output, vision, streaming, and model profiles.
 - [Adding a New Chat Model Provider](partner-pattern.md) - Step-by-step guide to integrate a new LLM provider into LangChain's monorepo, including package structure, ChatModel implementation, streaming, function calling, and standard tests.
 - [Prompt Templates and Few-Shot Learning](prompts.md) - Prompt templates define message sequences and variable substitution patterns for chat models. Few-shot learning selects examples dynamically to teach models by example.
 - [LangChain Repository Quick Start](quickstart.md) - Entry point for engineers: orient to the monorepo structure, run first tests, understand what to edit for common tasks, and route to major development areas.

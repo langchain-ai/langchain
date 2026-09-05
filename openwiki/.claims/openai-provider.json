@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:13741eab09e2d769cdfd885ea9b92e8a5f790a63498d6b10bf6cfeeaecf076b1",
+  "pageVersion": "sha256:f6b3ce5716dda913d293d28f2087c9b6e0632836e54b42d751f03d5c19c8b63e",
   "claims": [
     {
       "id": "claim_347664eb68464142b558791c7a95093f",
@@ -51,8 +51,8 @@
       "statement": "bind_tools() binds one or more tools to the model and accepts tool_choice parameter to specify 'auto', 'none', 'any'/'required', a tool name string, or a dict specifying which tool(s) to call. It also supports parallel_tool_calls, strict, and response_format parameters.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2390-L2496",
-          "version": "repo-lines-v1:sha256:33e6d9ef74cf0bf4d7297bdd8e2c381cfac7bb645a908ab7e3175f00717700f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMTg1NGIwNDY5MTdlM2FiMmFkMDI5ZTBlZWFlN2Y5MWQwYmUzZDY5MDE0YmI2MjdhYWRkZWYyZTY5ZDM4ODJkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxMjA4ZTliMjUzOTRiM2I0YWY1MDgyODIxYWE2MjM5MTgyZjRhMTdlYzc0MTFhOGY0MzZlNTEyYTY2ZmU0YWFjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1MDg4MDFjYjgwMGUyZjIwMzc0ZDM5YTEzNzZjODU0ZGJlYTIzMGNlMGQ1YWM1ZGIyMDBlMWFjMjdkYjZjYTc3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1YTE0MTYxZjkzYTAyZjM1OWJkODA1ZmViNGI4OTZjNGYxMWVhYjRjNWY3ODQwNmZkY2Y5OTdjZWRjNjdjMmRiIn0"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2413-L2520",
+          "version": "repo-lines-v1:sha256:e70e182b4ac97dbb31781e62b73610acaac7835e375a22824a9110daca3e7945:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMTg1NGIwNDY5MTdlM2FiMmFkMDI5ZTBlZWFlN2Y5MWQwYmUzZDY5MDE0YmI2MjdhYWRkZWYyZTY5ZDM4ODJkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxMjA4ZTliMjUzOTRiM2I0YWY1MDgyODIxYWE2MjM5MTgyZjRhMTdlYzc0MTFhOGY0MzZlNTEyYTY2ZmU0YWFjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1MDg4MDFjYjgwMGUyZjIwMzc0ZDM5YTEzNzZjODU0ZGJlYTIzMGNlMGQ1YWM1ZGIyMDBlMWFjMjdkYjZjYTc3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1YTE0MTYxZjkzYTAyZjM1OWJkODA1ZmViNGI4OTZjNGYxMWVhYjRjNWY3ODQwNmZkY2Y5OTdjZWRjNjdjMmRiIn0"
         }
       ]
     },
@@ -61,8 +61,8 @@
       "statement": "tool_choice supports 'auto' (default), 'none' (prevent tool use), 'any'/'required'/True (force at least one call), a tool name string (force specific tool), and dict format for OpenAI's native tool choice specification.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2407-L2482",
-          "version": "repo-lines-v1:sha256:fab7afcc3debe57067cfe831790e2c1f79ec95bbd1c9cbbd0616e6e8f94f59d0:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNTY2MWMyNDRkNjAyYWYwZjNjM2EyN2QwOTg0YzE4OTM1MDQzNjUwZGM5MzMyM2MxYWU5YjViOWM3YmEzYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3OTQwMDAwZTAwNjM2NGZmMDM3ZjhkNWMzMDYyNzhjMjY5OGRiMTY5NzE4YWU0OWZiZTMzOGZhMWY5ZjI5Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxNTYwN2VkYTdmYTkxOWRlMmY2NThhMzdkMWMzNDcyMGU5M2Y3ODcyY2E1OTdiZjYxNTcxNTNmOWY4OGI3ZjgifQ"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2431-L2438",
+          "version": "repo-lines-v1:sha256:0ac86e093c9c2415853162384a660baec82437e094a1b87fb17f83b0c2aa0b77:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU2ZDRhNzAyMzRlMzc5NWYwMDcxY2I1MzNkMzVjODBmMzRlZjI4Nzg0OTEyNDdhNjdjZGMxMmU0YjlmMDk5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWIzMDJkOWJjMjNlYTg0YWE0YjFlZDU0MTlhZjFmYjM2ZmQ2MzQ4MzhjMmVhYzBhZGNiNzdmODc4MDBjNjUxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTQzOGNmMmJhNjcxMjRkNDA1OTZmMDE5MWIyZDFkNGQ4MDk5MjQ1MzNkMWRlNTY2OTk0OThjNjg3OGJlZTk5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFjZjM5MjUxMThhODM4ZDNmMDhmZmRkOGFmNGM2ZTgzYWMxMmQyMWJjMzI3MGE5NmE5ZmQ5ZjU4ZTA0Y2E5YSJ9"
         }
       ]
     },
@@ -129,6 +129,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-05T08:22:37.860Z"
   }
 }
