@@ -11,6 +11,60 @@ from langchain_core.runnables import RunnableConfig, RunnableLambda
 
 
 @pytest.mark.asyncio
+async def test_abatch_as_completed_cancels_tasks_on_exception() -> None:
+    """Pending tasks are cancelled when one task raises an exception."""
+    side_effects: list[str] = []
+    never_proceed = asyncio.Event()
+
+    async def worker(x: str) -> str:
+        if x == "boom":
+            msg = "boom"
+            raise ValueError(msg)
+        try:
+            await never_proceed.wait()
+        except asyncio.CancelledError:
+            side_effects.append(f"cancelled-{x}")
+            raise
+        else:
+            side_effects.append(f"done-{x}")
+            return x
+
+    runnable = RunnableLambda(worker)
+    with pytest.raises(ValueError, match="boom"):
+        async for _ in runnable.abatch_as_completed(
+            ["boom", "a", "b"], config={"max_concurrency": 3}
+        ):
+            pass
+
+    assert "done-a" not in side_effects
+    assert "done-b" not in side_effects
+    assert "cancelled-a" in side_effects or "cancelled-b" in side_effects
+
+
+@pytest.mark.asyncio
+async def test_abatch_as_completed_cancels_tasks_on_early_break() -> None:
+    """Pending tasks are cancelled when the consumer breaks early."""
+    side_effects: list[str] = []
+
+    async def worker(x: str) -> str:
+        if x == "fast":
+            return "fast"
+        await asyncio.sleep(0.2)
+        side_effects.append(f"done-{x}")
+        return x
+
+    runnable = RunnableLambda(worker)
+    async for _idx, _out in runnable.abatch_as_completed(
+        ["fast", "slow1", "slow2"], config={"max_concurrency": 3}
+    ):
+        break
+
+    await asyncio.sleep(1.0)
+    assert "done-slow1" not in side_effects
+    assert "done-slow2" not in side_effects
+
+
+@pytest.mark.asyncio
 async def test_abatch_concurrency() -> None:
     """Test that abatch respects max_concurrency."""
     running_tasks = 0
