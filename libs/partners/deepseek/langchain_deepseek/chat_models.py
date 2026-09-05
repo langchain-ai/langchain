@@ -342,6 +342,30 @@ class ChatDeepSeek(BaseChatOpenAI):
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+
+        # DeepSeek's thinking mode requires follow-up requests to carry the
+        # previous assistant turn's `reasoning_content`, otherwise the API
+        # returns a 400 ("The `reasoning_content` in the thinking mode must be
+        # passed back to the API"). The base class drops that field on the
+        # outbound path because it is not part of the OpenAI message schema,
+        # so re-attach it from the input messages onto the corresponding
+        # converted assistant dicts. This package writes `reasoning_content`
+        # into `additional_kwargs` on the inbound side, so reading it back from
+        # there keeps the field round-tripping across a tool-calling loop.
+        messages = self._convert_input(input_).to_messages()
+        for message, converted in zip(messages, payload["messages"], strict=False):
+            if (
+                isinstance(message, AIMessage)
+                and converted.get("role") == "assistant"
+                and (
+                    reasoning_content := message.additional_kwargs.get(
+                        "reasoning_content"
+                    )
+                )
+                is not None
+            ):
+                converted["reasoning_content"] = reasoning_content
+
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])

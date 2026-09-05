@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types import CompletionUsage
@@ -254,6 +254,47 @@ class TestChatDeepSeekCustomUnit:
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
+
+    def test_get_request_payload_preserves_reasoning_content(self) -> None:
+        """Test that reasoning_content on prior assistant messages round-trips.
+
+        DeepSeek's thinking mode requires follow-up requests to carry the
+        previous assistant turn's `reasoning_content`, otherwise the API
+        returns a 400. The base class drops the field, so it must be
+        re-attached from the input messages.
+        """
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Hello!"),
+            AIMessage(
+                content="Hello, can I help you?",
+                additional_kwargs={
+                    "reasoning_content": "Simple greeting, just greet back.",
+                },
+            ),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        assistant = payload["messages"][1]
+        assert assistant["role"] == "assistant"
+        assert assistant["reasoning_content"] == "Simple greeting, just greet back."
+
+    def test_get_request_payload_without_reasoning_content(self) -> None:
+        """Test that assistant messages without reasoning_content are unaffected."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        messages = [
+            HumanMessage(content="Hello!"),
+            AIMessage(content="Hello, can I help you?"),
+        ]
+
+        payload = chat_model._get_request_payload(messages)
+
+        assistant = payload["messages"][1]
+        assert assistant["role"] == "assistant"
+        assert "reasoning_content" not in assistant
 
 
 class SampleTool(PydanticBaseModel):
