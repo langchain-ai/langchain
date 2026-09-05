@@ -11,10 +11,10 @@ import os
 from datetime import datetime, timedelta, timezone, tzinfo
 from pathlib import Path
 from typing import Any, Literal, overload
+from urllib.parse import parse_qs
 
 import httpx
 import pytest
-from typing_extensions import Self
 
 from langchain_openai import chatgpt_oauth as oauth_module
 from langchain_openai.chatgpt_oauth import (
@@ -683,150 +683,191 @@ def test_login_chatgpt_skips_browser_when_disabled(
     assert opened == []
 
 
-def test_login_chatgpt_device_honors_slow_down(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(("interval", "expected_interval"), [(2, 2), ("2", 2), (0, 1)])
+def test_login_chatgpt_device_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    interval: int | str,
+    expected_interval: float,
 ) -> None:
-    posts: list[dict[str, Any]] = []
-    polls: list[dict[str, Any]] = []
+    requests: list[httpx.Request] = []
     sleeps: list[float] = []
-    post_responses: list[dict[str, Any]] = [
-        {
-            "device_code": "dev",
-            "user_code": "user",
-            "verification_uri": "https://example.com",
-        },
-        {
-            "access_token": "at",
-            "refresh_token": "rt",
-            "expires_in": 3600,
-        },
-    ]
-    poll_responses: list[dict[str, Any]] = [
-        {"error": "authorization_pending"},
-        {"error": "slow_down"},
-        {"authorization_code": "auth-code"},
-    ]
-    post_iter = iter(post_responses)
-    poll_iter = iter(poll_responses)
+    statuses = iter([403, 404, 200])
 
-    def _fake_post(url: str, data: dict[str, str], **_: Any) -> dict[str, Any]:
-        posts.append({"url": url, "data": data})
-        return next(post_iter)
+    def handle(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if request.url == oauth_module.CHATGPT_DEVICE_CODE_URL:
+            if request.headers["content-type"] != "application/json":
+                return httpx.Response(
+                    400,
+                    json={
+                        "error": {
+                            "message": (
+                                "Input should be a valid dictionary or object "
+                                "to extract fields from"
+                            ),
+                            "type": "invalid_request_error",
+                            "param": None,
+                            "code": None,
+                        }
+                    },
+                )
+            assert json.loads(request.content) == {"client_id": "custom-client"}
+            return httpx.Response(
+                200,
+                json={
+                    "device_auth_id": "dev",
+                    "user_code": "user",
+                    "interval": interval,
+                },
+            )
+        if request.url == oauth_module.CHATGPT_DEVICE_TOKEN_URL:
+            assert request.headers["content-type"] == "application/json"
+            assert json.loads(request.content) == {
+                "device_auth_id": "dev",
+                "user_code": "user",
+            }
+            status = next(statuses)
+            if status != 200:
+                return httpx.Response(status, text="Still waiting")
+            return httpx.Response(
+                200,
+                json={
+                    "authorization_code": "auth-code",
+                    "code_verifier": "server-verifier",
+                    "code_challenge": "server-challenge",
+                },
+            )
+        assert request.url == CHATGPT_TOKEN_URL
+        assert request.headers["content-type"] == "application/x-www-form-urlencoded"
+        assert parse_qs(request.content.decode()) == {
+            "grant_type": ["authorization_code"],
+            "code": ["auth-code"],
+            "redirect_uri": [oauth_module.CHATGPT_DEVICE_REDIRECT_URI],
+            "client_id": ["custom-client"],
+            "code_verifier": ["server-verifier"],
+        }
+        return httpx.Response(
+            200,
+            json={
+                "access_token": "at",
+                "refresh_token": "rt",
+                "expires_in": 3600,
+            },
+        )
 
-    def _fake_poll(url: str, data: dict[str, str], **_: Any) -> dict[str, Any]:
-        polls.append({"url": url, "data": data})
-        return next(poll_iter)
+    transport = httpx.MockTransport(handle)
+    client_class = httpx.Client
+    monkeypatch.setattr(
+        oauth_module.httpx,
+        "Client",
+        lambda **kw: client_class(transport=transport, **kw),
+    )
+    monkeypatch.setattr(oauth_module.time, "sleep", sleeps.append)
+    path = tmp_path / "auth.json"
+    provider = login_chatgpt_device(
+        store_path=path, client_id="custom-client", poll_interval=1
+    )
+    assert len(requests) == 5
+    assert sleeps == [expected_interval, expected_interval]
+    assert provider.get_token().access_token == "at"
+    assert json.loads(path.read_text())["refresh_token"] == "rt"
+    output = capsys.readouterr().out
+    assert "https://auth.openai.com/codex/device" in output
+    assert "and enter user code: user" in output
 
-    def _track_sleep(seconds: float) -> None:
-        sleeps.append(seconds)
 
-    monkeypatch.setattr(oauth_module, "_post_form", _fake_post)
-    monkeypatch.setattr(oauth_module, "_post_device_poll_form", _fake_poll)
-    monkeypatch.setattr(oauth_module.time, "sleep", _track_sleep)
-
-    login_chatgpt_device(store_path=tmp_path / "x.json", poll_interval=2.0)
-
-    assert len(polls) == 3
-    # First sleep at base interval, then bumped by +5 after `slow_down`.
-    assert sleeps[0] == pytest.approx(2.0)
-    assert sleeps[1] == pytest.approx(7.0)
-
-
+@pytest.mark.parametrize("status", [400, 429, 500])
 def test_login_chatgpt_device_raises_on_fatal_error(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    status: int,
 ) -> None:
+    def handle(request: httpx.Request) -> httpx.Response:
+        if request.url == oauth_module.CHATGPT_DEVICE_CODE_URL:
+            return httpx.Response(
+                200,
+                json={
+                    "device_auth_id": "dev",
+                    "user_code": "user",
+                    "interval": "5",
+                },
+            )
+        assert request.url == oauth_module.CHATGPT_DEVICE_TOKEN_URL
+        return httpx.Response(status, json={"error": "access_denied"})
+
+    client_class = httpx.Client
     monkeypatch.setattr(
-        oauth_module,
-        "_post_form",
-        lambda *_a, **_k: {
-            "device_code": "d",
-            "user_code": "u",
-            "verification_uri": "https://example.com",
-        },
+        oauth_module.httpx,
+        "Client",
+        lambda **kw: client_class(transport=httpx.MockTransport(handle), **kw),
     )
-    monkeypatch.setattr(
-        oauth_module,
-        "_post_device_poll_form",
-        lambda *_a, **_k: {"error": "access_denied"},
-    )
-    monkeypatch.setattr(oauth_module.time, "sleep", lambda _s: None)
+    path = tmp_path / "auth.json"
     with pytest.raises(RuntimeError, match="access_denied"):
-        login_chatgpt_device(store_path=tmp_path / "x.json")
+        login_chatgpt_device(store_path=path)
+    assert not path.exists()
 
 
 def test_login_chatgpt_device_times_out(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    def handle(request: httpx.Request) -> httpx.Response:
+        if request.url == oauth_module.CHATGPT_DEVICE_CODE_URL:
+            return httpx.Response(
+                200,
+                json={
+                    "device_auth_id": "dev",
+                    "user_code": "user",
+                    "interval": "5",
+                },
+            )
+        assert request.url == oauth_module.CHATGPT_DEVICE_TOKEN_URL
+        return httpx.Response(403)
+
+    client_class = httpx.Client
     monkeypatch.setattr(
-        oauth_module,
-        "_post_form",
-        lambda *_a, **_k: {
-            "device_code": "d",
-            "user_code": "u",
-            "verification_uri": "https://example.com",
-        },
+        oauth_module.httpx,
+        "Client",
+        lambda **kw: client_class(transport=httpx.MockTransport(handle), **kw),
     )
-    monkeypatch.setattr(
-        oauth_module,
-        "_post_device_poll_form",
-        lambda *_a, **_k: {"error": "authorization_pending"},
-    )
-    monkeypatch.setattr(oauth_module.time, "sleep", lambda _s: None)
-    # Force the monotonic clock to immediately blow past the deadline.
+    monkeypatch.setattr(oauth_module.time, "sleep", lambda _: None)
     times = iter([0.0, 0.0, 9999.0])
     monkeypatch.setattr(oauth_module.time, "monotonic", lambda: next(times))
+    path = tmp_path / "auth.json"
     with pytest.raises(TimeoutError):
-        login_chatgpt_device(
-            store_path=tmp_path / "x.json", poll_interval=0.0, timeout=1.0
-        )
+        login_chatgpt_device(store_path=path, timeout=1)
+    assert not path.exists()
 
 
-def test_post_device_poll_form_returns_pending_400_payload(
+@pytest.mark.parametrize(
+    "missing", ["device_auth_id", "user_code", "authorization_code", "code_verifier"]
+)
+def test_login_chatgpt_device_rejects_missing_fields(
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    missing: str,
 ) -> None:
-    class _FakeClient:
-        def __init__(self, **_: Any) -> None:
-            pass
+    def handle(request: httpx.Request) -> httpx.Response:
+        if request.url == oauth_module.CHATGPT_DEVICE_CODE_URL:
+            payload = {"device_auth_id": "dev", "user_code": "user", "interval": "5"}
+        else:
+            assert request.url == oauth_module.CHATGPT_DEVICE_TOKEN_URL
+            payload = {"authorization_code": "code", "code_verifier": "verifier"}
+        payload.pop(missing, None)
+        return httpx.Response(200, json=payload)
 
-        def __enter__(self) -> Self:
-            return self
-
-        def __exit__(self, *_args: object) -> None:
-            pass
-
-        def post(self, *_args: Any, **_kwargs: Any) -> httpx.Response:
-            return _make_response(400, {"error": "authorization_pending"})
-
-    monkeypatch.setattr(oauth_module.httpx, "Client", _FakeClient)
-
-    payload = oauth_module._post_device_poll_form(
-        "https://example.com/poll", {"device_code": "d"}
+    client_class = httpx.Client
+    monkeypatch.setattr(
+        oauth_module.httpx,
+        "Client",
+        lambda **kw: client_class(transport=httpx.MockTransport(handle), **kw),
     )
-    assert payload == {"error": "authorization_pending"}
-
-
-def test_post_device_poll_form_raises_fatal_400(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    class _FakeClient:
-        def __init__(self, **_: Any) -> None:
-            pass
-
-        def __enter__(self) -> Self:
-            return self
-
-        def __exit__(self, *_args: object) -> None:
-            pass
-
-        def post(self, *_args: Any, **_kwargs: Any) -> httpx.Response:
-            return _make_response(400, {"error": "access_denied"})
-
-    monkeypatch.setattr(oauth_module.httpx, "Client", _FakeClient)
-
-    with pytest.raises(RuntimeError, match="access_denied"):
-        oauth_module._post_device_poll_form(
-            "https://example.com/poll", {"device_code": "d"}
-        )
+    path = tmp_path / "auth.json"
+    with pytest.raises(RuntimeError, match="missing required fields"):
+        login_chatgpt_device(store_path=path)
+    assert not path.exists()
 
 
 def test_callback_handler_extracts_code_and_state() -> None:
