@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7dc36350c57797f4e4cb42c4ca2523c8a6fda499d2176362da99865392c8721b",
+  "pageVersion": "sha256:3b34aaad139a2121ac25b8d1b8e8c1ed942f02eb67a723ced6478b3b297ea16f",
   "claims": [
     {
       "id": "claim_7425c73f5e4c4667b8babba66c3663a0",
@@ -92,7 +92,7 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml",
-          "version": "repo-file-v1:sha256:325931f1a0825e70a5f7c0228e9a98e3bd6e2395ea23db6d7a0dffce70087408"
+          "version": "repo-file-v1:sha256:8b952b55cca56e6372ca84df87708a13ecdf617b5bff9e322d749b46156d20c2"
         }
       ]
     },
@@ -183,6 +183,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-05T08:22:37.860Z"
   }
 }

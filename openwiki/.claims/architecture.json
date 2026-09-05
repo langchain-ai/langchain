@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4d075dd399f2c74cd6a1d03563dd5d1695887843ca5c5b920422838e41870e43",
+  "pageVersion": "sha256:42695e8b687188fdf01377b6f41e7a5e56800b1a3d38adcf518a0bcf24541829",
   "claims": [
     {
       "id": "claim_d872799ce6874d76b63667fe912b7616",
@@ -26,7 +26,7 @@
     },
     {
       "id": "claim_bf4afec1395b4acbbf413fe2928daab6",
-      "statement": "langchain-core (v1.6.1) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
+      "statement": "langchain-core (v1.6.2) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1-L50",
@@ -38,7 +38,7 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml#L24-L24",
-          "version": "repo-lines-v1:sha256:238e7ddf7f3fadccf53502477ac331715e5fc6a3aada4c63ceefaa35ec509859:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjM4ZTdkZGY3ZjNmYWRjY2Y1MzUwMjQ3N2FjMzMxNzE1ZTVmYzZhM2FhZGE0YzYzY2VlZmFhMzVlYzUwOTg1OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjM4ZTdkZGY3ZjNmYWRjY2Y1MzUwMjQ3N2FjMzMxNzE1ZTVmYzZhM2FhZGE0YzYzY2VlZmFhMzVlYzUwOTg1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGEyM2RmNzFkODljMGE5NmUzNWFhZjk1ZTdjZTllYTczYTRiN2FlZjQyNDZjN2Q3YzAzZjhlM2EwMTJiZjliNSJ9"
+          "version": "repo-lines-v1:sha256:aedcca5df1c476f4736d0f7d783cfab756063205d0b98960d97ce7c40356c7e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWVkY2NhNWRmMWM0NzZmNDczNmQwZjdkNzgzY2ZhYjc1NjA2MzIwNWQwYjk4OTYwZDk3Y2U3YzQwMzU2YzdlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWVkY2NhNWRmMWM0NzZmNDczNmQwZjdkNzgzY2ZhYjc1NjA2MzIwNWQwYjk4OTYwZDk3Y2U3YzQwMzU2YzdlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGEyM2RmNzFkODljMGE5NmUzNWFhZjk1ZTdjZTllYTczYTRiN2FlZjQyNDZjN2Q3YzAzZjhlM2EwMTJiZjliNSJ9"
         }
       ]
     },
@@ -149,6 +149,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-05T08:22:37.860Z"
   }
 }

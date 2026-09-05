@@ -5,7 +5,7 @@ description: "Entry point for engineers: orient to the monorepo structure, run f
 tags: [quickstart, getting-started, monorepo, setup, development, first-steps, cli-reference]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-05T08:22:37.860Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
@@ -43,7 +43,7 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-48ce5ee900993294d349b4e8
     resource: repo://libs/standard-tests/langchain_tests/__init__.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-05T08:22:37.860Z" }
 ---
 
 ## Welcome to LangChain Development
@@ -69,7 +69,7 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 ### When to Edit Each Layer
 
-| Layer | Edit when you are... | Key files |
+| Layer | Edit when you are… | Key files |
 |-------|----------------------|-----------|
 | **core** | Adding or modifying base abstractions, core interfaces (Runnable, BaseChatModel, messages, tools, prompts), or callbacks. | `libs/core/langchain_core/` |
 | **langchain_v1** | Building agent factory features, middleware, model initialization, chat model selection, or high-level orchestration. | `libs/langchain_v1/langchain/agents/`, `libs/langchain_v1/langchain/chat_models/` |
