@@ -30,6 +30,17 @@ VALID_TASKS = (
     "translation",
 )
 DEFAULT_BATCH_SIZE = 4
+
+
+def _is_translation_task(task: str) -> bool:
+    """Return True for translation and translation_xx_to_yy tasks."""
+    return task == "translation" or task.startswith("translation_")
+
+
+def _is_supported_task(task: str) -> bool:
+    """Return True if the pipeline task is supported by HuggingFacePipeline."""
+    return task in VALID_TASKS or _is_translation_task(task)
+
 _MIN_OPTIMUM_VERSION = "1.21"
 
 
@@ -159,7 +170,7 @@ class HuggingFacePipeline(BaseLLM):
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
         if backend in {"openvino", "ipex"}:
-            if task not in VALID_TASKS:
+            if not _is_supported_task(task):
                 msg = (
                     f"Got invalid task {task}, "
                     f"currently only {VALID_TASKS} are supported"
@@ -293,7 +304,7 @@ class HuggingFacePipeline(BaseLLM):
             model_kwargs=_model_kwargs,
             **_pipeline_kwargs,
         )
-        if pipeline.task not in VALID_TASKS:
+        if not _is_supported_task(pipeline.task):
             msg = (
                 f"Got invalid task {pipeline.task}, "
                 f"currently only {VALID_TASKS} are supported"
@@ -356,7 +367,7 @@ class HuggingFacePipeline(BaseLLM):
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
                     text = response["summary_text"]
-                elif self.pipeline.task in "translation":
+                elif _is_translation_task(self.pipeline.task):
                     text = response["translation_text"]
                 else:
                     msg = (
