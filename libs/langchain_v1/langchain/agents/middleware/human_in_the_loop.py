@@ -475,9 +475,57 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 decision = decisions[decision_idx]
                 decision_idx += 1
 
+                # Check if this is a cross-tool edit
+                if (
+                    decision["type"] == "edit"
+                    and "edit" in config["allowed_decisions"]
+                    and decision["edited_action"]["name"] != tool_call["name"]
+                ):
+                    target_tool_name = decision["edited_action"]["name"]
+                    target_config = self.interrupt_on.get(target_tool_name)
+
+                    # If the target tool has an interrupt_on policy, re-interrupt
+                    if target_config is not None:
+                        # Build a new ToolCall for the edited action
+                        edited_tool_call = ToolCall(
+                            type="tool_call",
+                            name=target_tool_name,
+                            args=decision["edited_action"]["args"],
+                            id=tool_call["id"],
+                        )
+
+                        # Create a new action request and review config for target tool
+                        new_action_request, new_review_config = self._create_action_and_config(
+                            edited_tool_call, target_config, state, runtime
+                        )
+
+                        # Trigger a new interrupt specifically for target tool
+                        new_decisions = interrupt(
+                            HITLRequest(
+                                action_requests=[new_action_request],
+                                review_configs=[new_review_config],
+                            )
+                        )["decisions"]
+
+                        # Process the new decision (approve/reject/edit again)
+                        revised_tool_call, tool_message = self._process_decision(
+                            new_decisions[0], edited_tool_call, target_config
+                        )
+
+                        revised_tool_calls.append(revised_tool_call)
+                        if tool_message:
+                            artificial_tool_messages.append(tool_message)
+                        continue
+
+
+                # Fallback: original logic for non-cross-tool edits
                 revised_tool_call, tool_message = self._process_decision(
                     decision, tool_call, config
                 )
+
+                revised_tool_calls.append(revised_tool_call)
+                if tool_message:
+                    artificial_tool_messages.append(tool_message)
                 if revised_tool_call is not None:
                     revised_tool_calls.append(revised_tool_call)
                 if tool_message:
