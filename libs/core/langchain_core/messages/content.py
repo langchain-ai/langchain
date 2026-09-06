@@ -1034,6 +1034,10 @@ def create_image_block(
         msg = "Must provide one of: url, base64, or file_id"
         raise ValueError(msg)
 
+    if base64 and not mime_type:
+        msg = "mime_type is required when using base64 data"
+        raise ValueError(msg)
+
     block = ImageContentBlock(type="image", id=ensure_id(id))
 
     if url is not None:
