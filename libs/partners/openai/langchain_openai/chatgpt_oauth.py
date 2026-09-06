@@ -59,6 +59,7 @@ CHATGPT_TOKEN_URL = "https://auth.openai.com/oauth/token"  # noqa: S105
 CHATGPT_DEVICE_CODE_URL = "https://auth.openai.com/api/accounts/deviceauth/usercode"
 CHATGPT_DEVICE_TOKEN_URL = "https://auth.openai.com/api/accounts/deviceauth/token"  # noqa: S105
 CHATGPT_DEVICE_REDIRECT_URI = "https://auth.openai.com/deviceauth/callback"
+CHATGPT_DEVICE_VERIFICATION_URL = "https://auth.openai.com/codex/device"
 CHATGPT_AUTH_CLAIMS_NAMESPACE = "https://api.openai.com/auth"
 DEFAULT_REDIRECT_HOST = "localhost"
 DEFAULT_REDIRECT_PORT = 1455
@@ -411,27 +412,46 @@ def _post_form(
     return resp.json()
 
 
-_DEVICE_POLL_PENDING_ERRORS = frozenset({"authorization_pending", "slow_down"})
+def _post_json(
+    url: str,
+    data: dict[str, Any],
+    *,
+    timeout: float = 30.0,
+) -> dict[str, Any]:
+    """POST a JSON payload and return the parsed JSON body."""
+    with httpx.Client(timeout=timeout) as client:
+        resp = client.post(
+            url,
+            json=data,
+            headers={"Accept": "application/json"},
+        )
+    _raise_for_oauth_response(url, resp)
+    return resp.json()
 
 
-def _post_device_poll_form(
+_DEVICE_POLL_PENDING_STATUSES = frozenset({403, 404})
+
+
+def _post_device_poll_json(
     url: str,
     data: dict[str, str],
     *,
     timeout: float = 30.0,
-) -> dict[str, Any]:
-    """POST a device-code poll and return expected pending error payloads."""
+) -> dict[str, Any] | None:
+    """POST a device-code poll.
+
+    Returns `None` while authorization is still pending (HTTP 403/404, per
+    the device-code endpoint's contract), or the parsed JSON body once the
+    code is available. Any other error status raises.
+    """
     with httpx.Client(timeout=timeout) as client:
         resp = client.post(
             url,
-            data=data,
+            json=data,
             headers={"Accept": "application/json"},
         )
-    if resp.status_code < 400:
-        return resp.json()
-    error_code, _ = _parse_oauth_error(resp)
-    if error_code in _DEVICE_POLL_PENDING_ERRORS:
-        return resp.json()
+    if resp.status_code in _DEVICE_POLL_PENDING_STATUSES:
+        return None
     _raise_for_oauth_response(url, resp)
     return resp.json()
 
@@ -970,11 +990,17 @@ def login_chatgpt_device(
     then exchanges the resulting code via the OAuth token endpoint using
     `CHATGPT_DEVICE_REDIRECT_URI`.
 
+    Unlike `login_chatgpt`, this flow does not generate a local PKCE pair:
+    the device-code endpoint issues its own `code_verifier`/`code_challenge`
+    and returns them once authorization completes, so the token exchange
+    uses the server-issued verifier rather than one generated here.
+
     Args:
         store_path: Where to persist the token. Defaults to
             `DEFAULT_STORE_PATH`.
         client_id: OAuth client ID (defaults to Codex/ChatGPT client).
-        poll_interval: Seconds between polls.
+        poll_interval: Seconds between polls, used only as a fallback when
+            the device-code response omits an `interval`.
         timeout: Total seconds to wait.
 
     Returns:
@@ -989,51 +1015,42 @@ def login_chatgpt_device(
         `login_chatgpt`: Browser-based loopback flow preferred when a local
             browser and free callback port are available.
     """
-    _verifier, challenge = _generate_pkce_pair()
-    start = _post_form(
-        CHATGPT_DEVICE_CODE_URL,
-        {
-            "client_id": client_id,
-            "scope": DEFAULT_SCOPE,
-            "code_challenge": challenge,
-            "code_challenge_method": "S256",
-        },
-    )
-    device_code = start.get("device_code")
-    user_code = start.get("user_code")
-    verification_uri = start.get("verification_uri") or start.get(
-        "verification_uri_complete"
-    )
-    if not (device_code and user_code and verification_uri):
+    start = _post_json(CHATGPT_DEVICE_CODE_URL, {"client_id": client_id})
+    device_auth_id = start.get("device_auth_id")
+    user_code = start.get("user_code") or start.get("usercode")
+    if not (device_auth_id and user_code):
         msg = "ChatGPT device-code response missing required fields."
         raise RuntimeError(msg)
+    current_interval = float(start.get("interval") or poll_interval)
+    print(  # noqa: T201
+        f"\nChatGPT sign-in: open {CHATGPT_DEVICE_VERIFICATION_URL} "
+        f"in a browser and enter user code: {user_code}\n"
+    )
     logger.info(
-        "Open %s in a browser and enter user code: %s", verification_uri, user_code
+        "Open %s in a browser and enter user code: %s",
+        CHATGPT_DEVICE_VERIFICATION_URL,
+        user_code,
     )
 
     deadline = time.monotonic() + timeout
-    authorization_code: str | None = None
-    current_interval = poll_interval
+    code_response: dict[str, Any] | None = None
     while time.monotonic() < deadline:
-        poll = _post_device_poll_form(
+        code_response = _post_device_poll_json(
             CHATGPT_DEVICE_TOKEN_URL,
-            {"client_id": client_id, "device_code": device_code},
+            {"device_auth_id": device_auth_id, "user_code": user_code},
         )
-        if poll.get("authorization_code"):
-            authorization_code = poll["authorization_code"]
+        if code_response is not None:
             break
-        error = poll.get("error")
-        if error == "slow_down":
-            # RFC 8628 §3.5: bump the poll interval by 5 seconds to comply
-            # with server-side rate limiting; otherwise we risk being banned.
-            current_interval += 5
-        elif error and error != "authorization_pending":
-            msg = f"Device authorization failed: {error}"
-            raise RuntimeError(msg)
-        time.sleep(current_interval)
-    if not authorization_code:
+        time.sleep(max(min(current_interval, deadline - time.monotonic()), 0))
+    if code_response is None:
         msg = "Timed out waiting for ChatGPT device authorization."
         raise TimeoutError(msg)
+
+    authorization_code = code_response.get("authorization_code")
+    code_verifier = code_response.get("code_verifier")
+    if not (authorization_code and code_verifier):
+        msg = "ChatGPT device authorization response missing required fields."
+        raise RuntimeError(msg)
 
     response = _post_form(
         CHATGPT_TOKEN_URL,
@@ -1042,7 +1059,7 @@ def login_chatgpt_device(
             "code": authorization_code,
             "redirect_uri": CHATGPT_DEVICE_REDIRECT_URI,
             "client_id": client_id,
-            "code_verifier": _verifier,
+            "code_verifier": code_verifier,
         },
     )
     token = _token_from_response(response)

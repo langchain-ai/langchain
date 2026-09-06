@@ -683,53 +683,63 @@ def test_login_chatgpt_skips_browser_when_disabled(
     assert opened == []
 
 
-def test_login_chatgpt_device_honors_slow_down(
+def test_login_chatgpt_device_sends_json_and_polls_until_authorized(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    posts: list[dict[str, Any]] = []
     polls: list[dict[str, Any]] = []
     sleeps: list[float] = []
-    post_responses: list[dict[str, Any]] = [
+    exchanges: list[dict[str, str]] = []
+
+    def _fake_post_json(url: str, data: dict[str, Any], **_: Any) -> dict[str, Any]:
+        assert url == oauth_module.CHATGPT_DEVICE_CODE_URL
+        assert data == {"client_id": oauth_module.CHATGPT_CLIENT_ID}
+        return {"device_auth_id": "dev-auth-1", "user_code": "user", "interval": 2}
+
+    poll_responses: list[dict[str, Any] | None] = [
+        None,
+        None,
         {
-            "device_code": "dev",
-            "user_code": "user",
-            "verification_uri": "https://example.com",
-        },
-        {
-            "access_token": "at",
-            "refresh_token": "rt",
-            "expires_in": 3600,
+            "authorization_code": "auth-code",
+            "code_verifier": "server-verifier",
+            "code_challenge": "server-challenge",
         },
     ]
-    poll_responses: list[dict[str, Any]] = [
-        {"error": "authorization_pending"},
-        {"error": "slow_down"},
-        {"authorization_code": "auth-code"},
-    ]
-    post_iter = iter(post_responses)
     poll_iter = iter(poll_responses)
 
-    def _fake_post(url: str, data: dict[str, str], **_: Any) -> dict[str, Any]:
-        posts.append({"url": url, "data": data})
-        return next(post_iter)
-
-    def _fake_poll(url: str, data: dict[str, str], **_: Any) -> dict[str, Any]:
+    def _fake_poll(url: str, data: dict[str, str], **_: Any) -> dict[str, Any] | None:
         polls.append({"url": url, "data": data})
         return next(poll_iter)
+
+    def _fake_exchange(url: str, data: dict[str, str], **_: Any) -> dict[str, Any]:
+        exchanges.append(data)
+        return {"access_token": "at", "refresh_token": "rt", "expires_in": 3600}
 
     def _track_sleep(seconds: float) -> None:
         sleeps.append(seconds)
 
-    monkeypatch.setattr(oauth_module, "_post_form", _fake_post)
-    monkeypatch.setattr(oauth_module, "_post_device_poll_form", _fake_poll)
+    monkeypatch.setattr(oauth_module, "_post_json", _fake_post_json)
+    monkeypatch.setattr(oauth_module, "_post_device_poll_json", _fake_poll)
+    monkeypatch.setattr(oauth_module, "_post_form", _fake_exchange)
     monkeypatch.setattr(oauth_module.time, "sleep", _track_sleep)
 
-    login_chatgpt_device(store_path=tmp_path / "x.json", poll_interval=2.0)
+    login_chatgpt_device(store_path=tmp_path / "x.json", poll_interval=5.0)
 
     assert len(polls) == 3
-    # First sleep at base interval, then bumped by +5 after `slow_down`.
-    assert sleeps[0] == pytest.approx(2.0)
-    assert sleeps[1] == pytest.approx(7.0)
+    assert polls[0]["url"] == oauth_module.CHATGPT_DEVICE_TOKEN_URL
+    # device_auth_id/user_code, not the old (wrong) device_code field.
+    assert polls[0]["data"] == {"device_auth_id": "dev-auth-1", "user_code": "user"}
+    # Uses the server-provided interval (2s), not the poll_interval fallback (5s).
+    assert sleeps == [pytest.approx(2.0), pytest.approx(2.0)]
+    assert exchanges == [
+        {
+            "grant_type": "authorization_code",
+            "code": "auth-code",
+            "redirect_uri": oauth_module.CHATGPT_DEVICE_REDIRECT_URI,
+            "client_id": oauth_module.CHATGPT_CLIENT_ID,
+            # The server-issued verifier, not a locally generated one.
+            "code_verifier": "server-verifier",
+        }
+    ]
 
 
 def test_login_chatgpt_device_raises_on_fatal_error(
@@ -737,18 +747,24 @@ def test_login_chatgpt_device_raises_on_fatal_error(
 ) -> None:
     monkeypatch.setattr(
         oauth_module,
-        "_post_form",
-        lambda *_a, **_k: {
-            "device_code": "d",
-            "user_code": "u",
-            "verification_uri": "https://example.com",
-        },
+        "_post_json",
+        lambda *_a, **_k: {"device_auth_id": "d", "user_code": "u", "interval": 1},
     )
-    monkeypatch.setattr(
-        oauth_module,
-        "_post_device_poll_form",
-        lambda *_a, **_k: {"error": "access_denied"},
-    )
+
+    class _FakeClient:
+        def __init__(self, **_: Any) -> None:
+            pass
+
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            pass
+
+        def post(self, *_args: Any, **_kwargs: Any) -> httpx.Response:
+            return _make_response(400, {"error": "access_denied"})
+
+    monkeypatch.setattr(oauth_module.httpx, "Client", _FakeClient)
     monkeypatch.setattr(oauth_module.time, "sleep", lambda _s: None)
     with pytest.raises(RuntimeError, match="access_denied"):
         login_chatgpt_device(store_path=tmp_path / "x.json")
@@ -759,21 +775,17 @@ def test_login_chatgpt_device_times_out(
 ) -> None:
     monkeypatch.setattr(
         oauth_module,
-        "_post_form",
-        lambda *_a, **_k: {
-            "device_code": "d",
-            "user_code": "u",
-            "verification_uri": "https://example.com",
-        },
+        "_post_json",
+        lambda *_a, **_k: {"device_auth_id": "d", "user_code": "u", "interval": 0},
     )
     monkeypatch.setattr(
         oauth_module,
-        "_post_device_poll_form",
-        lambda *_a, **_k: {"error": "authorization_pending"},
+        "_post_device_poll_json",
+        lambda *_a, **_k: None,
     )
     monkeypatch.setattr(oauth_module.time, "sleep", lambda _s: None)
     # Force the monotonic clock to immediately blow past the deadline.
-    times = iter([0.0, 0.0, 9999.0])
+    times = iter([0.0, 0.0, 9999.0, 9999.0])
     monkeypatch.setattr(oauth_module.time, "monotonic", lambda: next(times))
     with pytest.raises(TimeoutError):
         login_chatgpt_device(
@@ -781,7 +793,33 @@ def test_login_chatgpt_device_times_out(
         )
 
 
-def test_post_device_poll_form_returns_pending_400_payload(
+def test_post_device_poll_json_returns_none_when_pending(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A 403/404 from the poll endpoint means "still pending", not an error."""
+
+    class _FakeClient:
+        def __init__(self, **_: Any) -> None:
+            pass
+
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            pass
+
+        def post(self, *_args: Any, **_kwargs: Any) -> httpx.Response:
+            return _make_response(403, {})
+
+    monkeypatch.setattr(oauth_module.httpx, "Client", _FakeClient)
+
+    payload = oauth_module._post_device_poll_json(
+        "https://example.com/poll", {"device_auth_id": "d", "user_code": "u"}
+    )
+    assert payload is None
+
+
+def test_post_device_poll_json_returns_payload_on_success(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     class _FakeClient:
@@ -795,17 +833,28 @@ def test_post_device_poll_form_returns_pending_400_payload(
             pass
 
         def post(self, *_args: Any, **_kwargs: Any) -> httpx.Response:
-            return _make_response(400, {"error": "authorization_pending"})
+            return _make_response(
+                200,
+                {
+                    "authorization_code": "auth-code",
+                    "code_verifier": "v",
+                    "code_challenge": "c",
+                },
+            )
 
     monkeypatch.setattr(oauth_module.httpx, "Client", _FakeClient)
 
-    payload = oauth_module._post_device_poll_form(
-        "https://example.com/poll", {"device_code": "d"}
+    payload = oauth_module._post_device_poll_json(
+        "https://example.com/poll", {"device_auth_id": "d", "user_code": "u"}
     )
-    assert payload == {"error": "authorization_pending"}
+    assert payload == {
+        "authorization_code": "auth-code",
+        "code_verifier": "v",
+        "code_challenge": "c",
+    }
 
 
-def test_post_device_poll_form_raises_fatal_400(
+def test_post_device_poll_json_raises_fatal_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     class _FakeClient:
@@ -824,8 +873,8 @@ def test_post_device_poll_form_raises_fatal_400(
     monkeypatch.setattr(oauth_module.httpx, "Client", _FakeClient)
 
     with pytest.raises(RuntimeError, match="access_denied"):
-        oauth_module._post_device_poll_form(
-            "https://example.com/poll", {"device_code": "d"}
+        oauth_module._post_device_poll_json(
+            "https://example.com/poll", {"device_auth_id": "d", "user_code": "u"}
         )
 
 
