@@ -245,17 +245,17 @@ class VectorStore(ABC):
             List of IDs of the added texts.
         """
         if type(self).add_texts != VectorStore.add_texts:
-            if "ids" not in kwargs:
-                ids = [doc.id for doc in documents]
+            ids = kwargs.pop("ids", None)
 
-                # If there's at least one valid ID, we'll assume that IDs
-                # should be used.
-                if any(ids):
-                    kwargs["ids"] = ids
+            # If no ids provided via kwargs, extract from documents.
+            if ids is None:
+                doc_ids = [doc.id for doc in documents]
+                if any(doc_ids):
+                    ids = doc_ids
 
             texts = [doc.page_content for doc in documents]
             metadatas = [doc.metadata for doc in documents]
-            return self.add_texts(texts, metadatas, **kwargs)
+            return self.add_texts(texts, metadatas, ids, **kwargs)
         msg = (
             f"`add_documents` and `add_texts` has not been implemented "
             f"for {self.__class__.__name__} "
@@ -276,17 +276,17 @@ class VectorStore(ABC):
         """
         # If the async method has been overridden, we'll use that.
         if type(self).aadd_texts != VectorStore.aadd_texts:
-            if "ids" not in kwargs:
-                ids = [doc.id for doc in documents]
+            ids = kwargs.pop("ids", None)
 
-                # If there's at least one valid ID, we'll assume that IDs
-                # should be used.
-                if any(ids):
-                    kwargs["ids"] = ids
+            # If no ids provided via kwargs, extract from documents.
+            if ids is None:
+                doc_ids = [doc.id for doc in documents]
+                if any(doc_ids):
+                    ids = doc_ids
 
             texts = [doc.page_content for doc in documents]
             metadatas = [doc.metadata for doc in documents]
-            return await self.aadd_texts(texts, metadatas, **kwargs)
+            return await self.aadd_texts(texts, metadatas, ids, **kwargs)
 
         return await run_in_executor(None, self.add_documents, documents, **kwargs)
 

@@ -292,3 +292,54 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
     assert await store.aget_by_ids(["6"]) == [Document(id="6", page_content="baz")]
+
+
+@pytest.mark.parametrize("vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore])
+def test_add_documents_with_ids_kwarg_does_not_raise(vs_class: type[VectorStore]) -> None:
+    """Regression test for #32283: aadd_documents/add_documents with `ids` kwarg.
+
+    Previously, `ids` was placed in `**kwargs` and passed both explicitly and via
+    kwargs to `add_texts`/`aadd_texts`, causing
+    `TypeError: aadd_texts() got multiple values for keyword argument 'ids'`.
+    """
+    store = vs_class()
+
+    documents = [
+        Document(page_content="Hello world"),
+        Document(page_content="Goodbye world"),
+    ]
+    ids = ["doc_1", "doc_2"]
+
+    # This used to raise TypeError; now it should pass cleanly.
+    result = store.add_documents(documents, ids=ids)
+    assert result == ids
+    assert store.get_by_ids(ids) == [
+        Document(id="doc_1", page_content="Hello world"),
+        Document(id="doc_2", page_content="Goodbye world"),
+    ]
+
+
+@pytest.mark.parametrize("vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore])
+async def test_aadd_documents_with_ids_kwarg_does_not_raise(
+    vs_class: type[VectorStore],
+) -> None:
+    """Regression test for #32283: aadd_documents with `ids` kwarg.
+
+    The async code path forwarded `ids` to `aadd_texts` both as an explicit
+    parameter and through `**kwargs`, raising
+    `TypeError: aadd_texts() got multiple values for keyword argument 'ids'`.
+    """
+    store = vs_class()
+
+    documents = [
+        Document(page_content="Hello world"),
+        Document(page_content="Goodbye world"),
+    ]
+    ids = ["doc_1", "doc_2"]
+
+    result = await store.aadd_documents(documents, ids=ids)
+    assert result == ids
+    assert await store.aget_by_ids(ids) == [
+        Document(id="doc_1", page_content="Hello world"),
+        Document(id="doc_2", page_content="Goodbye world"),
+    ]
