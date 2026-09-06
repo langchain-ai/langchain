@@ -1,6 +1,8 @@
 """Unit tests for file search middleware."""
 
+import json
 import os
+import time
 from pathlib import Path
 from typing import Any
 
@@ -601,3 +603,81 @@ class TestGrepEdgeCases:
 
         # Large file should be skipped
         assert "/small.txt" in result
+
+
+class TestFallbackSearchIsolation:
+    """Tests for the isolated worker subprocess behind the Python fallback."""
+
+    def test_fallback_times_out_on_pathological_pattern(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A catastrophically backtracking pattern is bounded, not a hang."""
+        # 40 hex chars + `([0-9a-f]+)+g` backtracks exponentially in CPython's
+        # `re` engine; the worker must be killed at the deadline instead.
+        (tmp_path / "package.lock").write_text('{"sha": "%s"}\n' % ("a" * 40), encoding="utf-8")
+        monkeypatch.setattr("langchain.agents.middleware.file_search._FALLBACK_SEARCH_TIMEOUT", 2)
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        start = time.monotonic()
+        result = middleware.grep_search.func(pattern=r"([0-9a-f]+)+g")
+        elapsed = time.monotonic() - start
+
+        assert result.startswith("Search timed out after")
+        # Bounded well below the default 30s deadline; no unbounded block.
+        assert elapsed < 30
+
+    def test_fallback_pattern_roundtrip_unicode_and_special_chars(self, tmp_path: Path) -> None:
+        """Worker transport (JSON over stdin) must not mangle patterns."""
+        (tmp_path / "u.txt").write_text(
+            "héllo wörld; rm -rf $(pwd) `id` | & <>\x00end\nplain\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "u2.txt").write_text("café über\n", encoding="utf-8")
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+
+        assert "/u.txt" in middleware.grep_search.func(pattern="wörld; rm -rf")
+        assert "/u2.txt" in middleware.grep_search.func(pattern="caf[é] über")
+        assert "/u.txt" in middleware.grep_search.func(pattern="\x00end")
+
+    def test_ripgrep_hit_does_not_spawn_fallback_worker(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """When ripgrep returns results, no fallback worker is started."""
+        (tmp_path / "file1.py").write_text("print('hello')\n", encoding="utf-8")
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=True)
+
+        rg_line = json.dumps(
+            {
+                "type": "match",
+                "data": {
+                    "path": {"text": str(tmp_path / "file1.py")},
+                    "line_number": 1,
+                    "lines": {"text": "print('hello')\n"},
+                },
+            }
+        )
+
+        calls: list[list[str]] = []
+
+        class DummyResult:
+            stdout = rg_line
+
+        def fake_run(*args: Any, **_kwargs: Any) -> DummyResult:
+            calls.append(args[0])
+            return DummyResult()
+
+        monkeypatch.setattr("langchain.agents.middleware.file_search.subprocess.run", fake_run)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="hello")
+
+        assert "/file1.py" in result
+        # Exactly one subprocess (ripgrep); the fallback worker never ran.
+        assert len(calls) == 1
+        assert calls[0][0] == "rg"

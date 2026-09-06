@@ -11,7 +11,9 @@ import json
 import operator
 import os
 import re
+import signal
 import subprocess
+import sys
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +22,17 @@ from typing import Literal
 from langchain_core.tools import tool
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
+
+# Hard wall-clock timeout (seconds) for the Python fallback search, matching
+# the timeout the ripgrep subprocess path uses. The fallback regex comes from
+# model output, so the search runs in a worker process under this deadline: a
+# catastrophically backtracking pattern burns at most this many seconds in a
+# throwaway process instead of pinning the agent's worker thread indefinitely.
+_FALLBACK_SEARCH_TIMEOUT = 30
+
+
+class _FallbackSearchTimeoutError(Exception):
+    """The isolated Python fallback search exceeded its deadline."""
 
 
 def _is_within_root(candidate: Path, root: Path) -> bool:
@@ -103,6 +116,87 @@ def _match_include_pattern(basename: str, pattern: str) -> bool:
         return False
 
     return any(fnmatch.fnmatch(basename, candidate) for candidate in expanded)
+
+
+def _search_tree(
+    base_full: Path,
+    root: Path,
+    pattern: str,
+    include: str | None,
+    max_file_size_bytes: int,
+) -> dict[str, list[tuple[int, str]]]:
+    """Regex-search every file under `base_full`, keyed by virtual path.
+
+    Body of the Python fallback search; runs inside the worker subprocess
+    started by `FilesystemFileSearchMiddleware._python_search`.
+    """
+    regex = re.compile(pattern)
+    results: dict[str, list[tuple[int, str]]] = {}
+
+    # Walk directory tree without following symlinked directories so traversal
+    # cannot leave the root via a symlinked subdirectory.
+    for walk_root, _dirs, files in os.walk(base_full, followlinks=False):
+        for name in files:
+            file_path = Path(walk_root) / name
+
+            # Re-check containment after resolving so an in-root symlinked file
+            # pointing outside the root is never read.
+            if not _is_within_root(file_path, root):
+                continue
+
+            if not file_path.is_file():
+                continue
+
+            # Check include filter
+            if include and not _match_include_pattern(file_path.name, include):
+                continue
+
+            # Skip files that are too large
+            if file_path.stat().st_size > max_file_size_bytes:
+                continue
+
+            try:
+                content = file_path.read_text()
+            except (UnicodeDecodeError, PermissionError):
+                continue
+
+            # Search content
+            for line_num, line in enumerate(content.splitlines(), 1):
+                if regex.search(line):
+                    virtual_path = "/" + str(file_path.relative_to(root))
+                    if virtual_path not in results:
+                        results[virtual_path] = []
+                    results[virtual_path].append((line_num, line))
+
+    return results
+
+
+def _worker_main() -> None:
+    """Handle one fallback-search request: JSON on stdin, JSON on stdout.
+
+    Entry point for the isolated worker subprocess started with
+    `sys.executable -m langchain.agents.middleware.file_search`. Byte-level
+    I/O keeps the protocol exact (no locale-dependent encoding of the
+    model-controlled pattern).
+    """
+    if hasattr(signal, "alarm"):
+        # Watchdog: the parent enforces the search deadline, but if it dies
+        # first (crash, kill) the default SIGALRM disposition still terminates
+        # this worker instead of leaving an orphaned runaway search behind.
+        signal.alarm(_FALLBACK_SEARCH_TIMEOUT + 5)
+    request = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+    try:
+        results = _search_tree(
+            base_full=Path(request["base"]),
+            root=Path(request["root"]),
+            pattern=request["pattern"],
+            include=request["include"],
+            max_file_size_bytes=request["max_file_size_bytes"],
+        )
+        payload: dict[str, object] = {"results": results}
+    except Exception as e:
+        payload = {"error": f"{type(e).__name__}: {e}"}
+    sys.stdout.buffer.write(json.dumps(payload).encode("utf-8"))
 
 
 class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
@@ -243,17 +337,23 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
 
             # Try ripgrep first if enabled
             results = None
-            if self.use_ripgrep:
-                with suppress(
-                    FileNotFoundError,
-                    subprocess.CalledProcessError,
-                    subprocess.TimeoutExpired,
-                ):
-                    results = self._ripgrep_search(pattern, path, include)
+            try:
+                if self.use_ripgrep:
+                    with suppress(
+                        FileNotFoundError,
+                        subprocess.CalledProcessError,
+                        subprocess.TimeoutExpired,
+                    ):
+                        results = self._ripgrep_search(pattern, path, include)
 
-            # Python fallback if ripgrep failed or is disabled
-            if results is None:
-                results = self._python_search(pattern, path, include)
+                # Python fallback if ripgrep failed or is disabled. The
+                # fallback executes the model-controlled regex in a worker
+                # subprocess with a hard timeout, so a pathological pattern is
+                # reported as a timeout rather than blocking this process.
+                if results is None:
+                    results = self._python_search(pattern, path, include)
+            except _FallbackSearchTimeoutError:
+                return f"Search timed out after {_FALLBACK_SEARCH_TIMEOUT} seconds"
 
             if not results:
                 return "No matches found"
@@ -349,7 +449,15 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
     def _python_search(
         self, pattern: str, base_path: str, include: str | None
     ) -> dict[str, list[tuple[int, str]]]:
-        """Search using Python regex (fallback)."""
+        """Search using Python regex (fallback) in an isolated worker process.
+
+        The pattern is model-controlled and CPython's `re` engine can backtrack
+        exponentially, so the search never runs in this process: a worker
+        subprocess (`sys.executable -m <this module>`) receives the request as
+        JSON on stdin and reports JSON on stdout, under the same hard timeout
+        the ripgrep path uses. On timeout or worker failure the caller gets a
+        bounded `_FallbackSearchTimeoutError` instead of a hung tool call.
+        """
         try:
             base_full = self._validate_and_resolve_path(base_path)
         except ValueError:
@@ -358,45 +466,52 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
         if not base_full.exists():
             return {}
 
-        regex = re.compile(pattern)
-        results: dict[str, list[tuple[int, str]]] = {}
+        request = json.dumps(
+            {
+                "base": str(base_full),
+                "root": str(self.root_path),
+                "pattern": pattern,
+                "include": include,
+                "max_file_size_bytes": self.max_file_size_bytes,
+            }
+        )
+        # The worker re-imports this module by name; give it the same import
+        # path this process used (covers source checkouts and installed trees).
+        env = dict(os.environ)
+        env["PYTHONPATH"] = os.pathsep.join(sys.path)
+        try:
+            result = subprocess.run(  # noqa: S603
+                [sys.executable, "-m", __name__],
+                input=request,
+                capture_output=True,
+                encoding="utf-8",
+                timeout=_FALLBACK_SEARCH_TIMEOUT,
+                check=False,
+                env=env,
+            )
+        except subprocess.TimeoutExpired:
+            # subprocess.run has already killed and reaped the worker.
+            raise _FallbackSearchTimeoutError from None
+        except OSError:
+            # The worker could not be spawned at all; fail closed rather than
+            # run an unbounded regex search in this process.
+            raise _FallbackSearchTimeoutError from None
 
-        # Walk directory tree without following symlinked directories so traversal
-        # cannot leave the root via a symlinked subdirectory.
-        for walk_root, _dirs, files in os.walk(base_full, followlinks=False):
-            for name in files:
-                file_path = Path(walk_root) / name
+        try:
+            payload = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            # Worker died before reporting (e.g. crashed); bounded failure.
+            raise _FallbackSearchTimeoutError from None
+        if not isinstance(payload, dict) or "results" not in payload:
+            raise _FallbackSearchTimeoutError from None
+        if "error" in payload:
+            msg = f"Fallback search worker failed: {payload['error']}"
+            raise RuntimeError(msg)
 
-                # Re-check containment after resolving so an in-root symlinked file
-                # pointing outside the root is never read.
-                if not _is_within_root(file_path, self.root_path):
-                    continue
-
-                if not file_path.is_file():
-                    continue
-
-                # Check include filter
-                if include and not _match_include_pattern(file_path.name, include):
-                    continue
-
-                # Skip files that are too large
-                if file_path.stat().st_size > self.max_file_size_bytes:
-                    continue
-
-                try:
-                    content = file_path.read_text()
-                except (UnicodeDecodeError, PermissionError):
-                    continue
-
-                # Search content
-                for line_num, line in enumerate(content.splitlines(), 1):
-                    if regex.search(line):
-                        virtual_path = "/" + str(file_path.relative_to(self.root_path))
-                        if virtual_path not in results:
-                            results[virtual_path] = []
-                        results[virtual_path].append((line_num, line))
-
-        return results
+        return {
+            virtual_path: [tuple(match) for match in matches]
+            for virtual_path, matches in payload["results"].items()
+        }
 
     @staticmethod
     def _format_grep_results(
@@ -431,3 +546,9 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
 __all__ = [
     "FilesystemFileSearchMiddleware",
 ]
+
+
+if __name__ == "__main__":
+    # Worker mode: `python -m langchain.agents.middleware.file_search`.
+    # Only ever started by FilesystemFileSearchMiddleware._python_search.
+    _worker_main()
