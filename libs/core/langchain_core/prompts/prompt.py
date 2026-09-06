@@ -15,6 +15,7 @@ from langchain_core.prompts.string import (
     check_valid_template,
     get_template_variables,
     mustache_schema,
+    validate_f_string_template,
 )
 
 if TYPE_CHECKING:
@@ -195,8 +196,26 @@ class PromptTemplate(StringPromptTemplate):
             **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
-            A formatted string.
+            The formatted prompt string.
+
+        Raises:
+            ValueError: If the template references attribute access (`.`) or
+                indexing (`[]`) on f-string variables. This is a defense-in-depth
+                check that runs at format time, not only at construction, so
+                templates that bypass Pydantic model validation (e.g., direct
+                attribute assignment in subclasses, ``pickle.loads``,
+                ``copy.deepcopy``, ``dumps()``/``loads()`` round-trips) cannot
+                leak object internals via Python's ``str.format``.
         """
+        # Defense-in-depth: re-validate the f-string template at format time.
+        # The Pydantic `pre_init_validation` model_validator already runs at
+        # construction and blocks attribute access for `template_format='f-string'`,
+        # but any code path that bypasses Pydantic validation (subclasses that set
+        # attributes directly, deserialization, etc.) would otherwise let
+        # `{user.password}` / `{user.__class__}` reach `str.format()`.
+        # See CVE-2025-65106 (GHSA-6qv9-48xg-fc7f).
+        if self.template_format == "f-string":
+            validate_f_string_template(self.template)
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 

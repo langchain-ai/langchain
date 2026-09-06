@@ -8,13 +8,13 @@ from typing import Any, Literal
 from unittest import mock
 
 import pytest
+from langchain_core._api import LangChainDeprecationWarning
+from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 from packaging import version
 from syrupy.assertion import SnapshotAssertion
 
-from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
-from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
@@ -744,3 +744,82 @@ def test_prompt_template_add(
         variable="template",
         another_variable="other_template",
     )
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for CVE-2025-65106 (GHSA-6qv9-48xg-fc7f)
+# https://github.com/langchain-ai/langchain/security/advisories/GHSA-6qv9-48xg-fc7f
+#
+# Defense-in-depth: even when a PromptTemplate bypasses the Pydantic
+# pre_init_validation model_validator (subclass attribute assignment, pickle,
+# copy.deepcopy, dumps()/loads() round-trip), .format() must reject templates
+# that reference attribute access or indexing. These tests reproduce the
+# pre-fix behavior on a clean checkout.
+# ---------------------------------------------------------------------------
+
+
+def _bypass_pydantic(
+    template: str, template_format: str = "f-string"
+) -> PromptTemplate:
+    """Construct a PromptTemplate without going through `pre_init_validation`.
+
+    Mirrors any code path that sets attributes directly: subclass __init__,
+    pickle.loads, copy.deepcopy, dumps()/loads() round-trip with a legacy
+    pre-CVE-2026-44843 caller, or hand-rolled adapters.
+    """
+    p = PromptTemplate.__new__(PromptTemplate)
+    object.__setattr__(p, "template", template)
+    object.__setattr__(p, "template_format", template_format)
+    object.__setattr__(p, "input_variables", [])
+    object.__setattr__(p, "partial_variables", {})
+    return p
+
+
+class _LeakyAttributeObject:
+    """Stand-in for any user-supplied object that has 'interesting' attributes."""
+
+    def __init__(self) -> None:
+        self.password = "SECRET_LEAKED_VIA_ATTRIBUTE"
+        self.token = "sk-SECRET-LEAKED-TOKEN"
+
+
+def test_format_rejects_attribute_access_when_pydantic_bypassed() -> None:
+    """`format()` must raise even if construction bypassed the model_validator.
+
+    Pre-fix: the template below reaches `str.format()` and the password leaks.
+    Post-fix: `validate_f_string_template` runs at format time and raises.
+    """
+    p = _bypass_pydantic("Hello {u.name}, password={u.password}")
+    u = _LeakyAttributeObject()
+    with pytest.raises(ValueError, match="attribute access"):
+        p.format(u=u)
+
+
+def test_format_rejects_indexing_when_pydantic_bypassed() -> None:
+    """`{u[0]}`-style indexing must also be blocked at format time."""
+    p = _bypass_pydantic("First entry: {entries[0]}")
+    with pytest.raises(ValueError, match=r"indexing|\."):
+        p.format(entries=["ok", "secret"])
+
+
+def test_format_rejects_dunder_attribute_access_when_pydantic_bypassed() -> None:
+    """`{obj.__class__}` style traversal must be blocked.
+
+    This is the canonical CVE-2025-65106 failure scenario.
+    """
+    p = _bypass_pydantic("{obj.__class__.__name__}")
+    with pytest.raises(ValueError, match="attribute access"):
+        p.format(obj=_LeakyAttributeObject())
+
+
+
+def test_format_allows_simple_substitution_unchanged() -> None:
+    """The fix must not regress legitimate use: simple `{var}` substitution."""
+    p = _bypass_pydantic("Hello {name}, you are {age} years old.")
+    assert p.format(name="Alice", age=30) == "Hello Alice, you are 30 years old."
+
+
+def test_format_does_not_re_validate_jinja2_templates() -> None:
+    """Jinja2 has its own sandbox; we don't double-validate it at format time."""
+    p = _bypass_pydantic("Hello {{ name }}", template_format="jinja2")
+    assert p.format(name="Bob") == "Hello Bob"
