@@ -337,13 +337,17 @@ class ChatDeepSeek(BaseChatOpenAI):
     def _with_beta_api_base(self) -> Self:
         """Return a copy of this model that targets DeepSeek's beta endpoint."""
         beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
-        if self.root_client:
-            beta_model.root_client = self.root_client.with_options(
+        root_client = self.root_client or getattr(self.client, "_client", None)
+        if root_client:
+            beta_model.root_client = root_client.with_options(
                 base_url=DEFAULT_BETA_API_BASE
             )
             beta_model.client = beta_model.root_client.chat.completions
-        if self.root_async_client:
-            beta_model.root_async_client = self.root_async_client.with_options(
+        root_async_client = self.root_async_client or getattr(
+            self.async_client, "_client", None
+        )
+        if root_async_client:
+            beta_model.root_async_client = root_async_client.with_options(
                 base_url=DEFAULT_BETA_API_BASE
             )
             beta_model.async_client = beta_model.root_async_client.chat.completions

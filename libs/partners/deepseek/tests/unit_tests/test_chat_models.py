@@ -343,6 +343,17 @@ class TestChatDeepSeekStrictMode:
             DEFAULT_BETA_API_BASE
         )
 
+        custom_model = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
+            client=llm.client,
+            async_client=llm.async_client,
+        )._with_beta_api_base()
+        assert str(custom_model.root_client.base_url).startswith(DEFAULT_BETA_API_BASE)
+        assert str(custom_model.root_async_client.base_url).startswith(
+            DEFAULT_BETA_API_BASE
+        )
+
     def test_bind_tools_without_strict_mode_uses_default_endpoint(self) -> None:
         """Test bind_tools without strict or with strict=False uses default endpoint."""
         llm = ChatDeepSeek(
