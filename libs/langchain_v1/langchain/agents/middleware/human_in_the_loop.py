@@ -404,6 +404,86 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         )
         return when(req)
 
+    def _request_decisions(
+        self,
+        tool_calls: dict[int, ToolCall],
+        candidate_indices: list[int],
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
+    ) -> tuple[list[Decision], list[int]] | None:
+        """Request decisions for candidate tool calls that require review."""
+        action_requests: list[ActionRequest] = []
+        review_configs: list[ReviewConfig] = []
+        interrupt_indices: list[int] = []
+
+        for idx in candidate_indices:
+            tool_call = tool_calls[idx]
+            if (config := self.interrupt_on.get(tool_call["name"])) is None:
+                continue
+            if not self._should_interrupt(tool_call, config, state, runtime):
+                continue
+            action_request, review_config = self._create_action_and_config(
+                tool_call, config, state, runtime
+            )
+            action_requests.append(action_request)
+            review_configs.append(review_config)
+            interrupt_indices.append(idx)
+
+        if not action_requests:
+            return None
+
+        hitl_request = HITLRequest(
+            action_requests=action_requests,
+            review_configs=review_configs,
+        )
+        decisions = interrupt(hitl_request)["decisions"]
+        if (decisions_len := len(decisions)) != (interrupt_count := len(interrupt_indices)):
+            msg = (
+                f"Number of human decisions ({decisions_len}) does not match "
+                f"number of hanging tool calls ({interrupt_count})."
+            )
+            raise ValueError(msg)
+        return decisions, interrupt_indices
+
+    def _review_renamed_tool_calls(
+        self,
+        tool_calls: dict[int, ToolCall],
+        renamed_indices: list[int],
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
+    ) -> list[ToolMessage]:
+        """Review edited calls against each new target tool's interrupt policy."""
+        artificial_tool_messages: list[ToolMessage] = []
+
+        while renamed_indices:
+            review = self._request_decisions(tool_calls, renamed_indices, state, runtime)
+            if review is None:
+                break
+            decisions, interrupt_indices = review
+            next_renamed_indices: list[int] = []
+
+            for idx, decision in zip(interrupt_indices, decisions, strict=True):
+                tool_call = tool_calls[idx]
+                config = self.interrupt_on[tool_call["name"]]
+                revised_tool_call, tool_message = self._process_decision(
+                    decision, tool_call, config
+                )
+                if revised_tool_call is None:
+                    del tool_calls[idx]
+                else:
+                    tool_calls[idx] = revised_tool_call
+                    if (
+                        decision["type"] == "edit"
+                        and revised_tool_call["name"] != tool_call["name"]
+                    ):
+                        next_renamed_indices.append(idx)
+                if tool_message is not None:
+                    artificial_tool_messages.append(tool_message)
+
+            renamed_indices = next_renamed_indices
+
+        return artificial_tool_messages
+
     def after_model(
         self, state: AgentState[Any], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
@@ -428,68 +508,46 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         if not last_ai_msg or not last_ai_msg.tool_calls:
             return None
 
-        # Create action requests and review configs for tools that need approval
-        action_requests: list[ActionRequest] = []
-        review_configs: list[ReviewConfig] = []
-        interrupt_indices: list[int] = []
-
-        for idx, tool_call in enumerate(last_ai_msg.tool_calls):
-            if (config := self.interrupt_on.get(tool_call["name"])) is not None:
-                if not self._should_interrupt(tool_call, config, state, runtime):
-                    continue
-                action_request, review_config = self._create_action_and_config(
-                    tool_call, config, state, runtime
-                )
-                action_requests.append(action_request)
-                review_configs.append(review_config)
-                interrupt_indices.append(idx)
-
-        # If no interrupts needed, return early
-        if not action_requests:
-            return None
-
-        # Create single HITLRequest with all actions and configs
-        hitl_request = HITLRequest(
-            action_requests=action_requests,
-            review_configs=review_configs,
+        revised_tool_calls = dict(enumerate(last_ai_msg.tool_calls))
+        review = self._request_decisions(
+            revised_tool_calls, list(revised_tool_calls), state, runtime
         )
-
-        # Send interrupt and get response
-        decisions = interrupt(hitl_request)["decisions"]
-
-        # Validate that the number of decisions matches the number of interrupt tool calls
-        if (decisions_len := len(decisions)) != (interrupt_count := len(interrupt_indices)):
-            msg = (
-                f"Number of human decisions ({decisions_len}) does not match "
-                f"number of hanging tool calls ({interrupt_count})."
-            )
-            raise ValueError(msg)
+        if review is None:
+            return None
+        decisions, interrupt_indices = review
+        decisions_by_index = dict(zip(interrupt_indices, decisions, strict=True))
 
         # Process decisions and rebuild tool calls in original order
-        revised_tool_calls: list[ToolCall] = []
         artificial_tool_messages: list[ToolMessage] = []
-        decision_idx = 0
+        renamed_indices: list[int] = []
 
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
-            if idx in interrupt_indices:
+            if idx in decisions_by_index:
                 # This was an interrupt tool call - process the decision
                 config = self.interrupt_on[tool_call["name"]]
-                decision = decisions[decision_idx]
-                decision_idx += 1
+                decision = decisions_by_index[idx]
 
                 revised_tool_call, tool_message = self._process_decision(
                     decision, tool_call, config
                 )
                 if revised_tool_call is not None:
-                    revised_tool_calls.append(revised_tool_call)
-                if tool_message:
+                    revised_tool_calls[idx] = revised_tool_call
+                    if (
+                        decision["type"] == "edit"
+                        and revised_tool_call["name"] != tool_call["name"]
+                    ):
+                        renamed_indices.append(idx)
+                else:
+                    del revised_tool_calls[idx]
+                if tool_message is not None:
                     artificial_tool_messages.append(tool_message)
-            else:
-                # This was auto-approved - keep original
-                revised_tool_calls.append(tool_call)
+
+        artificial_tool_messages.extend(
+            self._review_renamed_tool_calls(revised_tool_calls, renamed_indices, state, runtime)
+        )
 
         # Update the AI message to only include approved tool calls
-        last_ai_msg.tool_calls = revised_tool_calls
+        last_ai_msg.tool_calls = list(revised_tool_calls.values())
 
         return {"messages": [last_ai_msg, *artificial_tool_messages]}
 

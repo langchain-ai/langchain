@@ -149,6 +149,179 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
         assert result["messages"][0].tool_calls[0]["id"] == "1"  # ID should be preserved
 
 
+def test_human_in_the_loop_middleware_rechecks_edited_tool_policy() -> None:
+    """Test that a renamed tool call is reviewed under its target tool policy."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "tool_a": {"allowed_decisions": ["approve", "edit"]},
+            "tool_b": {"allowed_decisions": ["approve", "reject"]},
+        }
+    )
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "tool_a", "args": {"value": 1}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+    captured_requests: list[Any] = []
+
+    def mock_decisions(request: Any) -> dict[str, Any]:
+        captured_requests.append(request)
+        if len(captured_requests) == 1:
+            return {
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "edited_action": Action(
+                            name="tool_b",
+                            args={"value": "edited"},
+                        ),
+                    }
+                ]
+            }
+        return {"decisions": [{"type": "approve"}]}
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        side_effect=mock_decisions,
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    assert len(captured_requests) == 2
+    assert captured_requests[1]["action_requests"] == [
+        {
+            "name": "tool_b",
+            "args": {"value": "edited"},
+            "description": (
+                "Tool execution requires approval\n\nTool: tool_b\nArgs: {'value': 'edited'}"
+            ),
+        }
+    ]
+    assert captured_requests[1]["review_configs"] == [
+        {
+            "action_name": "tool_b",
+            "allowed_decisions": ["approve", "reject"],
+        }
+    ]
+    assert result["messages"][0].tool_calls == [
+        ToolCall(type="tool_call", name="tool_b", args={"value": "edited"}, id="1")
+    ]
+
+
+def test_human_in_the_loop_middleware_rechecks_edited_tool_when_predicate() -> None:
+    """Test that an edited target tool's `when` predicate can skip review."""
+    captured_target_calls: list[ToolCall] = []
+
+    def target_requires_review(request: ToolCallRequest) -> bool:
+        captured_target_calls.append(request.tool_call)
+        return False
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "tool_a": {"allowed_decisions": ["edit"]},
+            "tool_b": InterruptOnConfig(
+                allowed_decisions=["approve", "reject"],
+                when=target_requires_review,
+            ),
+        }
+    )
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "tool_a", "args": {"value": 1}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.get_config", return_value={}),
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "edited_action": Action(
+                            name="tool_b",
+                            args={"value": "safe"},
+                        ),
+                    }
+                ]
+            },
+        ) as mock_interrupt,
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    assert result is not None
+    assert mock_interrupt.call_count == 1
+    assert captured_target_calls == [
+        ToolCall(type="tool_call", name="tool_b", args={"value": "safe"}, id="1")
+    ]
+    assert result["messages"][0].tool_calls == captured_target_calls
+
+
+def test_human_in_the_loop_middleware_rechecks_edited_tool_when_true() -> None:
+    """Test that a target tool's true `when` predicate triggers another review."""
+    captured_target_calls: list[ToolCall] = []
+
+    def target_requires_review(request: ToolCallRequest) -> bool:
+        captured_target_calls.append(request.tool_call)
+        return True
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "tool_a": {"allowed_decisions": ["edit"]},
+            "tool_b": InterruptOnConfig(
+                allowed_decisions=["approve", "reject"],
+                when=target_requires_review,
+            ),
+        }
+    )
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "tool_a", "args": {"value": 1}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.get_config", return_value={}),
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            side_effect=[
+                {
+                    "decisions": [
+                        {
+                            "type": "edit",
+                            "edited_action": Action(
+                                name="tool_b",
+                                args={"value": "requires-review"},
+                            ),
+                        }
+                    ]
+                },
+                {"decisions": [{"type": "approve"}]},
+            ],
+        ) as mock_interrupt,
+    ):
+        result = middleware.after_model(state, Runtime())
+
+    edited_tool_call = ToolCall(
+        type="tool_call",
+        name="tool_b",
+        args={"value": "requires-review"},
+        id="1",
+    )
+    assert result is not None
+    assert mock_interrupt.call_count == 2
+    assert captured_target_calls == [edited_tool_call]
+    target_request = mock_interrupt.call_args_list[1].args[0]
+    assert target_request["action_requests"][0]["name"] == "tool_b"
+    assert target_request["action_requests"][0]["args"] == {"value": "requires-review"}
+    assert target_request["review_configs"][0] == {
+        "action_name": "tool_b",
+        "allowed_decisions": ["approve", "reject"],
+    }
+    assert result["messages"][0].tool_calls == [edited_tool_call]
+
+
 def test_human_in_the_loop_middleware_single_tool_rejection_reason() -> None:
     """Test a custom rejection reason retains its human-provided context."""
     middleware = HumanInTheLoopMiddleware(
@@ -282,6 +455,221 @@ def test_human_in_the_loop_middleware_rejected_call_not_executed_and_stays_paire
     assert calls == []
     # The message history must remain protocol-valid throughout, including the rejection turn.
     _assert_tool_messages_are_paired(final["messages"])
+
+
+def test_cross_tool_edit_requires_target_tool_approval() -> None:
+    """A cross-tool edit must interrupt again before the target tool executes."""
+    calls: list[tuple[str, object]] = []
+
+    @tool
+    def tool_a(value: int) -> str:
+        """Run tool A."""
+        calls.append(("tool_a", value))
+        return "A executed"
+
+    @tool
+    def tool_b(value: str) -> str:
+        """Run tool B."""
+        calls.append(("tool_b", value))
+        return "B executed"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="tool_a", args={"value": 1}, id="1")],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[tool_a, tool_b],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={
+                    "tool_a": {"allowed_decisions": ["approve", "edit"]},
+                    "tool_b": {"allowed_decisions": ["approve", "reject"]},
+                }
+            )
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    config = {"configurable": {"thread_id": "cross-tool-edit-target-policy"}}
+
+    first = agent.invoke({"messages": [HumanMessage("Run tool A")]}, config)
+    assert "__interrupt__" in first
+
+    second = agent.invoke(
+        Command(
+            resume={
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "edited_action": {
+                            "name": "tool_b",
+                            "args": {"value": "edited"},
+                        },
+                    }
+                ]
+            }
+        ),
+        config,
+    )
+    assert "__interrupt__" in second
+    assert calls == []
+
+    final = agent.invoke(
+        Command(resume={"decisions": [{"type": "approve"}]}),
+        config,
+    )
+    assert "__interrupt__" not in final
+    assert calls == [("tool_b", "edited")]
+
+
+def test_multiple_cross_tool_edits_recheck_each_target() -> None:
+    """Each target in a chain of cross-tool edits must be reviewed before execution."""
+    calls: list[tuple[str, str]] = []
+
+    @tool
+    def tool_a(value: str) -> str:
+        """Run tool A."""
+        calls.append(("tool_a", value))
+        return "A executed"
+
+    @tool
+    def tool_b(value: str) -> str:
+        """Run tool B."""
+        calls.append(("tool_b", value))
+        return "B executed"
+
+    @tool
+    def tool_c(value: str) -> str:
+        """Run tool C."""
+        calls.append(("tool_c", value))
+        return "C executed"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="tool_a", args={"value": "original"}, id="1")],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[tool_a, tool_b, tool_c],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={
+                    "tool_a": {"allowed_decisions": ["edit"]},
+                    "tool_b": {"allowed_decisions": ["edit"]},
+                    "tool_c": {"allowed_decisions": ["approve"]},
+                }
+            )
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    config = {"configurable": {"thread_id": "multiple-cross-tool-edits"}}
+
+    first = agent.invoke({"messages": [HumanMessage("Run tool A")]}, config)
+    assert "__interrupt__" in first
+
+    second = agent.invoke(
+        Command(
+            resume={
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "edited_action": {
+                            "name": "tool_b",
+                            "args": {"value": "edited-b"},
+                        },
+                    }
+                ]
+            }
+        ),
+        config,
+    )
+    assert second["__interrupt__"][0].value["action_requests"][0]["name"] == "tool_b"
+    assert calls == []
+
+    third = agent.invoke(
+        Command(
+            resume={
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "edited_action": {
+                            "name": "tool_c",
+                            "args": {"value": "edited-c"},
+                        },
+                    }
+                ]
+            }
+        ),
+        config,
+    )
+    assert third["__interrupt__"][0].value["action_requests"][0]["name"] == "tool_c"
+    assert calls == []
+
+    final = agent.invoke(
+        Command(resume={"decisions": [{"type": "approve"}]}),
+        config,
+    )
+    assert "__interrupt__" not in final
+    assert calls == [("tool_c", "edited-c")]
+
+
+def test_cross_tool_edit_to_unconfigured_tool_is_auto_approved() -> None:
+    """A renamed call is auto-approved when the target has no HITL policy."""
+    calls: list[tuple[str, str]] = []
+
+    @tool
+    def tool_a(value: str) -> str:
+        """Run tool A."""
+        calls.append(("tool_a", value))
+        return "A executed"
+
+    @tool
+    def tool_b(value: str) -> str:
+        """Run tool B."""
+        calls.append(("tool_b", value))
+        return "B executed"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="tool_a", args={"value": "original"}, id="1")],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[tool_a, tool_b],
+        middleware=[
+            HumanInTheLoopMiddleware(interrupt_on={"tool_a": {"allowed_decisions": ["edit"]}})
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    config = {"configurable": {"thread_id": "cross-tool-edit-unconfigured-target"}}
+
+    first = agent.invoke({"messages": [HumanMessage("Run tool A")]}, config)
+    assert "__interrupt__" in first
+
+    final = agent.invoke(
+        Command(
+            resume={
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "edited_action": {
+                            "name": "tool_b",
+                            "args": {"value": "auto-approved"},
+                        },
+                    }
+                ]
+            }
+        ),
+        config,
+    )
+    assert "__interrupt__" not in final
+    assert calls == [("tool_b", "auto-approved")]
 
 
 def test_human_in_the_loop_middleware_single_tool_respond() -> None:
