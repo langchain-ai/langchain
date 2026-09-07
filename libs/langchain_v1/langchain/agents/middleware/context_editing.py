@@ -21,6 +21,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately
+from langchain_core.runnables import run_in_executor
 from typing_extensions import Protocol
 
 from langchain.agents.middleware.types import (
@@ -247,6 +248,23 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
 
         return count_tokens
 
+    def _apply_edits(
+        self,
+        request: ModelRequest[ContextT],
+        count_tokens: TokenCounter,
+    ) -> list[AnyMessage]:
+        """Deep-copy the messages and apply every configured edit.
+
+        A separate method so the async path can run it in the default thread
+        pool executor: the token counter can be a synchronous, blocking model
+        call (``get_num_tokens_from_messages``) and must not hold up the event
+        loop.
+        """
+        edited_messages = deepcopy(list(request.messages))
+        for edit in self.edits:
+            edit.apply(edited_messages, count_tokens=count_tokens)
+        return edited_messages
+
     def wrap_model_call(
         self,
         request: ModelRequest[ContextT],
@@ -293,9 +311,10 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
 
         count_tokens = self._resolve_token_counter(request)
 
-        edited_messages = deepcopy(list(request.messages))
-        for edit in self.edits:
-            edit.apply(edited_messages, count_tokens=count_tokens)
+        # Run the (potentially blocking) model token-counting edits off the
+        # event loop so an async agent isn't stalled by a synchronous
+        # `get_num_tokens_from_messages` call.
+        edited_messages = await run_in_executor(None, self._apply_edits, request, count_tokens)
 
         return await handler(request.override(messages=edited_messages))
 

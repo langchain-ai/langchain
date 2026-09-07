@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import time
 from typing import TYPE_CHECKING, Any, cast
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
@@ -578,3 +580,70 @@ async def test_custom_token_counter_forces_clearing_async() -> None:
     cleared_tool = modified_request.messages[1]
     assert isinstance(cleared_tool, ToolMessage)
     assert cleared_tool.content == "[cleared]"
+
+
+class _BlockingTokenCountingModel(FakeChatModel):
+    """Fake model whose token counting deliberately blocks for a fixed time."""
+
+    @override
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Sequence[Any] | None = None,
+    ) -> int:
+        time.sleep(0.2)  # Simulate a synchronous, blocking remote call.
+        return sum(len(str(message.content)) for message in messages)
+
+
+async def test_async_token_counting_does_not_block_event_loop() -> None:
+    """Model-based token counting in the async path must not stall the loop.
+
+    Regression test for a bug where a synchronous ``get_num_tokens_from_messages``
+    blocked the asyncio event loop. An unrelated heartbeat task should stay
+    responsive while the middleware applies its edits.
+    """
+    tool_call_id = "call-blocking"
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+    )
+    tool_message = ToolMessage(content="x" * 200, tool_call_id=tool_call_id)
+
+    model = _BlockingTokenCountingModel()
+    conversation: list[AnyMessage] = [ai_message, tool_message]
+    state = cast("AgentState[Any]", {"messages": conversation})
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=conversation,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=state,
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=50, keep=0, placeholder="[cleared]")],
+        token_count_method="model",  # noqa: S106
+    )
+
+    async def mock_handler(_req: ModelRequest) -> ModelResponse:
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    async def heartbeat(gap: list[float]) -> None:
+        started = time.perf_counter()
+        await asyncio.sleep(0.02)
+        gap.append(time.perf_counter() - started)
+
+    gaps: list[float] = []
+    heartbeat_task = asyncio.create_task(heartbeat(gaps))
+
+    # Drive the middleware and heartbeat concurrently.
+    await asyncio.gather(middleware.awrap_model_call(request, mock_handler), heartbeat_task)
+
+    assert gaps, "heartbeat task did not run"
+    # Blocking count sleeps 0.2s per call; the heartbeat (0.02s) must not be
+    # delayed anywhere near that duration if the loop stayed responsive.
+    assert gaps[0] < 0.1, f"event loop was blocked; heartbeat took {gaps[0]:.3f}s"
