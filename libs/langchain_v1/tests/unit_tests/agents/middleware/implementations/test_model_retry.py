@@ -598,6 +598,26 @@ def test_model_retry_max_delay_cap() -> None:
     assert delay_2 == 2.0
 
 
+def test_model_retry_max_delay_cap_with_jitter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test calculate_delay caps positive jitter at max_delay."""
+    monkeypatch.setattr(
+        "langchain.agents.middleware._retry.random.uniform",
+        lambda _lower, upper: upper,
+    )
+
+    delay = calculate_delay(
+        10,
+        backoff_factor=2.0,
+        initial_delay=1.0,
+        max_delay=5.0,
+        jitter=True,
+    )
+
+    assert delay == 5.0
+
+
 def test_model_retry_jitter_variation() -> None:
     """Test calculate_delay adds jitter to delays."""
     # Generate multiple delays and ensure they vary
