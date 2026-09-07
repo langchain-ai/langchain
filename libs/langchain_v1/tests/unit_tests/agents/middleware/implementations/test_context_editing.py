@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from typing import TYPE_CHECKING, Any, cast
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
@@ -12,6 +13,7 @@ from langchain_core.messages import (
     MessageLikeRepresentation,
     ToolMessage,
 )
+from pydantic import Field
 from typing_extensions import override
 
 from langchain.agents.middleware.context_editing import (
@@ -42,6 +44,21 @@ class _TokenCountingChatModel(FakeChatModel):
         return sum(_count_message_tokens(message) for message in messages)
 
 
+class _ThreadRecordingTokenCountingChatModel(_TokenCountingChatModel):
+    """Fake chat model that records threads used for token counting."""
+
+    token_count_thread_ids: list[int] = Field(default_factory=list)
+
+    @override
+    def get_num_tokens_from_messages(
+        self,
+        messages: list[BaseMessage],
+        tools: Sequence[Any] | None = None,
+    ) -> int:
+        self.token_count_thread_ids.append(threading.get_ident())
+        return super().get_num_tokens_from_messages(messages, tools)
+
+
 def _count_message_tokens(message: MessageLikeRepresentation) -> int:
     if isinstance(message, (AIMessage, ToolMessage)):
         return _count_content(cast("MessageLikeRepresentation", message.content))
@@ -64,8 +81,9 @@ def _make_state_and_request(
     messages: list[AIMessage | ToolMessage],
     *,
     system_prompt: str | None = None,
+    model: FakeChatModel | None = None,
 ) -> tuple[AgentState[Any], ModelRequest]:
-    model = _TokenCountingChatModel()
+    model = model or _TokenCountingChatModel()
     conversation: list[AnyMessage] = list(messages)
     state = cast("AgentState[Any]", {"messages": conversation})
     request = ModelRequest(
@@ -415,6 +433,38 @@ async def test_respects_keep_last_tool_results_async() -> None:
     assert len(cleared_messages) == 2
     assert isinstance(modified_request.messages[-1], ToolMessage)
     assert modified_request.messages[-1].content != "[cleared]"
+
+
+async def test_model_token_counting_does_not_block_event_loop() -> None:
+    """Model token counting runs outside the event loop thread."""
+    tool_call_id = "call-thread"
+    model = _ThreadRecordingTokenCountingChatModel()
+    _state, request = _make_state_and_request(
+        [
+            AIMessage(
+                content="",
+                tool_calls=[{"id": tool_call_id, "name": "tool", "args": {}}],
+            ),
+            ToolMessage(content="x" * 200, tool_call_id=tool_call_id),
+        ],
+        model=model,
+    )
+    middleware = ContextEditingMiddleware(
+        edits=[ClearToolUsesEdit(trigger=0, clear_at_least=1_000, keep=0)],
+        token_count_method="model",  # noqa: S106
+    )
+    event_loop_thread_id = threading.get_ident()
+    handler_thread_ids: list[int] = []
+
+    async def mock_handler(_req: ModelRequest) -> ModelResponse:
+        handler_thread_ids.append(threading.get_ident())
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    await middleware.awrap_model_call(request, mock_handler)
+
+    assert len(model.token_count_thread_ids) == 2
+    assert all(thread_id != event_loop_thread_id for thread_id in model.token_count_thread_ids)
+    assert handler_thread_ids == [event_loop_thread_id]
 
 
 async def test_exclude_tools_prevents_clearing_async() -> None:

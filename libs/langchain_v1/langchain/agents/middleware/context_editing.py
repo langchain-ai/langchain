@@ -21,6 +21,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately
+from langchain_core.runnables import run_in_executor
 from typing_extensions import Protocol
 
 from langchain.agents.middleware.types import (
@@ -247,6 +248,14 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
 
         return count_tokens
 
+    def _apply_edits(self, request: ModelRequest[ContextT]) -> list[AnyMessage]:
+        """Copy request messages and apply each configured edit."""
+        count_tokens = self._resolve_token_counter(request)
+        edited_messages = deepcopy(list(request.messages))
+        for edit in self.edits:
+            edit.apply(edited_messages, count_tokens=count_tokens)
+        return edited_messages
+
     def wrap_model_call(
         self,
         request: ModelRequest[ContextT],
@@ -265,11 +274,7 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
         if not request.messages:
             return handler(request)
 
-        count_tokens = self._resolve_token_counter(request)
-
-        edited_messages = deepcopy(list(request.messages))
-        for edit in self.edits:
-            edit.apply(edited_messages, count_tokens=count_tokens)
+        edited_messages = self._apply_edits(request)
 
         return handler(request.override(messages=edited_messages))
 
@@ -291,11 +296,7 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
         if not request.messages:
             return await handler(request)
 
-        count_tokens = self._resolve_token_counter(request)
-
-        edited_messages = deepcopy(list(request.messages))
-        for edit in self.edits:
-            edit.apply(edited_messages, count_tokens=count_tokens)
+        edited_messages = await run_in_executor(None, self._apply_edits, request)
 
         return await handler(request.override(messages=edited_messages))
 
