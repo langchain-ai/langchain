@@ -452,7 +452,7 @@ def _convert_from_v1_to_responses(
                             tool_call["args"], separators=(",", ":")
                         )
             if "extras" in block:
-                for extra_key in ("status", "namespace"):
+                for extra_key in ("status", "namespace", "async"):
                     if extra_key in block["extras"]:
                         new_block[extra_key] = block["extras"][extra_key]
             new_content.append(new_block)

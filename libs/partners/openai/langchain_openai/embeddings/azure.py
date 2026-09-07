@@ -205,7 +205,17 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
             },
             "default_query": self.default_query,
         }
-        if not self.client:
+        if (
+            self.azure_ad_token
+            or self.azure_ad_token_provider
+            or self.azure_ad_async_token_provider
+        ):
+            client_params["api_key"] = None
+        if not self.client and (
+            not self.azure_ad_async_token_provider
+            or self.azure_ad_token
+            or self.azure_ad_token_provider
+        ):
             sync_specific: dict = {"http_client": self.http_client}
             self.client = openai.AzureOpenAI(
                 **client_params,  # type: ignore[arg-type]

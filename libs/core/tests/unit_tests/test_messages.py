@@ -3,6 +3,7 @@ from typing import Any, get_args
 
 import pytest
 
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
 from langchain_core.messages import (
@@ -1395,34 +1396,40 @@ def test_typed_init() -> None:
     )
 
 
+# Calling `.text()` as a method is the deprecated path under test here, so the
+# warning it emits is expected rather than something to fix.
+@pytest.mark.filterwarnings(
+    r"ignore:Calling \.text\(\) as a method is deprecated:"
+    r"langchain_core._api.deprecation.LangChainDeprecationWarning"
+)
 def test_text_accessor() -> None:
     """Test that `message.text` property and `.text()` method return the same value."""
     human_msg = HumanMessage(content="Hello world")
     assert human_msg.text == "Hello world"
-    assert human_msg.text == "Hello world"
-    assert str(human_msg.text) == str(human_msg.text)
+    assert human_msg.text() == "Hello world"
+    assert str(human_msg.text) == str(human_msg.text())
 
     system_msg = SystemMessage(content="You are a helpful assistant")
     assert system_msg.text == "You are a helpful assistant"
-    assert system_msg.text == "You are a helpful assistant"
-    assert str(system_msg.text) == str(system_msg.text)
+    assert system_msg.text() == "You are a helpful assistant"
+    assert str(system_msg.text) == str(system_msg.text())
 
     ai_msg = AIMessage(content="I can help you with that")
     assert ai_msg.text == "I can help you with that"
-    assert ai_msg.text == "I can help you with that"
-    assert str(ai_msg.text) == str(ai_msg.text)
+    assert ai_msg.text() == "I can help you with that"
+    assert str(ai_msg.text) == str(ai_msg.text())
 
     tool_msg = ToolMessage(content="Task completed", tool_call_id="tool_1")
     assert tool_msg.text == "Task completed"
-    assert tool_msg.text == "Task completed"
-    assert str(tool_msg.text) == str(tool_msg.text)
+    assert tool_msg.text() == "Task completed"
+    assert str(tool_msg.text) == str(tool_msg.text())
 
     complex_msg = HumanMessage(
         content=[{"type": "text", "text": "Hello "}, {"type": "text", "text": "world"}]
     )
     assert complex_msg.text == "Hello world"
-    assert complex_msg.text == "Hello world"
-    assert str(complex_msg.text) == str(complex_msg.text)
+    assert complex_msg.text() == "Hello world"
+    assert str(complex_msg.text) == str(complex_msg.text())
 
     mixed_msg = AIMessage(
         content=[
@@ -1432,10 +1439,19 @@ def test_text_accessor() -> None:
         ]
     )
     assert mixed_msg.text == "The answer is 42"
-    assert mixed_msg.text == "The answer is 42"
-    assert str(mixed_msg.text) == str(mixed_msg.text)
+    assert mixed_msg.text() == "The answer is 42"
+    assert str(mixed_msg.text) == str(mixed_msg.text())
 
     empty_msg = HumanMessage(content=[])
     assert empty_msg.text == ""
-    assert empty_msg.text == ""
-    assert str(empty_msg.text) == str(empty_msg.text)
+    assert empty_msg.text() == ""
+    assert str(empty_msg.text) == str(empty_msg.text())
+
+
+def test_text_accessor_deprecation_warning() -> None:
+    """Test that calling `.text()` as a method emits a deprecation warning."""
+    with pytest.warns(
+        LangChainDeprecationWarning,
+        match=r"Calling \.text\(\) as a method is deprecated",
+    ):
+        HumanMessage(content="Hello world").text()

@@ -211,6 +211,8 @@ WellKnownTools = (
     "apply_patch",
 )
 
+_TOOL_EXTRAS_PASSTHROUGH = ("defer_loading", "async")
+
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
@@ -2462,9 +2464,10 @@ class BaseChatOpenAI(BaseChatModel):
                 isinstance(original, BaseTool)
                 and hasattr(original, "extras")
                 and isinstance(original.extras, dict)
-                and "defer_loading" in original.extras
             ):
-                formatted["defer_loading"] = original.extras["defer_loading"]
+                for key in _TOOL_EXTRAS_PASSTHROUGH:
+                    if key in original.extras:
+                        formatted[key] = original.extras[key]
         tool_names = []
         for tool in formatted_tools:
             if "function" in tool:
@@ -5093,7 +5096,12 @@ def _construct_lc_result_from_responses_api(
                         refusal_block["phase"] = phase
                     content_blocks.append(refusal_block)
         elif output.type == "function_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            function_call_block = output.model_dump(exclude_none=True, mode="json")
+            # The SDK names the reserved word `async_`; content blocks carry the
+            # wire name so it round-trips on the next request.
+            if "async_" in function_call_block:
+                function_call_block["async"] = function_call_block.pop("async_")
+            content_blocks.append(function_call_block)
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
@@ -5375,6 +5383,12 @@ def _convert_responses_chunk_to_generation_chunk(
         }
         if getattr(chunk.item, "namespace", None) is not None:
             function_call_content["namespace"] = chunk.item.namespace
+        # SDKs expose the reserved word as `async_`; older ones keep it in extras.
+        async_flag = getattr(chunk.item, "async_", None)
+        if async_flag is None:
+            async_flag = getattr(chunk.item, "async", None)
+        if async_flag is not None:
+            function_call_content["async"] = async_flag
         content.append(function_call_content)
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
