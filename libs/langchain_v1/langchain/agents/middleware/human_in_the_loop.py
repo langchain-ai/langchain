@@ -166,7 +166,7 @@ class InterruptOnConfig(TypedDict):
     Example:
         ```python
         # Static string description
-        config = ToolConfig(
+        config = InterruptOnConfig(
             allowed_decisions=["approve", "reject"],
             description="Please review this tool execution"
         )
@@ -196,12 +196,14 @@ class InterruptOnConfig(TypedDict):
     """Optional predicate controlling whether to interrupt for a given tool call.
 
     Receives a `ToolCallRequest` and returns `True` to interrupt or `False` to
-    auto-approve. Works in both `"batch"` and `"per_call"` modes.
+    auto-approve. The predicate is called during `after_model` before the tool
+    call is added to the batched human-in-the-loop request.
 
-    In `"batch"` mode the request is constructed with `tool=None` and
-    `runtime` set to the node-level `Runtime` (not a `ToolRuntime`), so
-    `request.runtime.tool_call_id` and `request.runtime.tools` are not available.
-    In `"per_call"` mode the full `ToolCallRequest` from `wrap_tool_call` is passed.
+    The request is constructed with `tool=None` and a new `ToolRuntime`. The
+    `ToolRuntime` copies `context`, `store`, `stream_writer`, `execution_info`,
+    and `server_info` from the node-level `Runtime`, while `tool_call_id` is
+    populated from the current tool call. The `tools` argument is not supplied,
+    so it uses its default empty list.
 
     Example:
         ```python
