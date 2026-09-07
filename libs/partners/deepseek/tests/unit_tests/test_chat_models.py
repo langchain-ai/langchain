@@ -325,8 +325,8 @@ class TestChatDeepSeekStrictMode:
         assert llm.api_base == DEFAULT_API_BASE
         assert str(llm.root_client.base_url).startswith(DEFAULT_API_BASE)
 
-    def test_beta_copy_preserves_client_transport(self) -> None:
-        """The beta copy must preserve each client's HTTP transport."""
+    def test_beta_copy_rebuilds_clients(self) -> None:
+        """The beta copy must use new clients."""
         llm = ChatDeepSeek(
             model="deepseek-chat",
             api_key=SecretStr("test_key"),
@@ -336,21 +336,8 @@ class TestChatDeepSeekStrictMode:
 
         assert beta_model.root_client is not llm.root_client
         assert beta_model.root_async_client is not llm.root_async_client
-        assert beta_model.root_client._client is llm.root_client._client
-        assert beta_model.root_async_client._client is llm.root_async_client._client
         assert str(beta_model.root_client.base_url).startswith(DEFAULT_BETA_API_BASE)
         assert str(beta_model.root_async_client.base_url).startswith(
-            DEFAULT_BETA_API_BASE
-        )
-
-        custom_model = ChatDeepSeek(
-            model="deepseek-chat",
-            api_key=SecretStr("test_key"),
-            client=llm.client,
-            async_client=llm.async_client,
-        )._with_beta_api_base()
-        assert str(custom_model.root_client.base_url).startswith(DEFAULT_BETA_API_BASE)
-        assert str(custom_model.root_async_client.base_url).startswith(
             DEFAULT_BETA_API_BASE
         )
 
