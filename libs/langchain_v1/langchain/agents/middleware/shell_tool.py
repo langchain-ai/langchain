@@ -699,7 +699,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]
     ) -> None:
         """Async run shutdown commands and release resources when an agent completes."""
-        return self.after_agent(state, runtime)
+        await run_in_executor(None, self.after_agent, state, runtime)
 
     def _get_or_create_resources(self, state: ShellToolState[ResponseT]) -> _SessionResources:
         """Get existing resources from state or create new ones if they don't exist.

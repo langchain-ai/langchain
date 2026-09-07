@@ -5,6 +5,7 @@ import logging
 import os
 import signal
 import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import Any, cast
@@ -458,6 +459,25 @@ async def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
         await middleware.aafter_agent(state, Runtime())
     finally:
         pass
+
+
+async def test_aafter_agent_offloads_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that async cleanup does not run on the event loop thread."""
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    event_loop_thread_id = threading.get_ident()
+    cleanup_thread_ids: list[int] = []
+
+    def record_cleanup(_state: ShellToolState, _runtime: Runtime) -> None:
+        cleanup_thread_ids.append(threading.get_ident())
+
+    monkeypatch.setattr(middleware, "after_agent", record_cleanup)
+
+    await middleware.aafter_agent(_empty_state(), Runtime())
+
+    assert cleanup_thread_ids
+    assert cleanup_thread_ids[0] != event_loop_thread_id
 
 
 def test_shell_middleware_resumable_after_interrupt(tmp_path: Path) -> None:
