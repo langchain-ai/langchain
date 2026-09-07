@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import gc
 import logging
 import os
@@ -461,23 +462,26 @@ async def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
         pass
 
 
-async def test_aafter_agent_offloads_cleanup(
+async def test_aafter_agent_does_not_block_event_loop(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Test that async cleanup does not run on the event loop thread."""
+    """Test that async cleanup does not block other event loop tasks."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
-    event_loop_thread_id = threading.get_ident()
-    cleanup_thread_ids: list[int] = []
+    event_loop = asyncio.get_running_loop()
+    cleanup_started = asyncio.Event()
+    release_cleanup = threading.Event()
 
     def record_cleanup(_state: ShellToolState, _runtime: Runtime) -> None:
-        cleanup_thread_ids.append(threading.get_ident())
+        event_loop.call_soon_threadsafe(cleanup_started.set)
+        assert release_cleanup.wait(timeout=1)
 
     monkeypatch.setattr(middleware, "after_agent", record_cleanup)
 
-    await middleware.aafter_agent(_empty_state(), Runtime())
+    cleanup_task = asyncio.create_task(middleware.aafter_agent(_empty_state(), Runtime()))
+    await cleanup_started.wait()
 
-    assert cleanup_thread_ids
-    assert cleanup_thread_ids[0] != event_loop_thread_id
+    release_cleanup.set()
+    await cleanup_task
 
 
 def test_shell_middleware_resumable_after_interrupt(tmp_path: Path) -> None:
