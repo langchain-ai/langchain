@@ -59,3 +59,39 @@ def test_importable_all_via_subprocess() -> None:
             if code != 0:
                 msg = f"Failed to import {module_name}."
                 raise ValueError(msg)
+
+
+def test_runnables_does_not_import_langsmith() -> None:
+    """Importing `langchain_core.runnables` must not pull in the `langsmith` SDK.
+
+    The tracer modules reach `langsmith` through `tracers.schemas`, so importing
+    them at module level loads the SDK for every program, including those that
+    never trace. Run in a subprocess so the result cannot be affected by imports
+    performed by other tests.
+
+    `Runnable` is bound rather than importing the package alone, because
+    `langchain_core.runnables` resolves its exports lazily and would not load
+    `runnables.base` otherwise.
+    """
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import sys; from langchain_core.runnables import Runnable; "
+                "sys.exit(2 if 'langsmith' in sys.modules else 0)"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode == 2:
+        msg = (
+            "`langsmith` was imported as a side effect of importing "
+            "`langchain_core.runnables`"
+        )
+        raise AssertionError(msg)
+    if result.returncode != 0:
+        msg = f"Subprocess failed unexpectedly:\n{result.stderr}"
+        raise AssertionError(msg)

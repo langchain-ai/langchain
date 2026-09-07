@@ -84,18 +84,6 @@ from langchain_core.runnables.utils import (
     is_async_generator,
 )
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
-from langchain_core.tracers.event_stream import (
-    _astream_events_implementation_v1,
-    _astream_events_implementation_v2,
-)
-from langchain_core.tracers.log_stream import (
-    LogStreamCallbackHandler,
-    _astream_log_implementation,
-)
-from langchain_core.tracers.root_listeners import (
-    AsyncRootListenersTracer,
-    RootListenersTracer,
-)
 from langchain_core.utils.aiter import aclosing, atee
 from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import (
@@ -1309,6 +1297,12 @@ class Runnable(ABC, Generic[Input, Output]):
             A `RunLogPatch` or `RunLog` object.
 
         """
+        # Deferred to avoid importing langsmith at module level (~132ms).
+        from langchain_core.tracers.log_stream import (  # noqa: PLC0415
+            LogStreamCallbackHandler,
+            _astream_log_implementation,
+        )
+
         warn_deprecated(
             since="1.3.3",
             message=("astream_log is deprecated. Use astream instead."),
@@ -1626,6 +1620,12 @@ class Runnable(ABC, Generic[Input, Output]):
         exclude_tags: Sequence[str] | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[StreamEvent]:
+        # Deferred to avoid importing langsmith at module level (~132ms).
+        from langchain_core.tracers.event_stream import (  # noqa: PLC0415
+            _astream_events_implementation_v1,
+            _astream_events_implementation_v2,
+        )
+
         if version == "v2":
             event_stream = _astream_events_implementation_v2(
                 self,
@@ -1963,6 +1963,11 @@ class Runnable(ABC, Generic[Input, Output]):
             chain.invoke(2)
             ```
         """
+        # Deferred to avoid importing langsmith at module level (~132ms).
+        from langchain_core.tracers.root_listeners import (  # noqa: PLC0415
+            RootListenersTracer,
+        )
+
         return RunnableBinding(
             bound=self,
             config_factories=[
@@ -2060,6 +2065,11 @@ class Runnable(ABC, Generic[Input, Output]):
             # on end callback ends at 2025-03-01T07:05:30.884831+00:00
             ```
         """
+        # Deferred to avoid importing langsmith at module level (~132ms).
+        from langchain_core.tracers.root_listeners import (  # noqa: PLC0415
+            AsyncRootListenersTracer,
+        )
+
         return RunnableBinding(
             bound=self,
             config_factories=[
@@ -6495,6 +6505,10 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
         Returns:
             A new `Runnable` with the listeners bound.
         """
+        # Deferred to avoid importing langsmith at module level (~132ms).
+        from langchain_core.tracers.root_listeners import (  # noqa: PLC0415
+            RootListenersTracer,
+        )
 
         def listener_config_factory(config: RunnableConfig) -> RunnableConfig:
             return {
