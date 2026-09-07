@@ -334,6 +334,22 @@ def test_docker_policy_rejects_cpu_limit() -> None:
         DockerExecutionPolicy(cpu_time_seconds=1)
 
 
+def test_docker_policy_omitted_env_does_not_forward_host_environment(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """An omitted environment must not expose host variables to the container."""
+    monkeypatch.setenv("LANGCHAIN_SHELL_HOST_SECRET", "secret")
+    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/docker")
+    policy = DockerExecutionPolicy()
+
+    environment = policy.prepare_environment(None)
+    command = policy._build_command(tmp_path, environment, ("/bin/sh",))
+
+    assert environment == {}
+    assert "-e" not in command
+    assert not any("LANGCHAIN_SHELL_HOST_SECRET" in arg for arg in command)
+
+
 def test_docker_policy_validates_memory() -> None:
     with pytest.raises(ValueError, match="memory_bytes must be positive if provided"):
         DockerExecutionPolicy(memory_bytes=0)

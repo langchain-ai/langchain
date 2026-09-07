@@ -236,6 +236,29 @@ def test_normalize_env_coercion(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+def test_omitted_env_inherits_parent_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that an omitted environment inherits variables from the parent process."""
+    monkeypatch.setenv("LANGCHAIN_SHELL_TEST_ENV", "inherited")
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "printf '%s\\n' \"$LANGCHAIN_SHELL_TEST_ENV\""},
+            tool_call_id=None,
+        )
+        assert result.strip() == "inherited"
+    finally:
+        middleware.after_agent(state, runtime)
+
+
 def test_shell_tool_missing_command_string(tmp_path: Path) -> None:
     """Test that shell tool raises an error when command is not a string."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")

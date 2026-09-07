@@ -580,8 +580,10 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
                 Defaults to an implementation-defined bash command.
             env: Optional environment variables to supply to the shell session.
 
-                Values are coerced to strings before command execution. If omitted, the
-                session inherits the parent process environment.
+                Values are coerced to strings and replace the inherited environment. If
+                omitted, host and Codex sandbox sessions inherit the parent process
+                environment, while Docker sessions do not forward host variables into the
+                container.
         """
         super().__init__()
         self._workspace_root = Path(workspace_root) if workspace_root else None
@@ -736,7 +738,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
             workspace_path,
             self._execution_policy,
             self._shell_command,
-            self._environment or {},
+            self._execution_policy.prepare_environment(self._environment),
         )
         try:
             session.start()

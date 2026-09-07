@@ -66,6 +66,9 @@ class BaseExecutionPolicy(abc.ABC):
     isolation using Docker.
     """
 
+    inherit_parent_environment: typing.ClassVar[bool] = True
+    """Whether an omitted environment inherits variables from the parent process."""
+
     command_timeout: float = 30.0
     startup_timeout: float = 30.0
     termination_timeout: float = 10.0
@@ -76,6 +79,21 @@ class BaseExecutionPolicy(abc.ABC):
         if self.max_output_lines <= 0:
             msg = "max_output_lines must be positive."
             raise ValueError(msg)
+
+    def prepare_environment(self, env: Mapping[str, str] | None) -> dict[str, str]:
+        """Resolve the environment passed to the shell process.
+
+        Args:
+            env: Explicit environment variables, or `None` to use the policy default.
+
+        Returns:
+            Explicit variables when provided, otherwise the parent environment for
+            policies that enable inheritance or an empty environment for policies that
+            disable it.
+        """
+        if env is not None:
+            return dict(env)
+        return os.environ.copy() if self.inherit_parent_environment else {}
 
     @abc.abstractmethod
     def spawn(
@@ -280,6 +298,8 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
     default image is `python:3.12-alpine3.19`; supply a custom image if you need
     preinstalled tooling.
     """
+
+    inherit_parent_environment: typing.ClassVar[bool] = False
 
     binary: str = "docker"
     image: str = "python:3.12-alpine3.19"
