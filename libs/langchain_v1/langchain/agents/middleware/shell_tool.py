@@ -22,14 +22,10 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, overload
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import run_in_executor
 from langchain_core.tools.base import ToolException
-from langchain_core.tools import BaseTool
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
 from pydantic.json_schema import SkipJsonSchema
 from typing_extensions import NotRequired, override
-from collections.abc import Awaitable, Callable
-
-from langgraph.prebuilt.tool_node import ToolCallRequest
 
 from langchain.agents.middleware._execution import (
     SHELL_TEMP_PREFIX,
@@ -54,9 +50,9 @@ from langchain.agents.middleware.types import (
 from langchain.tools import ToolRuntime, tool
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
-    from langgraph.types import Command
+    from collections.abc import Mapping, Sequence, Awaitable, Callable
     from langgraph.runtime import Runtime
+    from langgraph.prebuilt.tool_node import ToolCallRequest
 
 
 LOGGER = logging.getLogger(__name__)
@@ -774,7 +770,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         """Reject disallowed shell commands before execution.
 
         Args:
-            request: Tool call request with call dict, `BaseTool`, state, and runtime.
+            request: Tool call request.
             handler: Callable to execute the tool.
 
         Returns:
@@ -806,7 +802,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         """Reject disallowed shell commands before execution.
 
         Args:
-            request: Tool call request with call dict, `BaseTool`, state, and runtime.
+            request: Tool call request.
             handler: Callable to execute the tool.
 
         Returns:
