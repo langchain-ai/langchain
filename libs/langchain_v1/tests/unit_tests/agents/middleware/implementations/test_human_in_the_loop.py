@@ -149,6 +149,44 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
         assert result["messages"][0].tool_calls[0]["id"] == "1"  # ID should be preserved
 
 
+def test_human_in_the_loop_middleware_edit_cannot_change_tool_name() -> None:
+    """Test that an edit decision cannot redirect a call to another tool."""
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"tool_a": {"allowed_decisions": ["edit"]}})
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "tool_a", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = AgentState[Any](messages=[HumanMessage(content="Hello"), ai_message])
+
+    def mock_cross_tool_edit(_: Any) -> dict[str, Any]:
+        return {
+            "decisions": [
+                {
+                    "type": "edit",
+                    "edited_action": Action(
+                        name="tool_b",
+                        args={"input": "edited"},
+                    ),
+                }
+            ]
+        }
+
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            side_effect=mock_cross_tool_edit,
+        ),
+        pytest.raises(
+            ValueError,
+            match=re.escape(
+                "Tool name cannot be changed in an edit decision. Expected 'tool_a', got 'tool_b'."
+            ),
+        ),
+    ):
+        middleware.after_model(state, Runtime())
+
+
 def test_human_in_the_loop_middleware_single_tool_rejection_reason() -> None:
     """Test a custom rejection reason retains its human-provided context."""
     middleware = HumanInTheLoopMiddleware(

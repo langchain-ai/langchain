@@ -90,7 +90,7 @@ class EditDecision(TypedDict):
     edited_action: Action
     """Edited action for the agent to perform.
 
-    Ex: for a tool call, a human reviewer can edit the tool name and args.
+    For a tool call, a human reviewer can edit the args but not the tool name.
     """
 
 
@@ -327,10 +327,16 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             return tool_call, None
         if decision["type"] == "edit" and "edit" in allowed_decisions:
             edited_action = decision["edited_action"]
+            if edited_action["name"] != tool_call["name"]:
+                msg = (
+                    "Tool name cannot be changed in an edit decision. "
+                    f"Expected '{tool_call['name']}', got '{edited_action['name']}'."
+                )
+                raise ValueError(msg)
             return (
                 ToolCall(
                     type="tool_call",
-                    name=edited_action["name"],
+                    name=tool_call["name"],
                     args=edited_action["args"],
                     id=tool_call["id"],
                 ),
