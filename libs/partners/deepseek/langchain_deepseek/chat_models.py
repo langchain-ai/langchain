@@ -335,30 +335,19 @@ class ChatDeepSeek(BaseChatOpenAI):
         return _get_default_model_profile(self.model_name) or None
 
     def _with_beta_api_base(self) -> Self:
-        """Return a copy of this model that targets DeepSeek's beta endpoint.
-
-        DeepSeek only honors `strict` tool schemas on its beta endpoint, so
-        `bind_tools()` and `with_structured_output()` retarget the model when
-        `strict=True`.
-
-        `model_copy()` does not re-run validators and carries the `openai`
-        clients over by reference, so updating `api_base` alone would leave the
-        copy issuing requests against the original base URL. The clients are
-        cleared so `validate_environment()` rebuilds them against the beta
-        endpoint.
-        """
-        beta_model = self.model_copy(
-            update={
-                "api_base": DEFAULT_BETA_API_BASE,
-                "client": None,
-                "async_client": None,
-                "root_client": None,
-                "root_async_client": None,
-            }
-        )
-        # Pydantic exposes the decorated validator as a descriptor proxy, which
-        # mypy does not consider callable; invoking it directly is intentional.
-        return beta_model.validate_environment()  # type: ignore[operator]
+        """Return a copy of this model that targets DeepSeek's beta endpoint."""
+        beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+        if self.root_client:
+            beta_model.root_client = self.root_client.with_options(
+                base_url=DEFAULT_BETA_API_BASE
+            )
+            beta_model.client = beta_model.root_client.chat.completions
+        if self.root_async_client:
+            beta_model.root_async_client = self.root_async_client.with_options(
+                base_url=DEFAULT_BETA_API_BASE
+            )
+            beta_model.async_client = beta_model.root_async_client.chat.completions
+        return beta_model
 
     def _get_request_payload(
         self,

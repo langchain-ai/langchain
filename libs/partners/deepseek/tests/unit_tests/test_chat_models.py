@@ -325,13 +325,8 @@ class TestChatDeepSeekStrictMode:
         assert llm.api_base == DEFAULT_API_BASE
         assert str(llm.root_client.base_url).startswith(DEFAULT_API_BASE)
 
-    def test_beta_copy_rebuilds_clients(self) -> None:
-        """The beta copy must not share the default-endpoint clients.
-
-        `model_copy()` does not re-run validators, so a copy that only updates
-        `api_base` keeps the parent's `openai` clients and still calls the
-        default endpoint.
-        """
+    def test_beta_copy_preserves_client_transport(self) -> None:
+        """The beta copy must preserve each client's HTTP transport."""
         llm = ChatDeepSeek(
             model="deepseek-chat",
             api_key=SecretStr("test_key"),
@@ -341,6 +336,8 @@ class TestChatDeepSeekStrictMode:
 
         assert beta_model.root_client is not llm.root_client
         assert beta_model.root_async_client is not llm.root_async_client
+        assert beta_model.root_client._client is llm.root_client._client
+        assert beta_model.root_async_client._client is llm.root_async_client._client
         assert str(beta_model.root_client.base_url).startswith(DEFAULT_BETA_API_BASE)
         assert str(beta_model.root_async_client.base_url).startswith(
             DEFAULT_BETA_API_BASE
@@ -360,6 +357,19 @@ class TestChatDeepSeekStrictMode:
         # Test with strict=None (default)
         bound_model_none = llm.bind_tools([SampleTool])
         assert bound_model_none is not None
+
+    def test_strict_mode_preserves_custom_api_base(self) -> None:
+        """A custom API base must bypass the DeepSeek beta endpoint."""
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
+            base_url="https://proxy.example/v1",
+        )
+
+        bound_model = llm.bind_tools([SampleTool], strict=True)
+
+        assert _find_chat_model(bound_model) is llm
+        assert str(llm.root_client.base_url).startswith("https://proxy.example/v1")
 
     def test_with_structured_output_strict_mode_uses_beta_endpoint(self) -> None:
         """Test that with_structured_output with strict=True uses beta endpoint."""
