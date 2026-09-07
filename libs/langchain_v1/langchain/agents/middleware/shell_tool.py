@@ -683,8 +683,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
     """
 
     def _contains_dangerous_pattern(self, command: str) -> tuple[bool, str | None]:
-        """
-        Check if the command contains any dangerous shell patterns.
+        """Check if the command contains any dangerous shell patterns.
 
         These patterns can be used to bypass allow-list validation by embedding
         arbitrary commands within seemingly safe commands. The check includes
@@ -696,7 +695,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
             command: The shell command to check.
 
         Returns:
-            A tuple of (is_dangerous, pattern), where `pattern` is the dangerous pattern that was found, or None if no dangerous pattern was found.
+            A tuple of (is_dangerous, pattern), where `pattern` is the dangerous 
+            pattern that was found, or None if no dangerous pattern was found.
         """
 
         for pattern in ShellToolMiddleware.DANGEROUS_SHELL_PATTERNS:
@@ -711,7 +711,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         return False, None
 
     def _is_command_allowed(self, command: str) -> tuple[bool, str]:
-        """ Check if a shell command is allowed based on command
+        """Check if a shell command is allowed based on command
 
         SECURITY: For regular allow-lists, this function rejects commands containing
         dangerous shell patterns (command substitution, redirects, process
@@ -722,7 +722,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
             command (str): The shell command to check.
 
         Returns:
-            tuple[bool, str]: (True, "") if allowed; (False, reason) if not.
+            tuple[bool, str]: (True, "") if allowed;
+            (False, reason) if not.
         """
         if not self._allow_list or not command or not command.strip():
             return True, ""
