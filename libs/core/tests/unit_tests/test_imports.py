@@ -59,3 +59,18 @@ def test_importable_all_via_subprocess() -> None:
             if code != 0:
                 msg = f"Failed to import {module_name}."
                 raise ValueError(msg)
+
+
+def test_runnables_import_does_not_import_langsmith() -> None:
+    """Importing runnable primitives should not eagerly import the LangSmith SDK."""
+    code = (
+        "import sys\n"
+        "from langchain_core.runnables import Runnable\n"
+        "loaded = sorted(\n"
+        "    name for name in sys.modules\n"
+        "    if name == 'langsmith' or name.startswith('langsmith.')\n"
+        ")\n"
+        "assert not loaded, loaded[:10]\n"
+        "assert Runnable.__name__ == 'Runnable'\n"
+    )
+    subprocess.run([sys.executable, "-c", code], check=True)
