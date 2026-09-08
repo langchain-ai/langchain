@@ -326,6 +326,59 @@ async def test_fallbacks_astream() -> None:
         _ = [_ async for _ in runnable.astream({})]
 
 
+# Iterating an empty list (rather than returning early) keeps the helpers below
+# generator functions without introducing unreachable statements.
+_NO_CHUNKS: list[str] = []
+
+
+def _generate_empty(_: Iterator[Any]) -> Iterator[str]:
+    """Yield nothing, which is a valid result rather than a failure."""
+    yield from _NO_CHUNKS
+
+
+async def _agenerate_empty(_: AsyncIterator[Any]) -> AsyncIterator[str]:
+    """Async counterpart of `_generate_empty`."""
+    for chunk in _NO_CHUNKS:
+        yield chunk
+
+
+def test_fallbacks_stream_empty() -> None:
+    # A `Runnable` that yields nothing succeeded, so no fallback should be used.
+    runnable = RunnableGenerator(_generate_empty).with_fallbacks(
+        [RunnableGenerator(_generate)]
+    )
+    assert list(runnable.stream({})) == []
+
+    # Nothing anywhere to stream is still not an error.
+    runnable = RunnableGenerator(_generate_empty).with_fallbacks(
+        [RunnableGenerator(_generate_empty)]
+    )
+    assert list(runnable.stream({})) == []
+
+    # A genuine failure still falls back, even when the fallback yields nothing.
+    runnable = RunnableGenerator(_generate_immediate_error).with_fallbacks(
+        [RunnableGenerator(_generate_empty)]
+    )
+    assert list(runnable.stream({})) == []
+
+
+async def test_fallbacks_astream_empty() -> None:
+    runnable = RunnableGenerator(_agenerate_empty).with_fallbacks(
+        [RunnableGenerator(_agenerate)]
+    )
+    assert [c async for c in runnable.astream({})] == []
+
+    runnable = RunnableGenerator(_agenerate_empty).with_fallbacks(
+        [RunnableGenerator(_agenerate_empty)]
+    )
+    assert [c async for c in runnable.astream({})] == []
+
+    runnable = RunnableGenerator(_agenerate_immediate_error).with_fallbacks(
+        [RunnableGenerator(_agenerate_empty)]
+    )
+    assert [c async for c in runnable.astream({})] == []
+
+
 class FakeStructuredOutputModel(BaseChatModel):
     foo: int
 

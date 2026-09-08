@@ -486,6 +486,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        # Distinguishes "the stream ended without producing anything" from "the
+        # stream raised". Without it, the `StopIteration` raised by an exhausted
+        # stream would be caught below as if the `Runnable` had failed.
+        sentinel = object()
+        first_chunk: Output | object = sentinel
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -497,7 +502,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         input,
                         **kwargs,
                     )
-                    chunk: Output = context.run(next, stream)
+                    first_chunk = context.run(next, stream, sentinel)
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -511,6 +516,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             run_manager.on_chain_error(first_error)
             raise first_error
 
+        if first_chunk is sentinel:
+            # The `Runnable` succeeded but yielded nothing, so propagate the empty
+            # stream rather than falling back or raising.
+            run_manager.on_chain_end(None)
+            return
+
+        chunk = cast("Output", first_chunk)
         yield chunk
         output: Output | None = chunk
         try:
@@ -550,6 +562,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        # See the note in `stream`: an exhausted stream raises `StopAsyncIteration`,
+        # which would otherwise be mistaken for a failed `Runnable`.
+        sentinel = object()
+        first_chunk: Output | object = sentinel
         for runnable in self.runnables:
             try:
                 if self.exception_key and last_error is not None:
@@ -561,7 +577,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         child_config,
                         **kwargs,
                     )
-                    chunk = await coro_with_context(anext(stream), context)
+                    first_chunk = await coro_with_context(
+                        anext(stream, sentinel), context
+                    )
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
@@ -575,6 +593,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             await run_manager.on_chain_error(first_error)
             raise first_error
 
+        if first_chunk is sentinel:
+            # The `Runnable` succeeded but yielded nothing, so propagate the empty
+            # stream rather than falling back or raising.
+            await run_manager.on_chain_end(None)
+            return
+
+        chunk = cast("Output", first_chunk)
         yield chunk
         output: Output | None = chunk
         try:
