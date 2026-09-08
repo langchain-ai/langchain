@@ -136,7 +136,9 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     return json.loads(s, strict=strict)
 
 
-_json_markdown_re = re.compile(r"```(json)?(.*)", re.DOTALL)
+# Fenced-block language tags are case-insensitive in practice: models emit
+# "```JSON" or "```Json" as readily as "```json".
+_json_markdown_re = re.compile(r"```(json)?(.*)", re.DOTALL | re.IGNORECASE)
 
 
 def parse_json_markdown(

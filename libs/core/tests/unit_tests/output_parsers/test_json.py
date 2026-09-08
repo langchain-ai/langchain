@@ -201,6 +201,13 @@ def test_parse_json_with_code_blocks() -> None:
     assert parsed == {"foo": "```bar```"}
 
 
+@pytest.mark.parametrize("tag", ["JSON", "Json", "jSoN"])
+def test_parse_json_with_uppercase_code_block_tag(tag: str) -> None:
+    """The language tag of the fence is matched case-insensitively."""
+    parsed = parse_json_markdown(f'```{tag}\n{{"foo": "bar"}}\n```')
+    assert parsed == {"foo": "bar"}
+
+
 def test_parse_json_with_part_code_blocks() -> None:
     parsed = parse_json_markdown(JSON_WITH_PART_MARKDOWN_CODE_BLOCK)
     assert parsed == {"valid_json": "hey ```print(hello world!)``` hey"}
