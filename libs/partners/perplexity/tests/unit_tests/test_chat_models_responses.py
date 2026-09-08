@@ -135,6 +135,77 @@ def test_invoke_routes_to_responses_when_builtin_tool_in_payload() -> None:
     chat_create.assert_not_called()
 
 
+def test_invoke_responses_preserves_cost_metadata() -> None:
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
+    llm.client = MagicMock()
+    cost = {"total_cost": 0.123, "search_queries_cost": 0.09}
+    usage = _make_response_obj(
+        input_tokens=11,
+        output_tokens=22,
+        total_tokens=33,
+        num_search_queries=3,
+        cost=cost,
+    )
+    response = _make_response_obj(
+        id="resp_cost",
+        model="sonar-pro",
+        status="completed",
+        object="response",
+        output_text="hello",
+        output=[],
+        usage=usage,
+        citations=None,
+        images=None,
+        related_questions=None,
+        search_results=None,
+    )
+    llm.client.responses.create.return_value = response
+
+    result = llm.invoke("Find recent news", tools=[{"type": "web_search"}])
+
+    assert result.response_metadata["cost"] == cost
+    assert result.usage_metadata is not None
+    assert (
+        result.usage_metadata["input_token_details"]["num_search_queries"] == 3  # type: ignore[typeddict-item]
+    )
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_responses_preserves_cost_metadata() -> None:
+    llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
+    cost = {"total_cost": 0.456, "search_queries_cost": 0.12}
+    usage = _make_response_obj(
+        input_tokens=5,
+        output_tokens=7,
+        total_tokens=12,
+        num_search_queries=0,
+        cost=cost,
+    )
+    response = _make_response_obj(
+        id="resp_async_cost",
+        model="sonar-pro",
+        status="completed",
+        object="response",
+        output_text="async hello",
+        output=[],
+        usage=usage,
+        citations=None,
+        images=None,
+        related_questions=None,
+        search_results=None,
+    )
+    llm.async_client = MagicMock()
+    llm.async_client.responses.create = AsyncMock(return_value=response)
+
+    result = await llm.ainvoke("Find recent news", tools=[{"type": "web_search"}])
+
+    assert result.response_metadata["cost"] == cost
+    assert result.usage_metadata is not None
+    assert (
+        result.usage_metadata["input_token_details"]["num_search_queries"] == 0  # type: ignore[typeddict-item]
+    )
+
+
 def test_invoke_routes_to_responses_when_previous_response_id_bound() -> None:
     llm = ChatPerplexity(model="sonar-pro", api_key="test")
     llm.client = MagicMock()
@@ -461,7 +532,12 @@ def test_stream_yields_text_chunks_and_final_usage() -> None:
     llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
     llm.client = MagicMock()
 
-    usage = _make_response_obj(input_tokens=2, output_tokens=6, total_tokens=8)
+    usage = _make_response_obj(
+        input_tokens=2,
+        output_tokens=6,
+        total_tokens=8,
+        cost={"total_cost": 0.02, "search_queries_cost": 0.01},
+    )
     completed_response = _make_response_obj(
         id="resp_stream",
         model="sonar-pro",
@@ -492,13 +568,24 @@ def test_stream_yields_text_chunks_and_final_usage() -> None:
     assert final_usage is not None
     assert final_usage["input_tokens"] == 2
     assert final_usage["output_tokens"] == 6
+    cost_chunks = [c for c in chunks if "cost" in c.response_metadata]
+    assert cost_chunks
+    assert cost_chunks[-1].response_metadata["cost"] == {
+        "total_cost": 0.02,
+        "search_queries_cost": 0.01,
+    }
 
 
 @pytest.mark.asyncio
 async def test_astream_yields_text_chunks_and_final_usage() -> None:
     llm = ChatPerplexity(model="sonar-pro", api_key="test", use_responses_api=True)
 
-    usage = _make_response_obj(input_tokens=3, output_tokens=9, total_tokens=12)
+    usage = _make_response_obj(
+        input_tokens=3,
+        output_tokens=9,
+        total_tokens=12,
+        cost={"total_cost": 0.03, "search_queries_cost": 0.015},
+    )
     completed_response = _make_response_obj(
         id="resp_async",
         model="sonar-pro",
@@ -545,6 +632,12 @@ async def test_astream_yields_text_chunks_and_final_usage() -> None:
     assert final_usage is not None
     assert final_usage["input_tokens"] == 3
     assert final_usage["output_tokens"] == 9
+    cost_chunks = [c for c in collected if "cost" in c.response_metadata]
+    assert cost_chunks
+    assert cost_chunks[-1].response_metadata["cost"] == {
+        "total_cost": 0.03,
+        "search_queries_cost": 0.015,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -863,6 +956,18 @@ def test_convert_responses_usage_maps_cache_token_details() -> None:
     result = _convert_responses_usage(usage)
     assert result is not None
     assert result["input_token_details"] == {"cache_read": 800, "cache_creation": 150}
+
+
+def test_convert_responses_usage_maps_search_queries() -> None:
+    usage = _make_response_obj(
+        input_tokens=1000,
+        output_tokens=50,
+        total_tokens=1050,
+        num_search_queries=3,
+    )
+    result = _convert_responses_usage(usage)
+    assert result is not None
+    assert result["input_token_details"] == {"num_search_queries": 3}
 
 
 def test_convert_responses_usage_maps_cache_token_details_from_mapping() -> None:

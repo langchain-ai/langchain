@@ -96,6 +96,14 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
 
+    input_token_details: InputTokenDetails = {}
+    if (num_search_queries := token_usage.get("num_search_queries")) is not None:
+        # Search requests are billed separately from tokens and must remain
+        # visible to downstream cost calculators.
+        input_token_details["num_search_queries"] = (  # type: ignore[typeddict-unknown-key]
+            num_search_queries
+        )
+
     # Build output_token_details for Perplexity-specific fields
     output_token_details: OutputTokenDetails = {}
     if (reasoning := token_usage.get("reasoning_tokens")) is not None:
@@ -103,12 +111,15 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     if (citation_tokens := token_usage.get("citation_tokens")) is not None:
         output_token_details["citation_tokens"] = citation_tokens  # type: ignore[typeddict-unknown-key]
 
-    return UsageMetadata(
+    usage = UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
         output_token_details=output_token_details,
     )
+    if input_token_details:
+        usage["input_token_details"] = input_token_details
+    return usage
 
 
 _RESPONSES_ONLY_ARGS = frozenset(
@@ -339,6 +350,12 @@ def _get_attr(obj: Any, name: str, default: Any = None) -> Any:
     return getattr(obj, name, default)
 
 
+def _serialize_cost(cost: Any) -> Any:
+    """Return a JSON-compatible cost payload when the SDK provides a model."""
+    model_dump = getattr(cost, "model_dump", None)
+    return model_dump() if callable(model_dump) else cost
+
+
 def _convert_responses_usage(usage: Any) -> UsageMetadata | None:
     """Build `UsageMetadata` from a Responses API usage payload.
 
@@ -369,6 +386,11 @@ def _convert_responses_usage(usage: Any) -> UsageMetadata | None:
         cache_creation = _get_attr(details, "cache_creation_input_tokens", None)
         if cache_creation is not None:
             input_token_details["cache_creation"] = cache_creation
+
+    if (num_search_queries := _get_attr(usage, "num_search_queries", None)) is not None:
+        input_token_details["num_search_queries"] = (  # type: ignore[typeddict-unknown-key]
+            num_search_queries
+        )
 
     return UsageMetadata(
         input_tokens=input_tokens,
@@ -461,6 +483,9 @@ def _convert_responses_to_chat_result(response: Any) -> ChatResult:
         if value is not None:
             response_metadata[key] = value
     _set_model_name_alias(response_metadata)
+    cost = _get_attr(_get_attr(response, "usage", None), "cost", None)
+    if cost is not None:
+        response_metadata["cost"] = _serialize_cost(cost)
 
     message = AIMessage(
         content=content,
@@ -557,6 +582,9 @@ def _convert_responses_stream_event_to_chunk(
                 value = _get_attr(response, key, None)
                 if value:
                     additional_kwargs[key] = value
+            cost = _get_attr(_get_attr(response, "usage", None), "cost", None)
+            if cost is not None:
+                response_metadata["cost"] = _serialize_cost(cost)
         return ChatGenerationChunk(
             message=AIMessageChunk(
                 content="",
@@ -1219,6 +1247,7 @@ class ChatPerplexity(BaseChatModel):
         added_model_name: bool = False
         added_search_queries: bool = False
         added_search_context_size: bool = False
+        added_cost: bool = False
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1239,7 +1268,9 @@ class ChatPerplexity(BaseChatModel):
                 generation_info["model_name"] = model_name
                 added_model_name = True
             if total_usage := chunk.get("usage"):
-                if num_search_queries := total_usage.get("num_search_queries"):
+                if (
+                    num_search_queries := total_usage.get("num_search_queries")
+                ) is not None:
                     if not added_search_queries:
                         generation_info["num_search_queries"] = num_search_queries
                         added_search_queries = True
@@ -1247,6 +1278,9 @@ class ChatPerplexity(BaseChatModel):
                     if search_context_size := total_usage.get("search_context_size"):
                         generation_info["search_context_size"] = search_context_size
                         added_search_context_size = True
+                if (cost := total_usage.get("cost")) is not None and not added_cost:
+                    generation_info["cost"] = _serialize_cost(cost)
+                    added_cost = True
 
             choices = chunk.get("choices") or []
             if len(choices) == 0:
@@ -1336,6 +1370,7 @@ class ChatPerplexity(BaseChatModel):
         added_model_name: bool = False
         added_search_queries: bool = False
         added_search_context_size: bool = False
+        added_cost: bool = False
         async for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1355,7 +1390,9 @@ class ChatPerplexity(BaseChatModel):
                 generation_info["model_name"] = model_name
                 added_model_name = True
             if total_usage := chunk.get("usage"):
-                if num_search_queries := total_usage.get("num_search_queries"):
+                if (
+                    num_search_queries := total_usage.get("num_search_queries")
+                ) is not None:
                     if not added_search_queries:
                         generation_info["num_search_queries"] = num_search_queries
                         added_search_queries = True
@@ -1363,6 +1400,9 @@ class ChatPerplexity(BaseChatModel):
                     if search_context_size := total_usage.get("search_context_size"):
                         generation_info["search_context_size"] = search_context_size
                         added_search_context_size = True
+                if (cost := total_usage.get("cost")) is not None and not added_cost:
+                    generation_info["cost"] = _serialize_cost(cost)
+                    added_cost = True
 
             choices = chunk.get("choices") or []
             if len(choices) == 0:
@@ -1462,10 +1502,12 @@ class ChatPerplexity(BaseChatModel):
         response_metadata: dict[str, Any] = {
             "model_name": getattr(response, "model", self.model)
         }
-        if num_search_queries := usage_dict.get("num_search_queries"):
+        if (num_search_queries := usage_dict.get("num_search_queries")) is not None:
             response_metadata["num_search_queries"] = num_search_queries
         if search_context_size := usage_dict.get("search_context_size"):
             response_metadata["search_context_size"] = search_context_size
+        if (cost := usage_dict.get("cost")) is not None:
+            response_metadata["cost"] = _serialize_cost(cost)
 
         message = AIMessage(
             content=response.choices[0].message.content,
@@ -1531,10 +1573,12 @@ class ChatPerplexity(BaseChatModel):
         response_metadata: dict[str, Any] = {
             "model_name": getattr(response, "model", self.model)
         }
-        if num_search_queries := usage_dict.get("num_search_queries"):
+        if (num_search_queries := usage_dict.get("num_search_queries")) is not None:
             response_metadata["num_search_queries"] = num_search_queries
         if search_context_size := usage_dict.get("search_context_size"):
             response_metadata["search_context_size"] = search_context_size
+        if (cost := usage_dict.get("cost")) is not None:
+            response_metadata["cost"] = _serialize_cost(cost)
 
         message = AIMessage(
             content=response.choices[0].message.content,

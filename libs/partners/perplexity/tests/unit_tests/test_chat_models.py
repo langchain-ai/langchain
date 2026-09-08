@@ -200,6 +200,10 @@ def _usage_bearing_chunks() -> list[dict[str, Any]]:
                 "total_tokens": 13,
                 "num_search_queries": 2,
                 "search_context_size": "low",
+                "cost": {
+                    "total_cost": 0.042,
+                    "search_queries_cost": 0.02,
+                },
             },
         },
     ]
@@ -219,6 +223,10 @@ def test_perplexity_stream_emits_single_valued_usage_metadata_once() -> None:
     assert full.response_metadata["search_context_size"] == "low"
     assert full.response_metadata["num_search_queries"] == 2
     assert full.response_metadata["model_name"] == "sonar"
+    assert full.response_metadata["cost"] == {
+        "total_cost": 0.042,
+        "search_queries_cost": 0.02,
+    }
 
 
 @pytest.mark.asyncio
@@ -243,6 +251,10 @@ async def test_perplexity_astream_emits_single_valued_usage_metadata_once() -> N
     assert full.response_metadata["search_context_size"] == "low"
     assert full.response_metadata["num_search_queries"] == 2
     assert full.response_metadata["model_name"] == "sonar"
+    assert full.response_metadata["cost"] == {
+        "total_cost": 0.042,
+        "search_queries_cost": 0.02,
+    }
 
 
 def test_create_usage_metadata_basic() -> None:
@@ -251,6 +263,7 @@ def test_create_usage_metadata_basic() -> None:
         "prompt_tokens": 10,
         "completion_tokens": 20,
         "total_tokens": 30,
+        "num_search_queries": 0,
         "reasoning_tokens": 0,
         "citation_tokens": 0,
     }
@@ -262,6 +275,17 @@ def test_create_usage_metadata_basic() -> None:
     assert usage_metadata["total_tokens"] == 30
     assert usage_metadata["output_token_details"]["reasoning"] == 0
     assert usage_metadata["output_token_details"]["citation_tokens"] == 0  # type: ignore[typeddict-item]
+    assert (
+        usage_metadata["input_token_details"]["num_search_queries"] == 0  # type: ignore[typeddict-item]
+    )
+
+
+def test_create_usage_metadata_omits_missing_search_queries() -> None:
+    usage_metadata = _create_usage_metadata(
+        {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30}
+    )
+
+    assert "input_token_details" not in usage_metadata
 
 
 def test_perplexity_invoke_includes_num_search_queries(mocker: MockerFixture) -> None:
@@ -275,6 +299,7 @@ def test_perplexity_invoke_includes_num_search_queries(mocker: MockerFixture) ->
         "total_tokens": 30,
         "num_search_queries": 3,
         "search_context_size": "high",
+        "cost": {"total_cost": 0.123, "search_queries_cost": 0.09},
     }
 
     mock_response = MagicMock()
@@ -306,6 +331,14 @@ def test_perplexity_invoke_includes_num_search_queries(mocker: MockerFixture) ->
     assert result.response_metadata["num_search_queries"] == 3
     assert result.response_metadata["search_context_size"] == "high"
     assert result.response_metadata["model_name"] == "test-model"
+    assert result.response_metadata["cost"] == {
+        "total_cost": 0.123,
+        "search_queries_cost": 0.09,
+    }
+    assert result.usage_metadata is not None
+    assert (
+        result.usage_metadata["input_token_details"]["num_search_queries"] == 3  # type: ignore[typeddict-item]
+    )
     patcher.assert_called_once()
 
 
