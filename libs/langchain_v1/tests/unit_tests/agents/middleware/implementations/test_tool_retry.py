@@ -3,6 +3,7 @@
 import time
 from collections.abc import Callable
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
@@ -698,6 +699,41 @@ def test_tool_retry_max_delay_cap() -> None:
     assert delay_0 == 1.0
     assert delay_1 == 2.0
     assert delay_2 == 2.0
+
+
+def test_tool_retry_max_delay_cap_with_jitter() -> None:
+    """Test calculate_delay keeps the capped delay at or below `max_delay` under jitter."""
+    # Patch jitter to always take the upper bound so positive jitter cannot be
+    # masked by the random draw.
+    with patch(
+        "langchain.agents.middleware._retry.random.uniform",
+        side_effect=lambda _lower, upper: upper,
+    ):
+        # Pre-jitter delay is capped to `max_delay`, so jitter can only push it over.
+        delay = calculate_delay(
+            0,
+            backoff_factor=0.0,  # Constant delay
+            initial_delay=10.0,
+            max_delay=10.0,
+            jitter=True,
+        )
+
+    assert delay == 10.0
+
+    # Backoff growth that does not itself reach the cap is also bounded by it.
+    with patch(
+        "langchain.agents.middleware._retry.random.uniform",
+        side_effect=lambda _lower, upper: upper,
+    ):
+        delay = calculate_delay(
+            10,
+            backoff_factor=1.5,
+            initial_delay=1.0,
+            max_delay=60.0,  # 1.5 ** 10 = 57.67
+            jitter=True,
+        )
+
+    assert delay == 60.0
 
 
 def test_tool_retry_jitter_variation() -> None:

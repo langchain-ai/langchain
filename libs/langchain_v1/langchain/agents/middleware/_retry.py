@@ -128,7 +128,7 @@ def calculate_delay(
     if jitter and delay > 0:
         jitter_amount = delay * 0.25  # ±25% jitter
         delay += random.uniform(-jitter_amount, jitter_amount)  # noqa: S311
-        # Ensure delay is not negative after jitter
-        delay = max(0, delay)
+        # Cap again so positive jitter cannot push the delay past `max_delay`
+        delay = min(max(0, delay), max_delay)
 
     return delay
