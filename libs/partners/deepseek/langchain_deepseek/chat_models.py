@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from json import JSONDecodeError
 from typing import Any, Literal, TypeAlias, cast
 from urllib.parse import urlparse
 
 import openai
 from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -483,6 +484,32 @@ class ChatDeepSeek(BaseChatOpenAI):
                 e.pos,
             ) from e
 
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        try:
+            async for chunk in super()._astream(
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
+            ):
+                yield chunk
+        except JSONDecodeError as e:
+            msg = (
+                "DeepSeek API returned an invalid response. "
+                "Please check the API status and try again."
+            )
+            raise JSONDecodeError(
+                msg,
+                e.doc,
+                e.pos,
+            ) from e
+
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -492,6 +519,31 @@ class ChatDeepSeek(BaseChatOpenAI):
     ) -> ChatResult:
         try:
             return super()._generate(
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
+            )
+        except JSONDecodeError as e:
+            msg = (
+                "DeepSeek API returned an invalid response. "
+                "Please check the API status and try again."
+            )
+            raise JSONDecodeError(
+                msg,
+                e.doc,
+                e.pos,
+            ) from e
+
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        try:
+            return await super()._agenerate(
                 messages,
                 stop=stop,
                 run_manager=run_manager,

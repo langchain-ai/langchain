@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from json import JSONDecodeError
 from typing import Any, Literal
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
@@ -704,6 +706,99 @@ class TestChatDeepSeekPromptCacheUsage:
         message = generation_chunk.message
         assert isinstance(message, AIMessageChunk)
         assert message.usage_metadata is None
+
+
+INVALID_RESPONSE_MSG = (
+    "DeepSeek API returned an invalid response. "
+    "Please check the API status and try again."
+)
+
+
+def _empty_body_error() -> JSONDecodeError:
+    """Build the error the SDK raises when a response body is empty.
+
+    `json.loads("")` raises exactly `JSONDecodeError("Expecting value", "", 0)`,
+    which is what escapes the `openai` client when DeepSeek answers with a
+    truncated or empty body.
+    """
+    return JSONDecodeError("Expecting value", "", 0)
+
+
+class TestChatDeepSeekInvalidResponse:
+    """Tests that an unparseable response body reads the same from every entry point.
+
+    `ChatDeepSeek` overrides `_stream` and `_generate` for the sole purpose of
+    re-raising the SDK's `JSONDecodeError` with a message that names DeepSeek
+    instead of the opaque "Expecting value" (#29758, closing #29626). The async
+    twins have to do the same, or `ainvoke`/`astream` — the halves every
+    LangGraph deployment and every async service uses — leak the raw message.
+    """
+
+    @staticmethod
+    def _get_model() -> ChatDeepSeek:
+        """Build a model whose clients always fail to parse the response.
+
+        `_generate`/`_agenerate` always request through
+        `with_raw_response.create`, while `_stream`/`_astream` call `create`
+        directly, so both attributes have to fail for all four entry points to
+        be covered.
+        """
+        model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+        sync_client = MagicMock()
+        sync_client.create = MagicMock(side_effect=_empty_body_error())
+        sync_client.with_raw_response.create = MagicMock(
+            side_effect=_empty_body_error(),
+        )
+        async_client = MagicMock()
+        async_client.create = AsyncMock(side_effect=_empty_body_error())
+        async_client.with_raw_response.create = AsyncMock(
+            side_effect=_empty_body_error(),
+        )
+
+        model.client = sync_client
+        model.async_client = async_client
+        return model
+
+    def test_invoke_names_deepseek(self) -> None:
+        """Test that `invoke` reports which API returned the bad response."""
+        with pytest.raises(JSONDecodeError) as exc_info:
+            self._get_model().invoke("test")
+
+        assert exc_info.value.msg == INVALID_RESPONSE_MSG
+
+    def test_stream_names_deepseek(self) -> None:
+        """Test that `stream` reports which API returned the bad response."""
+        with pytest.raises(JSONDecodeError) as exc_info:
+            list(self._get_model().stream("test"))
+
+        assert exc_info.value.msg == INVALID_RESPONSE_MSG
+
+    async def test_ainvoke_names_deepseek(self) -> None:
+        """Test that `ainvoke` reports it too, not just its sync twin."""
+        with pytest.raises(JSONDecodeError) as exc_info:
+            await self._get_model().ainvoke("test")
+
+        assert exc_info.value.msg == INVALID_RESPONSE_MSG
+
+    async def test_astream_names_deepseek(self) -> None:
+        """Test that `astream` reports it too, not just its sync twin."""
+        with pytest.raises(JSONDecodeError) as exc_info:
+            async for _ in self._get_model().astream("test"):
+                pass
+
+        assert exc_info.value.msg == INVALID_RESPONSE_MSG
+
+    async def test_original_error_is_preserved(self) -> None:
+        """Test that the re-raise keeps the position and chains the cause."""
+        with pytest.raises(JSONDecodeError) as exc_info:
+            await self._get_model().ainvoke("test")
+
+        assert exc_info.value.doc == ""
+        assert exc_info.value.pos == 0
+        cause = exc_info.value.__cause__
+        assert isinstance(cause, JSONDecodeError)
+        assert cause.msg == "Expecting value"
 
 
 def test_profile() -> None:
