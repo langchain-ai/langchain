@@ -231,6 +231,27 @@ def test_codex_policy_spawns_codex_cli(monkeypatch: pytest.MonkeyPatch, tmp_path
     assert recorded["command"] == expected
 
 
+def test_codex_policy_inherits_parent_environment_when_env_is_none(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Preserve inheritance while retaining the Codex sandbox launch path."""
+    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/codex")
+    fake_launch = Mock(return_value=Mock())
+    monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)
+    policy = CodexSandboxExecutionPolicy(platform="linux")
+
+    policy.spawn(workspace=tmp_path, env=None, command=("/bin/bash",))
+
+    assert fake_launch.call_args.kwargs["env"] is None
+    assert fake_launch.call_args.args[0] == [
+        "/usr/bin/codex",
+        "sandbox",
+        "linux",
+        "--",
+        "/bin/bash",
+    ]
+
+
 def test_codex_policy_auto_platform_linux(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sys, "platform", "linux")
     policy = CodexSandboxExecutionPolicy(platform="auto")
@@ -290,14 +311,14 @@ def test_docker_policy_spawns_docker_run(monkeypatch: pytest.MonkeyPatch, tmp_pa
     def fake_launch(
         command: Sequence[str],
         *,
-        env: Mapping[str, str],
+        env: Mapping[str, str] | None,
         cwd: Path,
         start_new_session: bool,
         **_kwargs: Any,
     ) -> subprocess.Popen[str]:
         recorded["command"] = list(command)
         assert cwd == tmp_path
-        assert "PATH" in env  # host environment should retain system PATH
+        assert env is None  # Docker CLI inherits the host environment via Popen.
         assert start_new_session is True
         return Mock()
 
@@ -327,6 +348,46 @@ def test_docker_policy_spawns_docker_run(monkeypatch: pytest.MonkeyPatch, tmp_pa
     assert "-e" in command
     assert "PATH=/bin" in command
     assert command[-2:] == ["ubuntu:22.04", "/bin/bash"]
+
+
+def test_docker_policy_does_not_forward_parent_env_when_env_is_none(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Do not translate inherited host variables into container `-e` flags."""
+    marker_name = "LANGCHAIN_DOCKER_PARENT_SECRET_TEST"
+    monkeypatch.setenv(marker_name, "parent-secret")
+    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/docker")
+    fake_launch = Mock(return_value=Mock())
+    monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)
+
+    DockerExecutionPolicy().spawn(workspace=tmp_path, env=None, command=("/bin/sh",))
+
+    command = fake_launch.call_args.args[0]
+    assert fake_launch.call_args.kwargs["env"] is None
+    assert "-e" not in command
+    assert not any(marker_name in argument for argument in command)
+
+
+def test_docker_policy_forwards_explicit_env(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Forward explicitly supplied variables into the container."""
+    marker_name = "LANGCHAIN_DOCKER_PARENT_SECRET_TEST"
+    monkeypatch.setenv(marker_name, "parent-secret")
+    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/docker")
+    fake_launch = Mock(return_value=Mock())
+    monkeypatch.setattr(_execution, "_launch_subprocess", fake_launch)
+
+    DockerExecutionPolicy().spawn(
+        workspace=tmp_path,
+        env={"EXPLICIT_DOCKER_ENV_TEST": "visible"},
+        command=("/bin/sh",),
+    )
+
+    command = fake_launch.call_args.args[0]
+    assert fake_launch.call_args.kwargs["env"] is None
+    assert "EXPLICIT_DOCKER_ENV_TEST=visible" in command
+    assert not any(marker_name in argument for argument in command)
 
 
 def test_docker_policy_rejects_cpu_limit() -> None:

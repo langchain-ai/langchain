@@ -236,6 +236,68 @@ def test_normalize_env_coercion(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+def test_env_none_inherits_parent_marker(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Test that omitting `env` inherits arbitrary parent variables."""
+    marker_name = "LANGCHAIN_SHELL_PARENT_ENV_TEST"
+    monkeypatch.setenv(marker_name, "visible")
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        resources = middleware._get_or_create_resources(state)
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": f'printf "%s\\n" "${marker_name}"'},
+            tool_call_id=None,
+        )
+        assert result.strip() == "visible"
+    finally:
+        middleware.after_agent(state, runtime)
+
+
+def test_env_none_inherits_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Test that omitting `env` preserves the parent `HOME`."""
+    parent_home = str(tmp_path / "parent-home")
+    monkeypatch.setenv("HOME", parent_home)
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        resources = middleware._get_or_create_resources(state)
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": 'printf "%s\\n" "$HOME"'},
+            tool_call_id=None,
+        )
+        assert result.strip() == parent_home
+    finally:
+        middleware.after_agent(state, runtime)
+
+
+def test_explicit_env_replaces_parent_environment(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Test that an explicit environment is not merged with the parent."""
+    marker_name = "LANGCHAIN_SHELL_PARENT_ENV_TEST"
+    monkeypatch.setenv(marker_name, "parent-secret")
+    middleware = ShellToolMiddleware(
+        workspace_root=tmp_path / "workspace",
+        env={"EXPLICIT_ENV_TEST": "visible"},
+    )
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        resources = middleware._get_or_create_resources(state)
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": (f'printf "%s|%s\\n" "$EXPLICIT_ENV_TEST" "${{{marker_name}:-missing}}"')},
+            tool_call_id=None,
+        )
+        assert result.strip() == "visible|missing"
+    finally:
+        middleware.after_agent(state, runtime)
+
+
 def test_shell_tool_missing_command_string(tmp_path: Path) -> None:
     """Test that shell tool raises an error when command is not a string."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")

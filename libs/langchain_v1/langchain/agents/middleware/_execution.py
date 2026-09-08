@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import abc
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -27,7 +26,7 @@ SHELL_TEMP_PREFIX = "langchain-shell-"
 def _launch_subprocess(
     command: Sequence[str],
     *,
-    env: Mapping[str, str],
+    env: Mapping[str, str] | None,
     cwd: Path,
     preexec_fn: typing.Callable[[], None] | None,
     start_new_session: bool,
@@ -82,7 +81,7 @@ class BaseExecutionPolicy(abc.ABC):
         self,
         *,
         workspace: Path,
-        env: Mapping[str, str],
+        env: Mapping[str, str] | None,
         command: Sequence[str],
     ) -> subprocess.Popen[str]:
         """Launch the persistent shell process."""
@@ -132,7 +131,7 @@ class HostExecutionPolicy(BaseExecutionPolicy):
         self,
         *,
         workspace: Path,
-        env: Mapping[str, str],
+        env: Mapping[str, str] | None,
         command: Sequence[str],
     ) -> subprocess.Popen[str]:
         process = _launch_subprocess(
@@ -198,6 +197,9 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
     kernel features (e.g., Landlock inside some containers), process startup fails with a
     `RuntimeError`.
 
+    The sandbox restricts filesystem and syscall access, but does not isolate environment
+    variable secrets. When `env` is `None`, commands inherit the parent process environment.
+
     Configure sandbox behavior via `config_overrides` to align with your Codex CLI
     profile. This policy does not add its own resource limits; combine it with
     host-level guards (cgroups, container resource limits) as needed.
@@ -211,7 +213,7 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
         self,
         *,
         workspace: Path,
-        env: Mapping[str, str],
+        env: Mapping[str, str] | None,
         command: Sequence[str],
     ) -> subprocess.Popen[str]:
         full_command = self._build_command(command)
@@ -278,7 +280,8 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
     a host where Docker is locked down (rootless mode, AppArmor/SELinux, etc.) and
     review any additional volumes or capabilities passed through `extra_run_args`. The
     default image is `python:3.12-alpine3.19`; supply a custom image if you need
-    preinstalled tooling.
+    preinstalled tooling. Parent environment variables are not forwarded into the
+    container; only variables explicitly supplied in `env` are added to `docker run`.
     """
 
     binary: str = "docker"
@@ -315,14 +318,13 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
         self,
         *,
         workspace: Path,
-        env: Mapping[str, str],
+        env: Mapping[str, str] | None,
         command: Sequence[str],
     ) -> subprocess.Popen[str]:
         full_command = self._build_command(workspace, env, command)
-        host_env = os.environ.copy()
         return _launch_subprocess(
             full_command,
-            env=host_env,
+            env=None,
             cwd=workspace,
             preexec_fn=None,
             start_new_session=True,
@@ -331,7 +333,7 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
     def _build_command(
         self,
         workspace: Path,
-        env: Mapping[str, str],
+        env: Mapping[str, str] | None,
         command: Sequence[str],
     ) -> list[str]:
         binary = self._resolve_binary()
@@ -350,8 +352,9 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
             full_command.extend(["-w", "/"])
         if self.read_only_rootfs:
             full_command.append("--read-only")
-        for key, value in env.items():
-            full_command.extend(["-e", f"{key}={value}"])
+        if env is not None:
+            for key, value in env.items():
+                full_command.extend(["-e", f"{key}={value}"])
         if self.cpus is not None:
             full_command.extend(["--cpus", self.cpus])
         if self.user is not None:

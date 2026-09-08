@@ -130,12 +130,12 @@ class ShellSession:
         workspace: Path,
         policy: BaseExecutionPolicy,
         command: tuple[str, ...],
-        environment: Mapping[str, str],
+        environment: Mapping[str, str] | None,
     ) -> None:
         self._workspace = workspace
         self._policy = policy
         self._command = command
-        self._environment = dict(environment)
+        self._environment = dict(environment) if environment is not None else None
         self._process: subprocess.Popen[str] | None = None
         self._stdin: Any = None
         self._queue: queue.Queue[tuple[str, str | None]] = queue.Queue()
@@ -580,8 +580,15 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
                 Defaults to an implementation-defined bash command.
             env: Optional environment variables to supply to the shell session.
 
-                Values are coerced to strings before command execution. If omitted, the
-                session inherits the parent process environment.
+                Values are coerced to strings before command execution. If omitted,
+                `HostExecutionPolicy` and `CodexSandboxExecutionPolicy` inherit the parent
+                process environment. `DockerExecutionPolicy` does not forward parent
+                environment variables into the container.
+
+                Under `HostExecutionPolicy`, inheriting the parent environment means every
+                variable in the parent shell, including credentials, is readable by any
+                command the model runs. Supply an explicit `env`, or use
+                `DockerExecutionPolicy`, if that is not acceptable.
         """
         super().__init__()
         self._workspace_root = Path(workspace_root) if workspace_root else None
@@ -736,7 +743,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
             workspace_path,
             self._execution_policy,
             self._shell_command,
-            self._environment or {},
+            self._environment,
         )
         try:
             session.start()
