@@ -1,10 +1,11 @@
 ---
 type: "Reference"
-title: "> Entering new SequentialChain chain..."
-openwiki_generated: true
+title: "Callback System and Handler Integration"
+description: "Document the callback handler architecture, integration with runnables and chat models, and patterns for tracking execution events, streaming, and instrumentation."
+tags: ["callbacks", "observability", "handlers", "tracing", "streaming", "langsmith"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-08T08:27:09.597Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py

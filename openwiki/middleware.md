@@ -1,10 +1,11 @@
 ---
 type: "Reference"
-title: "Middleware"
-openwiki_generated: true
+title: "Agent Middleware: Composable Request/Response Processing"
+description: "Document the middleware system for agents, including lifecycle hooks, HITL approval, error handling, retry logic, and middleware composition patterns for intercepting and modifying agent behavior."
+tags: [agent-middleware, request-interception, composition, error-handling, human-in-the-loop]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-08T08:27:09.597Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
@@ -16,13 +17,12 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/middleware/tool_error.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
 ---
-
 
 ## Overview
 
-Middleware in LangChain agents provides a composable, layered approach to intercepting and modifying agent behavior without changing core agent logic. Middleware hooks into the agent execution loop to implement cross-cutting concerns: automatic retries, error handling, human-in-the-loop approval, PII redaction, structured output transformation, and tool caching.
+Middleware in LangChain agents provides a composable, layered approach to intercepting and modifying agent behavior without changing core agent logic. Middleware hooks into the agent execution loop to implement cross-cutting concerns: automatic retries, error handling, human-in-the-loop approval, tool argument validation, structured output transformation, and tool caching.
 
 ### Core Architectural Principles
 
@@ -52,7 +52,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
 
 ### Lifecycle Hooks
 
-Middleware can implement any or all of these lifecycle methods; unimplemented methods default to no-op:
+Middleware can implement any or all of these lifecycle methods; unimplemented methods raise `NotImplementedError` if invoked in the wrong execution path (sync vs async):
 
 #### Before/After Agent
 
@@ -204,7 +204,7 @@ middleware = ToolErrorMiddleware(on_error=on_error)
 
 ### Control Flow & Approval Middleware
 
-**HumanInTheLoopMiddleware**: Pauses after model-requested tool calls and sends an interrupt with action summaries to a human reviewer. Supports approval, editing, rejection, or human-answered "respond" decision types. Tool calls are modified based on human feedback before execution.
+**HumanInTheLoopMiddleware**: Pauses after model-requested tool calls and sends an interrupt with action summaries to a human reviewer. Uses the `after_model` hook to intercept AIMessage tool calls and send a HITLRequest for review. Supports approval, editing, rejection, or human-answered "respond" decision types. Tool calls are modified based on human feedback before execution.
 
 ```python
 from langchain.agents.middleware import HumanInTheLoopMiddleware
@@ -219,6 +219,12 @@ hitl = HumanInTheLoopMiddleware(
     }
 )
 ```
+
+The middleware constructs `ActionRequest` objects (with name, args, and optional description) and `ReviewConfig` objects (with action name and allowed decision types), sends them as a `HITLRequest` via `langgraph.interrupt()`, receives decisions back, and processes them:
+- **approve**: Tool call proceeds unchanged
+- **edit**: Tool call arguments are revised by the human
+- **reject**: Tool call is blocked; a ToolMessage with user feedback is sent to the model instead
+- **respond**: Tool execution is skipped; a synthetic ToolMessage with the human's answer is returned to the model
 
 ### Data Transformation & Privacy Middleware
 
@@ -254,7 +260,7 @@ class ModelRequest(Generic[ContextT]):
     model_settings: dict[str, Any]  # Additional model parameters
 ```
 
-**Immutable Pattern**: Middleware should not mutate `ModelRequest` directly. Use `request.override(**changes)` to create a new request with modifications.
+**Immutable Pattern**: Middleware should not mutate `ModelRequest` directly. Use `request.override(**changes)` to create a new request with modifications. Direct attribute assignment is deprecated and raises `DeprecationWarning`.
 
 ### ModelResponse
 
@@ -290,7 +296,7 @@ class ToolCallRequest:
     tool_call: dict  # Tool call dict with 'id', 'name', 'args'
     tool: BaseTool | None  # Resolved BaseTool instance (or None in batch mode)
     state: AgentState[Any]  # Agent state at time of call
-    runtime: Runtime[ContextT]  # Runtime context (ToolRuntime with tool-specific info)
+    runtime: ToolRuntime  # Runtime context with tool-specific info
 ```
 
 ## Composition and Execution Order
@@ -314,7 +320,7 @@ When middleware is registered as `[M1, M2, M3]`:
 
 State updates from hooks are merged using LangGraph reducers. For the `messages` field (which uses `add_messages` reducer), updates accumulate rather than replace.
 
-**Command Accumulation**: When middleware returns `ExtendedModelResponse` with `Command`, multiple commands are accumulated in a list (inner-first, then outer). The agent applies them sequentially after the model node completes.
+**Command Accumulation**: When middleware returns `ExtendedModelResponse` with `Command`, multiple commands are accumulated in a list (inner-to-outer order). The agent applies them sequentially after the model node completes.
 
 **Reducer Semantics**: Non-reducer fields in later commands override earlier ones (outermost middleware wins). The `messages` field is special: reducer-based fields like `messages` accumulate through `add_messages`.
 
@@ -341,7 +347,7 @@ class LoggingMiddleware(AgentMiddleware):
 ### Retry Logic with Exponential Backoff
 
 ```python
-import asyncio
+import time
 from langchain.agents.middleware import AgentMiddleware, ModelRequest, ModelResponse
 from langchain_core.messages import AIMessage
 
@@ -417,7 +423,7 @@ Middleware can provide sync-only, async-only, or both implementations. The agent
 
 - Call sync versions (`wrap_model_call`, `wrap_tool_call`) in sync contexts (`stream()`, `invoke()`).
 - Call async versions (`awrap_model_call`, `awrap_tool_call`) in async contexts (`astream()`, `ainvoke()`).
-- Raise `NotImplementedError` if the required implementation is missing for the execution path.
+- Raise `NotImplementedError` if the required implementation is missing for the execution path, with guidance to implement both versions or use async execution.
 
 **Best Practice**: Implement both versions unless the middleware is inherently async-only (e.g., uses async I/O).
 
@@ -440,7 +446,7 @@ agent = create_agent(
 )
 ```
 
-**Composition Rule**: First in the list = outermost (highest priority for interception and response transformation).
+**Composition Rule**: First in the list = outermost (highest priority for interception and response transformation). The factory collects middleware with wrap_model_call and awrap_model_call hooks, composes them into a single middleware stack via internal composition functions, establishing an order where the first middleware becomes the outermost layer.
 
 ## Tracing and Observability
 
@@ -491,3 +497,4 @@ Middleware hooks are automatically named in trace spans as `{middleware_name}.{h
 
 - [Agent Execution Flow and Loop Control](/openwiki/agent-execution.md) – Detailed description of the agent loop, state management, and where middleware hooks are invoked.
 - [Agent Factory and Graph Construction](/openwiki/agent-factory.md) – How the agent graph is built, including middleware integration and handler composition.
+- [Tools](/openwiki/tools.md) – Tool definition, registration, and execution context.

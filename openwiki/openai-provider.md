@@ -1,10 +1,11 @@
 ---
-type: "Reference"
-title: "Use async methods (ainvoke, astream)"
-openwiki_generated: true
+type: "ChatModel Integration"
+title: "OpenAI Integration: ChatOpenAI and Azure Support"
+description: "ChatOpenAI integration for OpenAI's Chat Completions and Responses APIs, with support for tool calling, structured output, vision, streaming, and Azure deployment."
+tags: ["openai", "chat-models", "tool-calling", "structured-output", "vision", "azure"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-08T08:27:09.597Z
 sources:
   - id: openwiki-source-1e66a9da38565f8901e651f4
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
@@ -12,9 +13,8 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-74e5bef080f1af7da12371cf
     resource: repo://libs/partners/openai/langchain_openai/data/_profiles.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
 ---
-
 
 ## Overview
 
@@ -34,7 +34,7 @@ The OpenAI integration (`langchain-openai`) provides production-ready chat model
 
 **Package**: `repo://libs/partners/openai/langchain_openai/`
 
-**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2799-L2900`
+**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2823-L2920`
 
 **Exports**: `repo://libs/partners/openai/langchain_openai/__init__.py`
 
@@ -303,6 +303,7 @@ def bind_tools(
   - `'any'` / `'required'` / `True`: Force at least one tool call
   - `dict`: OpenAI tool choice dict `{"type": "function", "function": {"name": "tool_name"}}`
   - `False` / `None`: No effect, default behavior
+  - `WellKnownTools` strings (`'file_search'`, `'web_search'`, `'tool_search'`, etc.): Built-in tools
 
   **Example:**
   ```python
@@ -314,6 +315,9 @@ def bind_tools(
   
   # Prevent tool use
   bound = model.bind_tools([get_weather, get_time], tool_choice="none")
+  
+  # Allow web search alongside tools
+  bound = model.bind_tools([get_weather], tool_choice="web_search")
   ```
 
 - **`parallel_tool_calls`** (`bool | None`): Allow the model to call multiple tools in one response. Default: `None` (allow parallel). Set to `False` to disable.
@@ -323,9 +327,9 @@ def bind_tools(
   bound = model.bind_tools([get_weather, get_time], parallel_tool_calls=False)
   ```
 
-- **`strict`** (`bool | None`): If `True`, model output matches tool schema exactly. Schema is validated per OpenAI's [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas). If `False`, no validation. If `None`, no strict requirement.
+- **`strict`** (`bool | None`): If `True`, model output matches tool schema exactly. Schema is validated per OpenAI's [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas). If `False`, no validation. If `None`, no strict requirement. When `response_format` is provided via Chat Completions API, strict defaults to `True` unless explicitly set to `False`.
 
-- **`response_format`** (`dict | type | None`): Optional response schema for Chat Completions API. When set with tools, requires `strict=True` (exception: Responses API).
+- **`response_format`** (`dict | type | None`): Optional response schema for Chat Completions API. When set with tools, requires `strict=True` (exception: Responses API does not require this).
 
 ### Tool Call Processing
 
@@ -653,6 +657,73 @@ model = ChatOpenAI(
         100: -100  # Suppress token ID 100
     }
 )
+```
+
+## Azure OpenAI Integration
+
+`AzureChatOpenAI` is a specialized subclass for Azure OpenAI deployments. It uses different authentication and endpoint configuration than standard `ChatOpenAI`.
+
+### Azure Setup
+
+First, create an Azure OpenAI deployment using the [quickstart guide](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/chatgpt-quickstart).
+
+Install the package and set environment variables:
+
+```bash
+pip install -U langchain-openai
+
+export AZURE_OPENAI_API_KEY="your-api-key"
+export AZURE_OPENAI_ENDPOINT="https://your-resource-name.openai.azure.com/"
+```
+
+### Basic Usage
+
+```python
+from langchain_openai import AzureChatOpenAI
+
+model = AzureChatOpenAI(
+    azure_deployment="your-deployment",
+    api_version="2024-05-01-preview",
+    temperature=0,
+    max_tokens=None,
+)
+
+response = model.invoke("What is 2 + 2?")
+```
+
+### Key Azure Parameters
+
+- **`azure_deployment`** (`str`): Name of Azure OpenAI deployment
+- **`api_version`** (`str`): Azure OpenAI REST API version (distinct from model version). See [versions](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning).
+- **`model`** (`str`): Underlying OpenAI model name (for tracing and token counting, does not affect completion)
+- **`model_version`** (`str`): Model version (e.g., `'0125'`, `'0125-preview'`) for token counting
+
+### Azure Response Example
+
+```python
+# response includes Azure-specific metadata
+response = model.invoke("Translate to French: Hello")
+
+# response includes:
+# - usage_metadata: token counts
+# - response_metadata with:
+#   - prompt_filter_results: content safety filtering info
+#   - finish_reason
+#   - logprobs (if requested)
+#   - content_filter_results: safety filtering details
+```
+
+### Azure Streaming
+
+```python
+model = AzureChatOpenAI(
+    azure_deployment="your-deployment",
+    api_version="2024-05-01-preview",
+    streaming=True
+)
+
+for chunk in model.stream("Translate to French: Hello"):
+    print(chunk.content, end="")
 ```
 
 ## Model Name Examples
