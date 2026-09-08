@@ -1,0 +1,88 @@
+{
+  "x402Version": 2,
+  "error": "PAYMENT-SIGNATURE header is required",
+  "resource": {
+    "url": "https://api.walletforge.app/v1/normalize",
+    "description": "Normalize text and extract emails, URLs, phones",
+    "mimeType": "application/json"
+  },
+  "accepts": [
+    {
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "amount": "10000",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "payTo": "0xb5F5a86Df5F78ed78920f74a1D7f26368F708E94",
+      "maxTimeoutSeconds": 60,
+      "extra": {
+        "name": "USD Coin",
+        "version": "2"
+      }
+    }
+  ],
+  "extensions": {
+    "bazaar": {
+      "info": {
+        "serviceName": "WalletForge",
+        "tags": [
+          "web-scraping",
+          "markdown",
+          "nlp",
+          "utilities"
+        ],
+        "input": {
+          "method": "POST",
+          "type": "json",
+          "bodyType": "json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "text"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200000
+              }
+            }
+          },
+          "example": {
+            "text": "Lead from Dave (dave@apex.com, 415-555-0100). https://apex.com"
+          }
+        },
+        "output": {
+          "example": {
+            "normalized": "...",
+            "emails": [
+              "dave@apex.com"
+            ],
+            "urls": [
+              "https://apex.com"
+            ],
+            "phones": [
+              "4155550100"
+            ],
+            "stats": {
+              "chars": 76,
+              "emails": 1,
+              "urls": 1,
+              "phones": 1
+            }
+          }
+        }
+      },
+      "schema": {
+        "type": "object",
+        "properties": {
+          "info": {
+            "type": "object"
+          },
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

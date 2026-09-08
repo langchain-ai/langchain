@@ -1,0 +1,86 @@
+{
+  "x402Version": 2,
+  "error": "PAYMENT-SIGNATURE header is required",
+  "resource": {
+    "url": "https://api.walletforge.app/v1/fetch-markdown",
+    "description": "Fetch a public URL and return cleaned markdown",
+    "mimeType": "application/json"
+  },
+  "accepts": [
+    {
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "amount": "50000",
+      "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "payTo": "0xb5F5a86Df5F78ed78920f74a1D7f26368F708E94",
+      "maxTimeoutSeconds": 60,
+      "extra": {
+        "name": "USD Coin",
+        "version": "2"
+      }
+    }
+  ],
+  "extensions": {
+    "bazaar": {
+      "info": {
+        "serviceName": "WalletForge",
+        "tags": [
+          "web-scraping",
+          "markdown",
+          "nlp",
+          "utilities"
+        ],
+        "input": {
+          "method": "POST",
+          "type": "json",
+          "bodyType": "json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "url"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "max_chars": {
+                "type": "integer",
+                "minimum": 500,
+                "maximum": 200000
+              }
+            }
+          },
+          "example": {
+            "url": "https://example.com",
+            "max_chars": 50000
+          }
+        },
+        "output": {
+          "example": {
+            "url": "https://example.com/",
+            "title": "Example Domain",
+            "content_type": "text/html",
+            "markdown": "# Example Domain\n\nThis domain is for use in illustrative examples\u2026",
+            "stats": {
+              "chars": 120,
+              "bytes_fetched": 1256,
+              "truncated": false
+            }
+          }
+        }
+      },
+      "schema": {
+        "type": "object",
+        "properties": {
+          "info": {
+            "type": "object"
+          },
+          "schema": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}
