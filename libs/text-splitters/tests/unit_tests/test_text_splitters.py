@@ -4432,3 +4432,31 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_recursive_splitter_strips_unsplittable_pieces() -> None:
+    """A piece that cannot be split further still honors `strip_whitespace`."""
+    splitter = RecursiveCharacterTextSplitter(
+        separators=[" "], chunk_size=3, chunk_overlap=0
+    )
+    # The default `keep_separator=True` prefixes every piece after the first
+    # with the space, so each piece is exactly `chunk_size` long and cannot be
+    # split any further with the given separators.
+    assert splitter.split_text("ab ab ab") == ["ab", "ab", "ab"]
+
+    keeping = RecursiveCharacterTextSplitter(
+        separators=[" "], chunk_size=3, chunk_overlap=0, strip_whitespace=False
+    )
+    assert keeping.split_text("ab ab ab") == ["ab", " ab", " ab"]
+
+
+def test_recursive_splitter_unsplittable_long_word_is_stripped() -> None:
+    """A word longer than `chunk_size` keeps no separator whitespace."""
+    splitter = RecursiveCharacterTextSplitter(
+        separators=["\n", " "], chunk_size=5, chunk_overlap=0
+    )
+    assert splitter.split_text("hi supercalifragilistic\nok") == [
+        "hi",
+        "supercalifragilistic",
+        "ok",
+    ]
