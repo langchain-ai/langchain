@@ -4432,3 +4432,28 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("line", "expected_header"),
+    [
+        ("# Title ##", "Title"),
+        ("# Title #", "Title"),
+        ("# Title   ###   ", "Title"),
+        ("# C#", "C#"),
+        ("# Title#", "Title#"),
+        ("# ##", ""),
+    ],
+)
+def test_md_header_text_splitter_strips_closing_hashes(
+    line: str, expected_header: str
+) -> None:
+    """A closing sequence of `#` is not part of the heading text (CommonMark)."""
+    markdown_document = f"{line}\nBody text."
+    headers_to_split_on = [("#", "Header 1")]
+    markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on)
+    output = markdown_splitter.split_text(markdown_document)
+
+    assert output == [
+        Document(page_content="Body text.", metadata={"Header 1": expected_header})
+    ]

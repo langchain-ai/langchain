@@ -20,6 +20,11 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
         super().__init__(separators=separators, **kwargs)
 
 
+# A run of `#` at the end of an ATX heading is a closing sequence when it is
+# preceded by whitespace (or is the whole text); `# C#` keeps its `#`.
+_CLOSING_HASHES_RE = re.compile(r"(?:^|\s+)#+\s*$")
+
+
 class MarkdownHeaderTextSplitter:
     """Splitting markdown files based on specified headers."""
 
@@ -221,8 +226,12 @@ class MarkdownHeaderTextSplitter:
                             header_text = stripped_line[len(sep) : -len(sep)].strip()
                         else:
                             # For standard headers like # Header, extract text
-                            # after the separator
-                            header_text = stripped_line[len(sep) :].strip()
+                            # after the separator. An optional closing sequence
+                            # of `#` (e.g. `# Header ##`) is not part of the
+                            # heading text, so drop it like CommonMark does.
+                            header_text = _CLOSING_HASHES_RE.sub(
+                                "", stripped_line[len(sep) :].strip()
+                            ).rstrip()
 
                         header: HeaderType = {
                             "level": current_header_level,
