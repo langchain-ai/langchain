@@ -32,8 +32,14 @@ def _launch_subprocess(
     preexec_fn: typing.Callable[[], None] | None,
     start_new_session: bool,
 ) -> subprocess.Popen[str]:
+    cmd_list = list(command)
+    if cmd_list and sys.platform == "win32":
+        executable = cmd_list[0]
+        if not shutil.which(executable) and executable in ("bash", "sh", "zsh"):
+            cmd_list = ["cmd.exe"] + cmd_list[1:]
+
     return subprocess.Popen(  # noqa: S603
-        list(command),
+        cmd_list,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

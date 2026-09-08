@@ -2,6 +2,12 @@
 
 from langgraph.runtime import Runtime
 
+from langchain.agents.middleware._execution import (
+    BaseExecutionPolicy,
+    CodexSandboxExecutionPolicy,
+    DockerExecutionPolicy,
+    HostExecutionPolicy,
+)
 from langchain.agents.middleware._trace_policy import configure_trace_policy
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
@@ -15,9 +21,6 @@ from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMatch, PIIMiddleware
 from langchain.agents.middleware.provider_tool_search import ProviderToolSearchMiddleware
 from langchain.agents.middleware.shell_tool import (
-    CodexSandboxExecutionPolicy,
-    DockerExecutionPolicy,
-    HostExecutionPolicy,
     RedactionRule,
     ShellToolMiddleware,
 )
@@ -53,6 +56,7 @@ from langchain.agents.middleware.types import (
 __all__ = [
     "AgentMiddleware",
     "AgentState",
+    "BaseExecutionPolicy",
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
