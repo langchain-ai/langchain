@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a438de3bacc6da5a8e98bfd85d8e6f3a947deaf987bccf74fa6efdf166987bb6",
+  "claims": [
+    {
+      "id": "claim_87d5d462354440a7bccb6dbe992c60d3",
+      "statement": "BaseChatModel.stream() yields AIMessageChunk objects as they are produced, checking streaming support via _should_stream() and falling back to invoke() if not supported. It manages the callback lifecycle: on_chat_model_start at initiation, on_llm_new_token per chunk, and on_llm_end or on_llm_error at completion. A final empty chunk with chunk_position='last' is yielded to signal stream completion and finalize tool call chunks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L727-L856",
+          "version": "repo-lines-v1:sha256:8945f395d5d6b5430e498ed34a1247f6be3a49e373131a158b3edee84db49a81:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2ZDAyZmNjYzVhNWFhZDlkMmZkZjc1NmZjN2ZlNjkzNDBmMWQzNzgwMTc0MDE2NjM4MzI0MGMzZWE2YzFmNDRmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxYWFjOTNhNjQzOWE2NDQxYTAyMTUwYzIyNmQ4MzdmYTI1YTQ2YzI1YTY3NzkzYjQyYjQ2YTVhMjk0ZjhkZTM4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2MWRlNTAwZjdhMmRmNzQ1ZGFjN2NjYzYzZDlmMGFhNzNlNTRjY2EwNTc5ZmE1YjRhNzI1MjI4YzQ4MjBlMjBiIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_6325590438b0489892a1599786f86f7e",
+      "statement": "BaseChatModel.astream() is the async variant of stream(), mirroring synchronous logic but using async/await for callbacks and AsyncCallbackManager. It iterates via async for over self._astream() and acquires rate limits asynchronously.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L858-L991",
+          "version": "repo-lines-v1:sha256:807ccf05f7bff67ca424c7f8b240e4b0317145e74e2c5c57b3d8f788617b6923:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNGU4YzYzMWQ3M2ZkMDAzMjFkNmUyY2IyNzUwZWE2M2VhYmVlOGIzNjc2YmMwYTEzZjMwZmQ1NDY0NjUwM2NiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3Mjc2ZmE5ODdiZGNkNTJkOTZhNjQ5YjNiNTcyYmRiMjZiOWU5MjcxYTNmMjljZjc0MTI1NDBkNzM1YjJkM2Q0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YjRlNzQ0ZThjZjE5MzY0OGExNzA1ZWRlZjE5N2M0NTNkNGM5NWE1YzI0MTUyNzdlMTA3NzFjMDgxOTFhYWRiIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_47e4c9d9b94f4ac78098ea9e0dba4925",
+      "statement": "AIMessageChunk represents partial, incremental message updates during streaming. It includes content (token or delta), tool_call_chunks (incomplete tool calls), and chunk_position sentinel. Chunks merge via the + operator, combining content and tool call arguments; the 'last' chunk_position triggers finalization of tool calls into complete ToolCall objects.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/messages/ai.py#L418-L536",
+          "version": "repo-lines-v1:sha256:c5c0e4e8c4ad9520a3725d13342d059511e117c85a00f583fd69aa75b13b2bb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4ZGQ5NTNlNzZlN2IyODEyZTIwNGUwNDU0MTYyYzYzZWZmYzE4MDRkNTI2ZDlhMWM3ZTgxODhkZjkzYjMzOTBiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiMTNjNmQwNzI5ZmQ5YTM5NzhlODZlZmI0ZDA5ZjNjNTE0M2YzOWI3YWI1YjcxMzYxZTljN2E2ZWZlN2UyZjZmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzZTEyNzA5OTRiZmM2NjIxYWExNWMxMmYxMjg3MGE1ZWJiNDBhNmI4ZjUwY2YxOTUxNjBkZDRjYTIwOTc4YjE1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMTc3NDNiZDc2Yzg2OTIzZTczMDc0NTNiYTA3NTJiODY3MGI4M2IwYTA2M2M2NGEwZTc5NmQwYzUxOTg2MWVjIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_eb8e4cb924c441dd91f783e4366a299f",
+      "statement": "The on_llm_new_token callback fires for each token or chunk during streaming, receiving the token string (or content block list for v1 format), the full ChatGenerationChunk with metadata and tool_call_chunks, run_id for tracing, and optional parent_run_id and tags. It enables real-time observation, logging, and application-specific reactions to streaming tokens.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/base.py#L65-L88",
+          "version": "repo-lines-v1:sha256:e4bed7227dc627f01db18cbf919a34691f2f85f4e0b4ead3a90c7dc43ae5f17e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MTNjMjlmY2U0NTdjZDgwNGMwZWQ0NjRjZDE5ZThjZjE5MjFkZjMxMGExNmY0MTAzMzc1NWNhZjM1NjM3ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZGUyNTg3MTk2MTQ5MjYwNzFjOGZiMTlmZDg2NjE1MDU1NWYxYjAxMzU0ZjhjZDE2MDNhMTA5YTdkZGFlNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmMTA5NTBiNWFmZGI1NGU1NDc1NWM3MzNiYWI5ZTliMjc2N2JkZjBiMWJmNjdlNWY5NzUyMzY3YjVhNDg3ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1NGJmYWQyNTY4MDMxOGIwMTEzYzljYWFiZTA1MjczOTc2YmQ2NDMyMGI5ZmVhMTM5ODNjOWJkY2ZkNWZiOWYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/streaming_stdout.py#L50-L60",
+          "version": "repo-lines-v1:sha256:eefb74b5ea9fce9d2141392376bb51d0941bb80972240b0e1c64ea016255ed32:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MTNjMjlmY2U0NTdjZDgwNGMwZWQ0NjRjZDE5ZThjZjE5MjFkZjMxMGExNmY0MTAzMzc1NWNhZjM1NjM3ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YWRmMjIxY2ZlNjYwYTRmNjAzNDYwYTQxYzRhNjBjNmUyYzk5MTc4ODY4MjA5MmRiOTkwODNjMzRiODEzNTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2ZDU3MzAyMjFjOGZjOWNlZGE5YzE2ZTI2NDNkODRmMzQzNTFhZDZjNGY2NDNmODM5ZGJkZGIzYmUxNzBmNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkNDAxNDM2NTliMjAyODQzOTYzOTY1YjRiODE1ZmFhYjYyMzcxYmM0NDRjODk1NmY2NGM3YjI1MGQ3NmFmMTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aff42106f80849fabc5d804cd0fbcff7",
+      "statement": "Runnable.stream() by default yields one full output from invoke(). Subclasses that support streaming override stream() or transform() to yield chunks. Streaming is not guaranteed for arbitrary Runnables unless explicitly implemented.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1194-L1235",
+          "version": "repo-lines-v1:sha256:52f3933957d94c8162dfa849e70cd335d61247108917a8fb081a31fe43b0f570:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMDJmY2NjNWE1YWFkOWQyZmRmNzU2ZmM3ZmU2OTM0MGYxZDM3ODAxNzQwMTY2MzgzMjQwYzNlYTZjMWY0NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYjIzYTg5OGMzMjkxNWQ3OWNiYzVkOTAxYWYyOGY0YzI3MjUxZDM3Y2RiZDA5OTlkMWZlMmMxZjkzZDFlZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzODc3MGYxM2U3M2YyMDU4NWIxMTU0ODRjYjY4MGY0YjI1MzlmMTU4YTExNmIwMWZkYjY4MDAwNjNlMmNmYjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe26c149726c47dfa995e7b3ddafd04f",
+      "statement": "RunnableSequence (a chain created with the | operator) automatically supports streaming if all components implement transform() or the last component streams. If any component lacks transform(), streaming is blocked until that component completes. Multiple blocking components create buffering points but preserve streaming output from the last component.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L3075-L3320",
+          "version": "repo-lines-v1:sha256:ad25efc0b9dde129f68999de4a00b228f4ebcdb5e3c41d1f5d86a71690598a81:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQ2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiZWUyODI4YWI5ODNjODVkZTdkOWUxOGNlZjVhYTQzZGY0MTJiYmRiY2FiMDc3ZjdmMDEzYjUzZWQ3ZTRlNzM3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlMGFjYmYwOTdlMWU4NjZmNGJlMzE5MjU3YmI0OWQ5OGQ1NWQwMWY4MTcxN2IzYzIyNTMwNDQ5NWYzNDMwMjZkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYmVjNzljZDAzZDA2YmE2ZmU3MDBlMDhiZDA0ZjFmMDA0ZDFkZTg0ODMzMzMwN2U2ZGE5YTJlZjcyZTZmODZmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxODQwYjI2ZmUzZWI2OTY1MDNhZDY4ZmJmMTg5ZmU4ODAwYjQ3NzRkYmYzZGIzYWZmM2Q4YzBjMTA4NDg1ODVlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_694f1031f2f64dfdb7673a21f795434e",
+      "statement": "The _transform_stream_with_config() helper manages streaming with callbacks: it tees input iterators for tracing, fires on_chain_start, invokes the transformer function with streaming input, accumulates outputs, yields chunks immediately, and fires on_chain_end or on_chain_error at completion. This is the core machinery for streaming through Runnables in a chain.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L2502-L2599",
+          "version": "repo-lines-v1:sha256:b4db1de783dda022373ec076b06a6fc67d0a8abca8fba21251eeeef2822d5116:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMThjN2ZjODgzMTdhMDg1YzYxM2MxOTYxNWRkMTc2YmFjZjFhNDMyOGNjMmVkNmVlOWMzMTNiMDQ5MjQ3ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzZGNjMDM2YWU0ZGYyMmM0ZjM3ODgwNzVmODhlNGE5ZTc0M2ZkMGE0ODYzMTFhMjI1OTY2NDU2MWIzNTg3NDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjODE4YWNjOWI4NGY1YjEyMGIzNmMxMjQ0MzQxMTI2NTIzZTVmZWU5NzE3MmVjNjU3MWVjMzc1NjRiNmE0YjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0888246b7f1c4834a3af1a55fc2f1009",
+      "statement": "invoke() waits for the entire model response before returning, consuming no intermediate memory but blocking responsiveness. stream() yields the first token as soon as available, enabling real-time feedback in interactive applications. The model produces tokens at the same rate in both cases; the difference is when tokens are delivered to the caller.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L474-L856",
+          "version": "repo-lines-v1:sha256:18b246d4f9105712e54309d31157eca8caf0cf172c8c99b1e0a1b8d2d6111527:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0NGRhOTM1MDAxOWRjMWU2Njc0NTI2NDM4NzMxNjE5OTcyMjVlOWNlNjAxMDdhZjdiNjRmODQwZGRlY2ZkYTRmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0NGFjMjA5ZDY3MjgzNmE0YzNkZDBlY2VkMTJkYzBlNmI2Zjc4ZDM4MWZmNTE2OGI3YzA3YTg0NzVkYTE5YTM3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2MWRlNTAwZjdhMmRmNzQ1ZGFjN2NjYzYzZDlmMGFhNzNlNTRjY2EwNTc5ZmE1YjRhNzI1MjI4YzQ4MjBlMjBiIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b15ce025491a4425b4d7ee2dc533063a",
+      "statement": "During streaming, if an error occurs after on_chat_model_start fires, on_llm_error receives the exception and a ChatGeneration merged from accumulated chunks. The exception is then re-raised. This allows callbacks to observe partial results before failure.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L833-L856",
+          "version": "repo-lines-v1:sha256:1c19e5928299e042429af5deae6b48b2c15aa0d928987771b51003c4f8b8b683:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZGFjOTI2YWQ1YTRhZTVkZWQ5M2E0ODljOTYyZjlmYzY0MzVjYzMzYWQzM2ZmN2Q5NGM5Y2VmMGQ5YjEwMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1NzY2NTEwODIxNzc5YmI2YTExMDg4Yzc4MjMyMWY2Y2Q1ZThhMDI1YTRhNmM3YzE4NDE5ZTVhNGQxZDJhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxZGU1MDBmN2EyZGY3NDVkYWM3Y2NjNjNkOWYwYWE3M2U1NGNjYTA1NzlmYTViNGE3MjUyMjhjNDgyMGUyMGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6019aef1fe5d4c46b2d814b6739259f9",
+      "statement": "BaseChatModel.stream_events(version='v3') returns ChatModelStream, which exposes typed projection properties (.text, .tool_calls, .usage, .reasoning, .output) that accumulate protocol events. This is distinct from token streaming and fires on_stream_event callbacks for each protocol event, providing detailed event-level visibility into streaming operations.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1-L45",
+          "version": "repo-lines-v1:sha256:9b0e7fb5e40ee88f22f766937245805b9ed747d105421138da2b46fe8f8522d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MTcxNTdmOTc5MDY1N2FmMGViZGVjZjNjM2ZmMTA4ZTQ2MGNhYWEzMjQ5MjczOGIxYThlMzU2YTI2MGE3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1NmRhNjZiNTVjODU4ZjIxZWNkYmFlOTM4MWEzMTkwNDkxNTc4YjEzZmJkNGU0ZjRlYzU3NTQyYTU5N2NmODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhYzM5ZDU1YjFjNDA5YWVlN2MzMThhZThmZWU0ZjEyOWVlODM1OWViMjczNjU3NWJlYmI4MDcxN2E1Mzk2OWQifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L992-L1007",
+          "version": "repo-lines-v1:sha256:585db4f95df0e78e7e568ef485dc6bf2f5aa659e705be1a76753572e91abb57a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNWVhMmUwZjNmYzQ0NzAyZTQyYzI5OWZlOTE5N2FkMWZjYTgzMzk2YjdlNjMwY2ZlMmZlYjdiNjU4N2M5YjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YmNiZjAxZjg5MGY4YzljZDUwMDA0NTlmNWY3MzRiOTFmMmZmNGRjNjVhNzU4ODlmYTFhMDIzMTU1YzZiYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkZGI2Y2QwZDM5Zjk4NzEyNDZjMzEyZGUyOWQwMTQwMGYzZTk1NDI0YmVmZWE0NDQwNjEwYWY3OTVjMDI5MzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4NTE4MTRlMGExODA3MTFkMzYyYmMzYzA0YjdiNTVmMTNlNzQ0ODFjNGQzNTUwZGE1YTA2ZDE0YTc0MWFhZDkifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-03T15:18:34.589Z"
+  }
+}

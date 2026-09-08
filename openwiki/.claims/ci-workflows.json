@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8af0cd4e2f4fde3bbeaa007c68ac7b8049bd352e75e6455e2b7896818da707cc",
+  "claims": [
+    {
+      "id": "claim_cb5fe3f72803497eac3f09ebf02d97cd",
+      "statement": "The primary CI workflow (check_diffs.yml) detects changed packages via Python script analysis and generates separate test matrices for linting, unit tests, Pydantic compatibility tests, integration test compilation, VCR cassette tests, and extended test suites before running corresponding downstream jobs.",
+      "evidence": [
+        {
+          "resource": "repo://.github/scripts/check_diff.py#L1-L54",
+          "version": "repo-lines-v1:sha256:97ef035504344bb0cfaabad9e93e0f1bd4eee1d885a2029155694f8224408c21:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxNWQ2Y2NhMTkzMjJlMWUwYzg3OGRmNzc1Nzg4ZWRkOGQ3MTFkZmIyODBlZmI1YWZmMmQ2MmU0ZDJhMDE4YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxODIxZWQ1N2E4NzZiZGUyYjM0OGFlYTFhYmRhNGMzNDgzM2M4MTkxYWQ4NTM4NWZmZmUzNzQ4MzM2MDlkZDkifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/check_diffs.yml#L43-L72",
+          "version": "repo-lines-v1:sha256:90f6935adda3467ddbea42901236cf760dca30eb3ad45c339ec78037287536d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZTNjNjBkYjI1M2NiY2VhNzI0YWFkZDkxOGViOTQ2NjRmN2M2N2U3ODRmNzk2Zjc4NGNmMTAyMjA3ZDI2YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwM2QyMGIzNzVjNzU1YTk5ODI1MDNjNTI0NmY0MjViNjk5YjIxYTJmYzZjMzE3MjdmMzhjNjAzM2RiODE5NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxNTdmYTE2N2Q5ZmU2YmIyNmRjOWMzNjdlZDkzOWIxNjM1MDMxM2E3YmIxMTUxNmYyMDUyODA4MTA2ODIyYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhZTBmZDMwNDk3Njk1ZDM0NDMyZWI3MTA5NDk4ZDM1N2YzMTUxOWU0MjFkOGUyZGRmYThhYWUyYjA0ODI1MWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_988c08f335474462a1ffcecc3ce9233c",
+      "statement": "Linting (_lint.yml) runs Ruff code analysis with GitHub annotations, MyPy type checking, and markdown linting on affected packages, sourcing tools from lint and typing dependency groups.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_lint.yml#L1-L81",
+          "version": "repo-lines-v1:sha256:fb33c9af65a879efb7ceb1f73f66585a6ef71217ab9d2cc3648aba80673cc25a:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNGY3ZWEyNDA4N2E4YTk3ZjdjOTZlMTBlZTJlOWRlMmY0OWRkOWQ5NGJmMThmZjc5MmVmNTMwZDZiMTYzMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMDM2ZTY3ZjMxNTRiM2Q5YWQwZmIwMTYzMGI2ODk0YTIwYmFmNmRkM2QwNmFkYWJjMjIyNGZkNjg4OGIwOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6b0fc2411ecf4fad88fca965449de834",
+      "statement": "Unit testing (_test.yml) uses matrix testing across Python versions with two-phase validation: runs against current locked dependencies, then downgrades to minimum versions calculated from pyproject.toml constraints and retests to verify compatibility.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_test.yml#L1-L85",
+          "version": "repo-lines-v1:sha256:c8b66a87e4f78fad14d6132b89a46335d8ea8de37901955bf8c28c2847549d66:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0YzM4ZTRiNTdjNjcyMzg1MTkxYWM0NGVkYmMxMjgxZTRkNTRmMzllZWJhNmQ4NDk0ZjA5NWM1NWNmYzRlMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzMwYzU3MjBjZjQ4Mjg1MGQ0NWFkY2IyZmQ1MmVmNzdmY2VmOTkxNWY0MDE0ZWEwMjJhY2ZjMTU4MzEyMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_faff1fd3ff6a47dcbe788006e8099848",
+      "statement": "Pydantic compatibility testing (_test_pydantic.yml) validates affected packages against configurable Pydantic versions and reruns full test suites to ensure multi-version support.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_test_pydantic.yml#L1-L73",
+          "version": "repo-lines-v1:sha256:55c42873c6aef62b5096d18f8211187bf1253f9e316f3daeae38863bcd5f8fd8:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MzgzOWE5Yzc3ZThiMDgzZDlmNGEzYzU5ZGQ2ZDhlNmE0ODNmNzVmZmRjNjM3NDkwZTcwNDJmZjQxMDNkMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzMwYzU3MjBjZjQ4Mjg1MGQ0NWFkY2IyZmQ1MmVmNzdmY2VmOTkxNWY0MDE0ZWEwMjJhY2ZjMTU4MzEyMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8400626cf3504ce09a31ece9a4afdf77",
+      "statement": "VCR cassette tests (_test_vcr.yml) run in playback-only mode with fake API credentials to detect stale cassettes from test changes without re-recording, triggered only for packages with recorded HTTP cassettes (e.g., libs/partners/openai).",
+      "evidence": [
+        {
+          "resource": "repo://.github/scripts/check_diff.py#L36-L40",
+          "version": "repo-lines-v1:sha256:33a13b78d3cd4c5fe97e291d64efdccc6f28035e8daf21586d55a46413fafe09:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg0YzkzMDhmNzdjMDlhZmNmYzI2Mzg2YTk2ZTc4YTFiY2I2M2U3NjkzN2MyZjNjMWQ5N2M3ZWQ5MDEwNDY3NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTFjNzAzMmM5MTk3MzRjMTAwOGYzN2MzM2QyOGQ0OTY0Y2Y1MzdhZjMzZDhiNjUwNTBmZDE5MzlkNGFmZWMwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTBiMTFkMmY4NzU0ZTVlNTRhYjcyYTk4ZDliOTNlNmE2MjY4MjJmZDBmYmIxMjVhYmUyOGE3Y2M4YzYwMGQ4ZSJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/_test_vcr.yml#L1-L66",
+          "version": "repo-lines-v1:sha256:69050e686a468c8ea429a563b7050fe40dd39acb7ab90334b481bc7bc0a37762:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OGRiODQ4OTFlMzViNzFmYTUwYmQ5N2YyMzJkMjNjNDFkMGNmNjkzMTM1ZDQzNjA2YTc2NGY1Yjg2YjU0ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzMwYzU3MjBjZjQ4Mjg1MGQ0NWFkY2IyZmQ1MmVmNzdmY2VmOTkxNWY0MDE0ZWEwMjJhY2ZjMTU4MzEyMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_91801b10b92a47e799b60f91d2a924ad",
+      "statement": "The release workflow (_release.yml) separates build and publishing jobs for security: build job (no credentials) runs version checks against PyPI and creates distributions; publishing jobs run in separate security context with trusted publishing tokens.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_release.yml#L140-L283",
+          "version": "repo-lines-v1:sha256:15929f1a5b9ae728de64ae6350f0e5b12c240077b6deccf9cfde4228b324a302:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2MDNmYjA5YzI3MzNmMTZmYjg0MGIxYzY1NTJkNWQ0MDI0MGIxNGUyYWE2NjRhNWQ0ZDFlYWQ4NmI0NzM5MGIzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0NzBjOTQ1NmJjMWM4YzA0ZTE1YWEzNzJjNjQwMDlkMDQyOGJjZjNiOTJjMmI3NjJlMTRiMDZlNmE5NzlhYTRlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4OGI0MDE0NjU1OTY4MzE5N2VjMjU3ODkxMGUxN2NlMWZiNTNkNWJlYTE4OWU1NWMxNTk3OGJkYTJmMmE5ZWJlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MzFhZTI5MjZjMmVkNjc4MDVhMzc1ZjMzZWJhYTI2Mjk1YTY2Mjg2NDgzN2ExYzQyZmRlOGIxY2UwZmU4Y2E3In0"
+        },
+        {
+          "resource": "repo://.github/workflows/_release.yml#L263-L274",
+          "version": "repo-lines-v1:sha256:8fac379434387b7ff418ee80553928eb371547752ab5bf4bebfcce50325c1384:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyN2MxYTlhYThmZTQ5MGE4ZTZkNWE2MGExNTNiNzgxN2FiNjVjODcwNDRjZTExMzQ5MjZlOGVmMDJmNWMyMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNWNlNTAxNDY3OWU5YWY2MWQ2NWJlZDhiODllNGQ3YzZlMzQzYWM0NWZkYzEyYTZlMGFmYWJiOTM3ODc4MTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNDgwOWU3NzY4YzUzNWVmMTQzZmJiYmZkMTUzY2ZkYmM0MjY0NzU5ZWYzM2Q5NjY5YWI0MDcwMmMyNjAxNTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiOWE0MTg3MjBkYzI1ZTU1NjkzZWZlZDExODJmOWI4YzEzYzcwNjIxOTE1ZDZiOGNjOTVmNWJkOGRkY2QxZmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_26b6ae2237874f2abd29497bf5ea977c",
+      "statement": "Release workflow build step checks if package version already exists on PyPI using PEP 440 normalization (e.g., 0.1.0-rc1 and 0.1.0rc1 resolve to same release) and fails if version is unavailable, PyPI is unreachable, or version mismatch with pyproject.toml.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_release.yml#L189-L261",
+          "version": "repo-lines-v1:sha256:218aecbec90b654052ca3fb2fc75a1eb6080533e7d1cb1a53a6785c9a8d63164:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0YmM5NmU3NzNhNjYzNjgwZjhhNjM0OWE0ZWM4NWMyMWEwNzVmYzExMmVmMGQxOTg3YzQ5NWI5NTE1ZTBlYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiYjlkZTNiNjhlZmYwYzVkNmY4NjdjMGIzOTAzZGJjMWI4OTQ3NzhlYmRmYmZjZjk1OTc0NDQ4OGM5Mjc3NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2N2IzNmQxODRhOTEzYTU0MjBjYmUwYTdhZGRjMjBjOGMzMTQ3YjVlNzMxMTk3YmNjODMzYmRlNjJiZmQyYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0OGI4NTExMzMyNGY4NDcyMzc5NjU0M2NhNmI2YWFhNzU1ODQ5YmI0MGMzYjRhOGJlNWIzOTRkMmFlODgyZjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_46fdd738a1ab4b7e968a67aaed75c159",
+      "statement": "Pre-release checks (pre-release-checks job) disable caching to catch missing dependencies, import the built wheel directly, run unit tests on both current and minimum dependency versions, block prerelease dependencies for stable releases, and run integration tests for partner packages.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_release.yml#L383-L540",
+          "version": "repo-lines-v1:sha256:a104fedce8750e7ab5723c475b0b13ebfd3f3d796baf2019da078b2ec4acc729:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMzIxNWFlOWJkMDZkZTVkNGE1YjYyZDYxMjhkOTZlYWI1MGVjNWZjMjQ3ZGI2YjAzOWFlMzcyYTYyNTFlZTRmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwM2YwY2ViYjhlODY5OTBkMjBiMzc5MzljYmI1NzYyMDUwNmU4ZTJiZGNhOGU2NzBlZjVkMTczNTQxYmVlMDkzIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef566ddb3bfd47eca370bcbe31b19913",
+      "statement": "Release notes generation finds previous release tags via git history with special handling for pre-releases (matches base version, falls back to latest) and stable releases (searches previous patch, falls back to latest), then extracts changelog via git log between tags for the working directory.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_release.yml#L304-L381",
+          "version": "repo-lines-v1:sha256:02c16c867a48d496d5d31cc9a7860ed52a43ba2fb5583c13d915e49e06fc323e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0YjE2ZjJjYmZkYzMzNWVmZmU2ZTQzYjI5YzcwY2ViNjRhNWRjNWRiN2Y1ZGUyNGJjMTllM2Y2NjAzODI4NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0Mzk5NDc4OWM4MWE2ZGFlY2IyMWQzOWU2NGZmYTliODA2ZjczYWFiNjQzMTQ4MGFmZmY4MzE3MTExNTA5ZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5N2UzYzIxNzRlYWFiMDBmMmFkZjI5NGVmNTEyZjY1NjU5MTkzZTJlMTg4N2RiYmMzZjI2N2UwOTc4YmRjZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2M2E0YWRjZjllMjgyNTNjMTM3ZjQyMjA4YmVhNTBjYzNjNzY0YjQwNDcxMWFhNDE3NWJmOTc3MTg4MzhkMDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ef1eed172f74ac6ab61e4128ed815e8",
+      "statement": "Integration tests (integration_tests.yml) run daily (1 PM UTC) with matrix over Python 3.10 and 3.14 against 9 default partner libraries (OpenAI, Anthropic, Fireworks, etc.), receive 30+ API credential environment variables, and serialize per-package tests via concurrency locks to prevent credential conflicts.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L152-L250",
+          "version": "repo-lines-v1:sha256:f171d5b939a4417dba2c2ba55d219c4555bc150a7422e4b0fdd0ee5a3c902593:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZTUzNjI0Nzk1ZDA0YmIxMjI2ZjI1NTgxOGUxNmRlZWZhMGU1ZTVlODYxN2I3MDZkMjAyNzA5MWYxMGE3ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkNGQwMzc4MWVmYzEwM2VkMTMzNTk1YWFlMjlmYzI4NDdmMTBkYmQ1MjAzMWFhMTZiNmYzYTI0ODdjNDA5OTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3ODljMzlkMGFiNzhkOWFjNzRjNDBiODEzZGRiNGNkYmRlMTc5Mjk0OTY4M2VhYzVmZTZiYjkyMDgwZTc2OGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNjU0ZGI5YTFhZjZiYTQ1MDQ2NDViODQxNWM5ODZjOTlmMmMzYTU1YTUyMzgwN2IwMmRhZDllMjM1Y2Q5OGQifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L56-L173",
+          "version": "repo-lines-v1:sha256:1a8edf16cffab1fed529e43b9a7cbacb77d936c43c70e0101b5774bbd60da086:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5Mjg4NDBhNmI3ZTYwMzAzZDg3YmU0ZDRkODJhNTBiMzMyODQyOTBkZWM0ZTM0MjhkNDdkOTNmYmVmZDFjNTkwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhM2M4NzQwMDg5NmU4Mzg5Njk2M2RjM2M3ZjBlZDU1ZDVjOTJlNGUyNzI0M2QyMDk0NWQ5NjhkMzdmZWExZDk5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjNjhjNjBmMmRiMTY1NGJlMDI3NzQ2MDJmMGFlNDU1N2FlNjM2ZTNiYzU3NTI0ZGJlMDMyYTNmYjlkMjVmMjFkIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_97644e1aaa3e49bda3b645ed2478cf80",
+      "statement": "Integration tests handle external repositories (google-genai, google-vertexai, langchain-aws) by checking them out separately and reorganizing into local partner directories, with special per-package install logic for overlaying local editable core and standard-tests packages.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L179-L248",
+          "version": "repo-lines-v1:sha256:c2e36b44b35a4586726b41e28ad4ec1f830ea00101b910b4d2f88368782174b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NjM5ZDFjYzRlNzE2NmUyYzlhYjNhM2Y4YTllMmIwMzNjYjcxNDZiYWU2MWU1YzZkOWM4YjIwYzEzYTNlZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMzA3MzdhMjFmYWIzYjUzMjU2OWUxNGJkYTkyMzc0YjQ4NDc4NGNhZWZhOTgyZDIzYjU0ZjRhNjhjNDc4YTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0NmZmMzU1ZGZmZDExNTNiMDQ2NzhiMGIzMDVjNDBhNmU0MDNmYjk1YzEzNDUxNzZlODRmNTEzZTQyZmFiNjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjNTZmYTBhMzEzZjc0ZGRkZTRkMWM2M2UxY2RmMGJhMWExMDQ4ZTY3NmQ4OTI0YTZjOTNjYmEyMjc4MTNiNDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_13b0caedf05f4f34b2d369323d87c866",
+      "statement": "Issue auto-labeling (auto-label-by-package.yml) parses Package section from issue body supporting both dropdown and checkbox formats, maps package names to labels via JSON mapping table, and adds/removes labels to match selections.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/auto-label-by-package.yml#L21-L100",
+          "version": "repo-lines-v1:sha256:fca7a2ef5c5deb22252ab3af123e2380ec861fcd17f0a9cef1c1bd4f9f5f1403:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYjA1ZmE0YjY4NTVmNDc1YTc0NDA0OTljN2JhZjNiZjk3OWMzNWZiYWNkZDhmZGU1ZTlhMTgzOGQyMTUzN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwMThjMzQ3MmE5ZDMxNWIyNTllNDQyNDMxNzRhMDQyYTNiZjk4ZjQ1ZDUyNjg3YWFlZGExNDgyNDVmYWNiMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0NGJiNTllOGRlZWUxOTAxZDNjMWM3YTIyZjM2MDU3OGRkNTUwOTU1OGM0MzA2NzU0OTg0MzU3NWUyYTFjZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5MjU0ZTEzNzQ3YzczYzAyNDZhNWRjNzg3MTNiMGU0NmZmNTQwMTdiZjRiMjQ3NGUwNmEzMGZkY2U0MDllODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ecdce57a4c5d4850abc2265c1d57a0c6",
+      "statement": "PR labeling (pr_labeler.yml) unifies file-based, size-based, title-based, and contributor classification into single workflow using concurrency locks to prevent label race conditions, and uses GitHub App token for organization membership verification.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/pr_labeler.yml#L1-L80",
+          "version": "repo-lines-v1:sha256:2dbf45e00dd63b3efde21201c64129b4fb2a233aa9265820ff396a5d20ed94ac:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5ODFlMGVkYmMyMWFhZjc5NjFjZTNhZGYxMzM4YmJjMWE5Njg4OTZlZjkzZDlmMGRjNjE0MDBmNGZkOTMxMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYzdjZGFmMjc5MjJlNTU0YTUxNTc1N2JkNjExMjJmOTAyZmNiMjdkNTQzZjg3N2Y1YTc0NjMwZjRiYWY3ZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxNjQxYWY5NWE0MDhhM2Q2YjNlMjBlOGRlZmE1YmEyNmQ3Zjk4ZTMxMDYwZGI4MzY5OGZjNWVkZGU5ZTE0N2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_36db0f10906f4354881a102930352456",
+      "statement": "OpenWiki auto-update (openwiki-update.yml) runs daily (8 AM UTC) using full repository history and openwiki CLI to regenerate documentation, creates pull request with changes, and preserves partial progress on failure for baseline establishment.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L1-L77",
+          "version": "repo-lines-v1:sha256:bd561d495ac81334fdfcf2b4984cd8b328074ef526f45bb4f2fc5e6598f4c75d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MDI3ODdhZjZkY2MwODM0ZGUxMjFjYmIxY2I5NWY5NDU5YjcyMWVhYjAzNDlmMTA1MDFiOTk2YzFjNzdmZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6b65a0ec4bcf43e081e47dc1519c1908",
+      "statement": "Minimum version testing uses get_min_versions.py script to extract version constraints from pyproject.toml, query PyPI for earliest satisfying published versions, and downgrade dependencies for retest; supports two modes: pull_request (lenient) and release (strict) for different CI contexts.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_release.yml#L470-L490",
+          "version": "repo-lines-v1:sha256:189ad3f1c987c3d09705339f603b9284e4c2833c8e29a910602c4a3838e9c3d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZTZiYWEyMzFjNDUwODllY2ZlMDYyYWNkOTNhNDAwYzQ4MGU4M2NmMWU1MTdjN2M3M2M2OWY2Y2RkOTI2OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhNTlmZGQzZDgxZmQxNTJkNTllMmI3OWJhMjE4Y2YwYmEwODJhZDY3MzdmYTdlMWJhMTBiNGVjYWUyOWRjYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyYjY3YzFiZTU1ZTZlNzc1NGRlNDQyYTM5ZWJjZTI4MWM4ODgxOWFkNDgyMzU1MGRmOTY2NTY2MTU4N2UyNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMmM4NWUxNzFlYmVlZGNjMmI3MjY4OTNhMjEwMDY4M2M5ZDJkY2QzODRhZDE0MGMxYWMyYzZhN2IzODAzZmUifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/_test.yml#L55-L72",
+          "version": "repo-lines-v1:sha256:a106ff2b4f7b419ad92fafd1a672286d2a8c523778a6787b41c4ed71be9b1b2f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkNzQxZTBhNzYyMDMwZDAzMzkxYjY2NzE3OGU4NWYzMWE2OTA0MmU1MTE0MjkzZTBhZTBmNDk1ZjNkMjliM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwMDU5OTg0MTZjZTRkMjk2ZDJlODk3YmI0MzMzZWQwMjQ4ZTNjNmNiOWJlNjFiMjUyOTljYTZlNTFiNzk1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1M2JiMTZlN2NlZmVlMTFiY2VjOWU0OGU0YWRjMWRiZWUyMjllMzY2ODllMDJlOTkzMTc1ZDY5MDNhMDk2MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4MzBhNGM0MDFhMmJhY2IyMjYyODAzZDAzYWJjODYzMzMyMzFmODM1MWFiZTEzNDMxNjM1OTVlMGY4ZGVlZmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6f0e8ca64f5a4dc08279158e5dabc14a",
+      "statement": "Release workflow for core package includes test-prior-published-packages-against-new-core job that fetches latest published partner packages (e.g., langchain-openai, langchain-anthropic), tests them against new core wheel, and can be selectively skipped via skip-prior-published-package-checks input.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_release.yml#L581-L743",
+          "version": "repo-lines-v1:sha256:c0f08801cbfc52c661f05da45eb66d15291617ff791f5b189ca1636c97b0a75d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiZTE0NDc5OGY0ZWI3OWMwOWU2YTlkODRiODNmN2FjOWFhN2M2ZjMzNzNjNGM2ODU1ZTBmZTU0NGQ1NjJlYTliIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiMzBmZWQ1ZWJjYzc1ZDJjMWQzYTA5MWRmOWE0NTlmNzY1ZTkxMGY2OGMzODllODE5YmU1ODFiNWNkYzQ1Yzg1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxNTkyOTYzNThkYzlmZGU5OWNhMmEwMWYxZDdiNzg1NDdmMjgxMzVjZWM0Yjk5OWI3M2IwNGM2ZjVlZDU1NzY5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwYmMzNDA1YWRkYmFkNmFiYzExNmFiOTg2ODY2Mzg3NGMyYWRlNTI0ODM1NTE2MGVhMTBlZjQxZDdlZGU3NjkxIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_49d056d38efd434781bfabcd9b68407a",
+      "statement": "Release workflow includes test-dependents job for core and langchain_v1 releases that checks external dependent packages (e.g., deepagents) across Python 3.11 and 3.13 to catch breaking changes before publishing.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_release.yml#L745-L800",
+          "version": "repo-lines-v1:sha256:76558b4fee1fb23d87c29da42dd3aa55372e78ca93032808f0856ce4261d1dc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNjZjNzE4YmMzMzk3MTUyNWQ3YjdkNTY2ODhmZTcwOTdiMmQwZTgwYzJhMzc5NjE5ODEzNDQ4OTM5ZDVmMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMjRkYmFmZmY0ODI0OTFiMjA4M2I4Yjg2MGE0ZDMxZjkyYjUzMzFjMmUyMzhjODEwMzZkNjJhMzZjZTM0ZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMmY4OGYyNGY0ODFjZGNkN2ZkNTA2NzY2ZDcxMDhmYWVlNDEzODQ5NjUwZjg3ZTcyMmMxYmE5Y2Y4YjYzMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNGQwN2E0ZWM0NTI5YmI4YTJhZGNmOGU4ZWZmZGU3NjI3NGM4MmUyMmU0NTkyNmY2MjMxOGFiOTUxZjk2YTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf8a3bf4e17c4734b05c19365c73b426",
+      "statement": "All CI jobs set UV_FROZEN=true to ensure reproducible builds against locked versions in uv.lock and prevent transitive dependency surprises; release pre-checks disable caching to prevent missing dependencies from being masked by cached environments.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_lint.yml#L31-L31",
+          "version": "repo-lines-v1:sha256:f3bbbe58ef06cefc721fa895cde17817da87a352714047a0a013aea771269249:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNiYmJlNThlZjA2Y2VmYzcyMWZhODk1Y2RlMTc4MTdkYTg3YTM1MjcxNDA0N2EwYTAxM2FlYTc3MTI2OTI0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNiYmJlNThlZjA2Y2VmYzcyMWZhODk1Y2RlMTc4MTdkYTg3YTM1MjcxNDA0N2EwYTAxM2FlYTc3MTI2OTI0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDBlODMzMGExNWRiNjY4ODA2MWJkMmJmZmFlZjQ2ZjJjYzBlN2FkN2QxNjM5NDg4OTNhZGM1NTc2NmU5YmYwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDU1MWE0OWM1YTVlZWY2OWVkNWIwOTkzOGNjMWRmYjk1MjNmYmU2ZjI3MWIwNjdlYTAzNGRiYzM0NGU3Y2Y4ZSJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/_release.yml#L409-L415",
+          "version": "repo-lines-v1:sha256:24040bfc54e88a0f6afc5bd2eddc942e5d77109bcfac084574f8ef8943245059:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzkzNTcyYjUzM2ZkYjQ1ZmRmZjZiNjg1ZGQzYzU5NTBhNDc3NjcyMDE1YWMxOTIwMzFmMWQ2NjllMWJlOWM5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDhiNTNmYzAyMWU0OTFlZjhhYTlhNTUzYzE3ZmNkYTkyZjQ1NmU1MjJkZmUxNTdkNDAzNjgyZjFmMDY4ZDQ4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWU0Y2EwODgxYmQ4ZDI2YzIyZDRlNTUwYmIxNGNmMDVkOTEzOTI1N2Y1YWNmMTZiNGM2OTRhM2RhZDIzMTUwMyJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/_test.yml#L22-L23",
+          "version": "repo-lines-v1:sha256:a3d42222f25205004c5b413ab62b3089da07e3970084243a753c5372e1d36291:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNiYmJlNThlZjA2Y2VmYzcyMWZhODk1Y2RlMTc4MTdkYTg3YTM1MjcxNDA0N2EwYTAxM2FlYTc3MTI2OTI0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRlOGFjN2M5NDU0MmM0MDA4MmQzODJkYTA4MmJjYzIxMTRhYmIzMmViM2NjYjgwYWIzOTY3YTc4ZTI5OGYyMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2U2YzI4NTJiMGE5YTcxZTM3ZTZmYWE2MTRiNWYzMTI2Njk5MGNjNWMxMWMwYzE2N2ZiNjI3YzYwYWIzYzg5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzg0NWI3ODZhMmNiZDZmNDllOWFiNmJiZWI3MjU5NTFhYzE3MWQxNDgxZjYxZTcyOWEzNjVkODc1YzkwNDIyNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b7db5bd4ac549cd959364938b85eb0a",
+      "statement": "Release workflow blocks stable releases if any dependencies declare prerelease versions; optional allow-prereleases flag permits transitive prerelease dependencies during alpha cycles when release itself is prerelease.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_release.yml#L34-L41",
+          "version": "repo-lines-v1:sha256:75076611d40b1a5f9baf6b2eb8b8382124110b110bfdcd72282e3e723644a475:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VjNWQ4NjM2YmUzNjZmMDNmYjJjZmM1NjJhYmVmNWY4NDMyMjI0ODY4MTFmZjYxZWFjZmQ2ODUxZDI2OGZhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEzOWZkZjVkY2RlYjM3ZTJiNTJjMGRkMDFmNmI5MmE0ZWQwNDJlYjk0OTJhZjhkZDVlOTRmZGRiNTMxMWIyMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTVmYmViYjVlM2ZlMzNhZTg2MDkwYTBlNjM0YzRiYjU5MGEzMzE3MzI2MWQzZjUyZmJjN2M3ODI3OTkwOGMzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGM5YTJmY2U2NmIyZWQ2MTE5YWNmODU0NGM5MzNhYTRlNDBiNDgyYTFhNmIyYTAzMTNkYjk4MGU5MjJiYjkwNCJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/_release.yml#L459-L464",
+          "version": "repo-lines-v1:sha256:084ee9b8f80e960e0a0038260ac1d406a94faa93dc7fb661eeb7c6cf6600a3ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzA5N2VlZDhmMWZhOTQ2NzZjYWViMDZkZGE2YzlmZjc2NmY4NmU2MTkxNmYzYzI0ZjQ3ZGY0NjE3NTZlYmY0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzhmYjZkZTUwMGVlNTg1YmZjYzg1MmNhMGEzZmYxOWE1OTg2YmE4YTUyMDZhMTQ1YmZiY2UxODEyYWVkZTYxMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODkxZWFlOGRhMDE0NjY2MTc5ZTMzZjdjZjc0MWYyZWRlYWUyODI5NzNjZTdlNDhlZmE1MDVkODZmODJmZWIzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTY2OGJiNGQwN2JjMDk1OTllZWI0NGIyMDdmOGRiNTEwZjhjYzk5NzFlYmU2MWQ5YTBiNzRkMTE5ZGQxZDI0NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3060af4d17a8410db1993b2134916d33",
+      "statement": "CI change detection skips standard-tests directory in package enumeration, ignores huggingface partner as CI-unstable, and supports IGNORE_CORE_DEPENDENTS flag to control whether core changes trigger dependent package tests.",
+      "evidence": [
+        {
+          "resource": "repo://.github/scripts/check_diff.py#L42-L53",
+          "version": "repo-lines-v1:sha256:39b10ceaaebbaea1eb3723c5cc264252f9516a3a822661b57df893a804b4cc06:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YTRhMTcyY2EwZWE3M2I4ZjBiZjRiMTNkYmY2NzgwODY4ZGQ0OWY0OWUxMTg2ZGVkMWIzYjI1MTJjMGJlOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyNzhiMTRiZmE0YWQ5YWM1ZTg5Mjc3NGU5MWZiY2U1N2Q0MDFkYTc1ZWIzZWRhYmFjNjYzNGU5MTdjNTY4NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmNmYzOThhM2YzMjczNzdiZDM4NGE3YWZjMDRiMTRjMGI4ZGUzZTQyNTk1MDZiNmNlNzUzNWI4MGQ3YjY3MWQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-03T15:18:34.589Z"
+  }
+}

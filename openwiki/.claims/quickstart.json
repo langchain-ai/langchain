@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7dc36350c57797f4e4cb42c4ca2523c8a6fda499d2176362da99865392c8721b",
+  "claims": [
+    {
+      "id": "claim_7425c73f5e4c4667b8babba66c3663a0",
+      "statement": "LangChain is organized as a three-layer architecture in /libs/: core (base abstractions including Runnable, BaseChatModel, tools, prompts, messages), langchain_v1 (agent orchestration, factory, middleware), and partners (provider-specific integrations)",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/__init__.py",
+          "version": "repo-file-v1:sha256:fa4e54cbdf24eb2cfc4fd24776115853a9bc7977447b4d072a470f6765d2a781"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/__init__.py",
+          "version": "repo-file-v1:sha256:ca83a85cf943caecb4b09073ad78355112742393ccc133451a10def0be7cb84a"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
+          "version": "repo-file-v1:sha256:d08e06dea1f954a477fa8951e2a8387a10396d07b92a3a60fdced307c136a84f"
+        }
+      ]
+    },
+    {
+      "id": "claim_a13c1f7c4ff7487793c8a02c71997a8e",
+      "statement": "langchain-core (/libs/core/) defines base abstractions and protocols that all LangChain ecosystem implementations must follow: Runnable[Input, Output], BaseChatModel, Messages, BaseTool, Prompts, Output Parsers, and Callbacks",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/__init__.py",
+          "version": "repo-file-v1:sha256:79cb9a4b8511da9536ce64fd2d7e11e05c19154f9b144159f6eea38fd752d8c9"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py",
+          "version": "repo-file-v1:sha256:a2c769b852868ee63985025e519a25bb988b8c987f5958033c7c97d832a70d11"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/__init__.py",
+          "version": "repo-file-v1:sha256:86bb3118ed302c422bf35829bb670bf3d915e8f7a25b5c98f86d2b86a6185e6b"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/__init__.py",
+          "version": "repo-file-v1:sha256:83930fac3f2c24af23799442202bd6469f9db40ab58eacbe7c5fb04b97a0af94"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/__init__.py",
+          "version": "repo-file-v1:sha256:d0b87655ce1ba50f666dfa1a3d316dbda5c506bead04194888b034a5f03ef407"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/__init__.py",
+          "version": "repo-file-v1:sha256:3115ee61a18a70378fcdfa9a7eb3bc9cb765b7734cd481156110d711f9c41143"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tools/__init__.py",
+          "version": "repo-file-v1:sha256:d1bd72c189435f6935072871e69db5872570674dd36db2aa223174321d235955"
+        }
+      ]
+    },
+    {
+      "id": "claim_3715231490364f3caa6ad55f21a58817",
+      "statement": "langchain-v1 (/libs/langchain_v1/) provides high-level agent orchestration through the Agent Factory (create_agent), agent middleware system, high-level chat model factory (init_chat_model), and LangGraph-based agent execution",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
+          "version": "repo-file-v1:sha256:2e1855c669ed50df9795b1f73ca690d7664d0ef58a1c4080d0f6504076ebea97"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py",
+          "version": "repo-file-v1:sha256:51b55618fb209bce1e69f2911b367963da549d930f5eef1b1125cd19a26586ae"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/__init__.py",
+          "version": "repo-file-v1:sha256:8f55d904d302f3579169ce5e2ece766b2401f1a4d7064d0fefc67e9c6fd818de"
+        }
+      ]
+    },
+    {
+      "id": "claim_a0e0ccef86c546278972c1bf40c74afe",
+      "statement": "Partners (/libs/partners/) contain provider-specific integrations (OpenAI, Anthropic, Ollama, Groq, Mistral, etc.), each implementing BaseChatModel and core abstractions for their respective LLM services",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
+          "version": "repo-file-v1:sha256:d08e06dea1f954a477fa8951e2a8387a10396d07b92a3a60fdced307c136a84f"
+        }
+      ]
+    },
+    {
+      "id": "claim_e9cccec63975419089bd76979ebd1ba8",
+      "statement": "LangChain monorepo uses uv for fast, deterministic dependency resolution; developers install dependencies via 'uv sync --all-groups' to get test, lint, type, and dev tools",
+      "evidence": [
+        {
+          "resource": "repo://libs/Makefile",
+          "version": "repo-file-v1:sha256:b703a85cdfdb60e98c41ec8261d9b78f0e7137105ee9da36b8cb919b2d35858b"
+        },
+        {
+          "resource": "repo://libs/core/pyproject.toml",
+          "version": "repo-file-v1:sha256:325931f1a0825e70a5f7c0228e9a98e3bd6e2395ea23db6d7a0dffce70087408"
+        }
+      ]
+    },
+    {
+      "id": "claim_6c6c8b397aea45c8aba5ea826906c408",
+      "statement": "Pre-commit hooks (.pre-commit-config.yaml) enforce code quality on every commit by running YAML/TOML syntax checks, text normalization, per-package formatting and linting (ruff, mypy), and version consistency checks",
+      "evidence": [
+        {
+          "resource": "repo://.pre-commit-config.yaml",
+          "version": "repo-file-v1:sha256:f6173b7f48573811a6a8ca9f0691ecb2d79c331ac1676af11542ab5cdcf68deb"
+        }
+      ]
+    },
+    {
+      "id": "claim_889d710efaf440858ab48841e9823ecd",
+      "statement": "Unit tests in tests/unit_tests/ run with socket restrictions (--disable-socket) to prevent accidental network calls, use pytest-xdist for parallel execution (-n auto), and unset LangSmith tracing variables to isolate tests",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L13-L20",
+          "version": "repo-lines-v1:sha256:ab8103f9ee7c85d9fb1c9d3d0cbe6264d1384aac292f90c74f84c77c06ed5398:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDliMzBjZTkzZjhkMmVlNmQ2NDdlYjNhN2RhYjQ0NjRiNWQ5Yjc5ZGExOTI4ZGE2MDY4MDQ3M2QyY2Y0ZTY4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ2M2RlMzg2ZTA3OTFhZGQ1MmUzZjZlM2EwOWYyYmY2NDhmZTQzMTMxOGUxOTE1YjdlNWRlOTlmN2E1ODQ1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzNzQ1ZTU1YTIzYmI0MzZjYTUxMGFiMTgwNGQyODMwMjhhNTJlNzc5MjE5YmNlNzAyODRkOWY3YjEwMDcxMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d72684ee1494db39c808dba3aace38f",
+      "statement": "Each package provides make targets for common dev tasks: 'make test' (unit tests), 'make format' (ruff formatting), 'make lint' (ruff checking and mypy), 'make type' (mypy type checking), with TEST_FILE parameter for specific tests",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L1-L72",
+          "version": "repo-lines-v1:sha256:4563e443cad83212eca51d09b8a3baf5bc291450d3eb93a8b177504a4a7defac:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3OWFlOTgzNzk4NzM0OGRiYzA2NjU0YzBmMGQyNjE2MGE5MjA0OTM1NzUzMTA3YzNkOWMzYWMxMGNmM2VlZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlNzJiZWQxNzkxNWM0N2VkMzk2NTE4ZDRlZmIwNTQyYzJkMWFhOWUyZDVhYzFlYTZiYjdjYTg1N2I0OWE5ZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b3a658617e59415188fffdfb3910474c",
+      "statement": "LangChain uses ruff (fast Python linter and formatter replacing black, isort, flake8) and mypy (static type checker) for code quality; both are run via 'uv run --group lint' and integrated into pre-commit hooks",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L60-L71",
+          "version": "repo-lines-v1:sha256:29fec26c245d633f51a9dee3d2c1fc35c3faabf011e275f28cd0896f6dde2bab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMmM3Mzg1MjgzZGQ4ZTg0MzY2YzA5OTFlOTgyNjVlMmVlNTJmY2NlYWU3YTAyZjgxOWMyODcwNGY0NzBiYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NWI4N2NiNTcyYzgyOThhN2QzM2JjM2I1MDBkOTg3MzM2YzEyMzIzNDg0OGNmMjBhZWM1NWJlNmRmZWFhMjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhOWM1NmY4YjEyM2I3YmY0NGY4MTI1ODEwODZhOGRlNWIwY2E5NjVmYzA2MGIwMmUwNTFhZTllOTQzMDg2NTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3YzBmYjdkNTgxYWNiNWNiYWIzZGU4NTk2NTRhOWY0NWJmNGVlMzE5N2U3Y2U4NzI0NGQ2NmM2ZjhjMjRkYWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5686f3853fca48b8a5dc4490e5ed9a6e",
+      "statement": "init_chat_model factory enables dynamic model discovery and instantiation from 'provider:model' identifier strings (e.g., 'openai:gpt-4o'), automatically loading partner packages",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/__init__.py",
+          "version": "repo-file-v1:sha256:8f55d904d302f3579169ce5e2ece766b2401f1a4d7064d0fefc67e9c6fd818de"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef277c441ad34123a521ed9902c3ff18",
+      "statement": "create_agent factory function constructs a compiled LangGraph state machine that orchestrates conversation flow between language model and tool execution with pluggable middleware composition, handling tool binding and structured output automatically",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
+          "version": "repo-file-v1:sha256:2e1855c669ed50df9795b1f73ca690d7664d0ef58a1c4080d0f6504076ebea97"
+        }
+      ]
+    },
+    {
+      "id": "claim_a67b17fb1c4b43c5906fe3950b9e2b37",
+      "statement": "Adding a new LLM provider follows a documented pattern: create a directory under /libs/partners/provider_name/ with ChatModel implementation, message conversion, provider registration, model profiles, and inherited standard test suites",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
+          "version": "repo-file-v1:sha256:d08e06dea1f954a477fa8951e2a8387a10396d07b92a3a60fdced307c136a84f"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/__init__.py",
+          "version": "repo-file-v1:sha256:8b94ff472e8acdf4b6145e2e1b37c13b6548624a8857866f694e12740e1c1d8e"
+        }
+      ]
+    },
+    {
+      "id": "claim_d55345b5af7c407c8349ab5c22ed2ced",
+      "statement": "langchain-tests (/libs/standard-tests/) provides reusable base test classes that enforce consistent testing across chat models, embeddings, and tools through inherited unit and integration test suites",
+      "evidence": [
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/__init__.py",
+          "version": "repo-file-v1:sha256:8b94ff472e8acdf4b6145e2e1b37c13b6548624a8857866f694e12740e1c1d8e"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-03T15:18:34.589Z"
+  }
+}

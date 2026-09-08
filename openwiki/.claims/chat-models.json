@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d6bff3b81a95d8ca6bc4bdbd9b5c49d4db94d4b506fe48361a3571a0a8f2a35f",
+  "claims": [
+    {
+      "id": "claim_d2cdcf05dd4149bb9ea0a5fb0d1568d8",
+      "statement": "BaseChatModel is an abstract protocol class that all chat model implementations inherit from. It is a Runnable that accepts LanguageModelInput (PromptValue, string, or sequence of messages) and produces AIMessage outputs. Subclasses must implement _generate (required) and optionally _llm_type, _stream, _agenerate, and _astream methods.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L284-L332",
+          "version": "repo-lines-v1:sha256:cfd32376cbed1e686d0204121882ac2c99a34deac67b48da8ef025034c33a85a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMDU3MWQwODUxYzEyMjE1M2EzYjAxMTUxNTUyOGY5YTQzNzBkZmVmN2EzMWRmMzU2ZThkNzljYzIwODQxNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMjIxODk1NWJjM2M2MzdmNGU5ZTQwNWQyY2JmNWU4Yjg4NTBkYTAyYWQxODEzM2I1NDMxNTllMDljZjQ3M2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1NjVjZjg2MzBjZDY5ZGJkYjA0ODg0NzFmMzM2MWY3NDMzNzU0MjAyNDFlYTA1MjNlOTMwODFkMmZjNzFmYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5NDQzYWE2YmMzZTM2NGNkZjliZTJlN2JiNDIwMGFiZjExMzUyMzVkZjQ2MjEyZmIyYWMzOGEyMDVhYmNiMWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_827f2a3f82984673bc9aedc818bcec64",
+      "statement": "BaseChatModel provides synchronous invoke/stream and asynchronous ainvoke/astream methods that handle message conversion, callback lifecycle (on_chat_model_start, on_llm_new_token, on_llm_end, on_llm_error), rate limiting, and routing to streaming or non-streaming code paths based on model implementation and configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L474-L523",
+          "version": "repo-lines-v1:sha256:9530ef00f9f42bd871ffa6b861c523bf4bd6383b0525873a8ef722979812dfd3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0YWMyMDlkNjcyODM2YTRjM2RkMGVjZWQxMmRjMGU2YjZmNzhkMzgxZmY1MTY4YjdjMDdhODQ3NWRhMTlhMzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4OGM3ZDI0YTAwNTU4ZTA0NDRkZDA1NWNiNTAzZjJjOTE5YjY4Y2QzNzhhM2NiNTU4Mzg4YThjMzY4ZDdmZWYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L726-L990",
+          "version": "repo-lines-v1:sha256:145b830db054fb6650ec383cec82317fa44c9cd6bd173f2c6ce94ecbbf300aec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjY1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0NGRhOTM1MDAxOWRjMWU2Njc0NTI2NDM4NzMxNjE5OTcyMjVlOWNlNjAxMDdhZjdiNjRmODQwZGRlY2ZkYTRmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1OTA5YTUzYTYxOGQwMjhlMWQzMDAwYzBhN2FiY2VlY2JlNWZiMzdmNGU1MTFlZmU0NjY0M2ZhZDZlNjY4NzJmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3ZTkzNzcxNDA4NjQxNGUxZDQ4NGZlZDU1ZTkzMjVlNWExNjFlY2Y0MTcxZmZlYjdkYWI0M2QwMDgyYjZjODRhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5ZGYxYTdhNTVlNzBlNDQ2YzhjY2RkYzkxZjRjOWY2ZDg5YTc4ZmVjMDNlZTQyN2U1MTA5MWVkOGRhMmJiYzM5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc67358634a74aeba7bff0a85313ecf8",
+      "statement": "The _should_stream() method determines whether to route through streaming APIs based on: (1) whether _stream/_astream are implemented, (2) disable_streaming configuration, (3) explicit stream=True/False kwargs, (4) instance-level streaming attribute, or (5) attached _StreamingCallbackHandler. If streaming is unavailable or disabled, stream() falls back to invoke() and yields a single chunk.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L525-L585",
+          "version": "repo-lines-v1:sha256:45eff9fcf247512c468032e165dd24e8c1ffc75e9a5f52d2780e137cad20140f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzOWQ2MmMzNjVjOTdiZWM4ODU2ODFmMjc3NGE1YThmM2MxNWZiNzQ3ZTRiMDRlNGMxMGQwNzA4NjM5MzQwNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNjljOTFlZmZjYmU3NjUzMDM5M2JmNjExMmZlYTA1YTYyNTcwMjVlMTI0ODMzZDMyNjIxNDIxNGE0MjU1MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiOTA1ZjA1ZmUzMDYyZjUzZmQ2MDRhMjI1NDY0ZGVkYTQ2ODg4OWI0ZDdiMTk1ZGQ0MzAzMjZmYWFhMDFmZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViZWVkOTEwZWVmYWMxOWJiOGJiNDdkNDVhZGE4ZWUwY2QwMDQ3OTY0OGJjMjZlYWZiNzBmYzQ1NmVmYjM1MDEifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L726-L741",
+          "version": "repo-lines-v1:sha256:cacbd449489fb9444e90e81dcf1ccc0e634841564f80ffa8520f3805bd9e4dd2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5N2I0N2JiODFjZTkzY2JhNjdhZmMwODY5OGE4MGNmYTA5M2E4NjY3ZTljOWY5NjUzMzc4MThkNjU3OGQxODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlOTM3NzE0MDg2NDE0ZTFkNDg0ZmVkNTVlOTMyNWU1YTE2MWVjZjQxNzFmZmViN2RhYjQzZDAwODJiNmM4NGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2N2EwNTgzZTViYzVjNTQwOWY3OWE4NTU5MWVjODcxMWJkODUwYjljNDZmYjBhZmU5OWU2ZTE5NWMyODA2MzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_88a3bc68c8c44f8d8e90f4e8f99af29d",
+      "statement": "Subclasses implement streaming via _stream() (sync) or _astream() (async) methods that yield ChatGenerationChunk objects. These methods receive normalized messages, stop sequences, and a run_manager for per-token callbacks. The default _astream implementation runs _stream in an executor. If neither is overridden, the model is non-streaming.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2255-L2311",
+          "version": "repo-lines-v1:sha256:731ced876db905c6d0950307f17a0523039ddf745c88e7c76ca4f706c988ac19:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzN2Q4Mzk0YzBjZjdhYWJiZTRhODg1YjA1NGE4ODI5YWQ3NGRhYmU1MGVmYzQ5NDg3NWJjZGVmNDQyMTA5YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjZjA5MWM0MTIxYTM5MTNhMWU4YmExMjg1YWIyNWRiOTFiZjVjNzY5OGUyYTgwOTI4NWQxM2EyMjZlMDRiODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlNzE1NTY0MGQ1YmM3OGYzMzcwZWQ3NDRjMTdiYzZjM2E1NDM5ZWNhYmEyMGZhOTRjZjYwYmRkNDliODQ4NmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlNzg1MjhkOTU5YzM1YTEyZWNkZDkxMjAzZTVkZjFkNDY4YTNkYjQ0Y2YyY2FkNzc5Y2ZiY2IxYzVhZWEyYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7e494bdfca8440db5198397500c6093",
+      "statement": "ChatModelStream and AsyncChatModelStream are returned by stream_events(version='v3') and expose typed projections (.text, .reasoning, .tool_calls, .usage, .output) that accumulate protocol events as they arrive. Each projection can be iterated for deltas or awaited for the final value.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1-L46",
+          "version": "repo-lines-v1:sha256:da766bf0c8862bfef9808624d302620cb3140e480dcd61508c3351300de0cc2c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MTcxNTdmOTc5MDY1N2FmMGViZGVjZjNjM2ZmMTA4ZTQ2MGNhYWEzMjQ5MjczOGIxYThlMzU2YTI2MGE3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwNTUyZmUyNDUxZmNkMGJjYWQ3Y2IzMWViM2NiYmRmODRlZjliNDBiNWE4ZDJiMmZkNGE2NDFkNjk3MzdkZjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4241369e9483403b9c2cea053dc229da",
+      "statement": "_generate() is the required abstract method all BaseChatModel subclasses must implement. It receives normalized BaseMessage list, optional stop sequences, and a run_manager. It returns a ChatResult containing a list of ChatGeneration objects (each holding an AIMessage and generation metadata).",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2208-L2226",
+          "version": "repo-lines-v1:sha256:7dc9ec20b0a88c54a871331ce5f6dadd49655125dca20d86e156c6f2d752e509:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNzA2NTVhMDI0OTg1MzI0MWVjMjRhMTQzZDNkMWY1ZTY2NTZiODE4YzE0Yzk0Y2E3NDFhNTU1ODkzOGNjOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZGUyNTg3MTk2MTQ5MjYwNzFjOGZiMTlmZDg2NjE1MDU1NWYxYjAxMzU0ZjhjZDE2MDNhMTA5YTdkZGFlNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0ODI5NTQ2NjAzM2RhYTgwODFhNDBjNjcyYWFkNzA1NDk1ODQ0NTU3NWNjOTFkZTU4OTE5MWU0ZGQ1ZGIzY2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwNTRjYTQ4MTRkOTViNjg2MDI0ZTZiM2I5YzRjOWU5MmM0NWNhZDdlMzJjMDk0Y2I5MTM4ZTQ2ODA5MmVkYjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c5628590b924439b189efce4c20ac96",
+      "statement": "_agenerate() is an optional override for native async support. The default implementation runs _generate in an executor via run_in_executor. Subclasses override to call native async provider APIs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2228-L2253",
+          "version": "repo-lines-v1:sha256:fac4b6218fce15d131280a4526267491b6aa6a769235926ebb676cacf677a1cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyOTMxNGIxZDFkNWVhNjFjYWE2M2NiYzIyMTM1YjM4YzQ1MWE1ZWRlOGU2MTIzNjFkMzk1OWE1NmQwZWJmMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzMjQ0MWRhZWNmMDMyZjQ0NTIwOTRjM2Q3OTI5MDMyZjc5YjcyOWFhZmNjYmU3YTA1YzFmZWYzYTUzMjc1NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwMGY3Y2UzNzEwYTczMmI5NjU4ZGMwNGIyYTI3M2YxNWYxM2FkOGU0Y2JkZGExMzRhYmQyZjY2ZTYzMzEwZDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2c69747d436f4b7e87260f3b184a7875",
+      "statement": "_generate_with_cache() and _agenerate_with_cache() wrap the core generation methods to transparently check and populate prompt caches via self.cache or get_llm_cache(). Cache hits replay v2 events if attached handlers support them, providing transparent caching with consistent callback behavior.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1892-L2206",
+          "version": "repo-lines-v1:sha256:8875e363badb600e00e7b80f354fca72b52ecd03e88a1c87cc770026fe10e7cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMzVhNGQ1NGU3ZGUxYTdmYjE3YjU4OTllNWFkMjMwMWMwZGEwODlhOGVkYmMxMWU4N2NlOGViNzFiMzcwMGZkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3NzJmOTY5NWM3NDY3Yzc0NzczYzljZTdmYzQyOWM1ZDBkMGU0ODdmM2M1MWQxNWQ2NjY4YTNkMjQwNzJiYjk1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjMTQyMzMyMGQ3N2NlMTg4MDY2OTBlZmRiOGUwOWZjNmU3MjZiODVmYjRkN2U2YTU1MTBiNWIxZGI0MDgzYWNmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTg3OTY0N2FmZDExNGM1MTI3Y2Q1Y2ViNzcyODRjMjNiNzBkYTE5NDJhNGE2NzU0NDRkNmNhZjEyY2MzZTM0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_824b46e4e601461a84a96f8f83ce7cbe",
+      "statement": "Chat models emit structured callback events throughout execution: on_chat_model_start (with serialized config and batch size), on_llm_new_token per streamed token, on_llm_end with final LLMResult, on_llm_error with exception, and on_stream_event for v2/v3 protocol events. Callbacks are configured via RunnableConfig with callbacks, tags, metadata, run_name, and run_id fields.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1668-L1676",
+          "version": "repo-lines-v1:sha256:1768cb9dcdfcc21004690fd656a760bc1260a60eb701db318f4c526426bcd74b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJjYmNkOGYxMTBmODIzZGI3OTQ1MDAwZmE1NTI2ZjIxMDJmMDFiMmYzZjFhODI2OGE5ZmIzZmNmNWM5ZWRmNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkwOWE1M2E2MThkMDI4ZTFkMzAwMGMwYTdhYmNlZWNiZTVmYjM3ZjRlNTExZWZlNDY2NDNmYWQ2ZTY2ODcyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzU4MzA3NmJlNjk5YTdhNzIyYTYzYjNjNWY3NmVjMDc4ZWNkZWI5Yjc5YTg5NWQyZDc3MDg5MTZjMDliZWMxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTY3MTViYjkwMWE5ZjIwMjU1ZWJkMDUzZGJmNDQ5NjkwOWM2MDgxNmVlODVkYzlmYTVmM2U2ZDBjNGYxZWVjYiJ9"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L773-L855",
+          "version": "repo-lines-v1:sha256:19a352f161e0454121917f747b7c73cde8e4ad68cb5844e6ac77c6b8aa425847:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjOTQ0N2JjMmFjN2Y0YTBhNGE3MzJiMmVhNGI1ZDIwNjYwOWNmOWI2N2NkNmY3NWUyOTFiYmQ1MDNiYzZhZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZDM2OTQ1YzE5ZTA0MzBmNTg5MWQ1YzQ0NTczMTI1OWE5ZDgyMmEyMWZhYWI1Y2MyNmY1Y2UyYTZiNTRhOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1NDNiZDUzN2M1Y2FjN2NjYzQ3ZGVmOTE2M2ZjZWI3YWI5NWZhNTE1YTcxZWU1MWU5ZTZkM2IwYzhmODk5YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MTgwZjZhYzIyYjU3YjVkMjU3YWExZjAxOWM2ZTY4OGU2ODEwNjE0YjgxNGE1NzgzZmU5ZWIzNzI0NWUzN2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4e7ce7ec11bc4a44b5bf0f404f70fa26",
+      "statement": "with_structured_output() constrains model output to a specified schema (Pydantic class, TypedDict, dict, or OpenAI tool schema). It delegates to bind_tools([schema], tool_choice='any') and chains through output parsers (PydanticToolsParser or JsonOutputKeyToolsParser). If include_raw=True, output is wrapped in {raw, parsed, parsing_error}. Requires bind_tools() implementation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2385-L2565",
+          "version": "repo-lines-v1:sha256:673bc22e396265b7dbabfa67b802837132337352be622cd69c071cfc5dfd1c84:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODYzYTc3NDFkMDgxOGZiZWMxOGIzODJlN2YyNzZjZTQxNGVlOGY1NGYyYzZjNWU0OGEzYTdkNDIzNDAxNzgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_fde81caf70274472a5807c28253e2d75",
+      "statement": "bind_tools() is an abstract method that subclasses override to bind a sequence of tool definitions to the model. It accepts tools (dict, type, callable, or BaseTool), tool_choice parameter, and returns a Runnable[LanguageModelInput, AIMessage] that includes tool definitions in API requests.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2366-L2383",
+          "version": "repo-lines-v1:sha256:a2c56a9bc7a84b7ed47b879ac55e9139606dc73bd2023a8ced246310d05fb38c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxODU0YjA0NjkxN2UzYWIyYWQwMjllMGVlYWU3ZjkxZDBiZTNkNjkwMTRiYjYyN2FhZGRlZjJlNjlkMzg4MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YjQ4Nzk3YmM1N2JkZGEzOGQ4MTE5NjhkMTE0YjgzNTZkN2I0YmUzMzFhMTQyZmY4ZDgzNWUwMzc3NjVlYzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1NzQzYjMwYzc5OTI2MzkwNGY4ZTgxODQyNDM3OWY5ZDIyYjJjMjAxY2I2ZTJmNzUzMzA0MTc3Y2YxYzk4OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMTQxNjFmOTNhMDJmMzU5YmQ4MDVmZWI0Yjg5NmM0ZjExZWFiNGM1Zjc4NDA2ZmRjZjk5N2NlZGM2N2MyZGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a5942a521cca487ca5e1ca8f328163c9",
+      "statement": "The ModelProfile TypedDict (optional field on BaseChatModel) holds capability metadata: context_window (max_input_tokens), supported modalities (text/image/audio/video/pdf inputs and outputs), tool calling support, structured output support, reasoning capabilities, and temperature support. Profiles are auto-loaded via _resolve_model_profile() override in subclasses.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L378-L444",
+          "version": "repo-lines-v1:sha256:8cff3df6f9a49eb1b3a5ba8ab37f259d084d3c6082f7da23b16c453c1d93cd72:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyM2Y0MDgzZDkzZTU2NzQ0Mjk1YWExNDU3ODNlNzYyMDhiNjIyYWJhYWI3NjhlNjliY2I3NWJmZDVhNGEwMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWIwOTBiY2QxNjIwZmE2MmVhZWUxNTdhNzRmY2E2MzVhYTI5ZTEyY2JmZmQ2MThiNTc5MmQ4N2JjMDNhM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViYWQwMjFjMTkzNDNiNmEzOTYxY2IyMWE0ODRkYTg2M2Q5NWE2ZWRiYjI1ZTY1OWJjMzIzZTM3ODE5MzE5N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MWFjN2JmYWFjZjE4YTk1NTM2YzVkY2RjYTc1ZDk5NTIzZmM0YmE0ZWUwY2FjN2IzNDQyMDc0ZmRlZjI5N2YifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/model_profile.py#L13-L150",
+          "version": "repo-lines-v1:sha256:497a9318b6379350b195e046e266ed2e8ccd7b0e2c69aaa337f7eab0811059ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmNjk0ZmRmZTIzOTgzZmQ5N2JiYTViODMwNTAzMWE4ZTU0ZjBkOWQ2YzhjMTI2ZDVlNzI5MjY3MmQzMDJjZWE0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MjAwOTdlNGFhNTAwNjhiYTE1N2Y5YTI3MzlmYWQ4Njk5NWUxZTBjZGNjZGFkYzU4OTdjMjAzNGM3NGQzZWZhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3Yzc0YzNlNWEzZDZjZDA1MTQ4NmU5YjRmNTQ3YzBlMjc3Mjk4NmUzOWQ4YmRkZDQ0MjU5OGUzZjQwZWJmZDhlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_af3159f29b2e4a53b9538a954ef8b5eb",
+      "statement": "BaseChatModel automatically loads model profiles via Pydantic validator _set_model_profile (mode='after'). Subclasses override _resolve_model_profile() to return model-specific profile data; the validator handles assignment and error suppression. Partner packages override _resolve_model_profile() to load profiles from their own profile registries.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L398-L444",
+          "version": "repo-lines-v1:sha256:f18d0b7106bc8237b8ffc290264d8d484ab6310f067a2375e15326297a177520:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2YWM3YjViZDJkY2Y2MjcwNjczMTFiYjhhZWQ1ZDk3NDBhODFjMmQ5NjhlNGM2ODE2Y2Y3MGM5NWMxZDQ1MDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWIwOTBiY2QxNjIwZmE2MmVhZWUxNTdhNzRmY2E2MzVhYTI5ZTEyY2JmZmQ2MThiNTc5MmQ4N2JjMDNhM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3NDAyMGJhYWEyYmU3OWY1NTVjMDk4YjM0ODQxMTRhNGU5MDU1ODA4M2UxNTE4OWRiMGJlMWJiNzE0YWYzYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MWFjN2JmYWFjZjE4YTk1NTM2YzVkY2RjYTc1ZDk5NTIzZmM0YmE0ZWUwY2FjN2IzNDQyMDc0ZmRlZjI5N2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_82543184d89c479aa3d772502f81c185",
+      "statement": "The disable_streaming field controls streaming behavior: False (default) enables streaming if available; True disables all streaming; 'tool_calling' disables streaming only when tools are passed. This allows gradual model replacement and workarounds for models with broken streaming.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L337-L353",
+          "version": "repo-lines-v1:sha256:51a6022ded251d8aee989262f4639c607e5697637e91e32e9b6adecdc3b77836:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYTQwNmYwNjc1MDBiZDdlZDBkN2EzMzc5NGE1MThhMTlkODFlMjJkOGEzNjMwYjgwNmUzZWM5NmJjMmQ0NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3NTliNzFmODYxZWZkYWMwNTM2ZGM3ZTljZWQwODg4MzFjZTQyZmI3MzdmMTg3MTFiODc3MGJlODE5Yzg2MzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmZDY2ZTg0NDMwMzRhZTY1NmNlNGZjMzMwY2E1NTMzNjVjODZjY2Q0ZjRlZDJmN2ExNGUwMDRlNjk2NGJkZTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8ecef7a6bac40fda27f1a0fa349d075",
+      "statement": "The output_version field (v0 or v1) controls AIMessage content format in stream() and invoke(). When output_version='v1', content is overwritten with standardized content_blocks format before streaming chunks and final generation. This allows consistent output shape across legacy and new code paths.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L355-L376",
+          "version": "repo-lines-v1:sha256:635a4b31855a4187743c7ababe83b7c78224ee57efa89c5d27dda7a74b5faf3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ZWZhODk1YTA1ZTdhNWZmNTNkZjQxZjJhZjA0YWFlMGY2ZmEzZDVmMzgxMDYyN2NhNDM4NmUxZGMxODEwMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlYWM1OWEzZjE3NmE4NGVlYjFkYTQwMmY2MDNhZDNkMTFmMTIzYTI1MGJmYTRlOGFhMjI2YTE4YWNlOTJkZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3NWY2YzU1ZDc4YzA3M2JlNmFlZjIwZGJhYWI1NzRhNjE3M2JmOTY4YTAwM2YzZTY0MWRjOGY3NWQ3MTZmOWUifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L798-L810",
+          "version": "repo-lines-v1:sha256:17453abba43b78a6ebc60d0c77c65844c04edc5eaad2f8ccc01c73366e30dfa5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjZWFjZmE2NjA0NDhkMTk3MDY4ZTZjZDY3ZDIxOGVlMjE1YTAzODFmZWI5MWFmMGZmODZiZGQxZWE5YzQ3OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxOGQ5MDEwN2I0MDBmODczNjEzYzI1NDNjMTQxOTE4NGYxZmM4MmZhN2EwN2Q3YjgyZTQzMTJlNzE5Zjg5YjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxOGQwMjljMGY5OWI2NDhlM2VmMWZmMGNkNDFhNTg5OGQzYTVjNTMxOTMzNDU0NDE4YWU1N2JkNWY3MmEwZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ODZkMDg5NDUyMzc4NThlZTJmMTI4OTAyZTQ3ZDFiMjc2OGFkMTFjNWY2YTIzNWQ5OTIzN2RhNzQ0YTYyNTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_43a30b4ed6ca4fc0aecb33ce2ff1bc07",
+      "statement": "BaseChatModel accepts optional rate_limiter field (BaseRateLimiter). When present, rate limiter is acquired (blocking) before _stream or _astream is called. This allows centralized request rate limiting across all calls to a model instance.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L334-L335",
+          "version": "repo-lines-v1:sha256:0fc1547d1be910cddd9353c31d20d343a35782557cdf49eca01c3c412bcb3314:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZiOTA5MzdiMmFiMjE0NmE3YjAwZTI2MTY0ODEzYzhhOTdiMjkzYmVkMzg5Njk2YmRmZjY0NmRjOWRkNTRiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2I2MTY1NmEwOTU3N2E4MjgwOGZiNmZlMTI0Y2I4YTlhYTUyZGRlOTYyYTJmZTFmNzMwOWRiMDNkYjdlNWMwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQxMmRjMmI0ODFlMDk4MWU3ZmVmZmFiZTU4MWU1NzhkNDE5OTJhM2RiZTEyZWIzMWIzNDEzZTc5NzBjZjIxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGFjMDdiYmEyNGY5OWRiNjc2YzcwM2NhODA5NTc5MmY4ZTQ4Yzk2ZTQxZThmNGYzOWFmZmQ1MmQ2OTk5NjljNiJ9"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L785-L786",
+          "version": "repo-lines-v1:sha256:cf9be61ceadd3f7e68f7bd2e4d1cccd7602eadd3d5746d5d8380986d58f8cd4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDQ3NDMxOGRjNzMxMTBlNWMxMmE2Zjg3MzBjMDIyNGRmZjUxMTEyMzFkMmIyNGVjYzVhMjg0YzE4N2NhZTQ3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjkxYmFkZmMzMmQ1ZDVhMDI4MWJjNmY0Y2JiYTM3MTlhYzQyOGQ3NTMwZjk0NmJhZTlhZjUyOTg2MjNmNDljMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTk0ZWIyMDI0OGUxZjJiODFhOTNhNmJiZjhhMGE1OWFiNGRiNGQ5MGE4YmY4YjQ2ZmI1Y2M5ZGRiOGQxZWNkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGQxMzg1MDk5ZGI2N2U5ZDkxMGI3OTZjNWIzMWUwNDI0OGJlODc4Zjk1MmYzZGI2YTY3ZGZhYjAwOGJlZWE1NSJ9"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L916-L917",
+          "version": "repo-lines-v1:sha256:48256efe060f855bb4cc3b04cf89ff00b05eee9ec177da4b89bb9cc0c601f842:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzZmZWE2M2UxMGI2M2M2Y2Q5MTUxMDRkNTBkODcwNTUzMGI2MDBkOTllZjRiYWY3YWMxMzhkOGFhYTczMDJmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk1MWQ5ZjVjOTIxNDg2YmM2MDlmMjAzY2Q5ZGE0ZTBkOTNkYmYyOWRlZDJhNTU0ZjM3YTI2MjllOWJiZjZiMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDI3YWUxN2E2MDE4MDI4ZjJkMzIzZDA2Zjc0N2U0NTg3M2I0NjQzNDY4NDhhM2FiMGM2NTNlMzM4Mjg4ZjYwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDllYjAyNDY4YTZmZGUyYjVmOTg4NjYxMjVjMjA3NzYxYmM3M2JlMTJjOWYyNGM3OTgyMGVkZmYxZGEyNzRmZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9238f8d4394949909b8bdf20533210ae",
+      "statement": "Stream and generate methods normalize messages via _normalize_messages() before passing to _stream/_generate. Each streamed chunk and final message receive a unique ID (derived from run_id) via message.id assignment for tracing. A final empty chunk with chunk_position='last' is emitted when streaming completes.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L789-L827",
+          "version": "repo-lines-v1:sha256:ed945de6b40629a7372acc7b08a9bf7dce32fbadd5b2aaa7f0c7ab3354b6a9fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhOWZhMmMwMmY0OGY0MmEwMDU5NWMyZGU3MzcyYmM0ODVlMGVlYzNiYWQzMGIxNDRmOWI4NmQ3NWRhYjMwZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZDMzMDIwODA2YmU2ZTQ3MDUyYTQ4ZDViODhmNmQ5ZTM3ZDUyMTRmNmE3ODAyNTQ2NzU3MDY5OWZhZjkzNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxOTNlN2Y0MTYyNGMxN2E2NzAyMzdmY2U5MWE5NmNiMTUzZDQwMDhlZjBiZjQ1ODhmNDMyMTU4M2ZjNWVmYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1YWYxOWJkZGMxZDJkZTA0ZjFkZjI5MWE1NmU0MGZlOWJiYWExMmY0NmRjYzU2MGZmMmI5NGRiMTYxNGE2YjEifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L922-L968",
+          "version": "repo-lines-v1:sha256:dc2eb57b0164229b93dad722773090979a244f7d8890a7b87859edaeb90d8fed:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MDA1MzZlZDc5MmMyMGZiYTcwYzIxYzUyMWIzNDEzNzU4MzM4NWM4MTJiMjVlOGRhZmUwMWUwMjU3OGViNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMTU4ZDhlMDhhZGI3M2M5OGI3NTYyNjQyMDM1OTYzMjIyYjQ4OTNiZGFkNDJmZjM0ZTM3OTUyOTgxMDc0MWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhNDRjZTIwMTQ0NjM0ZDUxZDA3ODY4MTY1ZTBmNDBlNTQxOGM0M2IzMGJmNTE2ZmFmNjY5OGJlNTU3ZTc5NzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxMmNjMjY2Zjg3MWZkYzIzMWNlNmE0MDAyZmE3MTc0NmQyYTk2Zjk3NTQ0M2M0MGMzNDhhNDYxZWFkZjllMGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ec235df6cf964921ac38bf132ea90a74",
+      "statement": "Each generation accumulates response metadata in AIMessage.response_metadata via _gen_info_and_msg_metadata(), which merges generation_info and message.response_metadata. For single-generation results, llm_output is also merged. This ensures all provider-specific metadata is accessible to the caller.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2705-L2720",
+          "version": "repo-lines-v1:sha256:965fbb380f052092c2ab3b975d319f11de6c7062904ff58b40935569e5165aa0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzZDQyOGIzNmM5ZjU0Zjg5NjIxZTM0M2EzNjE5NjgzNjhkNDYzMmYwMWU3MjdkM2QzNGRlZmU3MjYyYWUwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzZGYyYWNmMDZlOGMzZjAzYzcxMzVjNmU4YWM1YTljYTU0MzJhYmUwNmE3NGFjYTBmZGQ5YTUzYTAwOGY5ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiYmY4NWMxOWMwMmNkNTBhY2FiMzQ4ZmJkZWU1ZjA5YmRmN2MyYTVhMmY5MWVkODlmNTI3YmZhZmVhMWEyZGQifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L797-L797",
+          "version": "repo-lines-v1:sha256:5cbd5b8f86a102c25aac35f771f6330bef7ce8d346a1a659d16f68807b8f42c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNiZDViOGY4NmExMDJjMjVhYWMzNWY3NzFmNjMzMGJlZjdjZThkMzQ2YTFhNjU5ZDE2ZjY4ODA3YjhmNDJjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNiZDViOGY4NmExMDJjMjVhYWMzNWY3NzFmNjMzMGJlZjdjZThkMzQ2YTFhNjU5ZDE2ZjY4ODA3YjhmNDJjOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzdjNjNlOWQ2MDJhMjUwZTVmMjgzYjA0NzI4MDk4MjhiY2Q3ODJhOGM2ZmI5NWUyYjUwNjUxYjc5ZWZlMTAyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWJmNDE1MDc4ZTU2NmI1ZmJiNWJkOTY2MjdhMDY5ZGVlZWUyMjhkODdiMTgyZDg0M2NmMGFiZDJlYTZmNjkzMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc5fae439d664a6a8f8097b04d84aa96",
+      "statement": "_identifying_params (optional property) returns a dict of model configuration for tracing and cache key generation (e.g., {model: 'gpt-4', temperature: 0.7}). The _get_llm_string() method uses this to generate unique cache keys. Subclasses override to expose relevant configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1578-L1590",
+          "version": "repo-lines-v1:sha256:db996df4a774482474945b91b56b5c878e43df72cc2fbf7c176428da7e1a4987:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0YmI4NzEyMzY4MThlMmU5YTg1ZjVmNGUyYjUzNTEzMzJiZGU3NDQxNDU2YTYwNmMwZGVkNmUzOGNjNzk5MTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlYTQ0MzllYmFkMjA4Y2U4YTM4ZjE3OGRlMjZiNDllMWRlZjdhOWRiNDhkYzhmNWMzODc0NGUxYzI5MTU2NzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzOTljZTliZTcyN2E1ZDJiOTI4MTM3ZWEyMTMwNmEwNjk0ODZkY2RhYzBjMmUyN2U4NTFiZDE1MmZjYmM3YWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzYWI4ZjM2N2I3M2YzMjk5YWZkMTRjNzIxNmNmZjFjYmRlNTk5YjVhNGFhZjI3MDk3YjhlNGQwMjI0ZjYwNzYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2329-L2331",
+          "version": "repo-lines-v1:sha256:7aadbc292065b19aaa0ec9ade9171595d53a81c258959cad724bc0714a97c76a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNkMDBjZjI3MDk2NGQ0NGExM2RmYWM4NzUyYjA5ZmNjNDM1YjBmMTliMzE2YWJjZjgxYTdhYTY0YmIxMjJkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQxNWFjOWY0ZGFjMzE3ODA2MzIzNmVkMTRkNzAwZTk4MDMyM2E1ZTJlMTAyODBjOTlmN2Q2N2NhOTQxNjAyYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTI4MzFjODI4NzM0NWVlMzcyNTIxZTNlYWY5MzY0ZmUyNGYyOThkYjJjOTA2YmM4NDYyMWUyOGU2NDYwZWU0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGEwMmJhY2JiNzI3Yzk0ZDk0ZmU2MDI3NTU3MmIyNGNlMzg5NzI3ODQ3M2NlYjRhNjg3MjYyZWRiOGI5YjRjMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6c79a894b9814774817788715384c997",
+      "statement": "_llm_type (abstract property) returns a unique string identifier for the model type (e.g., 'openai', 'anthropic'). This is used for logging, tracing, and serialization. All subclasses must implement this.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2329-L2332",
+          "version": "repo-lines-v1:sha256:db535b12ac0a27fd6314901aaffafb6168ea80a9f313f96f7f93ffed50846b76:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNkMDBjZjI3MDk2NGQ0NGExM2RmYWM4NzUyYjA5ZmNjNDM1YjBmMTliMzE2YWJjZjgxYTdhYTY0YmIxMjJkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGUyMWQ2ZjJlMjQwZGZiNmU1NzdiZGUzMWQxN2VjNDA2NjA3NDYxNTY2OGNkMmVjOTJiMzU0MmFlYWY5ZTkyYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTI4MzFjODI4NzM0NWVlMzcyNTIxZTNlYWY5MzY0ZmUyNGYyOThkYjJjOTA2YmM4NDYyMWUyOGU2NDYwZWU0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzNhOWY1ZGU2MTcxMGM4NTc1MmFlODE2MTI4MWUwYWRhNjdhMjQ3ZTI0YzgxN2E2MzI1MTdhNWMwMmU4MGFmMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d3b5ed8dd982413fb716ce2501fe89e1",
+      "statement": "_get_ls_params() extracts LangSmith tracing parameters: ls_provider (derived from class name or overridden), ls_model_name (from kwargs['model'], self.model, or self.model_name), ls_temperature, and ls_max_tokens. Subclasses override to provide stable provider names and model identifier resolution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1502-L1576",
+          "version": "repo-lines-v1:sha256:cb5ec623ca84e8c04a65697a7e85c757abc32cf3b201a5f819234d601aca8341:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4NmM4ZGU0NjU1Y2MxMjg2N2NiYmJkMTdlMmZiOWI1NmYyNDM4YmJjNWMyZWEzYzQ4OGZhNjExYTViMjQ3NDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NWI3ZjU0NDQyMThjMzUxNDk5YzM4ZDA4YmViYTMwYTViYjYyMGNiMDQxMGQ3ZGExOTU5OTYwMDEyNDcyZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Y2Q4Yjk4MGU1YWE1Njc0ZjZkZWMzZTQzNjEzOGUzYjk1MDlkNzNlYzliNzJmZTgwNjA2YjMzMGM1YTdiNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4OTY1OTNjMDMwMWZiNzNkODc0NWQyNTVjNTM5NTgzNjcyOWE5YjZjYTg2ZTc2ZGRmMjU2Yzk2MTVhN2Q4MGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ca968af2819040e09edfeae44743ab8f",
+      "statement": "_should_use_protocol_streaming() determines v2 event routing separate from v1 streaming. Routes through v2 when _V2StreamingCallbackHandler is attached and native _stream_chat_model_events, _astream_chat_model_events, or standard _stream/_astream methods are available. Uses chunks_to_events bridge to convert chunks to protocol events.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L587-L643",
+          "version": "repo-lines-v1:sha256:2bfd684462989559832648a165a2f3dc126ce1f8c9950d17125e7bfa8905c307:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMzJkOTYzMzc4ZDEyYWFhMzVmYzI5NTg1Y2FhZjBkZGE0MmYxM2Q2Mjg0N2ZhZDdhZmRjNmQ2YTRkMDhjNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYjY1ZTg0OTdhNWE2NDJmN2I5MDE4MjEwZDY1Njk4NDkwOWRmNmNmMDg4MzNmMzcyNjNjNmFkOWJmZTlmZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1ZjYyODhlYTM4N2E5NGMzODlmMTFlZTMzYzk3ZmIwZDZlNjRlODlkNTczNWQ2MzlhMTkzMzUzYTIxZjEwMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2OGQxY2FkM2Y5N2UxMzk2MDZlYzlhOWQ0NTMyYzExZWNmZmY3MjMxMmU5ZGM5M2Y3YjU3YzZmY2U4N2ZlZmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3bdb8e7e3d224335979da820afec7a0e",
+      "statement": "_chat_model_stream_v3() returns a ChatModelStream with lazy initialization. It wraps event iteration via _iter_v2_events and uses a pump mechanism (pump_one) to lazily consume events. Rate limiting, event collection, and lifecycle callbacks are managed via closures with shared state.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L994-L1133",
+          "version": "repo-lines-v1:sha256:ce77e9c13ab68c17193b88c83c469b90ada207031c26fb7d00ed822f15010d46:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNTY0MGNlY2IxYjc3YWNjYTM2MTU0MjZlMDdkNTQzNWZiMDllOTMzMmU1ZjRiNjFlZTg5MDU2YzQzNjNiYzJmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyMmU3M2VlMDNmNzM5OWVhYjExMWEwMjE5MWZmYTc5MzJhOGFiYmU5MWFkM2NiYTM1Mzc0M2I2MDI4MjI4MGU2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ZGYxYTdhNTVlNzBlNDQ2YzhjY2RkYzkxZjRjOWY2ZDg5YTc4ZmVjMDNlZTQyN2U1MTA5MWVkOGRhMmJiYzM5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiYmJlNTNhODc3ZDc2ZGI4ODA1MTI0YzYzNjcxMDM2OWI3YWE3YTliZjFjYWVmMTEzOGQ4MzEyMzY4YzA1MTdhIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_78536e5312b04ae1a69c7bb45a2d0ed5",
+      "statement": "generate() and agenerate() accept a list of message lists and internally batch-process them. agenerate() uses asyncio.gather with return_exceptions=True to run _agenerate_with_cache concurrently. Results are flattened and combined via _combine_llm_outputs().",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1592-L1716",
+          "version": "repo-lines-v1:sha256:10713381eddb3932f6ee9ae086bc1e0e35fde2b65c37de93be4f7d5fa361ff20:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMmRmODNlNjhkYWVkNjY4Mzg5MGU3MWRhNDZkNWJiZGM2NDZjY2QwZjEyNjI2YWM2NTNhZTJhN2FkNTUyOGQ4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MjBlN2JiNmFkMzZjNjE5YWIxZjJiM2MyYjQzNTVjNjFlNWI1NTc3MmM4MmU2NGU1YmVkZmZkZDQ5YzQzNzMxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwOWQyZmY0MjNmMDhiMDAwMjY1ZThhOTQ5ZTZiZjA0ZjhlMmExMGI1ZWFiMTU4Nzk0ZWZmMWE1Mzk2OTI4ZDMwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkZDQ5Y2Y2NTVhNWI1ZDVjNGFmMzRmMDBmMmQ1NTIxMWZjMGJiOWQ3NTAwYTEyY2Q3YWNiMWRmZWI2MzY0MDkwIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1718-L1866",
+          "version": "repo-lines-v1:sha256:f4304f6ddc44aee6a4ec1f81b165dea18be17bc0077e61b0c0f4e0d4d857b4f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyMjlkZWYwOTY1YjQxMjM2NDI4ODNkNmI4MmZlZTJjYTNkZTI2NjlmNzVhNTZjZjJlM2IyMjViYTQyODEzZDQ3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MjBlN2JiNmFkMzZjNjE5YWIxZjJiM2MyYjQzNTVjNjFlNWI1NTc3MmM4MmU2NGU1YmVkZmZkZDQ5YzQzNzMxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1MTRhZTQ0M2ZhYzNjNjEzNDk1MmIwNDU0MTFkMTRlYjQ0OWQwOTdhMjExMGMxNDFjYTYwNjJiYzdmMjM3MDNkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmOTQ0NzZhYTQ5NzY1OTI4MzBmYmQyNjRkYWEwNWFlOTczM2U0ODBmNmU1MTU1NTNmYzllMDU2NGFmMjVlN2U3In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b18ce93e72c247ab8ad3f21f5123766c",
+      "statement": "LanguageModelInput is a union type: PromptValue | str | Sequence[MessageLikeRepresentation]. _convert_input normalizes all forms to PromptValue for downstream processing. String inputs become StringPromptValue; message sequences become ChatPromptValue.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/base.py#L140-L140",
+          "version": "repo-lines-v1:sha256:003db345d026fe447522acfcf47a5f6bc994ef5f32fcb613cf3bb3427b212583:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzZGIzNDVkMDI2ZmU0NDc1MjJhY2ZjZjQ3YTVmNmJjOTk0ZWY1ZjMyZmNiNjEzY2YzYmIzNDI3YjIxMjU4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDAzZGIzNDVkMDI2ZmU0NDc1MjJhY2ZjZjQ3YTVmNmJjOTk0ZWY1ZjMyZmNiNjEzY2YzYmIzNDI3YjIxMjU4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTE3ODJiM2Q1N2U0NjU4MjhhYjBmMDFkYTMwNGE0OTFkYTE0MDBjMzRlZDdjNzY3YjU1YjUyMWU4NTcyMTUwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWE5MzI5OTJhM2E3NzYxNjA1MGFiNDBmMjhkZTFmYmJlNjVmOGI4OTk2ZmU4YjllYWY3MWVjNTJmMDFhZGUzYyJ9"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L461-L472",
+          "version": "repo-lines-v1:sha256:24287b0abdaea0feab7ef708f33a5c3586ce8ca68f42123671e789ee6437258d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExY2Y5ODYxZjhhMGI5MGJkYjMwOTUzMmI4NGVmMTIwMmM5Y2FlZWM1Y2Y1NzAzYjEzOTk1Y2M1YzUxYTg0ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MWUzYmZlZjJjZDZhZjhhZTUyYmYxYzNiYjllM2NiYTViYmYwZDI4ZDg1MTBlM2YzYWFjZGI2MWM4ZGJhNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MTA1MDc4YTkyMGM3MWQxNzFmYjk5ZWJjYTQ1ZTM1ZWYyZjE2N2QwZWY2MzU0OGNhMTYwMmRiMjViNTczYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3N2VjOGI3OTAxMWU0ZmM0Yjc5OTQ3ZjYxYmFkOTdhYzBmZGRlYmRjZWVjMjc0ZGE1ZDM2MjMwMGQyYzYxNTIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-03T15:18:34.589Z"
+  }
+}
