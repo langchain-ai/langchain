@@ -400,8 +400,10 @@ def merge_content(
         # If second content is an empty string, treat as a no-op
         elif content == "":
             pass
-        # Otherwise, add the second content as a new element of the list
-        elif merged:
+        # Otherwise, add the second content as a new element of the list.
+        # This also covers merged == [] (falsy), where the string must
+        # still be appended rather than silently dropped.
+        else:
             merged.append(content)
     return merged
 

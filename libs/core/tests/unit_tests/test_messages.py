@@ -1099,6 +1099,16 @@ def test_tool_message_str() -> None:
             [[{"index": 0, "text": "bar"}]],
             [{"text": "foo"}, {"index": 0, "text": "bar"}],
         ),
+        # Regression cases for a non-empty string merged into an empty list:
+        # `elif merged:` used to be falsy for `[]`, silently dropping the
+        # string instead of appending it.
+        ([], ["bar"], ["bar"]),
+        ([], ["bar", "baz"], ["barbaz"]),
+        (
+            [{"text": "foo"}],
+            ["bar"],
+            [{"text": "foo"}, "bar"],
+        ),
     ],
 )
 def test_merge_content(
