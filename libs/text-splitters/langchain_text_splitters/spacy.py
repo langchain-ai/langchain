@@ -65,5 +65,5 @@ def _make_spacy_pipeline_for_splitting(
         sentencizer.add_pipe("sentencizer")
     else:
         sentencizer = cast("Language", spacy.load(pipeline, exclude=["ner", "tagger"]))
-        sentencizer.max_length = max_length
+    sentencizer.max_length = max_length
     return sentencizer

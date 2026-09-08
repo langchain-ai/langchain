@@ -7,7 +7,9 @@ import random
 import re
 import string
 import textwrap
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
+from unittest.mock import Mock
 
 import pytest
 from langchain_core._api import suppress_langchain_beta_warning
@@ -171,6 +173,71 @@ def test_lazy_getattr_raises_for_unknown() -> None:
 
     with pytest.raises(AttributeError, match="no_such_thing"):
         _ = lts.no_such_thing  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize(
+    ("pipeline", "expected_max_length"),
+    [
+        ("sentencizer", 2_000_000),
+        ("en_core_web_sm", 2_000_000),
+    ],
+)
+def test_spacy_splitter_honors_custom_max_length(
+    pipeline: str,
+    expected_max_length: int,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`SpacyTextSplitter` applies `max_length` to every pipeline variant.
+
+    Regression test for the sentencizer fast path, where `max_length` used to be
+    ignored because the assignment only ran in the model-backed branch.
+    """
+    from langchain_text_splitters.spacy import (  # noqa: PLC0415
+        _make_spacy_pipeline_for_splitting,
+    )
+
+    nlp = Mock()
+    loaded = Mock()
+    nlp.max_length = 1_000_000
+    loaded.max_length = 1_000_000
+
+    def _fake_import(module: str) -> Any:  # noqa: ANN401
+        if module == "spacy":
+            spacy = SimpleNamespace()
+            spacy.load = Mock(return_value=loaded)
+            return spacy
+        if module == "spacy.lang.en":
+            return SimpleNamespace(English=lambda: nlp)
+        raise AssertionError(module)
+
+    monkeypatch.setattr("langchain_text_splitters.spacy.import_module", _fake_import)
+
+    tokenizer = _make_spacy_pipeline_for_splitting(
+        pipeline, max_length=expected_max_length
+    )
+    assert tokenizer.max_length == expected_max_length
+
+
+def test_spacy_splitter_default_max_length(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The default `max_length` of 1_000_000 is preserved by default."""
+    from langchain_text_splitters.spacy import (  # noqa: PLC0415
+        _make_spacy_pipeline_for_splitting,
+    )
+
+    nlp = Mock()
+    nlp.max_length = 1_000_000
+
+    def _fake_import(module: str) -> Any:  # noqa: ANN401
+        if module == "spacy":
+            return SimpleNamespace()
+        if module == "spacy.lang.en":
+            return SimpleNamespace(English=lambda: nlp)
+        raise AssertionError(module)
+
+    monkeypatch.setattr("langchain_text_splitters.spacy.import_module", _fake_import)
+
+    tokenizer = _make_spacy_pipeline_for_splitting("sentencizer")
+    assert tokenizer.max_length == 1_000_000
 
 
 def test_lightweight_splitters_remain_eagerly_accessible() -> None:
