@@ -4322,6 +4322,22 @@ def test_get_request_payload_use_previous_response_id() -> None:
     assert len(payload["input"]) == 1
 
 
+def test_get_request_payload_explicit_previous_response_id() -> None:
+    """Test that an explicit `previous_response_id` kwarg reaches the payload."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+    ]
+    payload = llm._get_request_payload(messages, previous_response_id="resp_123")
+    # Passing the ID engages the Responses API on its own.
+    assert "input" in payload
+    assert payload["previous_response_id"] == "resp_123"
+    # Unlike `use_previous_response_id`, history is not trimmed.
+    assert len(payload["input"]) == 3
+
+
 def test_make_computer_call_output_from_message() -> None:
     # List content
     tool_message = ToolMessage(
