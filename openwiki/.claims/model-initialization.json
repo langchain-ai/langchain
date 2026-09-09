@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0ff4006082d29f33169349313c83cc890f4fafd73f0a3df4a51cf88689471825",
+  "claims": [
+    {
+      "id": "claim_189e539212e149fdb6d26bfac3426a8c",
+      "statement": "init_chat_model is a factory function that creates chat model instances from provider strings with optional prefixes (e.g., 'openai:gpt-4'), supporting both fixed and runtime-configurable model initialization modes. It centralizes instantiation across multiple provider integrations, handles provider inference, and routes parameters to provider-specific constructors.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L230-L240",
+          "version": "repo-lines-v1:sha256:2cfac04a6db674cab340eadb38f47ef218a5f55df7f298a7b8342703a228272b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYmQwZTkxYzk5ZDQ4YzAyZGZjYjliMGZlOGYzMGQyYTE5NTY0ZDQ4Y2FkOWJhYTM4M2MxMjY1MTk1YTIwOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzMmMyZTNhNjY4MGUwYTc0ZDMxMzNiYTUyZTY2ZTBhZDY0MzM1ZGNkZWNkODdmOGI1NWU4ZWI4N2M2OTdlYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiZDBkZGM4Njg0NTlkNmJlN2EwMWRmNmY0ODUwOTBkNzhlZjNkOGM3MzZiOGY1M2JmMTZhZmUxMjI2ZTc4MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4NmU2NmVkNTc1NzhmZTc4ZmJjM2M0NjEwNzJkODVmNDJiZjBjOWRmNGI1YmFhN2U3MzcwNDYzNzllOWE1OGMifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L515-L529",
+          "version": "repo-lines-v1:sha256:5c82190ce075e70f696f08fdf2ebfb113c6283ef02d77f557df3b93a6b354202:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxMzcwMzkxYWE5MmJmODBiY2VjZTVhMDdlYWY3YTc3MGJiNDUyZmU0ZWI1MzhmNWVjY2MzMWM1YmM3Yjc0OWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyZTMyMDZkZjg1Njg0Y2E5OTE4ZTU0Y2RmZDA5MTAwNGM3NjZjMWYxZjRmYWQ4ZDA3YjM0MzkxOWUyZmIxZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYWI5MWUyNzg3Zjk0YjdmNDU0ODAxYjliYWE5MTI1ZmQxMzRkMzc3NGE0ZmU1Mjc5N2M1ZDMzNWRiMGM5NDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_df4133df06044486afe159623791dcc7",
+      "statement": "init_chat_model accepts model (str or None), model_provider (str or None), configurable_fields (None, 'any', or list/tuple of field names), config_prefix (str or None), and **kwargs for provider-specific parameters. It returns either a BaseChatModel (fixed) or _ConfigurableModel (runtime-configurable).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L230-L237",
+          "version": "repo-lines-v1:sha256:40f16a565f3062c4122d4e9125dd6ee970cd6047f1b144d1446dc683febfe94f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzBiZDBlOTFjOTlkNDhjMDJkZmNiOWIwZmU4ZjMwZDJhMTk1NjRkNDhjYWQ5YmFhMzgzYzEyNjUxOTVhMjA4ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDIyMTA2ZWFkOGE5YThmZWYyY2U1MGE1NzEyNTcxY2YxOGFiZTI2MWE4Y2E1ZDJiMjI1NmEwMDc5MDQ4ZDZjNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGJkMGRkYzg2ODQ1OWQ2YmU3YTAxZGY2ZjQ4NTA5MGQ3OGVmM2Q4YzczNmI4ZjUzYmYxNmFmZTEyMjZlNzgxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzllYWZmNThmNWQ2N2E1YzY3NWI3ZTlmNjM1MWY3N2I5N2RjNDMzZmFiMjFhZjY5Yjg3NzMzMTg2ODQzNzk4MiJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L381-L386",
+          "version": "repo-lines-v1:sha256:635fe4218d2ccfda31f2f659d7b3119e12d002612fdb21e3d1588084a6c4989f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY4NDYzMTBhMDg3NGY0ZDI2MjFkZmU4MjNiYTdiNDY0MjJmMWMwYjc3ZmRlZjYyOGU0YzdiZGM1ZTZiYzljYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjA5OWJjMjM0NzExMzZiMTY5ZWUyMmJiYzc0ODlhNTI3M2JiM2Q3NDVkMTMxNjU3NWZhY2ZiZmMyMjAyNjIzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTY2OTMyMDI4YzQzNDVkMzlhNzM3ZmI4Y2E1YzRjOTUxYzBjZWJmYmI1NmE0NmMzZDQxOWQyODFlMDUwNzczNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b02fe80251ae4429b2eadcadeede3569",
+      "statement": "When a model string contains a colon and the prefix is a registered provider key, init_chat_model extracts the provider and model parts; otherwise it attempts best-effort inference from the model name prefix using case-insensitive matching against known patterns (gpt-, claude, command, amazon., etc.).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L543-L616",
+          "version": "repo-lines-v1:sha256:a9fa9d961e85cbbccd7d57b4421babf5fbe5d93a7aa62b3bc0b38d6b368121dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NjVhMDM2OTVmYTJkMWU0YmU3OWZhYzhmMDNhOGMzOTU2OTI3OTcwMjY0MTMxNDU5NDUzMDc3ZmU0ZjM1NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlNTMyODkxMmQzMWM2MTZhZWI3NzBhM2M1YmI3ZmIxZTE0OTI3MTRiNjQyNThjOTdhZjJlYmM0MDIxNTdkMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNDUzZTU0YTQ0ZDU0ZDAyYWNiZDViOWE0YjBlNTIxNTQ4ZGM4MTY0ODFjYTBhZDM2YzBiNmFhMzdhZmNiMDcifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L619-L648",
+          "version": "repo-lines-v1:sha256:7ed3f3ed659bea78a63bacae1bc7cb6bc9fe0c7e7ec32215b6e5561ac495d752:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NzUyNzA5Y2ZhODMyODY3NTc4ZjRiNjU2NWJlZGQ5ZmJiYzJlNTkzNTRmNDU5ZTZmM2RkZDgxZjNjNjAyNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwZGZjMjQ1MDYxYTM4NTQ0MmQ3YmM3ZjY5OTk1ODAyZjE2N2QwN2Y3OTI1ZGZlNTI4YTM3YmUwZWU0ZjQ4MWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b11a1705a5cd44ea88dd0a9a4565a98d",
+      "statement": "_BUILTIN_PROVIDERS is a dictionary mapping provider keys to tuples of (module_path, class_name, creator_func) for 37 built-in providers including openai, anthropic, bedrock, google_vertexai, azure_openai, cohere, groq, mistralai, ollama, and others. The registry includes fallback logic for ollama (tries langchain_community) and special creators for huggingface (from_model_id), ibm (model_id), and langsmith (gateway config).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L120",
+          "version": "repo-lines-v1:sha256:a714caf3bde31adb33a627fe7c985aa333571e5693027c2ef4131d0168cfc131:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0OWFmODNkYjQ4ODc5YTQyYjVjNTliMmEyYmY3NThiYWY4YjFkMmQwNTJmOGRmN2VlNWNkOTIyMjJkYTM4NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkNzA5NGEwOTBkZDkxYjgwMmJjZWIxYWNkYzMwYWMyNTc5MjU4YTFjNjkxNTk4YWVmNjYyMDAyMWQ1NWMzMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxOTY2MDgyOTFhZjY5NzQ1YzViMmVhZDliM2ZhYjRkMjVkZjQ2MjZkNDNhMzQyYTA3ZjkyMGRiYzhiMmJiYWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8cf40321717f40ad867f7c85ceb2142d",
+      "statement": "Most built-in providers use the standard _call creator function which directly instantiates the provider class. Special creators include: huggingface (uses from_model_id class method with model_id parameter), ibm (maps model to model_id constructor param), and langsmith (wraps instantiation with _apply_gateway_config to inject LangSmith gateway credentials and base URL from environment).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L27-L38",
+          "version": "repo-lines-v1:sha256:6e5b778f54e6269116c7c108fc0539dcb3d7f95e0e3529de1c59b46699e93250:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMTQ0MTg3N2RmNDEzMmJlOTc1MjBlMDUwMWI2YjAzNTFkMjVkMDNiNmZhZjNmYWQ2NDk0MTZlMDBkMjM4ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjMGEwMjQ5NGY3NTViMTQ4YWRlYmMyNWI5MzU3ZDA5MjAzNTM3YWY3OTcxZDE0OTBiZWM3ODFmMjFiNDY1YmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2NTdkMjA0ZjBiNWVmMmU3ZjAzYWM3NGE3NGJmZDhmY2U1ZTVkNzU4OTkwNTYxODU3MTY2NDRiMmY3YWUxZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkZTlhOTVmZjI2NTMxOWVjM2U1ZjdlYzQ1ODFlNjBiYTc3NTA3Y2I3OWY5YWM4M2IzNmNmZjU5M2FjMGRjNWEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L51-L97",
+          "version": "repo-lines-v1:sha256:fbbd5e179b2a760321d8bfaedb870aace34be1b417b6f3a4c3703a9a455bfa25:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZGEyZjQxNDVlNWI3YTZjMjNiZmNlYTE4ODc2Y2QzYzA1OWUyNGYxNzI2NzVjMzMwYTMzYzEyY2JjODVjNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1N2QzZGM0Yzk1NTU4ZTVjMTZlODkxNGQzMTJiYWVkYTMxNWZjZjJlMDE0MzM0MDBkMzU0N2I4MDE2NjljM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYzk3OTRjOTIxODcwZGVjNjU0YWU5YjU2ZDBiMDk3YWU0NDlhODU4NzE5Y2Q3MjhkZDI5N2ZhNjMyN2VhOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_52206704126944f1bc8bac7cea75f27d",
+      "statement": "When model is a non-None string and configurable_fields is None (the default), init_chat_model immediately invokes _init_chat_model_helper to parse the model name, retrieve the provider's creator function, and instantiate the chat model with merged kwargs. The instantiated BaseChatModel is returned and ready for invoke/stream immediately.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L515-L520",
+          "version": "repo-lines-v1:sha256:beb5925717f9dd1ecbc7d419ac81f59aeffd3a2ef9ba50313eb8edd82b89d904:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjEzNzAzOTFhYTkyYmY4MGJjZWNlNWEwN2VhZjdhNzcwYmI0NTJmZTRlYjUzOGY1ZWNjYzMxYzViYzdiNzQ5ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkwOWE1M2E2MThkMDI4ZTFkMzAwMGMwYTdhYmNlZWNiZTVmYjM3ZjRlNTExZWZlNDY2NDNmYWQ2ZTY2ODcyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTJlMzIwNmRmODU2ODRjYTk5MThlNTRjZGZkMDkxMDA0Yzc2NmMxZjFmNGZhZDhkMDdiMzQzOTE5ZTJmYjFkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjkyNTJkZDk3MTFkY2JmNGQ3MDI5MTQ2YmQ4YjYxYmFjYjgzYjFhNTc5MTMyNzlkYzEzZGIxNGE2YTJlM2UyZCJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L532-L540",
+          "version": "repo-lines-v1:sha256:85d94840b2951465740c4d8b5810394b3e5238bf6e32959da62a0e04828d3036:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGFiYTlhYWY2OWJiYWJiMzc1MjI3OWVjM2Y0ZmJhMTM0ZjI0Yzg5MjA2YmQ4NWJmMzM3M2U5MzA1M2E0NGFjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmIwZTE5Y2U4NTZkNWY5Mjc0NTZkOGMxOTc1NmNlN2FiNjJiZDVkNDViYTkxMjgzZmI2MzFmMzAxYzFmMWUyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGNjNGE3ZDFjYzc5NmFiYTNlNDY3MjMzMjdmNTE3ZTlmODExOTgyZDI1MGYwNzAyOTg2ZTRiNTc2NGFkOTU4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDJiMTNjODdmZDQyZjM3MjE5M2NlOWFhN2VhNTY1OTBlZWRiMzllZGM4ODE4OTIzYTQ1ZjJjOGY5YzFjNDQxMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1ad24cbf24204f71804126cdce8e0935",
+      "statement": "_ConfigurableModel is a Runnable[LanguageModelInput, Any] that wraps init_chat_model when configurable_fields is not None or model is None. It queues model instantiation and declarative operations (bind_tools, with_structured_output) until invoke/stream is called with config, enabling runtime selection of model, provider, and parameters.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L521-L529",
+          "version": "repo-lines-v1:sha256:34bcbfafa7789ef02b2356f9db768c3a24cc1a0e42628ec8caaf5f5396b4117d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODM5ZWYyNWIzODVhM2Y0Y2I0NDc4OGFjOGUzYTkwNTM2N2Y4YzA1NTg1OTVjZjkzNGMzNDFlYWViMzU1NGRhZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBjMWYxODhmMTQyZWQ3YTgyNDY4MGIyMDcxNzJjNTUxOWJjNjE0YTQ4ZmRhN2NmMTY3ZWRiOGRkZjc5OTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGM0NjQ3OWJiZjY0ZDFlZDE2MWY3YzliNTViOTg2YmFhZDEyYmRmZjgxNjBiOTljNTA2MTk2ZDE5ZmVlYmZlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWVhYjkxZTI3ODdmOTRiN2Y0NTQ4MDFiOWJhYTkxMjVmZDEzNGQzNzc0YTRmZTUyNzk3YzVkMzM1ZGIwYzk0OCJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L657-L680",
+          "version": "repo-lines-v1:sha256:bff10cdba27371d04116c8a459852b14f740b4919b6cbf369bb8f26ee2f76609:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MzJlZDgzMDcwMjhjNjk2ZDc1ZDQ4ZjFhZTQ5YjJiOTE4OWY2NDA3NTFlYWU4ZGYxZTMyNzc5ZTI4ZDQ2ODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyNTE0YmJlNzM5OGY4YTY1MWQ1Zjk1MGNiOGRkOWVhOWJmNjNjYTg3NzRlZjc4YmE4ZmVjZmZiNTk5MTRiNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlYWQxMTFiNDUwYzAwMWZlZDdhY2ZmMTBmNGM5ODIyYjJlNjc0ZDQ1OTIzZmMwZWY1ZmE4ODA4ZGNiZjc1NzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9864f836752745aea729ecab9f689953",
+      "statement": "_ConfigurableModel maintains _default_config (default params), _configurable_fields (which fields can override at runtime), _config_prefix (namespace for config keys), and _queued_declarative_operations (method calls to apply after model instantiation). On invoke/stream, _model(config) merges defaults with runtime config, instantiates the actual model via _init_chat_model_helper, applies queued operations, and delegates to the instantiated model.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L658-L680",
+          "version": "repo-lines-v1:sha256:c6b92ea50d4c8f8413cd2b81f455be9be5ade4d21e15e834dd69bc36e0168f8c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmZDdhMDdhODNkZDE5OTZmYjUxNjg0YjQyYWVjYWY0ZTkwZmI3OGJhNzIzMGU1NDJlZDdiZDAxZDQyMzAxYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxMWE2MjBjMDM5NDBkNzcxNDA3ZDY3NzAxNGNiNGMzNzYyMDBmZDZmZDYzMWU4OGFiYTY5ZTY4MTI4YmQ0MzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlYWQxMTFiNDUwYzAwMWZlZDdhY2ZmMTBmNGM5ODIyYjJlNjc0ZDQ1OTIzZmMwZWY1ZmE4ODA4ZGNiZjc1NzkifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L711-L727",
+          "version": "repo-lines-v1:sha256:208f58933e125c9b5eba0e1ba0a625f611d83d36672a257c931c33e375e84702:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZDkwMDc1MWViZjJhNzY3ZjY0YWRiNDI2NzYwZDI4Y2I1NzcyYTg0NDMyYTc2MjRkMmJlMGU1NjI1YzA3MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4OWNiNzEyNjQ5NjEyYmI2OTJlZGNlYzNhNjQ5ZTg4ZDlkNWYzZDkwNmMzZjNmMDkyM2RkMDMyYTQ3YzNkMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiM2VlNmUzN2E2ODljZmE3NjZlOGI4NWUwMDkwMDg5OGJkNDI2MDJiYWIyMTFmYWFhMTBkODVjOWViNzcyZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkNWFlM2Y3MDYwOGZmOGQ0NjNiZDZkYjVlMDczYmM4YjlhYmI1OGU4YWRkNGM3N2I5ZjBhNzUyMWI1ZGUwZDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_22c8fb84fcbe4610a881583eb77e0000",
+      "statement": "When bind_tools or with_structured_output are called on a _ConfigurableModel, __getattr__ intercepts these calls and queues the operation with its arguments instead of applying immediately. A new _ConfigurableModel is returned with the operation appended to _queued_declarative_operations, enabling chaining without mutating the original instance.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L681-L702",
+          "version": "repo-lines-v1:sha256:176787c5900a0ecfbb77c7bcf291defe88731d7120a1477ebcf154902bdfcd18:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4OTE2NGFlZGRlYTAwOGY5ZjcyNjhjMmJkZDRjZmQ3ZWY2YTEwYzIwMzFjMmRlMzg0NjdhZTI4MDU4ZTRjMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MzI5NGMzM2Q1OGY5ZGMyMzk0NWY3M2M2YWQxYTdjMjk2MGFlNzAyMjAwMDk5ZDQzNTZiY2VlOTZhNWViMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NjAzNmViYTY2MmI0MGUwNTBjNDI0YTJlZjIwNDRiNmQ1NTY0YzVlMmM0YzE3OTk1YmVlZTExYzFhZTA3MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlMjliYWRkNmExMmMyZGMzYzdiNTExYWZjODc4MmJjNjFmYTEyYzY5MGQyMWY2MDNiNjNkODVjYzliMjIwNjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a78a74767aff40048a7c03b8beb81db0",
+      "statement": "_model_params extracts model parameters from config['configurable'] with the config_prefix stripped, then filters to only whitelisted fields if _configurable_fields is a list (rather than 'any'). These are merged over _default_config to determine final instantiation parameters.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L718-L727",
+          "version": "repo-lines-v1:sha256:c4374ce21b4f6fd5954ed1db71f666184e7bcb6ae57d42a2deadc3824c22e4fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3ZmRjY2IyZTIyNGQyZmZhZjdiNzNmNzY4YjRkZDUxNTZkMDMyN2Q1OTg3YjdmMzNkNmU1ZmMxY2ZjOTFhM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4OWNiNzEyNjQ5NjEyYmI2OTJlZGNlYzNhNjQ5ZTg4ZDlkNWYzZDkwNmMzZjNmMDkyM2RkMDMyYTQ3YzNkMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2NzVhOTgxN2ZlYWEzNWZhNTRhZjQwNGYwMDQwZWI4MDU3ZjQ1MDVmNTlkNDc4ZjIzYTZiOTA1YmNlMmFkYWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkNWFlM2Y3MDYwOGZmOGQ0NjNiZDZkYjVlMDczYmM4YjlhYmI1OGU4YWRkNGM3N2I5ZjBhNzUyMWI1ZGUwZDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b7fd030bdd2424da9713d6f5d347b1d",
+      "statement": "The langsmith provider bridges to LangSmith's unified LLM gateway. It uses _init_langsmith as the creator function, which calls _apply_gateway_config to read LANGSMITH_GATEWAY (default: https://gateway.smith.langchain.com) and LANGSMITH_GATEWAY_API_KEY/LANGSMITH_API_KEY environment variables, injecting them as openai_api_base and openai_api_key, then sets use_responses_api=True before returning a ChatOpenAI instance.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L27-L38",
+          "version": "repo-lines-v1:sha256:6e5b778f54e6269116c7c108fc0539dcb3d7f95e0e3529de1c59b46699e93250:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMTQ0MTg3N2RmNDEzMmJlOTc1MjBlMDUwMWI2YjAzNTFkMjVkMDNiNmZhZjNmYWQ2NDk0MTZlMDBkMjM4ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjMGEwMjQ5NGY3NTViMTQ4YWRlYmMyNWI5MzU3ZDA5MjAzNTM3YWY3OTcxZDE0OTBiZWM3ODFmMjFiNDY1YmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2NTdkMjA0ZjBiNWVmMmU3ZjAzYWM3NGE3NGJmZDhmY2U1ZTVkNzU4OTkwNTYxODU3MTY2NDRiMmY3YWUxZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkZTlhOTVmZjI2NTMxOWVjM2U1ZjdlYzQ1ODFlNjBiYTc3NTA3Y2I3OWY5YWM4M2IzNmNmZjU5M2FjMGRjNWEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L85-L85",
+          "version": "repo-lines-v1:sha256:7388d2845aa2a638c655dd1f452f3548453910726f6c46e285bea68cc344f7f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzM4OGQyODQ1YWEyYTYzOGM2NTVkZDFmNDUyZjM1NDg0NTM5MTA3MjZmNmM0NmUyODViZWE2OGNjMzQ0ZjdmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzM4OGQyODQ1YWEyYTYzOGM2NTVkZDFmNDUyZjM1NDg0NTM5MTA3MjZmNmM0NmUyODViZWE2OGNjMzQ0ZjdmMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDE1MDA4YjkyOTk0M2VmNjVjNjZmZDcyYzAwYzZkZjc2MDFjNzI4NmE2MmEyNzQ2ZGE3ZDI2MmMyYTVjMTczMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzAwMGFlODZmYzhiZDc3MzBjOTdiNDhkZjljY2JlODc4ODgyZDFhNDY0ZjNiMjE1YTQyMDVmN2E0OTc4NjhhMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f40e3373b028465c9e4039fef1776032",
+      "statement": "_import_module catches ImportError when importing a provider's integration package and raises an ImportError with a helpful message suggesting the pip package to install (e.g., 'pip install langchain-openai'). For ollama, it falls back to langchain_community.chat_models if langchain_ollama is not available.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L123-L192",
+          "version": "repo-lines-v1:sha256:9a2a34a5d66d7b370be31f6393b3660e7b8a32212d987fca26bff006bf1d6e08:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMzM5NzBiMzhhNTU5MDE4NjYxYTA1MTE5YjA4MzgzMTk5YWExNWIzYzk4YWI5N2Q1MWQ0ZDM1ODllODQwZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YWU2MGEwOWE3ODRiNDdlYTA4NTMxNmJmZjkyYzY4MDExZGQ2NzBkODlmMjhkYWY1ZGE5YmI2YWU0MWJjNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyZjRjNmNhNTllMjY0NGQxZTBlNDg5NDA4ZGZlNTcwZWY5NzlkYmM0NDJiZmVjZDEwZjNkZTExMTQ5YjVlMmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_349e633a7ed74c69adaf52964ad6aa7d",
+      "statement": "_attempt_infer_model_provider uses case-insensitive prefix matching to infer provider from model name: gpt-/o1/o3/chatgpt/text-davinci → openai, claude → anthropic, command → cohere, accounts/fireworks → fireworks, amazon./anthropic./meta. → bedrock, gemini → google_vertexai (with deprecation warning), mistral/mixtral → mistralai, deepseek → deepseek, grok → xai, sonar → perplexity, solar → upstage. Returns None if no match, triggering a ValueError.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L543-L616",
+          "version": "repo-lines-v1:sha256:a9fa9d961e85cbbccd7d57b4421babf5fbe5d93a7aa62b3bc0b38d6b368121dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NjVhMDM2OTVmYTJkMWU0YmU3OWZhYzhmMDNhOGMzOTU2OTI3OTcwMjY0MTMxNDU5NDUzMDc3ZmU0ZjM1NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlNTMyODkxMmQzMWM2MTZhZWI3NzBhM2M1YmI3ZmIxZTE0OTI3MTRiNjQyNThjOTdhZjJlYmM0MDIxNTdkMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNDUzZTU0YTQ0ZDU0ZDAyYWNiZDViOWE0YjBlNTIxNTQ4ZGM4MTY0ODFjYTBhZDM2YzBiNmFhMzdhZmNiMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc1859b860ab4c1686802fd90b694c35",
+      "statement": "If model is specified, configurable_fields defaults to None (no runtime configurability). If model is None, configurable_fields defaults to ('model', 'model_provider'), allowing runtime selection of both. If config_prefix is non-empty and configurable_fields is None or not provided, a warning is issued.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L504-L513",
+          "version": "repo-lines-v1:sha256:a3a9526e612e846f52046efbcdc17fed68b4152d1ad0d02c9efc0b7336ff7a31:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNzhiOWQzNzI4N2ZmM2NmYmNmMzVjZDlmMjA1NGYxNWQ3ZmI2NDEwZTRkMGQ5ZjkxYjQ1MWQyYjRmNDlhNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0ODVlZTcxYmI4YmY1ZjVmZWFiOGM1OTczZWY5YmZjY2NkYzUwM2Y1MGY1YjZlOWYwYzY4N2FiMzc0ZjE0ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzMDRhZjZiYzUyNmQwNGFhMzJkNmYwZjU3ODhhYmNlMmVjZjFhZjg0N2Q5ZTA0YjZkODZiZWEzMTEwMzRiN2YifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-03T15:18:34.589Z"
+  }
+}

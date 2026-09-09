@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8bf3d528d2fe2628f24d10c54b6445ad11f8ec7abae99049815d037c83fdaf08",
+  "claims": [
+    {
+      "id": "claim_2b394255185b4645a1dcf0e8c628a197",
+      "statement": "VCR (Video Cassette Recorder) is the HTTP interaction recording and playback mechanism used in LangChain integration tests. Tests record live API interactions once with VCR, which scrubs sensitive headers and secrets before saving the cassette; subsequent runs replay cassettes instead of making live calls, enabling fast deterministic testing without credentials in CI.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/Makefile#L40-L43",
+          "version": "repo-lines-v1:sha256:11e8869cd9ad3d186371833270e57f6b9b33e6bfb1fb7b21204584ccecc8bddf:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE5YjMxNjhmZmFkM2U1NDQwMzY3Y2Y1NTg2OTAyZTE1NGNlMWJmYWJmOGM5ODlhNjUzYWRiZGQ1ZDgxZTU3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDhiZTQwMTJkYzZlODBmMGRhYTAwNWMwYWI5MDBkODY0M2UyMWE5NTVkNDZiYTlkZGJiZDk2ZDVmNDM5Zjg1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDgwZjAyNjdlOGNlNzQ5ZmY3YmVhMWQ0NGJmZTc4MmMzZWI1NjRlMDIxMDVlZGZkYjQ2MjNlMjU2ZjA5ZDQwYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmNlNGVlYjJlZGM5OWFiNzIxYTJmNTJhOGZhODc5YjM0ODY1MzUzNWViZTA4ZTUxNDdmZmE2MzkwM2IxZjRkNSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/conftest.py#L1-L249",
+          "version": "repo-lines-v1:sha256:b85e00ecaa85790473365ec6ee983a68cac7244ca3be79b50cde32a75f250676:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQ5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZjIzNDc5YTZiNDFhOGU5NGRkNTk5OWUzNjgzNDFhMDRiMTM1OTQ3OWZiMzM4MTA4MDk2MGI5YWVlMjJlMjkyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1Yjg0MzIyZDBmMzg1NDQ0M2U0YzU1ZDNlMjkzNmNkM2QwZGY2OGJmMjlmZWVlYjE4OTVlNTkwNGQwM2I4YTg0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py#L130-L143",
+          "version": "repo-lines-v1:sha256:0144da3602191e08b1c7c3a3d0ea02abb6d35b5ffbf3a7e28f89554b904f1087:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzhlNTQ1YjAyMTRlNDM2NDIxYTRiMzBiZDQ0NThjNDgxZGY5OTY5NWRkNjRmZjhkNmM1MDkxMTZjMmE5NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMzc1ZjdjZDVkMWMzYWI1YzFlMjE1N2ViNjFhNjRhMDRlOTZiZDA1YTg1NThkYmY0MWRmZWUxMTE4YjcxMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_500db96bd1a849b0bf87fcfc658df506",
+      "statement": "Cassettes are stored in `tests/cassettes/` at the package root or in module-specific subdirectories like `tests/integration_tests/chat_models/cassettes/test_base/`. The `vcr_cassette_dir` fixture dynamically computes the correct cassette directory per test module.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/tests/integration_tests/conftest.py#L28-L33",
+          "version": "repo-lines-v1:sha256:c07f93990d02fa5f77fa71acb95580ada8744a98c94f91d72e1381f0077d3147:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWI1NmVlNDI4YWJmYjA5YjhmNTYxMmYwNmVjMTMwMDdlZWM4MWNhNTQyNWZmNmIyMGNhZWZmZjFlYjhjMDQ2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJjZDJhYmU5MTg5M2Y3YmI0YTQzYjE2NDJkZjA3M2VkNzAyODdlOTNmNjE1MTY4YzE1OTNjNDM0ZDE5NzVjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDFjNGI2NjE0MWY3MWE4OWJmOGRhZjNlM2E1YTNjMTA1NTgxYWZlYTZhYmNmYTczYTlmNWVjYTE3YmExN2IxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/conftest.py#L1-L10",
+          "version": "repo-lines-v1:sha256:178a83406b111cae8b9945220d636751deb8ed3bd88e5f84b74a590e38709789:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmMjM0NzlhNmI0MWE4ZTk0ZGQ1OTk5ZTM2ODM0MWEwNGIxMzU5NDc5ZmIzMzgxMDgwOTYwYjlhZWUyMmUyOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmZjI1MDY3NDRlNzQ5NDAzNzkyODEwNTU5ZTYwNTkzNGRhNzUzMmFiMTcxYmQxNTdkN2E0ODBjNTgzOWU4YWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_54d8ddd8a7164b23ad0b43dcda38d1b6",
+      "statement": "LangChain scrubs sensitive data from cassettes before saving via multi-layer redaction: request/response headers (authorization, cookies, organization headers) are replaced with PLACEHOLDER; request/response bodies undergo recursive JSON parsing to redact OAuth secret fields (access_token, refresh_token, etc.) and JWT-shaped strings; binary payloads (PNG, JPEG, PDF) are skipped for performance since JWTs are ASCII.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/conftest.py#L13-L163",
+          "version": "repo-lines-v1:sha256:0585222ed51eed033d0d51b9e73183d4c7848ad754faa70ae3fc38813a59a6ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjNWJjMjVmOTBlNjI4MWQyMWIyOWUyY2M5YmJhYzdiYzQxYTU4MzRiZjhhNTdkOTQzMDMyMzk2M2QxZTQ3YThmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmM2NjMWQwNTZiYWIwYTc1Mzg1ZWY4ODg1MzRiYTdhNDFlYzY0NTAyODAxYmRlZmI0MjUwNjliYjJkYmNlMDBhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNWMxYzQ2MmUyYTM5ZDc0NzU5ZjVlMWIxMjZmNzY4M2EyYjczMDExOGUxOGY1MTIyYjA4Y2VkZWViNjUwZTIzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkYTc3MDc4NjBiMzhmZTcwNmZmNTJkZTNkNTUzZGFhN2QwZjI5ZDI1NWI0M2ZjMTE4OGMyMjQ1OGIyNmRjOWViIn0"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/conftest.py#L166-L187",
+          "version": "repo-lines-v1:sha256:a1feed4edb565ee0f5aa60ad840e641a44ad15edc95a48b2bf44baab447eb762:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5MDlmMTA0ODRlZjBmNzVkZjNkNThmYzMxMThlNGU1MmQ0NjRiNmNmZWY0MDA2NzRhNzNhMGYzOWE4NTU2YzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyMDg1MzI5MTBjZmNlZmU1ODcwM2Q0MzQ0NWE5YzIwMmIxMjQ4NzcyZjE2ZWY1YTE2MzBlNjJmMjVkZjAyNzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjMTFhYmZlNWIyZTY0MGY5ZWM1MWQ5MWI2NGZmMTgyOTExOWMzMjg3ZDg1NThiZGE4ZjQzMmFjNzdmNTVjYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMzc1ZjdjZDVkMWMzYWI1YzFlMjE1N2ViNjFhNjRhMDRlOTZiZDA1YTg1NThkYmY0MWRmZWUxMTE4YjcxMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1cc580eab7d64d7f819732d066840145",
+      "statement": "Integration tests load credentials from `.env` files (located at `tests/.env` or `tests/integration_tests/.env`) via `dotenv.load_dotenv()` in conftest on import. Tests access credentials via `os.environ[\"API_KEY\"]`. Tests without an API key in `.env` fail at runtime if they attempt to make live API calls, but cassette-backed tests run without credentials.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain/tests/integration_tests/.env.example#L1-L10",
+          "version": "repo-lines-v1:sha256:7d2d09a71f21529ce791fb25eefc3b76ba0eb543269183caa8f2a08b5aefdb31:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhODA0YWQ1NmQ4YjU0OGYxZGVkNjUyMDJiOGVhMmI2NzVmMjAyODI0ZjAzMGYwNWVhODRiNmMyMDdkYjQ2ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1MTEzMGVjMzI4M2I5NDYxMjMzMzM1ODAxMzNjYWIzMjE2MjgzZTQyNTVlYjQyNzJhMWQ1Njc3ZjYxOTE0NDMifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/tests/integration_tests/conftest.py#L1-L26",
+          "version": "repo-lines-v1:sha256:061351d62d2c74fcabfd6e23faf1bac12b01a02fb00b7e9dd90279fec4dfcc06:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjYjlmZmNjYmE1MTQ2YjJkZDE3N2EzMGMzMDU3YTQzOTVlYmQ1Yzc0NWQwNzg5ZDJlZDk1ZDBjZjRhZmUyNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzZDU3M2EwYjY2M2JlYzc5ZmYwMGVhNTFiOTEyNmYyYWY2NjBhOTg2NzUyMWEzZjA5YjJlZjdlNTZhZWEzMzIifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base.py#L47-L56",
+          "version": "repo-lines-v1:sha256:da4d3e9908cb823935c901a1344645b98de1cfcb0f5c7a2ec32c29c6f594ce51:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxZDUyNjM1ODI4ZDQ0NzEyOTk3NjkyOGY4YWFkMmJkNmVhNDI1ZGZhYzdhM2I1YzYzYTBmMWQzMTIzZGU0MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwYzUxNmMxNDA5MDg3Y2EwODFkOTg4M2E5YzdhMWEyZjM1ODIwYjQwNjUxNmE1MmIyYThlZDc5NGMzNDE0ZDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_91e6083fe38f4c06b675d1010d7577c7",
+      "statement": "Integration tests use pytest markers to classify test types: @pytest.mark.vcr marks cassette-backed tests that replay recorded interactions (run in CI with --record-mode=none); @pytest.mark.scheduled marks live-API-only tests that are skipped in CI unless running in a scheduled workflow; unmarked tests are offline and don't require credentials.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/pyproject.toml#L141-L147",
+          "version": "repo-lines-v1:sha256:f4860849b111f1c575475888e3d06804a8c2627ad1672362e56cb1f155ee634c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODY3NmU2NDE0NjVhNjU1MWU5ZTljZmZkN2ZhYTFlNmE0MmY5YjcyNDgwOTgxM2M5MDNkN2VkY2I1MmYzMDA2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThlY2FhYTA1ZTE0YWZkNGJlNTJkOWEyNDhhYTc4NzEwNjUyY2YxZjMxZTZiNmE3ODZmMDVmNjliZmFhMDlhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzk3NGYzMmE2OTI3ZWNkN2U0MGI2ZTk3ZDQyNDhhNjczNTM5OGVlYTY4MWE2M2FkZTMxMDUxMGFlYTY0ZjJmZiJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base.py#L58-L78",
+          "version": "repo-lines-v1:sha256:26638124d864750acfe43d1ed037e3ab197666170c26078a25a9055fce2c9342:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhYTVmMDdkNWFiZjU5NDNiM2ZiMzA1ZjI1MjAwY2IyNTBjOTQ2ZTUzYmNlODczOTAwNzFiMWU1MDllYWQxNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1N2E4OGI0ODlkNjgxMjhkM2IyNTY0OTNkMTJhN2E1ODc5NTczNmQ1ODI3ZGJmZjA3ZWZiMmFiZmE1MWVhNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczZDE1OGFhYWM0ZTAzNDRjOThiOGRkZDIwNzZkMjI4NTQ5OTE4YzBjYTJlODUwZDM1NGY4OTgyYTk4NzM1NTEifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/embeddings/test_base.py#L38-L51",
+          "version": "repo-lines-v1:sha256:e75969cbc6a78340e6243cd951ea433be14001e37af5f9fb9505071896fea8c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NTMyNDc0MGJmZmMzYjk1Zjk0ZGIyZDdiM2Q1MGU1ZDkxMDEyNmUzNTllOTYzOGU3Y2I1NTIzZjFjMjQwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmY2Y2ZDYxNzNhNTA3NTQwMjNjYjFjOTVjZDBhYTU0YjQxNGYwY2M0ZGY1NGExNDQ4MGI3NjI3MWZiNzE5ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1MDVkOGM1NGY2NWZhNWNlMTc1NjA2YWIzNDNhNWU0NjVlYjE5ZDY2MWJjYTkzMDE1NDlmODlmZTYyMzBjNDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f784b2f297348b2ae4b083cd407a10e",
+      "statement": "Cassettes are recorded once via `pytest --record-mode=new_episodes` with a valid API key in `.env`. VCR intercepts HTTP calls, scrubs sensitive data via before_record hooks, serializes to compressed YAML (.yaml.gz), and saves relative to the test module. Cassettes are committed to the repository and replayed in CI with --record-mode=none.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/Makefile#L35-L43",
+          "version": "repo-lines-v1:sha256:fecf43d133a0b72243df932394549e0a5902eb879f7164c7eed7d6d2edadec63:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk0ZWRmM2ZjZTEyMmUxZDcwZGRhZTQ0ZDU1ZTNkNGE5MTVkNzc5Yjk1YWJmYzkzMDIyMjQxNzQ0YTA2NTljYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDhiZTQwMTJkYzZlODBmMGRhYTAwNWMwYWI5MDBkODY0M2UyMWE5NTVkNDZiYTlkZGJiZDk2ZDVmNDM5Zjg1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTFhMjk4MDZjNTZhZmI4YTVhY2IyN2ExZTFjNzJjZDAzOWZmYWNlNTlmNzgzODE1YjhlZTZmYWUwNGUyN2M1NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmNlNGVlYjJlZGM5OWFiNzIxYTJmNTJhOGZhODc5YjM0ODY1MzUzNWViZTA4ZTUxNDdmZmE2MzkwM2IxZjRkNSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/conftest.py#L190-L204",
+          "version": "repo-lines-v1:sha256:e1eddc5a41b085268d3db96f1152e60ae2dd6b69320f898d3da34980bdfbbe5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMDM2NWQxNGM3ZGFiM2Q2NWIyMGVlYjNhZmU3ZTVkNGUzMGU4Zjc5OGU3OWFkMDZlNTk0MjI4Nzc0YTc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MWU3YzkwZDY2ZTYzNjZmODcxM2EyZjkzMjE1OWY5ZjAxYTk0MzU2ZjIzNGNmODk4YTdjNDliYzdkOTlkMjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMDMyNWY5ODBiNGFiZTBhNWJmZGViMmQzZWI5MzQ4NzZkM2EwNDMzMjU2NDQ0NzJjMTM2Y2NhMDJiOWE4MGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjOGExOTM1MTY1NGUwMmMzY2E1NTBmOTFhYjRmZTkxMGNlN2Y2M2E2Y2YzYmY2MWJiYzY1MWIxZjI1ZjllOTUifQ"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py#L47-L82",
+          "version": "repo-lines-v1:sha256:df5c8cedc06db79e7f2b48dae77d72b15c3e1b4dc9663a7c5e076f731c40bfc2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyOTQyMzQ1NjE1YzAwYjE1MzgxZTYyODg2YmRhM2ZmZmY4YTU1ZjljZTVmYTAzNjBjMmI1OGI1OTg4MWU5ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzI5MmY2NTFiMGZmNzY3M2U1YTY5NWMyZjg4NGQ2MzJkMWIyMjY1YjQ5ZGQ1NmE1YzE0YmQxM2E5OGY2ZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZWUxOTMyODRlODJmYjc2YWY0ZjRmNTgzZTQzZjA1MDdiNWYxMzJiMTY0ZTZkMzUyM2JhZmI5NGMwYzdiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxN2U3ODJhY2U3YzhmNTk2YjRlZmZiMTI5ZmQ0ZDljNjFlOTk4ZmRkMGZhNDdlN2EwNjY2ZjIyM2MzNTdlZDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_30e157b2c11a4c03b076a66f28517ea7",
+      "statement": "Integration tests support parameterized testing of multiple models/configurations via @pytest.mark.parametrize. Each parameter combination generates a separate cassette file (e.g., test_invoke[model0].yaml.gz, test_invoke[model1].yaml.gz), allowing independent recorded interactions for different model variants.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/conftest.py#L1-L50",
+          "version": "repo-lines-v1:sha256:eddffa985f00658447b0e5984bb7a938e635dde6458d1bacce1465edb7ee3053:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MjU5MGRjNzZjZWI0YTMzYTJhMzhkOGFkYzgyNTFiOGM3MmU1MDlhNjZlYzg5NGQwOGE2ZDdkYzk3NGQxOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4MThkNzI2MGJmZTcwMjc3MzIwMzVjNzE3NWNlNzZmODA3M2Q5NGNlZmZmZTlkYThkNWNiMjRhZGUzYzg5NzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxYWNjZjkwNGZhNmM3MGY4ZmZiYjQ3NTVhMzc1MGE0MTFiNzZjZTJiOTE4M2M4MmQ4NjQxZDU1MjA2NzYxZmYifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base_standard.py#L16-L60",
+          "version": "repo-lines-v1:sha256:4abaae78a2c7e532f9fd3b3e1a05a877804ba3311b29f8e072acd915c3be821f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNWExYzAzOWM1OTM5MGMzOTY0MDlmNTU3OGUzNDU4ZGUzOWI5ZmZjYzY0OTNkZjA4MWM0ODY2YWJlYjI3NmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMDQyNGJkZTNhZDkxZmY4ZGFlYTgxYTRhYTUwNGIyZmU5ZDM3OTIzZjU5Mzc5MTUyZDU0M2Q3YjRkZWFmNzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwMjM0YTQwZWNmNjU1OTUyOGMzODQ4ZDFkZjdkYWYyMzE5ZDFhNGNjOTU5ZWUxNWQ0MzllMjJjNmJmY2U0OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMTU5ZTRjNTBlMWNmMTlmM2UzZDM4YWFmMTMwYTI3ZWRmNTg3MDVhZTVjZTFhMWYyMjBiNTAwOGIzMzczYWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2f942acdaf344f8a7dd5232ded2f2d9",
+      "statement": "VCR integration tests support both sync and async code; async tests use @pytest.mark.vcr and work identically to sync tests because VCR intercepts the underlying httpx/requests library. Streaming tests (via stream() or stream_events()) are fully supported; VCR records the stream sequence and replays it identically.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base.py#L182-L200",
+          "version": "repo-lines-v1:sha256:fafef0a13e0016604f3c165e8084f8715614912c9c36a21559ecaf8514dc10a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhYTVmMDdkNWFiZjU5NDNiM2ZiMzA1ZjI1MjAwY2IyNTBjOTQ2ZTUzYmNlODczOTAwNzFiMWU1MDllYWQxNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0ZjhmMTJjZjhkODE1MzI2ZjhmMjc5MTc4ZjViYWVhNmU0YmFjNmY5OTk0MmEzNmMxNmVmY2NiNjA5Y2E1ZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMzkxMDBjZmYyYzAxMDEwY2I1YTI1ZjI1ZThiNzVmNTAxNzc2Nzg4MWUyMGIwMzYwMDE1ZTVhYjQ2MjU5OWQifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/embeddings/test_base.py#L53-L65",
+          "version": "repo-lines-v1:sha256:12ea5a2af5c6c9d1bc6c5d3b119a4244a7aa427067d71dbf77c3936af2c2c30d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NTMyNDc0MGJmZmMzYjk1Zjk0ZGIyZDdiM2Q1MGU1ZDkxMDEyNmUzNTllOTYzOGU3Y2I1NTIzZjFjMjQwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ODFjYjgwMGJhOTI5YzcwYmY5OWY5YjRiZTYyMmZjYThhNDY1NTkyNTkwMzVmNDJkMGMyZjA4ZjBhY2RhOTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjFlNzliYjM1ZjlkZTFiZWJiZmZhNTIwYzgzYzEwZGM4YjgzZmJlZWZjY2E1YjA5YjNkN2U5NWE5OGU5NjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxOTNlNmJiZjNkNWE0ZTY5MTM4NzBhMGUzNjUyNjAxYzkxMDAzOWVjYjZkYjI4MWM0NDNmZjA5YTE4N2M3NmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b49d8e4a26b46658f273e50b4c1c2ed",
+      "statement": "Each package's conftest.py extends base VCR configuration (from langchain_tests.conftest.base_vcr_config) via a vcr_config() fixture. Configuration includes record_mode (once/new_episodes/none), match_on strategy (method/uri/body or json_body for JSON-ignoring-order matching), filter_headers, before_record hooks, serializer (yaml.gz), and custom matchers registered in pytest_recording_configure().",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/conftest.py#L190-L249",
+          "version": "repo-lines-v1:sha256:cd6487781a7c4c4b6ded25db13dc8947476013ae99271f7d20a8d84bdb5faa01:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMDM2NWQxNGM3ZGFiM2Q2NWIyMGVlYjNhZmU3ZTVkNGUzMGU4Zjc5OGU3OWFkMDZlNTk0MjI4Nzc0YTc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViODQzMjJkMGYzODU0NDQzZTRjNTVkM2UyOTM2Y2QzZDBkZjY4YmYyOWZlZWViMTg5NWU1OTA0ZDAzYjhhODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMDMyNWY5ODBiNGFiZTBhNWJmZGViMmQzZWI5MzQ4NzZkM2EwNDMzMjU2NDQ0NzJjMTM2Y2NhMDJiOWE4MGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py#L130-L155",
+          "version": "repo-lines-v1:sha256:e3d0704dff8fca8d0a61d64b2b6b1bd421654204ab5faef64b64dd5b52df2ddf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzhlNTQ1YjAyMTRlNDM2NDIxYTRiMzBiZDQ0NThjNDgxZGY5OTY5NWRkNjRmZjhkNmM1MDkxMTZjMmE5NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxY2I2ZmI5YmVjNzJmZjA3ZTY4MDU0N2M3NTAyMzZkYWZmNDMzOWVhZTY5ODBkM2IwOTQwMmRkYmE4YzcwOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_150d3ea6225d45dd9187d0a97ab6047b",
+      "statement": "OpenAI Codex tests require special VCR handling in CI: conftest.py skips Codex tests at collection time unless running in --record-mode=none (cassette playback), and uses monkeypatch to stub _FileChatGPTOAuthTokenProvider token methods with fake in-memory tokens for VCR playback without requiring on-disk OAuth files.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/conftest.py#L1-L14",
+          "version": "repo-lines-v1:sha256:e1ec6b6d802926f2b1cac2647b9c3accc444f2b800170c6878377c812edd08df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MjU5MGRjNzZjZWI0YTMzYTJhMzhkOGFkYzgyNTFiOGM3MmU1MDlhNjZlYzg5NGQwOGE2ZDdkYzk3NGQxOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/conftest.py#L66-L92",
+          "version": "repo-lines-v1:sha256:57f36b10f5a271c6395a3103efe0146cbc3df80328363db90b11be8cf4cd1625:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYzYwZGExMTM1NTc1OTRhYTlhZmUyNjJmYjUxZjNhM2RlMWNhYTdjNDdhNTg4NTExYjdlYjA0MjY3OTY0ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiNDZkM2U4YWZjMzk3MWNjNzIyODc1N2Q5ZGI2Njk4ZmNmMGU0MzUyODAxNDc2MDcyMDBkZDhmMjBhODk3OTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlZjExYzliNzE2N2MwYWRjNDJmZWE4NTRhYjYzNDk5NzcwODE0YjBlNzE4MTAzYTllYzBmOWJlN2FmNjk5NzkifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/conftest.py#L95-L147",
+          "version": "repo-lines-v1:sha256:290ba4ef134137e43ce35cf85c1bbed29bf210fcd78fd848944179e080537c58:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDg2NmY0MDExZTU4NWZmYzA5MDkyZWRmMDgzMmUxN2I1MmY0YzkwYzRjYTBiNDJkY2ZhMDUwZmEzNzViNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1NDhjOWVjNjdmMzU3OWFhMTYyMWFhOTcxOGFmNjVjNGJkMjY2ZmRlMzQwZDA5ZWZlMTYyZTk0M2I5Y2IxN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7d605667c6f04ced95e6049010ae706f",
+      "statement": "LangChain integration tests can be run in multiple modes via pytest record-mode flags: --record-mode=once (default, records new cassettes, replays existing); --record-mode=new_episodes (always records, overwrites existing cassettes); --record-mode=none (playback-only, fails if cassette missing, used in CI).",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/Makefile#L35-L43",
+          "version": "repo-lines-v1:sha256:fecf43d133a0b72243df932394549e0a5902eb879f7164c7eed7d6d2edadec63:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk0ZWRmM2ZjZTEyMmUxZDcwZGRhZTQ0ZDU1ZTNkNGE5MTVkNzc5Yjk1YWJmYzkzMDIyMjQxNzQ0YTA2NTljYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDhiZTQwMTJkYzZlODBmMGRhYTAwNWMwYWI5MDBkODY0M2UyMWE5NTVkNDZiYTlkZGJiZDk2ZDVmNDM5Zjg1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTFhMjk4MDZjNTZhZmI4YTVhY2IyN2ExZTFjNzJjZDAzOWZmYWNlNTlmNzgzODE1YjhlZTZmYWUwNGUyN2M1NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmNlNGVlYjJlZGM5OWFiNzIxYTJmNTJhOGZhODc5YjM0ODY1MzUzNWViZTA4ZTUxNDdmZmE2MzkwM2IxZjRkNSJ9"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py#L130-L143",
+          "version": "repo-lines-v1:sha256:0144da3602191e08b1c7c3a3d0ea02abb6d35b5ffbf3a7e28f89554b904f1087:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzhlNTQ1YjAyMTRlNDM2NDIxYTRiMzBiZDQ0NThjNDgxZGY5OTY5NWRkNjRmZjhkNmM1MDkxMTZjMmE5NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMzc1ZjdjZDVkMWMzYWI1YzFlMjE1N2ViNjFhNjRhMDRlOTZiZDA1YTg1NThkYmY0MWRmZWUxMTE4YjcxMDcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-03T15:18:34.589Z"
+  }
+}

@@ -1258,7 +1258,7 @@ def test_explicit_prompt_cache_breakpoint_invoke() -> None:
     """
     chat = ChatOpenAI(
         model="gpt-5.6-sol",
-        max_completion_tokens=10,
+        max_completion_tokens=16,
         prompt_cache_options={"mode": "explicit"},
     )
     # A prefix long enough to exceed OpenAI's minimum cacheable prompt length.

@@ -3911,6 +3911,36 @@ def test_reasoning_effort_yields_to_effort() -> None:
     assert payload["output_config"]["effort"] == "high"
 
 
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"thinking": {"type": "disabled"}}, r"not supported for claude-fable-5-1"),
+        ({"top_k": 1}, r"`top_k` is not supported"),
+        ({"top_p": 0.9}, r"`top_p` is not supported"),
+        ({"temperature": 0.1}, r"`temperature` is not supported"),
+    ],
+)
+def test_fable_5_1_rejects_unsupported_parameters(
+    kwargs: dict[str, object], match: str
+) -> None:
+    """Fable 5.1 only supports adaptive thinking and default sampling."""
+    model = ChatAnthropic(model="claude-fable-5-1", **kwargs)
+
+    with pytest.raises(ValueError, match=match):
+        model._get_request_payload("Test query")
+
+
+def test_fable_5_1_rejects_manual_thinking() -> None:
+    """Fable 5.1 does not support manual thinking budgets."""
+    model = ChatAnthropic(
+        model="claude-fable-5-1",
+        thinking={"type": "enabled", "budget_tokens": 1_024},
+    )
+
+    with pytest.raises(ValueError, match=r"use adaptive thinking"):
+        model._get_request_payload("Test query")
+
+
 def test_reasoning_effort_defaults_adaptive_thinking() -> None:
     """Test that `reasoning_effort` also defaults `thinking` to adaptive.
 

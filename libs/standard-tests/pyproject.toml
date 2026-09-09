@@ -28,7 +28,7 @@ dependencies = [
     "pytest>=9.0.3,<10.0.0",
     "pytest-asyncio>=1.3.0,<2.0.0",
     "httpx>=0.28.1,<1.0.0",
-    "syrupy>=5.0.0,<6.0.0",
+    "syrupy>=5.0.0,<7.0.0",
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-benchmark",
     "pytest-codspeed",

@@ -4322,6 +4322,22 @@ def test_get_request_payload_use_previous_response_id() -> None:
     assert len(payload["input"]) == 1
 
 
+def test_get_request_payload_explicit_previous_response_id() -> None:
+    """Test that an explicit `previous_response_id` kwarg reaches the payload."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+    ]
+    payload = llm._get_request_payload(messages, previous_response_id="resp_123")
+    # Passing the ID engages the Responses API on its own.
+    assert "input" in payload
+    assert payload["previous_response_id"] == "resp_123"
+    # Unlike `use_previous_response_id`, history is not trimmed.
+    assert len(payload["input"]) == 3
+
+
 def test_make_computer_call_output_from_message() -> None:
     # List content
     tool_message = ToolMessage(
@@ -4616,13 +4632,15 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
 
 
 def test_model_prefers_responses_api() -> None:
-    # Pro models (with and without date snapshots): Responses API only
+    # Pro and Sol models (with and without date snapshots): Responses API only
     assert _model_prefers_responses_api("gpt-5-pro")
     assert _model_prefers_responses_api("gpt-5-pro-2025-10-06")
     assert _model_prefers_responses_api("gpt-5.2-pro")
     assert _model_prefers_responses_api("gpt-5.2-pro-2025-12-11")
     assert _model_prefers_responses_api("gpt-5.4-pro")
     assert _model_prefers_responses_api("gpt-5.4-pro-2026-03-05")
+    assert _model_prefers_responses_api("gpt-5.6-sol")
+    assert _model_prefers_responses_api("gpt-5.6-sol-2026-09-01")
     # Codex models: Responses API only
     assert _model_prefers_responses_api("gpt-5.3-codex")
     assert _model_prefers_responses_api("gpt-5.3-codex")
@@ -5155,6 +5173,154 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert {"type": "tool_search"} in result["tools"]
 
 
+def test__construct_lc_result_from_responses_api_async_tool_call() -> None:
+    """Test that `async` on a `function_call` item reaches `tool_call` extras."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_1",
+                    "call_id": "call_A",
+                    "name": "lookup_price",
+                    "arguments": '{"sku": "WIDGET"}',
+                    "async": True,
+                }
+            ),
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_2",
+                    "call_id": "call_B",
+                    "name": "get_time",
+                    "arguments": "{}",
+                }
+            ),
+        ],
+    )
+    message = cast(
+        AIMessage,
+        _construct_lc_result_from_responses_api(response).generations[0].message,
+    )
+    extras: dict[Any, dict[str, Any]] = {
+        block.get("id"): cast(dict[str, Any], block.get("extras") or {})
+        for block in message.content_blocks
+    }
+    assert extras["call_A"]["async"] is True
+    assert "async" not in extras["call_B"]
+    # The flag is metadata only; both remain ordinary tool calls.
+    assert [tc["id"] for tc in message.tool_calls] == ["call_A", "call_B"]
+
+
+def test_async_tool_call_round_trips_to_next_request() -> None:
+    """Test that `async` survives response -> message -> next request."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"async": True})
+    def lookup_price(sku: str) -> str:
+        """Look up a price."""
+        return "1200"
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_1",
+                    "call_id": "call_A",
+                    "name": "lookup_price",
+                    "arguments": '{"sku": "WIDGET"}',
+                    "async": True,
+                }
+            )
+        ],
+    )
+    for output_version in ("responses/v1", "v1"):
+        message = (
+            _construct_lc_result_from_responses_api(
+                response, output_version=output_version
+            )
+            .generations[0]
+            .message
+        )
+        llm = ChatOpenAI(
+            model=OPENAI_TEST_MODEL,
+            use_responses_api=True,
+            output_version=output_version,
+        )
+        bound = llm.bind_tools([lookup_price])
+        payload = bound._get_request_payload(  # type: ignore[attr-defined]
+            [HumanMessage("price?"), message, HumanMessage("anything else?")],
+            **bound.kwargs,  # type: ignore[attr-defined]
+        )
+        function_calls = [
+            item for item in payload["input"] if item.get("type") == "function_call"
+        ]
+        # Without the flag the Responses API rejects the turn for a missing output.
+        assert function_calls[0]["async"] is True, output_version
+
+
+def test_async_tool_from_extras_in_payload() -> None:
+    """Test that `async` from `BaseTool.extras` reaches the Responses tool def."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"async": True})
+    def lookup_price(sku: str) -> str:
+        """Look up a price."""
+        return "1200"
+
+    @tool
+    def get_time() -> str:
+        """Get the current time."""
+        return "14:05"
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    bound = llm.bind_tools([lookup_price, get_time])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    tools_by_name = {t["name"]: t for t in payload["tools"]}
+    assert tools_by_name["lookup_price"]["async"] is True
+    # Tools that don't opt in are unaffected.
+    assert "async" not in tools_by_name["get_time"]
+
+
+def test_async_tool_raw_dict_passthrough() -> None:
+    """Test that `async` on a raw tool dict is preserved."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    raw_tool = {
+        "type": "function",
+        "name": "lookup_price",
+        "description": "Look up a price.",
+        "async": True,
+        "parameters": {
+            "type": "object",
+            "properties": {"sku": {"type": "string"}},
+        },
+    }
+    bound = llm.bind_tools([raw_tool])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["tools"][0]["async"] is True
+
+
 def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
@@ -5234,3 +5400,83 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     assert llm.openai_api_base == "https://api.openai.com/v1"
     assert isinstance(llm.openai_api_key, SecretStr)
     assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+def test_configuration_update_block_becomes_input_item() -> None:
+    """A `configuration_update` block is hoisted out of the message content.
+
+    The Responses API expects it as a top-level input item preceding the message
+    it applies to, not as a content block nested inside one.
+    """
+    llm = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage(
+                [
+                    {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                    {"type": "text", "text": "Hello"},
+                ]
+            )
+        ]
+    )
+
+    assert payload["input"] == [
+        {"type": "configuration_update", "reasoning": {"effort": "high"}},
+        {
+            "role": "user",
+            "content": [{"type": "input_text", "text": "Hello"}],
+            "type": "message",
+        },
+    ]
+
+
+def test_configuration_update_block_keeps_position_across_turns() -> None:
+    """The item stays put as the conversation grows, so the prefix stays cacheable.
+
+    Re-deriving the item per request would shift it forward each turn and truncate
+    the cached prefix to whatever precedes it.
+    """
+    llm = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+    messages: list = [
+        HumanMessage("First question"),
+        AIMessage("First answer", response_metadata={"id": "resp_123"}),
+        HumanMessage(
+            [
+                {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                {"type": "text", "text": "Second question"},
+            ]
+        ),
+    ]
+    first = llm._get_request_payload(messages)
+    assert [item.get("role") or item["type"] for item in first["input"]] == [
+        "user",
+        "assistant",
+        "configuration_update",
+        "user",
+    ]
+
+    messages += [
+        AIMessage("Second answer", response_metadata={"id": "resp_456"}),
+        HumanMessage("Third question"),
+    ]
+    second = llm._get_request_payload(messages)
+    assert second["input"][: len(first["input"])] == first["input"]
+
+
+def test_configuration_update_block_without_text() -> None:
+    """An update with no accompanying text still yields the input item."""
+    llm = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage("Earlier question"),
+            AIMessage("Earlier answer", response_metadata={"id": "resp_123"}),
+            HumanMessage(
+                [{"type": "configuration_update", "reasoning": {"effort": "low"}}]
+            ),
+        ]
+    )
+
+    assert payload["input"][-1] == {
+        "type": "configuration_update",
+        "reasoning": {"effort": "low"},
+    }
