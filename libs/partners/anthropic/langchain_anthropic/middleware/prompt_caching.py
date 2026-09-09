@@ -235,7 +235,7 @@ def _tag_system_message(
             return system_message
         new_content = list(content)
         last = new_content[-1]
-        base = last if isinstance(last, dict) else {}
+        base = last if isinstance(last, dict) else {"type": "text", "text": last}
         new_content[-1] = {**base, "cache_control": cache_control}
     else:
         return system_message

@@ -423,6 +423,20 @@ class TestSystemMessageCaching:
         assert "cache_control" not in blocks[1]
         assert blocks[2]["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
 
+    def test_tags_trailing_string_in_list_as_text_block(self) -> None:
+        msg = SystemMessage(
+            content=[
+                {"type": "text", "text": "Block 1"},
+                "Trailing string",
+            ]
+        )
+        blocks = self._get_content_blocks(self._run(self._make_request(msg)))
+        assert len(blocks) == 2
+        assert blocks[0] == {"type": "text", "text": "Block 1"}
+        assert blocks[1]["type"] == "text"
+        assert blocks[1]["text"] == "Trailing string"
+        assert blocks[1]["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
+
     def test_does_not_mutate_original_system_message(self) -> None:
         original_content: list[str | dict[str, str]] = [
             {"type": "text", "text": "Block 1"},
