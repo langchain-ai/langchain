@@ -407,7 +407,6 @@ def get_lambda_source(func: Callable[..., Any]) -> str | None:
     return visitor.source if visitor.count == 1 else name
 
 
-@lru_cache(maxsize=256)
 def get_function_nonlocals(func: Callable[..., Any]) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
@@ -417,6 +416,25 @@ def get_function_nonlocals(func: Callable[..., Any]) -> list[Any]:
     Returns:
         The nonlocal variables accessed by the function.
     """
+    # Only plain functions (`def`/`lambda`, including `async def`) are safe to
+    # memoize across calls: the cache key (the function object itself) is held
+    # strongly for as long as it stays in the LRU cache, so caching anything
+    # else that carries a reference to other state -- bound methods (whose key
+    # keeps `__self__` alive via `__self__`/`__func__`), callable class
+    # instances, `functools.partial`, etc. -- would keep that state alive for
+    # up to `maxsize` cache entries after the caller drops its own reference.
+    # See https://github.com/langchain-ai/langchain/issues/30667
+    if inspect.isfunction(func):
+        return _get_function_nonlocals_cached(func)
+    return _get_function_nonlocals(func)
+
+
+@lru_cache(maxsize=256)
+def _get_function_nonlocals_cached(func: Callable[..., Any]) -> list[Any]:
+    return _get_function_nonlocals(func)
+
+
+def _get_function_nonlocals(func: Callable[..., Any]) -> list[Any]:
     try:
         code = inspect.getsource(func)
         tree = ast.parse(textwrap.dedent(code))
