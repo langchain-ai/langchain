@@ -5,6 +5,7 @@ import logging
 import os
 import signal
 import tempfile
+import sys
 import time
 from pathlib import Path
 from typing import Any, cast
@@ -29,10 +30,21 @@ from langchain.agents.middleware.shell_tool import (
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
+
+requires_posix_shell = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason=(
+        "ShellToolMiddleware requires a POSIX shell (`/bin/bash`) and POSIX "
+        "process-group signals (`os.killpg`, `signal.SIGKILL`)"
+    ),
+)
+
+
 def _empty_state() -> ShellToolState:
     return {"messages": []}
 
 
+@requires_posix_shell
 def test_executes_command_and_persists_state(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     middleware = ShellToolMiddleware(workspace_root=workspace)
@@ -56,6 +68,7 @@ def test_executes_command_and_persists_state(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_restart_resets_session_environment(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
     runtime = Runtime()
@@ -80,6 +93,7 @@ def test_restart_resets_session_environment(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_truncation_indicator_present(tmp_path: Path) -> None:
     policy = HostExecutionPolicy(max_output_lines=5, command_timeout=5.0)
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
@@ -96,6 +110,7 @@ def test_truncation_indicator_present(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_timeout_returns_error(tmp_path: Path) -> None:
     policy = HostExecutionPolicy(command_timeout=0.5)
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace", execution_policy=policy)
@@ -115,6 +130,7 @@ def test_timeout_returns_error(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_redaction_policy_applies(tmp_path: Path) -> None:
     middleware = ShellToolMiddleware(
         workspace_root=tmp_path / "workspace",
@@ -138,6 +154,7 @@ def test_redaction_policy_applies(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_startup_and_shutdown_commands(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     middleware = ShellToolMiddleware(
@@ -215,6 +232,7 @@ def test_normalize_env_non_string_keys() -> None:
         ShellToolMiddleware(env={123: "value"})  # type: ignore[dict-item]
 
 
+@requires_posix_shell
 def test_normalize_env_coercion(tmp_path: Path) -> None:
     """Test that environment values are coerced to strings."""
     middleware = ShellToolMiddleware(
@@ -236,6 +254,7 @@ def test_normalize_env_coercion(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_shell_tool_missing_command_string(tmp_path: Path) -> None:
     """Test that shell tool raises an error when command is not a string."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
@@ -260,6 +279,7 @@ def test_shell_tool_missing_command_string(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_tool_message_formatting_with_id(tmp_path: Path) -> None:
     """Test that tool messages are properly formatted with tool_call_id."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
@@ -284,6 +304,7 @@ def test_tool_message_formatting_with_id(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_nonzero_exit_code_returns_error(tmp_path: Path) -> None:
     """Test that non-zero exit codes are marked as errors."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
@@ -309,6 +330,7 @@ def test_nonzero_exit_code_returns_error(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_truncation_by_bytes(tmp_path: Path) -> None:
     """Test that output is truncated by bytes when max_output_bytes is exceeded."""
     policy = HostExecutionPolicy(max_output_bytes=50, command_timeout=5.0)
@@ -330,6 +352,7 @@ def test_truncation_by_bytes(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_startup_command_failure(tmp_path: Path) -> None:
     """Test that startup command failure raises an error."""
     policy = HostExecutionPolicy(startup_timeout=1.0)
@@ -342,6 +365,7 @@ def test_startup_command_failure(tmp_path: Path) -> None:
         middleware.before_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_shutdown_command_failure_logged(tmp_path: Path) -> None:
     """Test that shutdown command failures are logged but don't raise."""
     policy = HostExecutionPolicy(command_timeout=1.0)
@@ -361,6 +385,7 @@ def test_shutdown_command_failure_logged(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_shutdown_command_timeout_logged(tmp_path: Path) -> None:
     """Test that shutdown command timeouts are logged but don't raise."""
     policy = HostExecutionPolicy(command_timeout=0.1)
@@ -380,6 +405,7 @@ def test_shutdown_command_timeout_logged(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_empty_output_replaced_with_no_output(tmp_path: Path) -> None:
     """Test that empty command output is replaced with '<no output>'."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
@@ -402,6 +428,7 @@ def test_empty_output_replaced_with_no_output(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_stderr_output_labeling(tmp_path: Path) -> None:
     """Test that stderr output is properly labeled."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
@@ -443,6 +470,7 @@ def test_normalize_commands_string_tuple_list(
     assert middleware._startup_commands == expected
 
 
+@requires_posix_shell
 async def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
     """Test that async methods properly delegate to sync methods."""
     middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
@@ -460,6 +488,7 @@ async def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
         pass
 
 
+@requires_posix_shell
 def test_shell_middleware_resumable_after_interrupt(tmp_path: Path) -> None:
     """Test that shell middleware is resumable after an interrupt.
 
@@ -515,6 +544,7 @@ def test_shell_middleware_resumable_after_interrupt(tmp_path: Path) -> None:
     middleware.after_agent(state, runtime)
 
 
+@requires_posix_shell
 def test_get_or_create_resources_creates_when_missing(tmp_path: Path) -> None:
     """Test that _get_or_create_resources creates resources when they don't exist."""
     workspace = tmp_path / "workspace"
@@ -536,6 +566,7 @@ def test_get_or_create_resources_creates_when_missing(tmp_path: Path) -> None:
     resources.finalizer()
 
 
+@requires_posix_shell
 def test_get_or_create_resources_reuses_existing(tmp_path: Path) -> None:
     """Test that _get_or_create_resources reuses existing resources."""
     workspace = tmp_path / "workspace"
@@ -581,6 +612,7 @@ def test_kill_process_avoids_group_kill_for_shared_process_group(
     process.kill.assert_called_once_with()
 
 
+@requires_posix_shell
 def test_kill_process_uses_group_kill_for_dedicated_process_group(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -626,6 +658,7 @@ def test_kill_process_returns_early_when_process_already_gone(
     process.kill.assert_not_called()
 
 
+@requires_posix_shell
 def test_kill_process_falls_back_when_group_kill_raises_oserror(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
@@ -699,6 +732,7 @@ def test_kill_process_noop_without_active_process(tmp_path: Path) -> None:
     session._kill_process()
 
 
+@requires_posix_shell
 def test_shell_tool_with_checkpointer_does_not_raise_msgpack_error(tmp_path: Path) -> None:
     """`ShellToolMiddleware` must work with a checkpointer end to end.
 

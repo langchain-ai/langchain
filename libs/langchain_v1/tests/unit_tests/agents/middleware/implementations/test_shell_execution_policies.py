@@ -74,6 +74,7 @@ def test_host_policy_requires_resource_for_limits(monkeypatch: pytest.MonkeyPatc
 def test_host_policy_applies_prlimit(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     fake_resource = _make_resource(with_prlimit=True)
     monkeypatch.setattr(_execution, "resource", fake_resource, raising=False)
+    monkeypatch.setattr(_execution, "_HAS_RESOURCE", True, raising=False)
     monkeypatch.setattr(sys, "platform", "linux")
 
     recorded: dict[str, Any] = {}
@@ -112,6 +113,7 @@ def test_host_policy_applies_prlimit(monkeypatch: pytest.MonkeyPatch, tmp_path: 
 def test_host_policy_uses_preexec_on_macos(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     fake_resource = _make_resource(with_prlimit=False)
     monkeypatch.setattr(_execution, "resource", fake_resource, raising=False)
+    monkeypatch.setattr(_execution, "_HAS_RESOURCE", True, raising=False)
     monkeypatch.setattr(sys, "platform", "darwin")
 
     captured: dict[str, Any] = {}
@@ -146,6 +148,7 @@ def test_host_policy_respects_process_group_flag(
 ) -> None:
     fake_resource = _make_resource(with_prlimit=True)
     monkeypatch.setattr(_execution, "resource", fake_resource, raising=False)
+    monkeypatch.setattr(_execution, "_HAS_RESOURCE", True, raising=False)
     monkeypatch.setattr(sys, "platform", "linux")
 
     recorded: dict[str, Any] = {}
@@ -168,6 +171,7 @@ def test_host_policy_falls_back_to_rlimit_data(
 ) -> None:
     fake_resource = _make_resource(with_prlimit=True, has_rlimit_as=False)
     monkeypatch.setattr(_execution, "resource", fake_resource, raising=False)
+    monkeypatch.setattr(_execution, "_HAS_RESOURCE", True, raising=False)
     monkeypatch.setattr(sys, "platform", "linux")
 
     def fake_launch(*_args: Any, **_kwargs: Any) -> subprocess.Popen[str]:
