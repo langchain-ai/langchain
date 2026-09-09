@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
@@ -572,3 +573,23 @@ def test_convert_to_v1_from_anthropic_malformed_citations() -> None:
             ],
         },
     ]
+
+
+def test_non_standard_block_conversion_does_not_mutate_content() -> None:
+    """Converting an unknown block must preserve the source message."""
+    message = AIMessage(
+        [{"type": "future_block", "index": 3, "value": "test"}],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    original_content = deepcopy(message.content)
+
+    expected = [
+        {
+            "type": "non_standard",
+            "value": {"type": "future_block", "value": "test"},
+            "index": 3,
+        }
+    ]
+    assert message.content_blocks == expected
+    assert message.content == original_content
+    assert message.content_blocks == expected
