@@ -243,8 +243,9 @@ class SimpleRequestChain(Chain):
     ) -> dict[str, Any]:
         """Run the logic of this chain and return the output."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
-        name = inputs[self.input_key].pop("name")
-        args = inputs[self.input_key].pop("arguments")
+        function_call = inputs[self.input_key].copy()
+        name = function_call.pop("name")
+        args = function_call.pop("arguments")
         _pretty_name = get_colored_text(name, "green")
         _pretty_args = get_colored_text(json.dumps(args, indent=2), "green")
         _text = f"Calling endpoint {_pretty_name} with arguments:\n" + _pretty_args

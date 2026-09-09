@@ -242,7 +242,7 @@ class QAWithSourcesChain(BaseQAWithSourcesChain):
         run_manager: CallbackManagerForChainRun,
     ) -> list[Document]:
         """Get docs to run questioning over."""
-        return inputs.pop(self.input_docs_key)
+        return inputs[self.input_docs_key]
 
     @override
     async def _aget_docs(
@@ -252,7 +252,7 @@ class QAWithSourcesChain(BaseQAWithSourcesChain):
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> list[Document]:
         """Get docs to run questioning over."""
-        return inputs.pop(self.input_docs_key)
+        return inputs[self.input_docs_key]
 
     @property
     def _chain_type(self) -> str:

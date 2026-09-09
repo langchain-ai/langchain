@@ -101,6 +101,7 @@ class MapReduceChain(Chain):
         run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
+        inputs = inputs.copy()
         # Split the larger text into smaller chunks.
         doc_text = inputs.pop(self.input_key)
         texts = self.text_splitter.split_text(doc_text)
