@@ -107,6 +107,21 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         self._separators = separators or ["\n\n", "\n", " ", ""]
         self._is_separator_regex = is_separator_regex
 
+    def _prepare_chunk(self, chunk: str) -> str | None:
+        """Apply strip_whitespace setting to a chunk.
+
+        This ensures consistent handling across all code paths.
+
+        Args:
+            chunk: Text chunk to process
+
+        Returns:
+            Processed chunk, or None if empty after stripping
+        """
+        if self._strip_whitespace:
+            chunk = chunk.strip()
+        return chunk if chunk else None
+
     def _split_text(self, text: str, separators: list[str]) -> list[str]:
         """Split incoming text and return chunks."""
         final_chunks = []
@@ -140,7 +155,10 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                     final_chunks.extend(merged_text)
                     good_splits = []
                 if not new_separators:
-                    final_chunks.append(s)
+                    # FIX: Apply consistent whitespace handling
+                    processed = self._prepare_chunk(s)
+                    if processed is not None:  # Skip empty chunks
+                        final_chunks.append(processed)
                 else:
                     other_info = self._split_text(s, new_separators)
                     final_chunks.extend(other_info)

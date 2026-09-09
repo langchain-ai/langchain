@@ -4432,3 +4432,111 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+def test_recursive_splitter_strip_whitespace_true_unsplittable():
+    """Test that unsplittable pieces are stripped when strip_whitespace=True."""
+    splitter = RecursiveCharacterTextSplitter(
+        separators=["\n", " "],
+        chunk_size=5,
+        chunk_overlap=0,
+        strip_whitespace=True,  # Default
+    )
+    result = splitter.split_text("hi supercalifragilistic\nok")
+
+    # All chunks should be stripped, including the long unsplittable word
+    expected = ["hi", "supercalifragilistic", "ok"]
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    # Verify no leading/trailing spaces
+    for chunk in result:
+        assert chunk == chunk.strip(), f"Chunk '{chunk}' has unstripped whitespace"
+
+
+def test_recursive_splitter_strip_whitespace_false_unsplittable():
+    """Test that unsplittable pieces keep separator when strip_whitespace=False."""
+    splitter = RecursiveCharacterTextSplitter(
+        separators=["\n", " "],
+        chunk_size=5,
+        chunk_overlap=0,
+        strip_whitespace=False,
+        keep_separator=True,
+    )
+    result = splitter.split_text("hi supercalifragilistic\nok")
+
+    # With strip_whitespace=False and keep_separator=True,
+    # separators should be preserved
+    expected = ["hi", " supercalifragilistic", "\nok"]
+    assert result == expected, f"Expected {expected}, got {result}"
+
+
+def test_recursive_splitter_custom_separators_unsplittable():
+    """Test with common custom separator pattern (no empty string)."""
+    splitter = RecursiveCharacterTextSplitter(
+        separators=["\n\n", "\n", " "],  # Note: no "" at end
+        chunk_size=3,
+        chunk_overlap=0,
+        strip_whitespace=True,
+    )
+    result = splitter.split_text("ab ab ab")
+
+    # Expected: all chunks stripped
+    expected = ["ab", "ab", "ab"]
+    assert result == expected, f"Expected {expected}, got {result}"
+
+
+def test_recursive_splitter_long_single_word():
+    """Test that a single word longer than chunk_size is handled correctly."""
+    splitter = RecursiveCharacterTextSplitter(
+        separators=[" ", ""],
+        chunk_size=5,
+        chunk_overlap=0,
+        strip_whitespace=True,
+    )
+    result = splitter.split_text("hello supercalifragilistic world")
+
+    # "supercalifragilistic" (20 chars) > chunk_size (5)
+    # Should appear stripped in output
+    assert "supercalifragilistic" in result
+    assert " supercalifragilistic" not in result  # No leading space
+
+    # All chunks should be stripped
+    for chunk in result:
+        assert chunk == chunk.strip()
+
+
+def test_recursive_splitter_empty_after_strip():
+    """Test that chunks that become empty after stripping are dropped."""
+    splitter = RecursiveCharacterTextSplitter(
+        separators=[" "],
+        chunk_size=10,
+        chunk_overlap=0,
+        strip_whitespace=True,
+    )
+    # Multiple spaces between words could create empty chunks
+    result = splitter.split_text("hello     world")
+
+    # Should not contain empty strings
+    assert "" not in result
+    assert all(chunk.strip() for chunk in result)
+
+
+def test_recursive_splitter_mixed_sizes():
+    """Test mix of splittable and unsplittable content."""
+    splitter = RecursiveCharacterTextSplitter(
+        separators=["\n", " "],
+        chunk_size=10,
+        chunk_overlap=0,
+        strip_whitespace=True,
+    )
+    result = splitter.split_text(
+        "short\n"
+        "medium sized\n"
+        "verylongwordthatwontfitanywhere\n"
+        "end"
+    )
+
+    # All chunks should be stripped
+    for chunk in result:
+        assert chunk == chunk.strip()
+        assert not chunk.startswith(" ")
+        assert not chunk.endswith(" ")
