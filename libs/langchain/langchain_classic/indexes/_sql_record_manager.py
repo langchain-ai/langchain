@@ -144,6 +144,7 @@ class SQLRecordManager(RecordManager):
         self.engine = _engine
         self.dialect = _engine.dialect.name
         self.session_factory = _session_factory
+        self._last_time: float | None = None
 
     def create_schema(self) -> None:
         """Create the database schema."""
@@ -215,6 +216,9 @@ class SQLRecordManager(RecordManager):
             if not isinstance(dt, float):
                 msg = f"Unexpected type for datetime: {type(dt)}"
                 raise AssertionError(msg)  # noqa: TRY004
+            if self._last_time is not None:
+                dt = max(dt, self._last_time + 2e-6)
+            self._last_time = dt
             return dt
 
     async def aget_time(self) -> float:
@@ -248,6 +252,9 @@ class SQLRecordManager(RecordManager):
             if not isinstance(dt, float):
                 msg = f"Unexpected type for datetime: {type(dt)}"
                 raise AssertionError(msg)  # noqa: TRY004
+            if self._last_time is not None:
+                dt = max(dt, self._last_time + 2e-6)
+            self._last_time = dt
             return dt
 
     def update(
@@ -277,10 +284,13 @@ class SQLRecordManager(RecordManager):
         # data loss due to incorrectly deleting records.
         update_time = self.get_time()
 
-        if time_at_least and update_time < time_at_least:
+        if time_at_least is not None and update_time < time_at_least:
             # Safeguard against time sync issues
             msg = f"Time sync issue: {update_time} < {time_at_least}"
             raise AssertionError(msg)
+
+        if time_at_least is not None:
+            update_time = max(update_time, time_at_least) + 1e-6
 
         records_to_upsert = [
             {
@@ -359,10 +369,13 @@ class SQLRecordManager(RecordManager):
         # data loss due to incorrectly deleting records.
         update_time = await self.aget_time()
 
-        if time_at_least and update_time < time_at_least:
+        if time_at_least is not None and update_time < time_at_least:
             # Safeguard against time sync issues
             msg = f"Time sync issue: {update_time} < {time_at_least}"
             raise AssertionError(msg)
+
+        if time_at_least is not None:
+            update_time = max(update_time, time_at_least) + 1e-6
 
         records_to_upsert = [
             {

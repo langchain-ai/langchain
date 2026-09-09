@@ -251,6 +251,7 @@ class InMemoryRecordManager(RecordManager):
         # of {'group_id': group_id, 'updated_at': timestamp}
         self.records: dict[str, _Record] = {}
         self.namespace = namespace
+        self._last_time: float | None = None
 
     def create_schema(self) -> None:
         """In-memory schema creation is simply ensuring the structure is initialized."""
@@ -260,7 +261,11 @@ class InMemoryRecordManager(RecordManager):
 
     @override
     def get_time(self) -> float:
-        return time.time()
+        current_time = time.time()
+        if self._last_time is not None:
+            current_time = max(current_time, self._last_time + 2e-6)
+        self._last_time = current_time
+        return current_time
 
     @override
     async def aget_time(self) -> float:
@@ -296,12 +301,16 @@ class InMemoryRecordManager(RecordManager):
         if group_ids and len(keys) != len(group_ids):
             msg = "Length of keys must match length of group_ids"
             raise ValueError(msg)
+        current_time = self.get_time()
         for index, key in enumerate(keys):
             group_id = group_ids[index] if group_ids else None
-            if time_at_least and time_at_least > self.get_time():
+            if time_at_least is not None and time_at_least > current_time:
                 msg = "time_at_least must be in the past"
                 raise ValueError(msg)
-            self.records[key] = {"group_id": group_id, "updated_at": self.get_time()}
+            updated_at = current_time
+            if time_at_least is not None:
+                updated_at = max(current_time, time_at_least) + 1e-6
+            self.records[key] = {"group_id": group_id, "updated_at": updated_at}
 
     async def aupdate(
         self,
