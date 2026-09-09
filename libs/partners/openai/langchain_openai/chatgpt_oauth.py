@@ -36,6 +36,7 @@ import json
 import logging
 import os
 import secrets
+import tempfile
 import threading
 import time
 import urllib.parse
@@ -300,18 +301,22 @@ def _atomic_write_private_json(path: Path, data: dict[str, Any]) -> None:
     parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)
     _chmod_warn(parent, 0o700)
-    tmp = path.with_suffix(path.suffix + ".tmp")
     payload = json.dumps(data, indent=2, sort_keys=True)
-    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-    fd = os.open(tmp, flags, 0o600)
+    fd, tmp_name = tempfile.mkstemp(
+        dir=parent,
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+    )
+    tmp = Path(tmp_name)
     try:
+        _chmod_warn(tmp, 0o600)
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(payload)
-    except Exception:
+        tmp.replace(path)
+    except BaseException:
         with contextlib.suppress(OSError):
             tmp.unlink()
         raise
-    tmp.replace(path)
     _chmod_warn(path, 0o600)
 
 

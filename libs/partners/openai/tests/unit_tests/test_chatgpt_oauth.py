@@ -1029,3 +1029,26 @@ def test_file_lock_logs_warning_when_fcntl_unavailable(
     ):
         pass
     assert any("fcntl is unavailable" in rec.message for rec in caplog.records)
+
+
+def test_atomic_writes_use_unique_temporary_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Concurrent writes must not contend for a fixed temporary filename."""
+    created_paths: list[Path] = []
+    real_mkstemp = oauth_module.tempfile.mkstemp
+
+    def recording_mkstemp(*args: Any, **kwargs: Any) -> tuple[int, str]:
+        fd, name = real_mkstemp(*args, **kwargs)
+        created_paths.append(Path(name))
+        return fd, name
+
+    monkeypatch.setattr(oauth_module.tempfile, "mkstemp", recording_mkstemp)
+    target = tmp_path / "auth.json"
+
+    oauth_module._atomic_write_private_json(target, {"version": 1})
+    oauth_module._atomic_write_private_json(target, {"version": 2})
+
+    assert len(set(created_paths)) == 2
+    assert json.loads(target.read_text(encoding="utf-8")) == {"version": 2}
+    assert not any(path.exists() for path in created_paths)
