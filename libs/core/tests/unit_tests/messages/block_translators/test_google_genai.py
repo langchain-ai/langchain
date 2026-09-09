@@ -360,3 +360,14 @@ def test_grounding_citations_do_not_mutate_content() -> None:
 
     assert message.content == original_content
     assert "annotations" in blocks[0]
+
+
+def test_empty_image_url_is_preserved_as_non_standard() -> None:
+    """An empty image URL should remain available to downstream consumers."""
+    content = [{"type": "image_url", "image_url": {"url": ""}}]
+    message = AIMessage(
+        content=content,
+        response_metadata={"model_provider": "google_genai"},
+    )
+
+    assert message.content_blocks == [{"type": "non_standard", "value": content[0]}]

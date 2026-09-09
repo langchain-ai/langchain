@@ -445,10 +445,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                                 }
                             )
                 else:
-                    # This likely won't be reached according to previous implementations
                     converted_blocks.append({"type": "non_standard", "value": item})
-                    msg = "Image URL not a data URI; appending as non-standard block."
-                    raise ValueError(msg)
             elif item_type == "function_call":
                 # Handle Google GenAI function calls
                 function_call_block: types.ToolCall = {
