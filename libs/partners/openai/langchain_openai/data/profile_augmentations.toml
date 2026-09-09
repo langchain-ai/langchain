@@ -114,3 +114,6 @@ reasoning_effort_default = "medium"
 [overrides."gpt-5.6-terra"]
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "medium"
+
+[overrides."gpt-6-astra"]
+reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]

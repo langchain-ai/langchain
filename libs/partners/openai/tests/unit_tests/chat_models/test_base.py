@@ -206,6 +206,20 @@ def test_gpt_5_3_chat_latest_profile_has_no_reasoning_effort() -> None:
     assert "reasoning_effort_levels" not in model.profile
 
 
+def test_gpt_6_astra_reasoning_effort_levels() -> None:
+    model = ChatOpenAI(model="gpt-6-astra")
+
+    assert model.profile
+    assert model.profile["reasoning_effort_levels"] == [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+    ]
+    assert "reasoning_effort_default" not in model.profile
+
+
 def test_function_message_dict_to_function_message() -> None:
     content = json.dumps({"result": "Example #1"})
     name = "test_function"
