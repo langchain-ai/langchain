@@ -999,10 +999,11 @@ def _raise_if_authentication_error(e: TypeError) -> None:
         msg = (
             "Anthropic authentication failed: no API key or authorization "
             "credentials were provided. Set the ANTHROPIC_API_KEY environment "
-            "variable, pass api_key=... to ChatAnthropic, or provide "
-            'credentials via default_headers={"Authorization": ...}. If you '
-            "are routing through the LangSmith gateway, set LANGSMITH_GATEWAY "
-            "and LANGSMITH_GATEWAY_API_KEY."
+            "variable, pass api_key=..., auth_token=..., or credentials=... to "
+            "ChatAnthropic, or configure the anthropic SDK's own credential "
+            "resolution (a profile, or the workload identity federation "
+            "environment variables). If you are routing through the LangSmith "
+            "gateway, set LANGSMITH_GATEWAY and LANGSMITH_GATEWAY_API_KEY."
         )
         raise TypeError(msg) from e
 
@@ -1138,6 +1139,31 @@ class ChatAnthropic(BaseChatModel):
 
     If `LANGSMITH_GATEWAY` is enabled and the base URL points at the gateway,
     `LANGSMITH_GATEWAY_API_KEY` is used instead.
+    """
+
+    anthropic_auth_token: SecretStr | None = Field(default=None, alias="auth_token")
+    """Bearer token, forwarded to the anthropic client as `auth_token`.
+
+    For deployments that authenticate with an `Authorization: Bearer`
+    credential instead of an API key. Not read from the environment here: when
+    no explicit credential is configured on this model, the anthropic SDK's own
+    resolution reads `ANTHROPIC_AUTH_TOKEN` (see `credentials`).
+    """
+
+    credentials: Any | None = Field(default=None, exclude=True)
+    """An anthropic SDK credentials provider (`anthropic.lib.credentials`
+    `AccessTokenProvider`), forwarded verbatim to the client.
+
+    Enables authentication modes where no static API key exists, such as
+    workload identity federation, where the provider mints short-lived access
+    tokens on demand.
+
+    When none of `api_key`, `auth_token`, or `credentials` is set, client
+    construction defers to the anthropic SDK's own credential resolution:
+    `ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` environment variables,
+    profiles, and workload identity federation environment variables. If a
+    static credential is supplied alongside a provider, the SDK logs a warning
+    and the static credential wins.
     """
 
     anthropic_proxy: str | None = Field(
@@ -1332,6 +1358,7 @@ class ChatAnthropic(BaseChatModel):
         """Return a mapping of secret keys to environment variables."""
         return {
             "anthropic_api_key": "ANTHROPIC_API_KEY",
+            "anthropic_auth_token": "ANTHROPIC_AUTH_TOKEN",
             "mcp_servers": "ANTHROPIC_MCP_SERVERS",
         }
 
@@ -1449,11 +1476,21 @@ class ChatAnthropic(BaseChatModel):
             default_headers.update(self.default_headers)
 
         client_params: dict[str, Any] = {
-            "api_key": self.anthropic_api_key.get_secret_value(),
             "base_url": self.anthropic_api_url,
             "max_retries": self.max_retries,
             "default_headers": default_headers,
         }
+        # Forward credentials only when set. An unset api_key must not reach
+        # the client as an empty string: the SDK treats any non-None credential
+        # argument as explicit, which disables its own resolution (environment
+        # variables, profiles, workload identity federation) and shadows a
+        # `credentials` provider.
+        if api_key := self.anthropic_api_key.get_secret_value():
+            client_params["api_key"] = api_key
+        if self.anthropic_auth_token is not None:
+            client_params["auth_token"] = self.anthropic_auth_token.get_secret_value()
+        if self.credentials is not None:
+            client_params["credentials"] = self.credentials
         # value <= 0 indicates the param should be ignored. None is a meaningful value
         # for Anthropic client and treated differently than not specifying the param at
         # all.

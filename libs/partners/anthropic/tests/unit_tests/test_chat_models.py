@@ -287,6 +287,65 @@ def test_user_agent_header_in_client_params() -> None:
     assert params["default_headers"]["User-Agent"].startswith("langchain-anthropic/")
 
 
+def test_unset_api_key_is_omitted_from_client_params(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unset key defers to the anthropic SDK's own credential resolution.
+
+    Passing ``api_key=""`` counts as an explicit credential to the SDK, which
+    disables its resolution chain (environment variables, profiles, workload
+    identity federation) and shadows a ``credentials`` provider.
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    llm = ChatAnthropic(model=MODEL_NAME)
+    params = llm._client_params
+    assert "api_key" not in params
+    assert "auth_token" not in params
+    assert "credentials" not in params
+
+
+def test_explicit_and_env_api_keys_are_forwarded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="explicit-key")  # type: ignore[arg-type]
+    assert llm._client_params["api_key"] == "explicit-key"
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "env-key")
+    llm = ChatAnthropic(model=MODEL_NAME)
+    assert llm._client_params["api_key"] == "env-key"
+
+
+def test_auth_token_is_forwarded(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    llm = ChatAnthropic(model=MODEL_NAME, auth_token="bearer-token")  # type: ignore[call-arg]  # noqa: S106
+    params = llm._client_params
+    assert params["auth_token"] == "bearer-token"  # noqa: S105
+    assert "api_key" not in params
+    assert isinstance(llm.anthropic_auth_token, SecretStr)
+
+
+def test_credentials_provider_reaches_the_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    captured: dict[str, Any] = {}
+
+    class FakeClient:
+        def __init__(self, **kwargs: Any) -> None:
+            captured.update(kwargs)
+
+    provider = object()
+    llm = ChatAnthropic(model=MODEL_NAME, credentials=provider)
+    monkeypatch.setattr(anthropic, "Client", FakeClient)
+    _ = llm._client
+    assert captured["credentials"] is provider
+    assert "api_key" not in captured
+    assert "auth_token" not in captured
+
+
 @pytest.mark.parametrize("async_api", [True, False])
 def test_streaming_attribute_should_stream(async_api: bool) -> None:  # noqa: FBT001
     llm = ChatAnthropic(model=MODEL_NAME, streaming=True)
