@@ -355,7 +355,20 @@ class ChatDeepSeek(BaseChatOpenAI):
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-        for message in payload["messages"]:
+        input_messages = self._convert_input(input_).to_messages()
+        for input_message, message in zip(
+            input_messages, payload["messages"], strict=True
+        ):
+            if (
+                isinstance(input_message, AIMessage)
+                and (
+                    reasoning_content := input_message.additional_kwargs.get(
+                        "reasoning_content"
+                    )
+                )
+                is not None
+            ):
+                message["reasoning_content"] = reasoning_content
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
             elif message["role"] == "assistant" and isinstance(

@@ -259,6 +259,20 @@ class TestChatDeepSeekCustomUnit:
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
 
+    def test_get_request_payload_preserves_reasoning_content(self) -> None:
+        """Reasoning content should survive an assistant-message round trip."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        message = AIMessage(
+            content="",
+            additional_kwargs={"reasoning_content": "analysis from the model"},
+        )
+
+        payload = chat_model._get_request_payload([message])
+
+        assert payload["messages"][0]["reasoning_content"] == (
+            "analysis from the model"
+        )
+
 
 class SampleTool(PydanticBaseModel):
     """Sample tool schema for testing."""
