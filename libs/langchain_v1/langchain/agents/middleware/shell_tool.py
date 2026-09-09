@@ -130,12 +130,12 @@ class ShellSession:
         workspace: Path,
         policy: BaseExecutionPolicy,
         command: tuple[str, ...],
-        environment: Mapping[str, str],
+        environment: Mapping[str, str] | None,
     ) -> None:
         self._workspace = workspace
         self._policy = policy
         self._command = command
-        self._environment = dict(environment)
+        self._environment = dict(environment) if environment is not None else None
         self._process: subprocess.Popen[str] | None = None
         self._stdin: Any = None
         self._queue: queue.Queue[tuple[str, str | None]] = queue.Queue()
@@ -231,8 +231,6 @@ class ShellSession:
                 self._stdin.write(f"printf '{marker} %s\\n' $?\n")
                 self._stdin.flush()
             except (BrokenPipeError, OSError):
-                # The shell exited before we could write the marker command.
-                # This happens when commands like 'exit 1' terminate the shell.
                 return self._collect_output_after_exit(deadline)
 
             return self._collect_output(marker, deadline, timeout)
@@ -268,9 +266,6 @@ class ShellSession:
             if source == "stdout" and data.startswith(marker):
                 _, _, status = data.partition(" ")
                 exit_code = self._safe_int(status.strip())
-                # Drain any remaining stderr that may have arrived concurrently.
-                # The stderr reader thread runs independently, so output might
-                # still be in flight when the stdout marker arrives.
                 self._drain_remaining_stderr(collected, deadline)
                 break
 
@@ -325,24 +320,12 @@ class ShellSession:
         )
 
     def _collect_output_after_exit(self, deadline: float) -> CommandExecutionResult:
-        """Collect output after the shell exited unexpectedly.
-
-        Called when a `BrokenPipeError` occurs while writing to stdin, indicating the
-        shell process terminated (e.g., due to an 'exit' command).
-
-        Args:
-            deadline: Absolute time by which collection must complete.
-
-        Returns:
-            `CommandExecutionResult` with collected output and the process exit code.
-        """
         collected: list[str] = []
         total_lines = 0
         total_bytes = 0
         truncated_by_lines = False
         truncated_by_bytes = False
 
-        # Give reader threads a brief moment to enqueue any remaining output.
         drain_timeout = 0.1
         drain_deadline = min(time.monotonic() + drain_timeout, deadline)
 
@@ -356,7 +339,6 @@ class ShellSession:
                 break
 
             if data is None:
-                # EOF marker from a reader thread; continue draining.
                 continue
 
             total_lines += 1
@@ -382,7 +364,6 @@ class ShellSession:
             else:
                 collected.append(data)
 
-        # Get exit code from the terminated process.
         exit_code: int | None = None
         if self._process:
             exit_code = self._process.poll()
@@ -405,21 +386,12 @@ class ShellSession:
         if hasattr(os, "killpg"):
             try:
                 child_pgid = os.getpgid(self._process.pid)
-                # Only send a group kill when the child has a dedicated process group.
-                # If the child shares our group, killpg would terminate the caller too,
-                # so fall through to the direct kill below. That direct kill reaps only
-                # the immediate child, so any descendants it spawned may be orphaned.
-                # This applies to HostExecutionPolicy(create_process_group=False), the
-                # only policy that runs the shell in the caller's process group.
                 if child_pgid != os.getpgrp():
                     os.killpg(child_pgid, signal.SIGKILL)
                     return
             except ProcessLookupError:
-                # Process already gone; nothing left to kill.
                 return
             except OSError:
-                # e.g. EPERM while querying or signaling the group. Don't leak the
-                # child silently; fall through to a direct kill.
                 LOGGER.warning(
                     "Group kill failed; falling back to direct kill.",
                     exc_info=True,
@@ -428,11 +400,8 @@ class ShellSession:
         try:
             self._process.kill()
         except ProcessLookupError:
-            # Process exited between the check above and this kill; nothing to do.
             pass
         except OSError:
-            # The fallback kill can hit the same condition (e.g. EPERM) that routed us
-            # here. Log rather than let it escape the session shutdown path.
             LOGGER.warning(
                 "Direct kill failed.",
                 exc_info=True,
@@ -453,18 +422,6 @@ class ShellSession:
     def _drain_remaining_stderr(
         self, collected: list[str], deadline: float, drain_timeout: float = 0.05
     ) -> None:
-        """Drain any stderr output that arrived concurrently with the done marker.
-
-        The stdout and stderr reader threads run independently. When a command writes to
-        stderr just before exiting, the stderr output may still be in transit when the
-        done marker arrives on stdout. This method briefly polls the queue to capture
-        such output.
-
-        Args:
-            collected: The list to append collected stderr lines to.
-            deadline: The original command deadline (used as an upper bound).
-            drain_timeout: Maximum time to wait for additional stderr output.
-        """
         drain_deadline = min(time.monotonic() + drain_timeout, deadline)
         while True:
             remaining = drain_deadline - time.monotonic()
@@ -492,17 +449,8 @@ class _ShellToolInput(BaseModel):
     """Input schema for the persistent shell tool."""
 
     command: str | None = None
-    """The shell command to execute."""
-
     restart: bool | None = None
-    """Whether to restart the shell session."""
-
     runtime: Annotated[Any, SkipJsonSchema()] = None
-    """The runtime for the shell tool.
-
-    Included as a workaround at the moment bc args_schema doesn't work with
-    injected ToolRuntime.
-    """
 
     @model_validator(mode="after")
     def validate_payload(self) -> _ShellToolInput:
@@ -516,21 +464,7 @@ class _ShellToolInput(BaseModel):
 
 
 class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, ResponseT]):
-    """Middleware that registers a persistent shell tool for agents.
-
-    The middleware exposes a single long-lived shell session. Use the execution policy
-    to match your deployment's security posture:
-
-    * `HostExecutionPolicy` – full host access; best for trusted environments where the
-        agent already runs inside a container or VM that provides isolation.
-    * `CodexSandboxExecutionPolicy` – reuses the Codex CLI sandbox for additional
-        syscall/filesystem restrictions when the CLI is available.
-    * `DockerExecutionPolicy` – launches a separate Docker container for each agent run,
-        providing harder isolation, optional read-only root filesystems, and user
-        remapping.
-
-    When no policy is provided the middleware defaults to `HostExecutionPolicy`.
-    """
+    """Middleware that registers a persistent shell tool for agents."""
 
     state_schema = ShellToolState  # type: ignore[assignment]
 
@@ -547,42 +481,6 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         shell_command: Sequence[str] | str | None = None,
         env: Mapping[str, Any] | None = None,
     ) -> None:
-        """Initialize an instance of `ShellToolMiddleware`.
-
-        Args:
-            workspace_root: Base directory for the shell session.
-
-                If omitted, a temporary directory is created when the agent starts and
-                removed when it ends.
-            startup_commands: Optional commands executed sequentially after the session
-                starts.
-            shutdown_commands: Optional commands executed before the session shuts down.
-            execution_policy: Execution policy controlling timeouts, output limits, and
-                resource configuration.
-
-                Defaults to `HostExecutionPolicy` for native execution.
-            redaction_rules: Optional redaction rules to sanitize command output before
-                returning it to the model.
-
-                !!! warning
-                    Redaction rules are applied post execution and do not prevent
-                    exfiltration of secrets or sensitive data when using
-                    `HostExecutionPolicy`.
-
-            tool_description: Optional override for the registered shell tool
-                description.
-            tool_name: Name for the registered shell tool.
-
-                Defaults to `"shell"`.
-            shell_command: Optional shell executable (string) or argument sequence used
-                to launch the persistent session.
-
-                Defaults to an implementation-defined bash command.
-            env: Optional environment variables to supply to the shell session.
-
-                Values are coerced to strings before command execution. If omitted, the
-                session inherits the parent process environment.
-        """
         super().__init__()
         self._workspace_root = Path(workspace_root) if workspace_root else None
         self._tool_name = tool_name
@@ -599,7 +497,6 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         self._startup_commands = self._normalize_commands(startup_commands)
         self._shutdown_commands = self._normalize_commands(shutdown_commands)
 
-        # Create a proper tool that executes directly (no interception needed)
         description = tool_description or DEFAULT_TOOL_DESCRIPTION
 
         @tool(self._tool_name, args_schema=_ShellToolInput, description=description)
@@ -648,7 +545,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         normalized: dict[str, str] = {}
         for key, value in env.items():
             if not isinstance(key, str):
-                msg = "Environment variable names must be strings."  # type: ignore[unreachable]
+                msg = "Environment variable names must be strings."
                 raise TypeError(msg)
             normalized[key] = str(value)
         return normalized
@@ -657,38 +554,18 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
     def before_agent(
         self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Start the shell session and run startup commands.
-
-        Args:
-            state: The current agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Shell session resources to be stored in the agent state.
-        """
         resources = self._get_or_create_resources(state)
         return {"shell_session_resources": resources}
 
     async def abefore_agent(
         self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
-        """Async start the shell session and run startup commands.
-
-        Args:
-            state: The current agent state.
-            runtime: The runtime context.
-
-        Returns:
-            Shell session resources to be stored in the agent state.
-        """
         return await run_in_executor(None, self.before_agent, state, runtime)
 
     @override
     def after_agent(self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]) -> None:
-        """Run shutdown commands and release resources when an agent completes."""
         resources = state.get("shell_session_resources")
         if not isinstance(resources, _SessionResources):
-            # Resources were never created, nothing to clean up
             return
         try:
             self._run_shutdown_commands(resources.session)
@@ -698,27 +575,14 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
     async def aafter_agent(
         self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]
     ) -> None:
-        """Async run shutdown commands and release resources when an agent completes."""
         return self.after_agent(state, runtime)
 
     def _get_or_create_resources(self, state: ShellToolState[ResponseT]) -> _SessionResources:
-        """Get existing resources from state or create new ones if they don't exist.
-
-        This method enables resumability by checking if resources already exist in the state
-        (e.g., after an interrupt), and only creating new resources if they're not present.
-
-        Args:
-            state: The agent state which may contain shell session resources.
-
-        Returns:
-            Session resources, either retrieved from state or newly created.
-        """
         resources = state.get("shell_session_resources")
         if isinstance(resources, _SessionResources):
             return resources
 
         new_resources = self._create_resources()
-        # Cast needed to make state dict-like for mutation
         cast("dict[str, Any]", state)["shell_session_resources"] = new_resources
         return new_resources
 
@@ -736,7 +600,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
             workspace_path,
             self._execution_policy,
             self._shell_command,
-            self._environment or {},
+            self._environment,
         )
         try:
             session.start()
@@ -778,7 +642,6 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
                 )
 
     def _apply_redactions(self, content: str) -> tuple[str, dict[str, list[PIIMatch]]]:
-        """Apply configured redaction rules to command output."""
         matches_by_type: dict[str, list[PIIMatch]] = {}
         updated = content
         for rule in self._redaction_rules:
@@ -867,58 +730,28 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         if result.truncated_by_lines:
             sanitized_output = (
                 f"{sanitized_output.rstrip()}\n\n"
-                f"... Output truncated at {self._execution_policy.max_output_lines} lines "
-                f"(observed {result.total_lines})."
+                f"[Output truncated: exceeded maximum line limit of {self._execution_policy.max_output_lines}]"
             )
-        if result.truncated_by_bytes and self._execution_policy.max_output_bytes is not None:
+        elif result.truncated_by_bytes:
             sanitized_output = (
                 f"{sanitized_output.rstrip()}\n\n"
-                f"... Output truncated at {self._execution_policy.max_output_bytes} bytes "
-                f"(observed {result.total_bytes})."
+                f"[Output truncated: exceeded maximum byte limit]"
             )
-
-        if result.exit_code not in {0, None}:
-            sanitized_output = f"{sanitized_output.rstrip()}\n\nExit code: {result.exit_code}"
-            final_status: Literal["success", "error"] = "error"
-        else:
-            final_status = "success"
-
-        artifact = {
-            "timed_out": False,
-            "exit_code": result.exit_code,
-            "truncated_by_lines": result.truncated_by_lines,
-            "truncated_by_bytes": result.truncated_by_bytes,
-            "total_lines": result.total_lines,
-            "total_bytes": result.total_bytes,
-            "redaction_matches": matches,
-        }
 
         return self._format_tool_message(
             sanitized_output,
             tool_call_id,
-            status=final_status,
-            artifact=artifact,
+            status="success" if result.exit_code in {0, None} else "error",
+            artifact={
+                "timed_out": False,
+                "exit_code": result.exit_code,
+                "truncated_by_lines": result.truncated_by_lines,
+                "truncated_by_bytes": result.truncated_by_bytes,
+                "total_lines": result.total_lines,
+                "total_bytes": result.total_bytes,
+                **({"matches": matches} if matches else {}),
+            },
         )
-
-    @overload
-    def _format_tool_message(
-        self,
-        content: str,
-        tool_call_id: str,
-        *,
-        status: Literal["success", "error"],
-        artifact: dict[str, Any] | None = None,
-    ) -> ToolMessage: ...
-
-    @overload
-    def _format_tool_message(
-        self,
-        content: str,
-        tool_call_id: None,
-        *,
-        status: Literal["success", "error"],
-        artifact: dict[str, Any] | None = None,
-    ) -> str: ...
 
     def _format_tool_message(
         self,
@@ -928,22 +761,12 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, R
         status: Literal["success", "error"],
         artifact: dict[str, Any] | None = None,
     ) -> ToolMessage | str:
-        artifact = artifact or {}
+        artifact_data = artifact or {}
         if tool_call_id is None:
             return content
         return ToolMessage(
             content=content,
             tool_call_id=tool_call_id,
-            name=self._tool_name,
             status=status,
-            artifact=artifact,
+            artifact=artifact_data,
         )
-
-
-__all__ = [
-    "CodexSandboxExecutionPolicy",
-    "DockerExecutionPolicy",
-    "HostExecutionPolicy",
-    "RedactionRule",
-    "ShellToolMiddleware",
-]
