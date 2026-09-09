@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import gc
 import logging
 import os
 import signal
 import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import Any, cast
@@ -458,6 +460,27 @@ async def test_async_methods_delegate_to_sync(tmp_path: Path) -> None:
         await middleware.aafter_agent(state, Runtime())
     finally:
         pass
+
+
+async def test_aafter_agent_does_not_block_event_loop(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Synchronous cleanup should run outside the event-loop thread."""
+    middleware = ShellToolMiddleware(workspace_root=tmp_path / "workspace")
+    cleanup_started = threading.Event()
+    allow_cleanup = threading.Event()
+
+    def blocking_cleanup(_state: ShellToolState, _runtime: Runtime) -> None:
+        cleanup_started.set()
+        allow_cleanup.wait(timeout=2)
+
+    monkeypatch.setattr(middleware, "after_agent", blocking_cleanup)
+    task = asyncio.create_task(middleware.aafter_agent(_empty_state(), Runtime()))
+
+    started = await asyncio.to_thread(cleanup_started.wait, 1)
+    assert started
+    allow_cleanup.set()
+    await task
 
 
 def test_shell_middleware_resumable_after_interrupt(tmp_path: Path) -> None:
