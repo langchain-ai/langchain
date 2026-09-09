@@ -5,7 +5,7 @@ description: "Document the message abstraction, standardized content blocks for 
 tags: [messages, content-blocks, chat-models, streaming, multimodal, provider-adapters]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-08T08:27:09.597Z
 sources:
   - id: openwiki-source-77dc1fb726463969f9d53658
     resource: repo://libs/core/langchain_core/messages/ai.py
@@ -29,7 +29,7 @@ sources:
     resource: repo://libs/core/langchain_core/messages/tool.py
   - id: openwiki-source-498a9586e021b126ab8a8b42
     resource: repo://libs/core/langchain_core/messages/utils.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
 ---
 
 ## Overview
@@ -86,6 +86,9 @@ Represents the result of a tool invocation. Required fields:
 **`ChatMessage`** and **`FunctionMessage`**  
 Legacy/specialized message types. `ChatMessage` is generic with a `role` field; `FunctionMessage` represents deprecated function-calling format.
 
+**`RemoveMessage`** (`repo://libs/core/langchain_core/messages/modifier.py#L8-L33`)  
+A special message type for deleting other messages from conversation history. Takes only an `id` parameter (the message ID to remove) and no content. Used in agentic workflows to prune previous turns.
+
 ### Message Chunks and Streaming
 
 **Location**: `repo://libs/core/langchain_core/messages/base.py#L450-L500` (BaseMessageChunk)
@@ -93,14 +96,26 @@ Legacy/specialized message types. `ChatMessage` is generic with a `role` field; 
 During streaming, models emit `AIMessageChunk` objects incrementally. These chunks are designed to be **mergeable**: when combined with `+`, they accumulate content, merge tool call chunks by index, and aggregate token usage.
 
 **`AIMessageChunk`** fields:
-- **`tool_call_chunks`**: Partial tool call objects with nullable `name` and `args` (JSON string fragments).
-- **`chunk_position`**: `"last"` on the final chunk, signaling aggregation triggers (e.g., parsing completed tool call chunks into full `tool_calls`).
+- **`tool_call_chunks`**: Partial tool call objects with nullable `name` and `args` (JSON string fragments). Chunks with the same `index` are merged during aggregation.
+- **`chunk_position`**: `"last"` on the final chunk, signaling completion triggers (e.g., parsing completed tool call chunks into full `tool_calls`).
 
-Merging chunks with `+` invokes `add_ai_message_chunks()`, which:
-- Concatenates string content and merges list content blocks.
-- Combines `tool_call_chunks`, respecting their `index` field.
-- Aggregates token usage across chunks.
-- On the final chunk (`chunk_position="last"`), parses accumulated tool call chunks into complete `ToolCall` objects.
+**Chunk Aggregation via `add_ai_message_chunks()`** (`repo://libs/core/langchain_core/messages/ai.py#L652-L700`):
+
+When merging `AIMessageChunk` objects with `+` or via the function:
+1. **Content merging**: Concatenates string content; for list content, merges blocks preserving order.
+2. **Tool call chunk merging**: Combines `tool_call_chunks` by `index` field, concatenating `name` and `args` strings where both chunks share the same index.
+3. **Token usage aggregation**: Sums `usage_metadata` across chunks (input_tokens, output_tokens, per-category breakdowns).
+4. **Chunk position handling**: When `chunk_position="last"` (final chunk), accumulated `tool_call_chunks` are parsed via `parse_partial_json()` into complete `ToolCall` dicts.
+5. **Server-side tool call completion**: When `chunk_position="last"` and `output_version="v1"`, `server_tool_call_chunk` blocks are parsed into `server_tool_call` blocks with complete `args` objects.
+
+Example merge sequence:
+```python
+chunk1 = AIMessageChunk(tool_call_chunks=[ToolCallChunk(name="search", args='{"q":', index=0)])
+chunk2 = AIMessageChunk(tool_call_chunks=[ToolCallChunk(name=None, args='"hello"}', index=0)])
+final = chunk1 + chunk2
+# final.tool_call_chunks[0].args == '{"q": "hello"}'
+# After chunk_position="last", parses to: {"type": "tool_call", "name": "search", "args": {"q": "hello"}, ...}
+```
 
 ## Content Blocks: Unified Multimodal Representation
 
@@ -245,6 +260,26 @@ Support tool execution that happens server-side (e.g., code execution, web searc
 ```
 Holds provider-specific content that doesn't map to standard block types. Block translators attempt to parse non-standard blocks during the `content_blocks` property evaluation.
 
+### Content Block Type Summary
+
+LangChain defines the following standard block types:
+
+- **Text output**: `TextContentBlock` (`type: "text"`), `ReasoningContentBlock` (`type: "reasoning"` for chain-of-thought)
+- **Tool invocation**: `ToolCall` (`type: "tool_call"`), `ToolCallChunk` (`type: "tool_call_chunk"` for streaming), `InvalidToolCall` (`type: "invalid_tool_call"` for parsing failures)
+- **Server-side tools**: `ServerToolCall` (`type: "server_tool_call"`), `ServerToolCallChunk` (`type: "server_tool_call_chunk"`), `ServerToolResult` (`type: "server_tool_result"`)
+- **Multimodal data**: `ImageContentBlock` (`type: "image"`), `AudioContentBlock` (`type: "audio"`), `VideoContentBlock` (`type: "video"`), `FileContentBlock` (`type: "file"`), `PlainTextContentBlock` (`type: "text-plain"`)
+- **Provider-specific**: `NonStandardContentBlock` (`type: "non_standard"`)
+
+The union type `DataContentBlock` represents all multimodal data blocks and is defined as:
+```python
+DataContentBlock = (
+    ImageContentBlock | VideoContentBlock | AudioContentBlock | 
+    PlainTextContentBlock | FileContentBlock
+)
+```
+
+All block types support an optional `extras: dict[str, Any]` field for provider-specific metadata.
+
 ### Accessing Content Blocks
 
 **Location**: `repo://libs/core/langchain_core/messages/base.py#L199-L260`
@@ -259,10 +294,11 @@ def content_blocks(self) -> list[types.ContentBlock]:
 **Behavior**:
 1. If `content` is a string, wrap it as `{"type": "text", "text": content}`.
 2. Parse list items: strings become text blocks, dicts with known `type` values are kept as-is, others become `{"type": "non_standard", "value": ...}`.
-3. For `AIMessage`, check `response_metadata["model_provider"]` and use the provider's translator if registered (e.g., OpenAI, Anthropic).
-4. Fall back to best-effort parsing if no translator exists.
-5. For `AIMessage`, append `tool_calls` not already in content as tool call blocks.
-6. Extract reasoning from `additional_kwargs["reasoning_content"]` if present.
+3. Attempt to unpack non-standard blocks through a series of provider-specific parsers (v0 blocks, Chat Completions format, Anthropic format, Google GenAI format, Bedrock format).
+4. For `AIMessage`, check `response_metadata["model_provider"]` and use the provider's translator if registered (e.g., OpenAI, Anthropic).
+5. Fall back to best-effort parsing if no translator exists.
+6. For `AIMessage`, append `tool_calls` not already in content as tool call blocks.
+7. Extract reasoning from `additional_kwargs["reasoning_content"]` if present (inserted at start of blocks list).
 
 ## Block Translators: Adapting to Provider Formats
 
@@ -298,11 +334,19 @@ Handles Anthropic's format:
 - Converts `image` blocks with various source types to `ImageContentBlock`.
 - Populates `extras` with provider-specific fields like `cache_control`.
 
-**Google GenAI** and **Bedrock Converse**  
-Similar conversion logic for Google and AWS formats.
+**Google GenAI and Google VertexAI**  
+Convert Google's format blocks to standard types.
+
+**Bedrock (Classic) and Bedrock Converse**  
+Convert AWS Bedrock format blocks to standard types.
+
+**Groq**  
+Handles Groq's API response format.
 
 **LangChain v0 (Backward Compatibility)** (`repo://libs/core/langchain_core/messages/block_translators/langchain_v0.py`)  
-Parses legacy `source_type`-based blocks (e.g., `{"type": "image", "source_type": "url", "url": "..."}`) into v1 blocks.
+Parses legacy `source_type`-based blocks (e.g., `{"type": "image", "source_type": "url", "url": "..."}`) into v1 blocks. This ensures old code that constructs messages with v0 block format still works.
+
+**Auto-registration**: All translators are auto-initialized when the `block_translators` module loads via `_register_translators()`, which is called at module import time. External integrations can call `register_translator()` to add their own provider translators at runtime.
 
 ### Translation Flow in `content_blocks`
 
@@ -314,29 +358,49 @@ When `AIMessage.content_blocks` is accessed:
 
 ## Message Manipulation Utilities
 
-**Location**: `repo://libs/core/langchain_core/messages/utils.py#L1-L150` and beyond
+**Location**: `repo://libs/core/langchain_core/messages/utils.py`
 
 The utils module provides helpers for working with messages:
 
-**`get_buffer_string`**  
-Converts a sequence of messages to a single string for logging/debugging. Supports `format="prefix"` (role-prefixed) or `format="xml"` (XML tags with proper escaping). Multimodal content blocks are rendered with safe truncation and base64-encoded data omitted.
+**`get_buffer_string(messages, format="prefix")`** (`repo://libs/core/langchain_core/messages/utils.py#L287-L370`)  
+Converts a sequence of messages to a single string for logging, prompting, or debugging:
+- **`format="prefix"`** (default): Role-prefixed format like `"Human: ...\nAI: ..."`. Multimodal content blocks are skipped; only text and `text` blocks included.
+- **`format="xml"`**: XML-formatted output with `<message type="role">content</message>` structure. Supports safe rendering of complex multimodal content (images, audio, video, reasoning, tool calls) with proper character escaping. Base64-encoded data is skipped. Useful when message content may contain role-like prefixes that could cause ambiguity.
 
 **`convert_to_messages` and `convert_to_openai_messages`**  
 Coerce various input formats (dicts, strings, `MessageLikeRepresentation` union) into typed message objects.
 
-**`filter_messages`, `trim_messages`, `merge_message_runs`**  
-Filter, truncate, and deduplicate consecutive messages of the same type.
+**`filter_messages(messages, include_types=..., exclude_types=...)`**  
+Filter a sequence of messages by type, name, or ID.
 
-**`AnyMessage` Union Type**  
+**`trim_messages(messages, max_tokens=..., strategy="..."`**  
+Truncate a message sequence to fit within a token budget, using various strategies (keep start, keep end, keep first/last, etc.).
+
+**`merge_message_runs(messages)`**  
+Deduplicate and merge consecutive messages of the same type (e.g., multiple `AIMessage`s in a row).
+
+**`message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage`**  
+Convert a message chunk (or list of chunks) into a complete message.
+
+**`AnyMessage` Union Type** (`repo://libs/core/langchain_core/messages/utils.py#L86-L100`)  
 ```python
 AnyMessage = Annotated[
     Annotated[AIMessage, Tag(tag="ai")]
     | Annotated[HumanMessage, Tag(tag="human")]
-    | ... (all message and chunk types)
+    | Annotated[ChatMessage, Tag(tag="chat")]
+    | Annotated[SystemMessage, Tag(tag="system")]
+    | Annotated[FunctionMessage, Tag(tag="function")]
+    | Annotated[ToolMessage, Tag(tag="tool")]
+    | Annotated[AIMessageChunk, Tag(tag="AIMessageChunk")]
+    | Annotated[HumanMessageChunk, Tag(tag="HumanMessageChunk")]
+    | Annotated[ChatMessageChunk, Tag(tag="ChatMessageChunk")]
+    | Annotated[SystemMessageChunk, Tag(tag="SystemMessageChunk")]
+    | Annotated[FunctionMessageChunk, Tag(tag="FunctionMessageChunk")]
+    | Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
     Field(discriminator=Discriminator(_get_type)),
 ]
 ```
-A tagged union for Pydantic deserialization. The `type` field discriminates the correct message class during deserialization.
+A tagged union for Pydantic deserialization. Includes all message types and chunk variants. The `_get_type()` discriminator function extracts the `type` field from each message to route to the correct class during deserialization.
 
 ## Content Representation: String vs. Block List
 
@@ -367,14 +431,26 @@ AIMessage(
 )
 ```
 
-The `text` property extracts all text blocks:
+### The `text` Property
+
+**Location**: `repo://libs/core/langchain_core/messages/base.py#L262-L292`
+
+The `text` property returns a `TextAccessor` (string subclass) that extracts concatenated text from all text-type content blocks:
+
 ```python
 msg = AIMessage(content=[
     {"type": "text", "text": "Hello"},
     {"type": "image", "url": "..."},
+    {"type": "text", "text": " World"},
 ])
-print(msg.text)  # "Hello"
+print(msg.text)  # "Hello World"
 ```
+
+For backward compatibility, `TextAccessor` supports both property and method access:
+- **Modern** (v1.0+): `msg.text` (property access)
+- **Legacy** (pre-1.0): `msg.text()` (method call, deprecated, emits warning)
+
+Non-text blocks (images, audio, video, tool calls, reasoning) are automatically skipped when extracting text.
 
 ## Integration with Chat Models
 
@@ -407,13 +483,30 @@ The `extras` field in content blocks allows provider metadata without breaking s
 
 This approach maintains type safety while supporting emerging provider capabilities.
 
-## Backward Compatibility and Versioning
+## Message Versioning and Backward Compatibility
 
-LangChain v1.0 introduced the v1 content block format, superseding the v0 `source_type` style. The block translators handle both:
+LangChain v1.0 introduced the v1 content block format, superseding the v0 `source_type` style. The system handles both transparently:
 
-- **v0 blocks** (e.g., `{"type": "image", "source_type": "url", "url": "..."}`) are recognized and wrapped as non-standard blocks, then parsed by `_convert_v0_multimodal_input_to_v1()`.
-- **Provider-specific blocks** (e.g., OpenAI's `image_url` from raw API responses) are unpacked by provider translators.
-- **Output version tracking**: `response_metadata["output_version"] = "v1"` signals that content is already normalized, allowing short-circuit optimization.
+### v0 Block Recognition and Conversion
+
+**LangChain v0 blocks** (e.g., `{"type": "image", "source_type": "url", "url": "..."}`) are detected by the presence of a `source_type` field. During `content_blocks` normalization:
+1. v0 blocks are initially wrapped as `{"type": "non_standard", "value": ...}`.
+2. The `_convert_v0_multimodal_input_to_v1()` parser unpacks them into v1 format.
+3. The block is then processed as a standard v1 block.
+
+### Provider-Specific Block Unpacking
+
+Raw provider blocks (e.g., OpenAI's `{"type": "image_url", "image_url": {"url": "..."}}`) are wrapped as non-standard during initial parsing. Provider-specific translators (registered via `PROVIDER_TRANSLATORS`) then unpack them into standard types during `content_blocks` property access.
+
+### Output Version Tracking
+
+The `response_metadata["output_version"]` field signals content normalization status:
+- **`"v1"`**: Content is already normalized to v1 blocks (list of standard dicts). The `content_blocks` property returns content directly without re-parsing when:
+  - `output_version == "v1"` **and** `content` is a list (not a string)
+  - This short-circuit optimization avoids redundant parsing for model responses that already conform to v1 format.
+- **`None` or absent**: Content requires normalization via provider translators and fallback parsing.
+
+For `AIMessageChunk`, the v1 short-circuit is especially critical: even if `output_version="v1"`, if `content` is a string (e.g., text-only streaming), the content falls through to the provider translator to build `ContentBlock` dicts from `tool_call_chunks`.
 
 ## Example Workflows
 

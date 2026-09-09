@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7dc36350c57797f4e4cb42c4ca2523c8a6fda499d2176362da99865392c8721b",
+  "pageVersion": "sha256:e5d5db29dc79ac7fe95a9d3907d7332ac1504c3735f93a236d93039cebc2a687",
   "claims": [
     {
       "id": "claim_7425c73f5e4c4667b8babba66c3663a0",
@@ -87,12 +87,12 @@
       "statement": "LangChain monorepo uses uv for fast, deterministic dependency resolution; developers install dependencies via 'uv sync --all-groups' to get test, lint, type, and dev tools",
       "evidence": [
         {
-          "resource": "repo://libs/Makefile",
-          "version": "repo-file-v1:sha256:b703a85cdfdb60e98c41ec8261d9b78f0e7137105ee9da36b8cb919b2d35858b"
+          "resource": "repo://libs/Makefile#L1-L20",
+          "version": "repo-lines-v1:sha256:b703a85cdfdb60e98c41ec8261d9b78f0e7137105ee9da36b8cb919b2d35858b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyOGQwZmRiYTcwNTRmMzNiZTZkYTQ3MjU4OTFjMDA0OTIwMGZkNDNmNTAyMWY5N2Y2MmI4N2U4ZmNjMjBhZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OWEwZmIyMTcxZjliNTk0YmQyZjA5YzQwMmEwYjU1MmRiNjNiNTBlZDBhNzE1OGEzMWQzMGFlYWRhYjVjMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://libs/core/pyproject.toml",
-          "version": "repo-file-v1:sha256:325931f1a0825e70a5f7c0228e9a98e3bd6e2395ea23db6d7a0dffce70087408"
+          "resource": "repo://libs/core/pyproject.toml#L1-L40",
+          "version": "repo-lines-v1:sha256:5e1d9552eb39d47f9a70517f02b7414108ba8be8e9aabc8ef24645203c0f2a77:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NTY5OTQ2YWM5YmJlN2NiMmNkZWMzZjhiZWNmMzQzNzUwYzU4YjliMzIxZWMyMTk1YmZiYWFiMmFhOGM0YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYmFjZWMwM2JkMzE5ZWYyZjAyZWVkN2E3OTVmYzI5YmRkNTU4Mzc5NmUxNzFkYTY3YWM2M2Q1ODllYzZiMTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhYTRhNzU4ZTI4ZDhlZjI1MDA5ZDM1YjBhZTM1ZWU0ODRiMjc5OWVjNmIzMmRiMDY4YjFiNmJjYjg2OTQyNDkifQ"
         }
       ]
     },
@@ -183,6 +183,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-08T08:27:09.597Z"
   }
 }
