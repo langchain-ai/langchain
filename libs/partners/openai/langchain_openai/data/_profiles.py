@@ -1203,6 +1203,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
             "max",
         ],
+        "reasoning_effort_default": "low",
     },
     "gpt-image-1": {
         "name": "gpt-image-1",

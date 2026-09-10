@@ -117,3 +117,4 @@ reasoning_effort_default = "medium"
 
 [overrides."gpt-6-astra"]
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "low"

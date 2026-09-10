@@ -217,7 +217,7 @@ def test_gpt_6_astra_reasoning_effort_levels() -> None:
         "xhigh",
         "max",
     ]
-    assert "reasoning_effort_default" not in model.profile
+    assert model.profile["reasoning_effort_default"] == "low"
 
 
 def test_function_message_dict_to_function_message() -> None:
