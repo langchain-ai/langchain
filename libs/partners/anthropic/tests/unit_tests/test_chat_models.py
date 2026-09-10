@@ -3250,6 +3250,47 @@ def test_format_messages_preserves_nonempty_thinking_field() -> None:
     assert block["signature"] == "sig_xyz"
 
 
+def test_v1_invalid_tool_call_retains_tool_use_for_error_result() -> None:
+    """An error result must retain its Anthropic tool-use block on replay."""
+    tool_call_id = "toolu_invalid"
+    invalid_tool_call = {
+        "type": "invalid_tool_call",
+        "id": tool_call_id,
+        "name": "get_weather",
+        "args": '{"location":',
+        "error": "Failed to parse tool call arguments as JSON",
+    }
+    ai_message = AIMessage(
+        content=[invalid_tool_call],
+        invalid_tool_calls=[invalid_tool_call],
+        response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+    )
+    tool_message = ToolMessage(
+        "Tool call arguments were malformed.",
+        tool_call_id=tool_call_id,
+        status="error",
+    )
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    payload = llm._get_request_payload(
+        [HumanMessage("Check the weather"), ai_message, tool_message]
+    )
+
+    assert payload["messages"][1] == {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "tool_use",
+                "id": tool_call_id,
+                "name": "get_weather",
+                "input": {},
+            }
+        ],
+    }
+    assert payload["messages"][2]["content"][0]["tool_use_id"] == tool_call_id
+    assert payload["messages"][2]["content"][0]["is_error"] is True
+
+
 def test_strict_tool_use() -> None:
     model = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
