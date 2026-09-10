@@ -312,3 +312,59 @@ async def test_markdown_list_async() -> None:
         assert [
             a async for a in parser.atransform(aiter_from_iter([text]))
         ] == expectedlist
+
+
+def test_streaming_quoted_field_across_chunk_boundary() -> None:
+    """Streaming must produce the same fields as non-streaming for a quoted field
+    that contains a comma and is split across chunk boundaries (#40360).
+
+    Before the fix, the streaming fallback stored the decoded last part (e.g.
+    ``beta,``) as the next buffer instead of the raw unprocessed text (e.g.
+    `` "beta,``), so the opening quote was lost and subsequent CSV parsing
+    produced wrong field boundaries.
+    """
+    parser = CommaSeparatedListOutputParser()
+
+    # Quoted field "beta, gamma" split across two chunks
+    chunks = ['alpha, "beta,', ' gamma", delta']
+    full_text = "".join(chunks)
+
+    # Establish the correct parse result via non-streaming baseline
+    expected = parser.parse(full_text)
+    assert expected == ["alpha", "beta, gamma", "delta"]
+    expected_streamed = [[item] for item in expected]
+
+    assert list(parser.transform(iter(chunks))) == expected_streamed
+    assert add(parser.transform(iter(chunks))) == expected
+
+    # Doubled quote inside a quoted field, split across chunks
+    chunks2 = ['x, "it''s a test,', ' value", z']
+    full_text2 = "".join(chunks2)
+    expected2 = parser.parse(full_text2)
+    assert list(parser.transform(iter(chunks2))) == [[item] for item in expected2]
+
+    # Field spanning three chunks
+    chunks3 = ['"start,', ' middle,', ' end", last']
+    full_text3 = "".join(chunks3)
+    expected3 = parser.parse(full_text3)
+    assert expected3 == ["start, middle, end", "last"]
+    assert list(parser.transform(iter(chunks3))) == [[item] for item in expected3]
+
+
+import pytest  # noqa: E402
+
+
+@pytest.mark.asyncio
+async def test_streaming_quoted_field_across_chunk_boundary_async() -> None:
+    """Async streaming must also correctly handle quoted fields split across chunks."""
+    parser = CommaSeparatedListOutputParser()
+
+    chunks = ['alpha, "beta,', ' gamma", delta']
+    full_text = "".join(chunks)
+    expected = parser.parse(full_text)
+    assert expected == ["alpha", "beta, gamma", "delta"]
+    expected_streamed = [[item] for item in expected]
+
+    result = [a async for a in parser.atransform(aiter_from_iter(iter(chunks)))]
+    assert result == expected_streamed
+    assert await aadd(parser.atransform(aiter_from_iter(iter(chunks)))) == expected

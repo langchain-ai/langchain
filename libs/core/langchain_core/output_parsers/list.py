@@ -20,6 +20,44 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
+def _raw_after_n_commas(text: str, n: int) -> str:
+    """Return the raw text after the nth unquoted comma.
+
+    Tracks CSV quote state so that a quoted field containing commas is treated as
+    a single field, matching the behaviour of csv.reader.  Used by the streaming
+    fallback in ListOutputParser to preserve raw (un-decoded) quote context when
+    re-buffering a partial chunk — prevents a quoted field from losing its opening
+    quote and being mis-parsed on the next iteration.
+
+    Args:
+        text: Raw CSV text to scan.
+        n: Number of unquoted commas to skip.
+
+    Returns:
+        The substring starting immediately after the nth unquoted comma, or the
+        full *text* when fewer than *n* unquoted commas are found.
+    """
+    in_quote = False
+    commas_seen = 0
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if c == '"':
+            if in_quote:
+                if i + 1 < len(text) and text[i + 1] == '"':
+                    i += 1  # skip doubled (escaped) quote
+                else:
+                    in_quote = False
+            else:
+                in_quote = True
+        elif c == "," and not in_quote:
+            commas_seen += 1
+            if commas_seen == n:
+                return text[i + 1 :]
+        i += 1
+    return text
+
+
 def droplastn(
     iter: Iterator[T],  # noqa: A002
     n: int,
@@ -94,9 +132,14 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 parts = self.parse(buffer)
                 # Yield only complete parts
                 if len(parts) > 1:
-                    for part in parts[:-1]:
+                    n_complete = len(parts) - 1
+                    for part in parts[:n_complete]:
                         yield [part]
-                    buffer = parts[-1]
+                    # Keep the raw (un-decoded) suffix so that an incomplete
+                    # quoted field retains its opening quote across chunk
+                    # boundaries; using the decoded parts[-1] would lose that
+                    # quote and corrupt subsequent CSV parsing.
+                    buffer = _raw_after_n_commas(buffer, n_complete)
         # Yield the last part
         for part in self.parse(buffer):
             yield [part]
@@ -128,9 +171,10 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 parts = self.parse(buffer)
                 # Yield only complete parts
                 if len(parts) > 1:
-                    for part in parts[:-1]:
+                    n_complete = len(parts) - 1
+                    for part in parts[:n_complete]:
                         yield [part]
-                    buffer = parts[-1]
+                    buffer = _raw_after_n_commas(buffer, n_complete)
         # Yield the last part
         for part in self.parse(buffer):
             yield [part]
