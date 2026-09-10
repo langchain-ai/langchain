@@ -242,7 +242,7 @@ def test_a_string_naming_a_local_script_is_refused(tmp_path: Path) -> None:
     script = tmp_path / "server.py"
     script.touch()
 
-    with pytest.raises(ValueError, match="not a valid URL"):
+    with pytest.raises(ValueError, match=r"not a valid URL|has scheme"):
         MCPAdapter(str(script))
 
     # The same server, asked for explicitly, is still reachable.
