@@ -172,6 +172,44 @@ def _calculate_hash(
     raise ValueError(msg)
 
 
+def _get_document_hashes(
+    document: Document,
+    *,
+    key_encoder: Callable[[Document], str]
+    | Literal["sha1", "sha256", "sha512", "blake2b"],
+) -> tuple[str, str, str]:
+    """Calculate (content_hash, metadata_hash, combined_hash) of the document.
+
+    Args:
+        document: Document to hash.
+        key_encoder: Hashing algorithm to use for hashing the document.
+
+    Raises:
+        ValueError: If the metadata cannot be serialized using json.
+
+    Returns:
+        Tuple of (content_hash, metadata_hash, combined_hash).
+    """
+    metadata: dict[str, Any] = dict(document.metadata or {})
+
+    if callable(key_encoder):
+        hash_ = key_encoder(document)
+        return hash_, "", hash_
+
+    content_hash = _calculate_hash(document.page_content, algorithm=key_encoder)
+    try:
+        serialized_meta = json.dumps(metadata, sort_keys=True)
+    except Exception as e:
+        msg = (
+            f"Failed to hash metadata: {e}. "
+            f"Please use a dict that can be serialized using json."
+        )
+        raise ValueError(msg) from e
+    metadata_hash = _calculate_hash(serialized_meta, algorithm=key_encoder)
+    combined_hash = _calculate_hash(content_hash + metadata_hash, algorithm=key_encoder)
+    return content_hash, metadata_hash, combined_hash
+
+
 def _get_document_with_hash(
     document: Document,
     *,
@@ -203,28 +241,11 @@ def _get_document_with_hash(
     Returns:
         Document with a unique identifier based on the hash of the content and metadata.
     """
-    metadata: dict[str, Any] = dict(document.metadata or {})
-
-    if callable(key_encoder):
-        # If key_encoder is a callable, we use it to generate the hash.
-        hash_ = key_encoder(document)
-    else:
-        # The hashes are calculated separate for the content and the metadata.
-        content_hash = _calculate_hash(document.page_content, algorithm=key_encoder)
-        try:
-            serialized_meta = json.dumps(metadata, sort_keys=True)
-        except Exception as e:
-            msg = (
-                f"Failed to hash metadata: {e}. "
-                f"Please use a dict that can be serialized using json."
-            )
-            raise ValueError(msg) from e
-        metadata_hash = _calculate_hash(serialized_meta, algorithm=key_encoder)
-        hash_ = _calculate_hash(content_hash + metadata_hash, algorithm=key_encoder)
+    _, _, combined_hash = _get_document_hashes(document, key_encoder=key_encoder)
 
     return Document(
         # Assign a unique identifier based on the hash.
-        id=hash_,
+        id=combined_hash,
         page_content=document.page_content,
         metadata=document.metadata,
     )
@@ -306,6 +327,7 @@ def index(
     key_encoder: Literal["sha1", "sha256", "sha512", "blake2b"]
     | Callable[[Document], str] = "sha1",
     upsert_kwargs: dict[str, Any] | None = None,
+    metadata_update: bool = False,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -388,6 +410,11 @@ def index(
             For example, you can use this to specify a custom vector_field:
             upsert_kwargs={"vector_field": "embedding"}
             !!! version-added "Added in `langchain-core` 0.3.10"
+        metadata_update: If True, documents whose content is unchanged will have
+            their metadata updated in-place without re-embedding or re-upserting
+            vectors. Documents with unchanged content and metadata are skipped.
+            Defaults to False.
+            !!! version-added "Added in `langchain-core` 1.6.3"
 
     Returns:
         Indexing result which contains information about how many documents
@@ -440,8 +467,26 @@ def index(
             # implementation which just raises a NotImplementedError
             msg = "Vectorstore has not implemented the delete method"
             raise ValueError(msg)
+
+        if (
+            metadata_update
+            and type(destination).update_metadata == VectorStore.update_metadata
+        ):
+            msg = (
+                f"Vectorstore {destination} has not implemented "
+                "the update_metadata method required when metadata_update=True."
+            )
+            raise ValueError(msg)
     elif isinstance(destination, DocumentIndex):
-        pass
+        if (
+            metadata_update
+            and type(destination).update_metadata == DocumentIndex.update_metadata
+        ):
+            msg = (
+                f"DocumentIndex {destination} has not implemented "
+                "the update_metadata method required when metadata_update=True."
+            )
+            raise ValueError(msg)
     else:
         msg = (  # type: ignore[unreachable]
             f"Vectorstore should be either a VectorStore or a DocumentIndex. "
@@ -471,90 +516,236 @@ def index(
         # Track original batch size before deduplication
         original_batch_size = len(doc_batch)
 
-        hashed_docs = list(
-            _deduplicate_in_order(
-                [
-                    _get_document_with_hash(doc, key_encoder=key_encoder)
-                    for doc in doc_batch
-                ]
+        if not metadata_update:
+            hashed_docs = list(
+                _deduplicate_in_order(
+                    [
+                        _get_document_with_hash(doc, key_encoder=key_encoder)
+                        for doc in doc_batch
+                    ]
+                )
             )
-        )
-        # Count documents removed by within-batch deduplication
-        num_skipped += original_batch_size - len(hashed_docs)
+            # Count documents removed by within-batch deduplication
+            num_skipped += original_batch_size - len(hashed_docs)
 
-        source_ids: Sequence[str | None] = [
-            source_id_assigner(hashed_doc) for hashed_doc in hashed_docs
-        ]
+            source_ids: Sequence[str | None] = [
+                source_id_assigner(hashed_doc) for hashed_doc in hashed_docs
+            ]
 
-        if cleanup in {"incremental", "scoped_full"}:
-            # Source IDs are required.
-            for source_id, hashed_doc in zip(source_ids, hashed_docs, strict=False):
-                if source_id is None:
-                    msg = (
-                        f"Source IDs are required when cleanup mode is "
-                        f"incremental or scoped_full. "
-                        f"Document that starts with "
-                        f"content: {hashed_doc.page_content[:100]} "
-                        f"was not assigned as source id."
+            if cleanup in {"incremental", "scoped_full"}:
+                # Source IDs are required.
+                for source_id, hashed_doc in zip(source_ids, hashed_docs, strict=False):
+                    if source_id is None:
+                        msg = (
+                            f"Source IDs are required when cleanup mode is "
+                            f"incremental or scoped_full. "
+                            f"Document that starts with "
+                            f"content: {hashed_doc.page_content[:100]} "
+                            f"was not assigned as source id."
+                        )
+                        raise ValueError(msg)
+                    if cleanup == "scoped_full":
+                        scoped_full_cleanup_source_ids.add(source_id)
+                # Source IDs cannot be None after for loop above.
+                source_ids = cast("Sequence[str]", source_ids)
+
+            exists_batch = record_manager.exists(
+                cast("Sequence[str]", [doc.id for doc in hashed_docs])
+            )
+
+            # Filter out documents that already exist in the record store.
+            uids = []
+            docs_to_index = []
+            uids_to_refresh = []
+            seen_docs: set[str] = set()
+            for hashed_doc, doc_exists in zip(hashed_docs, exists_batch, strict=False):
+                hashed_id = cast("str", hashed_doc.id)
+                if doc_exists:
+                    if force_update:
+                        seen_docs.add(hashed_id)
+                    else:
+                        uids_to_refresh.append(hashed_id)
+                        continue
+                uids.append(hashed_id)
+                docs_to_index.append(hashed_doc)
+
+            # Update refresh timestamp
+            if uids_to_refresh:
+                record_manager.update(uids_to_refresh, time_at_least=index_start_dt)
+                num_skipped += len(uids_to_refresh)
+
+            # Be pessimistic and assume that all vector store write will fail.
+            # First write to vector store
+            if docs_to_index:
+                if isinstance(destination, VectorStore):
+                    destination.add_documents(
+                        docs_to_index,
+                        ids=uids,
+                        batch_size=batch_size,
+                        **(upsert_kwargs or {}),
                     )
-                    raise ValueError(msg)
-                if cleanup == "scoped_full":
-                    scoped_full_cleanup_source_ids.add(source_id)
-            # Source IDs cannot be None after for loop above.
-            source_ids = cast("Sequence[str]", source_ids)
+                elif isinstance(destination, DocumentIndex):
+                    destination.upsert(
+                        docs_to_index,
+                        **(upsert_kwargs or {}),
+                    )
 
-        exists_batch = record_manager.exists(
-            cast("Sequence[str]", [doc.id for doc in hashed_docs])
-        )
+                num_added += len(docs_to_index) - len(seen_docs)
+                num_updated += len(seen_docs)
 
-        # Filter out documents that already exist in the record store.
-        uids = []
-        docs_to_index = []
-        uids_to_refresh = []
-        seen_docs: set[str] = set()
-        for hashed_doc, doc_exists in zip(hashed_docs, exists_batch, strict=False):
-            hashed_id = cast("str", hashed_doc.id)
-            if doc_exists:
-                if force_update:
-                    seen_docs.add(hashed_id)
+            # And only then update the record store.
+            # Update ALL records, even if they already exist since we want to refresh
+            # their timestamp.
+            record_manager.update(
+                cast("Sequence[str]", [doc.id for doc in hashed_docs]),
+                group_ids=source_ids,
+                time_at_least=index_start_dt,
+            )
+        else:
+            # Prepare documents with stable IDs and compute metadata hashes
+            batch_docs: list[Document] = []
+            batch_meta_hashes: list[str] = []
+            for doc in doc_batch:
+                s_id = source_id_assigner(doc)
+                c_hash, m_hash, _ = _get_document_hashes(doc, key_encoder=key_encoder)
+                if doc.id is not None:
+                    doc_id = doc.id
+                elif s_id is not None:
+                    doc_id = _calculate_hash(f"{s_id}:{c_hash}", algorithm=key_encoder)
                 else:
-                    uids_to_refresh.append(hashed_id)
-                    continue
-            uids.append(hashed_id)
-            docs_to_index.append(hashed_doc)
+                    doc_id = c_hash
 
-        # Update refresh timestamp
-        if uids_to_refresh:
-            record_manager.update(uids_to_refresh, time_at_least=index_start_dt)
-            num_skipped += len(uids_to_refresh)
-
-        # Be pessimistic and assume that all vector store write will fail.
-        # First write to vector store
-        if docs_to_index:
-            if isinstance(destination, VectorStore):
-                destination.add_documents(
-                    docs_to_index,
-                    ids=uids,
-                    batch_size=batch_size,
-                    **(upsert_kwargs or {}),
+                batch_docs.append(
+                    Document(
+                        id=doc_id,
+                        page_content=doc.page_content,
+                        metadata=doc.metadata,
+                    )
                 )
-            elif isinstance(destination, DocumentIndex):
-                destination.upsert(
-                    docs_to_index,
-                    **(upsert_kwargs or {}),
+                batch_meta_hashes.append(m_hash)
+
+            # Deduplicate in order by doc.id, tracking metadata hash
+            seen_ids: set[str] = set()
+            hashed_docs = []
+            meta_hashes: dict[str, str] = {}
+            for doc, m_hash in zip(batch_docs, batch_meta_hashes, strict=False):
+                doc_id = cast("str", doc.id)
+                if doc_id not in seen_ids:
+                    seen_ids.add(doc_id)
+                    hashed_docs.append(doc)
+                    meta_hashes[doc_id] = m_hash
+
+            num_skipped += original_batch_size - len(hashed_docs)
+
+            source_ids = [source_id_assigner(doc) for doc in hashed_docs]
+
+            if cleanup in {"incremental", "scoped_full"}:
+                for source_id, hashed_doc in zip(source_ids, hashed_docs, strict=False):
+                    if source_id is None:
+                        msg = (
+                            f"Source IDs are required when cleanup mode is "
+                            f"incremental or scoped_full. "
+                            f"Document that starts with "
+                            f"content: {hashed_doc.page_content[:100]} "
+                            f"was not assigned as source id."
+                        )
+                        raise ValueError(msg)
+                    if cleanup == "scoped_full":
+                        scoped_full_cleanup_source_ids.add(source_id)
+                source_ids = cast("Sequence[str]", source_ids)
+
+            batch_ids = [cast("str", doc.id) for doc in hashed_docs]
+            exists_batch = record_manager.exists(batch_ids)
+
+            # Check which existing documents have matching metadata
+            existing_ids = [
+                doc_id
+                for doc_id, exists in zip(batch_ids, exists_batch, strict=False)
+                if exists
+            ]
+            existing_meta_hashes: dict[str, str | None] = (
+                dict(
+                    zip(
+                        existing_ids,
+                        record_manager.get_metadata_hashes(existing_ids),
+                        strict=False,
+                    )
                 )
+                if existing_ids and not force_update
+                else {}
+            )
 
-            num_added += len(docs_to_index) - len(seen_docs)
-            num_updated += len(seen_docs)
+            uids = []
+            docs_to_index = []
+            uids_to_refresh = []
+            uids_to_update_metadata: list[str] = []
+            metadatas_to_update: list[dict[str, Any]] = []
+            seen_docs = set()
 
-        # And only then update the record store.
-        # Update ALL records, even if they already exist since we want to refresh
-        # their timestamp.
-        record_manager.update(
-            cast("Sequence[str]", [doc.id for doc in hashed_docs]),
-            group_ids=source_ids,
-            time_at_least=index_start_dt,
-        )
+            for hashed_doc, doc_exists in zip(hashed_docs, exists_batch, strict=False):
+                hashed_id = cast("str", hashed_doc.id)
+                if doc_exists:
+                    if force_update:
+                        seen_docs.add(hashed_id)
+                    else:
+                        stored_m_hash = existing_meta_hashes.get(hashed_id)
+                        curr_m_hash = meta_hashes[hashed_id]
+                        if stored_m_hash is not None and stored_m_hash == curr_m_hash:
+                            uids_to_refresh.append(hashed_id)
+                            continue
+                        uids_to_update_metadata.append(hashed_id)
+                        metadatas_to_update.append(hashed_doc.metadata)
+                        continue
+                uids.append(hashed_id)
+                docs_to_index.append(hashed_doc)
+
+            # Update refresh timestamp
+            if uids_to_refresh:
+                record_manager.update(uids_to_refresh, time_at_least=index_start_dt)
+                num_skipped += len(uids_to_refresh)
+
+            # Perform in-place metadata updates without re-embedding
+            if uids_to_update_metadata:
+                destination.update_metadata(
+                    uids_to_update_metadata,
+                    metadatas_to_update,
+                )
+                meta_hashes_to_update = [
+                    meta_hashes[uid] for uid in uids_to_update_metadata
+                ]
+                record_manager.update(
+                    uids_to_update_metadata,
+                    time_at_least=index_start_dt,
+                    metadata_hashes=meta_hashes_to_update,
+                )
+                num_updated += len(uids_to_update_metadata)
+
+            # First write to vector store
+            if docs_to_index:
+                if isinstance(destination, VectorStore):
+                    destination.add_documents(
+                        docs_to_index,
+                        ids=uids,
+                        batch_size=batch_size,
+                        **(upsert_kwargs or {}),
+                    )
+                elif isinstance(destination, DocumentIndex):
+                    destination.upsert(
+                        docs_to_index,
+                        **(upsert_kwargs or {}),
+                    )
+
+                num_added += len(docs_to_index) - len(seen_docs)
+                num_updated += len(seen_docs)
+
+            # And only then update the record store.
+            batch_m_hashes = [meta_hashes[cast("str", d.id)] for d in hashed_docs]
+            record_manager.update(
+                cast("Sequence[str]", [doc.id for doc in hashed_docs]),
+                group_ids=source_ids,
+                time_at_least=index_start_dt,
+                metadata_hashes=batch_m_hashes,
+            )
 
         # If source IDs are provided, we can do the deletion incrementally!
         if cleanup == "incremental":
@@ -645,6 +836,7 @@ async def aindex(
     key_encoder: Literal["sha1", "sha256", "sha512", "blake2b"]
     | Callable[[Document], str] = "sha1",
     upsert_kwargs: dict[str, Any] | None = None,
+    metadata_update: bool = False,
 ) -> IndexingResult:
     """Async index data from the loader into the vector store.
 
@@ -727,6 +919,11 @@ async def aindex(
             For example, you can use this to specify a custom vector_field:
             upsert_kwargs={"vector_field": "embedding"}
             !!! version-added "Added in `langchain-core` 0.3.10"
+        metadata_update: If True, documents whose content is unchanged will have
+            their metadata updated in-place without re-embedding or re-upserting
+            vectors. Documents with unchanged content and metadata are skipped.
+            Defaults to False.
+            !!! version-added "Added in `langchain-core` 1.6.3"
 
     Returns:
         Indexing result which contains information about how many documents
@@ -765,7 +962,6 @@ async def aindex(
     # If it's a vectorstore, let's check if it has the required methods.
     if isinstance(destination, VectorStore):
         # Check that the Vectorstore has required methods implemented
-        # Check that the Vectorstore has required methods implemented
         methods = ["adelete", "aadd_documents"]
 
         for method in methods:
@@ -783,8 +979,30 @@ async def aindex(
             # methods implementation which just raises a NotImplementedError
             msg = "Vectorstore has not implemented the adelete or delete method"
             raise ValueError(msg)
+
+        if (
+            metadata_update
+            and type(destination).aupdate_metadata == VectorStore.aupdate_metadata
+            and type(destination).update_metadata == VectorStore.update_metadata
+        ):
+            msg = (
+                f"Vectorstore {destination} has not implemented "
+                "the aupdate_metadata or update_metadata method required "
+                "when metadata_update=True."
+            )
+            raise ValueError(msg)
     elif isinstance(destination, DocumentIndex):
-        pass
+        if (
+            metadata_update
+            and type(destination).aupdate_metadata == DocumentIndex.aupdate_metadata
+            and type(destination).update_metadata == DocumentIndex.update_metadata
+        ):
+            msg = (
+                f"DocumentIndex {destination} has not implemented "
+                "the aupdate_metadata or update_metadata method required "
+                "when metadata_update=True."
+            )
+            raise ValueError(msg)
     else:
         msg = (  # type: ignore[unreachable]
             f"Vectorstore should be either a VectorStore or a DocumentIndex. "
@@ -821,89 +1039,234 @@ async def aindex(
         # Track original batch size before deduplication
         original_batch_size = len(doc_batch)
 
-        hashed_docs = list(
-            _deduplicate_in_order(
-                [
-                    _get_document_with_hash(doc, key_encoder=key_encoder)
-                    for doc in doc_batch
-                ]
+        if not metadata_update:
+            hashed_docs = list(
+                _deduplicate_in_order(
+                    [
+                        _get_document_with_hash(doc, key_encoder=key_encoder)
+                        for doc in doc_batch
+                    ]
+                )
             )
-        )
-        # Count documents removed by within-batch deduplication
-        num_skipped += original_batch_size - len(hashed_docs)
+            # Count documents removed by within-batch deduplication
+            num_skipped += original_batch_size - len(hashed_docs)
 
-        source_ids: Sequence[str | None] = [
-            source_id_assigner(doc) for doc in hashed_docs
-        ]
+            source_ids: Sequence[str | None] = [
+                source_id_assigner(doc) for doc in hashed_docs
+            ]
 
-        if cleanup in {"incremental", "scoped_full"}:
-            # If the cleanup mode is incremental, source IDs are required.
-            for source_id, hashed_doc in zip(source_ids, hashed_docs, strict=False):
-                if source_id is None:
-                    msg = (
-                        f"Source IDs are required when cleanup mode is "
-                        f"incremental or scoped_full. "
-                        f"Document that starts with "
-                        f"content: {hashed_doc.page_content[:100]} "
-                        f"was not assigned as source id."
+            if cleanup in {"incremental", "scoped_full"}:
+                # If the cleanup mode is incremental, source IDs are required.
+                for source_id, hashed_doc in zip(source_ids, hashed_docs, strict=False):
+                    if source_id is None:
+                        msg = (
+                            f"Source IDs are required when cleanup mode is "
+                            f"incremental or scoped_full. "
+                            f"Document that starts with "
+                            f"content: {hashed_doc.page_content[:100]} "
+                            f"was not assigned as source id."
+                        )
+                        raise ValueError(msg)
+                    if cleanup == "scoped_full":
+                        scoped_full_cleanup_source_ids.add(source_id)
+                # Source IDs cannot be None after for loop above.
+                source_ids = cast("Sequence[str]", source_ids)
+
+            exists_batch = await record_manager.aexists(
+                cast("Sequence[str]", [doc.id for doc in hashed_docs])
+            )
+
+            # Filter out documents that already exist in the record store.
+            uids: list[str] = []
+            docs_to_index: list[Document] = []
+            uids_to_refresh = []
+            seen_docs: set[str] = set()
+            for hashed_doc, doc_exists in zip(hashed_docs, exists_batch, strict=False):
+                hashed_id = cast("str", hashed_doc.id)
+                if doc_exists:
+                    if force_update:
+                        seen_docs.add(hashed_id)
+                    else:
+                        uids_to_refresh.append(hashed_id)
+                        continue
+                uids.append(hashed_id)
+                docs_to_index.append(hashed_doc)
+
+            if uids_to_refresh:
+                # Must be updated to refresh timestamp.
+                await record_manager.aupdate(
+                    uids_to_refresh, time_at_least=index_start_dt
+                )
+                num_skipped += len(uids_to_refresh)
+
+            # Be pessimistic and assume that all vector store write will fail.
+            # First write to vector store
+            if docs_to_index:
+                if isinstance(destination, VectorStore):
+                    await destination.aadd_documents(
+                        docs_to_index,
+                        ids=uids,
+                        batch_size=batch_size,
+                        **(upsert_kwargs or {}),
                     )
-                    raise ValueError(msg)
-                if cleanup == "scoped_full":
-                    scoped_full_cleanup_source_ids.add(source_id)
-            # Source IDs cannot be None after for loop above.
-            source_ids = cast("Sequence[str]", source_ids)
+                elif isinstance(destination, DocumentIndex):
+                    await destination.aupsert(
+                        docs_to_index,
+                        **(upsert_kwargs or {}),
+                    )
+                num_added += len(docs_to_index) - len(seen_docs)
+                num_updated += len(seen_docs)
 
-        exists_batch = await record_manager.aexists(
-            cast("Sequence[str]", [doc.id for doc in hashed_docs])
-        )
-
-        # Filter out documents that already exist in the record store.
-        uids: list[str] = []
-        docs_to_index: list[Document] = []
-        uids_to_refresh = []
-        seen_docs: set[str] = set()
-        for hashed_doc, doc_exists in zip(hashed_docs, exists_batch, strict=False):
-            hashed_id = cast("str", hashed_doc.id)
-            if doc_exists:
-                if force_update:
-                    seen_docs.add(hashed_id)
+            # And only then update the record store.
+            # Update ALL records, even if they already exist since we want to refresh
+            # their timestamp.
+            await record_manager.aupdate(
+                cast("Sequence[str]", [doc.id for doc in hashed_docs]),
+                group_ids=source_ids,
+                time_at_least=index_start_dt,
+            )
+        else:
+            # Prepare documents with stable IDs and compute metadata hashes
+            batch_docs: list[Document] = []
+            batch_meta_hashes: list[str] = []
+            for doc in doc_batch:
+                s_id = source_id_assigner(doc)
+                c_hash, m_hash, _ = _get_document_hashes(doc, key_encoder=key_encoder)
+                if doc.id is not None:
+                    doc_id = doc.id
+                elif s_id is not None:
+                    doc_id = _calculate_hash(f"{s_id}:{c_hash}", algorithm=key_encoder)
                 else:
-                    uids_to_refresh.append(hashed_id)
-                    continue
-            uids.append(hashed_id)
-            docs_to_index.append(hashed_doc)
+                    doc_id = c_hash
 
-        if uids_to_refresh:
-            # Must be updated to refresh timestamp.
-            await record_manager.aupdate(uids_to_refresh, time_at_least=index_start_dt)
-            num_skipped += len(uids_to_refresh)
-
-        # Be pessimistic and assume that all vector store write will fail.
-        # First write to vector store
-        if docs_to_index:
-            if isinstance(destination, VectorStore):
-                await destination.aadd_documents(
-                    docs_to_index,
-                    ids=uids,
-                    batch_size=batch_size,
-                    **(upsert_kwargs or {}),
+                batch_docs.append(
+                    Document(
+                        id=doc_id,
+                        page_content=doc.page_content,
+                        metadata=doc.metadata,
+                    )
                 )
-            elif isinstance(destination, DocumentIndex):
-                await destination.aupsert(
-                    docs_to_index,
-                    **(upsert_kwargs or {}),
-                )
-            num_added += len(docs_to_index) - len(seen_docs)
-            num_updated += len(seen_docs)
+                batch_meta_hashes.append(m_hash)
 
-        # And only then update the record store.
-        # Update ALL records, even if they already exist since we want to refresh
-        # their timestamp.
-        await record_manager.aupdate(
-            cast("Sequence[str]", [doc.id for doc in hashed_docs]),
-            group_ids=source_ids,
-            time_at_least=index_start_dt,
-        )
+            # Deduplicate in order by doc.id, tracking metadata hash
+            seen_ids: set[str] = set()
+            hashed_docs = []
+            meta_hashes: dict[str, str] = {}
+            for doc, m_hash in zip(batch_docs, batch_meta_hashes, strict=False):
+                doc_id = cast("str", doc.id)
+                if doc_id not in seen_ids:
+                    seen_ids.add(doc_id)
+                    hashed_docs.append(doc)
+                    meta_hashes[doc_id] = m_hash
+
+            num_skipped += original_batch_size - len(hashed_docs)
+
+            source_ids = [source_id_assigner(doc) for doc in hashed_docs]
+
+            if cleanup in {"incremental", "scoped_full"}:
+                for source_id, hashed_doc in zip(source_ids, hashed_docs, strict=False):
+                    if source_id is None:
+                        msg = (
+                            f"Source IDs are required when cleanup mode is "
+                            f"incremental or scoped_full. "
+                            f"Document that starts with "
+                            f"content: {hashed_doc.page_content[:100]} "
+                            f"was not assigned as source id."
+                        )
+                        raise ValueError(msg)
+                    if cleanup == "scoped_full":
+                        scoped_full_cleanup_source_ids.add(source_id)
+                source_ids = cast("Sequence[str]", source_ids)
+
+            batch_ids = [cast("str", doc.id) for doc in hashed_docs]
+            exists_batch = await record_manager.aexists(batch_ids)
+
+            # Check which existing documents have matching metadata
+            existing_ids = [
+                doc_id
+                for doc_id, exists in zip(batch_ids, exists_batch, strict=False)
+                if exists
+            ]
+            existing_meta_hashes: dict[str, str | None] = (
+                dict(
+                    zip(
+                        existing_ids,
+                        await record_manager.aget_metadata_hashes(existing_ids),
+                        strict=False,
+                    )
+                )
+                if existing_ids and not force_update
+                else {}
+            )
+
+            uids = []
+            docs_to_index = []
+            uids_to_refresh = []
+            uids_to_update_metadata: list[str] = []
+            metadatas_to_update: list[dict[str, Any]] = []
+            seen_docs = set()
+
+            for hashed_doc, doc_exists in zip(hashed_docs, exists_batch, strict=False):
+                hashed_id = cast("str", hashed_doc.id)
+                if doc_exists:
+                    if force_update:
+                        seen_docs.add(hashed_id)
+                    else:
+                        stored_m_hash = existing_meta_hashes.get(hashed_id)
+                        curr_m_hash = meta_hashes[hashed_id]
+                        if stored_m_hash is not None and stored_m_hash == curr_m_hash:
+                            uids_to_refresh.append(hashed_id)
+                            continue
+                        uids_to_update_metadata.append(hashed_id)
+                        metadatas_to_update.append(hashed_doc.metadata)
+                        continue
+                uids.append(hashed_id)
+                docs_to_index.append(hashed_doc)
+
+            if uids_to_refresh:
+                await record_manager.aupdate(
+                    uids_to_refresh, time_at_least=index_start_dt
+                )
+                num_skipped += len(uids_to_refresh)
+
+            if uids_to_update_metadata:
+                await destination.aupdate_metadata(
+                    uids_to_update_metadata,
+                    metadatas_to_update,
+                )
+                meta_hashes_to_update = [
+                    meta_hashes[uid] for uid in uids_to_update_metadata
+                ]
+                await record_manager.aupdate(
+                    uids_to_update_metadata,
+                    time_at_least=index_start_dt,
+                    metadata_hashes=meta_hashes_to_update,
+                )
+                num_updated += len(uids_to_update_metadata)
+
+            if docs_to_index:
+                if isinstance(destination, VectorStore):
+                    await destination.aadd_documents(
+                        docs_to_index,
+                        ids=uids,
+                        batch_size=batch_size,
+                        **(upsert_kwargs or {}),
+                    )
+                elif isinstance(destination, DocumentIndex):
+                    await destination.aupsert(
+                        docs_to_index,
+                        **(upsert_kwargs or {}),
+                    )
+                num_added += len(docs_to_index) - len(seen_docs)
+                num_updated += len(seen_docs)
+
+            batch_m_hashes = [meta_hashes[cast("str", d.id)] for d in hashed_docs]
+            await record_manager.aupdate(
+                cast("Sequence[str]", [doc.id for doc in hashed_docs]),
+                group_ids=source_ids,
+                time_at_least=index_start_dt,
+                metadata_hashes=batch_m_hashes,
+            )
 
         # If source IDs are provided, we can do the deletion incrementally!
 

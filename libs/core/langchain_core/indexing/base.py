@@ -102,6 +102,7 @@ class RecordManager(ABC):
         *,
         group_ids: Sequence[str | None] | None = None,
         time_at_least: float | None = None,
+        metadata_hashes: Sequence[str | None] | None = None,
     ) -> None:
         """Upsert records into the database.
 
@@ -118,9 +119,13 @@ class RecordManager(ABC):
 
                 This is meant to help prevent time-drift issues since
                 time may not be monotonically increasing!
+            metadata_hashes: Optional list of metadata hashes
+                corresponding to the keys.
 
         Raises:
             ValueError: If the length of keys doesn't match the length of group_ids.
+            ValueError: If the length of keys doesn't match the length of
+                metadata_hashes.
         """
 
     @abstractmethod
@@ -130,6 +135,7 @@ class RecordManager(ABC):
         *,
         group_ids: Sequence[str | None] | None = None,
         time_at_least: float | None = None,
+        metadata_hashes: Sequence[str | None] | None = None,
     ) -> None:
         """Asynchronously upsert records into the database.
 
@@ -146,10 +152,36 @@ class RecordManager(ABC):
 
                 This is meant to help prevent time-drift issues since
                 time may not be monotonically increasing!
+            metadata_hashes: Optional list of metadata hashes
+                corresponding to the keys.
 
         Raises:
             ValueError: If the length of keys doesn't match the length of group_ids.
+            ValueError: If the length of keys doesn't match the length of
+                metadata_hashes.
         """
+
+    def get_metadata_hashes(self, keys: Sequence[str]) -> list[str | None]:
+        """Get metadata hashes for the provided keys.
+
+        Args:
+            keys: A list of keys to check.
+
+        Returns:
+            A list of metadata hashes (or None if not found or unsupported).
+        """
+        return [None] * len(keys)
+
+    async def aget_metadata_hashes(self, keys: Sequence[str]) -> list[str | None]:
+        """Asynchronously get metadata hashes for the provided keys.
+
+        Args:
+            keys: A list of keys to check.
+
+        Returns:
+            A list of metadata hashes (or None if not found or unsupported).
+        """
+        return self.get_metadata_hashes(keys)
 
     @abstractmethod
     def exists(self, keys: Sequence[str]) -> list[bool]:
@@ -232,9 +264,10 @@ class RecordManager(ABC):
         """
 
 
-class _Record(TypedDict):
+class _Record(TypedDict, total=False):
     group_id: str | None
     updated_at: float
+    metadata_hash: str | None
 
 
 class InMemoryRecordManager(RecordManager):
@@ -248,9 +281,10 @@ class InMemoryRecordManager(RecordManager):
         """
         super().__init__(namespace)
         # Each key points to a dictionary
-        # of {'group_id': group_id, 'updated_at': timestamp}
+        # of {'group_id': group_id, 'updated_at': timestamp, 'metadata_hash': ...}
         self.records: dict[str, _Record] = {}
         self.namespace = namespace
+        self._last_time: float = 0.0
 
     def create_schema(self) -> None:
         """In-memory schema creation is simply ensuring the structure is initialized."""
@@ -260,7 +294,11 @@ class InMemoryRecordManager(RecordManager):
 
     @override
     def get_time(self) -> float:
-        return time.time()
+        current_time = time.time()
+        if current_time <= self._last_time:
+            current_time = self._last_time + 1e-6
+        self._last_time = current_time
+        return current_time
 
     @override
     async def aget_time(self) -> float:
@@ -272,6 +310,7 @@ class InMemoryRecordManager(RecordManager):
         *,
         group_ids: Sequence[str | None] | None = None,
         time_at_least: float | None = None,
+        metadata_hashes: Sequence[str | None] | None = None,
     ) -> None:
         """Upsert records into the database.
 
@@ -287,21 +326,40 @@ class InMemoryRecordManager(RecordManager):
                 raise an error.
                 This is meant to help prevent time-drift issues since
                 time may not be monotonically increasing!
+            metadata_hashes: Optional list of metadata hashes corresponding to the keys.
 
         Raises:
             ValueError: If the length of keys doesn't match the length of group
                 ids.
+            ValueError: If the length of keys doesn't match the length of metadata
+                hashes.
             ValueError: If time_at_least is in the future.
         """
         if group_ids and len(keys) != len(group_ids):
             msg = "Length of keys must match length of group_ids"
             raise ValueError(msg)
+        if metadata_hashes and len(keys) != len(metadata_hashes):
+            msg = "Length of keys must match length of metadata_hashes"
+            raise ValueError(msg)
         for index, key in enumerate(keys):
             group_id = group_ids[index] if group_ids else None
+            metadata_hash = metadata_hashes[index] if metadata_hashes else None
             if time_at_least and time_at_least > self.get_time():
                 msg = "time_at_least must be in the past"
                 raise ValueError(msg)
-            self.records[key] = {"group_id": group_id, "updated_at": self.get_time()}
+            existing = self.records.get(key)
+            record: _Record = {
+                "group_id": group_id
+                if group_id is not None
+                else (existing.get("group_id") if existing else None),
+                "updated_at": self.get_time(),
+                "metadata_hash": (
+                    metadata_hash
+                    if metadata_hash is not None
+                    else (existing.get("metadata_hash") if existing else None)
+                ),
+            }
+            self.records[key] = record
 
     async def aupdate(
         self,
@@ -309,6 +367,7 @@ class InMemoryRecordManager(RecordManager):
         *,
         group_ids: Sequence[str | None] | None = None,
         time_at_least: float | None = None,
+        metadata_hashes: Sequence[str | None] | None = None,
     ) -> None:
         """Async upsert records into the database.
 
@@ -324,8 +383,24 @@ class InMemoryRecordManager(RecordManager):
                 raise an error.
                 This is meant to help prevent time-drift issues since
                 time may not be monotonically increasing!
+            metadata_hashes: Optional list of metadata hashes corresponding to the keys.
         """
-        self.update(keys, group_ids=group_ids, time_at_least=time_at_least)
+        self.update(
+            keys,
+            group_ids=group_ids,
+            time_at_least=time_at_least,
+            metadata_hashes=metadata_hashes,
+        )
+
+    @override
+    def get_metadata_hashes(self, keys: Sequence[str]) -> list[str | None]:
+        """Get metadata hashes for the provided keys."""
+        return [self.records.get(key, {}).get("metadata_hash") for key in keys]
+
+    @override
+    async def aget_metadata_hashes(self, keys: Sequence[str]) -> list[str | None]:
+        """Async get metadata hashes for the provided keys."""
+        return self.get_metadata_hashes(keys)
 
     def exists(self, keys: Sequence[str]) -> list[bool]:
         """Check if the provided keys exist in the database.
@@ -558,6 +633,47 @@ class DocumentIndex(BaseRetriever):
             None,
             self.upsert,
             items,
+            **kwargs,
+        )
+
+    def update_metadata(
+        self,
+        ids: Sequence[str],
+        metadatas: Sequence[dict[str, Any]],
+        **kwargs: Any,
+    ) -> None:
+        """Update metadata for documents in the index without re-indexing.
+
+        Args:
+            ids: Sequence of document IDs to update.
+            metadatas: Sequence of metadata dicts corresponding to the IDs.
+            **kwargs: Additional keyword arguments.
+
+        Raises:
+            NotImplementedError: If the document index does not support
+                updating metadata.
+        """
+        msg = f"{self.__class__.__name__} does not support update_metadata."
+        raise NotImplementedError(msg)
+
+    async def aupdate_metadata(
+        self,
+        ids: Sequence[str],
+        metadatas: Sequence[dict[str, Any]],
+        **kwargs: Any,
+    ) -> None:
+        """Async update metadata for documents in the index without re-indexing.
+
+        Args:
+            ids: Sequence of document IDs to update.
+            metadatas: Sequence of metadata dicts corresponding to the IDs.
+            **kwargs: Additional keyword arguments.
+        """
+        return await run_in_executor(
+            None,
+            self.update_metadata,
+            ids,
+            metadatas,
             **kwargs,
         )
 

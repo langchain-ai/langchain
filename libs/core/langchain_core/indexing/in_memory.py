@@ -58,6 +58,35 @@ class InMemoryDocumentIndex(DocumentIndex):
         return UpsertResponse(succeeded=ok_ids, failed=[])
 
     @override
+    def update_metadata(
+        self,
+        ids: Sequence[str],
+        metadatas: Sequence[dict[str, Any]],
+        **kwargs: Any,
+    ) -> None:
+        """Update metadata for documents in the in-memory document index.
+
+        Args:
+            ids: Sequence of document IDs to update.
+            metadatas: Sequence of metadata dicts corresponding to the IDs.
+            **kwargs: Additional keyword arguments.
+
+        Raises:
+            ValueError: If the length of ids doesn't match the length of metadatas.
+        """
+        if len(ids) != len(metadatas):
+            msg = (
+                f"ids and metadatas must have the same length. "
+                f"Got {len(ids)} ids and {len(metadatas)} metadatas."
+            )
+            raise ValueError(msg)
+        for doc_id, metadata in zip(ids, metadatas, strict=False):
+            if doc_id in self.store:
+                self.store[doc_id] = self.store[doc_id].model_copy(
+                    update={"metadata": metadata}
+                )
+
+    @override
     def delete(self, ids: list[str] | None = None, **kwargs: Any) -> DeleteResponse:
         """Delete by IDs.
 

@@ -290,6 +290,45 @@ class VectorStore(ABC):
 
         return await run_in_executor(None, self.add_documents, documents, **kwargs)
 
+    def update_metadata(
+        self,
+        ids: Sequence[str],
+        metadatas: Sequence[dict[str, Any]],
+        **kwargs: Any,
+    ) -> None:
+        """Update metadata for documents in the `VectorStore` without re-embedding.
+
+        Args:
+            ids: Sequence of document IDs to update.
+            metadatas: Sequence of metadata dicts corresponding to the IDs.
+            **kwargs: Additional keyword arguments.
+
+        Raises:
+            NotImplementedError: If the `VectorStore` does not support
+                updating metadata.
+        """
+        msg = f"{self.__class__.__name__} does not support update_metadata."
+        raise NotImplementedError(msg)
+
+    async def aupdate_metadata(
+        self,
+        ids: Sequence[str],
+        metadatas: Sequence[dict[str, Any]],
+        **kwargs: Any,
+    ) -> None:
+        """Async update metadata for documents in the `VectorStore`.
+
+        Avoids re-embedding when content is unchanged.
+
+        Args:
+            ids: Sequence of document IDs to update.
+            metadatas: Sequence of metadata dicts corresponding to the IDs.
+            **kwargs: Additional keyword arguments.
+        """
+        return await run_in_executor(
+            None, self.update_metadata, ids, metadatas, **kwargs
+        )
+
     def search(self, query: str, search_type: str, **kwargs: Any) -> list[Document]:
         """Return docs most similar to query using a specified search type.
 
