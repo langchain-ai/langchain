@@ -3563,6 +3563,146 @@ def test_split_json_convert_lists_true_non_list_no_misleading_hint() -> None:
     assert "convert_lists" not in str(exc_info.value)
 
 
+def _count_leaves(chunk: dict[str, Any]) -> int:
+    """Measure a chunk by how many leaf values it holds."""
+    total = 0
+    for value in chunk.values():
+        total += _count_leaves(value) if isinstance(value, dict) else 1
+    return total
+
+
+def _deep_merge(target: dict[str, Any], source: dict[str, Any]) -> dict[str, Any]:
+    """Recursively merge `source` into `target` so chunks can be recombined."""
+    for key, value in source.items():
+        existing = target.get(key)
+        if isinstance(value, dict) and isinstance(existing, dict):
+            _deep_merge(existing, value)
+        else:
+            target[key] = value
+    return target
+
+
+def test_split_json_length_function_is_keyword_only() -> None:
+    """`length_function` must not be positional, to keep the signature stable."""
+    with pytest.raises(TypeError):
+        RecursiveJsonSplitter(100, 50, _count_leaves)  # ty: ignore[too-many-positional-arguments]
+
+
+def test_split_json_custom_length_function_governs_chunk_size() -> None:
+    """Chunks are bounded by the custom measure, not by serialized length."""
+    max_leaves = 3
+    splitter = RecursiveJsonSplitter(
+        max_chunk_size=max_leaves,
+        min_chunk_size=1,
+        length_function=_count_leaves,
+    )
+
+    data: dict[str, Any] = {
+        "alpha": {"a1": 1, "a2": 2, "a3": 3},
+        "beta": {"b1": 4, "b2": 5},
+        "gamma": 6,
+    }
+    chunks = splitter.split_json(data)
+
+    assert chunks
+    for chunk in chunks:
+        assert _count_leaves(chunk) <= max_leaves
+
+
+def test_split_json_custom_length_function_preserves_all_data() -> None:
+    """Splitting with a custom measure must not lose or duplicate values."""
+    splitter = RecursiveJsonSplitter(
+        max_chunk_size=4, min_chunk_size=1, length_function=_count_leaves
+    )
+
+    data: dict[str, Any] = {
+        "config": {"retries": 3, "timeout": 30, "nested": {"deep": "value"}},
+        "items": {f"item{i}": f"value{i}" for i in range(10)},
+        "name": "example",
+    }
+    chunks = splitter.split_json(data)
+
+    merged: dict[str, Any] = {}
+    for chunk in chunks:
+        _deep_merge(merged, chunk)
+
+    assert merged == data
+
+
+def test_split_json_length_function_measures_merged_chunk() -> None:
+    """Sizes are measured on the merged chunk, not summed across its parts.
+
+    A super-additive measure exposes the difference: adding the size of an item to
+    the size of a chunk badly underestimates the size of the two combined.
+    """
+
+    def squared_size(chunk: dict[str, Any]) -> int:
+        return len(json.dumps(chunk)) ** 2
+
+    max_chunk = 40_000
+    splitter = RecursiveJsonSplitter(
+        max_chunk_size=max_chunk, min_chunk_size=1, length_function=squared_size
+    )
+
+    data: dict[str, Any] = {f"k{i}": f"v{i}" for i in range(25)}
+    chunks = splitter.split_json(data)
+
+    assert chunks
+    for chunk in chunks:
+        assert squared_size(chunk) <= max_chunk
+
+    merged: dict[str, Any] = {}
+    for chunk in chunks:
+        _deep_merge(merged, chunk)
+    assert merged == data
+
+
+def test_split_json_default_respects_max_chunk_size_for_deep_paths() -> None:
+    """Deeply nested keys must not push a chunk past `max_chunk_size`.
+
+    The size of an entry was previously estimated without the nested path it is
+    stored under, so long key paths could overflow the limit.
+    """
+    max_chunk = 800
+
+    def build(depth: int, breadth: int) -> dict[str, Any] | str:
+        if depth == 0:
+            return "x" * 40
+        return {
+            f"a_very_long_section_key_{i}": build(depth - 1, breadth)
+            for i in range(breadth)
+        }
+
+    data = build(4, 3)
+    assert isinstance(data, dict)
+
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk)
+    texts = splitter.split_text(json_data=data)
+
+    assert texts
+    for text in texts:
+        assert len(text) <= max_chunk
+
+
+def test_split_json_oversized_leaf_does_not_overflow_partial_chunk() -> None:
+    """A leaf too large to fit anywhere gets its own chunk."""
+    max_chunk = 100
+    splitter = RecursiveJsonSplitter(max_chunk_size=max_chunk, min_chunk_size=10)
+
+    data: dict[str, Any] = {"small": "a", "huge": "b" * 500, "other": "c"}
+    chunks = splitter.split_json(data)
+
+    merged: dict[str, Any] = {}
+    for chunk in chunks:
+        _deep_merge(merged, chunk)
+    assert merged == data
+
+    for chunk in chunks:
+        if len(json.dumps(chunk)) > max_chunk:
+            # Only the unsplittable value itself may exceed the limit.
+            assert chunk == {"huge": "b" * 500}
+
+
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.POWERSHELL, chunk_size=60, chunk_overlap=0
