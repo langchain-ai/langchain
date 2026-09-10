@@ -6,11 +6,20 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, cast
+from typing import Any, Literal, NoReturn, cast
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
+)
+from langchain_core.exceptions import (
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
 )
 from langchain_core.language_models import (
     LanguageModelInput,
@@ -101,6 +110,37 @@ def _create_stream_generation_info(
     if object_ := chunk_dict.get("object"):
         generation_info["object"] = object_
     return generation_info
+
+
+_ERROR_TYPES: dict[int, type[ModelError]] = {
+    400: ModelInvalidRequestError,
+    401: ModelAuthenticationError,
+    402: ModelPermissionDeniedError,
+    403: ModelPermissionDeniedError,
+    404: ModelNotFoundError,
+    422: ModelInvalidRequestError,
+    429: ModelRateLimitError,
+}
+
+
+def _raise_streaming_error(error: Any) -> NoReturn:
+    """Raise a standard model error for a fault OpenRouter reports in a 200 body.
+
+    ``error.code`` is the only signal of whether the failure is worth retrying,
+    so it is mapped to an exception type rather than formatted into the message.
+    """
+    code = error.get("code") if isinstance(error, dict) else None
+    if isinstance(code, str) and code.isdigit():
+        code = int(code)
+    error_type: type[ModelError] = ModelAPIError
+    if isinstance(code, int):
+        error_type = _ERROR_TYPES.get(code, ModelAPIError)
+    message = (error.get("message") if isinstance(error, dict) else None) or str(error)
+    msg = (
+        f"OpenRouter API returned an error during streaming: "
+        f"{message} (code: {code if code is not None else 'unknown'})"
+    )
+    raise error_type(msg)
 
 
 class ChatOpenRouter(BaseChatModel):
@@ -609,12 +649,7 @@ class ChatOpenRouter(BaseChatModel):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
                 if error := chunk_dict.get("error"):
-                    msg = (
-                        f"OpenRouter API returned an error during streaming: "
-                        f"{error.get('message', str(error))} "
-                        f"(code: {error.get('code', 'unknown')})"
-                    )
-                    raise ValueError(msg)
+                    _raise_streaming_error(error)
                 # Usage-only chunk (no choices) — emit with usage_metadata
                 if usage := chunk_dict.get("usage"):
                     usage_metadata = _create_usage_metadata(usage)
@@ -701,12 +736,7 @@ class ChatOpenRouter(BaseChatModel):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
                 if error := chunk_dict.get("error"):
-                    msg = (
-                        f"OpenRouter API returned an error during streaming: "
-                        f"{error.get('message', str(error))} "
-                        f"(code: {error.get('code', 'unknown')})"
-                    )
-                    raise ValueError(msg)
+                    _raise_streaming_error(error)
                 # Usage-only chunk (no choices) — emit with usage_metadata
                 if usage := chunk_dict.get("usage"):
                     usage_metadata = _create_usage_metadata(usage)

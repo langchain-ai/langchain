@@ -7,6 +7,15 @@ from typing import Any, Literal
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from langchain_core.exceptions import (
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+)
 from langchain_core.load import dumpd, dumps, load
 from langchain_core.messages import (
     AIMessage,
@@ -3422,7 +3431,7 @@ class TestStreamingErrors:
     """Tests for error handling during streaming."""
 
     def test_stream_error_chunk_raises(self) -> None:
-        """Test that a streaming error chunk raises ValueError."""
+        """A streaming error chunk raises a classified model error."""
         model = _make_model()
         model.client = MagicMock()
         error_chunks: list[dict[str, Any]] = [
@@ -3431,7 +3440,7 @@ class TestStreamingErrors:
             },
         ]
         model.client.chat.send.return_value = _MockSyncStream(error_chunks)
-        with pytest.raises(ValueError, match="Rate limit exceeded"):
+        with pytest.raises(ModelRateLimitError, match="Rate limit exceeded"):
             list(model.stream("Hello"))
 
     def test_stream_error_chunk_without_message(self) -> None:
@@ -3444,7 +3453,7 @@ class TestStreamingErrors:
             },
         ]
         model.client.chat.send.return_value = _MockSyncStream(error_chunks)
-        with pytest.raises(ValueError, match="OpenRouter API returned an error"):
+        with pytest.raises(ModelError, match="OpenRouter API returned an error"):
             list(model.stream("Hello"))
 
     def test_stream_heartbeat_chunk_skipped(self) -> None:
@@ -3463,7 +3472,7 @@ class TestStreamingErrors:
         assert "Hello" in full_content
 
     async def test_astream_error_chunk_raises(self) -> None:
-        """Test that an async streaming error chunk raises ValueError."""
+        """An async streaming error chunk raises a classified model error."""
         model = _make_model()
         model.client = MagicMock()
         error_chunks: list[dict[str, Any]] = [
@@ -3474,7 +3483,7 @@ class TestStreamingErrors:
         model.client.chat.send_async = AsyncMock(
             return_value=_MockAsyncStream(error_chunks)
         )
-        with pytest.raises(ValueError, match="Rate limit exceeded"):
+        with pytest.raises(ModelRateLimitError, match="Rate limit exceeded"):
             chunks = [c async for c in model.astream("Hello")]  # noqa: F841
 
     async def test_astream_heartbeat_chunk_skipped(self) -> None:
@@ -3779,3 +3788,30 @@ def test_profile() -> None:
     """Test that the model has a profile."""
     model = _make_model()
     assert model.profile
+
+
+@pytest.mark.parametrize(
+    ("code", "error_type", "is_retryable"),
+    [
+        (400, ModelInvalidRequestError, False),
+        (401, ModelAuthenticationError, False),
+        (402, ModelPermissionDeniedError, False),
+        (404, ModelNotFoundError, False),
+        (429, ModelRateLimitError, True),
+        (502, ModelAPIError, True),
+    ],
+)
+def test_stream_error_chunk_is_classified_by_code(
+    code: int, error_type: type[ModelError], *, is_retryable: bool
+) -> None:
+    """The error code decides the exception type, and whether a retry may help."""
+    model = _make_model()
+    model.client = MagicMock()
+    model.client.chat.send.return_value = _MockSyncStream(
+        [{"error": {"code": code, "message": "gateway said no"}}]
+    )
+
+    with pytest.raises(error_type) as exc_info:
+        list(model.stream("Hello"))
+
+    assert exc_info.value.is_retryable is is_retryable
