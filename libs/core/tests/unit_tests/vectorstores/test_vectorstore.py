@@ -292,3 +292,81 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
     assert await store.aget_by_ids(["6"]) == [Document(id="6", page_content="baz")]
+
+
+class CustomAsyncAddTextsVectorstore(VectorStore):
+    """A VectorStore that overrides `aadd_texts` with an explicit `ids` parameter.
+
+    Mirrors third-party stores (e.g. `QdrantVectorStore`) that implement the
+    async write path directly instead of inheriting the sync fallback.
+    """
+
+    def __init__(self) -> None:
+        self.store: dict[str, Document] = {}
+
+    @override
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: list[dict[str, Any]] | None = None,
+        ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        if not isinstance(texts, list):
+            texts = list(texts)
+        ids_iter = iter(ids or [])
+
+        ids_ = []
+
+        metadatas_ = metadatas or [{} for _ in texts]
+
+        for text, metadata in zip(texts, metadatas_ or [], strict=False):
+            next_id = next(ids_iter, None)
+            id_ = next_id or str(uuid.uuid4())
+            self.store[id_] = Document(page_content=text, metadata=metadata, id=id_)
+            ids_.append(id_)
+        return ids_
+
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        return [self.store[id_] for id_ in ids if id_ in self.store]
+
+    @classmethod
+    @override
+    def from_texts(
+        cls,
+        texts: list[str],
+        embedding: Embeddings,
+        metadatas: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
+    ) -> CustomAsyncAddTextsVectorstore:
+        vectorstore = CustomAsyncAddTextsVectorstore()
+        vectorstore.add_texts(texts, metadatas=metadatas, **kwargs)
+        return vectorstore
+
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> list[Document]:
+        raise NotImplementedError
+
+
+async def test_aadd_documents_with_custom_ids_delegates_ids_exactly_once() -> None:
+    """Regression test for #32283.
+
+    `VectorStore.aadd_documents` must forward custom ids to an overridden
+    `aadd_texts` exactly once. Previously ids were passed both explicitly and
+    through `**kwargs`, raising
+    `TypeError: aadd_texts() got multiple values for keyword argument 'ids'`.
+    """
+    store = CustomAsyncAddTextsVectorstore()
+    documents = [
+        Document(page_content="Hello world"),
+        Document(page_content="Goodbye world"),
+    ]
+
+    ids = await store.aadd_documents(documents, ids=["doc_1", "doc_2"])
+
+    assert ids == ["doc_1", "doc_2"]
+    assert await store.aget_by_ids(["doc_1", "doc_2"]) == [
+        Document(id="doc_1", page_content="Hello world"),
+        Document(id="doc_2", page_content="Goodbye world"),
+    ]
