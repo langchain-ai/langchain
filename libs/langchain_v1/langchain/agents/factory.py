@@ -2020,6 +2020,16 @@ def _make_tools_to_model_edge(
         client_side_tool_calls = [
             c for c in last_ai_message.tool_calls if c["name"] in tool_node.tools_by_name
         ]
+        return_direct_tool_call_ids = {
+            c["id"]
+            for c in client_side_tool_calls
+            if tool_node.tools_by_name[c["name"]].return_direct
+        }
+        if any(
+            message.tool_call_id in return_direct_tool_call_ids and message.status == "error"
+            for message in tool_messages
+        ):
+            return model_destination
         if client_side_tool_calls and all(
             tool_node.tools_by_name[c["name"]].return_direct for c in client_side_tool_calls
         ):
