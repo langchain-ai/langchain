@@ -91,7 +91,7 @@ class JsonEditDistanceEvaluator(StringEvaluator):
     def evaluation_name(self) -> str:
         return "json_edit_distance"
 
-    def _parse_json(self, node: Any) -> dict | list | None | float | bool | int | str:
+    def _parse_json(self, node: Any) -> dict | list | float | bool | int | str | None:
         if isinstance(node, str):
             return parse_json_markdown(node)
         return node

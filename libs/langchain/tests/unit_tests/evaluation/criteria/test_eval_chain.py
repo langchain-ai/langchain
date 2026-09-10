@@ -27,24 +27,34 @@ def test_resolve_criteria_str() -> None:
     [
         ("Y", {"reasoning": "", "value": "Y", "score": 1}),
         (
-            "Here is my step-by-step reasoning for the given criteria:\n"
-            'The criterion is: "Do you like cake?" I like cake.\n'
-            "Y",
+            (
+                "Here is my step-by-step reasoning for the given criteria:\n"
+                'The criterion is: "Do you like cake?" I like cake.\n'
+                "Y"
+            ),
             {
-                "reasoning": "Here is my step-by-step reasoning for the given criteria:"
-                '\nThe criterion is: "Do you like cake?" I like cake.',
+                "reasoning": (
+                    "Here is my step-by-step reasoning for the given criteria:\n"
+                    'The criterion is: "Do you like cake?" I like cake.'
+                ),
                 "value": "Y",
                 "score": 1,
             },
         ),
         (
-            " NThe submission N is correct, accurate, and factual. It accurately"
-            " identifies the specific effects of knowledge and interest on"
-            " these factors. Therefore, the submission Y meets the criteria. Y",
+            (
+                " NThe submission N is correct, accurate, and factual. "
+                "It accurately identifies the specific effects of knowledge and "
+                "interest on these factors. "
+                "Therefore, the submission Y meets the criteria. Y"
+            ),
             {
-                "reasoning": "NThe submission N is correct, accurate, and factual. It"
-                " accurately identifies the specific effects of knowledge and interest"
-                " on these factors. Therefore, the submission Y meets the criteria.",
+                "reasoning": (
+                    "NThe submission N is correct, accurate, and factual. "
+                    "It accurately identifies the specific effects of "
+                    "knowledge and interest on these factors. "
+                    "Therefore, the submission Y meets the criteria."
+                ),
                 "value": "Y",
                 "score": 1,
             },
