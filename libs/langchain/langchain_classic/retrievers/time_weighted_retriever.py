@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 from copy import deepcopy
 from typing import Any
 
@@ -13,7 +13,7 @@ from pydantic import ConfigDict, Field
 from typing_extensions import override
 
 
-def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> float:
+def _get_hours_passed(time: dt.datetime, ref_time: dt.datetime) -> float:
     """Get the hours passed between two datetimes."""
     return (time - ref_time).total_seconds() / 3600
 
@@ -53,19 +53,19 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
         arbitrary_types_allowed=True,
     )
 
-    def _document_get_date(self, field: str, document: Document) -> datetime.datetime:
+    def _document_get_date(self, field: str, document: Document) -> dt.datetime:
         """Return the value of the date field of a document."""
         if field in document.metadata:
             if isinstance(document.metadata[field], float):
-                return datetime.datetime.fromtimestamp(document.metadata[field])
+                return dt.datetime.fromtimestamp(document.metadata[field])
             return document.metadata[field]
-        return datetime.datetime.now()
+        return dt.datetime.now()
 
     def _get_combined_score(
         self,
         document: Document,
         vector_relevance: float | None,
-        current_time: datetime.datetime,
+        current_time: dt.datetime,
     ) -> float:
         """Return the combined score for a document."""
         hours_passed = _get_hours_passed(
@@ -116,7 +116,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
         self,
         docs_and_scores: dict[Any, tuple[Document, float | None]],
     ) -> list[Document]:
-        current_time = datetime.datetime.now()
+        current_time = dt.datetime.now()
         rescored_docs = [
             (doc, self._get_combined_score(doc, relevance, current_time))
             for doc, relevance in docs_and_scores.values()
@@ -165,7 +165,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
         """Add documents to vectorstore."""
         current_time = kwargs.get("current_time")
         if current_time is None:
-            current_time = datetime.datetime.now()
+            current_time = dt.datetime.now()
         # Avoid mutating input documents
         dup_docs = [deepcopy(d) for d in documents]
         for i, doc in enumerate(dup_docs):
@@ -185,7 +185,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
         """Add documents to vectorstore."""
         current_time = kwargs.get("current_time")
         if current_time is None:
-            current_time = datetime.datetime.now()
+            current_time = dt.datetime.now()
         # Avoid mutating input documents
         dup_docs = [deepcopy(d) for d in documents]
         for i, doc in enumerate(dup_docs):
