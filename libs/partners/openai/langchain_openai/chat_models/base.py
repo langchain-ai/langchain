@@ -45,6 +45,7 @@ from typing import (
 from urllib.parse import urlparse
 
 import certifi
+import httpx2
 import openai
 import tiktoken
 from langchain_core.callbacks import (
@@ -674,7 +675,114 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
         raise OpenAITimeoutError(e.request) from e
     if isinstance(e, openai.APIConnectionError):
         raise OpenAIConnectionError(message=e.message, request=e.request) from e
+    status_code = _status_from_error_body(e.body)
+    error_class = (
+        _model_error_class_for_status(status_code) if status_code is not None else None
+    )
+    if status_code is not None and error_class is not None:
+        # Status carried in the body (e.g. a gateway error event) instead of on
+        # the response line, so the SDK raised an unclassified APIError.
+        raise _classified_body_error(e.body, error_class, status_code, e.request) from e
     raise
+
+
+def _status_from_error_body(body: Any) -> int | None:
+    """Extract an HTTP status code from an error delivered in a 200 body.
+
+    OpenAI-compatible gateways report upstream faults with payloads such as
+    `{"code": 502, "message": "..."}`. Symbolic codes (e.g.
+    `"rate_limit_exceeded"`) carry no status information and yield `None`.
+
+    Args:
+        body: The raw error payload attached to the response or exception.
+
+    Returns:
+        The status code, or `None` when the payload carries no usable one.
+    """
+    if not isinstance(body, dict):
+        return None
+    code = body.get("code")
+    if isinstance(code, int) and not isinstance(code, bool):
+        return code
+    if isinstance(code, str) and code.isdigit():
+        return int(code)
+    return None
+
+
+def _model_error_class_for_status(
+    status_code: int,
+) -> type[openai.APIStatusError] | None:
+    """Map a status code to the dual-inheritance error class raised for it.
+
+    Args:
+        status_code: The HTTP status reported by the provider.
+
+    Returns:
+        The matching exception class, or `None` for statuses without one.
+    """
+    if status_code == 401:
+        return OpenAIAuthenticationError
+    if status_code == 403:
+        return OpenAIPermissionDeniedError
+    if status_code == 404:
+        return OpenAIModelNotFoundError
+    if status_code == 429:
+        return OpenAIRateLimitError
+    if status_code >= 500:
+        return OpenAIAPIError
+    if status_code in (400, 422):
+        return OpenAIInvalidRequestError
+    return None
+
+
+def _classified_body_error(
+    body: Any,
+    error_class: type[openai.APIStatusError],
+    status_code: int,
+    request: httpx2.Request | None,
+) -> openai.APIStatusError:
+    """Build the error a failing status line would have produced.
+
+    Args:
+        body: The raw error payload from the response body.
+        error_class: The classified exception type for `status_code`.
+        status_code: The status the provider reported in the payload.
+        request: The request the error relates to, if known.
+
+    Returns:
+        An exception that is both the OpenAI SDK type and the `ModelError`
+        subtype for `status_code`, carrying a reconstructed response.
+    """
+    message = body.get("message") if isinstance(body, dict) else None
+    if not isinstance(message, str) or not message:
+        message = str(body)
+    if request is None:
+        request = httpx2.Request("POST", "https://api.openai.com/v1")
+    return error_class(
+        message=message,
+        response=httpx2.Response(status_code=status_code, request=request),
+        body=body,
+    )
+
+
+def _raise_error_from_body(body: Any, request: httpx2.Request | None = None) -> None:
+    """Raise a classified error for a provider fault reported in a 200 body.
+
+    The OpenAI SDK raises nothing in this case, so without this the caller
+    receives an unclassified `ValueError`. Payloads without a usable status
+    code keep the historical `ValueError` behavior.
+
+    Args:
+        body: The raw error payload from the response body.
+        request: The request the error relates to, if known.
+    """
+    status_code = _status_from_error_body(body)
+    error_class = (
+        _model_error_class_for_status(status_code) if status_code is not None else None
+    )
+    if error_class is None or status_code is None:
+        raise ValueError(body)
+    raise _classified_body_error(body, error_class, status_code, request)
 
 
 def _add_gateway_metadata(generation_info: dict[str, Any], raw_response: Any) -> None:
@@ -2001,7 +2109,16 @@ class BaseChatOpenAI(BaseChatModel):
         # typically followed by a null value for `choices`, which we raise for
         # separately below).
         if response_dict.get("error"):
-            raise ValueError(response_dict.get("error"))
+            _raise_error_from_body(
+                response_dict["error"],
+                request=httpx2.Request(
+                    "POST",
+                    str(
+                        getattr(self.root_client, "base_url", None)
+                        or "https://api.openai.com/v1"
+                    ),
+                ),
+            )
 
         # Raise informative error messages for non-OpenAI chat completions APIs
         # that return malformed responses.
@@ -5020,7 +5137,7 @@ def _construct_lc_result_from_responses_api(
 ) -> ChatResult:
     """Construct `ChatResponse` from OpenAI Response API response."""
     if response.error:
-        raise ValueError(response.error)
+        _raise_error_from_body(response.error)
 
     if output_version is None:
         # Sentinel value of None lets us know if output_version is set explicitly.

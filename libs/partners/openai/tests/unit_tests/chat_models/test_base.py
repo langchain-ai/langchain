@@ -88,6 +88,12 @@ from langchain_openai.chat_models._compat import (
     _convert_to_v03_ai_message,
 )
 from langchain_openai.chat_models.base import (
+    OpenAIAPIError,
+    OpenAIAuthenticationError,
+    OpenAIInvalidRequestError,
+    OpenAIModelNotFoundError,
+    OpenAIPermissionDeniedError,
+    OpenAIRateLimitError,
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
@@ -4966,6 +4972,91 @@ def test_openai_transport_error_classification() -> None:
 
         assert isinstance(exc_info.value, model_error_type)
         assert exc_info.value.is_retryable is True
+
+
+class _FakeRawResponse:
+    """Stand-in for the SDK raw-response wrapper holding a parsed payload."""
+
+    def __init__(self, payload: Any) -> None:
+        self._payload = payload
+
+    def parse(self) -> Any:
+        return self._payload
+
+
+@pytest.mark.parametrize(
+    ("status_code", "error_class", "is_retryable"),
+    [
+        (400, OpenAIInvalidRequestError, False),
+        (401, OpenAIAuthenticationError, False),
+        (403, OpenAIPermissionDeniedError, False),
+        (404, OpenAIModelNotFoundError, False),
+        (429, OpenAIRateLimitError, True),
+        (502, OpenAIAPIError, True),
+    ],
+)
+def test_error_in_200_body_classified(
+    status_code: int,
+    error_class: type[openai.APIStatusError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Errors reported in a 200 body raise the same types as status errors."""
+    model = ChatOpenAI(api_key=SecretStr("test"))
+    error_payload = {"code": status_code, "message": "upstream provider fault"}
+
+    with patch.object(model.client, "with_raw_response") as mock_client:
+        mock_client.create.return_value = _FakeRawResponse({"error": error_payload})
+        with pytest.raises(error_class) as exc_info:
+            model.invoke("test")
+
+    assert exc_info.value.status_code == status_code
+    assert isinstance(exc_info.value, ModelError)
+    assert exc_info.value.is_retryable is is_retryable
+    assert exc_info.value.body == error_payload
+
+
+def test_error_in_200_body_without_status_keeps_value_error() -> None:
+    """Payloads without a usable status keep the historical `ValueError`."""
+    model = ChatOpenAI(api_key=SecretStr("test"))
+    error_payload = {"code": "rate_limit_exceeded", "message": "slow down"}
+
+    with patch.object(model.client, "with_raw_response") as mock_client:
+        mock_client.create.return_value = _FakeRawResponse({"error": error_payload})
+        with pytest.raises(ValueError, match="rate_limit_exceeded"):
+            model.invoke("test")
+
+
+def test_streaming_error_in_body_classified() -> None:
+    """SSE error events carrying a status raise the classified error type."""
+    model = ChatOpenAI(api_key=SecretStr("test"))
+    request = httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")
+    sdk_error = openai.APIError(
+        "upstream provider fault",
+        request=request,
+        body={"code": 502, "message": "upstream provider fault"},
+    )
+
+    with (  # noqa: PT012
+        patch.object(model.client, "create") as mock_create,
+        pytest.raises(OpenAIAPIError) as exc_info,
+    ):
+        mock_create.side_effect = sdk_error
+        next(model.stream("test"))
+
+    assert exc_info.value.status_code == 502
+    assert exc_info.value.is_retryable is True
+
+
+def test_responses_api_error_in_body_classified() -> None:
+    """Errors on Responses API objects raise the classified error type."""
+    response = MagicMock()
+    response.error = {"code": 502, "message": "upstream provider fault"}
+
+    with pytest.raises(OpenAIAPIError) as exc_info:
+        _construct_lc_result_from_responses_api(response)
+
+    assert exc_info.value.is_retryable is True
 
 
 def test_metadata_versions() -> None:
