@@ -13,7 +13,7 @@ class ParrotRetriever(BaseRetriever):
 
     @override
     def _get_relevant_documents(self, query: str, **kwargs: Any) -> list[Document]:
-        k = kwargs.get("k", self.k)
+        k = int(kwargs.get("k", self.k))
         return [Document(page_content=f"{self.parrot_name} says: {query}")] * k
 
 
