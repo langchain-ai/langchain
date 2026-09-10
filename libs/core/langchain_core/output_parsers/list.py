@@ -184,6 +184,96 @@ class CommaSeparatedListOutputParser(ListOutputParser):
     def _type(self) -> str:
         return "comma-separated-list"
 
+    @override
+    def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[list[str]]:
+        buffer = ""
+        for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                # Extract text
+                chunk_content = chunk.content
+                if not isinstance(chunk_content, str):
+                    continue
+                buffer += chunk_content
+            else:
+                # Add current chunk to buffer
+                buffer += chunk
+
+            # Find delimiter commas that are outside quotes
+            last_delim_idx = -1
+            in_quotes = False
+            i = 0
+            n = len(buffer)
+            while i < n:
+                char = buffer[i]
+                if char == '"':
+                    if in_quotes:
+                        if i + 1 < n and buffer[i + 1] == '"':
+                            i += 1
+                        else:
+                            in_quotes = False
+                    else:
+                        in_quotes = True
+                elif char == ',' and not in_quotes:
+                    last_delim_idx = i
+                i += 1
+
+            if last_delim_idx != -1:
+                complete_chunk = buffer[:last_delim_idx]
+                buffer = buffer[last_delim_idx + 1 :]
+                for part in self.parse(complete_chunk):
+                    yield [part]
+
+        # Yield any remaining part in buffer
+        if buffer:
+            for part in self.parse(buffer):
+                yield [part]
+
+    @override
+    async def _atransform(
+        self, input: AsyncIterator[str | BaseMessage]
+    ) -> AsyncIterator[list[str]]:
+        buffer = ""
+        async for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                # Extract text
+                chunk_content = chunk.content
+                if not isinstance(chunk_content, str):
+                    continue
+                buffer += chunk_content
+            else:
+                # Add current chunk to buffer
+                buffer += chunk
+
+            # Find delimiter commas that are outside quotes
+            last_delim_idx = -1
+            in_quotes = False
+            i = 0
+            n = len(buffer)
+            while i < n:
+                char = buffer[i]
+                if char == '"':
+                    if in_quotes:
+                        if i + 1 < n and buffer[i + 1] == '"':
+                            i += 1
+                        else:
+                            in_quotes = False
+                    else:
+                        in_quotes = True
+                elif char == ',' and not in_quotes:
+                    last_delim_idx = i
+                i += 1
+
+            if last_delim_idx != -1:
+                complete_chunk = buffer[:last_delim_idx]
+                buffer = buffer[last_delim_idx + 1 :]
+                for part in self.parse(complete_chunk):
+                    yield [part]
+
+        # Yield any remaining part in buffer
+        if buffer:
+            for part in self.parse(buffer):
+                yield [part]
+
 
 class NumberedListOutputParser(ListOutputParser):
     """Parse a numbered list."""

@@ -89,6 +89,20 @@ def test_multiple_items_with_comma() -> None:
     assert list(parser.transform(iter([text]))) == [[a] for a in expected]
 
 
+def test_streaming_quoted_fields_across_chunks() -> None:
+    parser = CommaSeparatedListOutputParser()
+    chunks = ['item0, "foo, ', 'foo2", "bar, baz", qux']
+    expected = ["item0", "foo, foo2", "bar, baz", "qux"]
+    assert list(parser.transform(iter(chunks))) == [[a] for a in expected]
+
+
+def test_streaming_escaped_quotes_across_chunks() -> None:
+    parser = CommaSeparatedListOutputParser()
+    chunks = ['"foo""bar, ', 'baz", qux']
+    expected = ['foo"bar, baz', "qux"]
+    assert list(parser.transform(iter(chunks))) == [[a] for a in expected]
+
+
 def test_numbered_list() -> None:
     parser = NumberedListOutputParser()
     text1 = (
@@ -224,6 +238,44 @@ async def test_multiple_items_async() -> None:
         )
     ] == [[a] for a in expected]
     assert [a async for a in parser.atransform(aiter_from_iter([text]))] == [
+        [a] for a in expected
+    ]
+
+
+async def test_multiple_items_with_comma_async() -> None:
+    parser = CommaSeparatedListOutputParser()
+    text = '"foo, foo2",bar,baz'
+    expected = ["foo, foo2", "bar", "baz"]
+
+    assert await parser.aparse(text) == expected
+    assert await aadd(parser.atransform(aiter_from_iter(t for t in text))) == expected
+    assert [a async for a in parser.atransform(aiter_from_iter(t for t in text))] == [
+        [a] for a in expected
+    ]
+    assert [
+        a
+        async for a in parser.atransform(
+            aiter_from_iter(t for t in text.splitlines(keepends=True))
+        )
+    ] == [[a] for a in expected]
+    assert [
+        a
+        async for a in parser.atransform(
+            aiter_from_iter(
+                " " + t if i > 0 else t for i, t in enumerate(text.split(" "))
+            )
+        )
+    ] == [[a] for a in expected]
+    assert [a async for a in parser.atransform(aiter_from_iter([text]))] == [
+        [a] for a in expected
+    ]
+
+
+async def test_streaming_quoted_fields_across_chunks_async() -> None:
+    parser = CommaSeparatedListOutputParser()
+    chunks = ['item0, "foo, ', 'foo2", "bar, baz", qux']
+    expected = ["item0", "foo, foo2", "bar, baz", "qux"]
+    assert [a async for a in parser.atransform(aiter_from_iter(chunks))] == [
         [a] for a in expected
     ]
 
