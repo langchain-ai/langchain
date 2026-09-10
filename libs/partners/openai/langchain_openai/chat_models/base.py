@@ -38,6 +38,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    NoReturn,
     TypeAlias,
     TypeVar,
     cast,
@@ -674,7 +675,61 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
         raise OpenAITimeoutError(e.request) from e
     if isinstance(e, openai.APIConnectionError):
         raise OpenAIConnectionError(message=e.message, request=e.request) from e
+    if getattr(e, "status_code", None) is None:
+        # Some OpenAI-compatible gateways report a failure with HTTP 200 and the
+        # status the response should have carried inside the body. Nothing
+        # raised a typed error, so none of the branches above matched.
+        status = _status_from_body_error(getattr(e, "body", None))
+        if status is not None:
+            _raise_classified_body_error(e.body, url=str(getattr(e, "request", "")))
     raise
+
+
+_BODY_ERROR_TYPES: dict[int, type[openai.APIStatusError]] = {
+    400: openai.BadRequestError,
+    401: openai.AuthenticationError,
+    403: openai.PermissionDeniedError,
+    404: openai.NotFoundError,
+    422: openai.UnprocessableEntityError,
+    429: openai.RateLimitError,
+}
+
+
+def _status_from_body_error(error: Any) -> int | None:
+    """Read the HTTP status out of an error payload delivered inside a 200."""
+    if not isinstance(error, dict):
+        return None
+    code = error.get("code")
+    if isinstance(code, str) and code.isdigit():
+        return int(code)
+    return code if isinstance(code, int) else None
+
+
+def _raise_classified_body_error(error: Any, *, url: str) -> NoReturn:
+    """Raise the error a provider reported inside a successful response body.
+
+    A 200 carries no failing status object, so one is built from the status the
+    payload reports. Routing through ``_handle_openai_api_error`` keeps the
+    mapping from status to LangChain type in one place.
+    """
+    # The SDK pins httpx2 on newer `openai` majors and httpx on older ones.
+    try:
+        import httpx2 as httpx
+    except ImportError:  # pragma: no cover - depends on the installed openai major
+        import httpx  # type: ignore[no-redef]
+
+    status = _status_from_body_error(error)
+    message = (
+        error.get("message") if isinstance(error, dict) else None
+    ) or "The provider returned an error in a successful response body"
+    body = error if isinstance(error, dict) else {"message": str(error)}
+    response = httpx.Response(status or 500, request=httpx.Request("POST", url))
+    error_type = _BODY_ERROR_TYPES.get(status or 500, openai.InternalServerError)
+    sdk_error = error_type(message, response=response, body=body)
+    if isinstance(sdk_error, openai.BadRequestError):
+        _handle_openai_bad_request(sdk_error)
+    _handle_openai_api_error(sdk_error)
+    raise sdk_error  # pragma: no cover - handlers above always raise
 
 
 def _add_gateway_metadata(generation_info: dict[str, Any], raw_response: Any) -> None:
@@ -2001,7 +2056,9 @@ class BaseChatOpenAI(BaseChatModel):
         # typically followed by a null value for `choices`, which we raise for
         # separately below).
         if response_dict.get("error"):
-            raise ValueError(response_dict.get("error"))
+            _raise_classified_body_error(
+                response_dict["error"], url=str(self.openai_api_base or "")
+            )
 
         # Raise informative error messages for non-OpenAI chat completions APIs
         # that return malformed responses.
@@ -5020,7 +5077,10 @@ def _construct_lc_result_from_responses_api(
 ) -> ChatResult:
     """Construct `ChatResponse` from OpenAI Response API response."""
     if response.error:
-        raise ValueError(response.error)
+        _raise_classified_body_error(
+            {"message": getattr(response.error, "message", "") or str(response.error)},
+            url="",
+        )
 
     if output_version is None:
         # Sentinel value of None lets us know if output_version is set explicitly.

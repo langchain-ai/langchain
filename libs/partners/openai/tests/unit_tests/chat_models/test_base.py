@@ -2256,7 +2256,7 @@ def test_structured_outputs_parser_valid_falsy_response() -> None:
 
 
 def test__construct_lc_result_from_responses_api_error_handling() -> None:
-    """Test that errors in the response are properly raised."""
+    """Errors in the response raise a classified provider error, not a ValueError."""
     response = Response(
         id="resp_123",
         created_at=1234567890,
@@ -2269,10 +2269,12 @@ def test__construct_lc_result_from_responses_api_error_handling() -> None:
         output=[],
     )
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(openai.InternalServerError) as excinfo:
         _construct_lc_result_from_responses_api(response)
 
     assert "Test error" in str(excinfo.value)
+    assert isinstance(excinfo.value, ModelAPIError)
+    assert excinfo.value.is_retryable is True
 
 
 def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
@@ -5494,3 +5496,114 @@ def test_configuration_update_block_without_text() -> None:
         "type": "configuration_update",
         "reasoning": {"effort": "low"},
     }
+
+
+_BODY_ERROR_CASES = [
+    (400, openai.BadRequestError, ModelInvalidRequestError, False),
+    (401, openai.AuthenticationError, ModelAuthenticationError, False),
+    (403, openai.PermissionDeniedError, ModelPermissionDeniedError, False),
+    (404, openai.NotFoundError, ModelNotFoundError, False),
+    (429, openai.RateLimitError, ModelRateLimitError, True),
+    (500, openai.InternalServerError, ModelAPIError, True),
+    (502, openai.InternalServerError, ModelAPIError, True),
+    ("429", openai.RateLimitError, ModelRateLimitError, True),  # sent as a string
+]
+
+
+def _completion_with_error(error: Any) -> dict:
+    """A 200 response body carrying an error instead of choices."""
+    return {
+        "id": "chatcmpl-1",
+        "object": "chat.completion",
+        "created": 1,
+        "model": OPENAI_TEST_MODEL,
+        "error": error,
+    }
+
+
+@pytest.mark.parametrize(
+    ("code", "sdk_error_type", "model_error_type", "is_retryable"), _BODY_ERROR_CASES
+)
+def test_body_error_classification_invoke(
+    code: int | str,
+    sdk_error_type: type[openai.APIStatusError],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """An error inside a 200 body raises the types the same error raised would."""
+    model = ChatOpenAI(api_key=SecretStr("test"))
+    body = _completion_with_error({"code": code, "message": "gateway said no"})
+
+    with patch.object(model.client, "with_raw_response") as mock_client:
+        mock_client.create.return_value.parse.return_value = body
+        with pytest.raises(sdk_error_type) as exc_info:
+            model.invoke("test")
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+    assert exc_info.value.body == {"code": code, "message": "gateway said no"}
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        {"message": "no code at all"},
+        {"code": "not_a_status", "message": "x"},
+        "a bare string error",
+    ],
+)
+def test_body_error_without_usable_status_still_raises(error: Any) -> None:
+    """A body that says "error" never reads as success, however malformed."""
+    model = ChatOpenAI(api_key=SecretStr("test"))
+
+    with patch.object(model.client, "with_raw_response") as mock_client:
+        mock_client.create.return_value.parse.return_value = _completion_with_error(
+            error
+        )
+        with pytest.raises(ModelAPIError):
+            model.invoke("test")
+
+
+@pytest.mark.parametrize(
+    ("code", "sdk_error_type", "model_error_type", "is_retryable"), _BODY_ERROR_CASES
+)
+def test_api_error_with_status_in_body_is_classified(
+    code: int | str,
+    sdk_error_type: type[openai.APIStatusError],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """A streamed gateway fault arrives as APIError with the status in `body`."""
+    model = ChatOpenAI(api_key=SecretStr("test"))
+    api_error = openai.APIError(
+        "gateway said no",
+        request=httpx2.Request("POST", "http://gateway.test/v1/chat/completions"),
+        body={"code": code, "message": "gateway said no"},
+    )
+
+    with patch.object(model.client, "with_raw_response") as mock_client:
+        mock_client.create.side_effect = api_error
+        with pytest.raises(sdk_error_type) as exc_info:
+            model.invoke("test")
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_api_error_without_usable_body_status_is_reraised_unchanged() -> None:
+    """An APIError with no status in its body keeps today's behaviour."""
+    model = ChatOpenAI(api_key=SecretStr("test"))
+    api_error = openai.APIError(
+        "something else went wrong",
+        request=httpx2.Request("POST", "http://gateway.test/v1/chat/completions"),
+        body={"message": "no code here"},
+    )
+
+    with patch.object(model.client, "with_raw_response") as mock_client:
+        mock_client.create.side_effect = api_error
+        with pytest.raises(openai.APIError) as exc_info:
+            model.invoke("test")
+
+    assert exc_info.value is api_error
