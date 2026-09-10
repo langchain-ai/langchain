@@ -65,14 +65,39 @@ class StrictFormatter(Formatter):
         Raises:
             KeyError: If the format string contains placeholders not present
                 in input_variables.
+            IndexError: If the format string contains positional placeholders.
 
         Example:
             >>> fmt = StrictFormatter()
             >>> fmt.validate_input_variables("Hello, {name}!", ["name"])  # OK
             >>> fmt.validate_input_variables("Hello, {name}!", ["other"])  # Raises
         """
-        dummy_inputs = dict.fromkeys(input_variables, "foo")
-        super().format(format_string, **dummy_inputs)
+        names = set(input_variables)
+        self._validate_format_string(format_string, names)
+
+    def _validate_format_string(self, format_string: str, names: set[str]) -> None:
+        """Check that every placeholder in a format string is a known variable.
+
+        Only variable *names* are checked — placeholders are never rendered,
+        so format specs (e.g. `{score:.1f}`) cannot fail validation.
+
+        Args:
+            format_string: A string containing replacement fields to validate.
+            names: Valid variable names.
+        """
+        for _, field_name, format_spec, _ in self.parse(format_string):
+            if field_name is not None:
+                if not field_name:
+                    msg = (
+                        "Positional arguments are not allowed, everything "
+                        "should be passed as keyword arguments."
+                    )
+                    raise IndexError(msg)
+                root = field_name.split(".")[0].split("[")[0]
+                if root not in names:
+                    raise KeyError(root)
+            if format_spec:
+                self._validate_format_string(format_spec, names)
 
 
 #: Default StrictFormatter instance for use throughout LangChain.

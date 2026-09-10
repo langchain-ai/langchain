@@ -108,6 +108,20 @@ class TestStrictFormatter:
         # Should not raise
         fmt.validate_input_variables("Hello, World!", [])
 
+    def test_validate_input_variables_with_format_spec(self) -> None:
+        """Test `validate_input_variables` accepts templates with format specs."""
+        fmt = StrictFormatter()
+        # Should not raise: the variable is provided, the spec only affects
+        # rendering and must not fail validation.
+        fmt.validate_input_variables("Score: {score:.1f}", ["score"])
+        fmt.validate_input_variables("Count: {n:d} ({p:%})", ["n", "p"])
+
+    def test_validate_input_variables_with_format_spec_missing(self) -> None:
+        """Test `validate_input_variables` still raises on missing variables."""
+        fmt = StrictFormatter()
+        with pytest.raises(KeyError):
+            fmt.validate_input_variables("Score: {score:.1f}", ["other"])
+
 
 class TestFormatterSingleton:
     """Tests for the formatter singleton instance."""
