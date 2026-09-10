@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 from langchain_core.embeddings import Embeddings
@@ -63,6 +64,15 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install sentence-transformers`."
             )
             raise ImportError(msg) from exc
+
+        if self.model_kwargs.get("backend", "torch") == "ipex":
+            msg = (
+                "`backend='ipex'` is no longer supported; the default `torch` "
+                "backend will be used instead. Intel GPU acceleration is "
+                "natively supported in PyTorch 2.5 and later."
+            )
+            warnings.warn(msg, UserWarning, stacklevel=2)
+            self.model_kwargs["backend"] = "torch"
 
         model_cls = sentence_transformers.SentenceTransformer
 

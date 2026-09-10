@@ -2,6 +2,7 @@ from __future__ import annotations  # type: ignore[import-not-found]
 
 import importlib.util
 import logging
+import warnings
 from collections.abc import Iterator, Mapping
 from typing import Any
 
@@ -156,6 +157,15 @@ class HuggingFacePipeline(BaseLLM):
 
             _model_kwargs["device_map"] = device_map
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
+
+        if backend == "ipex":
+            msg = (
+                "`backend='ipex'` is no longer supported; the default "
+                "`transformers` backend will be used instead. Intel GPU acceleration "
+                "is natively supported in PyTorch 2.5 and later."
+            )
+            warnings.warn(msg, UserWarning, stacklevel=2)
+            backend = "default"
 
         if backend == "openvino":
             if task not in VALID_TASKS:
