@@ -20,6 +20,11 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
         super().__init__(separators=separators, **kwargs)
 
 
+# Closing `#` run is not heading text when preceded by whitespace
+# (or the whole text); `# C#` keeps its `#` per CommonMark.
+_CLOSING_HASHES_RE = re.compile(r"(?:^|\s+)#+\s*$")
+
+
 class MarkdownHeaderTextSplitter:
     """Splitting markdown files based on specified headers."""
 
@@ -221,8 +226,11 @@ class MarkdownHeaderTextSplitter:
                             header_text = stripped_line[len(sep) : -len(sep)].strip()
                         else:
                             # For standard headers like # Header, extract text
-                            # after the separator
-                            header_text = stripped_line[len(sep) :].strip()
+                            # after the separator, dropping optional closing
+                            # `#` sequence (e.g. `# Header ##`).
+                            header_text = _CLOSING_HASHES_RE.sub(
+                                "", stripped_line[len(sep) :].strip()
+                            ).rstrip()
 
                         header: HeaderType = {
                             "level": current_header_level,
