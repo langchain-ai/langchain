@@ -1,6 +1,6 @@
 from functools import partial
 from inspect import isclass
-from typing import Any, cast
+from typing import Any
 
 import pytest
 from pydantic import BaseModel
@@ -20,7 +20,7 @@ def _fake_runnable(
 ) -> BaseModel | dict[str, Any]:
     if isclass(schema) and issubclass(schema, BaseModel):
         return schema(name="yo", value=value)
-    params = cast("dict[str, Any]", schema)["parameters"]
+    params = schema["parameters"]
     return {k: 1 if k != "value" else value for k in params}
 
 
