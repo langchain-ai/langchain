@@ -2819,6 +2819,44 @@ def html_header_splitter_splitter_factory() -> Callable[
             ],
             "Headers with no associated content",
         ),
+        (
+            # Test Case: Non-heading tags (e.g., div) should work as split points
+            [("h1", "Header 1"), ("div", "Div Content")],
+            """
+            <html>
+                <body>
+                    <h1>Introduction</h1>
+                    <p>Intro text.</p>
+                    <div>Div content here.</div>
+                    <h1>Conclusion</h1>
+                    <p>Final thoughts.</p>
+                </body>
+            </html>
+            """,
+            [
+                Document(
+                    page_content="Introduction", metadata={"Header 1": "Introduction"}
+                ),
+                Document(
+                    page_content="Intro text.",
+                    metadata={"Header 1": "Introduction"},
+                ),
+                Document(
+                    page_content="Div content here.",
+                    metadata={
+                        "Header 1": "Introduction",
+                        "Div Content": "Div content here.",
+                    },
+                ),
+                Document(
+                    page_content="Conclusion", metadata={"Header 1": "Conclusion"}
+                ),
+                Document(
+                    page_content="Final thoughts.", metadata={"Header 1": "Conclusion"}
+                ),
+            ],
+            "Non-heading tags as split points",
+        ),
     ],
 )
 @pytest.mark.requires("bs4")
@@ -2864,6 +2902,40 @@ def test_html_header_text_splitter(
             f"Test Case '{test_case}' Failed at Document {idx}: "
             f"Metadata mismatch.\nExpected: {expected.metadata}\nGot: {doc.metadata}"
         )
+
+
+@pytest.mark.requires("bs4")
+def test_html_header_splitter_non_heading_tags() -> None:
+    """Test that HTMLHeaderTextSplitter accepts non-heading tags like div.
+
+    Previously the constructor raised ValueError for any tag outside h1-h6
+    because int(tag[1:]) fails on non-numeric suffixes.  The fix uses a shared
+    _get_header_level helper that falls back to level 9999, matching the
+    existing fallback in _generate_documents.
+    """
+    # Should not raise — this was the original bug
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "Main Topic"), ("div", "Div Content")]
+    )
+    assert splitter.header_tags == ["h1", "div"]
+    # h1 (level 1) must sort before div (level 9999)
+    assert splitter.header_mapping["h1"] == "Main Topic"
+    assert splitter.header_mapping["div"] == "Div Content"
+
+    html = """
+    <html><body>
+      <h1>Intro</h1>
+      <p>Intro text</p>
+      <div>Div body</div>
+      <h1>Conclusion</h1>
+      <p>Final</p>
+    </body></html>
+    """
+    docs = splitter.split_text(html)
+    # The div should nest under the active h1, and a later h1 should close it
+    assert any("Div body" in d.page_content for d in docs)
+    assert any("Intro" in d.metadata.get("Main Topic", "") for d in docs)
+    assert any("Conclusion" in d.metadata.get("Main Topic", "") for d in docs)
 
 
 @pytest.mark.parametrize(
