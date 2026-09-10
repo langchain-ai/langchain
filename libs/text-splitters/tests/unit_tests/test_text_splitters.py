@@ -3094,6 +3094,59 @@ def test_html_no_headers_with_multiple_splitters(
         )
 
 
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter_accepts_non_heading_tags() -> None:
+    """Constructing with a tag outside h1-h6 must not raise.
+
+    The splitting engine assigns such tags a fallback level, so the constructor
+    should accept them and sort them after every numbered heading.
+    """
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("div", "Section"), ("h1", "Header 1")]
+    )
+    assert splitter.headers_to_split_on == [
+        ("h1", "Header 1"),
+        ("div", "Section"),
+    ]
+
+
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter_splits_on_non_heading_tag() -> None:
+    """A non-heading tag with direct text acts as a split boundary."""
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("div", "Section")]
+    )
+    html = (
+        "<html><body><h1>Intro</h1><div>Section A</div><p>Some text.</p></body></html>"
+    )
+    docs = splitter.split_text(html)
+    assert [(doc.page_content, doc.metadata) for doc in docs] == [
+        ("Intro", {"Header 1": "Intro"}),
+        ("Section A", {"Header 1": "Intro", "Section": "Section A"}),
+        ("Some text.", {"Header 1": "Intro", "Section": "Section A"}),
+    ]
+
+
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter_non_heading_tag_closed_by_numbered_header() -> None:
+    """A following numbered header closes an active non-heading section."""
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("div", "Section")]
+    )
+    html = (
+        "<html><body><h1>First</h1><div>A</div><p>one</p>"
+        "<h1>Second</h1><p>two</p></body></html>"
+    )
+    docs = splitter.split_text(html)
+    assert [(doc.page_content, doc.metadata) for doc in docs] == [
+        ("First", {"Header 1": "First"}),
+        ("A", {"Header 1": "First", "Section": "A"}),
+        ("one", {"Header 1": "First", "Section": "A"}),
+        ("Second", {"Header 1": "Second"}),
+        ("two", {"Header 1": "Second"}),
+    ]
+
+
 def test_split_text_on_tokens() -> None:
     """Test splitting by tokens per chunk."""
     text = "foo bar baz 123"
