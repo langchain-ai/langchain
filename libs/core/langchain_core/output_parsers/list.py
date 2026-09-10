@@ -40,6 +40,82 @@ def droplastn(
             yield buffer.popleft()
 
 
+def _decode_csv_field(field: str) -> str:
+    """Decode a single raw CSV field using the same dialect as `parse`.
+
+    Args:
+        field: The raw text of one CSV field, without its trailing separator.
+
+    Returns:
+        The decoded field value.
+    """
+    try:
+        reader = csv.reader(
+            StringIO(field), quotechar='"', delimiter=",", skipinitialspace=True
+        )
+        row = next(reader, None)
+    except csv.Error:
+        return field.strip()
+    if not row:
+        return ""
+    return row[0]
+
+
+def _split_complete_csv_fields(text: str) -> tuple[list[str], int]:
+    """Split completed CSV fields out of a raw, possibly partial CSV stream.
+
+    Scans `text` with quote awareness and returns the decoded fields that are
+    already terminated by a separator (a `,` or a record boundary outside
+    quotes), together with the index in `text` where the raw remainder (the
+    trailing field, which may still be incomplete) starts. Keeping the
+    remainder raw preserves quote state across streaming chunks, unlike
+    buffering the already-decoded last field.
+
+    Args:
+        text: The raw CSV text accumulated so far.
+
+    Returns:
+        A tuple of the decoded complete fields and the start index of the raw
+        remainder (`len(text)` when every field is complete).
+    """
+    fields: list[str] = []
+    start = 0
+    i = 0
+    n = len(text)
+    in_quotes = False
+    while i < n:
+        char = text[i]
+        if in_quotes:
+            if char == '"':
+                if i + 1 < n and text[i + 1] == '"':
+                    # Escaped quote inside a quoted field.
+                    i += 2
+                    continue
+                in_quotes = False
+            i += 1
+        elif char == '"':
+            in_quotes = True
+            i += 1
+        elif char == ",":
+            fields.append(_decode_csv_field(text[start:i]))
+            start = i + 1
+            i += 1
+        elif char in ("\r", "\n"):
+            if char == "\r" and i + 1 == n:
+                # A trailing `\r` may be the first half of a `\r\n` pair that
+                # arrives with the next chunk; do not split on it yet.
+                break
+            fields.append(_decode_csv_field(text[start:i]))
+            start = i + 1
+            if char == "\r" and i + 1 < n and text[i + 1] == "\n":
+                i += 2
+            else:
+                i += 1
+        else:
+            i += 1
+    return fields, start
+
+
 class ListOutputParser(BaseTransformOutputParser[list[str]]):
     """Parse the output of a model to a list."""
 
@@ -179,6 +255,56 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         except csv.Error:
             # Keep old logic for backup
             return [part.strip() for part in text.split(",")]
+
+    @override
+    def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[list[str]]:
+        buffer = ""
+        for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                # Extract text
+                chunk_content = chunk.content
+                if not isinstance(chunk_content, str):
+                    continue
+                buffer += chunk_content
+            else:
+                # Add current chunk to buffer
+                buffer += chunk
+            # Yield only fields already terminated by a separator, keeping the
+            # raw remainder (quote state intact) as the next buffer
+            fields, done_idx = _split_complete_csv_fields(buffer)
+            if done_idx:
+                for field in fields:
+                    yield [field]
+                buffer = buffer[done_idx:]
+        # Yield the last part
+        for part in self.parse(buffer):
+            yield [part]
+
+    @override
+    async def _atransform(
+        self, input: AsyncIterator[str | BaseMessage]
+    ) -> AsyncIterator[list[str]]:
+        buffer = ""
+        async for chunk in input:
+            if isinstance(chunk, BaseMessage):
+                # Extract text
+                chunk_content = chunk.content
+                if not isinstance(chunk_content, str):
+                    continue
+                buffer += chunk_content
+            else:
+                # Add current chunk to buffer
+                buffer += chunk
+            # Yield only fields already terminated by a separator, keeping the
+            # raw remainder (quote state intact) as the next buffer
+            fields, done_idx = _split_complete_csv_fields(buffer)
+            if done_idx:
+                for field in fields:
+                    yield [field]
+                buffer = buffer[done_idx:]
+        # Yield the last part
+        for part in self.parse(buffer):
+            yield [part]
 
     @property
     def _type(self) -> str:

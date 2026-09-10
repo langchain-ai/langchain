@@ -1,6 +1,8 @@
 from collections.abc import AsyncIterator, Iterable
 from typing import TypeVar
 
+import pytest
+
 from langchain_core.output_parsers.list import (
     CommaSeparatedListOutputParser,
     MarkdownListOutputParser,
@@ -87,6 +89,66 @@ def test_multiple_items_with_comma() -> None:
         parser.transform(" " + t if i > 0 else t for i, t in enumerate(text.split(" ")))
     ) == [[a] for a in expected]
     assert list(parser.transform(iter([text]))) == [[a] for a in expected]
+
+
+def test_streaming_quoted_field_split_across_chunks() -> None:
+    """A quoted field containing a comma must stream as one field.
+
+    Streaming chunked CSV text must produce the same fields as parsing the
+    concatenated text, even when a chunk boundary falls inside a quoted field.
+    """
+    parser = CommaSeparatedListOutputParser()
+    chunks = ['alpha, "beta,', ' gamma", delta']
+    text = "".join(chunks)
+    expected = ["alpha", "beta, gamma", "delta"]
+
+    assert parser.parse(text) == expected
+    assert list(parser.transform(iter(chunks))) == [[a] for a in expected]
+
+
+def test_streaming_quoted_field_with_escaped_quotes() -> None:
+    """Doubled quotes inside a quoted field survive chunk boundaries."""
+    parser = CommaSeparatedListOutputParser()
+    chunks = ['a, "say ""hi""', ' now", b']
+    text = "".join(chunks)
+    expected = ["a", 'say "hi" now', "b"]
+
+    assert parser.parse(text) == expected
+    assert list(parser.transform(iter(chunks))) == [[a] for a in expected]
+
+
+def test_streaming_matches_parse_on_newlines() -> None:
+    """Record boundaries in streamed text must match non-streaming parsing."""
+    parser = CommaSeparatedListOutputParser()
+    chunks = ["foo,\nbar", "\nbaz"]
+    text = "".join(chunks)
+
+    expected = parser.parse(text)
+    assert expected == ["foo", "", "bar", "baz"]
+    assert add(parser.transform(iter(chunks))) == expected
+
+
+def test_streaming_yields_complete_fields_incrementally() -> None:
+    """Complete fields are yielded as soon as their separator arrives."""
+    parser = CommaSeparatedListOutputParser()
+    output = parser.transform(iter(["alpha,", '"beta,', ' gamma",', " delta"]))
+
+    assert next(output) == ["alpha"]
+    assert next(output) == ["beta, gamma"]
+    assert next(output) == ["delta"]
+    with pytest.raises(StopIteration):
+        next(output)
+
+
+async def test_streaming_quoted_field_split_across_chunks_async() -> None:
+    """The async streaming path must match the sync path for quoted fields."""
+    parser = CommaSeparatedListOutputParser()
+    chunks = ['alpha, "beta,', ' gamma", delta']
+    expected = ["alpha", "beta, gamma", "delta"]
+
+    assert [a async for a in parser.atransform(aiter_from_iter(chunks))] == [
+        [a] for a in expected
+    ]
 
 
 def test_numbered_list() -> None:
