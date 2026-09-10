@@ -5,7 +5,6 @@ import logging
 import os
 from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import Any
-from urllib.parse import urlparse
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -17,21 +16,10 @@ from langchain_core.utils import from_env, get_pydantic_field_names
 from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self
 
+from langchain_huggingface._endpoint_utils import _is_huggingface_hosted_url
 from langchain_huggingface._version import __version__
 
 logger = logging.getLogger(__name__)
-
-
-def _is_huggingface_hosted_url(url: str | None) -> bool:
-    """True if url is HF-hosted (huggingface.co or hf.space)."""
-    if not url:
-        return False
-    hostname = (urlparse(url).hostname or "").lower()
-    return (
-        hostname == "huggingface.co"
-        or hostname == "hf.space"
-        or hostname.endswith((".huggingface.co", ".hf.space"))
-    )
 
 
 VALID_TASKS = (

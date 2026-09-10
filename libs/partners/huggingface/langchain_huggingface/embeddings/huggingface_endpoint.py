@@ -8,6 +8,8 @@ from langchain_core.utils import from_env
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
 
+from langchain_huggingface._endpoint_utils import _is_huggingface_hosted_url
+
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)
 
@@ -30,6 +32,15 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
             huggingfacehub_api_token="my-api-key",
         )
         ```
+
+    To reach a deployed Inference Endpoint or a self-hosted Text Embeddings
+    Inference server, pass its URL as `endpoint_url` instead of a repo ID:
+
+        ```python
+        hf = HuggingFaceEndpointEmbeddings(
+            endpoint_url="http://localhost:8081",
+        )
+        ```
     """
 
     client: Any = None
@@ -38,6 +49,16 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
     model: str | None = None
     """Model name to use."""
+
+    endpoint_url: str | None = None
+    """URL of the inference endpoint to send requests to.
+
+    Use this for a deployed Inference Endpoint or a self-hosted Hugging Face
+    compatible embedding server, such as Text Embeddings Inference. Mutually
+    exclusive with `model` and `repo_id`.
+
+    When the URL is not Hugging Face hosted, the configured token is not passed to
+    the underlying client, matching `HuggingFaceEndpoint`."""
 
     provider: str | None = None
     """Name of the provider to use for inference with the model specified in
@@ -68,8 +89,18 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         for field_name in ("model", "repo_id"):
             value = getattr(self, field_name)
             if value and value.startswith(("http://", "https://")):
-                msg = f"`{field_name}` must be a HuggingFace repo ID, not a URL."
+                msg = (
+                    f"`{field_name}` must be a HuggingFace repo ID, not a URL. "
+                    "Use `endpoint_url` for direct endpoints."
+                )
                 raise ValueError(msg)
+
+        if self.endpoint_url and (self.model or self.repo_id):
+            msg = (
+                "Please specify either an `endpoint_url` OR a `model`/`repo_id`, "
+                "not both."
+            )
+            raise ValueError(msg)
 
         huggingfacehub_api_token = self.huggingfacehub_api_token or os.getenv(
             "HF_TOKEN"
@@ -81,23 +112,36 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
                 InferenceClient,
             )
 
-            if self.model:
+            if self.endpoint_url:
+                # `model` and `repo_id` stay unset: the endpoint identifies itself.
+                target = self.endpoint_url
+            elif self.model:
                 self.repo_id = self.model
+                target = self.model
             elif self.repo_id:
                 self.model = self.repo_id
+                target = self.repo_id
             else:
                 self.model = DEFAULT_MODEL
                 self.repo_id = DEFAULT_MODEL
+                target = DEFAULT_MODEL
+
+            # A custom endpoint is not necessarily operated by Hugging Face, so
+            # don't hand it a Hugging Face token.
+            if self.endpoint_url and not _is_huggingface_hosted_url(self.endpoint_url):
+                token: str | None = None
+            else:
+                token = huggingfacehub_api_token
 
             client = InferenceClient(
-                model=self.model,
-                token=huggingfacehub_api_token,
+                model=target,
+                token=token,
                 provider=self.provider,  # type: ignore[arg-type]
             )
 
             async_client = AsyncInferenceClient(
-                model=self.model,
-                token=huggingfacehub_api_token,
+                model=target,
+                token=token,
                 provider=self.provider,  # type: ignore[arg-type]
             )
 
