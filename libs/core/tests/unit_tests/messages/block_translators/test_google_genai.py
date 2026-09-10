@@ -253,6 +253,17 @@ def test_content_blocks_preserve_index_for_images() -> None:
     assert [block.get("index") for block in blocks] == [0, 1]
 
 
+def test_empty_image_url_falls_back_to_non_standard_block() -> None:
+    """An empty image URL should preserve the source block instead of raising."""
+    item = {"type": "image_url", "image_url": {"url": ""}}
+    message = AIMessage(
+        content=[item],
+        response_metadata={"model_provider": "google_genai"},
+    )
+
+    assert message.content_blocks == [{"type": "non_standard", "value": item}]
+
+
 def test_content_blocks_preserve_index_for_parallel_tool_calls() -> None:
     """Tool calls rebuilt from `tool_calls` must recover their chunk index."""
     message = _genai_chunk(
