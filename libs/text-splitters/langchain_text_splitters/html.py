@@ -90,14 +90,14 @@ def _find_all_tags(
 def _get_header_level(tag: str) -> int:
     """Return the numeric header level for a tag, with fallback for non-standard tags.
 
-    h1 -> 1, h2 -> 2, etc. Non-numeric tags (e.g. div, section) get level 9999
-    so they sort below every numbered heading, matching the existing fallback in
+    h1 -> 1, h2 -> 2, etc. Only h1-h6 are treated as numbered headings; all
+    other tags (e.g. div, section, x-1) get level 9999 so they sort below
+    every numbered heading, matching the existing fallback in
     _generate_documents.
     """
-    try:
+    if tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
         return int(tag[1:])
-    except ValueError:
-        return 9999
+    return 9999
 
 
 class HTMLHeaderTextSplitter:

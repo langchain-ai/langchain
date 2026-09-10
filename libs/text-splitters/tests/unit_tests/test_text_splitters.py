@@ -2937,6 +2937,14 @@ def test_html_header_splitter_non_heading_tags() -> None:
     assert any("Intro" in d.metadata.get("Main Topic", "") for d in docs)
     assert any("Conclusion" in d.metadata.get("Main Topic", "") for d in docs)
 
+    # Non-heading tags with numeric suffixes (e.g. x-1) must get level 9999, not -1
+    splitter2 = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "Main"), ("x-1", "X1")]
+    )
+    assert "x-1" in splitter2.header_tags
+    # h1 (level 1) sorts before x-1 (level 9999), never -1
+    assert splitter2.header_tags == ["h1", "x-1"]
+
 
 @pytest.mark.parametrize(
     ("headers_to_split_on", "html_content", "expected_output", "test_case"),
