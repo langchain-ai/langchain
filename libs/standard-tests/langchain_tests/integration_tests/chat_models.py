@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from vcr.cassette import Cassette
 
 
-def _get_joke_class(  # noqa: RET503
+def _get_joke_class(
     schema_type: Literal["pydantic", "typeddict", "json_schema"],
 ) -> Any:
     class Joke(BaseModel):
@@ -75,8 +75,7 @@ def _get_joke_class(  # noqa: RET503
     if schema_type == "typeddict":
         return JokeDict, validate_joke_dict
 
-    if schema_type == "json_schema":
-        return Joke.model_json_schema(), validate_joke_dict
+    return Joke.model_json_schema(), validate_joke_dict
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
@@ -163,7 +162,7 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
 
 def _get_base64_from_url(url: str) -> str:
     user_agent = os.environ.get("LANGCHAIN_TESTS_USER_AGENT")
-    if not user_agent:
+    if user_agent is None:
         warning_message = (
             "LANGCHAIN_TESTS_USER_AGENT environment variable not set. "
             "langchain-tests pulls (CC0 License) audio data from wikimedia.org. "
@@ -171,7 +170,7 @@ def _get_base64_from_url(url: str) -> str:
             "https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy"
         )
         warnings.warn(warning_message, stacklevel=2)
-    headers = {"User-Agent": user_agent} if user_agent else {}
+    headers = {"User-Agent": user_agent} if user_agent is not None else {}
     httpx_response = httpx.get(url, headers=headers, timeout=10.0).content
     return base64.b64encode(httpx_response).decode("utf-8")
 
@@ -1027,7 +1026,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model override not supported.")
 
         override_model = self.model_override_value
-        if not override_model:
+        if override_model is None:
             pytest.skip("model_override_value not specified.")
 
         result = model.invoke("Hello", model=override_model)
@@ -1054,7 +1053,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model override not supported.")
 
         override_model = self.model_override_value
-        if not override_model:
+        if override_model is None:
             pytest.skip("model_override_value not specified.")
 
         result = await model.ainvoke("Hello", model=override_model)
@@ -1081,7 +1080,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model override not supported.")
 
         override_model = self.model_override_value
-        if not override_model:
+        if override_model is None:
             pytest.skip("model_override_value not specified.")
 
         full: AIMessageChunk | None = None
@@ -1111,7 +1110,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model override not supported.")
 
         override_model = self.model_override_value
-        if not override_model:
+        if override_model is None:
             pytest.skip("model_override_value not specified.")
 
         full: AIMessageChunk | None = None
@@ -1632,12 +1631,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke("hi", stop=["you"])
         assert isinstance(result, AIMessage)
 
-        custom_model = self.chat_model_class(
-            **{
-                **self.chat_model_params,
-                "stop": ["you"],
-            }
-        )
+        params: dict[str, Any] = {
+            **self.chat_model_params,
+            "stop": ["you"],
+        }
+        custom_model = self.chat_model_class(**params)
         result = custom_model.invoke("hi")
         assert isinstance(result, AIMessage)
 
@@ -1702,7 +1700,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         _validate_tool_call_message(result)
 
         tool_call_streaming = (
-            model.profile.get("tool_call_streaming", False) if model.profile else False
+            model.profile.get("tool_call_streaming", False)
+            if model.profile is not None
+            else False
         )
 
         # Test stream
@@ -1781,7 +1781,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         _validate_tool_call_message(result)
 
         tool_call_streaming = (
-            model.profile.get("tool_call_streaming", False) if model.profile else False
+            model.profile.get("tool_call_streaming", False)
+            if model.profile is not None
+            else False
         )
 
         # Test astream
@@ -2271,7 +2273,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert issubclass(tool_schema, BaseModel)
         few_shot_messages = tool_example_to_messages(
             "What is 1 + 2",
-            [tool_schema(a=1, b=2)],
+            [tool_schema(a=1, b=2)],  # ty: ignore[pydantic-discarded-extra-argument]
             tool_outputs=[function_result],
             ai_response=function_result,
         )
@@ -2499,9 +2501,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         # but this test validates pydantic.v1.BaseModel support at runtime.
         chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, Joke)  # type: ignore[unreachable]
+        assert isinstance(result, Joke)
 
-        chunk = None  # type: ignore[unreachable]
+        chunk = None
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, Joke)
         assert chunk is not None, "Stream returned no chunks - possible API issue"
