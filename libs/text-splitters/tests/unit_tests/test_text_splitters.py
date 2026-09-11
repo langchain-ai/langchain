@@ -2637,6 +2637,16 @@ def html_header_splitter_splitter_factory() -> Callable[
     return _create_splitter
 
 
+def test_html_header_splitter_accepts_non_heading_tags() -> None:
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "Title"), ("div", "Section")]
+    )
+
+    documents = splitter.split_text("<h1>Title</h1><div>Section</div>")
+
+    assert documents[1].metadata == {"Title": "Title", "Section": "Section"}
+
+
 @pytest.mark.parametrize(
     ("headers_to_split_on", "html_input", "expected_documents", "test_case"),
     [

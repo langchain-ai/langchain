@@ -173,7 +173,8 @@ class HTMLHeaderTextSplitter:
         """
         # Sort headers by their numeric level so that h1 < h2 < h3...
         self.headers_to_split_on = sorted(
-            headers_to_split_on, key=lambda x: int(x[0][1:])
+            headers_to_split_on,
+            key=lambda x: int(x[0][1:]) if x[0][1:].isdigit() else 9999,
         )
         self.header_mapping = dict(self.headers_to_split_on)
         self.header_tags = [tag for tag, _ in self.headers_to_split_on]
