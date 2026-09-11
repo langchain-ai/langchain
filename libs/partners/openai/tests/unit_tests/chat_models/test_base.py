@@ -4646,7 +4646,7 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
 
 
 def test_model_prefers_responses_api() -> None:
-    # Pro and Sol models (with and without date snapshots): Responses API only
+    # Pro, Sol, and Astra models (with and without date snapshots): Responses API only
     assert _model_prefers_responses_api("gpt-5-pro")
     assert _model_prefers_responses_api("gpt-5-pro-2025-10-06")
     assert _model_prefers_responses_api("gpt-5.2-pro")
@@ -4655,6 +4655,8 @@ def test_model_prefers_responses_api() -> None:
     assert _model_prefers_responses_api("gpt-5.4-pro-2026-03-05")
     assert _model_prefers_responses_api("gpt-5.6-sol")
     assert _model_prefers_responses_api("gpt-5.6-sol-2026-09-01")
+    assert _model_prefers_responses_api("gpt-6-astra")
+    assert _model_prefers_responses_api("gpt-6-astra-2026-09-04")
     # Codex models: Responses API only
     assert _model_prefers_responses_api("gpt-5.3-codex")
     assert _model_prefers_responses_api("gpt-5.3-codex")
