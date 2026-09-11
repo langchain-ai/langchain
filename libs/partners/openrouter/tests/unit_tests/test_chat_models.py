@@ -2633,7 +2633,7 @@ class TestErrorPaths:
             _make_model(model_kwargs={"model_name": "some-model"})
 
     def test_max_retries_zero_disables_retries(self) -> None:
-        """Test that max_retries=0 does not configure retry."""
+        """Test that max_retries=0 passes retry_config=None to disable retries."""
         with patch("openrouter.OpenRouter") as mock_cls:
             mock_cls.return_value = MagicMock()
             ChatOpenRouter(
@@ -2642,7 +2642,8 @@ class TestErrorPaths:
                 max_retries=0,
             )
             call_kwargs = mock_cls.call_args[1]
-            assert "retry_config" not in call_kwargs
+            assert "retry_config" in call_kwargs
+            assert call_kwargs["retry_config"] is None
 
     def test_max_retries_scales_elapsed_time(self) -> None:
         """Test that max_retries value scales max_elapsed_time."""
