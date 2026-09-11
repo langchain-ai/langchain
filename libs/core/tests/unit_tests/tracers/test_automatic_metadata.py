@@ -262,6 +262,12 @@ def test_errored_llm_run_attaches_gateway_metadata() -> None:
         pytest.param({"selected_model": "configured-model"}, {}, id="selected-only"),
         pytest.param({"model": None, "provider": None}, {}, id="null"),
         pytest.param({"model": "", "provider": ""}, {}, id="empty-strings"),
+        pytest.param({"model": " \t\n", "provider": "\n "}, {}, id="whitespace-only"),
+        pytest.param(
+            {"model": " resolved-model\n", "provider": "\tamazon_bedrock "},
+            {"ls_model_name": "resolved-model", "ls_provider": "amazon_bedrock"},
+            id="surrounding-whitespace",
+        ),
         pytest.param({"model": 42, "provider": ["openai"]}, {}, id="invalid-types"),
         pytest.param(
             {"model": False, "provider": "amazon_bedrock"},

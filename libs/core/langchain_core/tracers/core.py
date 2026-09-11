@@ -359,7 +359,7 @@ class _TracerCore(ABC):
         # The resolved gateway identity takes precedence over request-time metadata.
         for source, target in (("model", "ls_model_name"), ("provider", "ls_provider")):
             value = gateway_metadata.get(source)
-            if isinstance(value, str) and value:
+            if isinstance(value, str) and (value := value.strip()):
                 metadata[target] = value
 
     def _errored_llm_run(
