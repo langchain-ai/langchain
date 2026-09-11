@@ -1502,3 +1502,66 @@ def test_convert_to_openai_function_without_tools_module_imported(
     result = convert_to_openai_function(my_func)
 
     assert result["name"] == "my_func"
+
+
+def test_convert_to_openai_tool_wrapped_function_strict() -> None:
+    """A wrapped ``{"type": "function", "function": {...}}`` dict honours ``strict=True``.
+
+    Regression test for #40332: an already-wrapped tool was returned unchanged,
+    silently discarding the ``strict`` argument.
+    """
+    function_def = {
+        "name": "lookup",
+        "description": "Lookup data",
+        "parameters": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+        },
+    }
+    wrapped = convert_to_openai_tool(
+        {"type": "function", "function": function_def}, strict=True
+    )
+    assert wrapped["function"].get("strict") is True
+    assert wrapped["function"]["parameters"].get("additionalProperties") is False
+
+
+def test_convert_to_openai_tool_wrapped_function_strict_conflict() -> None:
+    """A conflicting ``strict`` value on a wrapped dict raises ``ValueError``."""
+    function_def = {
+        "name": "lookup",
+        "strict": False,
+        "parameters": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+        },
+    }
+    with pytest.raises(ValueError, match="strict"):
+        convert_to_openai_tool(
+            {"type": "function", "function": function_def}, strict=True
+        )
+
+
+def test_convert_to_openai_tool_builtin_ignores_strict() -> None:
+    """Built-in tools (no nested ``function`` key) are returned unchanged even when
+    ``strict`` is passed; they have no schema to make strict."""
+    computer_tool = {
+        "type": "computer",
+        "display_width": 1024,
+        "display_height": 768,
+        "environment": "browser",
+    }
+    result = convert_to_openai_tool(computer_tool, strict=True)
+    assert result == computer_tool
+
+
+def test_convert_to_openai_tool_wrapped_function_strict_none_unchanged() -> None:
+    """When ``strict=None`` (the default), a wrapped tool is returned unchanged."""
+    tool = {
+        "type": "function",
+        "function": {
+            "name": "lookup",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    }
+    result = convert_to_openai_tool(tool)
+    assert result is tool

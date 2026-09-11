@@ -557,6 +557,15 @@ def convert_to_openai_tool(
 
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:
+            # For `{"type": "function", "function": {...}}` dicts, honour an explicit
+            # `strict` argument: pass the inner function definition through
+            # `convert_to_openai_function` so that `strict` is applied and validated
+            # (including raising `ValueError` on a conflicting existing `strict` key).
+            # Built-in tools (file_search, computer, etc.) have no function schema to
+            # make strict, so they are returned unchanged regardless of `strict`.
+            if strict is not None and tool.get("type") == "function" and "function" in tool:
+                oai_function = convert_to_openai_function(tool["function"], strict=strict)
+                return {**tool, "function": oai_function}
             return tool
         # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
         if (tool.get("type") or "").startswith("web_search_preview"):
