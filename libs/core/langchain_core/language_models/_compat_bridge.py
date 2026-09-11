@@ -203,7 +203,10 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
             # `else` branch and clobbers the first. Same-type chunks
             # still share the bucket and merge cleanly, which is what
             # streaming text / reasoning relies on.
-            key: Any = ("__lc_no_index__", block.get("type"), i)
+            if block.get("type") == "tool_call" and block.get("id"):
+                key: Any = ("__lc_tool_call__", block["id"])
+            else:
+                key = ("__lc_no_index__", block.get("type"), i)
         else:
             key = explicit_idx
         result.append((key, dict(block)))
