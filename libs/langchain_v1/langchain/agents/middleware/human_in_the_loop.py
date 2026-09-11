@@ -27,10 +27,7 @@ if TYPE_CHECKING:
 
 
 _EDITED_TOOL_CALL_IDS_KEY = "__hitl_edited_tool_call_ids__"
-"""`response_metadata` key holding IDs of tool calls a reviewer edited.
-
-IDs only: pre-edit args are untrusted model output.
-"""
+"""`response_metadata` key holding IDs of tool calls a reviewer edited."""
 
 _EDIT_NOTICE = (
     "Note: a human reviewer replaced this tool call before it ran. The call that "
@@ -579,7 +576,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         result: ToolMessage | Command[Any],
         request: ToolCallRequest,
     ) -> ToolMessage | Command[Any]:
-        """Tell the model a reviewer replaced the args, so it does not retry its own."""
+        """Tell the model a reviewer replaced the args."""
         if not self.edit_notice or not self._was_edited(request):
             return result
 
