@@ -67,13 +67,14 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
                 pass
 
         # update shared state behind lock
-        if usage_metadata and model_name:
+        if usage_metadata:
+            key = model_name or "unknown"
             with self._lock:
-                if model_name not in self.usage_metadata:
-                    self.usage_metadata[model_name] = usage_metadata
+                if key not in self.usage_metadata:
+                    self.usage_metadata[key] = usage_metadata
                 else:
-                    self.usage_metadata[model_name] = add_usage(
-                        self.usage_metadata[model_name], usage_metadata
+                    self.usage_metadata[key] = add_usage(
+                        self.usage_metadata[key], usage_metadata
                     )
 
 

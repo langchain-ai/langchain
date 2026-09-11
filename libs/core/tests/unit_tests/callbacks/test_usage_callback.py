@@ -123,6 +123,21 @@ async def test_usage_callback_async() -> None:
     assert callback.usage_metadata == {"test_model": total_1_2}
 
 
+def test_usage_callback_missing_model_name() -> None:
+    """Usage must still be tracked when response_metadata lacks model_name."""
+    fresh_messages = [
+        AIMessage("Response 1", usage_metadata=usage1),
+        AIMessage("Response 2", usage_metadata=usage2),
+    ]
+    llm = GenericFakeChatModel(messages=iter(fresh_messages))
+
+    with get_usage_metadata_callback() as cb:
+        _ = llm.invoke("Message 1")
+        _ = llm.invoke("Message 2")
+        total_1_2 = add_usage(usage1, usage2)
+        assert cb.usage_metadata == {"unknown": total_1_2}
+
+
 def test_usage_callback_clears_on_exception() -> None:
     """Callback must stop tracking after with-block exits via exception (#38989)."""
     llm = FakeChatModelWithResponseMetadata(messages=iter(messages), model_name="fake")
