@@ -486,7 +486,11 @@ def convert_to_openai_function(
             )
             raise ValueError(msg)
         oai_function["strict"] = strict
-        if strict:
+        if (
+            strict
+            and "parameters" in oai_function
+            and isinstance(oai_function["parameters"], dict)
+        ):
             oai_function["parameters"] = _recursive_set_additional_properties_false(
                 oai_function["parameters"]
             )
@@ -556,6 +560,17 @@ def convert_to_openai_tool(
     from langchain_core.tools import Tool  # noqa: PLC0415
 
     if isinstance(tool, dict):
+        if tool.get("type") == "function" and "function" in tool:
+            if strict is not None:
+                fn_dict = convert_to_openai_function(tool["function"], strict=strict)
+                if isinstance(tool["function"], dict):
+                    fn_dict = {**tool["function"], **fn_dict}
+                return {
+                    **tool,
+                    "type": "function",
+                    "function": fn_dict,
+                }
+            return tool
         if tool.get("type") in _WellKnownOpenAITools:
             return tool
         # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"

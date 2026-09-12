@@ -1502,3 +1502,80 @@ def test_convert_to_openai_function_without_tools_module_imported(
     result = convert_to_openai_function(my_func)
 
     assert result["name"] == "my_func"
+
+
+def test_convert_to_openai_tool_dict_strict() -> None:
+    """Test that convert_to_openai_tool properly applies strict to tool dicts."""
+    tool = {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get current weather",
+            "parameters": {
+                "type": "object",
+                "properties": {"location": {"type": "string"}},
+                "required": ["location"],
+            },
+        },
+    }
+
+    # strict=True: sets strict=True and additionalProperties=False
+    res_true = convert_to_openai_tool(tool, strict=True)
+    assert res_true["type"] == "function"
+    assert res_true["function"]["strict"] is True
+    assert res_true["function"]["parameters"]["additionalProperties"] is False
+
+    # strict=False: sets strict=False without adding additionalProperties=False
+    res_false = convert_to_openai_tool(tool, strict=False)
+    assert res_false["type"] == "function"
+    assert res_false["function"]["strict"] is False
+    assert "additionalProperties" not in res_false["function"]["parameters"]
+
+    # strict=None: returns original tool dict unchanged
+    res_none = convert_to_openai_tool(tool, strict=None)
+    assert res_none is tool
+
+    # Preserves extra attributes like cache_control and top-level custom keys
+    tool_with_extra = {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "parameters": {"type": "object", "properties": {}},
+            "cache_control": {"type": "ephemeral"},
+        },
+        "custom_metadata": "kept",
+    }
+    res_extra = convert_to_openai_tool(tool_with_extra, strict=True)
+    assert res_extra["function"]["strict"] is True
+    assert res_extra["function"]["cache_control"] == {"type": "ephemeral"}
+    assert res_extra["custom_metadata"] == "kept"
+
+    # Conflicting strict raises ValueError
+    conflicting_tool = {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "strict": False,
+            "parameters": {"type": "object", "properties": {}},
+        },
+    }
+    with pytest.raises(ValueError, match="different from the explicit `strict` arg"):
+        convert_to_openai_tool(conflicting_tool, strict=True)
+
+
+def test_convert_to_openai_function_and_tool_without_parameters_strict() -> None:
+    """Test strict conversion when function has no parameters key."""
+    fn_without_params = {"name": "get_time", "description": "Get current time"}
+    res_fn = convert_to_openai_function(fn_without_params, strict=True)
+    assert res_fn["name"] == "get_time"
+    assert res_fn["strict"] is True
+    assert "parameters" not in res_fn
+
+    tool_without_params = {
+        "type": "function",
+        "function": {"name": "get_time", "description": "Get current time"},
+    }
+    res_tool = convert_to_openai_tool(tool_without_params, strict=True)
+    assert res_tool["function"]["name"] == "get_time"
+    assert res_tool["function"]["strict"] is True
+    assert "parameters" not in res_tool["function"]
