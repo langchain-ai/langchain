@@ -92,7 +92,7 @@ test_integration = [
     "cassio>=0.1.0,<1.0.0; python_version < '3.14'",
 ]
 lint = [
-    "ruff>=0.15.0,<0.16.0",
+    "ruff>=0.16.0,<0.17.0",
 ]
 typing = [
     "mypy>=2.1.0,<2.2.0",
@@ -149,6 +149,7 @@ select = [ "ALL",]
 ignore = [
     "C90",     # McCabe complexity
     "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
     "FIX002",  # Line contains TODO
     "PERF203", # Rarely useful
     "PLR09",   # Too many something (arg, statements, etc)
