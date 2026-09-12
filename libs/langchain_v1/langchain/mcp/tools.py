@@ -209,6 +209,62 @@ def _tool_metadata(tool: Tool, client: Client[Any] | None) -> dict[str, Any] | N
     return {"mcp": mcp} if mcp else None
 
 
+def _normalize_mcp_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Make open objects explicit unless evaluation annotations constrain them."""
+    nodes: list[dict[str, Any]] = []
+    normalized = _copy_mcp_schema(schema, nodes)
+    if any("unevaluatedProperties" in node for node in nodes):
+        return normalized
+    for node in nodes:
+        types = node.get("type", [])
+        if isinstance(types, str):
+            types = [types]
+        if isinstance(types, list) and "object" in types and node.get("properties", {}) == {}:
+            node.setdefault("additionalProperties", True)
+    return normalized
+
+
+def _copy_mcp_schema(schema: dict[str, Any], nodes: list[dict[str, Any]]) -> dict[str, Any]:
+    """Copy and collect schema positions without interpreting literal data."""
+    normalized = dict(schema)
+    nodes.append(normalized)
+    for key in (
+        "properties",
+        "$defs",
+        "definitions",
+        "patternProperties",
+        "dependentSchemas",
+        "dependencies",
+    ):
+        if isinstance(children := schema.get(key), dict):
+            normalized[key] = {
+                name: _copy_mcp_schema(child, nodes) if isinstance(child, dict) else child
+                for name, child in children.items()
+            }
+    for key in (
+        "items",
+        "additionalProperties",
+        "contains",
+        "not",
+        "if",
+        "then",
+        "else",
+        "additionalItems",
+        "unevaluatedItems",
+        "unevaluatedProperties",
+        "propertyNames",
+    ):
+        if isinstance(child := schema.get(key), dict):
+            normalized[key] = _copy_mcp_schema(child, nodes)
+    for key in ("anyOf", "oneOf", "allOf", "prefixItems", "items"):
+        if isinstance(children := schema.get(key), list):
+            normalized[key] = [
+                _copy_mcp_schema(child, nodes) if isinstance(child, dict) else child
+                for child in children
+            ]
+    return normalized
+
+
 async def as_langchain_tool(
     tool: Tool,
     client: Client[Any] | ClientGroup,
@@ -274,7 +330,7 @@ async def as_langchain_tool(
     return StructuredTool(
         name=tool.name,
         description=tool.description or "",
-        args_schema=tool.input_schema,
+        args_schema=_normalize_mcp_schema(tool.input_schema),
         coroutine=call_tool,
         response_format="content_and_artifact",
         metadata=_tool_metadata(tool, requesting_client),
