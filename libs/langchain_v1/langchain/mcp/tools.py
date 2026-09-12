@@ -210,58 +210,24 @@ def _tool_metadata(tool: Tool, client: Client[Any] | None) -> dict[str, Any] | N
 
 
 def _normalize_mcp_schema(schema: dict[str, Any]) -> dict[str, Any]:
-    """Make open objects explicit unless evaluation annotations constrain them."""
-    nodes: list[dict[str, Any]] = []
-    normalized = _copy_mcp_schema(schema, nodes)
-    if any("unevaluatedProperties" in node for node in nodes):
-        return normalized
-    for node in nodes:
-        types = node.get("type", [])
-        if isinstance(types, str):
-            types = [types]
-        if isinstance(types, list) and "object" in types and node.get("properties", {}) == {}:
-            node.setdefault("additionalProperties", True)
-    return normalized
-
-
-def _copy_mcp_schema(schema: dict[str, Any], nodes: list[dict[str, Any]]) -> dict[str, Any]:
-    """Copy and collect schema positions without interpreting literal data."""
+    """Keep open object arguments open during provider schema conversion."""
     normalized = dict(schema)
-    nodes.append(normalized)
-    for key in (
-        "properties",
-        "$defs",
-        "definitions",
-        "patternProperties",
-        "dependentSchemas",
-        "dependencies",
-    ):
-        if isinstance(children := schema.get(key), dict):
-            normalized[key] = {
-                name: _copy_mcp_schema(child, nodes) if isinstance(child, dict) else child
-                for name, child in children.items()
-            }
-    for key in (
-        "items",
-        "additionalProperties",
-        "contains",
-        "not",
-        "if",
-        "then",
-        "else",
-        "additionalItems",
-        "unevaluatedItems",
-        "unevaluatedProperties",
-        "propertyNames",
-    ):
-        if isinstance(child := schema.get(key), dict):
-            normalized[key] = _copy_mcp_schema(child, nodes)
-    for key in ("anyOf", "oneOf", "allOf", "prefixItems", "items"):
-        if isinstance(children := schema.get(key), list):
-            normalized[key] = [
-                _copy_mcp_schema(child, nodes) if isinstance(child, dict) else child
-                for child in children
-            ]
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        return normalized
+    normalized["properties"] = dict(properties)
+    for name, value in properties.items():
+        if not isinstance(value, dict):
+            continue
+        types = value.get("type")
+        is_object = types == "object" or (isinstance(types, list) and "object" in types)
+        if (
+            is_object
+            and not value.get("properties")
+            and "additionalProperties" not in value
+            and "unevaluatedProperties" not in value
+        ):
+            normalized["properties"][name] = {**value, "additionalProperties": True}
     return normalized
 
 
