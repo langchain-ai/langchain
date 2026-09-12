@@ -536,6 +536,8 @@ def _convert_chunk_to_message_chunk(
                         index=rtc.get("index"),
                     )
                 )
+    if reasoning_content := _dict.get("reasoning_content"):
+        additional_kwargs["reasoning_content"] = reasoning_content
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     if role == "assistant" or default_class == AIMessageChunk:

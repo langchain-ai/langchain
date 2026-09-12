@@ -1383,6 +1383,42 @@ class TestConvertChunkToMessageChunk:
             "input_token_details": {"cache_read": 6},
         }
 
+    def test_reasoning_content_surfaces_in_additional_kwargs(self) -> None:
+        """Streamed `reasoning_content` delta reaches `additional_kwargs`."""
+        chunk = {
+            "choices": [
+                {
+                    "delta": {
+                        "role": "assistant",
+                        "content": "",
+                        "reasoning_content": "Let me think about this...",
+                    }
+                }
+            ],
+        }
+        result = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+        assert isinstance(result, AIMessageChunk)
+        assert (
+            result.additional_kwargs.get("reasoning_content")
+            == "Let me think about this..."
+        )
+
+    def test_no_reasoning_content_key_when_absent(self) -> None:
+        """Deltas without `reasoning_content` should not add the key at all."""
+        chunk = {
+            "choices": [
+                {
+                    "delta": {
+                        "role": "assistant",
+                        "content": "hello",
+                    }
+                }
+            ],
+        }
+        result = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+        assert isinstance(result, AIMessageChunk)
+        assert "reasoning_content" not in result.additional_kwargs
+
 
 class TestCreateChatResult:
     """Tests for converting Fireworks responses into chat generations."""
