@@ -3,9 +3,6 @@ type: Integration Pattern
 title: Adding a New Chat Model Provider
 description: Step-by-step guide to integrate a new LLM provider into LangChain's monorepo, including package structure, ChatModel implementation, streaming, function calling, structured output, and standard tests. Covers message conversion, error handling, model profiles, and optional advanced API modes like Responses API.
 tags: [chat-models, provider-integration, llm, function-calling, structured-output, streaming]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:26:28.144Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
@@ -37,7 +34,10 @@ sources:
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:26:28.144Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-12T08:22:43.062Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-12T08:22:43.062Z
 ---
 
 ## Overview
@@ -92,7 +92,7 @@ Create a new directory under `/libs/partners/` with the provider name in lowerca
 
 ### Package Metadata (pyproject.toml)
 
-Key configuration for a provider package (reference: `repo://libs/partners/openai/pyproject.toml#L1-L76`):
+Key configuration for a provider package (reference: `repo://libs/partners/openai/pyproject.toml#L1-L80`):
 
 ```toml
 [build-system]
@@ -106,7 +106,7 @@ requires-python = ">=3.10.0,<4.0.0"
 version = "0.1.0"
 
 dependencies = [
-    "langchain-core>=1.6.0,<2.0.0",           # Required: base LangChain
+    "langchain-core>=1.6.2,<2.0.0",           # Required: base LangChain
     "provider-client-library>=2.45.0,<4.0.0", # Provider's own SDK (pinned version)
     "certifi>=2024.6.2",                      # SSL certificates
 ]
@@ -669,7 +669,6 @@ Create `tests/unit_tests/chat_models/test_standard.py` (reference: `/libs/standa
 
 from typing import Type
 
-import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.unit_tests import ChatModelUnitTests
 
@@ -679,11 +678,11 @@ from langchain_provider_name import ChatProviderModel
 class TestProviderModelStandard(ChatModelUnitTests):
     """Standard unit tests for ChatProviderModel."""
     
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatProviderModel
     
-    @pytest.fixture
+    @property
     def chat_model_params(self) -> dict:
         """Parameters to instantiate the chat model.
         
@@ -696,6 +695,8 @@ class TestProviderModelStandard(ChatModelUnitTests):
 ```
 
 **Configurable test fixtures** (from `langchain-tests` README):
+
+Fixtures may be defined as `@property` decorators (recommended) or `@pytest.fixture` decorators:
 
 - `chat_model_class` (required): The `BaseChatModel` subclass to test
 - `chat_model_params`: Kwargs for instantiation (defaults to empty dict)
@@ -711,7 +712,6 @@ Create `tests/integration_tests/chat_models/test_standard.py`:
 
 from typing import Type
 
-import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 
@@ -721,11 +721,11 @@ from langchain_provider_name import ChatProviderModel
 class TestProviderModelIntegration(ChatModelIntegrationTests):
     """Standard integration tests for ChatProviderModel."""
     
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatProviderModel
     
-    @pytest.fixture
+    @property
     def chat_model_params(self) -> dict:
         """Live API credentials (loaded from environment)."""
         return {
