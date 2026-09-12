@@ -238,11 +238,20 @@ def test_url_strings_are_accepted() -> None:
 
 
 def test_a_string_naming_a_local_script_is_refused(tmp_path: Path) -> None:
-    """A string must not select subprocess execution just by existing on disk."""
+    """A string must not select subprocess execution just by existing on disk.
+
+    Which guard refuses it turns on the platform, so what is asserted is the
+    refusal rather than one wording. On POSIX an absolute path fails URL
+    validation outright. On Windows the same path parses as a URL whose scheme
+    is the drive letter, so the scheme pin refuses it instead, as covered by
+    `test_strings_parsing_as_non_http_urls_are_refused`. A `tmp_path` need not
+    sit on `C:`, which is why the drive letter is matched rather than spelled
+    out.
+    """
     script = tmp_path / "server.py"
     script.touch()
 
-    with pytest.raises(ValueError, match="not a valid URL"):
+    with pytest.raises(ValueError, match=r"not a valid URL|has scheme '[a-z]'"):
         MCPAdapter(str(script))
 
     # The same server, asked for explicitly, is still reachable.
