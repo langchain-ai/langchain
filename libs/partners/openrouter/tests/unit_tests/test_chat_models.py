@@ -21,6 +21,7 @@ from langchain_core.messages import (
 )
 from langchain_core.runnables import RunnableBinding
 from pydantic import BaseModel, Field, SecretStr
+from typing_extensions import TypedDict
 
 from langchain_openrouter.chat_models import (
     ChatOpenRouter,
@@ -28,6 +29,7 @@ from langchain_openrouter.chat_models import (
     _convert_dict_to_message,
     _convert_file_block_to_openrouter,
     _convert_message_to_dict,
+    _convert_to_openrouter_response_format,
     _convert_video_block_to_openrouter,
     _create_stream_generation_info,
     _create_usage_metadata,
@@ -3349,6 +3351,116 @@ class TestStructuredOutputIntegration:
         assert result["parsed"] is None
         # parsing_error should capture the validation exception
         assert result["parsing_error"] is not None
+
+
+# ===========================================================================
+# `response_format` passed directly to invoke / bind_tools
+# ===========================================================================
+
+
+class GetWeatherTypedDict(TypedDict):
+    """Get the current weather in a given location."""
+
+    location: str
+
+
+class TestResponseFormatKwarg:
+    """Tests for `response_format` supplied outside `with_structured_output`."""
+
+    @staticmethod
+    def _mock_structured_model() -> ChatOpenRouter:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.chat.send.return_value = _make_sdk_response(
+            {
+                **_SIMPLE_RESPONSE_DICT,
+                "choices": [
+                    {
+                        "message": {
+                            "role": "assistant",
+                            "content": '{"location": "SF"}',
+                        },
+                        "finish_reason": "stop",
+                        "index": 0,
+                    }
+                ],
+            }
+        )
+        return model
+
+    @pytest.mark.parametrize(
+        ("schema", "expected_name"),
+        [(GetWeather, "GetWeather"), (GetWeatherTypedDict, "GetWeatherTypedDict")],
+    )
+    def test_invoke_converts_schema_to_json_schema(
+        self, schema: Any, expected_name: str
+    ) -> None:
+        """Pydantic and `TypedDict` schemas are converted for the API."""
+        model = self._mock_structured_model()
+        model.invoke("weather in SF", response_format=schema)
+        rf = model.client.chat.send.call_args[1]["response_format"]
+        assert rf["type"] == "json_schema"
+        assert rf["json_schema"]["name"] == expected_name
+        assert rf["json_schema"]["schema"]["properties"]["location"]
+
+    def test_invoke_passes_through_provider_strategy_envelope(self) -> None:
+        """`ProviderStrategy` sends an OpenAI-style envelope, preserved as-is."""
+        model = self._mock_structured_model()
+        model.invoke(
+            "weather in SF",
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "GetWeather",
+                    "schema": {"type": "object", "properties": {}},
+                    "strict": True,
+                },
+            },
+        )
+        rf = model.client.chat.send.call_args[1]["response_format"]
+        assert rf == {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "GetWeather",
+                "schema": {"type": "object", "properties": {}},
+                "strict": True,
+            },
+        }
+
+    def test_invoke_passes_through_json_mode(self) -> None:
+        """A `json_object` response format is left untouched."""
+        model = self._mock_structured_model()
+        model.invoke("weather in SF", response_format={"type": "json_object"})
+        rf = model.client.chat.send.call_args[1]["response_format"]
+        assert rf == {"type": "json_object"}
+
+    def test_bind_tools_converts_response_format(self) -> None:
+        """`bind_tools` converts a schema into a `json_schema` envelope."""
+        model = _make_model()
+        bound = model.bind_tools([], response_format=GetWeather)
+        assert isinstance(bound, RunnableBinding)
+        rf = bound.kwargs["response_format"]
+        assert rf["type"] == "json_schema"
+        assert rf["json_schema"]["name"] == "GetWeather"
+
+    def test_bind_tools_forwards_strict(self) -> None:
+        """`strict` is forwarded onto the converted `response_format`."""
+        model = _make_model()
+        bound = model.bind_tools([], response_format=GetWeather, strict=True)
+        assert isinstance(bound, RunnableBinding)
+        assert bound.kwargs["response_format"]["json_schema"]["strict"] is True
+
+    def test_raw_json_schema_without_title_is_wrapped(self) -> None:
+        """A titleless JSON schema is wrapped rather than raising."""
+        schema = {"type": "object", "properties": {"location": {"type": "string"}}}
+        assert _convert_to_openrouter_response_format(schema) == {
+            "type": "json_schema",
+            "json_schema": {"name": "", "schema": schema},
+        }
+
+    def test_none_returns_none(self) -> None:
+        """No schema means no `response_format`."""
+        assert _convert_to_openrouter_response_format(None) is None
 
 
 # ===========================================================================

@@ -132,6 +132,81 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     return default.copy()
 
 
+def _convert_to_fireworks_response_format(
+    schema: dict[str, Any] | type | None, *, strict: bool | None = None
+) -> dict[str, Any] | None:
+    """Convert a schema into a Fireworks `response_format` dict.
+
+    Accepts the shapes `ProviderStrategy` produces (OpenAI-style
+    `{"type": "json_schema", "json_schema": {...}}`), raw Pydantic model
+    classes, `TypedDict` classes, dataclasses, and raw JSON schema dicts,
+    converting them into the `response_format` envelope Fireworks expects.
+
+    Args:
+        schema: The schema to convert. Dicts already carrying a
+            `response_format` `type` (e.g. `'json_object'`, `'json_schema'`,
+            or `'text'`) are passed through, with `json_schema` envelopes
+            normalized. Other schema-like values are converted to a JSON
+            schema and wrapped.
+        strict: Whether to request strict schema adherence. Only applied when
+            the caller explicitly provides a value and the schema does not
+            already specify one.
+
+    Returns:
+        The `response_format` dict, or `None` if `schema` is `None`.
+    """
+    if schema is None:
+        return None
+
+    spec: dict[str, Any]
+    envelope_type = schema.get("type") if isinstance(schema, dict) else None
+    if isinstance(schema, dict) and isinstance(envelope_type, str):
+        if envelope_type == "json_schema" and isinstance(
+            inner := schema.get("json_schema"), dict
+        ):
+            # OpenAI-style envelope (e.g. from `ProviderStrategy`)
+            spec = {
+                "name": inner.get("name", ""),
+                "schema": inner.get("schema", inner),
+            }
+            if "strict" in inner:
+                spec["strict"] = inner["strict"]
+            elif strict is not None:
+                spec["strict"] = strict
+            return {"type": "json_schema", "json_schema": spec}
+        if envelope_type in ("json_object", "json_schema", "text"):
+            # Already a `response_format` the API understands
+            return schema
+        if envelope_type == "object" and "title" not in schema:
+            # Raw JSON schema without a title: wrap it directly, since
+            # `convert_to_json_schema` needs a name to convert from
+            spec = {"name": "", "schema": schema}
+            if strict is not None:
+                spec["strict"] = strict
+            return {"type": "json_schema", "json_schema": spec}
+
+    json_schema = convert_to_json_schema(schema, strict=strict)
+    spec = {"name": json_schema.get("title", ""), "schema": json_schema}
+    if strict is not None:
+        spec["strict"] = strict
+    return {"type": "json_schema", "json_schema": spec}
+
+
+def _normalize_response_format_param(params: dict[str, Any]) -> None:
+    """Normalize a `response_format` param in-place for the Fireworks API.
+
+    Converts Pydantic model classes, `TypedDict` classes, dataclasses, and raw
+    JSON schema dicts into the `{"type": "json_schema", "json_schema": {...}}`
+    envelope Fireworks expects. Values already in envelope form are left as-is.
+    """
+    response_format = params.get("response_format")
+    if response_format is None:
+        return
+    converted = _convert_to_fireworks_response_format(response_format)
+    if converted is not None:
+        params["response_format"] = converted
+
+
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
 
@@ -1166,6 +1241,7 @@ class ChatFireworks(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        _normalize_response_format_param(params)
         if self.stream_usage and "stream_options" not in params:
             params["stream_options"] = {"include_usage": True}
 
@@ -1224,6 +1300,7 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
+        _normalize_response_format_param(params)
         try:
             response = _completion_with_retry(
                 self, run_manager=run_manager, messages=message_dicts, **params
@@ -1283,6 +1360,7 @@ class ChatFireworks(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        _normalize_response_format_param(params)
         if self.stream_usage and "stream_options" not in params:
             params["stream_options"] = {"include_usage": True}
 
@@ -1344,6 +1422,7 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
+        _normalize_response_format_param(params)
         try:
             response = await _acompletion_with_retry(
                 self, run_manager=run_manager, messages=message_dicts, **params
@@ -1380,6 +1459,7 @@ class ChatFireworks(BaseChatModel):
         tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
         *,
         tool_choice: dict | str | bool | None = None,
+        response_format: dict[str, Any] | type | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -1396,10 +1476,22 @@ class ChatFireworks(BaseChatModel):
                 with the option to not call any function, `'any'` to enforce that some
                 function is called, or a dict of the form:
                 `{"type": "function", "function": {"name": <<tool_name>>}}`.
+            response_format: Optional schema to enforce a structured output
+                shape. Accepts a Pydantic model class, `TypedDict` class,
+                dataclass, JSON schema dict, or an OpenAI-style
+                `{"type": "json_schema", "json_schema": {...}}` envelope.
+
+                !!! version-added "Added in `langchain-fireworks` 1.6.2"
             **kwargs: Any additional parameters to pass to
                 `langchain_fireworks.chat_models.ChatFireworks.bind`
         """  # noqa: E501
         strict = kwargs.pop("strict", None)
+        if response_format is not None:
+            converted = _convert_to_fireworks_response_format(
+                response_format, strict=strict
+            )
+            if converted is not None:
+                kwargs["response_format"] = converted
         formatted_tools = [
             convert_to_openai_tool(tool, strict=strict) for tool in tools
         ]
