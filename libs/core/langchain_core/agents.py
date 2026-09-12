@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Any, Literal, overload
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
@@ -67,10 +67,28 @@ class AgentAction(Serializable):
 
     type: Literal["AgentAction"] = "AgentAction"
 
-    # Override init to support instantiation by position for backward compat.
+    @overload
     def __init__(
         self, tool: str, tool_input: str | dict[Any, Any], log: str, **kwargs: Any
-    ):
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        tool: str | None = None,
+        tool_input: str | dict[Any, Any] | None = None,
+        log: str | None = None,
+        **kwargs: Any,
+    ) -> None: ...
+
+    # Override init to support instantiation by position for backward compat.
+    def __init__(
+        self,
+        tool: str | None = None,
+        tool_input: str | dict[Any, Any] | None = None,
+        log: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Create an `AgentAction`.
 
         Args:
@@ -78,7 +96,23 @@ class AgentAction(Serializable):
             tool_input: The input to pass in to the `Tool`.
             log: Additional information to log about the action.
         """
-        super().__init__(tool=tool, tool_input=tool_input, log=log, **kwargs)
+        if tool is not None:
+            if "tool" in kwargs:
+                msg = "AgentAction() got multiple values for argument 'tool'"
+                raise TypeError(msg)
+            kwargs["tool"] = tool
+        if tool_input is not None:
+            if "tool_input" in kwargs:
+                msg = "AgentAction() got multiple values for argument 'tool_input'"
+                raise TypeError(msg)
+            kwargs["tool_input"] = tool_input
+        if log is not None:
+            if "log" in kwargs:
+                msg = "AgentAction() got multiple values for argument 'log'"
+                raise TypeError(msg)
+            kwargs["log"] = log
+
+        super().__init__(**kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -166,9 +200,38 @@ class AgentFinish(Serializable):
     """
     type: Literal["AgentFinish"] = "AgentFinish"
 
-    def __init__(self, return_values: dict[Any, Any], log: str, **kwargs: Any):
+    @overload
+    def __init__(
+        self, return_values: dict[Any, Any], log: str, **kwargs: Any
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        return_values: dict[Any, Any] | None = None,
+        log: str | None = None,
+        **kwargs: Any,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        return_values: dict[Any, Any] | None = None,
+        log: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Override init to support instantiation by position for backward compat."""
-        super().__init__(return_values=return_values, log=log, **kwargs)
+        if return_values is not None:
+            if "return_values" in kwargs:
+                msg = "AgentFinish() got multiple values for argument 'return_values'"
+                raise TypeError(msg)
+            kwargs["return_values"] = return_values
+        if log is not None:
+            if "log" in kwargs:
+                msg = "AgentFinish() got multiple values for argument 'log'"
+                raise TypeError(msg)
+            kwargs["log"] = log
+
+        super().__init__(**kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
