@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:955c0c402efcda6052d84d4421645bd6720847d59e4d25c1c4ac40bec2d68e2a",
+  "pageVersion": "sha256:1f8d11f3ee6474e3ba597ebdb16bf0e019a608be15e114982139514971b16218",
   "claims": [
     {
       "id": "claim_d872799ce6874d76b63667fe912b7616",
@@ -26,11 +26,11 @@
     },
     {
       "id": "claim_bf4afec1395b4acbbf413fe2928daab6",
-      "statement": "langchain-core (v1.6.2) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
+      "statement": "langchain-core (v1.6.3) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1-L50",
-          "version": "repo-lines-v1:sha256:ec4a224a2f0eaacffa422fe7c6e3ce9e3d1046a9ca9e78f1023c2e32ab8e6077:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZDFjY2U5NjgzYzRiOGE0NjJhN2Q0NDBjYjk2ZGE3NDk3YWQ2NDYwNTE0ZjNkYWI0NDlmZjgzMzllYjY5ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMWY5ZjBhODYyNjliNDk3Mjc1ZTgxYzJiMWNiMmVmYzIxNjdlNjFjNjFkZWExOTk1MTE4ZTdiODkxZTI0NTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYWJlNjk0Nzc1ZmI3OTg1MjcwYjNmMTRjNjNiOWZhZTk0MDBmNTczY2E0N2NhZWE3OGMwZTVhYmIxNjg3NDUifQ"
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1-L80",
+          "version": "repo-lines-v1:sha256:65a0c403c83c5df34f9fc75ad98dc0c9a24934c7d222476e9f7c20fc4c6b7d57:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZDFjY2U5NjgzYzRiOGE0NjJhN2Q0NDBjYjk2ZGE3NDk3YWQ2NDYwNTE0ZjNkYWI0NDlmZjgzMzllYjY5ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5M2U5NDRhMjBlY2I2ZWEwODAyMzIzMTgyYzdmZGRlZDYxMDlhZThlMjI5OWU0YjRmZjlkM2I3NDRlMTI4YmEifQ"
         },
         {
           "resource": "repo://libs/core/langchain_core/runnables/base.py#L1-L80",
@@ -38,7 +38,7 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml#L24-L24",
-          "version": "repo-lines-v1:sha256:aedcca5df1c476f4736d0f7d783cfab756063205d0b98960d97ce7c40356c7e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWVkY2NhNWRmMWM0NzZmNDczNmQwZjdkNzgzY2ZhYjc1NjA2MzIwNWQwYjk4OTYwZDk3Y2U3YzQwMzU2YzdlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWVkY2NhNWRmMWM0NzZmNDczNmQwZjdkNzgzY2ZhYjc1NjA2MzIwNWQwYjk4OTYwZDk3Y2U3YzQwMzU2YzdlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGEyM2RmNzFkODljMGE5NmUzNWFhZjk1ZTdjZTllYTczYTRiN2FlZjQyNDZjN2Q3YzAzZjhlM2EwMTJiZjliNSJ9"
+          "version": "repo-lines-v1:sha256:67892ee7e2e8e6143d7f7f98cf7004dbd056574aec1c7f6da71cbfcc086d07fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc4OTJlZTdlMmU4ZTYxNDNkN2Y3Zjk4Y2Y3MDA0ZGJkMDU2NTc0YWVjMWM3ZjZkYTcxY2JmY2MwODZkMDdmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc4OTJlZTdlMmU4ZTYxNDNkN2Y3Zjk4Y2Y3MDA0ZGJkMDU2NTc0YWVjMWM3ZjZkYTcxY2JmY2MwODZkMDdmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGEyM2RmNzFkODljMGE5NmUzNWFhZjk1ZTdjZTllYTczYTRiN2FlZjQyNDZjN2Q3YzAzZjhlM2EwMTJiZjliNSJ9"
         }
       ]
     },
@@ -149,6 +149,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-08T08:27:09.597Z"
+    "at": "2026-09-12T08:22:43.062Z"
   }
 }
