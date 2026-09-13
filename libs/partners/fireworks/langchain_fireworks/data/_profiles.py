@@ -335,7 +335,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "accounts/fireworks/models/mistral-large-3-fp8": {
         "name": "Mistral Large 3 675B Instruct 2512",
-        "release_date": "2024-11-01",
+        "release_date": "2025-12-02",
         "last_updated": "2025-12-02",
         "open_weights": True,
         "max_input_tokens": 262144,
