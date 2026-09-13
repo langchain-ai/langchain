@@ -10,7 +10,7 @@ import pytest
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import BaseModel, Field, field_validator
@@ -564,6 +564,63 @@ class TestResponseFormatAsToolStrategy:
         # HumanMessage, AIMessage, ToolMessage, AIMessage, ToolMessage
         assert len(response["messages"]) == 5
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
+    def test_structured_output_parsing_error_with_retry_alongside_tool_call(self) -> None:
+        """Test retry feedback when an invalid structured call shares a batch with a tool call.
+
+        Regression test for https://github.com/langchain-ai/langchain/issues/40423:
+        the validation-error ToolMessage produced for a rejected structured output
+        call must not be treated as an executed structured output tool by the
+        tools-to-model edge when an ordinary tool call ran in the same batch.
+        """
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": {"invalid": "data"},
+                },
+                {
+                    "name": "get_weather",
+                    "id": "2",
+                    "args": {},
+                },
+            ],
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "3",
+                    "args": WEATHER_DATA,
+                },
+            ],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [get_weather],
+            response_format=ToolStrategy(
+                WeatherBaseModel,
+                handle_errors=True,
+            ),
+        )
+
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        # HumanMessage, AIMessage, error ToolMessage, ToolMessage (get_weather),
+        # AIMessage, ToolMessage
+        assert len(response["messages"]) == 6
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        # The validation-error ToolMessage must be fed back to the model, not end the run
+        error_tool_message = next(
+            m
+            for m in response["messages"]
+            if isinstance(m, ToolMessage)
+            and m.name == "WeatherBaseModel"
+            and "error" in m.content.lower()
+        )
+        assert error_tool_message is not None
 
     def test_retry_with_custom_function(self) -> None:
         """Test retry with custom message generation."""

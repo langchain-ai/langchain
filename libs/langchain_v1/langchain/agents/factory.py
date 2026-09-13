@@ -2025,8 +2025,15 @@ def _make_tools_to_model_edge(
         ):
             return end_destination
 
-        # 3. Exit condition: A structured output tool was executed
-        if any(t.name in structured_output_tools for t in tool_messages):
+        # 3. Exit condition: A structured output tool was executed and its output
+        #    was accepted. When validation fails with error handling enabled, the
+        #    model node emits an error ToolMessage under the structured tool's name
+        #    but leaves `structured_response` unset; in that case route back to the
+        #    model so it can correct the structured output instead of ending.
+        if (
+            any(t.name in structured_output_tools for t in tool_messages)
+            and state.get("structured_response") is not None
+        ):
             return end_destination
 
         # 4. Default: Continue the loop
