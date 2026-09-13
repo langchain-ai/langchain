@@ -465,6 +465,21 @@ class ChatOpenRouter(BaseChatModel):
                 ),
                 retry_connection_errors=True,
             )
+        elif self.max_retries == 0:
+            # Explicitly disable retries. Without this, the SDK falls back to its
+            # built-in default RetryConfig (strategy="backoff", max_elapsed_time=
+            # 3600000 ms) whenever retry_config is UNSET, silently ignoring the
+            # caller's intent to disable retries entirely.
+            client_kwargs["retry_config"] = RetryConfig(
+                strategy="none",
+                backoff=BackoffStrategy(
+                    initial_interval=0,
+                    max_interval=0,
+                    exponent=1.5,
+                    max_elapsed_time=0,
+                ),
+                retry_connection_errors=False,
+            )
         return openrouter.OpenRouter(**client_kwargs)
 
     @model_validator(mode="after")
