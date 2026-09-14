@@ -1932,9 +1932,19 @@ class BaseChatOpenAI(BaseChatModel):
             or self.truncation is not None
             or self.use_previous_response_id
             or _model_prefers_responses_api(self.model_name)
+            or (self.model_name.lower().startswith("gpt-6") and payload.get("tools"))
         ):
             return True
         return _use_responses_api(payload)
+
+    def _filter_unsupported_model_params(self, payload: dict) -> None:
+        if self.model_name.lower().startswith("gpt-6"):
+            if self.profile and self.profile.get("temperature") is False:
+                payload.pop("temperature", None)
+            payload.pop("top_p", None)
+            payload.pop("top_logprobs", None)
+            if not self._use_responses_api(payload):
+                payload.pop("logprobs", None)
 
     def _get_request_payload(
         self,
@@ -1948,6 +1958,7 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["stop"] = stop
 
         payload = {**self._default_params, **kwargs}
+        self._filter_unsupported_model_params(payload)
 
         if self._use_responses_api(payload):
             if self.use_previous_response_id:
@@ -2295,7 +2306,7 @@ class BaseChatOpenAI(BaseChatModel):
         except KeyError:
             model_lower = model.lower()
             encoder = "cl100k_base"
-            if model_lower.startswith(("gpt-4o", "gpt-4.1", "gpt-5")):
+            if model_lower.startswith(("gpt-4o", "gpt-4.1", "gpt-5", "gpt-6")):
                 encoder = "o200k_base"
             encoding = tiktoken.get_encoding(encoder)
         return model, encoding
@@ -2346,7 +2357,9 @@ class BaseChatOpenAI(BaseChatModel):
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith(("gpt-3.5-turbo", "gpt-4", "gpt-5", "o1", "o3", "o4")):
+        elif model.startswith(
+            ("gpt-3.5-turbo", "gpt-4", "gpt-5", "gpt-6", "o1", "o3", "o4")
+        ):
             tokens_per_message = 3
             tokens_per_name = 1
         else:
