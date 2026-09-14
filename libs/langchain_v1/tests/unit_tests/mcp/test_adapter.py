@@ -238,11 +238,17 @@ def test_url_strings_are_accepted() -> None:
 
 
 def test_a_string_naming_a_local_script_is_refused(tmp_path: Path) -> None:
-    """A string must not select subprocess execution just by existing on disk."""
+    """A string must not select subprocess execution just by existing on disk.
+
+    The refusal message is platform-dependent: on POSIX the path fails Pydantic's
+    AnyUrl parsing ("not a valid URL"), while on Windows a drive-letter path
+    like ``C:\\...`` parses with scheme ``'c'`` and is rejected with
+    "has scheme ..." instead. Both assert the same refusal, so match either.
+    """
     script = tmp_path / "server.py"
     script.touch()
 
-    with pytest.raises(ValueError, match="not a valid URL"):
+    with pytest.raises(ValueError, match=r"not a valid URL|has scheme '[a-z]'"):
         MCPAdapter(str(script))
 
     # The same server, asked for explicitly, is still reachable.
