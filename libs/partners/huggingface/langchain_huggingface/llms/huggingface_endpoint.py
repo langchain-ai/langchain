@@ -22,15 +22,21 @@ from langchain_huggingface._version import __version__
 logger = logging.getLogger(__name__)
 
 
+_HF_HOSTED_DOMAINS = ("huggingface.co", "hf.space", "endpoints.huggingface.cloud")
+
+
 def _is_huggingface_hosted_url(url: str | None) -> bool:
-    """True if url is HF-hosted (huggingface.co or hf.space)."""
+    """True if url is HF-hosted.
+
+    Covers the Hub and Inference API (`huggingface.co`), Spaces (`hf.space`) and
+    dedicated Inference Endpoints (`*.endpoints.huggingface.cloud`).
+    """
     if not url:
         return False
     hostname = (urlparse(url).hostname or "").lower()
-    return (
-        hostname == "huggingface.co"
-        or hostname == "hf.space"
-        or hostname.endswith((".huggingface.co", ".hf.space"))
+    return any(
+        hostname == domain or hostname.endswith(f".{domain}")
+        for domain in _HF_HOSTED_DOMAINS
     )
 
 

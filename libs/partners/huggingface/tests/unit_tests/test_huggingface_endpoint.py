@@ -21,6 +21,8 @@ from langchain_huggingface.llms.huggingface_endpoint import (
         ("https://api.inference-api.azure-api.net/", False),
         ("https://abc.huggingface.co/inference", True),
         ("https://xyz.hf.space/", True),
+        ("https://jzgu0buei5.us-east-1.aws.endpoints.huggingface.cloud", True),
+        ("https://endpoints.huggingface.cloud.evil.example/", False),
     ],
 )
 def test_is_huggingface_hosted_url(
@@ -76,3 +78,23 @@ def test_huggingface_hosted_endpoint_keeps_api_key(
 
     call_kwargs = mock_inference_client.call_args[1]
     assert call_kwargs.get("api_key") == "hf_xxx"
+
+
+@patch("huggingface_hub.AsyncInferenceClient")
+@patch("huggingface_hub.InferenceClient")
+def test_inference_endpoints_url_keeps_api_key(
+    mock_inference_client: MagicMock,
+    mock_async_client: MagicMock,
+) -> None:
+    """A dedicated Inference Endpoint (endpoints.huggingface.cloud) gets the token."""
+    mock_inference_client.return_value = MagicMock()
+    mock_async_client.return_value = MagicMock()
+
+    HuggingFaceEndpoint(  # type: ignore[call-arg]
+        endpoint_url="https://jzgu0buei5.us-east-1.aws.endpoints.huggingface.cloud",
+        max_new_tokens=64,
+        huggingfacehub_api_token="hf_xxx",  # noqa: S106
+    )
+
+    assert mock_inference_client.call_args[1].get("api_key") == "hf_xxx"
+    assert mock_async_client.call_args[1].get("api_key") == "hf_xxx"
