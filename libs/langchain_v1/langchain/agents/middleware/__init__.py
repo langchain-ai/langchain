@@ -23,6 +23,7 @@ from langchain.agents.middleware.shell_tool import (
 )
 from langchain.agents.middleware.summarization import SummarizationMiddleware, TriggerClause
 from langchain.agents.middleware.todo import TodoListMiddleware
+from langchain.agents.middleware.token_budget import TokenBudgetMiddleware
 from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
 from langchain.agents.middleware.tool_error import ToolErrorMiddleware
@@ -81,6 +82,7 @@ __all__ = [
     "ShellToolMiddleware",
     "SummarizationMiddleware",
     "TodoListMiddleware",
+    "TokenBudgetMiddleware",
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
     "ToolErrorMiddleware",
