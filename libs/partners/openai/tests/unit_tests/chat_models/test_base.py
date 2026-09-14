@@ -4593,23 +4593,6 @@ def test_gpt_5_temperature_case_insensitive(
         assert payload["temperature"] == 0.7
 
 
-def test_gpt_6_unsupported_params() -> None:
-    llm = ChatOpenAI(
-        model="gpt-6-astra",
-        temperature=0.5,
-        top_p=0.5,
-        top_logprobs=2,
-        logprobs=True,
-    )
-
-    payload = llm._get_request_payload([HumanMessage(content="Hello")])
-
-    assert "temperature" not in payload
-    assert "top_p" not in payload
-    assert "top_logprobs" not in payload
-    assert "logprobs" not in payload
-
-
 def test_gpt_6_tools_use_responses_api() -> None:
     llm = ChatOpenAI(model="gpt-6-astra")
     tools = [

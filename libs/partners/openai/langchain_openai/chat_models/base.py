@@ -1937,15 +1937,6 @@ class BaseChatOpenAI(BaseChatModel):
             return True
         return _use_responses_api(payload)
 
-    def _filter_unsupported_model_params(self, payload: dict) -> None:
-        if self.model_name.lower().startswith("gpt-6"):
-            if self.profile and self.profile.get("temperature") is False:
-                payload.pop("temperature", None)
-            payload.pop("top_p", None)
-            payload.pop("top_logprobs", None)
-            if not self._use_responses_api(payload):
-                payload.pop("logprobs", None)
-
     def _get_request_payload(
         self,
         input_: LanguageModelInput,
@@ -1958,7 +1949,6 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["stop"] = stop
 
         payload = {**self._default_params, **kwargs}
-        self._filter_unsupported_model_params(payload)
 
         if self._use_responses_api(payload):
             if self.use_previous_response_id:
