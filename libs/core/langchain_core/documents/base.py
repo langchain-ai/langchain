@@ -119,10 +119,10 @@ class Blob(BaseMedia):
     mimetype: str | None = None
     """MIME type, not to be confused with a file extension."""
 
-    encoding: str = "utf-8"
+    encoding: str = "utf-8-sig"
     """Encoding to use if decoding the bytes into a string.
 
-    Uses `utf-8` as default encoding if decoding to string.
+    Uses `utf-8-sig` as default encoding if decoding to string.
     """
 
     path: PathLike | None = None
@@ -215,7 +215,7 @@ class Blob(BaseMedia):
         cls,
         path: PathLike,
         *,
-        encoding: str = "utf-8",
+        encoding: str = "utf-8-sig",
         mime_type: str | None = None,
         guess_type: bool = True,
         metadata: dict[Any, Any] | None = None,
@@ -252,7 +252,7 @@ class Blob(BaseMedia):
         cls,
         data: str | bytes,
         *,
-        encoding: str = "utf-8",
+        encoding: str = "utf-8-sig",
         mime_type: str | None = None,
         path: str | None = None,
         metadata: dict[Any, Any] | None = None,

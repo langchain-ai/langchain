@@ -25,3 +25,24 @@ def test_metadata_allows_non_string_keys(tmp_path: Path) -> None:
     assert doc.metadata == metadata
     assert blob_from_data.metadata == metadata
     assert blob_from_path.metadata == metadata
+
+
+def test_blob_as_string_with_utf8_bom(tmp_path: Path) -> None:
+    path = tmp_path / "bom.txt"
+    path.write_text("Hello, world!", encoding="utf-8-sig")
+
+    blob = Blob.from_path(path)
+
+    result = blob.as_string()
+
+    assert result == "Hello, world!"
+
+
+def test_blob_from_data_with_utf8_bom() -> None:
+    data = b"\xef\xbb\xbfHello, world!"
+
+    blob = Blob.from_data(data)
+
+    result = blob.as_string()
+
+    assert result == "Hello, world!"
