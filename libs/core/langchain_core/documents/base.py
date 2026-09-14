@@ -119,10 +119,12 @@ class Blob(BaseMedia):
     mimetype: str | None = None
     """MIME type, not to be confused with a file extension."""
 
-    encoding: str = "utf-8"
+    encoding: str = "utf-8-sig"
     """Encoding to use if decoding the bytes into a string.
 
-    Uses `utf-8` as default encoding if decoding to string.
+    Uses `utf-8-sig` as default encoding if decoding to string. `utf-8-sig` decodes
+    plain UTF-8 identically to `utf-8` and additionally strips a byte order mark (BOM)
+    when one is present, which is what editors on Windows write by default.
     """
 
     path: PathLike | None = None
@@ -215,7 +217,7 @@ class Blob(BaseMedia):
         cls,
         path: PathLike,
         *,
-        encoding: str = "utf-8",
+        encoding: str = "utf-8-sig",
         mime_type: str | None = None,
         guess_type: bool = True,
         metadata: dict[Any, Any] | None = None,
@@ -224,7 +226,8 @@ class Blob(BaseMedia):
 
         Args:
             path: Path-like object to file to be read
-            encoding: Encoding to use if decoding the bytes into a string
+            encoding: Encoding to use if decoding the bytes into a string.
+                Defaults to `utf-8-sig`, which also strips a byte order mark if present
             mime_type: If provided, will be set as the MIME type of the data
             guess_type: If `True`, the MIME type will be guessed from the file
                 extension, if a MIME type was not provided
@@ -252,7 +255,7 @@ class Blob(BaseMedia):
         cls,
         data: str | bytes,
         *,
-        encoding: str = "utf-8",
+        encoding: str = "utf-8-sig",
         mime_type: str | None = None,
         path: str | None = None,
         metadata: dict[Any, Any] | None = None,
@@ -261,7 +264,8 @@ class Blob(BaseMedia):
 
         Args:
             data: The in-memory data associated with the `Blob`
-            encoding: Encoding to use if decoding the bytes into a string
+            encoding: Encoding to use if decoding the bytes into a string.
+                Defaults to `utf-8-sig`, which also strips a byte order mark if present
             mime_type: If provided, will be set as the MIME type of the data
             path: If provided, will be set as the source from which the data came
             metadata: Metadata to associate with the `Blob`
