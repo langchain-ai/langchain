@@ -141,7 +141,23 @@ def _convert_from_v1_to_anthropic(
             )
 
         elif block["type"] == "invalid_tool_call":
-            continue
+            tool_call_id = block.get("id")
+            tool_name = block.get("name")
+            if (
+                model_provider == "anthropic"
+                and isinstance(tool_call_id, str)
+                and tool_call_id
+                and isinstance(tool_name, str)
+                and tool_name
+            ):
+                new_content.append(
+                    {
+                        "type": "tool_use",
+                        "name": tool_name,
+                        "input": {},
+                        "id": tool_call_id,
+                    }
+                )
 
         elif block["type"] == "reasoning" and model_provider == "anthropic":
             new_block = {}

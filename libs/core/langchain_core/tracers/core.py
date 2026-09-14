@@ -356,6 +356,11 @@ class _TracerCore(ABC):
             return
         metadata = run.extra.setdefault("metadata", {})
         metadata[_GATEWAY_RUN_METADATA_KEY] = gateway_metadata
+        # The resolved gateway identity takes precedence over request-time metadata.
+        for source, target in (("model", "ls_model_name"), ("provider", "ls_provider")):
+            value = gateway_metadata.get(source)
+            if isinstance(value, str) and (value := value.strip()):
+                metadata[target] = value
 
     def _errored_llm_run(
         self, error: BaseException, run_id: UUID, response: LLMResult | None = None

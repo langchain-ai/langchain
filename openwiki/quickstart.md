@@ -40,10 +40,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-48ce5ee900993294d349b4e8
     resource: repo://libs/standard-tests/langchain_tests/__init__.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:26:28.144Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-08T08:27:09.597Z
+    at: 2026-09-09T08:26:28.144Z
 ---
 
 ## Welcome to LangChain Development
@@ -71,9 +71,11 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 | Layer | Edit when you are... | Key files |
 |-------|----------------------|-----------|
-| **core** | Adding or modifying base abstractions, core interfaces (Runnable, BaseChatModel, messages, tools, prompts), or callbacks. | `libs/core/langchain_core/` |
-| **langchain_v1** | Building agent factory features, middleware, model initialization, chat model selection, or high-level orchestration. | `libs/langchain_v1/langchain/agents/`, `libs/langchain_v1/langchain/chat_models/` |
-| **partners/{name}** | Adding a new LLM provider (OpenAI, Anthropic, etc.), model-specific features, or provider integrations. | `libs/partners/{provider}/` |
+| **core** | Adding or modifying base abstractions and core interfaces: `Runnable`, `BaseChatModel`, messages, tools, prompts, callbacks, output parsers. | `libs/core/langchain_core/` |
+| **langchain_v1** | Building agent factory features (`create_agent`), middleware composition, model initialization (`init_chat_model`), or high-level orchestration. | `libs/langchain_v1/langchain/agents/factory.py`, `libs/langchain_v1/langchain/chat_models/base.py` |
+| **partners/{name}** | Adding a new LLM provider (OpenAI, Anthropic, etc.), implementing `ChatModel`, handling message conversion, or adding provider-specific features (streaming, tool calling, structured output). | `libs/partners/{provider}/langchain_{provider}/chat_models/base.py` |
+| **standard-tests** | Defining reusable test suites and test fixtures for evaluating chat models, embeddings, and tools across all providers. | `libs/standard-tests/langchain_tests/` |
+| **model-profiles** | Publishing model metadata, capability profiles, context windows, and supported features for discovery by `init_chat_model`. | `libs/model-profiles/langchain_model_profiles/` |
 
 ## Installation & Setup
 
@@ -198,6 +200,7 @@ Use the table below to route to detailed documentation:
 |------|-----------|--------------|
 | **Build an agent** | [Agent Factory](/openwiki/agent-factory.md) | create_agent, AgentState, middleware composition, graph execution |
 | **Add a new LLM provider** | [Adding a Chat Model Provider](/openwiki/partner-pattern.md) | ChatModel impl, message conversion, provider registration, standard tests |
+| **Integrate OpenAI (ChatGPT, o1, etc.)** | [OpenAI Integration](/openwiki/openai-provider.md) | ChatOpenAI, Responses API, vision, streaming, tool calling, Azure |
 | **Understand the architecture** | [Architecture Overview](/openwiki/architecture.md) | Three-layer design, dependency flow, core vs. orchestration vs. partners |
 | **Work with chat models** | [Chat Model Interface](/openwiki/chat-models.md) | BaseChatModel protocol, streaming, tool binding, structured output |
 | **Initialize models dynamically** | [Model Initialization](/openwiki/model-initialization.md) | init_chat_model factory, provider:model syntax, fallback chains |
@@ -272,7 +275,7 @@ langchain_v1/
 **partners/** — Provider integrations
 ```
 partners/
-├── openai/               # ChatOpenAI, embeddings
+├── openai/               # ChatOpenAI (Chat Completions & Responses APIs), embeddings
 ├── anthropic/            # ChatAnthropic (Claude)
 ├── ollama/               # ChatOllama (local models)
 ├── groq/                 # ChatGroq
@@ -297,6 +300,8 @@ provider/
 ├── Makefile
 └── uv.lock
 ```
+
+Some providers (like OpenAI) support advanced API modes—see [OpenAI Integration](/openwiki/openai-provider.md) for details on the Responses API and streaming with structured output.
 
 ## Your First PR: A Workflow
 
@@ -335,11 +340,18 @@ All checks must pass before pushing.
 
 ### 6. Commit and Push
 
+Follow [Conventional Commits](https://www.conventionalcommits.org/) format with scope (required):
+
 ```bash
 git add .
-git commit -m "Brief description of change"
+# Format: type(scope): description
+# Example: feat(core): add streaming support to BaseChatModel
+# Example: fix(openai): handle timeout errors gracefully
+git commit -m "type(scope): description"
 git push origin your-branch
 ```
+
+See [CLAUDE.md](repo://CLAUDE.md) for commit conventions and branch naming (`<username>/<scope>/<description>`).
 
 Pre-commit hooks will run automatically. If they fail, fix and commit again.
 

@@ -1318,6 +1318,14 @@ def test_get_num_tokens_from_messages_o_series(model: str) -> None:
     assert actual == expected
 
 
+def test_get_num_tokens_from_messages_gpt_6() -> None:
+    llm = ChatOpenAI(model="gpt-6-astra")
+    messages = [HumanMessage("how are you")]
+
+    assert llm._get_encoding_model()[1].name == "o200k_base"
+    assert llm.get_num_tokens_from_messages(messages) > 0
+
+
 class Foo(BaseModel):
     bar: int
 
@@ -4583,6 +4591,25 @@ def test_gpt_5_temperature_case_insensitive(
         messages = [HumanMessage(content="Hello")]
         payload = llm._get_request_payload(messages)
         assert payload["temperature"] == 0.7
+
+
+def test_gpt_6_tools_use_responses_api() -> None:
+    llm = ChatOpenAI(model="gpt-6-astra")
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get the weather",
+                "parameters": {"type": "object", "properties": {}},
+            },
+        }
+    ]
+
+    payload = llm._get_request_payload([HumanMessage(content="Hello")], tools=tools)
+
+    assert "input" in payload
+    assert "messages" not in payload
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
