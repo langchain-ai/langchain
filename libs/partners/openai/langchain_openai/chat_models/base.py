@@ -1932,6 +1932,7 @@ class BaseChatOpenAI(BaseChatModel):
             or self.truncation is not None
             or self.use_previous_response_id
             or _model_prefers_responses_api(self.model_name)
+            or (self.model_name.lower().startswith("gpt-6") and payload.get("tools"))
         ):
             return True
         return _use_responses_api(payload)

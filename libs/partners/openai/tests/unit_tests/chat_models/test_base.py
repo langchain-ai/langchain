@@ -4593,6 +4593,25 @@ def test_gpt_5_temperature_case_insensitive(
         assert payload["temperature"] == 0.7
 
 
+def test_gpt_6_tools_use_responses_api() -> None:
+    llm = ChatOpenAI(model="gpt-6-astra")
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get the weather",
+                "parameters": {"type": "object", "properties": {}},
+            },
+        }
+    ]
+
+    payload = llm._get_request_payload([HumanMessage(content="Hello")], tools=tools)
+
+    assert "input" in payload
+    assert "messages" not in payload
+
+
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_gpt_5_1_temperature_with_reasoning_effort_none(
     use_responses_api: bool,
