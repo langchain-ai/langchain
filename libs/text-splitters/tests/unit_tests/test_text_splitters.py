@@ -2819,6 +2819,31 @@ def html_header_splitter_splitter_factory() -> Callable[
             ],
             "Headers with no associated content",
         ),
+        (
+            # Test Case 6: Non-heading tags (e.g. div, section, header)
+            [("h1", "Main Topic"), ("div", "Section")],
+            """
+            <html>
+                <body>
+                    <h1>Title</h1>
+                    <div>Section Body</div>
+                    <p>Paragraph Text</p>
+                </body>
+            </html>
+            """,
+            [
+                Document(page_content="Title", metadata={"Main Topic": "Title"}),
+                Document(
+                    page_content="Section Body",
+                    metadata={"Main Topic": "Title", "Section": "Section Body"},
+                ),
+                Document(
+                    page_content="Paragraph Text",
+                    metadata={"Main Topic": "Title", "Section": "Section Body"},
+                ),
+            ],
+            "Non-heading tags support",
+        ),
     ],
 )
 @pytest.mark.requires("bs4")
