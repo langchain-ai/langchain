@@ -76,3 +76,44 @@ def test_huggingface_hosted_endpoint_keeps_api_key(
 
     call_kwargs = mock_inference_client.call_args[1]
     assert call_kwargs.get("api_key") == "hf_xxx"
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("https://jzgu0buei5.us-east-1.aws.endpoints.huggingface.cloud", True),
+        ("https://endpoints.huggingface.cloud", True),
+        ("https://fake.endpoints.huggingface.cloud.evil.com", False),
+    ],
+)
+def test_is_huggingface_hosted_url_dedicated_endpoints(
+    url: str,
+    expected: bool,  # noqa: FBT001
+) -> None:
+    """Dedicated Inference Endpoints (*.endpoints.huggingface.cloud) are HF-hosted."""
+    assert _is_huggingface_hosted_url(url) is expected
+
+
+@patch("huggingface_hub.AsyncInferenceClient")
+@patch("huggingface_hub.InferenceClient")
+def test_dedicated_endpoint_keeps_api_key(
+    mock_inference_client: MagicMock,
+    mock_async_client: MagicMock,
+) -> None:
+    """A paid dedicated Inference Endpoint is HF-hosted.
+
+    The token is passed so protected endpoints don't answer 401.
+    """
+    mock_inference_client.return_value = MagicMock()
+    mock_async_client.return_value = MagicMock()
+
+    HuggingFaceEndpoint(  # type: ignore[call-arg]
+        endpoint_url="https://jzgu0buei5.us-east-1.aws.endpoints.huggingface.cloud",
+        max_new_tokens=64,
+        huggingfacehub_api_token="hf_xxx",  # noqa: S106
+    )
+
+    call_kwargs = mock_inference_client.call_args[1]
+    assert call_kwargs.get("api_key") == "hf_xxx"
+    async_call_kwargs = mock_async_client.call_args[1]
+    assert async_call_kwargs.get("api_key") == "hf_xxx"

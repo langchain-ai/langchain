@@ -23,14 +23,16 @@ logger = logging.getLogger(__name__)
 
 
 def _is_huggingface_hosted_url(url: str | None) -> bool:
-    """True if url is HF-hosted (huggingface.co or hf.space)."""
+    """True if url is HF-hosted (huggingface.co, hf.space, or a dedicated endpoint)."""
     if not url:
         return False
     hostname = (urlparse(url).hostname or "").lower()
-    return (
-        hostname == "huggingface.co"
-        or hostname == "hf.space"
-        or hostname.endswith((".huggingface.co", ".hf.space"))
+    return hostname in (
+        "huggingface.co",
+        "hf.space",
+        "endpoints.huggingface.cloud",
+    ) or hostname.endswith(
+        (".huggingface.co", ".hf.space", ".endpoints.huggingface.cloud")
     )
 
 
