@@ -2642,7 +2642,7 @@ class TestErrorPaths:
                 max_retries=0,
             )
             call_kwargs = mock_cls.call_args[1]
-            assert "retry_config" not in call_kwargs
+            assert call_kwargs["retry_config"] is None
 
     def test_max_retries_scales_elapsed_time(self) -> None:
         """Test that max_retries value scales max_elapsed_time."""

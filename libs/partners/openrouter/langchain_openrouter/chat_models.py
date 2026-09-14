@@ -465,6 +465,8 @@ class ChatOpenRouter(BaseChatModel):
                 ),
                 retry_connection_errors=True,
             )
+        elif self.max_retries <= 0:
+            client_kwargs["retry_config"] = None
         return openrouter.OpenRouter(**client_kwargs)
 
     @model_validator(mode="after")
