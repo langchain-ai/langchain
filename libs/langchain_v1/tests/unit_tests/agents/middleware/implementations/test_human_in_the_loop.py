@@ -1519,3 +1519,54 @@ def test_human_in_the_loop_middleware_edit_can_redirect_to_another_tool() -> Non
     tool_message = next(m for m in final["messages"] if isinstance(m, ToolMessage))
     assert "drafted" in tool_message.content
     assert "draft_email" in tool_message.content  # the notice names what ran
+
+
+@pytest.mark.parametrize(
+    ("requested", "replacement", "expected_turns_after_tool"),
+    [("direct_tool", "normal_tool", 1), ("normal_tool", "direct_tool", 0)],
+    ids=["direct-to-normal", "normal-to-direct"],
+)
+def test_human_in_the_loop_middleware_edit_routes_on_executed_tool(
+    requested: str, replacement: str, expected_turns_after_tool: int
+) -> None:
+    """`return_direct` termination must follow the tool that ran, not the one requested."""
+
+    @tool(return_direct=True)
+    def direct_tool(x: str) -> str:
+        """Return directly."""
+        return f"direct {x}"
+
+    @tool
+    def normal_tool(x: str) -> str:
+        """Do not return directly."""
+        return f"normal {x}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[[ToolCall(name=requested, args={"x": "1"}, id="1")], []]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[direct_tool, normal_tool],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={requested: {"allowed_decisions": ["approve", "edit"]}}
+            )
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    config = {"configurable": {"thread_id": f"route-{requested}-{replacement}"}}
+    agent.invoke({"messages": [HumanMessage("go")]}, config)
+    final = agent.invoke(
+        Command(
+            resume={
+                "decisions": [
+                    {"type": "edit", "edited_action": {"name": replacement, "args": {"x": "1"}}}
+                ]
+            }
+        ),
+        config,
+    )
+
+    tool_idx = max(i for i, m in enumerate(final["messages"]) if isinstance(m, ToolMessage))
+    model_turns = sum(isinstance(m, AIMessage) for m in final["messages"][tool_idx + 1 :])
+    assert model_turns == expected_turns_after_tool
