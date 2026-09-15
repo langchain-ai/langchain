@@ -21,6 +21,10 @@ constraints = [
     { name = "pygments", specifier = ">=2.20.0" },
     { name = "urllib3", specifier = ">=2.6.3" },
 ]
+overrides = [
+    { name = "langgraph-checkpoint", git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&rev=cc%2Fhitl-tool-edits-toolcallrequest" },
+    { name = "langgraph-prebuilt", git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=cc%2Fhitl-tool-edits-toolcallrequest" },
+]
 
 [[package]]
 name = "aiofile"
@@ -2443,7 +2447,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.7.0"
+version = "1.7.2"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2582,7 +2586,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.6.1"
+version = "1.6.3"
 source = { editable = "../core" }
 dependencies = [
     { name = "httpx" },
@@ -2786,7 +2790,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.6.0"
+version = "1.6.2"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "certifi" },
@@ -2890,7 +2894,7 @@ requires-dist = [
     { name = "pytest-codspeed" },
     { name = "pytest-recording" },
     { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
-    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<7.0.0" },
     { name = "vcrpy", specifier = ">=8.2.1,<9.0.0" },
 ]
 
@@ -3012,27 +3016,19 @@ wheels = [
 [[package]]
 name = "langgraph-checkpoint"
 version = "4.2.0"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&rev=cc%2Fhitl-tool-edits-toolcallrequest#ab478cb40f186fe133bb280f951fa64a41fa263a" }
 dependencies = [
     { name = "langchain-core" },
     { name = "ormsgpack" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/dc/e1/089c4c9e0a2fec7f883f82ae8e6a727138d50074cfeb6644bc2d13b1019b/langgraph_checkpoint-4.2.0.tar.gz", hash = "sha256:51a593b6bee684b0818e5d6e58e28ab340c6db7794575056ce7bd1b746a84ed7", size = 180239, upload-time = "2026-08-07T20:05:03.756Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/05/71/3b475f09bd57d3a5649792c66353312b4432afd843f301739dfcebd157f0/langgraph_checkpoint-4.2.0-py3-none-any.whl", hash = "sha256:0547fd228935a0b758865de3a3d6d7a2537c308895d0f9ab092ce9151b5da942", size = 56833, upload-time = "2026-08-07T20:05:02.655Z" },
 ]
 
 [[package]]
 name = "langgraph-prebuilt"
 version = "1.1.0"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=cc%2Fhitl-tool-edits-toolcallrequest#218887d7ce5c979f6de7541cd7211e74d04b5bcb" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/29/66/ed9b93f56bc17ef22d551892f0ac2b225a97fe0fcf23a511b857f70d590b/langgraph_prebuilt-1.1.0.tar.gz", hash = "sha256:3c579cf6eed2d17f9c157c2d0fcaddcd8688524e7022d3b22b37a3bf4589d528", size = 178833, upload-time = "2026-05-12T03:37:49.332Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e9/43/3fe1a700b8490ed02679cdbbc8c915eb23a092faf496c9c1118abcd10be3/langgraph_prebuilt-1.1.0-py3-none-any.whl", hash = "sha256:51e311747d755b751d5c6b39b0c1446124d3a7643d2515017e6714b323508fc9", size = 41043, upload-time = "2026-05-12T03:37:48.007Z" },
 ]
 
 [[package]]

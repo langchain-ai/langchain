@@ -97,6 +97,12 @@ test_integration = [
 
 [tool.uv]
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
+# TODO(revert before merge): langgraph branch carrying the ToolNode redirect fix
+# (langchain-ai/langgraph, branch cc/hitl-tool-edits-toolcallrequest). Drop once released.
+override-dependencies = [
+    "langgraph-prebuilt @ git+https://github.com/langchain-ai/langgraph.git@cc/hitl-tool-edits-toolcallrequest#subdirectory=libs/prebuilt",
+    "langgraph-checkpoint @ git+https://github.com/langchain-ai/langgraph.git@cc/hitl-tool-edits-toolcallrequest#subdirectory=libs/checkpoint",
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
@@ -104,6 +110,8 @@ langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 langchain-anthropic = { path = "../partners/anthropic", editable = true }
+# TODO: delete this source before merge
+langgraph-prebuilt = { git = "https://github.com/langchain-ai/langgraph.git", branch = "cc/hitl-tool-edits-toolcallrequest", subdirectory = "libs/prebuilt" }
 
 [tool.ruff]
 line-length = 100
