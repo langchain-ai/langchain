@@ -1334,7 +1334,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict[str, Any]:  # noqa: C
     elif isinstance(message, ToolMessage):
         message_dict = {
             "role": "tool",
-            "content": message.content,
+            "content": _format_message_content(message.content),
             "tool_call_id": message.tool_call_id,
         }
     else:

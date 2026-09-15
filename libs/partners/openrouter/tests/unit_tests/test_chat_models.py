@@ -1760,6 +1760,32 @@ class TestMessageConversion:
             "tool_call_id": "call_123",
         }
 
+    def test_tool_message_with_content_blocks_to_dict(self) -> None:
+        """Test converting ToolMessage with content blocks (e.g. image) to dict."""
+        msg = ToolMessage(
+            content=[
+                {"type": "text", "text": "analysis results"},
+                {
+                    "type": "image",
+                    "base64": "aGVsbG8=",
+                    "mime_type": "image/png",
+                },
+            ],
+            tool_call_id="call_123",
+        )
+        result = _convert_message_to_dict(msg)
+        assert result == {
+            "role": "tool",
+            "content": [
+                {"type": "text", "text": "analysis results"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/png;base64,aGVsbG8="},
+                },
+            ],
+            "tool_call_id": "call_123",
+        }
+
     def test_chat_message_to_dict(self) -> None:
         """Test converting ChatMessage to dict."""
         msg = ChatMessage(content="Hello", role="developer")
