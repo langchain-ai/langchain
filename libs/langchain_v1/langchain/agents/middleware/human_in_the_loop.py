@@ -264,9 +264,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
 
                 Not used if a tool has a `description` in its `InterruptOnConfig`.
             edit_notice: Text appended to the result of a tool call a reviewer replaced
-                via an `edit` decision, so the model does not re-issue its original.
-
-                Pass `None` to append nothing.
+                via an `edit` decision. Pass `None` to append nothing.
 
         Raises:
             ValueError: If a tool's `InterruptOnConfig` does not have a non-empty
@@ -549,8 +547,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             f"{json.dumps(executed['args'], default=str)}."
         )
 
-    def _append_notice(self, message: ToolMessage, executed: Action) -> ToolMessage:
-        """Return `message` with the reviewer-edit notice appended to its content."""
+    def _prepend_notice(self, message: ToolMessage, executed: Action) -> ToolMessage:
+        """Return `message` with the reviewer-edit notice prepended to its content."""
         if not self.edit_notice:
             return message
         edit_notice = self._notice(executed)
@@ -560,7 +558,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             if edit_notice in message.content:
                 return message
             separator = "\n\n" if message.content else ""
-            content = f"{message.content}{separator}{edit_notice}"
+            content = f"{edit_notice}{separator}{message.content}"
         else:
             if any(edit_notice in str(block) for block in message.content):
                 return message
@@ -570,7 +568,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 if message.content and all(isinstance(b, str) for b in message.content)
                 else {"type": "text", "text": edit_notice}
             )
-            content = [*message.content, notice]
+            content = [notice, *message.content]
 
         return message.model_copy(update={"content": content})
 
@@ -584,7 +582,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             return result
 
         if isinstance(result, ToolMessage):
-            return self._append_notice(result, executed)
+            return self._prepend_notice(result, executed)
 
         # A `Command` carries the `ToolMessage` in its state update.
         if not isinstance(result, Command) or not isinstance(result.update, dict):
@@ -598,7 +596,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             update={
                 **result.update,
                 "messages": [
-                    self._append_notice(message, executed)
+                    self._prepend_notice(message, executed)
                     if isinstance(message, ToolMessage) and message.tool_call_id == tool_call_id
                     else message
                     for message in messages

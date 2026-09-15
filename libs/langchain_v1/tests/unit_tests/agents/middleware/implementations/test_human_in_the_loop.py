@@ -1212,7 +1212,7 @@ def test_human_in_the_loop_middleware_edit_annotates_tool_result() -> None:
     tool_messages = [m for m in final["messages"] if isinstance(m, ToolMessage)]
     assert len(tool_messages) == 1
     content = tool_messages[0].content
-    assert content.startswith("File written to notes.txt")
+    assert content.endswith("File written to notes.txt")
     assert _EDIT_NOTICE in content
     # The original, untrusted args must not be echoed back.
     assert "Hello, world!" not in content
@@ -1292,7 +1292,7 @@ def test_human_in_the_loop_middleware_edit_annotates_list_content(
     annotated = middleware.wrap_tool_call(request, lambda _: result)
 
     assert isinstance(annotated, ToolMessage)
-    assert annotated.content == [*tool_output, expected_notice_block]
+    assert annotated.content == [expected_notice_block, *tool_output]
 
 
 def _edited_request(tool_call_id: str = "1") -> ToolCallRequest:
@@ -1335,7 +1335,7 @@ def test_human_in_the_loop_middleware_edit_annotates_command_result() -> None:
     assert isinstance(result, Command)
     assert result.update["some_state_key"] == "preserved"
     annotated, passthrough = result.update["messages"]
-    assert annotated.content == f"wrote it\n\n{_EXPECTED_NOTICE}"
+    assert annotated.content == f"{_EXPECTED_NOTICE}\n\nwrote it"
     assert passthrough.content == "other"
 
 
@@ -1368,7 +1368,7 @@ async def test_human_in_the_loop_middleware_edit_annotates_async() -> None:
     result = await middleware.awrap_tool_call(_edited_request(), handler)
 
     assert isinstance(result, ToolMessage)
-    assert result.content == f"wrote it\n\n{_EXPECTED_NOTICE}"
+    assert result.content == f"{_EXPECTED_NOTICE}\n\nwrote it"
 
 
 def test_human_in_the_loop_middleware_edit_notice_is_customizable() -> None:
@@ -1383,7 +1383,7 @@ def test_human_in_the_loop_middleware_edit_notice_is_customizable() -> None:
     )
 
     assert isinstance(result, ToolMessage)
-    assert result.content.startswith("wrote it\n\nOperator overrode these args.")
+    assert result.content.startswith("Operator overrode these args.")
     assert _EDIT_NOTICE not in result.content
 
 
