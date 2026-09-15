@@ -101,7 +101,7 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 brew install uv
 ```
 
-Then sync all dependencies in your package:
+Then sync all dependencies in your package. (Note: `uv` will automatically create and manage the `.venv` directory for you; you do not need to manually activate it when using `uv run`!)
 
 ```bash
 # From any libs/ subdirectory, install all groups (test, lint, type, dev)
