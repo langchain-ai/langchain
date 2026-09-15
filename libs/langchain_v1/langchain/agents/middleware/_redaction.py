@@ -106,21 +106,39 @@ def detect_ip(content: str) -> list[PIIMatch]:
     """
     matches: list[PIIMatch] = []
     ipv4_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
+    # IPv6 addresses use colons, which are not word characters, so use
+    # lookarounds rather than `\b` for the boundaries.
+    ipv6_pattern = (
+        r"(?<![\dA-Fa-f:])"
+        r"(?:"
+        r"(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}"
+        r"|(?:[0-9A-Fa-f]{1,4}:){1,7}:"
+        r"|(?:[0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}"
+        r"|(?:[0-9A-Fa-f]{1,4}:){1,5}(?::[0-9A-Fa-f]{1,4}){1,2}"
+        r"|(?:[0-9A-Fa-f]{1,4}:){1,4}(?::[0-9A-Fa-f]{1,4}){1,3}"
+        r"|(?:[0-9A-Fa-f]{1,4}:){1,3}(?::[0-9A-Fa-f]{1,4}){1,4}"
+        r"|(?:[0-9A-Fa-f]{1,4}:){1,2}(?::[0-9A-Fa-f]{1,4}){1,5}"
+        r"|[0-9A-Fa-f]{1,4}:(?::[0-9A-Fa-f]{1,4}){1,6}"
+        r"|:(?:(?::[0-9A-Fa-f]{1,4}){1,7}|:)"
+        r")"
+        r"(?![\dA-Fa-f:])"
+    )
 
-    for match in re.finditer(ipv4_pattern, content):
-        ip_candidate = match.group()
-        try:
-            ipaddress.ip_address(ip_candidate)
-        except ValueError:
-            continue
-        matches.append(
-            PIIMatch(
-                type="ip",
-                value=ip_candidate,
-                start=match.start(),
-                end=match.end(),
+    for pattern in (ipv4_pattern, ipv6_pattern):
+        for match in re.finditer(pattern, content):
+            ip_candidate = match.group()
+            try:
+                ipaddress.ip_address(ip_candidate)
+            except ValueError:
+                continue
+            matches.append(
+                PIIMatch(
+                    type="ip",
+                    value=ip_candidate,
+                    start=match.start(),
+                    end=match.end(),
+                )
             )
-        )
 
     return matches
 

@@ -148,6 +148,20 @@ class TestIPDetection:
         assert matches[0]["type"] == "ip"
         assert matches[0]["value"] == "192.168.1.1"
 
+    def test_detect_valid_ipv6(self) -> None:
+        content = "Server IP: 2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+        matches = detect_ip(content)
+
+        assert len(matches) == 1
+        assert matches[0]["type"] == "ip"
+        assert matches[0]["value"] == "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+
+    def test_detect_compressed_ipv6(self) -> None:
+        content = "IPs: fe80::1 and ::1"
+        matches = detect_ip(content)
+
+        assert [m["value"] for m in matches] == ["fe80::1", "::1"]
+
     def test_detect_multiple_ips(self) -> None:
         content = "Connect to 10.0.0.1 or 8.8.8.8"
         matches = detect_ip(content)
