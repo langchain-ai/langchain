@@ -21,6 +21,10 @@ constraints = [
     { name = "pygments", specifier = ">=2.20.0" },
     { name = "urllib3", specifier = ">=2.6.3" },
 ]
+overrides = [
+    { name = "langgraph-checkpoint", git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&rev=cc%2Fhitl-tool-edits-toolcallrequest" },
+    { name = "langgraph-prebuilt", git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=cc%2Fhitl-tool-edits-toolcallrequest" },
+]
 
 [[package]]
 name = "aiofile"
@@ -2288,7 +2292,6 @@ source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph" },
-    { name = "langgraph-prebuilt" },
     { name = "pydantic" },
 ]
 
@@ -2407,7 +2410,6 @@ requires-dist = [
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langchain-xai", marker = "extra == 'xai'" },
     { name = "langgraph", specifier = ">=1.2.11,<1.3.0" },
-    { name = "langgraph-prebuilt", git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=cc%2Fhitl-tool-edits-toolcallrequest" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
 provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "baseten", "deepseek", "xai", "perplexity", "meta", "mcp"]
@@ -3014,7 +3016,7 @@ wheels = [
 [[package]]
 name = "langgraph-checkpoint"
 version = "4.2.0"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&branch=cc%2Fhitl-tool-edits-toolcallrequest#218887d7ce5c979f6de7541cd7211e74d04b5bcb" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&rev=cc%2Fhitl-tool-edits-toolcallrequest#ab478cb40f186fe133bb280f951fa64a41fa263a" }
 dependencies = [
     { name = "langchain-core" },
     { name = "ormsgpack" },
