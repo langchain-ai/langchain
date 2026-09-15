@@ -55,8 +55,12 @@ class ModelProfile(TypedDict, total=False):
     """Whether text inputs are supported."""
 
     image_inputs: bool
-    """Whether image inputs are supported."""
-    # TODO: add more detail about formats?
+    """Whether image inputs are supported.
+
+    Refers to inline image data in message content (`ImageContentBlock`),
+    typically bytes or a base64-encoded string with a `mime_type`. For image
+    inputs referenced by URL, see `image_url_inputs`.
+    """
 
     image_url_inputs: bool
     """Whether [image URL inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
@@ -64,18 +68,30 @@ class ModelProfile(TypedDict, total=False):
 
     pdf_inputs: bool
     """Whether [PDF inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
-    are supported."""
-    # TODO: add more detail about formats? e.g. bytes or base64
+    are supported.
+
+    Refers to document data in message content (`FileContentBlock`),
+    typically bytes or a base64-encoded string with a `mime_type`. Depending
+    on the provider, data may also be referenced by URL or `file_id`.
+    """
 
     audio_inputs: bool
     """Whether [audio inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
-    are supported."""
-    # TODO: add more detail about formats? e.g. bytes or base64
+    are supported.
+
+    Refers to audio data in message content (`AudioContentBlock`),
+    typically bytes or a base64-encoded string with a `mime_type`. Depending
+    on the provider, data may also be referenced by URL or `file_id`.
+    """
 
     video_inputs: bool
     """Whether [video inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
-    are supported."""
-    # TODO: add more detail about formats? e.g. bytes or base64
+    are supported.
+
+    Refers to video data in message content (`VideoContentBlock`),
+    typically bytes or a base64-encoded string with a `mime_type`. Depending
+    on the provider, data may also be referenced by URL or `file_id`.
+    """
 
     image_tool_message: bool
     """Whether images can be included in `ToolMessage` content."""
