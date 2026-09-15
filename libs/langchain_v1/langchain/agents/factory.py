@@ -655,6 +655,23 @@ def _handle_structured_output_error(
     return True, handle_errors(exception)
 
 
+def _invalid_tool_call_messages(output: AIMessage) -> list[ToolMessage]:
+    return [
+        ToolMessage(
+            content=(
+                f"Tool call {tool_call.get('name') or 'unknown'} with id "
+                f"{tool_call['id']} could not be executed because its arguments "
+                "were malformed or truncated."
+            ),
+            name=tool_call.get("name") or "unknown",
+            tool_call_id=tool_call["id"],
+            status="error",
+        )
+        for tool_call in output.invalid_tool_calls
+        if isinstance(tool_call.get("id"), str) and tool_call["id"]
+    ]
+
+
 def _chain_tool_call_wrappers(
     wrappers: Sequence[ToolCallWrapper],
 ) -> ToolCallWrapper | None:
@@ -1457,7 +1474,10 @@ def create_agent(
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
-        messages_list = handled_output["messages"]
+        messages_list = [
+            *handled_output["messages"],
+            *_invalid_tool_call_messages(output),
+        ]
         structured_response = handled_output.get("structured_response")
 
         return ModelResponse(
@@ -1508,7 +1528,10 @@ def create_agent(
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
-        messages_list = handled_output["messages"]
+        messages_list = [
+            *handled_output["messages"],
+            *_invalid_tool_call_messages(output),
+        ]
         structured_response = handled_output.get("structured_response")
 
         return ModelResponse(
@@ -1700,9 +1723,7 @@ def create_agent(
 
         # Include loop_entry_node when middleware can inject synthetic tool
         # messages, or when structured output or after-model hooks can reroute there.
-        model_to_tools_destinations = ["tools", exit_node]
-        if response_format or loop_exit_node != "model" or middleware_w_wrap_model_call:
-            model_to_tools_destinations.append(loop_entry_node)
+        model_to_tools_destinations = ["tools", loop_entry_node, exit_node]
 
         graph.add_conditional_edges(
             loop_exit_node,
@@ -1945,7 +1966,14 @@ def _make_model_to_tools_edge(
 
         tool_message_ids = [m.tool_call_id for m in tool_messages]
 
-        # 3. If the model hasn't called any tools, exit the loop
+        # 3. Retry after invalid tool calls have been answered synthetically.
+        if any(
+            tool_call.get("id") in tool_message_ids
+            for tool_call in last_ai_message.invalid_tool_calls
+        ):
+            return model_destination
+
+        # 4. If the model hasn't called any tools, exit the loop
         # this is the classic exit condition for an agent loop
         if len(last_ai_message.tool_calls) == 0:
             return end_destination
