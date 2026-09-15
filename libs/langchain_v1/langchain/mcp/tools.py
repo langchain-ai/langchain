@@ -209,6 +209,28 @@ def _tool_metadata(tool: Tool, client: Client[Any] | None) -> dict[str, Any] | N
     return {"mcp": mcp} if mcp else None
 
 
+def _normalize_mcp_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Keep open object arguments open during provider schema conversion."""
+    normalized = dict(schema)
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        return normalized
+    normalized["properties"] = dict(properties)
+    for name, value in properties.items():
+        if not isinstance(value, dict):
+            continue
+        types = value.get("type")
+        is_object = types == "object" or (isinstance(types, list) and "object" in types)
+        if (
+            is_object
+            and not value.get("properties")
+            and "additionalProperties" not in value
+            and "unevaluatedProperties" not in value
+        ):
+            normalized["properties"][name] = {**value, "additionalProperties": True}
+    return normalized
+
+
 async def as_langchain_tool(
     tool: Tool,
     client: Client[Any] | ClientGroup,
@@ -274,7 +296,7 @@ async def as_langchain_tool(
     return StructuredTool(
         name=tool.name,
         description=tool.description or "",
-        args_schema=tool.input_schema,
+        args_schema=_normalize_mcp_schema(tool.input_schema),
         coroutine=call_tool,
         response_format="content_and_artifact",
         metadata=_tool_metadata(tool, requesting_client),
