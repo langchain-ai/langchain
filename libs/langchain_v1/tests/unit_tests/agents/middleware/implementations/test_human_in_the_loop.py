@@ -13,6 +13,8 @@ from langgraph.types import Command
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware import InterruptOnConfig
 from langchain.agents.middleware.human_in_the_loop import (
+    _EDIT_NOTICE,
+    _EDITED_TOOL_CALL_IDS_KEY,
     Action,
     HumanInTheLoopMiddleware,
 )
@@ -1128,3 +1130,251 @@ def test_when_predicate_receives_correct_args() -> None:
     assert req.runtime.state is state
     assert req.runtime.context is runtime.context
     assert req.runtime.store is runtime.store
+
+
+def test_human_in_the_loop_middleware_edit_annotates_tool_result() -> None:
+    """An edited call runs the reviewer's args and its result is attributed to them."""
+    executed: list[dict[str, Any]] = []
+
+    @tool
+    def write_file_tool(path: str, content: str) -> str:
+        """Write content to a file."""
+        executed.append({"path": path, "content": content})
+        return f"File written to {path}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(
+                    name="write_file_tool",
+                    args={"path": "notes.txt", "content": "Hello, world!"},
+                    id="1",
+                )
+            ],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[write_file_tool],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={"write_file_tool": {"allowed_decisions": ["approve", "edit"]}}
+            )
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    config = {"configurable": {"thread_id": "edit-annotates-result"}}
+
+    interrupted = agent.invoke(
+        {"messages": [HumanMessage("Write notes.txt with 'Hello, world!'")]}, config
+    )
+    assert "__interrupt__" in interrupted
+
+    final = agent.invoke(
+        Command(
+            resume={
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "edited_action": {
+                            "name": "write_file_tool",
+                            "args": {"path": "notes.txt", "content": "reviewer value"},
+                        },
+                    }
+                ]
+            }
+        ),
+        config,
+    )
+
+    assert executed == [{"path": "notes.txt", "content": "reviewer value"}]
+
+    tool_messages = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    content = tool_messages[0].content
+    assert content.startswith("File written to notes.txt")
+    assert _EDIT_NOTICE in content
+    # The original, untrusted args must not be echoed back.
+    assert "Hello, world!" not in content
+    assert "__interrupt__" not in final
+    _assert_tool_messages_are_paired(final["messages"])
+
+
+def test_human_in_the_loop_middleware_approve_does_not_annotate() -> None:
+    """An approved call was the model's own, so its result must not be annotated."""
+
+    @tool
+    def write_file_tool(path: str, content: str) -> str:
+        """Write content to a file."""
+        return f"File written to {path} ({len(content)} chars)"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="write_file_tool", args={"path": "/p", "content": "c"}, id="1")],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[write_file_tool],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={"write_file_tool": {"allowed_decisions": ["approve", "edit"]}}
+            )
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    config = {"configurable": {"thread_id": "approve-no-annotation"}}
+    agent.invoke({"messages": [HumanMessage("write it")]}, config)
+    final = agent.invoke(Command(resume={"decisions": [{"type": "approve"}]}), config)
+
+    tool_messages = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert tool_messages[0].content == "File written to /p (1 chars)"
+
+
+@pytest.mark.parametrize(
+    ("tool_output", "expected_notice_block"),
+    [
+        ([{"type": "text", "text": "wrote it"}], {"type": "text", "text": _EDIT_NOTICE}),
+        (
+            [{"type": "text", "text": "a"}, {"type": "image_url", "image_url": {"url": "u"}}],
+            {"type": "text", "text": _EDIT_NOTICE},
+        ),
+        (["wrote it"], _EDIT_NOTICE),
+        ([], {"type": "text", "text": _EDIT_NOTICE}),
+    ],
+    ids=["text-block", "mixed-blocks", "plain-strings", "empty"],
+)
+def test_human_in_the_loop_middleware_edit_annotates_list_content(
+    tool_output: list[Any], expected_notice_block: Any
+) -> None:
+    """Block-content results are annotated, preserving existing blocks and their shape."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"write_file_tool": {"allowed_decisions": ["edit"]}}
+    )
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"name": "write_file_tool", "args": {"content": "edited"}, "id": "1"}],
+        response_metadata={_EDITED_TOOL_CALL_IDS_KEY: ["1"]},
+    )
+    request = ToolCallRequest(
+        tool_call=ToolCall(name="write_file_tool", args={"content": "edited"}, id="1"),
+        tool=None,
+        state=AgentState[Any](messages=[HumanMessage("go"), ai_message]),
+        runtime=None,
+    )
+    result = ToolMessage(content=tool_output, tool_call_id="1", name="write_file_tool")
+
+    annotated = middleware.wrap_tool_call(request, lambda _: result)
+
+    assert isinstance(annotated, ToolMessage)
+    assert annotated.content == [*tool_output, expected_notice_block]
+
+
+def _edited_request(tool_call_id: str = "1") -> ToolCallRequest:
+    """A `ToolCallRequest` whose call a reviewer edited."""
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"name": "write_file_tool", "args": {"content": "edited"}, "id": tool_call_id}],
+        response_metadata={_EDITED_TOOL_CALL_IDS_KEY: [tool_call_id]},
+    )
+    return ToolCallRequest(
+        tool_call=ToolCall(name="write_file_tool", args={"content": "edited"}, id=tool_call_id),
+        tool=None,
+        state=AgentState[Any](messages=[HumanMessage("go"), ai_message]),
+        runtime=None,
+    )
+
+
+def test_human_in_the_loop_middleware_edit_annotates_command_result() -> None:
+    """A `Command` result has its own `ToolMessage` annotated, leaving others intact."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"write_file_tool": {"allowed_decisions": ["edit"]}}
+    )
+    unrelated = ToolMessage(content="other", tool_call_id="99", name="other_tool")
+    command = Command(
+        update={
+            "messages": [
+                ToolMessage(content="wrote it", tool_call_id="1", name="write_file_tool"),
+                unrelated,
+            ],
+            "some_state_key": "preserved",
+        }
+    )
+
+    result = middleware.wrap_tool_call(_edited_request(), lambda _: command)
+
+    assert isinstance(result, Command)
+    assert result.update["some_state_key"] == "preserved"
+    annotated, passthrough = result.update["messages"]
+    assert annotated.content == f"wrote it\n\n{_EDIT_NOTICE}"
+    assert passthrough.content == "other"
+
+
+def test_human_in_the_loop_middleware_edit_notice_is_not_duplicated() -> None:
+    """The notice is idempotent; retry middleware may re-invoke the handler."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"write_file_tool": {"allowed_decisions": ["edit"]}}
+    )
+    request = _edited_request()
+    once = middleware.wrap_tool_call(
+        request, lambda _: ToolMessage(content="wrote it", tool_call_id="1")
+    )
+    assert isinstance(once, ToolMessage)
+    twice = middleware.wrap_tool_call(request, lambda _: once)
+
+    assert isinstance(twice, ToolMessage)
+    assert twice.content == once.content
+    assert twice.content.count(_EDIT_NOTICE) == 1
+
+
+async def test_human_in_the_loop_middleware_edit_annotates_async() -> None:
+    """`awrap_tool_call` must behave identically to the sync hook."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"write_file_tool": {"allowed_decisions": ["edit"]}}
+    )
+
+    async def handler(_: ToolCallRequest) -> ToolMessage:
+        return ToolMessage(content="wrote it", tool_call_id="1", name="write_file_tool")
+
+    result = await middleware.awrap_tool_call(_edited_request(), handler)
+
+    assert isinstance(result, ToolMessage)
+    assert result.content == f"wrote it\n\n{_EDIT_NOTICE}"
+
+
+def test_human_in_the_loop_middleware_edit_notice_is_customizable() -> None:
+    """`edit_notice` replaces the default text."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"write_file_tool": {"allowed_decisions": ["edit"]}},
+        edit_notice="Operator overrode these args.",
+    )
+
+    result = middleware.wrap_tool_call(
+        _edited_request(), lambda _: ToolMessage(content="wrote it", tool_call_id="1")
+    )
+
+    assert isinstance(result, ToolMessage)
+    assert result.content == "wrote it\n\nOperator overrode these args."
+    assert _EDIT_NOTICE not in result.content
+
+
+@pytest.mark.parametrize(
+    "tool_output",
+    ["wrote it", [{"type": "text", "text": "wrote it"}]],
+    ids=["string", "blocks"],
+)
+def test_human_in_the_loop_middleware_edit_notice_can_be_disabled(tool_output: Any) -> None:
+    """`edit_notice=None` leaves results untouched for both content shapes."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"write_file_tool": {"allowed_decisions": ["edit"]}},
+        edit_notice=None,
+    )
+
+    result = middleware.wrap_tool_call(
+        _edited_request(), lambda _: ToolMessage(content=tool_output, tool_call_id="1")
+    )
+
+    assert isinstance(result, ToolMessage)
+    assert result.content == tool_output
