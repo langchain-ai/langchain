@@ -251,6 +251,36 @@ def test_mustache_prompt_from_template(snapshot: SnapshotAssertion) -> None:
     }
 
 
+def test_mustache_inverted_section_nested_in_list_section() -> None:
+    """Inverted section nested in a list section with the same key.
+
+    The inner ``{{^items}}...{{/items}}`` end tag must close the inverted
+    section, not the enclosing ``{{#items}}`` list section.
+    """
+    # Nested inverted section with surrounding content.
+    template = "{{#items}}[{{^items}}none{{/items}}{{name}}]{{/items}}"
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(items=[{"name": "a"}, {"name": "b"}]) == "[a][b]"
+
+    # Nested inverted section followed by trailing content (used to raise
+    # IndexError because the outer end tag popped the root scope).
+    template = "{{#items}}{{^items}}none{{/items}}{{/items}}Done"
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(items=[{"name": "a"}, {"name": "b"}]) == "Done"
+
+    # Control: with a genuinely empty list, the inverted section's fallback
+    # still renders (the outer list section body never runs).
+    template = "{{#items}}[{{name}}]{{/items}}{{^items}}none{{/items}}"
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(items=[]) == "none"
+
+    # Control: non-nested inverted section behavior is unchanged.
+    template = "{{^items}}none{{/items}}"
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(items=[]) == "none"
+    assert prompt.format(items=[{"name": "a"}]) == ""
+
+
 def test_mustache_prompt_with_non_dict_mapping() -> None:
     """Test mustache templates accept non-`dict` `Mapping` values."""
     template = "Hello {{user.name}}"

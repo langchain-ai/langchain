@@ -635,7 +635,9 @@ def render(
                 tags = []
                 tags_with_same_key = 0
                 for token in tokens:
-                    if token == ("section", key):
+                    # Nested sections and inverted sections with the same key
+                    # each consume one matching end tag
+                    if token in {("section", key), ("inverted section", key)}:
                         tags_with_same_key += 1
                     if token == ("end", key):
                         tags_with_same_key -= 1
