@@ -13,6 +13,10 @@ Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langc
 uv add langchain-groq
 ```
 
+## 🤔 What is this?
+
+This package contains the LangChain integration for [Groq](https://groq.com/).
+
 ## 📖 Documentation
 
 For full documentation, see the [API reference](https://reference.langchain.com/python/integrations/langchain_groq/). For conceptual guides, tutorials, and examples on using these classes, see the [LangChain Docs](https://docs.langchain.com/oss/python/integrations/providers/groq).

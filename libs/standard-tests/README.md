@@ -47,8 +47,6 @@ To add standard tests to an integration package (e.g., for a chat model), you ne
 ```python
 """Standard LangChain interface tests"""
 
-from typing import Type
-
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.unit_tests import ChatModelUnitTests
@@ -58,7 +56,7 @@ from langchain_parrot_chain import ChatParrotChain
 
 class TestParrotChainStandard(ChatModelUnitTests):
     @pytest.fixture
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatParrotChain
 ```
 
@@ -66,8 +64,6 @@ class TestParrotChainStandard(ChatModelUnitTests):
 
 ```python
 """Standard LangChain interface tests"""
-
-from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -78,7 +74,7 @@ from langchain_parrot_chain import ChatParrotChain
 
 class TestParrotChainStandard(ChatModelIntegrationTests):
     @pytest.fixture
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatParrotChain
 ```
 
