@@ -540,24 +540,25 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 return cast("Action", edited[tool_call_id])
         return None
 
-    def _notice(self, executed: Action) -> str:
+    def _notice(self, executed: Action, *, has_content: bool) -> str:
         """The notice text, stating the call that actually ran."""
-        return (
+        notice = (
             f"{self.edit_notice} Executed instead: {executed['name']} with arguments "
             f"{json.dumps(executed['args'], default=str)}."
         )
+        return f"{notice}\n\nTool response:" if has_content else notice
 
     def _prepend_notice(self, message: ToolMessage, executed: Action) -> ToolMessage:
         """Return `message` with the reviewer-edit notice prepended to its content."""
         if not self.edit_notice:
             return message
-        edit_notice = self._notice(executed)
+        edit_notice = self._notice(executed, has_content=bool(message.content))
 
         content: str | list[str | dict[Any, Any]]
         if isinstance(message.content, str):
             if edit_notice in message.content:
                 return message
-            separator = "\n\n" if message.content else ""
+            separator = "\n" if message.content else ""
             content = f"{edit_notice}{separator}{message.content}"
         else:
             if any(edit_notice in str(block) for block in message.content):

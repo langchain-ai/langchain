@@ -24,6 +24,7 @@ from tests.unit_tests.agents.model import FakeToolCallingModel
 _EXPECTED_NOTICE = (
     f'{_EDIT_NOTICE} Executed instead: write_file_tool with arguments {{"content": "edited"}}.'
 )
+_EXPECTED_NOTICE_WITH_CONTENT = f"{_EXPECTED_NOTICE}\n\nTool response:"
 
 
 def test_human_in_the_loop_middleware_initialization() -> None:
@@ -1255,13 +1256,16 @@ def test_human_in_the_loop_middleware_approve_does_not_annotate() -> None:
 @pytest.mark.parametrize(
     ("tool_output", "expected_notice_block"),
     [
-        ([{"type": "text", "text": "wrote it"}], {"type": "text", "text": _EXPECTED_NOTICE}),
+        (
+            [{"type": "text", "text": "wrote it"}],
+            {"type": "text", "text": _EXPECTED_NOTICE_WITH_CONTENT},
+        ),
         (
             [{"type": "text", "text": "a"}, {"type": "image_url", "image_url": {"url": "u"}}],
-            {"type": "text", "text": _EXPECTED_NOTICE},
+            {"type": "text", "text": _EXPECTED_NOTICE_WITH_CONTENT},
         ),
-        (["wrote it"], _EXPECTED_NOTICE),
-        ([], {"type": "text", "text": _EXPECTED_NOTICE}),
+        (["wrote it"], _EXPECTED_NOTICE_WITH_CONTENT),
+        ([], {"type": "text", "text": _EXPECTED_NOTICE}),  # no label without content
     ],
     ids=["text-block", "mixed-blocks", "plain-strings", "empty"],
 )
@@ -1335,7 +1339,7 @@ def test_human_in_the_loop_middleware_edit_annotates_command_result() -> None:
     assert isinstance(result, Command)
     assert result.update["some_state_key"] == "preserved"
     annotated, passthrough = result.update["messages"]
-    assert annotated.content == f"{_EXPECTED_NOTICE}\n\nwrote it"
+    assert annotated.content == f"{_EXPECTED_NOTICE_WITH_CONTENT}\nwrote it"
     assert passthrough.content == "other"
 
 
@@ -1368,7 +1372,7 @@ async def test_human_in_the_loop_middleware_edit_annotates_async() -> None:
     result = await middleware.awrap_tool_call(_edited_request(), handler)
 
     assert isinstance(result, ToolMessage)
-    assert result.content == f"{_EXPECTED_NOTICE}\n\nwrote it"
+    assert result.content == f"{_EXPECTED_NOTICE_WITH_CONTENT}\nwrote it"
 
 
 def test_human_in_the_loop_middleware_edit_notice_is_customizable() -> None:
