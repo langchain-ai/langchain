@@ -157,8 +157,6 @@ class Crawler:
         page_element_buffer = self.page_element_buffer
         start = time.time()
 
-        page_state_as_text = []
-
         device_pixel_ratio: float = page.evaluate("window.devicePixelRatio")
         if platform == "darwin" and device_pixel_ratio == 1:  # lies
             device_pixel_ratio = 2
@@ -169,22 +167,6 @@ class Crawler:
         win_height: float = page.evaluate("window.screen.height")
         win_right_bound: float = win_left_bound + win_width
         win_lower_bound: float = win_upper_bound + win_height
-
-        # 	percentage_progress_start = (win_upper_bound / document_scroll_height) * 100
-        # 	percentage_progress_end = (
-        # 		(win_height + win_upper_bound) / document_scroll_height
-        # 	) * 100
-        percentage_progress_start = 1
-        percentage_progress_end = 2
-
-        page_state_as_text.append(
-            {
-                "x": 0,
-                "y": 0,
-                "text": f"[scrollbar {percentage_progress_start:0.2f}-"
-                f"{percentage_progress_end:0.2f}%]",
-            }
-        )
 
         tree = self.client.send(
             "DOMSnapshot.captureSnapshot",
