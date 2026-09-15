@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -20,6 +20,9 @@ from langchain.agents.middleware.human_in_the_loop import (
 )
 from langchain.agents.middleware.types import AgentState, ToolCallRequest
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
 
 _EXPECTED_NOTICE = (
     f'{_EDIT_NOTICE} Executed instead: write_file_tool with arguments {{"content": "edited"}}.'
@@ -1184,7 +1187,7 @@ def test_human_in_the_loop_middleware_edit_annotates_tool_result() -> None:
         ],
         checkpointer=InMemorySaver(),
     )
-    config = {"configurable": {"thread_id": "edit-annotates-result"}}
+    config: RunnableConfig = {"configurable": {"thread_id": "edit-annotates-result"}}
 
     interrupted = agent.invoke(
         {"messages": [HumanMessage("Write notes.txt with 'Hello, world!'")]}, config
@@ -1213,6 +1216,7 @@ def test_human_in_the_loop_middleware_edit_annotates_tool_result() -> None:
     tool_messages = [m for m in final["messages"] if isinstance(m, ToolMessage)]
     assert len(tool_messages) == 1
     content = tool_messages[0].content
+    assert isinstance(content, str)
     assert content.endswith("File written to notes.txt")
     assert _EDIT_NOTICE in content
     # The original, untrusted args must not be echoed back.
@@ -1245,7 +1249,7 @@ def test_human_in_the_loop_middleware_approve_does_not_annotate() -> None:
         ],
         checkpointer=InMemorySaver(),
     )
-    config = {"configurable": {"thread_id": "approve-no-annotation"}}
+    config: RunnableConfig = {"configurable": {"thread_id": "approve-no-annotation"}}
     agent.invoke({"messages": [HumanMessage("write it")]}, config)
     final = agent.invoke(Command(resume={"decisions": [{"type": "approve"}]}), config)
 
@@ -1289,7 +1293,7 @@ def test_human_in_the_loop_middleware_edit_annotates_list_content(
         tool_call=ToolCall(name="write_file_tool", args={"content": "edited"}, id="1"),
         tool=None,
         state=AgentState[Any](messages=[HumanMessage("go"), ai_message]),
-        runtime=None,
+        runtime=None,  # type: ignore[arg-type]
     )
     result = ToolMessage(content=tool_output, tool_call_id="1", name="write_file_tool")
 
@@ -1314,7 +1318,7 @@ def _edited_request(tool_call_id: str = "1") -> ToolCallRequest:
         tool_call=ToolCall(name="write_file_tool", args={"content": "edited"}, id=tool_call_id),
         tool=None,
         state=AgentState[Any](messages=[HumanMessage("go"), ai_message]),
-        runtime=None,
+        runtime=None,  # type: ignore[arg-type]
     )
 
 
@@ -1324,7 +1328,7 @@ def test_human_in_the_loop_middleware_edit_annotates_command_result() -> None:
         interrupt_on={"write_file_tool": {"allowed_decisions": ["edit"]}}
     )
     unrelated = ToolMessage(content="other", tool_call_id="99", name="other_tool")
-    command = Command(
+    command: Command[Any] = Command(
         update={
             "messages": [
                 ToolMessage(content="wrote it", tool_call_id="1", name="write_file_tool"),
@@ -1337,6 +1341,7 @@ def test_human_in_the_loop_middleware_edit_annotates_command_result() -> None:
     result = middleware.wrap_tool_call(_edited_request(), lambda _: command)
 
     assert isinstance(result, Command)
+    assert isinstance(result.update, dict)
     assert result.update["some_state_key"] == "preserved"
     annotated, passthrough = result.update["messages"]
     assert annotated.content == f"{_EXPECTED_NOTICE_WITH_CONTENT}\nwrote it"
@@ -1387,6 +1392,7 @@ def test_human_in_the_loop_middleware_edit_notice_is_customizable() -> None:
     )
 
     assert isinstance(result, ToolMessage)
+    assert isinstance(result.content, str)
     assert result.content.startswith("Operator overrode these args.")
     assert _EDIT_NOTICE not in result.content
 
@@ -1441,7 +1447,7 @@ def test_human_in_the_loop_middleware_edit_executes_reviewers_call() -> None:
         ],
         checkpointer=InMemorySaver(),
     )
-    config = {"configurable": {"thread_id": "executes-reviewer-call"}}
+    config: RunnableConfig = {"configurable": {"thread_id": "executes-reviewer-call"}}
     agent.invoke({"messages": [HumanMessage("write it")]}, config)
     final = agent.invoke(
         Command(
@@ -1497,7 +1503,7 @@ def test_human_in_the_loop_middleware_edit_can_redirect_to_another_tool() -> Non
         ],
         checkpointer=InMemorySaver(),
     )
-    config = {"configurable": {"thread_id": "edit-redirects-tool"}}
+    config: RunnableConfig = {"configurable": {"thread_id": "edit-redirects-tool"}}
     agent.invoke({"messages": [HumanMessage("send it")]}, config)
     final = agent.invoke(
         Command(
@@ -1554,7 +1560,7 @@ def test_human_in_the_loop_middleware_edit_routes_on_executed_tool(
         ],
         checkpointer=InMemorySaver(),
     )
-    config = {"configurable": {"thread_id": f"route-{requested}-{replacement}"}}
+    config: RunnableConfig = {"configurable": {"thread_id": f"route-{requested}-{replacement}"}}
     agent.invoke({"messages": [HumanMessage("go")]}, config)
     final = agent.invoke(
         Command(
