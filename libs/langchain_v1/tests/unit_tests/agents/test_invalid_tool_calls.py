@@ -45,18 +45,19 @@ def get_weather(city: str) -> str:
 
 
 def test_create_agent_answers_invalid_tool_calls() -> None:
-    agent = create_agent(InvalidToolCallingModel(), [get_weather])
+    model = InvalidToolCallingModel()
+    agent = create_agent(model, [get_weather])
 
     result = agent.invoke({"messages": [HumanMessage("Weather?")]})
 
-    assert len(result["messages"]) == 4
+    assert model.index == 1
+    assert len(result["messages"]) == 3
     tool_message = result["messages"][2]
     assert isinstance(tool_message, ToolMessage)
     assert tool_message.tool_call_id == "call_1"
     assert tool_message.name == "get_weather"
     assert tool_message.status == "error"
     assert "malformed or truncated" in tool_message.text
-    assert result["messages"][-1].text == "Please retry the request."
 
 
 def test_create_agent_ignores_invalid_tool_calls_without_ids() -> None:

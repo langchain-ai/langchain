@@ -1723,7 +1723,9 @@ def create_agent(
 
         # Include loop_entry_node when middleware can inject synthetic tool
         # messages, or when structured output or after-model hooks can reroute there.
-        model_to_tools_destinations = ["tools", loop_entry_node, exit_node]
+        model_to_tools_destinations = ["tools", exit_node]
+        if response_format or loop_exit_node != "model" or middleware_w_wrap_model_call:
+            model_to_tools_destinations.append(loop_entry_node)
 
         graph.add_conditional_edges(
             loop_exit_node,
@@ -1966,14 +1968,7 @@ def _make_model_to_tools_edge(
 
         tool_message_ids = [m.tool_call_id for m in tool_messages]
 
-        # 3. Retry after invalid tool calls have been answered synthetically.
-        if any(
-            tool_call.get("id") in tool_message_ids
-            for tool_call in last_ai_message.invalid_tool_calls
-        ):
-            return model_destination
-
-        # 4. If the model hasn't called any tools, exit the loop
+        # 3. If the model hasn't called any tools, exit the loop
         # this is the classic exit condition for an agent loop
         if len(last_ai_message.tool_calls) == 0:
             return end_destination
