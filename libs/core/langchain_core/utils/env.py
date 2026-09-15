@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import TypeVar
+
+V = TypeVar("V")
 
 
 def env_var_is_set(env_var: str) -> bool:
@@ -24,11 +26,11 @@ def env_var_is_set(env_var: str) -> bool:
 
 
 def get_from_dict_or_env(
-    data: dict[str, Any],
+    data: dict[str, V],
     key: str | list[str],
     env_key: str,
     default: str | None = None,
-) -> str:
+) -> V | str:
     """Get a value from a dictionary or an environment variable.
 
     Args:
@@ -47,10 +49,10 @@ def get_from_dict_or_env(
     if isinstance(key, (list, tuple)):
         for k in key:
             if value := data.get(k):
-                return str(value)
+                return value
 
     if isinstance(key, str) and key in data and data[key]:
-        return str(data[key])
+        return data[key]
 
     key_for_err = key[0] if isinstance(key, (list, tuple)) else key
 
