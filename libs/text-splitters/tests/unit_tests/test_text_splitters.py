@@ -486,6 +486,37 @@ def test_create_documents_with_start_index(
         assert text[s_i : s_i + len(doc.page_content)] == doc.page_content
 
 
+def test_create_documents_with_non_character_overlap() -> None:
+    """`create_documents` handles a non-character overlap unit.
+
+    Regression test for a bug where `TextSplitter.create_documents` assumed
+    `_chunk_overlap` was measured in characters, but token-based splitters
+    (e.g. `TokenTextSplitter`) use a token-based overlap. The search offset then
+    landed past the chunk, producing a `-1` start index.
+    """
+
+    class _TokenLikeSplitter(TextSplitter):
+        """Minimal splitter whose overlap is in a non-character unit."""
+
+        def __init__(self, **kwargs: Any) -> None:
+            super().__init__(**kwargs)
+            # A token-based overlap: the numeric value is smaller than the
+            # character overlap it represents.
+            self._chunk_overlap = 5
+
+        def split_text(self, text: str) -> list[str]:
+            del text
+            return [
+                "Lorem ipsum dolor sit amet",
+                " dolor sit amet, consectetur",
+            ]
+
+    text = "Lorem ipsum dolor sit amet, consectetur"
+    splitter = _TokenLikeSplitter(add_start_index=True)
+    docs = splitter.create_documents([text])
+    assert [d.metadata["start_index"] for d in docs] == [0, 11]
+
+
 def test_metadata_not_shallow() -> None:
     """Test that metadatas are not shallow."""
     texts = ["foo bar"]

@@ -136,7 +136,15 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 metadata = copy.deepcopy(metadatas_[i])
                 if self._add_start_index:
                     offset = index + previous_chunk_len - self._chunk_overlap
-                    index = text.find(chunk, max(0, offset))
+                    found_index = text.find(chunk, max(0, offset))
+                    if found_index == -1:
+                        # The offset assumes character-based overlap, but
+                        # token-based splitters (e.g. `TokenTextSplitter`) use a
+                        # token-based overlap, so the chunk can begin before
+                        # `offset`. Fall back to searching from the previous
+                        # chunk's start.
+                        found_index = text.find(chunk, index)
+                    index = found_index
                     metadata["start_index"] = index
                     previous_chunk_len = len(chunk)
                 new_doc = Document(page_content=chunk, metadata=metadata)
