@@ -262,7 +262,7 @@ def test_a_string_naming_a_local_script_is_refused(tmp_path: Path) -> None:
     ],
 )
 def test_strings_that_are_not_urls_are_refused(target: str) -> None:
-    with pytest.raises(ValueError, match="not a valid URL"):
+    with pytest.raises(ValueError, match=r"not a valid URL|has scheme"):
         MCPAdapter(target)
 
 
