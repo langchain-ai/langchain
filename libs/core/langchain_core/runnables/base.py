@@ -4033,25 +4033,42 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             s.get_input_jsonschema(config).get("type", "object") == "object"
             for s in self.steps__.values()
         ):
+            field_definitions: dict[str, Any] = {}
+            has_unconstrained_v2_root = False
+            saw_non_root_model = False
+
             for step in self.steps__.values():
                 step_input_schema = step.get_input_schema(config)
                 fields = get_fields(step_input_schema)
-                root_field = fields.get("root")
-                if root_field is not None and root_field.annotation != Any:
-                    return super().get_input_schema(config)
+
+                if issubclass(step_input_schema, RootModel):
+                    root_field = fields.get("root")
+                    if root_field is not None and root_field.annotation != Any:
+                        return super().get_input_schema(config)
+                    has_unconstrained_v2_root = True
+                    continue
+
+                saw_non_root_model = True
                 root_field = fields.get("__root__")
-                if root_field is not None and root_field.annotation != Any:
-                    return step_input_schema
+                if root_field is not None:
+                    if root_field.annotation != Any:
+                        return step_input_schema
+                    continue
+
+                for name, field in fields.items():
+                    field_definitions[name] = _get_schema_field_definition(field)
+
+            if (
+                not field_definitions
+                and has_unconstrained_v2_root
+                and not saw_non_root_model
+            ):
+                return super().get_input_schema(config)
 
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model_v2(
                 self.get_name("Input"),
-                field_definitions={
-                    k: _get_schema_field_definition(v)
-                    for step in self.steps__.values()
-                    for k, v in get_fields(step.get_input_schema(config)).items()
-                    if k != "__root__"
-                },
+                field_definitions=field_definitions,
             )
 
         return super().get_input_schema(config)

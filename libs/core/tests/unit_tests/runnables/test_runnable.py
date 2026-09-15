@@ -5875,6 +5875,47 @@ class _RunnableWithInputSchema(Runnable[Any, Any]):
         return input
 
 
+def test_runnable_parallel_unconstrained_v2_root_models() -> None:
+    """Parallel input schema keeps arbitrary values for unconstrained root models."""
+    parallel = RunnableParallel(
+        a=RunnablePassthrough(),
+        b=RunnableLambda(lambda x: x),
+    )
+
+    schema = parallel.input_schema
+    assert "root" not in schema.model_json_schema().get("properties", {})
+    for value in ({"k": 1}, "x", 5, [1]):
+        schema.model_validate(value)
+
+
+def test_runnable_parallel_merges_fields_around_unconstrained_root_model() -> None:
+    """Concrete fields survive while a synthetic v2 root field is ignored."""
+    parallel = RunnableParallel(
+        passthrough=RunnablePassthrough(),
+        prompt=PromptTemplate.from_template("{a}"),
+    )
+
+    schema = parallel.input_schema
+    assert set(schema.model_fields) == {"a"}
+    schema.model_validate({"a": "value"})
+
+
+def test_runnable_parallel_preserves_real_root_field() -> None:
+    """A user-defined ``root`` field is not mistaken for a Pydantic root model."""
+
+    class InputModel(BaseModel):
+        root: Any
+
+    parallel = RunnableParallel(
+        custom=_RunnableWithInputSchema(InputModel),
+        prompt=PromptTemplate.from_template("{a}"),
+    )
+
+    schema = parallel.input_schema
+    assert set(schema.model_fields) == {"root", "a"}
+    schema.model_validate({"root": "value", "a": "value"})
+
+
 @skip_if_no_pydantic_v1
 def test_runnable_parallel_preserves_required_v1_input_fields() -> None:
     class InputModel(BaseModelV1):
