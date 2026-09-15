@@ -1124,6 +1124,8 @@ def test_when_predicate_receives_correct_args() -> None:
     assert req.state is state
     assert isinstance(req.runtime, ToolRuntime)
     assert req.runtime.tool_call_id == "tc-1"
+    # Empty reflects the current implementation, not a stable contract; predicates
+    # in this path must not depend on `runtime.tools`.
     assert req.runtime.tools == []
     assert req.runtime.state is state
     assert req.runtime.context is runtime.context
