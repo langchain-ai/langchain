@@ -3,9 +3,6 @@ type: Integration Pattern
 title: Adding a New Chat Model Provider
 description: Step-by-step guide to integrate a new LLM provider into LangChain's monorepo, including package structure, ChatModel implementation, streaming, function calling, structured output, and standard tests. Covers message conversion, error handling, model profiles, and optional advanced API modes like Responses API.
 tags: [chat-models, provider-integration, llm, function-calling, structured-output, streaming]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:26:28.144Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
@@ -21,8 +18,8 @@ sources:
     resource: repo://libs/partners/anthropic/langchain_anthropic/data/_profiles.py
   - id: openwiki-source-d14c2b8060843a8a89b74733
     resource: repo://libs/partners/anthropic/langchain_anthropic/data/profile_augmentations.toml
-  - id: openwiki-source-8641a971af4f11b852966d77
-    resource: repo://libs/partners/openai/langchain_openai/chat_models/__init__.py
+  - id: openwiki-source-1e66a9da38565f8901e651f4
+    resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-3bc725a9a39d534be6f46d18
     resource: repo://libs/partners/openai/langchain_openai/chat_models/_compat.py
   - id: openwiki-source-738512768ef81ae009b097ac
@@ -38,6 +35,9 @@ sources:
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
 generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:26:28.144Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-15T08:27:41.150Z
 ---
 
 ## Overview
