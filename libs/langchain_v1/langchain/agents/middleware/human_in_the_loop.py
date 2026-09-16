@@ -555,13 +555,14 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             return request.override(tool_call=tool_call)
 
         # `tool_call["name"]` and `tool` must stay in agreement.
-        tool = next((t for t in request.available_tools if t.name == executed["name"]), None)
+        available = request.runtime.tools
+        tool = next((t for t in available if t.name == executed["name"]), None)
         if tool is None:
-            available = ", ".join(sorted(t.name for t in request.available_tools))
+            names = ", ".join(sorted(t.name for t in available))
             msg = (
                 f"Reviewer edited tool call {request.tool_call['id']!r} to "
                 f"{executed['name']!r}, which is not an available tool. "
-                f"Available tools: {available}."
+                f"Available tools: {names}."
             )
             raise ValueError(msg)
         return request.override(tool_call=tool_call, tool=tool)

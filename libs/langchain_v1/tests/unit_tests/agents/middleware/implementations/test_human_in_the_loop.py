@@ -1,4 +1,5 @@
 import re
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
@@ -1600,8 +1601,7 @@ def test_human_in_the_loop_middleware_edit_to_unknown_tool_raises() -> None:
         tool_call=ToolCall(name="write_file_tool", args={"content": "x"}, id="1"),
         tool=write_file_tool,
         state=AgentState[Any](messages=[HumanMessage("go"), ai_message]),
-        runtime=None,  # type: ignore[arg-type]
-        available_tools=[write_file_tool],
+        runtime=SimpleNamespace(tools=[write_file_tool]),  # type: ignore[arg-type]
     )
 
     with pytest.raises(ValueError, match="not an available tool"):
