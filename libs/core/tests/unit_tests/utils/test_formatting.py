@@ -125,3 +125,20 @@ class TestFormatterSingleton:
         """Test that the formatter singleton rejects positional arguments."""
         with pytest.raises(ValueError, match=r"No arguments should be provided"):
             formatter.format("{}", "arg")
+
+    def test_formatter_with_unused_extra_kwargs(self) -> None:
+        """Test that extra kwargs are ignored during formatting."""
+        result = formatter.format(
+            "Hello, {name}!", name="World", extra_param="unused"
+        )
+        assert result == "Hello, World!"
+
+    def test_formatter_numeric_and_boolean_types(self) -> None:
+        """Test formatting integers, floats, and booleans."""
+        result = formatter.format(
+            "Status: {active}, Count: {count}, Ratio: {ratio}",
+            active=True,
+            count=100,
+            ratio=0.75,
+        )
+        assert result == "Status: True, Count: 100, Ratio: 0.75"
