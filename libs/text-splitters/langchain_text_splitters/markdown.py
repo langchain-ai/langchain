@@ -193,7 +193,7 @@ class MarkdownHeaderTextSplitter:
                 # Check if line matches either standard or custom header pattern
                 if is_standard_header or is_custom_header:
                     # Ensure we are tracking the header as metadata
-                    if name is not None:
+                    if name is not None:  # ty: ignore[redundant-condition-strict]
                         # Get the current header level
                         if sep in self.custom_header_patterns:
                             current_header_level = self.custom_header_patterns[sep]
