@@ -191,6 +191,49 @@ async def test_tool_without_annotations_or_meta_has_no_metadata() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("argument_name", ["callbacks", "config", "run_manager"])
+async def test_reserved_argument_names_reach_the_mcp_server(argument_name: str) -> None:
+    """LangChain invocation controls must not consume MCP-owned arguments."""
+    server: FastMCP[None] = FastMCP("reserved-arguments")
+
+    if argument_name == "callbacks":
+
+        @server.tool(name="echo")
+        def echo_callbacks(callbacks: str, query: str) -> dict[str, str]:
+            """Return the supplied arguments."""
+            return {"callbacks": callbacks, "query": query}
+
+    elif argument_name == "config":
+
+        @server.tool(name="echo")
+        def echo_config(config: str, query: str) -> dict[str, str]:
+            """Return the supplied arguments."""
+            return {"config": config, "query": query}
+
+    else:
+
+        @server.tool(name="echo")
+        def echo_run_manager(run_manager: str, query: str) -> dict[str, str]:
+            """Return the supplied arguments."""
+            return {"run_manager": run_manager, "query": query}
+
+    tool, _ = await _one_tool(server)
+
+    message = await tool.ainvoke(
+        {
+            "name": "echo",
+            "args": {argument_name: "user-value", "query": "hello"},
+            "id": "call-1",
+            "type": "tool_call",
+        }
+    )
+
+    assert message.artifact == {
+        "structured_content": {argument_name: "user-value", "query": "hello"}
+    }
+
+
+@pytest.mark.asyncio
 async def test_server_identity_is_kept_under_the_mcp_namespace() -> None:
     server: FastMCP[None] = FastMCP("crm", version="2.1.0")
 
