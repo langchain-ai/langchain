@@ -35,3 +35,20 @@ def test_monotonicity() -> None:
             msg = f"UUIDs are not monotonic: {last} versus {i}"
             raise RuntimeError(msg)
         last = i
+
+
+def test_uuid7_version_and_properties() -> None:
+    """Test UUIDv7 version and object properties."""
+    val = uuid7()
+    assert isinstance(val, UUID)
+    assert val.version == 7
+
+
+def test_uuid7_with_specific_timestamp() -> None:
+    """Test UUIDv7 with explicit nanosecond timestamp."""
+    # Test year 2026 timestamp in nanoseconds
+    ns = 1_773_650_000_000_000_000
+    ms = ns // 1_000_000
+    val = uuid7(ns)
+    assert _uuid_v7_ms(val) == ms
+    assert val.version == 7
