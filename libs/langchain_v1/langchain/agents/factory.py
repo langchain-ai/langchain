@@ -2017,13 +2017,15 @@ def _make_tools_to_model_edge(
 
         # 2. Exit condition: All executed tools have return_direct=True
         # Filter to only client-side tools (provider tools are not in tool_node)
-        executed_names = [t.name for t in tool_messages if t.name in tool_node.tools_by_name]
-        if not executed_names:
-            executed_names = [
-                c["name"]
-                for c in last_ai_message.tool_calls
-                if c["name"] in tool_node.tools_by_name
-            ]
+        # Prefer tool name from ToolMessage due to redirects (e.g., from HITL)
+        executed_by_id = {
+            t.tool_call_id: t.name for t in tool_messages if t.name in tool_node.tools_by_name
+        }
+        executed_names = [
+            name
+            for c in last_ai_message.tool_calls
+            if (name := executed_by_id.get(c["id"], c["name"])) in tool_node.tools_by_name
+        ]
         if executed_names and all(
             tool_node.tools_by_name[name].return_direct for name in executed_names
         ):

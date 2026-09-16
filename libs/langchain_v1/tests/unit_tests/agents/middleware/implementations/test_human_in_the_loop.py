@@ -7,11 +7,11 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.prebuilt.tool_node import ToolRuntime
+from langgraph.prebuilt.tool_node import ToolNode, ToolRuntime
 from langgraph.runtime import Runtime
 from langgraph.types import Command
 
-from langchain.agents.factory import create_agent
+from langchain.agents.factory import _make_tools_to_model_edge, create_agent
 from langchain.agents.middleware import InterruptOnConfig
 from langchain.agents.middleware.human_in_the_loop import (
     _EDIT_NOTICE,
@@ -1608,3 +1608,41 @@ def test_human_in_the_loop_middleware_edit_to_unknown_tool_raises() -> None:
         middleware.wrap_tool_call(
             request, lambda _: ToolMessage(content="wrote it", tool_call_id="1")
         )
+
+
+def test_return_direct_routing_keeps_calls_with_unnamed_results() -> None:
+    """A result without a usable name must still participate in the return-direct check."""
+
+    @tool(return_direct=True)
+    def direct_tool(x: str) -> str:
+        """Return directly."""
+        return f"direct {x}"
+
+    @tool
+    def normal_tool(x: str) -> str:
+        """Do not return directly."""
+        return f"normal {x}"
+
+    node = ToolNode([direct_tool, normal_tool])
+    edge = _make_tools_to_model_edge(
+        tool_node=node,
+        model_destination="MODEL",
+        structured_output_tools={},
+        end_destination="END",
+    )
+    ai_message = AIMessage(
+        "",
+        tool_calls=[
+            {"name": "direct_tool", "args": {"x": "1"}, "id": "1", "type": "tool_call"},
+            {"name": "normal_tool", "args": {"x": "2"}, "id": "2", "type": "tool_call"},
+        ],
+    )
+    messages = [
+        HumanMessage("go"),
+        ai_message,
+        ToolMessage(content="direct result", tool_call_id="1", name="direct_tool"),
+        # A tool or middleware may omit `name`; the call must not drop out of the check.
+        ToolMessage(content="normal result", tool_call_id="2"),
+    ]
+
+    assert edge({"messages": messages}) == "MODEL"
