@@ -102,3 +102,21 @@ def test_comma_list_with_iterables() -> None:
 
     # Mixed types
     assert comma_list([1, "two", 3.0]) == "1, two, 3.0"
+
+
+def test_stringify_value_primitives_and_empty() -> None:
+    """Test stringify_value on booleans, None, empty collections, and numbers."""
+    assert stringify_value(True) == "True"
+    assert stringify_value(False) == "False"
+    assert stringify_value(None) == "None"
+    assert stringify_value(3.14159) == "3.14159"
+    assert stringify_value([]) == ""
+    assert stringify_value({}) == "\n"
+
+
+def test_sanitize_for_postgres_edge_cases() -> None:
+    """Test sanitize_for_postgres with leading, trailing, and only-NUL characters."""
+    assert sanitize_for_postgres("\x00") == ""
+    assert sanitize_for_postgres("\x00", replacement="[NUL]") == "[NUL]"
+    assert sanitize_for_postgres("\x00start") == "start"
+    assert sanitize_for_postgres("end\x00") == "end"
