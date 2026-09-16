@@ -540,6 +540,32 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 return cast("Action", edited[tool_call_id])
         return None
 
+    def _apply_edit(self, request: ToolCallRequest, executed: Action) -> ToolCallRequest:
+        """Point the request at the reviewer's call, resolving a redirected tool.
+
+        Raises:
+            ValueError: If the reviewer named a tool the agent does not have.
+        """
+        tool_call: ToolCall = {
+            **request.tool_call,
+            "name": executed["name"],
+            "args": executed["args"],
+        }
+        if executed["name"] == request.tool_call["name"]:
+            return request.override(tool_call=tool_call)
+
+        # `tool_call["name"]` and `tool` must stay in agreement.
+        tool = next((t for t in request.available_tools if t.name == executed["name"]), None)
+        if tool is None:
+            available = ", ".join(sorted(t.name for t in request.available_tools))
+            msg = (
+                f"Reviewer edited tool call {request.tool_call['id']!r} to "
+                f"{executed['name']!r}, which is not an available tool. "
+                f"Available tools: {available}."
+            )
+            raise ValueError(msg)
+        return request.override(tool_call=tool_call, tool=tool)
+
     def _notice(self, executed: Action, *, has_content: bool) -> str:
         """The notice text, stating the call that actually ran."""
         notice = (
@@ -620,9 +646,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             The tool result, with a note appended when a reviewer edited the call.
         """
         if (executed := self._reviewer_edit(request)) is not None:
-            request = request.override(
-                tool_call={**request.tool_call, "name": executed["name"], "args": executed["args"]}
-            )
+            request = self._apply_edit(request, executed)
         return self._annotate_edited_result(handler(request), request)
 
     async def awrap_tool_call(
@@ -640,7 +664,5 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             The tool result, with a note appended when a reviewer edited the call.
         """
         if (executed := self._reviewer_edit(request)) is not None:
-            request = request.override(
-                tool_call={**request.tool_call, "name": executed["name"], "args": executed["args"]}
-            )
+            request = self._apply_edit(request, executed)
         return self._annotate_edited_result(await handler(request), request)

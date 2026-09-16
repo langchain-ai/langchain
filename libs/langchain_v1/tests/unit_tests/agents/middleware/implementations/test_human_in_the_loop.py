@@ -1576,3 +1576,35 @@ def test_human_in_the_loop_middleware_edit_routes_on_executed_tool(
     tool_idx = max(i for i, m in enumerate(final["messages"]) if isinstance(m, ToolMessage))
     model_turns = sum(isinstance(m, AIMessage) for m in final["messages"][tool_idx + 1 :])
     assert model_turns == expected_turns_after_tool
+
+
+def test_human_in_the_loop_middleware_edit_to_unknown_tool_raises() -> None:
+    """A reviewer naming a tool the agent does not have fails loudly."""
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={"write_file_tool": {"allowed_decisions": ["edit"]}}
+    )
+
+    @tool
+    def write_file_tool(content: str) -> str:
+        """Write content."""
+        return f"wrote {len(content)} chars"
+
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"name": "write_file_tool", "args": {"content": "x"}, "id": "1"}],
+        response_metadata={
+            _EDITED_TOOL_CALLS_KEY: {"1": {"name": "nope", "args": {"content": "y"}}}
+        },
+    )
+    request = ToolCallRequest(
+        tool_call=ToolCall(name="write_file_tool", args={"content": "x"}, id="1"),
+        tool=write_file_tool,
+        state=AgentState[Any](messages=[HumanMessage("go"), ai_message]),
+        runtime=None,  # type: ignore[arg-type]
+        available_tools=[write_file_tool],
+    )
+
+    with pytest.raises(ValueError, match="not an available tool"):
+        middleware.wrap_tool_call(
+            request, lambda _: ToolMessage(content="wrote it", tool_call_id="1")
+        )

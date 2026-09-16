@@ -3016,7 +3016,7 @@ wheels = [
 [[package]]
 name = "langgraph-checkpoint"
 version = "4.2.0"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&rev=cc%2Fhitl-tool-edits-toolcallrequest#ab478cb40f186fe133bb280f951fa64a41fa263a" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&rev=cc%2Fhitl-tool-edits-toolcallrequest#dcd325e581e028cdb61f49c6d02ccd207695f8f7" }
 dependencies = [
     { name = "langchain-core" },
     { name = "ormsgpack" },
@@ -3025,7 +3025,7 @@ dependencies = [
 [[package]]
 name = "langgraph-prebuilt"
 version = "1.1.0"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=cc%2Fhitl-tool-edits-toolcallrequest#218887d7ce5c979f6de7541cd7211e74d04b5bcb" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=cc%2Fhitl-tool-edits-toolcallrequest#dcd325e581e028cdb61f49c6d02ccd207695f8f7" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
