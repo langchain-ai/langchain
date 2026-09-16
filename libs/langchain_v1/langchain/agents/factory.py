@@ -2098,7 +2098,7 @@ def _make_tools_to_model_edge(
             return end_destination
 
         # 3. Exit condition: A structured output tool was executed
-        if any(t.name in structured_output_tools for t in tool_messages):
+        if any(t.name in structured_output_tools and t.status != "error" for t in tool_messages):
             return end_destination
 
         # 4. Default: Continue the loop
