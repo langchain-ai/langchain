@@ -135,18 +135,36 @@ def _convert_content_block(content: ContentBlock) -> ToolMessageContentBlock:
     if isinstance(content, ResourceLink):
         mime_type = content.mime_type or None
         if mime_type and mime_type.startswith("image/"):
-            return create_image_block(url=content.uri, mime_type=mime_type)
-        return create_file_block(url=content.uri, mime_type=mime_type)
+            return create_image_block(
+                url=str(content.uri),
+                mime_type=mime_type,
+                name=content.name,
+                title=content.title,
+                description=content.description,
+                size=content.size,
+            )
+        return create_file_block(
+            url=str(content.uri),
+            mime_type=mime_type,
+            name=content.name,
+            title=content.title,
+            description=content.description,
+            size=content.size,
+        )
 
     if isinstance(content, EmbeddedResource):
         resource = content.resource
         if isinstance(resource, TextResourceContents):
-            return create_text_block(text=resource.text)
+            return create_text_block(text=resource.text, uri=str(resource.uri))
         if isinstance(resource, BlobResourceContents):
             mime_type = resource.mime_type or None
             if mime_type and mime_type.startswith("image/"):
-                return create_image_block(base64=resource.blob, mime_type=mime_type)
-            return create_file_block(base64=resource.blob, mime_type=mime_type)
+                return create_image_block(
+                    base64=resource.blob, mime_type=mime_type, uri=str(resource.uri)
+                )
+            return create_file_block(
+                base64=resource.blob, mime_type=mime_type, uri=str(resource.uri)
+            )
         # Unreachable while the SDK's resource union holds; see the note below.
         msg = f"Unknown embedded resource type: {type(resource).__name__}"  # type: ignore[unreachable]
         raise ValueError(msg)

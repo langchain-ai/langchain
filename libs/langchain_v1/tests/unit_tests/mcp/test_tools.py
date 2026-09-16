@@ -245,6 +245,32 @@ def test_resource_link_type_follows_its_mime_type(
     assert block["type"] == expected_type
     assert block["type"] != "text"  # narrows to the blocks that carry a URL
     assert block["url"] == "https://example.com/report"
+    assert block["extras"] == {"name": "report"}
+
+
+def test_resource_link_preserves_full_metadata() -> None:
+    """ResourceLink preserves name, title, description, and size under extras."""
+    block = _convert_content_block(
+        ResourceLink(
+            type="resource_link",
+            uri="file:///path/to/report.pdf",
+            name="report.pdf",
+            title="Quarterly Report",
+            description="Q3 financial report",
+            mimeType="application/pdf",
+            size=2048,
+        )
+    )
+
+    assert block["type"] == "file"
+    assert block["url"] == "file:///path/to/report.pdf"
+    assert block["mime_type"] == "application/pdf"
+    assert block["extras"] == {
+        "name": "report.pdf",
+        "title": "Quarterly Report",
+        "description": "Q3 financial report",
+        "size": 2048,
+    }
 
 
 def test_embedded_text_resource_becomes_a_text_block() -> None:
@@ -259,6 +285,7 @@ def test_embedded_text_resource_becomes_a_text_block() -> None:
 
     assert block["type"] == "text"
     assert block["text"] == "notes"
+    assert block["extras"] == {"uri": "file:///notes.txt"}
 
 
 @pytest.mark.parametrize(
@@ -278,6 +305,7 @@ def test_embedded_blob_resource_type_follows_its_mime_type(
     assert block["type"] == expected_type
     assert block["type"] != "text"  # narrows to the blocks that carry base64
     assert block["base64"] == "AAAA"
+    assert block["extras"] == {"uri": "file:///blob"}
 
 
 def test_audio_content_is_not_yet_supported() -> None:
