@@ -49,6 +49,7 @@ from langchain.agents.middleware.types import (
     wrap_model_call,
     wrap_tool_call,
 )
+from langchain.agents.middleware.unsupported_content import UnsupportedContentMiddleware
 
 __all__ = [
     "AgentMiddleware",
@@ -87,6 +88,7 @@ __all__ = [
     "ToolRetryMiddleware",
     "TracePolicy",
     "TriggerClause",
+    "UnsupportedContentMiddleware",
     "after_agent",
     "after_model",
     "before_agent",
