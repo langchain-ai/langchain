@@ -6,16 +6,9 @@ import asyncio
 
 import pytest
 from langchain_core.messages import HumanMessage, SystemMessage
+from typesafe_sdk import ChoiceAnswer, NoulAnswer, ScoreAnswer
 
-from langchain_typesafe import (
-    Choice,
-    ChoiceAnswer,
-    Noul,
-    NoulAnswer,
-    Score,
-    ScoreAnswer,
-    TypeSafeClassifier,
-)
+from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 
 
 def test_invoke_all_question_types() -> None:

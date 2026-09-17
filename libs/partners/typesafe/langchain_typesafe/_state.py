@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from langchain_core.messages import BaseMessage, convert_to_openai_messages
 from pydantic import JsonValue
 
 if TYPE_CHECKING:
+    import typesafe_sdk as ts
+
     from langchain_typesafe.types import State
 
 
@@ -28,7 +30,7 @@ def _serialize_state_value(value: object) -> JsonValue:
     raise TypeError(message)
 
 
-def serialize_state(state: State) -> JsonValue:
+def serialize_state(state: State) -> ts.JSONContent:
     """Recursively convert LangChain messages inside TypeSafe state to JSON.
 
     Args:
@@ -49,7 +51,9 @@ def serialize_state(state: State) -> JsonValue:
             "of BaseMessage objects."
         )
         raise TypeError(message)
-    return _serialize_state_value(state)
+    # The root is now known to be a string, object, or array, which is exactly the
+    # shape TypeSafe accepts; `_serialize_state_value` preserves it.
+    return cast("ts.JSONContent", _serialize_state_value(state))
 
 
 __all__ = ["serialize_state"]

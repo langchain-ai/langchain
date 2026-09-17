@@ -1,13 +1,31 @@
-"""LangChain integration for TypeSafe classifiers."""
+"""LangChain integration for TypeSafe classifiers.
 
-from langchain_typesafe._client_utils import (
-    TypeSafeAPIConnectionError,
+This package adds a LangChain `Runnable` on top of the official TypeSafe Python SDK.
+The SDK owns the wire protocol, question and answer types, retries, and response
+validation; this package adds tracing, LangChain message handling, and errors that
+also subclass LangChain's standard `ModelError` hierarchy.
+
+Question types are re-exported here for convenience. Answer and response types are
+not: they arrive on the response object and can be imported from `typesafe_sdk` when
+an explicit annotation is needed.
+"""
+
+from typesafe_sdk import (
+    Choice,
+    Noul,
+    NoulCriteria,
+    RetryPolicy,
+    Score,
     TypeSafeAPIError,
+    TypeSafeError,
+)
+
+from langchain_typesafe._errors import (
+    TypeSafeAPIConnectionError,
     TypeSafeAPIResponseValidationError,
     TypeSafeAPITimeoutError,
     TypeSafeAuthenticationError,
     TypeSafeBadRequestError,
-    TypeSafeError,
     TypeSafeInternalServerError,
     TypeSafeNotFoundError,
     TypeSafePermissionDeniedError,
@@ -16,32 +34,14 @@ from langchain_typesafe._client_utils import (
 )
 from langchain_typesafe._version import __version__
 from langchain_typesafe.classifier import TypeSafeClassifier
-from langchain_typesafe.types import (
-    Answer,
-    Choice,
-    ChoiceAnswer,
-    ClassificationResponse,
-    Noul,
-    NoulAnswer,
-    NoulCriteria,
-    Question,
-    Score,
-    ScoreAnswer,
-    State,
-    Usage,
-)
+from langchain_typesafe.types import State
 
 __all__ = [
-    "Answer",
     "Choice",
-    "ChoiceAnswer",
-    "ClassificationResponse",
     "Noul",
-    "NoulAnswer",
     "NoulCriteria",
-    "Question",
+    "RetryPolicy",
     "Score",
-    "ScoreAnswer",
     "State",
     "TypeSafeAPIConnectionError",
     "TypeSafeAPIError",
@@ -56,6 +56,5 @@ __all__ = [
     "TypeSafePermissionDeniedError",
     "TypeSafeRateLimitError",
     "TypeSafeUnprocessableEntityError",
-    "Usage",
     "__version__",
 ]

@@ -9,11 +9,11 @@
 uv add langchain-typesafe
 ```
 
-Set the `TYPESAFE_API_KEY` environment variable before making requests.
+Set the `TYPESAFE_API_KEY` environment variable before making requests. `TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT_MODEL` are also honored, and explicit constructor arguments take precedence over both.
 
 ## Usage
 
-`TypeSafeClassifier` is a LangChain `Runnable` for probabilistic classification and scoring with TypeSafe.
+`TypeSafeClassifier` is a LangChain `Runnable` for probabilistic classification and scoring with TypeSafe. It wraps the official [TypeSafe Python SDK](https://docs.typesafe.ai/sdk/python), so questions, answers, retries, and error semantics are the provider's own; this package adds the `Runnable` interface, LangChain tracing, and support for LangChain messages as input state.
 
 ```python
 from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
@@ -43,6 +43,8 @@ print(result.scores["frustration"].score)
 
 Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnable`, the classifier can also be composed with other LangChain runnables and supports standard batching, callbacks, and tracing.
 
+`invoke` returns the SDK's `SystemOneResponse`. Question types (`Noul`, `Choice`, `Score`) are re-exported here for convenience; answer and response types are not duplicated and can be imported from `typesafe_sdk` when an explicit annotation is needed.
+
 ### LangChain messages as state
 
 `BaseMessage` objects and message sequences can appear at the root or anywhere inside JSON state. The integration recursively converts them to objects with `role` and `content` fields while preserving surrounding application data:
@@ -61,21 +63,44 @@ response = classifier.invoke(
 )
 ```
 
-### Custom HTTP clients
+### Retries
 
-The classifier creates sync and async `httpx2` clients when they are not supplied. Applications that need custom transports, proxies, or shared connection pools can inject either client independently:
+TypeSafe asks clients to back off and retry on `429 Too Many Requests` and `529 Overloaded`. The SDK's default retry policy does this automatically, retrying HTTP 408, 429, and 5xx responses along with connection and timeout failures, using exponential backoff that honors the provider's retry headers. Pass a policy to change or disable it:
 
 ```python
-import httpx2
+from langchain_typesafe import RetryPolicy
 
 classifier = TypeSafeClassifier(
     questions={"urgent": Noul(instructions="Is this urgent?")},
-    client=httpx2.Client(proxy="http://proxy.internal"),
-    async_client=httpx2.AsyncClient(proxy="http://proxy.internal"),
+    retry=RetryPolicy(max_retries=5, timeout=20.0),
 )
 ```
 
-Injected clients are used as-is, and the application retains responsibility for their lifecycle.
+### Client lifecycle and custom clients
+
+TypeSafe clients are created on first use and reused, so keep classifier instances long-lived to benefit from connection pooling. A sync-only application never creates an async client. Use the classifier as a context manager, or call `close` and `aclose`, when deterministic cleanup is required:
+
+```python
+with TypeSafeClassifier(questions={"urgent": Noul(instructions="Is this urgent?")}) as classifier:
+    result = classifier.invoke("Production is down.")
+```
+
+Applications that need custom transports, proxies, or shared connection pools can inject either client independently:
+
+```python
+import httpx2
+from typesafe_sdk import AsyncTypeSafeClient, TypeSafeClient
+
+classifier = TypeSafeClassifier(
+    questions={"urgent": Noul(instructions="Is this urgent?")},
+    client=TypeSafeClient(http_client=httpx2.Client(proxy="http://proxy.internal")),
+    async_client=AsyncTypeSafeClient(
+        http_client=httpx2.AsyncClient(proxy="http://proxy.internal")
+    ),
+)
+```
+
+Injected clients are used as-is; the application retains responsibility for their lifecycle, and `close` and `aclose` leave them open.
 
 ### Error handling
 
@@ -93,7 +118,7 @@ except (ModelAuthenticationError, ModelRateLimitError):
     handle_model_error()
 ```
 
-`TypeSafeAPIError` exposes the response status, parsed body, headers, sanitized endpoint, and request ID. Connection, timeout, response-validation, and status-specific subclasses follow the names used by the TypeSafe Python SDK.
+Each error raised by this package is a subclass of both the corresponding `typesafe_sdk` exception and the matching LangChain `ModelError`, so `except typesafe_sdk.TypeSafeRateLimitError` and `except ModelRateLimitError` both work. `TypeSafeAPIError` exposes the response status, parsed body, headers, sanitized endpoint, and request ID.
 
 ## Documentation
 
