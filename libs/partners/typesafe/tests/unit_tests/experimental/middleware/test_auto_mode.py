@@ -27,6 +27,7 @@ from langchain_typesafe.experimental.middleware import __all__ as middleware_all
 from langchain_typesafe.types import Noul
 
 API_KEY = "test-api-key"
+pytestmark = pytest.mark.asyncio
 
 
 class _ToolCallingModel(GenericFakeChatModel):
@@ -157,7 +158,6 @@ def _tool_messages(result: dict[str, Any]) -> list[ToolMessage]:
     ]
 
 
-@pytest.mark.asyncio
 async def test_middleware_constructs_configurable_risk_classifier() -> None:
     """Construct the internal Noul from caller-supplied criteria and instructions."""
     custom_criteria = NoulCriteria(
@@ -178,7 +178,6 @@ async def test_middleware_constructs_configurable_risk_classifier() -> None:
         )
 
 
-@pytest.mark.asyncio
 async def test_blank_instructions_and_missing_criteria_use_defaults() -> None:
     """Fall back to conservative classification defaults."""
     async with _middleware(
@@ -191,7 +190,6 @@ async def test_blank_instructions_and_missing_criteria_use_defaults() -> None:
         assert middleware.criteria.false is not None
 
 
-@pytest.mark.asyncio
 async def test_base_tool_name_is_inferred() -> None:
     """Accept BaseTool instances and infer their configured names."""
     tool_instance = _delete_tool([])
@@ -200,13 +198,12 @@ async def test_base_tool_name_is_inferred() -> None:
         assert middleware.tool_names == {"delete_file"}
 
 
-def test_experimental_middleware_is_not_exported_from_root() -> None:
+async def test_experimental_middleware_is_not_exported_from_root() -> None:
     """Experimental middleware requires the explicit middleware namespace."""
     assert "AutoModeMiddleware" not in langchain_typesafe.__all__
     assert not hasattr(experimental, "AutoModeMiddleware")
 
 
-@pytest.mark.asyncio
 async def test_trace_policy_omits_classifier_context() -> None:
     """Middleware traces omit authorization context and tool arguments."""
     async with _middleware(0.2, tools=["delete_file"]) as middleware:
@@ -218,7 +215,6 @@ async def test_trace_policy_omits_classifier_context() -> None:
     ("risk_probability", "expected_status", "expected_executions"),
     [(0.2, "success", ["/workspace/report.txt"]), (0.9, "error", [])],
 )
-@pytest.mark.asyncio
 async def test_agent_executes_safe_calls_and_blocks_risky_calls(
     risk_probability: float,
     expected_status: str,
@@ -246,7 +242,6 @@ async def test_agent_executes_safe_calls_and_blocks_risky_calls(
     assert executions == expected_executions
 
 
-@pytest.mark.asyncio
 async def test_unlisted_tool_bypasses_classification() -> None:
     """Execute unlisted tools without sending a classifier request."""
     executions: list[str] = []
@@ -266,7 +261,6 @@ async def test_unlisted_tool_bypasses_classification() -> None:
     assert observed_requests == []
 
 
-@pytest.mark.asyncio
 async def test_threshold_boundary_is_blocked() -> None:
     """Block risk equal to the configured threshold."""
     executions: list[str] = []
@@ -280,7 +274,6 @@ async def test_threshold_boundary_is_blocked() -> None:
     assert executions == []
 
 
-@pytest.mark.asyncio
 async def test_classifier_receives_user_context_and_raw_tool_call() -> None:
     """Send user authorization context and complete tool details to TypeSafe."""
     tool_instance = _delete_tool([])
@@ -309,7 +302,6 @@ async def test_classifier_receives_user_context_and_raw_tool_call() -> None:
     assert state["tool_description"] == "Delete a file at the supplied path."
 
 
-@pytest.mark.asyncio
 async def test_classifier_context_is_limited_to_last_30_messages() -> None:
     """Bound conversation context while retaining assistant tool-call context."""
     tool_instance = _delete_tool([])
@@ -335,7 +327,6 @@ async def test_classifier_context_is_limited_to_last_30_messages() -> None:
 
 
 @pytest.mark.parametrize("async_", [False, True])
-@pytest.mark.asyncio
 async def test_classifier_failure_terminates_agent_run(*, async_: bool) -> None:
     """Propagate classifier failures without executing the configured tool."""
     executions: list[str] = []
@@ -365,13 +356,13 @@ async def test_classifier_failure_terminates_agent_run(*, async_: bool) -> None:
         {"tools": ["delete_file"], "threshold": 1.1},
     ],
 )
-def test_invalid_configuration_is_rejected(kwargs: dict[str, Any]) -> None:
+async def test_invalid_configuration_is_rejected(kwargs: dict[str, Any]) -> None:
     """Validate tool and threshold configuration through Pydantic."""
     with pytest.raises(ValidationError):
         AutoModeMiddleware(**kwargs)
 
 
-def test_experimental_public_interface() -> None:
+async def test_experimental_public_interface() -> None:
     """Expose Auto Mode alongside the model router middleware."""
     assert middleware_all == [
         "AutoModeMiddleware",
