@@ -73,7 +73,6 @@ class _AutoModeConfig(BaseModel):
     instructions: str = _DEFAULT_INSTRUCTIONS
     criteria: NoulCriteria = Field(default_factory=_default_criteria)
     threshold: float = Field(default=0.2, ge=0, le=1)
-    blocked_message: str = _DEFAULT_BLOCKED_MESSAGE
 
     @field_validator("instructions", mode="before")
     @classmethod
@@ -90,16 +89,6 @@ class _AutoModeConfig(BaseModel):
     def default_missing_criteria(cls, value: object) -> object:
         """Use the default criteria when callers provide `None`."""
         return _default_criteria() if value is None else value
-
-    @field_validator("blocked_message", mode="before")
-    @classmethod
-    def default_blank_blocked_message(cls, value: object) -> object:
-        """Use the default blocked message when callers provide blank text."""
-        return (
-            _DEFAULT_BLOCKED_MESSAGE
-            if isinstance(value, str) and not value.strip()
-            else value
-        )
 
     @property
     def tool_names(self) -> frozenset[str]:
@@ -144,8 +133,6 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
             conservative defaults when omitted.
         threshold: Probability at or above which a tool call is blocked. The
             conservative default blocks calls with at least 20% estimated risk.
-        blocked_message: Template returned to the model for blocked calls. It receives
-            `tool_name` and `risk_probability` format variables.
         client: Optional synchronous HTTP client used by the internal classifier.
         async_client: Optional asynchronous HTTP client used by the internal classifier.
 
@@ -185,7 +172,6 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         instructions: str = _DEFAULT_INSTRUCTIONS,
         criteria: NoulCriteria | None = None,
         threshold: float = 0.2,
-        blocked_message: str = _DEFAULT_BLOCKED_MESSAGE,
         client: httpx2.Client | None = None,
         async_client: httpx2.AsyncClient | None = None,
     ) -> None:
@@ -196,7 +182,6 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
             instructions: Risk-classification instructions sent to TypeSafe.
             criteria: Descriptions of the risky and safe outcomes.
             threshold: Probability at or above which execution is blocked.
-            blocked_message: Template for the blocked tool result.
             client: Optional synchronous HTTP client for the classifier.
             async_client: Optional asynchronous HTTP client for the classifier.
 
@@ -211,14 +196,12 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
                 "instructions": instructions,
                 "criteria": criteria,
                 "threshold": threshold,
-                "blocked_message": blocked_message,
             }
         )
         self.tool_names = config.tool_names
         self.threshold = config.threshold
         self.instructions = config.instructions
         self.criteria = config.criteria
-        self.blocked_message = config.blocked_message
         self.classifier = TypeSafeClassifier(
             questions={
                 _RISK_QUESTION_ID: Noul(
@@ -252,7 +235,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
     ) -> ToolMessage:
         tool_call = request.tool_call
         return ToolMessage(
-            content=self.blocked_message.format(
+            content=_DEFAULT_BLOCKED_MESSAGE.format(
                 tool_name=tool_call["name"],
                 risk_probability=risk_probability,
             ),
