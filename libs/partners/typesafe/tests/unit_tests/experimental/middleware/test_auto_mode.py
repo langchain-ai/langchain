@@ -6,13 +6,13 @@ import json
 import os
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
-from typing import Any, cast
+from typing import Any
 from unittest.mock import patch
 
 import httpx2
 import pytest
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import omit_payload
+from langchain.agents.middleware.types import InputAgentState, omit_payload
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import BaseTool, tool
@@ -116,7 +116,7 @@ async def _middleware(
     with patch.dict(os.environ, {"TYPESAFE_API_KEY": API_KEY}):
         middleware = AutoModeMiddleware(
             tools=tools,
-            risk_threshold=threshold,
+            threshold=threshold,
             client=client,
             async_client=async_client,
             **kwargs,
@@ -132,19 +132,21 @@ async def _run_agent(
     middleware: AutoModeMiddleware,
     tool_instance: BaseTool,
     *,
-    asynchronous: bool,
+    async_: bool,
     model: _ToolCallingModel | None = None,
+    messages: list[Any] | None = None,
 ) -> dict[str, Any]:
     agent = create_agent(
         model or _model(),
         tools=[tool_instance],
         middleware=[middleware],
     )
-    state = cast(
-        "Any",
-        {"messages": [HumanMessage("Delete the temporary report.")]},
+    state = InputAgentState(
+        messages=messages
+        if messages is not None
+        else [HumanMessage("Delete the temporary report.")]
     )
-    if asynchronous:
+    if async_:
         return await agent.ainvoke(state)
     return agent.invoke(state)
 
@@ -198,7 +200,7 @@ async def test_trace_policy_omits_classifier_context() -> None:
         assert middleware.trace_policy.process_inputs is omit_payload
 
 
-@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize("async_", [False, True])
 @pytest.mark.parametrize(
     ("risk_probability", "expected_status", "expected_executions"),
     [(0.2, "success", ["/workspace/report.txt"]), (0.9, "error", [])],
@@ -209,7 +211,7 @@ async def test_agent_executes_safe_calls_and_blocks_risky_calls(
     expected_status: str,
     expected_executions: list[str],
     *,
-    asynchronous: bool,
+    async_: bool,
 ) -> None:
     """Apply Auto Mode through complete synchronous and asynchronous agent runs."""
     executions: list[str] = []
@@ -222,7 +224,7 @@ async def test_agent_executes_safe_calls_and_blocks_risky_calls(
         result = await _run_agent(
             middleware,
             tool_instance,
-            asynchronous=asynchronous,
+            async_=async_,
         )
 
     [tool_message] = _tool_messages(result)
@@ -243,7 +245,7 @@ async def test_unlisted_tool_bypasses_classification() -> None:
         tools=["another_tool"],
         observed_requests=observed_requests,
     ) as middleware:
-        result = await _run_agent(middleware, tool_instance, asynchronous=False)
+        result = await _run_agent(middleware, tool_instance, async_=False)
 
     [tool_message] = _tool_messages(result)
     assert tool_message.status == "success"
@@ -258,7 +260,7 @@ async def test_threshold_boundary_is_blocked() -> None:
     tool_instance = _delete_tool(executions)
 
     async with _middleware(0.5, tools=[tool_instance], threshold=0.5) as middleware:
-        result = await _run_agent(middleware, tool_instance, asynchronous=False)
+        result = await _run_agent(middleware, tool_instance, async_=False)
 
     [tool_message] = _tool_messages(result)
     assert tool_message.status == "error"
@@ -276,23 +278,52 @@ async def test_classifier_receives_user_context_and_raw_tool_call() -> None:
         tools=[tool_instance],
         observed_requests=observed_requests,
     ) as middleware:
-        await _run_agent(middleware, tool_instance, asynchronous=False)
+        await _run_agent(middleware, tool_instance, async_=False)
 
     [request] = observed_requests
-    assert request["state"] == {
-        "user_messages": [{"role": "user", "content": "Delete the temporary report."}],
-        "tool_call": {
-            "id": "call_123",
-            "name": "delete_file",
-            "args": {"path": "/workspace/report.txt"},
-        },
-        "tool_description": "Delete a file at the supplied path.",
+    state = request["state"]
+    assert state["messages"][0] == {
+        "role": "user",
+        "content": "Delete the temporary report.",
     }
+    assert state["messages"][1]["role"] == "assistant"
+    assert state["messages"][1]["tool_calls"][0]["function"]["name"] == "delete_file"
+    assert state["tool_call"] == {
+        "id": "call_123",
+        "name": "delete_file",
+        "args": {"path": "/workspace/report.txt"},
+    }
+    assert state["tool_description"] == "Delete a file at the supplied path."
 
 
-@pytest.mark.parametrize("asynchronous", [False, True])
 @pytest.mark.asyncio
-async def test_classifier_failure_terminates_agent_run(*, asynchronous: bool) -> None:
+async def test_classifier_context_is_limited_to_last_30_messages() -> None:
+    """Bound conversation context while retaining assistant tool-call context."""
+    tool_instance = _delete_tool([])
+    observed_requests: list[dict[str, Any]] = []
+    history = [HumanMessage(f"message {index}") for index in range(31)]
+
+    async with _middleware(
+        0.9,
+        tools=[tool_instance],
+        observed_requests=observed_requests,
+    ) as middleware:
+        await _run_agent(
+            middleware,
+            tool_instance,
+            async_=False,
+            messages=history,
+        )
+
+    messages = observed_requests[0]["state"]["messages"]
+    assert len(messages) == 30
+    assert messages[0] == {"role": "user", "content": "message 2"}
+    assert messages[-1]["role"] == "assistant"
+
+
+@pytest.mark.parametrize("async_", [False, True])
+@pytest.mark.asyncio
+async def test_classifier_failure_terminates_agent_run(*, async_: bool) -> None:
     """Propagate classifier failures without executing the configured tool."""
     executions: list[str] = []
     tool_instance = _delete_tool(executions)
@@ -306,7 +337,7 @@ async def test_classifier_failure_terminates_agent_run(*, asynchronous: bool) ->
             await _run_agent(
                 middleware,
                 tool_instance,
-                asynchronous=asynchronous,
+                async_=async_,
             )
 
     assert executions == []
@@ -318,8 +349,8 @@ async def test_classifier_failure_terminates_agent_run(*, asynchronous: bool) ->
         {"tools": []},
         {"tools": [""]},
         {"tools": "delete_file"},
-        {"tools": ["delete_file"], "risk_threshold": -0.1},
-        {"tools": ["delete_file"], "risk_threshold": 1.1},
+        {"tools": ["delete_file"], "threshold": -0.1},
+        {"tools": ["delete_file"], "threshold": 1.1},
         {"tools": ["delete_file"], "instructions": "   "},
         {"tools": ["delete_file"], "blocked_message": ""},
     ],

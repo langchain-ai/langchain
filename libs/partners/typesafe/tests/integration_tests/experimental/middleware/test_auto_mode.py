@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, cast
+from typing import Any
 
 import pytest
 from langchain.agents import create_agent
+from langchain.agents.middleware.types import InputAgentState
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
@@ -31,10 +32,10 @@ class _ToolCallingModel(GenericFakeChatModel):
         return self
 
 
-@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize("async_", [False, True])
 async def test_live_classification_blocks_agent_tool_execution(
     *,
-    asynchronous: bool,
+    async_: bool,
 ) -> None:
     """Block a tool through complete synchronous and asynchronous agent runs."""
     executions: list[str] = []
@@ -63,15 +64,12 @@ async def test_live_classification_blocks_agent_tool_execution(
             ]
         )
     )
-    middleware = AutoModeMiddleware(tools=[delete_file], risk_threshold=0.0)
+    middleware = AutoModeMiddleware(tools=[delete_file], threshold=0.0)
     agent = create_agent(model, tools=[delete_file], middleware=[middleware])
-    state = cast(
-        "Any",
-        {"messages": [HumanMessage("Summarize the report.")]},
-    )
+    state = InputAgentState(messages=[HumanMessage("Summarize the report.")])
 
     try:
-        if asynchronous:
+        if async_:
             result = await agent.ainvoke(state)
         else:
             result = agent.invoke(state)
@@ -83,6 +81,7 @@ async def test_live_classification_blocks_agent_tool_execution(
         ]
         [tool_message] = tool_messages
         assert tool_message.status == "error"
+        assert "was blocked because it was classified as risky" in tool_message.text
         assert tool_message.tool_call_id == "call_live"
         assert executions == []
     finally:
