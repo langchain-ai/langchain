@@ -22,12 +22,33 @@ from langchain_typesafe import (
     TypeSafeClassifier,
     __version__,
 )
+from langchain_typesafe import classifier as classifier_module
 from langchain_typesafe.client import (
     TypeSafeAPIConnectionError,
     TypeSafeAPIError,
     TypeSafeAPIResponseValidationError,
     TypeSafeAPITimeoutError,
 )
+
+
+class _RunTreeStub:
+    """Stand-in for the LangSmith run tree that `_record_usage` writes to."""
+
+    def __init__(self) -> None:
+        self.extra: dict[str, Any] = {}
+
+
+class _RunRecorder(BaseCallbackHandler):
+    """Record the run type and metadata the classifier starts its run with."""
+
+    def __init__(self) -> None:
+        self.metadata: dict[str, Any] = {}
+        self.run_type: str | None = None
+
+    def on_chain_start(self, *_: Any, **kwargs: Any) -> None:
+        self.metadata = kwargs.get("metadata") or {}
+        self.run_type = kwargs.get("run_type")
+
 
 API_KEY = "test-api-key"
 REQUEST_ID = "req_test"
@@ -537,3 +558,104 @@ def test_callbacks_receive_classifier_run() -> None:
     assert callback.starts == 1
     assert callback.ends == 1
     client.close()
+
+
+def test_usage_is_recorded_on_the_active_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Token usage is written where LangSmith totals it.
+
+    LangSmith only sums tokens for `llm` runs whose metadata carries
+    `usage_metadata`, so both the payload and the run type are pinned.
+    """
+    stub = _RunTreeStub()
+    monkeypatch.setattr(classifier_module, "get_current_run_tree", lambda: stub)
+
+    def handler(_: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=_response_payload())
+
+    client = httpx2.Client(transport=httpx2.MockTransport(handler))
+    recorder = _RunRecorder()
+    classifier = TypeSafeClassifier(
+        api_key=API_KEY,
+        questions=_questions(),
+        client=client,
+    )
+
+    classifier.invoke("hello", config={"callbacks": [recorder]})
+    client.close()
+
+    assert recorder.run_type == "llm"
+    assert stub.extra["metadata"]["usage_metadata"] == {
+        "input_tokens": 42,
+        "output_tokens": 12,
+        "total_tokens": 54,
+    }
+
+
+async def test_async_usage_is_recorded_on_the_active_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`ainvoke` records the same usage as `invoke`."""
+    stub = _RunTreeStub()
+    monkeypatch.setattr(classifier_module, "get_current_run_tree", lambda: stub)
+
+    async def handler(_: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=_response_payload())
+
+    client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
+    classifier = TypeSafeClassifier(
+        api_key=API_KEY,
+        questions=_questions(),
+        async_client=client,
+    )
+
+    await classifier.ainvoke("hello")
+    await client.aclose()
+
+    assert stub.extra["metadata"]["usage_metadata"]["total_tokens"] == 54
+
+
+def test_run_carries_model_identity_without_losing_caller_metadata() -> None:
+    """Identity tags LangSmith prices by are added alongside caller metadata."""
+
+    def handler(_: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=_response_payload())
+
+    client = httpx2.Client(transport=httpx2.MockTransport(handler))
+    recorder = _RunRecorder()
+    classifier = TypeSafeClassifier(
+        api_key=API_KEY,
+        questions=_questions(),
+        client=client,
+    )
+
+    classifier.invoke(
+        "hello",
+        config={"callbacks": [recorder], "metadata": {"tenant": "acme"}},
+    )
+    client.close()
+
+    assert recorder.metadata["tenant"] == "acme"
+    assert recorder.metadata["ls_provider"] == "typesafe"
+    assert recorder.metadata["ls_model_name"] == "jev-latest"
+    assert API_KEY not in json.dumps(recorder.metadata, default=str)
+
+
+def test_untraced_invocation_is_unaffected() -> None:
+    """With no tracer active, recording usage is a no-op rather than an error."""
+
+    def handler(_: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=_response_payload())
+
+    client = httpx2.Client(transport=httpx2.MockTransport(handler))
+    classifier = TypeSafeClassifier(
+        api_key=API_KEY,
+        questions=_questions(),
+        client=client,
+    )
+
+    result = classifier.invoke("hello")
+    client.close()
+
+    assert result.usage.input_tokens == 42

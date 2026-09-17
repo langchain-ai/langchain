@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import httpx2
 from langchain_core._api import beta
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.runnables.config import ensure_config
 from langchain_core.utils import from_env, secret_from_env
+from langsmith.run_helpers import get_current_run_tree
 from pydantic import (
     ConfigDict,
     Field,
@@ -30,6 +33,9 @@ from langchain_typesafe.types import ClassificationResponse, Question, State
 _DEFAULT_BASE_URL = "https://api.typesafe.ai"
 _DEFAULT_MODEL = "jev-latest"
 _DEFAULT_TIMEOUT = 30.0
+_LS_PROVIDER = "typesafe"
+
+logger = logging.getLogger(__name__)
 
 
 @beta()
@@ -322,8 +328,8 @@ class TypeSafeClassifier(RunnableSerializable[State, ClassificationResponse]):
         return self._call_with_config(
             self._classify,
             input,
-            config,
-            run_type="chain",
+            self._traced_config(config),
+            run_type="llm",
         )
 
     @override
@@ -355,8 +361,8 @@ class TypeSafeClassifier(RunnableSerializable[State, ClassificationResponse]):
         return await self._acall_with_config(
             self._aclassify,
             input,
-            config,
-            run_type="chain",
+            self._traced_config(config),
+            run_type="llm",
         )
 
     def _classify(self, state: State) -> ClassificationResponse:
@@ -375,7 +381,7 @@ class TypeSafeClassifier(RunnableSerializable[State, ClassificationResponse]):
         except httpx2.HTTPError as error:
             message = "Unable to connect to the TypeSafe API."
             raise TypeSafeAPIConnectionError(message) from error
-        return parse_response(response)
+        return self._record_usage(parse_response(response))
 
     async def _aclassify(self, state: State) -> ClassificationResponse:
         payload = self._payload(state)
@@ -393,7 +399,38 @@ class TypeSafeClassifier(RunnableSerializable[State, ClassificationResponse]):
         except httpx2.HTTPError as error:
             message = "Unable to connect to the TypeSafe API."
             raise TypeSafeAPIConnectionError(message) from error
-        return parse_response(response)
+        return self._record_usage(parse_response(response))
+
+    def _traced_config(self, config: RunnableConfig | None) -> RunnableConfig:
+        """Set `ls_provider` and `ls_model_name` when run is created."""
+        config = ensure_config(config)
+        config["metadata"] = {
+            **(config.get("metadata") or {}),
+            "ls_provider": _LS_PROVIDER,
+            "ls_model_name": self.model,
+            "ls_model_type": "chat",
+        }
+        return config
+
+    def _record_usage(self, response: ClassificationResponse) -> ClassificationResponse:
+        """Attach TypeSafe token usage to the active run, if there is one.
+
+        Nothing is written when tracing is disabled, and a tracing failure never fails
+        an otherwise successful classification.
+        """
+        input_tokens = response.usage.input_tokens or 0
+        output_tokens = response.usage.output_tokens or 0
+        try:
+            run_tree = get_current_run_tree()
+            if run_tree is not None:
+                run_tree.extra.setdefault("metadata", {})["usage_metadata"] = {
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "total_tokens": input_tokens + output_tokens,
+                }
+        except Exception:  # noqa: BLE001 - tracing must not break classification
+            logger.debug("Could not attach TypeSafe usage.", exc_info=True)
+        return response
 
     @property
     def _endpoint(self) -> str:
