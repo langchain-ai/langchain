@@ -111,3 +111,22 @@ def test_convert_with_extras_on_v0_block() -> None:
     }
 
     assert _convert_legacy_v0_content_block_to_v1(block) == expected_output
+
+
+def test_convert_v0_block_with_id() -> None:
+    """Test that legacy v0 multimodal blocks carrying an id do not raise TypeError."""
+    blocks = [
+        {"type": "image", "source_type": "url", "url": "https://example.com/img.png", "id": "block-img-url"},
+        {"type": "image", "source_type": "base64", "data": "abc", "mime_type": "image/png", "id": "block-img-b64"},
+        {"type": "audio", "source_type": "url", "url": "https://example.com/aud.mp3", "id": "block-aud-url"},
+        {"type": "audio", "source_type": "base64", "data": "abc", "mime_type": "audio/mp3", "id": "block-aud-b64"},
+        {"type": "file", "source_type": "url", "url": "https://example.com/doc.pdf", "id": "block-file-url"},
+        {"type": "file", "source_type": "base64", "data": "abc", "mime_type": "application/pdf", "id": "block-file-b64"},
+        {"type": "file", "source_type": "text", "url": "some text content", "id": "block-file-text"},
+    ]
+    message = HumanMessage(content=blocks)
+    converted = message.content_blocks
+    assert len(converted) == 7
+    for block, original in zip(converted, blocks):
+        assert block.get("id") == original["id"]
+
