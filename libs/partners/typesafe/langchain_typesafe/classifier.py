@@ -32,7 +32,7 @@ _DEFAULT_MODEL = "jev-latest"
 _DEFAULT_TIMEOUT = 30.0
 
 
-@beta
+@beta()
 class TypeSafeClassifier(RunnableSerializable[State, ClassificationResponse]):
     """Classify JSON-compatible state with TypeSafe.
 
