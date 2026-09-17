@@ -43,7 +43,7 @@ print(result.scores["frustration"].score)
 
 Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnable`, the classifier can also be composed with other LangChain runnables and supports standard batching, callbacks, and tracing.
 
-`invoke` returns the SDK's `SystemOneResponse`. Question types (`Noul`, `Choice`, `Score`) are re-exported here for convenience; answer and response types are not duplicated and can be imported from `typesafe_sdk` when an explicit annotation is needed.
+`invoke` returns the SDK's `SystemOneResponse`. This package exports only `TypeSafeClassifier`, the three question types, and the `State` type; everything else — answers, responses, `RetryPolicy`, and the exception types — is imported from `typesafe_sdk`, which is where it is documented.
 
 ### LangChain messages as state
 
@@ -68,7 +68,7 @@ response = classifier.invoke(
 TypeSafe asks clients to back off and retry on `429 Too Many Requests` and `529 Overloaded`. The SDK's default retry policy does this automatically, retrying HTTP 408, 429, and 5xx responses along with connection and timeout failures, using exponential backoff that honors the provider's retry headers. Pass a policy to change or disable it:
 
 ```python
-from langchain_typesafe import RetryPolicy
+from typesafe_sdk import RetryPolicy
 
 classifier = TypeSafeClassifier(
     questions={"urgent": Noul(instructions="Is this urgent?")},
@@ -78,7 +78,7 @@ classifier = TypeSafeClassifier(
 
 ### Client lifecycle and custom clients
 
-TypeSafe clients are created on first use and reused, so keep classifier instances long-lived to benefit from connection pooling. A sync-only application never creates an async client. Use the classifier as a context manager, or call `close` and `aclose`, when deterministic cleanup is required:
+TypeSafe clients are created during initialization, so a missing or invalid API key fails immediately rather than on the first request. Keep classifier instances long-lived to benefit from connection pooling, and use the classifier as a context manager, or call `close` and `aclose`, when deterministic cleanup is required:
 
 ```python
 with TypeSafeClassifier(questions={"urgent": Noul(instructions="Is this urgent?")}) as classifier:
@@ -108,7 +108,7 @@ Provider errors also inherit from LangChain's standard model-error hierarchy. Ap
 
 ```python
 from langchain_core.exceptions import ModelAuthenticationError, ModelRateLimitError
-from langchain_typesafe import TypeSafeRateLimitError
+from typesafe_sdk import TypeSafeRateLimitError
 
 try:
     response = classifier.invoke("Classify this message.")
@@ -118,7 +118,7 @@ except (ModelAuthenticationError, ModelRateLimitError):
     handle_model_error()
 ```
 
-Each error raised by this package is a subclass of both the corresponding `typesafe_sdk` exception and the matching LangChain `ModelError`, so `except typesafe_sdk.TypeSafeRateLimitError` and `except ModelRateLimitError` both work. `TypeSafeAPIError` exposes the response status, parsed body, headers, sanitized endpoint, and request ID.
+Each error raised by this package is a subclass of both the corresponding `typesafe_sdk` exception and the matching LangChain `ModelError`, so both imports above catch it. Because every error is reachable through one of those two, this package does not re-export the exception types itself. `TypeSafeAPIError` exposes the response status, parsed body, headers, sanitized endpoint, and request ID.
 
 ## Documentation
 

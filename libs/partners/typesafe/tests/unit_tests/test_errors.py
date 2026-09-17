@@ -17,7 +17,7 @@ from langchain_core.exceptions import (
     ModelTimeoutError,
 )
 
-from langchain_typesafe import (
+from langchain_typesafe._errors import (
     TypeSafeAPIConnectionError,
     TypeSafeAPIResponseValidationError,
     TypeSafeAPITimeoutError,
@@ -28,8 +28,8 @@ from langchain_typesafe import (
     TypeSafePermissionDeniedError,
     TypeSafeRateLimitError,
     TypeSafeUnprocessableEntityError,
+    with_standard_errors,
 )
-from langchain_typesafe._errors import with_standard_errors
 
 # Each SDK HTTP exception, the status the provider reports it with, the package
 # exception it is translated to, and the standard LangChain error it also becomes.

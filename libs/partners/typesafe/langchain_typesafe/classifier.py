@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import os
-import threading
 from collections.abc import Mapping
-from typing import Any
+from typing import Annotated, Any
 
 import msgspec
 import typesafe_sdk as ts
@@ -13,9 +11,9 @@ from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from pydantic import (
     ConfigDict,
     Field,
+    PlainSerializer,
     PrivateAttr,
     SecretStr,
-    field_serializer,
     field_validator,
     model_validator,
 )
@@ -36,6 +34,13 @@ _QUESTION_TYPES: dict[str, type[ts.Noul | ts.Choice | ts.Score]] = {
     "choice": ts.Choice,
     "score": ts.Score,
 }
+
+# The SDK models questions as `msgspec` structs, which pydantic cannot serialize on
+# its own. Declaring the conversion on the type covers every pydantic dump.
+_Question = Annotated[
+    ts.Noul | ts.Choice | ts.Score,
+    PlainSerializer(msgspec.to_builtins),
+]
 
 
 class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
@@ -63,10 +68,10 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
     `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL`, and `TYPESAFE_DEFAULT_MODEL` from the
     environment. Explicit constructor values take precedence.
 
-    HTTP clients are created on first use and reused for the lifetime of the
-    classifier, so keep instances long-lived to benefit from connection pooling. Call
-    `close` or `aclose` when deterministic cleanup is required, or use the classifier
-    as a context manager.
+    Clients are created during initialization, so a missing or invalid API key fails
+    immediately. Keep classifier instances long-lived to benefit from connection
+    pooling, and call `close` or `aclose`, or use the classifier as a context
+    manager, when deterministic cleanup is required.
 
     Args:
         questions: Named `Noul`, `Choice`, or `Score` questions. Names become keys in
@@ -84,12 +89,15 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
             provider's retry headers. Pass `RetryPolicy(max_retries=0)` to disable
             retries.
         client: Optional `typesafe_sdk.TypeSafeClient` used by `invoke` and `batch`.
+            If omitted, one is created from the arguments above.
         async_client: Optional `typesafe_sdk.AsyncTypeSafeClient` used by `ainvoke`
-            and `abatch`.
+            and `abatch`. If omitted, one is created from the arguments above.
 
     Raises:
         ValueError: If questions are empty, a question dictionary has an unknown
-            `type`, credentials are unavailable, or the model name is blank.
+            `type`, or the model name is blank.
+        TypeSafeError: If the SDK cannot resolve an API key or the timeout is
+            invalid.
 
     ??? example "Classify state on several dimensions"
 
@@ -163,7 +171,7 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
         ```
     """
 
-    questions: Mapping[str, ts.Noul | ts.Choice | ts.Score] = Field(min_length=1)
+    questions: Mapping[str, _Question] = Field(min_length=1)
     """Questions sent together for every classifier invocation.
 
     The mapping key is the question ID and becomes the corresponding key in
@@ -222,10 +230,11 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
     client: ts.TypeSafeClient | None = Field(default=None, exclude=True, repr=False)
     """Optional synchronous TypeSafe client used by `invoke` and `batch`.
 
-    If omitted, the classifier creates one on first use from the configuration on this
-    class. Supply a client to reuse connection pools or to configure a custom
-    transport, proxy, or test fixture. An injected client is used as-is and is not
-    closed by `close`; the caller retains responsibility for its lifecycle.
+    If omitted, the classifier creates one during initialization from the
+    configuration on this class. Supply a client to reuse connection pools or to
+    configure a custom transport, proxy, or test fixture. An injected client is used
+    as-is and is not closed by `close`; the caller retains responsibility for its
+    lifecycle.
     """
 
     async_client: ts.AsyncTypeSafeClient | None = Field(
@@ -235,10 +244,11 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
     )
     """Optional asynchronous TypeSafe client used by `ainvoke` and `abatch`.
 
-    If omitted, the classifier creates one on first use from the configuration on this
-    class. Supply a client to reuse connection pools or to configure a custom
-    transport, proxy, or test fixture. An injected client is used as-is and is not
-    closed by `aclose`; the caller retains responsibility for its lifecycle.
+    If omitted, the classifier creates one during initialization from the
+    configuration on this class. Supply a client to reuse connection pools or to
+    configure a custom transport, proxy, or test fixture. An injected client is used
+    as-is and is not closed by `aclose`; the caller retains responsibility for its
+    lifecycle.
     """
 
     model_config = ConfigDict(
@@ -249,7 +259,6 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
 
     _owns_client: bool = PrivateAttr(default=False)
     _owns_async_client: bool = PrivateAttr(default=False)
-    _client_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
 
     @field_validator("questions", mode="before")
     @classmethod
@@ -274,19 +283,6 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
             coerced[name] = question_type(**fields)
         return coerced
 
-    @field_serializer("questions")
-    def _serialize_questions(
-        self,
-        questions: Mapping[str, ts.Noul | ts.Choice | ts.Score],
-    ) -> dict[str, Any]:
-        """Serialize SDK question types for LangChain serialization and tracing.
-
-        The SDK models questions as `msgspec` structs, which pydantic cannot serialize
-        on its own. The resulting dictionaries carry the `type` discriminator, so a
-        serialized classifier round-trips through `_coerce_questions`.
-        """
-        return {name: msgspec.to_builtins(q) for name, q in questions.items()}
-
     @field_validator("api_key")
     @classmethod
     def _coerce_api_key(cls, api_key: SecretStr | str | None) -> SecretStr | None:
@@ -307,26 +303,20 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
         return model
 
     @model_validator(mode="after")
-    def _validate_credentials(self) -> Self:
-        """Fail at construction time when no API key can be resolved.
+    def _build_clients(self) -> Self:
+        """Create the clients this classifier owns.
 
-        Clients are built lazily, so without this check a missing key would only
-        surface on the first invocation.
+        Constructing them here means the SDK resolves and validates credentials at
+        construction time, so a missing API key raises `TypeSafeError` immediately
+        rather than on the first invocation.
         """
-        if self.client is not None and self.async_client is not None:
-            return self
-        if (
-            isinstance(self.api_key, SecretStr)
-            and self.api_key.get_secret_value().strip()
-        ):
-            return self
-        if os.environ.get(ts.constants.API_KEY_ENV, "").strip():
-            return self
-        msg = (
-            "TypeSafe API key is required. Pass `api_key` or set "
-            f"`{ts.constants.API_KEY_ENV}`."
-        )
-        raise ValueError(msg)
+        if self.client is None:
+            self.client = ts.TypeSafeClient(**self._client_kwargs())
+            self._owns_client = True
+        if self.async_client is None:
+            self.async_client = ts.AsyncTypeSafeClient(**self._client_kwargs())
+            self._owns_async_client = True
+        return self
 
     @classmethod
     @override
@@ -347,12 +337,12 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
     def lc_attributes(self) -> dict[str, Any]:
         """Override `questions` with a JSON-compatible form for serialization.
 
-        LangChain serialization walks fields directly rather than through pydantic,
-        and renders values it does not recognize as `not_implemented`. Emitting the
-        questions as dictionaries keeps a serialized classifier and its traced run
-        faithful, and the `type` discriminator lets `_coerce_questions` rebuild them.
+        LangChain serialization reads fields directly rather than through pydantic,
+        and renders values it does not recognize as `not_implemented`. Reusing the
+        pydantic dump keeps a serialized classifier and its traced run faithful, and
+        the `type` discriminator lets `_coerce_questions` rebuild the questions.
         """
-        return {"questions": self._serialize_questions(self.questions)}
+        return {"questions": self.model_dump(include={"questions"})["questions"]}
 
     def _client_kwargs(self) -> dict[str, Any]:
         return {
@@ -369,19 +359,15 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
         }
 
     def _sync_client(self) -> ts.TypeSafeClient:
-        if self.client is None:
-            with self._client_lock:
-                if self.client is None:
-                    self.client = ts.TypeSafeClient(**self._client_kwargs())
-                    self._owns_client = True
+        if self.client is None:  # pragma: no cover - set during validation
+            msg = "Synchronous TypeSafe client was not initialized."
+            raise RuntimeError(msg)
         return self.client
 
     def _get_async_client(self) -> ts.AsyncTypeSafeClient:
-        if self.async_client is None:
-            with self._client_lock:
-                if self.async_client is None:
-                    self.async_client = ts.AsyncTypeSafeClient(**self._client_kwargs())
-                    self._owns_async_client = True
+        if self.async_client is None:  # pragma: no cover - set during validation
+            msg = "Asynchronous TypeSafe client was not initialized."
+            raise RuntimeError(msg)
         return self.async_client
 
     @override

@@ -12,18 +12,15 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.load import dumpd
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import SecretStr, ValidationError
-
-from langchain_typesafe import (
-    Choice,
-    Noul,
+from typesafe_sdk import (
     RetryPolicy,
-    Score,
     TypeSafeAPIConnectionError,
     TypeSafeAPIError,
     TypeSafeAPIResponseValidationError,
     TypeSafeAPITimeoutError,
-    TypeSafeClassifier,
 )
+
+from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 
 API_KEY = "test-api-key"
 REQUEST_ID = "req_test"
@@ -301,19 +298,14 @@ async def test_ainvoke_uses_async_client() -> None:
     assert result.choices["department"].choice == "technical"
 
 
-def test_clients_are_created_lazily_and_reused() -> None:
-    """No client exists until it is needed, and the same one is reused after."""
+def test_clients_are_created_during_initialization() -> None:
+    """Clients exist after construction and are reused across invocations."""
     classifier = TypeSafeClassifier(api_key=API_KEY, questions=_urgent())
 
-    assert classifier.client is None
-    assert classifier.async_client is None
-
-    created = classifier._sync_client()
-
-    assert classifier.client is created
-    assert classifier._sync_client() is created
-    # A sync-only caller never pays for an async client.
-    assert classifier.async_client is None
+    assert classifier.client is not None
+    assert classifier.async_client is not None
+    assert classifier._sync_client() is classifier.client
+    assert classifier._get_async_client() is classifier.async_client
 
     classifier.close()
 
@@ -357,7 +349,6 @@ def test_injected_clients_are_preserved_and_not_closed() -> None:
 def test_close_releases_a_created_client() -> None:
     """Closing the classifier closes only the client it created."""
     classifier = TypeSafeClassifier(api_key=API_KEY, questions=_urgent())
-    classifier._sync_client()
 
     classifier.close()
 
@@ -367,7 +358,6 @@ def test_close_releases_a_created_client() -> None:
 async def test_aclose_releases_a_created_async_client() -> None:
     """Closing the classifier closes only the async client it created."""
     classifier = TypeSafeClassifier(api_key=API_KEY, questions=_urgent())
-    classifier._get_async_client()
 
     await classifier.aclose()
 
@@ -489,9 +479,13 @@ def test_explicit_base_url_overrides_environment(
 
 
 def test_missing_api_key_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Constructing a classifier without credentials fails immediately."""
+    """Constructing a classifier without credentials fails immediately.
+
+    The SDK resolves and validates credentials when a client is built, so the error
+    comes from the provider rather than from a check duplicated here.
+    """
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
-    with pytest.raises(ValidationError, match="TypeSafe API key is required"):
+    with pytest.raises(ts.TypeSafeError, match="API key"):
         TypeSafeClassifier(questions=_urgent())
 
 
