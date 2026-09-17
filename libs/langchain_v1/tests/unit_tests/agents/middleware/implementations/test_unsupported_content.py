@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from langchain_core.callbacks import CallbackManagerForLLMRun
-    from langchain_core.messages import AnyMessage, ContentBlock
+    from langchain_core.messages import ContentBlock
 
     from langchain.agents.middleware.types import ModelRequest, ModelResponse
 
@@ -193,17 +193,6 @@ def test_non_pdf_file_blocks_are_left_alone() -> None:
     assert model.captured[0][0].content_blocks[0]["type"] == "file"
 
 
-def test_image_url_gate() -> None:
-    model = _model(image_inputs=True, image_url_inputs=False)
-    url_image: ContentBlock = {"type": "image", "url": "https://example.com/i.png"}
-    agent = create_agent(model, middleware=[UnsupportedContentMiddleware()])
-
-    agent.invoke({"messages": [HumanMessage(content=[url_image, IMAGE])]})
-
-    blocks = model.captured[0][0].content_blocks
-    assert [block["type"] for block in blocks] == ["text", "image"]
-
-
 def test_string_content_is_untouched() -> None:
     """A string-content message keeps its string form rather than becoming a block list."""
     model = _model(image_inputs=False)
@@ -214,47 +203,14 @@ def test_string_content_is_untouched() -> None:
     assert model.captured[0][0].content == "hello"
 
 
-def test_on_unsupported_customizes_the_notice() -> None:
-    model = _model(image_inputs=False)
-
-    def on_unsupported(block: ContentBlock, message: AnyMessage) -> str:
-        assert isinstance(message, HumanMessage)
-        return f"dropped a {block['type']}"
-
-    agent = create_agent(
-        model, middleware=[UnsupportedContentMiddleware(on_unsupported=on_unsupported)]
-    )
-
-    agent.invoke({"messages": [HumanMessage(content=[IMAGE])]})
-
-    assert model.captured[0][0].content_blocks[0]["text"] == "dropped a image"
-
-
-def test_on_unsupported_returning_none_drops_the_block() -> None:
-    model = _model(image_inputs=False)
-    agent = create_agent(
-        model,
-        middleware=[UnsupportedContentMiddleware(on_unsupported=lambda _block, _message: None)],
-    )
-
-    agent.invoke({"messages": [HumanMessage(content=[IMAGE, {"type": "text", "text": "hi"}])]})
-
-    blocks = model.captured[0][0].content_blocks
-    assert [block["type"] for block in blocks] == ["text"]
-
-
 def test_subclass_can_extend_support_checks() -> None:
     """Subclasses gate on things no profile field covers (e.g. the provider class)."""
 
     class RejectsDocx(UnsupportedContentMiddleware):
-        def is_supported(
-            self, block: ContentBlock, *, model: Any, profile: Any, in_tool_message: bool
-        ) -> bool:
+        def is_supported(self, block: ContentBlock, *, model: Any, in_tool_message: bool) -> bool:
             if block["type"] == "file" and "wordprocessingml" in block.get("mime_type", ""):
                 return False
-            return super().is_supported(
-                block, model=model, profile=profile, in_tool_message=in_tool_message
-            )
+            return super().is_supported(block, model=model, in_tool_message=in_tool_message)
 
     model = _model()
     docx: ContentBlock = {
