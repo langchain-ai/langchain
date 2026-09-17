@@ -128,24 +128,22 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         instructions: _QuestionContent,
     ) -> None:
         """Initialize the model router."""
-        super().__init__()
-        config = _ModelRouterConfig.model_validate(
+        self.config = _ModelRouterConfig.model_validate(
             {"choices": choices, "instructions": instructions}
         )
-        self.choices = config.choices
-        self.instructions = config.instructions
         self.models = {
             route: init_chat_model(choice.model)
             if isinstance(choice.model, str)
             else choice.model
-            for route, choice in self.choices.items()
+            for route, choice in self.config.choices.items()
         }
         self.classifier = TypeSafeClassifier(
             questions={
                 _QUESTION_ID: Choice(
-                    instructions=self.instructions,
+                    instructions=self.config.instructions,
                     criteria={
-                        route: choice.criteria for route, choice in self.choices.items()
+                        route: choice.criteria
+                        for route, choice in self.config.choices.items()
                     },
                 )
             }

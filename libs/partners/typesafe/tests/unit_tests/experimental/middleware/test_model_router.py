@@ -81,10 +81,10 @@ def test_middleware_constructs_classifier_from_routing_configuration() -> None:
         )
     }
     assert middleware.classifier is classifier
-    assert middleware.instructions == (
+    assert middleware.config.instructions == (
         "Choose the least costly model suited to the task."
     )
-    assert set(middleware.choices) == {"fast", "powerful"}
+    assert set(middleware.config.choices) == {"fast", "powerful"}
 
 
 @pytest.mark.parametrize("asynchronous", [False, True])
