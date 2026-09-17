@@ -45,7 +45,11 @@ Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnabl
 
 ### Experimental middleware
 
-Install the experimental extra to use TypeSafe-powered agent middleware. For example, `ModelRouterMiddleware` routes an agent to a model selected by a TypeSafe `Choice` question:
+Install the experimental extra to use TypeSafe-powered agent middleware.
+
+#### `ModelRouterMiddleware`
+
+`ModelRouterMiddleware` routes an agent to a model selected by a TypeSafe `Choice` question:
 
 ```bash
 uv add "langchain-typesafe[experimental]"
@@ -74,7 +78,29 @@ router = ModelRouterMiddleware(
 agent = create_agent("openai:gpt-5-mini", middleware=[router])
 ```
 
-The middleware classifies the latest human message once per agent run and stores the complete `ChoiceAnswer` in agent state, keeping its probabilities and confidence available to applications and traces. Classifier failures propagate instead of silently selecting another model. APIs under `langchain_typesafe.experimental` may change without notice.
+The model router classifies the latest human message once per agent run and stores the complete `ChoiceAnswer` in agent state, keeping its probabilities and confidence available to applications and traces. Classifier failures propagate instead of silently selecting another model.
+
+`AutoModeMiddleware` classifies calls to explicitly configured tools and blocks risky calls before execution:
+
+```python
+from langchain_typesafe import NoulCriteria
+from langchain_typesafe.experimental.middleware import AutoModeMiddleware
+
+auto_mode = AutoModeMiddleware(
+    tools=[delete_file],
+    criteria=NoulCriteria(
+        true="The call writes, deletes, publishes, or changes access.",
+        false="The call only reads public or user-provided data.",
+    ),
+)
+agent = create_agent(
+    model,
+    tools=[read_file, delete_file],
+    middleware=[auto_mode],
+)
+```
+
+`tools` accepts tool names or `BaseTool` instances. Customize `instructions` for the overall risk question and `criteria` for application-specific risky and safe outcomes. Configured calls whose risk probability meets or exceeds the threshold return an error `ToolMessage`; the tool handler is not called. Classification failures also prevent execution and propagate to the caller. The last 30 conversation messages provide context, while only explicit user messages count as authorization.
 
 ### LangChain messages as state
 
