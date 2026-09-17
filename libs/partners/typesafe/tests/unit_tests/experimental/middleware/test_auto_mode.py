@@ -196,7 +196,7 @@ async def test_base_tool_name_is_inferred() -> None:
     tool_instance = _delete_tool([])
 
     async with _middleware(0.2, tools=[tool_instance]) as middleware:
-        assert middleware.config.tool_names == {"delete_file"}
+        assert middleware._tool_names == {"delete_file"}
 
 
 async def test_experimental_middleware_is_not_exported_from_root() -> None:

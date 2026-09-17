@@ -24,7 +24,7 @@ except ImportError as error:
 
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from typing_extensions import override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
@@ -57,34 +57,18 @@ _DEFAULT_FALSE_CRITERIA = (
 )
 
 
-def _default_criteria() -> NoulCriteria:
-    return NoulCriteria(
-        true=_DEFAULT_TRUE_CRITERIA,
-        false=_DEFAULT_FALSE_CRITERIA,
-    )
-
-
 class _AutoModeConfig(BaseModel):
     """Validated Auto Mode execution configuration."""
 
     tools: list[str | BaseTool] = Field(min_length=1)
     instructions: str = Field(default=_DEFAULT_INSTRUCTIONS)
-    criteria: NoulCriteria = Field(default_factory=_default_criteria)
-    threshold: float = Field(default=0.2, ge=0, le=1)
-
-    @field_validator("criteria", mode="before")
-    @classmethod
-    def default_missing_criteria(cls, value: object) -> object:
-        """Use the default criteria when callers provide `None`."""
-        return _default_criteria() if value is None else value
-
-    @property
-    def tool_names(self) -> frozenset[str]:
-        """Return normalized tool names used by the execution filter."""
-        return frozenset(
-            (tool if isinstance(tool, str) else tool.name).strip()
-            for tool in self.tools
+    criteria: NoulCriteria = Field(
+        default=NoulCriteria(
+            true=_DEFAULT_TRUE_CRITERIA,
+            false=_DEFAULT_FALSE_CRITERIA,
         )
+    )
+    threshold: float = Field(default=0.2, ge=0, le=1)
 
 
 class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
@@ -176,7 +160,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
             {
                 "tools": tools,
                 "instructions": instructions,
-                "criteria": criteria,
+                **({"criteria": criteria} if criteria is not None else {}),
                 "threshold": threshold,
             }
         )
@@ -203,6 +187,14 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         if request.tool is not None and request.tool.description:
             state["tool_description"] = request.tool.description
         return state
+
+    @property
+    def _tool_names(self) -> frozenset[str]:
+        """Return normalized names for tools guarded by Auto Mode."""
+        return frozenset(
+            (tool if isinstance(tool, str) else tool.name).strip()
+            for tool in self.config.tools
+        )
 
     def _blocked_tool_message(
         self,
@@ -235,7 +227,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         Returns:
             The tool result for a low-risk call, or an error `ToolMessage` when blocked.
         """
-        if request.tool_call["name"] not in self.config.tool_names:
+        if request.tool_call["name"] not in self._tool_names:
             return handler(request)
         response = self.classifier.invoke(self._classification_state(request))
         risk_probability = response.nouls[_RISK_QUESTION_ID].noul
@@ -261,7 +253,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         Returns:
             The tool result for a low-risk call, or an error `ToolMessage` when blocked.
         """
-        if request.tool_call["name"] not in self.config.tool_names:
+        if request.tool_call["name"] not in self._tool_names:
             return await handler(request)
         response = await self.classifier.ainvoke(self._classification_state(request))
         risk_probability = response.nouls[_RISK_QUESTION_ID].noul
