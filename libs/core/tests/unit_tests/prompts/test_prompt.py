@@ -744,3 +744,21 @@ def test_prompt_template_add(
         variable="template",
         another_variable="other_template",
     )
+
+
+def test_mustache_nested_inverted_section_same_key() -> None:
+    """Test mustache inverted section nested inside a section with the same key (#40460)."""
+    prompt = PromptTemplate.from_template(
+        "{{#items}}[{{^items}}none{{/items}}{{name}}]{{/items}}",
+        template_format="mustache",
+    )
+    result = prompt.format(items=[{"name": "a"}, {"name": "b"}])
+    assert result == "[a][b]"
+
+    prompt_done = PromptTemplate.from_template(
+        "{{#items}}{{^items}}none{{/items}}{{/items}}Done",
+        template_format="mustache",
+    )
+    result_done = prompt_done.format(items=[{"name": "a"}, {"name": "b"}])
+    assert result_done == "Done"
+
