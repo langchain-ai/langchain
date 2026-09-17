@@ -68,6 +68,28 @@ def test_finalize_block_tool_call_chunk_valid_json() -> None:
     assert tool_call["args"] == {"query": "test"}
 
 
+def test_finalize_block_tool_call_chunk_none_id_generates_uuid() -> None:
+    block1: CompatBlock = {
+        "type": "tool_call_chunk",
+        "args": '{"query": "test1"}',
+        "id": None,
+        "name": "search",
+    }
+    block2: CompatBlock = {
+        "type": "tool_call_chunk",
+        "args": '{"query": "test2"}',
+        "id": None,
+        "name": "search",
+    }
+    result1 = cast("ToolCall", _finalize_block(block1))
+    result2 = cast("ToolCall", _finalize_block(block2))
+    assert result1["type"] == "tool_call"
+    assert result2["type"] == "tool_call"
+    assert bool(result1["id"]) is True
+    assert bool(result2["id"]) is True
+    assert result1["id"] != result2["id"]
+
+
 def test_finalize_block_tool_call_chunk_invalid_json() -> None:
     block: CompatBlock = {
         "type": "tool_call_chunk",

@@ -34,6 +34,7 @@ Public API:
 from __future__ import annotations
 
 import json
+import uuid
 from typing import TYPE_CHECKING, Any, cast
 
 from langchain_protocol.protocol import (
@@ -405,7 +406,7 @@ def finalize_tool_call_chunk(
     if finalized_type == "tool_call":
         finalized_tc = ToolCall(
             type="tool_call",
-            id=id_ or "",
+            id=id_ or uuid.uuid4().hex,
             name=name or "",
             args=parsed,
         )
@@ -413,7 +414,7 @@ def finalize_tool_call_chunk(
         return finalized_tc
     finalized_stc = ServerToolCall(
         type="server_tool_call",
-        id=id_ or "",
+        id=id_ or uuid.uuid4().hex,
         name=name or "",
         args=parsed,
     )
