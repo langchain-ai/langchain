@@ -16,7 +16,12 @@ from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
 )
-from langchain.agents.middleware.types import AgentState, ToolCallRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ToolCallRequest,
+    hook_config,
+)
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -281,6 +286,73 @@ def test_human_in_the_loop_middleware_rejected_call_not_executed_and_stays_paire
     # The tool itself must never run.
     assert calls == []
     # The message history must remain protocol-valid throughout, including the rejection turn.
+    _assert_tool_messages_are_paired(final["messages"])
+
+
+def test_human_in_the_loop_middleware_rejected_call_not_executed_with_jump_to_tools_middleware() -> (
+    None
+):
+    """A rejected tool call must not execute even when another middleware jumps to "tools".
+
+    Regression test for a HITL bypass: `HumanInTheLoopMiddleware` keeps a rejected
+    tool call in `AIMessage.tool_calls` (paired with a synthetic `ToolMessage`) so the
+    message history stays protocol-valid. Only the routing layer keeps it from actually
+    running, by excluding tool calls that already have a `ToolMessage`. Any other
+    `after_model` middleware that returns the documented `{"jump_to": "tools"}` outcome
+    must not bypass that filter -- see
+    https://github.com/langchain-ai/langchain/issues/40492.
+    """
+    calls: list[str] = []
+
+    @tool
+    def risky_tool(value: str) -> str:
+        """A tool that would be dangerous to run without approval."""
+        calls.append(value)
+        return f"Executed: {value}"
+
+    class JumpToToolsMiddleware(AgentMiddleware):
+        """A benign middleware (e.g. a guardrail or logger) using a documented outcome."""
+
+        @hook_config(can_jump_to=["tools"])
+        def after_model(self, state: AgentState[Any], runtime: Runtime[Any]) -> dict[str, Any] | None:
+            last_ai = next(
+                (m for m in reversed(state["messages"]) if isinstance(m, AIMessage)), None
+            )
+            if last_ai and last_ai.tool_calls:
+                return {"jump_to": "tools"}
+            return None
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="risky_tool", args={"value": "test"}, id="1")],
+            [],
+        ]
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[risky_tool],
+        middleware=[
+            JumpToToolsMiddleware(),
+            HumanInTheLoopMiddleware(
+                interrupt_on={"risky_tool": {"allowed_decisions": ["approve", "reject"]}}
+            ),
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    interrupted = agent.invoke(
+        {"messages": [HumanMessage("Please run risky_tool")]},
+        {"configurable": {"thread_id": "reject-not-executed-jump"}},
+    )
+    assert "__interrupt__" in interrupted
+
+    final = agent.invoke(
+        Command(resume={"decisions": [{"type": "reject", "message": "denied"}]}),
+        {"configurable": {"thread_id": "reject-not-executed-jump"}},
+    )
+
+    # The tool itself must never run, regardless of the extra jump_to="tools" middleware.
+    assert calls == []
     _assert_tool_messages_are_paired(final["messages"])
 
 

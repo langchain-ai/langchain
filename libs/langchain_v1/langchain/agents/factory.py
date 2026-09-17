@@ -1740,6 +1740,7 @@ def create_agent(
             model_destination=loop_entry_node,
             end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_after_model[0], "after_model"),
+            structured_output_tools=structured_output_tools,
         )
 
     # Add before_agent middleware edges
@@ -1752,6 +1753,7 @@ def create_agent(
                 model_destination=loop_entry_node,
                 end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "before_agent"),
+                structured_output_tools=structured_output_tools,
             )
         # Connect last before_agent to loop_entry_node (before_model or model)
         _add_middleware_edge(
@@ -1761,6 +1763,7 @@ def create_agent(
             model_destination=loop_entry_node,
             end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_before_agent[-1], "before_agent"),
+            structured_output_tools=structured_output_tools,
         )
 
     # Add before_model middleware edges
@@ -1773,6 +1776,7 @@ def create_agent(
                 model_destination=loop_entry_node,
                 end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "before_model"),
+                structured_output_tools=structured_output_tools,
             )
         # Go directly to model after the last before_model
         _add_middleware_edge(
@@ -1782,6 +1786,7 @@ def create_agent(
             model_destination=loop_entry_node,
             end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_before_model[-1], "before_model"),
+            structured_output_tools=structured_output_tools,
         )
 
     # Add after_model middleware edges
@@ -1797,6 +1802,7 @@ def create_agent(
                 model_destination=loop_entry_node,
                 end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "after_model"),
+                structured_output_tools=structured_output_tools,
             )
         # Note: Connection from after_model to after_agent/END is handled above
         # in the conditional edges section
@@ -1814,6 +1820,7 @@ def create_agent(
                 model_destination=loop_entry_node,
                 end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "after_agent"),
+                structured_output_tools=structured_output_tools,
             )
 
         # Connect the last after_agent to END
@@ -1824,6 +1831,7 @@ def create_agent(
             model_destination=loop_entry_node,
             end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
+            structured_output_tools=structured_output_tools,
         )
 
     # Set recursion limit to 9_999
@@ -1887,15 +1895,29 @@ def _dedupe_transformers(
 def _resolve_jump(
     jump_to: JumpTo | None,
     *,
+    state: dict[str, Any],
     model_destination: str,
     end_destination: str,
-) -> str | None:
+    structured_output_tools: dict[str, OutputToolBinding[Any]],
+) -> str | list[Send] | None:
     if jump_to == "model":
         return model_destination
     if jump_to == "end":
         return end_destination
     if jump_to == "tools":
-        return "tools"
+        # Route through the same pending-tool-call filtering as the default
+        # model->tools edge instead of a bare edge into the ToolNode. Without
+        # this, a tool call that already has a ToolMessage in state (e.g. a
+        # rejection recorded by HumanInTheLoopMiddleware, which keeps the
+        # call in AIMessage.tool_calls so the message stays valid for
+        # provider APIs) would be executed for real just because some other
+        # middleware requested `jump_to="tools"`.
+        return _pending_tool_call_destination(
+            state,
+            structured_output_tools=structured_output_tools,
+            model_destination=model_destination,
+            end_destination=end_destination,
+        )
     return None
 
 
@@ -1920,6 +1942,54 @@ def _fetch_last_ai_and_tool_messages(
     return None, []
 
 
+def _pending_tool_call_destination(
+    state: dict[str, Any],
+    *,
+    structured_output_tools: dict[str, OutputToolBinding[Any]],
+    model_destination: str,
+    end_destination: str,
+) -> str | list[Send]:
+    """Resolve the destination for entering the tools node from agent state.
+
+    This is the single choke point for routing into "tools": it filters
+    `AIMessage.tool_calls` down to calls that don't already have a matching
+    `ToolMessage` in state (e.g. a rejection from `HumanInTheLoopMiddleware`)
+    and fans out only those via `Send`. Every route into "tools" -- the
+    default model->tools edge and any middleware's `jump_to="tools"` -- must
+    go through this rather than routing to the "tools" node name directly, or
+    an already-answered tool call can be (re)executed by simply bypassing
+    this filter.
+    """
+    last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
+
+    # if no AIMessage exists (e.g., messages were cleared), or it made no tool
+    # calls, exit the loop -- this is the classic exit condition for an agent loop
+    if last_ai_message is None or len(last_ai_message.tool_calls) == 0:
+        return end_destination
+
+    tool_message_ids = [m.tool_call_id for m in tool_messages]
+    pending_tool_calls = [
+        c
+        for c in last_ai_message.tool_calls
+        if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
+    ]
+
+    # If there are pending tool calls, jump to the tool node.
+    # The tool node hydrates ToolRuntime.state from channels via
+    # CONFIG_KEY_READ at execution time, so we no longer inline the
+    # full state into each Send (previously O(N^2) in TASKS writes).
+    if pending_tool_calls:
+        return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
+
+    # If a fresh structured response was produced this call, exit the loop
+    if state.get("structured_response") is not None:
+        return end_destination
+
+    # AIMessage has tool calls, but there are no pending tool calls which suggests
+    # the injection of artificial tool messages. Jump to the model node
+    return model_destination
+
+
 def _make_model_to_tools_edge(
     *,
     model_destination: str,
@@ -1929,47 +1999,22 @@ def _make_model_to_tools_edge(
     def model_to_tools(
         state: dict[str, Any],
     ) -> str | list[Send] | None:
-        # 1. If there's an explicit jump_to in the state, use it
+        # If there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
             return _resolve_jump(
                 jump_to,
+                state=state,
                 model_destination=model_destination,
                 end_destination=end_destination,
+                structured_output_tools=structured_output_tools,
             )
 
-        last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
-
-        # 2. if no AIMessage exists (e.g., messages were cleared), exit the loop
-        if last_ai_message is None:
-            return end_destination
-
-        tool_message_ids = [m.tool_call_id for m in tool_messages]
-
-        # 3. If the model hasn't called any tools, exit the loop
-        # this is the classic exit condition for an agent loop
-        if len(last_ai_message.tool_calls) == 0:
-            return end_destination
-
-        pending_tool_calls = [
-            c
-            for c in last_ai_message.tool_calls
-            if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
-        ]
-
-        # 4. If there are pending tool calls, jump to the tool node.
-        # The tool node hydrates ToolRuntime.state from channels via
-        # CONFIG_KEY_READ at execution time, so we no longer inline the
-        # full state into each Send (previously O(N^2) in TASKS writes).
-        if pending_tool_calls:
-            return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
-
-        # 5. If a fresh structured response was produced this call, exit the loop
-        if state.get("structured_response") is not None:
-            return end_destination
-
-        # 6. AIMessage has tool calls, but there are no pending tool calls which suggests
-        # the injection of artificial tool messages. Jump to the model node
-        return model_destination
+        return _pending_tool_call_destination(
+            state,
+            structured_output_tools=structured_output_tools,
+            model_destination=model_destination,
+            end_destination=end_destination,
+        )
 
     return model_to_tools
 
@@ -2047,6 +2092,7 @@ def _add_middleware_edge(
     model_destination: str,
     end_destination: str,
     can_jump_to: list[JumpTo] | None,
+    structured_output_tools: dict[str, OutputToolBinding[Any]],
 ) -> None:
     """Add an edge to the graph for a middleware node.
 
@@ -2057,15 +2103,19 @@ def _add_middleware_edge(
         model_destination: The destination for the edge to the model.
         end_destination: The destination for the edge to the end.
         can_jump_to: The conditionally jumpable destinations for the edge.
+        structured_output_tools: Structured output tools, needed to correctly
+            filter pending tool calls when jumping to "tools".
     """
     if can_jump_to:
 
-        def jump_edge(state: dict[str, Any]) -> str:
+        def jump_edge(state: dict[str, Any]) -> str | list[Send]:
             return (
                 _resolve_jump(
                     state.get("jump_to"),
+                    state=state,
                     model_destination=model_destination,
                     end_destination=end_destination,
+                    structured_output_tools=structured_output_tools,
                 )
                 or default_destination
             )
