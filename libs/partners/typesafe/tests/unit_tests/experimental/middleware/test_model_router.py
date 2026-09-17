@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
 from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
@@ -40,13 +39,15 @@ def _router(
     route: str = "fast",
 ) -> tuple[
     ModelRouterMiddleware,
-    dict[str, BaseChatModel],
+    dict[str, GenericFakeChatModel],
     MagicMock,
     MagicMock,
 ]:
     models = {
-        "fast": cast("BaseChatModel", MagicMock(name="fast")),
-        "powerful": cast("BaseChatModel", MagicMock(name="powerful")),
+        "fast": GenericFakeChatModel(messages=iter([AIMessage("fast response")])),
+        "powerful": GenericFakeChatModel(
+            messages=iter([AIMessage("powerful response")])
+        ),
     }
     classifier = MagicMock(spec=TypeSafeClassifier)
     classifier.invoke.return_value = _response(route)
@@ -67,14 +68,6 @@ def _router(
     return middleware, models, classifier, classifier_class
 
 
-def _request(state: dict[str, Any]) -> ModelRequest[Any]:
-    return ModelRequest(
-        model=cast("BaseChatModel", MagicMock(name="original")),
-        messages=state.get("messages", []),
-        state=cast("Any", state),
-    )
-
-
 def test_middleware_constructs_classifier_from_routing_configuration() -> None:
     """Construct a TypeSafe Choice from the supplied criteria and instructions."""
     middleware, _, classifier, classifier_class = _router()
@@ -90,103 +83,76 @@ def test_middleware_constructs_classifier_from_routing_configuration() -> None:
     assert middleware.classifier is classifier
 
 
-def test_sync_route_is_stored_and_used_for_model_calls() -> None:
-    """Classify the latest human message and route synchronous model calls."""
+def test_sync_agent_routes_using_latest_human_message() -> None:
+    """Route a synchronous agent run using the latest human task."""
     middleware, models, classifier, _ = _router()
-    old_message = HumanMessage("Earlier task")
+    agent = create_agent(models["powerful"], middleware=[middleware])
     latest_message = HumanMessage("Update the README")
-    state: dict[str, Any] = {
-        "messages": [old_message, AIMessage("Ready"), latest_message]
-    }
 
-    state.update(middleware.before_agent(cast("Any", state), MagicMock()))
-    request = _request(state)
-    seen: list[ModelRequest[Any]] = []
+    result = agent.invoke(
+        {
+            "messages": [
+                HumanMessage("Earlier task"),
+                AIMessage("Ready"),
+                latest_message,
+            ]
+        }
+    )
 
-    def handler(routed: ModelRequest[Any]) -> ModelResponse[Any]:
-        seen.append(routed)
-        return MagicMock()
-
-    middleware.wrap_model_call(request, handler)
-
-    assert state["model_route"] == "fast"
-    assert seen[0].model is models["fast"]
-    assert request.model is not models["fast"]
-    classifier.invoke.assert_called_once()
-    assert classifier.invoke.call_args.args[0] is latest_message
-    assert classifier.invoke.call_args.kwargs == {}
+    assert result["messages"][-1].text == "fast response"
+    classifier.invoke.assert_called_once_with(latest_message)
 
 
 @pytest.mark.asyncio
-async def test_async_route_is_stored_and_used_for_model_calls() -> None:
-    """Classify the latest human message and route asynchronous model calls."""
+async def test_async_agent_routes_using_latest_human_message() -> None:
+    """Route an asynchronous agent run using the latest human task."""
     middleware, models, classifier, _ = _router()
+    agent = create_agent(models["powerful"], middleware=[middleware])
     latest_message = HumanMessage("Investigate a race condition")
-    state: dict[str, Any] = {"messages": [latest_message]}
 
-    state.update(await middleware.abefore_agent(cast("Any", state), MagicMock()))
-    request = _request(state)
-    seen: list[ModelRequest[Any]] = []
+    result = await agent.ainvoke({"messages": [latest_message]})
 
-    async def handler(routed: ModelRequest[Any]) -> ModelResponse[Any]:
-        seen.append(routed)
-        return MagicMock()
-
-    await middleware.awrap_model_call(request, handler)
-
-    assert state["model_route"] == "fast"
-    assert seen[0].model is models["fast"]
-    classifier.ainvoke.assert_awaited_once()
-    assert classifier.ainvoke.call_args.args[0] is latest_message
+    assert result["messages"][-1].text == "fast response"
+    classifier.ainvoke.assert_awaited_once_with(latest_message)
 
 
 @pytest.mark.parametrize("asynchronous", [False, True])
 @pytest.mark.asyncio
-async def test_classifier_failure_terminates_run(*, asynchronous: bool) -> None:
-    """Propagate classifier failures instead of silently selecting a model."""
-    middleware, _, classifier, _ = _router()
+async def test_classifier_failure_terminates_agent_run(*, asynchronous: bool) -> None:
+    """Propagate classifier failures through sync and async agent execution."""
+    middleware, models, classifier, _ = _router()
     classifier.invoke.side_effect = RuntimeError("unavailable")
     classifier.ainvoke.side_effect = RuntimeError("unavailable")
-    state = cast("Any", {"messages": [HumanMessage("Do the task")]})
+    agent = create_agent(models["fast"], middleware=[middleware])
+    inputs = cast("Any", {"messages": [HumanMessage("Do the task")]})
 
     if asynchronous:
         with pytest.raises(RuntimeError, match="unavailable"):
-            await middleware.abefore_agent(state, MagicMock())
+            await agent.ainvoke(inputs)
     else:
         with pytest.raises(RuntimeError, match="unavailable"):
-            middleware.before_agent(state, MagicMock())
+            agent.invoke(inputs)
 
 
-def test_missing_human_message_terminates_run() -> None:
-    """Reject agent state without a human task to classify."""
-    middleware, _, classifier, _ = _router()
-    state = cast("Any", {"messages": [AIMessage("No task yet")]})
+def test_missing_human_message_terminates_agent_run() -> None:
+    """Reject an agent run without a human task to classify."""
+    middleware, models, classifier, _ = _router()
+    agent = create_agent(models["fast"], middleware=[middleware])
 
     with pytest.raises(ValueError, match="at least one human message"):
-        middleware.before_agent(state, MagicMock())
+        agent.invoke({"messages": [AIMessage("No task yet")]})
 
     classifier.invoke.assert_not_called()
 
 
-def test_unknown_choice_terminates_run() -> None:
+def test_unknown_choice_terminates_agent_run() -> None:
     """Reject a TypeSafe choice that has no configured model."""
-    middleware, _, classifier, _ = _router()
+    middleware, models, classifier, _ = _router()
     classifier.invoke.return_value = _response("unknown")
+    agent = create_agent(models["fast"], middleware=[middleware])
 
     with pytest.raises(ValueError, match="unknown model route 'unknown'"):
-        middleware.before_agent(
-            cast("Any", {"messages": [HumanMessage("Do the task")]}),
-            MagicMock(),
-        )
-
-
-def test_unknown_route_in_state_terminates_run() -> None:
-    """Reject model calls whose state has no configured route."""
-    middleware, _, _, _ = _router()
-    request = _request({"messages": [], "model_route": "unknown"})
-
-    with pytest.raises(ValueError, match="unknown model route 'unknown'"):
-        middleware.wrap_model_call(request, MagicMock())
+        agent.invoke({"messages": [HumanMessage("Do the task")]})
 
 
 def test_configuration_validation() -> None:
@@ -224,33 +190,6 @@ def test_model_string_is_initialized_once() -> None:
 
     init_model.assert_called_once_with("openai:gpt-5-mini")
     assert middleware.models == {"fast": initialized_model}
-
-
-def test_create_agent_routes_the_run_to_the_selected_model() -> None:
-    """Compose routing state and model overrides through a compiled agent graph."""
-    fast_model = GenericFakeChatModel(messages=iter([AIMessage("fast response")]))
-    powerful_model = GenericFakeChatModel(
-        messages=iter([AIMessage("powerful response")])
-    )
-    classifier = MagicMock(spec=TypeSafeClassifier)
-    classifier.invoke.return_value = _response("fast")
-    with patch(
-        "langchain_typesafe.experimental.middleware.model_router.TypeSafeClassifier",
-        return_value=classifier,
-    ):
-        middleware = ModelRouterMiddleware(
-            choices={
-                "fast": ModelChoice(model=fast_model, criteria="Simple."),
-                "powerful": ModelChoice(model=powerful_model, criteria="Complex."),
-            },
-            instructions="Choose the least costly suitable route.",
-        )
-    agent = create_agent(powerful_model, middleware=[middleware])
-
-    result = agent.invoke({"messages": [HumanMessage("Update one line")]})
-
-    assert result["messages"][-1].text == "fast response"
-    classifier.invoke.assert_called_once()
 
 
 def test_experimental_public_interface() -> None:
