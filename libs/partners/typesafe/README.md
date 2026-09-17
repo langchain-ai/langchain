@@ -43,6 +43,40 @@ print(result.scores["frustration"].score)
 
 Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnable`, the classifier can also be composed with other LangChain runnables and supports standard batching, callbacks, and tracing.
 
+### Experimental model routing middleware
+
+Install the middleware extra to route an agent to a model selected by a TypeSafe `Choice` question:
+
+```bash
+uv add "langchain-typesafe[experimental]"
+```
+
+```python
+from langchain.agents import create_agent
+from langchain_typesafe.experimental.middleware import (
+    ModelChoice,
+    ModelRouterMiddleware,
+)
+
+router = ModelRouterMiddleware(
+    choices={
+        "fast": ModelChoice(
+            model=fast_model,
+            criteria="Simple, well-scoped tasks.",
+        ),
+        "powerful": ModelChoice(
+            model=powerful_model,
+            criteria="Complex tasks requiring deeper reasoning.",
+        ),
+    },
+    instructions="Choose the least costly model suited to the task.",
+    default_route="powerful",
+)
+agent = create_agent(fast_model, middleware=[router])
+```
+
+The middleware classifies the latest human message once per agent run. If classification fails or returns an unknown route, it uses `default_route`. This API is experimental and may change without notice.
+
 ### LangChain messages as state
 
 `BaseMessage` objects and message sequences can appear at the root or anywhere inside JSON state. The integration recursively converts them to objects with `role` and `content` fields while preserving surrounding application data:
