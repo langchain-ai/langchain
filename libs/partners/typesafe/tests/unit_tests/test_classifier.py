@@ -20,6 +20,7 @@ from langchain_typesafe import (
     Score,
     ScoreAnswer,
     TypeSafeClassifier,
+    __version__,
 )
 from langchain_typesafe.client import (
     TypeSafeAPIConnectionError,
@@ -114,7 +115,7 @@ def test_invoke_sends_request_and_parses_response() -> None:
     def handler(request: httpx2.Request) -> httpx2.Response:
         assert request.url == "https://api.typesafe.ai/v1/systemone"
         assert request.headers["authorization"] == f"Bearer {API_KEY}"
-        assert request.headers["user-agent"] == "langchain-typesafe/0.0.1"
+        assert request.headers["user-agent"] == f"langchain-typesafe/{__version__}"
         payload = json.loads(request.content)
         assert payload == {
             "state": {"message": "Stripe fails to connect."},
