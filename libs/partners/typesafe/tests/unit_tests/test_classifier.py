@@ -7,6 +7,7 @@ from typing import Any
 
 import httpx2
 import pytest
+from langchain_core._api import LangChainBetaWarning
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import SecretStr, ValidationError
@@ -66,6 +67,18 @@ def _questions() -> dict[str, Choice | Noul | Score]:
             criteria=["calm", "frustrated", "angry"],
         ),
     }
+
+
+def test_classifier_is_beta() -> None:
+    """Constructing the classifier warns that its API is in beta."""
+    with pytest.warns(
+        LangChainBetaWarning,
+        match=r"The class `TypeSafeClassifier` is in beta\.",
+    ):
+        TypeSafeClassifier(
+            api_key=API_KEY,
+            questions={"urgent": Noul(instructions="Is this urgent?")},
+        )
 
 
 def test_questions_require_instructions() -> None:

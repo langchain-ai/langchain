@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import httpx2
+from langchain_core._api import beta
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.utils import from_env, secret_from_env
 from pydantic import (
@@ -31,6 +32,7 @@ _DEFAULT_MODEL = "jev-latest"
 _DEFAULT_TIMEOUT = 30.0
 
 
+@beta
 class TypeSafeClassifier(RunnableSerializable[State, ClassificationResponse]):
     """Classify JSON-compatible state with TypeSafe.
 
