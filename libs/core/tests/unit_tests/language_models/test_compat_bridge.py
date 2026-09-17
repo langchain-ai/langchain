@@ -109,6 +109,74 @@ def test_finalize_block_server_tool_call_chunk_invalid_json() -> None:
     assert invalid.get("error") is not None
 
 
+def test_finalize_block_tool_call_chunk_missing_id_synthesizes_unique_ids() -> None:
+    first: CompatBlock = {
+        "type": "tool_call_chunk",
+        "args": '{"q": "first"}',
+        "name": "search",
+    }
+    second: CompatBlock = {
+        "type": "tool_call_chunk",
+        "args": '{"q": "second"}',
+        "id": "",
+        "name": "search",
+    }
+    ids = {
+        cast("ToolCall", _finalize_block(first))["id"],
+        cast("ToolCall", _finalize_block(second))["id"],
+    }
+    assert len(ids) == 2
+    assert all(tc_id for tc_id in ids)
+
+
+def test_finalize_block_server_tool_call_chunk_missing_id_synthesizes_id() -> None:
+    block: CompatBlock = {
+        "type": "server_tool_call_chunk",
+        "args": '{"q": "weather"}',
+        "name": "web_search",
+    }
+    result = cast("ServerToolCall", _finalize_block(block))
+    assert result["type"] == "server_tool_call"
+    assert result["id"] != ""
+    assert result["args"] == {"q": "weather"}
+
+
+def test_parallel_id_less_tool_calls_stay_distinct_end_to_end() -> None:
+    from langchain_core.messages.tool import tool_call_chunk
+
+    def _id_less_chunk(index: int, args: str) -> ChatGenerationChunk:
+        return ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    tool_call_chunk(name="search", args=args, id=None, index=index)
+                ],
+            ),
+        )
+
+    stream = ChatModelStream()
+    for event in chunks_to_events(
+        iter(
+            [
+                _id_less_chunk(0, '{"q": "first"}'),
+                _id_less_chunk(1, '{"q": "second"}'),
+            ]
+        ),
+        message_id="msg_demo",
+    ):
+        stream.dispatch(event)
+
+    tool_calls = stream.output.tool_calls
+    assert len(tool_calls) == 2
+    ids = [tc["id"] for tc in tool_calls]
+    assert all(tc_id for tc_id in ids)
+    assert len(set(ids)) == 2
+    assert [tc["args"] for tc in tool_calls] == [
+        {"q": "first"},
+        {"q": "second"},
+    ]
+
+
 def test_isolate_usage_present() -> None:
     usage: UsageInfo = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
     result = _isolate_usage(usage)

@@ -34,6 +34,7 @@ Public API:
 from __future__ import annotations
 
 import json
+import uuid
 from typing import TYPE_CHECKING, Any, cast
 
 from langchain_protocol.protocol import (
@@ -356,6 +357,17 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
     return state
 
 
+def _resolve_tool_call_id(id_: str | None) -> str:
+    """Resolve the finalized id for a tool call or server tool call.
+
+    Id-less calls all collapse onto `""` when finalized with a bare
+    `id_ or ""` fallback, so parallel id-less calls become
+    indistinguishable to any consumer keyed off the id.  Synthesize a
+    uuid in that case so each finalized call stays addressable.
+    """
+    return id_ if id_ else uuid.uuid4().hex
+
+
 def finalize_tool_call_chunk(
     *,
     raw_args: str | None,
@@ -377,7 +389,9 @@ def finalize_tool_call_chunk(
     Args:
         raw_args: Accumulated partial-JSON string; `None` or empty
             treated as `{}`.
-        id_: Tool-call id collected across chunks.
+        id_: Tool-call id collected across chunks.  A synthesized uuid
+            is used when the provider did not supply one, so parallel
+            id-less calls don't collapse onto the same id.
         name: Tool name collected across chunks.
         extras: Provider-specific fields to carry onto the finalized
             block. Callers are responsible for having already dropped
@@ -405,7 +419,7 @@ def finalize_tool_call_chunk(
     if finalized_type == "tool_call":
         finalized_tc = ToolCall(
             type="tool_call",
-            id=id_ or "",
+            id=_resolve_tool_call_id(id_),
             name=name or "",
             args=parsed,
         )
@@ -413,7 +427,7 @@ def finalize_tool_call_chunk(
         return finalized_tc
     finalized_stc = ServerToolCall(
         type="server_tool_call",
-        id=id_ or "",
+        id=_resolve_tool_call_id(id_),
         name=name or "",
         args=parsed,
     )
