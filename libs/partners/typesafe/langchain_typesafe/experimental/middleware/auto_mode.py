@@ -24,7 +24,7 @@ except ImportError as error:
 
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from typing_extensions import override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
@@ -63,18 +63,12 @@ class _AutoModeConfig(BaseModel):
 
     tools: list[str | BaseTool] = Field(min_length=1)
     instructions: str = Field(default=_DEFAULT_INSTRUCTIONS)
-    criteria: NoulCriteria = Field(
+    criteria: NoulCriteria | None = Field(
         default=NoulCriteria(
             true=_DEFAULT_TRUE_CRITERIA,
             false=_DEFAULT_FALSE_CRITERIA,
         )
     )
-
-    @field_validator("criteria", mode="before")
-    @classmethod
-    def default_none_criteria(cls, value: object) -> object:
-        """Use the configured default when callers provide `None`."""
-        return cls.model_fields["criteria"].default if value is None else value
 
 
 class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
@@ -107,8 +101,8 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         tools: Tool names or `BaseTool` instances to classify before execution. Unlisted
             tools are passed to the handler without classification.
         instructions: Risk-classification instructions sent to TypeSafe.
-        criteria: Optional descriptions of what should count as risky and safe. Uses
-            conservative defaults when omitted.
+        criteria: Optional descriptions of what should count as risky and safe. Pass
+            `None` to classify without outcome criteria.
 
     ??? example "Customize the risk criteria"
 
