@@ -45,7 +45,7 @@ Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnabl
 
 ### Experimental middleware
 
-Install the experimental extra to use TypeSafe-powered agent middleware.
+Install the experimental extra to use TypeSafe-powered agent middleware. APIs under `langchain_typesafe.experimental` may change without notice.
 
 #### `ModelRouterMiddleware`
 
@@ -102,9 +102,7 @@ agent = create_agent(
 )
 ```
 
-`tools` accepts tool names or `BaseTool` instances. Customize `instructions` for the overall risk question and `criteria` for application-specific risky and safe outcomes. Configured calls whose risk probability meets or exceeds the threshold return an error `ToolMessage`; the tool handler is not called. Classification failures also prevent execution and propagate to the caller. The last 30 conversation messages provide context, while only explicit user messages count as authorization. Tool arguments and descriptions are sent to TypeSafe for classification.
-
-APIs under `langchain_typesafe.experimental` may change without notice.
+`tools` accepts tool names or `BaseTool` instances. Customize `instructions` for the overall risk question and `criteria` for application-specific risky and safe outcomes. Configured calls whose risk probability meets or exceeds the threshold return an error `ToolMessage`.
 
 ### LangChain messages as state
 
