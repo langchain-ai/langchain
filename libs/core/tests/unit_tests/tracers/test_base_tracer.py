@@ -14,8 +14,9 @@ from langsmith import Client, traceable
 
 from langchain_core.callbacks import CallbackManager
 from langchain_core.exceptions import TracerException
-from langchain_core.messages import HumanMessage
-from langchain_core.outputs import LLMResult
+from langchain_core.load.dump import dumpd
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.runnables import chain as as_runnable
 from langchain_core.tracers._compat import pydantic_to_dict
 from langchain_core.tracers.base import BaseTracer
@@ -252,6 +253,21 @@ def test_tracer_tool_run_preserves_structured_inputs() -> None:
 
 
 @freeze_time("2023-01-01")
+def test_tracer_tool_run_custom_name() -> None:
+    """Custom `name` should override the serialized tool name."""
+    uuid = uuid4()
+    tracer = FakeTracer()
+    tracer.on_tool_start(
+        serialized={"name": "add"},
+        input_str="test",
+        run_id=uuid,
+        name="renamed",
+    )
+    tracer.on_tool_end("ok", run_id=uuid)
+    assert tracer.runs[0].name == "renamed"
+
+
+@freeze_time("2023-01-01")
 def test_tracer_nested_run() -> None:
     """Test tracer on a nested run."""
     tracer = FakeTracer()
@@ -437,6 +453,24 @@ def test_tracer_llm_run_on_error_callback() -> None:
     tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
     tracer.on_llm_error(exception, run_id=uuid)
     _compare_run_with_error(tracer.error_run, compare_run)
+
+
+@freeze_time("2023-01-01")
+def test_tracer_llm_run_on_error_keeps_partial_response() -> None:
+    """Partial stream generations passed as `response` should be stored on the run."""
+    exception = ValueError("boom")
+    uuid = uuid4()
+    response = LLMResult(
+        generations=[[ChatGeneration(message=AIMessage(content="partial"))]]
+    )
+    tracer = FakeTracer()
+    tracer.on_llm_start(serialized=SERIALIZED, prompts=[], run_id=uuid)
+    tracer.on_llm_error(exception, run_id=uuid, response=response)
+    assert tracer.runs[0].outputs is not None
+    assert "generations" in tracer.runs[0].outputs
+    assert tracer.runs[0].outputs["generations"][0][0]["message"] == dumpd(
+        AIMessage(content="partial")
+    )
 
 
 @freeze_time("2023-01-01")
