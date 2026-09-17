@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
+import httpx2
+
 try:
     from langchain.agents.middleware.types import (
         AgentMiddleware,
@@ -21,6 +23,8 @@ except ImportError as error:
     raise ImportError(message) from error
 
 from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.tools import BaseTool
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
@@ -44,33 +48,52 @@ _DEFAULT_BLOCKED_MESSAGE = (
     "The tool call `{tool_name}` was blocked because it was classified as risky "
     "(risk probability: {risk_probability:.2f}). The tool was not executed."
 )
-_REDACTED = "<redacted>"
-_SENSITIVE_KEY_PARTS = (
-    "api_key",
-    "apikey",
-    "credential",
-    "password",
-    "private_key",
-    "privatekey",
-    "secret",
-    "token",
+_DEFAULT_TRUE_CRITERIA = (
+    "Execution could cause harm, exceed authorization, expose sensitive data, or "
+    "create an external side effect."
+)
+_DEFAULT_FALSE_CRITERIA = (
+    "Execution is low risk, reversible, and clearly authorized by the user."
 )
 
 
-def _redact_sensitive_args(value: Any) -> Any:
-    if isinstance(value, dict):
-        redacted: dict[Any, Any] = {}
-        for key, item in value.items():
-            normalized_key = str(key).lower().replace("-", "_")
-            redacted[key] = (
-                _REDACTED
-                if any(part in normalized_key for part in _SENSITIVE_KEY_PARTS)
-                else _redact_sensitive_args(item)
-            )
-        return redacted
-    if isinstance(value, (list, tuple)):
-        return [_redact_sensitive_args(item) for item in value]
-    return value
+class _AutoModeConfig(BaseModel):
+    """Validated Auto Mode execution configuration."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tools: list[str | BaseTool] = Field(min_length=1)
+    instructions: str = Field(min_length=1)
+    risk_threshold: float = Field(ge=0, le=1)
+    blocked_message: str = Field(min_length=1)
+
+    @field_validator("tools")
+    @classmethod
+    def validate_tool_names(cls, tools: list[str | BaseTool]) -> list[str | BaseTool]:
+        """Reject tools without usable names."""
+        if any(
+            not (tool if isinstance(tool, str) else tool.name).strip() for tool in tools
+        ):
+            message = "Tool names must not be empty."
+            raise ValueError(message)
+        return tools
+
+    @field_validator("instructions", "blocked_message")
+    @classmethod
+    def validate_non_blank_text(cls, value: str) -> str:
+        """Reject blank classifier instructions and block messages."""
+        if not value.strip():
+            message = "Text configuration must not be blank."
+            raise ValueError(message)
+        return value
+
+    @property
+    def tool_names(self) -> frozenset[str]:
+        """Return normalized tool names used by the execution filter."""
+        return frozenset(
+            (tool if isinstance(tool, str) else tool.name).strip()
+            for tool in self.tools
+        )
 
 
 class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
@@ -83,12 +106,11 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
     without invoking the tool handler. Tool names not listed in `tools` bypass
     classification.
 
-    The classifier receives only user messages, the tool-call ID and name, redacted
-    arguments, and optional tool description. Values under credential-like argument keys
-    are replaced before state leaves the process. Tool output and assistant messages are
-    excluded so untrusted content cannot authorize execution. Classification failures
-    propagate and the tool handler is not called, so failures are fail-closed. This
-    middleware blocks risky calls; it does not request human approval.
+    The classifier receives user messages, the tool-call ID and name, arguments, and the
+    optional tool description. Tool output and assistant messages are excluded so
+    untrusted content cannot authorize execution. Classification failures propagate and
+    the tool handler is not called, so failures are fail-closed. This middleware blocks
+    risky calls; it does not request human approval.
 
     !!! warning
 
@@ -101,23 +123,35 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
     ```
 
     Args:
-        tools: Tool names to classify before execution. Unlisted tools are passed to the
-            handler without classification.
+        tools: Tool names or `BaseTool` instances to classify before execution. Unlisted
+            tools are passed to the handler without classification.
+        instructions: Risk-classification instructions sent to TypeSafe.
+        criteria: Optional descriptions of what should count as risky and safe. Uses
+            conservative defaults when omitted.
         risk_threshold: Probability at or above which a tool call is blocked. The
             conservative default blocks calls with at least 20% estimated risk.
         blocked_message: Template returned to the model for blocked calls. It receives
             `tool_name` and `risk_probability` format variables.
+        client: Optional synchronous HTTP client used by the internal classifier.
+        async_client: Optional asynchronous HTTP client used by the internal classifier.
 
     Raises:
-        ValueError: If `tools` is empty, contains an empty name, or the threshold is
-            outside `[0, 1]`.
+        pydantic.ValidationError: If `tools` is empty, contains an empty name, or the
+            threshold is outside `[0, 1]`.
 
     Example:
         ```python
         from langchain.agents import create_agent
+        from langchain_typesafe import NoulCriteria
         from langchain_typesafe.experimental.middleware import AutoModeMiddleware
 
-        auto_mode = AutoModeMiddleware(tools=["delete_file"])
+        auto_mode = AutoModeMiddleware(
+            tools=[delete_file],
+            criteria=NoulCriteria(
+                true="The call writes, deletes, publishes, or changes access.",
+                false="The call only reads public or user-provided data.",
+            ),
+        )
         agent = create_agent(
             model,
             tools=[read_file, delete_file],
@@ -132,53 +166,56 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
     def __init__(
         self,
         *,
-        tools: Sequence[str],
+        tools: Sequence[str | BaseTool],
+        instructions: str = _DEFAULT_RISK_INSTRUCTIONS,
+        criteria: NoulCriteria | None = None,
         risk_threshold: float = 0.2,
         blocked_message: str = _DEFAULT_BLOCKED_MESSAGE,
+        client: httpx2.Client | None = None,
+        async_client: httpx2.AsyncClient | None = None,
     ) -> None:
         """Initialize the tool-risk middleware.
 
         Args:
-            tools: Tool names to classify before execution.
-            risk_threshold: Probability at or above which execution is blocked. The
-                conservative default blocks calls with at least 20% estimated risk.
+            tools: Tool names or instances to classify before execution.
+            instructions: Risk-classification instructions sent to TypeSafe.
+            criteria: Descriptions of the risky and safe outcomes.
+            risk_threshold: Probability at or above which execution is blocked.
             blocked_message: Template for the blocked tool result.
+            client: Optional synchronous HTTP client for the classifier.
+            async_client: Optional asynchronous HTTP client for the classifier.
 
         Raises:
-            ValueError: If tool names or threshold configuration is invalid.
+            pydantic.ValidationError: If tool names or threshold configuration is
+                invalid.
         """
         super().__init__()
-        tool_filter = (
-            frozenset()
-            if isinstance(tools, str)
-            else frozenset(tool.strip() for tool in tools)
+        config = _AutoModeConfig.model_validate(
+            {
+                "tools": tools,
+                "instructions": instructions,
+                "risk_threshold": risk_threshold,
+                "blocked_message": blocked_message,
+            }
         )
-        if not tool_filter or "" in tool_filter:
-            message = "`tools` must contain at least one non-empty tool name."
-            raise ValueError(message)
-        if not 0 <= risk_threshold <= 1:
-            message = "`risk_threshold` must be between 0 and 1, inclusive."
-            raise ValueError(message)
-        self._tool_filter = tool_filter
+        self.tool_names = config.tool_names
+        self.risk_threshold = config.risk_threshold
+        self.instructions = config.instructions
+        self.criteria = criteria or NoulCriteria(
+            true=_DEFAULT_TRUE_CRITERIA,
+            false=_DEFAULT_FALSE_CRITERIA,
+        )
+        self.blocked_message = config.blocked_message
         self.classifier = TypeSafeClassifier(
             questions={
                 _RISK_QUESTION_ID: Noul(
-                    instructions=_DEFAULT_RISK_INSTRUCTIONS,
-                    criteria=NoulCriteria(
-                        true=(
-                            "Execution could cause harm, exceed authorization, expose "
-                            "sensitive data, or create an external side effect."
-                        ),
-                        false=(
-                            "Execution is low risk, reversible, and clearly authorized "
-                            "by the user."
-                        ),
-                    ),
+                    instructions=self.instructions,
+                    criteria=self.criteria,
                 )
-            }
+            },
+            client=client,
+            async_client=async_client,
         )
-        self.risk_threshold = risk_threshold
-        self.blocked_message = blocked_message
 
     @staticmethod
     def _classification_state(request: ToolCallRequest) -> dict[str, Any]:
@@ -192,7 +229,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
             "tool_call": {
                 "id": tool_call["id"],
                 "name": tool_call["name"],
-                "args": _redact_sensitive_args(tool_call["args"]),
+                "args": tool_call["args"],
             },
         }
         if request.tool is not None and request.tool.description:
@@ -238,7 +275,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         Returns:
             The tool result for a low-risk call, or an error `ToolMessage` when blocked.
         """
-        if request.tool_call["name"] not in self._tool_filter:
+        if request.tool_call["name"] not in self.tool_names:
             return handler(request)
         response = self.classifier.invoke(self._classification_state(request))
         risk_probability = self._risk_probability(response)
@@ -264,7 +301,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         Returns:
             The tool result for a low-risk call, or an error `ToolMessage` when blocked.
         """
-        if request.tool_call["name"] not in self._tool_filter:
+        if request.tool_call["name"] not in self.tool_names:
             return await handler(request)
         response = await self.classifier.ainvoke(self._classification_state(request))
         risk_probability = self._risk_probability(response)

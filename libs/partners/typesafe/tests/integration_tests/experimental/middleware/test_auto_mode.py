@@ -2,58 +2,89 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any, cast
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from langchain.agents.middleware.types import AgentState, ToolCallRequest
-from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
+from langchain.agents import create_agent
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
+from typing_extensions import Self, override
 
 from langchain_typesafe.experimental.middleware import AutoModeMiddleware
 
 
-@tool
-def delete_file(path: str) -> str:
-    """Delete a file at the supplied path."""
-    return path
+class _ToolCallingModel(GenericFakeChatModel):
+    """Deterministic chat model that accepts tool binding."""
+
+    @override
+    def bind_tools(
+        self,
+        tools: Sequence[Any],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Self:
+        """Return this model after accepting the agent's tools."""
+        _ = (tools, tool_choice, kwargs)
+        return self
 
 
 @pytest.mark.parametrize("asynchronous", [False, True])
-async def test_live_classification_blocks_without_executing_tool(
+async def test_live_classification_blocks_agent_tool_execution(
     *,
     asynchronous: bool,
 ) -> None:
-    """Block live synchronous and asynchronous tool calls deterministically."""
-    middleware = AutoModeMiddleware(tools=["delete_file"], risk_threshold=0.0)
-    request = ToolCallRequest(
-        tool_call=ToolCall(
-            name="delete_file",
-            args={"path": "/workspace/report.txt"},
-            id="call_live",
-            type="tool_call",
-        ),
-        tool=delete_file,
-        state=cast(
-            "AgentState[Any]",
-            {"messages": [HumanMessage("Summarize the report.")]},
-        ),
-        runtime=MagicMock(),
+    """Block a tool through complete synchronous and asynchronous agent runs."""
+    executions: list[str] = []
+
+    @tool
+    def delete_file(path: str) -> str:
+        """Delete a file at the supplied path."""
+        executions.append(path)
+        return "deleted"
+
+    model = _ToolCallingModel(
+        messages=iter(
+            [
+                AIMessage(
+                    content="",
+                    tool_calls=[
+                        ToolCall(
+                            name="delete_file",
+                            args={"path": "/workspace/report.txt"},
+                            id="call_live",
+                            type="tool_call",
+                        )
+                    ],
+                ),
+                AIMessage("done"),
+            ]
+        )
     )
-    sync_handler = MagicMock()
-    async_handler = AsyncMock()
+    middleware = AutoModeMiddleware(tools=[delete_file], risk_threshold=0.0)
+    agent = create_agent(model, tools=[delete_file], middleware=[middleware])
+    state = cast(
+        "Any",
+        {"messages": [HumanMessage("Summarize the report.")]},
+    )
 
     try:
         if asynchronous:
-            result = await middleware.awrap_tool_call(request, async_handler)
+            result = await agent.ainvoke(state)
         else:
-            result = middleware.wrap_tool_call(request, sync_handler)
+            result = agent.invoke(state)
 
-        assert isinstance(result, ToolMessage)
-        assert result.status == "error"
-        assert result.tool_call_id == "call_live"
-        sync_handler.assert_not_called()
-        async_handler.assert_not_awaited()
+        tool_messages = [
+            message
+            for message in result["messages"]
+            if isinstance(message, ToolMessage)
+        ]
+        [tool_message] = tool_messages
+        assert tool_message.status == "error"
+        assert tool_message.tool_call_id == "call_live"
+        assert executions == []
     finally:
         if middleware.classifier.async_client is not None:
             await middleware.classifier.async_client.aclose()
