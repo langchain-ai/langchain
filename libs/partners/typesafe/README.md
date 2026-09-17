@@ -79,7 +79,7 @@ router = ModelRouterMiddleware(
 agent = create_agent("openai:gpt-5-mini", middleware=[router])
 ```
 
-The model router classifies the latest human message once per agent run and stores the complete `ChoiceAnswer` in agent state, keeping its probabilities and confidence available to applications and traces. Classifier failures propagate instead of silently selecting another model.
+The model router classifies the latest human message once per agent run and stores the complete `ChoiceAnswer` in agent state, keeping its probabilities and confidence available to applications and traces.
 
 #### `AutoModeMiddleware`
 
