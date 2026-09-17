@@ -40,6 +40,9 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.runnables import RunnableBinding
+from pydantic import BaseModel
+from typing_extensions import TypedDict
 
 from langchain_fireworks import ChatFireworks
 from langchain_fireworks.chat_models import (
@@ -51,6 +54,7 @@ from langchain_fireworks.chat_models import (
     _convert_chunk_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _convert_to_fireworks_response_format,
     _format_message_content,
     _sanitize_chat_completions_content,
     _update_token_usage,
@@ -1667,6 +1671,114 @@ class TestReasoningEffort:
         model.invoke("Hello", reasoning_effort="high")
         call_kwargs = model.client.create.call_args[1]
         assert call_kwargs["reasoning_effort"] == "high"
+
+
+class TestResponseFormatKwarg:
+    """Tests for `response_format` supplied outside `with_structured_output`."""
+
+    @staticmethod
+    def _mock_structured_model() -> ChatFireworks:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": '{"location": "SF"}',
+                    },
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        return model
+
+    class GetWeather(BaseModel):
+        """Get the current weather in a given location."""
+
+        location: str
+
+    def test_invoke_converts_schema_to_json_schema(self) -> None:
+        """Pydantic schemas are converted into a `json_schema` envelope."""
+        model = self._mock_structured_model()
+        model.invoke("weather in SF", response_format=self.GetWeather)
+        rf = model.client.create.call_args[1]["response_format"]
+        assert rf["type"] == "json_schema"
+        assert rf["json_schema"]["name"] == "GetWeather"
+        assert rf["json_schema"]["schema"]["properties"]["location"]
+
+    def test_invoke_converts_typeddict_to_json_schema(self) -> None:
+        """`TypedDict` schemas are converted into a `json_schema` envelope."""
+
+        class GetWeatherTypedDict(TypedDict):
+            location: str
+
+        model = self._mock_structured_model()
+        model.invoke("weather in SF", response_format=GetWeatherTypedDict)
+        rf = model.client.create.call_args[1]["response_format"]
+        assert rf["type"] == "json_schema"
+        assert rf["json_schema"]["name"] == "GetWeatherTypedDict"
+        assert rf["json_schema"]["schema"]["properties"]["location"]
+
+    def test_invoke_passes_through_provider_strategy_envelope(self) -> None:
+        """`ProviderStrategy` sends an OpenAI-style envelope, preserved as-is."""
+        model = self._mock_structured_model()
+        model.invoke(
+            "weather in SF",
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "GetWeather",
+                    "schema": {"type": "object", "properties": {}},
+                    "strict": True,
+                },
+            },
+        )
+        rf = model.client.create.call_args[1]["response_format"]
+        assert rf == {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "GetWeather",
+                "schema": {"type": "object", "properties": {}},
+                "strict": True,
+            },
+        }
+
+    def test_invoke_passes_through_json_mode(self) -> None:
+        """A `json_object` response format is left untouched."""
+        model = self._mock_structured_model()
+        model.invoke("weather in SF", response_format={"type": "json_object"})
+        rf = model.client.create.call_args[1]["response_format"]
+        assert rf == {"type": "json_object"}
+
+    def test_bind_tools_converts_response_format(self) -> None:
+        """`bind_tools` converts a schema into a `json_schema` envelope."""
+        model = _make_model()
+        bound = model.bind_tools([], response_format=self.GetWeather)
+        assert isinstance(bound, RunnableBinding)
+        rf = bound.kwargs["response_format"]
+        assert rf["type"] == "json_schema"
+        assert rf["json_schema"]["name"] == "GetWeather"
+
+    def test_bind_tools_forwards_strict(self) -> None:
+        """`strict` is forwarded onto the converted `response_format`."""
+        model = _make_model()
+        bound = model.bind_tools([], response_format=self.GetWeather, strict=True)
+        assert isinstance(bound, RunnableBinding)
+        assert bound.kwargs["response_format"]["json_schema"]["strict"] is True
+
+    def test_raw_json_schema_without_title_is_wrapped(self) -> None:
+        """A titleless JSON schema is wrapped rather than raising."""
+        schema = {"type": "object", "properties": {"location": {"type": "string"}}}
+        assert _convert_to_fireworks_response_format(schema) == {
+            "type": "json_schema",
+            "json_schema": {"name": "", "schema": schema},
+        }
+
+    def test_none_returns_none(self) -> None:
+        """No schema means no `response_format`."""
+        assert _convert_to_fireworks_response_format(None) is None
 
 
 class TestServiceTier:

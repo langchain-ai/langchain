@@ -568,6 +568,7 @@ class ChatOpenRouter(BaseChatModel):
             return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
+        _normalize_response_format_param(params)
         _strip_internal_kwargs(params)
         response = self.client.chat.send(messages=message_dicts, **params)
         return self._create_chat_result(response)
@@ -586,6 +587,7 @@ class ChatOpenRouter(BaseChatModel):
             return await agenerate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
+        _normalize_response_format_param(params)
         _strip_internal_kwargs(params)
         response = await self.client.chat.send_async(messages=message_dicts, **params)
         return self._create_chat_result(response)
@@ -599,6 +601,7 @@ class ChatOpenRouter(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        _normalize_response_format_param(params)
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
@@ -689,6 +692,7 @@ class ChatOpenRouter(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        _normalize_response_format_param(params)
         if self.stream_usage:
             params["stream_options"] = {"include_usage": True}
         _strip_internal_kwargs(params)
@@ -903,6 +907,7 @@ class ChatOpenRouter(BaseChatModel):
         tool_choice: dict | str | bool | None = None,
         strict: bool | None = None,
         parallel_tool_calls: bool | None = None,
+        response_format: dict[str, Any] | type | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -921,6 +926,12 @@ class ChatOpenRouter(BaseChatModel):
             parallel_tool_calls: Set to `False` to disable parallel tool use.
                 Defaults to `None` (no specification, which allows parallel
                 tool use).
+            response_format: Optional schema to enforce a structured output
+                shape. Accepts a Pydantic model class, `TypedDict` class,
+                dataclass, JSON schema dict, or an OpenAI-style
+                `{"type": "json_schema", "json_schema": {...}}` envelope.
+
+                !!! version-added "Added in `langchain-openrouter` 0.2.9"
             **kwargs: Any additional parameters.
         """
         if parallel_tool_calls is not None:
@@ -948,6 +959,12 @@ class ChatOpenRouter(BaseChatModel):
                     "function": {"name": tool_name},
                 }
             kwargs["tool_choice"] = tool_choice
+        if response_format is not None:
+            converted = _convert_to_openrouter_response_format(
+                response_format, strict=strict
+            )
+            if converted is not None:
+                kwargs["response_format"] = converted
         return super().bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(  # type: ignore[override]
@@ -1069,10 +1086,85 @@ def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
+def _convert_to_openrouter_response_format(
+    schema: dict[str, Any] | type | None, *, strict: bool | None = None
+) -> dict[str, Any] | None:
+    """Convert a schema into an OpenRouter `response_format` dict.
+
+    Accepts the shapes `ProviderStrategy` produces (OpenAI-style
+    `{"type": "json_schema", "json_schema": {...}}`), raw Pydantic model
+    classes, `TypedDict` classes, dataclasses, and raw JSON schema dicts,
+    converting them into the `response_format` envelope OpenRouter expects.
+
+    Args:
+        schema: The schema to convert. Dicts already carrying a
+            `response_format` `type` (e.g. `'json_object'`, `'json_schema'`,
+            or `'text'`) are passed through, with `json_schema` envelopes
+            normalized. Other schema-like values are converted to a JSON
+            schema and wrapped.
+        strict: Whether to request strict schema adherence. Only applied when
+            the caller explicitly provides a value and the schema does not
+            already specify one.
+
+    Returns:
+        The `response_format` dict, or `None` if `schema` is `None`.
+    """
+    if schema is None:
+        return None
+
+    spec: dict[str, Any]
+    envelope_type = schema.get("type") if isinstance(schema, dict) else None
+    if isinstance(schema, dict) and isinstance(envelope_type, str):
+        if envelope_type == "json_schema" and isinstance(
+            inner := schema.get("json_schema"), dict
+        ):
+            # OpenAI-style envelope (e.g. from `ProviderStrategy`)
+            spec = {
+                "name": inner.get("name", ""),
+                "schema": inner.get("schema", inner),
+            }
+            if "strict" in inner:
+                spec["strict"] = inner["strict"]
+            elif strict is not None:
+                spec["strict"] = strict
+            return {"type": "json_schema", "json_schema": spec}
+        if envelope_type in ("json_object", "json_schema", "text"):
+            # Already a `response_format` the API understands
+            return schema
+        if envelope_type == "object" and "title" not in schema:
+            # Raw JSON schema without a title: wrap it directly, since
+            # `convert_to_json_schema` needs a name to convert from
+            spec = {"name": "", "schema": schema}
+            if strict is not None:
+                spec["strict"] = strict
+            return {"type": "json_schema", "json_schema": spec}
+
+    json_schema = convert_to_json_schema(schema, strict=strict)
+    spec = {"name": json_schema.get("title", ""), "schema": json_schema}
+    if strict is not None:
+        spec["strict"] = strict
+    return {"type": "json_schema", "json_schema": spec}
+
+
 def _strip_internal_kwargs(params: dict[str, Any]) -> None:
     """Remove LangChain-internal keys that the SDK does not accept."""
     for key in _INTERNAL_KWARGS:
         params.pop(key, None)
+
+
+def _normalize_response_format_param(params: dict[str, Any]) -> None:
+    """Normalize a `response_format` param in-place for the OpenRouter API.
+
+    Converts Pydantic model classes, `TypedDict` classes, dataclasses, and raw
+    JSON schema dicts into the `{"type": "json_schema", "json_schema": {...}}`
+    envelope OpenRouter expects. Values already in envelope form are left as-is.
+    """
+    response_format = params.get("response_format")
+    if response_format is None:
+        return
+    converted = _convert_to_openrouter_response_format(response_format)
+    if converted is not None:
+        params["response_format"] = converted
 
 
 #

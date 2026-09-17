@@ -30,7 +30,7 @@ def test_tool_choice_bool(strict: bool | None) -> None:  # noqa: FBT001
         name: str
         age: int
 
-    kwargs = {"tool_choice": True}
+    kwargs: dict[str, Any] = {"tool_choice": True}
     if strict is not None:
         kwargs["strict"] = strict
     with_tool = llm.bind_tools([MyTool], **kwargs)
