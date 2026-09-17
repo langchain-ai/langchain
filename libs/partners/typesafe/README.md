@@ -43,6 +43,31 @@ print(result.scores["frustration"].score)
 
 Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnable`, the classifier can also be composed with other LangChain runnables and supports standard batching, callbacks, and tracing.
 
+### Experimental skills middleware
+
+Install the experimental extra to select relevant Agent Skills with TypeSafe before each agent run:
+
+```bash
+uv add "langchain-typesafe[experimental]"
+```
+
+```python
+from pathlib import Path
+
+from langchain.agents import create_agent
+from langchain_typesafe.experimental.middleware import SkillsMiddleware
+
+skills = SkillsMiddleware(
+    skills=[
+        Path("skills/code-review/SKILL.md"),
+        Path("skills/docs-writer/SKILL.md"),
+    ]
+)
+agent = create_agent(model, middleware=[skills])
+```
+
+The middleware classifies the latest human message once per agent run, evaluates each skill independently, and injects every relevant skill into model-request messages. Skill sources can be `Skill` objects, paths to `SKILL.md`, or complete `SKILL.md` strings. This API is experimental and may change without notice.
+
 ### LangChain messages as state
 
 `BaseMessage` objects and message sequences can appear at the root or anywhere inside JSON state. The integration recursively converts them to objects with `role` and `content` fields while preserving surrounding application data:
