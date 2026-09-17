@@ -15,10 +15,11 @@ from typesafe_sdk import Choice, Noul, Score
 
 from langchain_typesafe._version import __version__
 from langchain_typesafe.classifier import TypeSafeClassifier
-from langchain_typesafe.types import State
+from langchain_typesafe.types import ClassificationRequest, State
 
 __all__ = [
     "Choice",
+    "ClassificationRequest",
     "Noul",
     "Score",
     "State",

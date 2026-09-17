@@ -18,24 +18,26 @@ Set the `TYPESAFE_API_KEY` environment variable before making requests. `TYPESAF
 ```python
 from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 
-classifier = TypeSafeClassifier(
-    questions={
-        "department": Choice(
-            instructions="Which team should handle this?",
-            criteria={
-                "billing": "Payment or subscription issues",
-                "technical": "Product or integration issues",
-            },
-        ),
-        "urgent": Noul(instructions="Does this message express urgency?"),
-        "frustration": Score(
-            instructions="How frustrated does the customer appear?",
-            criteria=["calm", "frustrated", "angry"],
-        ),
+classifier = TypeSafeClassifier()
+result = classifier.invoke(
+    {
+        "state": "Stripe has failed to connect for three days. Help ASAP.",
+        "questions": {
+            "department": Choice(
+                instructions="Which team should handle this?",
+                criteria={
+                    "billing": "Payment or subscription issues",
+                    "technical": "Product or integration issues",
+                },
+            ),
+            "urgent": Noul(instructions="Does this message express urgency?"),
+            "frustration": Score(
+                instructions="How frustrated does the customer appear?",
+                criteria=["calm", "frustrated", "angry"],
+            ),
+        },
     }
 )
-
-result = classifier.invoke("Stripe has failed to connect for three days. Help ASAP.")
 print(result.choices["department"].choice)
 print(result.nouls["urgent"].noul)
 print(result.scores["frustration"].score)
@@ -43,14 +45,16 @@ print(result.scores["frustration"].score)
 
 Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnable`, the classifier can also be composed with other LangChain runnables and supports standard batching, callbacks, and tracing.
 
-`invoke` returns the SDK's `SystemOneResponse`. This package exports only `TypeSafeClassifier`, the three question types, and the `State` type; everything else — answers, responses, `RetryPolicy`, and the exception types — is imported from `typesafe_sdk`, which is where it is documented.
+`invoke` returns the SDK's `SystemOneResponse`. This package exports only `TypeSafeClassifier`, `ClassificationRequest`, the three question types, and the `State` type; everything else — answers, responses, `RetryPolicy`, and the exception types — is imported from `typesafe_sdk`, which is where it is documented.
 
 ### LangChain messages as state
 
 A `BaseMessage` or a sequence of them can be passed directly and is converted to objects with `role` and `content` fields, which is the common case when classifying agent context:
 
 ```python
-response = classifier.invoke(state.messages)
+response = classifier.invoke(
+    {"state": state.messages, "questions": questions}
+)
 ```
 
 To embed messages in a larger structure, convert them where you build it:
@@ -60,10 +64,13 @@ from langchain_core.messages import HumanMessage, convert_to_openai_messages
 
 response = classifier.invoke(
     {
-        "conversation": convert_to_openai_messages(
-            [HumanMessage("My payouts have failed for three days. Help!")]
-        ),
-        "account_tier": "enterprise",
+        "state": {
+            "conversation": convert_to_openai_messages(
+                [HumanMessage("My payouts have failed for three days. Help!")]
+            ),
+            "account_tier": "enterprise",
+        },
+        "questions": questions,
     }
 )
 ```
@@ -76,7 +83,6 @@ TypeSafe asks clients to back off and retry on `429 Too Many Requests` and `529 
 from typesafe_sdk import RetryPolicy
 
 classifier = TypeSafeClassifier(
-    questions={"urgent": Noul(instructions="Is this urgent?")},
     retry=RetryPolicy(max_retries=5, timeout=20.0),
 )
 ```
@@ -86,8 +92,13 @@ classifier = TypeSafeClassifier(
 TypeSafe clients are created during initialization, so a missing or invalid API key fails immediately rather than on the first request. Keep classifier instances long-lived to benefit from connection pooling, and use the classifier as a context manager, or call `close` and `aclose`, when deterministic cleanup is required:
 
 ```python
-with TypeSafeClassifier(questions={"urgent": Noul(instructions="Is this urgent?")}) as classifier:
-    result = classifier.invoke("Production is down.")
+with TypeSafeClassifier() as classifier:
+    result = classifier.invoke(
+        {
+            "state": "Production is down.",
+            "questions": {"urgent": Noul(instructions="Is this urgent?")},
+        }
+    )
 ```
 
 Applications that need custom transports, proxies, or shared connection pools can inject either client independently:
@@ -97,7 +108,6 @@ import httpx2
 from typesafe_sdk import AsyncTypeSafeClient, TypeSafeClient
 
 classifier = TypeSafeClassifier(
-    questions={"urgent": Noul(instructions="Is this urgent?")},
     client=TypeSafeClient(http_client=httpx2.Client(proxy="http://proxy.internal")),
     async_client=AsyncTypeSafeClient(
         http_client=httpx2.AsyncClient(proxy="http://proxy.internal")
@@ -116,7 +126,9 @@ from langchain_core.exceptions import ModelAuthenticationError, ModelRateLimitEr
 from typesafe_sdk import TypeSafeRateLimitError
 
 try:
-    response = classifier.invoke("Classify this message.")
+    response = classifier.invoke(
+        {"state": "Classify this message.", "questions": questions}
+    )
 except TypeSafeRateLimitError as error:
     print(error.request_id, error.retry_after_ms)
 except (ModelAuthenticationError, ModelRateLimitError):

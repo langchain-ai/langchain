@@ -6,6 +6,7 @@ from langchain_typesafe import Choice, Noul, Score, __all__
 
 EXPECTED_ALL = [
     "Choice",
+    "ClassificationRequest",
     "Noul",
     "Score",
     "State",

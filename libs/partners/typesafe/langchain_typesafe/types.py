@@ -12,6 +12,7 @@ from typing import TypeAlias
 
 import typesafe_sdk as ts
 from langchain_core.messages import BaseMessage
+from typing_extensions import TypedDict
 
 State: TypeAlias = ts.JSONContent | BaseMessage | Sequence[BaseMessage]
 """State accepted by `TypeSafeClassifier`.
@@ -22,4 +23,12 @@ JSON. Messages nested inside a larger JSON structure are not converted; use
 `convert_to_openai_messages` where that structure is built.
 """
 
-__all__ = ["State"]
+
+class ClassificationRequest(TypedDict):
+    """State and questions for one TypeSafe classification request."""
+
+    state: State
+    questions: ts.Questions
+
+
+__all__ = ["ClassificationRequest", "State"]

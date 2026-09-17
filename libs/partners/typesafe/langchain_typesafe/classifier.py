@@ -20,18 +20,12 @@ from typing_extensions import Self, override
 
 from langchain_typesafe._errors import with_standard_errors
 from langchain_typesafe._version import __version__
-from langchain_typesafe.types import State
+from langchain_typesafe.types import ClassificationRequest, State
 
 # The SDK sets its own `User-Agent` last and unconditionally, so integration
 # attribution travels in a dedicated header instead.
 _INTEGRATION_HEADER = "X-LangChain-Integration"
 _INTEGRATION_VALUE = f"langchain-typesafe/{__version__}"
-
-_QUESTION_TYPES: dict[str, type[ts.Noul | ts.Choice | ts.Score]] = {
-    "noul": ts.Noul,
-    "choice": ts.Choice,
-    "score": ts.Score,
-}
 
 
 def _prepare_state(state: State) -> ts.JSONContent:
@@ -61,7 +55,9 @@ def _prepare_state(state: State) -> ts.JSONContent:
     return cast("ts.JSONContent", state)
 
 
-class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
+class TypeSafeClassifier(
+    RunnableSerializable[ClassificationRequest, ts.SystemOneResponse]
+):
     """Classify JSON-compatible state with TypeSafe.
 
     `TypeSafeClassifier` is a LangChain `Runnable` for asking one or more typed
@@ -93,10 +89,10 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
     pooling, and call `close` or `aclose`, or use the classifier as a context
     manager, when deterministic cleanup is required.
 
+    Invoke the classifier with a dictionary containing `state` and `questions`, matching
+    the official SDK's `system_one` request structure.
+
     Args:
-        questions: Named `Noul`, `Choice`, or `Score` questions. Names become keys in
-            `SystemOneResponse.answers`. Question dictionaries using a `type`
-            discriminator are converted to the corresponding SDK type.
         model: TypeSafe model used to answer the questions. If omitted, the SDK
             resolves `TYPESAFE_DEFAULT_MODEL` or its own default.
         api_key: TypeSafe API key. If omitted, reads `TYPESAFE_API_KEY`.
@@ -108,6 +104,7 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
             connection and timeout failures using exponential backoff that honors the
             provider's retry headers. Pass `RetryPolicy(max_retries=0)` to disable
             retries.
+        headers: Additional headers applied to clients created by this classifier.
         client: Optional `typesafe_sdk.TypeSafeClient` used by `invoke` and `batch`.
             If omitted, one is created from the arguments above.
         async_client: Optional `typesafe_sdk.AsyncTypeSafeClient` used by `ainvoke`
@@ -127,27 +124,32 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
         ```python
         from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 
-        classifier = TypeSafeClassifier(
-            questions={
-                "department": Choice(
-                    instructions="Which team should handle this request?",
-                    criteria={
-                        "billing": "Payment or subscription issues.",
-                        "technical": "Product bugs or integration failures.",
-                    },
-                ),
-                "urgent": Noul(
-                    instructions="Does this message require an urgent response?"
-                ),
-                "frustration": Score(
-                    instructions="How frustrated does the customer appear?",
-                    criteria=["Calm.", "Concerned but civil.", "Very angry."],
-                ),
-            }
-        )
+        questions = {
+            "department": Choice(
+                instructions="Which team should handle this request?",
+                criteria={
+                    "billing": "Payment or subscription issues.",
+                    "technical": "Product bugs or integration failures.",
+                },
+            ),
+            "urgent": Noul(
+                instructions="Does this message require an urgent response?"
+            ),
+            "frustration": Score(
+                instructions="How frustrated does the customer appear?",
+                criteria=["Calm.", "Concerned but civil.", "Very angry."],
+            ),
+        }
+        classifier = TypeSafeClassifier()
 
         response = classifier.invoke(
-            "Stripe has failed to connect for three days. Please help immediately."
+            {
+                "state": (
+                    "Stripe has failed to connect for three days. "
+                    "Please help immediately."
+                ),
+                "questions": questions,
+            }
         )
         print(response.choices["department"].choice)
         print(response.nouls["urgent"].noul)
@@ -162,16 +164,19 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
         ```python
         from langchain_typesafe import Noul, TypeSafeClassifier
 
-        classifier = TypeSafeClassifier(
-            questions={
-                "refund_requested": Noul(
-                    instructions="Does the customer request a refund?"
-                )
-            }
-        )
+        classifier = TypeSafeClassifier()
 
         async with classifier:
-            response = await classifier.ainvoke(state.messages)
+            response = await classifier.ainvoke(
+                {
+                    "state": state.messages,
+                    "questions": {
+                        "refund_requested": Noul(
+                            instructions="Does the customer request a refund?"
+                        )
+                    },
+                }
+            )
 
         print(response.nouls["refund_requested"].noul)
         ```
@@ -189,19 +194,6 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
         except ModelRateLimitError as error:
             print(error.retry_after_ms, error.request_id)
         ```
-    """
-
-    questions: Mapping[str, ts.Noul | ts.Choice | ts.Score] = Field(min_length=1)
-    """Questions sent together for every classifier invocation.
-
-    The mapping key is the question ID and becomes the corresponding key in
-    `SystemOneResponse.answers`. Question IDs identify answers for application code and
-    are not sent to the model; put the complete judgment in each question's
-    `instructions` rather than relying on its ID to provide context.
-
-    Questions share the same input state but are evaluated independently. Mix `Choice`,
-    `Noul`, and `Score` questions in one mapping when several judgments use the same
-    state instead of issuing one request per question.
     """
 
     model: str | None = None
@@ -247,6 +239,9 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
     unset is recommended. Pass `RetryPolicy(max_retries=0)` to disable retries.
     """
 
+    headers: Mapping[str, str] | None = None
+    """Additional headers applied to clients created by this classifier."""
+
     client: ts.TypeSafeClient | None = Field(default=None, exclude=True, repr=False)
     """Optional synchronous TypeSafe client used by `invoke` and `batch`.
 
@@ -279,29 +274,6 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
 
     _owns_client: bool = PrivateAttr(default=False)
     _owns_async_client: bool = PrivateAttr(default=False)
-
-    @field_validator("questions", mode="before")
-    @classmethod
-    def _coerce_questions(cls, questions: Any) -> Any:
-        """Convert question dictionaries to their corresponding SDK question types."""
-        if not isinstance(questions, dict):
-            return questions
-        coerced: dict[Any, Any] = {}
-        for name, question in questions.items():
-            if not isinstance(question, dict):
-                coerced[name] = question
-                continue
-            fields = dict(question)
-            kind = fields.pop("type", None)
-            question_type = _QUESTION_TYPES.get(kind) if isinstance(kind, str) else None
-            if question_type is None:
-                msg = (
-                    f"Question {name!r} has unsupported type {kind!r}. Expected one of "
-                    f"{sorted(_QUESTION_TYPES)}."
-                )
-                raise ValueError(msg)
-            coerced[name] = question_type(**fields)
-        return coerced
 
     @field_validator("api_key")
     @classmethod
@@ -349,7 +321,10 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
             "base_url": self.base_url,
             "timeout": self.timeout,
             "retry": self.retry,
-            "headers": {_INTEGRATION_HEADER: _INTEGRATION_VALUE},
+            "headers": {
+                **(self.headers or {}),
+                _INTEGRATION_HEADER: _INTEGRATION_VALUE,
+            },
         }
 
     def _sync_client(self) -> ts.TypeSafeClient:
@@ -367,14 +342,14 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
     @override
     def invoke(
         self,
-        input: State,
+        input: ClassificationRequest,
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> ts.SystemOneResponse:
         """Classify one JSON-compatible input synchronously.
 
         Args:
-            input: Text, JSON, a `BaseMessage`, or a sequence of messages.
+            input: A dictionary containing the state and named questions.
             config: Optional LangChain runnable configuration for callbacks, tags,
                 metadata, and tracing.
             **kwargs: Accepted for `Runnable` compatibility and otherwise ignored.
@@ -396,14 +371,14 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
     @override
     async def ainvoke(
         self,
-        input: State,
+        input: ClassificationRequest,
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> ts.SystemOneResponse:
         """Classify one JSON-compatible input asynchronously.
 
         Args:
-            input: Text, JSON, a `BaseMessage`, or a sequence of messages.
+            input: A dictionary containing the state and named questions.
             config: Optional LangChain runnable configuration for callbacks, tags,
                 metadata, and tracing.
             **kwargs: Accepted for `Runnable` compatibility and otherwise ignored.
@@ -427,17 +402,21 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
             run_type="chain",
         )
 
-    def _classify(self, state: State) -> ts.SystemOneResponse:
-        payload = _prepare_state(state)
+    def _classify(self, request: ClassificationRequest) -> ts.SystemOneResponse:
         client = self._sync_client()
         with with_standard_errors():
-            return client.system_one(payload, self.questions)
+            return client.system_one(
+                state=_prepare_state(request["state"]),
+                questions=request["questions"],
+            )
 
-    async def _aclassify(self, state: State) -> ts.SystemOneResponse:
-        payload = _prepare_state(state)
+    async def _aclassify(self, request: ClassificationRequest) -> ts.SystemOneResponse:
         client = self._get_async_client()
         with with_standard_errors():
-            return await client.system_one(payload, self.questions)
+            return await client.system_one(
+                state=_prepare_state(request["state"]),
+                questions=request["questions"],
+            )
 
     def close(self) -> None:
         """Close the synchronous client created by this classifier.

@@ -10,7 +10,7 @@ from langchain_core.messages import (
     SystemMessage,
     convert_to_openai_messages,
 )
-from typesafe_sdk import ChoiceAnswer, NoulAnswer, ScoreAnswer
+from typesafe_sdk import ChoiceAnswer, NoulAnswer, Questions, ScoreAnswer
 
 from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 
@@ -18,38 +18,38 @@ from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 def test_invoke_all_question_types() -> None:
     """Exercise the live sync API across Choice, Noul, and Score questions."""
     labels = {"billing", "technical", "sales"}
-    classifier = TypeSafeClassifier(
-        questions={
-            "department": Choice(
-                instructions="Which team should handle this request?",
-                criteria={
-                    "billing": "Payment or subscription issues.",
-                    "technical": "Product bugs or integration failures.",
-                    "sales": "Pricing or purchasing questions.",
-                },
-            ),
-            "urgent": Noul(
-                instructions="Does this message require an urgent response?"
-            ),
-            "frustration": Score(
-                instructions="How frustrated does the customer appear?",
-                criteria=[
-                    "Calm and neutral.",
-                    "Concerned but civil.",
-                    "Very angry or using strong language.",
-                ],
-            ),
-        }
-    )
+    questions: Questions = {
+        "department": Choice(
+            instructions="Which team should handle this request?",
+            criteria={
+                "billing": "Payment or subscription issues.",
+                "technical": "Product bugs or integration failures.",
+                "sales": "Pricing or purchasing questions.",
+            },
+        ),
+        "urgent": Noul(instructions="Does this message require an urgent response?"),
+        "frustration": Score(
+            instructions="How frustrated does the customer appear?",
+            criteria=[
+                "Calm and neutral.",
+                "Concerned but civil.",
+                "Very angry or using strong language.",
+            ],
+        ),
+    }
+    classifier = TypeSafeClassifier()
 
     try:
         response = classifier.invoke(
             {
-                "message": (
-                    "Stripe has failed to connect for three days. "
-                    "Please help immediately."
-                ),
-                "account_tier": "enterprise",
+                "state": {
+                    "message": (
+                        "Stripe has failed to connect for three days. "
+                        "Please help immediately."
+                    ),
+                    "account_tier": "enterprise",
+                },
+                "questions": questions,
             }
         )
 
@@ -84,34 +84,36 @@ def test_invoke_all_question_types() -> None:
 
 async def test_ainvoke_with_nested_messages() -> None:
     """Exercise the live async API with messages nested in structured state."""
-    classifier = TypeSafeClassifier(
-        questions={
-            "needs_support": Noul(
-                instructions="Does the user need help resolving a technical problem?"
-            )
-        }
-    )
+    questions: Questions = {
+        "needs_support": Noul(
+            instructions="Does the user need help resolving a technical problem?"
+        )
+    }
+    classifier = TypeSafeClassifier()
 
     try:
         response = await classifier.ainvoke(
             {
-                "conversation": convert_to_openai_messages(
-                    [
-                        SystemMessage(
-                            "You are reviewing a customer support conversation."
-                        ),
-                        HumanMessage(
-                            "The integration crashes every time I connect Stripe. "
-                            "Can someone help?"
-                        ),
-                    ]
-                ),
-                "account": {
-                    "tier": "enterprise",
-                    "failed_attempts": 3,
-                    "trial": False,
-                    "notes": None,
+                "state": {
+                    "conversation": convert_to_openai_messages(
+                        [
+                            SystemMessage(
+                                "You are reviewing a customer support conversation."
+                            ),
+                            HumanMessage(
+                                "The integration crashes every time I connect Stripe. "
+                                "Can someone help?"
+                            ),
+                        ]
+                    ),
+                    "account": {
+                        "tier": "enterprise",
+                        "failed_attempts": 3,
+                        "trial": False,
+                        "notes": None,
+                    },
                 },
+                "questions": questions,
             }
         )
 

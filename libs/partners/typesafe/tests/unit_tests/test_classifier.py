@@ -71,14 +71,12 @@ def _questions() -> dict[str, Choice | Noul | Score]:
 def _classifier(
     handler: Any,
     *,
-    questions: dict[str, Any] | None = None,
     retry: RetryPolicy | None = None,
     **kwargs: Any,
 ) -> TypeSafeClassifier:
     """Build a classifier whose sync client answers from `handler`."""
     return TypeSafeClassifier(
         api_key=API_KEY,
-        questions=questions if questions is not None else _questions(),
         client=ts.TypeSafeClient(
             api_key=API_KEY,
             transport=httpx2.MockTransport(handler),
@@ -91,14 +89,12 @@ def _classifier(
 def _async_classifier(
     handler: Any,
     *,
-    questions: dict[str, Any] | None = None,
     retry: RetryPolicy | None = None,
     **kwargs: Any,
 ) -> TypeSafeClassifier:
     """Build a classifier whose async client answers from `handler`."""
     return TypeSafeClassifier(
         api_key=API_KEY,
-        questions=questions if questions is not None else _questions(),
         async_client=ts.AsyncTypeSafeClient(
             api_key=API_KEY,
             transport=httpx2.MockTransport(handler),
@@ -112,56 +108,11 @@ def _urgent() -> dict[str, Noul]:
     return {"urgent": Noul(instructions="Is this urgent?")}
 
 
-def test_questions_must_not_be_empty() -> None:
-    """The classifier requires at least one question."""
-    with pytest.raises(ValidationError):
-        TypeSafeClassifier(api_key=API_KEY, questions={})
-
-
-def test_question_dictionaries_are_converted() -> None:
-    """Question dictionaries become the corresponding SDK question types."""
-    # Questions loaded from JSON or YAML arrive as plain dictionaries.
-    questions: dict[str, Any] = {
-        "urgent": {"type": "noul", "instructions": "Is this urgent?"},
-        "team": {
-            "type": "choice",
-            "instructions": "Who handles this?",
-            "criteria": {"billing": None},
-        },
-        "severity": {
-            "type": "score",
-            "instructions": "How severe?",
-            "criteria": ["low", "high"],
-        },
-    }
-    classifier = TypeSafeClassifier(api_key=API_KEY, questions=questions)
-
-    assert isinstance(classifier.questions["urgent"], ts.Noul)
-    assert isinstance(classifier.questions["team"], ts.Choice)
-    assert isinstance(classifier.questions["severity"], ts.Score)
-
-
-def test_unknown_question_type_is_rejected() -> None:
-    """A question dictionary with an unrecognized type fails validation."""
-    questions: dict[str, Any] = {
-        "urgent": {"type": "boolean", "instructions": "Urgent?"}
-    }
-    with pytest.raises(ValidationError, match="unsupported type"):
-        TypeSafeClassifier(api_key=API_KEY, questions=questions)
-
-
-def test_non_question_values_are_rejected() -> None:
-    """Values that are neither questions nor question dictionaries are rejected."""
-    questions: dict[str, Any] = {"urgent": "Is this urgent?"}
-    with pytest.raises(ValidationError):
-        TypeSafeClassifier(api_key=API_KEY, questions=questions)
-
-
 @pytest.mark.parametrize("model", ["", "   "])
 def test_model_must_not_be_empty(model: str) -> None:
     """The classifier rejects empty and whitespace-only model identifiers."""
     with pytest.raises(ValidationError):
-        TypeSafeClassifier(api_key=API_KEY, model=model, questions=_urgent())
+        TypeSafeClassifier(api_key=API_KEY, model=model)
 
 
 def test_invoke_sends_request_and_parses_response() -> None:
@@ -201,7 +152,12 @@ def test_invoke_sends_request_and_parses_response() -> None:
         )
 
     with _classifier(handler) as classifier:
-        result = classifier.invoke({"message": "Stripe fails to connect."})
+        result = classifier.invoke(
+            {
+                "state": {"message": "Stripe fails to connect."},
+                "questions": _questions(),
+            }
+        )
 
     assert result.request_id == REQUEST_ID
     assert result.model == "jev-latest"
@@ -232,14 +188,14 @@ def test_requests_identify_the_integration() -> None:
         observed = request.headers
         return httpx2.Response(200, json=_response_payload())
 
-    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_questions())
+    classifier = TypeSafeClassifier(api_key=API_KEY)
     # Exercise the lazily created client while keeping the request on a mock transport.
     classifier.client = ts.TypeSafeClient(
         api_key=API_KEY,
         transport=httpx2.MockTransport(handler),
         headers=classifier._client_kwargs()["headers"],
     )
-    classifier.invoke("hello")
+    classifier.invoke({"state": "hello", "questions": _questions()})
 
     assert observed["x-langchain-integration"].startswith("langchain-typesafe/")
     # The SDK owns `User-Agent` and overwrites it, so it stays the SDK's.
@@ -255,8 +211,13 @@ def test_single_message_is_serialized_as_role_content_state() -> None:
         observed_state = json.loads(request.content)["state"]
         return httpx2.Response(200, json=_response_payload())
 
-    with _classifier(handler, questions=_urgent()) as classifier:
-        classifier.invoke(HumanMessage("Please help immediately."))
+    with _classifier(handler) as classifier:
+        classifier.invoke(
+            {
+                "state": HumanMessage("Please help immediately."),
+                "questions": _questions(),
+            }
+        )
 
     assert observed_state == {
         "role": "user",
@@ -273,13 +234,16 @@ def test_message_sequence_is_serialized_as_conversation_state() -> None:
         observed_state = json.loads(request.content)["state"]
         return httpx2.Response(200, json=_response_payload())
 
-    with _classifier(handler, questions=_urgent()) as classifier:
+    with _classifier(handler) as classifier:
         classifier.invoke(
-            [
-                SystemMessage("You are a support assistant."),
-                HumanMessage("My integration is broken."),
-                AIMessage("I can help troubleshoot it."),
-            ]
+            {
+                "state": [
+                    SystemMessage("You are a support assistant."),
+                    HumanMessage("My integration is broken."),
+                    AIMessage("I can help troubleshoot it."),
+                ],
+                "questions": _questions(),
+            }
         )
 
     assert observed_state == [
@@ -297,14 +261,16 @@ async def test_ainvoke_uses_async_client() -> None:
         return httpx2.Response(200, json=_response_payload())
 
     async with _async_classifier(handler) as classifier:
-        result = await classifier.ainvoke("Please help ASAP.")
+        result = await classifier.ainvoke(
+            {"state": "Please help ASAP.", "questions": _questions()}
+        )
 
     assert result.choices["department"].choice == "technical"
 
 
 def test_clients_are_created_during_initialization() -> None:
     """Clients exist after construction and are reused across invocations."""
-    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_urgent())
+    classifier = TypeSafeClassifier(api_key=API_KEY)
 
     assert classifier.client is not None
     assert classifier.async_client is not None
@@ -318,11 +284,11 @@ def test_configuration_reaches_created_clients() -> None:
     """Classifier configuration is forwarded to clients it creates."""
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions=_urgent(),
         base_url="https://gateway.typesafe.example",
         model="jev-1.13",
         timeout=12.5,
         retry=NO_RETRIES,
+        headers={"X-Custom": "value"},
     )
     kwargs = classifier._client_kwargs()
 
@@ -331,6 +297,10 @@ def test_configuration_reaches_created_clients() -> None:
     assert kwargs["model"] == "jev-1.13"
     assert kwargs["timeout"] == 12.5
     assert kwargs["retry"] is NO_RETRIES
+    assert kwargs["headers"]["X-Custom"] == "value"
+    assert kwargs["headers"]["X-LangChain-Integration"].startswith(
+        "langchain-typesafe/"
+    )
 
 
 def test_injected_clients_are_preserved_and_not_closed() -> None:
@@ -338,7 +308,6 @@ def test_injected_clients_are_preserved_and_not_closed() -> None:
     client = ts.TypeSafeClient(api_key=API_KEY)
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions=_urgent(),
         client=client,
     )
 
@@ -352,7 +321,7 @@ def test_injected_clients_are_preserved_and_not_closed() -> None:
 
 def test_close_releases_a_created_client() -> None:
     """Closing the classifier closes only the client it created."""
-    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_urgent())
+    classifier = TypeSafeClassifier(api_key=API_KEY)
 
     classifier.close()
 
@@ -361,7 +330,7 @@ def test_close_releases_a_created_client() -> None:
 
 async def test_aclose_releases_a_created_async_client() -> None:
     """Closing the classifier closes only the async client it created."""
-    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_urgent())
+    classifier = TypeSafeClassifier(api_key=API_KEY)
 
     await classifier.aclose()
 
@@ -376,11 +345,10 @@ async def test_ainvoke_translates_api_error() -> None:
 
     async with _async_classifier(
         handler,
-        questions=_urgent(),
         retry=NO_RETRIES,
     ) as classifier:
         with pytest.raises(TypeSafeAPIError) as exc_info:
-            await classifier.ainvoke("hello")
+            await classifier.ainvoke({"state": "hello", "questions": _questions()})
 
     assert exc_info.value.status == 429
     assert exc_info.value.request_id == REQUEST_ID
@@ -395,11 +363,10 @@ async def test_ainvoke_translates_connection_error() -> None:
 
     async with _async_classifier(
         handler,
-        questions=_urgent(),
         retry=NO_RETRIES,
     ) as classifier:
         with pytest.raises(TypeSafeAPIConnectionError):
-            await classifier.ainvoke("hello")
+            await classifier.ainvoke({"state": "hello", "questions": _questions()})
 
 
 async def test_ainvoke_translates_timeout_error() -> None:
@@ -411,19 +378,18 @@ async def test_ainvoke_translates_timeout_error() -> None:
 
     async with _async_classifier(
         handler,
-        questions=_urgent(),
         retry=NO_RETRIES,
         timeout=6.0,
     ) as classifier:
         with pytest.raises(TypeSafeAPITimeoutError) as exc_info:
-            await classifier.ainvoke("hello")
+            await classifier.ainvoke({"state": "hello", "questions": _questions()})
 
     assert exc_info.value.timeout is not None
 
 
 def test_api_key_is_held_as_a_secret() -> None:
     """The API key is stored as `SecretStr` and kept out of representations."""
-    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_urgent())
+    classifier = TypeSafeClassifier(api_key=API_KEY)
 
     assert isinstance(classifier.api_key, SecretStr)
     assert classifier.api_key.get_secret_value() == API_KEY
@@ -439,9 +405,9 @@ def test_api_key_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         observed["authorization"] = request.headers["authorization"]
         return httpx2.Response(200, json=_response_payload())
 
-    classifier = TypeSafeClassifier(questions=_urgent())
+    classifier = TypeSafeClassifier()
     classifier.client = ts.TypeSafeClient(transport=httpx2.MockTransport(handler))
-    classifier.invoke("hello")
+    classifier.invoke({"state": "hello", "questions": _questions()})
 
     assert classifier.api_key is None
     assert observed["authorization"] == f"Bearer {API_KEY}"
@@ -456,12 +422,12 @@ def test_base_url_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         observed["url"] = str(request.url)
         return httpx2.Response(200, json=_response_payload())
 
-    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_urgent())
+    classifier = TypeSafeClassifier(api_key=API_KEY)
     classifier.client = ts.TypeSafeClient(
         api_key=API_KEY,
         transport=httpx2.MockTransport(handler),
     )
-    classifier.invoke("hello")
+    classifier.invoke({"state": "hello", "questions": _questions()})
 
     assert observed["url"] == "https://gateway.typesafe.example/v1/systemone"
 
@@ -475,7 +441,6 @@ def test_explicit_base_url_overrides_environment(
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
         base_url="https://explicit.example",
-        questions=_urgent(),
     )
 
     assert classifier._client_kwargs()["base_url"] == "https://explicit.example"
@@ -489,7 +454,7 @@ def test_missing_api_key_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
     with pytest.raises(ts.TypeSafeError, match="API key"):
-        TypeSafeClassifier(questions=_urgent())
+        TypeSafeClassifier()
 
 
 def test_injected_client_supplies_its_own_credentials(
@@ -499,7 +464,6 @@ def test_injected_client_supplies_its_own_credentials(
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
 
     classifier = TypeSafeClassifier(
-        questions=_urgent(),
         client=ts.TypeSafeClient(api_key=API_KEY),
         async_client=ts.AsyncTypeSafeClient(api_key=API_KEY),
     )
@@ -515,10 +479,10 @@ def test_invalid_response_is_translated() -> None:
         return httpx2.Response(200, json={"model": "jev-latest", "answers": []})
 
     with (
-        _classifier(handler, questions=_urgent(), retry=NO_RETRIES) as classifier,
+        _classifier(handler, retry=NO_RETRIES) as classifier,
         pytest.raises(TypeSafeAPIResponseValidationError) as exc_info,
     ):
-        classifier.invoke("hello")
+        classifier.invoke({"state": "hello", "questions": _questions()})
 
     assert exc_info.value.field_path
 
@@ -536,10 +500,9 @@ def test_retries_are_enabled_by_default() -> None:
 
     with _classifier(
         handler,
-        questions=_urgent(),
         retry=RetryPolicy(backoff_initial=0.0, backoff_max=0.0),
     ) as classifier:
-        result = classifier.invoke("hello")
+        result = classifier.invoke({"state": "hello", "questions": _questions()})
 
     assert attempts == 2
     assert result.nouls["urgent"].noul == 0.95
@@ -555,10 +518,10 @@ def test_retries_can_be_disabled() -> None:
         return httpx2.Response(529)
 
     with (
-        _classifier(handler, questions=_urgent(), retry=NO_RETRIES) as classifier,
+        _classifier(handler, retry=NO_RETRIES) as classifier,
         pytest.raises(TypeSafeAPIError),
     ):
-        classifier.invoke("hello")
+        classifier.invoke({"state": "hello", "questions": _questions()})
 
     assert attempts == 1
 
@@ -581,7 +544,9 @@ def test_callbacks_receive_classifier_run() -> None:
 
     callback = RecordingHandler()
     with _classifier(handler) as classifier:
-        classifier.invoke("hello", config={"callbacks": [callback]})
+        classifier.invoke(
+            {"state": "hello", "questions": _urgent()}, config={"callbacks": [callback]}
+        )
 
     assert callback.starts == 1
     assert callback.ends == 1
@@ -593,9 +558,14 @@ def test_batch_reuses_one_client() -> None:
     def handler(_: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, json=_response_payload())
 
-    with _classifier(handler, questions=_urgent()) as classifier:
+    with _classifier(handler) as classifier:
         client = classifier.client
-        results = classifier.batch(["one", "two", "three"])
+        results = classifier.batch(
+            [
+                {"state": state, "questions": _urgent()}
+                for state in ["one", "two", "three"]
+            ]
+        )
 
     assert classifier.client is client
     assert len(results) == 3
@@ -611,13 +581,16 @@ def test_nested_messages_are_not_converted() -> None:
         observed_state = json.loads(request.content)["state"]
         return httpx2.Response(200, json=_response_payload())
 
-    with _classifier(handler, questions=_urgent()) as classifier:
+    with _classifier(handler) as classifier:
         classifier.invoke(
             {
-                "conversation": convert_to_openai_messages(
-                    [HumanMessage("My payouts have failed.")]
-                ),
-                "account_tier": "enterprise",
+                "state": {
+                    "conversation": convert_to_openai_messages(
+                        [HumanMessage("My payouts have failed.")]
+                    ),
+                    "account_tier": "enterprise",
+                },
+                "questions": _urgent(),
             }
         )
 
@@ -636,7 +609,12 @@ def test_plain_json_state_passes_through() -> None:
         observed_state = json.loads(request.content)["state"]
         return httpx2.Response(200, json=_response_payload())
 
-    with _classifier(handler, questions=_urgent()) as classifier:
-        classifier.invoke({"ticket": {"id": 7, "tags": ["billing"], "vip": True}})
+    with _classifier(handler) as classifier:
+        classifier.invoke(
+            {
+                "state": {"ticket": {"id": 7, "tags": ["billing"], "vip": True}},
+                "questions": _urgent(),
+            }
+        )
 
     assert observed_state == {"ticket": {"id": 7, "tags": ["billing"], "vip": True}}
