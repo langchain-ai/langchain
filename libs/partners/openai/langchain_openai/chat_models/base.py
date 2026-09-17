@@ -238,6 +238,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         tool_calls = []
         invalid_tool_calls = []
         if raw_tool_calls := _dict.get("tool_calls"):
+            _known_tool_call_keys = {"id", "type", "function"}
+            tool_call_extras: list[dict[str, Any]] = []
             for raw_tool_call in raw_tool_calls:
                 try:
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
@@ -245,6 +247,17 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
                     )
+                # Capture any provider-specific extra fields on the tool call
+                # (e.g. Gemini's thought_signature) so they survive the
+                # round-trip and can be echoed back on the next turn.
+                extras = {
+                    k: v
+                    for k, v in raw_tool_call.items()
+                    if k not in _known_tool_call_keys
+                }
+                tool_call_extras.append(extras)
+            if any(tool_call_extras):
+                additional_kwargs["tool_call_extras"] = tool_call_extras
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
         return AIMessage(
@@ -426,12 +439,18 @@ def _convert_message_to_dict(
                 _lc_invalid_tool_call_to_openai_tool_call(tc)
                 for tc in message.invalid_tool_calls
             ]
+            # Re-attach any provider-specific extra fields that were captured
+            # during the incoming conversion (e.g. Gemini's thought_signature).
+            if tool_call_extras := message.additional_kwargs.get(
+                "tool_call_extras"
+            ):
+                for i, tc_dict in enumerate(message_dict["tool_calls"]):
+                    if i < len(tool_call_extras) and tool_call_extras[i]:
+                        tc_dict.update(tool_call_extras[i])
         elif "tool_calls" in message.additional_kwargs:
-            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
-            tool_call_supported_props = {"id", "type", "function"}
             message_dict["tool_calls"] = [
-                {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
-                for tool_call in message_dict["tool_calls"]
+                dict(tool_call)
+                for tool_call in message.additional_kwargs["tool_calls"]
             ]
         elif "function_call" in message.additional_kwargs:
             # OpenAI raises 400 if both function_call and tool_calls are present in the

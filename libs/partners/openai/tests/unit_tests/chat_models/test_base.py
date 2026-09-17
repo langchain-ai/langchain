@@ -374,6 +374,76 @@ def test__convert_dict_to_message_tool_call() -> None:
     assert reverted_message_dict == message
 
 
+def test__convert_dict_to_message_tool_call_extra_fields_roundtrip() -> None:
+    """Provider-specific extra fields on tool calls must survive the round-trip.
+
+    Some OpenAI-compatible endpoints (e.g. Gemini 3 via MLflow AI Gateway) attach
+    a required, opaque field to each tool call (``thought_signature``) that must
+    be echoed back on later turns.  This test ensures such fields are preserved
+    through ``_convert_dict_to_message`` → ``_convert_message_to_dict``.
+
+    See: https://github.com/langchain-ai/langchain/issues/40563
+    """
+    raw_assistant: dict = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+            {
+                "id": "call_1",
+                "type": "function",
+                "function": {"name": "get_weather", "arguments": "{}"},
+                "thought_signature": "abc123==",  # provider-specific extra
+            }
+        ],
+    }
+
+    msg = _convert_dict_to_message(raw_assistant)
+
+    # The extra field should be stashed in additional_kwargs.
+    assert "tool_call_extras" in msg.additional_kwargs  # type: ignore[union-attr]
+    assert msg.additional_kwargs["tool_call_extras"] == [  # type: ignore[union-attr]
+        {"thought_signature": "abc123=="}
+    ]
+
+    # Round-trip back to dict.
+    back = _convert_message_to_dict(msg)
+
+    assert back["tool_calls"][0]["thought_signature"] == "abc123=="
+    # Standard fields must still be present.
+    assert back["tool_calls"][0]["id"] == "call_1"
+    assert back["tool_calls"][0]["type"] == "function"
+    assert back["tool_calls"][0]["function"] == {
+        "name": "get_weather",
+        "arguments": "{}",
+    }
+
+
+def test__convert_dict_to_message_tool_call_no_extras() -> None:
+    """When there are no extra fields, the round-trip must still work as before."""
+    raw_assistant: dict = {
+        "role": "assistant",
+        "content": None,
+        "tool_calls": [
+            {
+                "id": "call_2",
+                "type": "function",
+                "function": {
+                    "name": "search",
+                    "arguments": '{"query": "weather"}',
+                },
+            }
+        ],
+    }
+
+    msg = _convert_dict_to_message(raw_assistant)
+
+    # No extras → no tool_call_extras key.
+    assert "tool_call_extras" not in msg.additional_kwargs  # type: ignore[union-attr]
+
+    back = _convert_message_to_dict(msg)
+    assert back == raw_assistant
+
+
 class MockAsyncContextManager:
     def __init__(self, chunk_list: list) -> None:
         self.current_chunk = 0
