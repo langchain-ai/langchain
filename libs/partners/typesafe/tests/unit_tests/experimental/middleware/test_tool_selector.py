@@ -52,6 +52,10 @@ def _classifier(response: ClassificationResponse) -> MagicMock:
     return classifier
 
 
+def _tool_names(tools: list[Any]) -> list[str]:
+    return [tool.name for tool in tools if not isinstance(tool, dict)]
+
+
 def _request(tools: list[Any], messages: list[Any]) -> ModelRequest[Any]:
     return ModelRequest(
         model=cast("BaseChatModel", MagicMock()),
@@ -115,7 +119,7 @@ def test_sync_selection_filters_tools_above_threshold() -> None:
     assert classifier.invoke.call_args.kwargs["config"]["metadata"] == {
         "lc_source": "ts_tool_selector"
     }
-    assert [t.name for t in seen[0].tools] == ["get_weather"]
+    assert _tool_names(seen[0].tools) == ["get_weather"]
 
 
 def test_max_tools_orders_by_probability_then_truncates() -> None:
@@ -139,7 +143,7 @@ def test_max_tools_orders_by_probability_then_truncates() -> None:
     ):
         middleware.wrap_model_call(request, handler)
 
-    assert [t.name for t in seen[0].tools] == ["search_web", "get_weather"]
+    assert _tool_names(seen[0].tools) == ["search_web", "get_weather"]
 
 
 def test_always_include_bypasses_classification_and_max_tools() -> None:
@@ -161,7 +165,7 @@ def test_always_include_bypasses_classification_and_max_tools() -> None:
 
     questions = classifier_class.call_args.kwargs["questions"]
     assert set(questions) == {"tool::search_web"}
-    assert {t.name for t in seen[0].tools} == {"get_weather", "search_web"}
+    assert set(_tool_names(seen[0].tools)) == {"get_weather", "search_web"}
 
 
 def test_always_include_missing_tool_raises() -> None:
@@ -201,13 +205,16 @@ def test_no_tools_is_noop() -> None:
     request = _request([], [HumanMessage("Hi")])
     middleware = TsToolSelectorMiddleware()
 
+    result_request: list[ModelRequest[Any]] = []
+
+    def handler(modified: ModelRequest[Any]) -> ModelResponse[Any]:
+        result_request.append(modified)
+        return cast("ModelResponse[Any]", MagicMock())
+
     with patch(
         "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier"
     ) as classifier_class:
-        result_request: list[ModelRequest[Any]] = []
-        middleware.wrap_model_call(
-            request, lambda req: result_request.append(req) or MagicMock()
-        )
+        middleware.wrap_model_call(request, handler)
 
     classifier_class.assert_not_called()
     assert result_request[0] is request
@@ -220,13 +227,17 @@ def test_relevance_threshold_is_inclusive() -> None:
     middleware = TsToolSelectorMiddleware(relevance_threshold=0.3)
     seen: list[ModelRequest[Any]] = []
 
+    def handler(modified: ModelRequest[Any]) -> ModelResponse[Any]:
+        seen.append(modified)
+        return cast("ModelResponse[Any]", MagicMock())
+
     with patch(
         "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
         return_value=classifier,
     ):
-        middleware.wrap_model_call(request, lambda req: seen.append(req) or MagicMock())
+        middleware.wrap_model_call(request, handler)
 
-    assert [t.name for t in seen[0].tools] == ["get_weather"]
+    assert _tool_names(seen[0].tools) == ["get_weather"]
 
 
 def test_missing_human_message_raises() -> None:
@@ -292,7 +303,7 @@ async def test_async_selection_filters_tools() -> None:
         await middleware.awrap_model_call(request, handler)
 
     classifier.ainvoke.assert_awaited_once()
-    assert [t.name for t in seen[0].tools] == ["get_weather"]
+    assert _tool_names(seen[0].tools) == ["get_weather"]
 
 
 def test_experimental_public_interface() -> None:
