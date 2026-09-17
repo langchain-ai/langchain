@@ -17,13 +17,13 @@ from pydantic import (
 )
 from typing_extensions import Self, override
 
-from langchain_typesafe._client_utils import (
+from langchain_typesafe._state import serialize_state
+from langchain_typesafe._version import __version__
+from langchain_typesafe.client import (
     TypeSafeAPIConnectionError,
     TypeSafeAPITimeoutError,
     parse_response,
 )
-from langchain_typesafe._state import serialize_state
-from langchain_typesafe._version import __version__
 from langchain_typesafe.types import ClassificationResponse, Question, State
 
 _DEFAULT_BASE_URL = "https://api.typesafe.ai"

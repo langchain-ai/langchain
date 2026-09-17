@@ -18,11 +18,13 @@ from langchain_typesafe import (
     NoulAnswer,
     Score,
     ScoreAnswer,
+    TypeSafeClassifier,
+)
+from langchain_typesafe.client import (
     TypeSafeAPIConnectionError,
     TypeSafeAPIError,
     TypeSafeAPIResponseValidationError,
     TypeSafeAPITimeoutError,
-    TypeSafeClassifier,
 )
 
 API_KEY = "test-api-key"

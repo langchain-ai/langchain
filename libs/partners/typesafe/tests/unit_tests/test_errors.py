@@ -19,7 +19,7 @@ from langchain_core.exceptions import (
     ModelTimeoutError,
 )
 
-from langchain_typesafe import (
+from langchain_typesafe.client import (
     TypeSafeAPIConnectionError,
     TypeSafeAPIError,
     TypeSafeAPIResponseValidationError,
@@ -31,8 +31,8 @@ from langchain_typesafe import (
     TypeSafePermissionDeniedError,
     TypeSafeRateLimitError,
     TypeSafeUnprocessableEntityError,
+    parse_response,
 )
-from langchain_typesafe._client_utils import parse_response
 
 
 @pytest.mark.parametrize(
