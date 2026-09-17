@@ -84,7 +84,7 @@ def test_filters_against_profile(profile: dict[str, Any], expected: str) -> None
     model = _model(**profile)
     agent = create_agent(model, middleware=[UnsupportedContentMiddleware()])
 
-    agent.invoke({"messages": [HumanMessage(content=[IMAGE])]})
+    agent.invoke({"messages": [HumanMessage(content_blocks=[IMAGE])]})
 
     message = model.captured[0][0]
     assert message.content_blocks[0]["type"] == expected
@@ -108,7 +108,7 @@ def test_filters_against_runtime_model(
         middleware=[_swap(runtime_model), UnsupportedContentMiddleware()],
     )
 
-    agent.invoke({"messages": [HumanMessage(content=[IMAGE])]})
+    agent.invoke({"messages": [HumanMessage(content_blocks=[IMAGE])]})
 
     assert not startup_model.captured
     message = runtime_model.captured[0][0]
@@ -123,7 +123,7 @@ async def test_async_filters_against_runtime_model() -> None:
         middleware=[_swap(runtime_model), UnsupportedContentMiddleware()],
     )
 
-    await agent.ainvoke({"messages": [HumanMessage(content=[IMAGE])]})
+    await agent.ainvoke({"messages": [HumanMessage(content_blocks=[IMAGE])]})
 
     message = runtime_model.captured[0][0]
     assert message.content_blocks[0]["type"] == "text"
@@ -144,12 +144,12 @@ def test_tool_message_gate(profile: dict[str, Any], expected: str) -> None:
     agent.invoke(
         {
             "messages": [
-                HumanMessage(content=[IMAGE]),
+                HumanMessage(content_blocks=[IMAGE]),
                 AIMessage(
                     content="",
                     tool_calls=[{"name": "t", "args": {}, "id": "call", "type": "tool_call"}],
                 ),
-                ToolMessage(content=[IMAGE], tool_call_id="call"),
+                ToolMessage(content_blocks=[IMAGE], tool_call_id="call"),
             ]
         }
     )
@@ -170,7 +170,7 @@ def test_pdf_tool_message_gate() -> None:
                     content="",
                     tool_calls=[{"name": "t", "args": {}, "id": "call", "type": "tool_call"}],
                 ),
-                ToolMessage(content=[PDF], tool_call_id="call"),
+                ToolMessage(content_blocks=[PDF], tool_call_id="call"),
             ]
         }
     )
@@ -188,7 +188,7 @@ def test_non_pdf_file_blocks_are_left_alone() -> None:
     }
     agent = create_agent(model, middleware=[UnsupportedContentMiddleware()])
 
-    agent.invoke({"messages": [HumanMessage(content=[docx])]})
+    agent.invoke({"messages": [HumanMessage(content_blocks=[docx])]})
 
     assert model.captured[0][0].content_blocks[0]["type"] == "file"
 
@@ -220,6 +220,6 @@ def test_subclass_can_extend_support_checks() -> None:
     }
     agent = create_agent(model, middleware=[RejectsDocx()])
 
-    agent.invoke({"messages": [HumanMessage(content=[docx])]})
+    agent.invoke({"messages": [HumanMessage(content_blocks=[docx])]})
 
     assert model.captured[0][0].content_blocks[0]["type"] == "text"
