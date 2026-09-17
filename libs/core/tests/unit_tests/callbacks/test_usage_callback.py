@@ -133,3 +133,13 @@ def test_usage_callback_clears_on_exception() -> None:
     # Calls after the block must not accumulate into the previous callback.
     _ = llm.invoke("outside block")
     assert cb.usage_metadata == {"fake": usage1}
+
+
+def test_usage_callback_missing_model_name() -> None:
+    """Test tracking usage metadata when model_name is missing."""
+    llm = GenericFakeChatModel(messages=iter(messages[:2]))
+    with get_usage_metadata_callback() as cb:
+        _ = llm.invoke("Message 1")
+        _ = llm.invoke("Message 2")
+        total_1_2 = add_usage(usage1, usage2)
+        assert cb.usage_metadata == {"unknown": total_1_2}
