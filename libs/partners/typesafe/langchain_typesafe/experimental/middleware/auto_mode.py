@@ -24,7 +24,7 @@ except ImportError as error:
 
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing_extensions import override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
@@ -69,6 +69,12 @@ class _AutoModeConfig(BaseModel):
             false=_DEFAULT_FALSE_CRITERIA,
         )
     )
+
+    @field_validator("criteria", mode="before")
+    @classmethod
+    def default_none_criteria(cls, value: object) -> object:
+        """Use the configured default when callers provide `None`."""
+        return cls.model_fields["criteria"].default if value is None else value
 
 
 class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
