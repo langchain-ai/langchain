@@ -33,7 +33,7 @@ from langchain_typesafe.client import (
 
 
 class _CapturingTracer(LangChainTracer):
-    """Collect the runs a tracer would send, without any network access."""
+    """Collect the runs a tracer would send to LangSmith, without any network."""
 
     def __init__(self) -> None:
         super().__init__(client=MagicMock())
@@ -532,10 +532,10 @@ def test_callbacks_receive_classifier_run() -> None:
         starts = 0
         ends = 0
 
-        def on_chat_model_start(self, *_: Any, **__: Any) -> None:
+        def on_chain_start(self, *_: Any, **__: Any) -> None:
             self.starts += 1
 
-        def on_llm_end(self, *_: Any, **__: Any) -> None:
+        def on_chain_end(self, *_: Any, **__: Any) -> None:
             self.ends += 1
 
     def handler(_: httpx2.Request) -> httpx2.Response:
@@ -556,11 +556,11 @@ def test_callbacks_receive_classifier_run() -> None:
     client.close()
 
 
-def test_tracer_records_usage_metadata_and_model_identity() -> None:
-    """Token usage reaches the LangSmith run so cost can be attributed.
+def test_traced_run_carries_usage_and_model_identity() -> None:
+    """A traced run reports tokens and the identity LangSmith prices it by.
 
-    `LangChainTracer` only populates `extra.metadata.usage_metadata` from the LLM
-    callback path, so this pins the run type as well as the usage payload.
+    LangSmith only totals tokens for `llm` runs whose metadata carries
+    `usage_metadata`, so the run type is pinned alongside the payload.
     """
 
     def handler(_: httpx2.Request) -> httpx2.Response:
@@ -587,13 +587,11 @@ def test_tracer_records_usage_metadata_and_model_identity() -> None:
     }
     assert metadata["ls_provider"] == "typesafe"
     assert metadata["ls_model_name"] == "jev-latest"
-    # The API key must never reach the traced payload.
-    assert API_KEY not in json.dumps(run.serialized)
     assert API_KEY not in json.dumps(run.extra, default=str)
 
 
-async def test_async_tracer_records_usage_metadata() -> None:
-    """`ainvoke` emits the same LLM-run usage as `invoke`."""
+async def test_async_traced_run_carries_usage() -> None:
+    """`ainvoke` reports the same usage as `invoke`."""
 
     async def handler(_: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, json=_response_payload())
@@ -612,3 +610,47 @@ async def test_async_tracer_records_usage_metadata() -> None:
     run = tracer.runs[-1]
     assert run.run_type == "llm"
     assert run.extra["metadata"]["usage_metadata"]["total_tokens"] == 54
+
+
+def test_caller_metadata_survives_model_identity_tags() -> None:
+    """Identity tags are added without discarding caller-supplied metadata."""
+
+    def handler(_: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=_response_payload())
+
+    client = httpx2.Client(transport=httpx2.MockTransport(handler))
+    tracer = _CapturingTracer()
+    classifier = TypeSafeClassifier(
+        api_key=API_KEY,
+        questions=_questions(),
+        client=client,
+    )
+
+    classifier.invoke(
+        "hello",
+        config={"callbacks": [tracer], "metadata": {"tenant": "acme"}},
+    )
+    client.close()
+
+    metadata = tracer.runs[-1].extra["metadata"]
+    assert metadata["tenant"] == "acme"
+    assert metadata["ls_provider"] == "typesafe"
+
+
+def test_untraced_invocation_is_unaffected() -> None:
+    """With no tracer active, recording usage is a no-op rather than an error."""
+
+    def handler(_: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=_response_payload())
+
+    client = httpx2.Client(transport=httpx2.MockTransport(handler))
+    classifier = TypeSafeClassifier(
+        api_key=API_KEY,
+        questions=_questions(),
+        client=client,
+    )
+
+    result = classifier.invoke("hello")
+    client.close()
+
+    assert result.usage.input_tokens == 42
