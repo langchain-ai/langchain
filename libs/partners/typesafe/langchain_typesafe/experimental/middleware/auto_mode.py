@@ -5,12 +5,12 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-import httpx2
-
 try:
     from langchain.agents.middleware.types import (
         AgentMiddleware,
         AgentState,
+        ContextT,
+        ResponseT,
         ToolCallRequest,
         TracePolicy,
         omit_payload,
@@ -24,7 +24,7 @@ except ImportError as error:
 
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 from typing_extensions import override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
@@ -67,22 +67,10 @@ def _default_criteria() -> NoulCriteria:
 class _AutoModeConfig(BaseModel):
     """Validated Auto Mode execution configuration."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     tools: list[str | BaseTool] = Field(min_length=1)
-    instructions: str = _DEFAULT_INSTRUCTIONS
+    instructions: str = Field(default=_DEFAULT_INSTRUCTIONS)
     criteria: NoulCriteria = Field(default_factory=_default_criteria)
     threshold: float = Field(default=0.2, ge=0, le=1)
-
-    @field_validator("instructions", mode="before")
-    @classmethod
-    def default_blank_instructions(cls, value: object) -> object:
-        """Use the default instructions when callers provide blank text."""
-        return (
-            _DEFAULT_INSTRUCTIONS
-            if isinstance(value, str) and not value.strip()
-            else value
-        )
 
     @field_validator("criteria", mode="before")
     @classmethod
@@ -99,7 +87,7 @@ class _AutoModeConfig(BaseModel):
         )
 
 
-class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
+class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Allow low-risk tool calls and block risky calls using TypeSafe.
 
     This middleware is experimental. It intercepts explicitly configured tools
@@ -133,8 +121,6 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
             conservative defaults when omitted.
         threshold: Probability at or above which a tool call is blocked. The
             conservative default blocks calls with at least 20% estimated risk.
-        client: Optional synchronous HTTP client used by the internal classifier.
-        async_client: Optional asynchronous HTTP client used by the internal classifier.
 
     Raises:
         pydantic.ValidationError: If `tools` is empty or the threshold is outside
@@ -172,8 +158,6 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         instructions: str = _DEFAULT_INSTRUCTIONS,
         criteria: NoulCriteria | None = None,
         threshold: float = 0.2,
-        client: httpx2.Client | None = None,
-        async_client: httpx2.AsyncClient | None = None,
     ) -> None:
         """Initialize the tool-risk middleware.
 
@@ -182,15 +166,13 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
             instructions: Risk-classification instructions sent to TypeSafe.
             criteria: Descriptions of the risky and safe outcomes.
             threshold: Probability at or above which execution is blocked.
-            client: Optional synchronous HTTP client for the classifier.
-            async_client: Optional asynchronous HTTP client for the classifier.
 
         Raises:
             pydantic.ValidationError: If tool names or threshold configuration is
                 invalid.
         """
         super().__init__()
-        config = _AutoModeConfig.model_validate(
+        self.config = _AutoModeConfig.model_validate(
             {
                 "tools": tools,
                 "instructions": instructions,
@@ -198,19 +180,13 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
                 "threshold": threshold,
             }
         )
-        self.tool_names = config.tool_names
-        self.threshold = config.threshold
-        self.instructions = config.instructions
-        self.criteria = config.criteria
         self.classifier = TypeSafeClassifier(
             questions={
                 _RISK_QUESTION_ID: Noul(
-                    instructions=self.instructions,
-                    criteria=self.criteria,
+                    instructions=self.config.instructions,
+                    criteria=self.config.criteria,
                 )
             },
-            client=client,
-            async_client=async_client,
         )
 
     @staticmethod
@@ -259,11 +235,11 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         Returns:
             The tool result for a low-risk call, or an error `ToolMessage` when blocked.
         """
-        if request.tool_call["name"] not in self.tool_names:
+        if request.tool_call["name"] not in self.config.tool_names:
             return handler(request)
         response = self.classifier.invoke(self._classification_state(request))
         risk_probability = response.nouls[_RISK_QUESTION_ID].noul
-        if risk_probability >= self.threshold:
+        if risk_probability >= self.config.threshold:
             return self._blocked_tool_message(request, risk_probability)
         return handler(request)
 
@@ -285,11 +261,11 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         Returns:
             The tool result for a low-risk call, or an error `ToolMessage` when blocked.
         """
-        if request.tool_call["name"] not in self.tool_names:
+        if request.tool_call["name"] not in self.config.tool_names:
             return await handler(request)
         response = await self.classifier.ainvoke(self._classification_state(request))
         risk_probability = response.nouls[_RISK_QUESTION_ID].noul
-        if risk_probability >= self.threshold:
+        if risk_probability >= self.config.threshold:
             return self._blocked_tool_message(request, risk_probability)
         return await handler(request)
 

@@ -118,10 +118,16 @@ async def _middleware(
         middleware = AutoModeMiddleware(
             tools=tools,
             threshold=threshold,
-            client=client,
-            async_client=async_client,
             **kwargs,
         )
+    created_client = middleware.classifier.client
+    created_async_client = middleware.classifier.async_client
+    if created_client is not None:
+        created_client.close()
+    if created_async_client is not None:
+        await created_async_client.aclose()
+    middleware.classifier.client = client
+    middleware.classifier.async_client = async_client
     try:
         yield middleware
     finally:
@@ -178,16 +184,11 @@ async def test_middleware_constructs_configurable_risk_classifier() -> None:
         )
 
 
-async def test_blank_instructions_and_missing_criteria_use_defaults() -> None:
-    """Fall back to conservative classification defaults."""
-    async with _middleware(
-        0.2,
-        tools=["delete_file"],
-        instructions="   ",
-    ) as middleware:
-        assert middleware.instructions.startswith("Would executing `tool_call`")
-        assert middleware.criteria.true is not None
-        assert middleware.criteria.false is not None
+async def test_missing_criteria_uses_defaults() -> None:
+    """Fall back to conservative criteria when none are provided."""
+    async with _middleware(0.2, tools=["delete_file"]) as middleware:
+        assert middleware.config.criteria.true is not None
+        assert middleware.config.criteria.false is not None
 
 
 async def test_base_tool_name_is_inferred() -> None:
@@ -195,7 +196,7 @@ async def test_base_tool_name_is_inferred() -> None:
     tool_instance = _delete_tool([])
 
     async with _middleware(0.2, tools=[tool_instance]) as middleware:
-        assert middleware.tool_names == {"delete_file"}
+        assert middleware.config.tool_names == {"delete_file"}
 
 
 async def test_experimental_middleware_is_not_exported_from_root() -> None:
