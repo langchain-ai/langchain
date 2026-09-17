@@ -647,3 +647,28 @@ async def test_tracer_nested_runs_on_error() -> None:
     assert len(tracer.runs) == 3
     for run in tracer.runs:
         _compare_run_with_error(run, compare_run)
+
+
+async def test_async_base_tracer_on_tool_start_name_and_on_llm_error_response() -> None:
+    """Test AsyncBaseTracer forwards name on_tool_start and response on_llm_error (#40501)."""
+    tracer = FakeAsyncTracer()
+    tool_uuid = uuid4()
+    await tracer.on_tool_start(
+        {"name": "original_tool"},
+        "test_input",
+        run_id=tool_uuid,
+        name="custom_tool_run_name",
+    )
+    assert tracer.run_map[str(tool_uuid)].name == "custom_tool_run_name"
+
+    llm_uuid = uuid4()
+    await tracer.on_llm_start(SERIALIZED, ["test prompt"], run_id=llm_uuid)
+    dummy_result = LLMResult(generations=[])
+    await tracer.on_llm_error(
+        ValueError("test error"),
+        run_id=llm_uuid,
+        response=dummy_result,
+    )
+    llm_run = [r for r in tracer.runs if r.id == str(llm_uuid)][0]
+    assert llm_run.outputs == dummy_result.model_dump()
+
