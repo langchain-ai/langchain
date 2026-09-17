@@ -96,6 +96,7 @@ async def _middleware(
     threshold: float = 0.5,
     instructions: str | None = None,
     criteria: NoulCriteria | None = None,
+    blocked_message: str | None = None,
     status_code: int = 200,
     observed_requests: list[dict[str, Any]] | None = None,
 ) -> AsyncIterator[AutoModeMiddleware]:
@@ -113,6 +114,8 @@ async def _middleware(
         kwargs["instructions"] = instructions
     if criteria is not None:
         kwargs["criteria"] = criteria
+    if blocked_message is not None:
+        kwargs["blocked_message"] = blocked_message
     with patch.dict(os.environ, {"TYPESAFE_API_KEY": API_KEY}):
         middleware = AutoModeMiddleware(
             tools=tools,
@@ -176,6 +179,21 @@ async def test_middleware_constructs_configurable_risk_classifier() -> None:
             instructions="Assess production impact.",
             criteria=custom_criteria,
         )
+
+
+@pytest.mark.asyncio
+async def test_blank_text_and_missing_criteria_use_defaults() -> None:
+    """Fall back to conservative defaults for empty optional configuration."""
+    async with _middleware(
+        0.2,
+        tools=["delete_file"],
+        instructions="   ",
+        blocked_message="",
+    ) as middleware:
+        assert middleware.instructions.startswith("Would executing `tool_call`")
+        assert middleware.blocked_message.startswith("The tool call")
+        assert middleware.criteria.true is not None
+        assert middleware.criteria.false is not None
 
 
 @pytest.mark.asyncio
@@ -347,12 +365,9 @@ async def test_classifier_failure_terminates_agent_run(*, async_: bool) -> None:
     "kwargs",
     [
         {"tools": []},
-        {"tools": [""]},
         {"tools": "delete_file"},
         {"tools": ["delete_file"], "threshold": -0.1},
         {"tools": ["delete_file"], "threshold": 1.1},
-        {"tools": ["delete_file"], "instructions": "   "},
-        {"tools": ["delete_file"], "blocked_message": ""},
     ],
 )
 def test_invalid_configuration_is_rejected(kwargs: dict[str, Any]) -> None:

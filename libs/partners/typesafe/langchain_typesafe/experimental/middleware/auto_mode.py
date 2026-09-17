@@ -57,35 +57,43 @@ _DEFAULT_FALSE_CRITERIA = (
 )
 
 
+def _default_criteria() -> NoulCriteria:
+    return NoulCriteria(
+        true=_DEFAULT_TRUE_CRITERIA,
+        false=_DEFAULT_FALSE_CRITERIA,
+    )
+
+
 class _AutoModeConfig(BaseModel):
     """Validated Auto Mode execution configuration."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     tools: list[str | BaseTool] = Field(min_length=1)
-    instructions: str = Field(min_length=1)
-    threshold: float = Field(ge=0, le=1)
-    blocked_message: str = Field(min_length=1)
+    instructions: str = _DEFAULT_INSTRUCTIONS
+    criteria: NoulCriteria = Field(default_factory=_default_criteria)
+    threshold: float = Field(default=0.2, ge=0, le=1)
+    blocked_message: str = _DEFAULT_BLOCKED_MESSAGE
 
-    @field_validator("tools")
+    @field_validator("instructions", mode="before")
     @classmethod
-    def validate_tool_names(cls, tools: list[str | BaseTool]) -> list[str | BaseTool]:
-        """Reject tools without usable names."""
-        if any(
-            not (tool if isinstance(tool, str) else tool.name).strip() for tool in tools
-        ):
-            message = "Tool names must not be empty."
-            raise ValueError(message)
-        return tools
+    def default_blank_instructions(cls, value: object) -> object:
+        """Use the default instructions when callers provide blank text."""
+        return (
+            _DEFAULT_INSTRUCTIONS
+            if isinstance(value, str) and not value.strip()
+            else value
+        )
 
-    @field_validator("instructions", "blocked_message")
+    @field_validator("blocked_message", mode="before")
     @classmethod
-    def validate_non_blank_text(cls, value: str) -> str:
-        """Reject blank classifier instructions and block messages."""
-        if not value.strip():
-            message = "Text configuration must not be blank."
-            raise ValueError(message)
-        return value
+    def default_blank_blocked_message(cls, value: object) -> object:
+        """Use the default blocked message when callers provide blank text."""
+        return (
+            _DEFAULT_BLOCKED_MESSAGE
+            if isinstance(value, str) and not value.strip()
+            else value
+        )
 
     @property
     def tool_names(self) -> frozenset[str]:
@@ -136,10 +144,11 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         async_client: Optional asynchronous HTTP client used by the internal classifier.
 
     Raises:
-        pydantic.ValidationError: If `tools` is empty, contains an empty name, or the
-            threshold is outside `[0, 1]`.
+        pydantic.ValidationError: If `tools` is empty or the threshold is outside
+            `[0, 1]`.
 
-    Example:
+    ??? example "Customize the risk criteria"
+
         ```python
         from langchain.agents import create_agent
         from langchain_typesafe import NoulCriteria
@@ -190,21 +199,19 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
                 invalid.
         """
         super().__init__()
-        config = _AutoModeConfig.model_validate(
-            {
-                "tools": tools,
-                "instructions": instructions,
-                "threshold": threshold,
-                "blocked_message": blocked_message,
-            }
-        )
+        config_data: dict[str, Any] = {
+            "tools": tools,
+            "instructions": instructions,
+            "threshold": threshold,
+            "blocked_message": blocked_message,
+        }
+        if criteria is not None:
+            config_data["criteria"] = criteria
+        config = _AutoModeConfig.model_validate(config_data)
         self.tool_names = config.tool_names
         self.threshold = config.threshold
         self.instructions = config.instructions
-        self.criteria = criteria or NoulCriteria(
-            true=_DEFAULT_TRUE_CRITERIA,
-            false=_DEFAULT_FALSE_CRITERIA,
-        )
+        self.criteria = config.criteria
         self.blocked_message = config.blocked_message
         self.classifier = TypeSafeClassifier(
             questions={
