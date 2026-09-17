@@ -624,6 +624,34 @@ def test_chunks_to_events_reasoning_then_tool_call_no_index() -> None:
     assert tool_call_finish["args"] == {"city": "San Francisco"}
 
 
+def test_chunks_to_events_parallel_tool_calls_no_index() -> None:
+    """Complete no-index tool calls use their ids as stable stream keys."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {"type": "tool_call", "id": "a", "name": "search", "args": {}},
+                ]
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {"type": "tool_call", "id": "b", "name": "read", "args": {}},
+                ]
+            )
+        ),
+    ]
+
+    events = list(chunks_to_events(iter(chunks)))
+    tool_calls = [
+        e["content"]
+        for e in events
+        if e["event"] == "content-block-finish" and e["content"]["type"] == "tool_call"
+    ]
+    assert [call["id"] for call in tool_calls] == ["a", "b"]
+
+
 @pytest.mark.asyncio
 async def test_achunks_to_events_reasoning_then_tool_call_no_index() -> None:
     """Async twin of the no-index reasoning + tool_call regression."""

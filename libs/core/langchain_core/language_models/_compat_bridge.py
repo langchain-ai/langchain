@@ -193,6 +193,10 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
             continue  # type: ignore[unreachable]
         explicit_idx = block.get("index")
         if explicit_idx is None:
+            if block.get("type") == "tool_call" and block.get("id"):
+                key: Any = ("__lc_tool_call__", block["id"])
+                result.append((key, dict(block)))
+                continue
             # No source-side identity. Bucket by (sentinel, block type,
             # positional `i`) so two blocks of different types at the
             # same position across chunks (e.g. Gemini emitting a
