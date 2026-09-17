@@ -82,6 +82,7 @@ on:
           - openrouter
           - perplexity
           - qdrant
+          - typesafe
           - xai
       working-directory-override:
         required: false
