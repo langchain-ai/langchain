@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
 try:
     from langchain.agents.middleware.types import (
@@ -92,7 +92,8 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     Raises:
         pydantic.ValidationError: If no model choices are provided.
 
-    Example:
+    ??? example "Route agent calls by task"
+
         ```python
         from langchain.agents import create_agent
         from langchain_typesafe.experimental.middleware import (
@@ -186,8 +187,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         handler: Callable[[ModelRequest[Any]], ModelResponse[Any]],
     ) -> ModelResponse[Any]:
         """Route a synchronous model call to the selected model."""
-        state = cast("_ModelRouterState", request.state)
-        answer = state["model_route"]
+        answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
         return handler(request.override(model=self.models[answer.choice]))
 
     @override
@@ -197,8 +197,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         handler: Callable[[ModelRequest[Any]], Awaitable[ModelResponse[Any]]],
     ) -> ModelResponse[Any]:
         """Route an asynchronous model call to the selected model."""
-        state = cast("_ModelRouterState", request.state)
-        answer = state["model_route"]
+        answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
         return await handler(request.override(model=self.models[answer.choice]))
 
 
