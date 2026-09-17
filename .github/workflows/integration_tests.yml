@@ -43,7 +43,6 @@ on:
           - "openrouter"
           - "perplexity"
           - "qdrant"
-          - "typesafe"
           - "xai"
       working-directory-override:
         type: string
@@ -325,7 +324,6 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
-          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
           WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}

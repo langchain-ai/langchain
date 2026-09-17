@@ -1,4 +1,4 @@
-.PHONY: all format lint type test tests integration_tests help
+.PHONY: all format lint type test tests examples help
 
 all: help
 
@@ -7,13 +7,15 @@ UV_FROZEN = true
 
 TEST_FILE ?= tests/unit_tests/
 PYTEST_EXTRA ?=
-integration_test integration_tests: TEST_FILE = tests/integration_tests/
+
 
 test tests:
 	env -u LANGCHAIN_TRACING_V2 -u LANGCHAIN_API_KEY -u LANGSMITH_API_KEY -u LANGSMITH_TRACING -u LANGCHAIN_PROJECT uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
-integration_test integration_tests:
-	uv run --group test --group test_integration pytest -v --tb=short -n auto $(PYTEST_EXTRA) $(TEST_FILE)
+examples:
+	uv run --group examples python examples/model_router.py
+	uv run --group examples python examples/skills.py
+	uv run --group examples python examples/auto_mode.py
 
 PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache
@@ -52,3 +54,4 @@ help:
 	@echo 'format                    - run code formatters'
 	@echo 'lint                      - run linters and type checking'
 	@echo 'test                      - run unit tests'
+	@echo 'examples                  - run the example scripts against the live API'

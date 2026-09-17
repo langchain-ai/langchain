@@ -303,7 +303,7 @@ def test_skill_loads_from_a_path(tmp_path: Path) -> None:
     """A `SKILL.md` path is read from disk."""
     path = _write_skill(tmp_path, "code-review", REVIEW_MD)
 
-    middleware = SkillsMiddleware(skills=[path], api_key="k")
+    middleware = SkillsMiddleware(skills=[path])
 
     assert set(middleware.skills) == {"code-review"}
 
@@ -313,7 +313,7 @@ def test_skill_name_must_match_its_directory(tmp_path: Path) -> None:
     path = _write_skill(tmp_path, "wrong-directory", REVIEW_MD)
 
     with pytest.raises(ValueError, match="must match its parent directory"):
-        SkillsMiddleware(skills=[path], api_key="k")
+        SkillsMiddleware(skills=[path])
 
 
 def test_non_skill_filename_is_rejected(tmp_path: Path) -> None:
@@ -323,13 +323,13 @@ def test_non_skill_filename_is_rejected(tmp_path: Path) -> None:
     path.write_text(REVIEW_MD, encoding="utf-8")
 
     with pytest.raises(ValueError, match=r"must point to a SKILL\.md file"):
-        SkillsMiddleware(skills=[path], api_key="k")
+        SkillsMiddleware(skills=[path])
 
 
 def test_missing_path_is_rejected(tmp_path: Path) -> None:
     """A path that does not exist fails with a clear error."""
     with pytest.raises(ValueError, match="Unable to resolve"):
-        SkillsMiddleware(skills=[tmp_path / "gone" / "SKILL.md"], api_key="k")
+        SkillsMiddleware(skills=[tmp_path / "gone" / "SKILL.md"])
 
 
 def test_path_outside_the_root_is_rejected(tmp_path: Path) -> None:
@@ -339,7 +339,7 @@ def test_path_outside_the_root_is_rejected(tmp_path: Path) -> None:
     outside = _write_skill(tmp_path / "elsewhere", "code-review", REVIEW_MD)
 
     with pytest.raises(ValueError, match="resolves outside the configured skills root"):
-        SkillsMiddleware(skills=[outside], skills_root=library, api_key="k")
+        SkillsMiddleware(skills=[outside], skills_root=library)
 
 
 def test_symlink_escaping_the_root_is_rejected(tmp_path: Path) -> None:
@@ -353,7 +353,7 @@ def test_symlink_escaping_the_root_is_rejected(tmp_path: Path) -> None:
     link.symlink_to(real)
 
     with pytest.raises(ValueError, match="resolves outside the configured skills root"):
-        SkillsMiddleware(skills=[link], skills_root=library, api_key="k")
+        SkillsMiddleware(skills=[link], skills_root=library)
 
 
 def test_path_inside_the_root_is_accepted(tmp_path: Path) -> None:
@@ -361,11 +361,7 @@ def test_path_inside_the_root_is_accepted(tmp_path: Path) -> None:
     library = tmp_path / "library"
     path = _write_skill(library, "code-review", REVIEW_MD)
 
-    middleware = SkillsMiddleware(
-        skills=[path],
-        skills_root=library,
-        api_key="k",
-    )
+    middleware = SkillsMiddleware(skills=[path], skills_root=library)
 
     assert set(middleware.skills) == {"code-review"}
 
@@ -376,7 +372,7 @@ def test_oversized_skill_file_is_rejected(tmp_path: Path) -> None:
     path.write_text("---\nname: code-review\n" + "x" * (10 * 1024 * 1024))
 
     with pytest.raises(ValueError, match="exceeds the 10 MiB size limit"):
-        SkillsMiddleware(skills=[path], api_key="k")
+        SkillsMiddleware(skills=[path])
 
 
 def test_invalid_utf8_skill_file_is_rejected(tmp_path: Path) -> None:
@@ -385,13 +381,13 @@ def test_invalid_utf8_skill_file_is_rejected(tmp_path: Path) -> None:
     path.write_bytes(b"---\nname: code-review\n\xff\xfe\n---\n")
 
     with pytest.raises(ValueError, match="not valid UTF-8"):
-        SkillsMiddleware(skills=[path], api_key="k")
+        SkillsMiddleware(skills=[path])
 
 
 def test_skill_objects_are_accepted() -> None:
     """A pre-built `Skill` needs no parsing."""
     skill = Skill(name="code-review", description="Review diffs.", content="body")
 
-    middleware = SkillsMiddleware(skills=[skill], api_key="k")
+    middleware = SkillsMiddleware(skills=[skill])
 
     assert middleware.skills["code-review"] is skill

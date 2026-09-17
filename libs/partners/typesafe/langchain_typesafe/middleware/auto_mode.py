@@ -19,10 +19,7 @@ from langchain_core.messages import (
     ToolMessage,
     convert_to_openai_messages,
 )
-from pydantic import SecretStr
 from typing_extensions import override
-
-from langchain_typesafe._classify import TypeSafeClassifier
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -115,30 +112,17 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
             conservative default blocks calls with at least 20% estimated risk.
         blocked_message: Template returned to the model for blocked calls. It
             receives `tool_name` and `risk_probability` format variables.
-        api_key: TypeSafe API key. If omitted, reads `TYPESAFE_API_KEY`.
-        base_url: Root URL for the TypeSafe API.
-        model: TypeSafe model used for the risk decision.
-        timeout: Timeout in seconds for the risk request.
-        retry: Retry policy for the risk request.
-        client: Optional synchronous TypeSafe client.
-        async_client: Optional asynchronous TypeSafe client.
+        client: TypeSafe client used for the risk decision. If omitted, a
+            `typesafe_sdk.TypeSafeClient` is created, which resolves
+            `TYPESAFE_API_KEY` and the rest of its configuration from the
+            environment. Pass one to set a model, timeout, retry policy, base URL,
+            or transport.
+        async_client: Asynchronous equivalent of `client`.
 
     Raises:
         ValueError: If `tools` is empty, contains an empty name, or the threshold is
             outside `[0, 1]`.
 
-    ??? example "Block risky tool calls"
-
-        ```python
-        from langchain.agents import create_agent
-        from langchain_typesafe import AutoModeMiddleware
-
-        agent = create_agent(
-            model,
-            tools=[read_file, delete_file],
-            middleware=[AutoModeMiddleware(tools=["delete_file"])],
-        )
-        ```
     """
 
     trace_policy = TracePolicy(process_inputs=omit_payload)
@@ -150,11 +134,6 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         tools: Sequence[str],
         risk_threshold: float = 0.2,
         blocked_message: str = _DEFAULT_BLOCKED_MESSAGE,
-        api_key: SecretStr | str | None = None,
-        base_url: str | None = None,
-        model: str | None = None,
-        timeout: float | None = None,
-        retry: ts.RetryPolicy | None = None,
         client: ts.TypeSafeClient | None = None,
         async_client: ts.AsyncTypeSafeClient | None = None,
     ) -> None:
@@ -174,29 +153,24 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         self._tool_filter = tool_filter
         self.risk_threshold = risk_threshold
         self.blocked_message = blocked_message
-        self._classifier = TypeSafeClassifier(
-            {
-                _RISK_QUESTION_ID: ts.Noul(
-                    instructions=_DEFAULT_RISK_INSTRUCTIONS,
-                    criteria={
-                        "true": (
-                            "Execution could cause harm, exceed authorization, expose "
-                            "sensitive data, or create an external side effect."
-                        ),
-                        "false": (
-                            "Execution is low risk, reversible, and clearly authorized "
-                            "by the user."
-                        ),
-                    },
-                )
-            },
-            api_key=api_key,
-            base_url=base_url,
-            model=model,
-            timeout=timeout,
-            retry=retry,
-            client=client,
-            async_client=async_client,
+        self._questions = {
+            _RISK_QUESTION_ID: ts.Noul(
+                instructions=_DEFAULT_RISK_INSTRUCTIONS,
+                criteria={
+                    "true": (
+                        "Execution could cause harm, exceed authorization, expose "
+                        "sensitive data, or create an external side effect."
+                    ),
+                    "false": (
+                        "Execution is low risk, reversible, and clearly authorized "
+                        "by the user."
+                    ),
+                },
+            )
+        }
+        self._client = client if client is not None else ts.TypeSafeClient()
+        self._async_client = (
+            async_client if async_client is not None else ts.AsyncTypeSafeClient()
         )
 
     @staticmethod
@@ -284,7 +258,9 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         """
         if request.tool_call["name"] not in self._tool_filter:
             return handler(request)
-        response = self._classifier.classify(self._classification_state(request))
+        response = self._client.system_one(
+            self._classification_state(request), self._questions
+        )
         risk_probability = self._risk_probability(response)
         if risk_probability >= self.risk_threshold:
             return self._blocked_tool_message(request, risk_probability)
@@ -314,7 +290,9 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         """
         if request.tool_call["name"] not in self._tool_filter:
             return await handler(request)
-        response = await self._classifier.aclassify(self._classification_state(request))
+        response = await self._async_client.system_one(
+            self._classification_state(request), self._questions
+        )
         risk_probability = self._risk_probability(response)
         if risk_probability >= self.risk_threshold:
             return self._blocked_tool_message(request, risk_probability)

@@ -19,10 +19,9 @@ from langchain.agents.middleware.types import (
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, convert_to_openai_messages
 from langgraph.runtime import Runtime
-from pydantic import SecretStr
 from typing_extensions import NotRequired, override
 
-from langchain_typesafe._classify import TypeSafeClassifier, log_classification_failure
+from langchain_typesafe._logging import log_classification_failure
 
 logger = logging.getLogger(__name__)
 
@@ -66,39 +65,16 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         instructions: Instructions TypeSafe should follow when selecting a route.
         default_route: Route used when classification fails or does not select a
             configured model.
-        api_key: TypeSafe API key. If omitted, reads `TYPESAFE_API_KEY`.
-        base_url: Root URL for the TypeSafe API.
-        model: TypeSafe model used for the routing decision.
-        timeout: Timeout in seconds for the routing request.
-        retry: Retry policy for the routing request.
-        client: Optional synchronous TypeSafe client.
-        async_client: Optional asynchronous TypeSafe client.
+        client: TypeSafe client used for the routing decision. If omitted, a
+            `typesafe_sdk.TypeSafeClient` is created, which resolves
+            `TYPESAFE_API_KEY` and the rest of its configuration from the
+            environment. Pass one to set a model, timeout, retry policy, base URL,
+            or transport.
+        async_client: Asynchronous equivalent of `client`.
 
     Raises:
         ValueError: If `choices` is empty or `default_route` is not one of them.
 
-    ??? example "Route between a fast and a powerful model"
-
-        ```python
-        from langchain.agents import create_agent
-        from langchain_typesafe import ModelChoice, ModelRouterMiddleware
-
-        router = ModelRouterMiddleware(
-            choices={
-                "fast": ModelChoice(
-                    model=fast_model,
-                    criteria="Simple, well-scoped tasks.",
-                ),
-                "powerful": ModelChoice(
-                    model=powerful_model,
-                    criteria="Complex tasks requiring deeper reasoning.",
-                ),
-            },
-            instructions="Choose the least costly model suited to the task.",
-            default_route="powerful",
-        )
-        agent = create_agent(fast_model, middleware=[router])
-        ```
     """
 
     state_schema = _ModelRouterState  # type: ignore[assignment]
@@ -111,11 +87,6 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         choices: Mapping[str, ModelChoice],
         instructions: ts.JSONContent,
         default_route: str,
-        api_key: SecretStr | str | None = None,
-        base_url: str | None = None,
-        model: str | None = None,
-        timeout: float | None = None,
-        retry: ts.RetryPolicy | None = None,
         client: ts.TypeSafeClient | None = None,
         async_client: ts.AsyncTypeSafeClient | None = None,
     ) -> None:
@@ -129,22 +100,17 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         if self.default_route not in self.choices:
             msg = f"Default route {self.default_route!r} is not present in `choices`."
             raise ValueError(msg)
-        self._classifier = TypeSafeClassifier(
-            {
-                _QUESTION_ID: ts.Choice(
-                    instructions=instructions,
-                    criteria={
-                        route: choice.criteria for route, choice in self.choices.items()
-                    },
-                )
-            },
-            api_key=api_key,
-            base_url=base_url,
-            model=model,
-            timeout=timeout,
-            retry=retry,
-            client=client,
-            async_client=async_client,
+        self._questions = {
+            _QUESTION_ID: ts.Choice(
+                instructions=instructions,
+                criteria={
+                    route: choice.criteria for route, choice in self.choices.items()
+                },
+            )
+        }
+        self._client = client if client is not None else ts.TypeSafeClient()
+        self._async_client = (
+            async_client if async_client is not None else ts.AsyncTypeSafeClient()
         )
 
     def _classification_state(self, state: _ModelRouterState) -> dict[str, Any] | None:
@@ -184,7 +150,9 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         if classifier_state is None:
             return {"model_route": self.default_route}
         try:
-            route = self._resolve_route(self._classifier.classify(classifier_state))
+            route = self._resolve_route(
+                self._client.system_one(classifier_state, self._questions)
+            )
         except Exception as error:  # noqa: BLE001 - routing must not break the agent
             log_classification_failure(
                 logger,
@@ -206,7 +174,9 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         if classifier_state is None:
             return {"model_route": self.default_route}
         try:
-            response = await self._classifier.aclassify(classifier_state)
+            response = await self._async_client.system_one(
+                classifier_state, self._questions
+            )
             route = self._resolve_route(response)
         except Exception as error:  # noqa: BLE001 - routing must not break the agent
             log_classification_failure(

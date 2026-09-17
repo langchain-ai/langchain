@@ -25,10 +25,10 @@ from langchain_core.messages import (
     convert_to_openai_messages,
 )
 from langgraph.runtime import Runtime
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import NotRequired, override
 
-from langchain_typesafe._classify import TypeSafeClassifier, log_classification_failure
+from langchain_typesafe._logging import log_classification_failure
 
 logger = logging.getLogger(__name__)
 
@@ -253,33 +253,17 @@ class SkillsMiddleware(AgentMiddleware[_SkillsState]):
         skills_root: Directory that every path source must resolve inside. Paths
             resolving outside it are rejected, which stops a symlink or `..`
             component from pulling in a file outside the skill library.
-        api_key: TypeSafe API key. If omitted, reads `TYPESAFE_API_KEY`.
-        base_url: Root URL for the TypeSafe API.
-        model: TypeSafe model used for the relevance decision.
-        timeout: Timeout in seconds for the relevance request.
-        retry: Retry policy for the relevance request.
-        client: Optional synchronous TypeSafe client.
-        async_client: Optional asynchronous TypeSafe client.
+        client: TypeSafe client used for the relevance decision. If omitted, a
+            `typesafe_sdk.TypeSafeClient` is created, which resolves
+            `TYPESAFE_API_KEY` and the rest of its configuration from the
+            environment. Pass one to set a model, timeout, retry policy, base URL,
+            or transport.
+        async_client: Asynchronous equivalent of `client`.
 
     Raises:
         ValueError: If the skill roster is empty, contains duplicate names, includes
             an invalid source, or `relevance_threshold` is outside `[0, 1]`.
 
-    ??? example "Select skills from a skill library"
-
-        ```python
-        from pathlib import Path
-
-        from langchain.agents import create_agent
-        from langchain_typesafe import SkillsMiddleware
-
-        library = Path("skills")
-        skills = SkillsMiddleware(
-            skills=[library / "code-review" / "SKILL.md"],
-            skills_root=library,
-        )
-        agent = create_agent(model, middleware=[skills])
-        ```
     """
 
     state_schema = _SkillsState  # type: ignore[assignment]
@@ -292,11 +276,6 @@ class SkillsMiddleware(AgentMiddleware[_SkillsState]):
         skills: Sequence[SkillSource],
         relevance_threshold: float = 0.3,
         skills_root: Path | None = None,
-        api_key: SecretStr | str | None = None,
-        base_url: str | None = None,
-        model: str | None = None,
-        timeout: float | None = None,
-        retry: ts.RetryPolicy | None = None,
         client: ts.TypeSafeClient | None = None,
         async_client: ts.AsyncTypeSafeClient | None = None,
     ) -> None:
@@ -322,23 +301,18 @@ class SkillsMiddleware(AgentMiddleware[_SkillsState]):
 
         self.skills = {skill.name: skill for skill in loaded_skills}
         self.relevance_threshold = relevance_threshold
-        self._classifier = TypeSafeClassifier(
-            {
-                f"{_SKILL_QUESTION_PREFIX}{skill.name}": ts.Noul(
-                    instructions=(
-                        "Does this skill directly apply to the user's latest request? "
-                        f"Skill: {skill.name}. Description: {skill.description}"
-                    )
+        self._questions = {
+            f"{_SKILL_QUESTION_PREFIX}{skill.name}": ts.Noul(
+                instructions=(
+                    "Does this skill directly apply to the user's latest request? "
+                    f"Skill: {skill.name}. Description: {skill.description}"
                 )
-                for skill in loaded_skills
-            },
-            api_key=api_key,
-            base_url=base_url,
-            model=model,
-            timeout=timeout,
-            retry=retry,
-            client=client,
-            async_client=async_client,
+            )
+            for skill in loaded_skills
+        }
+        self._client = client if client is not None else ts.TypeSafeClient()
+        self._async_client = (
+            async_client if async_client is not None else ts.AsyncTypeSafeClient()
         )
 
     def _classification_state(self, state: _SkillsState) -> dict[str, Any] | None:
@@ -378,7 +352,7 @@ class SkillsMiddleware(AgentMiddleware[_SkillsState]):
             return {"selected_skills": []}
         try:
             selected = self._selected_skills(
-                self._classifier.classify(classifier_state)
+                self._client.system_one(classifier_state, self._questions)
             )
         except Exception as error:  # noqa: BLE001 - skills must not break the agent
             log_classification_failure(logger, error, "no skills were added")
@@ -397,7 +371,9 @@ class SkillsMiddleware(AgentMiddleware[_SkillsState]):
         if classifier_state is None:
             return {"selected_skills": []}
         try:
-            response = await self._classifier.aclassify(classifier_state)
+            response = await self._async_client.system_one(
+                classifier_state, self._questions
+            )
             selected = self._selected_skills(response)
         except Exception as error:  # noqa: BLE001 - skills must not break the agent
             log_classification_failure(logger, error, "no skills were added")

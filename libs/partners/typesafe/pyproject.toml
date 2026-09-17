@@ -48,7 +48,8 @@ test = [
     "httpx2>=2.0.0,<3.0.0",
     "langchain-tests>=1.1.9,<2.0.0",
 ]
-test_integration = ["langchain-openai>=1.2.0,<2.0.0"]
+test_integration = []
+examples = ["langchain-openai>=1.2.0,<2.0.0"]
 lint = ["ruff>=0.15.0,<0.16.0"]
 dev = []
 typing = [
@@ -109,4 +110,8 @@ asyncio_mode = "auto"
 ]
 "scripts/*.py" = [
     "INP001", # Not a package
+]
+"examples/*.py" = [
+    "INP001", # Not a package
+    "T201",   # Examples print their results
 ]

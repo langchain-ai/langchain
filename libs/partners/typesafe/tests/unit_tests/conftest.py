@@ -58,13 +58,18 @@ class RecordingTransport:
         return self.requests[0]["questions"]
 
 
+@pytest.fixture(autouse=True)
+def _api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Let middleware construct default SDK clients without a real key."""
+    monkeypatch.setenv("TYPESAFE_API_KEY", API_KEY)
+
+
 @pytest.fixture
 def clients() -> Callable[[Handler], dict[str, Any]]:
     """Return a factory building middleware client kwargs from a handler."""
 
     def build(handler: Handler) -> dict[str, Any]:
         return {
-            "api_key": API_KEY,
             "client": ts.TypeSafeClient(
                 api_key=API_KEY,
                 transport=httpx2.MockTransport(handler),
