@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-typesafe"
-version = "0.0.1a1"
+version = "0.0.1a2"
 description = "A LangChain integration for TypeSafe classifiers"
 license = { text = "MIT" }
 readme = "README.md"
