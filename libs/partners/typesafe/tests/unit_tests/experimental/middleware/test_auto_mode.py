@@ -81,17 +81,17 @@ def _delete_tool(executions: list[str]) -> BaseTool:
     return delete_file
 
 
-def _response_payload(risk_probability: float) -> dict[str, Any]:
+def _response_payload(probability: float) -> dict[str, Any]:
     return {
         "model": "jev-latest",
-        "answers": {"is_risky": {"type": "noul", "noul": risk_probability}},
+        "answers": {"is_risky": {"type": "noul", "noul": probability}},
         "usage": {"input_tokens": 10, "output_tokens": 2},
     }
 
 
 @asynccontextmanager
 async def _middleware(
-    risk_probability: float,
+    probability: float,
     *,
     tools: Sequence[str | BaseTool],
     threshold: float = 0.5,
@@ -105,7 +105,7 @@ async def _middleware(
             observed_requests.append(json.loads(request.content))
         if status_code != 200:
             return httpx2.Response(status_code, json={"error": "unavailable"})
-        return httpx2.Response(200, json=_response_payload(risk_probability))
+        return httpx2.Response(200, json=_response_payload(probability))
 
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
     async_client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
@@ -213,11 +213,11 @@ async def test_trace_policy_omits_classifier_context() -> None:
 
 @pytest.mark.parametrize("async_", [False, True])
 @pytest.mark.parametrize(
-    ("risk_probability", "expected_status", "expected_executions"),
+    ("probability", "expected_status", "expected_executions"),
     [(0.2, "success", ["/workspace/report.txt"]), (0.9, "error", [])],
 )
 async def test_agent_executes_safe_calls_and_blocks_risky_calls(
-    risk_probability: float,
+    probability: float,
     expected_status: str,
     expected_executions: list[str],
     *,
@@ -228,7 +228,7 @@ async def test_agent_executes_safe_calls_and_blocks_risky_calls(
     tool_instance = _delete_tool(executions)
 
     async with _middleware(
-        risk_probability,
+        probability,
         tools=[tool_instance],
     ) as middleware:
         result = await _run_agent(
