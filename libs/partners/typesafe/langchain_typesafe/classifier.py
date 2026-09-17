@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any
+import json
+from collections.abc import Sequence
+from typing import Any, cast
 
 import httpx2
 from langchain_core._api import beta
+from langchain_core.callbacks import AsyncCallbackManager, CallbackManager
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages.ai import UsageMetadata
+from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.runnables.config import ensure_config
 from langchain_core.utils import from_env, secret_from_env
 from pydantic import (
     ConfigDict,
@@ -319,12 +326,29 @@ class TypeSafeClassifier(RunnableSerializable[State, ClassificationResponse]):
             TypeSafeAPITimeoutError: If the request exceeds its client timeout.
             TypeSafeAPIResponseValidationError: If a successful response is malformed.
         """
-        return self._call_with_config(
-            self._classify,
-            input,
-            config,
-            run_type="chain",
+        config = ensure_config(config)
+        callback_manager = CallbackManager.configure(
+            config.get("callbacks"),
+            None,
+            verbose=False,
+            inheritable_tags=config.get("tags"),
+            inheritable_metadata=self._trace_metadata(config),
         )
+        (run_manager,) = callback_manager.on_chat_model_start(
+            self._trace_serialized,
+            [self._trace_messages(input)],
+            invocation_params=self._invocation_params,
+            name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
+            batch_size=1,
+        )
+        try:
+            response = self._classify(input)
+        except BaseException as error:
+            run_manager.on_llm_error(error)
+            raise
+        run_manager.on_llm_end(_llm_result(response))
+        return response
 
     @override
     async def ainvoke(
@@ -352,12 +376,29 @@ class TypeSafeClassifier(RunnableSerializable[State, ClassificationResponse]):
             TypeSafeAPITimeoutError: If the request exceeds its client timeout.
             TypeSafeAPIResponseValidationError: If a successful response is malformed.
         """
-        return await self._acall_with_config(
-            self._aclassify,
-            input,
-            config,
-            run_type="chain",
+        config = ensure_config(config)
+        callback_manager = AsyncCallbackManager.configure(
+            config.get("callbacks"),
+            None,
+            verbose=False,
+            inheritable_tags=config.get("tags"),
+            inheritable_metadata=self._trace_metadata(config),
         )
+        (run_manager,) = await callback_manager.on_chat_model_start(
+            self._trace_serialized,
+            [self._trace_messages(input)],
+            invocation_params=self._invocation_params,
+            name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
+            batch_size=1,
+        )
+        try:
+            response = await self._aclassify(input)
+        except BaseException as error:
+            await run_manager.on_llm_error(error)
+            raise
+        await run_manager.on_llm_end(_llm_result(response))
+        return response
 
     def _classify(self, state: State) -> ClassificationResponse:
         payload = self._payload(state)
@@ -396,6 +437,58 @@ class TypeSafeClassifier(RunnableSerializable[State, ClassificationResponse]):
         return parse_response(response)
 
     @property
+    def _trace_serialized(self) -> dict[str, Any]:
+        """Identify the classifier in traces without exposing credentials."""
+        return {
+            "lc": 1,
+            "type": "not_implemented",
+            "id": [*self.get_lc_namespace(), type(self).__name__],
+            "name": type(self).__name__,
+        }
+
+    @property
+    def _invocation_params(self) -> dict[str, Any]:
+        """Describe the request in traces. Excludes credentials and `base_url`."""
+        return {
+            "model": self.model,
+            "questions": {
+                name: question.type for name, question in self.questions.items()
+            },
+        }
+
+    def _trace_metadata(self, config: RunnableConfig) -> dict[str, Any]:
+        """Merge caller metadata with the LangSmith model-identity keys."""
+        return {
+            **(config.get("metadata") or {}),
+            "ls_provider": "typesafe",
+            "ls_model_name": self.model,
+            "ls_model_type": "chat",
+        }
+
+    def _trace_messages(self, state: State) -> list[BaseMessage]:
+        """Render the input state as messages for the traced run's inputs.
+
+        Serialization failures are swallowed so that an unsupported state still
+        raises its `TypeError` inside the run, where the tracer records it.
+        """
+        if isinstance(state, BaseMessage):
+            return [state]
+        if (
+            isinstance(state, Sequence)
+            and not isinstance(state, (str, bytes))
+            and state
+            and all(isinstance(item, BaseMessage) for item in state)
+        ):
+            return cast("list[BaseMessage]", list(state))
+        try:
+            serialized = serialize_state(state)
+        except TypeError:
+            return [HumanMessage(content="<unserializable state>")]
+        if isinstance(serialized, str):
+            return [HumanMessage(content=serialized)]
+        return [HumanMessage(content=json.dumps(serialized, ensure_ascii=False))]
+
+    @property
     def _endpoint(self) -> str:
         return f"{self.base_url.rstrip('/')}/v1/systemone"
 
@@ -421,6 +514,37 @@ class TypeSafeClassifier(RunnableSerializable[State, ClassificationResponse]):
                 for name, question in self.questions.items()
             },
         }
+
+
+def _llm_result(response: ClassificationResponse) -> LLMResult:
+    """Wrap a classification response so the tracer records its token usage.
+
+    `LangChainTracer` reads usage from `generations[i][j].message.usage_metadata`,
+    so the answers are carried on an `AIMessage` rather than a plain `Generation`.
+    """
+    input_tokens = response.usage.input_tokens or 0
+    output_tokens = response.usage.output_tokens or 0
+    usage = UsageMetadata(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=input_tokens + output_tokens,
+    )
+    answers = {
+        name: answer.model_dump(mode="json")
+        for name, answer in response.answers.items()
+    }
+    message = AIMessage(
+        content=json.dumps(answers, ensure_ascii=False),
+        usage_metadata=usage,
+        response_metadata={
+            "model": response.model,
+            "request_id": response.request_id,
+        },
+    )
+    return LLMResult(
+        generations=[[ChatGeneration(message=message)]],
+        llm_output={"model": response.model, "token_usage": usage},
+    )
 
 
 __all__ = ["TypeSafeClassifier"]

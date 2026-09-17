@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import json
 from typing import Any
+from unittest.mock import MagicMock
 
 import httpx2
 import pytest
 from langchain_core._api import LangChainBetaWarning
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.tracers import LangChainTracer
 from pydantic import SecretStr, ValidationError
 
 from langchain_typesafe import (
@@ -28,6 +30,21 @@ from langchain_typesafe.client import (
     TypeSafeAPIResponseValidationError,
     TypeSafeAPITimeoutError,
 )
+
+
+class _CapturingTracer(LangChainTracer):
+    """Collect the runs a tracer would send, without any network access."""
+
+    def __init__(self) -> None:
+        super().__init__(client=MagicMock())
+        self.runs: list[Any] = []
+
+    def _persist_run_single(self, run: Any) -> None:
+        self.runs.append(run)
+
+    def _update_run_single(self, run: Any) -> None:
+        self.runs.append(run)
+
 
 API_KEY = "test-api-key"
 REQUEST_ID = "req_test"
@@ -515,10 +532,10 @@ def test_callbacks_receive_classifier_run() -> None:
         starts = 0
         ends = 0
 
-        def on_chain_start(self, *_: Any, **__: Any) -> None:
+        def on_chat_model_start(self, *_: Any, **__: Any) -> None:
             self.starts += 1
 
-        def on_chain_end(self, *_: Any, **__: Any) -> None:
+        def on_llm_end(self, *_: Any, **__: Any) -> None:
             self.ends += 1
 
     def handler(_: httpx2.Request) -> httpx2.Response:
@@ -537,3 +554,61 @@ def test_callbacks_receive_classifier_run() -> None:
     assert callback.starts == 1
     assert callback.ends == 1
     client.close()
+
+
+def test_tracer_records_usage_metadata_and_model_identity() -> None:
+    """Token usage reaches the LangSmith run so cost can be attributed.
+
+    `LangChainTracer` only populates `extra.metadata.usage_metadata` from the LLM
+    callback path, so this pins the run type as well as the usage payload.
+    """
+
+    def handler(_: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=_response_payload())
+
+    client = httpx2.Client(transport=httpx2.MockTransport(handler))
+    tracer = _CapturingTracer()
+    classifier = TypeSafeClassifier(
+        api_key=API_KEY,
+        questions=_questions(),
+        client=client,
+    )
+
+    classifier.invoke("hello", config={"callbacks": [tracer]})
+    client.close()
+
+    run = tracer.runs[-1]
+    metadata = run.extra["metadata"]
+    assert run.run_type == "llm"
+    assert metadata["usage_metadata"] == {
+        "input_tokens": 42,
+        "output_tokens": 12,
+        "total_tokens": 54,
+    }
+    assert metadata["ls_provider"] == "typesafe"
+    assert metadata["ls_model_name"] == "jev-latest"
+    # The API key must never reach the traced payload.
+    assert API_KEY not in json.dumps(run.serialized)
+    assert API_KEY not in json.dumps(run.extra, default=str)
+
+
+async def test_async_tracer_records_usage_metadata() -> None:
+    """`ainvoke` emits the same LLM-run usage as `invoke`."""
+
+    async def handler(_: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=_response_payload())
+
+    client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
+    tracer = _CapturingTracer()
+    classifier = TypeSafeClassifier(
+        api_key=API_KEY,
+        questions=_questions(),
+        async_client=client,
+    )
+
+    await classifier.ainvoke("hello", config={"callbacks": [tracer]})
+    await client.aclose()
+
+    run = tracer.runs[-1]
+    assert run.run_type == "llm"
+    assert run.extra["metadata"]["usage_metadata"]["total_tokens"] == 54
