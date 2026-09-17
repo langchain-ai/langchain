@@ -147,7 +147,6 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
             pydantic.ValidationError: If tool names or threshold configuration is
                 invalid.
         """
-        super().__init__()
         self.config = _AutoModeConfig.model_validate(
             {
                 "tools": tools,
