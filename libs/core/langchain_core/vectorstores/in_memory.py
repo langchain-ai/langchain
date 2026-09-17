@@ -544,3 +544,11 @@ class InMemoryVectorStore(VectorStore):
         path_.parent.mkdir(exist_ok=True, parents=True)
         with path_.open("w", encoding="utf-8") as f:
             json.dump(dumpd(self.store), f, indent=2)
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        """Return a relevance score normalizer.
+
+        Normalizes cosine similarity from [-1, 1] into [0, 1].
+        """
+        return lambda score: (score + 1.0) / 2.0
+

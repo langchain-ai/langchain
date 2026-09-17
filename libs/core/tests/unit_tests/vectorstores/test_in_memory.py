@@ -220,3 +220,25 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+def test_inmemory_similarity_search_with_relevance_scores() -> None:
+    """Test similarity search with relevance scores."""
+    embedding = DeterministicFakeEmbedding(size=2)
+    store = InMemoryVectorStore(embedding=embedding)
+    store.add_documents([Document(page_content="foo", id="1"), Document(page_content="bar", id="2")])
+
+    results = store.similarity_search_with_relevance_scores("foo", k=1)
+    assert len(results) == 1
+    doc, score = results[0]
+    assert doc.page_content == "foo"
+    assert 0.0 <= score <= 1.0
+
+    retriever = store.as_retriever(
+        search_type="similarity_score_threshold",
+        search_kwargs={"score_threshold": 0.5, "k": 2},
+    )
+    docs = retriever.invoke("foo")
+    assert len(docs) >= 1
+    assert docs[0].page_content == "foo"
+
