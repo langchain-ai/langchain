@@ -1,12 +1,10 @@
-"""Tests for TypeSafe provider and LangChain error classification."""
+"""Unit tests for TypeSafe error translation."""
 
 from __future__ import annotations
 
-import pickle
-from typing import Any
-
 import httpx2
 import pytest
+import typesafe_sdk as ts
 from langchain_core.exceptions import (
     ModelAPIError,
     ModelAuthenticationError,
@@ -19,9 +17,8 @@ from langchain_core.exceptions import (
     ModelTimeoutError,
 )
 
-from langchain_typesafe import (
+from langchain_typesafe._errors import (
     TypeSafeAPIConnectionError,
-    TypeSafeAPIError,
     TypeSafeAPIResponseValidationError,
     TypeSafeAPITimeoutError,
     TypeSafeAuthenticationError,
@@ -31,185 +28,222 @@ from langchain_typesafe import (
     TypeSafePermissionDeniedError,
     TypeSafeRateLimitError,
     TypeSafeUnprocessableEntityError,
+    with_standard_errors,
 )
-from langchain_typesafe._client_utils import parse_response
+
+# Each SDK HTTP exception, the status the provider reports it with, the package
+# exception it is translated to, and the standard LangChain error it also becomes.
+_API_CASES = [
+    (
+        ts.TypeSafeBadRequestError,
+        400,
+        TypeSafeBadRequestError,
+        ModelInvalidRequestError,
+    ),
+    (
+        ts.TypeSafeAuthenticationError,
+        401,
+        TypeSafeAuthenticationError,
+        ModelAuthenticationError,
+    ),
+    (
+        ts.TypeSafePermissionDeniedError,
+        403,
+        TypeSafePermissionDeniedError,
+        ModelPermissionDeniedError,
+    ),
+    (ts.TypeSafeNotFoundError, 404, TypeSafeNotFoundError, ModelNotFoundError),
+    (
+        ts.TypeSafeUnprocessableEntityError,
+        422,
+        TypeSafeUnprocessableEntityError,
+        ModelInvalidRequestError,
+    ),
+    (ts.TypeSafeRateLimitError, 429, TypeSafeRateLimitError, ModelRateLimitError),
+    (ts.TypeSafeInternalServerError, 500, TypeSafeInternalServerError, ModelAPIError),
+    (ts.TypeSafeInternalServerError, 529, TypeSafeInternalServerError, ModelAPIError),
+]
+
+_REQUEST = httpx2.Request("POST", "https://api.typesafe.ai/v1/systemone")
 
 
-@pytest.mark.parametrize(
-    ("status", "provider_type", "langchain_type", "is_retryable"),
-    [
-        (400, TypeSafeBadRequestError, ModelInvalidRequestError, False),
-        (401, TypeSafeAuthenticationError, ModelAuthenticationError, False),
-        (403, TypeSafePermissionDeniedError, ModelPermissionDeniedError, False),
-        (404, TypeSafeNotFoundError, ModelNotFoundError, False),
-        (422, TypeSafeUnprocessableEntityError, ModelInvalidRequestError, False),
-        (429, TypeSafeRateLimitError, ModelRateLimitError, True),
-        (500, TypeSafeInternalServerError, ModelAPIError, True),
-        (529, TypeSafeInternalServerError, ModelAPIError, True),
-    ],
-)
-def test_status_errors_use_provider_and_langchain_types(
+def _raise(
+    sdk_error: type[ts.TypeSafeAPIError],
     status: int,
-    provider_type: type[TypeSafeAPIError],
-    langchain_type: type[ModelError],
     *,
-    is_retryable: bool,
+    body: object = None,
+    headers: httpx2.Headers | None = None,
 ) -> None:
-    """Each known status is catchable through provider and LangChain hierarchies."""
-    request = httpx2.Request("POST", "https://api.typesafe.ai/v1/systemone")
-    response = httpx2.Response(status, json={"message": "failure"}, request=request)
+    """Raise an SDK HTTP error through the translator."""
+    with with_standard_errors():
+        raise sdk_error(
+            status,
+            body,
+            headers if headers is not None else httpx2.Headers(),
+            endpoint=f"POST {_REQUEST.url}",
+        )
 
-    with pytest.raises(provider_type) as exc_info:
-        parse_response(response)
 
-    assert isinstance(exc_info.value, langchain_type)
-    assert exc_info.value.is_retryable is is_retryable
+@pytest.mark.parametrize(("sdk_error", "status", "expected", "standard"), _API_CASES)
+def test_status_maps_to_paired_error(
+    sdk_error: type[ts.TypeSafeAPIError],
+    status: int,
+    expected: type[Exception],
+    standard: type[ModelError],
+) -> None:
+    """Each classified status raises a package error that is also a `ModelError`."""
+    with pytest.raises(expected) as exc_info:
+        _raise(sdk_error, status)
+
+    error = exc_info.value
+    assert isinstance(error, standard)
+    assert isinstance(error, sdk_error)
+    assert isinstance(error, ts.TypeSafeError)
+    assert error.status == status  # type: ignore[attr-defined]
 
 
-def test_overloaded_error_has_safe_provider_description() -> None:
-    """TypeSafe's nonstandard overloaded status remains useful without body text."""
-    response = httpx2.Response(
-        529,
-        json={"message": "private overload detail"},
-        request=httpx2.Request("POST", "https://api.typesafe.ai/v1/systemone"),
-    )
+@pytest.mark.parametrize(("sdk_error", "status", "expected", "standard"), _API_CASES)
+def test_sdk_exception_types_still_catch_paired_errors(
+    sdk_error: type[ts.TypeSafeAPIError],
+    status: int,
+    expected: type[Exception],
+    standard: type[ModelError],
+) -> None:
+    """Code that catches the SDK's own exception types keeps working."""
+    del expected, standard
+    with pytest.raises(sdk_error):
+        _raise(sdk_error, status)
+
+
+def test_retryable_flags_follow_the_condition() -> None:
+    """Retryability matches LangChain's standard classification."""
+    with pytest.raises(TypeSafeRateLimitError) as rate_limited:
+        _raise(ts.TypeSafeRateLimitError, 429)
+    with pytest.raises(TypeSafeInternalServerError) as overloaded:
+        _raise(ts.TypeSafeInternalServerError, 529)
+    with pytest.raises(TypeSafeAuthenticationError) as unauthenticated:
+        _raise(ts.TypeSafeAuthenticationError, 401)
+
+    assert rate_limited.value.is_retryable
+    assert overloaded.value.is_retryable
+    assert not unauthenticated.value.is_retryable
+
+
+def test_translation_preserves_response_metadata() -> None:
+    """Status, body, headers, request ID, and endpoint survive translation."""
+    body = {"error": "model overloaded"}
+    headers = httpx2.Headers({"x-typesafe-request-id": "req_123"})
 
     with pytest.raises(TypeSafeInternalServerError) as exc_info:
-        parse_response(response)
-
-    assert "529 Overloaded" in str(exc_info.value)
-    assert "private overload detail" not in str(exc_info.value)
-
-
-def test_api_error_exposes_metadata_without_leaking_it_in_repr() -> None:
-    """API errors expose structured context while keeping string forms sanitized."""
-    request = httpx2.Request(
-        "POST",
-        "https://user:password@example.test/v1/systemone?token=secret#fragment",
-    )
-    response = httpx2.Response(
-        400,
-        json={"message": "private response detail"},
-        headers={"x-typesafe-request-id": "req_123"},
-        request=request,
-    )
-
-    with pytest.raises(TypeSafeBadRequestError) as exc_info:
-        parse_response(response)
+        _raise(ts.TypeSafeInternalServerError, 529, body=body, headers=headers)
 
     error = exc_info.value
-    assert error.status == 400
-    assert error.status_code == 400
-    assert error.body == {"message": "private response detail"}
-    assert error.headers["x-typesafe-request-id"] == "req_123"
-    assert error.request_id == "req_123"
-    assert error.endpoint == "POST https://example.test/v1/systemone"
-    assert "private response detail" not in str(error)
-    assert "password" not in repr(error)
-    assert "token=secret" not in repr(error)
-
-
-def test_endpoint_sanitization_preserves_ipv6_and_port() -> None:
-    """Sanitization retains IPv6 addressing and explicit ports."""
-    request = httpx2.Request(
-        "POST",
-        "https://[2001:db8::1]:8443/v1/systemone?token=secret",
-    )
-    response = httpx2.Response(400, request=request)
-
-    with pytest.raises(TypeSafeBadRequestError) as exc_info:
-        parse_response(response)
-
-    assert exc_info.value.endpoint == "POST https://[2001:db8::1]:8443/v1/systemone"
-
-
-@pytest.mark.parametrize(
-    ("headers", "expected"),
-    [
-        ({"retry-after-ms": "125"}, 125.0),
-        ({"retry-after": "2"}, 2000.0),
-        ({"retry-after-ms": "bad", "retry-after": "3"}, 3000.0),
-        ({"retry-after-ms": "bad", "retry-after": "bad"}, None),
-    ],
-)
-def test_rate_limit_error_parses_retry_delay(
-    headers: dict[str, str], expected: float | None
-) -> None:
-    """Rate-limit responses expose the server-requested delay in milliseconds."""
-    response = httpx2.Response(
-        429,
-        headers=headers,
-        request=httpx2.Request("POST", "https://api.typesafe.ai/v1/systemone"),
-    )
-
-    with pytest.raises(TypeSafeRateLimitError) as exc_info:
-        parse_response(response)
-
-    assert exc_info.value.retry_after_ms == expected
-
-
-def test_response_validation_error_reports_field_path() -> None:
-    """Malformed successful responses identify the first invalid field."""
-    body: dict[str, Any] = {"model": "jev-latest", "answers": []}
-    response = httpx2.Response(
-        200,
-        json=body,
-        request=httpx2.Request("POST", "https://api.typesafe.ai/v1/systemone"),
-    )
-
-    with pytest.raises(TypeSafeAPIResponseValidationError) as exc_info:
-        parse_response(response)
-
-    error = exc_info.value
-    assert error.status == 200
+    assert error.status == 529
     assert error.body == body
-    assert error.field_path == "answers"
+    assert error.request_id == "req_123"
+    assert error.headers["x-typesafe-request-id"] == "req_123"
+    assert error.endpoint == f"POST {_REQUEST.url}"
 
 
-def test_connection_error_uses_standard_hierarchies() -> None:
-    """Connection failures are catchable as provider, LangChain, and Python errors."""
-    error = TypeSafeAPIConnectionError("Unable to connect")
+def test_translation_preserves_the_message() -> None:
+    """The translated error renders the same string as the SDK error."""
+    original = ts.TypeSafeBadRequestError(
+        400,
+        {"error": "criteria must not be empty"},
+        httpx2.Headers(),
+        endpoint=f"POST {_REQUEST.url}",
+    )
 
-    assert isinstance(error, ModelConnectionError)
-    assert isinstance(error, ConnectionError)
-    assert error.is_retryable is True
+    with pytest.raises(TypeSafeBadRequestError) as exc_info, with_standard_errors():
+        raise original
+
+    assert str(exc_info.value) == str(original)
 
 
-def test_timeout_error_uses_standard_hierarchies() -> None:
-    """Timeouts retain their setting and all provider and standard base types."""
-    timeout = httpx2.Timeout(10.0)
-    error = TypeSafeAPITimeoutError(timeout)
+def test_rate_limit_error_keeps_retry_delay() -> None:
+    """A 429 retains the provider's requested retry delay."""
+    with pytest.raises(TypeSafeRateLimitError) as exc_info:
+        _raise(
+            ts.TypeSafeRateLimitError,
+            429,
+            headers=httpx2.Headers({"retry-after-ms": "1500"}),
+        )
 
-    assert isinstance(error, TypeSafeAPIConnectionError)
+    assert exc_info.value.retry_after_ms == 1500
+
+
+def test_response_validation_error_keeps_field_path() -> None:
+    """A malformed successful response reports the offending field."""
+    with (
+        pytest.raises(TypeSafeAPIResponseValidationError) as exc_info,
+        with_standard_errors(),
+    ):
+        raise ts.TypeSafeAPIResponseValidationError(
+            200,
+            {"answers": {}},
+            httpx2.Headers(),
+            "answers.tone.confidence",
+            "POST https://api.typesafe.ai/v1/systemone",
+        )
+
+    assert exc_info.value.field_path == "answers.tone.confidence"
+    assert isinstance(exc_info.value, ModelAPIError)
+
+
+def test_timeout_error_is_paired() -> None:
+    """A timeout is both an SDK timeout and a LangChain timeout."""
+    with pytest.raises(TypeSafeAPITimeoutError) as exc_info, with_standard_errors():
+        raise ts.TypeSafeAPITimeoutError(7.5)
+
+    error = exc_info.value
+    assert error.timeout == 7.5
     assert isinstance(error, ModelTimeoutError)
     assert isinstance(error, TimeoutError)
-    assert error.is_retryable is True
-    assert error.timeout is timeout
+    assert isinstance(error, TypeSafeAPIConnectionError)
+    assert error.is_retryable
 
 
-@pytest.mark.parametrize(
-    "error",
-    [
-        TypeSafeAuthenticationError(401, {}, httpx2.Headers()),
-        TypeSafeRateLimitError(
-            429,
-            {},
-            httpx2.Headers({"retry-after-ms": "125"}),
-        ),
-        TypeSafeAPITimeoutError(10.0),
-        TypeSafeAPIResponseValidationError(
-            200,
-            {},
-            httpx2.Headers(),
-            "answers.urgent.noul",
-        ),
-    ],
-    ids=lambda error: type(error).__name__,
-)
-def test_errors_round_trip_through_pickle(error: Exception) -> None:
-    """Structured errors retain their type and attributes across process boundaries."""
-    restored = pickle.loads(pickle.dumps(error))  # noqa: S301
+def test_connection_error_is_paired() -> None:
+    """A connection failure is both an SDK and a LangChain connection error."""
+    msg = "Unable to connect to the TypeSafe API."
+    with (
+        pytest.raises(TypeSafeAPIConnectionError) as exc_info,
+        with_standard_errors(),
+    ):
+        raise ts.TypeSafeAPIConnectionError(msg)
 
-    assert type(restored) is type(error)
-    assert restored.args == error.args
-    assert vars(restored) == vars(error)
+    error = exc_info.value
+    assert isinstance(error, ModelConnectionError)
+    assert isinstance(error, ConnectionError)
+    assert error.is_retryable
+    assert "Unable to connect" in str(error)
+
+
+def test_already_translated_errors_pass_through() -> None:
+    """Nesting the translator does not re-wrap or lose the original traceback."""
+    with (
+        pytest.raises(TypeSafeRateLimitError) as exc_info,
+        with_standard_errors(),  # outer
+        with_standard_errors(),  # inner
+    ):
+        _raise(ts.TypeSafeRateLimitError, 429)
+
+    assert exc_info.value.__cause__ is not None
+    assert not isinstance(exc_info.value.__cause__, ModelError)
+
+
+def test_unclassified_status_keeps_the_sdk_error() -> None:
+    """A status the SDK does not classify is re-raised unchanged."""
+    with pytest.raises(ts.TypeSafeAPIError) as exc_info:
+        _raise(ts.TypeSafeAPIError, 418)
+
+    assert not isinstance(exc_info.value, ModelError)
+    assert exc_info.value.status == 418
+
+
+def test_successful_blocks_are_untouched() -> None:
+    """The translator returns control normally when nothing is raised."""
+    with with_standard_errors():
+        value = 1 + 1
+
+    assert value == 2

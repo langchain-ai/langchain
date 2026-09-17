@@ -22,8 +22,8 @@ classifiers = [
 ]
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "httpx2>=2.0.0,<3.0.0",
     "langchain-core>=1.6.2,<2.0.0",
+    "typesafe-sdk>=0.6.0,<1.0.0",
 ]
 
 [project.urls]
@@ -44,6 +44,7 @@ test = [
     "pytest-watcher>=0.6.3,<1.0.0",
     "pytest-xdist>=3.6.1,<4.0.0",
     "langchain-tests>=1.1.9,<2.0.0",
+    "httpx2>=2.0.0,<3.0.0",
 ]
 test_integration = []
 lint = ["ruff>=0.15.0,<0.16.0"]

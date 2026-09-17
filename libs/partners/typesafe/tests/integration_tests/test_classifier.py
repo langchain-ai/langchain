@@ -5,17 +5,14 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-from langchain_core.messages import HumanMessage, SystemMessage
-
-from langchain_typesafe import (
-    Choice,
-    ChoiceAnswer,
-    Noul,
-    NoulAnswer,
-    Score,
-    ScoreAnswer,
-    TypeSafeClassifier,
+from langchain_core.messages import (
+    HumanMessage,
+    SystemMessage,
+    convert_to_openai_messages,
 )
+from typesafe_sdk import ChoiceAnswer, NoulAnswer, ScoreAnswer
+
+from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 
 
 def test_invoke_all_question_types() -> None:
@@ -98,13 +95,17 @@ async def test_ainvoke_with_nested_messages() -> None:
     try:
         response = await classifier.ainvoke(
             {
-                "conversation": [
-                    SystemMessage("You are reviewing a customer support conversation."),
-                    HumanMessage(
-                        "The integration crashes every time I connect Stripe. "
-                        "Can someone help?"
-                    ),
-                ],
+                "conversation": convert_to_openai_messages(
+                    [
+                        SystemMessage(
+                            "You are reviewing a customer support conversation."
+                        ),
+                        HumanMessage(
+                            "The integration crashes every time I connect Stripe. "
+                            "Can someone help?"
+                        ),
+                    ]
+                ),
                 "account": {
                     "tier": "enterprise",
                     "failed_attempts": 3,
