@@ -47,13 +47,14 @@ Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnabl
 
 Install the experimental extra to use TypeSafe-powered agent middleware. APIs under `langchain_typesafe.experimental` may change without notice.
 
+```bash
+uv add "langchain-typesafe[experimental]"
+```
+
 #### `ModelRouterMiddleware`
 
 `ModelRouterMiddleware` routes an agent to a model selected by a TypeSafe `Choice` question:
 
-```bash
-uv add "langchain-typesafe[experimental]"
-```
 
 ```python
 from langchain.agents import create_agent
