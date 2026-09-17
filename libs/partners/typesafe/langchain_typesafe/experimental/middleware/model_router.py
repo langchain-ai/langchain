@@ -137,16 +137,12 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
             else choice.model
             for route, choice in self.config.choices.items()
         }
-        self.classifier = TypeSafeClassifier(
-            questions={
-                _QUESTION_ID: Choice(
-                    instructions=self.config.instructions,
-                    criteria={
-                        route: choice.criteria
-                        for route, choice in self.config.choices.items()
-                    },
-                )
-            }
+        self.classifier = TypeSafeClassifier()
+        self._question = Choice(
+            instructions=self.config.instructions,
+            criteria={
+                route: choice.criteria for route, choice in self.config.choices.items()
+            },
         )
 
     @staticmethod
@@ -163,7 +159,12 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         self, state: _ModelRouterState, runtime: Runtime[ContextT]
     ) -> dict[str, ChoiceAnswer]:
         """Classify the latest task and store the complete routing answer."""
-        response = self.classifier.invoke(self._latest_human_message(state))
+        response = self.classifier.invoke(
+            {
+                "state": self._latest_human_message(state),
+                "questions": {_QUESTION_ID: self._question},
+            }
+        )
         return {"model_route": response.choices[_QUESTION_ID]}
 
     @override
@@ -171,7 +172,12 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         self, state: _ModelRouterState, runtime: Runtime[ContextT]
     ) -> dict[str, ChoiceAnswer]:
         """Classify the latest task asynchronously and store the routing answer."""
-        response = await self.classifier.ainvoke(self._latest_human_message(state))
+        response = await self.classifier.ainvoke(
+            {
+                "state": self._latest_human_message(state),
+                "questions": {_QUESTION_ID: self._question},
+            }
+        )
         return {"model_route": response.choices[_QUESTION_ID]}
 
     @override

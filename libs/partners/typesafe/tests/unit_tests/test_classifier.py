@@ -97,10 +97,7 @@ def test_classifier_is_beta() -> None:
         LangChainBetaWarning,
         match=r"The class `TypeSafeClassifier` is in beta\.",
     ):
-        TypeSafeClassifier(
-            api_key=API_KEY,
-            questions={"urgent": Noul(instructions="Is this urgent?")},
-        )
+        TypeSafeClassifier(api_key=API_KEY)
 
 
 def test_questions_require_instructions() -> None:
@@ -123,11 +120,7 @@ def test_score_requires_two_levels() -> None:
 def test_model_must_not_be_empty(model: str) -> None:
     """The classifier rejects empty and whitespace-only model identifiers."""
     with pytest.raises(ValidationError):
-        TypeSafeClassifier(
-            api_key=API_KEY,
-            model=model,
-            questions={"urgent": Noul(instructions="Is this urgent?")},
-        )
+        TypeSafeClassifier(api_key=API_KEY, model=model)
 
 
 def test_invoke_sends_request_and_parses_response() -> None:
@@ -168,13 +161,11 @@ def test_invoke_sends_request_and_parses_response() -> None:
         )
 
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
-    classifier = TypeSafeClassifier(
-        api_key=API_KEY,
-        questions=_questions(),
-        client=client,
-    )
+    classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
 
-    result = classifier.invoke({"message": "Stripe fails to connect."})
+    result = classifier.invoke(
+        {"state": {"message": "Stripe fails to connect."}, "questions": _questions()}
+    )
 
     assert result.request_id == REQUEST_ID
     assert result.usage.input_tokens == 42
@@ -207,11 +198,15 @@ def test_single_message_is_serialized_as_role_content_state() -> None:
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is this urgent?")},
         client=client,
     )
 
-    classifier.invoke(HumanMessage("Please help immediately."))
+    classifier.invoke(
+        {
+            "state": HumanMessage("Please help immediately."),
+            "questions": {"urgent": Noul(instructions="Is this urgent?")},
+        }
+    )
 
     assert observed_state == {
         "role": "user",
@@ -232,16 +227,18 @@ def test_message_sequence_is_serialized_as_conversation_state() -> None:
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is the user asking for help?")},
         client=client,
     )
 
     classifier.invoke(
-        [
-            SystemMessage("You are a support assistant."),
-            HumanMessage("My integration is broken."),
-            AIMessage("I can help troubleshoot it."),
-        ]
+        {
+            "state": [
+                SystemMessage("You are a support assistant."),
+                HumanMessage("My integration is broken."),
+                AIMessage("I can help troubleshoot it."),
+            ],
+            "questions": {"urgent": Noul(instructions="Is the user asking for help?")},
+        }
     )
 
     assert observed_state == [
@@ -263,11 +260,12 @@ async def test_ainvoke_uses_async_client() -> None:
     async_client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions=_questions(),
         async_client=async_client,
     )
 
-    result = await classifier.ainvoke("Please help ASAP.")
+    result = await classifier.ainvoke(
+        {"state": "Please help ASAP.", "questions": _questions()}
+    )
 
     assert result.choices["department"].choice == "technical"
     await async_client.aclose()
@@ -295,7 +293,6 @@ async def test_missing_clients_are_created(
 
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is this urgent?")},
         timeout=12.5,
     )
 
@@ -314,7 +311,6 @@ async def test_injected_clients_are_preserved() -> None:
 
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is this urgent?")},
         client=client,
         async_client=async_client,
     )
@@ -338,12 +334,16 @@ async def test_ainvoke_translates_api_error() -> None:
     async_client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is this urgent?")},
         async_client=async_client,
     )
 
     with pytest.raises(TypeSafeAPIError) as exc_info:
-        await classifier.ainvoke("hello")
+        await classifier.ainvoke(
+            {
+                "state": "hello",
+                "questions": {"urgent": Noul(instructions="Is this urgent?")},
+            }
+        )
 
     assert exc_info.value.status_code == 429
     assert exc_info.value.request_id == REQUEST_ID
@@ -361,12 +361,16 @@ async def test_ainvoke_translates_connection_error() -> None:
     async_client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is this urgent?")},
         async_client=async_client,
     )
 
     with pytest.raises(TypeSafeAPIConnectionError, match="Unable to connect"):
-        await classifier.ainvoke("hello")
+        await classifier.ainvoke(
+            {
+                "state": "hello",
+                "questions": {"urgent": Noul(instructions="Is this urgent?")},
+            }
+        )
 
     await async_client.aclose()
 
@@ -385,12 +389,16 @@ async def test_ainvoke_translates_timeout_error() -> None:
     )
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is this urgent?")},
         async_client=async_client,
     )
 
     with pytest.raises(TypeSafeAPITimeoutError) as exc_info:
-        await classifier.ainvoke("hello")
+        await classifier.ainvoke(
+            {
+                "state": "hello",
+                "questions": {"urgent": Noul(instructions="Is this urgent?")},
+            }
+        )
 
     assert exc_info.value.timeout == async_client.timeout
     await async_client.aclose()
@@ -399,9 +407,7 @@ async def test_ainvoke_translates_timeout_error() -> None:
 def test_api_key_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     """The classifier reads its API key from `TYPESAFE_API_KEY`."""
     monkeypatch.setenv("TYPESAFE_API_KEY", API_KEY)
-    classifier = TypeSafeClassifier(
-        questions={"urgent": Noul(instructions="Is this urgent?")}
-    )
+    classifier = TypeSafeClassifier()
     assert isinstance(classifier.api_key, SecretStr)
     assert classifier.api_key.get_secret_value() == API_KEY
 
@@ -412,7 +418,6 @@ def test_base_url_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
 
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is this urgent?")},
     )
 
     assert classifier.base_url == "https://gateway.typesafe.example"
@@ -427,7 +432,6 @@ def test_explicit_base_url_overrides_environment(
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
         base_url="https://explicit.example",
-        questions={"urgent": Noul(instructions="Is this urgent?")},
     )
 
     assert classifier.base_url == "https://explicit.example"
@@ -437,7 +441,7 @@ def test_missing_api_key_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
     """Constructing a classifier without credentials fails before creating clients."""
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
     with pytest.raises(ValidationError, match="TypeSafe API key is required"):
-        TypeSafeClassifier(questions={"urgent": Noul(instructions="Is this urgent?")})
+        TypeSafeClassifier()
 
 
 def test_api_error_does_not_expose_response_body() -> None:
@@ -453,12 +457,16 @@ def test_api_error_does_not_expose_response_body() -> None:
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is this urgent?")},
         client=client,
     )
 
     with pytest.raises(TypeSafeAPIError) as exc_info:
-        classifier.invoke("hello")
+        classifier.invoke(
+            {
+                "state": "hello",
+                "questions": {"urgent": Noul(instructions="Is this urgent?")},
+            }
+        )
 
     assert exc_info.value.status_code == 401
     assert exc_info.value.request_id == REQUEST_ID
@@ -476,12 +484,16 @@ def test_connection_error_is_translated() -> None:
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is this urgent?")},
         client=client,
     )
 
     with pytest.raises(TypeSafeAPIConnectionError, match="Unable to connect"):
-        classifier.invoke("hello")
+        classifier.invoke(
+            {
+                "state": "hello",
+                "questions": {"urgent": Noul(instructions="Is this urgent?")},
+            }
+        )
 
     client.close()
 
@@ -499,12 +511,16 @@ def test_timeout_error_is_translated() -> None:
     )
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is this urgent?")},
         client=client,
     )
 
     with pytest.raises(TypeSafeAPITimeoutError) as exc_info:
-        classifier.invoke("hello")
+        classifier.invoke(
+            {
+                "state": "hello",
+                "questions": {"urgent": Noul(instructions="Is this urgent?")},
+            }
+        )
 
     assert exc_info.value.timeout == client.timeout
     client.close()
@@ -519,12 +535,16 @@ def test_invalid_response_is_translated() -> None:
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions={"urgent": Noul(instructions="Is this urgent?")},
         client=client,
     )
 
     with pytest.raises(TypeSafeAPIResponseValidationError, match="Invalid response"):
-        classifier.invoke("hello")
+        classifier.invoke(
+            {
+                "state": "hello",
+                "questions": {"urgent": Noul(instructions="Is this urgent?")},
+            }
+        )
 
     client.close()
 
@@ -549,11 +569,16 @@ def test_callbacks_receive_classifier_run() -> None:
     callback = RecordingHandler()
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions=_questions(),
         client=client,
     )
 
-    classifier.invoke("hello", config={"callbacks": [callback]})
+    classifier.invoke(
+        {
+            "state": "hello",
+            "questions": {"urgent": Noul(instructions="Is this urgent?")},
+        },
+        config={"callbacks": [callback]},
+    )
 
     assert callback.starts == 1
     assert callback.ends == 1
@@ -578,11 +603,16 @@ def test_usage_is_recorded_on_the_active_run(
     recorder = _RunRecorder()
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions=_questions(),
         client=client,
     )
 
-    classifier.invoke("hello", config={"callbacks": [recorder]})
+    classifier.invoke(
+        {
+            "state": "hello",
+            "questions": {"urgent": Noul(instructions="Is this urgent?")},
+        },
+        config={"callbacks": [recorder]},
+    )
     client.close()
 
     assert recorder.run_type == "llm"
@@ -606,11 +636,15 @@ async def test_async_usage_is_recorded_on_the_active_run(
     client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions=_questions(),
         async_client=client,
     )
 
-    await classifier.ainvoke("hello")
+    await classifier.ainvoke(
+        {
+            "state": "hello",
+            "questions": {"urgent": Noul(instructions="Is this urgent?")},
+        }
+    )
     await client.aclose()
 
     assert stub.extra["metadata"]["usage_metadata"]["total_tokens"] == 54
@@ -626,12 +660,11 @@ def test_run_carries_model_identity_without_losing_caller_metadata() -> None:
     recorder = _RunRecorder()
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions=_questions(),
         client=client,
     )
 
     classifier.invoke(
-        "hello",
+        {"state": "hello", "questions": _questions()},
         config={"callbacks": [recorder], "metadata": {"tenant": "acme"}},
     )
     client.close()
@@ -651,11 +684,15 @@ def test_untraced_invocation_is_unaffected() -> None:
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
-        questions=_questions(),
         client=client,
     )
 
-    result = classifier.invoke("hello")
+    result = classifier.invoke(
+        {
+            "state": "hello",
+            "questions": {"urgent": Noul(instructions="Is this urgent?")},
+        }
+    )
     client.close()
 
     assert result.usage.input_tokens == 42

@@ -154,13 +154,10 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
                 "criteria": criteria,
             }
         )
-        self.classifier = TypeSafeClassifier(
-            questions={
-                _QUESTION_ID: Noul(
-                    instructions=self.config.instructions,
-                    criteria=self.config.criteria,
-                )
-            },
+        self.classifier = TypeSafeClassifier()
+        self._question = Noul(
+            instructions=self.config.instructions,
+            criteria=self.config.criteria,
         )
 
     @staticmethod
@@ -219,7 +216,12 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         """
         if request.tool_call["name"] not in self._tool_names:
             return handler(request)
-        response = self.classifier.invoke(self._classification_state(request))
+        response = self.classifier.invoke(
+            {
+                "state": self._classification_state(request),
+                "questions": {_QUESTION_ID: self._question},
+            }
+        )
         probability = response.nouls[_QUESTION_ID].noul
         if probability >= _PROBABILITY_THRESHOLD:
             return self._blocked_tool_message(request, probability)
@@ -245,7 +247,12 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         """
         if request.tool_call["name"] not in self._tool_names:
             return await handler(request)
-        response = await self.classifier.ainvoke(self._classification_state(request))
+        response = await self.classifier.ainvoke(
+            {
+                "state": self._classification_state(request),
+                "questions": {_QUESTION_ID: self._question},
+            }
+        )
         probability = response.nouls[_QUESTION_ID].noul
         if probability >= _PROBABILITY_THRESHOLD:
             return self._blocked_tool_message(request, probability)
