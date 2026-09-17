@@ -1666,55 +1666,57 @@ def test_edit_is_not_replayed_onto_a_later_call_with_the_same_id() -> None:
     assert result.content == "done"
 
 
-def test_edit_is_ignored_when_edit_is_no_longer_an_allowed_decision() -> None:
-    """Policy is re-checked at execution time, not only when the decision is made.
+def test_recorded_edit_survives_a_later_tightening_of_allowed_decisions() -> None:
+    """A completed decision is honored as recorded, even under a stricter config.
 
-    A thread can be resumed after `allowed_decisions` is tightened, leaving a recorded
-    edit that the current configuration would never have permitted.
+    `allowed_decisions` governs what a reviewer may decide at review time. Re-checking
+    it at execution time would not deny the edit: the only thing left to run would be
+    the model's original call, which is precisely what the reviewer declined.
     """
     middleware = HumanInTheLoopMiddleware(
-        interrupt_on={"write_file_tool": {"allowed_decisions": ["approve", "reject"]}}
+        interrupt_on={"send_email_tool": {"allowed_decisions": ["approve", "reject"]}}
     )
-
-    @tool
-    def write_file_tool(content: str) -> str:
-        """Write content."""
-        return f"wrote {content}"
 
     @tool
     def send_email_tool(to: str) -> str:
         """Send an email."""
         return f"sent to {to}"
 
+    @tool
+    def draft_email_tool(to: str) -> str:
+        """Draft an email without sending it."""
+        return f"drafted to {to}"
+
+    # Recorded while `edit` was still permitted; the config has since been tightened.
     ai_message = AIMessage(
         content="",
-        tool_calls=[{"name": "write_file_tool", "args": {"content": "x"}, "id": "1"}],
+        tool_calls=[{"name": "send_email_tool", "args": {"to": "a@b.c"}, "id": "1"}],
         response_metadata={
-            _EDITED_TOOL_CALLS_KEY: {
-                "1": {"name": "send_email_tool", "args": {"to": "someone@example.com"}}
-            }
+            _EDITED_TOOL_CALLS_KEY: {"1": {"name": "draft_email_tool", "args": {"to": "a@b.c"}}}
         },
     )
-    tool_call = ToolCall(name="write_file_tool", args={"content": "x"}, id="1")
     request = ToolCallRequest(
-        tool_call=tool_call,
-        tool=write_file_tool,
+        tool_call=ToolCall(name="send_email_tool", args={"to": "a@b.c"}, id="1"),
+        tool=send_email_tool,
         state=AgentState[Any](messages=[HumanMessage("go"), ai_message]),
-        runtime=SimpleNamespace(tools=[write_file_tool, send_email_tool]),  # type: ignore[arg-type]
+        runtime=SimpleNamespace(tools=[send_email_tool, draft_email_tool]),  # type: ignore[arg-type]
     )
 
     executed: list[ToolCallRequest] = []
 
     def handler(req: ToolCallRequest) -> ToolMessage:
         executed.append(req)
-        return ToolMessage(content="done", tool_call_id="1")
+        assert req.tool is not None
+        return ToolMessage(content=req.tool.invoke(req.tool_call["args"]), tool_call_id="1")
 
     result = middleware.wrap_tool_call(request, handler)
 
-    assert [req.tool_call for req in executed] == [tool_call]
-    assert executed[0].tool is write_file_tool
+    # The reviewer's replacement runs; the declined original never does.
+    assert [req.tool_call["name"] for req in executed] == ["draft_email_tool"]
+    assert executed[0].tool is draft_email_tool
     assert isinstance(result, ToolMessage)
-    assert result.content == "done"
+    assert "drafted to a@b.c" in result.content
+    assert "draft_email_tool" in result.content  # the notice names what ran
 
 
 async def test_async_edit_is_not_replayed_onto_a_later_call_with_the_same_id() -> None:

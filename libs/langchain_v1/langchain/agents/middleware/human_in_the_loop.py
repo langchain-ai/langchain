@@ -532,11 +532,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         tool_call_id = request.tool_call.get("id")
         if not tool_call_id:
             return None
-        # Re-check policy at execution time: `allowed_decisions` may have been tightened
-        # since the decision was recorded, and a resumed thread carries the old record.
-        config = self.interrupt_on.get(request.tool_call["name"])
-        if config is None or "edit" not in config["allowed_decisions"]:
-            return None
         # Only the message this call came from.
         message = next(
             (m for m in reversed(request.state["messages"]) if isinstance(m, AIMessage)),
