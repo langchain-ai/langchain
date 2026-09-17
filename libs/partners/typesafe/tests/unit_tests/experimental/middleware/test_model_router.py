@@ -172,4 +172,8 @@ def test_model_string_is_initialized_once() -> None:
 
 def test_experimental_public_interface() -> None:
     """Expose the model router from the experimental middleware namespace."""
-    assert middleware_all == ["ModelChoice", "ModelRouterMiddleware"]
+    assert middleware_all == [
+        "AutoModeMiddleware",
+        "ModelChoice",
+        "ModelRouterMiddleware",
+    ]
