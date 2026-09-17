@@ -4432,3 +4432,16 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter_non_heading_tags() -> None:
+    """Test HTMLHeaderTextSplitter initialized with non-heading tags."""
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("div", "Div"), ("span", "Span")]
+    )
+    html_doc = "<html><body><h1>Title</h1><div>Section Div</div><p>Paragraph text</p></body></html>"
+    docs = splitter.split_text(html_doc)
+    assert len(docs) >= 1
+    assert docs[0].metadata.get("Header 1") == "Title"
+

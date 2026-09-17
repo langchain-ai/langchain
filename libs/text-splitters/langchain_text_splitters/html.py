@@ -172,8 +172,14 @@ class HTMLHeaderTextSplitter:
                 fewer `Document` objects.
         """
         # Sort headers by their numeric level so that h1 < h2 < h3...
+        def _get_tag_level(item: tuple[str, str]) -> int:
+            try:
+                return int(item[0][1:])
+            except (ValueError, IndexError):
+                return 9999
+
         self.headers_to_split_on = sorted(
-            headers_to_split_on, key=lambda x: int(x[0][1:])
+            headers_to_split_on, key=_get_tag_level
         )
         self.header_mapping = dict(self.headers_to_split_on)
         self.header_tags = [tag for tag, _ in self.headers_to_split_on]
