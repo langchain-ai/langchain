@@ -8,6 +8,7 @@ from langchain.agents import create_agent
 from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
+from pydantic import ValidationError
 
 from langchain_typesafe import Choice, ChoiceAnswer
 from langchain_typesafe.classifier import TypeSafeClassifier
@@ -69,7 +70,7 @@ def _router(
 
 
 def test_middleware_constructs_classifier_from_routing_configuration() -> None:
-    """Construct a TypeSafe Choice from the supplied criteria and instructions."""
+    """Construct a TypeSafe Choice and expose validated configuration fields."""
     middleware, _, classifier, classifier_class = _router()
 
     classifier_class.assert_called_once()
@@ -81,39 +82,39 @@ def test_middleware_constructs_classifier_from_routing_configuration() -> None:
         )
     }
     assert middleware.classifier is classifier
+    assert middleware.instructions == (
+        "Choose the least costly model suited to the task."
+    )
+    assert set(middleware.choices) == {"fast", "powerful"}
 
 
-def test_sync_agent_routes_using_latest_human_message() -> None:
-    """Route a synchronous agent run using the latest human task."""
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.asyncio
+async def test_agent_routes_using_latest_human_message(*, asynchronous: bool) -> None:
+    """Route sync and async agent runs while preserving the complete answer."""
     middleware, models, classifier, _ = _router()
     agent = create_agent(models["powerful"], middleware=[middleware])
     latest_message = HumanMessage("Update the README")
-
-    result = agent.invoke(
+    inputs = cast(
+        "Any",
         {
             "messages": [
                 HumanMessage("Earlier task"),
                 AIMessage("Ready"),
                 latest_message,
             ]
-        }
+        },
     )
 
-    assert result["messages"][-1].text == "fast response"
-    classifier.invoke.assert_called_once_with(latest_message)
-
-
-@pytest.mark.asyncio
-async def test_async_agent_routes_using_latest_human_message() -> None:
-    """Route an asynchronous agent run using the latest human task."""
-    middleware, models, classifier, _ = _router()
-    agent = create_agent(models["powerful"], middleware=[middleware])
-    latest_message = HumanMessage("Investigate a race condition")
-
-    result = await agent.ainvoke({"messages": [latest_message]})
+    if asynchronous:
+        result = await agent.ainvoke(inputs)
+        classifier.ainvoke.assert_awaited_once_with(latest_message)
+    else:
+        result = agent.invoke(inputs)
+        classifier.invoke.assert_called_once_with(latest_message)
 
     assert result["messages"][-1].text == "fast response"
-    classifier.ainvoke.assert_awaited_once_with(latest_message)
+    assert result["model_route"] == _response("fast").choices["model_route"]
 
 
 @pytest.mark.parametrize("asynchronous", [False, True])
@@ -134,30 +135,9 @@ async def test_classifier_failure_terminates_agent_run(*, asynchronous: bool) ->
             agent.invoke(inputs)
 
 
-def test_missing_human_message_terminates_agent_run() -> None:
-    """Reject an agent run without a human task to classify."""
-    middleware, models, classifier, _ = _router()
-    agent = create_agent(models["fast"], middleware=[middleware])
-
-    with pytest.raises(ValueError, match="at least one human message"):
-        agent.invoke({"messages": [AIMessage("No task yet")]})
-
-    classifier.invoke.assert_not_called()
-
-
-def test_unknown_choice_terminates_agent_run() -> None:
-    """Reject a TypeSafe choice that has no configured model."""
-    middleware, models, classifier, _ = _router()
-    classifier.invoke.return_value = _response("unknown")
-    agent = create_agent(models["fast"], middleware=[middleware])
-
-    with pytest.raises(ValueError, match="unknown model route 'unknown'"):
-        agent.invoke({"messages": [HumanMessage("Do the task")]})
-
-
-def test_configuration_validation() -> None:
-    """Reject an empty choice mapping."""
-    with pytest.raises(ValueError, match="At least one model choice"):
+def test_choices_are_required() -> None:
+    """Reject an empty choice mapping through validated configuration fields."""
+    with pytest.raises(ValidationError):
         ModelRouterMiddleware(
             choices={},
             instructions="Choose a route.",

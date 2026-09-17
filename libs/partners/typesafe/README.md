@@ -74,7 +74,7 @@ router = ModelRouterMiddleware(
 agent = create_agent("openai:gpt-5-mini", middleware=[router])
 ```
 
-The middleware classifies the latest human message once per agent run. Classification failures, missing human input, and unknown routes terminate the run instead of silently selecting another model. APIs under `langchain_typesafe.experimental` may change without notice.
+The middleware classifies the latest human message once per agent run and stores the complete `ChoiceAnswer` in agent state, keeping its probabilities and confidence available to applications and traces. Classifier failures propagate instead of silently selecting another model. APIs under `langchain_typesafe.experimental` may change without notice.
 
 ### LangChain messages as state
 
