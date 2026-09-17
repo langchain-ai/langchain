@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
-from typing import Any
+
+from langchain.agents.middleware import Runtime
+from langchain.agents.middleware.types import ContextT
 
 try:
     from langchain.agents.middleware.types import (
@@ -12,11 +14,11 @@ try:
         AgentState,
         ModelRequest,
         ModelResponse,
+        ResponseT,
         TracePolicy,
         omit_payload,
     )
     from langchain.chat_models import init_chat_model
-    from langgraph.runtime import Runtime
 except ImportError as error:
     msg = (
         "ModelRouterMiddleware requires the LangChain agent framework. "
@@ -116,7 +118,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         ```
     """
 
-    state_schema = _ModelRouterState  # type: ignore[assignment]
+    state_schema = _ModelRouterState
     trace_policy = TracePolicy(process_inputs=omit_payload)
 
     def __init__(
@@ -158,9 +160,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
 
     @override
     def before_agent(
-        self,
-        state: _ModelRouterState,
-        runtime: Runtime[Any],
+        self, state: _ModelRouterState, runtime: Runtime[ContextT]
     ) -> dict[str, ChoiceAnswer]:
         """Classify the latest task and store the complete routing answer."""
         response = self.classifier.invoke(self._latest_human_message(state))
@@ -168,9 +168,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
 
     @override
     async def abefore_agent(
-        self,
-        state: _ModelRouterState,
-        runtime: Runtime[Any],
+        self, state: _ModelRouterState, runtime: Runtime[ContextT]
     ) -> dict[str, ChoiceAnswer]:
         """Classify the latest task asynchronously and store the routing answer."""
         response = await self.classifier.ainvoke(self._latest_human_message(state))
@@ -179,9 +177,9 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     @override
     def wrap_model_call(
         self,
-        request: ModelRequest[Any],
-        handler: Callable[[ModelRequest[Any]], ModelResponse[Any]],
-    ) -> ModelResponse[Any]:
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT]:
         """Route a synchronous model call to the selected model."""
         answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
         return handler(request.override(model=self.models[answer.choice]))
@@ -189,9 +187,11 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     @override
     async def awrap_model_call(
         self,
-        request: ModelRequest[Any],
-        handler: Callable[[ModelRequest[Any]], Awaitable[ModelResponse[Any]]],
-    ) -> ModelResponse[Any]:
+        request: ModelRequest[ContextT],
+        handler: Callable[
+            [ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]
+        ],
+    ) -> ModelResponse[ResponseT]:
         """Route an asynchronous model call to the selected model."""
         answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
         return await handler(request.override(model=self.models[answer.choice]))
