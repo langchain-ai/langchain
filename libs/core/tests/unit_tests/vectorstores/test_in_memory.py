@@ -220,3 +220,39 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+def test_inmemory_delete_all_and_by_ids() -> None:
+    """Test delete with ids=None clears the store, and deleting specific ids."""
+    store = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=3))
+    store.add_documents(
+        [
+            Document(page_content="doc1", id="1"),
+            Document(page_content="doc2", id="2"),
+            Document(page_content="doc3", id="3"),
+        ]
+    )
+    assert len(store.store) == 3
+
+    # Delete specific id
+    store.delete(ids=["1"])
+    assert list(store.store.keys()) == ["2", "3"]
+
+    # Delete all by passing ids=None
+    store.delete(ids=None)
+    assert len(store.store) == 0
+
+
+async def test_inmemory_adelete_all() -> None:
+    """Test async adelete with ids=None clears the store."""
+    store = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=3))
+    await store.aadd_documents(
+        [
+            Document(page_content="doc1", id="1"),
+            Document(page_content="doc2", id="2"),
+        ]
+    )
+    assert len(store.store) == 2
+
+    await store.adelete(ids=None)
+    assert len(store.store) == 0
