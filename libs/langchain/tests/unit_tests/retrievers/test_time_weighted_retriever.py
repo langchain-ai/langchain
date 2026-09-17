@@ -201,3 +201,30 @@ async def test_aadd_documents(
         time_weighted_retriever.memory_stream[-1].page_content
         == documents[0].page_content
     )
+
+
+def test_add_documents_failure(
+    time_weighted_retriever: TimeWeightedVectorStoreRetriever,
+) -> None:
+    initial_count = len(time_weighted_retriever.memory_stream)
+    time_weighted_retriever.vectorstore.add_documents = Mock(
+        side_effect=RuntimeError("vector store failure")
+    )
+    documents = [Document(page_content="failure document")]
+    with pytest.raises(RuntimeError, match="vector store failure"):
+        time_weighted_retriever.add_documents(documents)
+    assert len(time_weighted_retriever.memory_stream) == initial_count
+
+
+async def test_aadd_documents_failure(
+    time_weighted_retriever: TimeWeightedVectorStoreRetriever,
+) -> None:
+    initial_count = len(time_weighted_retriever.memory_stream)
+    time_weighted_retriever.vectorstore.aadd_documents = AsyncMock(
+        side_effect=RuntimeError("vector store async failure")
+    )
+    documents = [Document(page_content="async failure document")]
+    with pytest.raises(RuntimeError, match="vector store async failure"):
+        await time_weighted_retriever.aadd_documents(documents)
+    assert len(time_weighted_retriever.memory_stream) == initial_count
+
