@@ -47,17 +47,22 @@ Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnabl
 
 ### LangChain messages as state
 
-`BaseMessage` objects and message sequences can appear at the root or anywhere inside JSON state. The integration recursively converts them to objects with `role` and `content` fields while preserving surrounding application data:
+A `BaseMessage` or a sequence of them can be passed directly and is converted to objects with `role` and `content` fields, which is the common case when classifying agent context:
 
 ```python
-from langchain_core.messages import HumanMessage, SystemMessage
+response = classifier.invoke(state.messages)
+```
+
+To embed messages in a larger structure, convert them where you build it:
+
+```python
+from langchain_core.messages import HumanMessage, convert_to_openai_messages
 
 response = classifier.invoke(
     {
-        "conversation": [
-            SystemMessage("You are reviewing a customer support conversation."),
-            HumanMessage("My payouts have failed for three days. Help!"),
-        ],
+        "conversation": convert_to_openai_messages(
+            [HumanMessage("My payouts have failed for three days. Help!")]
+        ),
         "account_tier": "enterprise",
     }
 )

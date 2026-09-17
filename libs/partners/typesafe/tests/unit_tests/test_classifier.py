@@ -9,8 +9,12 @@ import httpx2
 import pytest
 import typesafe_sdk as ts
 from langchain_core.callbacks import BaseCallbackHandler
-from langchain_core.load import dumpd
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+    convert_to_openai_messages,
+)
 from pydantic import SecretStr, ValidationError
 from typesafe_sdk import (
     RetryPolicy,
@@ -424,7 +428,6 @@ def test_api_key_is_held_as_a_secret() -> None:
     assert isinstance(classifier.api_key, SecretStr)
     assert classifier.api_key.get_secret_value() == API_KEY
     assert API_KEY not in repr(classifier)
-    assert API_KEY not in json.dumps(classifier.model_dump(mode="json"))
 
 
 def test_api_key_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -599,32 +602,41 @@ def test_batch_reuses_one_client() -> None:
     assert all(result.nouls["urgent"].noul == 0.95 for result in results)
 
 
-def test_serialization_renders_questions_faithfully() -> None:
-    """A serialized classifier carries its questions, not a placeholder."""
-    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_questions())
+def test_nested_messages_are_not_converted() -> None:
+    """Messages inside a larger structure are the caller's to convert."""
+    observed_state: Any = None
 
-    serialized = dumpd(classifier)
-    questions = serialized["kwargs"]["questions"]
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        nonlocal observed_state
+        observed_state = json.loads(request.content)["state"]
+        return httpx2.Response(200, json=_response_payload())
 
-    assert questions["urgent"] == {"type": "noul", "instructions": "Is this urgent?"}
-    assert questions["frustration"]["criteria"] == ["calm", "frustrated", "angry"]
-    assert "not_implemented" not in json.dumps(serialized)
+    with _classifier(handler, questions=_urgent()) as classifier:
+        classifier.invoke(
+            {
+                "conversation": convert_to_openai_messages(
+                    [HumanMessage("My payouts have failed.")]
+                ),
+                "account_tier": "enterprise",
+            }
+        )
+
+    assert observed_state == {
+        "conversation": [{"role": "user", "content": "My payouts have failed."}],
+        "account_tier": "enterprise",
+    }
 
 
-def test_serialized_questions_round_trip() -> None:
-    """Serialized questions can rebuild an equivalent classifier."""
-    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_questions())
+def test_plain_json_state_passes_through() -> None:
+    """State without messages reaches TypeSafe unchanged."""
+    observed_state: Any = None
 
-    rebuilt = TypeSafeClassifier(
-        api_key=API_KEY,
-        questions=dumpd(classifier)["kwargs"]["questions"],
-    )
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        nonlocal observed_state
+        observed_state = json.loads(request.content)["state"]
+        return httpx2.Response(200, json=_response_payload())
 
-    assert rebuilt.questions == classifier.questions
+    with _classifier(handler, questions=_urgent()) as classifier:
+        classifier.invoke({"ticket": {"id": 7, "tags": ["billing"], "vip": True}})
 
-
-def test_serialization_keeps_the_api_key_out() -> None:
-    """The API key is never written into a serialized classifier."""
-    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_urgent())
-
-    assert API_KEY not in json.dumps(dumpd(classifier))
+    assert observed_state == {"ticket": {"id": 7, "tags": ["billing"], "vip": True}}

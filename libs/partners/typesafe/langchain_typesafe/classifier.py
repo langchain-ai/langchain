@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Annotated, Any
+from collections.abc import Mapping, Sequence
+from typing import Any, cast
 
-import msgspec
 import typesafe_sdk as ts
+from langchain_core.messages import BaseMessage, convert_to_openai_messages
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from pydantic import (
     ConfigDict,
     Field,
-    PlainSerializer,
     PrivateAttr,
     SecretStr,
     field_validator,
@@ -20,7 +19,6 @@ from pydantic import (
 from typing_extensions import Self, override
 
 from langchain_typesafe._errors import with_standard_errors
-from langchain_typesafe._state import serialize_state
 from langchain_typesafe._version import __version__
 from langchain_typesafe.types import State
 
@@ -35,12 +33,32 @@ _QUESTION_TYPES: dict[str, type[ts.Noul | ts.Choice | ts.Score]] = {
     "score": ts.Score,
 }
 
-# The SDK models questions as `msgspec` structs, which pydantic cannot serialize on
-# its own. Declaring the conversion on the type covers every pydantic dump.
-_Question = Annotated[
-    ts.Noul | ts.Choice | ts.Score,
-    PlainSerializer(msgspec.to_builtins),
-]
+
+def _prepare_state(state: State) -> ts.JSONContent:
+    """Convert LangChain messages at the root of the state to role/content JSON.
+
+    Messages are the usual unit of agent context, and TypeSafe has no concept of
+    one, so a message or a sequence of messages is translated here. Any other state
+    is passed through untouched for the SDK to validate. Callers who embed messages
+    inside a larger JSON structure convert them with `convert_to_openai_messages`
+    where they build that structure.
+
+    Args:
+        state: Text, JSON, a `BaseMessage`, or a sequence of `BaseMessage` objects.
+
+    Returns:
+        State in a form TypeSafe accepts.
+    """
+    if isinstance(state, BaseMessage):
+        return convert_to_openai_messages(state)
+    if (
+        isinstance(state, Sequence)
+        and not isinstance(state, (str, bytes))
+        and all(isinstance(item, BaseMessage) for item in state)
+    ):
+        return convert_to_openai_messages(state)
+    # Every message-bearing shape is handled above, so what remains is native state.
+    return cast("ts.JSONContent", state)
 
 
 class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
@@ -54,15 +72,17 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
 
     Requests are issued through the official TypeSafe Python SDK, so retries, backoff,
     error classification, and response validation follow the provider's own behavior.
+    The classifier is not LangChain-serializable: it holds live HTTP clients, and
+    nothing in the callback or tracing path consumes a serialized form of it.
     Questions and answers are the SDK's types; this class adds the LangChain
     `Runnable` interface, tracing through the supplied `RunnableConfig`, and support
     for LangChain messages inside the input state.
 
-    Native TypeSafe state may be a string, JSON object, or JSON array. LangChain
-    `BaseMessage` objects and message sequences can appear at the root or anywhere
-    inside JSON objects and arrays. They are converted to role/content JSON before the
-    request is sent. Message IDs are omitted, while system, user, assistant, and tool
-    roles are preserved.
+    Native TypeSafe state may be a string, JSON object, or JSON array. A
+    `BaseMessage` or a sequence of them may also be passed directly and is converted
+    to role/content JSON, since messages are the usual unit of agent context. To put
+    messages inside a larger JSON structure, convert them with
+    `convert_to_openai_messages` where that structure is built.
 
     Configuration that is left unset is resolved by the SDK, which reads
     `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL`, and `TYPESAFE_DEFAULT_MODEL` from the
@@ -171,7 +191,7 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
         ```
     """
 
-    questions: Mapping[str, _Question] = Field(min_length=1)
+    questions: Mapping[str, ts.Noul | ts.Choice | ts.Score] = Field(min_length=1)
     """Questions sent together for every classifier invocation.
 
     The mapping key is the question ID and becomes the corresponding key in
@@ -318,32 +338,6 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
             self._owns_async_client = True
         return self
 
-    @classmethod
-    @override
-    def is_lc_serializable(cls) -> bool:
-        return True
-
-    @classmethod
-    @override
-    def get_lc_namespace(cls) -> list[str]:
-        return ["langchain", "classifiers", "typesafe"]
-
-    @property
-    def lc_secrets(self) -> dict[str, str]:
-        """Map the API-key field to its environment variable for serialization."""
-        return {"api_key": ts.constants.API_KEY_ENV}
-
-    @property
-    def lc_attributes(self) -> dict[str, Any]:
-        """Override `questions` with a JSON-compatible form for serialization.
-
-        LangChain serialization reads fields directly rather than through pydantic,
-        and renders values it does not recognize as `not_implemented`. Reusing the
-        pydantic dump keeps a serialized classifier and its traced run faithful, and
-        the `type` discriminator lets `_coerce_questions` rebuild the questions.
-        """
-        return {"questions": self.model_dump(include={"questions"})["questions"]}
-
     def _client_kwargs(self) -> dict[str, Any]:
         return {
             "api_key": (
@@ -380,7 +374,7 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
         """Classify one JSON-compatible input synchronously.
 
         Args:
-            input: Text, object, array, `BaseMessage`, or message sequence to classify.
+            input: Text, JSON, a `BaseMessage`, or a sequence of messages.
             config: Optional LangChain runnable configuration for callbacks, tags,
                 metadata, and tracing.
             **kwargs: Accepted for `Runnable` compatibility and otherwise ignored.
@@ -390,7 +384,6 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
             by question ID along with the model, token usage, and request ID.
 
         Raises:
-            TypeError: If the input is not a supported state.
             TypeSafeAPIError: If TypeSafe returns an unsuccessful HTTP response.
                 Classified statuses raise subclasses that are also
                 `langchain_core.exceptions.ModelError` subclasses.
@@ -410,7 +403,7 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
         """Classify one JSON-compatible input asynchronously.
 
         Args:
-            input: Text, object, array, `BaseMessage`, or message sequence to classify.
+            input: Text, JSON, a `BaseMessage`, or a sequence of messages.
             config: Optional LangChain runnable configuration for callbacks, tags,
                 metadata, and tracing.
             **kwargs: Accepted for `Runnable` compatibility and otherwise ignored.
@@ -420,7 +413,6 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
             by question ID along with the model, token usage, and request ID.
 
         Raises:
-            TypeError: If the input is not a supported state.
             TypeSafeAPIError: If TypeSafe returns an unsuccessful HTTP response.
                 Classified statuses raise subclasses that are also
                 `langchain_core.exceptions.ModelError` subclasses.
@@ -436,13 +428,13 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
         )
 
     def _classify(self, state: State) -> ts.SystemOneResponse:
-        payload = serialize_state(state)
+        payload = _prepare_state(state)
         client = self._sync_client()
         with with_standard_errors():
             return client.system_one(payload, self.questions)
 
     async def _aclassify(self, state: State) -> ts.SystemOneResponse:
-        payload = serialize_state(state)
+        payload = _prepare_state(state)
         client = self._get_async_client()
         with with_standard_errors():
             return await client.system_one(payload, self.questions)
