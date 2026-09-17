@@ -156,18 +156,19 @@ class BaseQAWithSourcesChain(Chain, ABC):
         run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
+        _inputs = inputs.copy()
         accepts_run_manager = (
             "run_manager" in inspect.signature(self._get_docs).parameters
         )
         if accepts_run_manager:
-            docs = self._get_docs(inputs, run_manager=_run_manager)
+            docs = self._get_docs(_inputs, run_manager=_run_manager)
         else:
-            docs = self._get_docs(inputs)  # type: ignore[call-arg]
+            docs = self._get_docs(_inputs)  # type: ignore[call-arg]
 
         answer = self.combine_documents_chain.run(
             input_documents=docs,
             callbacks=_run_manager.get_child(),
-            **inputs,
+            **_inputs,
         )
         answer, sources = self._split_sources(answer)
         result: dict[str, Any] = {
@@ -193,17 +194,18 @@ class BaseQAWithSourcesChain(Chain, ABC):
         run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
+        _inputs = inputs.copy()
         accepts_run_manager = (
             "run_manager" in inspect.signature(self._aget_docs).parameters
         )
         if accepts_run_manager:
-            docs = await self._aget_docs(inputs, run_manager=_run_manager)
+            docs = await self._aget_docs(_inputs, run_manager=_run_manager)
         else:
-            docs = await self._aget_docs(inputs)  # type: ignore[call-arg]
+            docs = await self._aget_docs(_inputs)  # type: ignore[call-arg]
         answer = await self.combine_documents_chain.arun(
             input_documents=docs,
             callbacks=_run_manager.get_child(),
-            **inputs,
+            **_inputs,
         )
         answer, sources = self._split_sources(answer)
         result: dict[str, Any] = {

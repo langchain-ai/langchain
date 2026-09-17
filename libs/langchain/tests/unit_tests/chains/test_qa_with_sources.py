@@ -1,5 +1,10 @@
-import pytest
+from copy import deepcopy
+from unittest.mock import AsyncMock, MagicMock
 
+import pytest
+from langchain_core.documents import Document
+
+from langchain_classic.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain_classic.chains.qa_with_sources.base import QAWithSourcesChain
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -92,3 +97,99 @@ def test_spliting_answer_into_answer_and_sources(
     generated_answer, generated_sources = qa_chain._split_sources(text)
     assert generated_answer == answer
     assert generated_sources == sources
+
+
+def test_qa_with_sources_preserve_inputs_sync() -> None:
+    """Test that QAWithSourcesChain does not mutate caller inputs on sync invoke."""
+    mock_combine = MagicMock(spec=BaseCombineDocumentsChain)
+    mock_combine.run.return_value = "Answer: test\nSOURCES: doc1"
+    chain = QAWithSourcesChain(combine_documents_chain=mock_combine)
+
+    docs = [Document(page_content="context", metadata={"source": "doc1"})]
+    inputs = {
+        "question": "What is the answer?",
+        "docs": docs,
+    }
+    original_inputs = deepcopy(inputs)
+
+    result = chain.invoke(inputs)
+
+    # Caller inputs must remain intact and unmutated
+    assert inputs == original_inputs
+    assert "docs" in inputs
+    assert inputs["docs"] == docs
+
+    # Combine chain must receive docs under input_documents and other inputs,
+    # without duplicates
+    assert mock_combine.run.call_count == 1
+    call_kwargs = mock_combine.run.call_args.kwargs
+    assert call_kwargs["input_documents"] == docs
+    assert call_kwargs["question"] == "What is the answer?"
+    assert "docs" not in call_kwargs
+
+    # Result contains expected output keys and values
+    assert result["answer"] == "Answer: test\n"
+    assert result["sources"] == "doc1"
+
+
+async def test_qa_with_sources_preserve_inputs_async() -> None:
+    """Test that QAWithSourcesChain does not mutate caller inputs on async ainvoke."""
+    mock_combine = MagicMock(spec=BaseCombineDocumentsChain)
+    mock_combine.arun = AsyncMock(return_value="Answer: test\nSOURCES: doc1")
+    chain = QAWithSourcesChain(combine_documents_chain=mock_combine)
+
+    docs = [Document(page_content="context", metadata={"source": "doc1"})]
+    inputs = {
+        "question": "What is the answer?",
+        "docs": docs,
+    }
+    original_inputs = deepcopy(inputs)
+
+    result = await chain.ainvoke(inputs)
+
+    # Caller inputs must remain intact and unmutated
+    assert inputs == original_inputs
+    assert "docs" in inputs
+    assert inputs["docs"] == docs
+
+    # Combine chain must receive docs under input_documents and other inputs,
+    # without duplicates
+    assert mock_combine.arun.call_count == 1
+    call_kwargs = mock_combine.arun.call_args.kwargs
+    assert call_kwargs["input_documents"] == docs
+    assert call_kwargs["question"] == "What is the answer?"
+    assert "docs" not in call_kwargs
+
+    # Result contains expected output keys and values
+    assert result["answer"] == "Answer: test\n"
+    assert result["sources"] == "doc1"
+
+
+def test_qa_with_sources_preserve_inputs_end_to_end_sync() -> None:
+    """Test end-to-end sync invoke with FakeLLM preserves caller inputs."""
+    chain = QAWithSourcesChain.from_llm(FakeLLM())
+    docs = [Document(page_content="context", metadata={"source": "doc1"})]
+    inputs = {
+        "question": "What is the answer?",
+        "docs": docs,
+    }
+    original_inputs = deepcopy(inputs)
+
+    chain.invoke(inputs)
+
+    assert inputs == original_inputs
+
+
+async def test_qa_with_sources_preserve_inputs_end_to_end_async() -> None:
+    """Test end-to-end async ainvoke with FakeLLM preserves caller inputs."""
+    chain = QAWithSourcesChain.from_llm(FakeLLM())
+    docs = [Document(page_content="context", metadata={"source": "doc1"})]
+    inputs = {
+        "question": "What is the answer?",
+        "docs": docs,
+    }
+    original_inputs = deepcopy(inputs)
+
+    await chain.ainvoke(inputs)
+
+    assert inputs == original_inputs
