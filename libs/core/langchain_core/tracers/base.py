@@ -708,9 +708,11 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
+        response: LLMResult | None = kwargs.pop("response", None)
         llm_run = self._errored_llm_run(
             error=error,
             run_id=run_id,
+            response=response,
         )
         tasks = [self._on_llm_error(llm_run), self._end_trace(llm_run)]
         await asyncio.gather(*tasks)
@@ -798,6 +800,7 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
             tags=tags,
             parent_run_id=parent_run_id,
             metadata=metadata,
+            name=name,
             inputs=inputs,
             **kwargs,
         )
