@@ -2509,6 +2509,20 @@ def test_experimental_markdown_syntax_text_splitter_header_config_on_multi_files
     assert output == expected_output
 
 
+def test_experimental_markdown_syntax_text_splitter_does_not_mutate_previous_results() -> None:
+    """Test that consecutive split_text calls do not mutate previously returned results (#40505)."""
+    splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    first = splitter.split_text("first document\n")
+    first_contents = [doc.page_content for doc in first]
+
+    second = splitter.split_text("second document\n")
+    second_contents = [doc.page_content for doc in second]
+
+    assert first is not second
+    assert [doc.page_content for doc in first] == first_contents
+    assert [doc.page_content for doc in second] == second_contents
+
+
 def test_solidity_code_splitter() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.SOL, chunk_size=CHUNK_SIZE, chunk_overlap=0
