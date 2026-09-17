@@ -1,11 +1,10 @@
 """Tests for `ModelRouterMiddleware`."""
 
-from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain.agents import create_agent
-from langchain_core.language_models import BaseChatModel
+from langchain.agents.middleware.types import InputAgentState
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import ValidationError
@@ -95,16 +94,13 @@ async def test_agent_routes_using_latest_human_message(*, asynchronous: bool) ->
     middleware, models, classifier, _ = _router()
     agent = create_agent(models["powerful"], middleware=[middleware])
     latest_message = HumanMessage("Update the README")
-    inputs = cast(
-        "Any",
-        {
-            "messages": [
-                HumanMessage("Earlier task"),
-                AIMessage("Ready"),
-                latest_message,
-            ]
-        },
-    )
+    inputs: InputAgentState = {
+        "messages": [
+            HumanMessage("Earlier task"),
+            AIMessage("Ready"),
+            latest_message,
+        ]
+    }
 
     if asynchronous:
         result = await agent.ainvoke(inputs)
@@ -125,7 +121,7 @@ async def test_classifier_failure_terminates_agent_run(*, asynchronous: bool) ->
     classifier.invoke.side_effect = RuntimeError("unavailable")
     classifier.ainvoke.side_effect = RuntimeError("unavailable")
     agent = create_agent(models["fast"], middleware=[middleware])
-    inputs = cast("Any", {"messages": [HumanMessage("Do the task")]})
+    inputs: InputAgentState = {"messages": [HumanMessage("Do the task")]}
 
     if asynchronous:
         with pytest.raises(RuntimeError, match="unavailable"):
@@ -146,7 +142,9 @@ def test_choices_are_required() -> None:
 
 def test_model_string_is_initialized_once() -> None:
     """Resolve model strings through `init_chat_model` during construction."""
-    initialized_model = cast("BaseChatModel", MagicMock())
+    initialized_model = GenericFakeChatModel(
+        messages=iter([AIMessage("initialized response")])
+    )
     classifier = MagicMock(spec=TypeSafeClassifier)
     with (
         patch(
