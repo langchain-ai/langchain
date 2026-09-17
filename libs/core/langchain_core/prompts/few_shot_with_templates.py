@@ -150,24 +150,23 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             prefix_kwargs = {
                 k: v for k, v in kwargs.items() if k in self.prefix.input_variables
             }
-            for k in prefix_kwargs:
-                kwargs.pop(k)
             prefix = self.prefix.format(**prefix_kwargs)
 
         # Create the overall suffix
         suffix_kwargs = {
             k: v for k, v in kwargs.items() if k in self.suffix.input_variables
         }
-        for k in suffix_kwargs:
-            kwargs.pop(k)
         suffix = self.suffix.format(
             **suffix_kwargs,
         )
 
+        used_vars = set(prefix_kwargs) | set(suffix_kwargs)
+        remaining_kwargs = {k: v for k, v in kwargs.items() if k not in used_vars}
+
         pieces = [prefix, *example_strings, suffix]
         template = self.example_separator.join([piece for piece in pieces if piece])
         # Format the template with the input variables.
-        return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
+        return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **remaining_kwargs)
 
     async def aformat(self, **kwargs: Any) -> str:
         """Async format the prompt with the inputs.
@@ -194,24 +193,23 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             prefix_kwargs = {
                 k: v for k, v in kwargs.items() if k in self.prefix.input_variables
             }
-            for k in prefix_kwargs:
-                kwargs.pop(k)
             prefix = await self.prefix.aformat(**prefix_kwargs)
 
         # Create the overall suffix
         suffix_kwargs = {
             k: v for k, v in kwargs.items() if k in self.suffix.input_variables
         }
-        for k in suffix_kwargs:
-            kwargs.pop(k)
         suffix = await self.suffix.aformat(
             **suffix_kwargs,
         )
 
+        used_vars = set(prefix_kwargs) | set(suffix_kwargs)
+        remaining_kwargs = {k: v for k, v in kwargs.items() if k not in used_vars}
+
         pieces = [prefix, *example_strings, suffix]
         template = self.example_separator.join([piece for piece in pieces if piece])
         # Format the template with the input variables.
-        return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
+        return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **remaining_kwargs)
 
     @property
     def _prompt_type(self) -> str:

@@ -104,3 +104,18 @@ async def test_get_examples_requires_examples_or_selector() -> None:
         prompt._get_examples()
     with pytest.raises(ValueError, match=match):
         await prompt._aget_examples()
+
+
+async def test_prompttemplate_prefix_suffix_shared_input_variables() -> None:
+    """Test that few shot works when prefix and suffix share an input variable."""
+    prompt = FewShotPromptWithTemplates(
+        prefix=PromptTemplate.from_template("Topic: {topic}"),
+        suffix=PromptTemplate.from_template("Answer about {topic}"),
+        examples=[{"question": "1 + 1", "answer": "2"}],
+        example_prompt=PromptTemplate.from_template("{question}: {answer}"),
+        input_variables=["topic"],
+        example_separator="\n",
+    )
+    expected = "Topic: cats\n1 + 1: 2\nAnswer about cats"
+    assert prompt.format(topic="cats") == expected
+    assert await prompt.aformat(topic="cats") == expected
