@@ -68,6 +68,27 @@ agent = create_agent(model, middleware=[skills])
 
 The middleware classifies the latest human message once per agent run, evaluates each skill independently, and injects every relevant skill into model-request messages. Skill sources can be `Skill` objects, paths to `SKILL.md`, or complete `SKILL.md` strings. This API is experimental and may change without notice.
 
+### Experimental tool selector middleware
+
+Install the experimental extra to filter an agent's tools down to the relevant ones with TypeSafe before each model call:
+
+```bash
+uv add "langchain-typesafe[experimental]"
+```
+
+```python
+from langchain.agents import create_agent
+from langchain_typesafe.experimental.middleware import TsToolSelectorMiddleware
+
+agent = create_agent(
+    model,
+    tools=[tool1, tool2, tool3, tool4, tool5],
+    middleware=[TsToolSelectorMiddleware(max_tools=3)],
+)
+```
+
+The middleware asks one independent `Noul` question per candidate tool ("is this tool needed next?"), batched into a single TypeSafe request against the latest human message, before every model call. Tools whose probability clears `relevance_threshold` (default `0.3`) are kept, ranked by that probability, and capped at `max_tools` if set. Use `always_include` to keep specific tools regardless of classification. This API is experimental and may change without notice.
+
 ### LangChain messages as state
 
 `BaseMessage` objects and message sequences can appear at the root or anywhere inside JSON state. The integration recursively converts them to objects with `role` and `content` fields while preserving surrounding application data:
