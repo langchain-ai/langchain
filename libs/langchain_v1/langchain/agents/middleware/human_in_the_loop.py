@@ -532,12 +532,21 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         tool_call_id = request.tool_call.get("id")
         if not tool_call_id:
             return None
-        for message in reversed(request.state["messages"]):
-            if not isinstance(message, AIMessage):
-                continue
-            edited = message.response_metadata.get(_EDITED_TOOL_CALLS_KEY) or {}
-            if tool_call_id in edited:
-                return cast("Action", edited[tool_call_id])
+        # Re-check policy at execution time: `allowed_decisions` may have been tightened
+        # since the decision was recorded, and a resumed thread carries the old record.
+        config = self.interrupt_on.get(request.tool_call["name"])
+        if config is None or "edit" not in config["allowed_decisions"]:
+            return None
+        # Only the message this call came from.
+        message = next(
+            (m for m in reversed(request.state["messages"]) if isinstance(m, AIMessage)),
+            None,
+        )
+        if message is None:
+            return None
+        edited = message.response_metadata.get(_EDITED_TOOL_CALLS_KEY) or {}
+        if tool_call_id in edited:
+            return cast("Action", edited[tool_call_id])
         return None
 
     def _apply_edit(self, request: ToolCallRequest, executed: Action) -> ToolCallRequest:
@@ -604,9 +613,10 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         self,
         result: ToolMessage | Command[Any],
         request: ToolCallRequest,
+        executed: Action | None,
     ) -> ToolMessage | Command[Any]:
         """Tell the model a reviewer replaced the call, and with what."""
-        if not self.edit_notice or (executed := self._reviewer_edit(request)) is None:
+        if not self.edit_notice or executed is None:
             return result
 
         if isinstance(result, ToolMessage):
@@ -646,9 +656,10 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         Returns:
             The tool result, with a note appended when a reviewer edited the call.
         """
-        if (executed := self._reviewer_edit(request)) is not None:
+        executed = self._reviewer_edit(request)
+        if executed is not None:
             request = self._apply_edit(request, executed)
-        return self._annotate_edited_result(handler(request), request)
+        return self._annotate_edited_result(handler(request), request, executed)
 
     async def awrap_tool_call(
         self,
@@ -664,6 +675,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         Returns:
             The tool result, with a note appended when a reviewer edited the call.
         """
-        if (executed := self._reviewer_edit(request)) is not None:
+        executed = self._reviewer_edit(request)
+        if executed is not None:
             request = self._apply_edit(request, executed)
-        return self._annotate_edited_result(await handler(request), request)
+        return self._annotate_edited_result(await handler(request), request, executed)
