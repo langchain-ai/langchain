@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import json
 from typing import Any
-from unittest.mock import MagicMock
 
 import httpx2
 import pytest
 from langchain_core._api import LangChainBetaWarning
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_core.tracers import LangChainTracer
 from pydantic import SecretStr, ValidationError
 
 from langchain_typesafe import (
@@ -24,6 +22,7 @@ from langchain_typesafe import (
     TypeSafeClassifier,
     __version__,
 )
+from langchain_typesafe import classifier as classifier_module
 from langchain_typesafe.client import (
     TypeSafeAPIConnectionError,
     TypeSafeAPIError,
@@ -32,18 +31,23 @@ from langchain_typesafe.client import (
 )
 
 
-class _CapturingTracer(LangChainTracer):
-    """Collect the runs a tracer would send to LangSmith, without any network."""
+class _RunTreeStub:
+    """Stand-in for the LangSmith run tree that `_record_usage` writes to."""
 
     def __init__(self) -> None:
-        super().__init__(client=MagicMock())
-        self.runs: list[Any] = []
+        self.extra: dict[str, Any] = {}
 
-    def _persist_run_single(self, run: Any) -> None:
-        self.runs.append(run)
 
-    def _update_run_single(self, run: Any) -> None:
-        self.runs.append(run)
+class _RunRecorder(BaseCallbackHandler):
+    """Record the run type and metadata the classifier starts its run with."""
+
+    def __init__(self) -> None:
+        self.metadata: dict[str, Any] = {}
+        self.run_type: str | None = None
+
+    def on_chain_start(self, *_: Any, **kwargs: Any) -> None:
+        self.metadata = kwargs.get("metadata") or {}
+        self.run_type = kwargs.get("run_type")
 
 
 API_KEY = "test-api-key"
@@ -556,70 +560,70 @@ def test_callbacks_receive_classifier_run() -> None:
     client.close()
 
 
-def test_traced_run_carries_usage_and_model_identity() -> None:
-    """A traced run reports tokens and the identity LangSmith prices it by.
+def test_usage_is_recorded_on_the_active_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Token usage is written where LangSmith totals it.
 
-    LangSmith only totals tokens for `llm` runs whose metadata carries
-    `usage_metadata`, so the run type is pinned alongside the payload.
+    LangSmith only sums tokens for `llm` runs whose metadata carries
+    `usage_metadata`, so both the payload and the run type are pinned.
     """
+    stub = _RunTreeStub()
+    monkeypatch.setattr(classifier_module, "get_current_run_tree", lambda: stub)
 
     def handler(_: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, json=_response_payload())
 
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
-    tracer = _CapturingTracer()
+    recorder = _RunRecorder()
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
         questions=_questions(),
         client=client,
     )
 
-    classifier.invoke("hello", config={"callbacks": [tracer]})
+    classifier.invoke("hello", config={"callbacks": [recorder]})
     client.close()
 
-    run = tracer.runs[-1]
-    metadata = run.extra["metadata"]
-    assert run.run_type == "llm"
-    assert metadata["usage_metadata"] == {
+    assert recorder.run_type == "llm"
+    assert stub.extra["metadata"]["usage_metadata"] == {
         "input_tokens": 42,
         "output_tokens": 12,
         "total_tokens": 54,
     }
-    assert metadata["ls_provider"] == "typesafe"
-    assert metadata["ls_model_name"] == "jev-latest"
-    assert API_KEY not in json.dumps(run.extra, default=str)
 
 
-async def test_async_traced_run_carries_usage() -> None:
-    """`ainvoke` reports the same usage as `invoke`."""
+async def test_async_usage_is_recorded_on_the_active_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`ainvoke` records the same usage as `invoke`."""
+    stub = _RunTreeStub()
+    monkeypatch.setattr(classifier_module, "get_current_run_tree", lambda: stub)
 
     async def handler(_: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, json=_response_payload())
 
     client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
-    tracer = _CapturingTracer()
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
         questions=_questions(),
         async_client=client,
     )
 
-    await classifier.ainvoke("hello", config={"callbacks": [tracer]})
+    await classifier.ainvoke("hello")
     await client.aclose()
 
-    run = tracer.runs[-1]
-    assert run.run_type == "llm"
-    assert run.extra["metadata"]["usage_metadata"]["total_tokens"] == 54
+    assert stub.extra["metadata"]["usage_metadata"]["total_tokens"] == 54
 
 
-def test_caller_metadata_survives_model_identity_tags() -> None:
-    """Identity tags are added without discarding caller-supplied metadata."""
+def test_run_carries_model_identity_without_losing_caller_metadata() -> None:
+    """Identity tags LangSmith prices by are added alongside caller metadata."""
 
     def handler(_: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, json=_response_payload())
 
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
-    tracer = _CapturingTracer()
+    recorder = _RunRecorder()
     classifier = TypeSafeClassifier(
         api_key=API_KEY,
         questions=_questions(),
@@ -628,13 +632,14 @@ def test_caller_metadata_survives_model_identity_tags() -> None:
 
     classifier.invoke(
         "hello",
-        config={"callbacks": [tracer], "metadata": {"tenant": "acme"}},
+        config={"callbacks": [recorder], "metadata": {"tenant": "acme"}},
     )
     client.close()
 
-    metadata = tracer.runs[-1].extra["metadata"]
-    assert metadata["tenant"] == "acme"
-    assert metadata["ls_provider"] == "typesafe"
+    assert recorder.metadata["tenant"] == "acme"
+    assert recorder.metadata["ls_provider"] == "typesafe"
+    assert recorder.metadata["ls_model_name"] == "jev-latest"
+    assert API_KEY not in json.dumps(recorder.metadata, default=str)
 
 
 def test_untraced_invocation_is_unaffected() -> None:
