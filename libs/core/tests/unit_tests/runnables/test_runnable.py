@@ -6010,3 +6010,33 @@ def test_runnable_sequence_v1_output_schema_with_pick() -> None:
     schema = sequence.get_output_jsonschema()
     assert set(schema["properties"]) == {"a"}
     assert "a" in schema["required"]
+
+
+async def test_runnable_assign_atransform_cancels_mapper_on_invalid_input() -> None:
+    """Test that RunnableAssign cancels mapper task when passthrough input validation fails."""
+    mapper_started = asyncio.Event()
+    mapper_cancelled = False
+
+    async def slow_mapper(value: Any) -> str:
+        nonlocal mapper_cancelled
+        mapper_started.set()
+        try:
+            await asyncio.sleep(60)
+            return "finished"
+        except asyncio.CancelledError:
+            mapper_cancelled = True
+            raise
+
+    runnable = RunnablePassthrough.assign(mapped=RunnableLambda(slow_mapper))
+
+    async def invalid_input():
+        yield {"valid": "first"}
+        await mapper_started.wait()
+        yield "invalid input"
+
+    with pytest.raises(ValueError, match="The input to RunnablePassthrough.assign\\(\\) must be a dict."):
+        async for _ in runnable.atransform(invalid_input()):
+            pass
+
+    assert mapper_cancelled is True
+
