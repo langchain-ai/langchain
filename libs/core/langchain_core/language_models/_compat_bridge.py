@@ -193,17 +193,15 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
             continue  # type: ignore[unreachable]
         explicit_idx = block.get("index")
         if explicit_idx is None:
-            # No source-side identity. Bucket by (sentinel, block type,
-            # positional `i`) so two blocks of different types at the
-            # same position across chunks (e.g. Gemini emitting a
-            # reasoning block in one chunk and a `tool_call` in the
-            # next, both at positional 0 because each chunk carries one
-            # block) get distinct wire blocks. Without this, the second
-            # type's incoming block hits `_accumulate`'s self-contained
-            # `else` branch and clobbers the first. Same-type chunks
-            # still share the bucket and merge cleanly, which is what
-            # streaming text / reasoning relies on.
-            key: Any = ("__lc_no_index__", block.get("type"), i)
+            # No source-side identity. A complete `tool_call` block
+            # carries a stable `id` — key by that instead of the
+            # positional fallback so parallel calls (each in its own
+            # chunk at position 0) don't collide. Other block types
+            # fall back to the positional key.
+            if block.get("type") == "tool_call" and block.get("id"):
+                key: Any = ("__lc_tool_call__", block["id"])
+            else:
+                key = ("__lc_no_index__", block.get("type"), i)
         else:
             key = explicit_idx
         result.append((key, dict(block)))

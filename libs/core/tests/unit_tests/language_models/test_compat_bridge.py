@@ -353,6 +353,87 @@ async def test_achunks_to_events_interleaved_parallel_tool_calls() -> None:
     _assert_interleaved_parallel_tool_call_events(events)
 
 
+def _gemini_parallel_tool_call_chunks() -> list[ChatGenerationChunk]:
+    """Chunks simulating Gemini-style parallel tool calls.
+
+    Gemini emits each complete tool_call as its own chunk with no `index`
+    field. Each chunk has one block at positional index 0. Without the
+    fix, both would key on ('__lc_no_index__', 'tool_call', 0) and the
+    first would be dropped.
+    """
+    return [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_a",
+                        "name": "search",
+                        "args": {"query": "weather"},
+                    }
+                ],
+                id="msg-1",
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": "call_b",
+                        "name": "read",
+                        "args": {"url": "example.com"},
+                    }
+                ],
+                id="msg-1",
+            )
+        ),
+    ]
+
+
+def test_chunks_to_events_gemini_parallel_tool_calls_no_index() -> None:
+    """Gemini-style parallel tool calls without index must not collide.
+
+    Regression test for langchain-ai/langchain#40392. Each parallel tool
+    call arrives as a complete `tool_call` block in its own chunk. Both
+    chunks have one block at positional index 0. Before the fix, both
+    keyed on ('__lc_no_index__', 'tool_call', 0) and the second
+    overwrote the first in the accumulator. After the fix, they key by
+    their stable `id` and both survive.
+    """
+    events = list(
+        chunks_to_events(
+            iter(_gemini_parallel_tool_call_chunks()), message_id="msg-1"
+        )
+    )
+
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    tool_calls = [f for f in finishes if f["content"].get("type") == "tool_call"]
+
+    assert len(tool_calls) == 2, "Both parallel tool calls must survive"
+    ids = {tc["content"]["id"] for tc in tool_calls}
+    assert ids == {"call_a", "call_b"}
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_gemini_parallel_tool_calls_no_index() -> None:
+    """Async twin of the Gemini parallel tool call regression."""
+    events = [
+        event
+        async for event in achunks_to_events(
+            _aiter_chunks(_gemini_parallel_tool_call_chunks()),
+            message_id="msg-1",
+        )
+    ]
+
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    tool_calls = [f for f in finishes if f["content"].get("type") == "tool_call"]
+
+    assert len(tool_calls) == 2
+    ids = {tc["content"]["id"] for tc in tool_calls}
+    assert ids == {"call_a", "call_b"}
+
+
 def _interleaved_parallel_tool_call_chunks() -> list[ChatGenerationChunk]:
     return [
         ChatGenerationChunk(
