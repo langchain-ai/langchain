@@ -52,8 +52,6 @@ class ModelChoice:
 class _ModelRouterConfig(BaseModel):
     """Validated model-router configuration."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     choices: dict[str, ModelChoice] = Field(min_length=1)
     instructions: _QuestionContent
 
