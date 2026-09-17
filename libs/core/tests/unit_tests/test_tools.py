@@ -881,6 +881,21 @@ def test_exception_handling_callable() -> None:
     assert expected == actual
 
 
+def test_exception_handling_preserves_artifact() -> None:
+    """A handled ToolException keeps its non-model-visible artifact."""
+    tool_ = _FakeExceptionTool(
+        exception=ToolException("failed", artifact={"retryable": True}),
+        handle_tool_error=True,
+    )
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "id": "123", "name": "exception"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.status == "error"
+    assert actual.artifact == {"retryable": True}
+
+
 def test_exception_handling_callable_message_content_blocks() -> None:
     expected: list[dict[str, Any]] = [{"type": "text", "text": "handled error"}]
 

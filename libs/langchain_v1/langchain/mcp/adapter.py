@@ -9,7 +9,7 @@ from pydantic import AnyUrl, TypeAdapter, ValidationError
 from typing_extensions import Self
 
 from langchain.mcp.elicitation import _arm_for_interrupts
-from langchain.mcp.tools import as_langchain_tool
+from langchain.mcp.tools import MCPMetaConfig, as_langchain_tool
 
 try:
     from fastmcp.client import Client as FastMCPClient
@@ -156,9 +156,17 @@ class MCPAdapter:
     client with no handler is armed, and it is cloned first so the caller's own
     object is never mutated.
 
+    Tools produced by `list_tools` forward MCP `_meta` when `mcp_meta` is set —
+    see `langchain.mcp` for the full keying convention, including per-server
+    overrides and the global fallback key.
+
     Args:
         target: MCP target accepted by `fastmcp.Client`, including an existing
             FastMCP client. A `str` must be an `http`/`https` URL.
+        mcp_meta: Optional configuration for MCP `_meta` forwarding. Controls
+            the configurable key, request/response sides, and global fallback.
+            `None` (default) disables `_meta` forwarding entirely — see
+            `MCPMetaConfig` and `langchain.mcp` for details.
 
     Example:
         ```python
@@ -171,7 +179,7 @@ class MCPAdapter:
         ```
     """
 
-    def __init__(self, target: MCPAdapterTarget) -> None:
+    def __init__(self, target: MCPAdapterTarget, *, mcp_meta: MCPMetaConfig | None = None) -> None:
         """Initialize the adapter around a FastMCP target, client, or group.
 
         Each underlying client is armed to answer elicitation with an interrupt,
@@ -179,6 +187,7 @@ class MCPAdapter:
         instead. A caller's client is cloned rather than mutated. See the class
         docstring.
         """
+        self._mcp_meta = mcp_meta
 
         def armed(client: FastMCPClient[Any]) -> FastMCPClient[Any]:
             if getattr(client, "_elicitation_callback", None) is not None:
@@ -239,7 +248,10 @@ class MCPAdapter:
         """
         async with self:
             remote_tools = await self._client.list_tools(cache_mode=cache_mode)
-            return [await as_langchain_tool(tool, self._client) for tool in remote_tools]
+            return [
+                await as_langchain_tool(tool, self._client, mcp_meta=self._mcp_meta)
+                for tool in remote_tools
+            ]
 
 
 __all__ = ["MCPAdapter", "MCPAdapterTarget"]

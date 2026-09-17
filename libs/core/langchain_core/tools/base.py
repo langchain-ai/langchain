@@ -374,8 +374,21 @@ class ToolException(Exception):  # noqa: N818
     This exception allows tools to signal errors without stopping the agent.
 
     The error is handled according to the tool's `handle_tool_error` setting, and the
-    result is returned as an observation to the agent.
+    result is returned as an observation to the agent. A handled exception may
+    also carry non-model-visible structured data in `artifact`, which is
+    preserved on the resulting `ToolMessage`.
     """
+
+    def __init__(self, *args: object, artifact: Any = None) -> None:
+        """Initialize a tool execution error.
+
+        Args:
+            *args: Exception arguments describing the error.
+            artifact: Optional non-model-visible data to attach to a handled
+                tool error.
+        """
+        super().__init__(*args)
+        self.artifact = artifact
 
 
 ArgsSchema = TypeBaseModel | dict[str, Any]
@@ -1123,6 +1136,7 @@ class ChildTool(BaseTool):
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+                artifact = e.artifact
                 status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e
@@ -1253,6 +1267,7 @@ class ChildTool(BaseTool):
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+                artifact = e.artifact
                 status = "error"
         except (Exception, KeyboardInterrupt) as e:
             error_to_raise = e

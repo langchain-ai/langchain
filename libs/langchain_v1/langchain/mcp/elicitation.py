@@ -313,6 +313,8 @@ async def _call_tool_with_interrupts(
     client: Client[Any] | ClientGroup,
     tool_name: str,
     arguments: dict[str, Any],
+    *,
+    meta: dict[str, Any] | None = None,
 ) -> CallToolResult:
     """Call an MCP tool, answering each round of requested input with an interrupt.
 
@@ -324,6 +326,8 @@ async def _call_tool_with_interrupts(
         client: A connected client armed to advertise the elicitation capability.
         tool_name: The MCP tool to call.
         arguments: Arguments for the tool.
+        meta: Optional MCP protocol-level `_meta` forwarded to every
+            `session.call_tool` call in the elicitation loop.
 
     Returns:
         The tool's terminal result.
@@ -341,7 +345,13 @@ async def _call_tool_with_interrupts(
     member, session, upstream_name = await _resolve_session(client, tool_name)
 
     result = await _await_monitored(
-        member, session.call_tool(upstream_name, arguments, allow_input_required=True)
+        member,
+        session.call_tool(
+            upstream_name,
+            arguments,
+            allow_input_required=True,
+            meta=meta,  # type: ignore[arg-type]  # dict[str,Any] vs RequestParamsMeta; wire-identical
+        ),
     )
 
     while isinstance(result, InputRequiredResult):
@@ -373,6 +383,7 @@ async def _call_tool_with_interrupts(
                 input_responses=responses,
                 request_state=result.request_state,  # opaque; echoed back verbatim
                 allow_input_required=True,
+                meta=meta,  # type: ignore[arg-type]  # dict[str,Any] vs RequestParamsMeta; wire-identical
             ),
         )
 
