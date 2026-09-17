@@ -9,6 +9,7 @@ import httpx2
 import pytest
 import typesafe_sdk as ts
 from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.load import dumpd
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import SecretStr, ValidationError
 
@@ -602,3 +603,34 @@ def test_batch_reuses_one_client() -> None:
     assert classifier.client is client
     assert len(results) == 3
     assert all(result.nouls["urgent"].noul == 0.95 for result in results)
+
+
+def test_serialization_renders_questions_faithfully() -> None:
+    """A serialized classifier carries its questions, not a placeholder."""
+    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_questions())
+
+    serialized = dumpd(classifier)
+    questions = serialized["kwargs"]["questions"]
+
+    assert questions["urgent"] == {"type": "noul", "instructions": "Is this urgent?"}
+    assert questions["frustration"]["criteria"] == ["calm", "frustrated", "angry"]
+    assert "not_implemented" not in json.dumps(serialized)
+
+
+def test_serialized_questions_round_trip() -> None:
+    """Serialized questions can rebuild an equivalent classifier."""
+    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_questions())
+
+    rebuilt = TypeSafeClassifier(
+        api_key=API_KEY,
+        questions=dumpd(classifier)["kwargs"]["questions"],
+    )
+
+    assert rebuilt.questions == classifier.questions
+
+
+def test_serialization_keeps_the_api_key_out() -> None:
+    """The API key is never written into a serialized classifier."""
+    classifier = TypeSafeClassifier(api_key=API_KEY, questions=_urgent())
+
+    assert API_KEY not in json.dumps(dumpd(classifier))

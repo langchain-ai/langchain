@@ -343,6 +343,17 @@ class TypeSafeClassifier(RunnableSerializable[State, ts.SystemOneResponse]):
         """Map the API-key field to its environment variable for serialization."""
         return {"api_key": ts.constants.API_KEY_ENV}
 
+    @property
+    def lc_attributes(self) -> dict[str, Any]:
+        """Override `questions` with a JSON-compatible form for serialization.
+
+        LangChain serialization walks fields directly rather than through pydantic,
+        and renders values it does not recognize as `not_implemented`. Emitting the
+        questions as dictionaries keeps a serialized classifier and its traced run
+        faithful, and the `type` discriminator lets `_coerce_questions` rebuild them.
+        """
+        return {"questions": self._serialize_questions(self.questions)}
+
     def _client_kwargs(self) -> dict[str, Any]:
         return {
             "api_key": (
