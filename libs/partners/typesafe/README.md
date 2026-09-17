@@ -43,9 +43,9 @@ print(result.scores["frustration"].score)
 
 Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnable`, the classifier can also be composed with other LangChain runnables and supports standard batching, callbacks, and tracing.
 
-### Experimental model routing middleware
+### Experimental middleware
 
-Install the middleware extra to route an agent to a model selected by a TypeSafe `Choice` question:
+Install the experimental extra to use TypeSafe-powered agent middleware. For example, `ModelRouterMiddleware` routes an agent to a model selected by a TypeSafe `Choice` question:
 
 ```bash
 uv add "langchain-typesafe[experimental]"
@@ -61,7 +61,7 @@ from langchain_typesafe.experimental.middleware import (
 router = ModelRouterMiddleware(
     choices={
         "fast": ModelChoice(
-            model=fast_model,
+            model="openai:gpt-5-mini",
             criteria="Simple, well-scoped tasks.",
         ),
         "powerful": ModelChoice(
@@ -70,12 +70,11 @@ router = ModelRouterMiddleware(
         ),
     },
     instructions="Choose the least costly model suited to the task.",
-    default_route="powerful",
 )
-agent = create_agent(fast_model, middleware=[router])
+agent = create_agent("openai:gpt-5-mini", middleware=[router])
 ```
 
-The middleware classifies the latest human message once per agent run. If classification fails or returns an unknown route, it uses `default_route`. This API is experimental and may change without notice.
+The middleware classifies the latest human message once per agent run. Classification failures, missing human input, and unknown routes terminate the run instead of silently selecting another model. APIs under `langchain_typesafe.experimental` may change without notice.
 
 ### LangChain messages as state
 

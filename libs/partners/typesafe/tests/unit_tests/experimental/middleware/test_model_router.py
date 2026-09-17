@@ -63,7 +63,6 @@ def _router(
                 ),
             },
             instructions="Choose the least costly model suited to the task.",
-            default_route="powerful",
         )
     return middleware, models, classifier, classifier_class
 
@@ -115,9 +114,7 @@ def test_sync_route_is_stored_and_used_for_model_calls() -> None:
     assert request.model is not models["fast"]
     classifier.invoke.assert_called_once()
     assert classifier.invoke.call_args.args[0] is latest_message
-    assert classifier.invoke.call_args.kwargs["config"]["metadata"] == {
-        "lc_source": "typesafe_model_router"
-    }
+    assert classifier.invoke.call_args.kwargs == {}
 
 
 @pytest.mark.asyncio
@@ -145,73 +142,88 @@ async def test_async_route_is_stored_and_used_for_model_calls() -> None:
 
 @pytest.mark.parametrize("asynchronous", [False, True])
 @pytest.mark.asyncio
-async def test_classifier_failure_uses_default_route(*, asynchronous: bool) -> None:
-    """Use the default for classifier failures and unknown state routes."""
-    middleware, models, classifier, _ = _router()
+async def test_classifier_failure_terminates_run(*, asynchronous: bool) -> None:
+    """Propagate classifier failures instead of silently selecting a model."""
+    middleware, _, classifier, _ = _router()
     classifier.invoke.side_effect = RuntimeError("unavailable")
     classifier.ainvoke.side_effect = RuntimeError("unavailable")
-    state = {"messages": [HumanMessage("Do the task")]}
+    state = cast("Any", {"messages": [HumanMessage("Do the task")]})
 
     if asynchronous:
-        update = await middleware.abefore_agent(cast("Any", state), MagicMock())
+        with pytest.raises(RuntimeError, match="unavailable"):
+            await middleware.abefore_agent(state, MagicMock())
     else:
-        update = middleware.before_agent(cast("Any", state), MagicMock())
-
-    assert update == {"model_route": "powerful"}
-
-    request = _request({"messages": [], "model_route": "unknown"})
-    seen: list[ModelRequest[Any]] = []
-
-    def handler(routed: ModelRequest[Any]) -> ModelResponse[Any]:
-        seen.append(routed)
-        return MagicMock()
-
-    middleware.wrap_model_call(request, handler)
-    assert seen[0].model is models["powerful"]
+        with pytest.raises(RuntimeError, match="unavailable"):
+            middleware.before_agent(state, MagicMock())
 
 
-def test_missing_human_message_uses_default_without_classifying() -> None:
-    """Avoid a classifier call when there is no human task."""
+def test_missing_human_message_terminates_run() -> None:
+    """Reject agent state without a human task to classify."""
     middleware, _, classifier, _ = _router()
-    state = {"messages": [AIMessage("No task yet")]}
+    state = cast("Any", {"messages": [AIMessage("No task yet")]})
 
-    update = middleware.before_agent(cast("Any", state), MagicMock())
+    with pytest.raises(ValueError, match="at least one human message"):
+        middleware.before_agent(state, MagicMock())
 
-    assert update == {"model_route": "powerful"}
     classifier.invoke.assert_not_called()
 
 
-def test_unknown_choice_uses_default_route() -> None:
-    """Use the default when TypeSafe selects an unconfigured route."""
+def test_unknown_choice_terminates_run() -> None:
+    """Reject a TypeSafe choice that has no configured model."""
     middleware, _, classifier, _ = _router()
     classifier.invoke.return_value = _response("unknown")
 
-    update = middleware.before_agent(
-        cast("Any", {"messages": [HumanMessage("Do the task")]}),
-        MagicMock(),
-    )
+    with pytest.raises(ValueError, match="unknown model route 'unknown'"):
+        middleware.before_agent(
+            cast("Any", {"messages": [HumanMessage("Do the task")]}),
+            MagicMock(),
+        )
 
-    assert update == {"model_route": "powerful"}
+
+def test_unknown_route_in_state_terminates_run() -> None:
+    """Reject model calls whose state has no configured route."""
+    middleware, _, _, _ = _router()
+    request = _request({"messages": [], "model_route": "unknown"})
+
+    with pytest.raises(ValueError, match="unknown model route 'unknown'"):
+        middleware.wrap_model_call(request, MagicMock())
 
 
 def test_configuration_validation() -> None:
-    """Reject an empty choice mapping or a missing default route."""
-    _, models, _, _ = _router()
-    choices = {"fast": ModelChoice(model=models["fast"], criteria="Simple.")}
-
+    """Reject an empty choice mapping."""
     with pytest.raises(ValueError, match="At least one model choice"):
         ModelRouterMiddleware(
             choices={},
             instructions="Choose a route.",
-            default_route="powerful",
         )
 
-    with pytest.raises(ValueError, match="Default route 'missing'"):
-        ModelRouterMiddleware(
-            choices=choices,
+
+def test_model_string_is_initialized_once() -> None:
+    """Resolve model strings through `init_chat_model` during construction."""
+    initialized_model = cast("BaseChatModel", MagicMock())
+    classifier = MagicMock(spec=TypeSafeClassifier)
+    with (
+        patch(
+            "langchain_typesafe.experimental.middleware.model_router.init_chat_model",
+            return_value=initialized_model,
+        ) as init_model,
+        patch(
+            "langchain_typesafe.experimental.middleware.model_router.TypeSafeClassifier",
+            return_value=classifier,
+        ),
+    ):
+        middleware = ModelRouterMiddleware(
+            choices={
+                "fast": ModelChoice(
+                    model="openai:gpt-5-mini",
+                    criteria="Simple tasks.",
+                )
+            },
             instructions="Choose a route.",
-            default_route="missing",
         )
+
+    init_model.assert_called_once_with("openai:gpt-5-mini")
+    assert middleware.models == {"fast": initialized_model}
 
 
 def test_create_agent_routes_the_run_to_the_selected_model() -> None:
@@ -232,7 +244,6 @@ def test_create_agent_routes_the_run_to_the_selected_model() -> None:
                 "powerful": ModelChoice(model=powerful_model, criteria="Complex."),
             },
             instructions="Choose the least costly suitable route.",
-            default_route="powerful",
         )
     agent = create_agent(powerful_model, middleware=[middleware])
 
