@@ -94,7 +94,6 @@ async def _middleware(
     probability: float,
     *,
     tools: Sequence[str | BaseTool],
-    threshold: float = 0.5,
     instructions: str | None = None,
     criteria: NoulCriteria | None = None,
     status_code: int = 200,
@@ -117,7 +116,6 @@ async def _middleware(
     with patch.dict(os.environ, {"TYPESAFE_API_KEY": API_KEY}):
         middleware = AutoModeMiddleware(
             tools=tools,
-            threshold=threshold,
             **kwargs,
         )
     created_client = middleware.classifier.client
@@ -262,19 +260,6 @@ async def test_unlisted_tool_bypasses_classification() -> None:
     assert observed_requests == []
 
 
-async def test_threshold_boundary_is_blocked() -> None:
-    """Block risk equal to the configured threshold."""
-    executions: list[str] = []
-    tool_instance = _delete_tool(executions)
-
-    async with _middleware(0.5, tools=[tool_instance], threshold=0.5) as middleware:
-        result = await _run_agent(middleware, tool_instance, async_=False)
-
-    [tool_message] = _tool_messages(result)
-    assert tool_message.status == "error"
-    assert executions == []
-
-
 async def test_classifier_receives_user_context_and_raw_tool_call() -> None:
     """Send user authorization context and complete tool details to TypeSafe."""
     tool_instance = _delete_tool([])
@@ -353,12 +338,10 @@ async def test_classifier_failure_terminates_agent_run(*, async_: bool) -> None:
     [
         {"tools": []},
         {"tools": "delete_file"},
-        {"tools": ["delete_file"], "threshold": -0.1},
-        {"tools": ["delete_file"], "threshold": 1.1},
     ],
 )
 async def test_invalid_configuration_is_rejected(kwargs: dict[str, Any]) -> None:
-    """Validate tool and threshold configuration through Pydantic."""
+    """Validate tool configuration through Pydantic."""
     with pytest.raises(ValidationError):
         AutoModeMiddleware(**kwargs)
 

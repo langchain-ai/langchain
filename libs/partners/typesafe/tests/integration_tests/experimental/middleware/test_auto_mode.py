@@ -64,7 +64,7 @@ async def test_live_classification_blocks_agent_tool_execution(
             ]
         )
     )
-    middleware = AutoModeMiddleware(tools=[delete_file], threshold=0.0)
+    middleware = AutoModeMiddleware(tools=[delete_file])
     agent = create_agent(model, tools=[delete_file], middleware=[middleware])
     state = InputAgentState(messages=[HumanMessage("Summarize the report.")])
 
