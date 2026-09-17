@@ -28,7 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
-from langchain_typesafe.types import ClassificationResponse, Noul, NoulCriteria
+from langchain_typesafe.types import Noul, NoulCriteria
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -84,6 +84,12 @@ class _AutoModeConfig(BaseModel):
             if isinstance(value, str) and not value.strip()
             else value
         )
+
+    @field_validator("criteria", mode="before")
+    @classmethod
+    def default_missing_criteria(cls, value: object) -> object:
+        """Use the default criteria when callers provide `None`."""
+        return _default_criteria() if value is None else value
 
     @field_validator("blocked_message", mode="before")
     @classmethod
@@ -199,15 +205,15 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
                 invalid.
         """
         super().__init__()
-        config_data: dict[str, Any] = {
-            "tools": tools,
-            "instructions": instructions,
-            "threshold": threshold,
-            "blocked_message": blocked_message,
-        }
-        if criteria is not None:
-            config_data["criteria"] = criteria
-        config = _AutoModeConfig.model_validate(config_data)
+        config = _AutoModeConfig.model_validate(
+            {
+                "tools": tools,
+                "instructions": instructions,
+                "criteria": criteria,
+                "threshold": threshold,
+                "blocked_message": blocked_message,
+            }
+        )
         self.tool_names = config.tool_names
         self.threshold = config.threshold
         self.instructions = config.instructions
@@ -238,10 +244,6 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         if request.tool is not None and request.tool.description:
             state["tool_description"] = request.tool.description
         return state
-
-    @staticmethod
-    def _risk_probability(response: ClassificationResponse) -> float:
-        return response.nouls[_RISK_QUESTION_ID].noul
 
     def _blocked_tool_message(
         self,
@@ -277,7 +279,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         if request.tool_call["name"] not in self.tool_names:
             return handler(request)
         response = self.classifier.invoke(self._classification_state(request))
-        risk_probability = self._risk_probability(response)
+        risk_probability = response.nouls[_RISK_QUESTION_ID].noul
         if risk_probability >= self.threshold:
             return self._blocked_tool_message(request, risk_probability)
         return handler(request)
@@ -303,7 +305,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[Any], Any]):
         if request.tool_call["name"] not in self.tool_names:
             return await handler(request)
         response = await self.classifier.ainvoke(self._classification_state(request))
-        risk_probability = self._risk_probability(response)
+        risk_probability = response.nouls[_RISK_QUESTION_ID].noul
         if risk_probability >= self.threshold:
             return self._blocked_tool_message(request, risk_probability)
         return await handler(request)
