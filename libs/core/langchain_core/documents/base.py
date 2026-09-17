@@ -164,12 +164,13 @@ class Blob(BaseMedia):
         Returns:
             The data as a string.
         """
+        enc = "utf-8-sig" if self.encoding.lower().replace("_", "-") == "utf-8" else self.encoding
         if self.data is None and self.path:
-            return Path(self.path).read_text(encoding=self.encoding)
+            return Path(self.path).read_text(encoding=enc)
         if isinstance(self.data, bytes):
-            return self.data.decode(self.encoding)
+            return self.data.decode(enc)
         if isinstance(self.data, str):
-            return self.data
+            return self.data.lstrip("\ufeff") if self.encoding.lower().replace("_", "-") == "utf-8" else self.data
         msg = f"Unable to get string for blob {self}"
         raise ValueError(msg)
 
