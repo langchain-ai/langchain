@@ -45,21 +45,11 @@ _PDF_MIME_TYPE: Final = "application/pdf"
 class UnsupportedContentMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Replace multimodal input blocks the active model can't accept with a text notice.
 
-    Several providers reject a request outright — often with a non-retryable 400 — when
-    it carries a content block they don't support, such as an image sent to a text-only
-    model or a non-PDF `file` block. That ends the run even though the rest of the
-    conversation is fine. This middleware swaps each unsupported block for a short text
-    notice so the model learns the attachment was dropped and the turn continues.
-
     Support is read from
     [`model.profile`](https://docs.langchain.com/oss/python/langchain/models#model-profiles).
-    Profile coverage is incomplete, so a missing field counts as supported: only an
-    explicit `False` drops a block.
 
-    Place this middleware **last** in the `middleware` list. `wrap_model_call` layers run
-    outermost-first, so the last entry is the innermost layer and the only one guaranteed
-    to see the final `request.model` — including a model another middleware swapped in at
-    runtime.
+    Place this middleware last in the `middleware` list, so that if
+    `ModelRequest.model` changes, this middleware will apply to the correct one.
 
     Example:
         ```python
