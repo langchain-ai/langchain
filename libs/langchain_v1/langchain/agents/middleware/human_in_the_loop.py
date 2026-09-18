@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
-from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Protocol, cast
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.config import get_config
@@ -16,6 +16,7 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
+    PrivateStateAttr,
     ResponseT,
     StateT,
     ToolCallRequest,
@@ -27,8 +28,8 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 
-_EDITED_TOOL_CALLS_KEY = "__hitl_edited_tool_calls__"
-"""`response_metadata` key mapping tool call ID to the reviewer's replacement."""
+_EDITED_TOOL_CALLS_KEY = "hitl_edited_tool_calls"
+"""State key mapping tool call ID to the reviewer's replacement for it."""
 
 _EDIT_NOTICE = (
     "Note: a human reviewer replaced this tool call before it ran. The call recorded in "
@@ -229,8 +230,17 @@ class InterruptOnConfig(TypedDict):
     """
 
 
+class _HumanInTheLoopState(AgentState[ResponseT]):
+    """State schema for `HumanInTheLoopMiddleware`."""
+
+    hitl_edited_tool_calls: NotRequired[Annotated[dict[str, Action], PrivateStateAttr]]
+    """Track tool call edits from `after_model`, so they can be used by `wrap_tool_call`."""
+
+
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     """Human in the loop middleware."""
+
+    state_schema = _HumanInTheLoopState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -454,8 +464,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 review_configs.append(review_config)
                 interrupt_indices.append(idx)
 
-        # If no interrupts needed, return early
+        # If no interrupts needed, return early, dropping any earlier turn's edits so
+        # they cannot be applied to this turn's tool calls.
         if not action_requests:
+            if state.get(_EDITED_TOOL_CALLS_KEY):
+                return {_EDITED_TOOL_CALLS_KEY: {}}
             return None
 
         # Create single HITLRequest with all actions and configs
@@ -504,14 +517,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         # Update the AI message to only include approved tool calls
         last_ai_msg.tool_calls = revised_tool_calls
 
-        # `wrap_tool_call` reads this back to substitute and annotate the call.
-        if edited_tool_calls:
-            last_ai_msg.response_metadata = {
-                **last_ai_msg.response_metadata,
-                _EDITED_TOOL_CALLS_KEY: edited_tool_calls,
-            }
-
-        return {"messages": [last_ai_msg, *artificial_tool_messages]}
+        # `wrap_tool_call` reads this back to substitute and annotate the call. Always
+        # written, so an earlier turn's edits cannot survive into this one.
+        return {
+            "messages": [last_ai_msg, *artificial_tool_messages],
+            _EDITED_TOOL_CALLS_KEY: edited_tool_calls,
+        }
 
     async def aafter_model(
         self, state: AgentState[Any], runtime: Runtime[ContextT]
@@ -532,14 +543,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         tool_call_id = request.tool_call.get("id")
         if not tool_call_id:
             return None
-        # Only the message this call came from.
-        message = next(
-            (m for m in reversed(request.state["messages"]) if isinstance(m, AIMessage)),
-            None,
-        )
-        if message is None:
-            return None
-        edited = message.response_metadata.get(_EDITED_TOOL_CALLS_KEY) or {}
+        edited = request.state.get(_EDITED_TOOL_CALLS_KEY) or {}
         if tool_call_id in edited:
             return cast("Action", edited[tool_call_id])
         return None

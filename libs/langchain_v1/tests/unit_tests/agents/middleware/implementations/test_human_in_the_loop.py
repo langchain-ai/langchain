@@ -18,6 +18,7 @@ from langchain.agents.middleware.human_in_the_loop import (
     _EDITED_TOOL_CALLS_KEY,
     Action,
     HumanInTheLoopMiddleware,
+    _HumanInTheLoopState,
 )
 from langchain.agents.middleware.types import AgentState, ToolCallRequest
 from tests.unit_tests.agents.model import FakeToolCallingModel
@@ -158,7 +159,7 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
         assert len(result["messages"]) == 1
         assert result["messages"][0].tool_calls[0]["args"] == {"input": "test"}
         assert result["messages"][0].tool_calls[0]["id"] == "1"  # ID should be preserved
-        assert result["messages"][0].response_metadata[_EDITED_TOOL_CALLS_KEY] == {
+        assert result[_EDITED_TOOL_CALLS_KEY] == {
             "1": {"name": "test_tool", "args": {"input": "edited"}}
         }
 
@@ -532,9 +533,7 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
         assert updated_ai_message.tool_calls[0]["id"] == "1"  # ID preserved
         assert updated_ai_message.tool_calls[1]["args"] == {"location": "San Francisco"}
         assert updated_ai_message.tool_calls[1]["id"] == "2"  # ID preserved
-        assert updated_ai_message.response_metadata[_EDITED_TOOL_CALLS_KEY]["1"]["args"] == {
-            "location": "New York"
-        }
+        assert result[_EDITED_TOOL_CALLS_KEY]["1"]["args"] == {"location": "New York"}
 
 
 def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
@@ -575,7 +574,7 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
         updated_ai_message = result["messages"][0]
         assert updated_ai_message.tool_calls[0]["args"] == {"input": "test"}
         assert updated_ai_message.tool_calls[0]["id"] == "1"  # ID preserved
-        assert updated_ai_message.response_metadata[_EDITED_TOOL_CALLS_KEY] == {
+        assert result[_EDITED_TOOL_CALLS_KEY] == {
             "1": {"name": "test_tool", "args": {"input": "modified"}}
         }
 
@@ -770,9 +769,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         assert "messages" in result
         assert len(result["messages"]) == 1
         assert result["messages"][0].tool_calls[0]["args"] == {"input": "test"}
-        assert result["messages"][0].response_metadata[_EDITED_TOOL_CALLS_KEY]["1"]["args"] == {
-            "input": "edited"
-        }
+        assert result[_EDITED_TOOL_CALLS_KEY]["1"]["args"] == {"input": "edited"}
 
     middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": False})
 
@@ -982,9 +979,7 @@ def test_human_in_the_loop_middleware_preserves_order_with_edits() -> None:
         assert updated_ai_message.tool_calls[0]["args"] == {"val": 1}
         assert updated_ai_message.tool_calls[1]["name"] == "tool_b"
         assert updated_ai_message.tool_calls[1]["args"] == {"val": 2}  # model's own
-        assert updated_ai_message.response_metadata[_EDITED_TOOL_CALLS_KEY]["id_b"]["args"] == {
-            "val": 200
-        }  # reviewer's
+        assert result[_EDITED_TOOL_CALLS_KEY]["id_b"]["args"] == {"val": 200}  # reviewer's
         assert updated_ai_message.tool_calls[1]["id"] == "id_b"  # ID preserved
         assert updated_ai_message.tool_calls[2]["name"] == "tool_c"
         assert updated_ai_message.tool_calls[2]["args"] == {"val": 3}
@@ -1258,6 +1253,25 @@ def test_human_in_the_loop_middleware_approve_does_not_annotate() -> None:
     assert tool_messages[0].content == "File written to /p (1 chars)"
 
 
+def _edited_request(tool_call_id: str = "1") -> ToolCallRequest:
+    """A `ToolCallRequest` whose call a reviewer edited."""
+    ai_message = AIMessage(
+        content="",
+        tool_calls=[{"name": "write_file_tool", "args": {"content": "edited"}, "id": tool_call_id}],
+    )
+    return ToolCallRequest(
+        tool_call=ToolCall(name="write_file_tool", args={"content": "edited"}, id=tool_call_id),
+        tool=None,
+        state=_HumanInTheLoopState[Any](
+            messages=[HumanMessage("go"), ai_message],
+            hitl_edited_tool_calls={
+                tool_call_id: Action(name="write_file_tool", args={"content": "edited"})
+            },
+        ),
+        runtime=None,  # type: ignore[arg-type]
+    )
+
+
 @pytest.mark.parametrize(
     ("tool_output", "expected_notice_block"),
     [
@@ -1281,46 +1295,12 @@ def test_human_in_the_loop_middleware_edit_annotates_list_content(
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"write_file_tool": {"allowed_decisions": ["edit"]}}
     )
-    ai_message = AIMessage(
-        content="",
-        tool_calls=[{"name": "write_file_tool", "args": {"content": "edited"}, "id": "1"}],
-        response_metadata={
-            _EDITED_TOOL_CALLS_KEY: {
-                "1": {"name": "write_file_tool", "args": {"content": "edited"}}
-            }
-        },
-    )
-    request = ToolCallRequest(
-        tool_call=ToolCall(name="write_file_tool", args={"content": "edited"}, id="1"),
-        tool=None,
-        state=AgentState[Any](messages=[HumanMessage("go"), ai_message]),
-        runtime=None,  # type: ignore[arg-type]
-    )
     result = ToolMessage(content=tool_output, tool_call_id="1", name="write_file_tool")
 
-    annotated = middleware.wrap_tool_call(request, lambda _: result)
+    annotated = middleware.wrap_tool_call(_edited_request(), lambda _: result)
 
     assert isinstance(annotated, ToolMessage)
     assert annotated.content == [expected_notice_block, *tool_output]
-
-
-def _edited_request(tool_call_id: str = "1") -> ToolCallRequest:
-    """A `ToolCallRequest` whose call a reviewer edited."""
-    ai_message = AIMessage(
-        content="",
-        tool_calls=[{"name": "write_file_tool", "args": {"content": "edited"}, "id": tool_call_id}],
-        response_metadata={
-            _EDITED_TOOL_CALLS_KEY: {
-                tool_call_id: {"name": "write_file_tool", "args": {"content": "edited"}}
-            }
-        },
-    )
-    return ToolCallRequest(
-        tool_call=ToolCall(name="write_file_tool", args={"content": "edited"}, id=tool_call_id),
-        tool=None,
-        state=AgentState[Any](messages=[HumanMessage("go"), ai_message]),
-        runtime=None,  # type: ignore[arg-type]
-    )
 
 
 def test_human_in_the_loop_middleware_edit_annotates_command_result() -> None:
@@ -1593,14 +1573,14 @@ def test_human_in_the_loop_middleware_edit_to_unknown_tool_raises() -> None:
     ai_message = AIMessage(
         content="",
         tool_calls=[{"name": "write_file_tool", "args": {"content": "x"}, "id": "1"}],
-        response_metadata={
-            _EDITED_TOOL_CALLS_KEY: {"1": {"name": "nope", "args": {"content": "y"}}}
-        },
     )
     request = ToolCallRequest(
         tool_call=ToolCall(name="write_file_tool", args={"content": "x"}, id="1"),
         tool=write_file_tool,
-        state=AgentState[Any](messages=[HumanMessage("go"), ai_message]),
+        state=_HumanInTheLoopState[Any](
+            messages=[HumanMessage("go"), ai_message],
+            hitl_edited_tool_calls={"1": Action(name="nope", args={"content": "y"})},
+        ),
         runtime=SimpleNamespace(tools=[write_file_tool]),  # type: ignore[arg-type]
     )
 
@@ -1610,60 +1590,99 @@ def test_human_in_the_loop_middleware_edit_to_unknown_tool_raises() -> None:
         )
 
 
-def test_edit_is_not_replayed_onto_a_later_call_with_the_same_id() -> None:
-    """An edit binds to the message it was recorded on, not to a bare tool call ID.
+def test_a_turn_that_resolves_no_decisions_clears_the_previous_turns_edits() -> None:
+    """A recorded edit does not outlive the turn that recorded it.
 
-    Providers are not required to keep tool call IDs unique across turns, and fake or
-    proxied models routinely reuse them. A reused ID must not pull an earlier turn's
-    edit onto a call the reviewer approved as-is.
+    State is not scoped to a message the way `response_metadata` was, and providers are
+    not required to keep tool call IDs unique across turns. `after_model` therefore
+    drops the previous turn's edits the moment it reaches a turn with nothing to review,
+    so a reused ID cannot pull an earlier edit onto a call that never went to a human.
     """
     middleware = HumanInTheLoopMiddleware(interrupt_on={"write_file_tool": True})
+    state = _HumanInTheLoopState[Any](
+        messages=[
+            HumanMessage("go"),
+            AIMessage(
+                content="",
+                tool_calls=[{"name": "read_file_tool", "args": {"path": "p"}, "id": "1"}],
+            ),
+        ],
+        hitl_edited_tool_calls={"1": Action(name="write_file_tool", args={"content": "reviewer"})},
+    )
+
+    assert middleware.after_model(state, Runtime()) == {_EDITED_TOOL_CALLS_KEY: {}}
+
+
+def test_a_turn_with_nothing_recorded_does_not_write_state() -> None:
+    """The clear is only issued when there is something to clear."""
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"write_file_tool": True})
+    state = _HumanInTheLoopState[Any](
+        messages=[
+            HumanMessage("go"),
+            AIMessage(
+                content="",
+                tool_calls=[{"name": "read_file_tool", "args": {"path": "p"}, "id": "1"}],
+            ),
+        ],
+    )
+
+    assert middleware.after_model(state, Runtime()) is None
+
+
+def test_reused_tool_call_id_does_not_replay_a_previous_turns_edit() -> None:
+    """End to end: a later call reusing an edited call's ID runs the model's own args."""
+    executed: list[tuple[str, str]] = []
 
     @tool
-    def write_file_tool(content: str) -> str:
-        """Write content."""
-        return f"wrote {content}"
+    def write_file_tool(path: str, content: str) -> str:
+        """Write content to a file."""
+        executed.append(("write", content))
+        return f"File written to {path}"
 
-    edited_turn = AIMessage(
-        content="",
-        tool_calls=[{"name": "write_file_tool", "args": {"content": "original"}, "id": "1"}],
-        response_metadata={
-            _EDITED_TOOL_CALLS_KEY: {
-                "1": {"name": "write_file_tool", "args": {"content": "reviewer"}}
+    @tool
+    def read_file_tool(path: str) -> str:
+        """Read a file."""
+        executed.append(("read", path))
+        return f"Contents of {path}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="write_file_tool", args={"path": "a.txt", "content": "model"}, id="1")],
+            # The same ID on a tool that is not gated, so this turn reviews nothing.
+            [ToolCall(name="read_file_tool", args={"path": "b.txt"}, id="1")],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[write_file_tool, read_file_tool],
+        middleware=[HumanInTheLoopMiddleware(interrupt_on={"write_file_tool": True})],
+        checkpointer=InMemorySaver(),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "reused-tool-call-id"}}
+
+    agent.invoke({"messages": [HumanMessage("write it, then read it")]}, config)
+    final = agent.invoke(
+        Command(
+            resume={
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "edited_action": {
+                            "name": "write_file_tool",
+                            "args": {"path": "a.txt", "content": "reviewer"},
+                        },
+                    }
+                ]
             }
-        },
-    )
-    approved_turn = AIMessage(
-        content="",
-        tool_calls=[{"name": "write_file_tool", "args": {"content": "second"}, "id": "1"}],
-    )
-    tool_call = ToolCall(name="write_file_tool", args={"content": "second"}, id="1")
-    request = ToolCallRequest(
-        tool_call=tool_call,
-        tool=write_file_tool,
-        state=AgentState[Any](
-            messages=[
-                HumanMessage("go"),
-                edited_turn,
-                ToolMessage(content="wrote reviewer", tool_call_id="1", name="write_file_tool"),
-                HumanMessage("again"),
-                approved_turn,
-            ]
         ),
-        runtime=SimpleNamespace(tools=[write_file_tool]),  # type: ignore[arg-type]
+        config,
     )
 
-    executed: list[ToolCall] = []
-
-    def handler(req: ToolCallRequest) -> ToolMessage:
-        executed.append(req.tool_call)
-        return ToolMessage(content="done", tool_call_id="1")
-
-    result = middleware.wrap_tool_call(request, handler)
-
-    assert executed == [tool_call]
-    assert isinstance(result, ToolMessage)
-    assert result.content == "done"
+    assert executed == [("write", "reviewer"), ("read", "b.txt")]
+    read_result = [m for m in final["messages"] if isinstance(m, ToolMessage)][-1]
+    # The read was never edited, so its result carries no notice.
+    assert read_result.content == "Contents of b.txt"
 
 
 def test_recorded_edit_survives_a_later_tightening_of_allowed_decisions() -> None:
@@ -1691,14 +1710,14 @@ def test_recorded_edit_survives_a_later_tightening_of_allowed_decisions() -> Non
     ai_message = AIMessage(
         content="",
         tool_calls=[{"name": "send_email_tool", "args": {"to": "a@b.c"}, "id": "1"}],
-        response_metadata={
-            _EDITED_TOOL_CALLS_KEY: {"1": {"name": "draft_email_tool", "args": {"to": "a@b.c"}}}
-        },
     )
     request = ToolCallRequest(
         tool_call=ToolCall(name="send_email_tool", args={"to": "a@b.c"}, id="1"),
         tool=send_email_tool,
-        state=AgentState[Any](messages=[HumanMessage("go"), ai_message]),
+        state=_HumanInTheLoopState[Any](
+            messages=[HumanMessage("go"), ai_message],
+            hitl_edited_tool_calls={"1": Action(name="draft_email_tool", args={"to": "a@b.c"})},
+        ),
         runtime=SimpleNamespace(tools=[send_email_tool, draft_email_tool]),  # type: ignore[arg-type]
     )
 
@@ -1719,49 +1738,21 @@ def test_recorded_edit_survives_a_later_tightening_of_allowed_decisions() -> Non
     assert "draft_email_tool" in result.content  # the notice names what ran
 
 
-async def test_async_edit_is_not_replayed_onto_a_later_call_with_the_same_id() -> None:
-    """`awrap_tool_call` binds edits to the originating message too."""
+async def test_async_turn_that_resolves_no_decisions_clears_the_previous_turns_edits() -> None:
+    """`aafter_model` drops the previous turn's edits too."""
     middleware = HumanInTheLoopMiddleware(interrupt_on={"write_file_tool": True})
-
-    @tool
-    def write_file_tool(content: str) -> str:
-        """Write content."""
-        return f"wrote {content}"
-
-    edited_turn = AIMessage(
-        content="",
-        tool_calls=[{"name": "write_file_tool", "args": {"content": "original"}, "id": "1"}],
-        response_metadata={
-            _EDITED_TOOL_CALLS_KEY: {
-                "1": {"name": "write_file_tool", "args": {"content": "reviewer"}}
-            }
-        },
-    )
-    approved_turn = AIMessage(
-        content="",
-        tool_calls=[{"name": "write_file_tool", "args": {"content": "second"}, "id": "1"}],
-    )
-    tool_call = ToolCall(name="write_file_tool", args={"content": "second"}, id="1")
-    request = ToolCallRequest(
-        tool_call=tool_call,
-        tool=write_file_tool,
-        state=AgentState[Any](
-            messages=[HumanMessage("go"), edited_turn, HumanMessage("again"), approved_turn]
-        ),
-        runtime=SimpleNamespace(tools=[write_file_tool]),  # type: ignore[arg-type]
+    state = _HumanInTheLoopState[Any](
+        messages=[
+            HumanMessage("go"),
+            AIMessage(
+                content="",
+                tool_calls=[{"name": "read_file_tool", "args": {"path": "p"}, "id": "1"}],
+            ),
+        ],
+        hitl_edited_tool_calls={"1": Action(name="write_file_tool", args={"content": "reviewer"})},
     )
 
-    executed: list[ToolCall] = []
-
-    async def handler(req: ToolCallRequest) -> ToolMessage:
-        executed.append(req.tool_call)
-        return ToolMessage(content="done", tool_call_id="1")
-
-    result = await middleware.awrap_tool_call(request, handler)
-
-    assert executed == [tool_call]
-    assert isinstance(result, ToolMessage)
-    assert result.content == "done"
+    assert await middleware.aafter_model(state, Runtime()) == {_EDITED_TOOL_CALLS_KEY: {}}
 
 
 def test_return_direct_routing_keeps_calls_with_unnamed_results() -> None:
