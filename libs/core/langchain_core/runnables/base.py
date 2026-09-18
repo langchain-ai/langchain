@@ -3860,6 +3860,29 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         async for chunk in self.atransform(input_aiter(), config, **kwargs):
             yield chunk
 
+    def bind_tools(self, *args: Any, **kwargs: Any) -> Any:
+        """Raise a helpful error when `bind_tools` is called on a sequence.
+
+        `with_structured_output()` returns a `RunnableSequence` (e.g.
+        `chat model | output parser`), which does not support `bind_tools`.
+        Instead, either:
+
+        - Pass tools directly:
+          `model.with_structured_output(schema, tools=[...], strict=True,
+          include_raw=True)`, or
+        - Bind tools before requesting structured output:
+          `model.bind_tools([...]).with_structured_output(schema)`.
+        """
+        msg = (
+            "`bind_tools` is not supported on a `RunnableSequence`, such as "
+            "the one returned by `with_structured_output()`. "
+            "Instead, either pass tools directly via "
+            "`model.with_structured_output(schema, tools=[...], strict=True, "
+            "include_raw=True)`, or bind tools to the chat model first via "
+            "`model.bind_tools([...]).with_structured_output(schema)`."
+        )
+        raise NotImplementedError(msg)
+
 
 class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
     """Runnable that runs a mapping of `Runnable`s in parallel.
