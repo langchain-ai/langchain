@@ -2047,6 +2047,53 @@ def test__format_messages_several_non_contiguous_system_runs_in_place() -> None:
     ]
 
 
+def test__format_messages_keeps_both_runs_when_turn_between_is_dropped() -> None:
+    """Two system runs separated only by a dropped turn both reach the wire.
+
+    The empty assistant turn between them is removed, so they end up adjacent.
+    Anthropic accepts consecutive `role: "system"` entries and judges them as
+    one section, so both are sent, in document order.
+    """
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+        AIMessage(""),
+        SystemMessage("Include type annotations."),
+        AIMessage("Looks fine."),
+        HumanMessage("Review bar()"),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+    )
+    assert actual_system is None
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "system", "content": "Be concise."},
+        {"role": "system", "content": "Include type annotations."},
+        {"role": "assistant", "content": "Looks fine."},
+        {"role": "user", "content": "Review bar()"},
+    ]
+
+
+def test__format_messages_two_held_back_runs_before_a_user_turn_raise() -> None:
+    """Two runs that both turn out to be illegal cannot both be hoisted.
+
+    The user turn after them makes the position illegal, and hoisting stays a
+    once-per-request fallback, so this raises the same error it raises today.
+    """
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+        AIMessage(""),
+        SystemMessage("Include type annotations."),
+        HumanMessage("Review bar()"),
+    ]
+    with pytest.raises(
+        ValueError, match=r"Received multiple non-consecutive system messages\."
+    ):
+        _format_messages(messages, model=MID_CONVERSATION_SYSTEM_MODEL)
+
+
 def test__format_messages_non_leading_system_hoisted_on_unsupported_model() -> None:
     """A model without support keeps today's hoisting behavior."""
     messages = [

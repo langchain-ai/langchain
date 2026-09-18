@@ -681,20 +681,26 @@ def _format_messages(
         (i for i, m in enumerate(merged_messages) if m.type != "system"),
         default=-1,
     )
-    # A system message whose predecessor is legal, held back until the
-    # following wire turn decides whether it can stay in place.
-    pending_system: BaseMessage | None = None
+    # System messages whose predecessor is legal, held back until the following
+    # wire turn decides whether they can stay in place. A list, not one slot: a
+    # dropped turn between two system runs leaves both waiting on the same
+    # following turn.
+    pending_system: list[BaseMessage] = []
     for _i, message in enumerate(merged_messages):
         if message.type == "system":
             if _i == 0:
                 system = _format_system_content(message.content)
                 continue
-            if _supports_mid_conversation_system_messages(
-                model
-            ) and _previous_turn_allows_system(
-                formatted_messages[-1] if formatted_messages else None
+            if _supports_mid_conversation_system_messages(model) and (
+                # Anthropic accepts consecutive system turns and judges them as
+                # one section, so a system message already held back is itself a
+                # legal predecessor.
+                pending_system
+                or _previous_turn_allows_system(
+                    formatted_messages[-1] if formatted_messages else None
+                )
             ):
-                pending_system = message
+                pending_system.append(message)
                 continue
             if system is not None:
                 msg = "Received multiple non-consecutive system messages."
@@ -952,35 +958,37 @@ def _format_messages(
             # anthropic.BadRequestError: Error code: 400: all messages must have
             # non-empty content except for the optional final assistant message
             continue
-        if pending_system is not None:
+        if pending_system:
             # The following wire turn is now known, so the held-back system
-            # message can be placed. Anthropic requires an `assistant` turn
-            # after a mid-conversation system message.
+            # messages can be placed. Anthropic requires an `assistant` turn
+            # after a mid-conversation system section.
             if role == "assistant":
-                formatted_messages.append(
+                formatted_messages.extend(
                     {
                         "role": "system",
-                        "content": _format_system_content(pending_system.content),
+                        "content": _format_system_content(pending.content),
                     }
+                    for pending in pending_system
                 )
-            elif system is not None:
-                msg = "Received multiple non-consecutive system messages."
-                raise ValueError(msg)
             else:
-                system = _format_system_content(pending_system.content)
-                _warn_system_message_hoisted(pending_system, model)
-            pending_system = None
+                # Illegal after all. Hoisting stays a once-per-request fallback,
+                # so a second run that also cannot be sent in place raises, as
+                # it always has.
+                for pending in pending_system:
+                    if system is not None:
+                        msg = "Received multiple non-consecutive system messages."
+                        raise ValueError(msg)
+                    system = _format_system_content(pending.content)
+                    _warn_system_message_hoisted(pending, model)
+            pending_system = []
         formatted_messages.append({"role": role, "content": content})
 
-    if pending_system is not None:
-        # Nothing followed it, so it ends the messages array, which Anthropic
-        # accepts.
-        formatted_messages.append(
-            {
-                "role": "system",
-                "content": _format_system_content(pending_system.content),
-            }
-        )
+    # Nothing followed them, so they end the messages array, which Anthropic
+    # accepts.
+    formatted_messages.extend(
+        {"role": "system", "content": _format_system_content(pending.content)}
+        for pending in pending_system
+    )
     return system, formatted_messages
 
 
