@@ -2,6 +2,8 @@ import base64
 import json
 import math
 import re
+import struct
+import zlib
 from collections.abc import Callable, Sequence
 from typing import Any, TypedDict
 
@@ -2859,6 +2861,244 @@ def test_count_tokens_approximately_with_image_only_message() -> None:
     # Default tokens_per_image is 85 and extra_tokens_per_message is 3,
     # so we expect something in the ~90-110 range.
     assert 80 < token_count < 120
+
+
+def _png_bytes(width: int, height: int) -> bytes:
+    """Build a minimal valid PNG with the given dimensions."""
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        body = tag + data
+        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body))
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    scanlines = b"".join(b"\x00" + b"\x80" * (width * 3) for _ in range(height))
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", zlib.compress(scanlines))
+        + chunk(b"IEND", b"")
+    )
+
+
+def _jpeg_bytes(width: int, height: int, metadata_size: int = 0) -> bytes:
+    """Build a JPEG header, optionally padded with a metadata segment."""
+    app0 = b""
+    if metadata_size:
+        app0 = (
+            b"\xff\xe0" + struct.pack(">H", metadata_size + 2) + b"\x00" * metadata_size
+        )
+    sof0 = b"\xff\xc0" + struct.pack(">HBHHB", 17, 8, height, width, 3) + b"\x00" * 9
+    return b"\xff\xd8" + app0 + sof0 + b"\xff\xd9"
+
+
+def _webp_bytes(width: int, height: int) -> bytes:
+    """Build a WebP VP8X header with the given dimensions."""
+    payload = (
+        b"VP8X"
+        + struct.pack("<I", 10)
+        + b"\x00" * 4
+        + (width - 1).to_bytes(3, "little")
+        + (height - 1).to_bytes(3, "little")
+    )
+    return b"RIFF" + struct.pack("<I", len(payload) + 4) + b"WEBP" + payload
+
+
+def _image_message(data: bytes, mime_type: str = "image/png") -> HumanMessage:
+    """Wrap raw image bytes in a message with a single image block."""
+    encoded = base64.b64encode(data).decode()
+    return HumanMessage(
+        content=[
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:{mime_type};base64,{encoded}"},
+            }
+        ]
+    )
+
+
+def test_count_tokens_approximately_image_scales_with_resolution() -> None:
+    """Larger images should cost more tokens than smaller ones."""
+    small = count_tokens_approximately([_image_message(_png_bytes(256, 256))])
+    medium = count_tokens_approximately([_image_message(_png_bytes(1024, 1024))])
+    large = count_tokens_approximately([_image_message(_png_bytes(1920, 1080))])
+
+    assert small < medium < large
+
+
+def test_count_tokens_approximately_image_dimension_estimates() -> None:
+    """Known dimensions should produce their expected tile-based estimate."""
+    # 4 extra tokens per message: 3 extra_tokens_per_message + 1 for the "human" role
+    overhead = 4
+    assert (
+        count_tokens_approximately([_image_message(_png_bytes(1024, 1024))])
+        == 765 + overhead
+    )
+    assert (
+        count_tokens_approximately([_image_message(_png_bytes(1920, 1080))])
+        == 1105 + overhead
+    )
+    # Downscaled to fit within the maximum edge, so it matches 1920x1080
+    assert (
+        count_tokens_approximately([_image_message(_png_bytes(2560, 1440))])
+        == 1105 + overhead
+    )
+
+
+def test_count_tokens_approximately_image_formats() -> None:
+    """Dimensions should be read from PNG, JPEG and WebP payloads alike."""
+    expected = count_tokens_approximately([_image_message(_png_bytes(1024, 1024))])
+
+    jpeg = count_tokens_approximately(
+        [_image_message(_jpeg_bytes(1024, 1024), "image/jpeg")]
+    )
+    webp = count_tokens_approximately(
+        [_image_message(_webp_bytes(1024, 1024), "image/webp")]
+    )
+
+    assert jpeg == expected
+    assert webp == expected
+
+
+def test_count_tokens_approximately_jpeg_with_metadata() -> None:
+    """A JPEG frame header behind a large metadata segment should still be found."""
+    expected = count_tokens_approximately(
+        [_image_message(_jpeg_bytes(1920, 1080), "image/jpeg")]
+    )
+    padded = count_tokens_approximately(
+        [_image_message(_jpeg_bytes(1920, 1080, metadata_size=40000), "image/jpeg")]
+    )
+
+    assert padded == expected
+
+
+def test_count_tokens_approximately_jpeg_does_not_rescan_malformed_data() -> None:
+    """A frame header behind a stray byte should be treated as malformed.
+
+    Scanning forward a byte at a time to resynchronize would let a payload of
+    meaningless bytes drive the segment walk, so the walk gives up instead.
+    """
+    header = _jpeg_bytes(1920, 1080)
+    # Insert a byte where the next segment marker is expected
+    corrupted = header[:2] + b"\x00" + header[2:]
+
+    intact = count_tokens_approximately([_image_message(header, "image/jpeg")])
+    assert intact > 1000
+
+    count = count_tokens_approximately([_image_message(corrupted, "image/jpeg")])
+    assert count < 100
+
+
+def test_count_tokens_approximately_jpeg_filler_payload_falls_back() -> None:
+    """Long runs of filler bytes should fall back rather than being scanned."""
+    payloads = [
+        b"\xff\xd8" + b"\xff" * 200_000,
+        b"\xff\xd8" + b"\x00" * 200_000,
+        b"\xff\xd8" + b"\xff\xe0\x00\x02" * 40_000,
+    ]
+
+    for payload in payloads:
+        count = count_tokens_approximately([_image_message(payload, "image/jpeg")])
+        assert count < 100
+
+
+def test_count_tokens_approximately_image_block_shapes() -> None:
+    """All base64 image block shapes should be measured the same way."""
+    encoded = base64.b64encode(_png_bytes(1024, 1024)).decode()
+    data_url = f"data:image/png;base64,{encoded}"
+    blocks: list[dict[str, Any]] = [
+        {"type": "image_url", "image_url": {"url": data_url}},
+        {"type": "image_url", "image_url": data_url},
+        {"type": "image", "base64": encoded, "mime_type": "image/png"},
+        {"type": "image", "url": data_url},
+    ]
+
+    counts = {
+        count_tokens_approximately([HumanMessage(content=[block])]) for block in blocks
+    }
+
+    assert len(counts) == 1
+    assert counts.pop() > 700
+
+
+def test_count_tokens_approximately_low_detail_image_is_fixed_cost() -> None:
+    """Low-detail images are charged a flat rate, so dimensions must be ignored."""
+    encoded = base64.b64encode(_png_bytes(1920, 1080)).decode()
+    data_url = f"data:image/png;base64,{encoded}"
+
+    high_detail = count_tokens_approximately(
+        [HumanMessage(content=[{"type": "image_url", "image_url": {"url": data_url}}])]
+    )
+    assert high_detail > 1000
+
+    # Both the raw Chat Completions shape and the normalized block carry `detail`
+    nested = HumanMessage(
+        content=[{"type": "image_url", "image_url": {"url": data_url, "detail": "low"}}]
+    )
+    top_level = HumanMessage(
+        content=[
+            {
+                "type": "image",
+                "base64": encoded,
+                "mime_type": "image/png",
+                "detail": "low",
+            }
+        ]
+    )
+
+    for message in (nested, top_level):
+        assert count_tokens_approximately([message]) < 100
+
+
+def test_count_tokens_approximately_high_and_auto_detail_use_dimensions() -> None:
+    """Only low detail is fixed-cost; other values still estimate from dimensions."""
+    encoded = base64.b64encode(_png_bytes(1920, 1080)).decode()
+    data_url = f"data:image/png;base64,{encoded}"
+
+    for detail in ("high", "auto", "HIGH"):
+        message = HumanMessage(
+            content=[
+                {"type": "image_url", "image_url": {"url": data_url, "detail": detail}}
+            ]
+        )
+        assert count_tokens_approximately([message]) > 1000
+
+
+def test_count_tokens_approximately_image_without_dimensions() -> None:
+    """Images with no readable dimensions should fall back to the fixed penalty."""
+    remote = HumanMessage(
+        content=[{"type": "image", "url": "https://example.com/image.png"}]
+    )
+    file_id = HumanMessage(content=[{"type": "image", "file_id": "file-abc123"}])
+    unparseable = _image_message(b"not really an image")
+
+    for message in (remote, file_id, unparseable):
+        assert 80 < count_tokens_approximately([message]) < 100
+
+
+def test_count_tokens_approximately_explicit_tokens_per_image_wins() -> None:
+    """An explicit tokens_per_image should suppress dimension-based estimation."""
+    message = _image_message(_png_bytes(1920, 1080))
+
+    assert count_tokens_approximately([message]) > 1000
+    assert count_tokens_approximately([message], tokens_per_image=85) < 100
+    # Zero is a valid override and must not be treated as unset
+    assert count_tokens_approximately([message], tokens_per_image=0) < 10
+
+
+def test_count_tokens_approximately_malformed_image_does_not_raise() -> None:
+    """Truncated or malformed payloads should fall back instead of raising."""
+    malformed = [
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR",
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x08",
+        b"RIFF____WEBP" + b"VP8 " + b"____" + b"___" + b"\x9d\x01\x2a",
+        b"RIFF____WEBP" + b"VP8X" + b"____",
+        b"\xff\xd8",
+        b"",
+    ]
+
+    for payload in malformed:
+        count = count_tokens_approximately([_image_message(payload)])
+        assert count > 0
 
 
 def test_count_tokens_approximately_with_unknown_block_type() -> None:
