@@ -19,7 +19,13 @@ from typing import (
 )
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AnyMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
@@ -83,6 +89,8 @@ class _ComposedExtendedModelResponse(Generic[ResponseT]):
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Sequence
 
+    from langchain_core.language_models.model_profile import ModelProfile
+    from langchain_core.messages.content import ContentBlock
     from langchain_core.runnables import Runnable, RunnableConfig
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
@@ -115,6 +123,70 @@ if TYPE_CHECKING:
 
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
+
+_INPUT_PROFILE_FIELDS = {
+    "image": "image_inputs",
+    "audio": "audio_inputs",
+    "video": "video_inputs",
+}
+_TOOL_MESSAGE_PROFILE_FIELDS = {
+    "image": "image_tool_message",
+    "file": "pdf_tool_message",
+}
+
+
+def _content_block_supported(
+    block: ContentBlock,
+    profile: ModelProfile,
+    *,
+    in_tool_message: bool,
+) -> bool:
+    """Return whether a model profile supports an input content block."""
+    block_type = block["type"]
+    field = _INPUT_PROFILE_FIELDS.get(block_type)
+    if block_type == "image" and "url" in block:
+        field = "image_url_inputs"
+    elif block_type == "file" and block.get("mime_type") == "application/pdf":
+        field = "pdf_inputs"
+    if field is not None and profile.get(field) == False:  # noqa: E712
+        return False
+    tool_field = _TOOL_MESSAGE_PROFILE_FIELDS.get(block_type)
+    return not (
+        in_tool_message and tool_field is not None and profile.get(tool_field) == False  # noqa: E712
+    )
+
+
+def _filter_unsupported_content_blocks(
+    messages: list[AnyMessage], model: BaseChatModel
+) -> list[AnyMessage]:
+    """Replace input blocks explicitly unsupported by the active model profile."""
+    profile = model.profile
+    if profile is None:
+        return messages
+    filtered: list[AnyMessage] = []
+    changed = False
+    for message in messages:
+        if not isinstance(message, (HumanMessage, ToolMessage)):
+            filtered.append(message)
+            continue
+        blocks = message.content_blocks
+        content = [
+            block
+            if _content_block_supported(
+                block, profile, in_tool_message=isinstance(message, ToolMessage)
+            )
+            else {
+                "type": "text",
+                "text": f"[{block['type']} content omitted: unsupported by this model]",
+            }
+            for block in blocks
+        ]
+        changed = changed or content != blocks
+        filtered.append(
+            message.model_copy(update={"content": content}) if content != blocks else message
+        )
+    return filtered if changed else messages
+
 
 DYNAMIC_TOOL_ERROR_TEMPLATE = """
 Middleware added tools that the agent doesn't know how to execute.
@@ -1447,7 +1519,7 @@ def create_agent(
         """
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
-        messages = request.messages
+        messages = _filter_unsupported_content_blocks(request.messages, request.model)
         if request.system_message:
             messages = [request.system_message, *messages]
 
@@ -1498,7 +1570,7 @@ def create_agent(
         """
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
-        messages = request.messages
+        messages = _filter_unsupported_content_blocks(request.messages, request.model)
         if request.system_message:
             messages = [request.system_message, *messages]
 
