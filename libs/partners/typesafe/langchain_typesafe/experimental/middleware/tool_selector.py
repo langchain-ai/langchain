@@ -90,7 +90,7 @@ class TsToolSelectorMiddleware(
     def __init__(
         self,
         *,
-        relevance_threshold: float = 0.3,
+        relevance_threshold: float = 0.5,
         max_tools: int | None = None,
         always_include: list[str] | None = None,
     ) -> None:
