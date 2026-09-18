@@ -326,4 +326,9 @@ def test_create_agent_keeps_selection_private() -> None:
 
 def test_experimental_public_interface() -> None:
     """Expose skills from the experimental middleware namespace."""
-    assert middleware_all == ["Skill", "SkillSource", "SkillsMiddleware"]
+    assert middleware_all == [
+        "Skill",
+        "SkillSource",
+        "SkillsMiddleware",
+        "TsToolSelectorMiddleware",
+    ]

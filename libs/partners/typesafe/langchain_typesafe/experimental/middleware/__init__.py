@@ -5,5 +5,13 @@ from langchain_typesafe.experimental.middleware.skills import (
     SkillsMiddleware,
     SkillSource,
 )
+from langchain_typesafe.experimental.middleware.tool_selector import (
+    TsToolSelectorMiddleware,
+)
 
-__all__ = ["Skill", "SkillSource", "SkillsMiddleware"]
+__all__ = [
+    "Skill",
+    "SkillSource",
+    "SkillsMiddleware",
+    "TsToolSelectorMiddleware",
+]
