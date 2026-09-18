@@ -36,7 +36,7 @@ _EDIT_NOTICE = (
     "your message is the one you produced, not the one that executed. This was "
     "intentional and authorized. Do not re-issue your original call."
 )
-"""Default text appended to the result of a tool call a reviewer edited."""
+"""Default text prepended to the result of a tool call a reviewer edited."""
 
 
 class Action(TypedDict):
@@ -273,8 +273,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 requested.
 
                 Not used if a tool has a `description` in its `InterruptOnConfig`.
-            edit_notice: Text appended to the result of a tool call a reviewer replaced
-                via an `edit` decision. Pass `None` to append nothing.
+            edit_notice: Text prepended to the result of a tool call a reviewer replaced
+                via an `edit` decision. Pass `None` to add nothing.
 
         Raises:
             ValueError: If a tool's `InterruptOnConfig` does not have a non-empty
@@ -646,14 +646,14 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
     ) -> ToolMessage | Command[Any]:
-        """Append reviewer-edit guidance to the result of an edited tool call.
+        """Prepend reviewer-edit guidance to the result of an edited tool call.
 
         Args:
             request: The tool call request being executed.
             handler: Callable that executes the tool.
 
         Returns:
-            The tool result, with a note appended when a reviewer edited the call.
+            The tool result, with a note prepended when a reviewer edited the call.
         """
         executed = self._reviewer_edit(request)
         if executed is not None:
@@ -672,7 +672,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             handler: Awaitable callable that executes the tool.
 
         Returns:
-            The tool result, with a note appended when a reviewer edited the call.
+            The tool result, with a note prepended when a reviewer edited the call.
         """
         executed = self._reviewer_edit(request)
         if executed is not None:
