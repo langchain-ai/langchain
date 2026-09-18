@@ -68,6 +68,22 @@ def test_finalize_block_tool_call_chunk_valid_json() -> None:
     assert tool_call["args"] == {"query": "test"}
 
 
+def test_finalize_block_tool_call_chunk_generates_id_when_missing() -> None:
+    block: CompatBlock = {
+        "type": "tool_call_chunk",
+        "args": '{"query": "test"}',
+        "id": None,
+        "name": "search",
+    }
+
+    first = cast("ToolCall", _finalize_block(block))
+    second = cast("ToolCall", _finalize_block(block))
+
+    assert first["id"]
+    assert second["id"]
+    assert first["id"] != second["id"]
+
+
 def test_finalize_block_tool_call_chunk_invalid_json() -> None:
     block: CompatBlock = {
         "type": "tool_call_chunk",
