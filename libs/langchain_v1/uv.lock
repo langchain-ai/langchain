@@ -2283,7 +2283,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -2443,7 +2443,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.7.0"
+version = "1.7.2"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2582,7 +2582,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.6.1"
+version = "1.6.3"
 source = { editable = "../core" }
 dependencies = [
     { name = "httpx" },
@@ -2786,7 +2786,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.6.0"
+version = "1.6.2"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "certifi" },
@@ -2890,7 +2890,7 @@ requires-dist = [
     { name = "pytest-codspeed" },
     { name = "pytest-recording" },
     { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
-    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<7.0.0" },
     { name = "vcrpy", specifier = ">=8.2.1,<9.0.0" },
 ]
 
