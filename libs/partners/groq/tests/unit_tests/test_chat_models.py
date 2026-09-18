@@ -263,6 +263,12 @@ def test_chat_groq_invalid_streaming_params() -> None:
         )
 
 
+def test_chat_groq_rejects_n_greater_than_one_non_streaming() -> None:
+    """Groq only supports n=1; non-streaming n>1 must fail before any API call."""
+    with pytest.raises(ValueError, match="n must be 1"):
+        ChatGroq(model="foo", n=2)
+
+
 def test_with_structured_output_json_schema_strict() -> None:
     class Response(BaseModel):
         """Response schema."""
