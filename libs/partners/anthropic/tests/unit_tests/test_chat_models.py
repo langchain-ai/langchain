@@ -64,9 +64,6 @@ os.environ["ANTHROPIC_API_KEY"] = "foo"
 
 MODEL_NAME = "claude-sonnet-4-5-20250929"
 
-# A model that accepts `role: "system"` entries in the messages array. Distinct
-# from `MODEL_NAME`, which does not, so that the two placements a non-leading
-# system message can take are both reachable from these tests.
 MID_CONVERSATION_SYSTEM_MODEL = "claude-opus-5"
 
 
@@ -640,12 +637,7 @@ def test__merge_messages() -> None:
 
 
 def test__merge_messages_coalesces_adjacent_system_messages() -> None:
-    """Adjacent system messages collapse into one, mixing string and block content.
-
-    `_format_messages` relies on this: by the time it decides placement, a
-    contiguous run of system messages is already a single message, so "the run
-    starting at index 0" is just the message at index 0.
-    """
+    """Test adjacent system messages are merged."""
     messages = [
         SystemMessage("bar"),  # type: ignore[misc]
         SystemMessage("baz"),  # type: ignore[misc]
@@ -1705,12 +1697,7 @@ def test__format_messages_openai_image_format() -> None:
 
 
 def test__format_messages_with_multiple_system() -> None:
-    """A trailing run of system messages is now sent in place, not hoisted.
-
-    This input used to be hoisted from wherever it appeared. Coalescing of the
-    adjacent system messages is now covered by
-    `test__merge_messages_coalesces_adjacent_system_messages`.
-    """
+    """Test a trailing run of system messages is sent in place."""
     messages = [
         HumanMessage("baz"),
         SystemMessage("bar"),
@@ -1797,15 +1784,11 @@ def test__format_messages_system_text_block_preserves_supported_fields() -> None
     ]
 
 
-_HOIST_WARNING = "not at the start of the message list"
+_HOIST_WARNING = "A non-leading `SystemMessage` was moved"
 
 
 def test__format_messages_leading_system_string_content_unchanged() -> None:
-    """A lone leading system message with string content stays a plain string.
-
-    The `system` field sits near the front of the hashed cache prefix, so this
-    shape must not change.
-    """
+    """Test leading string system content stays a string."""
     messages = [
         SystemMessage("You are a code reviewer."),
         HumanMessage("Review foo()"),
@@ -1876,11 +1859,7 @@ def test__format_messages_system_between_user_and_ai_sent_in_place() -> None:
 
 
 def test__format_messages_system_after_tool_message_sent_in_place() -> None:
-    """A system message after tool results lands after the folded user turn.
-
-    This is the agentic-loop pattern: new operator context arrives between the
-    tool results and the model's next turn.
-    """
+    """Test a system message follows the folded tool-result turn."""
     ai = AIMessage(
         "",
         tool_calls=[{"name": "search", "args": {"q": "foo"}, "id": "toolu_1"}],
@@ -1910,8 +1889,6 @@ def test__format_messages_system_after_tool_message_sent_in_place() -> None:
         "web_search_tool_result",
         "code_execution_tool_result",
         "mcp_tool_result",
-        # Not a type that exists today: the suffix test must accept a server
-        # tool result shipped after this code was written.
         "future_server_tool_result",
     ],
 )
@@ -1945,11 +1922,7 @@ def test__format_messages_system_after_server_tool_result_sent_in_place(
 
 
 def test__format_messages_system_after_client_tool_result_hoisted() -> None:
-    """The client-side `tool_result` block is not a server tool result.
-
-    It is spelled without a prefix, so the `_tool_result` suffix test must not
-    mistake it for one.
-    """
+    """Test client-side tool results are not server tool results."""
     messages = [
         HumanMessage("Review foo()"),
         AIMessage(
@@ -2048,12 +2021,7 @@ def test__format_messages_several_non_contiguous_system_runs_in_place() -> None:
 
 
 def test__format_messages_keeps_both_runs_when_turn_between_is_dropped() -> None:
-    """Two system runs separated only by a dropped turn both reach the wire.
-
-    The empty assistant turn between them is removed, so they end up adjacent.
-    Anthropic accepts consecutive `role: "system"` entries and judges them as
-    one section, so both are sent, in document order.
-    """
+    """Test both system runs survive a dropped intermediate turn."""
     messages = [
         HumanMessage("Review foo()"),
         SystemMessage("Be concise."),
@@ -2076,11 +2044,7 @@ def test__format_messages_keeps_both_runs_when_turn_between_is_dropped() -> None
 
 
 def test__format_messages_two_held_back_runs_before_a_user_turn_raise() -> None:
-    """Two runs that both turn out to be illegal cannot both be hoisted.
-
-    The user turn after them makes the position illegal, and hoisting stays a
-    once-per-request fallback, so this raises the same error it raises today.
-    """
+    """Test two unplaceable pending system runs raise."""
     messages = [
         HumanMessage("Review foo()"),
         SystemMessage("Be concise."),
@@ -2095,15 +2059,16 @@ def test__format_messages_two_held_back_runs_before_a_user_turn_raise() -> None:
 
 
 def test__format_messages_non_leading_system_hoisted_on_unsupported_model() -> None:
-    """A model without support keeps today's hoisting behavior."""
+    """Test unsupported models hoist non-leading system messages."""
     messages = [
         HumanMessage("Review foo()"),
         SystemMessage("Be concise."),
     ]
-    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+    with pytest.warns(UserWarning, match=_HOIST_WARNING) as warnings:
         actual_system, actual_messages = _format_messages(
             messages, model="claude-3-5-haiku-20241022"
         )
+    assert "Be concise" not in str(warnings[0].message)
     assert actual_system == "Be concise."
     assert actual_messages == [{"role": "user", "content": "Review foo()"}]
 
@@ -2123,14 +2088,7 @@ def test__format_messages_non_leading_system_hoisted_on_sonnet_5() -> None:
 
 
 def test__format_messages_non_leading_system_hoisted_on_platform_model_id() -> None:
-    """Pins a known limitation: platform-prefixed identifiers do not match.
-
-    Every model check in the module is an unnormalized prefix test, so a
-    platform-prefixed identifier hoists rather than going in place. Anthropic
-    supports the feature there; normalizing all of the model checks together is
-    a follow-up, and this test makes that a deliberate change rather than an
-    accident.
-    """
+    """Test platform-prefixed model identifiers do not match."""
     messages = [
         HumanMessage("Review foo()"),
         SystemMessage("Be concise."),
@@ -2169,7 +2127,7 @@ def test__format_messages_unsupported_model_prefixes_hoist(model: str) -> None:
 
 
 def test__format_messages_second_unplaceable_system_run_raises() -> None:
-    """A thread that has always been rejected keeps raising the same error."""
+    """Test a second unplaceable system run raises."""
     messages = [
         SystemMessage("You are a code reviewer."),
         HumanMessage("Review foo()"),
@@ -2218,14 +2176,7 @@ def test__format_messages_system_v1_content_blocks_drop_id_in_place() -> None:
 
 
 def test__format_messages_final_assistant_turn_trimmed_past_system() -> None:
-    """A system message after the final assistant turn does not disable trimming.
-
-    Regression test for index arithmetic that counted the final assistant turn
-    from the end of the caller's list, which stops being the end of the wire
-    sequence once a system message can occupy a turn of its own. The system
-    message here is hoisted -- a plain assistant turn is an illegal predecessor
-    -- which is exactly the case where the old arithmetic went wrong.
-    """
+    """Test a later system message does not disable assistant trimming."""
     human = HumanMessage("Review foo()")
     system = SystemMessage("Be concise.")
 
@@ -2245,11 +2196,7 @@ def test__format_messages_final_assistant_turn_trimmed_past_system() -> None:
 
 
 def test__format_messages_empty_final_assistant_turn_kept_past_system() -> None:
-    """An empty assistant turn that ends the wire sequence is kept.
-
-    Anthropic allows the optional final assistant message to be empty, and once
-    the system message is hoisted that assistant turn is the final one.
-    """
+    """Test an empty final assistant turn is kept before a hoisted system."""
     with pytest.warns(UserWarning, match=_HOIST_WARNING):
         _, actual_messages = _format_messages(
             [HumanMessage("Review foo()"), AIMessage(""), SystemMessage("Be concise.")],
@@ -2262,12 +2209,7 @@ def test__format_messages_empty_final_assistant_turn_kept_past_system() -> None:
 
 
 def test__format_messages_system_position_judged_against_wire_sequence() -> None:
-    """Legality is judged after empty assistant turns are dropped.
-
-    The caller's list has the system message following an assistant turn, which
-    would be illegal, but that turn is dropped before the request is sent, so on
-    the wire the system message follows a user turn.
-    """
+    """Test placement against the formatted wire sequence."""
     messages = [
         HumanMessage("Review foo()"),
         AIMessage(""),
@@ -2286,13 +2228,7 @@ def test__format_messages_system_position_judged_against_wire_sequence() -> None
 
 
 def test__format_messages_system_hoisted_when_next_ai_turn_is_dropped() -> None:
-    """A successor that never reaches the wire cannot make a position legal.
-
-    The assistant turn after the system message is empty, so it is dropped, and
-    on the wire the system message would be followed by a user turn -- which
-    Anthropic rejects. Judging the successor from the caller's list instead
-    would send this in place and break a thread that works today.
-    """
+    """Test a dropped assistant successor makes system placement illegal."""
     messages = [
         HumanMessage("Review foo()"),
         SystemMessage("Be concise."),
@@ -2349,7 +2285,7 @@ def test__format_messages_system_citations_preserved_in_place() -> None:
 
 
 def test__format_messages_requires_model() -> None:
-    """Forgetting the model must fail loudly, not silently disable the feature."""
+    """Test the model argument is required."""
     with pytest.raises(TypeError):
         _format_messages([HumanMessage("hi")])  # type: ignore[call-arg]
 
