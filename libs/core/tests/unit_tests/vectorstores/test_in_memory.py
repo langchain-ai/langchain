@@ -179,6 +179,35 @@ async def test_inmemory_upsert() -> None:
     }
 
 
+async def test_inmemory_delete_none_clears_store() -> None:
+    store = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=3))
+    store.add_documents(
+        [
+            Document(page_content="foo", id="1"),
+            Document(page_content="bar", id="2"),
+        ]
+    )
+    assert sorted(store.store.keys()) == ["1", "2"]
+
+    store.delete([])
+    assert sorted(store.store.keys()) == ["1", "2"]
+
+    store.delete(["1"])
+    assert sorted(store.store.keys()) == ["2"]
+
+    store.delete(ids=None)
+    assert store.store == {}
+
+    store.add_documents(
+        [
+            Document(page_content="foo", id="1"),
+            Document(page_content="bar", id="2"),
+        ]
+    )
+    await store.adelete(ids=None)
+    assert store.store == {}
+
+
 async def test_inmemory_get_by_ids() -> None:
     """Test get by ids."""
     store = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=3))
