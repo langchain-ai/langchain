@@ -249,6 +249,13 @@ async def test_list_keys(manager: InMemoryRecordManager) -> None:
     assert results[0] in {"key1", "key2", "key3", "key4", "key5"}
 
 
+async def test_list_keys_limit_zero(manager: InMemoryRecordManager) -> None:
+    manager.update(["key1", "key2", "key3"])
+    assert manager.list_keys() == ["key1", "key2", "key3"]
+    assert manager.list_keys(limit=0) == []
+    assert await manager.alist_keys(limit=0) == []
+
+
 def test_delete_keys(manager: InMemoryRecordManager) -> None:
     """Test deleting keys from the database."""
     # Insert records
