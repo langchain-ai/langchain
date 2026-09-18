@@ -7,6 +7,7 @@ from typing import Annotated, Literal, TypeAlias
 
 from langchain_core.messages import BaseMessage
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from typing_extensions import TypedDict
 
 _QuestionContent: TypeAlias = str | dict[str, JsonValue] | list[JsonValue]
 _StateValue: TypeAlias = (
@@ -61,14 +62,17 @@ class Noul(BaseModel):
         ```python
         from langchain_typesafe import Noul, TypeSafeClassifier
 
-        classifier = TypeSafeClassifier(
-            questions={
-                "urgent": Noul(
-                    instructions="Does this message require an urgent response?"
-                )
+        classifier = TypeSafeClassifier()
+        response = classifier.invoke(
+            {
+                "state": "Production is down. Please help immediately.",
+                "questions": {
+                    "urgent": Noul(
+                        instructions="Does this message require an urgent response?"
+                    )
+                },
             }
         )
-        response = classifier.invoke("Production is down. Please help immediately.")
         urgency = response.nouls["urgent"].noul
 
         if urgency >= 0.8:
@@ -103,19 +107,22 @@ class Choice(BaseModel):
         ```python
         from langchain_typesafe import Choice, TypeSafeClassifier
 
-        classifier = TypeSafeClassifier(
-            questions={
-                "department": Choice(
-                    instructions="Which team should handle this request?",
-                    criteria={
-                        "billing": "Payment, invoice, or subscription issues.",
-                        "technical": "Product bugs or integration failures.",
-                        "sales": "Pricing or purchasing questions.",
-                    },
-                )
+        classifier = TypeSafeClassifier()
+        response = classifier.invoke(
+            {
+                "state": "Stripe fails whenever I connect my account.",
+                "questions": {
+                    "department": Choice(
+                        instructions="Which team should handle this request?",
+                        criteria={
+                            "billing": "Payment, invoice, or subscription issues.",
+                            "technical": "Product bugs or integration failures.",
+                            "sales": "Pricing or purchasing questions.",
+                        },
+                    )
+                },
             }
         )
-        response = classifier.invoke("Stripe fails whenever I connect my account.")
         department = response.choices["department"]
 
         if department.confidence >= 0.7:
@@ -153,19 +160,22 @@ class Score(BaseModel):
         ```python
         from langchain_typesafe import Score, TypeSafeClassifier
 
-        classifier = TypeSafeClassifier(
-            questions={
-                "frustration": Score(
-                    instructions="How frustrated does the customer appear?",
-                    criteria=[
-                        "Calm and neutral.",
-                        "Concerned but civil.",
-                        "Very angry or using strong language.",
-                    ],
-                )
+        classifier = TypeSafeClassifier()
+        response = classifier.invoke(
+            {
+                "state": "This has failed three times. Fix it now.",
+                "questions": {
+                    "frustration": Score(
+                        instructions="How frustrated does the customer appear?",
+                        criteria=[
+                            "Calm and neutral.",
+                            "Concerned but civil.",
+                            "Very angry or using strong language.",
+                        ],
+                    )
+                },
             }
         )
-        response = classifier.invoke("This has failed three times. Fix it now.")
         frustration = response.scores["frustration"]
 
         print(frustration.score)  # May be fractional, for example 1.35.
@@ -186,6 +196,13 @@ class Score(BaseModel):
 
 Question = Annotated[Noul | Choice | Score, Field(discriminator="type")]
 """A discriminated union of question types accepted by `TypeSafeClassifier`."""
+
+
+class ClassificationRequest(TypedDict):
+    """State and questions for one TypeSafe classification request."""
+
+    state: State
+    questions: dict[str, Question]
 
 
 class NoulAnswer(BaseModel):
@@ -312,6 +329,7 @@ __all__ = [
     "Answer",
     "Choice",
     "ChoiceAnswer",
+    "ClassificationRequest",
     "ClassificationResponse",
     "Noul",
     "NoulAnswer",

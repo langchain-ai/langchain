@@ -174,7 +174,7 @@ async def test_middleware_constructs_configurable_risk_classifier() -> None:
         instructions="Assess production impact.",
         criteria=custom_criteria,
     ) as middleware:
-        question = middleware.classifier.questions["is_risky"]
+        question = middleware._question
 
         assert question == Noul(
             instructions="Assess production impact.",
@@ -186,7 +186,7 @@ async def test_none_criteria_is_supported() -> None:
     """Allow callers to classify without outcome criteria."""
     async with _middleware(0.2, tools=["delete_file"]) as middleware:
         assert middleware.config.criteria is None
-        assert middleware.classifier.questions["is_risky"].criteria is None
+        assert middleware._question.criteria is None
 
 
 async def test_base_tool_name_is_inferred() -> None:
