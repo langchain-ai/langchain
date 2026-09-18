@@ -2023,7 +2023,12 @@ def _make_tools_to_model_edge(
         if client_side_tool_calls and all(
             tool_node.tools_by_name[c["name"]].return_direct for c in client_side_tool_calls
         ):
-            return end_destination
+            direct_tool_call_ids = {c["id"] for c in client_side_tool_calls}
+            if not any(
+                tool_message.tool_call_id in direct_tool_call_ids and tool_message.status == "error"
+                for tool_message in tool_messages
+            ):
+                return end_destination
 
         # 3. Exit condition: A structured output tool was executed
         if any(t.name in structured_output_tools for t in tool_messages):

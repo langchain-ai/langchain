@@ -1,9 +1,11 @@
-"""Tests for return_direct tool graph structure."""
+"""Tests for return_direct tool graph structure and routing."""
 
+from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import tool
+from langgraph.prebuilt import ToolNode
 from syrupy.assertion import SnapshotAssertion
 
-from langchain.agents.factory import create_agent
+from langchain.agents.factory import _make_tools_to_model_edge, create_agent
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -70,3 +72,41 @@ def test_agent_graph_with_mixed_tools(snapshot: SnapshotAssertion) -> None:
     # because at least one tool has return_direct=True
     mermaid_diagram = agent.get_graph().draw_mermaid()
     assert mermaid_diagram == snapshot
+
+
+def test_return_direct_tool_error_routes_back_to_model() -> None:
+    """A failed return_direct tool should let the model observe and handle the error."""
+
+    @tool(return_direct=True)
+    def return_direct_tool(input_string: str) -> str:
+        """A tool with return_direct=True."""
+        return input_string
+
+    edge = _make_tools_to_model_edge(
+        tool_node=ToolNode([return_direct_tool]),
+        model_destination="model",
+        structured_output_tools={},
+        end_destination="__end__",
+    )
+    state = {
+        "messages": [
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": "return_direct_tool",
+                        "args": {"input_string": "test"},
+                        "id": "call-1",
+                    }
+                ],
+            ),
+            ToolMessage(
+                content="tool failed",
+                name="return_direct_tool",
+                tool_call_id="call-1",
+                status="error",
+            ),
+        ]
+    }
+
+    assert edge(state) == "model"
