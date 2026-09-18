@@ -1,0 +1,23 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Debug agent tests (pytest)" type="tests" factoryName="py.test" nameIsGenerated="false">
+    <module name="langchain@1" />
+    <option name="ENV_FILES" value="" />
+    <option name="INTERPRETER_OPTIONS" value="" />
+    <option name="PARENT_ENVS" value="true" />
+    <envs>
+      <env name="PYTHONUNBUFFERED" value="1" />
+    </envs>
+    <option name="SDK_HOME" value="" />
+    <option name="SDK_NAME" value="" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/libs/langchain_v1" />
+    <option name="IS_MODULE_SDK" value="true" />
+    <option name="ADD_CONTENT_ROOTS" value="true" />
+    <option name="ADD_SOURCE_ROOTS" value="true" />
+    <option name="_new_keywords" value="&quot;&quot;" />
+    <option name="_new_parameters" value="&quot;&quot;" />
+    <option name="_new_additionalArguments" value="&quot;--no-header&quot;" />
+    <option name="_new_target" value="&quot;$PROJECT_DIR$/libs/langchain_v1/tests/unit_tests/agents/test_agent_name.py::test_agent_name_on_multiple_iterations&quot;" />
+    <option name="_new_targetType" value="&quot;PATH&quot;" />
+    <method v="2" />
+  </configuration>
+</component>
