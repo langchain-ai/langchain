@@ -106,8 +106,12 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         texts = [x.replace("\n", " ") for x in texts]
         if self.multi_process:
             pool = self._client.start_multi_process_pool()
-            embeddings = self._client.encode_multi_process(texts, pool)
-            sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
+            try:
+                embeddings = self._client.encode_multi_process(texts, pool)
+            finally:
+                sentence_transformers.SentenceTransformer.stop_multi_process_pool(
+                    pool
+                )
         else:
             embeddings = self._client.encode(
                 texts,
