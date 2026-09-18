@@ -1,0 +1,19 @@
+
+[tool.poetry]
+name = "langchain-nanoempire"
+version = "0.1.0"
+description = "An integration package connecting Nano Empire AI x402 tools with LangChain"
+authors = ["Rob Lambert <agents@nanoempireai.com>"]
+readme = "README.md"
+packages = [
+    { include = "langchain_nanoempire" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+langchain-core = "^0.2.0"
+httpx = "^0.27.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
