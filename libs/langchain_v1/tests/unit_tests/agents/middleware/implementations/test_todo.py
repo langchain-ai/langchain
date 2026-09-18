@@ -79,6 +79,30 @@ def test_todo_middleware_default_prompts() -> None:
     assert tool.description == WRITE_TODOS_TOOL_DESCRIPTION
 
 
+def test_system_prompt_mentions_tool_only_boundary() -> None:
+    """System prompt tells the model not to duplicate user-facing text around the call."""
+    prompt = WRITE_TODOS_SYSTEM_PROMPT.lower()
+    # The tool-only boundary rule must be present (fixes duplicated plan text).
+    assert "tool-only" in prompt
+    # It must forbid user-facing content in the same message as the call.
+    assert "same assistant message as the tool call" in prompt
+    # It must preserve the #37643 contract: final answer lands after the call.
+    assert "AFTER your last `write_todos` call" in WRITE_TODOS_SYSTEM_PROMPT
+    assert "not before or in the same turn" in WRITE_TODOS_SYSTEM_PROMPT
+
+
+def test_tool_description_mentions_tool_only_boundary() -> None:
+    """Tool description tells the model the call is tool-only with respect to text."""
+    description = WRITE_TODOS_TOOL_DESCRIPTION
+    # The dedicated tool-only section must exist.
+    assert "Keep `write_todos` Calls Tool-Only" in description
+    # It must call out each kind of user-facing content that should not be duplicated.
+    for fragment in ("plan text", "status updates", "approval questions", "final answers"):
+        assert fragment in description
+    # It must preserve the #37643 contract: answer after the tool result, not before.
+    assert "after your final `write_todos` call, not before or alongside it" in description
+
+
 def test_adds_system_prompt_when_none_exists() -> None:
     """Test that middleware adds system prompt when request has none."""
     middleware = TodoListMiddleware()

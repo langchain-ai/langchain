@@ -112,9 +112,13 @@ It is important to skip using this tool when:
 Being proactive with task management ensures you complete all requirements successfully
 Remember: If you only need to make a few tool calls to complete a task, and it is clear what you need to do, it is better to just do the task directly and NOT call this tool at all.
 
+## Keep `write_todos` Calls Tool-Only
+
+A `write_todos` call updates the todo state — it does not communicate with the user. When you call `write_todos`, the assistant message must contain the tool call only. Do NOT include any user-facing content — plan text, status updates, approval questions, or final answers — in the same message as the call. Send that user-facing content once, in a message AFTER the tool result returns, never before or alongside the call. Putting the same plan or question both before and after the tool call shows the user a duplicated message.
+
 ## When You Finish
 
-`write_todos` tracks your work; it does not deliver the answer. Whatever the user asked for — computations, summaries, comparisons, data — must appear as text content in a message after your final `write_todos` call. Marking the last todo complete is not itself an answer to the user."""  # noqa: E501
+`write_todos` tracks your work; it does not deliver the answer. Whatever the user asked for — computations, summaries, comparisons, data — must appear as text content in a message after your final `write_todos` call, not before or alongside it. Marking the last todo complete is not itself an answer to the user."""  # noqa: E501
 
 WRITE_TODOS_SYSTEM_PROMPT = """## `write_todos`
 
@@ -130,10 +134,11 @@ Writing todos takes time and tokens, use it when it is helpful for managing comp
 
 - The `write_todos` tool should never be called multiple times in parallel.
 - Don't be afraid to revise the To-Do list as you go. New information may reveal new tasks that need to be done, or old tasks that are irrelevant.
+- Keep `write_todos` calls tool-only. When you call `write_todos`, do NOT put user-facing plan text, status updates, approval questions, or final answers in the same assistant message as the tool call. The tool call updates the todo state; the user-facing message comes once, after the tool result returns. Emitting the same plan or question both before and alongside the call and again afterward shows the user a duplicated message.
 
 ## Finishing a task
 
-When you finish all work, write your final answer in the message AFTER your last `write_todos` call — not in the same turn as that call. Start the final message with the substantive content the user asked for — the data, computation, summary, or analysis. The user wants the result, not confirmation that the work is done."""  # noqa: E501
+When you finish all work, write your final answer in the message AFTER your last `write_todos` call — not before or in the same turn as that call. Start the final message with the substantive content the user asked for — the data, computation, summary, or analysis. The user wants the result, not confirmation that the work is done."""  # noqa: E501
 
 
 @tool(description=WRITE_TODOS_TOOL_DESCRIPTION)
