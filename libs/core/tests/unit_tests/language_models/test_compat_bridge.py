@@ -109,6 +109,103 @@ def test_finalize_block_server_tool_call_chunk_invalid_json() -> None:
     assert invalid.get("error") is not None
 
 
+def test_finalize_block_tool_call_chunk_none_id_synthesizes_uuid() -> None:
+    """finalize_tool_call_chunk synthesizes unique hex UUIDs when id is None."""
+    block1: CompatBlock = {
+        "type": "tool_call_chunk",
+        "args": '{"query": "first"}',
+        "id": None,
+        "name": "search",
+    }
+    block2: CompatBlock = {
+        "type": "tool_call_chunk",
+        "args": '{"query": "second"}',
+        "id": None,
+        "name": "search",
+    }
+    res1 = cast("ToolCall", _finalize_block(block1))
+    res2 = cast("ToolCall", _finalize_block(block2))
+    assert res1["id"] is not None
+    assert res1["id"] != ""
+    assert res2["id"] is not None
+    assert res2["id"] != ""
+    assert res1["id"] != res2["id"]
+    assert len(res1["id"]) == 32
+
+
+def test_finalize_block_server_tool_call_chunk_none_id_synthesizes_uuid() -> None:
+    """finalize_tool_call_chunk synthesizes hex UUIDs for server_tool_call."""
+    block1: CompatBlock = {
+        "type": "server_tool_call_chunk",
+        "args": '{"q": "first"}',
+        "id": None,
+        "name": "search",
+    }
+    block2: CompatBlock = {
+        "type": "server_tool_call_chunk",
+        "args": '{"q": "second"}',
+        "id": None,
+        "name": "search",
+    }
+    res1 = cast("ServerToolCall", _finalize_block(block1))
+    res2 = cast("ServerToolCall", _finalize_block(block2))
+    assert res1["id"] is not None
+    assert res1["id"] != ""
+    assert res2["id"] is not None
+    assert res2["id"] != ""
+    assert res1["id"] != res2["id"]
+    assert len(res1["id"]) == 32
+
+
+def test_chunks_to_events_parallel_tool_calls_with_none_id_generate_distinct_ids() -> (
+    None
+):
+    """Parallel tool calls without IDs synthesize distinct UUIDs."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    {
+                        "index": 0,
+                        "id": None,
+                        "name": "search",
+                        "args": '{"q": "first"}',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    {
+                        "index": 1,
+                        "id": None,
+                        "name": "search",
+                        "args": '{"q": "second"}',
+                        "type": "tool_call_chunk",
+                    }
+                ],
+            )
+        ),
+    ]
+
+    stream = ChatModelStream()
+    for event in chunks_to_events(iter(chunks), message_id="msg_demo"):
+        stream.dispatch(event)
+
+    tool_calls = stream.output.tool_calls
+    assert len(tool_calls) == 2
+    tc0, tc1 = tool_calls[0], tool_calls[1]
+    assert tc0["id"] is not None
+    assert tc0["id"] != ""
+    assert tc1["id"] is not None
+    assert tc1["id"] != ""
+    assert tc0["id"] != tc1["id"]
+
+
 def test_isolate_usage_present() -> None:
     usage: UsageInfo = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
     result = _isolate_usage(usage)
