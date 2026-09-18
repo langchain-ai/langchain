@@ -20,6 +20,7 @@ from langchain_core.language_models.chat_model_stream import (
     ChatModelStream,
 )
 from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.outputs import ChatGenerationChunk
 
 if TYPE_CHECKING:
@@ -107,6 +108,81 @@ def test_finalize_block_server_tool_call_chunk_invalid_json() -> None:
     invalid = cast("InvalidToolCall", result)
     assert invalid["type"] == "invalid_tool_call"
     assert invalid.get("error") is not None
+
+
+def test_finalize_block_id_less_tool_calls_get_distinct_ids() -> None:
+    first = cast(
+        "ToolCall",
+        _finalize_block(
+            {
+                "type": "tool_call_chunk",
+                "args": '{"q": "first"}',
+                "id": None,
+                "name": "search",
+            }
+        ),
+    )
+    second = cast(
+        "ToolCall",
+        _finalize_block(
+            {
+                "type": "tool_call_chunk",
+                "args": '{"q": "second"}',
+                "id": None,
+                "name": "search",
+            }
+        ),
+    )
+    assert first["type"] == "tool_call"
+    assert second["type"] == "tool_call"
+    assert first["id"]
+    assert second["id"]
+    assert first["id"] != second["id"]
+
+
+def test_finalize_block_id_less_server_tool_calls_get_distinct_ids() -> None:
+    first = cast(
+        "ServerToolCall",
+        _finalize_block(
+            {
+                "type": "server_tool_call_chunk",
+                "args": '{"q": "first"}',
+                "id": None,
+                "name": "web_search",
+            }
+        ),
+    )
+    second = cast(
+        "ServerToolCall",
+        _finalize_block(
+            {
+                "type": "server_tool_call_chunk",
+                "args": '{"q": "second"}',
+                "id": None,
+                "name": "web_search",
+            }
+        ),
+    )
+    assert first["type"] == "server_tool_call"
+    assert second["type"] == "server_tool_call"
+    assert first["id"]
+    assert second["id"]
+    assert first["id"] != second["id"]
+
+
+def test_finalize_block_preserves_supplied_tool_call_id() -> None:
+    result = cast(
+        "ToolCall",
+        _finalize_block(
+            {
+                "type": "tool_call_chunk",
+                "args": '{"q": "test"}',
+                "id": "call_abc",
+                "name": "search",
+            }
+        ),
+    )
+    assert result["id"] == "call_abc"
 
 
 def test_isolate_usage_present() -> None:
@@ -326,6 +402,38 @@ def test_chunks_to_events_tool_call_multichunk() -> None:
     # from the presence of a valid tool_call either; terminal reasons
     # are provider-specific (see `_build_message_finish`).
     assert "finish_reason" not in _event_metadata(events[-1])
+
+
+def test_chunks_to_events_id_less_parallel_tool_calls_do_not_collapse() -> None:
+    def id_less_chunk(index: int, args: str) -> ChatGenerationChunk:
+        return ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    tool_call_chunk(name="search", args=args, id=None, index=index)
+                ],
+            ),
+        )
+
+    stream = ChatModelStream()
+    for event in chunks_to_events(
+        iter(
+            [
+                id_less_chunk(0, '{"q": "first"}'),
+                id_less_chunk(1, '{"q": "second"}'),
+            ]
+        ),
+        message_id="msg_demo",
+    ):
+        stream.dispatch(event)
+
+    tool_calls = stream.output.tool_calls
+    assert len(tool_calls) == 2
+    assert tool_calls[0]["args"] == {"q": "first"}
+    assert tool_calls[1]["args"] == {"q": "second"}
+    assert tool_calls[0]["id"]
+    assert tool_calls[1]["id"]
+    assert tool_calls[0]["id"] != tool_calls[1]["id"]
 
 
 def test_chunks_to_events_interleaved_parallel_tool_calls() -> None:

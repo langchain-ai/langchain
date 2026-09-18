@@ -34,6 +34,7 @@ Public API:
 from __future__ import annotations
 
 import json
+import uuid
 from typing import TYPE_CHECKING, Any, cast
 
 from langchain_protocol.protocol import (
@@ -377,7 +378,10 @@ def finalize_tool_call_chunk(
     Args:
         raw_args: Accumulated partial-JSON string; `None` or empty
             treated as `{}`.
-        id_: Tool-call id collected across chunks.
+        id_: Tool-call id collected across chunks. Missing or empty
+            values are replaced with a unique hex uuid on successful
+            `tool_call` / `server_tool_call` finalization so parallel
+            id-less calls do not collapse onto `""`.
         name: Tool name collected across chunks.
         extras: Provider-specific fields to carry onto the finalized
             block. Callers are responsible for having already dropped
@@ -405,7 +409,7 @@ def finalize_tool_call_chunk(
     if finalized_type == "tool_call":
         finalized_tc = ToolCall(
             type="tool_call",
-            id=id_ or "",
+            id=id_ or uuid.uuid4().hex,
             name=name or "",
             args=parsed,
         )
@@ -413,7 +417,7 @@ def finalize_tool_call_chunk(
         return finalized_tc
     finalized_stc = ServerToolCall(
         type="server_tool_call",
-        id=id_ or "",
+        id=id_ or uuid.uuid4().hex,
         name=name or "",
         args=parsed,
     )
