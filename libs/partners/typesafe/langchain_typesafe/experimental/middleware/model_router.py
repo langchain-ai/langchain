@@ -91,6 +91,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
 
     Raises:
         pydantic.ValidationError: If no model choices are provided.
+        ValueError: If a run's state contains no human message to classify.
 
     ??? example "Route agent calls by task"
 
@@ -151,12 +152,27 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
 
     @staticmethod
     def _latest_human_message(state: _ModelRouterState) -> HumanMessage:
-        """Return the latest human message from agent state."""
-        return next(
-            message
-            for message in reversed(state["messages"])
-            if isinstance(message, HumanMessage)
+        """Return the latest human message from agent state.
+
+        Raises:
+            ValueError: If the state contains no human message to route on.
+        """
+        message = next(
+            (
+                message
+                for message in reversed(state["messages"])
+                if isinstance(message, HumanMessage)
+            ),
+            None,
         )
+        if message is None:
+            msg = (
+                "ModelRouterMiddleware requires a human message to classify, but the "
+                "agent state contains none. Include a HumanMessage in the run's "
+                "messages, or remove the middleware for runs that do not have one."
+            )
+            raise ValueError(msg)
+        return message
 
     @override
     def before_agent(

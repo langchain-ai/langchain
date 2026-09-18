@@ -131,6 +131,32 @@ async def test_classifier_failure_terminates_agent_run(*, asynchronous: bool) ->
             agent.invoke(inputs)
 
 
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.asyncio
+async def test_state_without_a_human_message_raises_a_named_error(
+    *, asynchronous: bool
+) -> None:
+    """Explain the missing human message instead of raising `StopIteration`.
+
+    A bare `next()` over the messages ends the sync path with an empty
+    `StopIteration` and the async path with `RuntimeError: coroutine raised
+    StopIteration`, neither of which names the middleware or the cause.
+    """
+    middleware, models, classifier, _ = _router()
+    agent = create_agent(models["fast"], middleware=[middleware])
+    inputs: InputAgentState = {"messages": [AIMessage("Resumed without a user turn")]}
+
+    if asynchronous:
+        with pytest.raises(ValueError, match="requires a human message"):
+            await agent.ainvoke(inputs)
+    else:
+        with pytest.raises(ValueError, match="requires a human message"):
+            agent.invoke(inputs)
+
+    classifier.invoke.assert_not_called()
+    classifier.ainvoke.assert_not_awaited()
+
+
 def test_choices_are_required() -> None:
     """Reject an empty choice mapping through validated configuration fields."""
     with pytest.raises(ValidationError):
