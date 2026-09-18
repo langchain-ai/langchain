@@ -1042,9 +1042,16 @@ class QdrantVectorStore(VectorStore):
         ids: Sequence[str | int] | None = None,
         batch_size: int = 64,
     ) -> Generator[tuple[list[str | int], list[models.PointStruct]], Any, None]:
-        texts_iterator = iter(texts)
+        texts_list = list(texts)
+        if ids is not None and len(ids) != len(texts_list):
+            msg = (
+                f"Number of ids ({len(ids)}) does not match "
+                f"number of texts ({len(texts_list)})."
+            )
+            raise ValueError(msg)
+        texts_iterator = iter(texts_list)
         metadatas_iterator = iter(metadatas or [])
-        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
+        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in texts_list])
 
         while batch_texts := list(islice(texts_iterator, batch_size)):
             batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
@@ -1064,7 +1071,7 @@ class QdrantVectorStore(VectorStore):
                         self.content_payload_key,
                         self.metadata_payload_key,
                     ),
-                    strict=False,
+                    strict=True,
                 )
             ]
 
