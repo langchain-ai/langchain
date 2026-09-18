@@ -429,7 +429,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
                 for line in chunk.page_content.splitlines()
                 if line and not line.isspace()
             ]
-        return self.chunks
+        return self.chunks.copy()
 
     def _resolve_header_stack(self, header_depth: int, header_text: str) -> None:
         for i, (depth, _) in enumerate(self.current_header_stack):

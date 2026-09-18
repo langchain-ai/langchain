@@ -190,6 +190,17 @@ def test_character_text_splitter() -> None:
     assert output == expected_output
 
 
+def test_experimental_markdown_splitter_does_not_mutate_previous_result() -> None:
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter()
+
+    first = markdown_splitter.split_text("first document\n")
+    first_before = [document.page_content for document in first]
+
+    markdown_splitter.split_text("second document\n")
+
+    assert [document.page_content for document in first] == first_before
+
+
 def test_character_text_splitter_empty_doc() -> None:
     """Test splitting by character count doesn't create empty documents."""
     text = "foo  bar"
