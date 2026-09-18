@@ -536,33 +536,171 @@ def _format_text_block(block: dict) -> dict:
     return formatted_block
 
 
+def _format_system_content(content: str | list[Any]) -> str | list[dict]:
+    """Narrow system message content to what Anthropic accepts.
+
+    Shared by both placements a system message can end up in -- hoisted into the
+    top-level `system` field or emitted in place as a `role: "system"` turn --
+    so the two cannot drift.
+
+    String content passes through as a string: the `system` field sits near the
+    front of the hashed cache prefix, so promoting it to a single-element block
+    array would invalidate every existing caller's prompt cache. Text blocks are
+    narrowed to Anthropic-supported fields (preserving `cache_control`); other
+    blocks pass through untouched.
+    """
+    if isinstance(content, list):
+        return [
+            (
+                (_format_text_block(block) if block.get("type") == "text" else block)
+                if isinstance(block, dict)
+                else {"type": "text", "text": block}
+            )
+            for block in content
+        ]
+    return content
+
+
+def _warn_system_message_hoisted(message: BaseMessage, model: str | None) -> None:
+    """Warn that a non-leading system message was hoisted instead of sent in place.
+
+    Fires on every fallback hoist. A plain warning rather than a deprecation
+    warning: there is no removal target, because the remedy would be a migration
+    over persisted conversation threads that callers cannot scope and would not
+    perform. It identifies the offending message by a leading snippet of its
+    text -- the message has no name to quote -- and says what to change, since
+    that is the only thing that will ever move a caller off the fallback.
+    """
+    warnings.warn(
+        f"A `SystemMessage` starting {message.text[:60]!r} is not at the start "
+        "of the message list and was moved into the top-level `system` field, "
+        "so it applies to the whole conversation instead of from its position "
+        "onwards. This is a fallback for a position or model Anthropic will "
+        f"not accept in place (model: {model!r}). To have it sent in place, "
+        "move it so that it follows a human or tool message and is either last "
+        "or followed by an AI message, and use a model that supports "
+        "mid-conversation system messages; to keep whole-conversation "
+        "semantics, move it to the start of the list.",
+        UserWarning,
+        stacklevel=3,
+    )
+
+
+def _is_server_tool_result_block(block: object) -> bool:
+    """Return whether a formatted content block is a server-side tool result.
+
+    Every server-side tool result block type carries a prefix before the
+    `_tool_result` suffix (e.g. `web_search_tool_result`), whereas the
+    client-side tool result block is exactly `tool_result`. A suffix test
+    therefore separates the two without enumerating the server-side types,
+    which would go stale as new server tools ship -- and would go stale in the
+    dangerous direction, hoisting a system message that was legal in place.
+    """
+    return (
+        isinstance(block, dict)
+        and isinstance(block.get("type"), str)
+        and block["type"].endswith("_tool_result")
+    )
+
+
+def _previous_turn_allows_system(previous_turn: dict | None) -> bool:
+    """Return whether a `role: "system"` turn may follow `previous_turn`.
+
+    Anthropic accepts a content-carrying system message in the messages array
+    only when it immediately follows a `user` turn (including one carrying tool
+    results) or an `assistant` turn ending in a server tool result. It can never
+    be the first entry. Any other placement is a 400.
+
+    This is half of the placement rule; the other half -- that the system
+    message must either end the array or be followed by an `assistant` turn --
+    cannot be judged until the following wire turn is known, so
+    `_format_messages` defers it.
+
+    Args:
+        previous_turn: The preceding *formatted* turn, or `None` if the system
+            message would be first on the wire. Judging against the formatted
+            sequence rather than the caller's list matters because empty
+            assistant turns are dropped along the way.
+    """
+    if previous_turn is None:
+        return False
+
+    previous_role = previous_turn.get("role")
+    previous_content = previous_turn.get("content")
+    return previous_role == "user" or (
+        previous_role == "assistant"
+        and isinstance(previous_content, list)
+        and bool(previous_content)
+        and _is_server_tool_result_block(previous_content[-1])
+    )
+
+
 def _format_messages(
     messages: Sequence[BaseMessage],
+    *,
+    model: str | None,
 ) -> tuple[str | list[dict] | None, list[dict]]:
-    """Format messages for Anthropic's API."""
+    """Format messages for Anthropic's API.
+
+    The contiguous run of system messages starting at index 0 is hoisted into
+    the top-level `system` field. Any other system run is left where it is, as a
+    `role: "system"` entry, when the model supports mid-conversation system
+    messages and the position is one Anthropic accepts. Otherwise it is hoisted
+    with a warning, which keeps conversation threads persisted before this
+    behavior existed working -- a thread is stored data, so a caller cannot fix
+    it with a code change. A second run that can neither be sent in place nor
+    hoisted (because a run was already hoisted) raises, as it always has.
+
+    Placement is judged against the wire sequence on both sides, so a
+    candidate system message is held back until the following wire turn is
+    known. Looking ahead in the caller's list instead would count an empty
+    assistant turn that this function drops as a legal successor, and send a
+    system message in place that Anthropic would reject.
+
+    Args:
+        messages: The messages to format.
+        model: The model the request will be sent to, used to decide whether a
+            non-leading system message can be sent in place. Required, not
+            defaulted: a call site that forgot to pass it would otherwise
+            silently hoist everything and leave the feature dead. Pass `None`
+            when formatting messages that cannot contain a system message.
+
+    Returns:
+        A `(system, formatted_messages)` pair.
+
+    Raises:
+        ValueError: If a system run can neither be sent in place nor hoisted.
+    """
     system: str | list[dict] | None = None
     formatted_messages: list[dict] = []
     merged_messages = _merge_messages(messages)
+    # System messages that go in place occupy a wire turn but are not assistant
+    # turns, so the final-assistant-turn checks below count from the last
+    # non-system message rather than from the end of the list.
+    last_non_system_index = max(
+        (i for i, m in enumerate(merged_messages) if m.type != "system"),
+        default=-1,
+    )
+    # A system message whose predecessor is legal, held back until the
+    # following wire turn decides whether it can stay in place.
+    pending_system: BaseMessage | None = None
     for _i, message in enumerate(merged_messages):
         if message.type == "system":
+            if _i == 0:
+                system = _format_system_content(message.content)
+                continue
+            if _supports_mid_conversation_system_messages(
+                model
+            ) and _previous_turn_allows_system(
+                formatted_messages[-1] if formatted_messages else None
+            ):
+                pending_system = message
+                continue
             if system is not None:
                 msg = "Received multiple non-consecutive system messages."
                 raise ValueError(msg)
-            if isinstance(message.content, list):
-                system = [
-                    (
-                        (
-                            _format_text_block(block)
-                            if block.get("type") == "text"
-                            else block
-                        )
-                        if isinstance(block, dict)
-                        else {"type": "text", "text": block}
-                    )
-                    for block in message.content
-                ]
-            else:
-                system = message.content
+            system = _format_system_content(message.content)
+            _warn_system_message_hoisted(message, model)
             continue
 
         role = _message_type_lookups[message.type]
@@ -725,8 +863,11 @@ def _format_messages(
                         )
                     elif block["type"] == "tool_result":
                         # Regular tool results that need content formatting
+                        # A lone human message can never carry a system
+                        # message, so the model is irrelevant here.
                         tool_content = _format_messages(
                             [HumanMessage(block["content"])],
+                            model=None,
                         )[1][0]["content"]
                         content.append(
                             _normalize_block_tool_use_id(
@@ -796,7 +937,7 @@ def _format_messages(
                 _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls),
             )
 
-        if role == "assistant" and _i == len(merged_messages) - 1:
+        if role == "assistant" and _i == last_non_system_index:
             if isinstance(content, str):
                 content = content.rstrip()
             elif (
@@ -807,11 +948,39 @@ def _format_messages(
             ):
                 content[-1]["text"] = content[-1]["text"].rstrip()
 
-        if not content and role == "assistant" and _i < len(merged_messages) - 1:
+        if not content and role == "assistant" and _i < last_non_system_index:
             # anthropic.BadRequestError: Error code: 400: all messages must have
             # non-empty content except for the optional final assistant message
             continue
+        if pending_system is not None:
+            # The following wire turn is now known, so the held-back system
+            # message can be placed. Anthropic requires an `assistant` turn
+            # after a mid-conversation system message.
+            if role == "assistant":
+                formatted_messages.append(
+                    {
+                        "role": "system",
+                        "content": _format_system_content(pending_system.content),
+                    }
+                )
+            elif system is not None:
+                msg = "Received multiple non-consecutive system messages."
+                raise ValueError(msg)
+            else:
+                system = _format_system_content(pending_system.content)
+                _warn_system_message_hoisted(pending_system, model)
+            pending_system = None
         formatted_messages.append({"role": role, "content": content})
+
+    if pending_system is not None:
+        # Nothing followed it, so it ends the messages array, which Anthropic
+        # accepts.
+        formatted_messages.append(
+            {
+                "role": "system",
+                "content": _format_system_content(pending_system.content),
+            }
+        )
     return system, formatted_messages
 
 
@@ -897,6 +1066,41 @@ def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
     return tuple(levels)
 
 
+def _supports_mid_conversation_system_messages(model: object) -> bool:
+    """Return whether a model accepts `role: "system"` entries in `messages`.
+
+    A mid-conversation system message applies from its position onwards without
+    invalidating the cached prefix ahead of it, but only some models accept one;
+    Sonnet 5 notably does not, despite being a current model.
+
+    The prefixes match forward, so a later point release of a supported family
+    (e.g. `claude-opus-5-1`) is picked up without an edit. `claude-opus-4-8` is
+    spelled in full because `claude-opus-4` would wrongly include 4-5, 4-6 and
+    4-7. `claude-mythos-preview` is excluded because it cannot be mapped to a
+    version.
+
+    Known limitation: like every other model check in this module, this is a
+    plain prefix test with no normalization, so a platform-prefixed identifier
+    (e.g. a Bedrock-style `anthropic.claude-...`) does not match and its system
+    messages are hoisted instead. Anthropic supports the feature on those
+    platforms; normalizing all of this module's model checks together is a
+    follow-up.
+
+    Non-string model values return `False` rather than raising, so a misbehaving
+    subclass falls through to the safer hoisting branch.
+    """
+    if not isinstance(model, str):
+        return False
+    return model.startswith(
+        (
+            "claude-fable-5",
+            "claude-mythos-5",
+            "claude-opus-4-8",
+            "claude-opus-5",
+        )
+    )
+
+
 def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
     """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
 
@@ -922,6 +1126,12 @@ def _apply_cache_control_to_last_eligible_block(
     skipping `code_execution`-related blocks (Anthropic rejects breakpoints
     there). String message content is promoted to a single text block so the
     breakpoint can be attached.
+
+    There is no role filter, so a trailing in-place `role: "system"` turn can
+    receive the breakpoint. That is deliberate: Anthropic documents
+    mid-conversation system messages as cacheable, and a trailing system message
+    is the true end of the stable prefix, so excluding it would place the
+    breakpoint early and re-process the system message on every later turn.
 
     Returns:
         `True` if a breakpoint was applied, `False` if every candidate was
@@ -1599,7 +1809,7 @@ class ChatAnthropic(BaseChatModel):
                     }
                 )
 
-        system, formatted_messages = _format_messages(messages)
+        system, formatted_messages = _format_messages(messages, model=self.model)
 
         # Only the direct Anthropic API accepts top-level `cache_control`.
         # Subclasses that route through other transports (e.g. Bedrock) expand
@@ -2750,8 +2960,13 @@ class ChatAnthropic(BaseChatModel):
             403
             ```
         """  # noqa: D214
-        formatted_system, formatted_messages = _format_messages(messages)
-        if isinstance(formatted_system, str):
+        formatted_system, formatted_messages = _format_messages(
+            messages, model=self.model
+        )
+        # Forward both shapes the `system` field can take. Previously only the
+        # string form was forwarded, silently omitting a block-array system
+        # prompt from the count.
+        if formatted_system is not None:
             kwargs["system"] = formatted_system
         if tools:
             # Filter the same schemas `bind_tools` drops, so counting tokens and
