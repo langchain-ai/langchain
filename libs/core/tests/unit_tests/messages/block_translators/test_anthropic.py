@@ -192,6 +192,36 @@ def test_convert_to_v1_from_anthropic() -> None:
     assert message.content != expected_content  # check no mutation
 
 
+def test_convert_to_v1_from_anthropic_index_no_mutation() -> None:
+    """`index` is lifted onto the `non_standard` wrapper without mutating `content`.
+
+    Regression test: the `else` branch built `non_standard["value"]` from the
+    original block dict (not a copy) and then `.pop("index")`'d off of it, deleting
+    `index` from `message.content` as a side effect of reading `.content_blocks`.
+    """
+    original_block = {"type": "something_else", "foo": "bar", "index": 3}
+    message = AIMessage(
+        content=[dict(original_block)],
+        response_metadata={"model_provider": "anthropic"},
+    )
+
+    first = message.content_blocks
+    second = message.content_blocks
+
+    assert message.content == [original_block]
+    assert (
+        first
+        == second
+        == [
+            {
+                "type": "non_standard",
+                "value": {"type": "something_else", "foo": "bar"},
+                "index": 3,
+            }
+        ]
+    )
+
+
 def test_convert_to_v1_from_anthropic_chunk() -> None:
     chunks = [
         AIMessageChunk(
