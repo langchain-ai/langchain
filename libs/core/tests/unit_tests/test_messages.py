@@ -496,6 +496,28 @@ def test_message_chunk_to_message() -> None:
     assert AIMessageChunk(**chunk.model_dump()) == chunk
 
 
+def test_empty_tool_calls_not_hydrated_from_additional_kwargs() -> None:
+    raw = {
+        "id": "call_1",
+        "type": "function",
+        "function": {"name": "secret_tool", "arguments": '{"q": 1}'},
+    }
+    hydrated = AIMessage(content="x", additional_kwargs={"tool_calls": [raw]})
+    assert hydrated.tool_calls[0]["name"] == "secret_tool"
+
+    cleared = AIMessage(
+        content="x",
+        tool_calls=[],
+        additional_kwargs={"tool_calls": [raw]},
+    )
+    assert cleared.tool_calls == []
+    assert load(dumpd(cleared), allowed_objects=[AIMessage]).tool_calls == []
+    rebuilt = AIMessage(
+        **{k: v for k, v in cleared.model_dump().items() if k != "type"}
+    )
+    assert rebuilt.tool_calls == []
+
+
 def test_tool_calls_merge() -> None:
     chunks: list[dict[str, Any]] = [
         {"content": ""},
