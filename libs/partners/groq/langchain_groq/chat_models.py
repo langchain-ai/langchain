@@ -540,8 +540,8 @@ class ChatGroq(BaseChatModel):
         if self.n < 1:
             msg = "n must be at least 1."
             raise ValueError(msg)
-        if self.n > 1 and self.streaming:
-            msg = "n must be 1 when streaming."
+        if self.n != 1:
+            msg = "n must be 1."
             raise ValueError(msg)
         if self.temperature == 0:
             self.temperature = 1e-8

@@ -251,13 +251,14 @@ def test_chat_groq_extra_kwargs() -> None:
         ChatGroq(model="foo", model_kwargs={"model": "test-model"})
 
 
-def test_chat_groq_invalid_streaming_params() -> None:
-    """Test that an error is raised if streaming is invoked with n>1."""
+@pytest.mark.parametrize("streaming", [False, True])
+def test_chat_groq_invalid_n(streaming: bool) -> None:
+    """Test that Groq rejects unsupported multiple completions."""
     with pytest.raises(ValueError):
         ChatGroq(
             model="foo",
             max_tokens=10,
-            streaming=True,
+            streaming=streaming,
             temperature=0,
             n=5,
         )
