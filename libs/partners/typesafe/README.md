@@ -21,34 +21,33 @@ from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 classifier = TypeSafeClassifier()
 
 result = classifier.invoke(
-    state="Stripe has failed to connect for three days. Help ASAP.",
-    questions={
-        "department": Choice(
-            instructions="Which team should handle this?",
-            criteria={
-                "billing": "Payment or subscription issues",
-                "technical": "Product or integration issues",
-            },
-        ),
-        "urgent": Noul(instructions="Does this message express urgency?"),
-        "frustration": Score(
-            instructions="How frustrated does the customer appear?",
-            criteria=["calm", "frustrated", "angry"],
-        ),
-    },
+    {
+        "state": "Stripe has failed to connect for three days. Help ASAP.",
+        "questions": {
+            "department": Choice(
+                instructions="Which team should handle this?",
+                criteria={
+                    "billing": "Payment or subscription issues",
+                    "technical": "Product or integration issues",
+                },
+            ),
+            "urgent": Noul(instructions="Does this message express urgency?"),
+            "frustration": Score(
+                instructions="How frustrated does the customer appear?",
+                criteria=["calm", "frustrated", "angry"],
+            ),
+        },
+    }
 )
 print(result.choices["department"].choice)
 print(result.nouls["urgent"].noul)
 print(result.scores["frustration"].score)
 ```
 
-Call `invoke` or `ainvoke` with keyword `state` and `questions` arguments. Both are
-normalized into the Runnable request, so callbacks and traces include the complete
-classification request. Use `await classifier.ainvoke(...)` for asynchronous
-applications.
-
-For generic Runnable composition or batching, pass the complete
-`ClassifierRequest` mapping positionally:
+Pass a complete `ClassifierRequest` mapping to `invoke` or `ainvoke`. Keeping both
+`state` and `questions` in the Runnable input makes the complete classification request
+available to composition, batching, callbacks, and tracing. Use
+`await classifier.ainvoke(...)` for asynchronous applications:
 
 ```python
 from langchain_typesafe import ClassifierRequest
@@ -130,16 +129,18 @@ agent = create_agent(
 from langchain_core.messages import HumanMessage, SystemMessage
 
 response = classifier.invoke(
-    state={
-        "conversation": [
-            SystemMessage("You are reviewing a customer support conversation."),
-            HumanMessage("My payouts have failed for three days. Help!"),
-        ],
-        "account_tier": "enterprise",
-    },
-    questions={
-        "urgent": Noul(instructions="Does this customer need urgent help?")
-    },
+    {
+        "state": {
+            "conversation": [
+                SystemMessage("You are reviewing a customer support conversation."),
+                HumanMessage("My payouts have failed for three days. Help!"),
+            ],
+            "account_tier": "enterprise",
+        },
+        "questions": {
+            "urgent": Noul(instructions="Does this customer need urgent help?")
+        },
+    }
 )
 ```
 
@@ -168,8 +169,10 @@ from langchain_typesafe import TypeSafeRateLimitError
 
 try:
     response = classifier.invoke(
-        state="Classify this message.",
-        questions={"urgent": Noul(instructions="Is this urgent?")},
+        {
+            "state": "Classify this message.",
+            "questions": {"urgent": Noul(instructions="Is this urgent?")},
+        }
     )
 except TypeSafeRateLimitError as error:
     print(error.request_id, error.retry_after_ms)

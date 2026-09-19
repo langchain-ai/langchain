@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, overload
+from typing import Any
 
 import httpx2
 from langchain_core._api import beta
@@ -31,8 +31,6 @@ from langchain_typesafe.client import (
 from langchain_typesafe.types import (
     ClassifierRequest,
     ClassifierResponse,
-    Question,
-    State,
 )
 
 _DEFAULT_BASE_URL = "https://api.typesafe.ai"
@@ -95,25 +93,28 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         classifier = TypeSafeClassifier()
 
         response = classifier.invoke(
-            state=(
-                "Stripe has failed to connect for three days. Please help immediately."
-            ),
-            questions={
-                "department": Choice(
-                    instructions="Which team should handle this request?",
-                    criteria={
-                        "billing": "Payment or subscription issues.",
-                        "technical": "Product bugs or integration failures.",
-                    },
+            {
+                "state": (
+                    "Stripe has failed to connect for three days. "
+                    "Please help immediately."
                 ),
-                "urgent": Noul(
-                    instructions="Does this message require an urgent response?"
-                ),
-                "frustration": Score(
-                    instructions="How frustrated does the customer appear?",
-                    criteria=["Calm.", "Concerned but civil.", "Very angry."],
-                ),
-            },
+                "questions": {
+                    "department": Choice(
+                        instructions="Which team should handle this request?",
+                        criteria={
+                            "billing": "Payment or subscription issues.",
+                            "technical": "Product bugs or integration failures.",
+                        },
+                    ),
+                    "urgent": Noul(
+                        instructions="Does this message require an urgent response?"
+                    ),
+                    "frustration": Score(
+                        instructions="How frustrated does the customer appear?",
+                        criteria=["Calm.", "Concerned but civil.", "Very angry."],
+                    ),
+                },
+            }
         )
         print(response.choices["department"].choice)
         print(response.nouls["urgent"].noul)
@@ -131,12 +132,14 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         classifier = TypeSafeClassifier()
 
         response = await classifier.ainvoke(
-            state="Please refund the duplicate charge.",
-            questions={
-                "refund_requested": Noul(
-                    instructions="Does the customer request a refund?"
-                )
-            },
+            {
+                "state": "Please refund the duplicate charge.",
+                "questions": {
+                    "refund_requested": Noul(
+                        instructions="Does the customer request a refund?"
+                    )
+                },
+            }
         )
         print(response.nouls["refund_requested"].noul)
         ```
@@ -285,148 +288,69 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         """Map the API-key field to its environment variable for serialization."""
         return {"api_key": "TYPESAFE_API_KEY"}
 
-    @overload
-    def invoke(
-        self,
-        *,
-        state: State,
-        questions: dict[str, Question],
-        config: RunnableConfig | None = None,
-    ) -> ClassifierResponse: ...
-
-    @overload
+    @override
     def invoke(
         self,
         input: ClassifierRequest,
         config: RunnableConfig | None = None,
-        **kwargs: Any,
-    ) -> ClassifierResponse: ...
-
-    @override
-    def invoke(
-        self,
-        input: ClassifierRequest | None = None,
-        config: RunnableConfig | None = None,
-        *,
-        state: State | None = None,
-        questions: dict[str, Question] | None = None,
-        **kwargs: Any,
+        **_: Any,
     ) -> ClassifierResponse:
         """Classify one request synchronously.
 
         Args:
-            input: Complete request mapping used by generic `Runnable` integrations.
-                Omit it when passing `state` and `questions` directly.
+            input: Complete request containing the state and typed questions.
             config: Optional LangChain runnable configuration for callbacks, tags,
                 metadata, and tracing.
-            state: Text, object, array, `BaseMessage`, or message sequence to classify.
-            questions: Named `Noul`, `Choice`, or `Score` questions for this invocation.
-            **kwargs: Additional keyword arguments accepted for `Runnable`
-                compatibility. Generic callers may supply the request as `input`.
+            **_: Additional keyword arguments accepted for `Runnable` compatibility and
+                otherwise ignored.
 
         Returns:
             Structured TypeSafe answers and request metadata.
 
         Raises:
-            TypeError: If invocation forms are mixed or required arguments are omitted.
             TypeSafeAPIError: If TypeSafe returns an unsuccessful HTTP response.
             TypeSafeAPIConnectionError: If no HTTP response is received.
             TypeSafeAPITimeoutError: If the request exceeds its client timeout.
             TypeSafeAPIResponseValidationError: If a successful response is malformed.
         """
-        request = self._normalize_input(
-            request=input,
-            state=state,
-            questions=questions,
-        )
-
         return self._call_with_config(
             self._classify,
-            request,
+            input,
             self._traced_config(config),
             run_type="llm",
         )
-
-    @overload
-    async def ainvoke(
-        self,
-        *,
-        state: State,
-        questions: dict[str, Question],
-        config: RunnableConfig | None = None,
-    ) -> ClassifierResponse: ...
-
-    @overload
-    async def ainvoke(
-        self,
-        input: ClassifierRequest,
-        config: RunnableConfig | None = None,
-        **kwargs: Any,
-    ) -> ClassifierResponse: ...
 
     @override
     async def ainvoke(
         self,
-        input: ClassifierRequest | None = None,
+        input: ClassifierRequest,
         config: RunnableConfig | None = None,
-        *,
-        state: State | None = None,
-        questions: dict[str, Question] | None = None,
-        **kwargs: Any,
+        **_: Any,
     ) -> ClassifierResponse:
         """Classify one request asynchronously.
 
         Args:
-            input: Complete request mapping used by generic `Runnable` integrations.
-                Omit it when passing `state` and `questions` directly.
+            input: Complete request containing the state and typed questions.
             config: Optional LangChain runnable configuration for callbacks, tags,
                 metadata, and tracing.
-            state: Text, object, array, `BaseMessage`, or message sequence to classify.
-            questions: Named `Noul`, `Choice`, or `Score` questions for this invocation.
-            **kwargs: Additional keyword arguments accepted for `Runnable`
-                compatibility. Generic callers may supply the request as `input`.
+            **_: Additional keyword arguments accepted for `Runnable` compatibility and
+                otherwise ignored.
 
         Returns:
             Structured TypeSafe answers and request metadata.
 
         Raises:
-            TypeError: If invocation forms are mixed or required arguments are omitted.
             TypeSafeAPIError: If TypeSafe returns an unsuccessful HTTP response.
             TypeSafeAPIConnectionError: If no HTTP response is received.
             TypeSafeAPITimeoutError: If the request exceeds its client timeout.
             TypeSafeAPIResponseValidationError: If a successful response is malformed.
         """
-        request = self._normalize_input(
-            request=input,
-            state=state,
-            questions=questions,
-        )
-
         return await self._acall_with_config(
             self._aclassify,
-            request,
+            input,
             self._traced_config(config),
             run_type="llm",
         )
-
-    @staticmethod
-    def _normalize_input(
-        *,
-        request: ClassifierRequest | None,
-        state: State | None,
-        questions: dict[str, Question] | None,
-    ) -> ClassifierRequest:
-        """Normalize direct and generic Runnable invocation forms."""
-        if request is not None:
-            if state is not None or questions is not None:
-                message = "Pass either `input` or `state` and `questions`, not both."
-                raise TypeError(message)
-            return request
-
-        if state is None or questions is None:
-            message = "Pass both `state` and `questions`."
-            raise TypeError(message)
-        return ClassifierRequest(state=state, questions=questions)
 
     def _classify(self, request: ClassifierRequest) -> ClassifierResponse:
         payload = self._payload(request)

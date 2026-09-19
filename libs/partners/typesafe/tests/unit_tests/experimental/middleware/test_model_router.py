@@ -105,14 +105,18 @@ async def test_agent_routes_using_latest_human_message(*, asynchronous: bool) ->
     if asynchronous:
         result = await agent.ainvoke(inputs)
         classifier.ainvoke.assert_awaited_once_with(
-            state=latest_message,
-            questions=_routing_questions(middleware.config),
+            {
+                "state": latest_message,
+                "questions": _routing_questions(middleware.config),
+            }
         )
     else:
         result = agent.invoke(inputs)
         classifier.invoke.assert_called_once_with(
-            state=latest_message,
-            questions=_routing_questions(middleware.config),
+            {
+                "state": latest_message,
+                "questions": _routing_questions(middleware.config),
+            }
         )
 
     assert result["messages"][-1].text == "fast response"

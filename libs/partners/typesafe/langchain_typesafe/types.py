@@ -64,12 +64,14 @@ class Noul(BaseModel):
 
         classifier = TypeSafeClassifier()
         response = classifier.invoke(
-            state="Production is down. Please help immediately.",
-            questions={
-                "urgent": Noul(
-                    instructions="Does this message require an urgent response?"
-                )
-            },
+            {
+                "state": "Production is down. Please help immediately.",
+                "questions": {
+                    "urgent": Noul(
+                        instructions="Does this message require an urgent response?"
+                    )
+                },
+            }
         )
         urgency = response.nouls["urgent"].noul
 
@@ -107,17 +109,19 @@ class Choice(BaseModel):
 
         classifier = TypeSafeClassifier()
         response = classifier.invoke(
-            state="Stripe fails whenever I connect my account.",
-            questions={
-                "department": Choice(
-                    instructions="Which team should handle this request?",
-                    criteria={
-                        "billing": "Payment, invoice, or subscription issues.",
-                        "technical": "Product bugs or integration failures.",
-                        "sales": "Pricing or purchasing questions.",
-                    },
-                )
-            },
+            {
+                "state": "Stripe fails whenever I connect my account.",
+                "questions": {
+                    "department": Choice(
+                        instructions="Which team should handle this request?",
+                        criteria={
+                            "billing": "Payment, invoice, or subscription issues.",
+                            "technical": "Product bugs or integration failures.",
+                            "sales": "Pricing or purchasing questions.",
+                        },
+                    )
+                },
+            }
         )
         department = response.choices["department"]
 
@@ -158,17 +162,19 @@ class Score(BaseModel):
 
         classifier = TypeSafeClassifier()
         response = classifier.invoke(
-            state="This has failed three times. Fix it now.",
-            questions={
-                "frustration": Score(
-                    instructions="How frustrated does the customer appear?",
-                    criteria=[
-                        "Calm and neutral.",
-                        "Concerned but civil.",
-                        "Very angry or using strong language.",
-                    ],
-                )
-            },
+            {
+                "state": "This has failed three times. Fix it now.",
+                "questions": {
+                    "frustration": Score(
+                        instructions="How frustrated does the customer appear?",
+                        criteria=[
+                            "Calm and neutral.",
+                            "Concerned but civil.",
+                            "Very angry or using strong language.",
+                        ],
+                    )
+                },
+            }
         )
         frustration = response.scores["frustration"]
 

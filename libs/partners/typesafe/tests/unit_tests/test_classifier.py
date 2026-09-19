@@ -94,6 +94,10 @@ def _questions() -> dict[str, Choice | Noul | Score]:
     }
 
 
+def _request(state: Any = "hello") -> ClassifierRequest:
+    return {"state": state, "questions": _questions()}
+
+
 def test_classifier_is_beta() -> None:
     """Constructing the classifier warns that its API is in beta."""
     with pytest.warns(
@@ -214,10 +218,7 @@ def test_single_message_is_serialized_as_role_content_state() -> None:
         client=client,
     )
 
-    classifier.invoke(
-        state=HumanMessage("Please help immediately."),
-        questions=_questions(),
-    )
+    classifier.invoke(_request(HumanMessage("Please help immediately.")))
 
     assert observed_state == {
         "role": "user",
@@ -242,12 +243,13 @@ def test_message_sequence_is_serialized_as_conversation_state() -> None:
     )
 
     classifier.invoke(
-        state=[
-            SystemMessage("You are a support assistant."),
-            HumanMessage("My integration is broken."),
-            AIMessage("I can help troubleshoot it."),
-        ],
-        questions=_questions(),
+        _request(
+            [
+                SystemMessage("You are a support assistant."),
+                HumanMessage("My integration is broken."),
+                AIMessage("I can help troubleshoot it."),
+            ]
+        )
     )
 
     assert observed_state == [
@@ -258,8 +260,8 @@ def test_message_sequence_is_serialized_as_conversation_state() -> None:
     client.close()
 
 
-def test_invoke_accepts_state_and_questions_keywords() -> None:
-    """Keyword arguments become the complete Runnable request."""
+def test_invoke_accepts_classifier_request() -> None:
+    """The complete typed request is accepted as the Runnable input."""
     observed_payload: dict[str, Any] = {}
     questions: dict[str, Choice | Noul | Score] = {
         "urgent": Noul(instructions="Is this urgent?")
@@ -272,10 +274,11 @@ def test_invoke_accepts_state_and_questions_keywords() -> None:
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
 
-    classifier.invoke(
-        state={"message": "Please help ASAP."},
-        questions=questions,
-    )
+    request: ClassifierRequest = {
+        "state": {"message": "Please help ASAP."},
+        "questions": questions,
+    }
+    classifier.invoke(request)
 
     assert observed_payload["state"] == {"message": "Please help ASAP."}
     assert observed_payload["questions"] == {
@@ -285,8 +288,8 @@ def test_invoke_accepts_state_and_questions_keywords() -> None:
 
 
 @pytest.mark.asyncio
-async def test_ainvoke_accepts_state_and_questions_keywords() -> None:
-    """The asynchronous API accepts the same keyword arguments."""
+async def test_ainvoke_accepts_classifier_request() -> None:
+    """The asynchronous API accepts the same typed request input."""
     observed_payload: dict[str, Any] = {}
     questions: dict[str, Choice | Noul | Score] = {
         "urgent": Noul(instructions="Is this urgent?")
@@ -299,10 +302,11 @@ async def test_ainvoke_accepts_state_and_questions_keywords() -> None:
     async_client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(api_key=API_KEY, async_client=async_client)
 
-    await classifier.ainvoke(
-        state="Please help ASAP.",
-        questions=questions,
-    )
+    request: ClassifierRequest = {
+        "state": "Please help ASAP.",
+        "questions": questions,
+    }
+    await classifier.ainvoke(request)
 
     assert observed_payload["state"] == "Please help ASAP."
     assert set(observed_payload["questions"]) == {"urgent"}
@@ -323,7 +327,7 @@ async def test_ainvoke_uses_async_client() -> None:
         async_client=async_client,
     )
 
-    result = await classifier.ainvoke(state="Please help ASAP.", questions=_questions())
+    result = await classifier.ainvoke(_request("Please help ASAP."))
 
     assert result.choices["department"].choice == "technical"
     await async_client.aclose()
@@ -396,7 +400,7 @@ async def test_ainvoke_translates_api_error() -> None:
     )
 
     with pytest.raises(TypeSafeAPIError) as exc_info:
-        await classifier.ainvoke(state="hello", questions=_questions())
+        await classifier.ainvoke(_request())
 
     assert exc_info.value.status_code == 429
     assert exc_info.value.request_id == REQUEST_ID
@@ -418,7 +422,7 @@ async def test_ainvoke_translates_connection_error() -> None:
     )
 
     with pytest.raises(TypeSafeAPIConnectionError, match="Unable to connect"):
-        await classifier.ainvoke(state="hello", questions=_questions())
+        await classifier.ainvoke(_request())
 
     await async_client.aclose()
 
@@ -441,7 +445,7 @@ async def test_ainvoke_translates_timeout_error() -> None:
     )
 
     with pytest.raises(TypeSafeAPITimeoutError) as exc_info:
-        await classifier.ainvoke(state="hello", questions=_questions())
+        await classifier.ainvoke(_request())
 
     assert exc_info.value.timeout == async_client.timeout
     await async_client.aclose()
@@ -504,7 +508,7 @@ def test_api_error_does_not_expose_response_body() -> None:
     )
 
     with pytest.raises(TypeSafeAPIError) as exc_info:
-        classifier.invoke(state="hello", questions=_questions())
+        classifier.invoke(_request())
 
     assert exc_info.value.status_code == 401
     assert exc_info.value.request_id == REQUEST_ID
@@ -526,7 +530,7 @@ def test_connection_error_is_translated() -> None:
     )
 
     with pytest.raises(TypeSafeAPIConnectionError, match="Unable to connect"):
-        classifier.invoke(state="hello", questions=_questions())
+        classifier.invoke(_request())
 
     client.close()
 
@@ -548,7 +552,7 @@ def test_timeout_error_is_translated() -> None:
     )
 
     with pytest.raises(TypeSafeAPITimeoutError) as exc_info:
-        classifier.invoke(state="hello", questions=_questions())
+        classifier.invoke(_request())
 
     assert exc_info.value.timeout == client.timeout
     client.close()
@@ -567,7 +571,7 @@ def test_invalid_response_is_translated() -> None:
     )
 
     with pytest.raises(TypeSafeAPIResponseValidationError, match="Invalid response"):
-        classifier.invoke(state="hello", questions=_questions())
+        classifier.invoke(_request())
 
     client.close()
 
@@ -596,8 +600,7 @@ def test_callbacks_receive_classifier_run() -> None:
     )
 
     classifier.invoke(
-        state="hello",
-        questions=_questions(),
+        _request(),
         config={"callbacks": [callback]},
     )
 
@@ -628,8 +631,7 @@ def test_usage_is_recorded_on_the_active_run(
     )
 
     classifier.invoke(
-        state="hello",
-        questions=_questions(),
+        _request(),
         config={"callbacks": [recorder]},
     )
     client.close()
@@ -660,7 +662,7 @@ async def test_async_usage_is_recorded_on_the_active_run(
         async_client=client,
     )
 
-    await classifier.ainvoke(state="hello", questions=_questions())
+    await classifier.ainvoke(_request())
     await client.aclose()
 
     assert stub.extra["metadata"]["usage_metadata"]["total_tokens"] == 54
@@ -680,8 +682,7 @@ def test_run_carries_model_identity_without_losing_caller_metadata() -> None:
     )
 
     classifier.invoke(
-        state="hello",
-        questions=_questions(),
+        _request(),
         config={"callbacks": [recorder], "metadata": {"tenant": "acme"}},
     )
     client.close()
@@ -704,7 +705,7 @@ def test_untraced_invocation_is_unaffected() -> None:
         client=client,
     )
 
-    result = classifier.invoke(state="hello", questions=_questions())
+    result = classifier.invoke(_request())
     client.close()
 
     assert result.usage.input_tokens == 42

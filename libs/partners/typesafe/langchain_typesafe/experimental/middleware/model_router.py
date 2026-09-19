@@ -166,8 +166,10 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     ) -> dict[str, ChoiceAnswer]:
         """Classify the latest task and store the complete routing answer."""
         response = self.classifier.invoke(
-            state=self._latest_human_message(state),
-            questions=_routing_questions(self.config),
+            {
+                "state": self._latest_human_message(state),
+                "questions": _routing_questions(self.config),
+            }
         )
         return {"model_route": response.choices[_QUESTION_ID]}
 
@@ -177,8 +179,10 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     ) -> dict[str, ChoiceAnswer]:
         """Classify the latest task asynchronously and store the routing answer."""
         response = await self.classifier.ainvoke(
-            state=self._latest_human_message(state),
-            questions=_routing_questions(self.config),
+            {
+                "state": self._latest_human_message(state),
+                "questions": _routing_questions(self.config),
+            }
         )
         return {"model_route": response.choices[_QUESTION_ID]}
 

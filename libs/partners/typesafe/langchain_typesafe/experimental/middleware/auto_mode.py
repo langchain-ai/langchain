@@ -223,8 +223,10 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         if request.tool_call["name"] not in self._tool_names:
             return handler(request)
         response = self.classifier.invoke(
-            state=self._classification_state(request),
-            questions=_risk_questions(self.config),
+            {
+                "state": self._classification_state(request),
+                "questions": _risk_questions(self.config),
+            }
         )
         probability = response.nouls[_QUESTION_ID].noul
         if probability >= _PROBABILITY_THRESHOLD:
@@ -252,8 +254,10 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         if request.tool_call["name"] not in self._tool_names:
             return await handler(request)
         response = await self.classifier.ainvoke(
-            state=self._classification_state(request),
-            questions=_risk_questions(self.config),
+            {
+                "state": self._classification_state(request),
+                "questions": _risk_questions(self.config),
+            }
         )
         probability = response.nouls[_QUESTION_ID].noul
         if probability >= _PROBABILITY_THRESHOLD:
