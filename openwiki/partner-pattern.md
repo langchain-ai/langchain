@@ -3,9 +3,6 @@ type: Integration Pattern
 title: Adding a New Chat Model Provider
 description: Step-by-step guide to integrate a new LLM provider into LangChain's monorepo, including package structure, ChatModel implementation, streaming, function calling, structured output, and standard tests. Covers message conversion, error handling, model profiles, and optional advanced API modes like Responses API.
 tags: [chat-models, provider-integration, llm, function-calling, structured-output, streaming]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:26:28.144Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
@@ -38,6 +35,9 @@ sources:
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
 generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:26:28.144Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-19T08:23:50.449Z
 ---
 
 ## Overview

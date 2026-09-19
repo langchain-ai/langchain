@@ -3,9 +3,6 @@ type: "Reference"
 title: "Agent Middleware: Composable Request/Response Processing"
 description: "Document the middleware system for agents, including lifecycle hooks, HITL approval, error handling, retry logic, and middleware composition patterns for intercepting and modifying agent behavior."
 tags: [agent-middleware, request-interception, composition, error-handling, human-in-the-loop]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-08T08:27:09.597Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
@@ -17,7 +14,10 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/middleware/tool_error.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-19T08:23:50.449Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-19T08:23:50.449Z
 ---
 
 ## Overview
@@ -220,11 +220,66 @@ hitl = HumanInTheLoopMiddleware(
 )
 ```
 
+#### How HumanInTheLoopMiddleware Works
+
+The middleware implements two key hooks:
+
+**`after_model` Hook** – Batches Tool Call Reviews:
+1. Extracts the last `AIMessage` from the conversation and identifies tool calls requiring approval (those with entries in `interrupt_on`)
+2. For each tool call, optionally evaluates the `when` predicate (if configured) to dynamically filter which calls need interruption
+3. Constructs an `ActionRequest` (with tool name, args, and optional description) and `ReviewConfig` (with action name and allowed decision types) for each tool call needing approval
+4. Batches all actions and configs into a single `HITLRequest`
+5. Calls `langgraph.interrupt(hitl_request)` to pause execution and send the request to a human reviewer
+6. On resumption, receives `HITLResponse` with a list of `Decision` objects (one per interrupted tool call)
+7. Processes decisions to modify the AIMessage's tool_calls list and generate synthetic `ToolMessage` objects for reject/respond decisions
+8. Returns state updates with the revised messages and an internal map of edited tool call IDs for later use
+
+**`wrap_tool_call` Hook** – Applies Edit Decisions and Annotates Results:
+1. Checks if this tool call was edited by the human reviewer (via the internal `_EDITED_TOOL_CALLS_KEY` state map)
+2. If edited, replaces the tool call with the reviewer's version (possibly changing tool name and arguments)
+3. Calls the handler to execute the (possibly edited) tool
+4. If an edit was applied, prepends a notice to the result explaining the reviewer's replacement
+
+#### Decision Types
+
 The middleware constructs `ActionRequest` objects (with name, args, and optional description) and `ReviewConfig` objects (with action name and allowed decision types), sends them as a `HITLRequest` via `langgraph.interrupt()`, receives decisions back, and processes them:
-- **approve**: Tool call proceeds unchanged
-- **edit**: Tool call arguments are revised by the human
-- **reject**: Tool call is blocked; a ToolMessage with user feedback is sent to the model instead
-- **respond**: Tool execution is skipped; a synthetic ToolMessage with the human's answer is returned to the model
+
+- **approve**: Tool call proceeds unchanged; no artificial message is generated
+- **edit**: Tool call is replaced with the reviewer's version (may change tool name and arguments); original call is stored for annotation during execution; no artificial message generated, but `wrap_tool_call` will prepend a notice when the result returns
+- **reject**: Tool call is removed from the AIMessage; a synthetic `ToolMessage` with status `"error"` and the user's reason is added to messages, sent to the model instead of executing the tool
+- **respond**: Tool call is removed from the AIMessage; a synthetic `ToolMessage` with status `"success"` and the reviewer's answer is added to messages, allowing the human to answer on behalf of the tool without execution
+
+#### Configuration Options
+
+`interrupt_on` mapping values can be:
+
+- **`True`**: All decision types (`approve`, `edit`, `reject`, `respond`) are allowed for this tool
+- **`False`**: Tool is auto-approved (no interrupt triggered)
+- **`InterruptOnConfig` dict**: Fine-grained control with the following optional fields:
+  - `allowed_decisions` (required): List of decision types to permit; must be non-empty
+  - `description` (optional): Static string or callable that generates a custom description for the tool call; if omitted, uses `description_prefix` + tool name and args
+  - `args_schema` (optional): JSON schema for tool arguments, used by UI to validate edits
+  - `when` (optional): Callable predicate `(ToolCallRequest) -> bool` that dynamically filters which tool calls interrupt; `True` to interrupt, `False` to auto-approve
+
+Example with dynamic predicates and descriptions:
+
+```python
+def describe_deletion(tool_call, state, runtime):
+    path = tool_call["args"].get("path", "unknown")
+    return f"Delete file at {path}. Are you sure?"
+
+hitl = HumanInTheLoopMiddleware(
+    interrupt_on={
+        "delete_file": {
+            "allowed_decisions": ["approve", "reject"],
+            "description": describe_deletion,
+            "when": lambda req: req.tool_call["args"].get("path", "").startswith("/etc"),
+        },
+    }
+)
+```
+
+In this example, `delete_file` calls are only interrupted if the path starts with `/etc`; other deletions are auto-approved.
 
 ### Data Transformation & Privacy Middleware
 
@@ -298,6 +353,8 @@ class ToolCallRequest:
     state: AgentState[Any]  # Agent state at time of call
     runtime: ToolRuntime  # Runtime context with tool-specific info
 ```
+
+**Immutable Pattern**: Like `ModelRequest`, `ToolCallRequest` follows an immutable pattern. Use `request.override(tool_call=..., tool=...)` to create a modified request. This is particularly useful in `wrap_tool_call` middleware when you need to adjust tool arguments or redirect to a different tool before execution.
 
 ## Composition and Execution Order
 

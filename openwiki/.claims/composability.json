@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2686a50367f151aef17fad64706fe0e5bb3d6d279febeecbac7d3760d2d17424",
+  "pageVersion": "sha256:b1865ee18a325e7adb3e92dc9a711aa6de1c1561369a1643b70dd4f019664d14",
   "claims": [
     {
       "id": "claim_51e65b4f126f42d986b2766ee964d991",
@@ -159,10 +159,78 @@
           "version": "repo-lines-v1:sha256:dcb170b588e742a6b114ec378abf0fe9adc59525cecfedf62848d5e95203bb96:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyMGI0NTNmNWUwYzkyZDVmNmMyNTFhNWVhMTk2MGQ3MmYzYmQwNzk1NmFlODU3ZGEyMGUzMWE4OGM1NTk2OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmNDZkNzQ5OGExYTZiYjQ5MDJlMzhkMjcwZDI0YmFmNjczODcwMThmNzM1YWUyNmU1ZTI0YmE0OTJlMmMzODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzMjBjM2ZhOTJjODlmZTA3YjYzZjI3Y2Y2MzY2ZmNiNjM3YTZmNGI5M2E3ODAxMTIwZTU0NGQ5MzVkNGMwZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwMWJiYmQwMjVkMTZmMjE0MzM1NWI0NGQ3MzQ1OWQ3MWQxODM5OTJlOGI3NTE2NWMxOTAxZjMxMTg0ZWYxODEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_611acba6e73f47ec9e503e1469abbef2",
+      "statement": "The Runnable protocol defines a standardized interface for transformation with abstract invoke method and default implementations for ainvoke, batch, abatch, stream, astream, plus input_schema and output_schema properties, enabling uniform composition.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L133-L265",
+          "version": "repo-lines-v1:sha256:0fc61d0018b1cfc55713f48b37f8f3976dad338a6308acca0e81f0b18db43343:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMDY2NDAxOWM5MDdkZjg1MGVhOWUwNThmMTJiMTkyMzc0YmViM2ZjY2FiMDYxOTAzMGM2OGU2NTQ4YWQ4MTQ5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhNmE3MTUyNTcyZWU4NGYxMDkwNmM3NGI5ZjJhOTI0MzRkZGFiMGUzYzQyODEzYjA0ZTU5N2VmY2VjOTUxYjI2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3MTgwODU1ZDUzMGZkYjU4MzIyNDIzYTZmZGRkZTlhM2IyYTRhMDk2MjVhNWRiMzc0M2U4OTdjMDUyYmJiZGQzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkMmJmYjM3N2Y5ZDhjNDQxODc5ZGI1MGQ2NTQxYzQzYzQ5NzQ2MWFlMjUzNWJkOThkYjBlNzM5ZDUyNDRjYWRjIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_44b87bc873074856b56357a4a594ad8b",
+      "statement": "RunnableConfig enables runtime dependency injection of callbacks, tags, metadata, and configurable parameters without modifying component code, flowing through the execution context to all pipeline steps.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/config.py#L57-L180",
+          "version": "repo-lines-v1:sha256:7f85a1e0b956b46b3420a12055d6178610b27b8b4316a22e94152e384d0e6671:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNDQxNWRiMTViMDQ0MmYyYjFmNWYzZmQzZTBlYTMyMDhlYWE0MTY0ZTkyZDE1OTI4NWUzYzlkMmRjNjkxMmVkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkNGMwYzlmY2JmOGVlNTZhOTFiNjc5YTQ4YzVjMjhjY2ZjMGQwYTY4ZTkwNTdjYTU0NjQzNjFkMjg4ZjQ5NGUyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2NDZlYTdhOWFlNzZiMzUyNGEzODVlMzJhMDdhNTZkMGE1MjYyNTU1NGQwMzZiNGYxYjNiZDkyZWM3Nzg3MTA5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5ZDMwMWRiNzljYWVmMzYwY2I3ZjYxOGIwMzE0OTE2ZjdmNTA2ZDUzZmExYzAzN2MwMDUyNTY3YjUyYTA4NjcwIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_03c296f8b84848e29538337c9722a50c",
+      "statement": "The with_retry() and with_fallbacks() methods wrap Runnables with resilience behavior, enabling retry with exponential backoff and fallback chains without modifying the original component.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L2101-L2264",
+          "version": "repo-lines-v1:sha256:1c6b113e40b70ceeea092d327be875bebd6cfa6e7ace59766a7a1a72e8eb402e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhYjY3YWM0ZDgxNDNlY2NkN2IzOGFjZjE3ZGM5ZTdmNjI2OGEzNWJhZDQ4MzMwYmFiOTE2NzNjNjg5YjJiZmVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1OTA5YTUzYTYxOGQwMjhlMWQzMDAwYzBhN2FiY2VlY2JlNWZiMzdmNGU1MTFlZmU0NjY0M2ZhZDZlNjY4NzJmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiZjQ2YTI5MGJkYmE2Zjc2N2ViYjBjYzlkNTUwMWRjYTc3YTZhZWZlNzlmYzNkMDZmZGEyYWJhODc2N2E1MmJiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjOTU5MzQ0YmIyMzBhM2Q2YjNjNWVhYTVjMGM4NzcxMjUxYWM1NmM5YmYyYzllYzZlYjJiYmEwYjUxM2I4YmZjIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_f52936eb993a4216a4b0022bdcc2bde8",
+      "statement": "Middleware in agents composes as a stack where the first registered middleware is the outermost layer, with wrap_model_call and wrap_tool_call handlers accumulating commands from inner layers in inner-first order for atomic composition.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L263-L352",
+          "version": "repo-lines-v1:sha256:272c0933c5414b8cecc2e64643c365fa65e76088a91d385cdab443f37076f035:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Y2IwNmM0MzdmOTk3ODhiZDVjOGM4MDY5MjU0MTI5YmVlN2ExNGYzMzc2ZTFjZWY2MTczYWUyMGE3Y2YyZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViZjVlNjBjNjUyNDc1YjVjNzhmMzdlYmI2OTJjNWIxM2NhZDMwMjI4NmM3MDFlYzBhZTAxODVhMWZiMzVjZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4YjE2YTdhZjFkZDFlYzI4OTY3MWRhMWU5MmExY2UzN2I4MTA0YWFlYjZlYjU3MzY1NmU4NWVhMzU0YTNhY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5YTcwM2FiYzE5MWZjZWUxOWIwMzM5NTc3MjEzZWQ2OTMyMGRlOTFmZWMwNDdjZjAzYTY0NTUyYzNiYTY1NjQifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L658-L703",
+          "version": "repo-lines-v1:sha256:eff3fce7f1b6be9da8fc1b26e716da66f1d49decb6b3ebe0ba1695e43d7457ae:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ODdkYjg2YjJiMmZlNjQ1ODFlZGExMWIxNTExNDQzZTAxZjgxMjgzMzhiYWU4ODY5NDQ1ZGE4ZDM4OGVmZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMTFjMDU2N2QwYTVmOWU5YjEzNWY2NWNkMjUzNzJkZmQ2Mjg3NzVmN2MxZWQyNTNmOGJhZDQyZGQyZDY2NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlZTVkZWM0YzJlNzkwMGIzMWU5N2YwM2NiMGEyOWM0OWI5ZDNiZmY2NDZhN2E0NzYyYzI5NzQ3OWZiM2E5ZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhYzE4MjM4ZGQ5NjgxZjA4YmY5MmE3ZGI3ZTFhNGVhYjdjOTY4YWE0MDIwYjk5MDAzM2M3YjI4NTA2MmI3MjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_24473d9a9bde4f21854af62e76334a97",
+      "statement": "create_agent() accepts middleware instances that declare optional state_schema fields which are merged into the agent state during graph construction, enabling middleware to safely extend the state type with custom fields.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L452-L506",
+          "version": "repo-lines-v1:sha256:153d997320fe740d99c810085479142edca654cc31fb26d9e04ac0f4d056aeed:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMzliNTU0NjBlOTk3Y2YxYzM0NTIzYjY2ZjgxYzhmODNmZjg2YzRiNDhlNWE4MmRjMTYwNjk5NzQzOTk2ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjNWI4NzFjNWZhNDJkMDViMWZjMDc5ZjY3MDg1OWM4YzFjMTZhOWU3NjRiNWI0OTYwYTM1MWE4NzBlNmIzYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4M2M2YjE4NWUzZWZiOGMxYjYzYTYyMjI2OGJmNTYxZjViN2ZmOGIwYWQ5NDJkMTk5MDUxMmMyOTJlMmQ2MDEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L840-L960",
+          "version": "repo-lines-v1:sha256:7facb656f68659395c24e07797bf3a2b8b3fb480bdc9513049b81f032da2aa34:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNjg5OTkzM2ZhODgwYTBlZjI2YzJhOGI0OTAwZTM3MTc0Nzg4YWRiNWFlYjA3YmVkNTczMjY0MmIwNDU1ZTBlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyZjg0NjMxMGEwODc0ZjRkMjYyMWRmZTgyM2JhN2I0NjQyMmYxYzBiNzdmZGVmNjI4ZTRjN2JkYzVlNmJjOWNhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNjBmZTg2NTMxMGRlMzMwZjE2YzQyZTY4ZjMwMWMzODNhZjg3MDk2NzVhYjYyN2E0OTcxNmY0YzQ2OWFiOGU0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5ZTQ1YWZkMjE5MDI4YTQ4YjE0NmFhYjhhNmFmYzU2ZWIyOThhNDQ1ODVkMjYzMzExZTBmMDBiMGZjN2Q5MDY3In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_36399f2e81d845f5abfa064ccae85ba3",
+      "statement": "Custom Runnables integrate seamlessly with composition by implementing invoke (required), optionally ainvoke for async I/O, and stream/astream for partial output, becoming immediately composable with the pipe operator.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L150-L210",
+          "version": "repo-lines-v1:sha256:1dd2be9006d88f024fc71afc69a978052f0b86932627ee9acfb9812af81ee3e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMjc0Yjc2ZDllMTBkNzNmMjA1NDc5ZDlmYzBhMTU3YmUyMzM3YjMwYWE3N2RjZWMwNmViY2IyNjY1NmUxOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzNWFlYzdhZTkzMzMzMzg1YTk0NzM0N2QxNTZmZjZiMDUwMmJmZDFhNzEwYmUwN2FlOTY2NjYxMzczNTVkNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0MmFkYjFkYTQzOGYyMWFlODk4M2Y1MGY3ZjUyNGI1NjliN2Y4NzBiMGNhYTgyZWNiMTE1YjA3ZDIzYzQzOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhMDZjYjMxNjJiYzk4YjczYzM3ZGYxODVmYjBjMzg3MWJlZDEzMDE2YWI0MGMzODA3Y2RhZDNlZDk3NzRmMjAifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-19T08:23:50.449Z"
   }
 }

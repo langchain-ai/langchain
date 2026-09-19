@@ -1,11 +1,11 @@
 ---
 type: "Concept"
-title: "Streaming: Token-by-Token Output"
-description: "How streaming works across LLM components and chains, token-by-token delivery via AIMessageChunk, callback integration, and memory/latency tradeoffs."
-tags: [streaming, token-streaming, llm-output, chat-models, callbacks, astream, real-time-feedback]
+title: "Streaming: Incremental Output and Real-Time Control"
+description: "Document streaming modes, token-by-token incremental delivery, asynchronous patterns, backpressure control, and client patterns for interactive agent feedback and responsive UIs."
+tags: [streaming, token-streaming, llm-output, async-patterns, backpressure, astream, astream_events, real-time-feedback]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
@@ -19,7 +19,7 @@ sources:
     resource: repo://libs/core/langchain_core/messages/ai.py
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-19T08:23:50.449Z" }
 ---
 
 ## Overview
@@ -28,7 +28,7 @@ generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
 
 Instead of blocking with `invoke()` until a full response is ready, applications call `stream()` or `astream()` and receive a sequence of partial outputs as they arrive from the model. Each chunk is an `AIMessageChunk` carrying delta content. Callbacks intercept these chunks via the `on_llm_new_token` event, making it possible to observe, log, or react to each token without collecting the entire response first.
 
-Streaming flows through chains—prompts, models, output parsers, and other runnables—preserving incremental output delivery at each stage. By composition, a chain automatically supports streaming if all its components do. This page documents the mechanics of streaming across components, the trade-offs versus non-streaming invoke, and how to integrate streaming into applications.
+Streaming flows through chains—prompts, models, output parsers, and other runnables—preserving incremental output delivery at each stage. By composition, a chain automatically supports streaming if all its components do. This page documents the mechanics of streaming across components, streaming modes and APIs, backpressure and flow control, the trade-offs versus non-streaming invoke, and how to integrate streaming into applications.
 
 ## Synchronous Streaming: stream()
 
@@ -44,24 +44,22 @@ Streaming flows through chains—prompts, models, output parsers, and other runn
 
 3. **Fire on_chat_model_start**: The callback lifecycle begins with `on_chat_model_start`, signaling that LLM invocation is beginning.
 
-4. **Iterate model chunks**: For each `ChatGenerationChunk` from the underlying `_stream()` implementation:
+4. **Acquire rate limit**: If a rate limiter is attached to the model, `stream()` acquires a permit before beginning, blocking until the rate limit allows.
+
+5. **Iterate model chunks**: For each `ChatGenerationChunk` from the underlying `_stream()` implementation:
    - The chunk's message ID is set to a unique run ID if not already present.
    - Response metadata (model provider, latency, etc.) is computed and attached.
    - **on_llm_new_token is fired** with the chunk's content and the full chunk object, allowing callbacks to observe or buffer each token.
    - The chunk message is cast to `AIMessageChunk` and yielded immediately.
    - Chunks are accumulated for later aggregation.
 
-5. **Yield final "last" chunk**: After the model finishes, if output_version is v1 (content-block format), an empty chunk with `chunk_position="last"` is yielded. This signals to parsers and consumers that the stream is complete and that tool_call_chunks should be finalized.
+6. **Yield final "last" chunk**: After the model finishes, if output_version is v1 (content-block format), an empty chunk with `chunk_position="last"` is yielded. This signals to parsers and consumers that the stream is complete and that tool_call_chunks should be finalized.
 
-6. **Callback lifecycle closes**: If successful, `on_llm_end` fires with a merged `ChatGeneration` containing all chunks. If an exception occurs, `on_llm_error` fires with partial accumulation.
+7. **Callback lifecycle closes**: If successful, `on_llm_end` fires with a merged `ChatGeneration` containing all chunks. If an exception occurs, `on_llm_error` fires with partial accumulation.
 
 ### Fallback Behavior
 
 If the model does not implement streaming (checked via `_should_stream(async_api=False)`), `stream()` delegates to `invoke()` and yields a single result cast to `AIMessageChunk`. This ensures all models provide a consistent streaming interface, even if only non-streaming invoke is available.
-
-### Rate Limiting
-
-If a rate limiter is attached to the model, `stream()` acquires a permit before beginning, blocking until the rate limit allows.
 
 ## Asynchronous Streaming: astream()
 
@@ -122,6 +120,7 @@ def on_llm_new_token(
 
 ```python
 from langchain_core.callbacks import StreamingStdOutCallbackHandler
+from langchain_core.runnables import RunnableConfig
 
 callback = StreamingStdOutCallbackHandler()
 
@@ -147,13 +146,13 @@ By default, `Runnable.stream()` yields one full output from `invoke()`. Subclass
 
 ### Streaming through RunnableSequence
 
-**Location**: `repo://libs/core/langchain_core/runnables/base.py#L3075-L3320`
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L3075-L3320`, `#L3764-L3810`
 
 `RunnableSequence` (a chain created with the `|` operator) automatically supports streaming if:
 1. **All upstream components implement transform**: The `transform()` method maps streaming input to streaming output.
 2. **The last component produces chunks**: Output parsers and models implement `transform()` to yield partial results.
 
-If any component does not implement `transform()`, streaming begins only after that component completes (blocking point). Multiple blocking components create multiple buffering points, but the final output still streams from the last component if it supports streaming.
+The `_transform` method in `RunnableSequence` threads each component's `transform()` method in sequence. If a component does not implement `transform()`, it buffers all input and calls `stream()`, creating a blocking point. The output still streams from the final component if it supports streaming.
 
 ### Streaming Example: Model → Parser
 
@@ -172,13 +171,82 @@ for chunk in chain.stream("What is 2+2?"):
 
 When `model.stream()` yields chunks, the parser's `transform()` (or default `stream()`) consumes each chunk and yields its transformation. Text parsers may yield tokens directly; JSON parsers yield partial JSON objects as they become parseable.
 
-## Streaming via stream_events: ChatModelStream
+## Event-Based Streaming: astream_events() and stream_events()
 
-**Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py`
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L1368-L1550`
 
-For advanced use cases requiring detailed event granularity, `BaseChatModel.stream_events(version="v3")` returns a `ChatModelStream` object that exposes **typed projection properties** (`.text`, `.tool_calls`, `.usage`, `.reasoning`, `.output`) which accumulate events as they arrive.
+`Runnable.astream_events()` and `stream_events()` provide a structured, event-based view of execution, complementing token-level streaming.
 
-This is distinct from simple token streaming and is useful for applications needing structured, event-by-event visibility into reasoning, tool calls, and other protocol events. The `ChatModelStream` also fires `on_stream_event` callbacks for each protocol event, not just tokens.
+### Versions
+
+- **v1/v2**: Iterator of `StreamEvent` dicts with `on_chain_start`, `on_llm_new_token`, `on_chain_stream`, `on_chain_end`, etc. Full execution history with parent/child relationships.
+- **v3 (chat models only)**: Returns a `ChatModelStream` object exposing typed projection properties instead of raw event dicts.
+
+### Example: Iterate Events
+
+```python
+async for event in model.astream_events("What is 2+2?", version="v2"):
+    if event["event"] == "on_llm_new_token":
+        print(event["data"]["chunk"].content, end="", flush=True)
+```
+
+## Advanced Streaming: ChatModelStream (v3)
+
+**Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1-L300`
+
+For advanced use cases requiring detailed event granularity and structured access, `BaseChatModel.stream_events(version="v3")` returns a `ChatModelStream` object that exposes **typed projection properties** that accumulate content-block protocol events as they arrive.
+
+### Projections
+
+A `ChatModelStream` provides these properties:
+
+- **.text** — `SyncTextProjection`: Iterable of `str` deltas representing text content. Call `str()` to get the complete accumulated text.
+- **.reasoning** — `SyncTextProjection`: Same interface as `.text` for reasoning content blocks.
+- **.tool_calls** — `SyncProjection`: Iterable of `ToolCallChunk` deltas. Call `.get()` to retrieve finalized `list[ToolCall]`.
+- **.usage** — `UsageProjection`: Usage metadata (tokens, cost).
+- **.output** — `AIMessage`: Blocking property that drains all events and returns the final assembled `AIMessage`.
+
+### Backpressure and Flow Control
+
+**ChatModelStream** implements **pull-based backpressure** via the `_request_more` callback. When a projection's iterator catches up to the event buffer and the stream is not yet complete, the iterator calls `_request_more()` to pull more events from the producer. This allows:
+
+- **Lazy evaluation**: Projections do not drain the stream unless explicitly consumed.
+- **Multiple consumers**: Each projection can be independently iterated; all events are replayed from the start via internal buffering.
+- **Backpressure without blocking**: The producer is not forced to emit all events at once; the consumer controls the pace via iteration.
+
+### Example: Structured Streaming
+
+```python
+stream = model.stream_events(messages, version="v3")
+
+# Consume text as it arrives
+for text_delta in stream.text:
+    print(text_delta, end="", flush=True)
+
+# Or get the full finalized text
+full_text = str(stream.text)
+
+# Tool calls accumulated incrementally
+for tool_call_delta in stream.tool_calls:
+    print(f"Tool: {tool_call_delta.get('name')}")
+
+# Get final message when stream finishes
+output: AIMessage = stream.output
+print(f"Final tool calls: {output.tool_calls}")
+```
+
+### Async Variant
+
+**Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1280-L1500`
+
+`AsyncChatModelStream` provides the same projections for async contexts. Projections use `async for` iteration:
+
+```python
+stream = await model.astream_events(messages, version="v3")
+
+async for text_delta in stream.text:
+    print(text_delta, end="", flush=True)
+```
 
 ## Memory and Latency Trade-offs: stream() vs invoke()
 
@@ -192,11 +260,22 @@ This is distinct from simple token streaming and is useful for applications need
 ### stream()
 
 - **Latency**: Yields the first token as soon as available; responsive to user.
-- **Memory**: Requires buffering of accumulated chunks if the caller collects them.
+- **Memory**: Requires buffering of accumulated chunks if the caller collects them. Projections in v3 stream_events buffer events internally for replay semantics.
 - **Responsiveness**: Non-blocking; enables progressive display.
 - **Use case**: Web UIs, console applications, user-facing interactions where real-time feedback improves UX.
 
 In practice, streaming does not add significant latency compared to invoke; the model produces tokens at the same rate. The difference is **when tokens are delivered to the caller**. Stream delivery is preferable for interactive applications because users see output appearing in real-time rather than a blank screen until the full response is ready.
+
+### Backpressure Considerations
+
+When streaming, the rate at which the producer sends events may exceed the rate at which the consumer processes them. Backpressure mechanisms control this:
+
+- **Pull-based (ChatModelStream v3)**: The consumer's iterator calls `_request_more()` when it needs the next batch of events. The producer only emits events on demand. This is efficient for slow consumers.
+- **Callback buffering (on_llm_new_token)**: Callbacks can buffer or drop tokens without blocking the producer. If a callback is slow, it does not slow the producer; events are lost if the consumer cannot keep up.
+
+Choose the backpressure model based on your application:
+- **Critical content**: Use pull-based iteration (ChatModelStream) to ensure no events are missed.
+- **Best-effort display**: Use callbacks (on_llm_new_token) for responsive UIs; dropped tokens are acceptable.
 
 ## Integration Patterns
 
@@ -204,6 +283,7 @@ In practice, streaming does not add significant latency compared to invoke; the 
 
 ```python
 from langchain_core.callbacks import StreamingStdOutCallbackHandler
+from langchain_core.runnables import RunnableConfig
 
 callback = StreamingStdOutCallbackHandler()
 for _ in model.stream(
@@ -226,6 +306,7 @@ print(result)  # Final complete response
 
 ```python
 from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.runnables import RunnableConfig
 
 class MyCallback(BaseCallbackHandler):
     def on_llm_new_token(self, token, **kwargs):
@@ -246,6 +327,24 @@ async def chat_endpoint(messages):
     async for chunk in model.astream(messages):
         # Yield to HTTP client as server-sent event
         yield f"data: {chunk.content}\n\n"
+```
+
+### Structured Streaming with Tool Calls
+
+```python
+stream = model.stream_events(
+    [{"role": "user", "content": "Use tool X with arg Y"}],
+    version="v3"
+)
+
+# Consume structured content as it arrives
+for tool_delta in stream.tool_calls:
+    print(f"Tool call: {tool_delta.get('id')} - {tool_delta.get('name')}")
+
+# Wait for the complete message
+final_message = stream.output
+for tool_call in final_message.tool_calls:
+    print(f"Final: {tool_call['name']}({tool_call['args']})")
 ```
 
 ## Lifecycle and Error Handling
@@ -275,6 +374,11 @@ When a stream exits (via break, exception, or normal completion), any buffered c
 Subclasses of `BaseChatModel` override `_stream()` and/or `_astream()` to implement model-specific streaming:
 
 ```python
+from typing import Iterator, Any
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.outputs.chat_generation import ChatGenerationChunk
+
 class MyModel(BaseChatModel):
     def _stream(
         self,
@@ -294,53 +398,22 @@ The `stream()` method handles callbacks, merging, and lifecycle; subclasses only
 Output parsers can override `transform()` to stream partial results:
 
 ```python
-class MyParser(BaseGenerationOutputParser[T]):
+from typing import Iterator, Any
+from langchain_core.output_parsers import BaseGenerationOutputParser
+from langchain_core.runnables import RunnableConfig
+
+class MyParser(BaseGenerationOutputParser[str]):
     def transform(
         self,
         input: Iterator[str | BaseMessage],
         config: RunnableConfig | None = None,
         **kwargs: Any,
-    ) -> Iterator[T]:
-        buffer = ""
-        for chunk in input:
-            buffer += chunk.content or ""
-            # Attempt partial parsing
-            if partial := self.parse_result([Generation(text=buffer)], partial=True):
-                yield partial
+    ) -> Iterator[str]:
+        """Stream partial parsing results."""
+        for item in input:
+            # Yield partial or complete parses as items arrive
+            if isinstance(item, AIMessageChunk):
+                yield self._parse_partial(item.content)
 ```
 
-This allows parsers to yield progressively more complete results as tokens arrive.
-
-## Configuration and Operations
-
-### Disabling Streaming
-
-Models respect the `stream=False` parameter or a falsy check in `_should_stream()`. Calling `invoke()` directly bypasses streaming even if the model supports it.
-
-### Configuring Callbacks
-
-```python
-config = RunnableConfig(
-    callbacks=[StreamingStdOutCallbackHandler()],
-    tags=["user-interaction"],
-    metadata={"session_id": "..."},
-)
-for chunk in model.stream(messages, config=config):
-    pass
-```
-
-Callbacks, tags, and metadata propagate through the callback lifecycle.
-
-### Async Streaming
-
-Use `astream()` in async contexts and `await` on async callbacks:
-
-```python
-async for chunk in model.astream(messages):
-    # Process chunks asynchronously
-    await handle_chunk(chunk)
-```
-
-## Conclusion
-
-Streaming is central to building responsive LangChain applications. By yielding output token-by-token and firing callbacks per token, streaming enables real-time user feedback without sacrificing performance. The protocol is consistent across models, chains, and parsers, making it easy to compose streaming operations and observe output at any level of the application stack.
+Parsers that support streaming make chains end-to-end streaming.

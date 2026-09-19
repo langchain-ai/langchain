@@ -1,17 +1,17 @@
 ---
 type: Agent Runtime Architecture
-title: Agent Execution Flow and Loop Control
-description: Traces the runtime lifecycle of an agent from user input through model invocation, tool dispatch, and loop termination conditions, with detailed state management and middleware integration points.
+title: Agent Execution Flow and Control
+description: Detailed walkthrough of agent execution from user input through model invocation, tool dispatch, loop control, and termination conditions, including state management, middleware hooks, invocation patterns, and streaming modes.
 tags: [agent-execution, control-flow, state-machine, loop-control, tool-dispatch, middleware, langchain]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-19T08:23:50.449Z" }
 ---
 
 ## Overview
@@ -200,12 +200,12 @@ After the model is invoked, the graph checks whether to dispatch tools:
 
 ### Tools-to-Model Decision (_make_tools_to_model_edge)
 
-After tool execution completes:
+After tool execution completes, this edge determines whether to continue the loop or exit:
 
-1. **No AIMessage**: If the message list is corrupted, jump to model for recovery.
+1. **No AIMessage** (recovery): If no AIMessage exists (corrupted state), jump back to model node to recover.
 2. **Return Direct Tools**: If all executed client-side tools have `return_direct=True`, exit the loop immediately.
 3. **Structured Output Executed**: If any executed tool is a structured output tool, exit (the response is ready).
-4. **Default**: Continue the loop, jumping back to `before_model` so the model can process tool results.
+4. **Default**: Continue the loop, jumping back to `loop_entry_node` (typically `before_model` if present, else `model`) so the model can process tool results.
 
 ### Model-to-Model Decision (_make_model_to_model_edge)
 
@@ -425,6 +425,64 @@ State machine showing the progression from agent start through model invocation,
 - **Structured Output** (`/openwiki/structured-output.md`): In-depth guide to response formats, strategies, and schema validation.
 - **Messages** (`/openwiki/messages.md`): Message types, serialization, and conversation management.
 - **Agent Factory** (`/openwiki/agent-factory.md`): How `create_agent()` constructs the StateGraph from configuration.
+
+## Invocation and Streaming Modes
+
+Agents support multiple invocation patterns:
+
+### Synchronous Invocation
+
+The `invoke()` method blocks until the agent loop completes:
+
+```python
+result = agent.invoke({"messages": [HumanMessage("What is 2+2?")]})
+print(result["messages"][-1].content)
+```
+
+The agent runs to completion (termination condition met) and returns the final state dictionary with all messages.
+
+### Asynchronous Invocation
+
+The `ainvoke()` method is the async variant:
+
+```python
+result = await agent.ainvoke({"messages": [HumanMessage("What is 2+2?")]})
+```
+
+All middleware hooks and tool execution use async-capable variants when available.
+
+### Streaming via stream_events (v3 Protocol)
+
+For real-time visibility into agent execution, `stream_events(version="v3")` returns an `AgentRunStream` with typed projections:
+
+```python
+run = agent.stream_events({"messages": [HumanMessage("What tools exist?")]}, version="v3")
+
+# Access tool calls as they complete
+for tool_call in run.tool_calls:  # type: ignore[attr-defined]
+    print(f"Tool: {tool_call.tool_name}, ID: {tool_call.tool_call_id}")
+    for delta in tool_call.output_deltas:
+        print(f"  Output delta: {delta}")
+
+# Access final messages
+for msg in run.messages:
+    print(f"{msg.type}: {msg.content}")
+```
+
+The v3 protocol automatically registers `ToolCallTransformer` to expose tool calls and `MessagesTransformer` to expose messages. User-supplied transformers are appended after built-in transformers.
+
+### Streaming via stream()
+
+The `stream()` and `astream()` methods yield state updates at each graph node:
+
+```python
+for chunk in agent.stream({"messages": [HumanMessage("Help with X")]}, stream_mode="updates"):
+    print(chunk)  # dict of {node_name: state_updates}
+```
+
+Supported `stream_mode` values (from LangGraph):
+- `"updates"`: Node-by-node state dictionary updates (most common for agents)
+- `"values"`: Full state dict after each node completes
 
 ## Configuration and Operations
 

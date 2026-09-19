@@ -1,10 +1,11 @@
 ---
 type: "Reference"
-title: "CI/CD Workflows: GitHub Actions and Release Process"
-openwiki_generated: true
+title: "CI/CD Workflows and Release Process"
+description: "Overview of GitHub Actions workflows for testing, releasing packages, and updating documentation, including dependencies, matrix configurations, and release automation."
+tags: ["CI/CD", "GitHub Actions", "release process", "testing", "automation"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-34e57b5a3a0c875639ab72a7
     resource: repo://.github/scripts/check_diff.py
@@ -28,11 +29,10 @@ sources:
     resource: repo://.github/workflows/openwiki-update.yml
   - id: openwiki-source-f8781d847f6481a966a44a68
     resource: repo://.github/workflows/pr_labeler.yml
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-19T08:23:50.449Z" }
 ---
 
-
-# CI/CD Workflows: GitHub Actions and Release Process
+# CI/CD Workflows and Release Process
 
 LangChain employs a sophisticated CI/CD system built on GitHub Actions that automates testing, linting, quality checks, and release management across a monorepo structure. The system emphasizes efficiency through intelligent change detection, parallel matrix testing, and strict release gates.
 
@@ -175,6 +175,8 @@ Security rationale: Separates build (no credentials) from publishing (trusted pu
 5. **Prerelease dependency detection**: Fails if any dependencies use prerelease constraints (unless release itself is prerelease)
 6. **Integration tests**: For partner packages only, runs `make integration_tests` with live API credentials
 
+The pre-release checks disable caching intentionally to catch missing dependency declarations that would otherwise be masked by cached virtual environments.
+
 ### PyPI Publishing
 
 **Job: `test-pypi-publish`** (TestPyPI):
@@ -224,7 +226,14 @@ Scheduled daily (1 PM UTC) with manual dispatch override capability.
 - Runs per-package `make integration_tests` with all live API credentials injected
 - Uses concurrency locks per (package, python-version) to serialize same-package runs and prevent credential conflicts
 
-**Credentials**: Receives 30+ environment variables covering OpenAI, Anthropic, Google, AWS, Azure, Groq, MistralAI, HuggingFace, and more.
+**Credentials**: Receives 30+ environment variables covering OpenAI, Anthropic, Google, AWS, Azure, Groq, MistralAI, HuggingFace, Cohere, and many more. External repositories (google-genai, google-vertexai, langchain-aws) have special per-package install logic that overlays local editable core and standard-tests packages.
+
+**Dependent package testing**:
+
+**Job: `test-dependents`**:
+- Tests external dependent packages like deepagents against current monorepo versions
+- Uses Python 3.11 and 3.14 (bounded to package-specific requirements)
+- Explicitly overrides PyPI resolution to use local editable installs for testing against branch versions
 
 ## Auto-Labeling Workflows
 
@@ -232,10 +241,13 @@ Scheduled daily (1 PM UTC) with manual dispatch override capability.
 
 Fires when issues are opened or edited:
 
-1. Parses issue body for `## Package` section
-2. Maps package name (e.g., "langchain-openai") to label (e.g., "openai")
-3. Adds/removes labels to match selected package(s)
-4. Supports both dropdown (single) and checkbox (multi-select) formats
+1. Parses issue body for `## Package` section (supporting both dropdown and checkbox formats)
+2. Maps package names (e.g., "langchain-openai") to corresponding issue labels (e.g., "openai")
+3. Maintains comprehensive mapping table for all core and partner packages
+4. Adds/removes labels to match selected package(s)
+5. Supports both dropdown (single selection) and checkbox (multi-select) formats
+
+Label mapping covers: langchain, langchain-openai, langchain-anthropic, langchain-classic, langchain-core, langchain-model-profiles, langchain-tests, langchain-text-splitters, and all partner packages (chroma, deepseek, exa, fireworks, groq, huggingface, mistralai, nomic, ollama, openrouter, perplexity, qdrant, typesafe, xai).
 
 ### PR Labeling (`pr_labeler.yml`)
 
@@ -260,7 +272,7 @@ Runs on schedule (8 AM UTC daily) or manual dispatch:
 5. Creates/updates pull request with changes
 6. Preserves partial progress on failure for baseline establishment
 
-Uses LangSmith tracing for observability.
+Uses LangSmith tracing for observability. OpenWiki model defaults to Claude Haiku 4.5 with Anthropic backend.
 
 ## Dependency Pinning & Version Management
 
@@ -313,11 +325,17 @@ Two modes:
 ### Environment Variables
 
 **Frozen dependency control**:
-- `UV_FROZEN`: Prevents automatic dependency resolution
-- `UV_NO_SYNC`: Skips uv sync in build steps (manual sync used instead)
+- `UV_FROZEN=true`: Prevents automatic dependency resolution
+- `UV_NO_SYNC=true`: Skips uv sync in build steps (manual sync used instead)
 
 **Linting & formatting**:
 - `RUFF_OUTPUT_FORMAT: github`: Inline GitHub annotations for linter violations
+
+**OpenWiki**:
+- `OPENWIKI_PROVIDER: anthropic`: Claude backend for documentation generation
+- `OPENWIKI_MODEL_ID: claude-haiku-4-5`: Model selection
+- `OPENWIKI_LANGSMITH_API_KEY`: LangSmith workspace authentication
+- `ANTHROPIC_API_KEY`: Anthropic API credentials
 
 **LangSmith tracing** (optional):
 - `LANGSMITH_API_KEY`: Optional tracing of CI workflows themselves

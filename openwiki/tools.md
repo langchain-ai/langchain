@@ -1,10 +1,11 @@
 ---
 type: "Reference"
-title: "Form 1: No arguments (name from function)"
-openwiki_generated: true
+title: "Tools: Defining, Converting, and Calling"
+description: "Comprehensive guide to LangChain's tool system: converting functions to tools via decorators, input schema generation and validation, execution lifecycle, error handling, tool organization, and integration with agents."
+tags: [tool, decorator, schema, agent, runnable, structured-tool, validation, error-handling]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-9861ba5cf0c42c142cf732f9
     resource: repo://libs/core/langchain_core/messages/tool.py
@@ -18,9 +19,8 @@ sources:
     resource: repo://libs/core/langchain_core/tools/simple.py
   - id: openwiki-source-b816e651a5890bde13cf8013
     resource: repo://libs/core/langchain_core/tools/structured.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-19T08:23:50.449Z" }
 ---
-
 
 ## Overview
 
@@ -73,7 +73,7 @@ When `infer_schema=True` (default), the tool examines the function signature to 
 - Function docstring is parsed (if `parse_docstring=True`) following Google style to extract parameter descriptions
 - Descriptions are merged from: Annotated metadata → docstring Args section → none
 - Injected arguments (those annotated with `InjectedToolArg`, `InjectedToolCallId`, or `ToolRuntime`) are automatically excluded from the schema sent to models but re-injected at runtime
-- Reserved parameter names (`run_manager`, `callbacks`, `config`) are filtered from the user-facing schema
+- Reserved parameter names (`run_manager`, `callbacks`) are filtered from the user-facing schema
 
 **Memoization:** The `tool_call_schema` property builds and caches a subset model class per tool instance, excluding injected arguments. The schema class's `model_json_schema()` method is patched to cache the generated dict, preventing expensive regeneration on every agent loop.
 
@@ -463,7 +463,7 @@ Tools expose run_manager in `_run()` signature to allow direct callback invocati
 
 **Reserved Parameter Names:**
 
-Parameters named `config`, `run_manager`, or `callbacks` are filtered from the tool schema because they conflict with LangChain's runtime injection. Use `ToolRuntime` annotation to access runtime state instead.
+Parameters named `config`, `run_manager`, or `callbacks` have special handling. The `run_manager` and `callbacks` parameters are filtered from the tool schema because they conflict with LangChain's runtime injection. The `config` parameter (used for RunnableConfig) collides with injected values and will cause runtime errors if named as a user argument. Use `ToolRuntime` annotation to access runtime state, context, and configuration instead.
 
 **Provider Extras:**
 

@@ -5,7 +5,7 @@ description: "Explain the Runnable protocol and how it enables composable chaini
 tags: [runnable, lcel, composition, invoke, stream, batch, async, chaining]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8bf3d528d2fe2628f24d10c54b6445ad11f8ec7abae99049815d037c83fdaf08",
+  "pageVersion": "sha256:9f1067ae7d88591d049d001243cff1374c150da2d1ff5750cc6c05d3fce0b75c",
   "claims": [
     {
       "id": "claim_2b394255185b4645a1dcf0e8c628a197",
@@ -22,25 +22,25 @@
     },
     {
       "id": "claim_500db96bd1a849b0bf87fcfc658df506",
-      "statement": "Cassettes are stored in `tests/cassettes/` at the package root or in module-specific subdirectories like `tests/integration_tests/chat_models/cassettes/test_base/`. The `vcr_cassette_dir` fixture dynamically computes the correct cassette directory per test module.",
+      "statement": "Cassettes are stored at `tests/cassettes/` (the default cassette_library_dir) at the package root level with flat naming based on test function names (e.g., test_invoke.yaml.gz, TestClassName.test_method.yaml.gz) and parametrization (e.g., test_name[param0].yaml.gz, test_name[param1].yaml.gz). Packages can override cassette_library_dir with a custom vcr_cassette_dir fixture to use nested structures.",
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/tests/integration_tests/conftest.py#L28-L33",
           "version": "repo-lines-v1:sha256:c07f93990d02fa5f77fa71acb95580ada8744a98c94f91d72e1381f0077d3147:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWI1NmVlNDI4YWJmYjA5YjhmNTYxMmYwNmVjMTMwMDdlZWM4MWNhNTQyNWZmNmIyMGNhZWZmZjFlYjhjMDQ2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJjZDJhYmU5MTg5M2Y3YmI0YTQzYjE2NDJkZjA3M2VkNzAyODdlOTNmNjE1MTY4YzE1OTNjNDM0ZDE5NzVjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDFjNGI2NjE0MWY3MWE4OWJmOGRhZjNlM2E1YTNjMTA1NTgxYWZlYTZhYmNmYTczYTlmNWVjYTE3YmExN2IxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://libs/partners/openai/tests/conftest.py#L1-L10",
-          "version": "repo-lines-v1:sha256:178a83406b111cae8b9945220d636751deb8ed3bd88e5f84b74a590e38709789:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmMjM0NzlhNmI0MWE4ZTk0ZGQ1OTk5ZTM2ODM0MWEwNGIxMzU5NDc5ZmIzMzgxMDgwOTYwYjlhZWUyMmUyOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmZjI1MDY3NDRlNzQ5NDAzNzkyODEwNTU5ZTYwNTkzNGRhNzUzMmFiMTcxYmQxNTdkN2E0ODBjNTgzOWU4YWEifQ"
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py#L130-L143",
+          "version": "repo-lines-v1:sha256:0144da3602191e08b1c7c3a3d0ea02abb6d35b5ffbf3a7e28f89554b904f1087:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzhlNTQ1YjAyMTRlNDM2NDIxYTRiMzBiZDQ0NThjNDgxZGY5OTY5NWRkNjRmZjhkNmM1MDkxMTZjMmE5NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMzc1ZjdjZDVkMWMzYWI1YzFlMjE1N2ViNjFhNjRhMDRlOTZiZDA1YTg1NThkYmY0MWRmZWUxMTE4YjcxMDcifQ"
         }
       ]
     },
     {
       "id": "claim_54d8ddd8a7164b23ad0b43dcda38d1b6",
-      "statement": "LangChain scrubs sensitive data from cassettes before saving via multi-layer redaction: request/response headers (authorization, cookies, organization headers) are replaced with PLACEHOLDER; request/response bodies undergo recursive JSON parsing to redact OAuth secret fields (access_token, refresh_token, etc.) and JWT-shaped strings; binary payloads (PNG, JPEG, PDF) are skipped for performance since JWTs are ASCII.",
+      "statement": "LangChain scrubs sensitive data from cassettes before saving via multi-layer redaction: all request and response headers are replaced with **REDACTED**; request URIs are replaced with **REDACTED**; request/response bodies undergo recursive JSON parsing to redact OAuth secret fields (access_token, refresh_token, id_token, code, code_verifier, device_code, client_secret) and JWT-shaped strings; binary payloads (PNG, JPEG, PDF, audio, ZIP, etc.) are skipped for performance since JWTs and OAuth secrets are ASCII.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/tests/conftest.py#L13-L163",
-          "version": "repo-lines-v1:sha256:0585222ed51eed033d0d51b9e73183d4c7848ad754faa70ae3fc38813a59a6ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjNWJjMjVmOTBlNjI4MWQyMWIyOWUyY2M5YmJhYzdiYzQxYTU4MzRiZjhhNTdkOTQzMDMyMzk2M2QxZTQ3YThmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmM2NjMWQwNTZiYWIwYTc1Mzg1ZWY4ODg1MzRiYTdhNDFlYzY0NTAyODAxYmRlZmI0MjUwNjliYjJkYmNlMDBhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNWMxYzQ2MmUyYTM5ZDc0NzU5ZjVlMWIxMjZmNzY4M2EyYjczMDExOGUxOGY1MTIyYjA4Y2VkZWViNjUwZTIzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkYTc3MDc4NjBiMzhmZTcwNmZmNTJkZTNkNTUzZGFhN2QwZjI5ZDI1NWI0M2ZjMTE4OGMyMjQ1OGIyNmRjOWViIn0"
+          "resource": "repo://libs/partners/openai/tests/conftest.py#L13-L187",
+          "version": "repo-lines-v1:sha256:5f44337e39382b7b881604a9db2369ef8c88b98b57d43ded55ada0c0156f033a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjNWJjMjVmOTBlNjI4MWQyMWIyOWUyY2M5YmJhYzdiYzQxYTU4MzRiZjhhNTdkOTQzMDMyMzk2M2QxZTQ3YThmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3MjA4NTMyOTEwY2ZjZWZlNTg3MDNkNDM0NDVhOWMyMDJiMTI0ODc3MmYxNmVmNWExNjMwZTYyZjI1ZGYwMjc0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNWMxYzQ2MmUyYTM5ZDc0NzU5ZjVlMWIxMjZmNzY4M2EyYjczMDExOGUxOGY1MTIyYjA4Y2VkZWViNjUwZTIzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MjM3NWY3Y2Q1ZDFjM2FiNWMxZTIxNTdlYjYxYTY0YTA0ZTk2YmQwNWE4NTU4ZGJmNDFkZmVlMTExOGI3MTA3In0"
         },
         {
           "resource": "repo://libs/partners/openai/tests/conftest.py#L166-L187",
@@ -179,6 +179,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-19T08:23:50.449Z"
   }
 }

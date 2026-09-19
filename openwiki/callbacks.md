@@ -5,7 +5,7 @@ description: "Document the callback handler architecture, integration with runna
 tags: ["callbacks", "observability", "handlers", "tracing", "streaming", "langsmith"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-08T08:27:09.597Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py

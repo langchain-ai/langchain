@@ -5,7 +5,7 @@ description: "How to write integration tests that call real model APIs with VCR 
 tags: [integration-tests, vcr, cassettes, api-testing, pytest, ci-cd, model-testing]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-bcf7be66f36f862f639f3c7a
     resource: repo://libs/langchain_v1/tests/integration_tests/conftest.py
@@ -27,7 +27,7 @@ sources:
     resource: repo://libs/partners/openai/tests/integration_tests/embeddings/test_base.py
   - id: openwiki-source-db02c1dda8563ab005cd9d62
     resource: repo://libs/standard-tests/langchain_tests/conftest.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-19T08:23:50.449Z" }
 ---
 
 ## Overview
@@ -95,6 +95,8 @@ Credentials are then accessed via `os.environ["OPENAI_API_KEY"]` or similar in t
 
 **VCR** (Video Cassette Recorder, implemented by the `vcrpy` library) records HTTP interactions—requests and responses—the first time a test runs with a live API. On subsequent runs, VCR replays the recorded cassette instead of making live network calls.
 
+LangChain uses the **pytest-recording** plugin to integrate VCR with pytest. The plugin provides the `@pytest.mark.vcr` marker and automatic cassette discovery/management based on test names and the `vcr_config()` fixture.
+
 ### Recording Phase (Once, by Developers)
 
 When a new integration test is written or an existing test's behavior changes:
@@ -116,28 +118,24 @@ When running tests:
 
 ### Cassette Location
 
-Cassettes are stored relative to test modules in a `cassettes/` subdirectory:
+Cassette storage is configured via the `vcr_config()` fixture's `cassette_library_dir` setting. The default (from `langchain_tests.conftest.base_vcr_config()`) is `tests/cassettes/`, which is a flat directory at the package root:
 
 ```
 libs/partners/openai/tests/
-  integration_tests/
-    chat_models/
-      test_base.py
-      cassettes/
-        test_base/
-          TestChatOpenAICodexStandard.test_invoke.yaml.gz
-          test_chat_openai.yaml.gz
+  cassettes/
+    TestChatOpenAICodexStandard.test_invoke.yaml.gz
+    test_langchain_openai_embeddings_equivalent_to_raw.yaml.gz
+    test_streaming_tool_call_v1_v2_parity.yaml.gz
+    TestChatOpenAICodexStandard.test_stream[model0].yaml.gz
+    TestChatOpenAICodexStandard.test_stream[model1].yaml.gz
 ```
 
-Or at the test root:
+Cassette filenames are derived from the test function name and any parametrization:
+- Sync function test: `test_invoke.yaml.gz`
+- Class-based test: `TestClassName.test_method.yaml.gz`
+- Parametrized test: `test_name[param0].yaml.gz`, `test_name[param1].yaml.gz`
 
-```
-libs/partners/openai/tests/cassettes/
-  test_langchain_openai_embeddings_equivalent_to_raw.yaml.gz
-  test_streaming_tool_call_v1_v2_parity.yaml.gz
-```
-
-The fixture `vcr_cassette_dir` (from `conftest.py`) computes the correct directory per test module:
+Some packages may override this location via a custom `vcr_cassette_dir` fixture:
 
 ```python
 @pytest.fixture(scope="module")
@@ -146,24 +144,30 @@ def vcr_cassette_dir(request: pytest.FixtureRequest) -> str:
     return str(module.parent / "cassettes" / module.stem)
 ```
 
+This would place cassettes in a subdirectory tree mirroring the test module structure.
+
 ## Security: Scrubbing Sensitive Data
 
 VCR cassettes are **committed to git** and **visible to the world** (in public repositories). To prevent accidental exposure of API keys, JWTs, OAuth tokens, and other secrets, LangChain uses a multi-layer scrubbing pipeline.
 
 ### What Gets Redacted
 
-**Headers** (configured in `conftest.py`):
+**All request and response headers** are redacted to `**REDACTED**` by the `remove_request_headers` and `remove_response_headers` functions in `conftest.py`. Additionally, specific headers are explicitly listed in `_EXTRA_HEADERS` for clarity:
 
 ```python
 _EXTRA_HEADERS = [
     ("openai-organization", "PLACEHOLDER"),
     ("user-agent", "PLACEHOLDER"),
-    ("authorization", "PLACEHOLDER"),
+    ("x-openai-client-user-agent", "PLACEHOLDER"),
+    ("chatgpt-account-id", "PLACEHOLDER"),
     ("cookie", "PLACEHOLDER"),
+    ("set-cookie", "PLACEHOLDER"),
 ]
 ```
 
-**Request and Response Bodies** (OAuth secret fields):
+**Request URIs** are redacted to `**REDACTED**` (since they may contain API endpoints or other identifiers).
+
+**Request and Response Body Fields** (OAuth secret fields):
 
 ```python
 _OAUTH_SECRET_FIELDS = frozenset({
@@ -171,6 +175,7 @@ _OAUTH_SECRET_FIELDS = frozenset({
     "refresh_token",
     "id_token",
     "code",
+    "code_verifier",
     "device_code",
     "client_secret",
 })
@@ -180,9 +185,9 @@ Redaction is applied with specialized handlers:
 
 - **JSON bodies**: Recursively walks the parsed JSON tree and redacts any field matching `_OAUTH_SECRET_FIELDS`
 - **Form-encoded bodies**: Splits on `&` and redacts matching keys
-- **JWT patterns**: Uses regex to detect and redact JWT-shaped strings anywhere in the body
+- **JWT patterns**: Uses regex to detect and redact JWT-shaped strings (matches `eyJ...` patterns with base64url characters)
 
-**Binary payloads** (PNG, JPEG, PDF, audio, etc.) are **skipped**—their magic bytes are detected and the scrubbing stack is bypassed for performance (JWTs and OAuth secrets are ASCII, so binary bodies can't carry them).
+**Binary payloads** (PNG, JPEG, PDF, audio, ZIP, etc.) are **skipped**—their magic bytes are detected and the scrubbing stack is bypassed for performance (JWTs and OAuth secrets are ASCII, so binary bodies can't carry them).
 
 ### Scrubbing Configuration in conftest.py
 
@@ -238,11 +243,11 @@ def test_chat_openai_invoke():
     assert response.content  # Assert the response is non-empty
 ```
 
-The `@pytest.mark.vcr` marker tells pytest-recording to automatically:
+The `@pytest.mark.vcr` marker activates pytest-recording's VCR integration, which automatically:
 
-1. Look for a cassette file named `test_chat_openai_invoke.yaml.gz` in the module's `cassettes/` directory
-2. Use VCR to intercept HTTP calls
-3. Replay the cassette if it exists; record a new one if it doesn't (or if `--record-mode=new_episodes` is passed)
+1. Detects a cassette file (derived from the test function name) in the configured cassette directory
+2. Uses VCR to intercept HTTP calls made by httpx/requests
+3. Replays the cassette if it exists (in `--record-mode=once` or `--record-mode=none`), or records a new one (in `--record-mode=new_episodes` or `--record-mode=once` if the cassette is missing)
 
 ### Markers for Test Classification
 
@@ -425,7 +430,7 @@ interactions:
 version: 1
 ```
 
-Headers and secrets are replaced with `PLACEHOLDER` or `**REDACTED**`:
+All headers and the URI are replaced with `**REDACTED**`:
 
 ```yaml
 request:
@@ -433,7 +438,16 @@ request:
     authorization:
       - "**REDACTED**"
     openai-organization:
-      - "PLACEHOLDER"
+      - "**REDACTED**"
+    user-agent:
+      - "**REDACTED**"
+  uri: "**REDACTED**"
+response:
+  headers:
+    content-type:
+      - "application/json"
+    set-cookie:
+      - "**REDACTED**"
 ```
 
 ### Inspecting Cassettes
@@ -584,7 +598,7 @@ VCR supports several record modes:
 
 ### Request Matching
 
-By default, VCR matches requests by:
+By default (via `base_vcr_config()`), VCR matches requests by:
 
 ```python
 match_on: ["method", "uri", "body"]
@@ -592,15 +606,18 @@ match_on: ["method", "uri", "body"]
 
 This means: "A request matches a cassette if the HTTP method, URI, and body are identical."
 
-For APIs with non-deterministic bodies (e.g., timestamps in the request), you can customize matchers or use `allow_playback_repeats` to reuse the same response for multiple request variants.
-
-OpenAI tests use a custom `json_body` matcher:
+However, since **URIs and request bodies are redacted during recording**, OpenAI tests override the matcher with a custom `json_body` matcher:
 
 ```python
-config["match_on"] = ["json_body"]  # Only match on JSON-parsed body (ignores whitespace/key order)
+config["match_on"] = ["json_body"]  # Match on parsed JSON body (ignores whitespace/key order)
 ```
 
-This allows cassettes to match even if JSON key order differs.
+This custom matcher:
+1. Parses both the recorded and current request body as JSON
+2. Compares the parsed JSON objects (ignoring whitespace and key order differences)
+3. Falls back to byte-for-byte comparison if either body is not valid JSON
+
+This allows cassettes to match even if JSON formatting differs, and works around URI redaction by matching only on the semantic request payload.
 
 ## Integration with CI/CD
 
