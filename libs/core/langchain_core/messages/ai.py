@@ -307,8 +307,8 @@ class AIMessage(BaseMessage):
     @model_validator(mode="before")
     @classmethod
     def _backwards_compat_tool_calls(cls, values: dict[str, Any]) -> Any:
-        check_additional_kwargs = not any(
-            values.get(k)
+        check_additional_kwargs = all(
+            values.get(k) is None
             for k in ("tool_calls", "invalid_tool_calls", "tool_call_chunks")
         )
         if check_additional_kwargs and (
