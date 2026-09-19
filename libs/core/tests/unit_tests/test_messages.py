@@ -496,6 +496,65 @@ def test_message_chunk_to_message() -> None:
     assert AIMessageChunk(**chunk.model_dump()) == chunk
 
 
+def test_empty_tool_calls_not_hydrated_from_additional_kwargs() -> None:
+    raw = {
+        "id": "call_1",
+        "type": "function",
+        "function": {"name": "secret_tool", "arguments": '{"q": 1}'},
+    }
+    hydrated = AIMessage(content="x", additional_kwargs={"tool_calls": [raw]})
+    assert hydrated.tool_calls[0]["name"] == "secret_tool"
+
+    cleared = AIMessage(
+        content="x",
+        tool_calls=[],
+        additional_kwargs={"tool_calls": [raw]},
+    )
+    assert cleared.tool_calls == []
+    assert load(dumpd(cleared), allowed_objects=[AIMessage]).tool_calls == []
+    rebuilt = AIMessage(
+        **{k: v for k, v in cleared.model_dump().items() if k != "type"}
+    )
+    assert rebuilt.tool_calls == []
+
+    # Explicit non-empty tool_calls is preserved
+    explicit_tc = {"name": "keep", "args": {"a": 1}, "id": "2", "type": "tool_call"}
+    msg_explicit = AIMessage(
+        content="x",
+        tool_calls=[explicit_tc],
+        additional_kwargs={"tool_calls": [raw]},
+    )
+    assert len(msg_explicit.tool_calls) == 1
+    assert msg_explicit.tool_calls[0]["name"] == "keep"
+
+    # Explicit empty invalid_tool_calls
+    msg_invalid = AIMessage(
+        content="x",
+        tool_calls=[],
+        invalid_tool_calls=[],
+        additional_kwargs={"tool_calls": [raw]},
+    )
+    assert msg_invalid.tool_calls == []
+    assert msg_invalid.invalid_tool_calls == []
+
+    # AIMessageChunk test
+    hydrated_chunk = AIMessageChunk(
+        content="x", additional_kwargs={"tool_calls": [raw]}
+    )
+    assert hydrated_chunk.tool_call_chunks[0]["name"] == "secret_tool"
+
+    cleared_chunk = AIMessageChunk(
+        content="x",
+        tool_call_chunks=[],
+        additional_kwargs={"tool_calls": [raw]},
+    )
+    assert cleared_chunk.tool_call_chunks == []
+    assert (
+        load(dumpd(cleared_chunk), allowed_objects=[AIMessageChunk]).tool_call_chunks
+        == []
+    )
+
+
 def test_tool_calls_merge() -> None:
     chunks: list[dict[str, Any]] = [
         {"content": ""},
