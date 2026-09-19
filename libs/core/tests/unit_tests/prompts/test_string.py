@@ -69,6 +69,17 @@ def test_check_valid_template_rejects_nested_replacement_field_in_format_spec() 
         check_valid_template(template, "f-string", ["name"])
 
 
+@pytest.mark.parametrize("template", ["Value: {}", "{:.2f}"])
+def test_get_template_variables_rejects_empty_f_string_field(template: str) -> None:
+    with pytest.raises(ValueError, match="Empty replacement fields"):
+        get_template_variables(template, "f-string")
+
+
+def test_check_valid_template_rejects_empty_f_string_field() -> None:
+    with pytest.raises(ValueError, match="Empty replacement fields"):
+        check_valid_template("Value: {}", "f-string", [])
+
+
 @pytest.mark.parametrize(
     ("template", "kwargs", "expected_variables", "expected_output"),
     [

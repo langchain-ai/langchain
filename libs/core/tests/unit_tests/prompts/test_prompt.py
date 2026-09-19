@@ -58,6 +58,15 @@ def test_from_file_encoding(tmp_path: Path) -> None:
         PromptTemplate.from_file(file_path, encoding="utf-8")
 
 
+def test_prompt_from_template_rejects_empty_f_string_field() -> None:
+    with pytest.raises(ValueError, match="Empty replacement fields"):
+        PromptTemplate.from_template("Value: {}")
+
+    prompt = PromptTemplate.from_template("Value: {{}}")
+    assert prompt.input_variables == []
+    assert prompt.format() == "Value: {}"
+
+
 def test_prompt_from_template() -> None:
     """Test prompts can be constructed from a template."""
     # Single input variable.
@@ -295,10 +304,7 @@ def test_prompt_missing_input_variables() -> None:
 
 def test_prompt_empty_input_variable() -> None:
     """Test error is raised when empty string input variable."""
-    with pytest.raises(
-        ValueError,
-        match=re.escape("check for mismatched or missing input parameters from ['']"),
-    ):
+    with pytest.raises(ValueError, match="Empty replacement fields"):
         PromptTemplate(input_variables=[""], template="{}", validate_template=True)
 
 

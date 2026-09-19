@@ -239,6 +239,13 @@ def validate_f_string_template(template: str) -> list[str]:
             )
             raise ValueError(msg)
 
+        if not var:
+            msg = (
+                f"Invalid variable name {var!r} in f-string template. "
+                f"Empty replacement fields are interpreted as positional arguments."
+            )
+            raise ValueError(msg)
+
         if var.isdigit():
             msg = (
                 f"Invalid variable name {var!r} in f-string template. "
