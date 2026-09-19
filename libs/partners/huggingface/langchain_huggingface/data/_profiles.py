@@ -885,7 +885,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp": {
         "name": "DeepSeek V4 Flash Vision Exp",
         "release_date": "2026-08-21",
-        "last_updated": "2026-08-21",
+        "last_updated": "2026-09-01",
         "open_weights": True,
         "max_input_tokens": 1048576,
         "max_output_tokens": 384000,
