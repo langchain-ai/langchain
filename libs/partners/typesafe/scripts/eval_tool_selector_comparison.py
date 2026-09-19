@@ -18,14 +18,12 @@ below) and a TypeSafe-compatible endpoint for the Jev classifier. LangSmith
 tracing is optional -- only enabled if LANGSMITH_TRACING is set by the caller;
 this script never sets it itself.
 
-Tasks 1-5 are real Harbor task instructions (contextbench "cloud" suite, from
-deepagents/libs/evals/datasets/context-retrieval-evals) -- ground truth for
-those lives in that Harbor dataset. Tasks 6-9 are hand-authored, chosen to
-need deliberately different tool subsets (execute-heavy, read-only, edit-heavy,
-delegation-heavy) since the contextbench task family is tool-homogeneous
-(every task needs read+search+write-answer) and doesn't exercise selection
-differences. Tasks 6-9 have no fixture/environment or ground truth yet -- this
-script only measures which tools get selected/called, not task correctness.
+Tasks 1-5 are real ContextBench Harbor task instructions. Tasks 6-10 are
+real `harbor-index/harbor-index` instructions selected to exercise data
+analysis, implementation, debugging, and repository editing. All ten tasks have
+packaged environments and verifiers in their source Harbor datasets. This
+script still measures selection and first-turn tool calls only; use these task
+IDs with Harbor to measure end-to-end pass/fail.
 """
 
 from __future__ import annotations
@@ -83,33 +81,57 @@ TASKS = {
         "'Ana'?\n\nUse only the files under `/app/files`. Write your final "
         "answer (and nothing else) to `/app/answer.txt`."
     ),
-    # --- mixed [authored], deliberately different tool requirements ---
-    "run-tests": (
-        "Run the test suite in this repo and report which tests are failing "
-        "and why. Don't fix anything yet, just report."
+    # --- harbor-index, varied execute/read/write/edit workloads ---
+    "bix-filter-chip-variants": (
+        "Answer the following question.\n\nWhat is the average number of CHIP "
+        "variants per sample after filtering out intronic, intergenic, and UTR "
+        "variants?\n\nAnalyze the data files in `/workspace/`.\n\nWrite your "
+        "final answer -- just the number -- to `/workspace/answer.txt`."
     ),
-    "explain-only": (
-        "What does the function `parse_config` in config.py do? Just explain "
-        "it in plain English -- don't change anything."
+    "build-word2vec-pipeline": (
+        "Implement `task_func` in `/workspace/solution.py`. Clean a list of "
+        "texts by removing non-alphanumeric characters, lowercasing, and "
+        "removing supplied stopwords (or NLTK English stopwords), then train "
+        "and return a gensim `Word2Vec` model. Hidden tests will verify it."
     ),
-    "rename-var": (
-        "Rename the variable `usr` to `user` everywhere it's used across the "
-        "codebase."
+    "usaco-assign-cows-to-barns": (
+        "Implement a Python 3 solution in `/app/solution.py` that counts the "
+        "number of maximal matchings between cows and barns, modulo 1,000,000,007, "
+        "for N up to 3000. Read from stdin and write the answer to stdout."
     ),
-    "delegate-refactor": (
-        "This module needs a large refactor spanning many files. Delegate the "
-        "whole thing to a subagent and have it handle it end to end."
+    "swesmith-fix-oauth1-header-params": (
+        "Fix malformed OAuth1 parameter serialization in the repository. "
+        "Authorization header names and values must remain paired and comma-separated, "
+        "and URI query signing must preserve the scheme, authority, path, existing "
+        "query parameters, and fragment."
+    ),
+    "swebenchverified-fix-sphinx-literal-nitpick": (
+        "A source repository is provided at `/app`. Make minimal non-test source "
+        "changes so Sphinx renders values in `Literal[...]` annotations without "
+        "treating values such as `True` as missing `py:class` references under "
+        "nitpick mode."
     ),
 }
-REPS_PER_PATH = 3
+REPS_PER_PATH = 4
 
 
 def build_dcode_tools(model: object) -> list:
     scratch_dir = tempfile.mkdtemp(prefix="eval_tool_selector_")
-    backend = LocalShellBackend(root_dir=scratch_dir, virtual_mode=False, inherit_env=False)
+    backend = LocalShellBackend(
+        root_dir=scratch_dir, virtual_mode=False, inherit_env=False
+    )
     fs_middleware = FilesystemMiddleware(
         backend=backend,
-        tools=["ls", "read_file", "write_file", "edit_file", "delete", "glob", "grep", "execute"],
+        tools=[
+            "ls",
+            "read_file",
+            "write_file",
+            "edit_file",
+            "delete",
+            "glob",
+            "grep",
+            "execute",
+        ],
     )
     subagent_middleware = SubAgentMiddleware(
         backend=backend,
@@ -125,8 +147,12 @@ def build_dcode_tools(model: object) -> list:
     return list(fs_middleware.tools) + list(subagent_middleware.tools)
 
 
-def run_selection(middleware, model: object, query: str, tools: list) -> tuple[list, float]:
-    request = ModelRequest(model=model, messages=[HumanMessage(query)], tools=list(tools))
+def run_selection(
+    middleware, model: object, query: str, tools: list
+) -> tuple[list, float]:
+    request = ModelRequest(
+        model=model, messages=[HumanMessage(query)], tools=list(tools)
+    )
     seen: list[ModelRequest] = []
 
     def handler(modified: ModelRequest) -> MagicMock:
@@ -140,7 +166,9 @@ def run_selection(middleware, model: object, query: str, tools: list) -> tuple[l
     return filtered, elapsed
 
 
-def run_downstream(model: ChatOpenAI, query: str, tools: list) -> tuple[list[str], float]:
+def run_downstream(
+    model: ChatOpenAI, query: str, tools: list
+) -> tuple[list[str], float]:
     bound = model.bind_tools(tools)
     start = time.perf_counter()
     response = bound.invoke([HumanMessage(query)])
