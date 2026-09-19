@@ -40,6 +40,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
 
             return self.__class__(
                 role=self.role,
+                name=self.name or other.name,
                 content=merge_content(self.content, other.content),
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
@@ -47,11 +48,12 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
                 response_metadata=merge_dicts(
                     self.response_metadata, other.response_metadata
                 ),
-                id=self.id,
+                id=self.id or other.id,
             )
         if isinstance(other, BaseMessageChunk):
             return self.__class__(
                 role=self.role,
+                name=self.name or other.name,
                 content=merge_content(self.content, other.content),
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
@@ -59,6 +61,6 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
                 response_metadata=merge_dicts(
                     self.response_metadata, other.response_metadata
                 ),
-                id=self.id,
+                id=self.id or other.id,
             )
         return super().__add__(other)

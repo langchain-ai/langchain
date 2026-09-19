@@ -84,6 +84,24 @@ def test_merge_message_runs_response_metadata() -> None:
     assert messages[1].response_metadata == {"input_tokens": 2}
 
 
+def test_merge_message_runs_name() -> None:
+    messages = [
+        HumanMessage("foo", name="alice"),
+        HumanMessage("bar", name="alice"),
+    ]
+    expected = [HumanMessage("foo\nbar", name="alice")]
+    actual = merge_message_runs(messages)
+    assert actual == expected
+
+    ai_messages = [
+        AIMessage("foo", name="bot"),
+        AIMessage("bar", name="bot"),
+    ]
+    expected_ai = [AIMessage("foo\nbar", name="bot")]
+    actual_ai = merge_message_runs(ai_messages)
+    assert actual_ai == expected_ai
+
+
 def test_merge_message_runs_content() -> None:
     messages = [
         AIMessage("foo", id="1"),

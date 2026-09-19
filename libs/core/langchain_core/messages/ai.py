@@ -721,7 +721,10 @@ def add_ai_message_chunks(
         "last" if any(x.chunk_position == "last" for x in [left, *others]) else None
     )
 
+    chunk_name = left.name or next((o.name for o in others if o.name), None)
+
     return left.__class__(
+        name=chunk_name,
         content=content,
         additional_kwargs=additional_kwargs,
         tool_call_chunks=tool_call_chunks,

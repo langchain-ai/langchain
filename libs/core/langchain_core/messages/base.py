@@ -437,7 +437,8 @@ class BaseMessageChunk(BaseMessage):
             # concat into a single BaseMessageChunk
 
             return self.__class__(
-                id=self.id,
+                id=self.id or other.id,
+                name=self.name or other.name,
                 type=self.type,
                 content=merge_content(self.content, other.content),
                 additional_kwargs=merge_dicts(
@@ -458,7 +459,9 @@ class BaseMessageChunk(BaseMessage):
                 self.response_metadata, *(o.response_metadata for o in other)
             )
             return self.__class__(  # type: ignore[call-arg]
-                id=self.id,
+                id=self.id or next((o.id for o in other if o.id), None),
+                name=self.name or next((o.name for o in other if o.name), None),
+                type=self.type,
                 content=content,
                 additional_kwargs=additional_kwargs,
                 response_metadata=response_metadata,

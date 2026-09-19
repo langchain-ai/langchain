@@ -187,6 +187,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
                 raise ValueError(msg)
 
             return self.__class__(
+                name=self.name or other.name,
                 tool_call_id=self.tool_call_id,
                 content=merge_content(self.content, other.content),
                 artifact=merge_obj(self.artifact, other.artifact),
@@ -196,7 +197,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
                 response_metadata=merge_dicts(
                     self.response_metadata, other.response_metadata
                 ),
-                id=self.id,
+                id=self.id or other.id,
                 status=_merge_status(self.status, other.status),
             )
 

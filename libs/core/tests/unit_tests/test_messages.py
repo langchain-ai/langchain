@@ -18,7 +18,9 @@ from langchain_core.messages import (
     HumanMessageChunk,
     RemoveMessage,
     SystemMessage,
+    SystemMessageChunk,
     ToolMessage,
+    ToolMessageChunk,
     convert_to_messages,
     convert_to_openai_image_block,
     get_buffer_string,
@@ -355,6 +357,83 @@ def test_ai_message_chunks() -> None:
     ) == AIMessageChunk(content="I am indeed."), (
         "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
     )
+
+
+def test_message_chunks_name_preservation() -> None:
+    # AIMessageChunk
+    assert (
+        AIMessageChunk(content="Hello", name="assistant")
+        + AIMessageChunk(content=" world")
+    ).name == "assistant"
+    assert (
+        AIMessageChunk(content="Hello")
+        + AIMessageChunk(content=" world", name="assistant")
+    ).name == "assistant"
+    assert (
+        AIMessageChunk(content="Hello", name="assistant")
+        + AIMessageChunk(content=" world", name="assistant")
+    ).name == "assistant"
+
+    # HumanMessageChunk
+    assert (
+        HumanMessageChunk(content="Hello", name="alice")
+        + HumanMessageChunk(content=" world")
+    ).name == "alice"
+    assert (
+        HumanMessageChunk(content="Hello")
+        + HumanMessageChunk(content=" world", name="alice")
+    ).name == "alice"
+
+    # SystemMessageChunk
+    assert (
+        SystemMessageChunk(content="System", name="sys")
+        + SystemMessageChunk(content=" prompt")
+    ).name == "sys"
+    assert (
+        SystemMessageChunk(content="System")
+        + SystemMessageChunk(content=" prompt", name="sys")
+    ).name == "sys"
+
+    # ChatMessageChunk
+    assert (
+        ChatMessageChunk(role="user", content="Hello", name="alice")
+        + ChatMessageChunk(role="user", content=" world")
+    ).name == "alice"
+    assert (
+        ChatMessageChunk(role="user", content="Hello")
+        + ChatMessageChunk(role="user", content=" world", name="alice")
+    ).name == "alice"
+
+    # ToolMessageChunk
+    assert (
+        ToolMessageChunk(tool_call_id="call_1", content="ok", name="calc")
+        + ToolMessageChunk(tool_call_id="call_1", content=" done")
+    ).name == "calc"
+    assert (
+        ToolMessageChunk(tool_call_id="call_1", content="ok")
+        + ToolMessageChunk(tool_call_id="call_1", content=" done", name="calc")
+    ).name == "calc"
+
+    # BaseMessageChunk with list
+    chunk_list = [BaseMessageChunk(type="custom", content="b", name="named")]
+    assert (BaseMessageChunk(type="custom", content="a") + chunk_list).name == "named"
+
+
+def test_message_chunks_fallback_id() -> None:
+    assert (
+        HumanMessageChunk(content="a", id=None)
+        + HumanMessageChunk(content="b", id="id123")
+    ).id == "id123"
+    assert (
+        ChatMessageChunk(role="user", content="a", id=None)
+        + ChatMessageChunk(role="user", content="b", id="id123")
+    ).id == "id123"
+    assert (
+        ToolMessageChunk(tool_call_id="c1", content="a", id=None)
+        + ToolMessageChunk(tool_call_id="c1", content="b", id="id123")
+    ).id == "id123"
+    id_chunk_list = [BaseMessageChunk(type="custom", content="b", id="id456")]
+    assert (BaseMessageChunk(type="custom", content="a") + id_chunk_list).id == "id456"
 
 
 class TestGetBufferString:
