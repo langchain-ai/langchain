@@ -5,7 +5,7 @@ description: "How to write unit tests for langchain-core and langchain component
 tags: [unit-tests, pytest, testing, fixtures, mocking, chat-models, tools, embeddings, type-checking, mypy]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
@@ -33,7 +33,7 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/embeddings.py
   - id: openwiki-source-a6b31954b6df57580d0f3ed0
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/tools.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-19T08:23:50.449Z" }
 ---
 
 ## Overview
@@ -135,7 +135,12 @@ class TestMyChatModelUnit(ChatModelUnitTests):
 - `supports_image_urls` (bool): Whether the model accepts image URLs in content
 - `supports_pdf_inputs` (bool): Whether the model accepts PDF file content
 - `supports_audio_inputs` (bool): Whether the model accepts audio content
+- `supports_video_inputs` (bool): Whether the model accepts video content (no tests currently written)
+- `supports_anthropic_inputs` (bool): Whether the model supports Anthropic-style input format
+- `supports_image_tool_message` (bool): Whether the model accepts ToolMessage objects with image content
+- `supports_pdf_tool_message` (bool): Whether the model accepts ToolMessage objects with PDF content
 - `returns_usage_metadata` (bool): Whether `invoke()` and `stream()` return usage token counts (default: True)
+- `supported_usage_metadata_details` (dict): Which usage metadata details are emitted in invoke and stream (audio_input, audio_output, reasoning_output, cache_read_input, cache_creation_input)
 - `supports_model_override` (bool): Whether the model accepts a `model` parameter in `invoke()` to override at runtime (default: True)
 - `model_override_value` (str): Alternative model name for testing dynamic model selection (required if `supports_model_override=True`)
 

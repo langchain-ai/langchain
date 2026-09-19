@@ -5,7 +5,7 @@ description: "Document BaseChatModel protocol, input/output handling, streaming,
 tags: [chat-models, llm-integration, streaming, structured-output, model-capabilities]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-08T08:27:09.597Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-132f3183693cd9cf79d029a5
     resource: repo://libs/core/langchain_core/language_models/base.py
@@ -15,7 +15,13 @@ sources:
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
   - id: openwiki-source-a0aef6917b7e1f4a06e6db95
     resource: repo://libs/core/langchain_core/language_models/model_profile.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+  - id: openwiki-source-c479d4fffee5cf62576699e4
+    resource: repo://libs/langchain_v1/langchain/chat_models/base.py
+  - id: openwiki-source-7de1ace618efbdfd8bacb5cb
+    resource: repo://libs/partners/anthropic/langchain_anthropic/chat_models.py
+  - id: openwiki-source-738512768ef81ae009b097ac
+    resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
+generated: { by: "openwiki/0.5.0", at: "2026-09-19T08:23:50.449Z" }
 ---
 
 ## Overview
@@ -350,9 +356,38 @@ def bind_tools(
 ```
 
 - Abstract method; must be implemented by subclasses that support tool calling
-- Binds a list of tools to the model
+- Converts tools (functions, Pydantic classes, TypedDict, dict schemas, or BaseTool instances) to provider-specific format
 - Returns a bound runnable that includes tool definitions in the API request
-- `tool_choice="any"` forces the model to call at least one tool
+- `tool_choice` parameter controls whether tool calling is forced (`"any"`) or optional (`None`)
+- Tool input/output is captured in `AIMessage.tool_calls` and received via `ToolMessage` in subsequent turns
+
+**Tool input formats accepted**:
+- **Callable**: Function or method with type hints; converted to JSON schema via `convert_to_json_schema()`
+- **Pydantic BaseModel**: Converted to JSON schema via introspection
+- **TypedDict**: Converted to JSON schema
+- **dict**: Assumed to be provider-specific tool/function schema (e.g., OpenAI format)
+- **BaseTool**: LangChain's tool abstraction with name, description, and args schema
+
+### Tool Calling Support Matrix
+
+Not all models support tool calling. The `profile.tool_calling` field indicates support:
+
+| Provider | Tool Calling | Tool Choice | Tool Call Streaming | Structured Output |
+|----------|---|---|---|---|
+| OpenAI (gpt-4, etc.) | ✓ | ✓ | ✓ | ✓ (native) |
+| Anthropic (claude-3+) | ✓ | ✓ | ✓ | ✓ (via tools) |
+| Google Vertex AI | ✓ | ✓ | ✓ | ✓ |
+| Cohere | ✓ | Limited | Limited | ✓ |
+| Groq | ✓ | ✓ | ✓ | ✓ |
+| DeepSeek | ✓ | ✓ | ✓ | ✓ |
+| Mistral AI | ✓ | ✓ | Limited | ✓ |
+| AWS Bedrock (varies) | ✓ | Varies | Varies | Varies |
+
+When `profile.tool_calling` is `False`, `bind_tools()` and `with_structured_output()` will raise `NotImplementedError`. Fallback strategies include:
+
+1. **Instruction-based**: Inject tool definitions as text in system prompt (unreliable)
+2. **Output parsing**: Parse natural language output via LLM or regex
+3. **Model swap**: Use `disable_streaming="tool_calling"` with fallback to `invoke()` when tools are needed
 
 ## Model Profiles and Capabilities
 
@@ -451,17 +486,150 @@ Subclasses must implement:
 | `_astream()` | Native async streaming | ✗ | Optional; defaults to running `_stream` in executor |
 | `bind_tools()` | Tool binding for structured output | ✗ | Required only if `with_structured_output()` is needed |
 
-## Model Initialization
+## Model Initialization and Provider Resolution
 
-**Location**: `repo://libs/langchain_v1/langchain/chat_models/base.py` (v1 compat) and `langchain_core` partner packages
+**Location**: `repo://libs/langchain_v1/langchain/chat_models/base.py` (v1 compat) and partner packages
 
-Models are instantiated via:
+### Direct Instantiation
 
-1. **Direct instantiation**: `ChatOpenAI(model="gpt-4", temperature=0)`
-2. **Factory function `init_chat_model()`**: Auto-detects provider and imports the class dynamically
-3. **Partner package exports**: Each provider (e.g., `langchain-openai`) exports a concrete model class
+Models are created directly with provider-specific classes:
 
-The `init_chat_model()` function accepts a model name string (e.g., `"gpt-4"`, `"claude-3-sonnet"`) and optional `model_provider` to instantiate the correct class without explicit imports.
+```python
+from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
+
+model = ChatOpenAI(model="gpt-4", temperature=0)
+model = ChatAnthropic(model="claude-3-sonnet", temperature=0)
+```
+
+### Factory Function: init_chat_model()
+
+**Location**: `repo://libs/langchain_v1/langchain/chat_models/base.py#L230-L532`
+
+`init_chat_model()` provides a unified interface to instantiate any supported chat model without explicit provider package imports:
+
+```python
+def init_chat_model(
+    model: str | None = None,
+    *,
+    model_provider: str | None = None,
+    configurable_fields: Literal["any"] | list[str] | tuple[str, ...] | None = None,
+    config_prefix: str | None = None,
+    **kwargs: Any,
+) -> BaseChatModel | _ConfigurableModel
+```
+
+**Usage patterns**:
+
+1. **Fixed model with provider prefix**: `init_chat_model("openai:gpt-4", temperature=0)`
+2. **Fixed model with separate provider**: `init_chat_model("gpt-4", model_provider="openai")`
+3. **Configurable model**: `init_chat_model(configurable_fields="any")` – allows runtime model/provider selection
+
+### Provider Resolution Logic
+
+**Location**: `repo://libs/langchain_v1/langchain/chat_models/base.py#L543-L647`
+
+The resolution process (`_parse_model()` and `_attempt_infer_model_provider()`):
+
+1. **Prefix format**: If model contains `:` (e.g., `"openai:gpt-4"`), splits on first `:` to extract provider
+2. **Explicit provider**: If `model_provider` kwarg is supplied, uses it directly
+3. **Inference**: Attempts to infer provider from model name prefix:
+   - `gpt-...`, `o1...`, `o3...`, `chatgpt...`, `text-davinci...` → `openai`
+   - `claude...` → `anthropic`
+   - `command...` → `cohere`
+   - `gemini...` → `google_vertexai` (default; prefers `google_genai` in next major version)
+   - `accounts/fireworks...` → `fireworks`
+   - `mistral...`, `mixtral...` → `mistralai`
+   - `deepseek...` → `deepseek`
+   - `grok...` → `xai`
+   - `sonar...` → `perplexity`
+   - `solar...` → `upstage`
+   - `amazon.`, `anthropic.`, `meta.` → `bedrock`
+4. **Provider normalization**: Converts provider names to snake_case and lowercase
+5. **Dynamic import**: Loads the provider package and class via `importlib` from the `_BUILTIN_PROVIDERS` registry
+
+Supported providers include: `openai`, `anthropic`, `azure_openai`, `azure_ai`, `google_vertexai`, `google_genai`, `bedrock`, `bedrock_converse`, `anthropic_bedrock`, `cohere`, `fireworks`, `together`, `mistralai`, `huggingface`, `groq`, `ollama`, `deepseek`, `ibm`, `nvidia`, `xai`, `openrouter`, `perplexity`, `upstage`, `baseten`, `litellm`, `meta`, and `langsmith`.
+
+### Configurable Models
+
+When `configurable_fields` is specified, `init_chat_model()` returns a `_ConfigurableModel` (a `Runnable` wrapper) that defers model instantiation until runtime:
+
+```python
+# Configurable model—resolves at call time
+model = init_chat_model(configurable_fields=("model", "temperature"))
+result = model.invoke("Hello", config={
+    "configurable": {"model": "gpt-4", "temperature": 0.5}
+})
+
+# Can be chained with declarative methods (bind_tools, with_structured_output)
+model = init_chat_model().with_structured_output(MySchema)
+```
+
+## Provider Implementations
+
+Each provider package (e.g., `langchain-openai`, `langchain-anthropic`) implements `BaseChatModel` with provider-specific capabilities. The partner pattern allows vendors to:
+
+1. **Implement required methods**: `_generate()`, `_stream()`, `_agenerate()`, `_astream()` with provider APIs
+2. **Implement tool calling**: `bind_tools()` to support structured output and tool calling
+3. **Provide model profiles**: Override `_resolve_model_profile()` to load model capability metadata
+4. **Custom exception handling**: Define exception subclasses mapping provider errors to LangChain error hierarchy
+5. **Message format translation**: Convert LangChain message objects to provider-specific request formats
+
+### OpenAI Provider
+
+**Location**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py`
+
+- **Class**: `ChatOpenAI` (for OpenAI API) and `AzureChatOpenAI` (for Azure OpenAI)
+- **Streaming**: Implements both `_stream()` and `_astream()` with native event streaming
+- **Tool calling**: Full support via `bind_tools()` with function calling schema conversion
+- **Structured output**: Supports via `with_structured_output()` using tool-as-schema pattern
+- **Token counting**: Uses `tiktoken` library for pre-flight token accounting
+- **Message translation**: Converts to OpenAI Chat Completions format including vision (images, PDFs) and tool messages
+
+### Anthropic Provider
+
+**Location**: `repo://libs/partners/anthropic/langchain_anthropic/chat_models.py`
+
+- **Class**: `ChatAnthropic`
+- **Streaming**: Implements both `_stream()` and `_astream()` with native streaming
+- **Tool calling**: Full support via `bind_tools()` with XML-style tool use definitions
+- **Structured output**: Supports via `with_structured_output()` using tool schemas
+- **Message merging**: Anthropic requires consecutive user messages be merged; `_merge_messages()` handles this before API calls
+- **Tool ID normalization**: Normalizes tool call IDs to match Anthropic's required pattern via `_normalize_tool_call_id()`
+- **Vision support**: Handles image inputs via base64-encoded and URL-based image blocks
+
+### Extension Points for Custom Providers
+
+When implementing a custom chat model, override:
+
+```python
+class MyCustomChatModel(BaseChatModel):
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        # Required: call provider API and return ChatResult
+        pass
+    
+    def _stream(self, messages, stop=None, run_manager=None, **kwargs):
+        # Optional: implement streaming support
+        pass
+    
+    def bind_tools(self, tools, *, tool_choice=None, **kwargs):
+        # Optional: implement tool calling support
+        pass
+    
+    def _resolve_model_profile(self):
+        # Optional: return ModelProfile with capability metadata
+        pass
+    
+    @property
+    def _llm_type(self) -> str:
+        # Required: return stable model type identifier
+        return "my_provider"
+    
+    @property
+    def _identifying_params(self) -> dict:
+        # Optional: return dict of model configuration for tracing
+        return {"model": self.model, "temperature": self.temperature}
+```
 
 ## Example: Custom Chat Model
 
@@ -576,6 +744,40 @@ config = {"callbacks": [MyStreamingHandler()]}
 model_with_fallback.invoke("Prompt", config=config)
 ```
 
+## Error Handling and Recovery
+
+Chat models handle errors gracefully by capturing error metadata and firing callbacks:
+
+### Error Extraction
+
+**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L112-L147`
+
+When generation raises an exception, `_generate_response_from_error()` attempts to extract HTTP response metadata:
+
+- **Status code**, **headers**, **response body**: Extracted from `error.response` if available
+- **Request ID**: Extracted from `error.request_id` if present
+- **Gateway metadata**: Parsed from response headers via `_parse_gateway_metadata()`
+
+This metadata is merged into the error-time `ChatGeneration` and reported via `on_llm_error` callbacks, allowing tracing/observability systems to log the context around failures.
+
+### Provider-Specific Exception Mapping
+
+Partner packages define custom exception subclasses that inherit from both provider SDK exceptions and LangChain exception hierarchy. For example:
+
+- `OpenAIAuthenticationError` (OpenAI) – inherits `openai.AuthenticationError` and `ModelAuthenticationError`
+- `AnthropicAuthenticationError` (Anthropic) – inherits anthropic SDK errors and `ModelAuthenticationError`
+
+This allows catch-all error handling via LangChain exception types while preserving provider-specific information.
+
+### Callback Flow During Errors
+
+1. `on_chat_model_start` fires before the call
+2. If generation raises exception:
+   - Error metadata is extracted via `_generate_response_from_error()`
+   - `on_llm_error(exception, response=LLMResult(...))` fires with extracted metadata
+   - Exception propagates to caller
+3. Batch operations continue processing remaining messages; errors are collected and reported per-message
+
 ## Key Invariants and Guarantees
 
 1. **Input normalization**: All input forms (string, message list, PromptValue) are normalized to messages before `_generate`/`_stream` are called.
@@ -592,4 +794,4 @@ model_with_fallback.invoke("Prompt", config=config)
 
 7. **Response metadata**: Each generation accumulates metadata (tokens, finish_reason, etc.) in `message.response_metadata`.
 
-8. **Error handling**: Exceptions during generation trigger `on_llm_error` and propagate to the caller; error metadata is extracted from HTTP responses if available.
+8. **Error propagation**: Exceptions during generation trigger `on_llm_error` with extracted response metadata and propagate to the caller; the operation is not automatically retried (use `with_retry()` for that).

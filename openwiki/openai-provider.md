@@ -5,7 +5,7 @@ description: "ChatOpenAI integration for OpenAI's Chat Completions and Responses
 tags: ["openai", "chat-models", "tool-calling", "structured-output", "vision", "azure"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-08T08:27:09.597Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-1e66a9da38565f8901e651f4
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
@@ -13,7 +13,7 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-74e5bef080f1af7da12371cf
     resource: repo://libs/partners/openai/langchain_openai/data/_profiles.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-19T08:23:50.449Z" }
 ---
 
 ## Overview
@@ -34,7 +34,7 @@ The OpenAI integration (`langchain-openai`) provides production-ready chat model
 
 **Package**: `repo://libs/partners/openai/langchain_openai/`
 
-**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2823-L2920`
+**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2829`
 
 **Exports**: `repo://libs/partners/openai/langchain_openai/__init__.py`
 
@@ -116,6 +116,18 @@ Related classes:
 - **`truncation`** (`str | None`): Truncation strategy for Responses API. `'auto'` (drop middle items) or `'disabled'` (default).
 - **`context_management`** (`list[dict[str, Any]] | None`): Configuration for [context compaction](https://developers.openai.com/api/docs/guides/compaction).
 - **`disabled_params`** (`dict[str, Any] | None`): Parameters to disable for the model. Shape: `{"param": None | ['val1', 'val2']}`. Used to prevent incompatible parameters (e.g., `{"parallel_tool_calls": None}` for older models).
+
+**Responses API Configuration:**
+
+- **`use_responses_api`** (`bool | None`): Explicitly route requests to OpenAI's Responses API (`/v1/responses`) instead of Chat Completions API (`/v1/chat/completions`). If `None` (default), inferred based on invocation parameters (e.g., `reasoning`, streaming with certain models).
+- **`output_version`** (`str | None`): Format version for `AIMessage` output. Supported values:
+  - `'v0'`: Legacy format as of `langchain-openai` 0.3.x
+  - `'responses/v1'`: Responses API output formatted as AIMessage content blocks (Responses API only)
+  - `'v1'`: Standard LangChain cross-provider format
+  
+  Default changed to `"responses/v1"` in `langchain-openai` 1.0.0. Overridable via `LC_OUTPUT_VERSION` environment variable.
+
+- **`use_previous_response_id`** (`bool`, default `False`): For Responses API, automatically pass the ID of the most recent response to reuse conversation state. When enabled, messages up to the most recent response are dropped from request payloads. Simplifies conversation management without manual `previous_response_id` handling.
 
 **Other:**
 
@@ -247,6 +259,129 @@ Vision is supported on models like `gpt-4-vision`, `gpt-4o`, and `gpt-4-turbo`. 
    ```
 
 Token counting for images is approximated: `low` detail = 85 tokens, `high` detail = ~170 + 255 per image tile based on resolution.
+
+## Responses API
+
+The **Responses API** (`/v1/responses`) is OpenAI's advanced endpoint for streaming, reasoning models, and conversation state management. It differs from the Chat Completions API by providing:
+
+- **Streaming with reasoning**: Models output reasoning alongside final answers
+- **Conversation state**: Reuse previous response context via `previous_response_id`
+- **Structured execution**: Tool calls, function execution, and web search results
+- **Enhanced output**: Includes metadata like reasoning tokens, tool call outputs, and file search results
+
+### When to Use Responses API
+
+Use Responses API when:
+- Working with reasoning models (`o1`, `o3`, `gpt-4-with-reasoning`)
+- Needing full reasoning output in streamed responses
+- Reusing conversation state across multiple requests
+- Requiring advanced features like file search, web search, or code interpreter results
+
+### Basic Usage
+
+Invoke with `use_responses_api=True` or set `reasoning` parameters:
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+
+# Explicitly use Responses API
+model = ChatOpenAI(
+    model="gpt-4o",
+    use_responses_api=True
+)
+
+response = model.invoke("Solve this step by step: 2+2=?")
+print(response.content)  # Full reasoning and answer
+```
+
+**Automatic Routing**: When `use_responses_api=None` (default), requests automatically route to Responses API if:
+- `reasoning` parameter is set (Responses API exclusive)
+- Model name suggests reasoning capability (e.g., `o1`, `o3`)
+
+### Reasoning Models
+
+For models with built-in reasoning (`o1`, `o3`, `gpt-4-with-reasoning`), enable with `reasoning`:
+
+```python
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(
+    model="o3-mini",  # Reasoning model
+    reasoning={
+        "effort": "high",           # Reasoning depth: low, medium, high, or None
+        "summary": "detailed"       # Output style: auto, concise, detailed
+    }
+)
+
+response = model.invoke("Analyze the logical fallacy in: 'All cats are animals, so all animals are cats.'")
+print(response.additional_kwargs.get("reasoning"))  # Raw reasoning steps
+print(response.content)  # Final answer
+```
+
+**Chat Completions API** (older) uses `reasoning_effort` instead:
+
+```python
+model = ChatOpenAI(
+    model="gpt-4-turbo",
+    reasoning_effort="high"  # Chat Completions API only
+)
+```
+
+### Conversation State Management
+
+Reuse response context to reduce token usage:
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, AIMessage
+
+model = ChatOpenAI(
+    model="gpt-4o",
+    use_previous_response_id=True  # Auto-manage conversation state
+)
+
+# First request
+response1 = model.invoke("What's the capital of France?")
+response_id = response1.response_metadata.get("id")
+
+# Second request: server automatically uses response1 context
+response2 = model.invoke(
+    "What's its population?",
+    # response1 is dropped from the payload; use_previous_response_id handles this
+)
+print(response2.content)  # Leverages Paris context from response1
+```
+
+Or manage explicitly:
+
+```python
+from langchain_core.messages import HumanMessage
+
+messages = [
+    HumanMessage("What's the capital of France?"),
+    AIMessage("Paris", response_metadata={"id": "resp_123"}),
+    HumanMessage("What's its population?")
+]
+
+response = model.invoke(
+    messages,
+    previous_response_id="resp_123"  # Passed in invocation
+)
+```
+
+### Output Format
+
+Responses API output is normalized to `AIMessage` with `output_version="responses/v1"` (default since 1.0.0):
+
+```python
+response = model.invoke("Some query")
+
+print(response.content)  # List of content blocks (text, tool calls, etc.)
+print(response.additional_kwargs.get("reasoning"))  # Reasoning steps (if reasoning model)
+print(response.response_metadata)  # Metadata with response ID, finish_reason, etc.
+print(response.usage_metadata)  # Token counts
+```
 
 ## Function Calling
 

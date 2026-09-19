@@ -1,22 +1,22 @@
 ---
-type: "Reference"
-title: "AutoStrategy (recommended)"
-openwiki_generated: true
+type: "Mechanism Reference"
+title: "Structured Output: Typed Agent Responses"
+description: "Guide to structured output in agents—response schema definition, provider strategies, retry on validation failure, and type-safe response handling across models."
+tags: ["agents", "structured-output", "response-format", "validation", "tool-calling"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-ec30ab6256dd50cc670919f6
     resource: repo://libs/langchain_v1/langchain/agents/structured_output.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-19T08:23:50.449Z" }
 ---
-
 
 ## Overview
 
-Structured output is the mechanism that ensures a language model returns responses matching a specific JSON schema. Rather than receiving unparsed text or tool calls, agents can enforce that model outputs conform to Pydantic models, dataclasses, TypedDicts, or raw JSON schemas. The factory configures one of three strategies—tool-based, provider-native, or automatic—each with different tradeoffs around compatibility, validation, and retry behavior.
+Structured output is the mechanism that constrains a language model's responses to match a specific JSON schema. Rather than receiving unparsed text or tool calls, agents can enforce that model outputs conform to Pydantic models, dataclasses, TypedDicts, or raw JSON schemas. The factory configures one of three strategies—tool-based, provider-native, or automatically-detected—each with different tradeoffs around compatibility, validation, and retry behavior.
 
 ### Core Concept
 
@@ -106,7 +106,7 @@ A model supports provider-native structured output if:
 2. Not a pre-3-series Gemini model (which cannot mix tools with structured output), OR
 3. Model name matches fallback patterns like `gpt-4o`, `claude-opus`, etc.
 
-### AutoStrategy: Automatic Strategy Selection
+### AutoStrategy: Automatic Strategy Selection (Recommended)
 
 Defers strategy selection until model invocation time. The factory inspects the bound model and chooses:
 
@@ -424,5 +424,5 @@ agent = create_agent(
 ## See Also
 
 - [Agent Factory](/openwiki/agent-factory.md): Entry point for creating agents; handles schema registration and strategy binding
-- [Agent Execution Flow](/openwiki/agent-execution.md): Runtime loop where structured output is parsed and validated
-- [LangChain Structured Output Documentation](https://python.langchain.com/docs/guides/structured_output/)
+- [Chat Models](/openwiki/chat-models.md): Model interfaces and provider capabilities
+- [Tools](/openwiki/tools.md): Tool definition and binding mechanisms

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7f15b0e6bb2c95e703a2e0c8f6fe04091727b2cb26ae3a3260124cd43f1394e0",
+  "pageVersion": "sha256:bbc389c9d9b4a9a6e88069da74d74cddb48f92954dea5b42d152b1dc60c69210",
   "claims": [
     {
       "id": "claim_bdde90f4e5f6413f8214fe7e80b66a9a",
@@ -44,15 +44,15 @@
     },
     {
       "id": "claim_69fa7a0282f74dacb02b906474eb001e",
-      "statement": "ChatModelUnitTests in langchain_tests.unit_tests tests chat model initialization, sync/async invoke, streaming, tool binding, structured output, serialization, and message handling; implementations override chat_model_class (required) and chat_model_params (required) properties plus feature flags like has_tool_calling, has_structured_output, supports_image_inputs.",
+      "statement": "ChatModelUnitTests in langchain_tests.unit_tests tests chat model initialization, sync/async invoke, streaming, tool binding, structured output, serialization, and message handling; implementations override chat_model_class (required) and chat_model_params (required) properties plus feature flags including has_tool_calling, has_tool_choice, has_structured_output, supports_image_inputs, supports_image_urls, supports_pdf_inputs, supports_audio_inputs, supports_video_inputs, supports_anthropic_inputs, supports_image_tool_message, supports_pdf_tool_message, returns_usage_metadata, supported_usage_metadata_details, supports_model_override, and model_override_value.",
       "evidence": [
         {
           "resource": "repo://libs/standard-tests/langchain_tests/unit_tests/chat_models.py#L277-L340",
           "version": "repo-lines-v1:sha256:1f718c2c9f4f47dbab87594675c8ec1115ece927acebc63636acaec7f640bbfd:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYjg1ODY3YTRhNWZiNGJlMjFhOGNjMTg3ZjY3NmM3MjQ0OGFlN2EzNTdlMWZlMTlhNGZmYmFmMDQ2YTFlMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMjJkZDMxZjcxNWVmZGQ4YjAxZGYyYTY0Mzc3OGI1MDIxN2RhMmE1Nzc0ZTBlYzA2MDNlZjczNDhjYmE1MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczM2U4NDg3Yzg1ZGZkY2Y5ZmE3YjkzYzc0NmM5NDYyNWFlNDdlMTIwYzc5N2U3OTFlNzM3ZjllZDdmZmM3M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmYzRkMTFjMzdiMmJiZTI3MDBjNDk3NGY5NGNhZGY3NGE2YjU1ODZhNjU3Y2ZlZTNjZmI1ZTQwNTlhODEyZGQifQ"
         },
         {
-          "resource": "repo://libs/standard-tests/langchain_tests/unit_tests/chat_models.py#L43-L114",
-          "version": "repo-lines-v1:sha256:c89ea4f0203e8faedc0a38d530353b239af1c28047c7e25f6afd1d4277c0c67b:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzMmJhYzM2ZjYyMmI5OGI2NTFhZGRkZGQ1OGMwZjYxY2IwYjNhMzEzMDkxODgxZGMwNTVhNjU3NmZmZDk5MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlYzk2NzJmN2E5MTgzNDY3YmY3MGFlOWU2ZWNkOGZlNGI3MzY4OGNhNGRhM2JkYzI3Mzk5OWRlZGUwOTlmY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiODI4NzI0ZjFkZDg1M2ZiOWZkZTYwMTAwNDlmODk2ZDczNzYyMmZkZTczOGY3YjE5YzlkMWVhZDFjYmRmNzEifQ"
+          "resource": "repo://libs/standard-tests/langchain_tests/unit_tests/chat_models.py#L43-L275",
+          "version": "repo-lines-v1:sha256:07f1f427c09d476ef6c118be648f3178f5017b6c7abd932223cbbe5c3a20d301:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2MzJiYWMzNmY2MjJiOThiNjUxYWRkZGRkNThjMGY2MWNiMGIzYTMxMzA5MTg4MWRjMDU1YTY1NzZmZmQ5OTJjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiZWM5NjcyZjdhOTE4MzQ2N2JmNzBhZTllNmVjZDhmZTRiNzM2ODhjYTRkYTNiZGMyNzM5OTlkZWRlMDk5ZmNkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiOGMwMGZhNTE3ZTJlNjdjYzI0OGYyZTNjYWFjOTkwYzRkYjU0YmUzZWVlOTkwMDk1ZTNmMzhhZWQ1MmY0NGU0In0"
         }
       ]
     },
@@ -189,6 +189,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-19T08:23:50.449Z"
   }
 }

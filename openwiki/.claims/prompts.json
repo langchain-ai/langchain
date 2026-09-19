@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5f946f7b6b3214808e71060f1626dc4100caf473eb5e0186d8064f20219062b9",
+  "pageVersion": "sha256:8bcb6e923cfa527e896ff49c94a4f202b418da676dc32b8f793fa54304b855b5",
   "claims": [
     {
       "id": "claim_06ad6af0140b4318b25f43272f89e77f",
@@ -175,10 +175,62 @@
           "version": "repo-lines-v1:sha256:9e7a196791d7921f5dda4aff01828a5731663f7a163f5da719a6140c2fec3dee:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZGRjYTFjZDMwMjFlNzA0YjcxMjNiMTYwMGIzOGM3ZDExNTRhYWZiNGJlNzEwOTA1ZTVkZDE1MjBlNzk0NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MjU2OTVlYTJkY2RhMWM2M2JlMjg1Yjc4MDlhMmEwMzYwZGEzZGZiYWY3ZjMzYjJkMTA0NzJmYzZhMDNkMDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxZjAyMzJlOTNkNTcxMDA4MTM4N2E5ZWFkNmFjZmRlZTYzNGRkZWU3YzQ2ZjE0NDc3Y2NhZGRhMDZmZWE5OTIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_2db2654d1c824174abb3c2eccdaae5da",
+      "statement": "ImagePromptTemplate formats image URLs with template variables, supporting f-string, mustache, and jinja2 formatting. DictPromptTemplate applies variable substitution to nested dictionary structures for API requests. Both support multimodal and structured API inputs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/dict.py#L19-L73",
+          "version": "repo-lines-v1:sha256:f1bf8039d680d77387672d971a92d3ac51dd0498bacf53e805b8c65fb5f48478:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzOTIzZGZhNzMzMjI5Y2EzNjZhMTAyMjUwYzA0ZmNkZjcxMzNhMmZiNzdkODYzMzRlMGRjNzVkMDljNWU0Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmMDY2NWI0NThlZWUyZWI1NDAyMjdiODVhMDMxOWUzMjZiYWQwZWI2NmY5ODdiYmUxMjQyYzRiYmNhNGFiYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5MzcxZWQzZTk1MjEwMjcyZTg3ZDM4NzFmM2NmNjFkNGRhZWQxNTQyYmQ5M2I5MTllMjgyMzY5Yzc5NTdmYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3N2VjOGI3OTAxMWU0ZmM0Yjc5OTQ3ZjYxYmFkOTdhYzBmZGRlYmRjZWVjMjc0ZGE1ZDM2MjMwMGQyYzYxNTIifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/image.py#L17-L82",
+          "version": "repo-lines-v1:sha256:45c5864695d580b69dd20b1eafa97bc1aa16874cf472058f367f4c740c678f6f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMGU3NjJlNTE3YjAyYWY1ZWZmNzUxZWMwNjQ0ZGRmMGNkYzc0MjQxNjQ1MjZhZDMwYzgwNmU4YWUxNmY3ZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZmRmNTNhOTBkNTExZDVkNDI5NzRiODRlMzMzMGJlZWQyYzgzNWNiN2M0OTliN2FkMzEwNzQ0Y2JiN2RjZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxODhlYzliYWJmOTQxYWUyM2NkODJlYmMzMmNiY2E3MDgxN2JiN2NjNjczZWFmMDA5NDkyYTgzM2VkOGU3ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0NWNkNDFkNGEzODA4YjA2NGJlNzEyYTFmNTEzNzk5Zjc0YTM1YjMyNjg4Y2E4MTYxNWQ3ZjFlMDJiYTI1OTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d5058e86bf6044eaadf4c20a8c199ef8",
+      "statement": "Prompts validate input and partial variables at initialization, rejecting reserved names like 'stop' and overlapping variable sets. At format time, missing required variables raise KeyError with helpful messages. Optional validate_template=True performs static syntax checking (not available for mustache templates).",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/base.py#L80-L106",
+          "version": "repo-lines-v1:sha256:9c34342917cbc2de674da5211522a9ad0ecee1894035e304e4bce2a5e3184900:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZjFjZGQwZjU3NDMzY2U1MDc3OTA3MjJlMmY1MWQ5NzM1NmNiZmZhN2IyNGRkN2NhMTM0NDgzMmQ0ZTUyNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWIwOTBiY2QxNjIwZmE2MmVhZWUxNTdhNzRmY2E2MzVhYTI5ZTEyY2JmZmQ2MThiNTc5MmQ4N2JjMDNhM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3NTRiMWE5MjNjNmNlMTA4NzdkNzBkNDJlODYzYjM0NDMyM2VkMzE5NWJjOGY0NTE0NDk4YmVmY2ViYzAzYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxM2QxNTY1OGFlNGYxMWMwYWE4Mzc1NWM2MDM0ZmI2MWZhMWY1OWFmMjRlNTYwOWI4NTc0MjJmOGQ3YTQyOTcifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/prompt.py#L89-L125",
+          "version": "repo-lines-v1:sha256:582c98b48cb66dbbd00141af028daef691d4db0919b349a19f03d91254867463:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NWQzZjRmNmJlNzRjOTY4MjViZmUxZTVkZGZjMTk2MjI1ZWRlZTBiM2FkZDU4YzYzMjhjMTQ4YWNiNmUyMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhYWEzNzA3NGNkY2ZmMmU2MzY0ZWQ3MDhhZjk4MDBlMjI0YmQzMDUxMzc0ZmNmMTI4YzZlNDg3MjM3ODc0YzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmNDdiZmFjOWU4OGQ0YWMyM2ZiZTUzOTJhYjVmZTg5ODlmYjgzYjdkMTE0OTUxYmZiN2FjNmQyMDFiMGEwMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2ZWJkNDlmYTEzMzI4YTFhZmUxMjNjMDZmZWZkYTFlMDM5ZTY1MjM4MWQwOTZkNDhmZjI2M2M3MGIxZTA5ZGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_62a804d098fe44349b15f1725e805bf6",
+      "statement": "ChatPromptTemplate automatically infers input_variables and optional_variables from messages during initialization. Optional MessagesPlaceholder instances are tracked separately and populated with empty lists as partial defaults, enabling flexible conversation history injection.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L976-L1103",
+          "version": "repo-lines-v1:sha256:aa332080e5323384a1006c59cc039cce19d283b8a580419547c5f20fd2808a86:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkZTZkOTUwNjZkZTRmYTMwMDA0N2Y1MDY1N2Y4ZmRiZjcxMmEzZGVjMjc5Mzg4NTI4N2Y0YjVkZmNhZGU0YzdhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyYWFhMzcwNzRjZGNmZjJlNjM2NGVkNzA4YWY5ODAwZTIyNGJkMzA1MTM3NGZjZjEyOGM2ZTQ4NzIzNzg3NGM0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZDhmZjMxZGVjZGY2OWUxZGQ5MmQ1ZmIzYTkzNGFkMDc2MTJlYmIzNGQzODAxMzczMmQzNjllZTAyM2MyNmM3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwOWJkODVkMjM1YzczODc3YWJhNzBkOTQ4NjJlNTg0YWQ3ZjcwYTAwMTE1YmU3N2MzZjA4OWE4YjhkYjk4MjM0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_6813d62d608840e787fb9260e89efe38",
+      "statement": "Prompts inherit from RunnableSerializable and implement invoke(dict)->PromptValue, ainvoke(dict)->PromptValue, batch(), and stream() methods. Single-variable prompts accept non-dict arguments which are auto-wrapped. This enables prompts to compose in chains using the pipe operator | and be streamed for real-time output.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/base.py#L38-L265",
+          "version": "repo-lines-v1:sha256:64489482f1ebbeb063c9442a1ee046835ae2ef2eacfc77b96eb727c2281a5b48:eyJzZWxlY3RlZExpbmVDb3VudCI6MjI4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhODdmOTIxMjY2NTgzMmU0NmRmNDNkZGMwNzBiODZiZGM1NWY2YmQyYTdhOGZhMjE0ODY1NjExMTIzMzg5NTFkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1OTA5YTUzYTYxOGQwMjhlMWQzMDAwYzBhN2FiY2VlY2JlNWZiMzdmNGU1MTFlZmU0NjY0M2ZhZDZlNjY4NzJmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5MjZmYWRkOWFjNmM0MzAyY2VjZTI5MTFjYjNlYTM5MzA3MGMwY2ZiNTE2YTE5NjczMTI5ZTllMGIxNDE1YzJjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MTgwMDgyODY3Yzk4OTI5NTZkYzcyZjEzY2Y1MjIyMDVmMjIxN2NjMjMyYzYxNDgzMjk5ZDk4Yjg4Yzc4YjMwIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L871-L898",
+          "version": "repo-lines-v1:sha256:20b844138db12de0c40c2f730235217936bb1dd770077379a1990b0e168fe88e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhNzc4Y2RkMmM3NmNmNWRjYjYwM2M4N2JmZDk1ZTNmYTQ4YjRiMThkNmExNzE0OTAyNDc5NDA0ZGM5M2Q3NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZWY2ZDQ3NjI3Yzk4YzFjYWFkYTM4MDMzZDQzZTEyYzE5YTA3OTNiN2E5OTNjNWUwYTdmZDdlNjRiMmNmNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjYmY5N2EyNWMxZTBmNWFiZjc5NzYwMjY2OGI5NzMxMWE0NzlmNmFjYzk0ODFiNDg4M2EyNjdhN2NiYzc3MjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjYTM2MDc4Yjc2NGEzOTc2NDZlNzc5ZTQ1NWMwOTJiN2UzNWZiMmYxNGUxOTY0ODAxMjA0NzJmMWVkMWQ1NzAifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-19T08:23:50.449Z"
   }
 }

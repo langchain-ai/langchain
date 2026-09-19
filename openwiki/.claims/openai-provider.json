@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:012f8bbb76f0fc9e8cf5796d4dd6a558d1ac45e1248a500804c3dd6342401ccf",
+  "pageVersion": "sha256:5f240845b14ccb9a2faf2c73b12686d26d027a2822d6d345a046a3fcb8744bda",
   "claims": [
     {
       "id": "claim_347664eb68464142b558791c7a95093f",
@@ -125,10 +125,82 @@
           "version": "repo-lines-v1:sha256:14ebffc7bca9e6fda843b3932b482d6ffbf0487c1f74f9bfbb871bb591a6cbc1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMWZkYTIxNjI4MGFjNjg0ZmI1ZGQ4NjIxYmE5NTJiMjU3YzhjZTVlMDExM2U2N2JjMTJkZDBlZGU1ZTg2MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_b04025c344f1451fb01e41cb5dc0ff36",
+      "statement": "ChatOpenAI supports use_responses_api (bool | None) to explicitly route requests to OpenAI's Responses API (/v1/responses). When None (default), routing is inferred based on invocation parameters like reasoning settings or model names (o1, o3).",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1206-L1212",
+          "version": "repo-lines-v1:sha256:4394ac614e41bb4fbba567fe5129aa87b44074a86f0831fb733d795906b977d3:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDliZDI5MzM3MGRlZTJjOTc0YWJkMzZmZGMyZTAzYjA2ODE1MjMxZGVmZjUzMTQxYTNmMjYzYWFjNjZjZTI4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhNzE1MjU3MmVlODRmMTA5MDZjNzRiOWYyYTkyNDM0ZGRhYjBlM2M0MjgxM2IwNGU1OTdlZmNlYzk1MWIyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTBjMDU1Nzg5NTA3MjU4NzI5ZTA3MDEzOGRlNzY0OTU2ZWRkYWJkNTM3OGYwZDJjYmQwN2I5ZTdjYmExYzRmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZkNjZlODQ0MzAzNGFlNjU2Y2U0ZmMzMzBjYTU1MzM2NWM4NmNjZDRmNGVkMmY3YTE0ZTAwNGU2OTY0YmRlNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f02cc9f7f8f84e9c9288a4d699fbcfda",
+      "statement": "ChatOpenAI supports output_version (str | None) to control AIMessage output format: 'v0' (legacy 0.3.x format), 'responses/v1' (Responses API content blocks, default since 1.0.0), or 'v1' (cross-provider standard). Overridable via LC_OUTPUT_VERSION environment variable.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1214-L1232",
+          "version": "repo-lines-v1:sha256:f940f4ea789e27a1ba50a9ac633bb82b19e9ced57ccaf2b870cf93d5f7958217:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ZWZhODk1YTA1ZTdhNWZmNTNkZjQxZjJhZjA0YWFlMGY2ZmEzZDVmMzgxMDYyN2NhNDM4NmUxZGMxODEwMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlOTJhNzI4NjYzMWJiMzFkNTg4ZjYxOWQ1ZTNmZWY0Mjk3MzE1MGJiMzgyYTY1NTQzMDdjNmViZDZlNjEwNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2NDQyMDIxZjNkNDJmMjU0MTVjZDJlOGNjMGIwNmRjYzQyMDZmYjFkZmE1ODY0NzJlNWUxNTYxZDZmZTQyNzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_980e70ce481b449c9307c82fa238b853",
+      "statement": "ChatOpenAI supports use_previous_response_id (bool, default False) to automatically pass the most recent response ID to the Responses API, reusing conversation state. When enabled, messages up to the most recent response are dropped from request payloads.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1175-L1200",
+          "version": "repo-lines-v1:sha256:e047547355c1633975f7ff056345a6ccb40317a16fc8f61efdef6ed3df9d982b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNDM5MGRhMTUyMGJlZTExYjk0YTg5OWYwMDY4ODc1MmIzODNkMDhlZTYyYmJlMGNmZTc1YzI0ZTY3YjM0MDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMDU0Mjg3MDUxZTJhOTQ4M2ZiNDBkN2U4M2RkMTYzMjZkZGJmMzc2ODEzMzNiZjVhNDU0M2ViNWQ1YmEyZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhMDJlNzIzYmFkYjFjYjVlNmJmNDFiZGNiZDczZWVlYzdhMjU2Mzg5NTUzYmMwMWRlZGE1YzRhNWNlODdlYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiNDJmYWE3YzBmNmQ1OWQxN2NlNjc3ZDQ3YjU1MTA1NjVjZDlhNjRmNTFlZjMxMDRhY2Q3YzgxY2E0MzczMmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_15ab94d081064ab8a62d8ffbc118512e",
+      "statement": "Responses API (/v1/responses) is OpenAI's advanced endpoint supporting streaming with reasoning, conversation state reuse via previous_response_id, structured tool execution, web search, and file search. Automatic routing occurs when reasoning parameter is set or model name indicates reasoning capability (o1, o3).",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1701-L1710",
+          "version": "repo-lines-v1:sha256:3d77d31defa187b8da0a56dc351416c1b5722bb4ce846b1ccf19ece12160f59f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNWE0MDU3YWNjMGUxZTdiNjQzYzY1NDQ2YjJkNjIyNzA0ZTA1NTYxOGFjM2VmODVlMTA1MTcxZmQ1Yjc0MzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyM2M1M2ViYmIxZWJjZGM5M2JjMmE0OTlhZjA1MzA1MjgzZWY4ZWFkZmI1NzUzODBkNGNhMzA4MmFlNWZlNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2NWY2YjM0YTI5YTYwZjg3MDNiM2E5NTNjNGYwZDg2OGQ4NmQxNmU1NTFmZWU4ZjE3MjJmN2FkN2U0ZWMyMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMWI5ZTQxNjUyMmNmMjAzMTIxODhiZWY3NTViNjI0YTY5M2Q0ZjY1N2Y0ODc0MzQwZGMxYjk3OWViNzc3N2IifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L909-L932",
+          "version": "repo-lines-v1:sha256:41814211db4dd232ffa77a0d6d3398934a0d1c7d612c1624c73a8163939dfe23:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MzU4MmE1ZDZkMWZjM2ExODgwNTg4ODZhYjAzOTZhYzg3ODdiYmMzZTM2MTYzODVlZDQzNDE2ZWU0Zjg4OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2Yjc1OWJhMDVmM2NhYWE1YjQxNzIwMDYwNzNhODgyNGMwZDdjM2IyNzhmNzFlOGI1ZTg5NDFkNzkxYjJiMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1NGVjNzc5MTU0YTFkMzg2MTU2M2M4ZjViZTYzNGRkYTBhNWNmOWQ5OGZhNmM3YTBiZmUxMjlhNzJhYzgwZjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3a97db713cef4deebe34beec7666374f",
+      "statement": "ChatOpenAI supports reasoning models (o1, o3, gpt-4-with-reasoning) via Responses API with reasoning parameter (dict with effort and summary keys). Chat Completions API uses reasoning_effort parameter. Reasoning output is available in response.additional_kwargs['reasoning'].",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L878-L907",
+          "version": "repo-lines-v1:sha256:9020783ca84ae396bbcb6756d4d5ce4e99f00c104ee49c7f4186303d8166e656:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMWZlZTM3OWY3MTMwMTFjYWQ2YjNhMDZjOWI2NmNjNzg5M2FlMmU2NGVlNjEyNWQ4YTZlNjIzZTBlMzMzNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjY2JhMzllNGVhMTExOGQwNzg4ZTBjNzczNTJiYTI4NGIzMDY0NzMwN2E2N2ZiZjM3MzY2ZjJlZjM4YWUyNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxODAwYWIxNmEwMDQ2ODVjMjUxNDI5ZDNhNjFmMDBjY2JkZDUzNDc2N2Y3MzczY2UxZjVkNmQ4MzRhMzQ2MDkifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L909-L932",
+          "version": "repo-lines-v1:sha256:41814211db4dd232ffa77a0d6d3398934a0d1c7d612c1624c73a8163939dfe23:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MzU4MmE1ZDZkMWZjM2ExODgwNTg4ODZhYjAzOTZhYzg3ODdiYmMzZTM2MTYzODVlZDQzNDE2ZWU0Zjg4OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2Yjc1OWJhMDVmM2NhYWE1YjQxNzIwMDYwNzNhODgyNGMwZDdjM2IyNzhmNzFlOGI1ZTg5NDFkNzkxYjJiMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1NGVjNzc5MTU0YTFkMzg2MTU2M2M4ZjViZTYzNGRkYTBhNWNmOWQ5OGZhNmM3YTBiZmUxMjlhNzJhYzgwZjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_de10ca5a2875471db401124c306573ca",
+      "statement": "Responses API supports conversation state reuse via previous_response_id parameter. ChatOpenAI can manage this automatically with use_previous_response_id=True, or manually by passing previous_response_id in invocation kwargs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1175-L1200",
+          "version": "repo-lines-v1:sha256:e047547355c1633975f7ff056345a6ccb40317a16fc8f61efdef6ed3df9d982b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNDM5MGRhMTUyMGJlZTExYjk0YTg5OWYwMDY4ODc1MmIzODNkMDhlZTYyYmJlMGNmZTc1YzI0ZTY3YjM0MDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMDU0Mjg3MDUxZTJhOTQ4M2ZiNDBkN2U4M2RkMTYzMjZkZGJmMzc2ODEzMzNiZjVhNDU0M2ViNWQ1YmEyZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhMDJlNzIzYmFkYjFjYjVlNmJmNDFiZGNiZDczZWVlYzdhMjU2Mzg5NTUzYmMwMWRlZGE1YzRhNWNlODdlYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiNDJmYWE3YzBmNmQ1OWQxN2NlNjc3ZDQ3YjU1MTA1NjVjZDlhNjRmNTFlZjMxMDRhY2Q3YzgxY2E0MzczMmQifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1957-L1957",
+          "version": "repo-lines-v1:sha256:2179f225a62deebf23f38b8b3bc1a23b03d570586579f02f0b61916d7bba6c2f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE3OWYyMjVhNjJkZWViZjIzZjM4YjhiM2JjMWEyM2IwM2Q1NzA1ODY1NzlmMDJmMGI2MTkxNmQ3YmJhNmMyZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE3OWYyMjVhNjJkZWViZjIzZjM4YjhiM2JjMWEyM2IwM2Q1NzA1ODY1NzlmMDJmMGI2MTkxNmQ3YmJhNmMyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTA2YjNjZDE5MmQ3MDYwZGRjOTY2YTk0OWEzNmFhMWNjYzI5MGFhMDM3NmJiMmMyNDUxZTkyOGQyNzI1NThkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2EyY2E5N2M0NGUzNDQ2YjJjZjQ0ZDIyNzc3MGEyNWE1NWU0ZThhZTJhYjQyNGQzYjEzNTAxMzc4ODZhMjNmOSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-08T08:27:09.597Z"
+    "at": "2026-09-19T08:23:50.449Z"
   }
 }

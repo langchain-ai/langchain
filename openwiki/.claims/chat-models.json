@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:67dc4d64315fbd418d3cdd7cd0f5500ae8f6059c10d263e69dfedd8e7d3a8338",
+  "pageVersion": "sha256:ce5a9ba58373d2f6d8c8d50683c4e5d2f4bbcd4ad9a34ed9ae1f0a7102418eb5",
   "claims": [
     {
       "id": "claim_d2cdcf05dd4149bb9ea0a5fb0d1568d8",
@@ -299,10 +299,104 @@
           "version": "repo-lines-v1:sha256:24287b0abdaea0feab7ef708f33a5c3586ce8ca68f42123671e789ee6437258d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExY2Y5ODYxZjhhMGI5MGJkYjMwOTUzMmI4NGVmMTIwMmM5Y2FlZWM1Y2Y1NzAzYjEzOTk1Y2M1YzUxYTg0ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MWUzYmZlZjJjZDZhZjhhZTUyYmYxYzNiYjllM2NiYTViYmYwZDI4ZDg1MTBlM2YzYWFjZGI2MWM4ZGJhNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MTA1MDc4YTkyMGM3MWQxNzFmYjk5ZWJjYTQ1ZTM1ZWYyZjE2N2QwZWY2MzU0OGNhMTYwMmRiMjViNTczYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3N2VjOGI3OTAxMWU0ZmM0Yjc5OTQ3ZjYxYmFkOTdhYzBmZGRlYmRjZWVjMjc0ZGE1ZDM2MjMwMGQyYzYxNTIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_479c88db0db2436fb551b7c1517f2a09",
+      "statement": "init_chat_model() is a factory function that provides unified model instantiation via provider-agnostic interface. It accepts model name (with optional 'provider:model' prefix), explicit model_provider kwarg, configurable_fields specification, and config_prefix for runtime parameter binding. The function performs provider inference based on model name prefix, dynamic import of provider classes, and returns either a fixed BaseChatModel or a _ConfigurableModel Runnable for deferred initialization.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L230-L400",
+          "version": "repo-lines-v1:sha256:6ab9ac24984b199ca785fd1c0d6e8afff33e0c5d03687c01f518ac5eaa6bcf03:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjMGJkMGU5MWM5OWQ0OGMwMmRmY2I5YjBmZThmMzBkMmExOTU2NGQ0OGNhZDliYWEzODNjMTI2NTE5NWEyMDhlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhNmVmNmQ0NzYyN2M5OGMxY2FhZGEzODAzM2Q0M2UxMmMxOWEwNzkzYjdhOTkzYzVlMGE3ZmQ3ZTY0YjJjZjU0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkYmQwZGRjODY4NDU5ZDZiZTdhMDFkZjZmNDg1MDkwZDc4ZWYzZDhjNzM2YjhmNTNiZjE2YWZlMTIyNmU3ODFiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMjc0ZDFmZGIxYjI1NjE0ZDg0OGZhODE5NzU2ZDAwMjEzNzg5OTljNDE4YjY3NGQwMWMzZjAyYTNhMzU0MjE2In0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L532-L541",
+          "version": "repo-lines-v1:sha256:701d2d288dafd1883ea1d9ba4eb68005135dbadf82beb4084341fcd32218906a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhYmE5YWFmNjliYmFiYjM3NTIyNzllYzNmNGZiYTEzNGYyNGM4OTIwNmJkODViZjMzNzNlOTMwNTNhNDRhY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4YjYzZjg2ZWI3OTI3Y2NkMDU3OTc0NDA1MjQwZWQ0NzAxNzIzNjQ1ZDE5NDY5MTE4NzgyZmI0YzA3MDQ4MzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e285e9dd42864930b49d2b041afa23a6",
+      "statement": "init_chat_model() resolves providers via _attempt_infer_model_provider() which maps model name prefixes to provider names (e.g., 'gpt-' -> 'openai', 'claude' -> 'anthropic', 'gemini' -> 'google_vertexai'). The function accepts 'provider:model' format or explicit model_provider kwarg, normalizes provider names to snake_case, and raises ValueError if provider cannot be inferred and is not explicitly provided.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L543-L647",
+          "version": "repo-lines-v1:sha256:08659533847bcbbc1240d1b506b59c377e857e310dd429d3f8e395b36be982b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4NzY1YTAzNjk1ZmEyZDFlNGJlNzlmYWM4ZjAzYThjMzk1NjkyNzk3MDI2NDEzMTQ1OTQ1MzA3N2ZlNGYzNTU2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OGM1NzJmYTc3Y2E3NGEwYjY4ZTg1ZDhjMjViNjkzZWMzZjI2MjE2OGE4NGIxYmQwMmViNmIzZjRmNjg0YzY2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4ZTUzMjg5MTJkMzFjNjE2YWViNzcwYTNjNWJiN2ZiMWUxNDkyNzE0YjY0MjU4Yzk3YWYyZWJjNDAyMTU3ZDJlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MDdkZWI4MGNiNDdiNGU0MDQ4NWU3ZjE0NmEzMjg3ZWIzZGYxYTU5MGY1MzIzYzkxNzJjZDgxNmMyYzc4YTUxIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_871242da26354587b1303dd087cbbcdf",
+      "statement": "When configurable_fields is specified in init_chat_model(), the function returns a _ConfigurableModel (Runnable wrapper) that defers model instantiation to runtime. At invoke time, the _ConfigurableModel reads config['configurable'] fields, merges them with stored defaults, instantiates the underlying BaseChatModel, and forwards the request. This enables dynamic model/provider selection without code changes.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L657-L680",
+          "version": "repo-lines-v1:sha256:bff10cdba27371d04116c8a459852b14f740b4919b6cbf369bb8f26ee2f76609:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MzJlZDgzMDcwMjhjNjk2ZDc1ZDQ4ZjFhZTQ5YjJiOTE4OWY2NDA3NTFlYWU4ZGYxZTMyNzc5ZTI4ZDQ2ODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyNTE0YmJlNzM5OGY4YTY1MWQ1Zjk1MGNiOGRkOWVhOWJmNjNjYTg3NzRlZjc4YmE4ZmVjZmZiNTk5MTRiNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlYWQxMTFiNDUwYzAwMWZlZDdhY2ZmMTBmNGM5ODIyYjJlNjc0ZDQ1OTIzZmMwZWY1ZmE4ODA4ZGNiZjc1NzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_87d753a8a6f94dbfb158ad8725e07a71",
+      "statement": "When generation raises BaseException with response attribute, _generate_response_from_error() extracts HTTP response metadata: status_code, headers, response body (JSON or text), and request_id. Gateway metadata is parsed from response headers. This metadata is merged into error-time ChatGeneration and reported via on_llm_error(exception, response=LLMResult(...)) callback.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L112-L147",
+          "version": "repo-lines-v1:sha256:ba327855133eaa05319828d5d3d50551be383187d7bc66a8bb58d2a4afdd986f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNTQ0MGE4YTg1NWYxZTE5OTc0NTYwYjc0MTcwMjM5ODJlY2M5ZDI2ZDNmOGRhYzE1NzE3NWY5MGE5MGIyN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ODM1MDk1Mjk2MGZlYjRkOGQ1YTM2MzIwNTBhMjcyYjM3MDBmODUzY2EyNGEzMDc5OWIzNjM0Y2ZlZjY1ZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4Yjg1Y2IyZmM5YWFjYTc0MDE3ZmU4MzM5ZTIzMmI1Y2YxZTU1NzZjMjYxYWVkOWZhNWQ4MzI1MGEyZWExNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlYzhhODg2YTUyMjAwY2Q3ZmU5ZWZmMDgyOGFlYmU2MjY5NDFmMDcwNTY5NzYwNmZlZWUwMGU5MjE5MGY4YzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_98362658f7c04a559a7f18c287dd1a49",
+      "statement": "Partner packages define exception subclasses that inherit from both provider SDK exceptions and LangChain error types (e.g., OpenAIAuthenticationError inherits openai.AuthenticationError and ModelAuthenticationError). This dual inheritance allows catch-all error handling via LangChain exception types while preserving provider-specific exception details and context.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L570-L579",
+          "version": "repo-lines-v1:sha256:aceaaf7fb792833f01dd845fef0899a74476647f38adcceb9a0e4f7f698ed94e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ZmRjZWY0ZTgyMmRiMGVkMzNmOTFkNmJiY2E2MWMwN2Y0Nzg5ODkwMTMxNzM5Y2E4YmU4ZTAwMmFkMmUxMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyMjkwODE0NWVjZmQ4OWNmYjc2MjdkM2YwZjFmZDg3YmE5OWYyYTIyOTY3YmNkZGJlZjAwOTMwOGY2ZjA2ODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmNWI5MGUyZTcxMDdmMDlmZjEzNDA2MmRmN2YxNGZmZTg5MzNiZmRhN2E0NjMwZmMwNGZiZTUyNWQyMWIzNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmODQ3ZmFiZTEzNDEyOGQ2N2NmYjZlOGQzMDRkNzUyMTQ3Y2RiMDU1YzIwNzA1MTI0YTNkMTc1NTdmMzhiM2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b71d4455fa3e4fbbbe054350c4ee3267",
+      "statement": "ChatOpenAI and AzureChatOpenAI classes implement BaseChatModel for OpenAI APIs. Streaming is implemented via both _stream() and _astream() with native event streaming. Tool calling is supported via bind_tools() with function calling schema conversion. Structured output uses tool-as-schema pattern. Message translation converts to OpenAI Chat Completions format with support for vision (images, PDFs) and tool messages. Token counting uses tiktoken library.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1-L100",
+          "version": "repo-lines-v1:sha256:374d7d0b7be968fcbb72f4de79e0322853197e0fd77b213c47567e4a34f25703:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzMDFmZGEyMTYyODBhYzY4NGZiNWRkODYyMWJhOTUyYjI1N2M4Y2U1ZTAxMTNlNjdiYzEyZGQwZWRlNWU4NjBjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhYzZmYmYxYWZmYmMzNTM4NDhjZjlhMjk5NjQyYjI5NmRmZjlmZmQ3YTk1NzMyYjIwYWU3NGEyNWMwY2VmOWU4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjN2YzYjIyMmJkZGI3YzQ4NTNkYzAyNWRkZGNjYTA0Mzc2MmY1NjZlNjA5MjYwZDYwYThhNWQ1YjFiZmRiZTQ1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a208023653a24c748c8553c32f3086e1",
+      "statement": "ChatAnthropic implements BaseChatModel for Anthropic APIs. Streaming is implemented via both _stream() and _astream() with native streaming support. Tool calling uses XML-style tool use definitions. Message merging is required because Anthropic API does not accept consecutive user messages; _merge_messages() handles this. Tool call IDs are normalized via _normalize_tool_call_id() to match Anthropic's required ^[a-zA-Z0-9_-]+$ pattern. Vision support includes base64-encoded and URL-based image blocks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/chat_models.py#L281-L593",
+          "version": "repo-lines-v1:sha256:fd44261ed348996168d419ea9a0c0e7695448592cbe93985ad5ec8a19749f0f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNjVlOGJmNTgwYTM4YmJjZmFkYWYwMzYxZGFiNzg4YzRlMDFmMjI4MzVkYzc5NjM4ZWU2NWNmYzk1ZTViM2ZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5ODMzNzU3YzZiYmM2YzllMjk2M2I0MDQyMDYwYjAwMjdhNGUyOGM4M2RmZmY4ZWQyYTBiMjYwODQ2YmYyMmM4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4Y2M0YTdkMWNjNzk2YWJhM2U0NjcyMzMyN2Y1MTdlOWY4MTE5ODJkMjUwZjA3MDI5ODZlNGI1NzY0YWQ5NTg5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmYjYzM2JlN2ZiYmI5ZDNiMDI1Nzc2MDNmZTI4ZDU4OWYwNmU1NDBhNzk2OWUzOGU4YjgxMmQzMmMzZjM0NzQwIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_03088c3d2ce34e5ebc986cc65acb1988",
+      "statement": "Not all models support tool calling. The ModelProfile.tool_calling boolean field indicates support. OpenAI (gpt-4+) and Anthropic (claude-3+) have full tool calling, tool_choice, and tool call streaming support. Other providers like Cohere, Groq, DeepSeek, Mistral, and AWS Bedrock have varying levels of support. When tool_calling is False, bind_tools() and with_structured_output() raise NotImplementedError.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/model_profile.py#L126-L136",
+          "version": "repo-lines-v1:sha256:c1243a8dc78c417d13354d639c865f129fec0f49cba792754826ce06d4a67408:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZmZjYTcxYzVhOTcxOTM2ZTZlYjFjYjNlNzUzNjBhZWI2ZTlkYzg3YzI5ZmYwYTQ0MmY2NzQzNjRhZjZmMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzN2UwYjRlZTQwZTliOWI0NzZlZjFmOTk3M2Y1ZTAzOGYyZjVhZGNjMWNhNWUxNGM4NmY5MDAwZGY1YTJlNjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwOTM5N2IzY2FhNWI3YjEzNTNiZGYwZmM4MzY4ZGIxMjA3ZTFiMGFiNjAzOTFmOTJjNWU2OWMyMzE0OTdiOTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_153dfa6b869d4a6f89ecfb0f67131d3b",
+      "statement": "bind_tools() accepts tools in multiple formats: Callable (function/method with type hints), Pydantic BaseModel, TypedDict, dict (provider-specific schema), and BaseTool. Callables and Pydantic classes are converted to JSON schema via convert_to_json_schema(). Tool input/output is captured in AIMessage.tool_calls and received via ToolMessage in subsequent turns.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2366-L2383",
+          "version": "repo-lines-v1:sha256:a2c56a9bc7a84b7ed47b879ac55e9139606dc73bd2023a8ced246310d05fb38c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxODU0YjA0NjkxN2UzYWIyYWQwMjllMGVlYWU3ZjkxZDBiZTNkNjkwMTRiYjYyN2FhZGRlZjJlNjlkMzg4MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YjQ4Nzk3YmM1N2JkZGEzOGQ4MTE5NjhkMTE0YjgzNTZkN2I0YmUzMzFhMTQyZmY4ZDgzNWUwMzc3NjVlYzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1NzQzYjMwYzc5OTI2MzkwNGY4ZTgxODQyNDM3OWY5ZDIyYjJjMjAxY2I2ZTJmNzUzMzA0MTc3Y2YxYzk4OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMTQxNjFmOTNhMDJmMzU5YmQ4MDVmZWI0Yjg5NmM0ZjExZWFiNGM1Zjc4NDA2ZmRjZjk5N2NlZGM2N2MyZGIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-08T08:27:09.597Z"
+    "at": "2026-09-19T08:23:50.449Z"
   }
 }

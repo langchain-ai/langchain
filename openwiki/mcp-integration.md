@@ -1,10 +1,11 @@
 ---
-type: "Reference"
-title: "Bearer token"
-openwiki_generated: true
+type: "Integration"
+title: "MCP (Model Context Protocol) Integration"
+description: "The langchain.mcp module discovers and adapts MCP tools for LangChain agents, supporting multiple transports, elicitation-driven interrupts, tool error recovery, and multi-server prefixing."
+tags: [mcp, tools, protocol, agents, integration]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-19T08:23:50.449Z
 sources:
   - id: openwiki-source-6d1e3478d5b63988ee177552
     resource: repo://libs/langchain_v1/examples/mcp/auth_bearer.py
@@ -30,9 +31,8 @@ sources:
     resource: repo://libs/langchain_v1/langchain/mcp/elicitation.py
   - id: openwiki-source-4715c337e9b93b9d00846133
     resource: repo://libs/langchain_v1/langchain/mcp/tools.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-19T08:23:50.449Z" }
 ---
-
 
 ## Overview
 
