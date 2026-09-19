@@ -6,6 +6,8 @@ EXPECTED_ALL = [
     "Answer",
     "Choice",
     "ChoiceAnswer",
+    "ClassifierRequest",
+    "ClassifierResponse",
     "Noul",
     "NoulAnswer",
     "NoulCriteria",

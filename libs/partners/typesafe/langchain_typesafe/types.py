@@ -7,6 +7,7 @@ from typing import Annotated, Literal, TypeAlias
 
 from langchain_core.messages import BaseMessage
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from typing_extensions import TypedDict
 
 _QuestionContent: TypeAlias = str | dict[str, JsonValue] | list[JsonValue]
 _StateValue: TypeAlias = (
@@ -61,14 +62,15 @@ class Noul(BaseModel):
         ```python
         from langchain_typesafe import Noul, TypeSafeClassifier
 
-        classifier = TypeSafeClassifier(
+        classifier = TypeSafeClassifier()
+        response = classifier.invoke(
+            state="Production is down. Please help immediately.",
             questions={
                 "urgent": Noul(
                     instructions="Does this message require an urgent response?"
                 )
-            }
+            },
         )
-        response = classifier.invoke("Production is down. Please help immediately.")
         urgency = response.nouls["urgent"].noul
 
         if urgency >= 0.8:
@@ -83,7 +85,7 @@ class Noul(BaseModel):
     """Complete yes/no judgment to make about the input state.
 
     Instructions may be text or structured JSON. Write the full question here even when
-    the question ID used by `TypeSafeClassifier.questions` appears self-explanatory.
+    its ID in `ClassifierRequest.questions` appears self-explanatory.
     """
 
     criteria: NoulCriteria | None = None
@@ -103,7 +105,9 @@ class Choice(BaseModel):
         ```python
         from langchain_typesafe import Choice, TypeSafeClassifier
 
-        classifier = TypeSafeClassifier(
+        classifier = TypeSafeClassifier()
+        response = classifier.invoke(
+            state="Stripe fails whenever I connect my account.",
             questions={
                 "department": Choice(
                     instructions="Which team should handle this request?",
@@ -113,9 +117,8 @@ class Choice(BaseModel):
                         "sales": "Pricing or purchasing questions.",
                     },
                 )
-            }
+            },
         )
-        response = classifier.invoke("Stripe fails whenever I connect my account.")
         department = response.choices["department"]
 
         if department.confidence >= 0.7:
@@ -153,7 +156,9 @@ class Score(BaseModel):
         ```python
         from langchain_typesafe import Score, TypeSafeClassifier
 
-        classifier = TypeSafeClassifier(
+        classifier = TypeSafeClassifier()
+        response = classifier.invoke(
+            state="This has failed three times. Fix it now.",
             questions={
                 "frustration": Score(
                     instructions="How frustrated does the customer appear?",
@@ -163,9 +168,8 @@ class Score(BaseModel):
                         "Very angry or using strong language.",
                     ],
                 )
-            }
+            },
         )
-        response = classifier.invoke("This has failed three times. Fix it now.")
         frustration = response.scores["frustration"]
 
         print(frustration.score)  # May be fractional, for example 1.35.
@@ -186,6 +190,20 @@ class Score(BaseModel):
 
 Question = Annotated[Noul | Choice | Score, Field(discriminator="type")]
 """A discriminated union of question types accepted by `TypeSafeClassifier`."""
+
+
+class ClassifierRequest(TypedDict):
+    """Complete input for one `TypeSafeClassifier` invocation.
+
+    Keeping the state and questions in the Runnable input ensures both values
+    participate in composition, batching, and tracing.
+    """
+
+    state: State
+    """Text, structured JSON, or LangChain messages to classify."""
+
+    questions: dict[str, Question]
+    """Non-empty mapping of answer IDs to typed classification questions."""
 
 
 class NoulAnswer(BaseModel):
@@ -260,12 +278,12 @@ class Usage(BaseModel):
     """Number of output tokens produced, or `None` when not reported."""
 
 
-class ClassificationResponse(BaseModel):
+class ClassifierResponse(BaseModel):
     """Typed answers and metadata returned from one TypeSafe request.
 
     Access every answer through `answers`, or use `nouls`, `choices`, and `scores` for
     views filtered by answer type. Each mapping preserves the question IDs supplied to
-    `TypeSafeClassifier.questions`.
+    `ClassifierRequest.questions`.
     """
 
     model: str
@@ -312,7 +330,8 @@ __all__ = [
     "Answer",
     "Choice",
     "ChoiceAnswer",
-    "ClassificationResponse",
+    "ClassifierRequest",
+    "ClassifierResponse",
     "Noul",
     "NoulAnswer",
     "NoulCriteria",

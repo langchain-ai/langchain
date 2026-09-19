@@ -18,7 +18,10 @@ Set the `TYPESAFE_API_KEY` environment variable before making requests.
 ```python
 from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 
-classifier = TypeSafeClassifier(
+classifier = TypeSafeClassifier()
+
+result = classifier.invoke(
+    state="Stripe has failed to connect for three days. Help ASAP.",
     questions={
         "department": Choice(
             instructions="Which team should handle this?",
@@ -32,16 +35,30 @@ classifier = TypeSafeClassifier(
             instructions="How frustrated does the customer appear?",
             criteria=["calm", "frustrated", "angry"],
         ),
-    }
+    },
 )
-
-result = classifier.invoke("Stripe has failed to connect for three days. Help ASAP.")
 print(result.choices["department"].choice)
 print(result.nouls["urgent"].noul)
 print(result.scores["frustration"].score)
 ```
 
-Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnable`, the classifier can also be composed with other LangChain runnables and supports standard batching, callbacks, and tracing.
+Call `invoke` or `ainvoke` with keyword `state` and `questions` arguments. Both are
+normalized into the Runnable request, so callbacks and traces include the complete
+classification request. Use `await classifier.ainvoke(...)` for asynchronous
+applications.
+
+For generic Runnable composition or batching, pass the complete
+`ClassifierRequest` mapping positionally:
+
+```python
+from langchain_typesafe import ClassifierRequest
+
+request: ClassifierRequest = {
+    "state": "Stripe has failed to connect for three days. Help ASAP.",
+    "questions": {"urgent": Noul(instructions="Is this urgent?")},
+}
+result = classifier.invoke(request)
+```
 
 ### Experimental middleware
 
@@ -113,13 +130,16 @@ agent = create_agent(
 from langchain_core.messages import HumanMessage, SystemMessage
 
 response = classifier.invoke(
-    {
+    state={
         "conversation": [
             SystemMessage("You are reviewing a customer support conversation."),
             HumanMessage("My payouts have failed for three days. Help!"),
         ],
         "account_tier": "enterprise",
-    }
+    },
+    questions={
+        "urgent": Noul(instructions="Does this customer need urgent help?")
+    },
 )
 ```
 
@@ -131,7 +151,6 @@ The classifier creates sync and async `httpx2` clients when they are not supplie
 import httpx2
 
 classifier = TypeSafeClassifier(
-    questions={"urgent": Noul(instructions="Is this urgent?")},
     client=httpx2.Client(proxy="http://proxy.internal"),
     async_client=httpx2.AsyncClient(proxy="http://proxy.internal"),
 )
@@ -148,7 +167,10 @@ from langchain_core.exceptions import ModelAuthenticationError, ModelRateLimitEr
 from langchain_typesafe import TypeSafeRateLimitError
 
 try:
-    response = classifier.invoke("Classify this message.")
+    response = classifier.invoke(
+        state="Classify this message.",
+        questions={"urgent": Noul(instructions="Is this urgent?")},
+    )
 except TypeSafeRateLimitError as error:
     print(error.request_id, error.retry_after_ms)
 except (ModelAuthenticationError, ModelRateLimitError):

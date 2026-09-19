@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field, JsonValue
 from typing_extensions import NotRequired, override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
-from langchain_typesafe.types import Choice, ChoiceAnswer
+from langchain_typesafe.types import Choice, ChoiceAnswer, Question
 
 _QUESTION_ID = "model_route"
 _QuestionContent = str | dict[str, JsonValue] | list[JsonValue]
@@ -56,6 +56,18 @@ class _ModelRouterConfig(BaseModel):
 
     choices: dict[str, ModelChoice] = Field(min_length=1)
     instructions: _QuestionContent
+
+
+def _routing_questions(config: _ModelRouterConfig) -> dict[str, Question]:
+    """Build the routing question from validated middleware configuration."""
+    return {
+        _QUESTION_ID: Choice(
+            instructions=config.instructions,
+            criteria={
+                route: choice.criteria for route, choice in config.choices.items()
+            },
+        )
+    }
 
 
 class _ModelRouterState(AgentState):
@@ -137,17 +149,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
             else choice.model
             for route, choice in self.config.choices.items()
         }
-        self.classifier = TypeSafeClassifier(
-            questions={
-                _QUESTION_ID: Choice(
-                    instructions=self.config.instructions,
-                    criteria={
-                        route: choice.criteria
-                        for route, choice in self.config.choices.items()
-                    },
-                )
-            }
-        )
+        self.classifier = TypeSafeClassifier()
 
     @staticmethod
     def _latest_human_message(state: _ModelRouterState) -> HumanMessage:
@@ -163,7 +165,10 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         self, state: _ModelRouterState, runtime: Runtime[ContextT]
     ) -> dict[str, ChoiceAnswer]:
         """Classify the latest task and store the complete routing answer."""
-        response = self.classifier.invoke(self._latest_human_message(state))
+        response = self.classifier.invoke(
+            state=self._latest_human_message(state),
+            questions=_routing_questions(self.config),
+        )
         return {"model_route": response.choices[_QUESTION_ID]}
 
     @override
@@ -171,7 +176,10 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         self, state: _ModelRouterState, runtime: Runtime[ContextT]
     ) -> dict[str, ChoiceAnswer]:
         """Classify the latest task asynchronously and store the routing answer."""
-        response = await self.classifier.ainvoke(self._latest_human_message(state))
+        response = await self.classifier.ainvoke(
+            state=self._latest_human_message(state),
+            questions=_routing_questions(self.config),
+        )
         return {"model_route": response.choices[_QUESTION_ID]}
 
     @override
