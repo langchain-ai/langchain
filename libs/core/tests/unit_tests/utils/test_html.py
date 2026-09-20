@@ -207,3 +207,59 @@ def test_extract_sub_links_with_query() -> None:
         )
     )
     assert actual == expected, f"Expected {expected}, but got {actual}"
+
+
+def test_prune_invisible_elements_hidden_styles() -> None:
+    from langchain_core.utils.html import prune_invisible_elements
+
+    html = (
+        "<div>"
+        "<p>Visible content</p>"
+        "<span style=\"display: none;\">Hidden injection</span>"
+        "<span style=\"visibility: hidden;\">Invisible attack</span>"
+        "<p style=\"font-size: 0px;\">Zero font</p>"
+        "<div style=\"opacity: 0;\">Zero opacity</div>"
+        "<p style=\"text-indent: -9999px;\">Off-screen payload</p>"
+        "<p>Final normal text</p>"
+        "</div>"
+    )
+    cleaned = prune_invisible_elements(html)
+    assert "Visible content" in cleaned
+    assert "Final normal text" in cleaned
+    assert "Hidden injection" not in cleaned
+    assert "Invisible attack" not in cleaned
+    assert "Zero font" not in cleaned
+    assert "Zero opacity" not in cleaned
+    assert "Off-screen payload" not in cleaned
+
+
+def test_prune_invisible_elements_preserves_accessibility() -> None:
+    from langchain_core.utils.html import prune_invisible_elements
+
+    html = (
+        "<div>"
+        "<span class=\"sr-only\" aria-hidden=\"true\">Screen reader text</span>"
+        "<span class=\"visually-hidden\">Accessible warning</span>"
+        "<span aria-hidden=\"true\">Adversarial hidden text</span>"
+        "</div>"
+    )
+    cleaned = prune_invisible_elements(html, preserve_aria=True)
+    assert "Screen reader text" in cleaned
+    assert "Accessible warning" in cleaned
+    assert "Adversarial hidden text" not in cleaned
+
+
+def test_prune_invisible_elements_script_and_style_tags() -> None:
+    from langchain_core.utils.html import prune_invisible_elements
+
+    html = (
+        "<div>"
+        "<style>body { color: red; }</style>"
+        "<script>alert(1);</script>"
+        "<p>Safe text</p>"
+        "</div>"
+    )
+    cleaned = prune_invisible_elements(html)
+    assert "Safe text" in cleaned
+    assert "alert(1)" not in cleaned
+    assert "color: red" not in cleaned
