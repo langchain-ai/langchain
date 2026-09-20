@@ -72,14 +72,11 @@ def test_middleware_constructs_classifier_from_routing_configuration() -> None:
     """Construct a TypeSafe Choice and expose validated configuration fields."""
     middleware, _, classifier, classifier_class = _router()
 
-    classifier_class.assert_called_once()
-    questions = classifier_class.call_args.kwargs["questions"]
-    assert questions == {
-        "model_route": Choice(
-            instructions="Choose the least costly model suited to the task.",
-            criteria={"fast": "Simple tasks.", "powerful": "Complex tasks."},
-        )
-    }
+    classifier_class.assert_called_once_with()
+    assert middleware._question == Choice(
+        instructions="Choose the least costly model suited to the task.",
+        criteria={"fast": "Simple tasks.", "powerful": "Complex tasks."},
+    )
     assert middleware.classifier is classifier
     assert middleware.config.instructions == (
         "Choose the least costly model suited to the task."
@@ -104,10 +101,20 @@ async def test_agent_routes_using_latest_human_message(*, asynchronous: bool) ->
 
     if asynchronous:
         result = await agent.ainvoke(inputs)
-        classifier.ainvoke.assert_awaited_once_with(latest_message)
+        classifier.ainvoke.assert_awaited_once_with(
+            {
+                "state": latest_message,
+                "questions": {"model_route": middleware._question},
+            }
+        )
     else:
         result = agent.invoke(inputs)
-        classifier.invoke.assert_called_once_with(latest_message)
+        classifier.invoke.assert_called_once_with(
+            {
+                "state": latest_message,
+                "questions": {"model_route": middleware._question},
+            }
+        )
 
     assert result["messages"][-1].text == "fast response"
     assert result["model_route"] == _response("fast").choices["model_route"]

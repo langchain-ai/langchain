@@ -18,24 +18,27 @@ Set the `TYPESAFE_API_KEY` environment variable before making requests.
 ```python
 from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 
-classifier = TypeSafeClassifier(
-    questions={
-        "department": Choice(
-            instructions="Which team should handle this?",
-            criteria={
-                "billing": "Payment or subscription issues",
-                "technical": "Product or integration issues",
-            },
-        ),
-        "urgent": Noul(instructions="Does this message express urgency?"),
-        "frustration": Score(
-            instructions="How frustrated does the customer appear?",
-            criteria=["calm", "frustrated", "angry"],
-        ),
+classifier = TypeSafeClassifier()
+
+result = classifier.invoke(
+    {
+        "state": "Stripe has failed to connect for three days. Help ASAP.",
+        "questions": {
+            "department": Choice(
+                instructions="Which team should handle this?",
+                criteria={
+                    "billing": "Payment or subscription issues",
+                    "technical": "Product or integration issues",
+                },
+            ),
+            "urgent": Noul(instructions="Does this message express urgency?"),
+            "frustration": Score(
+                instructions="How frustrated does the customer appear?",
+                criteria=["calm", "frustrated", "angry"],
+            ),
+        },
     }
 )
-
-result = classifier.invoke("Stripe has failed to connect for three days. Help ASAP.")
 print(result.choices["department"].choice)
 print(result.nouls["urgent"].noul)
 print(result.scores["frustration"].score)
