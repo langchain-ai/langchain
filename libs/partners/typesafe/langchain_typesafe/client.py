@@ -23,7 +23,7 @@ from langchain_core.exceptions import (
 from pydantic import ValidationError
 from typing_extensions import override
 
-from langchain_typesafe.types import ClassificationResponse
+from langchain_typesafe.types import ClassifierResponse
 
 _REQUEST_ID_HEADER = "x-typesafe-request-id"
 _RETRY_AFTER_HEADER = "retry-after"
@@ -310,7 +310,7 @@ def _api_error(response: httpx2.Response) -> TypeSafeAPIError:
     )
 
 
-def parse_response(response: httpx2.Response) -> ClassificationResponse:
+def parse_response(response: httpx2.Response) -> ClassifierResponse:
     """Validate an HTTP response and convert it to a classification response.
 
     Args:
@@ -331,7 +331,7 @@ def parse_response(response: httpx2.Response) -> ClassificationResponse:
     endpoint = _response_endpoint(response)
     body = _response_body(response)
     try:
-        parsed = ClassificationResponse.model_validate(body)
+        parsed = ClassifierResponse.model_validate(body)
     except ValidationError as error:
         location = error.errors()[0].get("loc", ())
         field_path = ".".join(str(item) for item in location) or "response"

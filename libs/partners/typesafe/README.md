@@ -18,30 +18,46 @@ Set the `TYPESAFE_API_KEY` environment variable before making requests.
 ```python
 from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
 
-classifier = TypeSafeClassifier(
-    questions={
-        "department": Choice(
-            instructions="Which team should handle this?",
-            criteria={
-                "billing": "Payment or subscription issues",
-                "technical": "Product or integration issues",
-            },
-        ),
-        "urgent": Noul(instructions="Does this message express urgency?"),
-        "frustration": Score(
-            instructions="How frustrated does the customer appear?",
-            criteria=["calm", "frustrated", "angry"],
-        ),
+classifier = TypeSafeClassifier()
+
+result = classifier.invoke(
+    {
+        "state": "Stripe has failed to connect for three days. Help ASAP.",
+        "questions": {
+            "department": Choice(
+                instructions="Which team should handle this?",
+                criteria={
+                    "billing": "Payment or subscription issues",
+                    "technical": "Product or integration issues",
+                },
+            ),
+            "urgent": Noul(instructions="Does this message express urgency?"),
+            "frustration": Score(
+                instructions="How frustrated does the customer appear?",
+                criteria=["calm", "frustrated", "angry"],
+            ),
+        },
     }
 )
-
-result = classifier.invoke("Stripe has failed to connect for three days. Help ASAP.")
 print(result.choices["department"].choice)
 print(result.nouls["urgent"].noul)
 print(result.scores["frustration"].score)
 ```
 
-Use `await classifier.ainvoke(...)` for asynchronous applications. As a `Runnable`, the classifier can also be composed with other LangChain runnables and supports standard batching, callbacks, and tracing.
+Pass a complete `ClassifierRequest` mapping to `invoke` or `ainvoke`. Keeping both
+`state` and `questions` in the Runnable input makes the complete classification request
+available to composition, batching, callbacks, and tracing. Use
+`await classifier.ainvoke(...)` for asynchronous applications:
+
+```python
+from langchain_typesafe import ClassifierRequest
+
+request: ClassifierRequest = {
+    "state": "Stripe has failed to connect for three days. Help ASAP.",
+    "questions": {"urgent": Noul(instructions="Is this urgent?")},
+}
+result = classifier.invoke(request)
+```
 
 ### Experimental middleware
 
@@ -114,11 +130,16 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 response = classifier.invoke(
     {
-        "conversation": [
-            SystemMessage("You are reviewing a customer support conversation."),
-            HumanMessage("My payouts have failed for three days. Help!"),
-        ],
-        "account_tier": "enterprise",
+        "state": {
+            "conversation": [
+                SystemMessage("You are reviewing a customer support conversation."),
+                HumanMessage("My payouts have failed for three days. Help!"),
+            ],
+            "account_tier": "enterprise",
+        },
+        "questions": {
+            "urgent": Noul(instructions="Does this customer need urgent help?")
+        },
     }
 )
 ```
@@ -131,7 +152,6 @@ The classifier creates sync and async `httpx2` clients when they are not supplie
 import httpx2
 
 classifier = TypeSafeClassifier(
-    questions={"urgent": Noul(instructions="Is this urgent?")},
     client=httpx2.Client(proxy="http://proxy.internal"),
     async_client=httpx2.AsyncClient(proxy="http://proxy.internal"),
 )
@@ -148,7 +168,12 @@ from langchain_core.exceptions import ModelAuthenticationError, ModelRateLimitEr
 from langchain_typesafe import TypeSafeRateLimitError
 
 try:
-    response = classifier.invoke("Classify this message.")
+    response = classifier.invoke(
+        {
+            "state": "Classify this message.",
+            "questions": {"urgent": Noul(instructions="Is this urgent?")},
+        }
+    )
 except TypeSafeRateLimitError as error:
     print(error.request_id, error.retry_after_ms)
 except (ModelAuthenticationError, ModelRateLimitError):

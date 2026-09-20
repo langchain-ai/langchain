@@ -10,8 +10,10 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_typesafe import (
     Choice,
     ChoiceAnswer,
+    ClassifierRequest,
     Noul,
     NoulAnswer,
+    Question,
     Score,
     ScoreAnswer,
     TypeSafeClassifier,
@@ -21,40 +23,39 @@ from langchain_typesafe import (
 def test_invoke_all_question_types() -> None:
     """Exercise the live sync API across Choice, Noul, and Score questions."""
     labels = {"billing", "technical", "sales"}
-    classifier = TypeSafeClassifier(
-        questions={
-            "department": Choice(
-                instructions="Which team should handle this request?",
-                criteria={
-                    "billing": "Payment or subscription issues.",
-                    "technical": "Product bugs or integration failures.",
-                    "sales": "Pricing or purchasing questions.",
-                },
-            ),
-            "urgent": Noul(
-                instructions="Does this message require an urgent response?"
-            ),
-            "frustration": Score(
-                instructions="How frustrated does the customer appear?",
-                criteria=[
-                    "Calm and neutral.",
-                    "Concerned but civil.",
-                    "Very angry or using strong language.",
-                ],
-            ),
-        }
-    )
+    questions: dict[str, Question] = {
+        "department": Choice(
+            instructions="Which team should handle this request?",
+            criteria={
+                "billing": "Payment or subscription issues.",
+                "technical": "Product bugs or integration failures.",
+                "sales": "Pricing or purchasing questions.",
+            },
+        ),
+        "urgent": Noul(instructions="Does this message require an urgent response?"),
+        "frustration": Score(
+            instructions="How frustrated does the customer appear?",
+            criteria=[
+                "Calm and neutral.",
+                "Concerned but civil.",
+                "Very angry or using strong language.",
+            ],
+        ),
+    }
+    classifier = TypeSafeClassifier()
 
     try:
-        response = classifier.invoke(
-            {
+        request: ClassifierRequest = {
+            "state": {
                 "message": (
                     "Stripe has failed to connect for three days. "
                     "Please help immediately."
                 ),
                 "account_tier": "enterprise",
-            }
-        )
+            },
+            "questions": questions,
+        }
+        response = classifier.invoke(request)
 
         department = response.answers["department"]
         urgent = response.answers["urgent"]
@@ -87,17 +88,16 @@ def test_invoke_all_question_types() -> None:
 
 async def test_ainvoke_with_nested_messages() -> None:
     """Exercise the live async API with messages nested in structured state."""
-    classifier = TypeSafeClassifier(
-        questions={
-            "needs_support": Noul(
-                instructions="Does the user need help resolving a technical problem?"
-            )
-        }
-    )
+    questions: dict[str, Question] = {
+        "needs_support": Noul(
+            instructions="Does the user need help resolving a technical problem?"
+        )
+    }
+    classifier = TypeSafeClassifier()
 
     try:
-        response = await classifier.ainvoke(
-            {
+        request: ClassifierRequest = {
+            "state": {
                 "conversation": [
                     SystemMessage("You are reviewing a customer support conversation."),
                     HumanMessage(
@@ -111,8 +111,10 @@ async def test_ainvoke_with_nested_messages() -> None:
                     "trial": False,
                     "notes": None,
                 },
-            }
-        )
+            },
+            "questions": questions,
+        }
+        response = await classifier.ainvoke(request)
 
         needs_support = response.answers["needs_support"]
         assert isinstance(needs_support, NoulAnswer)

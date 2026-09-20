@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
-from langchain_typesafe.types import Noul, NoulCriteria
+from langchain_typesafe.types import Noul, NoulCriteria, Question
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -69,6 +69,16 @@ class _AutoModeConfig(BaseModel):
             false=_DEFAULT_FALSE_CRITERIA,
         )
     )
+
+
+def _risk_questions(config: _AutoModeConfig) -> dict[str, Question]:
+    """Build the risk question from validated middleware configuration."""
+    return {
+        _QUESTION_ID: Noul(
+            instructions=config.instructions,
+            criteria=config.criteria,
+        )
+    }
 
 
 class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
@@ -154,14 +164,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
                 "criteria": criteria,
             }
         )
-        self.classifier = TypeSafeClassifier(
-            questions={
-                _QUESTION_ID: Noul(
-                    instructions=self.config.instructions,
-                    criteria=self.config.criteria,
-                )
-            },
-        )
+        self.classifier = TypeSafeClassifier()
 
     @staticmethod
     def _classification_state(request: ToolCallRequest) -> dict[str, Any]:
@@ -219,7 +222,12 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         """
         if request.tool_call["name"] not in self._tool_names:
             return handler(request)
-        response = self.classifier.invoke(self._classification_state(request))
+        response = self.classifier.invoke(
+            {
+                "state": self._classification_state(request),
+                "questions": _risk_questions(self.config),
+            }
+        )
         probability = response.nouls[_QUESTION_ID].noul
         if probability >= _PROBABILITY_THRESHOLD:
             return self._blocked_tool_message(request, probability)
@@ -245,7 +253,12 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         """
         if request.tool_call["name"] not in self._tool_names:
             return await handler(request)
-        response = await self.classifier.ainvoke(self._classification_state(request))
+        response = await self.classifier.ainvoke(
+            {
+                "state": self._classification_state(request),
+                "questions": _risk_questions(self.config),
+            }
+        )
         probability = response.nouls[_QUESTION_ID].noul
         if probability >= _PROBABILITY_THRESHOLD:
             return self._blocked_tool_message(request, probability)
