@@ -136,7 +136,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     return json.loads(s, strict=strict)
 
 
-_json_markdown_re = re.compile(r"```(json)?(.*)", re.DOTALL)
+_json_markdown_re = re.compile(r"```((?i:json))?(.*)", re.DOTALL)
 
 
 def parse_json_markdown(

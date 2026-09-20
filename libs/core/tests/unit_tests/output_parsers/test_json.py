@@ -214,6 +214,12 @@ def test_parse_json_with_code_blocks_and_newlines() -> None:
     }
 
 
+@pytest.mark.parametrize("tag", ["json", "JSON", "Json", "jSoN"])
+def test_parse_json_with_case_insensitive_code_fence(tag: str) -> None:
+    parsed = parse_json_markdown(f'```{tag}\n{{"foo": "bar"}}\n```')
+    assert parsed == {"foo": "bar"}
+
+
 def test_parse_non_dict_json_output() -> None:
     text = "```json\n1\n```"
     with pytest.raises(OutputParserException) as exc_info:
