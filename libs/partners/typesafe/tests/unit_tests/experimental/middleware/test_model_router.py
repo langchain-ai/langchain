@@ -170,6 +170,26 @@ def test_model_string_is_initialized_once() -> None:
     assert middleware.models == {"fast": initialized_model}
 
 
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.asyncio
+async def test_run_without_human_message_fails_before_classification(
+    *, asynchronous: bool
+) -> None:
+    """Stop runs that carry no user turn with a clear error, not StopIteration."""
+    middleware, models, classifier, _ = _router()
+    agent = create_agent(models["fast"], middleware=[middleware])
+    inputs: InputAgentState = {"messages": [AIMessage("Resumed with no user turn")]}
+
+    if asynchronous:
+        with pytest.raises(ValueError, match="needs a HumanMessage"):
+            await agent.ainvoke(inputs)
+        classifier.ainvoke.assert_not_awaited()
+    else:
+        with pytest.raises(ValueError, match="needs a HumanMessage"):
+            agent.invoke(inputs)
+        classifier.invoke.assert_not_called()
+
+
 def test_experimental_public_interface() -> None:
     """Expose the model router from the experimental middleware namespace."""
     assert middleware_all == [
