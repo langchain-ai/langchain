@@ -277,3 +277,17 @@ async def test_adelete_keys(amanager: InMemoryRecordManager) -> None:
     # Check if the deleted keys are no longer in the database
     remaining_keys = await amanager.alist_keys()
     assert remaining_keys == ["key3"]
+
+
+def test_list_keys_limit_zero(manager: InMemoryRecordManager) -> None:
+    """list_keys(limit=0) must return an empty list, not all keys."""
+    manager.update(["key1", "key2"])
+    assert manager.list_keys(limit=0) == []
+    assert manager.list_keys(limit=1) == ["key1"]
+    assert manager.list_keys(limit=None) == ["key1", "key2"]
+
+
+async def test_alist_keys_limit_zero(amanager: InMemoryRecordManager) -> None:
+    """alist_keys(limit=0) must return an empty list, not all keys."""
+    await amanager.aupdate(["key1", "key2"])
+    assert await amanager.alist_keys(limit=0) == []

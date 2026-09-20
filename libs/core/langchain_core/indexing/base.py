@@ -381,7 +381,7 @@ class InMemoryRecordManager(RecordManager):
             if group_ids and data["group_id"] not in group_ids:
                 continue
             result.append(key)
-        if limit:
+        if limit is not None:
             return result[:limit]
         return result
 
