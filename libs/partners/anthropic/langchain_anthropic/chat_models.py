@@ -595,11 +595,7 @@ def _format_messages(
     *,
     model: str | None,
 ) -> tuple[str | list[dict] | None, list[dict]]:
-    """Format messages for Anthropic's API.
-
-    Leading system messages are hoisted. Supported models keep other system
-    messages in place when Anthropic accepts their position.
-    """
+    """Format messages for Anthropic's API."""
     system: str | list[dict] | None = None
     formatted_messages: list[dict] = []
     merged_messages = _merge_messages(messages)
