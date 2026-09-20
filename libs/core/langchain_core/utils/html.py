@@ -1,3 +1,4 @@
+import html.parser
 """Utilities for working with HTML."""
 
 import logging
@@ -130,3 +131,83 @@ def extract_sub_links(
 
         results.append(path)
     return results
+
+
+class _InvisibleElementPruner(html.parser.HTMLParser):
+    def __init__(self, *, preserve_aria: bool = True):
+        super().__init__(convert_charrefs=True)
+        self.preserve_aria = preserve_aria
+        self.output: list[str] = []
+        self.invisible_depth = 0
+
+    def _is_invisible_style(self, style_str: str) -> bool:
+        norm = re.sub(r"\s+", "", style_str.lower())
+        patterns = [
+            r"display:(none|contents)",
+            r"visibility:(hidden|collapse)",
+            r"font-size:(0|0px|0em|0rem|0pt)",
+            r"opacity:(0|0\.0)",
+            r"text-indent:-[0-9]{3,}",
+        ]
+        return any(re.search(p, norm) for p in patterns)
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attr_dict = dict(attrs)
+        tag_lower = tag.lower()
+
+        if self.invisible_depth > 0:
+            self.invisible_depth += 1
+            return
+
+        is_invis = False
+        if tag_lower in ("script", "style"):
+            is_invis = True
+        elif "hidden" in attr_dict:
+            is_invis = True
+        elif "style" in attr_dict and attr_dict["style"] and self._is_invisible_style(attr_dict["style"]):
+            is_invis = True
+        elif attr_dict.get("aria-hidden", "").lower() == "true":
+            is_invis = True
+
+        if is_invis:
+            # Check if this element should be preserved under ARIA accessibility rules
+            classes = (attr_dict.get("class") or "").split()
+            if self.preserve_aria and any(c in ("sr-only", "visually-hidden") for c in classes):
+                is_invis = False
+
+        if is_invis:
+            self.invisible_depth = 1
+            return
+
+        attr_str = "".join(f' {k}="{v}"' if v is not None else f" {k}" for k, v in attrs)
+        self.output.append(f"<{tag}{attr_str}>")
+
+    def handle_endtag(self, tag: str) -> None:
+        if self.invisible_depth > 0:
+            self.invisible_depth -= 1
+            return
+        self.output.append(f"</{tag}>")
+
+    def handle_data(self, data: str) -> None:
+        if self.invisible_depth == 0:
+            self.output.append(data)
+
+
+def prune_invisible_elements(raw_html: str, *, preserve_aria: bool = True) -> str:
+    """Prune invisible, hidden, and off-screen DOM elements from HTML.
+
+    This strips opportunistic adversarial content (e.g. zero-pixel font,
+    display:none, negative text-indent injections) while explicitly preserving
+    accessibility markers (e.g. screen-reader text with .sr-only).
+
+    Args:
+        raw_html: The input raw HTML string.
+        preserve_aria: If True, preserves visually hidden elements designed for
+            accessibility (e.g. classes 'sr-only', 'visually-hidden'). Defaults to True.
+
+    Returns:
+        The sanitized HTML string with invisible DOM elements removed.
+    """
+    parser = _InvisibleElementPruner(preserve_aria=preserve_aria)
+    parser.feed(raw_html)
+    return "".join(parser.output)
