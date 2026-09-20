@@ -437,7 +437,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -626,7 +626,7 @@ typing = [
 
 [[package]]
 name = "langchain-typesafe"
-version = "0.0.1a2"
+version = "0.0.1a3"
 source = { editable = "." }
 dependencies = [
     { name = "httpx2" },
