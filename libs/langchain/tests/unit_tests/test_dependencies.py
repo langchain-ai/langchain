@@ -16,7 +16,7 @@ PYPROJECT_TOML = HERE / "../../pyproject.toml"
 @pytest.fixture
 def uv_conf() -> dict[str, Any]:
     """Load the pyproject.toml file."""
-    with PYPROJECT_TOML.open() as f:
+    with PYPROJECT_TOML.open(encoding="utf-8") as f:
         return toml.load(f)
 
 
