@@ -34,7 +34,9 @@ def _retrieve_ref(path: str, schema: dict[str, Any]) -> list[Any] | dict[Any, An
         )
         raise ValueError(msg)
     out: list[Any] | dict[Any, Any] = schema
-    for component in components[1:]:
+    for token in components[1:]:
+        # Decode JSON Pointer tokens after splitting, with ~1 before ~0 (RFC 6901).
+        component = token.replace("~1", "/").replace("~0", "~")
         if component in out:
             if isinstance(out, list):
                 msg = f"Reference '{path}' not found."
