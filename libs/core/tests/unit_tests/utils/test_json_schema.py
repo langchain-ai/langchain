@@ -4,7 +4,7 @@ import pydantic
 import pytest
 from packaging.version import Version
 
-from langchain_core.tools import tool
+from langchain_core.tools import StructuredTool, tool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.json_schema import dereference_refs
 
@@ -37,6 +37,53 @@ def test_dereference_refs_one_ref() -> None:
     }
     actual = dereference_refs(schema)
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    ("name", "token"),
+    [("location/city", "location~1city"), ("a~b", "a~0b"), ("a~1b", "a~01b")],
+)
+def test_dereference_refs_escaped_pointer_tokens(name: str, token: str) -> None:
+    """Decode JSON Pointer escapes once, in the order required by RFC 6901."""
+    reference = {"$ref": f"#/$defs/{token}"}
+    schema = {
+        "type": "object",
+        "properties": {"value": reference},
+        "$defs": {name: {"type": "string"}, token: {"type": "integer"}},
+    }
+
+    actual = dereference_refs(schema)
+
+    assert actual["properties"]["value"] == {"type": "string"}
+    assert reference == {"$ref": f"#/$defs/{token}"}
+
+
+def test_convert_to_openai_tool_escaped_pointer_tokens() -> None:
+    """Tool schemas can reference definitions whose names contain slashes."""
+    schema = {
+        "type": "object",
+        "properties": {"location": {"$ref": "#/$defs/location~1city"}},
+        "$defs": {"location/city": {"type": "string"}},
+    }
+
+    def lookup(location: str) -> str:
+        return location
+
+    lookup_tool = StructuredTool.from_function(
+        lookup, description="Look up a location.", args_schema=schema
+    )
+
+    assert convert_to_openai_tool(lookup_tool) == {
+        "type": "function",
+        "function": {
+            "name": "lookup",
+            "description": "Look up a location.",
+            "parameters": {
+                "type": "object",
+                "properties": {"location": {"type": "string"}},
+            },
+        },
+    }
 
 
 def test_dereference_refs_multiple_refs() -> None:
