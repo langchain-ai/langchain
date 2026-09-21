@@ -121,6 +121,28 @@ agent = create_agent(
 
 `tools` accepts tool names or `BaseTool` instances. Customize `instructions` for the overall risk question and `criteria` for application-specific risky and safe outcomes. Configured calls whose risk probability meets or exceeds the threshold return an error `ToolMessage`.
 
+Auto Mode must follow middleware that can modify a tool name or arguments so it
+classifies the final request that will execute. For example, place human review before
+Auto Mode when reviewers can edit calls:
+
+```python
+agent = create_agent(
+    model,
+    tools=[read_file, delete_file],
+    middleware=[human_in_the_loop, auto_mode],
+)
+```
+
+Agent creation raises `ValueError` for the reverse order when a middleware declares
+that it may modify the tool call and could make Auto Mode's decision stale. Wrappers
+that preserve the request, such as `ToolRetryMiddleware`, may follow Auto Mode so a
+retry does not repeat classification.
+
+Ordering validation is opt-in. Custom middleware that changes `request.tool_call` or
+`request.tool` must declare `wrap_tool_call_may_modify_request = True`, or pass
+`may_modify_request=True` to `@wrap_tool_call`. LangChain cannot detect an undeclared
+request modification.
+
 ### LangChain messages as state
 
 `BaseMessage` objects and message sequences can appear at the root or anywhere inside JSON state. The integration recursively converts them to objects with `role` and `content` fields while preserving surrounding application data:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from contextlib import asynccontextmanager
 from typing import Any
 from unittest.mock import patch
@@ -12,10 +12,17 @@ from unittest.mock import patch
 import httpx2
 import pytest
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import InputAgentState, omit_payload
+from langchain.agents.middleware import ToolRetryMiddleware
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    InputAgentState,
+    ToolCallRequest,
+    omit_payload,
+)
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import BaseTool, tool
+from langgraph.types import Command
 from pydantic import ValidationError
 from typing_extensions import Self, override
 
@@ -45,6 +52,44 @@ class _ToolCallingModel(GenericFakeChatModel):
         """Return this model after accepting the agent's tools."""
         _ = (tools, tool_choice, kwargs)
         return self
+
+
+class _ReplaceToolCallMiddleware(AgentMiddleware):
+    """Replace a tool call immediately before invoking the next handler."""
+
+    wrap_tool_call_may_modify_request = True
+
+    def __init__(self, replacement: BaseTool, args: dict[str, Any]) -> None:
+        self.replacement = replacement
+        self.args = args
+
+    def _replace(self, request: ToolCallRequest) -> ToolCallRequest:
+        tool_call = ToolCall(
+            name=self.replacement.name,
+            args=self.args,
+            id=request.tool_call["id"],
+            type="tool_call",
+        )
+        return request.override(tool_call=tool_call, tool=self.replacement)
+
+    def wrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        """Replace the request before synchronous execution."""
+        return handler(self._replace(request))
+
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[
+            [ToolCallRequest],
+            Awaitable[ToolMessage | Command[Any]],
+        ],
+    ) -> ToolMessage | Command[Any]:
+        """Replace the request before asynchronous execution."""
+        return await handler(self._replace(request))
 
 
 def _model(
@@ -80,6 +125,16 @@ def _delete_tool(executions: list[str]) -> BaseTool:
         return "deleted"
 
     return delete_file
+
+
+def _draft_tool(executions: list[str]) -> BaseTool:
+    @tool
+    def draft_file(path: str) -> str:
+        """Draft a file without changing the filesystem."""
+        executions.append(path)
+        return "drafted"
+
+    return draft_file
 
 
 def _response_payload(probability: float) -> dict[str, Any]:
@@ -240,6 +295,117 @@ async def test_agent_executes_safe_calls_and_blocks_risky_calls(
     assert tool_message.status == expected_status
     assert tool_message.tool_call_id == "call_123"
     assert executions == expected_executions
+
+
+async def test_middleware_rejects_an_inner_tool_call_transformer() -> None:
+    """Reject ordering that lets a later middleware replace a classified call."""
+    draft_tool = _draft_tool([])
+    delete_tool = _delete_tool([])
+
+    async with _middleware(0.9, tools=[delete_tool]) as middleware:
+        with pytest.raises(ValueError, match="final tool call request"):
+            create_agent(
+                _model(tool_name="draft_file", args={"path": "report.txt"}),
+                tools=[draft_tool, delete_tool],
+                middleware=[
+                    middleware,
+                    _ReplaceToolCallMiddleware(
+                        delete_tool,
+                        {"path": "/workspace/report.txt"},
+                    ),
+                ],
+            )
+
+
+@pytest.mark.parametrize("async_", [False, True])
+async def test_middleware_classifies_a_call_transformed_by_an_outer_wrapper(
+    *, async_: bool
+) -> None:
+    """Classify the final tool name and arguments after request transformation."""
+    draft_executions: list[str] = []
+    delete_executions: list[str] = []
+    draft_tool = _draft_tool(draft_executions)
+    delete_tool = _delete_tool(delete_executions)
+    observed_requests: list[dict[str, Any]] = []
+
+    async with _middleware(
+        0.9,
+        tools=[delete_tool],
+        observed_requests=observed_requests,
+    ) as middleware:
+        agent = create_agent(
+            _model(tool_name="draft_file", args={"path": "report.txt"}),
+            tools=[draft_tool, delete_tool],
+            middleware=[
+                _ReplaceToolCallMiddleware(
+                    delete_tool,
+                    {"path": "/workspace/report.txt"},
+                ),
+                middleware,
+            ],
+        )
+        if async_:
+            result = await agent.ainvoke(
+                {"messages": [HumanMessage("Prepare the report.")]}
+            )
+        else:
+            result = agent.invoke({"messages": [HumanMessage("Prepare the report.")]})
+
+    [tool_message] = _tool_messages(result)
+    assert tool_message.status == "error"
+    assert draft_executions == []
+    assert delete_executions == []
+    [classifier_request] = observed_requests
+    assert classifier_request["state"]["tool_call"] == {
+        "id": "call_123",
+        "name": "delete_file",
+        "args": {"path": "/workspace/report.txt"},
+    }
+
+
+@pytest.mark.parametrize("async_", [False, True])
+async def test_tool_retry_does_not_repeat_classification(*, async_: bool) -> None:
+    """Retry only execution when retry middleware follows Auto Mode."""
+    attempts: list[str] = []
+
+    @tool
+    def flaky_tool(value: str) -> str:
+        """Fail once before returning a result."""
+        attempts.append(value)
+        if len(attempts) == 1:
+            message = "temporary failure"
+            raise RuntimeError(message)
+        return "done"
+
+    observed_requests: list[dict[str, Any]] = []
+    async with _middleware(
+        0.2,
+        tools=[flaky_tool],
+        observed_requests=observed_requests,
+    ) as middleware:
+        agent = create_agent(
+            _model(tool_name="flaky_tool", args={"value": "report"}),
+            tools=[flaky_tool],
+            middleware=[
+                middleware,
+                ToolRetryMiddleware(
+                    max_retries=1,
+                    initial_delay=0,
+                    jitter=False,
+                ),
+            ],
+        )
+        if async_:
+            result = await agent.ainvoke(
+                {"messages": [HumanMessage("Prepare the report.")]}
+            )
+        else:
+            result = agent.invoke({"messages": [HumanMessage("Prepare the report.")]})
+
+    [tool_message] = _tool_messages(result)
+    assert tool_message.status == "success"
+    assert attempts == ["report", "report"]
+    assert len(observed_requests) == 1
 
 
 async def test_unlisted_tool_bypasses_classification() -> None:

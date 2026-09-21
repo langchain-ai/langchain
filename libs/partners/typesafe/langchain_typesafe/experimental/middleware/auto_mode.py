@@ -101,6 +101,16 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
 
         This middleware is experimental. Its API may change without notice.
 
+        Place it after middleware that declares it can modify a tool name or arguments.
+        Agent creation raises `ValueError` if such a tool-call wrapper follows Auto
+        Mode, because classifying an earlier version of the request would leave the
+        final call unchecked.
+
+        Ordering validation relies on middleware capability declarations. Custom
+        middleware that changes `request.tool_call` or `request.tool` must set
+        `wrap_tool_call_may_modify_request = True` (or the equivalent
+        `@wrap_tool_call` option); undeclared modifications cannot be detected.
+
     Install the experimental extra to use this class:
 
     ```bash
@@ -138,6 +148,9 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
 
     trace_policy = TracePolicy(process_inputs=omit_payload)
     """Exclude authorization context and tool arguments from middleware traces."""
+
+    wrap_tool_call_requires_final_request = True
+    """Require classification to run after middleware that can modify the tool call."""
 
     def __init__(
         self,
