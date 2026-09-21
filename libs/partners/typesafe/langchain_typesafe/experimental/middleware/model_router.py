@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
+from threading import Lock
+from typing import Any
+from weakref import ReferenceType, ref
 
 from langchain.agents.middleware import Runtime
 from langchain.agents.middleware.types import ContextT
@@ -76,6 +79,9 @@ class _ModelRouterState(AgentState):
     model_route: NotRequired[ChoiceAnswer]
 
 
+_ExecutionKey = tuple[str, str, str, int]
+
+
 class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     """Select an agent's model with a TypeSafe `Choice` classification.
 
@@ -84,6 +90,10 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     for every model call in the run. Keeping the complete answer makes probabilities
     and confidence available in state and traces. Classifier failures propagate and
     terminate the run rather than silently selecting a different model.
+
+    When an enclosing `ModelRetryMiddleware` retries the original request, the
+    selected route is applied again. When an enclosing `ModelFallbackMiddleware`
+    supplies a replacement request, its fallback model is preserved.
 
     !!! warning
 
@@ -150,6 +160,10 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
             for route, choice in self.config.choices.items()
         }
         self.classifier = TypeSafeClassifier()
+        self._routed_requests: dict[
+            _ExecutionKey, ReferenceType[ModelRequest[Any]]
+        ] = {}
+        self._routed_requests_lock = Lock()
 
     @staticmethod
     def _latest_human_message(state: _ModelRouterState) -> HumanMessage:
@@ -186,6 +200,52 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         )
         return {"model_route": response.choices[_QUESTION_ID]}
 
+    @staticmethod
+    def _execution_key(request: ModelRequest[Any]) -> _ExecutionKey | None:
+        """Return the stable identity of the current model-node execution."""
+        execution_info = request.runtime.execution_info
+        if execution_info is None:
+            return None
+        return (
+            execution_info.checkpoint_id,
+            execution_info.checkpoint_ns,
+            execution_info.task_id,
+            execution_info.node_attempt,
+        )
+
+    def _forget_request(
+        self,
+        key: _ExecutionKey,
+        request_ref: ReferenceType[ModelRequest[Any]],
+    ) -> None:
+        """Remove a completed node without deleting a newer record for the same key."""
+        with self._routed_requests_lock:
+            current = self._routed_requests.get(key)
+            if current is request_ref:
+                self._routed_requests.pop(key)
+
+    def _route_request(self, request: ModelRequest[ContextT]) -> ModelRequest[ContextT]:
+        """Route original and retry requests while preserving fallback replacements."""
+        answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
+        routed_model = self.models[answer.choice]
+        key = self._execution_key(request)
+        if key is None:
+            return request.override(model=routed_model)
+
+        with self._routed_requests_lock:
+            request_ref = self._routed_requests.get(key)
+            original_request = request_ref() if request_ref is not None else None
+            if original_request is None:
+                request_ref = ref(
+                    request,
+                    lambda dead_ref: self._forget_request(key, dead_ref),
+                )
+                self._routed_requests[key] = request_ref
+            elif request is not original_request:
+                return request
+
+        return request.override(model=routed_model)
+
     @override
     def wrap_model_call(
         self,
@@ -193,8 +253,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
     ) -> ModelResponse[ResponseT]:
         """Route a synchronous model call to the selected model."""
-        answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
-        return handler(request.override(model=self.models[answer.choice]))
+        return handler(self._route_request(request))
 
     @override
     async def awrap_model_call(
@@ -205,8 +264,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         ],
     ) -> ModelResponse[ResponseT]:
         """Route an asynchronous model call to the selected model."""
-        answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
-        return await handler(request.override(model=self.models[answer.choice]))
+        return await handler(self._route_request(request))
 
 
 __all__ = ["ModelChoice", "ModelRouterMiddleware"]

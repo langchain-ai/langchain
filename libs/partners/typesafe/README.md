@@ -97,6 +97,8 @@ agent = create_agent("openai:gpt-5-mini", middleware=[router])
 
 The model router classifies the latest human message once per agent run and stores the complete `ChoiceAnswer` in agent state, keeping its probabilities and confidence available to applications and traces.
 
+It also composes with LangChain's model retry and fallback middleware. An enclosing `ModelRetryMiddleware` retries the selected route, while a replacement request from an enclosing `ModelFallbackMiddleware` keeps the fallback model instead of being routed back to the failed model.
+
 #### `AutoModeMiddleware`
 
 `AutoModeMiddleware` classifies calls to explicitly configured tools and blocks risky calls before execution:
