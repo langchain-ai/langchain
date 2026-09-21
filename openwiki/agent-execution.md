@@ -5,13 +5,13 @@ description: Traces the runtime lifecycle of an agent from user input through mo
 tags: [agent-execution, control-flow, state-machine, loop-control, tool-dispatch, middleware, langchain]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
 ---
 
 ## Overview
@@ -200,12 +200,12 @@ After the model is invoked, the graph checks whether to dispatch tools:
 
 ### Tools-to-Model Decision (_make_tools_to_model_edge)
 
-After tool execution completes:
+After tool execution completes, the conditional edge determines the next step:
 
-1. **No AIMessage**: If the message list is corrupted, jump to model for recovery.
+1. **No AIMessage**: If the message list is corrupted or empty, route back to the model for recovery.
 2. **Return Direct Tools**: If all executed client-side tools have `return_direct=True`, exit the loop immediately.
 3. **Structured Output Executed**: If any executed tool is a structured output tool, exit (the response is ready).
-4. **Default**: Continue the loop, jumping back to `before_model` so the model can process tool results.
+4. **Default**: Continue the loop, routing back to `before_model` (or `model` if no middleware) so the model can process tool results.
 
 ### Model-to-Model Decision (_make_model_to_model_edge)
 
@@ -220,11 +220,11 @@ When structured output tools are configured but no regular tools exist, the mode
 The loop terminates when any of these are true:
 
 - Model does not call any tools (`tool_calls` is empty).
-- Model jumps via middleware to `'end'`.
-- All pending tool calls are structured output tool calls (response is ready).
-- A structured output tool is executed (response is ready).
-- A tool with `return_direct=True` is executed.
-- An explicit exception is raised and not caught.
+- Middleware explicitly sets `jump_to='end'` in `before_model` or `after_model`.
+- A structured output tool is executed (its result is parsed into `state['structured_response']`).
+- A tool with `return_direct=True` is executed (after tool execution phase).
+- `state['structured_response']` is populated (after a model invocation with structured output tools).
+- An unhandled exception is raised during model invocation or tool execution.
 
 ## Tool Execution
 

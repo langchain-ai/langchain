@@ -2,9 +2,6 @@
 type: "Reference"
 title: "CI/CD Workflows: GitHub Actions and Release Process"
 openwiki_generated: true
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
 sources:
   - id: openwiki-source-34e57b5a3a0c875639ab72a7
     resource: repo://.github/scripts/check_diff.py
@@ -28,7 +25,12 @@ sources:
     resource: repo://.github/workflows/openwiki-update.yml
   - id: openwiki-source-f8781d847f6481a966a44a68
     resource: repo://.github/workflows/pr_labeler.yml
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+  - id: openwiki-source-12805fbf767dc2a3e238645e
+    resource: repo://.github/workflows/pr_lint.yml
+generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-21T08:30:16.745Z
 ---
 
 
@@ -236,6 +238,19 @@ Fires when issues are opened or edited:
 2. Maps package name (e.g., "langchain-openai") to label (e.g., "openai")
 3. Adds/removes labels to match selected package(s)
 4. Supports both dropdown (single) and checkbox (multi-select) formats
+
+### PR Title Linting (`pr_lint.yml`)
+
+Enforces Conventional Commits 1.0.0 format on all pull request titles:
+
+- **Format**: `<type>[optional scope]: <description>` (e.g., `feat(core): add multi-tenant support`)
+- **Allowed types**: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert, release, hotfix
+- **Optional scope**: Scopes for specific packages (core, langchain, anthropic, openai, etc.) or cross-cutting concerns (infra, deps)
+- **Breaking changes**: Append `!` after type/scope (e.g., `feat!: remove deprecated API`)
+- **Release commits**: Must be `release(scope): x.y.z` format
+- **Validation**: Uses `amannn/action-semantic-pull-request` with empty scope rejection
+
+Empty scope parentheses are rejected; PR must either omit parentheses (no scope) or provide a valid scope.
 
 ### PR Labeling (`pr_labeler.yml`)
 

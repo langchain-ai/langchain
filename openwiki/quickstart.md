@@ -40,10 +40,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-48ce5ee900993294d349b4e8
     resource: repo://libs/standard-tests/langchain_tests/__init__.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:26:28.144Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-09T08:26:28.144Z
+    at: 2026-09-21T08:30:16.745Z
 ---
 
 ## Welcome to LangChain Development
@@ -51,6 +51,8 @@ verified:
 LangChain is the agent engineering platform—a framework for building LLM-powered applications with composable abstractions, provider integrations, and orchestration primitives. This page guides you through the monorepo structure, essential setup, common dev tasks, and routing to deeper documentation.
 
 **New to the repo?** Start with [Installation & Setup](#installation--setup), then jump to [Quick Navigation](#quick-navigation-to-major-areas) to find what you need to work on.
+
+**Want a complete tour?** See [Architecture Overview](/openwiki/architecture.md) for system design, [Dev Commands](/openwiki/dev-commands.md) for detailed CLI reference, and [Source Map](/openwiki/source-map.md) to locate code by topic.
 
 ## Monorepo Overview
 
@@ -104,12 +106,15 @@ brew install uv
 Then sync all dependencies in your package:
 
 ```bash
-# From any libs/ subdirectory, install all groups (test, lint, type, dev)
+# From any libs/ subdirectory, install all groups (test, lint, type, typing, dev)
 uv sync --all-groups
 
 # Or install only what you need
-uv sync --group test     # For running tests
-uv sync --group lint     # For ruff/mypy
+uv sync --group test          # For running tests
+uv sync --group test_integration  # For integration tests with VCR cassettes
+uv sync --group lint          # For ruff formatting
+uv sync --group typing        # For mypy type checking
+uv sync --group dev           # For dev tools (Jupyter, setuptools, etc.)
 ```
 
 ### Pre-Commit Hooks
@@ -173,9 +178,26 @@ make format_diff
 ```
 
 **Tools used:**
-- **ruff**: Fast Python linter and formatter (replaces black, isort, flake8)
-- **mypy**: Static type checker
-- Both are run via `uv run --group lint`
+- **ruff**: Fast Python linter and formatter (replaces black, isort, flake8). Run via `uv run --group lint`
+- **mypy**: Static type checker. Run via `uv run --group typing`
+- Both are integrated into pre-commit hooks and make targets
+
+### Run Integration Tests
+
+Integration tests call real model APIs with recorded responses (VCR cassettes):
+
+```bash
+# From any package directory
+make integration_tests
+
+# Run a specific integration test
+make integration_tests TEST_FILE=tests/integration_tests/test_specific.py
+
+# Record new cassettes (requires API credentials in .env)
+make integration_tests RECORD=true
+```
+
+See [Integration Testing](/openwiki/integration-tests.md) for detailed cassette management.
 
 ### Full Local Validation
 
@@ -190,6 +212,12 @@ Or in one line:
 
 ```bash
 cd libs/core && make format lint test
+```
+
+For integration tests as well:
+
+```bash
+cd libs/langchain_v1 && make format lint test integration_tests
 ```
 
 ## Quick Navigation to Major Areas
