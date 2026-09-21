@@ -437,7 +437,8 @@ class BaseMessageChunk(BaseMessage):
             # concat into a single BaseMessageChunk
 
             return self.__class__(
-                id=self.id,
+                id=self.id if self.id is not None else other.id,
+                name=self.name if self.name is not None else other.name,
                 type=self.type,
                 content=merge_content(self.content, other.content),
                 additional_kwargs=merge_dicts(
@@ -457,8 +458,17 @@ class BaseMessageChunk(BaseMessage):
             response_metadata = merge_dicts(
                 self.response_metadata, *(o.response_metadata for o in other)
             )
+            # Carry the name (and a fallback id) from the first chunk that has one.
+            first_id = self.id
+            first_name = self.name
+            for o in other:
+                if first_id is None and o.id is not None:
+                    first_id = o.id
+                if first_name is None and o.name is not None:
+                    first_name = o.name
             return self.__class__(  # type: ignore[call-arg]
-                id=self.id,
+                id=first_id,
+                name=first_name,
                 content=content,
                 additional_kwargs=additional_kwargs,
                 response_metadata=response_metadata,

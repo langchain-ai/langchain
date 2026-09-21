@@ -1431,3 +1431,41 @@ def test_text_accessor() -> None:
     assert empty_msg.text == ""
     assert empty_msg.text == ""
     assert str(empty_msg.text) == str(empty_msg.text)
+
+
+def test_message_chunk_add_preserves_name_and_id() -> None:
+    """Regression test for #40677.
+
+    BaseMessageChunk.__add__ used to drop the ``name`` field and would also
+    lose ``id`` when the leading chunk had id=None.  Both attributes must
+    be carried forward to the merged chunk.
+    """
+    # name from the leading chunk is preserved
+    ai_chunk = AIMessageChunk(content="Hello", name="assistant")
+    merged = ai_chunk + AIMessageChunk(content=" world")
+    assert merged.name == "assistant"
+
+    # name from the *trailing* chunk is used when the leading chunk has no name
+    ai_chunk2 = AIMessageChunk(content="Hello") + AIMessageChunk(
+        content=" world", name="assistant"
+    )
+    assert ai_chunk2.name == "assistant"
+
+    # id fallback: leading id=None, trailing id carries over
+    no_id = AIMessageChunk(content="a", id=None)
+    with_id = AIMessageChunk(content="b", id="chunk-123")
+    assert (no_id + with_id).id == "chunk-123"
+
+    # id from leading chunk wins over trailing chunk id
+    a = AIMessageChunk(content="a", id="first")
+    b = AIMessageChunk(content="b", id="second")
+    assert (a + b).id == "first"
+
+    # name is preserved end-to-end through merge_message_runs
+    from langchain_core.messages import merge_message_runs
+
+    merged_runs = merge_message_runs(
+        [HumanMessage("Hello", name="alice"), HumanMessage(" world", name="alice")]
+    )
+    assert len(merged_runs) == 1
+    assert merged_runs[0].name == "alice"

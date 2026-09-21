@@ -721,6 +721,14 @@ def add_ai_message_chunks(
         "last" if any(x.chunk_position == "last" for x in [left, *others]) else None
     )
 
+    # Carry the name from the first chunk that has one set.
+    merged_name = left.name
+    if merged_name is None:
+        for other in others:
+            if other.name is not None:
+                merged_name = other.name
+                break
+
     return left.__class__(
         content=content,
         additional_kwargs=additional_kwargs,
@@ -728,6 +736,7 @@ def add_ai_message_chunks(
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
         id=chunk_id,
+        name=merged_name,
         chunk_position=chunk_position,
     )
 
