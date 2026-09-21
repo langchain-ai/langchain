@@ -1206,9 +1206,7 @@ class BaseChatOpenAI(BaseChatModel):
     use_responses_api: bool | None = None
     """Whether to use the Responses API instead of the Chat API.
 
-    If not specified, set to `True` when instance settings require the Responses
-    API, excluding `model_kwargs`. Otherwise remains `None` and is inferred from
-    invocation params. Explicit `True` or `False` overrides inference.
+    If not specified, set to `True` when instance settings require the Responses API,
 
     !!! version-added "Added in `langchain-openai` 0.3.9"
     """
