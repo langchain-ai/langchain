@@ -962,6 +962,8 @@ def create_agent(
 
     Raises:
         AssertionError: If duplicate middleware instances are provided.
+        ValueError: If declared tool-call middleware capabilities conflict or are
+            ordered unsafely.
 
     The agent node calls the language model with the messages list (after applying
     the system prompt). If the resulting [`AIMessage`][langchain.messages.AIMessage]
@@ -1045,6 +1047,26 @@ def create_agent(
         if m.__class__.wrap_tool_call is not AgentMiddleware.wrap_tool_call
         or m.__class__.awrap_tool_call is not AgentMiddleware.awrap_tool_call
     ]
+
+    final_request_middleware: AgentMiddleware[Any, Any, Any] | None = None
+    for m in middleware_w_wrap_tool_call:
+        if m.wrap_tool_call_requires_final_request and m.wrap_tool_call_may_modify_request:
+            msg = (
+                f"Middleware '{m.name}' cannot both require the final tool call request "
+                "and modify that request."
+            )
+            raise ValueError(msg)
+        if m.wrap_tool_call_requires_final_request:
+            final_request_middleware = m
+        elif m.wrap_tool_call_may_modify_request and final_request_middleware is not None:
+            msg = (
+                f"Middleware '{final_request_middleware.name}' requires the final tool "
+                f"call request, but '{m.name}' follows it and declares that it may "
+                "modify that request. "
+                f"Move '{m.name}' before '{final_request_middleware.name}' in the "
+                "middleware list."
+            )
+            raise ValueError(msg)
 
     # Chain all wrap_tool_call handlers into a single composed handler
     wrap_tool_call_wrapper = None

@@ -241,6 +241,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     """Human in the loop middleware."""
 
     state_schema = _HumanInTheLoopState  # type: ignore[assignment]
+    wrap_tool_call_may_modify_request = True
 
     def __init__(
         self,

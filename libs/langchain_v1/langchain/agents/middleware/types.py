@@ -410,6 +410,24 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
     Messages are still captured on the inner model-call span.
     """
 
+    wrap_tool_call_may_modify_request: bool = False
+    """Whether `wrap_tool_call` may change the request passed to its handler.
+
+    Middleware that changes `request.tool_call` or `request.tool` on any path must set
+    this to `True`. `create_agent` uses this opt-in declaration to validate ordering
+    against middleware that requires the final request. Validation is declaration-based
+    and cannot detect custom middleware that modifies a request without setting this
+    flag.
+    """
+
+    wrap_tool_call_requires_final_request: bool = False
+    """Whether `wrap_tool_call` decisions require the final tool call request.
+
+    Middleware that authorizes or validates the tool name or arguments should set this
+    to `True`. `create_agent` rejects a declared request-modifying middleware after one
+    that requires the final request. A middleware cannot declare both capabilities.
+    """
+
     transformers: Sequence[TransformerFactory] = ()
     """Stream transformer factories registered by the middleware.
 
@@ -701,16 +719,19 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
             !!! example "Modify request before execution"
 
                 ```python
-                def wrap_tool_call(self, request, handler):
-                    modified_call = {
-                        **request.tool_call,
-                        "args": {
-                            **request.tool_call["args"],
-                            "value": request.tool_call["args"]["value"] * 2,
-                        },
-                    }
-                    request = request.override(tool_call=modified_call)
-                    return handler(request)
+                class ModifyArgsMiddleware(AgentMiddleware):
+                    wrap_tool_call_may_modify_request = True
+
+                    def wrap_tool_call(self, request, handler):
+                        modified_call = {
+                            **request.tool_call,
+                            "args": {
+                                **request.tool_call["args"],
+                                "value": request.tool_call["args"]["value"] * 2,
+                            },
+                        }
+                        request = request.override(tool_call=modified_call)
+                        return handler(request)
                 ```
 
             !!! example "Retry on error (call handler multiple times)"
@@ -2028,6 +2049,8 @@ def wrap_tool_call(
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
+    may_modify_request: bool = False,
+    requires_final_request: bool = False,
 ) -> Callable[
     [_CallableReturningToolResponse],
     AgentMiddleware[StateT, ContextT],
@@ -2040,6 +2063,8 @@ def wrap_tool_call(
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str | None = None,
+    may_modify_request: bool = False,
+    requires_final_request: bool = False,
 ) -> (
     Callable[
         [_CallableReturningToolResponse],
@@ -2067,6 +2092,10 @@ def wrap_tool_call(
         name: Middleware class name.
 
             Defaults to function name.
+        may_modify_request: Whether the middleware may change `request.tool_call` or
+            `request.tool` before calling its handler.
+        requires_final_request: Whether middleware decisions require the final tool
+            name and arguments after request-modifying middleware has run.
 
     Returns:
         `AgentMiddleware` instance if func provided, otherwise a decorator.
@@ -2102,7 +2131,7 @@ def wrap_tool_call(
         !!! example "Modify request"
 
             ```python
-            @wrap_tool_call
+            @wrap_tool_call(may_modify_request=True)
             def modify_args(request, handler):
                 modified_call = {
                     **request.tool_call,
@@ -2167,6 +2196,8 @@ def wrap_tool_call(
                     {
                         "state_schema": state_schema or AgentState,
                         "tools": tools or [],
+                        "wrap_tool_call_may_modify_request": may_modify_request,
+                        "wrap_tool_call_requires_final_request": requires_final_request,
                         "awrap_tool_call": async_wrapped,
                     },
                 )(),
@@ -2191,6 +2222,8 @@ def wrap_tool_call(
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
+                    "wrap_tool_call_may_modify_request": may_modify_request,
+                    "wrap_tool_call_requires_final_request": requires_final_request,
                     "wrap_tool_call": wrapped,
                 },
             )(),

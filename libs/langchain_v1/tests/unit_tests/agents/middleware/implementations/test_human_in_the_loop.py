@@ -43,6 +43,7 @@ def test_human_in_the_loop_middleware_initialization() -> None:
         "test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
     }
     assert middleware.description_prefix == "Custom prefix"
+    assert middleware.wrap_tool_call_may_modify_request is True
 
 
 def test_human_in_the_loop_middleware_rejects_empty_allowed_decisions() -> None:

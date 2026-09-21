@@ -8,12 +8,14 @@ import time
 from collections.abc import Callable
 from typing import Any, TypedDict
 
+import pytest
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import BaseTool, tool
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware import ToolRetryMiddleware
 from langchain.agents.middleware.types import AgentMiddleware, ToolCallRequest, wrap_tool_call
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
@@ -93,6 +95,29 @@ def test_wrap_tool_call_with_custom_state_schema() -> None:
 
     assert isinstance(middleware_with_schema, AgentMiddleware)
     assert middleware_with_schema.state_schema == CustomState
+
+
+def test_wrap_tool_call_declares_request_capabilities() -> None:
+    """Propagate request-ordering capabilities through the decorator."""
+
+    @wrap_tool_call(may_modify_request=True)
+    def modifier(
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        return handler(request)
+
+    @wrap_tool_call(requires_final_request=True)
+    def guard(
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        return handler(request)
+
+    assert modifier.wrap_tool_call_may_modify_request is True
+    assert modifier.wrap_tool_call_requires_final_request is False
+    assert guard.wrap_tool_call_may_modify_request is False
+    assert guard.wrap_tool_call_requires_final_request is True
 
 
 def test_wrap_tool_call_logging() -> None:
@@ -436,6 +461,137 @@ def test_wrap_tool_call_multiple_middleware_composition() -> None:
     assert call_log == ["outer_before", "inner_before", "inner_after", "outer_after"]
     tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
     assert len(tool_messages) == 1
+
+
+def test_final_request_middleware_rejects_a_following_wrapper() -> None:
+    """Prevent authorization middleware from observing a stale tool call request."""
+
+    class FinalRequestMiddleware(AgentMiddleware):
+        wrap_tool_call_requires_final_request = True
+
+        def wrap_tool_call(
+            self,
+            request: ToolCallRequest,
+            handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+        ) -> ToolMessage | Command[Any]:
+            return handler(request)
+
+    class RequestTransformerMiddleware(AgentMiddleware):
+        wrap_tool_call_may_modify_request = True
+
+        def wrap_tool_call(
+            self,
+            request: ToolCallRequest,
+            handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+        ) -> ToolMessage | Command[Any]:
+            return handler(request)
+
+    model = FakeToolCallingModel(tool_calls=[])
+
+    with pytest.raises(ValueError, match="requires the final tool call request"):
+        create_agent(
+            model=model,
+            tools=[search],
+            middleware=[FinalRequestMiddleware(), RequestTransformerMiddleware()],
+        )
+
+
+def test_final_request_middleware_allows_transformers_before_it() -> None:
+    """Allow request-transforming wrappers before final-request middleware."""
+
+    class FinalRequestMiddleware(AgentMiddleware):
+        wrap_tool_call_requires_final_request = True
+
+        def wrap_tool_call(
+            self,
+            request: ToolCallRequest,
+            handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+        ) -> ToolMessage | Command[Any]:
+            return handler(request)
+
+    class RequestTransformerMiddleware(AgentMiddleware):
+        wrap_tool_call_may_modify_request = True
+
+        def wrap_tool_call(
+            self,
+            request: ToolCallRequest,
+            handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+        ) -> ToolMessage | Command[Any]:
+            return handler(request)
+
+    create_agent(
+        model=FakeToolCallingModel(tool_calls=[]),
+        tools=[search],
+        middleware=[
+            RequestTransformerMiddleware(),
+            FinalRequestMiddleware(),
+        ],
+    )
+
+
+def test_final_request_middleware_allows_tool_retry_after_it() -> None:
+    """Allow a retry wrapper that forwards the same request to its handler."""
+
+    class FinalRequestMiddleware(AgentMiddleware):
+        wrap_tool_call_requires_final_request = True
+
+        def wrap_tool_call(
+            self,
+            request: ToolCallRequest,
+            handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+        ) -> ToolMessage | Command[Any]:
+            return handler(request)
+
+    create_agent(
+        model=FakeToolCallingModel(tool_calls=[]),
+        tools=[search],
+        middleware=[FinalRequestMiddleware(), ToolRetryMiddleware()],
+    )
+
+
+def test_multiple_final_request_middleware_may_be_adjacent() -> None:
+    """Allow multiple final-request middleware at the end of the list."""
+
+    class FinalRequestMiddleware(AgentMiddleware):
+        wrap_tool_call_requires_final_request = True
+
+        def wrap_tool_call(
+            self,
+            request: ToolCallRequest,
+            handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+        ) -> ToolMessage | Command[Any]:
+            return handler(request)
+
+    class SecondFinalRequestMiddleware(FinalRequestMiddleware):
+        pass
+
+    create_agent(
+        model=FakeToolCallingModel(tool_calls=[]),
+        tools=[search],
+        middleware=[FinalRequestMiddleware(), SecondFinalRequestMiddleware()],
+    )
+
+
+def test_middleware_cannot_require_and_modify_the_final_request() -> None:
+    """Reject contradictory tool-call middleware capability declarations."""
+
+    class InvalidMiddleware(AgentMiddleware):
+        wrap_tool_call_may_modify_request = True
+        wrap_tool_call_requires_final_request = True
+
+        def wrap_tool_call(
+            self,
+            request: ToolCallRequest,
+            handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+        ) -> ToolMessage | Command[Any]:
+            return handler(request)
+
+    with pytest.raises(ValueError, match="cannot both require"):
+        create_agent(
+            model=FakeToolCallingModel(tool_calls=[]),
+            tools=[search],
+            middleware=[InvalidMiddleware()],
+        )
 
 
 def test_wrap_tool_call_multiple_tools() -> None:
