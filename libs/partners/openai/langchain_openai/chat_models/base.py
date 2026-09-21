@@ -1206,7 +1206,7 @@ class BaseChatOpenAI(BaseChatModel):
     use_responses_api: bool | None = None
     """Whether to use the Responses API instead of the Chat API.
 
-    If not specified then will be inferred based on invocation params.
+    If not specified, set to `True` when instance settings require the Responses API,
 
     !!! version-added "Added in `langchain-openai` 0.3.9"
     """
@@ -1323,6 +1323,13 @@ class BaseChatOpenAI(BaseChatModel):
         `langchain-openai` version entry.
         """
         self._add_version("langchain-openai", __version__)
+        return self
+
+    @model_validator(mode="after")
+    def _infer_use_responses_api(self) -> Self:
+        """Expose unconditional instance-level Responses API routing."""
+        if self.use_responses_api is None and self._use_responses_api({}):
+            self.use_responses_api = True
         return self
 
     @model_validator(mode="after")
