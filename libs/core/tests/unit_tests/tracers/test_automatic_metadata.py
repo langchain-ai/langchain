@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+import pytest
+
 from langchain_core.messages import AIMessage
 from langchain_core.messages.tool import ToolCall
 from langchain_core.outputs import ChatGeneration, LLMResult
@@ -189,7 +191,11 @@ def test_complete_llm_run_attaches_gateway_metadata() -> None:
 
     completed_run = tracer._complete_llm_run(response=response, run_id=run.id)
 
-    assert completed_run.extra["metadata"]["ls_gateway_info"] == gateway_info
+    assert completed_run.extra["metadata"] == {
+        "ls_gateway_info": gateway_info,
+        "ls_model_name": gateway_info["model"],
+        "ls_provider": gateway_info["provider"],
+    }
 
 
 def test_complete_llm_run_no_gateway_metadata() -> None:
@@ -230,3 +236,87 @@ def test_errored_llm_run_attaches_gateway_metadata() -> None:
     )
 
     assert errored_run.extra["metadata"]["ls_gateway_info"] == gateway_info
+
+
+@pytest.mark.parametrize("errored", [False, True])
+@pytest.mark.parametrize(
+    ("gateway_info", "expected_identity"),
+    [
+        pytest.param(
+            {"model": "resolved-model", "provider": "amazon_bedrock"},
+            {"ls_model_name": "resolved-model", "ls_provider": "amazon_bedrock"},
+            id="resolved-identity",
+        ),
+        pytest.param(
+            {"model": "resolved-model", "selected_model": "configured-model"},
+            {"ls_model_name": "resolved-model"},
+            id="model-only",
+        ),
+        pytest.param(
+            {"provider": "amazon_bedrock"},
+            {"ls_provider": "amazon_bedrock"},
+            id="provider-only",
+        ),
+        pytest.param({}, {}, id="empty"),
+        pytest.param({"error": "rate_limit_exceeded"}, {}, id="error-only"),
+        pytest.param({"selected_model": "configured-model"}, {}, id="selected-only"),
+        pytest.param({"model": None, "provider": None}, {}, id="null"),
+        pytest.param({"model": "", "provider": ""}, {}, id="empty-strings"),
+        pytest.param({"model": " \t\n", "provider": "\n "}, {}, id="whitespace-only"),
+        pytest.param(
+            {"model": " resolved-model\n", "provider": "\tamazon_bedrock "},
+            {"ls_model_name": "resolved-model", "ls_provider": "amazon_bedrock"},
+            id="surrounding-whitespace",
+        ),
+        pytest.param({"model": 42, "provider": ["openai"]}, {}, id="invalid-types"),
+        pytest.param(
+            {"model": False, "provider": "amazon_bedrock"},
+            {"ls_provider": "amazon_bedrock"},
+            id="invalid-model-valid-provider",
+        ),
+        pytest.param(
+            {"model": "resolved-model", "provider": {}},
+            {"ls_model_name": "resolved-model"},
+            id="valid-model-invalid-provider",
+        ),
+    ],
+)
+def test_gateway_metadata_overrides_request_identity(
+    gateway_info: dict[str, object],
+    expected_identity: dict[str, str],
+    *,
+    errored: bool,
+) -> None:
+    """Only valid returned identity fields override request-time tracing metadata."""
+    tracer = MockTracerCore()
+    run = _make_run("test-gateway-identity-run-id")
+    original_metadata = {
+        "ls_model_name": "requested-model",
+        "ls_provider": "openai",
+        "custom": "preserved",
+    }
+    run.extra = {"metadata": original_metadata.copy()}
+    tracer.run_map[str(run.id)] = run
+    response = LLMResult(
+        generations=[
+            [
+                ChatGeneration(
+                    message=AIMessage(content="Test"),
+                    generation_info={GATEWAY_METADATA_RESPONSE_KEY: gateway_info},
+                )
+            ]
+        ]
+    )
+
+    if errored:
+        completed_run = tracer._errored_llm_run(
+            error=ValueError("boom"), run_id=run.id, response=response
+        )
+    else:
+        completed_run = tracer._complete_llm_run(response=response, run_id=run.id)
+
+    assert completed_run.extra["metadata"] == {
+        **original_metadata,
+        **expected_identity,
+        "ls_gateway_info": gateway_info,
+    }
