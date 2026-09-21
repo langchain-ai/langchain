@@ -14,7 +14,7 @@ def test_version_matches_pyproject() -> None:
 
     # Read the version from pyproject.toml
     pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
-    with pyproject_path.open() as f:
+    with pyproject_path.open(encoding="utf-8") as f:
         pyproject_data = toml.load(f)
 
     pyproject_version = pyproject_data["project"]["version"]
