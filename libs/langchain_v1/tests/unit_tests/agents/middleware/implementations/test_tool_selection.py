@@ -7,7 +7,7 @@ from typing import Any, Literal
 import pytest
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field
@@ -974,3 +974,181 @@ class TestLLMToolSelectorInternalCallMetadata:
             config["metadata"][INTERNAL_CALL_METADATA_KEY]
             == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
         )
+
+
+class MessageCapturingSelectionModel(FakeModel):
+    """`FakeModel` that records the input messages passed to the selector model."""
+
+    captured_inputs: list[Any] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_inputs.append(input)
+        return super().invoke(input, config, stop=stop, **kwargs)
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_inputs.append(input)
+        return await super().ainvoke(input, config, stop=stop, **kwargs)
+
+
+def _selection_model() -> MessageCapturingSelectionModel:
+    """Build a selection model that always selects `get_weather`."""
+    return MessageCapturingSelectionModel(
+        messages=cycle(
+            [
+                AIMessage(
+                    content="",
+                    tool_calls=[
+                        {
+                            "name": "ToolSelectionResponse",
+                            "id": "1",
+                            "args": {"tools": ["get_weather"]},
+                        }
+                    ],
+                ),
+            ]
+        )
+    )
+
+
+def _message_contents(model_input: Any) -> list[Any]:
+    """Extract the content of every message handed to the selection model."""
+    if isinstance(model_input, list):
+        items = model_input
+    elif hasattr(model_input, "to_messages"):
+        items = model_input.to_messages()
+    else:  # pragma: no cover - defensive
+        msg = f"Unexpected model input: {type(model_input)}"
+        raise TypeError(msg)
+
+    contents: list[Any] = []
+    for item in items:
+        if isinstance(item, BaseMessage):
+            contents.append(item.content)
+        elif isinstance(item, dict):
+            contents.append(item.get("content"))
+    return contents
+
+
+class TestLLMToolSelectorConversationHistory:
+    """The selector must see recent turns, not only the latest user message."""
+
+    def test_wrap_model_call_passes_conversation_history(self) -> None:
+        """A vague follow-up can only be resolved against the earlier turns."""
+        tool_selection_model = _selection_model()
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        agent.invoke(
+            {
+                "messages": [
+                    HumanMessage("I need the weather in Paris"),
+                    AIMessage("Sure, I'll use get_weather for that."),
+                    HumanMessage("do it"),
+                ]
+            }
+        )
+
+        assert len(tool_selection_model.captured_inputs) == 1
+        contents = _message_contents(tool_selection_model.captured_inputs[0])
+        # Both the follow-up and the turn it refers back to reach the selector.
+        assert "do it" in contents
+        assert "I need the weather in Paris" in contents
+
+    async def test_awrap_model_call_passes_conversation_history(self) -> None:
+        """The async path forwards the same conversation window."""
+        tool_selection_model = _selection_model()
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        await agent.ainvoke(
+            {
+                "messages": [
+                    HumanMessage("I need the weather in Paris"),
+                    AIMessage("Sure, I'll use get_weather for that."),
+                    HumanMessage("do it"),
+                ]
+            }
+        )
+
+        assert len(tool_selection_model.captured_inputs) == 1
+        contents = _message_contents(tool_selection_model.captured_inputs[0])
+        assert "do it" in contents
+        assert "I need the weather in Paris" in contents
+
+    def test_agent_system_prompt_is_not_sent_to_selector(self) -> None:
+        """The selector keeps its own system prompt instead of the agent's."""
+        agent_system_prompt = "You are a helpful weather assistant."
+        tool_selection_model = _selection_model()
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+            system_prompt=agent_system_prompt,
+        )
+
+        agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert len(tool_selection_model.captured_inputs) == 1
+        contents = _message_contents(tool_selection_model.captured_inputs[0])
+        assert agent_system_prompt not in contents
+        assert contents[0] == tool_selector.system_prompt
+
+    def test_max_history_messages_bounds_the_window(self) -> None:
+        """Older turns are dropped once the window is filled."""
+        tool_selection_model = _selection_model()
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(
+            model=tool_selection_model, max_history_messages=1
+        )
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+
+        agent.invoke(
+            {
+                "messages": [
+                    HumanMessage("I need the weather in Paris"),
+                    AIMessage("Sure, I'll use get_weather for that."),
+                    HumanMessage("do it"),
+                ]
+            }
+        )
+
+        assert len(tool_selection_model.captured_inputs) == 1
+        contents = _message_contents(tool_selection_model.captured_inputs[0])
+        assert contents == [tool_selector.system_prompt, "do it"]
+
+    def test_max_history_messages_must_be_positive(self) -> None:
+        """A non-positive window is rejected at construction time."""
+        with pytest.raises(ValueError, match="max_history_messages must be >= 1"):
+            LLMToolSelectorMiddleware(model=_selection_model(), max_history_messages=0)

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeGuard, Union
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
@@ -57,7 +57,7 @@ class _SelectionRequest:
 
     available_tools: list[BaseTool]
     system_message: str
-    last_user_message: HumanMessage
+    history: list[BaseMessage]
     model: BaseChatModel
     valid_tool_names: list[str]
 
@@ -164,6 +164,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         max_tools: int | None = None,
         always_include: list[str] | None = None,
         max_retries: int = 1,
+        max_history_messages: int = 5,
         on_parsing_failure: OnParsingFailure = "error",
     ) -> None:
         """Initialize the tool selector.
@@ -188,6 +189,14 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
                 `tools` list).
 
                 Must be `>= 0`.
+            max_history_messages: Maximum number of recent conversation messages to
+                pass to the selection model, so that follow-up requests such as
+                "do it" can be resolved against earlier turns.
+
+                System messages are not included, since the selection model gets its
+                own system prompt.
+
+                Must be `>= 1`.
             on_parsing_failure: Behavior once `max_retries` is exhausted and the
                 response is still malformed.
 
@@ -205,16 +214,20 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
                 output that needs bounding.
 
         Raises:
-            ValueError: If `max_retries < 0`.
+            ValueError: If `max_retries < 0` or `max_history_messages < 1`.
         """
         super().__init__()
         if max_retries < 0:
             msg = "max_retries must be >= 0"
             raise ValueError(msg)
+        if max_history_messages < 1:
+            msg = "max_history_messages must be >= 1"
+            raise ValueError(msg)
         self.system_prompt = system_prompt
         self.max_tools = max_tools
         self.always_include = always_include or []
         self.max_retries = max_retries
+        self.max_history_messages = max_history_messages
         self.on_parsing_failure = on_parsing_failure
 
         if isinstance(model, (BaseChatModel, type(None))):
@@ -274,15 +287,20 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
                 f"only the first {self.max_tools} will be used."
             )
 
-        # Get the last user message from the conversation history
-        last_user_message: HumanMessage
-        for message in reversed(request.messages):
-            if isinstance(message, HumanMessage):
-                last_user_message = message
-                break
-        else:
+        # Selection needs the user's request, so a user message must be present.
+        if not any(isinstance(message, HumanMessage) for message in request.messages):
             msg = "No user message found in request messages"
             raise AssertionError(msg)
+
+        # Carry recent conversation context so that follow-up requests such as
+        # "do it" can be resolved against earlier turns. System messages are
+        # dropped: the selection model is given its own system prompt, and the
+        # agent's prompt is not conversation context for selection.
+        history: list[BaseMessage] = [
+            message for message in request.messages if not isinstance(message, SystemMessage)
+        ]
+        if len(history) > self.max_history_messages:
+            history = history[-self.max_history_messages :]
 
         model = self.model or request.model
         valid_tool_names = [tool.name for tool in available_tools]
@@ -290,7 +308,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
         return _SelectionRequest(
             available_tools=available_tools,
             system_message=system_message,
-            last_user_message=last_user_message,
+            history=history,
             model=model,
             valid_tool_names=valid_tool_names,
         )
@@ -410,7 +428,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
         messages: list[BaseMessage | dict[str, Any]] = [
             {"role": "system", "content": selection_request.system_message},
-            selection_request.last_user_message,
+            *selection_request.history,
         ]
         config: RunnableConfig = {
             "metadata": {"lc_source": "tool_selection", **internal_call_metadata()}
@@ -477,7 +495,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT,
 
         messages: list[BaseMessage | dict[str, Any]] = [
             {"role": "system", "content": selection_request.system_message},
-            selection_request.last_user_message,
+            *selection_request.history,
         ]
         config: RunnableConfig = {
             "metadata": {"lc_source": "tool_selection", **internal_call_metadata()}
