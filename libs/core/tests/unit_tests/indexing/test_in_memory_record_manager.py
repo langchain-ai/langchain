@@ -248,6 +248,12 @@ async def test_list_keys(manager: InMemoryRecordManager) -> None:
     assert len(results) == 1
     assert results[0] in {"key1", "key2", "key3", "key4", "key5"}
 
+    # limit=0 must return an empty list, not all keys.
+    # 0 is falsy, so `if limit:` skips the slice and returns everything — wrong.
+    # The fix uses `if limit is not None:` instead.
+    assert manager.list_keys(limit=0) == []
+    assert await manager.alist_keys(limit=0) == []
+
 
 def test_delete_keys(manager: InMemoryRecordManager) -> None:
     """Test deleting keys from the database."""
