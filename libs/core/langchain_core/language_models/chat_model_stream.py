@@ -131,16 +131,21 @@ def _sweep_chunk_store(
     `tool_call_chunk` → `tool_call`) and prevents `merge_lists` from
     re-merging further chunks into an already-parsed args dict.
     """
+    # `index` is dropped for client-side `tool_call` so a finalized block cannot
+    # be re-merged (see the note above); `server_tool_call` keeps it, matching
+    # v1's `init_server_tool_calls`, which finalizes in place and preserves it.
+    extras_drop = {"type", "id", "name", "args"}
+    if finalized_type == "tool_call":
+        extras_drop = extras_drop | {"index"}
+
     for idx in sorted(store):
         chunk = store[idx]
         # Carry over any non-finalize-rewritten fields the chunk collected
-        # (e.g., `extras`). `_merge_chunk_into_store` only populates
-        # `id` / `name` / `args`, so this is empty in practice today;
-        # future provider-specific fields would flow through here.
+        # (e.g., `extras`). Block-delta chunks reach the store through
+        # `_merge_block_delta_into_store`, which keeps every non-None field,
+        # so `index` can be present here.
         extras = {
-            k: v
-            for k, v in chunk.items()
-            if k not in {"type", "id", "name", "args"} and v is not None
+            k: v for k, v in chunk.items() if k not in extras_drop and v is not None
         }
         final_block = finalize_tool_call_chunk(
             raw_args=chunk.get("args"),

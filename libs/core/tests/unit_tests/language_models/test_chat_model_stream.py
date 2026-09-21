@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import pytest
 from typing_extensions import assert_type
@@ -15,7 +15,10 @@ from langchain_core.language_models.chat_model_stream import (
     ChatModelStream,
     SyncProjection,
     SyncTextProjection,
+    _merge_block_delta_into_store,
+    _sweep_chunk_store,
 )
+from langchain_core.utils._merge import merge_lists
 
 if TYPE_CHECKING:
     from langchain_protocol.protocol import ContentBlockFinishData
@@ -953,3 +956,85 @@ class TestAsyncChatModelStream:
             await stream.text
         with pytest.raises(RuntimeError, match="async fail"):
             await stream
+
+
+# ---------------------------------------------------------------------------
+# End-of-stream sweep: `index` must not survive onto a client tool_call
+# ---------------------------------------------------------------------------
+
+
+class TestSweepDropsIndexOnClientToolCalls:
+    """`finalize_tool_call_chunk` requires callers to drop `index`.
+
+    Its docstring: "Callers are responsible for having already dropped keys
+    they don't want propagated (notably `type`, `id`, `name`, `args`, and
+    `index` on client-side `tool_call`)."
+
+    A finalized `tool_call` that keeps `index` is re-merged by `merge_lists`
+    with any later chunk sharing that index, which raises because the parsed
+    `args` dict and the chunk's `args` string are different types.
+    `server_tool_call` keeps `index`, matching v1's `init_server_tool_calls`.
+    """
+
+    CHUNK: ClassVar[dict[str, Any]] = {
+        "type": "tool_call_chunk",
+        "id": "call_1",
+        "name": "get_weather",
+        "args": '{"city": "Paris"}',
+        "index": 0,
+    }
+
+    @staticmethod
+    def _sweep(store: dict[int, dict[str, Any]], finalized_type: str) -> dict[int, Any]:
+        finalized: dict[int, Any] = {}
+        _sweep_chunk_store(
+            store,
+            finalized_type=finalized_type,
+            finalized_blocks=finalized,
+            tool_calls_acc=[],
+            invalid_acc=[],
+        )
+        return finalized
+
+    def _store_via_block_delta(self) -> dict[int, dict[str, Any]]:
+        # The path a `block-delta` tool_call_chunk takes: every non-None field
+        # is kept, so `index` reaches the store.
+        store: dict[int, dict[str, Any]] = {}
+        _merge_block_delta_into_store(store, 0, dict(self.CHUNK))
+        return store
+
+    def test_client_tool_call_has_no_index(self) -> None:
+        finalized = self._sweep(self._store_via_block_delta(), "tool_call")
+
+        assert finalized[0]["type"] == "tool_call"
+        assert "index" not in finalized[0]
+
+    def test_server_tool_call_keeps_index(self) -> None:
+        finalized = self._sweep(self._store_via_block_delta(), "server_tool_call")
+
+        assert finalized[0]["type"] == "server_tool_call"
+        assert finalized[0]["index"] == 0
+
+    def test_parsed_args_survive_the_sweep(self) -> None:
+        finalized = self._sweep(self._store_via_block_delta(), "tool_call")
+
+        assert finalized[0]["args"] == {"city": "Paris"}
+        assert finalized[0]["id"] == "call_1"
+        assert finalized[0]["name"] == "get_weather"
+
+    def test_finalized_block_is_not_remerged_by_a_later_chunk(self) -> None:
+        finalized = self._sweep(self._store_via_block_delta(), "tool_call")
+        later_chunk = {
+            "type": "tool_call_chunk",
+            "id": None,
+            "name": None,
+            "args": '{"unit": "c"}',
+            "index": 0,
+        }
+
+        # Without the fix this raises: merge_dicts refuses to merge the chunk's
+        # `args` string into the finalized block's parsed dict.
+        merged = merge_lists([dict(finalized[0])], [later_chunk])
+
+        assert merged is not None
+        assert len(merged) == 2
