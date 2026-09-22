@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0ff4006082d29f33169349313c83cc890f4fafd73f0a3df4a51cf88689471825",
+  "pageVersion": "sha256:a2984365361bea3650236ef43c48d193ac444b15257fef3ea6110d04c3580210",
   "claims": [
     {
       "id": "claim_189e539212e149fdb6d26bfac3426a8c",
@@ -46,7 +46,7 @@
     },
     {
       "id": "claim_b11a1705a5cd44ea88dd0a9a4565a98d",
-      "statement": "_BUILTIN_PROVIDERS is a dictionary mapping provider keys to tuples of (module_path, class_name, creator_func) for 37 built-in providers including openai, anthropic, bedrock, google_vertexai, azure_openai, cohere, groq, mistralai, ollama, and others. The registry includes fallback logic for ollama (tries langchain_community) and special creators for huggingface (from_model_id), ibm (model_id), and langsmith (gateway config).",
+      "statement": "_BUILTIN_PROVIDERS is a dictionary mapping provider keys to tuples of (module_path, class_name, creator_func) for 32 built-in providers including openai, anthropic, bedrock, google_vertexai, azure_openai, cohere, groq, mistralai, ollama, and others. The registry includes fallback logic for ollama (tries langchain_community) and special creators for huggingface (from_model_id), ibm (model_id), and langsmith (gateway config).",
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L120",
@@ -177,6 +177,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-21T08:30:16.745Z"
   }
 }

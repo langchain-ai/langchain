@@ -5,15 +5,17 @@ description: "ChatOpenAI integration for OpenAI's Chat Completions and Responses
 tags: ["openai", "chat-models", "tool-calling", "structured-output", "vision", "azure"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-08T08:27:09.597Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-1e66a9da38565f8901e651f4
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
+  - id: openwiki-source-f32b395707eda97cd743f4e5
+    resource: repo://libs/partners/openai/langchain_openai/chat_models/azure.py
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-74e5bef080f1af7da12371cf
     resource: repo://libs/partners/openai/langchain_openai/data/_profiles.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
 ---
 
 ## Overview
@@ -34,7 +36,7 @@ The OpenAI integration (`langchain-openai`) provides production-ready chat model
 
 **Package**: `repo://libs/partners/openai/langchain_openai/`
 
-**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2823-L2920`
+**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2829-L3750`
 
 **Exports**: `repo://libs/partners/openai/langchain_openai/__init__.py`
 
@@ -175,6 +177,33 @@ model = ChatOpenAI(
 response = await model.ainvoke("Hi")
 ```
 
+## BaseChatOpenAI and Initialization
+
+`ChatOpenAI` inherits from `BaseChatOpenAI`, which is a base class shared with `AzureChatOpenAI`. On initialization, `BaseChatOpenAI`:
+
+1. **Resolves API authentication** from parameters, environment variables, or callables
+2. **Builds HTTP clients** (sync and async) with optional socket options for connection management
+3. **Registers model profiles** for capability metadata
+4. **Validates parameters** like `stream_chunk_timeout` (negative values fall back to defaults with warnings)
+5. **Initializes OpenAI client instances** (`self.client`, `self.async_client`) using the OpenAI SDK
+
+**Client Initialization Details:**
+
+- **Sync client** (`self.client`): Built from sync `httpx.Client` or created internally. Required for sync `invoke()` and `stream()` methods.
+- **Async client** (`self.async_client`): Built from async `httpx.AsyncClient` or created internally. Required for async `ainvoke()` and `astream()` methods.
+- **Root clients** (`self.root_client`, `self.root_async_client`): Cached OpenAI client instances used for actual API calls.
+
+If an **async callable** is provided for `api_key`, the sync client is not available, and sync methods raise `ValueError`. Use async methods instead:
+
+```python
+async def get_key() -> str:
+    return await fetch_secret()
+
+model = ChatOpenAI(model="gpt-4o", api_key=get_key)
+# await model.ainvoke(...) works
+# model.invoke(...) raises ValueError
+```
+
 ## Model Profiles and Capabilities
 
 Model profiles are auto-generated metadata that describe model capabilities. They are stored in `repo://libs/partners/openai/langchain_openai/data/_profiles.py` and retrieved via the `ModelProfileRegistry`.
@@ -198,6 +227,67 @@ from langchain_core.language_models import ModelProfileRegistry
 
 model = ChatOpenAI(model="gpt-4o")
 # Profiles are used internally by LangChain for capability checks
+```
+
+## Responses API
+
+`ChatOpenAI` automatically switches between the Chat Completions API and the Responses API based on the model, parameters, and configuration. The **Responses API** provides enhanced features including:
+
+- **Streaming reasoning** for reasoning models (e.g., o1-preview)
+- **Structured output with tools** alongside reasoning
+- **Context management** (message compaction) via `context_management` parameter
+- **Truncation strategy** control via `truncation` parameter
+- **Reasoning parameters** (effort, summary) via `reasoning` dict
+- **Previous response tracking** via `use_previous_response_id` parameter
+
+**Automatic API Selection**: The Responses API is automatically used when:
+- Model name starts with `gpt-5` (pro variants) or contains `codex`
+- `use_responses_api=True` is explicitly set
+- `reasoning` or `context_management` parameters are provided
+- `truncation` or `include` parameters are set
+- `use_previous_response_id=True` is set
+- Model name starts with `gpt-6` and tools are provided
+
+**Explicit Control:**
+
+```python
+# Force Responses API
+model = ChatOpenAI(model="gpt-4o", use_responses_api=True)
+
+# Force Chat Completions API
+model = ChatOpenAI(model="gpt-4o", use_responses_api=False)
+
+# Auto-detect (default)
+model = ChatOpenAI(model="gpt-4o", use_responses_api=None)
+```
+
+**Responses API with Reasoning:**
+
+```python
+model = ChatOpenAI(
+    model="o1-preview",
+    use_responses_api=True,
+    reasoning={
+        "effort": "high",
+        "summary": "detailed"
+    }
+)
+
+response = model.invoke("Analyze this complex system design")
+# Response includes reasoning content and analysis
+```
+
+**Context Management (Responses API only):**
+
+```python
+model = ChatOpenAI(
+    model="gpt-4o",
+    use_responses_api=True,
+    context_management=[
+        {"type": "auto", "min_tokens": 1000}
+    ]
+)
+# Model will automatically drop older messages to fit context window
 ```
 
 ## Vision Support
@@ -576,7 +666,7 @@ asyncio.run(stream_response())
 
 If a chunk doesn't arrive within the timeout, `StreamChunkTimeoutError` is raised. This is distinct from `httpx` read timeout—it measures silence between *parsed chunks*, not inter-byte silence.
 
-## Error Handling
+## Error Handling and Retries
 
 `ChatOpenAI` maps OpenAI SDK exceptions to LangChain's standardized error hierarchy:
 
@@ -585,23 +675,72 @@ If a chunk doesn't arrive within the timeout, `StreamChunkTimeoutError` is raise
 | `AuthenticationError` | `ModelAuthenticationError` | Invalid API key |
 | `PermissionDeniedError` | `ModelPermissionDeniedError` | API key lacks permissions |
 | `BadRequestError` (context_length_exceeded) | `ContextOverflowError` | Input exceeds model's context window |
+| `BadRequestError` (response_format validation) | `ModelInvalidRequestError` | Invalid schema for structured output |
 | `RateLimitError` | `ModelRateLimitError` | Rate limit exceeded |
 | `NotFoundError` | `ModelNotFoundError` | Model doesn't exist or isn't available |
 | `APIError` / `InternalServerError` | `ModelAPIError` | OpenAI server error |
 | `APIConnectionError` | `ModelConnectionError` | Network connectivity issue |
 | `APITimeoutError` | `ModelTimeoutError` | Request timeout |
 
-**Example:**
+**Error Handling Example:**
 
 ```python
-from langchain_core.exceptions import ContextOverflowError, ModelAuthenticationError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAuthenticationError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
+
+model = ChatOpenAI(model="gpt-4o")
 
 try:
-    response = model.invoke(very_long_message)
+    response = model.invoke(messages)
 except ContextOverflowError as e:
     print(f"Message too long: {e}")
 except ModelAuthenticationError as e:
     print(f"Auth failed: {e}")
+except ModelRateLimitError as e:
+    print(f"Rate limited, retry later")
+except ModelTimeoutError as e:
+    print(f"Request timed out")
+```
+
+**Retry Configuration:**
+
+Automatic retries for transient failures are configured via `max_retries` (default: None). The OpenAI SDK automatically retries on certain transient errors (429, 500-599 status codes):
+
+```python
+model = ChatOpenAI(
+    model="gpt-4o",
+    max_retries=3,  # Retry up to 3 times on transient failures
+    timeout=30.0   # Request timeout in seconds
+)
+
+# Or with tuple for separate connect/read timeouts
+model = ChatOpenAI(
+    model="gpt-4o",
+    timeout=(10.0, 30.0)  # (connect_timeout, read_timeout)
+)
+```
+
+**Stream Chunk Timeout (Async Streaming):**
+
+When async streaming stalls between parsed chunks (not keepalive), a `StreamChunkTimeoutError` is raised:
+
+```python
+from langchain_openai import StreamChunkTimeoutError
+
+model = ChatOpenAI(
+    model="gpt-4o",
+    stream_chunk_timeout=60.0  # Timeout per chunk
+)
+
+try:
+    async for chunk in model.astream("Hello"):
+        print(chunk.content, end="")
+except StreamChunkTimeoutError as e:
+    print(f"Stream stalled: {e}")
 ```
 
 ## Advanced Configuration
@@ -659,9 +798,65 @@ model = ChatOpenAI(
 )
 ```
 
+## Message Handling and Generation
+
+### Message Conversion
+
+`ChatOpenAI` converts LangChain message types to OpenAI's API format and back:
+
+**Input message types** (converted to OpenAI format):
+- `HumanMessage`: user role
+- `AIMessage`: assistant role (with tool_calls and additional_kwargs)
+- `SystemMessage`: system role (or "developer" if marked with `__openai_role__`)
+- `ToolMessage`: tool role (with tool_call_id)
+- `FunctionMessage`: function role (legacy)
+
+**Output**: `AIMessage` with:
+- `content`: Text response
+- `tool_calls`: List of `ToolCall` objects if model called tools
+- `invalid_tool_calls`: Malformed tool calls that couldn't be parsed
+- `additional_kwargs`: Audio data (if audio output enabled), function_call (legacy), etc.
+- `response_metadata`: token usage, finish reason, system fingerprint, logprobs, etc.
+- `usage_metadata`: Standardized usage counts (input_tokens, output_tokens, total_tokens)
+
+### Generation Flow
+
+1. **Input normalization**: Convert string or message list to `ChatPromptValue`
+2. **Message formatting**: Format content blocks (text, images, tool use markers) per API requirements
+3. **Payload construction**: Build request dict with model, messages, parameters, tools, response_format, etc.
+4. **API selection**: Determine Chat Completions vs Responses API based on model and parameters
+5. **API call**: Invoke OpenAI SDK (sync or async)
+6. **Response parsing**: Extract message content, tool calls, usage, metadata
+7. **Message creation**: Wrap in `AIMessage` with all metadata
+8. **Callback firing**: Invoke LLM callbacks for logging, streaming, etc.
+
+### Content Block Handling
+
+When messages contain multi-modal content (text + images, text + tool references), `ChatOpenAI` formats them per API requirements:
+
+```python
+from langchain_core.messages import HumanMessage
+
+# Multi-modal message
+message = HumanMessage(
+    content=[
+        {"type": "text", "text": "Analyze this chart"},
+        {
+            "type": "image_url",
+            "image_url": {"url": "https://example.com/chart.png", "detail": "high"}
+        }
+    ]
+)
+
+response = model.invoke([message])
+```
+
+For **Chat Completions API**, certain content block types are filtered (e.g., `thinking`, `tool_use`).
+For **Responses API**, content blocks are expanded to support reasoning, computer use, file search, etc.
+
 ## Azure OpenAI Integration
 
-`AzureChatOpenAI` is a specialized subclass for Azure OpenAI deployments. It uses different authentication and endpoint configuration than standard `ChatOpenAI`.
+`AzureChatOpenAI` is a specialized subclass for Azure OpenAI deployments. It inherits all `ChatOpenAI` functionality (tool calling, structured output, streaming, vision) but with Azure-specific authentication, endpoint routing, and response metadata handling.
 
 ### Azure Setup
 
@@ -674,6 +869,7 @@ pip install -U langchain-openai
 
 export AZURE_OPENAI_API_KEY="your-api-key"
 export AZURE_OPENAI_ENDPOINT="https://your-resource-name.openai.azure.com/"
+export OPENAI_API_VERSION="2024-05-01-preview"  # Optional; can be passed to constructor
 ```
 
 ### Basic Usage
@@ -682,48 +878,109 @@ export AZURE_OPENAI_ENDPOINT="https://your-resource-name.openai.azure.com/"
 from langchain_openai import AzureChatOpenAI
 
 model = AzureChatOpenAI(
-    azure_deployment="your-deployment",
+    azure_deployment="my-deployment",
     api_version="2024-05-01-preview",
     temperature=0,
     max_tokens=None,
 )
 
 response = model.invoke("What is 2 + 2?")
+print(response.usage_metadata)  # Token counts
 ```
 
 ### Key Azure Parameters
 
-- **`azure_deployment`** (`str`): Name of Azure OpenAI deployment
-- **`api_version`** (`str`): Azure OpenAI REST API version (distinct from model version). See [versions](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning).
-- **`model`** (`str`): Underlying OpenAI model name (for tracing and token counting, does not affect completion)
-- **`model_version`** (`str`): Model version (e.g., `'0125'`, `'0125-preview'`) for token counting
+**Authentication & Endpoint:**
+
+- **`azure_deployment`** (`str`): Name of the Azure OpenAI deployment. Sets the request URL to `/deployments/{azure_deployment}`.
+- **`azure_endpoint`** (`str`): Full Azure endpoint URL (e.g., `https://resource-name.openai.azure.com/`). Auto-inferred from `AZURE_OPENAI_ENDPOINT` env var.
+- **`api_key`** (`str | Callable`): Azure API key. Auto-inferred from `AZURE_OPENAI_API_KEY` env var.
+- **`azure_ad_token`** (`str`): Azure Active Directory token (alternative to API key).
+- **`api_version`** (`str`): Azure OpenAI REST API version (distinct from model version). Examples: `"2024-05-01-preview"`, `"2024-02-15-preview"`. See [API versions](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning).
+
+**Model Configuration (for tracing & token counting only):**
+
+- **`model`** (`str`): Underlying OpenAI model name (e.g., `"gpt-4o"`, `"gpt-35-turbo"`). Does **not** affect completion; uses `azure_deployment` instead.
+- **`model_version`** (`str`): Model version (e.g., `'0125'`, `'0125-preview'`) for token counting.
+
+**Other Parameters:**
+
+All standard `ChatOpenAI` parameters are supported: `temperature`, `max_tokens`, `top_p`, `frequency_penalty`, `presence_penalty`, `timeout`, `max_retries`, `streaming`, `logprobs`, etc.
 
 ### Azure Response Example
 
+Azure includes additional metadata in responses:
+
 ```python
-# response includes Azure-specific metadata
+model = AzureChatOpenAI(azure_deployment="my-deployment", api_version="2024-05-01-preview")
 response = model.invoke("Translate to French: Hello")
 
-# response includes:
-# - usage_metadata: token counts
-# - response_metadata with:
-#   - prompt_filter_results: content safety filtering info
-#   - finish_reason
-#   - logprobs (if requested)
-#   - content_filter_results: safety filtering details
+print(response.usage_metadata)
+# {'input_tokens': 28, 'output_tokens': 6, 'total_tokens': 34}
+
+print(response.response_metadata)
+# {
+#   'token_usage': {
+#     'completion_tokens': 6, 'prompt_tokens': 28, 'total_tokens': 34
+#   },
+#   'model_name': 'gpt-4o',
+#   'system_fingerprint': 'fp_...',
+#   'prompt_filter_results': [...],      # Content safety filtering
+#   'content_filter_results': {...},     # Safety categorization
+#   'finish_reason': 'stop',
+# }
+```
+
+**Content Safety Filtering**: Azure includes `prompt_filter_results` and `content_filter_results` in `response_metadata`, detailing filtering for hate speech, self-harm, sexual content, and violence.
+
+### Azure Tool Calling
+
+Tool calling with `AzureChatOpenAI` works identically to `ChatOpenAI`:
+
+```python
+from pydantic import BaseModel, Field
+
+class GetWeather(BaseModel):
+    '''Get current weather'''
+    location: str = Field(description="City and state, e.g. Boston, MA")
+
+model = AzureChatOpenAI(azure_deployment="my-deployment", api_version="2024-05-01-preview")
+model_with_tools = model.bind_tools([GetWeather])
+response = model_with_tools.invoke("What's the weather in Boston?")
+print(response.tool_calls)
 ```
 
 ### Azure Streaming
 
+Streaming with `AzureChatOpenAI` includes all standard features (callbacks, chunk timeouts, token usage in chunks):
+
 ```python
 model = AzureChatOpenAI(
-    azure_deployment="your-deployment",
+    azure_deployment="my-deployment",
     api_version="2024-05-01-preview",
-    streaming=True
+    streaming=True,
+    stream_chunk_timeout=60.0
 )
 
 for chunk in model.stream("Translate to French: Hello"):
     print(chunk.content, end="")
+```
+
+### Azure Structured Output
+
+All `with_structured_output()` methods are supported:
+
+```python
+from pydantic import BaseModel
+
+class Translation(BaseModel):
+    french: str
+    confidence: float
+
+model = AzureChatOpenAI(azure_deployment="my-deployment", api_version="2024-05-01-preview")
+structured = model.with_structured_output(Translation, method="json_schema")
+result = structured.invoke("Translate to French: Hello world")
+print(result.french)
 ```
 
 ## Model Name Examples
@@ -739,16 +996,39 @@ Check [OpenAI models page](https://platform.openai.com/docs/models) for current 
 
 ## Testing
 
-Unit tests are located in `repo://libs/partners/openai/tests/unit_tests/chat_models/`.
+Unit and integration tests are located in `repo://libs/partners/openai/tests/`.
 
-Key test files:
-- `repo://libs/partners/openai/tests/unit_tests/chat_models/test_base.py`: Main ChatOpenAI tests
-- `repo://libs/partners/openai/tests/unit_tests/chat_models/test_client_utils.py`: Client utilities
+### Unit Tests
+
+Key unit test files:
+- `repo://libs/partners/openai/tests/unit_tests/chat_models/test_base.py`: Main ChatOpenAI tests including:
+  - API initialization and parameter validation
+  - Message conversion and content block handling
+  - Error handling and exception mapping
+  - Tool calling and structured output methods
+  - Streaming with callbacks
+- `repo://libs/partners/openai/tests/unit_tests/chat_models/test_base_standard.py`: Standard test suite for ChatOpenAI (Chat Completions API)
+- `repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py`: Standard test suite for Responses API
 - `repo://libs/partners/openai/tests/unit_tests/chat_models/test_azure.py`: Azure-specific tests
+- `repo://libs/partners/openai/tests/unit_tests/chat_models/test_client_utils.py`: Client utilities (socket options, proxies, HTTP clients)
 
-**Test structured output:**
+### Integration Tests
+
+Integration tests with real API calls are in `repo://libs/partners/openai/tests/integration_tests/chat_models/`.
+
+### Standard Test Suite
+
+Both `ChatOpenAI` (Chat Completions) and Responses API inherit standard test suites from `langchain-tests` to validate:
+- Basic invoke and streaming
+- Tool calling semantics
+- Structured output conformance
+- Callback integration
+- Token counting accuracy
+
+**Example unit test:**
 
 ```python
+import pytest
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 
@@ -756,11 +1036,116 @@ class TestSchema(BaseModel):
     name: str
     value: int
 
-def test_with_structured_output():
+@pytest.mark.asyncio
+async def test_structured_output_function_calling():
     model = ChatOpenAI(model="gpt-4o")
     structured = model.with_structured_output(TestSchema, method="function_calling")
-    # Invoke and verify output is TestSchema instance
+    result = await structured.ainvoke("Return {name: 'test', value: 42}")
+    assert isinstance(result, TestSchema)
+    assert result.name == "test"
+    assert result.value == 42
+
+@pytest.mark.asyncio
+async def test_streaming_with_callback():
+    from langchain_core.callbacks import StreamingStdOutCallbackHandler
+    
+    model = ChatOpenAI(model="gpt-4o", streaming=True)
+    chunks = []
+    async for chunk in model.astream("Hello", config={"callbacks": []}):
+        chunks.append(chunk)
+    assert len(chunks) > 0
 ```
+
+## Extension and Customization
+
+### Subclassing BaseChatOpenAI
+
+Advanced use cases can subclass `BaseChatOpenAI` to customize behavior:
+
+```python
+from langchain_openai.chat_models.base import BaseChatOpenAI
+from langchain_core.outputs import ChatResult
+
+class CustomChatOpenAI(BaseChatOpenAI):
+    """Custom OpenAI wrapper with additional logging."""
+    
+    custom_param: str = "default"
+    
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        # Custom pre-processing
+        print(f"Custom param: {self.custom_param}")
+        
+        # Call parent
+        result = super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+        
+        # Custom post-processing
+        result.llm_output["custom_field"] = "custom_value"
+        
+        return result
+
+# Use custom class
+model = CustomChatOpenAI(model="gpt-4o", custom_param="my_value")
+response = model.invoke("Hello")
+```
+
+### Middleware and Hooks
+
+Custom middleware can be added via `RunnablePassthrough`, `RunnableLambda`, or decorator patterns:
+
+```python
+from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+
+def log_input(input_val):
+    print(f"User input: {input_val}")
+    return input_val
+
+def log_output(output):
+    print(f"Model output: {output.content}")
+    return output
+
+model = ChatOpenAI(model="gpt-4o")
+chain = (
+    RunnableLambda(log_input)
+    | model
+    | RunnableLambda(log_output)
+)
+
+response = chain.invoke("What is 2+2?")
+```
+
+### Custom Client Configuration
+
+For advanced network control, provide fully configured httpx clients:
+
+```python
+import httpx
+from langchain_openai import ChatOpenAI
+
+http_client = httpx.Client(
+    timeout=httpx.Timeout(30.0),
+    limits=httpx.Limits(max_connections=5, max_keepalive_connections=2),
+    verify=certifi.where(),
+)
+
+http_async_client = httpx.AsyncClient(
+    timeout=httpx.Timeout(30.0),
+    limits=httpx.Limits(max_connections=5, max_keepalive_connections=2),
+)
+
+model = ChatOpenAI(
+    model="gpt-4o",
+    http_client=http_client,
+    http_async_client=http_async_client,
+)
+```
+
+## Known Limitations and Considerations
+
+1. **Sync callable API keys**: If `api_key` is a sync callable, async methods still work, but they resolve the key in an executor thread.
+2. **Provider-specific fields**: Non-OpenAI fields in responses (e.g., from vLLM, DeepSeek) are not preserved. Use provider-specific packages instead.
+3. **Responses API limitations**: Not all Chat Completions parameters are supported in Responses API (e.g., `n` is not supported).
+4. **Structured output schema validation**: The `json_schema` method requires schemas to meet OpenAI's supported-schemas constraints.
+5. **Azure API version coupling**: Azure requires explicit `api_version` and ties it to feature availability (e.g., structured output only in newer versions).
 
 ## Related Pages
 

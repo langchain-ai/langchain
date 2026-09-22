@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:861e60569112cc57094912804e603c9cd7bd4162df709645dd543bb46b2cca3f",
+  "pageVersion": "sha256:2c73027e4ac35b6bafe1b1e6da66b81ecdbdfdd7c36522eee378830a21a33af5",
   "claims": [
     {
       "id": "claim_0d3a898647bd4d1d9c08eb386919394b",
@@ -14,15 +14,15 @@
     },
     {
       "id": "claim_6d5428a93f294d5daf8a181cdd80d95f",
-      "statement": "The agent factory constructs a state machine with nodes: START → before_agent → before_model → model → after_model → [tools → after_model loop | after_agent] → END. The model is called, and if it returns tool calls, the tools node executes them and loops back unless a tool has return_direct=True or a structured output was produced.",
+      "statement": "The agent factory constructs a state machine with nodes: START → entry_node (before_agent or before_model or model) → loop_entry_node (before_model or model) → model → loop_exit_node (after_model or model) → [tools → loop_entry_node loop | exit_node] → END. The model is called, and if it returns tool calls, the tools node executes them and loops back to loop_entry_node unless a tool has return_direct=True, a structured output was produced, or no pending tool calls remain.",
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1647-L1743",
           "version": "repo-lines-v1:sha256:e5d4752fd45563b2294e6d0e37f5aff8f5ced6fd3f7b62a204f170a82d433a0b:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyYjM1ZjA3NzlhODIwMDkzMTkzZDkzOGEzYWE0OTA1NmVjMjk2ODc2YjViM2E1YWQyZmU1MTA3MDMyMDEzZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwOWY2YTA3YmVkNjMwN2Q0MjRjNjAxMzRjMzg3ZThiZjc1NDAxNGEzZjY0ZDk0NzQ3ZWFhZWRkZWViZTMxZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxN2UwYTFmMTc1YWZhZGQ2MGViYzMwOGQzMGU4ZDQ3NGExZDVmZGIyMDFlZWZjZWM5NTk0NDRlM2RkZTQ1MDgifQ"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1923-L2037",
-          "version": "repo-lines-v1:sha256:a9bc359f6e804a4cdc0cb76ebfb4141003353d4d8539636a2a7f5f658cb4c82c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxNTE5OTZmZDNiMjMzM2NiODYzNmQwNDg0YmYxOTNhYjEwZDNhMzAyMmExMzY1Y2I1MjFjNThlYmYwZWQ1OTVlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjNDQ3OWNjZWQ2NmFmZmMzYzA5OTg4YjUwMzg2NTZjYTUyYTlmOWE0NDUyYzFhNGY2ZWU0NWQ1ZWM1YjQ1N2EzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4ZWNhYTdiNzY3M2I5MzJlOWE0NTNlNmRiZTVhYjdhNjU0OGU5MGMxZDI3YmVkNDViNmQ1NjU1MDgzZmU4NTZmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxM2EwMTI5M2NiNzY5ODQyNTU5NDM1YmM0NmRmYzUxYWEwYWZjZTFhM2IwNDcxNGQzYjE3ZTMwNmM3YjI0MWUwIn0"
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L2004-L2043",
+          "version": "repo-lines-v1:sha256:600efbf881448e5cb5250d3ab7f403b67c281cc1963747fb68ba2b03ce762369:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxY2ZjMmJmMGMwNmFhZmMyOTNjNWE3MTkzYzc2MjFhMmQwYjIyOWZjNGE1MWZjZmRlOGUwYmRiYzUwNjUyMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NDc5Y2NlZDY2YWZmYzNjMDk5ODhiNTAzODY1NmNhNTJhOWY5YTQ0NTJjMWE0ZjZlZTQ1ZDVlYzViNDU3YTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZTE2NjY1MDcwYTE2MzkwYzYyZjliN2NkNWE2ZWQ5ZmI2ODZhODE2ZGNkNjAwMjBlNTNkMzhmNjAxYzUxYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzYTAxMjkzY2I3Njk4NDI1NTk0MzViYzQ2ZGZjNTFhYTBhZmNlMWEzYjA0NzE0ZDNiMTdlMzA2YzdiMjQxZTAifQ"
         }
       ]
     },
@@ -112,15 +112,15 @@
     },
     {
       "id": "claim_0acc06eb9c7d45e8b886f43ee4a296b7",
-      "statement": "Tools are registered at agent creation from BaseTool instances, raw callables (auto-wrapped), or dict-based provider tools. The ToolNode batches pending tool calls and executes them. Conditional edges route back to model unless a tool has return_direct=True, a structured output tool was called, or no tool calls remain.",
+      "statement": "Tools are registered at agent creation from BaseTool instances, raw callables (auto-wrapped), or dict-based provider tools. The ToolNode batches pending tool calls and executes them. Conditional edges route back to loop_entry_node unless all executed tools have return_direct=True, a structured output tool was called, or no pending tool calls remain.",
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1077-L1096",
           "version": "repo-lines-v1:sha256:f51ce8995c6e7b5b534cc0b32939c94c0739cfdae2e1bac61c23707201372310:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxN2EyMDA1ODk0MzI1ODA1MmVlOTkzNDZjZmQwNGI0OTVmOWM4ZGI5NDMyMjMzYTk3ZWMxNWI5ZGM3ZDZhOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiZmE4NzY1YjhjZDgxOWNlZDI4ODVkMzFmMTNkNTUwMGUwYWJiMjdhZGM1M2FlOWM3ZDE5YTJmZTNhNDFkZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4YzM2ZmUxMTg0NTI5MDAyNThmZjEwNWEyY2M2NjNlZWJlOWFhN2YxN2YwYzM0NTI3ZWU5NWM0ODdmYTQ4YWQifQ"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L2004-L2037",
-          "version": "repo-lines-v1:sha256:940f4f6befc1131d7e75249e7b77d093f0043727ec8dad72724605c33f9e9d89:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxY2ZjMmJmMGMwNmFhZmMyOTNjNWE3MTkzYzc2MjFhMmQwYjIyOWZjNGE1MWZjZmRlOGUwYmRiYzUwNjUyMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NDc5Y2NlZDY2YWZmYzNjMDk5ODhiNTAzODY1NmNhNTJhOWY5YTQ0NTJjMWE0ZjZlZTQ1ZDVlYzViNDU3YTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZTE2NjY1MDcwYTE2MzkwYzYyZjliN2NkNWE2ZWQ5ZmI2ODZhODE2ZGNkNjAwMjBlNTNkMzhmNjAxYzUxYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzYTAxMjkzY2I3Njk4NDI1NTk0MzViYzQ2ZGZjNTFhYTBhZmNlMWEzYjA0NzE0ZDNiMTdlMzA2YzdiMjQxZTAifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L2004-L2043",
+          "version": "repo-lines-v1:sha256:600efbf881448e5cb5250d3ab7f403b67c281cc1963747fb68ba2b03ce762369:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxY2ZjMmJmMGMwNmFhZmMyOTNjNWE3MTkzYzc2MjFhMmQwYjIyOWZjNGE1MWZjZmRlOGUwYmRiYzUwNjUyMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NDc5Y2NlZDY2YWZmYzNjMDk5ODhiNTAzODY1NmNhNTJhOWY5YTQ0NTJjMWE0ZjZlZTQ1ZDVlYzViNDU3YTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZTE2NjY1MDcwYTE2MzkwYzYyZjliN2NkNWE2ZWQ5ZmI2ODZhODE2ZGNkNjAwMjBlNTNkMzhmNjAxYzUxYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzYTAxMjkzY2I3Njk4NDI1NTk0MzViYzQ2ZGZjNTFhYTBhZmNlMWEzYjA0NzE0ZDNiMTdlMzA2YzdiMjQxZTAifQ"
         }
       ]
     },
@@ -225,6 +225,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-21T08:30:16.745Z"
   }
 }

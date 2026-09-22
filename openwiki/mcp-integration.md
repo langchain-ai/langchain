@@ -2,9 +2,6 @@
 type: "Reference"
 title: "Bearer token"
 openwiki_generated: true
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
 sources:
   - id: openwiki-source-6d1e3478d5b63988ee177552
     resource: repo://libs/langchain_v1/examples/mcp/auth_bearer.py
@@ -31,6 +28,9 @@ sources:
   - id: openwiki-source-4715c337e9b93b9d00846133
     resource: repo://libs/langchain_v1/langchain/mcp/tools.py
 generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-21T08:30:16.745Z
 ---
 
 

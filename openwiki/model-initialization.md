@@ -5,11 +5,11 @@ description: Factory function for instantiating chat models from provider string
 tags: [chat-models, factory-pattern, initialization, model-parameters, configuration, provider-registry]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-c479d4fffee5cf62576699e4
     resource: repo://libs/langchain_v1/langchain/chat_models/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
 ---
 
 ## Overview
@@ -124,7 +124,7 @@ If inference fails and `model_provider` is not provided, a `ValueError` lists su
 
 The `_BUILTIN_PROVIDERS` dictionary maps provider names to module paths, class names, and instantiation functions. Each entry is a tuple: `(module_path, class_name, creator_func)`.
 
-**Representative Entries** (repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L97):
+**All 32 Built-in Providers** (repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L97):
 
 | Provider | Package | Class | Module | Notes |
 |---|---|---|---|---|
@@ -134,6 +134,7 @@ The `_BUILTIN_PROVIDERS` dictionary maps provider names to module paths, class n
 | `azure_ai` | `langchain-azure-ai` | `AzureAIOpenAIApiChatModel` | `langchain_azure_ai.chat_models` | Submodule import |
 | `google_vertexai` | `langchain-google-vertexai` | `ChatVertexAI` | `langchain_google_vertexai` | |
 | `google_genai` | `langchain-google-genai` | `ChatGoogleGenerativeAI` | `langchain_google_genai` | |
+| `google_anthropic_vertex` | `langchain-google-vertexai` | `ChatAnthropicVertex` | `langchain_google_vertexai.model_garden` | Anthropic via Google Vertex |
 | `anthropic_bedrock` | `langchain-aws` | `ChatAnthropicBedrock` | `langchain_aws` | Bedrock-hosted Anthropic |
 | `bedrock` | `langchain-aws` | `ChatBedrock` | `langchain_aws` | Generic Bedrock models |
 | `bedrock_converse` | `langchain-aws` | `ChatBedrockConverse` | `langchain_aws` | Bedrock Converse API |
@@ -144,6 +145,7 @@ The `_BUILTIN_PROVIDERS` dictionary maps provider names to module paths, class n
 | `huggingface` | `langchain-huggingface` | `ChatHuggingFace` | `langchain_huggingface` | Uses `from_model_id()` |
 | `ibm` | `langchain-ibm` | `ChatWatsonx` | `langchain_ibm` | Uses `model_id=` param |
 | `litellm` | `langchain-litellm` | `ChatLiteLLM` | `langchain_litellm` | |
+| `meta` | `langchain-meta` | `ChatMetaModel` | `langchain_meta` | |
 | `mistralai` | `langchain-mistralai` | `ChatMistralAI` | `langchain_mistralai` | |
 | `nvidia` | `langchain-nvidia-ai-endpoints` | `ChatNVIDIA` | `langchain_nvidia_ai_endpoints` | |
 | `ollama` | `langchain-ollama` | `ChatOllama` | `langchain_ollama` | Fallback to `langchain_community` |
@@ -152,6 +154,7 @@ The `_BUILTIN_PROVIDERS` dictionary maps provider names to module paths, class n
 | `together` | `langchain-together` | `ChatTogether` | `langchain_together` | |
 | `upstage` | `langchain-upstage` | `ChatUpstage` | `langchain_upstage` | |
 | `xai` | `langchain-xai` | `ChatXAI` | `langchain_xai` | |
+| `baseten` | `langchain-baseten` | `ChatBaseten` | `langchain_baseten` | |
 | `langsmith` | `langchain-openai` | `ChatOpenAI` | `langchain_openai` | Routes via LangSmith gateway |
 
 **Design notes:**
