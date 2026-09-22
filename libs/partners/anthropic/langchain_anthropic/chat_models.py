@@ -563,7 +563,6 @@ def _format_system_content(
     content: str | list[Any],
     *,
     model: str | None = None,
-    in_place: bool = False,
     preserve_tool_changes: bool = False,
     stacklevel: int = 3,
 ) -> str | list[dict]:
@@ -581,10 +580,8 @@ def _format_system_content(
     Args:
         content: The system message's content.
         model: The model the request targets, used only in warning text.
-        in_place: Whether the message is being sent as a mid-conversation `system`
-            turn.
-        preserve_tool_changes: Whether tool-change blocks should be forwarded outside
-            an in-place turn so Anthropic can validate them.
+        preserve_tool_changes: Whether tool-change blocks should be forwarded instead
+            of dropped.
         stacklevel: Frames to skip when attributing a warning, so it points at the
             caller of `_format_messages` rather than at this module. The default
             suits a direct call; a caller reached through a helper adds a frame.
@@ -606,7 +603,7 @@ def _format_system_content(
         if block_type == "text":
             formatted.append(_format_text_block(block))
         elif block_type in _TOOL_CHANGE_BLOCK_TYPES:
-            if in_place or preserve_tool_changes:
+            if preserve_tool_changes:
                 formatted.append(block)
             else:
                 warnings.warn(
@@ -689,7 +686,7 @@ def _format_in_place_system_messages(
         content = _format_system_content(
             pending.content,
             model=model,
-            in_place=True,
+            preserve_tool_changes=True,
             # This helper sits between `_format_messages` and the warning site.
             stacklevel=4,
         )
