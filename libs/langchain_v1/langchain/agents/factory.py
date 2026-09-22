@@ -90,8 +90,7 @@ class _ComposedExtendedModelResponse(Generic[ResponseT]):
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Sequence
 
-    from langchain_core.messages import BaseMessage
-    from langchain_core.messages.tool import InvalidToolCall  # type: ignore[attr-defined]
+    from langchain_core.messages import InvalidToolCall
     from langchain_core.runnables import Runnable, RunnableConfig
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
@@ -1509,9 +1508,7 @@ def create_agent(
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
-        messages_list = cast(
-            "list[BaseMessage]", _patch_invalid_tool_calls(handled_output["messages"])
-        )
+        messages_list = handled_output["messages"]
         structured_response = handled_output.get("structured_response")
 
         return ModelResponse(
@@ -1570,9 +1567,7 @@ def create_agent(
 
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
-        messages_list = cast(
-            "list[BaseMessage]", _patch_invalid_tool_calls(handled_output["messages"])
-        )
+        messages_list = handled_output["messages"]
         structured_response = handled_output.get("structured_response")
 
         return ModelResponse(

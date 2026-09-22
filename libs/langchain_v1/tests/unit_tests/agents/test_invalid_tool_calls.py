@@ -1,14 +1,18 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import BaseModel, Field
 
 from langchain.agents import create_agent
 from langchain.agents.structured_output import ToolStrategy
 from langchain.tools import tool
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
 
 
 class InvalidToolCallingModel(FakeToolCallingModel):
@@ -50,6 +54,8 @@ class WeatherResponse(BaseModel):
 
 
 class MixedToolCallingModel(FakeToolCallingModel):
+    received_messages: list[BaseMessage] = Field(default_factory=list)
+
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -57,7 +63,8 @@ class MixedToolCallingModel(FakeToolCallingModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        _ = (messages, stop, run_manager, kwargs)
+        _ = (stop, run_manager, kwargs)
+        self.received_messages = messages
         if self.index == 0:
             message = AIMessage(
                 content="",
@@ -86,20 +93,55 @@ class MixedToolCallingModel(FakeToolCallingModel):
         return ChatResult(generations=[ChatGeneration(message=message)])
 
 
-def test_create_agent_answers_invalid_tool_calls() -> None:
+def test_create_agent_does_not_patch_model_output() -> None:
     model = InvalidToolCallingModel()
     agent = create_agent(model, [get_weather])
 
     result = agent.invoke({"messages": [HumanMessage("Weather?")]})
 
     assert model.index == 1
-    assert len(result["messages"]) == 3
-    tool_message = result["messages"][2]
+    assert len(result["messages"]) == 2
+    assert isinstance(result["messages"][-1], AIMessage)
+
+
+def test_create_agent_answers_invalid_tool_calls_on_next_turn() -> None:
+    model = InvalidToolCallingModel()
+    agent = create_agent(model, [get_weather], checkpointer=InMemorySaver())
+    config: RunnableConfig = {"configurable": {"thread_id": "1"}}
+
+    agent.invoke({"messages": [HumanMessage("Weather?")]}, config)
+    model.invalid_tool_call_id = None
+    result = agent.invoke({"messages": [HumanMessage("Try again")]}, config)
+
+    tool_message = model.received_messages[2]
     assert isinstance(tool_message, ToolMessage)
     assert tool_message.tool_call_id == "call_1"
     assert tool_message.name == "get_weather"
     assert tool_message.status == "error"
     assert "malformed or truncated" in tool_message.text
+    assert [type(message) for message in result["messages"]] == [
+        HumanMessage,
+        AIMessage,
+        ToolMessage,
+        HumanMessage,
+        AIMessage,
+    ]
+
+
+async def test_create_agent_answers_invalid_tool_calls_async() -> None:
+    model = InvalidToolCallingModel()
+    agent = create_agent(model, [get_weather], checkpointer=InMemorySaver())
+    config: RunnableConfig = {"configurable": {"thread_id": "1"}}
+
+    await agent.ainvoke({"messages": [HumanMessage("Weather?")]}, config)
+    model.invalid_tool_call_id = None
+    result = await agent.ainvoke({"messages": [HumanMessage("Try again")]}, config)
+
+    tool_message = model.received_messages[2]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.tool_call_id == "call_1"
+    assert tool_message.status == "error"
+    assert isinstance(result["messages"][2], ToolMessage)
 
 
 def test_create_agent_answers_historical_invalid_tool_calls() -> None:
@@ -177,6 +219,12 @@ def test_invalid_structured_tool_call_does_not_end_agent() -> None:
 
     assert model.index == 2
     assert result["structured_response"] == WeatherResponse(city="Paris")
+    answered = {
+        message.tool_call_id: message.status
+        for message in model.received_messages
+        if isinstance(message, ToolMessage)
+    }
+    assert answered == {"structured": "error", "weather": "success"}
 
 
 def test_create_agent_ignores_invalid_tool_calls_without_ids() -> None:
