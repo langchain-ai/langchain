@@ -564,6 +564,7 @@ def _format_system_content(
     *,
     model: str | None = None,
     in_place: bool = False,
+    preserve_tool_changes: bool = False,
     stacklevel: int = 3,
 ) -> str | list[dict]:
     """Narrow system message content to what Anthropic accepts.
@@ -581,9 +582,9 @@ def _format_system_content(
         content: The system message's content.
         model: The model the request targets, used only in warning text.
         in_place: Whether the message is being sent as a mid-conversation `system`
-            turn. Tool-change blocks are only meaningful there; a message hoisted
-            into the top-level `system` field would apply them conversation-wide,
-            so they are dropped instead.
+            turn.
+        preserve_tool_changes: Whether tool-change blocks should be forwarded outside
+            an in-place turn so Anthropic can validate them.
         stacklevel: Frames to skip when attributing a warning, so it points at the
             caller of `_format_messages` rather than at this module. The default
             suits a direct call; a caller reached through a helper adds a frame.
@@ -605,7 +606,7 @@ def _format_system_content(
         if block_type == "text":
             formatted.append(_format_text_block(block))
         elif block_type in _TOOL_CHANGE_BLOCK_TYPES:
-            if in_place:
+            if in_place or preserve_tool_changes:
                 formatted.append(block)
             else:
                 warnings.warn(
@@ -715,15 +716,11 @@ def _format_messages(
     for _i, message in enumerate(merged_messages):
         if message.type == "system":
             if _i == 0:
-                if _has_tool_change_block(message.content):
-                    msg = (
-                        "A tool-change block (`tool_addition` / `tool_removal`) "
-                        "cannot be sent on a leading `SystemMessage`. Anthropic "
-                        "requires these blocks to follow a human or tool message, "
-                        "so move the `SystemMessage` after one."
-                    )
-                    raise ValueError(msg)
-                system = _format_system_content(message.content, model=model)
+                system = _format_system_content(
+                    message.content,
+                    model=model,
+                    preserve_tool_changes=True,
+                )
                 continue
             if _supports_mid_conversation_system_messages(model) and (
                 pending_system

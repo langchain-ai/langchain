@@ -100,6 +100,7 @@ from langchain_openai.chat_models.base import (
     _create_usage_metadata_responses,
     _format_message_content,
     _get_last_messages,
+    _handle_openai_bad_request,
     _make_computer_call_output_from_message,
     _model_prefers_responses_api,
     _oai_structured_outputs_parser,
@@ -4825,6 +4826,73 @@ _CONTEXT_OVERFLOW_API_ERROR = openai.APIError(
 )
 
 
+def test_additional_tools_bad_request_warns_with_responses_guidance() -> None:
+    """Add LangChain guidance after OpenAI rejects the Chat Completions block."""
+    body = {
+        "error": {
+            "message": (
+                "Invalid value: 'additional_tools'. Supported values are: 'text'."
+            ),
+            "type": "invalid_request_error",
+            "param": "messages[0].content[0].type",
+            "code": "invalid_value",
+        }
+    }
+    error = openai.BadRequestError(
+        message=body["error"]["message"],
+        response=MagicMock(status_code=400),
+        body=body,
+    )
+
+    with (
+        pytest.warns(UserWarning, match="use_responses_api=True"),
+        pytest.raises(ModelInvalidRequestError) as exc_info,
+    ):
+        _handle_openai_bad_request(error)
+
+    wrapped_error = cast(openai.BadRequestError, exc_info.value)
+    assert wrapped_error.body == body
+    assert wrapped_error.response is error.response
+
+
+@pytest.mark.parametrize(
+    ("message", "param", "code"),
+    [
+        ("Invalid value: 'text'.", "messages[0].content[0].type", "invalid_value"),
+        ("Invalid value: 'additional_tools'.", "messages[0].role", "invalid_value"),
+        (
+            "Invalid value: 'additional_tools'.",
+            "messages[0].content[0].type",
+            "invalid_request_error",
+        ),
+    ],
+)
+def test_unrelated_bad_request_does_not_warn_about_responses(
+    message: str,
+    param: str,
+    code: str,
+) -> None:
+    """Do not suggest Responses unless all observed error fields match."""
+    body = {
+        "error": {
+            "message": message,
+            "type": "invalid_request_error",
+            "param": param,
+            "code": code,
+        }
+    }
+    error = openai.BadRequestError(
+        message=message,
+        response=MagicMock(status_code=400),
+        body=body,
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with pytest.raises(ModelInvalidRequestError):
+            _handle_openai_bad_request(error)
+
+
 def test_context_overflow_error_invoke_sync() -> None:
     """Test context overflow error on invoke (sync, chat completions API)."""
     llm = ChatOpenAI()
@@ -5589,18 +5657,19 @@ def test_additional_tools_block_does_not_mutate_input_content() -> None:
 
 
 @pytest.mark.parametrize("spelling", ["bare", "non_standard"])
-def test_additional_tools_block_on_chat_completions_raises(spelling: str) -> None:
-    """`additional_tools` has no Chat Completions equivalent, so it must be loud."""
+def test_additional_tools_block_on_chat_completions_forwarded(spelling: str) -> None:
+    """Let Chat Completions validate its current accepted system block types."""
     block: dict = (
         _ADDITIONAL_TOOLS_BLOCK
         if spelling == "bare"
         else {"type": "non_standard", "value": _ADDITIONAL_TOOLS_BLOCK}
     )
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
-    with pytest.raises(ValueError, match="use_responses_api=True"):
-        llm._get_request_payload(
-            [HumanMessage("Earlier question"), SystemMessage([block])]
-        )
+    payload = llm._get_request_payload(
+        [HumanMessage("Earlier question"), SystemMessage([block])]
+    )
+
+    assert payload["messages"][1]["content"] == [_ADDITIONAL_TOOLS_BLOCK]
 
 
 @pytest.mark.parametrize("spelling", ["bare", "non_standard"])

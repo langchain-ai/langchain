@@ -394,15 +394,22 @@ def _format_message_content(
             "must be carried on a `SystemMessage`. OpenAI restricts the input item "
             'to `role: "developer"`, so it cannot be sent on any other message.',
         )
-    elif api == "chat/completions":
-        _raise_if_additional_tools(
-            content,
-            "requires the Responses API and cannot be sent via Chat Completions. "
-            "Set `use_responses_api=True`.",
-        )
     if content and isinstance(content, list):
         formatted_content = []
-        for block in content:
+        for raw_block in content:
+            unwrapped_block = (
+                _unwrap_non_standard(raw_block)
+                if isinstance(raw_block, dict)
+                else raw_block
+            )
+            block = (
+                unwrapped_block
+                if api == "chat/completions"
+                and _is_system_role(role)
+                and isinstance(unwrapped_block, dict)
+                and unwrapped_block.get("type") == _ADDITIONAL_TOOLS_BLOCK_TYPE
+                else raw_block
+            )
             # Remove unexpected block types
             if (
                 isinstance(block, dict)
@@ -709,6 +716,23 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
             "https://platform.openai.com/docs/guides/structured-outputs#supported-schemas"
         )
         warnings.warn(message)
+    body = e.body if isinstance(e.body, Mapping) else {}
+    error = body.get("error", body)
+    if (
+        isinstance(error, Mapping)
+        and error.get("code") == "invalid_value"
+        and re.fullmatch(
+            r"messages\[\d+\]\.content\[\d+\]\.type",
+            str(error.get("param", "")),
+        )
+        and "Invalid value: 'additional_tools'" in e.message
+    ):
+        warnings.warn(
+            "`additional_tools` requires the Responses API. Set "
+            "`use_responses_api=True`.",
+            UserWarning,
+            stacklevel=2,
+        )
     raise OpenAIInvalidRequestError(
         message=e.message, response=e.response, body=e.body
     ) from e

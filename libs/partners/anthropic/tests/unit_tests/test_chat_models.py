@@ -2417,20 +2417,20 @@ def test__format_messages_leading_system_unrecognized_block_dropped() -> None:
 
 @pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
 @pytest.mark.parametrize("spelling", ["bare", "non_standard"])
-def test__format_messages_leading_system_tool_change_block_raises(
+def test__format_messages_leading_system_tool_change_block_forwarded(
     block: dict,
     spelling: str,
 ) -> None:
-    """A tool-change block on a leading system message is inexpressible."""
+    """Anthropic validates tool-change blocks on the top-level system field."""
     content: list[str | dict] = (
         [block] if spelling == "bare" else [{"type": "non_standard", "value": block}]
     )
-    messages = [
-        SystemMessage(content),
-        HumanMessage("Review foo()"),
-    ]
-    with pytest.raises(ValueError, match="cannot be sent on a leading"):
-        _format_messages(messages, model=MID_CONVERSATION_SYSTEM_MODEL)
+    actual_system, actual_messages = _format_messages(
+        [SystemMessage(content), HumanMessage("Review foo()")],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+    )
+    assert actual_system == [block]
+    assert actual_messages == [{"role": "user", "content": "Review foo()"}]
 
 
 def test__format_messages_system_tool_change_block_stripped_on_unsupported_model() -> (
