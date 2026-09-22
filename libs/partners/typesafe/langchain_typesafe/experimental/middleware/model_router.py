@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
+from typing import Annotated
 
 from langchain.agents.middleware import Runtime
 from langchain.agents.middleware.types import ContextT
@@ -14,6 +15,7 @@ try:
         AgentState,
         ModelRequest,
         ModelResponse,
+        OmitFromInput,
         ResponseT,
         TracePolicy,
         omit_payload,
@@ -73,7 +75,7 @@ def _routing_questions(config: _ModelRouterConfig) -> dict[str, Question]:
 class _ModelRouterState(AgentState):
     """Agent state used to persist the TypeSafe routing answer."""
 
-    model_route: NotRequired[ChoiceAnswer]
+    model_route: Annotated[NotRequired[ChoiceAnswer], OmitFromInput]
 
 
 class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):

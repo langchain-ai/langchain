@@ -87,6 +87,15 @@ def test_middleware_constructs_classifier_from_routing_configuration() -> None:
     assert set(middleware.config.choices) == {"fast", "powerful"}
 
 
+def test_model_route_is_output_only() -> None:
+    """Exclude the middleware-generated route from the agent input schema."""
+    middleware, models, _, _ = _router()
+    agent = create_agent(models["powerful"], middleware=[middleware])
+
+    assert "model_route" not in agent.get_input_jsonschema()["properties"]
+    assert "model_route" in agent.get_output_jsonschema()["properties"]
+
+
 @pytest.mark.parametrize("asynchronous", [False, True])
 @pytest.mark.asyncio
 async def test_agent_routes_using_latest_human_message(*, asynchronous: bool) -> None:
