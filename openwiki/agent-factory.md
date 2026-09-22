@@ -1,10 +1,11 @@
 ---
 type: "Reference"
-title: "Create a basic agent"
-openwiki_generated: true
+title: "Agent Factory and create_agent"
+description: "The agent factory constructs state machines that orchestrate conversation flow between a language model, tool execution, and middleware layers. The create_agent function handles tool binding, structured output, state schema resolution, and graph compilation."
+tags: [agents, factory, state-machine, middleware, langgraph]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
@@ -14,9 +15,8 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/middleware/_trace_policy.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
 ---
-
 
 ## Overview
 
@@ -47,32 +47,33 @@ for chunk in agent.stream(inputs, stream_mode="updates"):
 
 ## Agent Architecture
 
-The agent factory constructs a **state machine graph** with the following structure:
+The agent factory constructs a **state machine graph** with nodes for model invocation, tool execution, and middleware hooks. The graph processes messages in a loop until a stopping condition is met.
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Heuristic: an unescaped angle bracket inside a label breaks rendering; rephrase the label. -->
-```text
-graph TD
-    START["START"] --> ENTRY["Entry Node<br/>(before_agent)"]
-    ENTRY --> LOOP_ENTRY["Loop Entry<br/>(before_model | model)"]
-    LOOP_ENTRY --> MODEL["Model Node<br/>(LLM Call)"]
-    MODEL --> AFTER_MODEL["After Model<br/>(middleware)"]
-    AFTER_MODEL --> ROUTER{Has Tool Calls?}
+```mermaid
+flowchart TD
+    START([START]) --> ENTRY["Entry Node<br/>(before_agent or before_model or model)"]
+    ENTRY --> LOOP["Loop Entry<br/>(before_model or model)"]
+    LOOP --> MODEL["Model Node<br/>(LLM Call)"]
+    MODEL --> AFTER["After Model<br/>(after_model middleware)"]
+    AFTER --> ROUTER{Has Tool Calls?}
+    ROUTER -->|No| EXIT["Exit Node<br/>(after_agent or END)"]
     ROUTER -->|Yes| TOOLS["Tools Node<br/>(Execute Tools)"]
-    ROUTER -->|No| EXIT["Exit Node<br/>(after_agent)"]
-    TOOLS --> TOOLS_ROUTER{Tool Direct Return?}
-    TOOLS_ROUTER -->|No| LOOP_ENTRY
-    TOOLS_ROUTER -->|Yes| EXIT
-    EXIT --> END["END"]
+    TOOLS --> CHECK{Exit?}
+    CHECK -->|return_direct or<br/>structured_output| EXIT
+    CHECK -->|No| LOOP
+    EXIT --> END([END])
 ```
+
+Agent execution flow showing middleware hooks at each stage.
 
 **Key Nodes:**
 
-- **Entry Node**: Runs `before_agent` hooks once at the start of the conversation.
-- **Loop Entry**: Begins each iteration of the model → tool loop. Runs `before_model` middleware.
+- **Entry Node**: Runs before_agent hooks once at start, then before_model hooks if present, else proceeds to model.
+- **Loop Entry**: Marks the beginning of the model-tool iteration loop. Tools loop back here after execution (unless exit conditions are met).
 - **Model Node**: Calls the language model with messages and system prompt. Handles structured output parsing.
-- **After Model**: Runs `after_model` hooks after model output (runs each loop iteration).
-- **Tools Node**: Executes tools returned by the model. Skipped if no tools are defined.
-- **Exit Node**: Runs `after_agent` hooks once at the end of the conversation.
+- **After Model**: Runs after_model hooks after model output (runs each loop iteration).
+- **Tools Node**: Executes tools returned by the model. Only added if tools are defined. Skipped if model returns no tool calls.
+- **Exit Node**: Runs after_agent hooks once at end, then exits the graph.
 
 ## Core Concepts
 
@@ -334,8 +335,8 @@ Tools are registered at agent creation. Supported formats:
 2. Conditional routing checks for pending tool calls (not yet executed).
 3. **ToolNode** batches pending calls and executes them in parallel (or sequentially, depending on config).
 4. Execution results are wrapped in `ToolMessage`s and added to state.
-5. Loop back to model unless:
-   - A tool with `return_direct=True` was executed
+5. Loop back to loop_entry node unless:
+   - All executed tools have `return_direct=True`
    - A structured output tool was executed
    - No pending tool calls remain
 

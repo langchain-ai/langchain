@@ -3,9 +3,6 @@ type: "Reference"
 title: "Agent Middleware: Composable Request/Response Processing"
 description: "Document the middleware system for agents, including lifecycle hooks, HITL approval, error handling, retry logic, and middleware composition patterns for intercepting and modifying agent behavior."
 tags: [agent-middleware, request-interception, composition, error-handling, human-in-the-loop]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-08T08:27:09.597Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
@@ -18,6 +15,9 @@ sources:
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
 generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-21T08:30:16.745Z
 ---
 
 ## Overview

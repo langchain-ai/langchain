@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2686a50367f151aef17fad64706fe0e5bb3d6d279febeecbac7d3760d2d17424",
+  "pageVersion": "sha256:b1feac445c4494398af24cf9d3767e68ffd5c1d3882b408e3e3c515d1a5f906e",
   "claims": [
     {
       "id": "claim_51e65b4f126f42d986b2766ee964d991",
@@ -159,10 +159,62 @@
           "version": "repo-lines-v1:sha256:dcb170b588e742a6b114ec378abf0fe9adc59525cecfedf62848d5e95203bb96:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyMGI0NTNmNWUwYzkyZDVmNmMyNTFhNWVhMTk2MGQ3MmYzYmQwNzk1NmFlODU3ZGEyMGUzMWE4OGM1NTk2OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmNDZkNzQ5OGExYTZiYjQ5MDJlMzhkMjcwZDI0YmFmNjczODcwMThmNzM1YWUyNmU1ZTI0YmE0OTJlMmMzODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzMjBjM2ZhOTJjODlmZTA3YjYzZjI3Y2Y2MzY2ZmNiNjM3YTZmNGI5M2E3ODAxMTIwZTU0NGQ5MzVkNGMwZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwMWJiYmQwMjVkMTZmMjE0MzM1NWI0NGQ3MzQ1OWQ3MWQxODM5OTJlOGI3NTE2NWMxOTAxZjMxMTg0ZWYxODEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_274df276f4164f0986482705d658ad40",
+      "statement": "RunnableSequence creates a callback hierarchy where each step is marked as a child run using run_manager.get_child(f'seq:step:{i + 1}'), and configuration context including callbacks, tags, and metadata flows through each step via patch_config while preserving parent context.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L3447-L3456",
+          "version": "repo-lines-v1:sha256:d0e7a92d9bb4a4987f765dbcc982dfbb7cbbaec050279f5f19bc2d7009abfef9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0YzBmNTAyZmExMzg1NDI4MThmMTkwMGZhNzcxZDRlN2JhZTU1YWRhZDAwZWQ1NzdkMTYzODM4M2JlYzU3MTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MDljZGZiZmUyOGNjYzdkMDUwNzBhZTQzYjczZWRlNzRkMmQwNTdmYThlNTE1MmQ0MzI5NTRhYzc1YWY0ZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViYzliOWZhYzZiMzE1NGQwZjJmZWE1ZGYyNzliNTM0ZDUwM2NhNzA4MTdlZDI3MDEzZjhiOGQzNTdlMWM1YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhZmFmY2EzOWQwNGE0NjRiOWJiZmI0NDFmOTliMzlkMzUyNjY2YzE0ZGQxYmZlMzU2N2I4MjlmNDc4ZmU3YjgifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L3486-L3496",
+          "version": "repo-lines-v1:sha256:4d9bf0584cfa7573fd2f441840f6971314a47a6f3acf08dc5af80c2de1f5354f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0YzBmNTAyZmExMzg1NDI4MThmMTkwMGZhNzcxZDRlN2JhZTU1YWRhZDAwZWQ1NzdkMTYzODM4M2JlYzU3MTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MzliNjRjZGI1M2NiNDMyZGUyMjUyZTQyNDk3ZGE5M2JkZDA5MDY2ZTQ0YjA4ZDQyNDY4NzhlYzFlMzhlYzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViYzliOWZhYzZiMzE1NGQwZjJmZWE1ZGYyNzliNTM0ZDUwM2NhNzA4MTdlZDI3MDEzZjhiOGQzNTdlMWM1YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1NjliNjdkOWJjNmQ0NzQ3ZjY0YzNkN2M4MzNiNTVhMmJkN2Y1NGI1ZmMzM2Q5NWQ1NWVkZmY4MTNjMTA2OTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ebc1bd417f0b442198f6e66629796024",
+      "statement": "RunnableParallel applies the same input to each branch concurrently; in callback traces, each branch key becomes a separate child run via run_manager.get_child(f'map:key:{key}').",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L4164-L4174",
+          "version": "repo-lines-v1:sha256:5bf1f50f53bb8f8e1a3c05c41d993c9fed86dfeb782eccd07cb1bf59f43a56de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YTQ3YWY2YjM4YTliMzJhYmQyYmViYmZmNmU4NGEzMGE2Nzk4OWMxNjU3ODJlMmVhNGFlNzg5NWI0MmMzMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxMDM0ODFjNTdkMGYwZGMwZjc2Y2QyY2M4YjM2MDRjNGU4Mjk2ZGE0MTIyYWRkMTllODE3NDVkYzdlMzMxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkZWI1ZDYxMTQ2MjAxYjFmOGQ5OTM3MzU1NzNjYjdhYmZlOWJjNzJkYTU0ZmFhMTJiMjk3ZDdkZjM4OTA3YjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxN2Q4MDFkMTc2ODY4Y2JlOGM4NWQ0YzY3M2U4YjJlOWU4NDk1ZmVmYWUzNGU2Njc1NjhmYjBiZDhjMmJhM2UifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L4219-L4226",
+          "version": "repo-lines-v1:sha256:ac18e058dcc4a58e25df6dac933d7af8d6c098c931c190f2f5ce29352e420617:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhhNDdhZjZiMzhhOWIzMmFiZDJiZWJiZmY2ZTg0YTMwYTY3OTg5YzE2NTc4MmUyZWE0YWU3ODk1YjQyYzMyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTEwMzQ4MWM1N2QwZjBkYzBmNzZjZDJjYzhiMzYwNGM0ZTgyOTZkYTQxMjJhZGQxOWU4MTc0NWRjN2UzMzFhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2M4NDBlMTdjY2E5NjQyMjI1OTViYzYwNWQ3NjM3YWY0YTNmMTgxODQ3ODVlNmYwMDY1OWFhMzQ3ZTI4ZWRlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjE3ZDgwMWQxNzY4NjhjYmU4Yzg1ZDRjNjczZThiMmU5ZTg0OTVmZWZhZTM0ZTY2NzU2OGZiMGJkOGMyYmEzZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a0da484e66e343cf987c435a2a26e448",
+      "statement": "RunnableWithFallbacks wraps a runnable and fallbacks, trying the primary runnable first and sequentially attempting each fallback in order if an exception matching exceptions_to_handle occurs; it supports exception_key to pass the exception to fallbacks via the input dict.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/fallbacks.py#L164-L200",
+          "version": "repo-lines-v1:sha256:611b9639bec84a186374e367c3baee2de35ee00c89219030dbd95db4606b233b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3NTA0NDQwYWI1OTRhZWY0OTAzYzdlZWZiZTUwOWZhYjJmOGI0ZjY3MWE2OTlmNWJmZmU3ZmVjZDZiMTQ0Y2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiODAzNzNmZDEyMWZkMzY0MDc4YjdkY2M4ZjRmZThlNWMzYWZjZTI2NTQ5ZTExODUzZmU3NDk2MjE0NWIwNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NWNiNmI1OWViYjcxYjE5NWRkZjBiNDU2NDdhNDhjYmI5MjRhOWFlMWRlMTIzZDU5NzgyMzVhOTc4NTI5YTYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L105",
+          "version": "repo-lines-v1:sha256:9a355b343c4f10e10c0c09d470c2a5af5537c95c3099117cc8463831a0c11916:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZTk5NmEzNTY1YmNjYTgwNzA3NjA0NjMxZTY5NzhlNjM5ZmQxOTJiMTg3NGYxOWI1YmNjNDFhZmY1NDAwYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlYjkxZDk0MWU1MDQyNWVjN2E4ZTBhMjFkMmE1MmZjNWQ5OTM5MWY3OWJiN2NmOGU1N2MyNmVmNjkyNGU3NGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwMWJiYmQwMjVkMTZmMjE0MzM1NWI0NGQ3MzQ1OWQ3MWQxODM5OTJlOGI3NTE2NWMxOTAxZjMxMTg0ZWYxODEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc2ef09032cc48cbb7fb1ddcc920cbe0",
+      "statement": "The with_fallbacks method on any Runnable returns a RunnableWithFallbacks instance that tries the original runnable followed by each fallback in order, with control over which exceptions to handle and optional exception passing to fallbacks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L2188-L2264",
+          "version": "repo-lines-v1:sha256:98f8c09434deaeab4fa002aff9e2811f173ab68db004fa38ae7ed50afc6c8c63:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZjdjYjFlODMyZDUyOGZjNjFkOGU5YTg1NzYyNmVmYWRmNDI1NDlhY2YwMzU0YzVkYjMwYzU1M2E5MzQ5ZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3ODQ4NzIyMWE5ZGZiYTkxYzJmNjcyY2JkYmNiOGRhZjRlMDBhZjc2ZWM2NjFmNTI3M2NjOTZhMzMxYzNlNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5NTkzNDRiYjIzMGEzZDZiM2M1ZWFhNWMwYzg3NzEyNTFhYzU2YzliZjJjOWVjNmViMmJiYTBiNTEzYjhiZmMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-21T08:30:16.745Z"
   }
 }

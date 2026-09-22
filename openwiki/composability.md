@@ -1,18 +1,21 @@
 ---
-type: "Reference"
-title: "Dict syntax creates a RunnableParallel"
-openwiki_generated: true
+type: "Concept"
+title: "Composability and LCEL Chains"
+description: "How Runnable components compose through LCEL operators, creating reusable workflows with automatic async, batch, and streaming support."
+tags: ["composability", "LCEL", "runnables", "chaining", "operators"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
   - id: openwiki-source-48e94bbe49ab4f33ba87e9cb
     resource: repo://libs/core/langchain_core/runnables/branch.py
+  - id: openwiki-source-f9f4c1dc4f9cdf80d824ce15
+    resource: repo://libs/core/langchain_core/runnables/fallbacks.py
   - id: openwiki-source-de6c904bd0171642bd50f6d9
     resource: repo://libs/core/langchain_core/runnables/router.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
 ---
 
 
@@ -248,6 +251,105 @@ Every method has an async counterpart:
 | `transform(Iterator[Input])` | `atransform(AsyncIterator[Input])` |
 
 Async methods integrate with the callback system and execute concurrency-aware batching via `asyncio.gather`.
+
+## Variable Binding and Context Flow
+
+In composed chains, data flows through steps along with execution context. Each step receives the output of the previous step as its input.
+
+### Context Propagation
+
+When a chain invokes, **`RunnableSequence`** creates a callback hierarchy for tracing:
+- Each step is marked as a child run using `run_manager.get_child(f"seq:step:{i + 1}")`
+- Callbacks, tags, and metadata flow through the chain via `RunnableConfig`
+- `patch_config` updates the config for each step while preserving parent context
+
+```python
+from langchain_core.runnables import RunnableLambda
+
+# Context flows through each step
+step1 = RunnableLambda(lambda x: x + 1)
+step2 = RunnableLambda(lambda x: x * 2)
+chain = step1 | step2
+
+# Invoke with tracing config
+result = chain.invoke(
+    5, 
+    config={
+        "run_name": "my_chain",
+        "callbacks": [my_tracer],
+        "tags": ["prod"],
+    }
+)
+# Each step runs with inherited config while reporting to callbacks
+```
+
+### Dict Composition and Key Selection
+
+When using dict syntax in a sequence, each dict key becomes a separate branch context:
+
+```python
+chain = step1 | {
+    "result_a": step2,
+    "result_b": step3,
+}
+
+# Output combines results from both branches
+output = chain.invoke(input)  # {'result_a': ..., 'result_b': ...}
+```
+
+Each branch (`result_a`, `result_b`) appears as a separate child run in the callback trace.
+
+## Fallback Patterns
+
+Fallbacks provide resilience by retrying with alternative Runnables when one fails.
+
+### Fallback at Component Level
+
+```python
+from langchain_core.runnables import RunnableLambda
+
+primary_llm = ChatOpenAI(model="gpt-4")
+fallback_llm = ChatAnthropic(model="claude-3-sonnet")
+
+resilient_llm = primary_llm.with_fallbacks(
+    [fallback_llm],
+    exceptions_to_handle=(APIConnectionError,),
+)
+
+output = resilient_llm.invoke("What is composability?")
+# Uses primary_llm; falls back to fallback_llm if APIConnectionError occurs
+```
+
+### Fallback at Chain Level
+
+```python
+# Construct a chain with fallback
+chain_with_fallback = (
+    prompt 
+    | resilient_llm 
+    | parser
+).with_fallbacks([
+    RunnableLambda(lambda x: "Service unavailable")
+])
+
+output = chain_with_fallback.invoke({"topic": "composability"})
+# If the entire chain fails, returns fallback response
+```
+
+### Multiple Fallbacks
+
+Fallbacks are tried in order until one succeeds:
+
+```python
+model = ChatOpenAI().with_fallbacks([
+    ChatAnthropic(),        # Try second
+    ChatClaude(),          # Try third
+    ChatCohere(),          # Try fourth
+    RunnableLambda(default_response),  # Final fallback
+])
+```
+
+The chain tries each fallback sequentially until one returns successfully or all are exhausted.
 
 ## Chaining Patterns
 
