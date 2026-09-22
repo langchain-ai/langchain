@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:abcbcb06c5c3c07ec9e8a552348709b6dce0f36436642407e9738f6b62dfdf4c",
+  "pageVersion": "sha256:7147252f9ec42f2a3fbb825bf918edec111c30d11e7c9c2e161ba8a4dc68942e",
   "claims": [
     {
       "id": "claim_c71edae5b0f64c8fa79c17ef1aca0f6b",
@@ -98,7 +98,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py",
-          "version": "repo-file-v1:sha256:df3ce3629a9ebd4b1d09cba0b36b0f97f94eafd6f5bd4f2c69a51745236120db"
+          "version": "repo-file-v1:sha256:b7f271886609e76085c3bd3a0adca0c2a52327b8165c23533a3602b3ba3cdec2"
         }
       ]
     },
@@ -164,31 +164,31 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml",
-          "version": "repo-file-v1:sha256:41dd3fe38070b0a7ebacf5cee2db04df126ffe46c8b6bad14624a0782602df43"
+          "version": "repo-file-v1:sha256:55cedb202c33c63643e241be6606fef3c4155b02f7c0b4b6e3fcb0cb37614844"
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml",
-          "version": "repo-file-v1:sha256:700d28cde27314b5dd63f55f1c693046d5520a1c0e3ffd02db349349dbde69a7"
+          "version": "repo-file-v1:sha256:6dc328e210676ab7f09e455da9f7e578d9d2b5623f51f82dd962b79eea44e290"
         }
       ]
     },
     {
       "id": "claim_458d709b604149fa8fb9639025882358",
-      "statement": "LangChain uses a three-layer architecture: langchain-core (v1.6.3) for base abstractions, langchain (v1.4.2) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
+      "statement": "LangChain uses a three-layer architecture: langchain-core (v1.6.4) for base abstractions, langchain (v1.4.2) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
       "evidence": [
         {
           "resource": "repo://libs/core/pyproject.toml",
-          "version": "repo-file-v1:sha256:41dd3fe38070b0a7ebacf5cee2db04df126ffe46c8b6bad14624a0782602df43"
+          "version": "repo-file-v1:sha256:55cedb202c33c63643e241be6606fef3c4155b02f7c0b4b6e3fcb0cb37614844"
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml",
-          "version": "repo-file-v1:sha256:700d28cde27314b5dd63f55f1c693046d5520a1c0e3ffd02db349349dbde69a7"
+          "version": "repo-file-v1:sha256:6dc328e210676ab7f09e455da9f7e578d9d2b5623f51f82dd962b79eea44e290"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-21T08:30:16.745Z"
+    "at": "2026-09-22T08:27:06.345Z"
   }
 }
