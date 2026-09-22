@@ -1822,8 +1822,8 @@ class ChatAnthropic(BaseChatModel):
         if isinstance(system, list) and not system:
             # Every block was narrowed away (or the message was empty to begin
             # with). An empty block array carries no instructions, so drop the
-            # field rather than sending it. `_format_messages` still treats the
-            # slot as taken, so a second hoisted system message is still an error.
+            # field rather than sending it. `_format_messages` has already
+            # claimed the slot, so a second hoisted system message still errors.
             system = None
 
         # Only the direct Anthropic API accepts top-level `cache_control`.

@@ -5656,8 +5656,9 @@ def test_unrecognized_user_block_dropped_silently() -> None:
 def test_unrecognized_block_forwarded_on_chat_completions(role: str) -> None:
     """Chat Completions keeps its long-standing passthrough for unknown blocks.
 
-    Narrowing it is a known, documented gap that this change deliberately leaves
-    alone; only `additional_tools` is singled out, because it must raise.
+    `additional_tools` is the one system block it rejects, as that's a common mistake
+    (needs responses api). Every other unknown block is passed through as the caller
+    wrote it.
     """
     message = (
         SystemMessage([_FOREIGN_TOOL_CHANGE_BLOCK])
