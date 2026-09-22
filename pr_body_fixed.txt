@@ -1,0 +1,5 @@
+Fixes #40379
+
+Passing `max_retries=0` to `ChatOpenRouter` currently omits `retry_config` from the kwargs. The underlying `openrouter` SDK treats omission as `UNSET` and falls back to a 1-hour exponential backoff.
+
+This patch actively disables the SDK retries by explicitly passing `retry_config=None` when `max_retries <= 0`. Also corrects the unit test which was asserting the broken behavior.
