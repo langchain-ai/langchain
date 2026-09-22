@@ -1279,19 +1279,20 @@ class ChatAnthropic(BaseChatModel):
     Examples:
 
     - `#!python {"type": "enabled", "budget_tokens": 10_000}` (pre-4.7 models)
-    - `#!python {"type": "adaptive"}` (Opus 4.6+, Opus 5, Sonnet 5)
+    - `#!python {"type": "adaptive"}` (Opus 4.6+, Opus 5, Opus 5.5, Sonnet 5)
     - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+,
-      Opus 5, Sonnet 5)
+      Opus 5, Opus 5.5, Sonnet 5)
     - `#!python {"type": "disabled"}` (Opus 5 and Sonnet 5, where adaptive
       thinking is on by default)
 
-    !!! note "Claude Opus 4.7+, Opus 5, and Sonnet 5"
+    !!! note "Claude Opus 4.7+, Opus 5, Opus 5.5, and Sonnet 5"
 
         `budget_tokens` is removed on these models — use `{"type": "adaptive"}`
         with `output_config.effort` to control reasoning effort. The default
         `display` is `"omitted"`; set it to `"summarized"` to receive
         summarized reasoning in the response. On Opus 5, disabled thinking is
-        supported only at `"high"` effort or below.
+        supported only at `"high"` effort or below. On Opus 5.5, thinking
+        can't be disabled; omit `thinking` and use `output_config.effort`.
     """
 
     output_config: dict[str, Any] | None = None
@@ -1341,8 +1342,9 @@ class ChatAnthropic(BaseChatModel):
 
     !!! note
 
-        Setting `reasoning_effort` to `'high'` produces exactly the same behavior
-        as omitting the parameter altogether.
+        On most models, setting `reasoning_effort` to `'high'` produces exactly
+        the same behavior as omitting the parameter altogether. On Opus 5.5 the
+        default is `'medium'`.
 
     Example: `reasoning_effort="medium"`
     """
