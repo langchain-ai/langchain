@@ -2707,6 +2707,59 @@ def test_with_structured_output_root_combinator_raises_when_thinking_enabled() -
         chat_model.with_structured_output(_Either, method="function_calling")
 
 
+@pytest.mark.parametrize("model", ["claude-opus-5-5", "claude-fable-5-1"])
+@pytest.mark.parametrize(
+    "structured_output_kwargs", [{}, {"method": "function_calling"}]
+)
+@pytest.mark.parametrize("thinking", [None, {"type": "adaptive"}])
+def test_with_structured_output_falls_back_without_forced_tool_choice(
+    model: str,
+    structured_output_kwargs: dict[str, Any],
+    thinking: dict[str, Any] | None,
+) -> None:
+    """Models that reject forced `tool_choice` use `json_schema` instead."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=model,
+        anthropic_api_key="secret-api-key",
+        thinking=thinking,
+    )
+
+    class Person(BaseModel):
+        name: str
+
+    with pytest.warns(UserWarning, match="does not support forced tool use"):
+        structured = chat_model.with_structured_output(
+            Person, **structured_output_kwargs
+        )
+
+    bound = cast("RunnableBinding", structured.first)  # type: ignore[attr-defined]
+    assert "tools" not in bound.kwargs
+    assert "tool_choice" not in bound.kwargs
+    assert bound.kwargs["output_config"]["format"]["type"] == "json_schema"
+    assert bound.kwargs["ls_structured_output_format"]["kwargs"] == {
+        "method": "json_schema"
+    }
+
+
+def test_with_structured_output_forces_tool_choice_when_supported() -> None:
+    """Models that accept forced `tool_choice` keep `function_calling`."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model="claude-opus-5",
+        anthropic_api_key="secret-api-key",
+    )
+
+    class Person(BaseModel):
+        name: str
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        structured = chat_model.with_structured_output(Person)
+
+    bound = cast("RunnableBinding", structured.first)  # type: ignore[attr-defined]
+    assert bound.kwargs["tool_choice"] == {"type": "tool", "name": "Person"}
+    assert "output_config" not in bound.kwargs
+
+
 def test_get_num_tokens_from_messages_filters_unsupported_tools() -> None:
     """Token counting and sending agree on which tools the API will accept."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]

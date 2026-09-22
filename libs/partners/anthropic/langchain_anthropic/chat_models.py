@@ -993,6 +993,11 @@ def _supports_mid_conversation_system_messages(model: object) -> bool:
     )
 
 
+def _supports_forced_tool_choice(model: str) -> bool:
+    """Return whether the model accepts `tool_choice` types `any` and `tool`."""
+    return not model.startswith(("claude-fable-5-1", "claude-opus-5-5"))
+
+
 def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
     """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
 
@@ -2667,7 +2672,9 @@ class ChatAnthropic(BaseChatModel):
             method: The structured output method to use. Options are:
 
                 - `'function_calling'` (default): Use forced tool calling to get
-                    structured output.
+                    structured output. On models that don't support forced tool
+                    use (Claude Opus 5.5, Claude Fable 5.1), falls back to
+                    `'json_schema'` with a warning.
                 - `'json_schema'`: Use Claude's dedicated
                     [structured output](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
                     feature.
@@ -2715,6 +2722,17 @@ class ChatAnthropic(BaseChatModel):
                 "'json_schema' method."
             )
             warnings.warn(warning_message, stacklevel=2)
+            method = "json_schema"
+
+        if method == "function_calling" and not _supports_forced_tool_choice(
+            self.model
+        ):
+            warnings.warn(
+                f"{self.model} does not support forced tool use, which "
+                "`method='function_calling'` relies on. Using "
+                "`method='json_schema'` instead.",
+                stacklevel=2,
+            )
             method = "json_schema"
 
         if method == "function_calling":
