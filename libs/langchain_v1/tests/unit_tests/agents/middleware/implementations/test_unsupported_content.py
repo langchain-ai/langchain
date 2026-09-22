@@ -214,10 +214,10 @@ def test_subclass_can_extend_support_checks() -> None:
     """Subclasses gate on things no profile field covers (e.g. the provider class)."""
 
     class RejectsDocx(UnsupportedContentMiddleware):
-        def is_supported(self, block: ContentBlock, *, model: Any, in_tool_message: bool) -> bool:
+        def _is_supported(self, block: ContentBlock, *, model: Any, in_tool_message: bool) -> bool:
             if block["type"] == "file" and "wordprocessingml" in block.get("mime_type", ""):
                 return False
-            return super().is_supported(block, model=model, in_tool_message=in_tool_message)
+            return super()._is_supported(block, model=model, in_tool_message=in_tool_message)
 
     model = _model()
     docx: ContentBlock = {

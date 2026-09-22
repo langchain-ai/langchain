@@ -61,7 +61,7 @@ class UnsupportedContentMiddleware(AgentMiddleware[AgentState[ResponseT], Contex
     trace_policy = TracePolicy(process_inputs=omit_payload)
     """Omit hook inputs from traces by default; set a `TracePolicy` to override."""
 
-    def is_supported(
+    def _is_supported(
         self,
         block: ContentBlock,
         *,
@@ -100,7 +100,7 @@ class UnsupportedContentMiddleware(AgentMiddleware[AgentState[ResponseT], Contex
                 return False
         return profile.get(field) is not False
 
-    def replace(
+    def _replace(
         self,
         block: ContentBlock,
         message: AnyMessage,  # noqa: ARG002  # unused by the default text; here for overrides
@@ -129,8 +129,8 @@ class UnsupportedContentMiddleware(AgentMiddleware[AgentState[ResponseT], Contex
         blocks = message.content_blocks
         new_blocks = [
             block
-            if self.is_supported(block, model=model, in_tool_message=in_tool_message)
-            else self.replace(block, message)
+            if self._is_supported(block, model=model, in_tool_message=in_tool_message)
+            else self._replace(block, message)
             for block in blocks
         ]
         if new_blocks == blocks:
