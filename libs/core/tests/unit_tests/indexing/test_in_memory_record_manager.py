@@ -38,6 +38,14 @@ def test_update(manager: InMemoryRecordManager) -> None:
     assert read_keys == ["key1", "key2", "key3"]
 
 
+def test_update_rejects_empty_group_ids(manager: InMemoryRecordManager) -> None:
+    """An explicit empty group ID list must not bypass length validation."""
+    with pytest.raises(ValueError, match="Length of keys must match"):
+        manager.update(["key1"], group_ids=[])
+
+    assert manager.list_keys() == []
+
+
 async def test_aupdate(amanager: InMemoryRecordManager) -> None:
     """Test updating records in the database."""
     # no keys should be present in the set
@@ -49,6 +57,16 @@ async def test_aupdate(amanager: InMemoryRecordManager) -> None:
     # Retrieve the records
     read_keys = await amanager.alist_keys()
     assert read_keys == ["key1", "key2", "key3"]
+
+
+async def test_aupdate_rejects_empty_group_ids(
+    amanager: InMemoryRecordManager,
+) -> None:
+    """The async API must reject an empty group ID list for non-empty keys."""
+    with pytest.raises(ValueError, match="Length of keys must match"):
+        await amanager.aupdate(["key1"], group_ids=[])
+
+    assert await amanager.alist_keys() == []
 
 
 def test_update_timestamp(manager: InMemoryRecordManager) -> None:
@@ -209,6 +227,8 @@ async def test_list_keys(manager: InMemoryRecordManager) -> None:
     # By group
     assert manager.list_keys(group_ids=["group1"]) == ["key3"]
     assert await manager.alist_keys(group_ids=["group1"]) == ["key3"]
+    assert manager.list_keys(group_ids=[]) == []
+    assert await manager.alist_keys(group_ids=[]) == []
 
     # Before
     assert sorted(
