@@ -19,10 +19,17 @@ from typing import (
 )
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AnyMessage,
+    RemoveMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
@@ -83,6 +90,7 @@ class _ComposedExtendedModelResponse(Generic[ResponseT]):
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Sequence
 
+    from langchain_core.messages import InvalidToolCall
     from langchain_core.runnables import Runnable, RunnableConfig
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
@@ -215,6 +223,7 @@ def _build_commands(
     middleware_commands: list[Command[Any]] | None = None,
     *,
     has_structured_output: bool = False,
+    repaired_messages: list[AnyMessage] | None = None,
 ) -> list[Command[Any]]:
     """Build a list of Commands from a model response and middleware commands.
 
@@ -230,11 +239,19 @@ def _build_commands(
             `response_format`. When `True` and no structured response was
             produced, `structured_response` is explicitly cleared to avoid a
             stale value from a previous checkpointed turn.
+        repaired_messages: Complete message history after repairing invalid tool calls.
 
     Returns:
         List of `Command` objects ready to be returned from a model node.
     """
-    state: dict[str, Any] = {"messages": model_response.result}
+    messages = model_response.result
+    if repaired_messages is not None:
+        messages = [
+            RemoveMessage(id=REMOVE_ALL_MESSAGES),
+            *repaired_messages,
+            *model_response.result,
+        ]
+    state: dict[str, Any] = {"messages": messages}
 
     if model_response.structured_response is not None:
         state["structured_response"] = model_response.structured_response
@@ -653,6 +670,40 @@ def _handle_structured_output_error(
             return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
         return False, ""
     return True, handle_errors(exception)
+
+
+def _invalid_tool_call_message(tool_call: InvalidToolCall) -> ToolMessage | None:
+    tool_call_id = tool_call.get("id")
+    if tool_call_id is None:
+        return None
+    name = tool_call.get("name") or "unknown"
+    return ToolMessage(
+        content=(
+            f"Tool call {name} with id {tool_call_id} could not be executed - "
+            "arguments were malformed or truncated."
+        ),
+        name=name,
+        tool_call_id=tool_call_id,
+        status="error",
+    )
+
+
+def _patch_invalid_tool_calls(messages: Sequence[AnyMessage]) -> list[AnyMessage]:
+    answered_ids = {
+        message.tool_call_id for message in messages if isinstance(message, ToolMessage)
+    }
+    patched_messages: list[AnyMessage] = []
+    for message in messages:
+        patched_messages.append(message)
+        if not isinstance(message, AIMessage):
+            continue
+        for tool_call in message.invalid_tool_calls:
+            if tool_call.get("id") in answered_ids:
+                continue
+            if tool_message := _invalid_tool_call_message(tool_call):
+                patched_messages.append(tool_message)
+                answered_ids.add(tool_message.tool_call_id)
+    return patched_messages
 
 
 def _chain_tool_call_wrappers(
@@ -1467,12 +1518,13 @@ def create_agent(
 
     def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
         """Sync model request handler with sequential middleware processing."""
+        messages = _patch_invalid_tool_calls(state["messages"])
         request = ModelRequest(
             model=model,
             tools=default_tools,
             system_message=system_message,
             response_format=initial_response_format,
-            messages=state["messages"],
+            messages=messages,
             tool_choice=None,
             state=state,
             runtime=runtime,
@@ -1481,11 +1533,18 @@ def create_agent(
         has_structured_output = initial_response_format is not None
         if wrap_model_call_handler is None:
             model_response = _execute_model_sync(request)
-            return _build_commands(model_response, has_structured_output=has_structured_output)
+            return _build_commands(
+                model_response,
+                has_structured_output=has_structured_output,
+                repaired_messages=messages if messages != state["messages"] else None,
+            )
 
         result = wrap_model_call_handler(request, _execute_model_sync)
         return _build_commands(
-            result.model_response, result.commands, has_structured_output=has_structured_output
+            result.model_response,
+            result.commands,
+            has_structured_output=has_structured_output,
+            repaired_messages=messages if messages != state["messages"] else None,
         )
 
     async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
@@ -1518,12 +1577,13 @@ def create_agent(
 
     async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
         """Async model request handler with sequential middleware processing."""
+        messages = _patch_invalid_tool_calls(state["messages"])
         request = ModelRequest(
             model=model,
             tools=default_tools,
             system_message=system_message,
             response_format=initial_response_format,
-            messages=state["messages"],
+            messages=messages,
             tool_choice=None,
             state=state,
             runtime=runtime,
@@ -1532,11 +1592,18 @@ def create_agent(
         has_structured_output = initial_response_format is not None
         if awrap_model_call_handler is None:
             model_response = await _execute_model_async(request)
-            return _build_commands(model_response, has_structured_output=has_structured_output)
+            return _build_commands(
+                model_response,
+                has_structured_output=has_structured_output,
+                repaired_messages=messages if messages != state["messages"] else None,
+            )
 
         result = await awrap_model_call_handler(request, _execute_model_async)
         return _build_commands(
-            result.model_response, result.commands, has_structured_output=has_structured_output
+            result.model_response,
+            result.commands,
+            has_structured_output=has_structured_output,
+            repaired_messages=messages if messages != state["messages"] else None,
         )
 
     # Use sync or async based on model capabilities
@@ -2032,7 +2099,7 @@ def _make_tools_to_model_edge(
             return end_destination
 
         # 3. Exit condition: A structured output tool was executed
-        if any(t.name in structured_output_tools for t in tool_messages):
+        if any(t.name in structured_output_tools and t.status != "error" for t in tool_messages):
             return end_destination
 
         # 4. Default: Continue the loop
