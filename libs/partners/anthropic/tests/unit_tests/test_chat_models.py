@@ -5589,6 +5589,22 @@ def test_no_task_budget_no_beta() -> None:
 
 
 _MID_CONVERSATION_TOOL_CHANGES_BETA = "mid-conversation-tool-changes-2026-07-01"
+_INLINE_TOOLS_BETA = "inline-tools-2026-09-15"
+_INLINE_TOOL_ADDITION_BLOCK = {
+    "type": "tool_addition",
+    "tool": {
+        "type": "tool_definition",
+        "definition": {
+            "name": "db_query",
+            "description": "Run a read-only query.",
+            "input_schema": {
+                "type": "object",
+                "properties": {"sql": {"type": "string"}},
+                "required": ["sql"],
+            },
+        },
+    },
+}
 
 
 def _tool_change_conversation() -> list[BaseMessage]:
@@ -5614,6 +5630,61 @@ def test_tool_change_block_beta_not_duplicated() -> None:
     )
     payload = model._get_request_payload(_tool_change_conversation())
     assert payload["betas"].count(_MID_CONVERSATION_TOOL_CHANGES_BETA) == 1
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test_inline_tool_definition_auto_appends_beta(spelling: str) -> None:
+    """Inline definitions use their beta and preserve the native wire payload."""
+    block = (
+        _INLINE_TOOL_ADDITION_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _INLINE_TOOL_ADDITION_BLOCK}
+    )
+    model = ChatAnthropic(model="claude-opus-5-5")
+    payload = model._get_request_payload(
+        [HumanMessage("Review data"), SystemMessage([block])]
+    )
+    assert payload["messages"][-1]["content"] == [_INLINE_TOOL_ADDITION_BLOCK]
+    assert payload["betas"] == [_INLINE_TOOLS_BETA]
+
+
+def test_inline_tool_definition_supersedes_reference_beta() -> None:
+    """One inline beta covers mixed inline and reference-based changes."""
+    model = ChatAnthropic(model="claude-opus-5-5")
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Review data"),
+            SystemMessage([_TOOL_REMOVAL_BLOCK, _INLINE_TOOL_ADDITION_BLOCK]),
+        ]
+    )
+    assert payload["betas"] == [_INLINE_TOOLS_BETA]
+
+
+def test_explicit_inline_beta_covers_reference_tool_change() -> None:
+    """An explicit inline beta prevents inference of the older reference beta."""
+    model = ChatAnthropic(
+        model="claude-opus-5-5",
+        betas=[_INLINE_TOOLS_BETA],
+    )
+    payload = model._get_request_payload(_tool_change_conversation())
+    assert payload["betas"] == [_INLINE_TOOLS_BETA]
+
+
+@pytest.mark.parametrize(
+    "betas",
+    [
+        [_INLINE_TOOLS_BETA],
+        [_MID_CONVERSATION_TOOL_CHANGES_BETA, _INLINE_TOOLS_BETA],
+    ],
+)
+def test_inline_tool_beta_preserved_without_duplication(betas: list[str]) -> None:
+    """Explicit beta order is preserved and inline beta is not duplicated."""
+    model = ChatAnthropic(model="claude-opus-5-5", betas=betas)
+    payload = model._get_request_payload(
+        [HumanMessage("Review data"), SystemMessage([_INLINE_TOOL_ADDITION_BLOCK])]
+    )
+    assert payload["betas"] == betas
+    assert payload["betas"].count(_INLINE_TOOLS_BETA) == 1
 
 
 def test_system_stripped_to_empty_omits_system_field() -> None:

@@ -545,6 +545,9 @@ _TOOL_CHANGE_BLOCK_TYPES = ("tool_addition", "tool_removal")
 _MID_CONVERSATION_TOOL_CHANGES_BETA = "mid-conversation-tool-changes-2026-07-01"
 """Beta header required to send `tool_addition` / `tool_removal` blocks."""
 
+_INLINE_TOOLS_BETA = "inline-tools-2026-09-15"
+"""Beta header required to define a tool in a `tool_addition` block."""
+
 
 def _is_tool_change_block(block: object) -> bool:
     """Return whether a content block changes the tool set, in either spelling."""
@@ -557,6 +560,19 @@ def _is_tool_change_block(block: object) -> bool:
 def _has_tool_change_block(content: object) -> bool:
     """Return whether any block in `content` changes the tool set."""
     return isinstance(content, list) and any(_is_tool_change_block(b) for b in content)
+
+
+def _has_inline_tool_definition(content: object) -> bool:
+    """Return whether `content` defines a tool in a `tool_addition` block."""
+    if not isinstance(content, list):
+        return False
+    return any(
+        isinstance(block, dict)
+        and block.get("type") == "tool_addition"
+        and isinstance(tool := block.get("tool"), dict)
+        and tool.get("type") == "tool_definition"
+        for block in content
+    )
 
 
 def _format_system_content(
@@ -2033,20 +2049,27 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = [required_beta]
 
-        # Auto-append required beta for mid-conversation tool changes. Checked
-        # against the formatted messages rather than the inputs so a block that
-        # was narrowed away does not enable the beta.
-        if any(
-            message.get("role") == "system"
-            and _has_tool_change_block(message.get("content"))
+        system_contents = [
+            message.get("content")
             for message in (payload.get("messages") or [])
-        ):
-            required_beta = _MID_CONVERSATION_TOOL_CHANGES_BETA
-            if payload.get("betas"):
-                if required_beta not in payload["betas"]:
-                    payload["betas"] = [*payload["betas"], required_beta]
-            else:
-                payload["betas"] = [required_beta]
+            if message.get("role") == "system"
+        ]
+        has_tool_change = any(_has_tool_change_block(c) for c in system_contents)
+        has_inline_definition = any(
+            _has_inline_tool_definition(c) for c in system_contents
+        )
+        explicit_betas = payload.get("betas") or []
+        tool_change_beta = (
+            _INLINE_TOOLS_BETA
+            if has_inline_definition
+            else (
+                _MID_CONVERSATION_TOOL_CHANGES_BETA
+                if has_tool_change and _INLINE_TOOLS_BETA not in explicit_betas
+                else None
+            )
+        )
+        if tool_change_beta and tool_change_beta not in explicit_betas:
+            payload["betas"] = [*explicit_betas, tool_change_beta]
 
         # Auto-append required beta for user_profile_id
         if payload.get("user_profile_id"):
