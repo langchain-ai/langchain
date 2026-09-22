@@ -345,6 +345,15 @@ def _unwrap_non_standard(block: dict) -> dict:
     return block
 
 
+def _is_ai_role(role: str | None) -> bool:
+    """Return whether a message's role is the assistant's.
+
+    Assistant content is replayed model output, not a caller's instruction, so it is
+    exempt from the placement checks a caller's own blocks are held to.
+    """
+    return str(role).lower().startswith("ai")
+
+
 def _is_system_role(role: str | None) -> bool:
     """Return whether a message's role carries provider instructions.
 
@@ -354,17 +363,19 @@ def _is_system_role(role: str | None) -> bool:
     return role in ("system", "developer")
 
 
-def _raise_if_additional_tools(content: Any) -> None:
-    """Reject `additional_tools` on the Chat Completions API.
+def _raise_if_additional_tools(content: Any, reason: str) -> None:
+    """Reject an `additional_tools` block that cannot work where it was placed.
 
-    `additional_tools` is a Responses-only input item, and nothing routes a request
-    to the Responses API based on message content, so the natural usage — a plain
-    `ChatOpenAI(...)` plus an `additional_tools` system message — lands here. That
-    makes an opaque API error the default outcome rather than a rare one, so this is
-    raised rather than warned.
+    The block only reaches the wire as a Responses top-level input item carried on
+    a system message. Anywhere else it is this provider's own block type in a
+    position this provider forbids, which the error taxonomy makes loud rather than
+    silent: nothing routes a request to the Responses API based on message content,
+    so a silent drop would make the broken case the default outcome.
 
     Args:
         content: The message's content.
+        reason: Sentence explaining why this placement cannot work, and how to fix
+            it. Appended to the error.
 
     Raises:
         ValueError: If an `additional_tools` block is present, in either spelling.
@@ -377,10 +388,7 @@ def _raise_if_additional_tools(content: Any) -> None:
             and _unwrap_non_standard(raw_block).get("type")
             == _ADDITIONAL_TOOLS_BLOCK_TYPE
         ):
-            msg = (
-                "`additional_tools` requires the Responses API and cannot be sent "
-                "via Chat Completions. Set `use_responses_api=True`."
-            )
+            msg = f"`additional_tools` {reason}"
             raise ValueError(msg)
 
 
@@ -390,8 +398,22 @@ def _format_message_content(
     role: str | None = None,
 ) -> Any:
     """Format message content."""
-    if api == "chat/completions" and _is_system_role(role):
-        _raise_if_additional_tools(content)
+    if _is_ai_role(role):
+        # Replayed assistant output; `additional_tools` is also an output item, so
+        # an echoed one must survive a round trip rather than abort the request.
+        pass
+    elif not _is_system_role(role):
+        _raise_if_additional_tools(
+            content,
+            "must be carried on a `SystemMessage`. OpenAI restricts the input item "
+            'to `role: "developer"`, so it cannot be sent on any other message.',
+        )
+    elif api == "chat/completions":
+        _raise_if_additional_tools(
+            content,
+            "requires the Responses API and cannot be sent via Chat Completions. "
+            "Set `use_responses_api=True`.",
+        )
     if content and isinstance(content, list):
         formatted_content = []
         for block in content:

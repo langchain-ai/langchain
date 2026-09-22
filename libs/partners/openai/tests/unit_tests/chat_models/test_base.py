@@ -5604,6 +5604,53 @@ def test_additional_tools_block_on_chat_completions_raises(spelling: str) -> Non
 
 
 @pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+@pytest.mark.parametrize("use_responses_api", [True, False])
+@pytest.mark.parametrize("message_type", ["human", "tool"])
+def test_additional_tools_block_off_system_message_raises(
+    message_type: str,
+    use_responses_api: bool,
+    spelling: str,
+) -> None:
+    """OpenAI restricts the input item to `role: "developer"`.
+
+    Anywhere but a `SystemMessage` it is this provider's own block in a position
+    this provider forbids, so it is raised rather than dropped. Guards against
+    client-supplied content blocks reaching the top-level input list.
+    """
+    block: dict = (
+        _ADDITIONAL_TOOLS_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _ADDITIONAL_TOOLS_BLOCK}
+    )
+    message: BaseMessage = (
+        HumanMessage([block])
+        if message_type == "human"
+        else ToolMessage([block], tool_call_id="call_1")
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=use_responses_api)
+    with pytest.raises(ValueError, match="SystemMessage"):
+        llm._get_request_payload([message])
+
+
+def test_additional_tools_block_on_ai_message_not_rejected() -> None:
+    """`additional_tools` is also a Responses *output* item.
+
+    Replaying an assistant turn that echoes one must not raise; handling the output
+    form is out of scope, and out of scope should mean untouched, not fatal.
+    """
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    llm._get_request_payload(
+        [
+            HumanMessage("Earlier question"),
+            AIMessage(
+                [{"type": "text", "text": "Sure."}, _ADDITIONAL_TOOLS_BLOCK],
+                response_metadata={"id": "resp_123"},
+            ),
+        ]
+    )
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
 def test_unrecognized_system_block_dropped_with_warning(spelling: str) -> None:
     """Responses system content is a closed set, so an unknown block is reported."""
     block: dict = (
