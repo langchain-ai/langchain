@@ -277,3 +277,40 @@ async def test_adelete_keys(amanager: InMemoryRecordManager) -> None:
     # Check if the deleted keys are no longer in the database
     remaining_keys = await amanager.alist_keys()
     assert remaining_keys == ["key3"]
+
+
+def test_empty_group_ids_validation_and_filtering(
+    manager: InMemoryRecordManager,
+) -> None:
+    """Test validation and filtering when empty group_ids sequence is provided."""
+    # update with mismatching empty group_ids should raise ValueError
+    with pytest.raises(ValueError, match="Length of keys must match length of group_ids"):
+        manager.update(["k1"], group_ids=[])
+
+    # populate test data
+    manager.update(["k1", "k2"], group_ids=["g1", "g2"])
+
+    # list_keys with empty list should return empty list (no groups match)
+    assert manager.list_keys(group_ids=[]) == []
+
+    # list_keys with None should return all keys (no filter applied)
+    assert sorted(manager.list_keys(group_ids=None)) == ["k1", "k2"]
+
+
+async def test_aempty_group_ids_validation_and_filtering(
+    amanager: InMemoryRecordManager,
+) -> None:
+    """Test async validation and filtering when empty group_ids sequence is provided."""
+    # aupdate with mismatching empty group_ids should raise ValueError
+    with pytest.raises(ValueError, match="Length of keys must match length of group_ids"):
+        await amanager.aupdate(["k1"], group_ids=[])
+
+    # populate test data
+    await amanager.aupdate(["k1", "k2"], group_ids=["g1", "g2"])
+
+    # alist_keys with empty list should return empty list (no groups match)
+    assert await amanager.alist_keys(group_ids=[]) == []
+
+    # alist_keys with None should return all keys (no filter applied)
+    assert sorted(await amanager.alist_keys(group_ids=None)) == ["k1", "k2"]
+
