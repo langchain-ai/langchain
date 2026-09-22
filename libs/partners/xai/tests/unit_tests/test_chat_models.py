@@ -368,3 +368,48 @@ def test_convert_chunk_recomputes_total_tokens_for_reasoning() -> None:
     assert usage_metadata["output_tokens"] == 14  # 9 completion + 5 reasoning
     assert usage_metadata["total_tokens"] == 46  # 32 + 14, invariant holds
     assert usage_metadata["output_token_details"]["reasoning"] == 5
+
+
+def test_client_is_a_view_onto_root_client() -> None:
+    """Test that `client` is the chat-completions view of `root_client`.
+
+    `BaseChatOpenAI` reaches for `root_client` on the Responses API path, the
+    `response_format` streaming path and the structured-output parse path, while
+    plain chat completions go through `client`. Building the two independently
+    gives one model two separate SDK clients, so those paths no longer share a
+    connection pool and anything done to `root_client` (closing it, for example)
+    leaves the chat-completions side untouched.
+    """
+    llm = ChatXAI(model=MODEL_NAME, api_key=SecretStr("test-api-key"))
+
+    assert llm.client._client is llm.root_client
+    assert llm.async_client._client is llm.root_async_client
+
+
+def test_closing_root_client_closes_the_chat_completions_side() -> None:
+    """Test that the two entry points share one underlying client lifecycle."""
+    llm = ChatXAI(model=MODEL_NAME, api_key=SecretStr("test-api-key"))
+
+    assert llm.client._client.is_closed() is False
+    llm.root_client.close()
+
+    assert llm.client._client.is_closed() is True
+
+
+def test_supplied_clients_are_left_alone() -> None:
+    """Test that an explicitly supplied `client` suppresses construction.
+
+    The guard is `if not (self.client or None)`, so a caller wiring in their own
+    client must not have it replaced by a view onto a root client they never
+    asked for.
+    """
+    sentinel = object()
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        api_key=SecretStr("test-api-key"),
+        client=sentinel,
+        async_client=sentinel,
+    )
+
+    assert llm.client is sentinel
+    assert llm.async_client is sentinel
