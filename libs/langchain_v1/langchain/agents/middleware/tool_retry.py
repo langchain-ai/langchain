@@ -34,6 +34,14 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
 
     Supports retrying on specific exceptions and exponential backoff.
 
+    !!! warning
+
+        By default all tools are retried, including failures that happen after the
+        request was already transmitted. A read timeout does not say whether the
+        tool's effect landed, so retrying one that charges or sends something can
+        duplicate it. Pass `tools=[...]` to scope retrying, or `on_failure="error"`
+        to stop instead.
+
     Examples:
         !!! example "Basic usage with default settings (2 retries, exponential backoff)"
 
@@ -78,7 +86,7 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
             )
             ```
 
-        !!! example "Apply to specific tools with custom error handling"
+        !!! example "Apply to specific idempotent tools with custom error handling"
 
             ```python
             def format_error(exc: Exception) -> str:
@@ -257,7 +265,7 @@ class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         attempt_word = "attempt" if attempts_made == 1 else "attempts"
         return (
             f"Tool '{tool_name}' failed after {attempts_made} {attempt_word} "
-            f"with {exc_type}: {exc_msg}. Please try again."
+            f"with {exc_type}: {exc_msg}."
         )
 
     def _handle_failure(

@@ -1142,3 +1142,27 @@ def test_tool_retry_reraises_graph_bubble_up() -> None:
         middleware.wrap_tool_call(request, handler)
 
     assert calls == 1  # bubbled up on first raise, not retried
+
+
+def test_tool_retry_exhausted_message_omits_retry_instruction() -> None:
+    """Exhausted retries report the failure without telling the model to retry the tool."""
+    middleware = ToolRetryMiddleware(max_retries=2, initial_delay=0.0, jitter=False)
+
+    def handler(request: ToolCallRequest) -> ToolMessage:  # noqa: ARG001
+        msg = "read timed out"
+        raise TimeoutError(msg)
+
+    request = ToolCallRequest(
+        tool_call=ToolCall(name="failing_tool", args={"value": "x"}, id="1"),
+        tool=failing_tool,
+        state={"messages": []},
+        runtime=None,  # type: ignore[arg-type]
+    )
+
+    message = middleware.wrap_tool_call(request, handler)
+
+    assert isinstance(message, ToolMessage)
+    assert message.status == "error"
+    assert message.content == (
+        "Tool 'failing_tool' failed after 3 attempts with TimeoutError: read timed out."
+    )
