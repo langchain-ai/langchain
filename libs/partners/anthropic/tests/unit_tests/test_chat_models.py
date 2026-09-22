@@ -2707,38 +2707,38 @@ def test_with_structured_output_root_combinator_raises_when_thinking_enabled() -
         chat_model.with_structured_output(_Either, method="function_calling")
 
 
+class _Person(BaseModel):
+    name: str
+
+
+_ANTHROPIC_TOOL_SCHEMA = {
+    "name": "_Person",
+    "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}},
+}
+
+
 @pytest.mark.parametrize("model", ["claude-opus-5-5", "claude-fable-5-1"])
-@pytest.mark.parametrize(
-    "structured_output_kwargs", [{}, {"method": "function_calling"}]
-)
+@pytest.mark.parametrize("schema", [_Person, _ANTHROPIC_TOOL_SCHEMA])
 @pytest.mark.parametrize("thinking", [None, {"type": "adaptive"}])
-def test_with_structured_output_falls_back_without_forced_tool_choice(
+def test_with_structured_output_skips_forced_tool_choice_when_unsupported(
     model: str,
-    structured_output_kwargs: dict[str, Any],
+    schema: type[BaseModel] | dict[str, Any],
     thinking: dict[str, Any] | None,
 ) -> None:
-    """Models that reject forced `tool_choice` use `json_schema` instead."""
+    """Models that reject forced `tool_choice` bind the tool without forcing it."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model=model,
         anthropic_api_key="secret-api-key",
         thinking=thinking,
     )
 
-    class Person(BaseModel):
-        name: str
-
-    with pytest.warns(UserWarning, match="does not support forced tool use"):
-        structured = chat_model.with_structured_output(
-            Person, **structured_output_kwargs
-        )
+    with pytest.warns(UserWarning, match="method='json_schema'"):
+        structured = chat_model.with_structured_output(schema)
 
     bound = cast("RunnableBinding", structured.first)  # type: ignore[attr-defined]
-    assert "tools" not in bound.kwargs
+    assert [t["name"] for t in bound.kwargs["tools"]] == ["_Person"]
     assert "tool_choice" not in bound.kwargs
-    assert bound.kwargs["output_config"]["format"]["type"] == "json_schema"
-    assert bound.kwargs["ls_structured_output_format"]["kwargs"] == {
-        "method": "json_schema"
-    }
+    assert "output_config" not in bound.kwargs
 
 
 def test_with_structured_output_forces_tool_choice_when_supported() -> None:

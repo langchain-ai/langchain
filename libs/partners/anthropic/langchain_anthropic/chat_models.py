@@ -2399,9 +2399,11 @@ class ChatAnthropic(BaseChatModel):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         thinking_admonition = (
             "You are attempting to use structured output via forced tool calling, "
-            "which is not guaranteed when `thinking` is enabled. This method will "
-            "raise an OutputParserException if tool calls are not generated. Consider "
-            "disabling `thinking` or adjust your prompt to ensure the tool is called."
+            "which is not supported when `thinking` is enabled or on "
+            f"{self.model}. This method will raise an OutputParserException if tool "
+            "calls are not generated. Consider `method='json_schema'`, disabling "
+            "`thinking` where supported, or adjusting your prompt to ensure the "
+            "tool is called."
         )
         warnings.warn(thinking_admonition, stacklevel=2)
         llm = self.bind_tools(
@@ -2672,9 +2674,10 @@ class ChatAnthropic(BaseChatModel):
             method: The structured output method to use. Options are:
 
                 - `'function_calling'` (default): Use forced tool calling to get
-                    structured output. On models that don't support forced tool
-                    use (Claude Opus 5.5, Claude Fable 5.1), falls back to
-                    `'json_schema'` with a warning.
+                    structured output. When `thinking` is enabled, or on models
+                    that don't support forced tool use (Claude Opus 5.5, Claude
+                    Fable 5.1), the tool call isn't forced, and a missing tool
+                    call raises `OutputParserException`.
                 - `'json_schema'`: Use Claude's dedicated
                     [structured output](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
                     feature.
@@ -2724,26 +2727,16 @@ class ChatAnthropic(BaseChatModel):
             warnings.warn(warning_message, stacklevel=2)
             method = "json_schema"
 
-        if method == "function_calling" and not _supports_forced_tool_choice(
-            self.model
-        ):
-            warnings.warn(
-                f"{self.model} does not support forced tool use, which "
-                "`method='function_calling'` relies on. Using "
-                "`method='json_schema'` instead.",
-                stacklevel=2,
-            )
-            method = "json_schema"
-
+        # TODO: make `method="json_schema"` the default in a future release.
         if method == "function_calling":
             formatted_tool = cast(AnthropicTool, convert_to_anthropic_tool(schema))
             # The result of convert_to_anthropic_tool for 'method=function_calling' will
             # always be an AnthropicTool
             tool_name = formatted_tool["name"]
-            if self.thinking is not None and self.thinking.get("type") in (
-                "enabled",
-                "adaptive",
-            ):
+            if (
+                self.thinking is not None
+                and self.thinking.get("type") in ("enabled", "adaptive")
+            ) or not _supports_forced_tool_choice(self.model):
                 llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
                     schema,
                     formatted_tool,
