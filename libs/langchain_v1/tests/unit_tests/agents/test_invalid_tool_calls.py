@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Any
 
+import pytest
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
@@ -227,11 +228,24 @@ def test_invalid_structured_tool_call_does_not_end_agent() -> None:
     assert answered == {"structured": "error", "weather": "success"}
 
 
-def test_create_agent_ignores_invalid_tool_calls_without_ids() -> None:
+@pytest.mark.parametrize(("tool_call_id", "patched"), [(None, False), ("", True)])
+def test_create_agent_patches_only_invalid_tool_calls_with_ids(
+    tool_call_id: str | None, *, patched: bool
+) -> None:
     model = InvalidToolCallingModel(invalid_tool_call_id=None)
     agent = create_agent(model, [get_weather])
+    invalid_message = AIMessage(
+        content="",
+        invalid_tool_calls=[
+            {
+                "name": "get_weather",
+                "args": '{"city":',
+                "id": tool_call_id,
+                "error": "Invalid JSON",
+            }
+        ],
+    )
 
-    result = agent.invoke({"messages": [HumanMessage("Weather?")]})
+    agent.invoke({"messages": [HumanMessage("Weather?"), invalid_message]})
 
-    assert model.index == 1
-    assert len(result["messages"]) == 2
+    assert isinstance(model.received_messages[-1], ToolMessage) is patched

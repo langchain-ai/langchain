@@ -674,13 +674,13 @@ def _handle_structured_output_error(
 
 def _invalid_tool_call_message(tool_call: InvalidToolCall) -> ToolMessage | None:
     tool_call_id = tool_call.get("id")
-    if not isinstance(tool_call_id, str) or not tool_call_id:
+    if tool_call_id is None:
         return None
     name = tool_call.get("name") or "unknown"
     return ToolMessage(
         content=(
-            f"Tool call {name} with id {tool_call_id} could not be executed because "
-            "its arguments were malformed or truncated."
+            f"Tool call {name} with id {tool_call_id} could not be executed - "
+            "arguments were malformed or truncated."
         ),
         name=name,
         tool_call_id=tool_call_id,
