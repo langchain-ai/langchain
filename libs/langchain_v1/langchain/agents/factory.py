@@ -2026,7 +2026,7 @@ def _make_tools_to_model_edge(
             for c in last_ai_message.tool_calls
             if (name := executed_by_id.get(c["id"] or "", c["name"])) in tool_node.tools_by_name
         ]
-        if executed_names and all(
+        if executed_names and not any(t.status == "error" for t in tool_messages) and all(
             tool_node.tools_by_name[name].return_direct for name in executed_names
         ):
             return end_destination
