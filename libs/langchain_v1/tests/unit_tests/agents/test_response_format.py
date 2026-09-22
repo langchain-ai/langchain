@@ -13,6 +13,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.errors import GraphRecursionError
 from pydantic import BaseModel, Field, field_validator
 from typing_extensions import TypedDict, override
 
@@ -651,6 +652,96 @@ class TestResponseFormatAsToolStrategy:
             == "Please provide valid weather data with temperature and condition."
         )
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
+    def test_max_retries_caps_repeated_validation_failures(self) -> None:
+        """A model stuck on the same invalid output stops after `max_retries`."""
+        # FakeToolCallingModel cycles its tool calls, so this model never corrects itself.
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": {"invalid": "data"},
+                },
+            ],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                WeatherBaseModel,
+                max_retries=2,
+            ),
+        )
+
+        with pytest.raises(
+            StructuredOutputValidationError,
+            match=r".*WeatherBaseModel.*",
+        ):
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        # Initial attempt plus exactly two retries.
+        assert model.index == 3
+
+    def test_max_retries_resets_after_successful_call(self) -> None:
+        """Failures before a success don't count against a later retry budget."""
+        tool_calls = [
+            [{"name": "WeatherBaseModel", "id": "1", "args": {"invalid": "data"}}],
+            [{"name": "WeatherBaseModel", "id": "2", "args": WEATHER_DATA}],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                WeatherBaseModel,
+                max_retries=1,
+            ),
+        )
+
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
+    def test_validation_error_tool_message_marked_as_error(self) -> None:
+        """Retry `ToolMessage`s are marked `status='error'` so retries can be counted."""
+        tool_calls = [
+            [{"name": "WeatherBaseModel", "id": "1", "args": {"invalid": "data"}}],
+            [{"name": "WeatherBaseModel", "id": "2", "args": WEATHER_DATA}],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(model, [], response_format=ToolStrategy(WeatherBaseModel))
+
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        # The failed attempt is marked as an error, the accepted one is not.
+        assert response["messages"][2].status == "error"
+        assert response["messages"][4].status == "success"
+
+    def test_no_max_retries_keeps_unbounded_behavior(self) -> None:
+        """Without `max_retries`, retries stay unbounded (existing default)."""
+        tool_calls = [
+            [{"name": "WeatherBaseModel", "id": "1", "args": {"invalid": "data"}}],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(model, [], response_format=ToolStrategy(WeatherBaseModel))
+
+        # Nothing in the structured output path stops the loop, so it runs until
+        # the graph's own recursion limit trips.
+        with pytest.raises(GraphRecursionError):
+            agent.invoke(
+                {"messages": [HumanMessage("What's the weather?")]},
+                {"recursion_limit": 6},
+            )
 
     def test_validation_error_with_invalid_response(self) -> None:
         """Test validation error with invalid response.

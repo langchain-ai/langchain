@@ -230,6 +230,19 @@ class ToolStrategy(Generic[SchemaT]):
         `dataclass`, or `TypedDict` instead.
     """
 
+    max_retries: int | None
+    """Maximum number of times to retry a validation failure before giving up.
+
+    Retries are counted per structured-output tool, from the trailing run of error
+    `ToolMessage`s already present in the conversation. Once the cap is reached, the
+    original error is raised instead of being fed back to the model again.
+
+    `None` (the default) keeps the previous unbounded behavior: with `handle_errors`
+    still truthy, a model that keeps repeating the same invalid output will keep
+    being retried forever, growing the transcript until something else stops it
+    (e.g. the graph's recursion limit or the provider's context window).
+    """
+
     def __init__(
         self,
         schema: type[SchemaT] | UnionType | dict[str, Any],
@@ -240,6 +253,7 @@ class ToolStrategy(Generic[SchemaT]):
         | type[Exception]
         | tuple[type[Exception], ...]
         | Callable[[Exception], str] = True,
+        max_retries: int | None = None,
     ) -> None:
         """Initialize `ToolStrategy`.
 
@@ -249,6 +263,7 @@ class ToolStrategy(Generic[SchemaT]):
         self.schema = schema
         self.tool_message_content = tool_message_content
         self.handle_errors = handle_errors
+        self.max_retries = max_retries
 
         def _iter_variants(schema: Any) -> Iterable[Any]:
             """Yield leaf variants from Union and JSON Schema oneOf."""

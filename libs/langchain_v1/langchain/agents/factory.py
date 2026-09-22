@@ -625,9 +625,34 @@ def _is_openai_compatible_model(model: BaseChatModel) -> bool:
     return isinstance(model, base_chat_openai.BaseChatOpenAI)
 
 
+def _count_prior_structured_output_retries(
+    messages: Sequence[AnyMessage],
+    tool_name: str,
+) -> int:
+    """Count consecutive prior error retries for a structured-output tool.
+
+    Walks backward from the end of `messages`, counting error `ToolMessage`s for
+    `tool_name`, skipping over the `AIMessage`s that separate retry attempts. Stops
+    at the first message that isn't part of that trailing retry run, so a
+    successful call (or an unrelated tool call) resets the count to `0`.
+    """
+    count = 0
+    for message in reversed(messages):
+        if isinstance(message, ToolMessage):
+            if message.name == tool_name and message.status == "error":
+                count += 1
+                continue
+            break
+        if isinstance(message, AIMessage):
+            continue
+        break
+    return count
+
+
 def _handle_structured_output_error(
     exception: Exception,
     response_format: ResponseFormat[Any],
+    retry_count: int = 0,
 ) -> tuple[bool, str]:
     """Handle structured output error.
 
@@ -639,6 +664,8 @@ def _handle_structured_output_error(
     handle_errors = response_format.handle_errors
 
     if handle_errors is False:
+        return False, ""
+    if response_format.max_retries is not None and retry_count >= response_format.max_retries:
         return False, ""
     if handle_errors is True:
         return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
@@ -1192,7 +1219,9 @@ def create_agent(
     )
 
     def _handle_model_output(
-        output: AIMessage, effective_response_format: ResponseFormat[Any] | None
+        output: AIMessage,
+        effective_response_format: ResponseFormat[Any] | None,
+        prior_messages: Sequence[AnyMessage] = (),
     ) -> dict[str, Any]:
         """Handle model output including structured responses.
 
@@ -1200,6 +1229,9 @@ def create_agent(
             output: The AI message output from the model.
             effective_response_format: The actual strategy used (may differ from initial
                 if auto-detected).
+            prior_messages: Messages preceding `output`, used to count how many times
+                a structured-output tool has already failed validation in a row, for
+                `ToolStrategy.max_retries`.
         """
         # Handle structured output with provider strategy
         if isinstance(effective_response_format, ProviderStrategy):
@@ -1235,8 +1267,12 @@ def create_agent(
                     # Handle multiple structured outputs error
                     tool_names = [tc["name"] for tc in structured_tool_calls]
                     exception = MultipleStructuredOutputsError(tool_names, output)
+                    retry_count = max(
+                        _count_prior_structured_output_retries(prior_messages, tool_name)
+                        for tool_name in tool_names
+                    )
                     should_retry, error_message = _handle_structured_output_error(
-                        exception, effective_response_format
+                        exception, effective_response_format, retry_count
                     )
                     if not should_retry:
                         raise exception
@@ -1247,6 +1283,7 @@ def create_agent(
                             content=error_message,
                             tool_call_id=tc["id"],
                             name=tc["name"],
+                            status="error",
                         )
                         for tc in structured_tool_calls
                     ]
@@ -1276,8 +1313,11 @@ def create_agent(
                     }
                 except Exception as exc:
                     exception = StructuredOutputValidationError(tool_call["name"], exc, output)
+                    retry_count = _count_prior_structured_output_retries(
+                        prior_messages, tool_call["name"]
+                    )
                     should_retry, error_message = _handle_structured_output_error(
-                        exception, effective_response_format
+                        exception, effective_response_format, retry_count
                     )
                     if not should_retry:
                         raise exception from exc
@@ -1289,6 +1329,7 @@ def create_agent(
                                 content=error_message,
                                 tool_call_id=tool_call["id"],
                                 name=tool_call["name"],
+                                status="error",
                             ),
                         ],
                     }
@@ -1456,7 +1497,7 @@ def create_agent(
             output.name = name
 
         # Handle model output to get messages and structured_response
-        handled_output = _handle_model_output(output, effective_response_format)
+        handled_output = _handle_model_output(output, effective_response_format, request.messages)
         messages_list = handled_output["messages"]
         structured_response = handled_output.get("structured_response")
 
@@ -1507,7 +1548,7 @@ def create_agent(
             output.name = name
 
         # Handle model output to get messages and structured_response
-        handled_output = _handle_model_output(output, effective_response_format)
+        handled_output = _handle_model_output(output, effective_response_format, request.messages)
         messages_list = handled_output["messages"]
         structured_response = handled_output.get("structured_response")
 
