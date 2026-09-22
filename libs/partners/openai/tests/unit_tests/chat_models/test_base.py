@@ -5605,12 +5605,7 @@ def test_additional_tools_block_on_chat_completions_raises(spelling: str) -> Non
 
 @pytest.mark.parametrize("spelling", ["bare", "non_standard"])
 def test_unrecognized_system_block_dropped_with_warning(spelling: str) -> None:
-    """Responses system content is a closed set, so an unknown block is reported.
-
-    A foreign tool-change block (Anthropic's `tool_removal`, say, left over from a
-    mid-thread model switch) is just one instance of unrecognized: it needs no
-    registry of its own to be handled.
-    """
+    """Responses system content is a closed set, so an unknown block is reported."""
     block: dict = (
         _FOREIGN_TOOL_CHANGE_BLOCK
         if spelling == "bare"
