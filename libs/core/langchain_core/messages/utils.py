@@ -101,6 +101,29 @@ AnyMessage = Annotated[
 """A type representing any defined `Message` or `MessageChunk` type."""
 
 
+def _repr_without_payloads(block: dict[str, Any]) -> str:
+    """``repr`` of *block* with embedded payloads replaced by a placeholder.
+
+    Unknown content blocks are measured through ``repr``, which would otherwise
+    count a whole base64 payload (an OpenAI ``input_image`` block is hundreds of
+    KB) as characters.
+    """
+
+    def scrub(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {
+                key: "<base64>" if key == "base64" else scrub(item)
+                for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [scrub(item) for item in value]
+        if isinstance(value, str) and value.startswith("data:"):
+            return "<data-url>"
+        return value
+
+    return repr(scrub(block))
+
+
 def _has_base64_data(block: dict[str, Any]) -> bool:
     """Check if a content block contains base64 encoded data.
 
@@ -2345,16 +2368,21 @@ def count_tokens_approximately(
                 elif isinstance(block, dict):
                     block_type = block.get("type", "")
 
-                    # Apply fixed penalty for image blocks
-                    if block_type in {"image", "image_url"}:
+                    # Fixed penalty for image blocks. ``input_image`` is the OpenAI
+                    # Responses spelling (langchain-openai emits it) and it keeps
+                    # the payload in a plain string field.
+                    if block_type in {"image", "image_url", "input_image"}:
                         token_count += tokens_per_image
                     # Count text blocks normally
                     elif block_type == "text":
                         text = block.get("text", "")
                         message_chars += len(text)
-                    # Conservative estimate for unknown block types
+                    # Conservative estimate for unknown block types, but never
+                    # measure an embedded base64/file payload as characters: one
+                    # `input_file` or a new provider block would otherwise inflate
+                    # the estimate by orders of magnitude.
                     else:
-                        message_chars += len(repr(block))
+                        message_chars += len(_repr_without_payloads(block))
                 else:
                     # Fallback for unexpected block types
                     message_chars += len(repr(block))  # type: ignore[unreachable]

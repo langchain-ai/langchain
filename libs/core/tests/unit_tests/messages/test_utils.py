@@ -3146,3 +3146,45 @@ def test_convert_to_messages_lc_envelope_partial_shape_not_matched() -> None:
     # and dict `kwargs` too. Without all four, we fall through.
     with pytest.raises(ValueError, match="MESSAGE_COERCION_FAILURE"):
         convert_to_messages([{"lc": 1, "content": "missing other fields"}])
+
+
+def test_count_tokens_approximately_counts_input_image_as_one_image() -> None:
+    """OpenAI Responses blocks put the payload in a plain string field.
+
+    ``input_image`` is the Responses spelling of an image (langchain-openai emits
+    it), so it must cost the fixed image penalty. Counting the base64 payload as
+    characters inflated the estimate ~1000x, and ``trim_messages`` would then
+    drop history it did not need to drop.
+    """
+    payload = "A" * 400_000
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "look"},
+            {"type": "input_image", "image_url": f"data:image/png;base64,{payload}"},
+        ]
+    )
+
+    token_count = count_tokens_approximately([message])
+
+    # Fixed image penalty (85) + a couple of text tokens, not ~100k.
+    assert token_count < 200
+
+
+def test_count_tokens_approximately_ignores_payloads_in_unknown_blocks() -> None:
+    """Any unknown block carrying a data URL must not be measured as characters."""
+    payload = "A" * 400_000
+    message = HumanMessage(
+        content=[
+            {
+                "type": "some_future_block",
+                "file_id": "f1",
+                "data": f"data:application/pdf;base64,{payload}",
+            }
+        ]
+    )
+
+    assert count_tokens_approximately([message]) < 200
+
+    # Non-payload fields keep contributing so the estimate stays conservative.
+    verbose = HumanMessage(content=[{"type": "some_future_block", "text": "x" * 400}])
+    assert count_tokens_approximately([verbose]) > 50
