@@ -277,3 +277,55 @@ async def test_adelete_keys(amanager: InMemoryRecordManager) -> None:
     # Check if the deleted keys are no longer in the database
     remaining_keys = await amanager.alist_keys()
     assert remaining_keys == ["key3"]
+
+
+def test_update_with_empty_group_ids_raises(manager: InMemoryRecordManager) -> None:
+    """An explicit empty ``group_ids`` list must still be length-validated.
+
+    Regression test for #40745: ``group_ids=[]`` was indistinguishable from
+    ``None``, so ``update(["key"], group_ids=[])`` skipped the documented
+    length check and silently stored the key with ``group_id=None``.
+    """
+    manager.update(["key1"], group_ids=["group1"])
+
+    # An empty list with non-empty keys must raise, not silently pass.
+    with pytest.raises(ValueError, match="Length of keys must match"):
+        manager.update(["key2"], group_ids=[])
+
+    # The failed update must not have written a partial record.
+    assert manager.list_keys() == ["key1"]
+
+
+async def test_aupdate_with_empty_group_ids_raises(
+    amanager: InMemoryRecordManager,
+) -> None:
+    """Async variant of the empty ``group_ids`` length-validation regression."""
+    await amanager.aupdate(["key1"], group_ids=["group1"])
+
+    with pytest.raises(ValueError, match="Length of keys must match"):
+        await amanager.aupdate(["key2"], group_ids=[])
+
+    assert await amanager.alist_keys() == ["key1"]
+
+
+def test_list_keys_with_empty_group_ids_returns_empty(
+    manager: InMemoryRecordManager,
+) -> None:
+    """An explicit empty ``group_ids`` filter must match no records.
+
+    Regression test for #40745: ``list_keys(group_ids=[])`` used a truthiness
+    check, so the filter was skipped and every record was returned.
+    """
+    manager.update(["key1"], group_ids=["group1"])
+    manager.update(["key2"], group_ids=None)
+
+    assert manager.list_keys(group_ids=[]) == []
+
+
+async def test_alist_keys_with_empty_group_ids_returns_empty(
+    amanager: InMemoryRecordManager,
+) -> None:
+    """Async variant of the empty ``group_ids`` filtering regression."""
+    await amanager.aupdate(["key1"], group_ids=["group1"])
+
+    assert await amanager.alist_keys(group_ids=[]) == []
