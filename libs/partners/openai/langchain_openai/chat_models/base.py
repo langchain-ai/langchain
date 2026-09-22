@@ -326,12 +326,72 @@ def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[
     return content
 
 
+_ADDITIONAL_TOOLS_BLOCK_TYPE = "additional_tools"
+"""Responses API input item that adds tools partway through a conversation."""
+
+
+def _unwrap_non_standard(block: dict) -> dict:
+    """Return the payload carried by a `non_standard` block, else the block itself.
+
+    `NonStandardContentBlock` is core's escape hatch for provider-specific payloads.
+    Unwrapping before classification means a caller can spell a provider-native block
+    either bare or wrapped and get the same behavior.
+    """
+    if block.get("type") == "non_standard" and isinstance(
+        value := block.get("value"),
+        dict,
+    ):
+        return value
+    return block
+
+
+def _is_system_role(role: str | None) -> bool:
+    """Return whether a message's role carries provider instructions.
+
+    `SystemMessage` reports `"system"` whether or not it is later emitted with
+    OpenAI's `developer` role, so one check covers both spellings.
+    """
+    return role in ("system", "developer")
+
+
+def _raise_if_additional_tools(content: Any) -> None:
+    """Reject `additional_tools` on the Chat Completions API.
+
+    `additional_tools` is a Responses-only input item, and nothing routes a request
+    to the Responses API based on message content, so the natural usage — a plain
+    `ChatOpenAI(...)` plus an `additional_tools` system message — lands here. That
+    makes an opaque API error the default outcome rather than a rare one, so this is
+    raised rather than warned.
+
+    Args:
+        content: The message's content.
+
+    Raises:
+        ValueError: If an `additional_tools` block is present, in either spelling.
+    """
+    if not isinstance(content, list):
+        return
+    for raw_block in content:
+        if (
+            isinstance(raw_block, dict)
+            and _unwrap_non_standard(raw_block).get("type")
+            == _ADDITIONAL_TOOLS_BLOCK_TYPE
+        ):
+            msg = (
+                "`additional_tools` requires the Responses API and cannot be sent "
+                "via Chat Completions. Set `use_responses_api=True`."
+            )
+            raise ValueError(msg)
+
+
 def _format_message_content(
     content: Any,
     api: Literal["chat/completions", "responses"] = "chat/completions",
     role: str | None = None,
 ) -> Any:
     """Format message content."""
+    if api == "chat/completions" and _is_system_role(role):
+        _raise_if_additional_tools(content)
     if content and isinstance(content, list):
         formatted_content = []
         for block in content:
@@ -4983,6 +5043,7 @@ def _construct_responses_api_input(
                     "tool_search_output",
                     "apply_patch_call_output",
                     "configuration_update",
+                    _ADDITIONAL_TOOLS_BLOCK_TYPE,
                 )
                 for block in msg["content"]:
                     if block["type"] in ("text", "image_url", "file"):
@@ -4993,6 +5054,18 @@ def _construct_responses_api_input(
                         new_blocks.append(block)
                     elif block["type"] in non_message_item_types:
                         input_.append(block)
+                    elif _is_system_role(msg["role"]):
+                        # System content is a closed set here, so an unrecognized
+                        # block is a mistake rather than something to forward.
+                        # User content keeps its long-standing silent drop, where
+                        # the set is open and warning would be noise.
+                        warnings.warn(
+                            f"Content block {block['type']!r} was dropped from a "
+                            "system message: the Responses API has no input item "
+                            "of that type, so it cannot be placed in the request.",
+                            UserWarning,
+                            stacklevel=2,
+                        )
                     else:
                         pass
                 msg["content"] = new_blocks

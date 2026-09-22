@@ -536,22 +536,109 @@ def _format_text_block(block: dict) -> dict:
     return formatted_block
 
 
-def _format_system_content(content: str | list[Any]) -> str | list[dict]:
+_TOOL_CHANGE_BLOCK_TYPES = ("tool_addition", "tool_removal")
+"""Anthropic-native system content blocks that change the tool set mid-conversation."""
+
+_MID_CONVERSATION_TOOL_CHANGES_BETA = "mid-conversation-tool-changes-2026-07-01"
+"""Beta header required to send `tool_addition` / `tool_removal` blocks."""
+
+
+def _unwrap_non_standard(block: dict) -> dict:
+    """Return the payload carried by a `non_standard` block, else the block itself.
+
+    `NonStandardContentBlock` is core's escape hatch for provider-specific payloads.
+    Unwrapping here means a caller can spell a provider-native block either bare or
+    wrapped and get the same wire output.
+    """
+    if block.get("type") == "non_standard" and isinstance(
+        value := block.get("value"),
+        dict,
+    ):
+        return value
+    return block
+
+
+def _is_tool_change_block(block: object) -> bool:
+    """Return whether a content block changes the tool set, in either spelling."""
+    return (
+        isinstance(block, dict)
+        and _unwrap_non_standard(block).get("type") in _TOOL_CHANGE_BLOCK_TYPES
+    )
+
+
+def _has_tool_change_block(content: object) -> bool:
+    """Return whether any block in `content` changes the tool set."""
+    return isinstance(content, list) and any(_is_tool_change_block(b) for b in content)
+
+
+def _format_system_content(
+    content: str | list[Any],
+    *,
+    model: str | None = None,
+    in_place: bool = False,
+    stacklevel: int = 3,
+) -> str | list[dict]:
     """Narrow system message content to what Anthropic accepts.
 
     String content is passed through unchanged; promoting it to a single-element
     block array would invalidate existing callers' prompt caches.
+
+    Anthropic documents a closed set of system content blocks: `text` anywhere, plus
+    `tool_addition` / `tool_removal` on a mid-conversation `system` turn. Anything
+    else is rejected by the API, so it is dropped with a warning rather than
+    forwarded. Blocks wrapped in core's `non_standard` escape hatch are unwrapped
+    first, so both spellings behave identically.
+
+    Args:
+        content: The system message's content.
+        model: The model the request targets, used only in warning text.
+        in_place: Whether the message is being sent as a mid-conversation `system`
+            turn. Tool-change blocks are only meaningful there; a message hoisted
+            into the top-level `system` field would apply them conversation-wide,
+            so they are dropped instead.
+        stacklevel: Frames to skip when attributing a warning, so it points at the
+            caller of `_format_messages` rather than at this module. The default
+            suits a direct call; a caller reached through a helper adds a frame.
+
+    Returns:
+        Content narrowed to the blocks Anthropic accepts in this position.
     """
-    if isinstance(content, list):
-        return [
-            (
-                (_format_text_block(block) if block.get("type") == "text" else block)
-                if isinstance(block, dict)
-                else {"type": "text", "text": block}
+    if not isinstance(content, list):
+        return content
+
+    formatted: list[dict] = []
+    for raw_block in content:
+        if not isinstance(raw_block, dict):
+            formatted.append({"type": "text", "text": raw_block})
+            continue
+
+        block = _unwrap_non_standard(raw_block)
+        block_type = block.get("type")
+        if block_type == "text":
+            formatted.append(_format_text_block(block))
+        elif block_type in _TOOL_CHANGE_BLOCK_TYPES:
+            if in_place:
+                formatted.append(block)
+            else:
+                warnings.warn(
+                    f"Tool-change block {block_type!r} was dropped: it is only "
+                    "valid on a `SystemMessage` sent in place, and this one was "
+                    "hoisted into the top-level `system` field. Use a model that "
+                    "supports mid-conversation system messages and place the "
+                    "message after a human or tool message, either last or before "
+                    f"an AI message (model: {model!r}).",
+                    UserWarning,
+                    stacklevel=stacklevel,
+                )
+        else:
+            warnings.warn(
+                f"Unrecognized system content block {block_type!r} was dropped. "
+                "Anthropic accepts `text` in any system message, plus "
+                "`tool_addition` and `tool_removal` on a mid-conversation one.",
+                UserWarning,
+                stacklevel=stacklevel,
             )
-            for block in content
-        ]
-    return content
+    return formatted
 
 
 def _warn_system_message_hoisted(model: str | None) -> None:
@@ -590,6 +677,39 @@ def _previous_turn_allows_system(previous_turn: dict | None) -> bool:
     )
 
 
+def _format_in_place_system_messages(
+    pending_system: Sequence[BaseMessage],
+    *,
+    model: str | None,
+) -> list[dict]:
+    """Format system messages that keep their position in the message array.
+
+    A message whose content is narrowed away entirely is omitted: Anthropic
+    rejects a `system` turn with empty content, and the dropped blocks have
+    already been warned about.
+
+    Args:
+        pending_system: System messages awaiting emission, in order.
+        model: The model the request targets, used only in warning text.
+
+    Returns:
+        Formatted `system`-role turns.
+    """
+    turns: list[dict] = []
+    for pending in pending_system:
+        content = _format_system_content(
+            pending.content,
+            model=model,
+            in_place=True,
+            # This helper sits between `_format_messages` and the warning site.
+            stacklevel=4,
+        )
+        if content == []:
+            continue
+        turns.append({"role": "system", "content": content})
+    return turns
+
+
 def _format_messages(
     messages: Sequence[BaseMessage],
     *,
@@ -607,7 +727,15 @@ def _format_messages(
     for _i, message in enumerate(merged_messages):
         if message.type == "system":
             if _i == 0:
-                system = _format_system_content(message.content)
+                if _has_tool_change_block(message.content):
+                    msg = (
+                        "A tool-change block (`tool_addition` / `tool_removal`) "
+                        "cannot be sent on a leading `SystemMessage`. Anthropic "
+                        "requires these blocks to follow a human or tool message, "
+                        "so move the `SystemMessage` after one."
+                    )
+                    raise ValueError(msg)
+                system = _format_system_content(message.content, model=model)
                 continue
             if _supports_mid_conversation_system_messages(model) and (
                 pending_system
@@ -620,7 +748,7 @@ def _format_messages(
             if system is not None:
                 msg = "Received multiple non-consecutive system messages."
                 raise ValueError(msg)
-            system = _format_system_content(message.content)
+            system = _format_system_content(message.content, model=model)
             _warn_system_message_hoisted(model)
             continue
 
@@ -874,25 +1002,20 @@ def _format_messages(
         if pending_system:
             if role == "assistant":
                 formatted_messages.extend(
-                    {
-                        "role": "system",
-                        "content": _format_system_content(pending.content),
-                    }
-                    for pending in pending_system
+                    _format_in_place_system_messages(pending_system, model=model)
                 )
             else:
                 for pending in pending_system:
                     if system is not None:
                         msg = "Received multiple non-consecutive system messages."
                         raise ValueError(msg)
-                    system = _format_system_content(pending.content)
+                    system = _format_system_content(pending.content, model=model)
                     _warn_system_message_hoisted(model)
             pending_system = []
         formatted_messages.append({"role": role, "content": content})
 
     formatted_messages.extend(
-        {"role": "system", "content": _format_system_content(pending.content)}
-        for pending in pending_system
+        _format_in_place_system_messages(pending_system, model=model)
     )
     return system, formatted_messages
 
@@ -1696,6 +1819,12 @@ class ChatAnthropic(BaseChatModel):
                 )
 
         system, formatted_messages = _format_messages(messages, model=self.model)
+        if isinstance(system, list) and not system:
+            # Every block was narrowed away (or the message was empty to begin
+            # with). An empty block array carries no instructions, so drop the
+            # field rather than sending it. `_format_messages` still treats the
+            # slot as taken, so a second hoisted system message is still an error.
+            system = None
 
         # Only the direct Anthropic API accepts top-level `cache_control`.
         # Subclasses that route through other transports (e.g. Bedrock) expand
@@ -1916,6 +2045,21 @@ class ChatAnthropic(BaseChatModel):
         thinking = payload.get("thinking")
         if isinstance(thinking, dict) and thinking.get("display") == "updates":
             required_beta = "thinking-display-updates-2026-08-18"
+            if payload.get("betas"):
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
+        # Auto-append required beta for mid-conversation tool changes. Checked
+        # against the formatted messages rather than the inputs so a block that
+        # was narrowed away does not enable the beta.
+        if any(
+            message.get("role") == "system"
+            and _has_tool_change_block(message.get("content"))
+            for message in (payload.get("messages") or [])
+        ):
+            required_beta = _MID_CONVERSATION_TOOL_CHANGES_BETA
             if payload.get("betas"):
                 if required_beta not in payload["betas"]:
                     payload["betas"] = [*payload["betas"], required_beta]

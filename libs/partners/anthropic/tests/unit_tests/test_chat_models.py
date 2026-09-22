@@ -30,6 +30,7 @@ from langchain_core.exceptions import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -1896,15 +1897,12 @@ def test__format_messages_system_after_server_tool_result_sent_in_place(
     block_type: str,
 ) -> None:
     """An assistant turn ending in a server tool result is a legal predecessor."""
-    ai = AIMessage(
-        [
-            {
-                "type": block_type,
-                "tool_use_id": "srvtoolu_1",
-                "content": [{"type": "text", "text": "results"}],
-            },
-        ],
-    )
+    block = {
+        "type": block_type,
+        "tool_use_id": "srvtoolu_1",
+        "content": [{"type": "text", "text": "results"}],
+    }
+    ai = AIMessage([block], response_metadata={"model_provider": "anthropic"})
     messages = [
         HumanMessage("Review foo()"),
         ai,
@@ -1919,6 +1917,9 @@ def test__format_messages_system_after_server_tool_result_sent_in_place(
         "assistant",
         "system",
     ]
+    # Forward compatibility: an unrecognized server tool result block reaches the
+    # wire untouched, which is what makes it a legal predecessor in the first place.
+    assert actual_messages[1]["content"] == [block]
 
 
 def test__format_messages_system_after_client_tool_result_hoisted() -> None:
@@ -2282,6 +2283,234 @@ def test__format_messages_system_citations_preserved_in_place() -> None:
             },
         ],
     }
+
+
+_TOOL_REMOVAL_BLOCK = {
+    "type": "tool_removal",
+    "tool": {"type": "tool_reference", "name": "get_weather"},
+}
+_TOOL_ADDITION_BLOCK = {
+    "type": "tool_addition",
+    "tool": {"type": "tool_reference", "name": "get_weather"},
+}
+_TOOL_CHANGE_UNSUPPORTED_WARNING = "Tool-change block"
+_UNRECOGNIZED_SYSTEM_BLOCK_WARNING = "Unrecognized system content block"
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+def test__format_messages_system_tool_change_block_sent_in_place(
+    block: dict,
+) -> None:
+    """Tool-change blocks reach the wire verbatim from an in-place system message."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([block]),
+        AIMessage("Looks fine."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+    )
+    assert actual_system is None
+    assert actual_messages[1] == {"role": "system", "content": [block]}
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+def test__format_messages_system_tool_change_block_spellings_match(
+    block: dict,
+) -> None:
+    """A bare dict and a `non_standard` wrapper produce identical wire output."""
+    bare = [
+        HumanMessage("Review foo()"),
+        SystemMessage([block]),
+        AIMessage("Looks fine."),
+    ]
+    wrapped = [
+        HumanMessage("Review foo()"),
+        SystemMessage([{"type": "non_standard", "value": block}]),
+        AIMessage("Looks fine."),
+    ]
+    assert _format_messages(bare, model=MID_CONVERSATION_SYSTEM_MODEL) == (
+        _format_messages(wrapped, model=MID_CONVERSATION_SYSTEM_MODEL)
+    )
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+def test__format_messages_tool_change_block_survives_content_blocks(
+    block: dict,
+) -> None:
+    """The payload reaches the converter untranslated via either accessor.
+
+    A bare provider-native dict wraps into `non_standard` when read through
+    `content_blocks`, and an already-wrapped one stays put; neither is rewritten.
+    The converter unwraps both, so the accessor a caller uses cannot change the
+    wire output.
+    """
+    bare = SystemMessage([block])
+    wrapped = SystemMessage(content_blocks=[{"type": "non_standard", "value": block}])
+    expected = [{"type": "non_standard", "value": block}]
+    assert bare.content_blocks == expected
+    assert wrapped.content_blocks == expected
+
+    conversation = [HumanMessage("Review foo()"), AIMessage("Looks fine.")]
+    assert _format_messages(
+        [conversation[0], bare, conversation[1]],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+    ) == _format_messages(
+        [conversation[0], wrapped, conversation[1]],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+    )
+
+
+def test__format_messages_system_tool_change_block_beside_text() -> None:
+    """Siblings of a tool-change block survive alongside it."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+    _, actual_messages = _format_messages(messages, model=MID_CONVERSATION_SYSTEM_MODEL)
+    assert actual_messages[1] == {
+        "role": "system",
+        "content": [{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK],
+    }
+
+
+def test__format_messages_system_unrecognized_block_dropped_with_warning() -> None:
+    """An unrecognized system content block is dropped with a warning."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage(
+            [
+                {"type": "text", "text": "Be concise."},
+                {"type": "made_up_block", "foo": "bar"},
+            ],
+        ),
+        AIMessage("Looks fine."),
+    ]
+    with pytest.warns(UserWarning, match=_UNRECOGNIZED_SYSTEM_BLOCK_WARNING):
+        _, actual_messages = _format_messages(
+            messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        )
+    assert actual_messages[1] == {
+        "role": "system",
+        "content": [{"type": "text", "text": "Be concise."}],
+    }
+
+
+def test__format_messages_leading_system_unrecognized_block_dropped() -> None:
+    """The hoisted leading system path drops unrecognized blocks too."""
+    messages = [
+        SystemMessage(
+            [
+                {"type": "text", "text": "Be concise."},
+                {"type": "made_up_block", "foo": "bar"},
+            ],
+        ),
+        HumanMessage("Review foo()"),
+    ]
+    with pytest.warns(UserWarning, match=_UNRECOGNIZED_SYSTEM_BLOCK_WARNING):
+        actual_system, _ = _format_messages(
+            messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        )
+    assert actual_system == [{"type": "text", "text": "Be concise."}]
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test__format_messages_leading_system_tool_change_block_raises(
+    block: dict,
+    spelling: str,
+) -> None:
+    """A tool-change block on a leading system message is inexpressible."""
+    content: list[str | dict] = (
+        [block] if spelling == "bare" else [{"type": "non_standard", "value": block}]
+    )
+    messages = [
+        SystemMessage(content),
+        HumanMessage("Review foo()"),
+    ]
+    with pytest.raises(ValueError, match="cannot be sent on a leading"):
+        _format_messages(messages, model=MID_CONVERSATION_SYSTEM_MODEL)
+
+
+def test__format_messages_system_tool_change_block_stripped_on_unsupported_model() -> (
+    None
+):
+    """An unsupported model strips the tool-change block and hoists the text."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+    with pytest.warns(UserWarning, match=_TOOL_CHANGE_UNSUPPORTED_WARNING) as record:
+        actual_system, actual_messages = _format_messages(messages, model=MODEL_NAME)
+    messages_warned = [str(warning.message) for warning in record]
+    assert any(_TOOL_CHANGE_UNSUPPORTED_WARNING in m for m in messages_warned)
+    assert any(_HOIST_WARNING in m for m in messages_warned)
+    assert actual_system == [{"type": "text", "text": "Be concise."}]
+    assert [message["role"] for message in actual_messages] == ["user", "assistant"]
+
+
+def test__format_messages_system_tool_change_block_stripped_on_illegal_position() -> (
+    None
+):
+    """A hoisted system message on a supported model also strips tool changes."""
+    messages = [
+        HumanMessage("Review foo()"),
+        AIMessage("Looks fine."),
+        SystemMessage([{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK]),
+    ]
+    with pytest.warns(UserWarning, match=_TOOL_CHANGE_UNSUPPORTED_WARNING) as record:
+        actual_system, _ = _format_messages(
+            messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        )
+    messages_warned = [str(warning.message) for warning in record]
+    assert any(_TOOL_CHANGE_UNSUPPORTED_WARNING in m for m in messages_warned)
+    assert actual_system == [{"type": "text", "text": "Be concise."}]
+
+
+def test__format_messages_system_stripped_to_empty_hoists_empty_list() -> None:
+    """Stripping every block leaves an empty system array, not `None`."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([_TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+    with pytest.warns(UserWarning, match=_TOOL_CHANGE_UNSUPPORTED_WARNING):
+        actual_system, _ = _format_messages(messages, model=MODEL_NAME)
+    assert actual_system == []
+
+
+def test__format_messages_does_not_mutate_input_content() -> None:
+    """Formatting must leave the caller's own message content untouched."""
+    text_block = {"type": "text", "text": "Be concise.", "id": "lc_abc123"}
+    tool_change_block = {
+        "type": "tool_removal",
+        "tool": {"type": "tool_reference", "name": "get_weather"},
+    }
+    content: list[str | dict] = [text_block, tool_change_block]
+    before = copy.deepcopy(content)
+    _format_messages(
+        [
+            HumanMessage("Review foo()"),
+            SystemMessage(content),
+            AIMessage("Looks fine."),
+        ],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+    )
+    assert content == before
+
+
+def test__format_messages_human_native_image_block_preserved() -> None:
+    """Regression guard: native Anthropic image blocks still reach the wire."""
+    block = {
+        "type": "image",
+        "source": {"type": "base64", "media_type": "image/png", "data": "aGk="},
+    }
+    _, actual_messages = _format_messages(
+        [HumanMessage([block])], model=MID_CONVERSATION_SYSTEM_MODEL
+    )
+    assert actual_messages == [{"role": "user", "content": [block]}]
 
 
 def test__format_messages_requires_model() -> None:
@@ -5357,6 +5586,63 @@ def test_no_task_budget_no_beta() -> None:
     betas = payload.get("betas")
     if betas:
         assert "task-budgets-2026-03-13" not in betas
+
+
+_MID_CONVERSATION_TOOL_CHANGES_BETA = "mid-conversation-tool-changes-2026-07-01"
+
+
+def _tool_change_conversation() -> list[BaseMessage]:
+    return [
+        HumanMessage("Review foo()"),
+        SystemMessage([_TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+
+
+def test_tool_change_block_auto_appends_beta() -> None:
+    """A tool-change block that reaches the wire enables the beta."""
+    model = ChatAnthropic(model=MID_CONVERSATION_SYSTEM_MODEL)
+    payload = model._get_request_payload(_tool_change_conversation())
+    assert payload["betas"] == [_MID_CONVERSATION_TOOL_CHANGES_BETA]
+
+
+def test_tool_change_block_beta_not_duplicated() -> None:
+    """The tool-change beta is appended at most once."""
+    model = ChatAnthropic(
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        betas=[_MID_CONVERSATION_TOOL_CHANGES_BETA],
+    )
+    payload = model._get_request_payload(_tool_change_conversation())
+    assert payload["betas"].count(_MID_CONVERSATION_TOOL_CHANGES_BETA) == 1
+
+
+def test_system_stripped_to_empty_omits_system_field() -> None:
+    """An empty block array carries no instructions, so it is not sent."""
+    model = ChatAnthropic(model=MODEL_NAME)
+    with pytest.warns(UserWarning, match="Tool-change block"):
+        payload = model._get_request_payload(_tool_change_conversation())
+    assert "system" not in payload
+
+
+def test_no_tool_change_block_no_beta() -> None:
+    """A conversation without tool-change blocks does not enable the beta."""
+    model = ChatAnthropic(model=MID_CONVERSATION_SYSTEM_MODEL)
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Review foo()"),
+            SystemMessage("Be concise."),
+            AIMessage("Looks fine."),
+        ],
+    )
+    assert _MID_CONVERSATION_TOOL_CHANGES_BETA not in (payload.get("betas") or [])
+
+
+def test_stripped_tool_change_block_no_beta() -> None:
+    """A tool-change block narrowed away on an unsupported model enables nothing."""
+    model = ChatAnthropic(model=MODEL_NAME)
+    with pytest.warns(UserWarning, match="Tool-change block"):
+        payload = model._get_request_payload(_tool_change_conversation())
+    assert _MID_CONVERSATION_TOOL_CHANGES_BETA not in (payload.get("betas") or [])
 
 
 def test_anthropic_stream_events_v3_lifecycle() -> None:
