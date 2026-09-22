@@ -163,6 +163,7 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_chat_completions,
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
+    _unwrap_non_standard,
 )
 from langchain_openai.data._profiles import _PROFILES
 
@@ -328,21 +329,6 @@ def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[
 
 _ADDITIONAL_TOOLS_BLOCK_TYPE = "additional_tools"
 """Responses API input item that adds tools partway through a conversation."""
-
-
-def _unwrap_non_standard(block: dict) -> dict:
-    """Return the payload carried by a `non_standard` block, else the block itself.
-
-    `NonStandardContentBlock` is core's escape hatch for provider-specific payloads.
-    Unwrapping before classification means a caller can spell a provider-native block
-    either bare or wrapped and get the same behavior.
-    """
-    if block.get("type") == "non_standard" and isinstance(
-        value := block.get("value"),
-        dict,
-    ):
-        return value
-    return block
 
 
 def _is_ai_role(role: str | None) -> bool:

@@ -83,7 +83,10 @@ from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
 )
-from langchain_anthropic._compat import _convert_from_v1_to_anthropic
+from langchain_anthropic._compat import (
+    _convert_from_v1_to_anthropic,
+    _unwrap_non_standard,
+)
 from langchain_anthropic._sdk_compat import (
     _aparse,
     _route_unsupported_sampling_params,
@@ -541,21 +544,6 @@ _TOOL_CHANGE_BLOCK_TYPES = ("tool_addition", "tool_removal")
 
 _MID_CONVERSATION_TOOL_CHANGES_BETA = "mid-conversation-tool-changes-2026-07-01"
 """Beta header required to send `tool_addition` / `tool_removal` blocks."""
-
-
-def _unwrap_non_standard(block: dict) -> dict:
-    """Return the payload carried by a `non_standard` block, else the block itself.
-
-    `NonStandardContentBlock` is core's escape hatch for provider-specific payloads.
-    Unwrapping here means a caller can spell a provider-native block either bare or
-    wrapped and get the same wire output.
-    """
-    if block.get("type") == "non_standard" and isinstance(
-        value := block.get("value"),
-        dict,
-    ):
-        return value
-    return block
 
 
 def _is_tool_change_block(block: object) -> bool:
