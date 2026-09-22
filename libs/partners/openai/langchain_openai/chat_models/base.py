@@ -3203,6 +3203,39 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See `bind_tools` for more.
 
+    ??? info "Mid-conversation tool additions"
+
+        ```python
+        from langchain_core.messages import HumanMessage, SystemMessage
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+        model.invoke(
+            [
+                HumanMessage("What time is it?"),
+                SystemMessage(
+                    [
+                        {
+                            "type": "additional_tools",
+                            "role": "developer",
+                            "tools": [
+                                {
+                                    "type": "function",
+                                    "name": "get_time",
+                                    "description": "Get the current time.",
+                                    "parameters": {
+                                        "type": "object",
+                                        "properties": {},
+                                    },
+                                }
+                            ],
+                        }
+                    ]
+                ),
+            ]
+        )
+        ```
+
     ??? info "Built-in (server-side) tools"
 
         You can access [built-in tools](https://platform.openai.com/docs/guides/tools?api-mode=responses)

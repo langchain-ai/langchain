@@ -1299,6 +1299,37 @@ class ChatAnthropic(BaseChatModel):
         )
         ```
 
+    Example: Add a tool mid-conversation
+        ```python
+        from langchain_core.messages import HumanMessage, SystemMessage
+        from langchain_anthropic import ChatAnthropic
+
+        model = ChatAnthropic(model="claude-opus-5-5")
+        model.invoke(
+            [
+                HumanMessage("What time is it?"),
+                SystemMessage(
+                    [
+                        {
+                            "type": "tool_addition",
+                            "tool": {
+                                "type": "tool_definition",
+                                "definition": {
+                                    "name": "get_time",
+                                    "description": "Get the current time.",
+                                    "input_schema": {
+                                        "type": "object",
+                                        "properties": {},
+                                    },
+                                },
+                            },
+                        }
+                    ]
+                ),
+            ]
+        )
+        ```
+
     Note:
         Any param which is not explicitly supported will be passed directly to
         [`Anthropic.messages.create(...)`](https://platform.claude.com/docs/en/api/python/messages/create)
