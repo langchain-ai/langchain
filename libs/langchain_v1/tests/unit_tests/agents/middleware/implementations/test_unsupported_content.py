@@ -72,6 +72,13 @@ def _swap(model: RecordingModel) -> AgentMiddleware:
     return SwapModel()
 
 
+def test_trace_inputs_are_omitted() -> None:
+    policy = UnsupportedContentMiddleware.trace_policy
+    assert policy is not None
+    assert policy.process_inputs is not None
+    assert policy.process_inputs({"request": {"foo": "bar"}}) == {}
+
+
 @pytest.mark.parametrize(
     ("profile", "expected"),
     [

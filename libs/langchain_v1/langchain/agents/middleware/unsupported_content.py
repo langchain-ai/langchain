@@ -13,6 +13,8 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     ResponseT,
+    TracePolicy,
+    omit_payload,
 )
 
 if TYPE_CHECKING:
@@ -55,6 +57,9 @@ class UnsupportedContentMiddleware(AgentMiddleware[AgentState[ResponseT], Contex
         agent = create_agent(model, middleware=[*other_middleware, UnsupportedContentMiddleware()])
         ```
     """
+
+    trace_policy = TracePolicy(process_inputs=omit_payload)
+    """Omit hook inputs from traces by default; set a `TracePolicy` to override."""
 
     def is_supported(
         self,
