@@ -3,9 +3,6 @@ type: Integration Pattern
 title: Adding a New Chat Model Provider
 description: Step-by-step guide to integrate a new LLM provider into LangChain's monorepo, including package structure, ChatModel implementation, streaming, function calling, structured output, and standard tests. Covers message conversion, error handling, model profiles, and optional advanced API modes like Responses API.
 tags: [chat-models, provider-integration, llm, function-calling, structured-output, streaming]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-09T08:26:28.144Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
@@ -21,6 +18,8 @@ sources:
     resource: repo://libs/partners/anthropic/langchain_anthropic/data/_profiles.py
   - id: openwiki-source-d14c2b8060843a8a89b74733
     resource: repo://libs/partners/anthropic/langchain_anthropic/data/profile_augmentations.toml
+  - id: openwiki-source-04e3ac4f56ff2adb2b02de7d
+    resource: repo://libs/partners/anthropic/pyproject.toml
   - id: openwiki-source-8641a971af4f11b852966d77
     resource: repo://libs/partners/openai/langchain_openai/chat_models/__init__.py
   - id: openwiki-source-3bc725a9a39d534be6f46d18
@@ -37,7 +36,10 @@ sources:
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-09-09T08:26:28.144Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-21T08:30:16.745Z
 ---
 
 ## Overview
@@ -106,7 +108,7 @@ requires-python = ">=3.10.0,<4.0.0"
 version = "0.1.0"
 
 dependencies = [
-    "langchain-core>=1.6.0,<2.0.0",           # Required: base LangChain
+    "langchain-core>=1.6.2,<2.0.0",           # Required: base LangChain
     "provider-client-library>=2.45.0,<4.0.0", # Provider's own SDK (pinned version)
     "certifi>=2024.6.2",                      # SSL certificates
 ]

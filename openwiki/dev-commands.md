@@ -5,7 +5,7 @@ description: "Quick reference for uv, make, lint, test, and type-checking comman
 tags: [development, build, testing, linting, typing, uv, make, pre-commit, local-setup]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml

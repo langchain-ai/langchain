@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:012f8bbb76f0fc9e8cf5796d4dd6a558d1ac45e1248a500804c3dd6342401ccf",
+  "pageVersion": "sha256:9cf9b71623f99687ab1cf0779e86f4be9c781731b7ab13fdab1b710a1372e78e",
   "claims": [
     {
       "id": "claim_347664eb68464142b558791c7a95093f",
@@ -11,8 +11,8 @@
           "version": "repo-file-v1:sha256:d08e06dea1f954a477fa8951e2a8387a10396d07b92a3a60fdced307c136a84f"
         },
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2799-L2900",
-          "version": "repo-lines-v1:sha256:2d8081ad2ca1015a79c313cb0513c30f843560a31c19eb962e55f5edaac7b72a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkOTBkYTg3MTNlNzU1ZjU1MmQ1YmIzNWY3YjJmOGUwMGU3YjA0MzY1Yzc2YWI4MmE3NDRmMGU1OTVlMjA2MDYyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMGNhZTNkYzI3OGY2NDlhYWFlYjE5ZDdhMTBjODYzNjQyNTIzZjhlZjAwYzkxODUzNjEzNGRiMGM0Mzk4NDU0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiM2RmMmFjZjA2ZThjM2YwM2M3MTM1YzZlOGFjNWE5Y2E1NDMyYWJlMDZhNzRhY2EwZmRkOWE1M2EwMDhmOTg3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwMjVmNzA0OWQ5NmQyY2Y4MWE5NjA5Y2NkMDgxMDg0ZmE5OGRhYWIyM2QyMmIxYzMwMjI5MWY3ODhhNjRmM2E0In0"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2829-L3750",
+          "version": "repo-lines-v1:sha256:d7750e52d840b4379fd892a656237cba6bf7af6d95a997b2485fb55d937139ec:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkOTBkYTg3MTNlNzU1ZjU1MmQ1YmIzNWY3YjJmOGUwMGU3YjA0MzY1Yzc2YWI4MmE3NDRmMGU1OTVlMjA2MDYyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiM2RmMmFjZjA2ZThjM2YwM2M3MTM1YzZlOGFjNWE5Y2E1NDMyYWJlMDZhNzRhY2EwZmRkOWE1M2EwMDhmOTg3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmZmFjMjQ1YTViMDZkOGVmNGVkYWI3MmY5MjYzOGM3MTA2NGQzMjNlOGYyOTI4ODA1YWZiYTkyMzZlYzE0MWNjIn0"
         }
       ]
     },
@@ -125,10 +125,140 @@
           "version": "repo-lines-v1:sha256:14ebffc7bca9e6fda843b3932b482d6ffbf0487c1f74f9bfbb871bb591a6cbc1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMWZkYTIxNjI4MGFjNjg0ZmI1ZGQ4NjIxYmE5NTJiMjU3YzhjZTVlMDExM2U2N2JjMTJkZDBlZGU1ZTg2MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_32bd96aa13d7497aaa57a1ab4854ffc7",
+      "statement": "ChatOpenAI automatically switches between Chat Completions API and Responses API based on model name, parameters, and explicit configuration; Responses API is used when reasoning, context_management, truncation, include, or use_previous_response_id are specified, or when model name starts with 'gpt-5' (pro variants) or model is 'codex'.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1924-L1941",
+          "version": "repo-lines-v1:sha256:3e78692a1e3b0ba179962add5d178415cd42ad5fcc7014aeb09f387a97cc53fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmNmVmYTZmY2MxYmM0NWZmNGVjODg4OWNiNjE4MTAzMzg1ZmMzZDYzMzA3ZTIyZmE2NTI5ODliMWFkZDEyYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2ZGE1NmY0NTM5MTk3NjQ1ZTcwYWEzNjdhN2RiMzkwNWFkOWFkODVhMjk0YmFkYWIwNzIzMWNjYTc2ZjQwYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiNDE4YzYyMjIwNmFlMmZlYTY0YzcyOGY3YzU2YWUyZmVjMDUxZjdkOGY1OTBlNTEyMjA2NmRmNmVhNzRiMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkYjlmM2E4NmRlMTA4YTAwN2YzNWQxZjVlZWE4ZGM2ZmVmY2EyMzIyZjgyYTZmMGIzNDhhNWFkMGQ1MTljOWMifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L704-L707",
+          "version": "repo-lines-v1:sha256:82a296d139f47c53b4a1ab656ffeec75782c9412c8bc0365fa0ad828f8ddf817:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjVmZDUyNjAyNTIxYjEzMWNjOTI0Y2VkZjhlMmNjZTI2NWNjOWE2ZjNlZWJhMGZkZTE5M2NkZjY5MTAyZWRlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTE3ZGQ2OWFhNGNmZWU0YzQ4NDkwNDQ4ZjA0ZmQxYWI1MjRjYTdjMzU3Y2FlNjFkMDk4NTdmOTU2ZjI3MzRjYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTk4YjA2M2Q5YjQ3ZTY1Mzc5NjI1NTcyY2NlMTk3NjY5ZDU3NjdlMTJjMThiZTA3NTY1MmI4Y2Q5ODFjZThkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGI3MmM5NmVjZmNiZWZiNTNlZjIxY2YxNmEzZTZkMzEwY2QzZDk5NjI1YTVkMGE2MjFjNDM4NDBhMDMxYzcxOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c65009ac17447729064bb15abaa8729",
+      "statement": "Responses API supports streaming reasoning for reasoning models, structured output with tools, context management via context_management parameter for automatic message compaction, truncation strategy control, and previous response tracking via use_previous_response_id for conversation continuity.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1206-L1241",
+          "version": "repo-lines-v1:sha256:a8bb36529055ff53fdae31695bffcb6d5bc3944aeba5f9e75cf51a8a2d5e2ae5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5YmQyOTMzNzBkZWUyYzk3NGFiZDM2ZmRjMmUwM2IwNjgxNTIzMWRlZmY1MzE0MWEzZjI2M2FhYzY2Y2UyOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMGZiZWQ0OGZmMzE4MWMxNmZiMTI0ODcxNDkzOWFiOTI3NmI4ZGUyZWU3MzJmOWM5NWRlNDRjMjhlODEwNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwYzA1NTc4OTUwNzI1ODcyOWUwNzAxMzhkZTc2NDk1NmVkZGFiZDUzNzhmMGQyY2JkMDdiOWU3Y2JhMWM0ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0Y2I3MmU2NTQwODc1MzM1MTk2NTIyM2ZhZjA5YWQ3YzUwOGFjMGI4ZWMyMGQzMWY5ODRmMzFlMWY4N2VhZjEifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L909-L932",
+          "version": "repo-lines-v1:sha256:41814211db4dd232ffa77a0d6d3398934a0d1c7d612c1624c73a8163939dfe23:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MzU4MmE1ZDZkMWZjM2ExODgwNTg4ODZhYjAzOTZhYzg3ODdiYmMzZTM2MTYzODVlZDQzNDE2ZWU0Zjg4OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2Yjc1OWJhMDVmM2NhYWE1YjQxNzIwMDYwNzNhODgyNGMwZDdjM2IyNzhmNzFlOGI1ZTg5NDFkNzkxYjJiMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1NGVjNzc5MTU0YTFkMzg2MTU2M2M4ZjViZTYzNGRkYTBhNWNmOWQ5OGZhNmM3YTBiZmUxMjlhNzJhYzgwZjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c741b92393a24960933927e07e430816",
+      "statement": "ChatOpenAI maps OpenAI SDK exceptions to LangChain's standardized error hierarchy: AuthenticationError -> ModelAuthenticationError, PermissionDeniedError -> ModelPermissionDeniedError, BadRequestError (context_length_exceeded) -> ContextOverflowError, RateLimitError -> ModelRateLimitError, NotFoundError -> ModelNotFoundError, APIError -> ModelAPIError, APIConnectionError -> ModelConnectionError, APITimeoutError -> ModelTimeoutError.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L612-L677",
+          "version": "repo-lines-v1:sha256:14658e6226d5972c8dfcd35ee5e68818fc2fb2d5615c55bf07435c5692bebb20:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkMzYzNjVkODZhZWJmMTI1NzA4NGRjZThlNDUyNmQxNTYyY2QwZmU1NWU0MWU2NmE1ZjdiOTQ2YWM2ZWEwMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYmIyM2Q0ODg5ZjE4NGI1MWM0YThkYjliZDVjOGFhOWQ3NDc5YWJhNDdhMzMzNzcwMzI2M2M4MTZlNzY4YjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwYWY5NzFkMjcyODdmZjk3NzYzZjBmZGI2MzJmNDZmM2VlMjNhZmNkYjQwNzcyNWUzZTU0OGM4OTg3MTY1Y2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwM2MwYzBjYjJkY2IyZGY2NmRlODQ4OTFmMWYxM2MwMDVkNmJhZGM4ODZlODhmZjI5MzBlMmNkYTU0Yjc0OGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_526c35034a134a5ca6f38a2b9c1175fc",
+      "statement": "Automatic retries for transient failures (429, 500-599) are configured via max_retries parameter; request timeout is controlled via timeout parameter (float or tuple of connect/read timeouts).",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L816-L822",
+          "version": "repo-lines-v1:sha256:718975f36eb81f71aeeb2c0f225af901bd7cd251b227e2763e704280a8354a24:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ5MGZlZTM0ZGFiMGI2ZmFiNTkwNDI3MmM5MjdjNWYwMTg3MjMxMjJhZjI0Yjk1ZTc3ZTEwYTJjYWQ4ZjhhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhNzE1MjU3MmVlODRmMTA5MDZjNzRiOWYyYTkyNDM0ZGRhYjBlM2M0MjgxM2IwNGU1OTdlZmNlYzk1MWIyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODU3MTVjNzMxNDg2YWFkNDBjZjMxZjkxY2RiZjIwMDU1MTdiYmMyYzA0Y2YwYzdjMDc5NGNkMTEwM2MzNDU2MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgyNjNlODIzNjQ1ZDZjNGJjMWJiZTEzMDFjMDc2MmQ2Y2QwMzIzYmQzNWYyYmQ4NzkzZDk1NDY3NDY0ZDEzOCJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L841-L842",
+          "version": "repo-lines-v1:sha256:926de5c3c86a9294d7224138eff3c672ec662e0c156f8f52da034baf6a183122:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzhkYmY0YmFmODJhOTVmMDJkYmRkYWQ2YjY5YTMxZDg5ZjAzNjgyNGViZGE1NmJhY2FkYjI5ZTVkN2E1Y2VjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjkxZTg4MDlmODRjZGNhMDZmNjY2NGQzMzJmZDk5NjQyMDk4YmI2MjZhMmE0MjNlZTdkNWU3MzQxYjllNGM1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjJlY2RiYzNhN2I2MDNkZTM0NmRmZGE2MmY4YjJiOTdjYjZjYjA2ZmJkNDhkNTAwZjc3MWU3MDU0MGU2ZGExYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTgyNzNmN2I0NjAyYWY1ZWQzMjlkMDU3NjkyYzBiZWI5YjM5ZDQwMWViMDllYWY2ZjMwMTBhNmU5NjQ5NTgwYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a2e099cfba141ab9fc85d0e16bc731d",
+      "statement": "BaseChatOpenAI initialization resolves API authentication from parameters/environment variables/callables, builds HTTP clients (sync and async) with optional socket options, registers model profiles, validates parameters like stream_chunk_timeout, and initializes OpenAI client instances.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1254-L1259",
+          "version": "repo-lines-v1:sha256:eb0e57bafb26e9cc000c8a15ea3591aeddc99ab35d2a64304d5224784a743455:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTU1ZDNmNGY2YmU3NGM5NjgyNWJmZTFlNWRkZmMxOTYyMjVlZGVlMGIzYWRkNThjNjMyOGMxNDhhY2I2ZTIxOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUzZWExODU0ZjM0ZWM2ZWU0ZGE5YzAzNTRjZDBhNGEzNGY0MmZhNDJkYTZjY2Q2ZGEzMThiZGY2MjE2M2ViNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmE4OTk5YTlhZmU3YTdlMDRhOTQ1NGE2YmE3MTQzY2YzNzYzYWMwNzY2YjBhMWQ2MmM3OGNlNGFiNzkzODUxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTJkNGM4MTkyMDgyNjY1ZGQ5MGRmYzUzNGJkMWVjMjJiOWE2MmYzYjZmNTk1M2ExMzc3MTU3ZmQzNjYyODg2MyJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L715-L732",
+          "version": "repo-lines-v1:sha256:4f37b02fe8bea277c794e5b3e72e4e4bd51a41ff1022cb3cee530a010157b073:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwYWIyNjQwNjA4YTZlZGJhZGE4MDJlYTdlYzA1NjYxM2JhOTFhY2Q5ZTdhOGIwZjcxOGRmODQ1Yjg4YzBlMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliY2FkYzRlMjljMmM0NWUyOTI5NjcwZmZiNGJiNDZiY2JjNDRlYWIzNTAyNzAzNWJmNDVmYjFiMTdiYzU1ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxNWNhNjgzZTRiMDU3NTFlNjIxZjIzN2Y0NDNkYjc0MDI3Y2NkYTNhMDgxMzBiNGY1MTE2Y2Y4YmYzODI4OTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2fe26ad78d9648d88ef5c1ef3fa22b68",
+      "statement": "When an async callable is provided for api_key, the sync client is not available; sync methods (invoke, stream) raise ValueError, requiring use of async methods (ainvoke, astream) instead.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1605-L1613",
+          "version": "repo-lines-v1:sha256:0d71a780173bd1a4489f6b543d90004f4d3f0f111d32814132308d89827f73a1:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGIwYjlhMWVlYTVjZTNjOTgyN2NiODdmZmYyNWJiNzBjY2Y3NzYxNjgyZDk1OGNjZTBmNzMyZDkxMTZiNzMxZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjVhYmE0Mjg3Y2RiOTU2MWQ0ZTFiMjI0NTM4ZTI1MmFhYjQwNzRkMTQyMjhiNzY0NDkyMGZlZDU1ODk3YzU0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWM3MDQwNGViNzQwZDIyNWI2NmI3ZjQ1MTI1ZTU0ZDBmYmZkYzY1ODk0MDEzZTM2OTYxZTg4NDI3Y2MyOTcxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmJlYWJiNjM3ZDhhMDdhNTA3Zjg4ODU3MDZhN2YxYTZhYTE1NzUzNjE3NjljODk4ZmRjYmI1NTI5YTllYTJjOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_80d965910e2d424f8526f864c8f3cb1d",
+      "statement": "AzureChatOpenAI is a subclass of BaseChatOpenAI that inherits all ChatOpenAI functionality (tool calling, structured output, streaming, vision) but with Azure-specific authentication (azure_endpoint, api_key, azure_ad_token), endpoint routing via azure_deployment, and API versioning (api_version distinct from model version).",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/azure.py#L37-L100",
+          "version": "repo-lines-v1:sha256:1a48dd86b02b19c7a4b58181504f3e9226e1e3eaeb984873c284d04c5e2b013b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNzllYTJiMDA4NDM1NjlmOGJjZDMwY2IwNWQ0NTE4ZGQxMThlMWUxOGRjYTBkYTA4NWFiODhhNmIxYWEzMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZWY2ZDQ3NjI3Yzk4YzFjYWFkYTM4MDMzZDQzZTEyYzE5YTA3OTNiN2E5OTNjNWUwYTdmZDdlNjRiMmNmNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ODVjNmRmMDBmNzZhYzBiYWM3ODYyMDRlZjIxMzFiYmNmMzY2NzJhMDc4NWExY2Y5ZTE2OGM5NjU3NzM0NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyZWMxMDczNTVkNDk2ZmMzYWMwMDQ3ZDUyMTI2MjQ3NjYzZjViNmIzMTQ3MDlhY2U2ODAwZjU1YzEzZWUzMzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fdcf536a8a03424185ad7ae6d5215610",
+      "statement": "AzureChatOpenAI responses include Azure-specific metadata: prompt_filter_results and content_filter_results in response_metadata detailing content safety filtering for hate speech, self-harm, sexual content, and violence.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/azure.py#L152-L172",
+          "version": "repo-lines-v1:sha256:5e8d741926523803a539f79ae153fb4a5ca0f627046ad21a15d2a63ee5f50519:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhMjgyOWJmNWQ2NDEyNmQ2ZTBmN2E1NDIzNDc1ZDU3MDA5ZWVkMTk2NTJlNDIxZTAzNzMyMWU0MGMzNjhmYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1M2Q0ZDc4MWI2OWNmNTYxNWIyMGExZWI1Mzg4MDFlMmYwMjU4NzFhOTEzZWRmMGQxMzJhMzkyNDE3ODBiMGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMmVmODQ3OWFkMGY1ZTkyMzVmZDc0MTFiYTUxNzVmNjY0ZjIzY2M2YTg0MTA3NmM5YWIzZWI4ODExNmUyZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0OTRlMTUwZjJhYmVmYzE4ODI2ZDM0MTBjZGQwNDFhYTY0MzI5MzUwZmVkOGY2MmUxNDIxNGI1ZjRmNmQ3YmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5636b23e82694eb7a7783e02d60452ab",
+      "statement": "ChatOpenAI converts LangChain message types (HumanMessage, AIMessage, SystemMessage, ToolMessage) to OpenAI API format and back; output is AIMessage with content, tool_calls, invalid_tool_calls, additional_kwargs (audio, function_call), response_metadata (token usage, finish reason, system fingerprint, logprobs), and usage_metadata (standardized token counts).",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L217-L281",
+          "version": "repo-lines-v1:sha256:adf75f5a37024e890e20a5b780ca4de846af6fa2f0ae26cbd5c286493e19ea04:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlOTRiYmJkZTFhNTc4ZTU0MDk3NjZmZjRhOTc3ODU2YzU4MmNkZDBiZDU5MzhkMDcxZDdkNjY2YTRkMzU2NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNDJmZmEwNDkzOWY2ZGQ3NDdlMzc0ZTMyNjU0MDc4ZDBiZDA1ZWNlODYyMTg0N2EzNTMzZmY4ZTFkNTJiMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlYzQyOTU5MTY5N2YyNDg0N2RkNWQ1Yzk2ZDM2ZDRiZDU2NzVmMzZhNDY3YWNhNjZkMjRiNzZiYzU0MDEyYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkMTJmNDFjMWY1ZGFhMmM1NWMyNzI5NDg1ZDAwN2ZjMTg4YzBiMjBjNmViZmMwMzdlM2MwMGRmZWJmNGUwNTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3caff63b9a194d83a4feca3784c64c79",
+      "statement": "For multi-modal content, ChatOpenAI formats content blocks per API requirements; Chat Completions API filters certain block types (thinking, tool_use), while Responses API expands support for reasoning, computer use, file search.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L304-L326",
+          "version": "repo-lines-v1:sha256:6cd902fc919094ac7918459a836e31a99d75d17d7ed2346180e909177edbf419:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMzZiYzBjODRjODlmZmMyYmNiZDg3YzA4OTE0YTRmNzJjYTY5YTE0OTYyZTlhMTIxOTExZDIwZmVjY2RhOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhOGE1ZTU5NzYzOGZiYzZlMGZkMDJlYTZhMTA1OWU4ZGVjNWJiY2FhNzI2ZDJiMzllM2UzMjg2YTcxN2EyYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjZjc2NmFmOTQwZjVhNDYwMjMzNDZmY2YzNmEyMWYyOGViYmUyMjUxMWE4MmFhN2MyNzUzYzMyOGU0ZmM1ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwNjI4MDJmZTZkNGE3YjQzOWNhNzg5ZDE2MTlhZmMzMjg0ZTI1ZTlhMTQwZGVlNDI3YmM5YjU0ZThlMWI4YjUifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L329-L350",
+          "version": "repo-lines-v1:sha256:8a2daaa3c8c8db699cb10fef0f8f2f525c09602dc0e497d7603c7d6aaaadb468:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNTUwZDY1YWNhYjg5YmE1MWYwMjJlMGQ5MTg3Yjg2ZWI2ZGE1NWY4MGQzMzI4MzJhYWE4ZTYxMjJjZGU4ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOGE5ZTljMzI1MjgyMGM2NWE4MTY1MjBiOGRiNDkzMjI4MDg0OWVjOGM3ZDJlYjYyNzJhZmRmZWJlMDU5YzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyYmY3NDA3MDljNGU2MzM0NjVlZWE4YTU0N2UzOGYyODc4NzcyM2RjODAzYzliYzMxOGFkY2VmODVjOTMzNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjYzE1YzJiNTMzYjBmZTZlYWExZTA0NTk0MGM0YmQ3YzdmYTQ4MTFkMTE4NTlhMjhmM2Q2NjU1ZDQzMjJlNTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_da74740d79ff48be8b14b5d1660ccd31",
+      "statement": "ChatOpenAI can be subclassed to customize behavior via overriding _generate, _stream, _agenerate, _astream methods; custom middleware can be added via RunnablePassthrough, RunnableLambda, or decorator patterns.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L715-L724",
+          "version": "repo-lines-v1:sha256:4796c14704f049c8340f8cb74976a7f9e7af36bb8fbf9250e8c163d7a4124e0d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwYWIyNjQwNjA4YTZlZGJhZGE4MDJlYTdlYzA1NjYxM2JhOTFhY2Q5ZTdhOGIwZjcxOGRmODQ1Yjg4YzBlMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliY2FkYzRlMjljMmM0NWUyOTI5NjcwZmZiNGJiNDZiY2JjNDRlYWIzNTAyNzAzNWJmNDVmYjFiMTdiYzU1ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhODNkNzQxZTM3NWRlNGMzMWI3Yzc4Mzg3YzdjN2UyNzUxZWY4NTU5MWE3ZWE3ZjkwYzNmN2E3NTQ5NTQ0ZmUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-08T08:27:09.597Z"
+    "at": "2026-09-21T08:30:16.745Z"
   }
 }
