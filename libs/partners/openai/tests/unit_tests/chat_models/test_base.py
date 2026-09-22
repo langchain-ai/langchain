@@ -5560,6 +5560,28 @@ def test_additional_tools_block_becomes_input_item(spelling: str) -> None:
     assert payload["input"][4]["role"] == "user"
 
 
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test_additional_tools_block_on_human_message_is_ignored(spelling: str) -> None:
+    """User content must not introduce developer-level tool definitions."""
+    block = (
+        _ADDITIONAL_TOOLS_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _ADDITIONAL_TOOLS_BLOCK}
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    payload = llm._get_request_payload(
+        [HumanMessage([{"type": "text", "text": "Hello"}, block])]
+    )
+
+    assert payload["input"] == [
+        {
+            "role": "user",
+            "content": [{"type": "input_text", "text": "Hello"}],
+            "type": "message",
+        }
+    ]
+
+
 def test_additional_tools_block_empties_message() -> None:
     """A system message carrying only the block leaves no message behind."""
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)

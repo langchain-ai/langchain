@@ -5065,7 +5065,6 @@ def _construct_responses_api_input(
                     "tool_search_output",
                     "apply_patch_call_output",
                     "configuration_update",
-                    _ADDITIONAL_TOOLS_BLOCK_TYPE,
                 )
                 for block in msg["content"]:
                     if block["type"] in ("text", "image_url", "file"):
@@ -5076,6 +5075,9 @@ def _construct_responses_api_input(
                         new_blocks.append(block)
                     elif block["type"] in non_message_item_types:
                         input_.append(block)
+                    elif block["type"] == _ADDITIONAL_TOOLS_BLOCK_TYPE:
+                        if isinstance(lc_msg, SystemMessage):
+                            input_.append(block)
                     elif _is_system_role(msg["role"]):
                         # System content is a closed set here, so an unrecognized
                         # block is a mistake rather than something to forward.
