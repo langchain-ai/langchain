@@ -3563,6 +3563,57 @@ def test_split_json_convert_lists_true_non_list_no_misleading_hint() -> None:
     assert "convert_lists" not in str(exc_info.value)
 
 
+def test_split_text_ensure_ascii_false_respects_max_chunk_size() -> None:
+    """Chunks must not exceed max_chunk_size when ensure_ascii=False.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/40761.
+    _json_size previously measured escaped ASCII bytes regardless of the caller's
+    ensure_ascii flag, so non-ASCII data (CJK, Cyrillic, accented Latin) produced
+    chunks far smaller than requested.
+    """
+    data = {str(i): "你好世界" * 10 for i in range(20)}
+    splitter = RecursiveJsonSplitter(max_chunk_size=500)
+
+    chunks = splitter.split_text(json_data=data, ensure_ascii=False)
+
+    assert all(
+        len(c) <= 500 for c in chunks
+    ), f"Chunk exceeded max_chunk_size: {[len(c) for c in chunks]}"
+    # With correct sizing the splitter packs more per chunk — far fewer chunks
+    # than the 10 produced by the buggy behaviour.
+    assert len(chunks) < 10, (
+        f"Expected fewer than 10 chunks with ensure_ascii=False, got {len(chunks)}"
+    )
+
+
+def test_split_json_ensure_ascii_false_respects_max_chunk_size() -> None:
+    """split_json with ensure_ascii=False must honour max_chunk_size.
+
+    Regression test companion to test_split_text_ensure_ascii_false_respects_max_chunk_size.
+    """
+    data = {str(i): "你好世界" * 10 for i in range(20)}
+    splitter = RecursiveJsonSplitter(max_chunk_size=500)
+
+    chunks = splitter.split_json(json_data=data, ensure_ascii=False)
+
+    for chunk in chunks:
+        serialized = __import__("json").dumps(chunk, ensure_ascii=False)
+        assert len(serialized) <= 500, (
+            f"Chunk serialized size {len(serialized)} exceeds max_chunk_size"
+        )
+
+
+def test_split_text_ensure_ascii_true_unchanged() -> None:
+    """ensure_ascii=True (the default) must produce the same output as before the fix."""
+    data = {str(i): "你好世界" * 10 for i in range(20)}
+    splitter = RecursiveJsonSplitter(max_chunk_size=500)
+
+    chunks = splitter.split_text(json_data=data, ensure_ascii=True)
+
+    assert len(chunks) == 10
+    assert all(len(c) <= 500 for c in chunks)
+
+
 def test_powershell_code_splitter_short_code() -> None:
     splitter = RecursiveCharacterTextSplitter.from_language(
         Language.POWERSHELL, chunk_size=60, chunk_overlap=0
