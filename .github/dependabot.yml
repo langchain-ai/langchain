@@ -66,6 +66,7 @@ updates:
       - "/libs/partners/openrouter/"
       - "/libs/partners/perplexity/"
       - "/libs/partners/qdrant/"
+      - "/libs/partners/typesafe/"
       - "/libs/partners/xai/"
     schedule:
       interval: "monthly"

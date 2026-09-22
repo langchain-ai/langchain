@@ -5,7 +5,7 @@ description: "Document the callback handler architecture, integration with runna
 tags: ["callbacks", "observability", "handlers", "tracing", "streaming", "langsmith"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-08T08:27:09.597Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
@@ -23,7 +23,7 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/config.py
   - id: openwiki-source-bfd8b1aa6ad00852a2e99762
     resource: repo://libs/core/langchain_core/tracers/context.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
 ---
 
 
@@ -39,13 +39,12 @@ The system is built on a hierarchical run structure where parent-child relations
 
 **BaseCallbackHandler** (`repo://libs/core/langchain_core/callbacks/base.py#L496-L546`) is the base class for all callback implementations. It inherits from multiple mixins that define event methods for different operation types:
 
-- **LLMManagerMixin**: `on_llm_start`, `on_llm_new_token`, `on_llm_end`, `on_llm_error`, `on_stream_event`
-- **ChainManagerMixin**: `on_chain_start`, `on_chain_end`, `on_chain_error`
-- **ToolManagerMixin**: `on_tool_start`, `on_tool_end`, `on_tool_error`
-- **RetrieverManagerMixin**: `on_retriever_start`, `on_retriever_end`, `on_retriever_error`
-- **AgentManagerMixin**: `on_agent_action`, `on_agent_finish`
+- **LLMManagerMixin**: `on_llm_new_token`, `on_llm_end`, `on_llm_error`, `on_stream_event`
+- **ChainManagerMixin**: `on_chain_end`, `on_chain_error`, `on_agent_action`, `on_agent_finish`
+- **ToolManagerMixin**: `on_tool_end`, `on_tool_error`
+- **RetrieverManagerMixin**: `on_retriever_end`, `on_retriever_error`
 - **RunManagerMixin**: `on_text`, `on_retry`, `on_custom_event`
-- **CallbackManagerMixin**: start methods for all operation types
+- **CallbackManagerMixin**: `on_llm_start`, `on_chat_model_start`, `on_chain_start`, `on_tool_start`, `on_retriever_start`
 
 Every handler also supports `raise_error` and `run_inline` attributes to control error propagation and execution context.
 
@@ -408,7 +407,7 @@ class LLMOnlyHandler(BaseCallbackHandler):
         return True  # Skip all retriever events
 ```
 
-Available properties: `ignore_llm`, `ignore_chain`, `ignore_agent`, `ignore_tool`, `ignore_retriever`, `ignore_retry`, `ignore_chat_model`, `ignore_custom_event`.
+Available properties: `ignore_llm`, `ignore_chain`, `ignore_agent`, `ignore_retriever`, `ignore_retry`, `ignore_chat_model`, `ignore_custom_event`.
 
 ## Custom Event Dispatch
 

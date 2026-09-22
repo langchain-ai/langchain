@@ -116,6 +116,7 @@ jobs:
             openrouter
             perplexity
             qdrant
+            typesafe
             xai
             infra
             deps

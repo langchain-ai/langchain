@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7f15b0e6bb2c95e703a2e0c8f6fe04091727b2cb26ae3a3260124cd43f1394e0",
+  "pageVersion": "sha256:ec2b85809adb37d687222c6c15a81c5fba81b7c81ad0de26ad5250a61798fbd9",
   "claims": [
     {
       "id": "claim_bdde90f4e5f6413f8214fe7e80b66a9a",
@@ -14,7 +14,7 @@
     },
     {
       "id": "claim_20d69ecaf7e34bfd922eda9176b4adba",
-      "statement": "The conftest.py blockbuster fixture (autouse=True) prevents blocking I/O in async code by registering allowed blocking calls in specific functions like os.stat in langchain_core/_api/internal.py and os.path.abspath in runnables/base.py.",
+      "statement": "The conftest.py blockbuster fixture (autouse=True) prevents blocking I/O in async code by registering allowed blocking calls: os.stat and os.path.abspath in langchain_core/_api/internal.py (is_caller_internal) and langchain_core/runnables/base.py (__repr__); os.stat and io.TextIOWrapper.read in langsmith/client.py (_default_retry_config); and all functions in freezegun/api.py (_get_cached_module_attributes).",
       "evidence": [
         {
           "resource": "repo://libs/core/tests/unit_tests/conftest.py#L12-L32",
@@ -189,6 +189,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-21T08:30:16.745Z"
   }
 }

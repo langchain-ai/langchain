@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
+from langchain_core._api import deprecated
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -19,6 +20,14 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
+@deprecated(
+    since="1.6.4",
+    removal="2.0.0",
+    addendum=(
+        "See the short-term memory documentation for recommended alternatives: "
+        "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    ),
+)
 class BaseChatMessageHistory(ABC):
     """Abstract base class for storing chat message history.
 
@@ -95,6 +104,10 @@ class BaseChatMessageHistory(ABC):
     In general, getting the messages may involve IO to the underlying persistence
     layer, so this operation is expected to incur some latency.
     """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize cooperatively to preserve multiple inheritance."""
+        super().__init__(*args, **kwargs)
 
     async def aget_messages(self) -> list[BaseMessage]:
         """Async version of getting messages.
@@ -199,6 +212,14 @@ class BaseChatMessageHistory(ABC):
         return get_buffer_string(self.messages)
 
 
+@deprecated(
+    since="1.6.4",
+    removal="2.0.0",
+    addendum=(
+        "See the short-term memory documentation for recommended alternatives: "
+        "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    ),
+)
 class InMemoryChatMessageHistory(BaseChatMessageHistory, BaseModel):
     """In memory implementation of chat message history.
 
