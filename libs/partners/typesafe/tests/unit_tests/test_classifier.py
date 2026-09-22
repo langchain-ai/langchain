@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 import httpx2
 import pytest
 from langchain_core._api import LangChainBetaWarning
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from pydantic import SecretStr, ValidationError
+from langchain_core.runnables import RunnableBranch, RunnableParallel
+from pydantic import BaseModel, SecretStr, ValidationError
 
 from langchain_typesafe import (
     Choice,
@@ -107,6 +108,66 @@ def test_classifier_is_beta() -> None:
         TypeSafeClassifier(
             api_key=API_KEY,
         )
+
+
+def test_input_schema_supports_recursive_state() -> None:
+    """The Runnable input model validates nested state and generates JSON Schema."""
+    classifier = TypeSafeClassifier(api_key=API_KEY)
+    request = _request(
+        {
+            "thread": [
+                HumanMessage("Hello"),
+                {"metadata": {"attempt": 1, "complete": False}},
+            ]
+        }
+    )
+
+    input_schema = cast("type[BaseModel]", classifier.get_input_schema())
+    validated = input_schema.model_validate(request)
+    json_schema = classifier.get_input_jsonschema()
+
+    validated_request = validated.model_dump()
+    assert validated_request["state"]["thread"][1] == {
+        "metadata": {"attempt": 1, "complete": False}
+    }
+    assert set(validated_request["questions"]) == set(request["questions"])
+    state_schema = json_schema["$defs"]["ClassifierRequest"]["properties"]["state"]
+    state_refs = {
+        branch.get("items", branch.get("additionalProperties", {})).get("$ref")
+        for branch in state_schema["anyOf"]
+    }
+    assert "#/$defs/_StateValue" in state_refs
+
+    state_value = json_schema["$defs"]["_StateValue"]
+    nested_refs = {
+        branch.get("items", branch.get("additionalProperties", {})).get("$ref")
+        for branch in state_value["anyOf"]
+    }
+    assert nested_refs == {None, "#/$defs/_StateValue"}
+
+
+def test_schema_dependent_runnable_apis() -> None:
+    """Schema generation works through tools, graphs, branches, and parallels."""
+    classifier = TypeSafeClassifier(api_key=API_KEY)
+
+    with pytest.warns(LangChainBetaWarning, match="This API is in beta"):
+        classifier_tool = classifier.as_tool()
+    graph = classifier.get_graph().to_json(with_schemas=True)
+    parallel_schema = RunnableParallel(classify=classifier).get_input_jsonschema()
+
+    branch = RunnableBranch(
+        (lambda _: True, classifier),
+        classifier,
+    )
+    # Branch schema inference probes every child schema; construction must not raise.
+    branch.get_input_jsonschema()
+
+    assert set(classifier_tool.get_input_jsonschema()["properties"]) == {
+        "state",
+        "questions",
+    }
+    assert len(graph["nodes"]) == 3
+    assert parallel_schema["$defs"]["_StateValue"]
 
 
 def test_questions_require_instructions() -> None:

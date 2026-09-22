@@ -7,18 +7,13 @@ from typing import Annotated, Literal, TypeAlias
 
 from langchain_core.messages import BaseMessage
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
-from typing_extensions import TypedDict
+from typing_extensions import TypeAliasType, TypedDict
 
 _QuestionContent: TypeAlias = str | dict[str, JsonValue] | list[JsonValue]
-_StateValue: TypeAlias = (
-    str
-    | int
-    | float
-    | bool
-    | BaseMessage
-    | Sequence["_StateValue"]
-    | dict[str, "_StateValue"]
-    | None
+_StateValue = TypeAliasType(
+    "_StateValue",
+    "str | int | float | bool | BaseMessage | Sequence[_StateValue] | "
+    "dict[str, _StateValue] | None",
 )
 
 State: TypeAlias = str | BaseMessage | Sequence[_StateValue] | dict[str, _StateValue]
