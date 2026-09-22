@@ -43,6 +43,45 @@ def test_convert_from_v1_restores_anthropic_invalid_tool_calls() -> None:
     ]
 
 
+def test_convert_from_v1_preserves_toolset_name() -> None:
+    """Preserve provider metadata on complete and streamed tool calls."""
+    content: list[types.ContentBlock] = [
+        {
+            "type": "tool_call",
+            "id": "toolu_1",
+            "name": "screenshot",
+            "args": {},
+            "extras": {"toolset_name": "computer"},
+        },
+        {
+            "type": "tool_call_chunk",
+            "id": "toolu_2",
+            "name": "left_click",
+            "args": '{"coordinate": [10, 20]}',
+            "extras": {"toolset_name": "computer"},
+        },
+    ]
+
+    result = _convert_from_v1_to_anthropic(content, [], "anthropic")
+
+    assert result == [
+        {
+            "type": "tool_use",
+            "id": "toolu_1",
+            "name": "screenshot",
+            "input": {},
+            "toolset_name": "computer",
+        },
+        {
+            "type": "tool_use",
+            "id": "toolu_2",
+            "name": "left_click",
+            "input": {"coordinate": [10, 20]},
+            "toolset_name": "computer",
+        },
+    ]
+
+
 def test_convert_from_v1_filters_non_anthropic_invalid_tool_calls() -> None:
     """Test that invalid calls from other providers are not promoted."""
     content: list[types.ContentBlock] = [

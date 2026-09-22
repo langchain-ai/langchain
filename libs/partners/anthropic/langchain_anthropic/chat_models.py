@@ -201,6 +201,7 @@ _BUILTIN_TOOL_PREFIXES = [
     "memory_",
     "tool_search_",
     "advisor_",
+    "browser_toolset_",
 ]
 
 _ANTHROPIC_EXTRA_FIELDS: set[str] = {
@@ -328,7 +329,20 @@ def _merge_messages(
 ) -> list[SystemMessage | AIMessage | HumanMessage]:
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
+    toolset_names: dict[str, str] = {}
     for curr in messages:
+        if isinstance(curr, AIMessage):
+            toolset_names = {}
+            if isinstance(curr.content, list):
+                for block in curr.content:
+                    if (
+                        isinstance(block, dict)
+                        and block.get("type") == "tool_use"
+                        and isinstance(block.get("id"), str)
+                        and isinstance(block.get("toolset_name"), str)
+                        and (tool_use_id := _normalize_tool_call_id(block["id"]))
+                    ):
+                        toolset_names[tool_use_id] = block["toolset_name"]
         if isinstance(curr, ToolMessage):
             if (
                 isinstance(curr.content, list)
@@ -355,12 +369,18 @@ def _merge_messages(
                             }
                         cleaned.append(block)
                     tool_content = cleaned
+                tool_use_id = _normalize_tool_call_id(curr.tool_call_id)
                 tool_result: dict = {
                     "type": "tool_result",
                     "content": tool_content,
-                    "tool_use_id": _normalize_tool_call_id(curr.tool_call_id),
+                    "tool_use_id": tool_use_id,
                     "is_error": curr.status == "error",
                 }
+                toolset_name = curr.additional_kwargs.get("toolset_name")
+                if not isinstance(toolset_name, str) and tool_use_id:
+                    toolset_name = toolset_names.get(tool_use_id)
+                if isinstance(toolset_name, str):
+                    tool_result["toolset_name"] = toolset_name
                 if cache_ctrl:
                     tool_result["cache_control"] = cache_ctrl
                 curr = HumanMessage(  # type: ignore[misc]
@@ -663,6 +683,7 @@ def _format_messages(
                             isinstance(message, AIMessage)
                             and (block["id"] in [tc["id"] for tc in message.tool_calls])
                             and not block.get("caller")
+                            and not block.get("toolset_name")
                         ):
                             overlapping = [
                                 tc
@@ -692,6 +713,8 @@ def _format_messages(
                             )
                             if caller := block.get("caller"):
                                 tool_use_block["caller"] = caller
+                            if toolset_name := block.get("toolset_name"):
+                                tool_use_block["toolset_name"] = toolset_name
                             content.append(tool_use_block)
                     elif block["type"] in ("server_tool_use", "mcp_tool_use"):
                         formatted_block = {
@@ -2120,6 +2143,11 @@ class ChatAnthropic(BaseChatModel):
             content_block = event.content_block.model_dump()
             if "caller" in content_block and content_block["caller"] is None:
                 content_block.pop("caller")
+            if (
+                "toolset_name" in content_block
+                and content_block["toolset_name"] is None
+            ):
+                content_block.pop("toolset_name")
             content_block["index"] = event.index
             if event.content_block.type == "tool_use":
                 if (
@@ -2295,6 +2323,8 @@ class ChatAnthropic(BaseChatModel):
                     block.pop("citations")
                 if "caller" in block and block["caller"] is None:
                     block.pop("caller")
+                if "toolset_name" in block and block["toolset_name"] is None:
+                    block.pop("toolset_name")
                 if "encrypted_content" in block and block["encrypted_content"] is None:
                     block.pop("encrypted_content")
                 if (
@@ -3019,6 +3049,7 @@ class _AnthropicToolUse(TypedDict):
     input: dict
     id: str
     caller: NotRequired[dict[str, Any]]
+    toolset_name: NotRequired[str]
 
 
 def _lc_tool_calls_to_anthropic_tool_use_blocks(

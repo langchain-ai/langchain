@@ -13,7 +13,16 @@ from unittest.mock import MagicMock, patch
 
 import anthropic
 import pytest
-from anthropic.types import Message, TextBlock, Usage
+from anthropic.types import (
+    InputJSONDelta,
+    Message,
+    RawContentBlockDeltaEvent,
+    RawContentBlockStartEvent,
+    RawContentBlockStopEvent,
+    TextBlock,
+    ToolUseBlock,
+    Usage,
+)
 from blockbuster import blockbuster_ctx
 from langchain_core.exceptions import (
     ContextOverflowError,
@@ -493,6 +502,144 @@ def test__format_output_cached() -> None:
     llm = ChatAnthropic(model=MODEL_NAME, anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
     actual = llm._format_output(anthropic_msg)
     assert actual.generations[0].message == expected
+
+
+def test__format_output_drops_empty_toolset_name() -> None:
+    """A regular tool call should not expose the SDK's optional field as `None`."""
+    anthropic_msg = Message(
+        id="foo",
+        content=[ToolUseBlock(id="toolu_1", input={}, name="weather", type="tool_use")],
+        model="baz",
+        role="assistant",
+        stop_reason="tool_use",
+        stop_sequence=None,
+        usage=Usage(input_tokens=2, output_tokens=1),
+        type="message",
+    )
+    llm = ChatAnthropic(model=MODEL_NAME, anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+
+    message = llm._format_output(anthropic_msg).generations[0].message
+
+    assert isinstance(message.content, list)
+    assert message.content[0] == {
+        "id": "toolu_1",
+        "input": {},
+        "name": "weather",
+        "type": "tool_use",
+    }
+
+
+def test_client_toolset_call_round_trip() -> None:
+    """Preserve `toolset_name` on a tool call and its corresponding result."""
+    anthropic_msg = Message(
+        id="foo",
+        content=[
+            ToolUseBlock(
+                id="toolu_1",
+                input={},
+                name="screenshot",
+                toolset_name="computer",
+                type="tool_use",
+            ),
+            ToolUseBlock(
+                id="toolu_2",
+                input={"coordinate": [10, 20]},
+                name="left_click",
+                toolset_name="computer",
+                type="tool_use",
+            ),
+        ],
+        model="baz",
+        role="assistant",
+        stop_reason="tool_use",
+        stop_sequence=None,
+        usage=Usage(input_tokens=2, output_tokens=1),
+        type="message",
+    )
+    llm = ChatAnthropic(model=MODEL_NAME, anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+    ai_message = cast(
+        AIMessage, llm._format_output(anthropic_msg).generations[0].message
+    )
+    tool_message = ToolMessage(
+        "ok",
+        tool_call_id="toolu_1",
+    )
+    second_tool_message = ToolMessage(
+        "ok",
+        tool_call_id="toolu_2",
+    )
+
+    _, messages = _format_messages(
+        [
+            HumanMessage("Take a screenshot and click"),
+            ai_message,
+            tool_message,
+            second_tool_message,
+        ],
+        model=MODEL_NAME,
+    )
+
+    assert messages[1]["content"][0]["toolset_name"] == "computer"
+    assert messages[1]["content"][1]["toolset_name"] == "computer"
+    assert messages[2]["content"][0]["toolset_name"] == "computer"
+    assert messages[2]["content"][1]["toolset_name"] == "computer"
+
+
+def test_toolset_name_is_scoped_to_most_recent_ai_message() -> None:
+    """Do not leak a toolset name across turns that reuse a tool-call ID."""
+    tool_call_id = "call_1"
+    ordinary_call = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": tool_call_id,
+                "name": "weather",
+                "input": {},
+            }
+        ],
+        tool_calls=[
+            {"type": "tool_call", "id": tool_call_id, "name": "weather", "args": {}}
+        ],
+    )
+    browser_call = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": tool_call_id,
+                "name": "screenshot",
+                "input": {},
+                "toolset_name": "browser",
+            }
+        ],
+        tool_calls=[
+            {
+                "type": "tool_call",
+                "id": tool_call_id,
+                "name": "screenshot",
+                "args": {},
+            }
+        ],
+    )
+
+    _, messages = _format_messages(
+        [
+            HumanMessage("Check the weather"),
+            ordinary_call,
+            ToolMessage("sunny", tool_call_id=tool_call_id),
+            browser_call,
+            ToolMessage("screenshot", tool_call_id=tool_call_id),
+            ordinary_call,
+            ToolMessage("rainy", tool_call_id=tool_call_id),
+        ],
+        model=MODEL_NAME,
+    )
+
+    first_result = messages[2]["content"][0]
+    browser_result = messages[4]["content"][0]
+    final_result = messages[6]["content"][0]
+    assert "toolset_name" not in first_result
+    assert browser_result["toolset_name"] == "browser"
+    assert "toolset_name" not in final_result
 
 
 def test__merge_messages() -> None:
@@ -3622,6 +3769,47 @@ def test_empty_text_content_block_start_emits_no_chunk() -> None:
     assert block_start_event is not None
 
 
+def test_toolset_name_survives_stream_aggregation() -> None:
+    """Preserve a toolset member's identity across streamed content chunks."""
+    events = [
+        RawContentBlockStartEvent(
+            content_block=ToolUseBlock(
+                id="toolu_1",
+                input={},
+                name="left_click",
+                toolset_name="computer",
+                type="tool_use",
+            ),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=InputJSONDelta(
+                partial_json='{"coordinate": [10, 20]}',
+                type="input_json_delta",
+            ),
+            index=0,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+    ]
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=False)
+
+    assert aggregate is not None
+    assert isinstance(aggregate.content, list)
+    tool_use = next(
+        block
+        for block in aggregate.content
+        if isinstance(block, dict) and block.get("type") == "tool_use"
+    )
+    assert tool_use["toolset_name"] == "computer"
+    tool_call_block = aggregate.content_blocks[0]
+    assert tool_call_block["type"] == "tool_call_chunk"
+    assert tool_call_block["extras"]["toolset_name"] == "computer"
+
+
 def test_thinking_content_block_start_carries_initial_thinking() -> None:
     """Regression test: thinking/signature on `content_block_start` must survive.
 
@@ -3903,6 +4091,54 @@ def test_v1_invalid_tool_call_retains_tool_use_for_error_result() -> None:
     assert payload["messages"][2]["content"][0]["is_error"] is True
 
 
+def test_v1_client_toolset_name_round_trip() -> None:
+    """Preserve a v1 toolset name on the paired tool use and tool result."""
+    tool_call_id = "toolu_1"
+    ai_message = AIMessage(
+        content=[
+            {
+                "type": "tool_call",
+                "id": tool_call_id,
+                "name": "screenshot",
+                "args": {},
+                "extras": {"toolset_name": "computer"},
+            }
+        ],
+        response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+    )
+    tool_message = ToolMessage("ok", tool_call_id=tool_call_id)
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    payload = llm._get_request_payload(
+        [HumanMessage("Take a screenshot"), ai_message, tool_message]
+    )
+
+    assert payload["messages"][1] == {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "tool_use",
+                "id": tool_call_id,
+                "name": "screenshot",
+                "input": {},
+                "toolset_name": "computer",
+            }
+        ],
+    }
+    assert payload["messages"][2] == {
+        "role": "user",
+        "content": [
+            {
+                "type": "tool_result",
+                "content": "ok",
+                "tool_use_id": tool_call_id,
+                "is_error": False,
+                "toolset_name": "computer",
+            }
+        ],
+    }
+
+
 def test_strict_tool_use() -> None:
     model = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
@@ -4096,6 +4332,25 @@ def test_advisor_is_builtin_tool() -> None:
     )
     assert advisor_tool in payload["tools"]
     assert "advisor-tool-2026-03-01" in payload["betas"]
+
+
+def test_browser_toolset_is_builtin_tool() -> None:
+    """Test that the name-less Browser toolset passes through unchanged."""
+    tool = {
+        "type": "browser_toolset_20260801",
+        "configs": {"javascript_exec": {"enabled": True}},
+    }
+    assert _is_builtin_tool(tool)
+
+    model = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    bound = model.bind_tools([tool])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        [HumanMessage("hello")],
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+
+    assert tool in payload["tools"]
+    assert "betas" not in payload
 
 
 def test_tool_search_beta_headers() -> None:

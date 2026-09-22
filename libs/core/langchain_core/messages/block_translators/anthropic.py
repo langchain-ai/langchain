@@ -288,6 +288,10 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     )
                     if "caller" in block:
                         tool_call_chunk["extras"] = {"caller": block["caller"]}
+                    if isinstance(block.get("toolset_name"), str):
+                        tool_call_chunk.setdefault("extras", {})["toolset_name"] = (
+                            block["toolset_name"]
+                        )
 
                     index = chunk.get("index")
                     if index is not None:
@@ -323,9 +327,13 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     if "index" in block:
                         tool_call_block["index"] = block["index"]
                     if "caller" in block:
-                        if "extras" not in tool_call_block:
-                            tool_call_block["extras"] = {}
-                        tool_call_block["extras"]["caller"] = block["caller"]
+                        tool_call_block.setdefault("extras", {})["caller"] = block[
+                            "caller"
+                        ]
+                    if isinstance(block.get("toolset_name"), str):
+                        tool_call_block.setdefault("extras", {})["toolset_name"] = (
+                            block["toolset_name"]
+                        )
 
                     yield tool_call_block
 

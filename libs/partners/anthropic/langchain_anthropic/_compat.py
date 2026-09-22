@@ -119,8 +119,11 @@ def _convert_from_v1_to_anthropic(
                 "input": block.get("args", {}),
                 "id": block.get("id", ""),
             }
-            if "caller" in block.get("extras", {}):
-                tool_use_block["caller"] = block["extras"]["caller"]
+            extras = block.get("extras", {})
+            if "caller" in extras:
+                tool_use_block["caller"] = extras["caller"]
+            if isinstance(extras.get("toolset_name"), str):
+                tool_use_block["toolset_name"] = extras["toolset_name"]
             new_content.append(tool_use_block)
 
         elif block["type"] == "tool_call_chunk":
@@ -131,14 +134,16 @@ def _convert_from_v1_to_anthropic(
                     input_ = {}
             else:
                 input_ = block.get("args") or {}
-            new_content.append(
-                {
-                    "type": "tool_use",
-                    "name": block.get("name", ""),
-                    "input": input_,
-                    "id": block.get("id", ""),
-                }
-            )
+            tool_use_block = {
+                "type": "tool_use",
+                "name": block.get("name", ""),
+                "input": input_,
+                "id": block.get("id", ""),
+            }
+            extras = block.get("extras", {})
+            if isinstance(extras.get("toolset_name"), str):
+                tool_use_block["toolset_name"] = extras["toolset_name"]
+            new_content.append(tool_use_block)
 
         elif block["type"] == "invalid_tool_call":
             tool_call_id = block.get("id")

@@ -14,6 +14,7 @@ def test_convert_to_v1_from_anthropic() -> None:
                 "id": "abc_123",
                 "name": "get_weather",
                 "input": {"location": "San Francisco"},
+                "toolset_name": "weather",
             },
             {
                 "type": "tool_use",
@@ -99,6 +100,7 @@ def test_convert_to_v1_from_anthropic() -> None:
             "id": "abc_123",
             "name": "get_weather",
             "args": {"location": "San Francisco"},
+            "extras": {"toolset_name": "weather"},
         },
         {
             "type": "tool_call",
