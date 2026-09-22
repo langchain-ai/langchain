@@ -10,6 +10,7 @@ from langchain_core.language_models._compat_bridge import (
     CompatBlock,
     _finalize_block,
     _isolate_usage,
+    _iter_protocol_blocks,
     achunks_to_events,
     amessage_to_events,
     chunks_to_events,
@@ -674,6 +675,173 @@ async def test_achunks_to_events_reasoning_then_tool_call_no_index() -> None:
     finish_types = [b.get("type") for b in finish_blocks]
     assert "reasoning" in finish_types
     assert "tool_call" in finish_types
+
+
+def _parallel_tool_call_no_index_chunks() -> list[ChatGenerationChunk]:
+    """Gemini-shaped stream: one complete, un-indexed `tool_call` per chunk."""
+    return [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": "tc1",
+                        "name": "search",
+                        "args": {"query": "weather"},
+                    }
+                ],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": "tc2",
+                        "name": "read",
+                        "args": {"path": "notes.md"},
+                    }
+                ],
+                response_metadata={
+                    "output_version": "v1",
+                    "model_provider": "google_genai",
+                },
+            )
+        ),
+    ]
+
+
+def _assert_parallel_tool_call_no_index_events(events: list[Any]) -> None:
+    assert_valid_event_stream(events)
+
+    finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
+    assert [f["index"] for f in finishes] == [0, 1]
+
+    finalized = [cast("ToolCall", event["content"]) for event in finishes]
+    assert [call["id"] for call in finalized] == ["tc1", "tc2"], (
+        f"A parallel tool call was dropped during chunk accumulation. "
+        f"Finish events saw: {finalized}"
+    )
+    assert [call["name"] for call in finalized] == ["search", "read"]
+    assert finalized[0]["args"] == {"query": "weather"}
+    assert finalized[1]["args"] == {"path": "notes.md"}
+
+
+def test_chunks_to_events_parallel_tool_calls_no_index() -> None:
+    """Parallel un-indexed `tool_call` blocks in separate chunks both survive.
+
+    Regression for langchain-ai/langchain#40392. Gemini streams each parallel
+    function call as its own chunk carrying one complete `tool_call` block, and
+    the `google_genai` translator only attaches an `index` when the originating
+    `tool_call_chunk` had one — which Gemini's function calls do not. Every
+    call therefore fell on positional key 0, so `_accumulate`'s self-contained
+    `else` branch replaced the first call with the second and the turn ran only
+    one of the two tools the model asked for. Keying a finalized `tool_call` by
+    its `id` keeps the calls in distinct wire blocks.
+    """
+    events = list(
+        chunks_to_events(
+            iter(_parallel_tool_call_no_index_chunks()), message_id="msg-1"
+        )
+    )
+
+    _assert_parallel_tool_call_no_index_events(events)
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_parallel_tool_calls_no_index() -> None:
+    """Async twin of the un-indexed parallel tool-call regression."""
+    events = [
+        event
+        async for event in achunks_to_events(
+            _aiter_chunks(_parallel_tool_call_no_index_chunks()),
+            message_id="msg-1",
+        )
+    ]
+
+    _assert_parallel_tool_call_no_index_events(events)
+
+
+def test_chunks_to_events_repeated_tool_call_id_no_index_merges() -> None:
+    """One `tool_call` re-emitted across chunks stays a single wire block.
+
+    Guards the other side of the id-keyed fallback: keying on `id` must not
+    split a call that a provider repeats across chunks into two blocks.
+    """
+    block: CompatBlock = {
+        "type": "tool_call",
+        "id": "tc1",
+        "name": "search",
+        "args": {"query": "weather"},
+    }
+    chunks = [
+        ChatGenerationChunk(message=AIMessageChunk(content=[dict(block)])),
+        ChatGenerationChunk(message=AIMessageChunk(content=[dict(block)])),
+    ]
+
+    events = list(chunks_to_events(iter(chunks), message_id="msg-1"))
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+
+    assert len(finishes) == 1
+    assert cast("ToolCall", finishes[0]["content"])["id"] == "tc1"
+
+
+def test_iter_protocol_blocks_keying_fallbacks() -> None:
+    """An explicit `index` wins; an id-less `tool_call` keeps positional keying.
+
+    Documents the boundaries of the id-keyed fallback. `tool_call_chunk` is
+    excluded on purpose: its `id` only arrives on the first chunk, so keying
+    chunks by id would strand later arg-only deltas in their own bucket.
+    """
+    indexed = _iter_protocol_blocks(
+        AIMessageChunk(
+            content=[
+                {
+                    "type": "tool_call",
+                    "id": "tc1",
+                    "name": "search",
+                    "args": {},
+                    "index": 7,
+                }
+            ]
+        )
+    )
+    assert [key for key, _ in indexed] == [7]
+
+    for missing_id in (None, ""):
+        anonymous = _iter_protocol_blocks(
+            AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call",
+                        "id": missing_id,
+                        "name": "search",
+                        "args": {},
+                    }
+                ]
+            )
+        )
+        assert [key for key, _ in anonymous] == [("__lc_no_index__", "tool_call", 0)]
+
+    streaming = _iter_protocol_blocks(
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                {
+                    "type": "tool_call_chunk",
+                    "id": "tc1",
+                    "name": "search",
+                    "args": "{}",
+                    "index": None,
+                }
+            ],
+        )
+    )
+    assert [key for key, _ in streaming] == [("__lc_no_index__", "tool_call_chunk", 0)]
 
 
 def test_chunks_to_events_preserves_additional_kwargs_on_assembled_message() -> None:

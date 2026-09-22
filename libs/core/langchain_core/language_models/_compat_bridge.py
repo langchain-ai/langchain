@@ -155,9 +155,10 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     Returns `(key, block)` pairs.  The key is the block's stable identifier
     across the stream: the block's `index` field when present (can be an
     int or a string — some providers use string identifiers like
-    `"lc_rs_305f30"`), or the positional index within the message as a
-    fallback.  Callers are responsible for allocating wire-level `uint`
-    indices; this helper only surfaces the source-side identity.
+    `"lc_rs_305f30"`), then a finalized `tool_call`'s own `id`, and
+    finally the positional index within the message as a fallback.
+    Callers are responsible for allocating wire-level `uint` indices;
+    this helper only surfaces the source-side identity.
 
     For finalized `AIMessage`, also surfaces `invalid_tool_calls`
     — which `AIMessage.content_blocks` currently omits from its return
@@ -181,6 +182,13 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     hook per provider (or a bridge-level "continue the open block when
     the source has no identity" rule) would close the gap if another
     integration ever emits mixed content.
+
+    Finalized `tool_call` blocks sidestep that fallback entirely because
+    they carry an `id`.  Other self-contained id-bearing types
+    (`server_tool_call`, `invalid_tool_call`) remain on the positional
+    fallback: no in-repo translator is known to emit them without an
+    index across separate chunks, so they are left alone rather than
+    changed speculatively.
     """
     try:
         raw = msg.content_blocks
@@ -191,8 +199,25 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     for i, block in enumerate(raw):
         if not isinstance(block, dict):
             continue  # type: ignore[unreachable]
+        key: Any
         explicit_idx = block.get("index")
-        if explicit_idx is None:
+        if explicit_idx is not None:
+            key = explicit_idx
+        elif block.get("type") == "tool_call" and block.get("id"):
+            # A finalized `tool_call` carries its own identity in `id`, so it
+            # never needs the positional fallback below. Providers that emit
+            # each parallel call as its own chunk (Gemini via the
+            # `google_genai` translator, which only attaches an `index` when
+            # the originating `tool_call_chunk` had one) would otherwise give
+            # every call positional 0, bucketing them together so
+            # `_accumulate`'s self-contained `else` branch clobbers all but
+            # the last. Keying on `id` keeps parallel calls distinct while
+            # still collapsing a call that is re-emitted across chunks.
+            # Deliberately excludes `tool_call_chunk`: its `id` only arrives
+            # on the first chunk, so later arg-only deltas would miss the
+            # bucket and fragment the call.
+            key = ("__lc_tool_call__", block["id"])
+        else:
             # No source-side identity. Bucket by (sentinel, block type,
             # positional `i`) so two blocks of different types at the
             # same position across chunks (e.g. Gemini emitting a
@@ -203,9 +228,7 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
             # `else` branch and clobbers the first. Same-type chunks
             # still share the bucket and merge cleanly, which is what
             # streaming text / reasoning relies on.
-            key: Any = ("__lc_no_index__", block.get("type"), i)
-        else:
-            key = explicit_idx
+            key = ("__lc_no_index__", block.get("type"), i)
         result.append((key, dict(block)))
 
     if not isinstance(msg, AIMessageChunk):
