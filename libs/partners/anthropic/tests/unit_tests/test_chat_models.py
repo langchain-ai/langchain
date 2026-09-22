@@ -4719,6 +4719,72 @@ def test_opus_5_rejects_manual_thinking_at_all_effort_levels(effort: str) -> Non
         model._get_request_payload("Test query")
 
 
+def _sampling_value(payload: dict, key: str) -> object:
+    """Sampling params sit at top level (anthropic<1) or in `extra_body` (>=1)."""
+    if key in payload:
+        return payload[key]
+    extra_body = payload.get("extra_body")
+    if isinstance(extra_body, dict):
+        return extra_body.get(key)
+    return None
+
+
+def test_opus_5_rejects_top_k() -> None:
+    """`top_k` is deprecated for Opus 4.7+/Sonnet 5 and rejected by the API."""
+    model = ChatAnthropic(model="claude-opus-5", top_k=10)
+
+    with pytest.raises(ValueError, match=r"`top_k` is not supported for claude-opus-5"):
+        model._get_request_payload("Test query")
+
+
+@pytest.mark.parametrize("model_name", ["claude-opus-4-7", "claude-sonnet-5"])
+def test_deprecated_sampling_models_reject_call_time_top_k(model_name: str) -> None:
+    """Call-time `top_k` overrides get the same preflight validation."""
+    model = ChatAnthropic(model=model_name)
+
+    with pytest.raises(ValueError, match=r"`top_k` is not supported"):
+        model._get_request_payload("Test query", top_k=10)
+
+
+@pytest.mark.parametrize(
+    "model_name", ["claude-opus-4-7", "claude-opus-5", "claude-sonnet-5"]
+)
+def test_deprecated_sampling_models_reject_non_default_top_p_and_temperature(
+    model_name: str,
+) -> None:
+    """Non-default `top_p`/`temperature` fail locally instead of at the API."""
+    model = ChatAnthropic(model=model_name, top_p=0.9, temperature=0.7)
+
+    with pytest.raises(ValueError, match=r"`top_p` is not supported"):
+        model._get_request_payload("Test query")
+
+    with pytest.raises(ValueError, match=r"`temperature` is not supported"):
+        model._get_request_payload("Test query", top_p=1)
+
+
+@pytest.mark.parametrize(
+    "model_name", ["claude-opus-4-7", "claude-opus-5", "claude-sonnet-5"]
+)
+def test_deprecated_sampling_models_allow_default_values(model_name: str) -> None:
+    """Default sampling values keep building the payload unchanged."""
+    model = ChatAnthropic(model=model_name, temperature=1, top_p=1)
+
+    payload = model._get_request_payload("Test query")
+
+    assert _sampling_value(payload, "top_k") is None
+    assert _sampling_value(payload, "temperature") == 1
+    assert _sampling_value(payload, "top_p") == 1
+
+
+def test_older_models_still_accept_top_k() -> None:
+    """Models outside the deprecated families keep forwarding `top_k`."""
+    model = ChatAnthropic(model="claude-opus-4-5-20251101", top_k=10)
+
+    payload = model._get_request_payload("Test query")
+
+    assert _sampling_value(payload, "top_k") == 10
+
+
 def test_effort_also_defaults_adaptive_thinking() -> None:
     """Test that `effort` composes with the adaptive-thinking default too.
 

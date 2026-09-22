@@ -1608,7 +1608,14 @@ class ChatAnthropic(BaseChatModel):
             output_config["effort"] = effort
 
         is_fable_model = self.model.startswith("claude-fable-5")
-        if is_fable_model:
+        # Anthropic deprecates `top_k`, `temperature`, and `top_p` for these
+        # model families; non-default values are rejected with HTTP 400 by
+        # the API, so fail locally with the same rules as Fable models.
+        # https://docs.anthropic.com/en/docs/about-claude/model-deprecations#api-parameter-deprecations
+        is_sampling_deprecated_model = is_fable_model or self.model.startswith(
+            ("claude-opus-4-7", "claude-opus-5", "claude-sonnet-5")
+        )
+        if is_sampling_deprecated_model:
             top_k = request_config.get("top_k", self.top_k)
             top_p = request_config.get("top_p", self.top_p)
             temperature = request_config.get("temperature", self.temperature)
@@ -1626,12 +1633,16 @@ class ChatAnthropic(BaseChatModel):
                     "non-default values."
                 )
                 raise ValueError(msg)
-            if isinstance(thinking, Mapping) and thinking.get("type") == "disabled":
-                msg = (
-                    '`thinking={"type": "disabled"}` is not supported for '
-                    f"{self.model}; omit `thinking` to use adaptive thinking."
-                )
-                raise ValueError(msg)
+        if (
+            is_fable_model
+            and isinstance(thinking, Mapping)
+            and thinking.get("type") == "disabled"
+        ):
+            msg = (
+                '`thinking={"type": "disabled"}` is not supported for '
+                f"{self.model}; omit `thinking` to use adaptive thinking."
+            )
+            raise ValueError(msg)
 
         if (
             (self.model.startswith("claude-opus-5") or is_fable_model)
