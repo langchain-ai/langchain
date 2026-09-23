@@ -509,6 +509,9 @@ _WellKnownOpenAITools = (
     "tool_search",
     "apply_patch",
     "namespace",
+    "shell",
+    "programmatic_tool_calling",
+    "local_shell",
 )
 
 
@@ -551,6 +554,11 @@ def convert_to_openai_tool(
     !!! warning "Behavior changed in `langchain-core` 0.3.63"
 
         Added support for OpenAI's image generation built-in tool.
+
+    !!! warning "Behavior changed in `langchain-core` 1.6.5"
+
+        Added support for OpenAI's shell (including legacy local shell) and
+        programmatic tool calling tools.
     """
     # Import locally to prevent circular import
     from langchain_core.tools import Tool  # noqa: PLC0415

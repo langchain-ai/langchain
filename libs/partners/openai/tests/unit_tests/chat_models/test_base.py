@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import warnings
+from copy import deepcopy
 from functools import partial
 from types import TracebackType
 from typing import Any, Literal, cast
@@ -2876,6 +2877,226 @@ def test__convert_responses_chunk_to_generation_chunk_apply_patch_response() -> 
     ]
 
 
+_SHELL_AND_PROGRAM_OUTPUT_ITEMS = [
+    {
+        "type": "shell_call",
+        "id": "shell_123",
+        "call_id": "call_shell_123",
+        "action": {
+            "commands": ["pwd"],
+            "timeout_ms": 120000,
+            "max_output_length": 4096,
+        },
+        "status": "completed",
+        "caller": {"type": "program", "caller_id": "call_program_123"},
+    },
+    {
+        "type": "shell_call_output",
+        "id": "shell_output_123",
+        "call_id": "call_shell_123",
+        "output": [
+            {
+                "stdout": "workspace\n",
+                "stderr": "",
+                "outcome": {"type": "exit", "exit_code": 0},
+            }
+        ],
+        "status": "completed",
+    },
+    {
+        "type": "local_shell_call",
+        "id": "local_shell_123",
+        "call_id": "call_local_shell_123",
+        "action": {"type": "exec", "command": ["pwd"], "env": {}},
+        "status": "completed",
+    },
+    {
+        "type": "local_shell_call_output",
+        "id": "local_shell_output_123",
+        "output": '{"stdout":"workspace\\n"}',
+        "status": "completed",
+    },
+    {
+        "type": "program",
+        "id": "program_123",
+        "call_id": "call_program_123",
+        "code": "text('done')",
+        "fingerprint": "fingerprint_123",
+    },
+    {
+        "type": "program_output",
+        "id": "program_output_123",
+        "call_id": "call_program_123",
+        "result": "done",
+        "status": "completed",
+    },
+]
+
+
+def _response_with_output_item(item: dict[str, Any]) -> Response:
+    return Response.model_validate(
+        {
+            "id": "resp_123",
+            "created_at": 1234567890,
+            "model": "gpt-6-sol",
+            "object": "response",
+            "parallel_tool_calls": True,
+            "tools": [],
+            "tool_choice": "auto",
+            "output": [item],
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    "item", _SHELL_AND_PROGRAM_OUTPUT_ITEMS, ids=lambda item: item["type"]
+)
+def test__construct_lc_result_preserves_shell_and_program_items(
+    item: dict[str, Any],
+) -> None:
+    """Test shell and program output items are preserved as content blocks."""
+    response = _response_with_output_item(item)
+
+    result = _construct_lc_result_from_responses_api(response)
+
+    message = cast(AIMessage, result.generations[0].message)
+    assert message.content == [
+        response.output[0].model_dump(exclude_none=True, mode="json")
+    ]
+
+
+@pytest.mark.parametrize(
+    "item", _SHELL_AND_PROGRAM_OUTPUT_ITEMS, ids=lambda item: item["type"]
+)
+def test__convert_responses_chunk_preserves_shell_and_program_items(
+    item: dict[str, Any],
+) -> None:
+    """Test streamed shell and program items are preserved in message chunks."""
+    response = _response_with_output_item(item)
+    chunk = MagicMock()
+    chunk.type = "response.output_item.done"
+    chunk.output_index = 0
+    chunk.item = response.output[0]
+
+    _, _, _, generation_chunk = _convert_responses_chunk_to_generation_chunk(
+        chunk,
+        current_index=-1,
+        current_output_index=-1,
+        current_sub_index=-1,
+    )
+
+    assert generation_chunk is not None
+    expected = response.output[0].model_dump(exclude_none=True, mode="json")
+    expected["index"] = 0
+    assert generation_chunk.message.content == [expected]
+
+
+def test__construct_responses_api_input_shell_and_program_round_trip() -> None:
+    """Test shell and program content blocks can be sent back as input items."""
+    call_items = [
+        item
+        for item in _SHELL_AND_PROGRAM_OUTPUT_ITEMS
+        if item["type"]
+        in {"shell_call", "local_shell_call", "program", "program_output"}
+    ]
+    output_items = [
+        item
+        for item in _SHELL_AND_PROGRAM_OUTPUT_ITEMS
+        if item["type"] in {"shell_call_output", "local_shell_call_output"}
+    ]
+
+    result = _construct_responses_api_input(
+        [AIMessage(content=call_items), HumanMessage(content=output_items)]
+    )
+
+    assert result == [*call_items, *output_items]
+
+
+def test__construct_responses_api_input_preserves_program_caller_on_tool_output() -> (
+    None
+):
+    """Test ToolMessage output retains the caller of a program-issued call."""
+    caller = {"type": "program", "caller_id": "call_program_123"}
+    messages = [
+        AIMessage(
+            content=[
+                {
+                    "type": "function_call",
+                    "id": "function_123",
+                    "call_id": "call_function_123",
+                    "name": "get_weather",
+                    "arguments": '{"location":"San Francisco"}',
+                    "caller": caller,
+                }
+            ],
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "id": "call_function_123",
+                    "name": "get_weather",
+                    "args": {"location": "San Francisco"},
+                }
+            ],
+        ),
+        ToolMessage(content="sunny", tool_call_id="call_function_123"),
+    ]
+
+    result = _construct_responses_api_input(messages)
+
+    assert result[-1] == {
+        "type": "function_call_output",
+        "call_id": "call_function_123",
+        "output": "sunny",
+        "caller": caller,
+    }
+
+
+def test_previous_response_id_preserves_program_caller_on_tool_output() -> None:
+    """Test PTC caller survives when the source AIMessage is omitted from input."""
+    caller = {"type": "program", "caller_id": "call_program_123"}
+    messages = [
+        AIMessage(
+            content=[
+                {
+                    "type": "function_call",
+                    "id": "function_123",
+                    "call_id": "call_function_123",
+                    "name": "get_weather",
+                    "arguments": '{"location":"San Francisco"}',
+                    "caller": caller,
+                }
+            ],
+            tool_calls=[
+                {
+                    "type": "tool_call",
+                    "id": "call_function_123",
+                    "name": "get_weather",
+                    "args": {"location": "San Francisco"},
+                }
+            ],
+            response_metadata={"id": "resp_123"},
+        ),
+        ToolMessage(content="sunny", tool_call_id="call_function_123"),
+    ]
+    llm = ChatOpenAI(
+        model="gpt-6-sol",
+        api_key=SecretStr("test-api-key"),
+        use_previous_response_id=True,
+    )
+
+    payload = llm._get_request_payload(messages)
+
+    assert payload["previous_response_id"] == "resp_123"
+    assert payload["input"] == [
+        {
+            "type": "function_call_output",
+            "call_id": "call_function_123",
+            "output": "sunny",
+            "caller": caller,
+        }
+    ]
+
+
 def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     """Test a response with web search output."""
     from openai.types.responses.response_function_web_search import (
@@ -3883,6 +4104,23 @@ def test_compat_responses_v03_apply_patch_tool_outputs() -> None:
     ]
 
 
+def test_compat_responses_v03_shell_and_program_tool_outputs() -> None:
+    """Test shell and program items are retained in the legacy output format."""
+    output_items = deepcopy(_SHELL_AND_PROGRAM_OUTPUT_ITEMS)
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "Done.", "id": "msg_123"},
+            *output_items,
+        ],
+        id="resp_123",
+    )
+
+    message_v03_output = _convert_to_v03_ai_message(message)
+
+    assert message_v03_output.content == [{"type": "text", "text": "Done."}]
+    assert message_v03_output.additional_kwargs["tool_outputs"] == output_items
+
+
 @pytest.mark.parametrize(
     ("message_v1", "expected"),
     [
@@ -4079,6 +4317,41 @@ def test_convert_from_v1_to_responses(
 
     # Check no mutation
     assert message_v1 != result
+
+
+def test_convert_from_v1_to_responses_preserves_program_caller() -> None:
+    """Test function calls retain their program caller when converted back."""
+    caller = {"type": "program", "caller_id": "call_program_123"}
+    content: list[types.ContentBlock] = [
+        {
+            "type": "tool_call",
+            "id": "call_function_123",
+            "name": "get_weather",
+            "args": {"location": "San Francisco"},
+            "extras": {"caller": caller},
+        }
+    ]
+
+    tool_calls: list[types.ToolCall] = [
+        {
+            "type": "tool_call",
+            "id": "call_function_123",
+            "name": "get_weather",
+            "args": {"location": "San Francisco"},
+        }
+    ]
+
+    result = _convert_from_v1_to_responses(content, tool_calls)
+
+    assert result == [
+        {
+            "type": "function_call",
+            "call_id": "call_function_123",
+            "name": "get_weather",
+            "arguments": '{"location":"San Francisco"}',
+            "caller": caller,
+        }
+    ]
 
 
 def test_convert_from_v1_to_responses_preserves_reasoning_item_boundaries() -> None:
@@ -5148,6 +5421,53 @@ def test_tool_search_passthrough() -> None:
     assert "input" in payload
 
 
+@pytest.mark.parametrize(
+    "tool",
+    [
+        {
+            "type": "shell",
+            "environment": {
+                "type": "container_auto",
+                "skills": [{"type": "skill_reference", "skill_id": "skill_123"}],
+            },
+        },
+        {"type": "programmatic_tool_calling"},
+        {"type": "local_shell"},
+    ],
+)
+def test_shell_and_programmatic_tool_passthrough(tool: dict[str, object]) -> None:
+    """Test that shell and programmatic tools reach the Responses API payload."""
+    llm = ChatOpenAI(model="gpt-6-sol", api_key=SecretStr("test-api-key"))
+    bound = llm.bind_tools([tool])
+
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+
+    assert tool in payload["tools"]
+    assert "input" in payload
+
+
+@pytest.mark.parametrize("tool_choice", ["shell", "programmatic_tool_calling"])
+def test_shell_and_programmatic_tool_choice(tool_choice: str) -> None:
+    """Test that tool names are converted to Responses tool choice objects."""
+    tool = (
+        {"type": "shell", "environment": {"type": "local"}}
+        if tool_choice == "shell"
+        else {"type": "programmatic_tool_calling"}
+    )
+    llm = ChatOpenAI(model="gpt-6-sol", api_key=SecretStr("test-api-key"))
+    bound = llm.bind_tools([tool], tool_choice=tool_choice)
+
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+
+    assert payload["tool_choice"] == {"type": tool_choice}
+
+
 def test_tool_search_with_defer_loading_extras() -> None:
     """Test that defer_loading from BaseTool extras is merged into tool defs."""
     from langchain_core.tools import tool
@@ -5171,6 +5491,26 @@ def test_tool_search_with_defer_loading_extras() -> None:
     assert weather_tool is not None
     assert weather_tool["defer_loading"] is True
     assert {"type": "tool_search"} in payload["tools"]
+
+
+def test_allowed_callers_base_tool_extra_passthrough() -> None:
+    """Test BaseTool can opt into programmatic invocation through extras."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"allowed_callers": ["programmatic"]})
+    def get_weather(location: str) -> str:
+        """Get weather for a location."""
+        return f"Weather in {location}"
+
+    llm = ChatOpenAI(model="gpt-6-sol", api_key=SecretStr("test-api-key"))
+    bound = llm.bind_tools([get_weather, {"type": "programmatic_tool_calling"}])
+
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+
+    assert payload["tools"][0]["allowed_callers"] == ["programmatic"]
 
 
 def test_namespace_passthrough() -> None:

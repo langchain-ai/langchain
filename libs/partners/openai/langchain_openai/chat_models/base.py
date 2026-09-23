@@ -209,9 +209,13 @@ WellKnownTools = (
     "image_generation",
     "tool_search",
     "apply_patch",
+    "shell",
+    "programmatic_tool_calling",
+    # The Responses API has no `local_shell` tool choice object. The legacy tool
+    # can be bound, but cannot be forced by passing its type as `tool_choice`.
 )
 
-_TOOL_EXTRAS_PASSTHROUGH = ("defer_loading", "async")
+_TOOL_EXTRAS_PASSTHROUGH = ("defer_loading", "async", "allowed_callers")
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -1966,7 +1970,11 @@ class BaseChatOpenAI(BaseChatModel):
                 payload_to_use = last_messages if previous_response_id else messages
                 if previous_response_id:
                     payload["previous_response_id"] = previous_response_id
-                payload = _construct_responses_api_payload(payload_to_use, payload)
+                payload = _construct_responses_api_payload(
+                    payload_to_use,
+                    payload,
+                    function_call_callers=_get_function_call_callers(messages),
+                )
             else:
                 payload = _construct_responses_api_payload(messages, payload)
         else:
@@ -4515,7 +4523,10 @@ def _get_last_messages(
 
 
 def _construct_responses_api_payload(
-    messages: Sequence[BaseMessage], payload: dict
+    messages: Sequence[BaseMessage],
+    payload: dict,
+    *,
+    function_call_callers: dict[str, dict[str, Any]] | None = None,
 ) -> dict:
     # Rename legacy parameters
     for legacy_token_param in ["max_tokens", "max_completion_tokens"]:
@@ -4539,7 +4550,9 @@ def _construct_responses_api_payload(
         payload.pop("temperature", None)
 
     payload["input"] = _construct_responses_api_input(
-        messages, store=payload.get("store")
+        messages,
+        store=payload.get("store"),
+        function_call_callers=function_call_callers,
     )
     if tools := payload.pop("tools", None):
         new_tools: list = []
@@ -4783,8 +4796,42 @@ def _pop_index_and_sub_index(block: dict) -> dict:
     return new_block
 
 
+def _get_function_call_callers(
+    messages: Sequence[BaseMessage],
+) -> dict[str, dict[str, Any]]:
+    """Map function call IDs to their program callers."""
+    callers: dict[str, dict[str, Any]] = {}
+    for message in messages:
+        if not isinstance(message, AIMessage) or not isinstance(message.content, list):
+            continue
+        for raw_block in message.content:
+            if not isinstance(raw_block, dict):
+                continue
+            block = raw_block
+            if raw_block.get("type") == "non_standard" and isinstance(
+                raw_block.get("value"), dict
+            ):
+                block = raw_block["value"]
+            block_type = block.get("type")
+            if block_type == "function_call":
+                call_id = block.get("call_id")
+                caller = block.get("caller")
+            elif block_type == "tool_call":
+                call_id = block.get("id")
+                extras = block.get("extras")
+                caller = extras.get("caller") if isinstance(extras, dict) else None
+            else:
+                continue
+            if isinstance(call_id, str) and isinstance(caller, dict):
+                callers[call_id] = caller
+    return callers
+
+
 def _construct_responses_api_input(
-    messages: Sequence[BaseMessage], *, store: bool | None = None
+    messages: Sequence[BaseMessage],
+    *,
+    store: bool | None = None,
+    function_call_callers: dict[str, dict[str, Any]] | None = None,
 ) -> list:
     """Construct the input for the OpenAI Responses API.
 
@@ -4802,6 +4849,8 @@ def _construct_responses_api_input(
             When `True` or `None` (the default, matching the server's
             stored-by-default behavior), item IDs and reasoning blocks
             are preserved.
+        function_call_callers: Program caller metadata from messages omitted when
+            continuing with `previous_response_id`.
 
     Returns:
         A list of Responses API input items derived from `messages`.
@@ -4851,6 +4900,17 @@ def _construct_responses_api_input(
                     "output": tool_output,
                     "call_id": msg["tool_call_id"],
                 }
+                caller = (function_call_callers or {}).get(msg["tool_call_id"])
+                if caller is None:
+                    for item in reversed(input_):
+                        if (
+                            item.get("type") == "function_call"
+                            and item.get("call_id") == msg["tool_call_id"]
+                        ):
+                            caller = item.get("caller")
+                            break
+                if caller:
+                    function_call_output["caller"] = caller
                 input_.append(function_call_output)
         elif msg["role"] == "assistant":
             if isinstance(msg.get("content"), list):
@@ -4925,6 +4985,12 @@ def _construct_responses_api_input(
                             "tool_search_output",
                             "apply_patch_call",
                             "apply_patch_call_output",
+                            "shell_call",
+                            "shell_call_output",
+                            "local_shell_call",
+                            "local_shell_call_output",
+                            "program",
+                            "program_output",
                         ):
                             input_.append(_pop_index_and_sub_index(block))
                         elif block_type == "image_generation_call":
@@ -4982,6 +5048,8 @@ def _construct_responses_api_input(
                     "mcp_approval_response",
                     "tool_search_output",
                     "apply_patch_call_output",
+                    "shell_call_output",
+                    "local_shell_call_output",
                     "configuration_update",
                 )
                 for block in msg["content"]:
@@ -5162,6 +5230,12 @@ def _construct_lc_result_from_responses_api(
             "tool_search_output",
             "apply_patch_call",
             "apply_patch_call_output",
+            "shell_call",
+            "shell_call_output",
+            "local_shell_call",
+            "local_shell_call_output",
+            "program",
+            "program_output",
         ):
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
 
@@ -5417,6 +5491,12 @@ def _convert_responses_chunk_to_generation_chunk(
         "tool_search_output",
         "apply_patch_call",
         "apply_patch_call_output",
+        "shell_call",
+        "shell_call_output",
+        "local_shell_call",
+        "local_shell_call_output",
+        "program",
+        "program_output",
     ):
         _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")

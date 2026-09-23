@@ -605,8 +605,8 @@ def test_convert_to_openai_data_block() -> None:
     assert result == expected
 
 
-def test_convert_to_v1_from_responses_async_tool_call() -> None:
-    """Test that the `async` flag on a function call reaches `tool_call` extras."""
+def test_convert_to_v1_from_responses_tool_call_extras() -> None:
+    """Test Responses function call metadata reaches `tool_call` extras."""
     message = AIMessage(
         [
             {
@@ -616,6 +616,7 @@ def test_convert_to_v1_from_responses_async_tool_call() -> None:
                 "name": "lookup_price",
                 "arguments": '{"sku": "WIDGET"}',
                 "async": True,
+                "caller": {"type": "program", "caller_id": "call_program_123"},
             },
             {
                 "type": "function_call",
@@ -642,7 +643,14 @@ def test_convert_to_v1_from_responses_async_tool_call() -> None:
             "id": "call_A",
             "name": "lookup_price",
             "args": {"sku": "WIDGET"},
-            "extras": {"item_id": "fc_1", "async": True},
+            "extras": {
+                "item_id": "fc_1",
+                "async": True,
+                "caller": {
+                    "type": "program",
+                    "caller_id": "call_program_123",
+                },
+            },
         },
         {
             "type": "tool_call",

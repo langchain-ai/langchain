@@ -1478,6 +1478,33 @@ def test_convert_to_openai_tool_computer_passthrough() -> None:
     assert result == computer_tool
 
 
+def test_convert_to_openai_tool_shell_passthrough() -> None:
+    """Test that a hosted shell tool with skills is passed through unchanged."""
+    tool = {
+        "type": "shell",
+        "environment": {
+            "type": "container_auto",
+            "skills": [{"type": "skill_reference", "skill_id": "skill_123"}],
+        },
+    }
+
+    assert convert_to_openai_tool(tool) == tool
+
+
+def test_convert_to_openai_tool_programmatic_tool_calling_passthrough() -> None:
+    """Test that the programmatic tool calling tool is passed through unchanged."""
+    tool = {"type": "programmatic_tool_calling"}
+
+    assert convert_to_openai_tool(tool) == tool
+
+
+def test_convert_to_openai_tool_local_shell_passthrough() -> None:
+    """Test that the legacy local shell tool is passed through unchanged."""
+    tool = {"type": "local_shell"}
+
+    assert convert_to_openai_tool(tool) == tool
+
+
 def test_convert_to_openai_function_without_tools_module_imported(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

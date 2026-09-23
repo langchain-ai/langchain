@@ -107,6 +107,12 @@ def _convert_to_v03_ai_message(
                     "tool_search_output",
                     "apply_patch_call",
                     "apply_patch_call_output",
+                    "shell_call",
+                    "shell_call_output",
+                    "local_shell_call",
+                    "local_shell_call_output",
+                    "program",
+                    "program_output",
                 ):
                     # Store built-in tool calls in additional_kwargs
                     if "tool_outputs" not in message.additional_kwargs:
@@ -452,7 +458,7 @@ def _convert_from_v1_to_responses(
                             tool_call["args"], separators=(",", ":")
                         )
             if "extras" in block:
-                for extra_key in ("status", "namespace", "async"):
+                for extra_key in ("status", "namespace", "async", "caller"):
                     if extra_key in block["extras"]:
                         new_block[extra_key] = block["extras"][extra_key]
             new_content.append(new_block)
