@@ -87,7 +87,21 @@ agent = create_agent(
 )
 ```
 
-The middleware asks one independent `Noul` question per candidate tool ("is this tool needed next?"), batched into a single TypeSafe request against the latest human message, before every model call. Tools whose probability clears `relevance_threshold` (default `0.5`) are kept, ranked by that probability, and capped at `max_tools` if set. Use `always_include` to keep specific tools regardless of classification. This API is experimental and may change without notice.
+`TsToolSelectorMiddleware` asks one independent `Noul` question per candidate tool ("is this tool needed next?"), batched into a single TypeSafe request against the latest human message, before every model call. Tools whose probability clears `relevance_threshold` (default `0.5`) are kept, ranked by that probability, and capped at `max_tools` if set.
+
+For a single best tool at each model step, use `TsChoiceToolSelectorMiddleware` instead:
+
+```python
+from langchain_typesafe.experimental.middleware import TsChoiceToolSelectorMiddleware
+
+agent = create_agent(
+    model,
+    tools=[tool1, tool2, tool3],
+    middleware=[TsChoiceToolSelectorMiddleware()],
+)
+```
+
+This variant asks one `Choice` question over the candidate tools and exposes only the chosen tool for the next model call; it chooses again on subsequent calls. Both variants accept `always_include` to keep named tools without classification, and preserve provider-specific tool definitions. This API is experimental and may change without notice.
 
 ### LangChain messages as state
 
