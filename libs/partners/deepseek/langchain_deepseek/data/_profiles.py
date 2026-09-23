@@ -40,6 +40,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "deepseek-v4-flash": {
         "name": "DeepSeek V4 Flash",
+        "status": "deprecated",
         "release_date": "2026-09-10",
         "last_updated": "2026-09-10",
         "open_weights": True,
@@ -62,6 +63,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "deepseek-v4-flash-vision-exp": {
         "name": "DeepSeek V4 Flash Vision Exp",
+        "status": "deprecated",
         "release_date": "2026-09-10",
         "last_updated": "2026-09-10",
         "open_weights": True,
