@@ -33,7 +33,6 @@ langchain/
 ├── .github/              # CI/CD workflows and templates
 ├── .vscode/              # VSCode IDE standard settings and recommended extensions
 ├── openwiki/             # Generated just-in-time evidence index (optional reading)
-├── AGENTS.md             # This file — global development guidelines
 └── README.md             # Information about LangChain
 ```
 
@@ -54,7 +53,7 @@ This monorepo uses `uv` for dependency management. Local development uses editab
 
 Each package in `libs/` has its own `pyproject.toml`, `uv.lock`, and `Makefile`. There is no workspace-level `pyproject.toml` or `Makefile` at the repo root — always `cd` into the package you are working on before running the commands below (for example `cd libs/langchain_v1` or `cd libs/core`).
 
-Before running your tests, set up the package by running (from that package directory):
+Before running your tests, set up all packages by running:
 
 ```bash
 # For all groups
@@ -104,7 +103,7 @@ There is no single workspace config at the repository root. Configuration lives 
 
 #### PR and commit titles
 
-Follow Conventional Commits. See `.github/workflows/pr_lint.yml` for allowed types and scopes. Include a scope for package changes (required in practice for review routing — even for the main `langchain` package). CI rejects empty scope parentheses (`fix(): ...`) via the "Reject empty scope" step; a title with the scope omitted entirely (`fix: ...`) currently passes `requireScope: false` but is discouraged.
+Follow Conventional Commits. See `.github/workflows/pr_lint.yml` for allowed types and scopes. All titles must include a scope with no exceptions — even for the main `langchain` package.
 
 - Start the text after `type(scope):` with a lowercase letter, unless the first word is a proper noun (e.g. `Azure`, `GitHub`, `OpenAI`) or a named entity (class, function, method, parameter, or variable name).
 - Wrap named entities in backticks so they render as code. Proper nouns are left unadorned.
