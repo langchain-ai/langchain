@@ -284,7 +284,7 @@ def _get_message_type_str(
     raise ValueError(msg)
 
 
-_TOOL_CALL_ID_DISPLAY_LIMIT = 32
+_TOOL_CALL_ID_DISPLAY_LIMIT = 64
 
 
 def _display_tool_call_id(tool_call_id: str) -> str:
@@ -337,8 +337,8 @@ def get_buffer_string(
         If a message is an `AIMessage` and contains both tool calls under `tool_calls`
         and a function call under `additional_kwargs["function_call"]`, only the tool
         calls will be appended to the string representation.
-        In XML format, tool-call IDs longer than 32 characters are displayed
-        as the first 32 characters followed by `...`; the original messages
+        In XML format, tool-call IDs longer than 64 characters are displayed
+        as the first 64 characters followed by `...`; the original messages
         are not changed.
 
     !!! note "XML format"

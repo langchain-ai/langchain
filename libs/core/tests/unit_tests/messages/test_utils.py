@@ -1807,7 +1807,7 @@ def test_get_buffer_string_abbreviates_long_tool_call_ids_in_xml_only() -> None:
     rendered = get_buffer_string([message, result], format="xml")
     prefix = get_buffer_string([message, result])
 
-    assert f"{long_id[:32]}..." in rendered
+    assert f"{long_id[:64]}..." in rendered
     assert long_id not in rendered
     assert "call_short" in rendered
     assert "result" in rendered
