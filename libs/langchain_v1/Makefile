@@ -126,4 +126,3 @@ help:
 	@echo 'extended_tests               - run only extended unit tests'
 	@echo 'test_watch                   - run unit tests in watch mode'
 	@echo 'integration_tests            - run integration tests'
-	@echo '-- DOCUMENTATION tasks are from the top-level Makefile --'
