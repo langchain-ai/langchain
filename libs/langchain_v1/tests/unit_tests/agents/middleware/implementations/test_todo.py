@@ -296,43 +296,32 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
 
 
 @pytest.mark.parametrize(
-    ("todos", "expected_message"),
+    "todos",
     [
-        ([], "Updated todo list to []"),
-        (
-            [{"content": "Task 1", "status": "pending"}],
-            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}]",
-        ),
-        (
-            [
-                {"content": "Task 1", "status": "pending"},
-                {"content": "Task 2", "status": "in_progress"},
-            ],
-            (
-                "Updated todo list to ["
-                "{'content': 'Task 1', 'status': 'pending'}, "
-                "{'content': 'Task 2', 'status': 'in_progress'}]"
-            ),
-        ),
-        (
-            [
-                {"content": "Task 1", "status": "pending"},
-                {"content": "Task 2", "status": "in_progress"},
-                {"content": "Task 3", "status": "completed"},
-            ],
-            (
-                "Updated todo list to ["
-                "{'content': 'Task 1', 'status': 'pending'}, "
-                "{'content': 'Task 2', 'status': 'in_progress'}, "
-                "{'content': 'Task 3', 'status': 'completed'}]"
-            ),
-        ),
+        [],
+        [{"content": "Task 1", "status": "pending"}],
+        [
+            {"content": "Task 1", "status": "pending"},
+            {"content": "Task 2", "status": "in_progress"},
+        ],
+        [
+            {"content": "Task 1", "status": "pending"},
+            {"content": "Task 2", "status": "in_progress"},
+            {"content": "Task 3", "status": "completed"},
+        ],
     ],
 )
 def test_todo_middleware_write_todos_tool_execution(
-    todos: list[dict[str, Any]], expected_message: str
+    todos: list[dict[str, Any]],
 ) -> None:
-    """Test that the write_todos tool executes correctly."""
+    """Test that the write_todos tool executes correctly.
+
+    The tool message is a neutral "Todo list updated." ack; the actual
+    state lives in the `todos` field of the Command update. Dumping the
+    full list inline (including `status: completed` entries) was priming
+    some models to interpret the tool result as "everything done, wrap
+    up briefly" instead of continuing to deliver the substantive answer.
+    """
     tool_call = {
         "args": {"todos": todos},
         "name": "write_todos",
@@ -341,7 +330,7 @@ def test_todo_middleware_write_todos_tool_execution(
     }
     result = write_todos.invoke(tool_call)
     assert result.update["todos"] == todos
-    assert result.update["messages"][0].content == expected_message
+    assert result.update["messages"][0].content == "Todo list updated."
 
 
 @pytest.mark.parametrize(
