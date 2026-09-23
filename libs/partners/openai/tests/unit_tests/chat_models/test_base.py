@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import warnings
 from functools import partial
@@ -5505,6 +5506,223 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     assert llm.openai_api_base == "https://api.openai.com/v1"
     assert isinstance(llm.openai_api_key, SecretStr)
     assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+_ADDITIONAL_TOOLS_BLOCK = {
+    "type": "additional_tools",
+    "role": "developer",
+    "tools": [
+        {
+            "type": "function",
+            "name": "get_customer",
+            "description": "Look up a customer by ID.",
+            "parameters": {
+                "type": "object",
+                "properties": {"customer_id": {"type": "string"}},
+                "required": ["customer_id"],
+                "additionalProperties": False,
+            },
+        }
+    ],
+}
+_FOREIGN_TOOL_CHANGE_BLOCK = {
+    "type": "tool_removal",
+    "tool": {"type": "tool_reference", "name": "get_weather"},
+}
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test_additional_tools_block_becomes_input_item(spelling: str) -> None:
+    """An `additional_tools` block is hoisted to a top-level Responses input item."""
+    block: dict = (
+        _ADDITIONAL_TOOLS_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _ADDITIONAL_TOOLS_BLOCK}
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage("Earlier question"),
+            AIMessage("Earlier answer", response_metadata={"id": "resp_123"}),
+            SystemMessage([{"type": "text", "text": "Be concise."}, block]),
+            HumanMessage("Next question"),
+        ]
+    )
+
+    # The item precedes the message it was carried on, matching how the Responses
+    # API converter hoists every other non-message input item.
+    assert payload["input"][2] == _ADDITIONAL_TOOLS_BLOCK
+    assert payload["input"][3] == {
+        "role": "system",
+        "content": [{"type": "input_text", "text": "Be concise."}],
+        "type": "message",
+    }
+    assert payload["input"][4]["role"] == "user"
+
+
+def test_additional_tools_block_empties_message() -> None:
+    """A system message carrying only the block leaves no message behind."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage("Earlier question"),
+            SystemMessage([_ADDITIONAL_TOOLS_BLOCK]),
+        ]
+    )
+
+    assert payload["input"] == [
+        {"role": "user", "content": "Earlier question", "type": "message"},
+        _ADDITIONAL_TOOLS_BLOCK,
+    ]
+
+
+def test_additional_tools_block_does_not_mutate_input_content() -> None:
+    """Hoisting the item must leave the caller's own message content untouched."""
+    content: list[str | dict] = [
+        {"type": "text", "text": "Be concise."},
+        _ADDITIONAL_TOOLS_BLOCK,
+    ]
+    before = copy.deepcopy(content)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    llm._get_request_payload([HumanMessage("Earlier question"), SystemMessage(content)])
+    assert content == before
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test_additional_tools_block_on_chat_completions_raises(spelling: str) -> None:
+    """`additional_tools` requires the Responses API."""
+    block: dict = (
+        _ADDITIONAL_TOOLS_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _ADDITIONAL_TOOLS_BLOCK}
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    with pytest.raises(ValueError, match="use_responses_api=True"):
+        llm._get_request_payload(
+            [HumanMessage("Earlier question"), SystemMessage([block])]
+        )
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+@pytest.mark.parametrize("use_responses_api", [True, False])
+@pytest.mark.parametrize("message_type", ["human", "tool"])
+def test_additional_tools_block_off_system_message_raises(
+    message_type: str,
+    use_responses_api: bool,
+    spelling: str,
+) -> None:
+    """OpenAI restricts the input item to `role: "developer"`.
+
+    Anywhere but a `SystemMessage` it is this provider's own block in a position
+    this provider forbids, so it is raised rather than dropped. Guards against
+    client-supplied content blocks reaching the top-level input list.
+    """
+    block: dict = (
+        _ADDITIONAL_TOOLS_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _ADDITIONAL_TOOLS_BLOCK}
+    )
+    message: BaseMessage = (
+        HumanMessage([block])
+        if message_type == "human"
+        else ToolMessage([block], tool_call_id="call_1")
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=use_responses_api)
+    with pytest.raises(ValueError, match="SystemMessage"):
+        llm._get_request_payload([message])
+
+
+def test_additional_tools_block_on_ai_message_not_rejected() -> None:
+    """`additional_tools` is also a Responses *output* item.
+
+    Replaying an assistant turn that echoes one must not raise; handling the output
+    form is out of scope, and out of scope should mean untouched, not fatal.
+    """
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    llm._get_request_payload(
+        [
+            HumanMessage("Earlier question"),
+            AIMessage(
+                [{"type": "text", "text": "Sure."}, _ADDITIONAL_TOOLS_BLOCK],
+                response_metadata={"id": "resp_123"},
+            ),
+        ]
+    )
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test_unrecognized_system_block_dropped_with_warning(spelling: str) -> None:
+    """Responses system content is a closed set, so an unknown block is reported."""
+    block: dict = (
+        _FOREIGN_TOOL_CHANGE_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _FOREIGN_TOOL_CHANGE_BLOCK}
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    with pytest.warns(UserWarning, match="tool_removal"):
+        payload = llm._get_request_payload(
+            [
+                HumanMessage("Earlier question"),
+                SystemMessage([{"type": "text", "text": "Be concise."}, block]),
+            ]
+        )
+
+    assert payload["input"][-1] == {
+        "role": "system",
+        "content": [{"type": "input_text", "text": "Be concise."}],
+        "type": "message",
+    }
+
+
+def test_unrecognized_user_block_dropped_silently() -> None:
+    """User content is an open set, so dropping an unknown block stays quiet."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        payload = llm._get_request_payload(
+            [
+                HumanMessage(
+                    [
+                        {"type": "text", "text": "Hello"},
+                        {"type": "made_up_block", "foo": "bar"},
+                    ]
+                )
+            ]
+        )
+
+    assert payload["input"] == [
+        {
+            "role": "user",
+            "content": [{"type": "input_text", "text": "Hello"}],
+            "type": "message",
+        },
+    ]
+
+
+@pytest.mark.parametrize("role", ["system", "human"])
+def test_unrecognized_block_forwarded_on_chat_completions(role: str) -> None:
+    """Chat Completions keeps its long-standing passthrough for unknown blocks.
+
+    `additional_tools` is the one system block it rejects, as that's a common mistake
+    (needs responses api). Every other unknown block is passed through as the caller
+    wrote it.
+    """
+    message = (
+        SystemMessage([_FOREIGN_TOOL_CHANGE_BLOCK])
+        if role == "system"
+        else HumanMessage([_FOREIGN_TOOL_CHANGE_BLOCK])
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        payload = llm._get_request_payload([message])
+
+    assert payload["messages"] == [
+        {
+            "role": role if role == "system" else "user",
+            "content": [_FOREIGN_TOOL_CHANGE_BLOCK],
+        }
+    ]
 
 
 def test_configuration_update_block_becomes_input_item() -> None:
