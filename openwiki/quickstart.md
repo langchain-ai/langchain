@@ -257,8 +257,7 @@ Use the table below to route to detailed documentation:
 ├── .pre-commit-config.yaml # Pre-commit hooks definition
 ├── .vscode/              # VS Code settings
 ├── libs/                 # Main monorepo workspace
-├── AGENTS.md             # Agent-focused documentation
-├── CLAUDE.md             # Contributing guide (READ THIS BEFORE PR)
+├── AGENTS.md             # Contributing guide (READ THIS BEFORE PR)
 └── README.md             # Top-level project overview
 ```
 
@@ -343,7 +342,7 @@ Decide what you want to work on using the [Quick Navigation](#quick-navigation-t
 ### 2. Read the Contributing Guide
 
 Before coding, read:
-- **[CLAUDE.md](repo://CLAUDE.md)** — Conventions, style, and PR expectations
+- **[AGENTS.md](repo://AGENTS.md)** — Conventions, style, and PR expectations
 - **Relevant wiki page** — Deep context on your area (see table above)
 
 ### 3. Set Up Your Package
@@ -379,7 +378,7 @@ git commit -m "type(scope): description"
 git push origin your-branch
 ```
 
-See [CLAUDE.md](repo://CLAUDE.md) for commit conventions and branch naming (`<username>/<scope>/<description>`).
+See [AGENTS.md](repo://AGENTS.md) for commit conventions and branch naming (`<username>/<scope>/<description>`).
 
 Pre-commit hooks will run automatically. If they fail, fix and commit again.
 
@@ -391,7 +390,7 @@ Link the PR to any relevant issue and reference the wiki pages you read in the d
 
 | File | Purpose |
 |------|---------|
-| `CLAUDE.md` | Contributing guide, style, and conventions |
+| `AGENTS.md` | Contributing guide, style, and conventions |
 | `libs/Makefile` | Monorepo-level make targets (lock, check-lock) |
 | `libs/{core,langchain_v1,partners/*/Makefile` | Per-package test, lint, format targets |
 | `.pre-commit-config.yaml` | Git hooks for code quality |
@@ -462,7 +461,7 @@ make format && make lint && make test
 
 ## Next Steps
 
-1. **Read [CLAUDE.md](repo://CLAUDE.md)** for contributing conventions
+1. **Read [AGENTS.md](repo://AGENTS.md)** for contributing conventions
 2. **Pick a wiki page** from [Quick Navigation](#quick-navigation-to-major-areas) matching your task
 3. **Clone, setup, and make your first change**
 4. **Run `make format lint test`** to validate locally
