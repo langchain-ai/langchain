@@ -249,6 +249,24 @@ async def test_list_keys(manager: InMemoryRecordManager) -> None:
     assert results[0] in {"key1", "key2", "key3", "key4", "key5"}
 
 
+def test_empty_group_ids_validation(manager: InMemoryRecordManager) -> None:
+    manager.update(["key1"], group_ids=["group1"])
+    assert manager.list_keys(group_ids=[]) == []
+    with pytest.raises(ValueError, match="Length of keys"):
+        manager.update(["key2"], group_ids=[])
+    assert manager.list_keys() == ["key1"]
+
+
+async def test_aempty_group_ids_validation(
+    amanager: InMemoryRecordManager,
+) -> None:
+    await amanager.aupdate(["key1"], group_ids=["group1"])
+    assert await amanager.alist_keys(group_ids=[]) == []
+    with pytest.raises(ValueError, match="Length of keys"):
+        await amanager.aupdate(["key2"], group_ids=[])
+    assert await amanager.alist_keys() == ["key1"]
+
+
 def test_delete_keys(manager: InMemoryRecordManager) -> None:
     """Test deleting keys from the database."""
     # Insert records

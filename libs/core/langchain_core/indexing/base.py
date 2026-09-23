@@ -293,11 +293,11 @@ class InMemoryRecordManager(RecordManager):
                 ids.
             ValueError: If time_at_least is in the future.
         """
-        if group_ids and len(keys) != len(group_ids):
+        if group_ids is not None and len(keys) != len(group_ids):
             msg = "Length of keys must match length of group_ids"
             raise ValueError(msg)
         for index, key in enumerate(keys):
-            group_id = group_ids[index] if group_ids else None
+            group_id = group_ids[index] if group_ids is not None else None
             if time_at_least and time_at_least > self.get_time():
                 msg = "time_at_least must be in the past"
                 raise ValueError(msg)
@@ -378,7 +378,7 @@ class InMemoryRecordManager(RecordManager):
                 continue
             if after and data["updated_at"] <= after:
                 continue
-            if group_ids and data["group_id"] not in group_ids:
+            if group_ids is not None and data["group_id"] not in group_ids:
                 continue
             result.append(key)
         if limit:
