@@ -1090,6 +1090,78 @@ def test_message_to_events_finalized_tool_call_start_strips_args() -> None:
     assert tc_finish["args"] == {"q": "big payload " * 100}
 
 
+def test_message_to_events_preserves_additional_kwargs_on_finalized_message() -> None:
+    """Replay path must preserve additional_kwargs (e.g., Gemini thought signatures).
+
+    Non-streaming `ainvoke` returns the provider's AIMessage unchanged,
+    including `additional_kwargs`. The v3 streaming path uses
+    `chunks_to_events` to preserve these. The replay path (`message_to_events`)
+    must also preserve them for cache-hit scenarios to maintain parity:
+    streaming and non-streaming must not diverge.
+
+    Provider-specific data like Gemini's `__gemini_function_call_thought_signatures__`
+    (required for multi-turn flows) rides in `additional_kwargs` and must survive
+    finalized-message replay.
+    """
+    thought_signature = "CiIBDDnWx-EXAMPLE-SIGNATURE-PAYLOAD=="
+    tool_call_id = "tc-abc"
+    msg = AIMessage(
+        content="hello",
+        additional_kwargs={
+            "__gemini_function_call_thought_signatures__": {
+                tool_call_id: thought_signature,
+            },
+            "provider_state": {
+                "important": "preserve-me",
+            },
+        },
+    )
+
+    # Verify the message-finish event carries additional_kwargs
+    events = list(message_to_events(msg))
+    finish_event = cast("MessageFinishData", events[-1])
+    assert finish_event.get("event") == "message-finish"
+    assert finish_event.get("additional_kwargs") == msg.additional_kwargs, (
+        "message-finish event should preserve additional_kwargs field for "
+        "provider-specific data (e.g., Gemini thought signatures)"
+    )
+
+    # Verify reconstruction through ChatModelStream preserves additional_kwargs
+    stream = ChatModelStream()
+    for event in message_to_events(msg):
+        stream.dispatch(event)
+    reconstructed = stream.output
+    assert reconstructed.additional_kwargs == msg.additional_kwargs, (
+        "Replayed message should have identical additional_kwargs to original; "
+        "cache-hit scenarios must match non-streaming behavior"
+    )
+
+
+@pytest.mark.asyncio
+async def test_amessage_to_events_preserves_additional_kwargs() -> None:
+    """Async variant of additional_kwargs preservation test."""
+    msg = AIMessage(
+        content="hello",
+        additional_kwargs={
+            "key": "value",
+            "nested": {"data": "payload"},
+        },
+    )
+
+    # Verify the async path produces the same event structure
+    events = [e async for e in amessage_to_events(msg)]
+    finish_event = cast("MessageFinishData", events[-1])
+    assert finish_event.get("event") == "message-finish"
+    assert finish_event.get("additional_kwargs") == msg.additional_kwargs
+
+    # Verify reconstruction works with async events
+    stream = AsyncChatModelStream()
+    for event in [e async for e in amessage_to_events(msg)]:
+        stream.dispatch(event)
+    reconstructed = await stream.output
+    assert reconstructed.additional_kwargs == msg.additional_kwargs
+
+
 @pytest.mark.asyncio
 async def test_amessage_to_events_matches_sync() -> None:
     msg = AIMessage(
