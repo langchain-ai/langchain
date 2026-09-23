@@ -284,6 +284,16 @@ def _get_message_type_str(
     raise ValueError(msg)
 
 
+_TOOL_CALL_ID_DISPLAY_LIMIT = 64
+
+
+def _display_tool_call_id(tool_call_id: str) -> str:
+    """Abbreviate long tool-call IDs in formatted message strings."""
+    if len(tool_call_id) > _TOOL_CALL_ID_DISPLAY_LIMIT:
+        return f"{tool_call_id[:_TOOL_CALL_ID_DISPLAY_LIMIT]}..."
+    return tool_call_id
+
+
 def get_buffer_string(
     messages: Sequence[BaseMessage],
     human_prefix: str = "Human",
@@ -327,6 +337,9 @@ def get_buffer_string(
         If a message is an `AIMessage` and contains both tool calls under `tool_calls`
         and a function call under `additional_kwargs["function_call"]`, only the tool
         calls will be appended to the string representation.
+        In XML format, tool-call IDs longer than 64 characters are displayed
+        as the first 64 characters followed by `...`; the original messages
+        are not changed.
 
     !!! note "XML format"
 
@@ -469,7 +482,7 @@ def get_buffer_string(
 
                 if has_tool_calls:
                     for tc in ai_msg.tool_calls:
-                        tc_id = quoteattr(str(tc.get("id") or ""))
+                        tc_id = quoteattr(_display_tool_call_id(tc.get("id") or ""))
                         tc_name = quoteattr(str(tc.get("name") or ""))
                         tc_args = escape(
                             json.dumps(tc.get("args", {}), ensure_ascii=False)

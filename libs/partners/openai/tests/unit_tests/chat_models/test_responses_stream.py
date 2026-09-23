@@ -13,6 +13,8 @@ from openai.types.responses import (
     ResponseContentPartAddedEvent,
     ResponseContentPartDoneEvent,
     ResponseCreatedEvent,
+    ResponseErrorEvent,
+    ResponseFailedEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseFunctionToolCallItem,
@@ -30,6 +32,7 @@ from openai.types.responses import (
     ResponseTextDoneEvent,
 )
 from openai.types.responses.response import Response
+from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_output_text import ResponseOutputText
 from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_reasoning_summary_part_added_event import (
@@ -50,7 +53,10 @@ from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _convert_responses_chunk_to_generation_chunk,
 )
-from tests.unit_tests.chat_models.test_base import MockSyncContextManager
+from tests.unit_tests.chat_models.test_base import (
+    MockAsyncContextManager,
+    MockSyncContextManager,
+)
 
 MODEL = "gpt-5.4"
 
@@ -1231,3 +1237,68 @@ def test_responses_stream_tolerates_unknown_literal_drift() -> None:
             full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.id == "resp_123"
+
+
+def _failed_event(error: ResponseError | None) -> ResponseFailedEvent:
+    created = responses_stream[0]
+    assert isinstance(created, ResponseCreatedEvent)
+    response = created.response.model_copy(update={"status": "failed", "error": error})
+    return ResponseFailedEvent(
+        response=response, sequence_number=1, type="response.failed"
+    )
+
+
+_FAILURE_CASES = [
+    (
+        _failed_event(ResponseError(code="server_error", message="Model failed.")),
+        "server_error",
+    ),
+    (_failed_event(None), "Response resp_123 failed."),
+    (
+        ResponseErrorEvent(
+            type="error",
+            code="rate_limit_exceeded",
+            message="Rate limit reached.",
+            param=None,
+            sequence_number=1,
+        ),
+        "rate_limit_exceeded: Rate limit reached.",
+    ),
+]
+
+
+@pytest.mark.parametrize(("failure_event", "match"), _FAILURE_CASES)
+def test_responses_stream_raises_on_failure(failure_event: Any, match: str) -> None:
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager([responses_stream[0], failure_event])
+
+    mock_client.responses.create = mock_create
+
+    with (
+        patch.object(llm, "root_client", mock_client),
+        pytest.raises(ValueError, match=match),
+    ):
+        list(llm.stream("test"))
+
+
+@pytest.mark.parametrize(("failure_event", "match"), _FAILURE_CASES)
+async def test_responses_astream_raises_on_failure(
+    failure_event: Any, match: str
+) -> None:
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager([responses_stream[0], failure_event])
+
+    mock_client.responses.create = mock_create
+
+    with (
+        patch.object(llm, "root_async_client", mock_client),
+        pytest.raises(ValueError, match=match),
+    ):
+        async for _ in llm.astream("test"):
+            pass
