@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -14,10 +14,11 @@ from langchain.agents.middleware.types import (
     ResponseT,
 )
 from langchain_core.messages import HumanMessage
+from langchain_core.runnables import RunnableConfig
 from typing_extensions import override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
-from langchain_typesafe.types import Noul
+from langchain_typesafe.types import Choice, ClassificationResponse, Noul
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -173,9 +174,10 @@ class TsToolSelectorMiddleware(
         )
 
     def _select_tool_names(
-        self, response_nouls: dict[str, Any], selection_request: _SelectionRequest
+        self, response: ClassificationResponse, selection_request: _SelectionRequest
     ) -> list[str]:
         """Return classifiable tool names above threshold, ranked by probability."""
+        response_nouls = response.nouls
         scored = [
             (name, response_nouls[f"{_TOOL_QUESTION_PREFIX}{name}"].noul)
             for name in selection_request.valid_tool_names
@@ -188,6 +190,10 @@ class TsToolSelectorMiddleware(
         if self.max_tools is not None:
             selected = selected[: self.max_tools]
         return selected
+
+    def _classifier_config(self) -> RunnableConfig:
+        """Tag classifier calls for tool selection traces."""
+        return {"metadata": {"lc_source": "ts_tool_selector"}}
 
     def _process_selection(
         self,
@@ -226,9 +232,9 @@ class TsToolSelectorMiddleware(
         classifier = self._build_classifier(selection_request.classifiable_tools)
         response = classifier.invoke(
             selection_request.last_user_message,
-            config={"metadata": {"lc_source": "ts_tool_selector"}},
+            config=self._classifier_config(),
         )
-        selected_tool_names = self._select_tool_names(response.nouls, selection_request)
+        selected_tool_names = self._select_tool_names(response, selection_request)
         modified_request = self._process_selection(
             selected_tool_names, selection_request, request
         )
@@ -250,13 +256,74 @@ class TsToolSelectorMiddleware(
         classifier = self._build_classifier(selection_request.classifiable_tools)
         response = await classifier.ainvoke(
             selection_request.last_user_message,
-            config={"metadata": {"lc_source": "ts_tool_selector"}},
+            config=self._classifier_config(),
         )
-        selected_tool_names = self._select_tool_names(response.nouls, selection_request)
+        selected_tool_names = self._select_tool_names(response, selection_request)
         modified_request = self._process_selection(
             selected_tool_names, selection_request, request
         )
         return await handler(modified_request)
 
 
-__all__ = ["TsToolSelectorMiddleware"]
+class TsChoiceToolSelectorMiddleware(TsToolSelectorMiddleware):
+    """Select one candidate tool for the next model call with a TypeSafe `Choice`.
+
+    Unlike `TsToolSelectorMiddleware`, this variant asks one categorical question
+    across all available candidate tools, rather than scoring each tool separately.
+    The choice is made again before each model call. `always_include` tools and
+    provider-specific tool definitions are passed through in addition to the chosen
+    tool. Classifier failures and invalid choices raise instead of silently changing
+    tool availability.
+
+    !!! warning
+
+        This middleware is experimental. Its API may change without notice.
+
+    Args:
+        always_include: Tool names to include without classification.
+
+    ??? example "Select one tool per step"
+
+        ```python
+        from langchain_typesafe.experimental.middleware import (
+            TsChoiceToolSelectorMiddleware,
+        )
+
+        middleware = TsChoiceToolSelectorMiddleware()
+        ```
+    """
+
+    def __init__(self, *, always_include: list[str] | None = None) -> None:
+        """Initialize the choice-based tool selector."""
+        super().__init__(always_include=always_include)
+
+    def _build_classifier(self, tools: list[BaseTool]) -> TypeSafeClassifier:
+        """Build one categorical question for all candidate tools."""
+        return TypeSafeClassifier(
+            questions={
+                "tool": Choice(
+                    instructions=(
+                        "Which one of these tools is needed next to make progress on "
+                        "the user's current request? Select exactly one tool."
+                    ),
+                    criteria={tool.name: tool.description for tool in tools},
+                )
+            },
+        )
+
+    def _select_tool_names(
+        self, response: ClassificationResponse, selection_request: _SelectionRequest
+    ) -> list[str]:
+        """Return only the chosen tool if it is one of the candidates."""
+        answer = response.choices.get("tool")
+        if answer is None or answer.choice not in selection_request.valid_tool_names:
+            msg = "TypeSafe returned no valid tool choice for the current request"
+            raise ValueError(msg)
+        return [answer.choice]
+
+    def _classifier_config(self) -> RunnableConfig:
+        """Tag choice selector calls separately in traces."""
+        return {"metadata": {"lc_source": "ts_choice_tool_selector"}}
+
+
+__all__ = ["TsChoiceToolSelectorMiddleware", "TsToolSelectorMiddleware"]

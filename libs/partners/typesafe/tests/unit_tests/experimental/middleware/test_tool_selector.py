@@ -11,8 +11,11 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
 
-from langchain_typesafe import NoulAnswer, TypeSafeClassifier
-from langchain_typesafe.experimental.middleware import TsToolSelectorMiddleware
+from langchain_typesafe import ChoiceAnswer, NoulAnswer, TypeSafeClassifier
+from langchain_typesafe.experimental.middleware import (
+    TsChoiceToolSelectorMiddleware,
+    TsToolSelectorMiddleware,
+)
 from langchain_typesafe.experimental.middleware import __all__ as middleware_all
 from langchain_typesafe.types import ClassificationResponse
 
@@ -41,6 +44,20 @@ def _response(scores: dict[str, float]) -> ClassificationResponse:
         answers={
             f"tool::{name}": NoulAnswer(type="noul", noul=score)
             for name, score in scores.items()
+        },
+    )
+
+
+def _choice_response(choice: str) -> ClassificationResponse:
+    return ClassificationResponse(
+        model="jev-latest",
+        answers={
+            "tool": ChoiceAnswer(
+                type="choice",
+                choice=choice,
+                probabilities={choice: 1.0},
+                confidence=1.0,
+            )
         },
     )
 
@@ -306,11 +323,111 @@ async def test_async_selection_filters_tools() -> None:
     assert _tool_names(seen[0].tools) == ["get_weather"]
 
 
+def test_choice_selects_one_tool_per_model_call() -> None:
+    """Choose one candidate afresh for every model call, not the entire task."""
+    classifier = _classifier(_choice_response("get_weather"))
+    middleware = TsChoiceToolSelectorMiddleware()
+    first = _request([get_weather, search_web], [HumanMessage("Find the weather")])
+    second = _request(
+        [get_weather, search_web],
+        [HumanMessage("Find the weather"), AIMessage("Next search the web")],
+    )
+    seen: list[ModelRequest[Any]] = []
+
+    def handler(modified: ModelRequest[Any]) -> ModelResponse[Any]:
+        seen.append(modified)
+        return cast("ModelResponse[Any]", MagicMock())
+
+    with patch(
+        "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+        return_value=classifier,
+    ) as classifier_class:
+        middleware.wrap_model_call(first, handler)
+        classifier.invoke.return_value = _choice_response("search_web")
+        middleware.wrap_model_call(second, handler)
+
+    assert classifier_class.call_count == 2
+    question = classifier_class.call_args.kwargs["questions"]["tool"]
+    assert question.criteria == {
+        "get_weather": get_weather.description,
+        "search_web": search_web.description,
+    }
+    assert "next" in question.instructions
+    assert classifier.invoke.call_args.kwargs["config"]["metadata"] == {
+        "lc_source": "ts_choice_tool_selector"
+    }
+    assert _tool_names(seen[0].tools) == ["get_weather"]
+    assert _tool_names(seen[1].tools) == ["search_web"]
+    assert first.tools == [get_weather, search_web]
+
+
+@pytest.mark.asyncio
+async def test_choice_async_preserves_always_included_and_provider_tools() -> None:
+    """Keep bypassed tools while asynchronously choosing one candidate."""
+    classifier = _classifier(_choice_response("search_web"))
+    provider_tool = {"type": "web_search"}
+    request = _request(
+        [get_weather, search_web, send_email, provider_tool],
+        [HumanMessage("Search for the latest weather")],
+    )
+    middleware = TsChoiceToolSelectorMiddleware(always_include=["get_weather"])
+    seen: list[ModelRequest[Any]] = []
+
+    async def handler(modified: ModelRequest[Any]) -> ModelResponse[Any]:
+        seen.append(modified)
+        return cast("ModelResponse[Any]", MagicMock())
+
+    with patch(
+        "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+        return_value=classifier,
+    ) as classifier_class:
+        await middleware.awrap_model_call(request, handler)
+
+    assert classifier.ainvoke.await_count == 1
+    assert classifier_class.call_args.kwargs["questions"]["tool"].criteria == {
+        "search_web": search_web.description,
+        "send_email": send_email.description,
+    }
+    assert _tool_names(seen[0].tools) == ["search_web", "get_weather"]
+    assert provider_tool in seen[0].tools
+
+
+@pytest.mark.parametrize("response", [_choice_response("unknown"), _response({})])
+def test_choice_rejects_invalid_response(response: ClassificationResponse) -> None:
+    """Never substitute an unavailable or missing tool silently."""
+    classifier = _classifier(response)
+    request = _request([get_weather], [HumanMessage("Get the weather")])
+
+    with (
+        patch(
+            "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+            return_value=classifier,
+        ),
+        pytest.raises(ValueError, match="no valid tool choice"),
+    ):
+        TsChoiceToolSelectorMiddleware().wrap_model_call(
+            request, lambda _req: MagicMock()
+        )
+
+
+def test_choice_only_always_included_tools_skips_classifier() -> None:
+    """Skip classification if no candidate tools remain."""
+    request = _request([get_weather], [HumanMessage("Get the weather")])
+    with patch(
+        "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier"
+    ) as classifier_class:
+        TsChoiceToolSelectorMiddleware(always_include=["get_weather"]).wrap_model_call(
+            request, lambda _req: MagicMock()
+        )
+    classifier_class.assert_not_called()
+
+
 def test_experimental_public_interface() -> None:
     """Expose the tool selector from the experimental middleware namespace."""
     assert middleware_all == [
         "Skill",
         "SkillSource",
         "SkillsMiddleware",
+        "TsChoiceToolSelectorMiddleware",
         "TsToolSelectorMiddleware",
     ]
