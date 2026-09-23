@@ -4759,6 +4759,54 @@ def test_opus_5_rejects_call_time_disabled_thinking_at_high_effort(
         model._get_request_payload("Test query", output_config={"effort": effort})
 
 
+@pytest.mark.parametrize(
+    "effort",
+    [
+        pytest.param(None, id="no-effort"),
+        pytest.param("low", id="low"),
+        pytest.param("medium", id="medium"),
+        pytest.param("high", id="high"),
+        pytest.param("xhigh", id="xhigh"),
+        pytest.param("max", id="max"),
+    ],
+)
+def test_opus_5_5_rejects_disabled_thinking_at_every_effort(
+    effort: str | None,
+) -> None:
+    """Opus 5.5 keeps adaptive thinking enabled in every effort mode.
+
+    Unlike Opus 5, the conflict is not limited to the highest efforts.
+    """
+    kwargs: dict[str, object] = {"thinking": {"type": "disabled"}}
+    if effort is not None:
+        kwargs["output_config"] = {"effort": effort}
+    model = ChatAnthropic(model="claude-opus-5-5", **kwargs)
+
+    with pytest.raises(
+        ValueError,
+        match=r"not supported for claude-opus-5-5.*omit `thinking`",
+    ):
+        model._get_request_payload("Test query")
+
+
+def test_opus_5_5_rejects_call_time_disabled_thinking() -> None:
+    """Call-time `thinking` overrides are validated too."""
+    model = ChatAnthropic(model="claude-opus-5-5")
+
+    with pytest.raises(ValueError, match=r"not supported for claude-opus-5-5"):
+        model._get_request_payload("Test query", thinking={"type": "disabled"})
+
+
+def test_opus_5_5_allows_omitted_thinking() -> None:
+    """Omitting `thinking` lets Opus 5.5 use its always-on reasoning."""
+    model = ChatAnthropic(model="claude-opus-5-5", reasoning_effort="low")
+
+    payload = model._get_request_payload("Test query")
+
+    assert "thinking" not in payload
+    assert payload["output_config"]["effort"] == "low"
+
+
 @pytest.mark.parametrize("effort", ["low", "medium", "high", "xhigh", "max"])
 def test_opus_5_rejects_manual_thinking_at_all_effort_levels(effort: str) -> None:
     """Opus 5 does not support manual extended thinking."""
@@ -5326,6 +5374,95 @@ def test_bind_tools_keeps_forced_tool_choice_when_thinking_disabled() -> None:
     assert cast("RunnableBinding", result).kwargs["tool_choice"] == {"type": "any"}
 
 
+def test_bind_tools_drops_forced_choice_once_for_unsupported_model() -> None:
+    """The early guard drops the choice without a second payload warning."""
+    chat_model = ChatAnthropic(
+        model="claude-opus-5-5",
+        anthropic_api_key="secret-api-key",
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        result = cast(
+            "RunnableBinding",
+            chat_model.bind_tools([GetWeather], tool_choice="any"),
+        )
+        payload = chat_model._get_request_payload("Test query", **result.kwargs)
+
+    assert "tool_choice" not in result.kwargs
+    assert "tool_choice" not in payload
+    assert len(caught) == 1
+    assert "does not support forced tool use" in str(caught[0].message)
+
+
+_DUMMY_TOOLS = [{"name": "GetWeather", "input_schema": {"type": "object"}}]
+
+
+def test_payload_relaxes_call_time_forced_choice_for_unsupported_model() -> None:
+    """A forced `tool_choice` passed at call time bypasses `bind_tools`."""
+    chat_model = ChatAnthropic(
+        model="claude-opus-5-5",
+        anthropic_api_key="secret-api-key",
+    )
+
+    with pytest.warns(UserWarning, match="does not support forced tool use"):
+        payload = chat_model._get_request_payload(
+            "Test query", tools=_DUMMY_TOOLS, tool_choice={"type": "any"}
+        )
+
+    assert payload["tool_choice"] == {"type": "auto"}
+
+
+def test_payload_relaxes_model_kwargs_forced_choice_for_unsupported_model() -> None:
+    """A forced `tool_choice` in `model_kwargs` bypasses `bind_tools`."""
+    chat_model = ChatAnthropic(
+        model="claude-opus-5-5",
+        anthropic_api_key="secret-api-key",
+        model_kwargs={"tool_choice": {"type": "tool", "name": "GetWeather"}},
+    )
+
+    with pytest.warns(UserWarning, match="does not support forced tool use"):
+        payload = chat_model._get_request_payload("Test query", tools=_DUMMY_TOOLS)
+
+    assert payload["tool_choice"] == {"type": "auto"}
+
+
+def test_payload_relaxes_forced_tool_choice_for_reasoning_effort_thinking() -> None:
+    """The final guard preserves shared options and removes the forced tool name.
+
+    `reasoning_effort` applies adaptive thinking while building the payload, so
+    this conflict only becomes visible after `bind_tools` has already returned.
+    """
+    chat_model = ChatAnthropic(
+        model="claude-opus-5",
+        anthropic_api_key="secret-api-key",
+        reasoning_effort="high",
+    )
+
+    bound = cast(
+        "RunnableBinding",
+        chat_model.bind_tools(
+            [GetWeather],
+            tool_choice="GetWeather",
+            parallel_tool_calls=False,
+        ),
+    )
+    assert bound.kwargs["tool_choice"] == {
+        "type": "tool",
+        "name": "GetWeather",
+        "disable_parallel_tool_use": True,
+    }
+
+    with pytest.warns(UserWarning, match="thinking is enabled"):
+        payload = chat_model._get_request_payload("Test query", **bound.kwargs)
+
+    assert payload["thinking"] == {"type": "adaptive", "display": "summarized"}
+    assert payload["tool_choice"] == {
+        "type": "auto",
+        "disable_parallel_tool_use": True,
+    }
+
+
 def test_thinking_in_params_recognizes_adaptive() -> None:
     """_thinking_in_params should recognize both enabled and adaptive types."""
     assert _thinking_in_params({"thinking": {"type": "enabled", "budget_tokens": 5000}})
@@ -5333,6 +5470,11 @@ def test_thinking_in_params_recognizes_adaptive() -> None:
     assert not _thinking_in_params({"thinking": {"type": "disabled"}})
     assert not _thinking_in_params({"thinking": {}})
     assert not _thinking_in_params({})
+
+
+def test_thinking_in_params_tolerates_explicit_none() -> None:
+    """An explicit `thinking=None` means "no thinking", not a malformed config."""
+    assert not _thinking_in_params({"thinking": None})
 
 
 def test_effort_xhigh() -> None:

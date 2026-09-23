@@ -998,6 +998,17 @@ def _supports_forced_tool_choice(model: str) -> bool:
     return not model.startswith(("claude-fable-5-1", "claude-opus-5-5"))
 
 
+def _is_forced_tool_choice(tool_choice: object) -> bool:
+    """Return whether a normalized `tool_choice` mapping forces tool use.
+
+    Raw strings are not Anthropic SDK input and are left for SDK validation.
+    """
+    return isinstance(tool_choice, Mapping) and tool_choice.get("type") in (
+        "any",
+        "tool",
+    )
+
+
 def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
     """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
 
@@ -1595,6 +1606,22 @@ class ChatAnthropic(BaseChatModel):
         }
         return anthropic.AsyncClient(**params)
 
+    def _forced_tool_choice_warning(self, *, thinking_enabled: bool) -> str:
+        """Build the warning emitted when a forced `tool_choice` must be relaxed."""
+        if thinking_enabled:
+            return (
+                "tool_choice is forced but thinking is enabled. The Anthropic "
+                "API does not support forced tool use with thinking. Falling back "
+                "to automatic tool selection. Tool calls are not "
+                "guaranteed. Disable thinking where supported, or adjust your "
+                "prompt to ensure the tool is called."
+            )
+        return (
+            f"Model {self.model!r} does not support forced tool use. "
+            "Falling back to automatic tool selection. Tool calls are "
+            "not guaranteed. Adjust your prompt to ensure the tool is called."
+        )
+
     def _assert_valid_model_configuration(self, kwargs: Mapping[str, Any]) -> None:
         """Validate resolved request configuration against model-specific invariants."""
         request_config = {**self.model_kwargs, **kwargs}
@@ -1633,12 +1660,6 @@ class ChatAnthropic(BaseChatModel):
                     "non-default values."
                 )
                 raise ValueError(msg)
-            if isinstance(thinking, Mapping) and thinking.get("type") == "disabled":
-                msg = (
-                    '`thinking={"type": "disabled"}` is not supported for '
-                    f"{self.model}; omit `thinking` to use adaptive thinking."
-                )
-                raise ValueError(msg)
 
         if (
             (self.model.startswith("claude-opus-5") or is_fable_model)
@@ -1652,10 +1673,24 @@ class ChatAnthropic(BaseChatModel):
             )
             raise ValueError(msg)
 
+        thinking_disabled = (
+            isinstance(thinking, Mapping) and thinking.get("type") == "disabled"
+        )
+
+        # All Fable 5 models require adaptive thinking, while the separate
+        # forced-tool restriction currently starts at Fable 5.1.
+        if thinking_disabled and self.model.startswith(
+            ("claude-fable-5", "claude-opus-5-5")
+        ):
+            msg = (
+                '`thinking={"type": "disabled"}` is not supported for '
+                f"{self.model}; omit `thinking` to use adaptive thinking."
+            )
+            raise ValueError(msg)
+
         if (
-            self.model.startswith("claude-opus-5")
-            and isinstance(thinking, Mapping)
-            and thinking.get("type") == "disabled"
+            thinking_disabled
+            and self.model.startswith("claude-opus-5")
             and output_config.get("effort") in {"xhigh", "max"}
         ):
             msg = (
@@ -1800,6 +1835,31 @@ class ChatAnthropic(BaseChatModel):
             and "xhigh" in _reasoning_effort_levels(self.profile)
         ):
             payload["thinking"] = {"type": "adaptive", "display": "summarized"}
+
+        # Final guard for forced tool use. `bind_tools` warns early, but a forced
+        # `tool_choice` can still reach here via call-time kwargs, `model_kwargs`,
+        # or a `bind_tools` result whose `tool_choice` was overridden. Thinking is
+        # fully resolved at this point, including the adaptive default applied
+        # above for `reasoning_effort`, which `bind_tools` cannot see.
+        if _is_forced_tool_choice(payload.get("tool_choice")):
+            payload_thinking_enabled = _thinking_in_params(payload)
+            if payload_thinking_enabled or not _supports_forced_tool_choice(self.model):
+                # Downgrade to `auto` rather than dropping the key outright, so a
+                # `disable_parallel_tool_use` setting the caller merged into the
+                # forced choice survives. Mirrors `bind_tools`, which relaxes the
+                # type but keeps the rest of the mapping.
+                relaxed_tool_choice = {
+                    **payload["tool_choice"],
+                    "type": "auto",
+                }
+                relaxed_tool_choice.pop("name", None)
+                payload["tool_choice"] = relaxed_tool_choice
+                warnings.warn(
+                    self._forced_tool_choice_warning(
+                        thinking_enabled=payload_thinking_enabled
+                    ),
+                    stacklevel=2,
+                )
 
         if "response_format" in payload:
             # response_format present when using agents.create_agent's ProviderStrategy
@@ -2596,23 +2656,20 @@ class ChatAnthropic(BaseChatModel):
 
         # Anthropic API rejects forced tool use when thinking is enabled:
         # "Thinking may not be enabled when tool_choice forces tool use."
-        # Drop forced tool_choice and warn, matching the behavior in
-        # _get_llm_for_structured_output_when_thinking_is_enabled.
-        if (
-            self.thinking is not None
-            and self.thinking.get("type") in ("enabled", "adaptive")
-            and "tool_choice" in kwargs
-            and kwargs["tool_choice"].get("type") in ("any", "tool")
-        ):
-            warnings.warn(
-                "tool_choice is forced but thinking is enabled. The Anthropic "
-                "API does not support forced tool use with thinking. "
-                "Dropping tool_choice to avoid an API error. Tool calls are "
-                "not guaranteed. Consider disabling thinking or adjusting "
-                "your prompt to ensure the tool is called.",
-                stacklevel=2,
-            )
-            del kwargs["tool_choice"]
+        # Some models also reject forced tool use regardless of whether thinking
+        # was explicitly configured. Warn here so the stack trace points at the
+        # caller's `bind_tools` call; `_get_request_payload` repeats the check
+        # against the fully resolved payload as a backstop.
+        if _is_forced_tool_choice(kwargs.get("tool_choice")):
+            thinking_enabled = self.thinking is not None and self.thinking.get(
+                "type"
+            ) in ("enabled", "adaptive")
+            if thinking_enabled or not _supports_forced_tool_choice(self.model):
+                warnings.warn(
+                    self._forced_tool_choice_warning(thinking_enabled=thinking_enabled),
+                    stacklevel=2,
+                )
+                del kwargs["tool_choice"]
 
         if parallel_tool_calls is not None:
             disable_parallel_tool_use = not parallel_tool_calls
@@ -3004,7 +3061,15 @@ def _tools_in_params(params: dict) -> bool:
 
 
 def _thinking_in_params(params: dict) -> bool:
-    return params.get("thinking", {}).get("type") in ("enabled", "adaptive")
+    """Return whether `params` requests an active thinking mode.
+
+    Defensive against an explicit `thinking=None`, which callers may pass to mean
+    "no thinking config" and which is not a mapping.
+    """
+    thinking = params.get("thinking")
+    if not isinstance(thinking, Mapping):
+        return False
+    return thinking.get("type") in ("enabled", "adaptive")
 
 
 def _documents_in_params(params: dict) -> bool:
