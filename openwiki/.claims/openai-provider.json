@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9cf9b71623f99687ab1cf0779e86f4be9c781731b7ab13fdab1b710a1372e78e",
+  "pageVersion": "sha256:cd334ced3b220f64f277df1025ee057b9e5df7621a6a1e720fb642adc48c8e88",
   "claims": [
     {
       "id": "claim_347664eb68464142b558791c7a95093f",
@@ -146,7 +146,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1206-L1241",
-          "version": "repo-lines-v1:sha256:a8bb36529055ff53fdae31695bffcb6d5bc3944aeba5f9e75cf51a8a2d5e2ae5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5YmQyOTMzNzBkZWUyYzk3NGFiZDM2ZmRjMmUwM2IwNjgxNTIzMWRlZmY1MzE0MWEzZjI2M2FhYzY2Y2UyOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMGZiZWQ0OGZmMzE4MWMxNmZiMTI0ODcxNDkzOWFiOTI3NmI4ZGUyZWU3MzJmOWM5NWRlNDRjMjhlODEwNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwYzA1NTc4OTUwNzI1ODcyOWUwNzAxMzhkZTc2NDk1NmVkZGFiZDUzNzhmMGQyY2JkMDdiOWU3Y2JhMWM0ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0Y2I3MmU2NTQwODc1MzM1MTk2NTIyM2ZhZjA5YWQ3YzUwOGFjMGI4ZWMyMGQzMWY5ODRmMzFlMWY4N2VhZjEifQ"
+          "version": "repo-lines-v1:sha256:64260a1d2a0cd85a22c0e1aaf69d55e04d0aff1791dd6611f8f43346a6c426dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5YmQyOTMzNzBkZWUyYzk3NGFiZDM2ZmRjMmUwM2IwNjgxNTIzMWRlZmY1MzE0MWEzZjI2M2FhYzY2Y2UyOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMGZiZWQ0OGZmMzE4MWMxNmZiMTI0ODcxNDkzOWFiOTI3NmI4ZGUyZWU3MzJmOWM5NWRlNDRjMjhlODEwNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwYzA1NTc4OTUwNzI1ODcyOWUwNzAxMzhkZTc2NDk1NmVkZGFiZDUzNzhmMGQyY2JkMDdiOWU3Y2JhMWM0ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0Y2I3MmU2NTQwODc1MzM1MTk2NTIyM2ZhZjA5YWQ3YzUwOGFjMGI4ZWMyMGQzMWY5ODRmMzFlMWY4N2VhZjEifQ"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L909-L932",
@@ -259,6 +259,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-21T08:30:16.745Z"
+    "at": "2026-09-22T08:27:06.345Z"
   }
 }

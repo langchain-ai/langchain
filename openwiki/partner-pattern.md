@@ -36,10 +36,10 @@ sources:
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-22T08:27:06.345Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
+    at: 2026-09-22T08:27:06.345Z
 ---
 
 ## Overview
@@ -94,7 +94,7 @@ Create a new directory under `/libs/partners/` with the provider name in lowerca
 
 ### Package Metadata (pyproject.toml)
 
-Key configuration for a provider package (reference: `repo://libs/partners/openai/pyproject.toml#L1-L76`):
+Key configuration for a provider package (reference: `/libs/partners/openai/pyproject.toml#L1-L76`):
 
 ```toml
 [build-system]
@@ -845,9 +845,9 @@ Provider implementations must convert Responses API output (which includes tool 
 
 **Recommendation**: Responses API support is optional and provider-specific. Implement it only if your provider's SDK supports it. For reference implementations, see OpenAI's `ChatOpenAI.use_responses_api` and corresponding test fixtures in `test_responses_standard.py`.
 
-## 8. Error Handling
+## 9. Error Handling
 
-Map provider-specific exceptions to LangChain's unified exception hierarchy (reference: `repo://libs/core/langchain_core/exceptions.py`):
+Map provider-specific exceptions to LangChain's unified exception hierarchy (reference: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L54-L64`):
 
 | Provider Exception | LangChain Exception |
 |---|---|
@@ -872,7 +872,7 @@ def _generate(self, messages, **kwargs):
     # ... rest of generation logic
 ```
 
-## 9. Example: OpenAI Provider Reference
+## 10. Example: OpenAI Provider Reference
 
 The OpenAI provider (`repo://libs/partners/openai/langchain_openai/chat_models/base.py`) is a comprehensive reference implementation demonstrating:
 
@@ -883,7 +883,7 @@ The OpenAI provider (`repo://libs/partners/openai/langchain_openai/chat_models/b
 - **Error mapping**: Detailed provider-specific error handling
 - **Async support**: Full async/await implementation for all methods
 
-## 10. Maintenance and Updates
+## 11. Maintenance and Updates
 
 ### Dependency Updates
 
