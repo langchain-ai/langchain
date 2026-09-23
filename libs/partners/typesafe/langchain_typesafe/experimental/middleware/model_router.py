@@ -160,6 +160,22 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
             if isinstance(message, HumanMessage)
         )
 
+    def _validate_route_answer(self, answer: ChoiceAnswer | None) -> ChoiceAnswer:
+        """Validate the classifier answer before using it to select a model."""
+        if answer is None:
+            msg = (
+                "The classifier response did not contain the required "
+                f"{_QUESTION_ID!r} answer."
+            )
+            raise ValueError(msg)
+        if answer.choice not in self.models:
+            msg = (
+                f"The classifier selected unknown model route {answer.choice!r}. "
+                f"Expected one of: {sorted(self.models)!r}."
+            )
+            raise ValueError(msg)
+        return answer
+
     @override
     def before_agent(
         self, state: _ModelRouterState, runtime: Runtime[ContextT]
@@ -171,7 +187,11 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
                 "questions": _routing_questions(self.config),
             }
         )
-        return {"model_route": response.choices[_QUESTION_ID]}
+        return {
+            "model_route": self._validate_route_answer(
+                response.choices.get(_QUESTION_ID)
+            )
+        }
 
     @override
     async def abefore_agent(
@@ -184,7 +204,11 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
                 "questions": _routing_questions(self.config),
             }
         )
-        return {"model_route": response.choices[_QUESTION_ID]}
+        return {
+            "model_route": self._validate_route_answer(
+                response.choices.get(_QUESTION_ID)
+            )
+        }
 
     @override
     def wrap_model_call(
@@ -193,7 +217,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
     ) -> ModelResponse[ResponseT]:
         """Route a synchronous model call to the selected model."""
-        answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
+        answer = self._validate_route_answer(request.state.get(_QUESTION_ID))
         return handler(request.override(model=self.models[answer.choice]))
 
     @override
@@ -205,7 +229,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         ],
     ) -> ModelResponse[ResponseT]:
         """Route an asynchronous model call to the selected model."""
-        answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
+        answer = self._validate_route_answer(request.state.get(_QUESTION_ID))
         return await handler(request.override(model=self.models[answer.choice]))
 
 

@@ -141,6 +141,38 @@ async def test_classifier_failure_terminates_agent_run(*, asynchronous: bool) ->
             agent.invoke(inputs)
 
 
+@pytest.mark.parametrize(
+    ("response", "error_message"),
+    [
+        (
+            _response("not-configured"),
+            "unknown model route 'not-configured'",
+        ),
+        (
+            ClassifierResponse(model="jev-latest", answers={}),
+            "did not contain the required 'model_route' answer",
+        ),
+    ],
+)
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.asyncio
+async def test_invalid_classifier_route_fails_clearly(
+    *, response: ClassifierResponse, error_message: str, asynchronous: bool
+) -> None:
+    """Reject missing and unknown routes consistently in sync and async runs."""
+    middleware, models, classifier, _ = _router()
+    classifier.invoke.return_value = response
+    classifier.ainvoke = AsyncMock(return_value=response)
+    agent = create_agent(models["fast"], middleware=[middleware])
+    inputs: InputAgentState = {"messages": [HumanMessage("Do the task")]}
+
+    with pytest.raises(ValueError, match=error_message):
+        if asynchronous:
+            await agent.ainvoke(inputs)
+        else:
+            agent.invoke(inputs)
+
+
 def test_choices_are_required() -> None:
     """Reject an empty choice mapping through validated configuration fields."""
     with pytest.raises(ValidationError):
