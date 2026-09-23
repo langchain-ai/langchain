@@ -766,7 +766,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.6.5"
+version = "1.6.6"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
