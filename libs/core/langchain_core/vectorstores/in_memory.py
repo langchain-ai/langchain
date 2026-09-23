@@ -194,6 +194,13 @@ class InMemoryVectorStore(VectorStore):
         texts = [doc.page_content for doc in documents]
         vectors = self.embedding.embed_documents(texts)
 
+        if len(vectors) != len(texts):
+            msg = (
+                "The embedding function returned a different number of embeddings "
+                f"({len(vectors)}) than texts ({len(texts)})."
+            )
+            raise ValueError(msg)
+
         if ids and len(ids) != len(texts):
             msg = (
                 f"ids must be the same length as texts. "
@@ -226,6 +233,13 @@ class InMemoryVectorStore(VectorStore):
     ) -> list[str]:
         texts = [doc.page_content for doc in documents]
         vectors = await self.embedding.aembed_documents(texts)
+
+        if len(vectors) != len(texts):
+            msg = (
+                "The embedding function returned a different number of embeddings "
+                f"({len(vectors)}) than texts ({len(texts)})."
+            )
+            raise ValueError(msg)
 
         if ids and len(ids) != len(texts):
             msg = (

@@ -220,3 +220,22 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_inmemory_rejects_mismatched_embedding_count(use_async: bool) -> None:
+    embeddings_mock = Mock(
+        wraps=DeterministicFakeEmbedding(size=3),
+        embed_documents=Mock(return_value=[[1.0, 0.0, 0.0]]),
+        aembed_documents=AsyncMock(return_value=[[1.0, 0.0, 0.0]]),
+    )
+    store = InMemoryVectorStore(embedding=embeddings_mock)
+    documents = [Document(page_content="foo"), Document(page_content="bar")]
+
+    with pytest.raises(ValueError, match="different number of embeddings"):
+        if use_async:
+            await store.aadd_documents(documents)
+        else:
+            store.add_documents(documents)
+
+    assert store.store == {}
