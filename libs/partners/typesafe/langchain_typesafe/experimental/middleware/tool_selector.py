@@ -67,6 +67,8 @@ class TsToolSelectorMiddleware(
             are kept. No limit if not specified.
         always_include: Tool names to always include regardless of classification.
             These do not count against `max_tools` and are not sent to TypeSafe.
+        classifier_model: Model used for classification. Set to `semif-qwen3.5-4b`
+            to use SemIf through a compatible gateway; defaults to Jev.
 
     Raises:
         ValueError: If `relevance_threshold` is not between `0` and `1`.
@@ -93,6 +95,7 @@ class TsToolSelectorMiddleware(
         relevance_threshold: float = 0.5,
         max_tools: int | None = None,
         always_include: list[str] | None = None,
+        classifier_model: str = "jev-latest",
     ) -> None:
         """Initialize the tool selector."""
         super().__init__()
@@ -102,6 +105,7 @@ class TsToolSelectorMiddleware(
         self.relevance_threshold = relevance_threshold
         self.max_tools = max_tools
         self.always_include = always_include or []
+        self.classifier_model = classifier_model
 
     def _prepare_selection_request(
         self, request: ModelRequest[ContextT]
@@ -160,6 +164,7 @@ class TsToolSelectorMiddleware(
     def _build_classifier(self, tools: list[BaseTool]) -> TypeSafeClassifier:
         """Build a classifier with one `Noul` question per candidate tool."""
         return TypeSafeClassifier(
+            model=self.classifier_model,
             questions={
                 f"{_TOOL_QUESTION_PREFIX}{tool.name}": Noul(
                     instructions=(
