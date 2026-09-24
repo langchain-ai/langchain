@@ -265,6 +265,32 @@ class TsToolSelectorMiddleware(
         return await handler(modified_request)
 
 
+def _build_choice_classifier(tools: list[BaseTool]) -> TypeSafeClassifier:
+    """Build one categorical question for all candidate tools."""
+    return TypeSafeClassifier(
+        questions={
+            "tool": Choice(
+                instructions=(
+                    "Which one of these tools is needed next to make progress on "
+                    "the user's current request? Select exactly one tool."
+                ),
+                criteria={tool.name: tool.description for tool in tools},
+            )
+        },
+    )
+
+
+def _select_choice_tool_names(
+    response: ClassificationResponse, selection_request: _SelectionRequest
+) -> list[str]:
+    """Require that the chosen tool belongs to the candidates."""
+    answer = response.choices.get("tool")
+    if answer is None or answer.choice not in selection_request.valid_tool_names:
+        msg = "TypeSafe returned no valid tool choice for the current request"
+        raise ValueError(msg)
+    return [answer.choice]
+
+
 class TsChoiceToolSelectorMiddleware(TsToolSelectorMiddleware):
     """Select one candidate tool for the next model call with a TypeSafe `Choice`.
 
@@ -299,31 +325,158 @@ class TsChoiceToolSelectorMiddleware(TsToolSelectorMiddleware):
 
     def _build_classifier(self, tools: list[BaseTool]) -> TypeSafeClassifier:
         """Build one categorical question for all candidate tools."""
-        return TypeSafeClassifier(
-            questions={
-                "tool": Choice(
-                    instructions=(
-                        "Which one of these tools is needed next to make progress on "
-                        "the user's current request? Select exactly one tool."
-                    ),
-                    criteria={tool.name: tool.description for tool in tools},
-                )
-            },
-        )
+        return _build_choice_classifier(tools)
 
     def _select_tool_names(
         self, response: ClassificationResponse, selection_request: _SelectionRequest
     ) -> list[str]:
         """Return only the chosen tool if it is one of the candidates."""
-        answer = response.choices.get("tool")
-        if answer is None or answer.choice not in selection_request.valid_tool_names:
-            msg = "TypeSafe returned no valid tool choice for the current request"
-            raise ValueError(msg)
-        return [answer.choice]
+        return _select_choice_tool_names(response, selection_request)
 
     def _classifier_config(self) -> RunnableConfig:
         """Tag choice selector calls separately in traces."""
         return {"metadata": {"lc_source": "ts_choice_tool_selector"}}
 
 
-__all__ = ["TsChoiceToolSelectorMiddleware", "TsToolSelectorMiddleware"]
+class TsHybridToolSelectorMiddleware(TsToolSelectorMiddleware):
+    """Choose whether to expose no tools, one tool, or several tools per model call.
+
+    A first `Choice` question decides the selection shape from the latest human
+    message. A second classifier selects tools only for `single` or `multiple`:
+    `single` uses the choice selector, while `multiple` uses the thresholded
+    per-tool `Noul` selector. Classifier errors and invalid choices propagate.
+
+    !!! warning
+
+        This middleware is experimental. Its API may change without notice.
+
+    Args:
+        relevance_threshold: Minimum probability for tools in `multiple` mode.
+        max_tools: Maximum number of classified tools in `multiple` mode.
+        always_include: Tool names to pass through without classification.
+    """
+
+    def __init__(
+        self,
+        *,
+        relevance_threshold: float = 0.5,
+        max_tools: int | None = None,
+        always_include: list[str] | None = None,
+    ) -> None:
+        """Initialize the hybrid selector with multi-tool selection settings."""
+        super().__init__(
+            relevance_threshold=relevance_threshold,
+            max_tools=max_tools,
+            always_include=always_include,
+        )
+
+    def _build_shape_classifier(self) -> TypeSafeClassifier:
+        """Build the question that decides how many tools the next step needs."""
+        return TypeSafeClassifier(
+            questions={
+                "shape": Choice(
+                    instructions=(
+                        "Does the user's current request need a tool for the next "
+                        "step? Choose none if no tool is needed, single if one tool "
+                        "is needed, or multiple if several tools are needed."
+                    ),
+                    criteria={
+                        "none": "No tool is needed for the next step.",
+                        "single": "Exactly one tool is needed for the next step.",
+                        "multiple": "Several tools may be needed for the next step.",
+                    },
+                )
+            }
+        )
+
+    def _shape(self, response: ClassificationResponse) -> str:
+        """Require a valid answer before changing the tools available to the model."""
+        answer = response.choices.get("shape")
+        if answer is None or answer.choice not in {"none", "single", "multiple"}:
+            msg = (
+                "TypeSafe returned no valid tool selection shape "
+                "for the current request"
+            )
+            raise ValueError(msg)
+        return answer.choice
+
+    def _classifier_config(self) -> RunnableConfig:
+        """Identify second-stage tool selection separately in traces."""
+        return {"metadata": {"lc_source": "ts_hybrid_tool_selector_stage_2"}}
+
+    def _stage_one_config(self) -> RunnableConfig:
+        """Identify the shape classification separately in traces."""
+        return {"metadata": {"lc_source": "ts_hybrid_tool_selector_stage_1"}}
+
+    @override
+    def wrap_model_call(
+        self,
+        request: ModelRequest[None],
+        handler: Callable[[ModelRequest[None]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT]:
+        """Classify the shape and select tools before invoking the model."""
+        selection_request = self._prepare_selection_request(request)
+        if selection_request is None:
+            return handler(request)
+
+        shape_response = self._build_shape_classifier().invoke(
+            selection_request.last_user_message, config=self._stage_one_config()
+        )
+        shape = self._shape(shape_response)
+        selected = []
+        if shape != "none":
+            classifier = (
+                _build_choice_classifier(selection_request.classifiable_tools)
+                if shape == "single"
+                else self._build_classifier(selection_request.classifiable_tools)
+            )
+            response = classifier.invoke(
+                selection_request.last_user_message, config=self._classifier_config()
+            )
+            selected = (
+                _select_choice_tool_names(response, selection_request)
+                if shape == "single"
+                else self._select_tool_names(response, selection_request)
+            )
+        return handler(self._process_selection(selected, selection_request, request))
+
+    @override
+    async def awrap_model_call(
+        self,
+        request: ModelRequest[None],
+        handler: Callable[[ModelRequest[None]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT]:
+        """Classify the shape and select tools asynchronously."""
+        selection_request = self._prepare_selection_request(request)
+        if selection_request is None:
+            return await handler(request)
+
+        shape_response = await self._build_shape_classifier().ainvoke(
+            selection_request.last_user_message, config=self._stage_one_config()
+        )
+        shape = self._shape(shape_response)
+        selected = []
+        if shape != "none":
+            classifier = (
+                _build_choice_classifier(selection_request.classifiable_tools)
+                if shape == "single"
+                else self._build_classifier(selection_request.classifiable_tools)
+            )
+            response = await classifier.ainvoke(
+                selection_request.last_user_message, config=self._classifier_config()
+            )
+            selected = (
+                _select_choice_tool_names(response, selection_request)
+                if shape == "single"
+                else self._select_tool_names(response, selection_request)
+            )
+        return await handler(
+            self._process_selection(selected, selection_request, request)
+        )
+
+
+__all__ = [
+    "TsChoiceToolSelectorMiddleware",
+    "TsHybridToolSelectorMiddleware",
+    "TsToolSelectorMiddleware",
+]
