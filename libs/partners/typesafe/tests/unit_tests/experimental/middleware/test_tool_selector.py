@@ -109,6 +109,30 @@ def test_middleware_constructs_classifier_per_call() -> None:
     assert "current weather" in questions["tool::get_weather"].instructions
 
 
+@pytest.mark.parametrize("model", ["jev-latest", "semif-qwen3.5-4b"])
+@pytest.mark.parametrize(
+    "selector", [TsToolSelectorMiddleware, TsChoiceToolSelectorMiddleware]
+)
+def test_classifier_uses_requested_model(model: str, selector: type) -> None:
+    """Route both tool selection modes to the configured classifier model."""
+    response = (
+        _choice_response("get_weather")
+        if selector is TsChoiceToolSelectorMiddleware
+        else _response({"get_weather": 0.9})
+    )
+    classifier = _classifier(response)
+    request = _request([get_weather], [HumanMessage("What's the weather?")])
+    middleware = selector(classifier_model=model)
+
+    with patch(
+        "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+        return_value=classifier,
+    ) as classifier_class:
+        middleware.wrap_model_call(request, lambda _req: MagicMock())
+
+    assert classifier_class.call_args.kwargs["model"] == model
+
+
 def test_sync_selection_filters_tools_above_threshold() -> None:
     """Keep only tools whose `Noul` probability clears the threshold."""
     classifier = _classifier(

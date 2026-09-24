@@ -101,7 +101,7 @@ agent = create_agent(
 )
 ```
 
-This variant asks one `Choice` question over the candidate tools and exposes only the chosen tool for the next model call; it chooses again on subsequent calls. Both variants accept `always_include` to keep named tools without classification, and preserve provider-specific tool definitions. This API is experimental and may change without notice.
+This variant asks one `Choice` question over the candidate tools and exposes only the chosen tool for the next model call; it chooses again on subsequent calls. Both variants accept `always_include` to keep named tools without classification, and preserve provider-specific tool definitions. To use SemIf instead of the default Jev model, set `classifier_model="semif-qwen3.5-4b"` on the selector and configure `TYPESAFE_BASE_URL` and `TYPESAFE_API_KEY` for a compatible gateway. This API is experimental and may change without notice.
 
 ### LangChain messages as state
 
