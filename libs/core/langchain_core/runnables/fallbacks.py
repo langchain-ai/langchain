@@ -312,6 +312,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         to_return: dict[int, Any] = {}
         run_again = dict(enumerate(inputs))
         handled_exceptions: dict[int, BaseException] = {}
+        unhandled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
         for runnable in self.runnables:
             outputs = runnable.batch(
@@ -331,7 +332,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     output, self.exceptions_to_handle
                 ):
                     if not return_exceptions:
-                        first_to_raise = first_to_raise or output
+                        if first_to_raise is None:
+                            first_to_raise = output
+                        unhandled_exceptions[i] = output
                     else:
                         handled_exceptions[i] = output
                     run_again.pop(i)
@@ -344,10 +347,19 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     to_return[i] = output
                     run_again.pop(i)
                     handled_exceptions.pop(i, None)
-            if first_to_raise:
-                raise first_to_raise
+            if not run_again and not first_to_raise:
+                break
             if not run_again:
                 break
+
+        # Close root runs for unhandled exceptions (was leaking before)
+        for i, error in unhandled_exceptions.items():
+            run_managers[i].on_chain_error(error)
+        if first_to_raise:
+            # Also close any remaining handled failures before raising
+            for i, error in sorted(handled_exceptions.items()):
+                run_managers[i].on_chain_error(error)
+            raise first_to_raise
 
         sorted_handled_exceptions = sorted(handled_exceptions.items())
         for i, error in sorted_handled_exceptions:
@@ -410,6 +422,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         to_return: dict[int, Output | BaseException] = {}
         run_again = dict(enumerate(inputs))
         handled_exceptions: dict[int, BaseException] = {}
+        unhandled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
         for runnable in self.runnables:
             outputs = await runnable.abatch(
@@ -430,7 +443,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     output, self.exceptions_to_handle
                 ):
                     if not return_exceptions:
-                        first_to_raise = first_to_raise or output
+                        if first_to_raise is None:
+                            first_to_raise = output
+                        unhandled_exceptions[i] = output
                     else:
                         handled_exceptions[i] = output
                     run_again.pop(i)
@@ -444,10 +459,28 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     run_again.pop(i)
                     handled_exceptions.pop(i, None)
 
-            if first_to_raise:
-                raise first_to_raise
+            if not run_again and not first_to_raise:
+                break
             if not run_again:
                 break
+
+        if unhandled_exceptions:
+            await asyncio.gather(
+                *(
+                    run_managers[i].on_chain_error(error)
+                    for i, error in unhandled_exceptions.items()
+                )
+            )
+        if first_to_raise:
+            # Also close any remaining handled failures before raising
+            if handled_exceptions:
+                await asyncio.gather(
+                    *(
+                        run_managers[i].on_chain_error(error)
+                        for i, error in sorted(handled_exceptions.items())
+                    )
+                )
+            raise first_to_raise
 
         sorted_handled_exceptions = sorted(handled_exceptions.items())
         await asyncio.gather(
