@@ -117,7 +117,7 @@ agent = create_agent(
 )
 ```
 
-Before each model call, a `Choice` question against the latest human message picks `none`, `single`, or `multiple`. `none` hides candidate tools without a second classifier call; `single` chooses one tool as in `TsChoiceToolSelectorMiddleware`; `multiple` uses the thresholded, probability-ranked `Noul` batch from `TsToolSelectorMiddleware`. `always_include` tools and provider-specific tool definitions remain available in every mode. Classifier errors and invalid choices raise. This API is experimental and may change without notice.
+Before each model call, a `Choice` question against the latest human message picks `none`, `single`, or `multiple`. `none` hides candidate tools without a second classifier call; `single` chooses one tool as in `TsChoiceToolSelectorMiddleware`; `multiple` uses the thresholded, probability-ranked `Noul` batch from `TsToolSelectorMiddleware`. `always_include` tools and provider-specific tool definitions remain available in every mode. Classifier errors and invalid choices raise. All three selectors default to Jev; to use SemIf, set `classifier_model="semif-qwen3.5-4b"` on the selector and configure `TYPESAFE_BASE_URL` and `TYPESAFE_API_KEY` for a compatible gateway. This API is experimental and may change without notice.
 
 ### LangChain messages as state
 

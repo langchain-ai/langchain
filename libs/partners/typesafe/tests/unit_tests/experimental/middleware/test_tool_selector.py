@@ -124,6 +124,30 @@ def test_middleware_constructs_classifier_per_call() -> None:
     assert "current weather" in questions["tool::get_weather"].instructions
 
 
+@pytest.mark.parametrize("model", ["jev-latest", "semif-qwen3.5-4b"])
+@pytest.mark.parametrize(
+    "selector", [TsToolSelectorMiddleware, TsChoiceToolSelectorMiddleware]
+)
+def test_classifier_uses_requested_model(model: str, selector: type) -> None:
+    """Route Noul and Choice selection to the configured classifier model."""
+    response = (
+        _choice_response("get_weather")
+        if selector is TsChoiceToolSelectorMiddleware
+        else _response({"get_weather": 0.9})
+    )
+    classifier = _classifier(response)
+    request = _request([get_weather], [HumanMessage("What's the weather?")])
+    middleware = selector(classifier_model=model)
+
+    with patch(
+        "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+        return_value=classifier,
+    ) as classifier_class:
+        middleware.wrap_model_call(request, lambda _req: MagicMock())
+
+    assert classifier_class.call_args.kwargs["model"] == model
+
+
 def test_sync_selection_filters_tools_above_threshold() -> None:
     """Keep only tools whose `Noul` probability clears the threshold."""
     classifier = _classifier(
@@ -438,7 +462,8 @@ def test_choice_only_always_included_tools_skips_classifier() -> None:
 
 
 @pytest.mark.parametrize("shape", ["none", "single", "multiple"])
-def test_hybrid_routes_sync(shape: str) -> None:
+@pytest.mark.parametrize("model", ["jev-latest", "semif-qwen3.5-4b"])
+def test_hybrid_routes_sync(shape: str, model: str) -> None:
     """Classify shape once, then invoke only the needed selection stage."""
     first = _classifier(_shape_response(shape))
     second = _classifier(
@@ -451,7 +476,7 @@ def test_hybrid_routes_sync(shape: str) -> None:
         [HumanMessage("Help me"), AIMessage("Next step")],
     )
     middleware = TsHybridToolSelectorMiddleware(
-        max_tools=1, always_include=["get_weather"]
+        max_tools=1, always_include=["get_weather"], classifier_model=model
     )
     seen: list[ModelRequest[Any]] = []
 
@@ -466,6 +491,9 @@ def test_hybrid_routes_sync(shape: str) -> None:
         middleware.wrap_model_call(request, handler)
 
     assert classifier_class.call_count == (1 if shape == "none" else 2)
+    assert all(
+        call.kwargs["model"] == model for call in classifier_class.call_args_list
+    )
     assert classifier_class.call_args_list[0].kwargs["questions"]["shape"].criteria == {
         "none": "No tool is needed for the next step.",
         "single": "Exactly one tool is needed for the next step.",
@@ -499,7 +527,8 @@ def test_hybrid_routes_sync(shape: str) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("shape", ["none", "single", "multiple"])
-async def test_hybrid_routes_async(shape: str) -> None:
+@pytest.mark.parametrize("model", ["jev-latest", "semif-qwen3.5-4b"])
+async def test_hybrid_routes_async(shape: str, model: str) -> None:
     """Use the asynchronous classifier path for every shape."""
     first = _classifier(_shape_response(shape))
     second = _classifier(
@@ -518,11 +547,14 @@ async def test_hybrid_routes_async(shape: str) -> None:
         "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
         side_effect=[first, second],
     ) as classifier_class:
-        await TsHybridToolSelectorMiddleware(max_tools=1).awrap_model_call(
-            request, handler
-        )
+        await TsHybridToolSelectorMiddleware(
+            max_tools=1, classifier_model=model
+        ).awrap_model_call(request, handler)
 
     assert classifier_class.call_count == (1 if shape == "none" else 2)
+    assert all(
+        call.kwargs["model"] == model for call in classifier_class.call_args_list
+    )
     first.ainvoke.assert_awaited_once()
     assert _tool_names(seen[0].tools) == ([] if shape == "none" else ["search_web"])
     if shape == "none":
