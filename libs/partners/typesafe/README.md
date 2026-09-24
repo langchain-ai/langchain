@@ -87,7 +87,7 @@ agent = create_agent(
 )
 ```
 
-The middleware asks one independent `Noul` question per candidate tool ("is this tool needed next?"), batched into a single TypeSafe request against the latest human message, before every model call. Tools whose probability clears `relevance_threshold` (default `0.5`) are kept, ranked by that probability, and capped at `max_tools` if set. Use `always_include` to keep specific tools regardless of classification. This API is experimental and may change without notice.
+The middleware asks one independent `Noul` question per candidate tool ("is this tool needed next?"), batched into a single TypeSafe request against the latest human message, before every model call. Tools whose probability clears `relevance_threshold` (default `0.5`) are kept, ranked by that probability, and capped at `max_tools` if set. Use `always_include` to keep specific tools regardless of classification. To use SemIf instead of the default Jev model, set `classifier_model="semif-qwen3.5-4b"` and configure `TYPESAFE_BASE_URL` and `TYPESAFE_API_KEY` for a gateway that supports SemIf. This API is experimental and may change without notice.
 
 ### LangChain messages as state
 
