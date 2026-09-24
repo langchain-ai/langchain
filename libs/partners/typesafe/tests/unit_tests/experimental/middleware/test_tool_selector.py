@@ -14,6 +14,7 @@ from langchain_core.tools import tool
 from langchain_typesafe import ChoiceAnswer, NoulAnswer, TypeSafeClassifier
 from langchain_typesafe.experimental.middleware import (
     TsChoiceToolSelectorMiddleware,
+    TsHybridToolSelectorMiddleware,
     TsToolSelectorMiddleware,
 )
 from langchain_typesafe.experimental.middleware import __all__ as middleware_all
@@ -56,6 +57,20 @@ def _choice_response(choice: str) -> ClassificationResponse:
                 type="choice",
                 choice=choice,
                 probabilities={choice: 1.0},
+                confidence=1.0,
+            )
+        },
+    )
+
+
+def _shape_response(shape: str) -> ClassificationResponse:
+    return ClassificationResponse(
+        model="jev-latest",
+        answers={
+            "shape": ChoiceAnswer(
+                type="choice",
+                choice=shape,
+                probabilities={shape: 1.0},
                 confidence=1.0,
             )
         },
@@ -422,6 +437,245 @@ def test_choice_only_always_included_tools_skips_classifier() -> None:
     classifier_class.assert_not_called()
 
 
+@pytest.mark.parametrize("shape", ["none", "single", "multiple"])
+def test_hybrid_routes_sync(shape: str) -> None:
+    """Classify shape once, then invoke only the needed selection stage."""
+    first = _classifier(_shape_response(shape))
+    second = _classifier(
+        _choice_response("search_web")
+        if shape == "single"
+        else _response({"search_web": 0.8, "send_email": 0.1})
+    )
+    request = _request(
+        [get_weather, search_web, send_email, {"type": "web_search"}],
+        [HumanMessage("Help me"), AIMessage("Next step")],
+    )
+    middleware = TsHybridToolSelectorMiddleware(
+        max_tools=1, always_include=["get_weather"]
+    )
+    seen: list[ModelRequest[Any]] = []
+
+    def handler(modified: ModelRequest[Any]) -> ModelResponse[Any]:
+        seen.append(modified)
+        return cast("ModelResponse[Any]", MagicMock())
+
+    with patch(
+        "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+        side_effect=[first, second],
+    ) as classifier_class:
+        middleware.wrap_model_call(request, handler)
+
+    assert classifier_class.call_count == (1 if shape == "none" else 2)
+    assert classifier_class.call_args_list[0].kwargs["questions"]["shape"].criteria == {
+        "none": "No tool is needed for the next step.",
+        "single": "Exactly one tool is needed for the next step.",
+        "multiple": "Several tools may be needed for the next step.",
+    }
+    first.invoke.assert_called_once_with(
+        request.messages[0],
+        config={"metadata": {"lc_source": "ts_hybrid_tool_selector_stage_1"}},
+    )
+    assert _tool_names(seen[0].tools) == (
+        ["get_weather"] if shape == "none" else ["search_web", "get_weather"]
+    )
+    assert seen[0].tools[-1] is request.tools[-1]
+    assert request.tools[0] is get_weather
+    if shape == "none":
+        second.invoke.assert_not_called()
+    else:
+        second.invoke.assert_called_once_with(
+            request.messages[0],
+            config={"metadata": {"lc_source": "ts_hybrid_tool_selector_stage_2"}},
+        )
+        questions = classifier_class.call_args.kwargs["questions"]
+        if shape == "single":
+            assert questions["tool"].criteria == {
+                "search_web": search_web.description,
+                "send_email": send_email.description,
+            }
+        else:
+            assert set(questions) == {"tool::search_web", "tool::send_email"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("shape", ["none", "single", "multiple"])
+async def test_hybrid_routes_async(shape: str) -> None:
+    """Use the asynchronous classifier path for every shape."""
+    first = _classifier(_shape_response(shape))
+    second = _classifier(
+        _choice_response("search_web")
+        if shape == "single"
+        else _response({"search_web": 0.8, "send_email": 0.1})
+    )
+    request = _request([get_weather, search_web, send_email], [HumanMessage("Help me")])
+    seen: list[ModelRequest[Any]] = []
+
+    async def handler(modified: ModelRequest[Any]) -> ModelResponse[Any]:
+        seen.append(modified)
+        return cast("ModelResponse[Any]", MagicMock())
+
+    with patch(
+        "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+        side_effect=[first, second],
+    ) as classifier_class:
+        await TsHybridToolSelectorMiddleware(max_tools=1).awrap_model_call(
+            request, handler
+        )
+
+    assert classifier_class.call_count == (1 if shape == "none" else 2)
+    first.ainvoke.assert_awaited_once()
+    assert _tool_names(seen[0].tools) == ([] if shape == "none" else ["search_web"])
+    if shape == "none":
+        second.ainvoke.assert_not_awaited()
+    else:
+        second.ainvoke.assert_awaited_once()
+        assert second.ainvoke.call_args.kwargs["config"]["metadata"] == {
+            "lc_source": "ts_hybrid_tool_selector_stage_2"
+        }
+
+
+@pytest.mark.parametrize("response", [_shape_response("unknown"), _response({})])
+def test_hybrid_rejects_invalid_shape(response: ClassificationResponse) -> None:
+    """Reject unknown or missing shape answers before tool selection."""
+    request = _request([get_weather], [HumanMessage("Help me")])
+    with (
+        patch(
+            "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+            return_value=_classifier(response),
+        ) as classifier_class,
+        pytest.raises(ValueError, match="no valid tool selection shape"),
+    ):
+        TsHybridToolSelectorMiddleware().wrap_model_call(
+            request, lambda _req: MagicMock()
+        )
+    classifier_class.assert_called_once()
+
+
+@pytest.mark.parametrize("stage", [1, 2])
+def test_hybrid_sync_classifier_failure_propagates(stage: int) -> None:
+    """Never continue with guessed tools after a classifier error."""
+    first = _classifier(_shape_response("single"))
+    second = _classifier(_choice_response("get_weather"))
+    (first if stage == 1 else second).invoke.side_effect = RuntimeError("unavailable")
+    request = _request([get_weather], [HumanMessage("Help me")])
+    with (
+        patch(
+            "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+            side_effect=[first, second],
+        ),
+        pytest.raises(RuntimeError, match="unavailable"),
+    ):
+        TsHybridToolSelectorMiddleware().wrap_model_call(
+            request, lambda _req: MagicMock()
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stage", [1, 2])
+async def test_hybrid_async_classifier_failure_propagates(stage: int) -> None:
+    """Never continue after an asynchronous classifier error."""
+    first = _classifier(_shape_response("multiple"))
+    second = _classifier(_response({"get_weather": 0.9}))
+    (first if stage == 1 else second).ainvoke.side_effect = RuntimeError("unavailable")
+    request = _request([get_weather], [HumanMessage("Help me")])
+    with (
+        patch(
+            "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+            side_effect=[first, second],
+        ),
+        pytest.raises(RuntimeError, match="unavailable"),
+    ):
+        await TsHybridToolSelectorMiddleware().awrap_model_call(request, AsyncMock())
+
+
+@pytest.mark.parametrize("response", [_choice_response("invalid"), _response({})])
+def test_hybrid_single_rejects_invalid_tool(response: ClassificationResponse) -> None:
+    """Preserve the choice selector's fail-closed invalid-tool behavior."""
+    first = _classifier(_shape_response("single"))
+    second = _classifier(response)
+    request = _request([get_weather], [HumanMessage("Help me")])
+    with (
+        patch(
+            "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+            side_effect=[first, second],
+        ),
+        pytest.raises(ValueError, match="no valid tool choice"),
+    ):
+        TsHybridToolSelectorMiddleware().wrap_model_call(
+            request, lambda _req: MagicMock()
+        )
+
+
+def test_hybrid_skips_classification_without_candidates() -> None:
+    """Preserve all bypassed tools without calling either classifier."""
+    provider_tool = {"type": "web_search"}
+    request = _request([get_weather, provider_tool], [HumanMessage("Help me")])
+    seen: list[ModelRequest[Any]] = []
+
+    def handler(modified: ModelRequest[Any]) -> ModelResponse[Any]:
+        seen.append(modified)
+        return cast("ModelResponse[Any]", MagicMock())
+
+    with patch(
+        "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier"
+    ) as classifier_class:
+        TsHybridToolSelectorMiddleware(always_include=["get_weather"]).wrap_model_call(
+            request, handler
+        )
+    classifier_class.assert_not_called()
+    assert seen[0] is request
+    assert provider_tool in seen[0].tools
+
+
+def test_hybrid_rejects_missing_always_include() -> None:
+    """Validate bypassed tool names before either selection stage."""
+    request = _request([get_weather], [HumanMessage("Help me")])
+    with pytest.raises(ValueError, match="not found in request"):
+        TsHybridToolSelectorMiddleware(always_include=["send_email"]).wrap_model_call(
+            request, lambda _req: MagicMock()
+        )
+
+
+def test_hybrid_validates_threshold() -> None:
+    """Apply the same threshold validation as the multi-tool selector."""
+    with pytest.raises(ValueError, match="relevance_threshold"):
+        TsHybridToolSelectorMiddleware(relevance_threshold=1.1)
+
+
+def test_hybrid_multiple_can_keep_zero_tools() -> None:
+    """Respect the Noul threshold even when the shape is multiple."""
+    first = _classifier(_shape_response("multiple"))
+    second = _classifier(_response({"get_weather": 0.1}))
+    request = _request([get_weather], [HumanMessage("Help me")])
+    seen: list[ModelRequest[Any]] = []
+
+    def handler(modified: ModelRequest[Any]) -> ModelResponse[Any]:
+        seen.append(modified)
+        return cast("ModelResponse[Any]", MagicMock())
+
+    with patch(
+        "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+        side_effect=[first, second],
+    ):
+        TsHybridToolSelectorMiddleware().wrap_model_call(request, handler)
+    assert seen[0].tools == []
+
+
+@pytest.mark.asyncio
+async def test_hybrid_async_rejects_invalid_shape() -> None:
+    """Reject an invalid stage-one answer before async tool selection."""
+    request = _request([get_weather], [HumanMessage("Help me")])
+    with (
+        patch(
+            "langchain_typesafe.experimental.middleware.tool_selector.TypeSafeClassifier",
+            return_value=_classifier(_shape_response("unexpected")),
+        ) as classifier_class,
+        pytest.raises(ValueError, match="no valid tool selection shape"),
+    ):
+        await TsHybridToolSelectorMiddleware().awrap_model_call(request, AsyncMock())
+    classifier_class.assert_called_once()
+
+
 def test_experimental_public_interface() -> None:
     """Expose the tool selector from the experimental middleware namespace."""
     assert middleware_all == [
@@ -429,5 +683,6 @@ def test_experimental_public_interface() -> None:
         "SkillSource",
         "SkillsMiddleware",
         "TsChoiceToolSelectorMiddleware",
+        "TsHybridToolSelectorMiddleware",
         "TsToolSelectorMiddleware",
     ]

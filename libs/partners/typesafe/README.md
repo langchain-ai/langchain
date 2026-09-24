@@ -103,6 +103,22 @@ agent = create_agent(
 
 This variant asks one `Choice` question over the candidate tools and exposes only the chosen tool for the next model call; it chooses again on subsequent calls. Both variants accept `always_include` to keep named tools without classification, and preserve provider-specific tool definitions. This API is experimental and may change without notice.
 
+### Experimental hybrid tool selector middleware
+
+Use `TsHybridToolSelectorMiddleware` when a step might need no tool, a single tool, or several tools:
+
+```python
+from langchain_typesafe.experimental.middleware import TsHybridToolSelectorMiddleware
+
+agent = create_agent(
+    model,
+    tools=[tool1, tool2, tool3],
+    middleware=[TsHybridToolSelectorMiddleware(relevance_threshold=0.5, max_tools=3)],
+)
+```
+
+Before each model call, a `Choice` question against the latest human message picks `none`, `single`, or `multiple`. `none` hides candidate tools without a second classifier call; `single` chooses one tool as in `TsChoiceToolSelectorMiddleware`; `multiple` uses the thresholded, probability-ranked `Noul` batch from `TsToolSelectorMiddleware`. `always_include` tools and provider-specific tool definitions remain available in every mode. Classifier errors and invalid choices raise. This API is experimental and may change without notice.
+
 ### LangChain messages as state
 
 `BaseMessage` objects and message sequences can appear at the root or anywhere inside JSON state. The integration recursively converts them to objects with `role` and `content` fields while preserving surrounding application data:

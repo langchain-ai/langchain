@@ -7,6 +7,7 @@ from langchain_typesafe.experimental.middleware.skills import (
 )
 from langchain_typesafe.experimental.middleware.tool_selector import (
     TsChoiceToolSelectorMiddleware,
+    TsHybridToolSelectorMiddleware,
     TsToolSelectorMiddleware,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "SkillSource",
     "SkillsMiddleware",
     "TsChoiceToolSelectorMiddleware",
+    "TsHybridToolSelectorMiddleware",
     "TsToolSelectorMiddleware",
 ]
