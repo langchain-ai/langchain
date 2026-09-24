@@ -29,6 +29,12 @@ dependencies = [
     "tiktoken>=0.7.0,<1.0.0",
 ]
 
+[project.optional-dependencies]
+azure-identity = [
+    "azure-identity>=1.25.0,<2.0.0",
+    "aiohttp>=3.11.0,<4.0.0",
+]
+
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/openai"
 Documentation = "https://reference.langchain.com/python/integrations/langchain_openai/"

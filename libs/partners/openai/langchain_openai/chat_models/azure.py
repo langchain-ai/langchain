@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from importlib import import_module
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar
 
 import openai
@@ -28,6 +29,33 @@ logger = logging.getLogger(__name__)
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
 _DictOrPydantic: TypeAlias = dict | _BM
+_AZURE_OPENAI_SCOPE = "https://cognitiveservices.azure.com/.default"
+_AZURE_WORKLOAD_IDENTITY_ENV_VARS = (
+    "AZURE_CLIENT_ID",
+    "AZURE_TENANT_ID",
+    "AZURE_FEDERATED_TOKEN_FILE",
+)
+
+
+def _get_azure_workload_identity_token_providers() -> tuple[
+    Callable[[], str] | None, Callable[[], Awaitable[str]] | None
+]:
+    if not all(os.getenv(key) for key in _AZURE_WORKLOAD_IDENTITY_ENV_VARS):
+        return None, None
+    try:
+        azure_identity = import_module("azure.identity")
+        azure_identity_aio = import_module("azure.identity.aio")
+    except ImportError:
+        return None, None
+    sync_provider = azure_identity.get_bearer_token_provider(
+        azure_identity.WorkloadIdentityCredential(),
+        _AZURE_OPENAI_SCOPE,
+    )
+    async_provider = azure_identity_aio.get_bearer_token_provider(
+        azure_identity_aio.WorkloadIdentityCredential(),
+        _AZURE_OPENAI_SCOPE,
+    )
+    return sync_provider, async_provider
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -663,6 +691,21 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'
                 )
                 raise ValueError(msg)
+
+        if not any(
+            (
+                self.openai_api_key,
+                self.azure_ad_token,
+                self.azure_ad_token_provider,
+                self.azure_ad_async_token_provider,
+            )
+        ):
+            sync_provider, async_provider = (
+                _get_azure_workload_identity_token_providers()
+            )
+            self.azure_ad_token_provider = sync_provider
+            self.azure_ad_async_token_provider = async_provider
+
         client_params: dict = {
             "api_version": self.openai_api_version,
             "azure_endpoint": self.azure_endpoint,
