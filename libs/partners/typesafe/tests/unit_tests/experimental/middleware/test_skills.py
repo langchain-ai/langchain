@@ -331,5 +331,6 @@ def test_experimental_public_interface() -> None:
         "SkillSource",
         "SkillsMiddleware",
         "TsChoiceToolSelectorMiddleware",
+        "TsHybridToolSelectorMiddleware",
         "TsToolSelectorMiddleware",
     ]
