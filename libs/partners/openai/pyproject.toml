@@ -30,7 +30,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-azure-identity = ["azure-identity>=1.25.0,<2.0.0"]
+azure-identity = [
+    "azure-identity>=1.25.0,<2.0.0",
+    "aiohttp>=3.11.0,<4.0.0",
+]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/openai"
