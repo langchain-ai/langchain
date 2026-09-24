@@ -106,7 +106,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
         from langchain_anthropic import ChatAnthropic
 
         model = ChatAnthropic(
-            model_name="claude-sonnet-4-5-20250929", rate_limiter=rate_limiter
+            model_name="claude-sonnet-5", rate_limiter=rate_limiter
         )
 
         for _ in range(5):
