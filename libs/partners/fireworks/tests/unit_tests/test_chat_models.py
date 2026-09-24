@@ -57,6 +57,7 @@ from langchain_fireworks.chat_models import (
     _update_token_usage,
     _usage_to_metadata,
 )
+from langchain_fireworks.data._profiles import _PROFILES
 
 MODEL_NAME = "accounts/fireworks/models/test-model"
 
@@ -103,6 +104,15 @@ def test_fireworks_model_param() -> None:
     llm = ChatFireworks(model_name="foo", api_key="fake-key")  # type: ignore[call-arg, arg-type]
     assert llm.model_name == "foo"
     assert llm.model == "foo"
+
+
+@pytest.mark.parametrize("model_name", _PROFILES)
+def test_model_profile_rejects_native_pdf_input(model_name: str) -> None:
+    profile = _make_model(model=model_name).profile
+
+    assert profile is not None
+    assert profile["pdf_inputs"] is False
+    assert profile["pdf_tool_message"] is False
 
 
 def test_convert_dict_to_message_with_reasoning_content() -> None:

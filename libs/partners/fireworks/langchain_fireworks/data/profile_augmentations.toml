@@ -2,6 +2,8 @@ provider = "fireworks-ai"
 
 [overrides]
 tool_call_streaming = true
+pdf_inputs = false
+pdf_tool_message = false
 
 [overrides."accounts/fireworks/models/deepseek-v4-pro"]
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh", "max"]
