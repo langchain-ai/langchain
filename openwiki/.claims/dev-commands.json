@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7dd5ad8767d8a3f658ed06a962ccaafe416623877d4864ce71de856a4ae7b52f",
+  "pageVersion": "sha256:e0c1e432eb3a9f97814ec19fdf745a5ea2d49c993a0cd79a67a32490ea2dd9e7",
   "claims": [
     {
       "id": "claim_42b2b3c1ac6e4a938efa7b2651c79b81",
       "statement": "The LangChain monorepo uses uv for dependency management, with each package in libs/ maintaining its own pyproject.toml and uv.lock file. Dependencies are installed via uv sync, with optional group selectors (--group test, --group lint, --all-groups) to control which tools and test dependencies are available.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L43-L63",
+          "resource": "repo://AGENTS.md#L43-L63",
           "version": "repo-lines-v1:sha256:18c23a068133429888d5554c52abc7fad7af4e7cfc99ede025695ab2769177cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlOGYyN2U5YmQ4NzAwYmMxMzlhNWEwOGFjMWRlZTY1MTZjYTE4NDBhMjA1YTZmN2U3MzJhZmVhNzE1ZTk2MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0ZTBkNjliZDQ4MjFmNTY2NDVmMjAyZTMxMDA5OWI4NmM0ZTVlYjkyOWMzOTQzNDE1M2U1Yjc2Y2M5NjY5MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4YWEwOTVmYTY5YmU0NmRmODUyZGRhMjE2NDcxMzFmMmIwMmMyYjIyZTIzOWY4YzdmZGUwZjJkZWJmZmM3OTcifQ"
         },
         {
@@ -53,7 +53,7 @@
       "statement": "Unit tests reside in tests/unit_tests/ and run with socket restrictions (--disable-socket --allow-unix-socket) to prevent accidental network calls. Integration tests in tests/integration_tests/ are run separately with full network access via make integration_tests.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L199-L205",
+          "resource": "repo://AGENTS.md#L199-L205",
           "version": "repo-lines-v1:sha256:796f55ce45583a14e8b50842b84a1c8a2f7583da169c91d9c35b00647d9eedea:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGZjNzE3MTYzNzQ5NjY3Y2JlZjJlNTY4OGRkMGIwM2YzNGY5NzhlYjdhZWM2ZTFiN2M4NTM2MjNjMmMwNmExMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjk1ZjAxY2Q1ODhjZGIxMTlkYjhlNjcxNjMyZjRhOWU2ZTVlN2M5MGEzYTcyOTRhNzRmNDU1ODg0ZTg5YmRmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTg4ZDBjN2YwMDY1ODgwZWY3MDY1MmM5N2QxOWU1MzQ2NDUxMTllNTVmOWMwYTMxZmI1OTMxNGZmYzQ1N2MxZSJ9"
         },
         {
@@ -71,7 +71,7 @@
       "statement": "Ruff is the primary linting and formatting tool. make lint runs ruff check (linter), ruff format --diff (format checking), and mypy (type checking). make format applies ruff format and ruff check --fix to auto-fix issues. Ruff checks and formats Python files and Jupyter notebooks.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L74-L82",
+          "resource": "repo://AGENTS.md#L74-L82",
           "version": "repo-lines-v1:sha256:b82a369b901d62f1b1145bc7b798f34b59789353970045ac54779e7192c3a67e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGU0YjVhMWE1NGExNjUwNTViMWUyODYzMGJlZWM5ZWIxOTM3ZDM3MDkxZjYxNjJmNDM1MzU5MDg3NmUzOTZlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWViNmQzY2I2YzNhY2FhZDAxYjI0MDRkYWNkZDA0NGJhMWMzYjU3MGE0ODA1ODRkYWQzMDVlYmI0MTRiNTkzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMxYWViMDIxYTA2MjZlNDBhZWQ3YWQ3NjE4NjJiYzdiOWRkMjI2NjBhOWFlYTg1YTA2YmM5NDZiYWFmZDUzMiJ9"
         },
         {
@@ -85,7 +85,7 @@
       "statement": "Mypy provides static type checking via the make type target. The make lint target includes mypy checking. Type hints are required on all public functions and return types according to code quality standards.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L175-L192",
+          "resource": "repo://AGENTS.md#L175-L192",
           "version": "repo-lines-v1:sha256:640ff52e1d50406006089cd00dc65c5d4a080be0ef2cd5d06025102cd8d709dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5OWQ1MjI2Y2I0MGM4OGIwNzY5ZjRlZjQ1Yjg0Mjk3NDJkZjY4YTIzMTkyYjhkMmQ3N2QxNjhjMDgxZWEwYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YTg2ZTkyZWY5ZGMxNDM5ZTliZGY3ODJmNzYyOGQ0Y2VkN2JiZGQwZjBjMTMxYzFkZTc1NjFlMDQzYmNhNjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyODA3ZjgxYjMwMTViMGZkNDhhMWE1NDQyY2E0Y2FjNjRlMTc5ZTBjMDc3ODNjZDZkYmZmYzZjMjNhMDE3OWIifQ"
         },
         {
@@ -127,7 +127,7 @@
       "statement": "Targeted testing is supported via uv run --group test pytest <file> for any test file, and the make test target accepts TEST_FILE parameter to run tests in a specific file or directory (default: tests/unit_tests/).",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L65-L72",
+          "resource": "repo://AGENTS.md#L65-L72",
           "version": "repo-lines-v1:sha256:31a4bfdbc86236cc94b3c911a3021bae7225923c76578064979e5940b39e80e2:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWRlMmY1MzI4ZWU2ZTgwNTBlOGFhZmQ4ZGM4NjlhMDY5Y2Q5NTg0ZWRhYWY1NGZlNTg5ZDczYzNiN2RjZDc5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTEzYTY5MWJiMDQ5NzI2YTFiMjExODRmZWUxZWRiZDI1ODcyYjY5NjUyNjJiYzVmMmRjYzU0ZTMyNDY5NjMxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTY5YzI1Mzg5YzNjNmNiNmRlZmM3ZDU5YmJhZmZjOGZmOWY2OGMwZjkxNTc5NjhmYjdiNzA1OGNhYTk2Y2UyMSJ9"
         },
         {
@@ -155,7 +155,7 @@
       "statement": "To develop a single package, navigate to its directory (e.g., cd libs/langchain_v1), run uv sync --all-groups to install dependencies, then use the same make targets (test, lint, format, type). Each package maintains its own Makefile with consistent targets.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L43-L63",
+          "resource": "repo://AGENTS.md#L43-L63",
           "version": "repo-lines-v1:sha256:18c23a068133429888d5554c52abc7fad7af4e7cfc99ede025695ab2769177cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlOGYyN2U5YmQ4NzAwYmMxMzlhNWEwOGFjMWRlZTY1MTZjYTE4NDBhMjA1YTZmN2U3MzJhZmVhNzE1ZTk2MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0ZTBkNjliZDQ4MjFmNTY2NDVmMjAyZTMxMDA5OWI4NmM0ZTVlYjkyOWMzOTQzNDE1M2U1Yjc2Y2M5NjY5MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4YWEwOTVmYTY5YmU0NmRmODUyZGRhMjE2NDcxMzFmMmIwMmMyYjIyZTIzOWY4YzdmZGUwZjJkZWJmZmM3OTcifQ"
         },
         {
@@ -177,6 +177,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-21T08:30:16.745Z"
   }
 }

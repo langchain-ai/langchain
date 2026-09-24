@@ -1792,6 +1792,30 @@ def test_get_buffer_string_with_tool_calls() -> None:
     assert "NYC" in result
 
 
+def test_get_buffer_string_abbreviates_long_tool_call_ids_in_xml_only() -> None:
+    """Long IDs are shortened in display text without modifying protocol messages."""
+    long_id = "call_" + "thought_signature" * 100
+    message = AIMessage(
+        content="calling",
+        tool_calls=[
+            {"name": "search", "args": {"query": "weather"}, "id": long_id},
+            {"name": "search", "args": {}, "id": "call_short"},
+        ],
+    )
+    result = ToolMessage(content="result", tool_call_id=long_id)
+
+    rendered = get_buffer_string([message, result], format="xml")
+    prefix = get_buffer_string([message, result])
+
+    assert f"{long_id[:64]}..." in rendered
+    assert long_id not in rendered
+    assert "call_short" in rendered
+    assert "result" in rendered
+    assert long_id in prefix
+    assert message.tool_calls[0]["id"] == long_id
+    assert result.tool_call_id == long_id
+
+
 def test_get_buffer_string_with_tool_calls_empty_content() -> None:
     """Test `get_buffer_string` with `tool_calls` and empty `content`."""
     messages = [

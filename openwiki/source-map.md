@@ -44,10 +44,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-22T08:27:06.345Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-08T08:27:09.597Z
+    at: 2026-09-22T08:27:06.345Z
 ---
 
 ## Overview
@@ -89,7 +89,7 @@ This page provides a quick reference for locating code by topic in the LangChain
 
 ```
 /libs/
-├── core/                           # langchain-core: Base abstractions (v1.6.2)
+├── core/                           # langchain-core: Base abstractions (v1.6.4)
 │   ├── langchain_core/
 │   │   ├── language_models/        # BaseChatModel and language model abstractions
 │   │   ├── messages/               # Message types and content blocks
@@ -106,7 +106,7 @@ This page provides a quick reference for locating code by topic in the LangChain
 │   ├── Makefile
 │   └── pyproject.toml
 │
-├── langchain_v1/                   # langchain: Orchestration and agents (v1.4.0)
+├── langchain_v1/                   # langchain: Orchestration and agents (v1.4.2)
 │   ├── langchain/
 │   │   ├── agents/
 │   │   │   ├── factory.py          # Agent factory and graph construction
@@ -266,8 +266,8 @@ The `BaseTool` in `repo://libs/core/langchain_core/tools/base.py` provides:
 
 ```
 User Applications
-  ├─→ langchain (v1.4.0)
-  │    ├─→ langchain-core (v1.6.2)
+  ├─→ langchain (v1.4.2)
+  │    ├─→ langchain-core (v1.6.4)
   │    └─→ LangGraph (state machines)
   │
   ├─→ langchain-core (direct use)

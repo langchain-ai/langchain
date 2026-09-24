@@ -12,6 +12,7 @@ This repository is structured as a monorepo, with various packages located in th
 core/             # Core primitives and abstractions for langchain
 langchain/        # langchain-classic
 langchain_v1/     # langchain
+model-profiles/   # Model capability profiles and CLI (`langchain-model-profiles`)
 partners/         # Certain third-party providers integrations (see below)
 standard-tests/   # Standardized tests for integrations
 text-splitters/   # Text splitter utilities

@@ -5,12 +5,12 @@ okf_version: "0.2"
 # Files
 
 - [Agent Execution Flow and Loop Control](agent-execution.md) - Traces the runtime lifecycle of an agent from user input through model invocation, tool dispatch, and loop termination conditions, with detailed state management and middleware integration points.
-- [Create a basic agent](agent-factory.md)
+- [Agent Factory and create_agent](agent-factory.md) - The agent factory constructs state machines that orchestrate conversation flow between a language model, tool execution, and middleware layers. The create_agent function handles tool binding, structured output, state schema resolution, and graph compilation.
 - [LangChain System Architecture](architecture.md) - High-level decomposition of the LangChain framework into three layers: langchain-core (abstractions), langchain (orchestration and agents), and partners (provider integrations), showing dependencies, component responsibilities, and extension boundaries.
 - [Callback System and Handler Integration](callbacks.md) - Document the callback handler architecture, integration with runnables and chat models, and patterns for tracking execution events, streaming, and instrumentation.
 - [Chat Model Interface and Lifecycle](chat-models.md) - Document BaseChatModel protocol, input/output handling, streaming, and integration points with callbacks and model profiling.
 - [CI/CD Workflows: GitHub Actions and Release Process](ci-workflows.md)
-- [Dict syntax creates a RunnableParallel](composability.md)
+- [Composability and LCEL Chains](composability.md) - How Runnable components compose through LCEL operators, creating reusable workflows with automatic async, batch, and streaming support.
 - [Development Commands and Local Setup](dev-commands.md) - Quick reference for uv, make, lint, test, and type-checking commands in the LangChain monorepo, including environment setup, pre-commit hooks, and testing workflows.
 - [Integration Testing: Live API Tests and VCR Cassettes](integration-tests.md) - How to write integration tests that call real model APIs with VCR cassette recording for CI compatibility, including environment setup, cassette management, and parameterization patterns.
 - [Bearer token](mcp-integration.md)
@@ -25,5 +25,5 @@ okf_version: "0.2"
 - [Source Map: Repository File Organization](source-map.md) - Quick reference for locating code by topic, mapping LangChain concepts to their implementation paths across the monorepo including core abstractions, agents, middleware, partners, and configuration files.
 - [Streaming: Token-by-Token Output](streaming.md) - How streaming works across LLM components and chains, token-by-token delivery via AIMessageChunk, callback integration, and memory/latency tradeoffs.
 - [AutoStrategy (recommended)](structured-output.md)
-- [Form 1: No arguments (name from function)](tools.md)
+- [Tools and Tool Binding](tools.md) - LangChain's tool system enables agents and language models to execute structured actions through schema-aware components with automatic validation, error handling, and callback integration.
 - [Unit Testing: Strategies and Patterns](unit-tests.md) - How to write unit tests for langchain-core and langchain components using pytest, fixtures, mocking, and standard test classes from langchain-tests.

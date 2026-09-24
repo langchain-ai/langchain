@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bd16b5e2d2f508d0aba8962fb1e836569b2a9af1615a3ec3a278948b6b703043",
+  "pageVersion": "sha256:6d2dd5c14c9fd39233694a1e55b4834368b448da97791dd15f15bc0543d0a4ad",
   "claims": [
     {
       "id": "claim_601f8ad960a04f2195c35dab22235db1",
@@ -80,11 +80,11 @@
     },
     {
       "id": "claim_28399de8706b4de9a4940d95163c6961",
-      "statement": "_make_tools_to_model_edge decides after tool execution whether to continue the loop or exit. It exits if no AIMessage exists, if all executed client-side tools have return_direct=True, or if a structured output tool was executed. Otherwise it loops back to the model via loop_entry_node.",
+      "statement": "_make_tools_to_model_edge decides after tool execution whether to continue the loop or exit. It routes back to the model if no AIMessage exists (for recovery). It exits if all executed client-side tools have return_direct=True or if a structured output tool was executed. Otherwise it loops back to the model via model_destination.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L2004-L2038",
-          "version": "repo-lines-v1:sha256:d4d2f05e92f40a9bf4105bce6ae4578bc49a8e2803c4a74c7e3f86cb5c8b91d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxY2ZjMmJmMGMwNmFhZmMyOTNjNWE3MTkzYzc2MjFhMmQwYjIyOWZjNGE1MWZjZmRlOGUwYmRiYzUwNjUyMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZTE2NjY1MDcwYTE2MzkwYzYyZjliN2NkNWE2ZWQ5ZmI2ODZhODE2ZGNkNjAwMjBlNTNkMzhmNjAxYzUxYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjM2UxMWUyMGMwZTFlZGQ0ZTVkOWQ4NGUxYTI4NjgzNTVlMzhlY2Q5MmRlMWE5OTIyNWRmOGZlN2RiZWZiZDAifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L2004-L2043",
+          "version": "repo-lines-v1:sha256:600efbf881448e5cb5250d3ab7f403b67c281cc1963747fb68ba2b03ce762369:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxY2ZjMmJmMGMwNmFhZmMyOTNjNWE3MTkzYzc2MjFhMmQwYjIyOWZjNGE1MWZjZmRlOGUwYmRiYzUwNjUyMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NDc5Y2NlZDY2YWZmYzNjMDk5ODhiNTAzODY1NmNhNTJhOWY5YTQ0NTJjMWE0ZjZlZTQ1ZDVlYzViNDU3YTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZTE2NjY1MDcwYTE2MzkwYzYyZjliN2NkNWE2ZWQ5ZmI2ODZhODE2ZGNkNjAwMjBlNTNkMzhmNjAxYzUxYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzYTAxMjkzY2I3Njk4NDI1NTk0MzViYzQ2ZGZjNTFhYTBhZmNlMWEzYjA0NzE0ZDNiMTdlMzA2YzdiMjQxZTAifQ"
         }
       ]
     },
@@ -134,15 +134,15 @@
     },
     {
       "id": "claim_6f03a00d76e84d2b9df99159d2c73d41",
-      "statement": "The agent loop terminates when: (1) model does not call tools (tool_calls is empty), (2) middleware sets jump_to='end', (3) all pending tool calls are structured output tools, (4) a structured output tool is executed, (5) a tool with return_direct=True is executed, or (6) an unhandled exception occurs.",
+      "statement": "The agent loop terminates when: (1) model does not call tools (tool_calls is empty), (2) middleware sets jump_to='end', (3) a structured output tool is executed and its response is parsed, (4) a tool with return_direct=True is executed, (5) state['structured_response'] is populated after a model invocation, or (6) an unhandled exception occurs.",
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1923-L1975",
           "version": "repo-lines-v1:sha256:964403b0cff43101e0a6d7fc69ae5b93dc942efb343cfc9f243a36cbe0684356:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MTk5NmZkM2IyMzMzY2I4NjM2ZDA0ODRiZjE5M2FiMTBkM2EzMDIyYTEzNjVjYjUyMWM1OGViZjBlZDU5NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlY2FhN2I3NjczYjkzMmU5YTQ1M2U2ZGJlNWFiN2E2NTQ4ZTkwYzFkMjdiZWQ0NWI2ZDU2NTUwODNmZTg1NmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxMTJhMDFhZTM4MjIzNGM5YTBiNzQxOGIxNDJjMGI4MWQ2ODMwODhhMDAzYWVjNDgxZTkyNWYzOTk3NjhjNDQifQ"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L2004-L2038",
-          "version": "repo-lines-v1:sha256:d4d2f05e92f40a9bf4105bce6ae4578bc49a8e2803c4a74c7e3f86cb5c8b91d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxY2ZjMmJmMGMwNmFhZmMyOTNjNWE3MTkzYzc2MjFhMmQwYjIyOWZjNGE1MWZjZmRlOGUwYmRiYzUwNjUyMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZTE2NjY1MDcwYTE2MzkwYzYyZjliN2NkNWE2ZWQ5ZmI2ODZhODE2ZGNkNjAwMjBlNTNkMzhmNjAxYzUxYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjM2UxMWUyMGMwZTFlZGQ0ZTVkOWQ4NGUxYTI4NjgzNTVlMzhlY2Q5MmRlMWE5OTIyNWRmOGZlN2RiZWZiZDAifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L2004-L2043",
+          "version": "repo-lines-v1:sha256:600efbf881448e5cb5250d3ab7f403b67c281cc1963747fb68ba2b03ce762369:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxY2ZjMmJmMGMwNmFhZmMyOTNjNWE3MTkzYzc2MjFhMmQwYjIyOWZjNGE1MWZjZmRlOGUwYmRiYzUwNjUyMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NDc5Y2NlZDY2YWZmYzNjMDk5ODhiNTAzODY1NmNhNTJhOWY5YTQ0NTJjMWE0ZjZlZTQ1ZDVlYzViNDU3YTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZTE2NjY1MDcwYTE2MzkwYzYyZjliN2NkNWE2ZWQ5ZmI2ODZhODE2ZGNkNjAwMjBlNTNkMzhmNjAxYzUxYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzYTAxMjkzY2I3Njk4NDI1NTk0MzViYzQ2ZGZjNTFhYTBhZmNlMWEzYjA0NzE0ZDNiMTdlMzA2YzdiMjQxZTAifQ"
         }
       ]
     },
@@ -247,6 +247,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-21T08:30:16.745Z"
   }
 }

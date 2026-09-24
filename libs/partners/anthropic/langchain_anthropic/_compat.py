@@ -6,6 +6,16 @@ from typing import Any, cast
 from langchain_core.messages import content as types
 
 
+def _unwrap_non_standard(block: dict) -> dict:
+    """Unwrap a provider-native dictionary from a standard content block."""
+    if block.get("type") == "non_standard" and isinstance(
+        value := block.get("value"),
+        dict,
+    ):
+        return value
+    return block
+
+
 def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
     """Convert LangChain annotation format to Anthropic's native citation format."""
     if annotation["type"] == "non_standard_annotation":

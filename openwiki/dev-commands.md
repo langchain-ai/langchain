@@ -5,12 +5,12 @@ description: "Quick reference for uv, make, lint, test, and type-checking comman
 tags: [development, build, testing, linting, typing, uv, make, pre-commit, local-setup]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
-  - id: openwiki-source-a2371d6362e5db4bc834ad03
-    resource: repo://CLAUDE.md
+  - id: openwiki-source-8037e2358a2c4f9b2c722a11
+    resource: repo://AGENTS.md
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
   - id: openwiki-source-3486a94e6eb23a78271a5bfb
@@ -45,7 +45,7 @@ uv sync --group test
 uv sync --group lint
 ```
 
-The `--all-groups` flag ensures you have tools for linting, type checking, and testing. See the [Contributing Guide in CLAUDE.md](repo://CLAUDE.md) for detailed development conventions and PR guidelines.
+The `--all-groups` flag ensures you have tools for linting, type checking, and testing. See the [Contributing Guide in AGENTS.md](repo://AGENTS.md) for detailed development conventions and PR guidelines.
 
 ### Pre-Commit Setup
 
@@ -388,6 +388,6 @@ pre-commit run --all-files
 
 ## Related Documentation
 
-- [Contributing Guide](repo://CLAUDE.md): Detailed development conventions, PR templates, and code standards
+- [Contributing Guide](repo://AGENTS.md): Detailed development conventions, PR templates, and code standards
 - [System Architecture](repo:///openwiki/architecture.md): Three-layer design and module responsibilities
 - [CI/CD Workflows](repo:///openwiki/ci-workflows.md): GitHub Actions automation and release process

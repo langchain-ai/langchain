@@ -31,7 +31,7 @@ resolution-markers = [
     "python_full_version < '3.11' and platform_python_implementation == 'PyPy'",
 ]
 dependencies = [
-    { name = "caio", version = "0.9.25", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "caio", version = "0.9.25", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/67/e2/d7cb819de8df6b5c1968a2756c3cb4122d4fa2b8fc768b53b7c9e5edb646/aiofile-3.9.0.tar.gz", hash = "sha256:e5ad718bb148b265b6df1b3752c4d1d83024b93da9bd599df74b9d9ffcf7919b", size = 17943, upload-time = "2024-10-08T10:39:35.846Z" }
 wheels = [
@@ -55,7 +55,7 @@ resolution-markers = [
     "python_full_version == '3.11.*' and platform_python_implementation == 'PyPy'",
 ]
 dependencies = [
-    { name = "caio", version = "0.12.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "caio", version = "0.12.2", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/14/31/edb06aabd8f8f0b56d659f30800795f40b93cba96be946ce179f6931e3a5/aiofile-3.12.3.tar.gz", hash = "sha256:caa6aa746b5e47e2165f7abd741b6415e49cf4d44fddc0f61844612cc3924d41", size = 21600, upload-time = "2026-08-04T22:59:27.171Z" }
 wheels = [
@@ -251,17 +251,16 @@ wheels = [
 
 [[package]]
 name = "anyio"
-version = "4.11.0"
+version = "4.14.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "idna" },
-    { name = "sniffio" },
     { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c6/78/7d432127c41b50bccba979505f272c16cbcadcc33645d5fa3a738110ae75/anyio-4.11.0.tar.gz", hash = "sha256:82a8d0b81e318cc5ce71a5f1f8b5c4e63619620b63141ef8c995fa0db95a57c4", size = 219094, upload-time = "2025-09-23T09:19:12.58Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/61/cc/a381afa6efea9f496eff839d4a6a1aed3bfafc7b3ab4b0d1b243a12573dd/anyio-4.14.2.tar.gz", hash = "sha256:cfa139f3ed1a23ee8f88a145ddb5ac7605b8bbfd8592baacd7ce3d8bb4313c7f", size = 260176, upload-time = "2026-07-12T20:29:07.082Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/15/b3/9b1a8074496371342ec1e796a96f99c82c945a339cd81a8e73de28b4cf9e/anyio-4.11.0-py3-none-any.whl", hash = "sha256:0287e96f4d26d4149305414d4e3bc32f0dcd0862365a4bddea19d7a1ec38c4fc", size = 109097, upload-time = "2025-09-23T09:19:10.601Z" },
+    { url = "https://files.pythonhosted.org/packages/da/35/f2287558c17e29fafc8ef3daf819bb9834061cfa43bff8014f7df7f63bdc/anyio-4.14.2-py3-none-any.whl", hash = "sha256:9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494", size = 125813, upload-time = "2026-07-12T20:29:05.763Z" },
 ]
 
 [[package]]
@@ -1533,12 +1532,12 @@ resolution-markers = [
     "python_full_version < '3.11' and platform_python_implementation == 'PyPy'",
 ]
 dependencies = [
-    { name = "google-api-core", marker = "python_full_version < '3.13'" },
-    { name = "google-auth", marker = "python_full_version < '3.13'" },
-    { name = "google-cloud-core", marker = "python_full_version < '3.13'" },
-    { name = "google-crc32c", marker = "python_full_version < '3.13'" },
-    { name = "google-resumable-media", marker = "python_full_version < '3.13'" },
-    { name = "requests", marker = "python_full_version < '3.13'" },
+    { name = "google-api-core" },
+    { name = "google-auth" },
+    { name = "google-cloud-core" },
+    { name = "google-crc32c" },
+    { name = "google-resumable-media" },
+    { name = "requests" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6d/98/c0c6d10f893509585c755a6567689e914df3501ae269f46b0d67d7e7c70a/google_cloud_storage-3.5.0.tar.gz", hash = "sha256:10b89e1d1693114b3e0ca921bdd28c5418701fd092e39081bb77e5cee0851ab7", size = 17242207, upload-time = "2025-11-05T12:41:02.715Z" }
 wheels = [
@@ -1558,12 +1557,12 @@ resolution-markers = [
     "python_full_version == '3.13.*' and platform_python_implementation != 'PyPy'",
 ]
 dependencies = [
-    { name = "google-api-core", marker = "python_full_version >= '3.13'" },
-    { name = "google-auth", marker = "python_full_version >= '3.13'" },
-    { name = "google-cloud-core", marker = "python_full_version >= '3.13'" },
-    { name = "google-crc32c", marker = "python_full_version >= '3.13'" },
-    { name = "google-resumable-media", marker = "python_full_version >= '3.13'" },
-    { name = "requests", marker = "python_full_version >= '3.13'" },
+    { name = "google-api-core" },
+    { name = "google-auth" },
+    { name = "google-cloud-core" },
+    { name = "google-crc32c" },
+    { name = "google-resumable-media" },
+    { name = "requests" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ce/7e/73bb7512df1d1aad6ce3f9aed847cd40e0cd400ba4a85d86ab8eb412e9cc/google_cloud_storage-3.13.1.tar.gz", hash = "sha256:a80bf8cac2794808aa61c50c5f769ecbbe2d10331bacd0d69d30e59b14b346b2", size = 17341051, upload-time = "2026-08-06T06:24:42.229Z" }
 wheels = [
@@ -2002,7 +2001,7 @@ name = "importlib-metadata"
 version = "9.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "zipp", marker = "python_full_version < '3.12'" },
+    { name = "zipp" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a9/01/15bb152d77b21318514a96f43af312635eb2500c96b55398d020c93d86ea/importlib_metadata-9.0.0.tar.gz", hash = "sha256:a4f57ab599e6a2e3016d7595cfd72eb4661a5106e787a95bcc90c7105b831efc", size = 56405, upload-time = "2026-03-20T06:42:56.999Z" }
 wheels = [
@@ -2283,7 +2282,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -2443,7 +2442,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.7.0"
+version = "1.7.2"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2582,7 +2581,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.6.1"
+version = "1.6.3"
 source = { editable = "../core" }
 dependencies = [
     { name = "httpx" },
@@ -2786,7 +2785,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.6.0"
+version = "1.6.2"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "certifi" },
@@ -2890,7 +2889,7 @@ requires-dist = [
     { name = "pytest-codspeed" },
     { name = "pytest-recording" },
     { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
-    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<7.0.0" },
     { name = "vcrpy", specifier = ">=8.2.1,<9.0.0" },
 ]
 

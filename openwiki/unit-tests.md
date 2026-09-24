@@ -5,7 +5,7 @@ description: "How to write unit tests for langchain-core and langchain component
 tags: [unit-tests, pytest, testing, fixtures, mocking, chat-models, tools, embeddings, type-checking, mypy]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
@@ -33,7 +33,7 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/embeddings.py
   - id: openwiki-source-a6b31954b6df57580d0f3ed0
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/tools.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
 ---
 
 ## Overview
@@ -248,10 +248,24 @@ The root `conftest.py` in `tests/unit_tests/` provides shared fixtures and pytes
 def blockbuster() -> Iterator[BlockBuster]:
     """Blockbuster fixture prevents blocking I/O in async code."""
     with blockbuster_ctx("langchain_core") as bb:
-        # Allow blocking in specific functions (e.g., internal API checks)
+        # Allow specific blocking operations in specific locations
         bb.functions["os.stat"].can_block_in(
             "langchain_core/_api/internal.py", "is_caller_internal"
+        ).can_block_in(
+            "langchain_core/runnables/base.py", "__repr__"
+        ).can_block_in(
+            "langsmith/client.py", "_default_retry_config"
         )
+        bb.functions["os.path.abspath"].can_block_in(
+            "langchain_core/_api/internal.py", "is_caller_internal"
+        ).can_block_in(
+            "langchain_core/runnables/base.py", "__repr__"
+        )
+        bb.functions["io.TextIOWrapper.read"].can_block_in(
+            "langsmith/client.py", "_default_retry_config"
+        )
+        for bb_function in bb.functions.values():
+            bb_function.can_block_in("freezegun/api.py", "_get_cached_module_attributes")
         yield bb
 ```
 

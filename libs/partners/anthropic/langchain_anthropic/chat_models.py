@@ -83,7 +83,10 @@ from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
 )
-from langchain_anthropic._compat import _convert_from_v1_to_anthropic
+from langchain_anthropic._compat import (
+    _convert_from_v1_to_anthropic,
+    _unwrap_non_standard,
+)
 from langchain_anthropic._sdk_compat import (
     _aparse,
     _route_unsupported_sampling_params,
@@ -536,33 +539,215 @@ def _format_text_block(block: dict) -> dict:
     return formatted_block
 
 
+_TOOL_CHANGE_BLOCK_TYPES = ("tool_addition", "tool_removal")
+"""Anthropic-native system content blocks that change the tool set mid-conversation."""
+
+_MID_CONVERSATION_TOOL_CHANGES_BETA = "mid-conversation-tool-changes-2026-07-01"
+"""Beta header required to send `tool_addition` / `tool_removal` blocks."""
+
+_INLINE_TOOLS_BETA = "inline-tools-2026-09-15"
+"""Beta header required to define a tool in a `tool_addition` block."""
+
+
+def _is_tool_change_block(block: object) -> bool:
+    """Return whether a content block changes the tool set, in either spelling."""
+    return (
+        isinstance(block, dict)
+        and _unwrap_non_standard(block).get("type") in _TOOL_CHANGE_BLOCK_TYPES
+    )
+
+
+def _has_tool_change_block(content: object) -> bool:
+    """Return whether any block in `content` changes the tool set."""
+    return isinstance(content, list) and any(_is_tool_change_block(b) for b in content)
+
+
+def _has_inline_tool_definition(content: object) -> bool:
+    """Return whether `content` defines a tool in a `tool_addition` block."""
+    if not isinstance(content, list):
+        return False
+    return any(
+        isinstance(block, dict)
+        and block.get("type") == "tool_addition"
+        and isinstance(tool := block.get("tool"), dict)
+        and tool.get("type") == "tool_definition"
+        for block in content
+    )
+
+
+def _format_system_content(
+    content: str | list[Any],
+    *,
+    model: str | None = None,
+    preserve_tool_changes: bool = False,
+    stacklevel: int = 3,
+) -> str | list[dict]:
+    """Narrow system message content to what Anthropic accepts.
+
+    String content is passed through unchanged; promoting it to a single-element
+    block array would invalidate existing callers' prompt caches.
+
+    Anthropic documents a closed set of system content blocks: `text` anywhere, plus
+    `tool_addition` / `tool_removal` on a mid-conversation `system` turn. Anything
+    else is rejected by the API, so it is dropped with a warning rather than
+    forwarded. Blocks wrapped in core's `non_standard` escape hatch are unwrapped
+    first, so both spellings behave identically.
+
+    Args:
+        content: The system message's content.
+        model: The model the request targets, used only in warning text.
+        preserve_tool_changes: Whether tool-change blocks should be forwarded instead
+            of dropped.
+        stacklevel: Frames to skip when attributing a warning, so it points at the
+            caller of `_format_messages` rather than at this module. The default
+            suits a direct call; a caller reached through a helper adds a frame.
+
+    Returns:
+        Content narrowed to the blocks Anthropic accepts in this position.
+    """
+    if not isinstance(content, list):
+        return content
+
+    formatted: list[dict] = []
+    for raw_block in content:
+        if not isinstance(raw_block, dict):
+            formatted.append({"type": "text", "text": raw_block})
+            continue
+
+        block = _unwrap_non_standard(raw_block)
+        block_type = block.get("type")
+        if block_type == "text":
+            formatted.append(_format_text_block(block))
+        elif block_type in _TOOL_CHANGE_BLOCK_TYPES:
+            if preserve_tool_changes:
+                formatted.append(block)
+            else:
+                warnings.warn(
+                    f"Tool-change block {block_type!r} was dropped: it is only "
+                    "valid on a `SystemMessage` sent in place, and this one was "
+                    "hoisted into the top-level `system` field. Use a model that "
+                    "supports mid-conversation system messages and place the "
+                    "message after a human or tool message, either last or before "
+                    f"an AI message (model: {model!r}).",
+                    UserWarning,
+                    stacklevel=stacklevel,
+                )
+        else:
+            warnings.warn(
+                f"Unrecognized system content block {block_type!r} was dropped. "
+                "Anthropic accepts `text` in any system message, plus "
+                "`tool_addition` and `tool_removal` on a mid-conversation one.",
+                UserWarning,
+                stacklevel=stacklevel,
+            )
+    return formatted
+
+
+def _warn_system_message_hoisted(model: str | None) -> None:
+    """Warn that a non-leading system message was hoisted."""
+    warnings.warn(
+        "A non-leading `SystemMessage` was moved to the top-level `system` field "
+        "and now applies to the entire conversation. To send it in place, use a "
+        "supported model and place it after a human or tool message, either last "
+        f"or before an AI message (model: {model!r}).",
+        UserWarning,
+        stacklevel=3,
+    )
+
+
+def _is_server_tool_result_block(block: object) -> bool:
+    """Return whether a content block is a server-side tool result."""
+    return (
+        isinstance(block, dict)
+        and isinstance(block.get("type"), str)
+        and block["type"].endswith("_tool_result")
+    )
+
+
+def _previous_turn_allows_system(previous_turn: dict | None) -> bool:
+    """Return whether a system message may follow the formatted turn."""
+    if previous_turn is None:
+        return False
+
+    previous_role = previous_turn.get("role")
+    previous_content = previous_turn.get("content")
+    return previous_role == "user" or (
+        previous_role == "assistant"
+        and isinstance(previous_content, list)
+        and bool(previous_content)
+        and _is_server_tool_result_block(previous_content[-1])
+    )
+
+
+def _format_in_place_system_messages(
+    pending_system: Sequence[BaseMessage],
+    *,
+    model: str | None,
+) -> list[dict]:
+    """Format system messages that keep their position in the message array.
+
+    A message whose content is narrowed away entirely is omitted: Anthropic
+    rejects a `system` turn with empty content, and the dropped blocks have
+    already been warned about.
+
+    Args:
+        pending_system: System messages awaiting emission, in order.
+        model: The model the request targets, used only in warning text.
+
+    Returns:
+        Formatted `system`-role turns.
+    """
+    turns: list[dict] = []
+    for pending in pending_system:
+        content = _format_system_content(
+            pending.content,
+            model=model,
+            preserve_tool_changes=True,
+            # This helper sits between `_format_messages` and the warning site.
+            stacklevel=4,
+        )
+        if content == []:
+            continue
+        turns.append({"role": "system", "content": content})
+    return turns
+
+
 def _format_messages(
     messages: Sequence[BaseMessage],
+    *,
+    model: str | None,
 ) -> tuple[str | list[dict] | None, list[dict]]:
     """Format messages for Anthropic's API."""
     system: str | list[dict] | None = None
     formatted_messages: list[dict] = []
     merged_messages = _merge_messages(messages)
+    last_non_system_index = max(
+        (i for i, m in enumerate(merged_messages) if m.type != "system"),
+        default=-1,
+    )
+    pending_system: list[BaseMessage] = []
     for _i, message in enumerate(merged_messages):
         if message.type == "system":
+            if _i == 0:
+                system = _format_system_content(
+                    message.content,
+                    model=model,
+                    preserve_tool_changes=True,
+                )
+                continue
+            if _supports_mid_conversation_system_messages(model) and (
+                pending_system
+                or _previous_turn_allows_system(
+                    formatted_messages[-1] if formatted_messages else None
+                )
+            ):
+                pending_system.append(message)
+                continue
             if system is not None:
                 msg = "Received multiple non-consecutive system messages."
                 raise ValueError(msg)
-            if isinstance(message.content, list):
-                system = [
-                    (
-                        (
-                            _format_text_block(block)
-                            if block.get("type") == "text"
-                            else block
-                        )
-                        if isinstance(block, dict)
-                        else {"type": "text", "text": block}
-                    )
-                    for block in message.content
-                ]
-            else:
-                system = message.content
+            system = _format_system_content(message.content, model=model)
+            _warn_system_message_hoisted(model)
             continue
 
         role = _message_type_lookups[message.type]
@@ -727,6 +912,7 @@ def _format_messages(
                         # Regular tool results that need content formatting
                         tool_content = _format_messages(
                             [HumanMessage(block["content"])],
+                            model=None,
                         )[1][0]["content"]
                         content.append(
                             _normalize_block_tool_use_id(
@@ -796,7 +982,7 @@ def _format_messages(
                 _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls),
             )
 
-        if role == "assistant" and _i == len(merged_messages) - 1:
+        if role == "assistant" and _i == last_non_system_index:
             if isinstance(content, str):
                 content = content.rstrip()
             elif (
@@ -807,11 +993,28 @@ def _format_messages(
             ):
                 content[-1]["text"] = content[-1]["text"].rstrip()
 
-        if not content and role == "assistant" and _i < len(merged_messages) - 1:
+        if not content and role == "assistant" and _i < last_non_system_index:
             # anthropic.BadRequestError: Error code: 400: all messages must have
             # non-empty content except for the optional final assistant message
             continue
+        if pending_system:
+            if role == "assistant":
+                formatted_messages.extend(
+                    _format_in_place_system_messages(pending_system, model=model)
+                )
+            else:
+                for pending in pending_system:
+                    if system is not None:
+                        msg = "Received multiple non-consecutive system messages."
+                        raise ValueError(msg)
+                    system = _format_system_content(pending.content, model=model)
+                    _warn_system_message_hoisted(model)
+            pending_system = []
         formatted_messages.append({"role": role, "content": content})
+
+    formatted_messages.extend(
+        _format_in_place_system_messages(pending_system, model=model)
+    )
     return system, formatted_messages
 
 
@@ -895,6 +1098,25 @@ def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
     if not isinstance(levels, (list, tuple)):
         return ()
     return tuple(levels)
+
+
+def _supports_mid_conversation_system_messages(model: object) -> bool:
+    """Return whether the model supports mid-conversation system messages."""
+    if not isinstance(model, str):
+        return False
+    return model.startswith(
+        (
+            "claude-fable-5",
+            "claude-mythos-5",
+            "claude-opus-4-8",
+            "claude-opus-5",
+        )
+    )
+
+
+def _supports_forced_tool_choice(model: str) -> bool:
+    """Return whether the model accepts `tool_choice` types `any` and `tool`."""
+    return not model.startswith(("claude-fable-5-1", "claude-opus-5-5"))
 
 
 def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
@@ -1082,6 +1304,37 @@ class ChatAnthropic(BaseChatModel):
         )
         ```
 
+    Example: Add a tool mid-conversation
+        ```python
+        from langchain_core.messages import HumanMessage, SystemMessage
+        from langchain_anthropic import ChatAnthropic
+
+        model = ChatAnthropic(model="claude-opus-5-5")
+        model.invoke(
+            [
+                HumanMessage("What time is it?"),
+                SystemMessage(
+                    [
+                        {
+                            "type": "tool_addition",
+                            "tool": {
+                                "type": "tool_definition",
+                                "definition": {
+                                    "name": "get_time",
+                                    "description": "Get the current time.",
+                                    "input_schema": {
+                                        "type": "object",
+                                        "properties": {},
+                                    },
+                                },
+                            },
+                        }
+                    ]
+                ),
+            ]
+        )
+        ```
+
     Note:
         Any param which is not explicitly supported will be passed directly to
         [`Anthropic.messages.create(...)`](https://platform.claude.com/docs/en/api/python/messages/create)
@@ -1183,19 +1436,20 @@ class ChatAnthropic(BaseChatModel):
     Examples:
 
     - `#!python {"type": "enabled", "budget_tokens": 10_000}` (pre-4.7 models)
-    - `#!python {"type": "adaptive"}` (Opus 4.6+, Opus 5, Sonnet 5)
+    - `#!python {"type": "adaptive"}` (Opus 4.6+, Opus 5, Opus 5.5, Sonnet 5)
     - `#!python {"type": "adaptive", "display": "summarized"}` (Opus 4.7+,
-      Opus 5, Sonnet 5)
+      Opus 5, Opus 5.5, Sonnet 5)
     - `#!python {"type": "disabled"}` (Opus 5 and Sonnet 5, where adaptive
       thinking is on by default)
 
-    !!! note "Claude Opus 4.7+, Opus 5, and Sonnet 5"
+    !!! note "Claude Opus 4.7+, Opus 5, Opus 5.5, and Sonnet 5"
 
         `budget_tokens` is removed on these models — use `{"type": "adaptive"}`
         with `output_config.effort` to control reasoning effort. The default
         `display` is `"omitted"`; set it to `"summarized"` to receive
         summarized reasoning in the response. On Opus 5, disabled thinking is
-        supported only at `"high"` effort or below.
+        supported only at `"high"` effort or below. On Opus 5.5, thinking
+        can't be disabled; omit `thinking` and use `output_config.effort`.
     """
 
     output_config: dict[str, Any] | None = None
@@ -1245,8 +1499,9 @@ class ChatAnthropic(BaseChatModel):
 
     !!! note
 
-        Setting `reasoning_effort` to `'high'` produces exactly the same behavior
-        as omitting the parameter altogether.
+        On most models, setting `reasoning_effort` to `'high'` produces exactly
+        the same behavior as omitting the parameter altogether. On Opus 5.5 the
+        default is `'medium'`.
 
     Example: `reasoning_effort="medium"`
     """
@@ -1599,7 +1854,13 @@ class ChatAnthropic(BaseChatModel):
                     }
                 )
 
-        system, formatted_messages = _format_messages(messages)
+        system, formatted_messages = _format_messages(messages, model=self.model)
+        if isinstance(system, list) and not system:
+            # Every block was narrowed away (or the message was empty to begin
+            # with). An empty block array carries no instructions, so drop the
+            # field rather than sending it. `_format_messages` has already
+            # claimed the slot, so a second hoisted system message still errors.
+            system = None
 
         # Only the direct Anthropic API accepts top-level `cache_control`.
         # Subclasses that route through other transports (e.g. Bedrock) expand
@@ -1825,6 +2086,28 @@ class ChatAnthropic(BaseChatModel):
                     payload["betas"] = [*payload["betas"], required_beta]
             else:
                 payload["betas"] = [required_beta]
+
+        system_contents = [
+            message.get("content")
+            for message in (payload.get("messages") or [])
+            if message.get("role") == "system"
+        ]
+        has_tool_change = any(_has_tool_change_block(c) for c in system_contents)
+        has_inline_definition = any(
+            _has_inline_tool_definition(c) for c in system_contents
+        )
+        explicit_betas = payload.get("betas") or []
+        tool_change_beta = (
+            _INLINE_TOOLS_BETA
+            if has_inline_definition
+            else (
+                _MID_CONVERSATION_TOOL_CHANGES_BETA
+                if has_tool_change and _INLINE_TOOLS_BETA not in explicit_betas
+                else None
+            )
+        )
+        if tool_change_beta and tool_change_beta not in explicit_betas:
+            payload["betas"] = [*explicit_betas, tool_change_beta]
 
         # Auto-append required beta for user_profile_id
         if payload.get("user_profile_id"):
@@ -2296,9 +2579,11 @@ class ChatAnthropic(BaseChatModel):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         thinking_admonition = (
             "You are attempting to use structured output via forced tool calling, "
-            "which is not guaranteed when `thinking` is enabled. This method will "
-            "raise an OutputParserException if tool calls are not generated. Consider "
-            "disabling `thinking` or adjust your prompt to ensure the tool is called."
+            "which is not supported when `thinking` is enabled or on "
+            f"{self.model}. This method will raise an OutputParserException if tool "
+            "calls are not generated. Consider `method='json_schema'`, disabling "
+            "`thinking` where supported, or adjusting your prompt to ensure the "
+            "tool is called."
         )
         warnings.warn(thinking_admonition, stacklevel=2)
         llm = self.bind_tools(
@@ -2569,7 +2854,10 @@ class ChatAnthropic(BaseChatModel):
             method: The structured output method to use. Options are:
 
                 - `'function_calling'` (default): Use forced tool calling to get
-                    structured output.
+                    structured output. When `thinking` is enabled, or on models
+                    that don't support forced tool use (Claude Opus 5.5, Claude
+                    Fable 5.1), the tool call isn't forced, and a missing tool
+                    call raises `OutputParserException`.
                 - `'json_schema'`: Use Claude's dedicated
                     [structured output](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
                     feature.
@@ -2619,15 +2907,16 @@ class ChatAnthropic(BaseChatModel):
             warnings.warn(warning_message, stacklevel=2)
             method = "json_schema"
 
+        # TODO: make `method="json_schema"` the default in a future release.
         if method == "function_calling":
             formatted_tool = cast(AnthropicTool, convert_to_anthropic_tool(schema))
             # The result of convert_to_anthropic_tool for 'method=function_calling' will
             # always be an AnthropicTool
             tool_name = formatted_tool["name"]
-            if self.thinking is not None and self.thinking.get("type") in (
-                "enabled",
-                "adaptive",
-            ):
+            if (
+                self.thinking is not None
+                and self.thinking.get("type") in ("enabled", "adaptive")
+            ) or not _supports_forced_tool_choice(self.model):
                 llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
                     schema,
                     formatted_tool,
@@ -2750,8 +3039,10 @@ class ChatAnthropic(BaseChatModel):
             403
             ```
         """  # noqa: D214
-        formatted_system, formatted_messages = _format_messages(messages)
-        if isinstance(formatted_system, str):
+        formatted_system, formatted_messages = _format_messages(
+            messages, model=self.model
+        )
+        if formatted_system is not None:
             kwargs["system"] = formatted_system
         if tools:
             # Filter the same schemas `bind_tools` drops, so counting tokens and

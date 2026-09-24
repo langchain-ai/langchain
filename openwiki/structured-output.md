@@ -4,7 +4,7 @@ title: "AutoStrategy (recommended)"
 openwiki_generated: true
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py

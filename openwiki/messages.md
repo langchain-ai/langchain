@@ -5,7 +5,7 @@ description: "Document the message abstraction, standardized content blocks for 
 tags: [messages, content-blocks, chat-models, streaming, multimodal, provider-adapters]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-08T08:27:09.597Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-77dc1fb726463969f9d53658
     resource: repo://libs/core/langchain_core/messages/ai.py

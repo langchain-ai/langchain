@@ -5,7 +5,7 @@ description: "Prompt templates define message sequences and variable substitutio
 tags: [prompt, template, few-shot, example-selection, variable-substitution, structured-output]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-1f4e0a5b877db4f050f2a34c
     resource: repo://libs/core/langchain_core/example_selectors/base.py
