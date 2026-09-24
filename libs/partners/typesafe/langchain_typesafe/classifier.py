@@ -278,11 +278,6 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
     def is_lc_serializable(cls) -> bool:
         return True
 
-    @classmethod
-    @override
-    def get_lc_namespace(cls) -> list[str]:
-        return ["langchain", "classifiers", "typesafe"]
-
     @property
     def lc_secrets(self) -> dict[str, str]:
         """Map the API-key field to its environment variable for serialization."""

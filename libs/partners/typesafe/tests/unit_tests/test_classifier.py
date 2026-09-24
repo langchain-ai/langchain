@@ -9,6 +9,7 @@ import httpx2
 import pytest
 from langchain_core._api import LangChainBetaWarning
 from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.load import dumpd, load
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import SecretStr, ValidationError
 
@@ -107,6 +108,62 @@ def test_classifier_is_beta() -> None:
         TypeSafeClassifier(
             api_key=API_KEY,
         )
+
+
+def test_serialization_round_trip() -> None:
+    """The classifier can round-trip through the built-in partner allowlist."""
+    classifier = TypeSafeClassifier(api_key=API_KEY)
+    serialized = dumpd(classifier)
+
+    assert serialized["id"] == [
+        "langchain_typesafe",
+        "classifier",
+        "TypeSafeClassifier",
+    ]
+
+    revived = load(
+        serialized,
+        allowed_objects="all",
+        secrets_map={"TYPESAFE_API_KEY": API_KEY},
+    )
+
+    assert isinstance(revived, TypeSafeClassifier)
+    assert revived.model == classifier.model
+    assert revived.base_url == classifier.base_url
+    assert revived.timeout == classifier.timeout
+
+    explicitly_revived = load(
+        serialized,
+        allowed_objects=[TypeSafeClassifier],
+        secrets_map={"TYPESAFE_API_KEY": API_KEY},
+    )
+
+    assert isinstance(explicitly_revived, TypeSafeClassifier)
+
+
+def test_legacy_serialized_id_is_supported() -> None:
+    """Manifests created with the previously released ID remain loadable."""
+    classifier = TypeSafeClassifier(api_key=API_KEY)
+    serialized = dumpd(classifier)
+    serialized["id"] = [
+        "langchain",
+        "classifiers",
+        "typesafe",
+        "TypeSafeClassifier",
+    ]
+    legacy_revived = load(
+        serialized,
+        allowed_objects="all",
+        secrets_map={"TYPESAFE_API_KEY": API_KEY},
+    )
+    explicitly_legacy_revived = load(
+        serialized,
+        allowed_objects=[TypeSafeClassifier],
+        secrets_map={"TYPESAFE_API_KEY": API_KEY},
+    )
+
+    assert isinstance(legacy_revived, TypeSafeClassifier)
+    assert isinstance(explicitly_legacy_revived, TypeSafeClassifier)
 
 
 def test_questions_require_instructions() -> None:
