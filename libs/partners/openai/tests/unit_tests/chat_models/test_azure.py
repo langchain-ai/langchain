@@ -13,7 +13,7 @@ from typing_extensions import TypedDict
 from langchain_openai import AzureChatOpenAI, AzureOpenAI, AzureOpenAIEmbeddings
 from langchain_openai.chat_models.azure import (
     _AZURE_OPENAI_SCOPE,
-    _get_azure_workload_identity_token_provider,
+    _get_azure_workload_identity_token_providers,
 )
 
 AZURE_PROFILE_TEST_MODEL = "gpt-5.5"
@@ -48,13 +48,27 @@ def test_initialize_azure_openai_with_workload_identity(
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("AZURE_OPENAI_AD_TOKEN", raising=False)
     credential = mock.Mock()
+    async_credential = mock.Mock()
     token_provider = mock.Mock(return_value="token")
+
+    async def async_token() -> str:
+        return "token"
+
     azure_identity = mock.Mock()
     azure_identity.WorkloadIdentityCredential.return_value = credential
     azure_identity.get_bearer_token_provider.return_value = token_provider
+    azure_identity_aio = mock.Mock()
+    azure_identity_aio.WorkloadIdentityCredential.return_value = async_credential
+    azure_identity_aio.get_bearer_token_provider.return_value = async_token
+
+    def fake_import_module(name: str) -> mock.Mock:
+        if name == "azure.identity.aio":
+            return azure_identity_aio
+        return azure_identity
+
     monkeypatch.setattr(
         "langchain_openai.chat_models.azure.import_module",
-        mock.Mock(return_value=azure_identity),
+        mock.Mock(side_effect=fake_import_module),
     )
 
     model = AzureChatOpenAI(
@@ -63,9 +77,50 @@ def test_initialize_azure_openai_with_workload_identity(
     )
 
     assert model.azure_ad_token_provider is token_provider
+    assert model.azure_ad_async_token_provider is async_token
     azure_identity.get_bearer_token_provider.assert_called_once_with(
         credential, _AZURE_OPENAI_SCOPE
     )
+    azure_identity_aio.get_bearer_token_provider.assert_called_once_with(
+        async_credential, _AZURE_OPENAI_SCOPE
+    )
+
+
+async def test_initialize_azure_openai_with_workload_identity_async_provider(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for key in ("AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_FEDERATED_TOKEN_FILE"):
+        monkeypatch.setenv(key, "test-value")
+    monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("AZURE_OPENAI_AD_TOKEN", raising=False)
+    token_provider = mock.Mock(return_value="token")
+
+    async def async_token() -> str:
+        return "token"
+
+    azure_identity = mock.Mock()
+    azure_identity.get_bearer_token_provider.return_value = token_provider
+    azure_identity_aio = mock.Mock()
+    azure_identity_aio.get_bearer_token_provider.return_value = async_token
+
+    def fake_import_module(name: str) -> mock.Mock:
+        if name == "azure.identity.aio":
+            return azure_identity_aio
+        return azure_identity
+
+    monkeypatch.setattr(
+        "langchain_openai.chat_models.azure.import_module",
+        mock.Mock(side_effect=fake_import_module),
+    )
+
+    model = AzureChatOpenAI(
+        azure_endpoint="https://endpoint.openai.azure.com",
+        api_version="2024-10-21",
+    )
+
+    assert model.azure_ad_async_token_provider is not None
+    assert await model.azure_ad_async_token_provider() == "token"
 
 
 def test_workload_identity_requires_optional_dependency(
@@ -78,7 +133,7 @@ def test_workload_identity_requires_optional_dependency(
         mock.Mock(side_effect=ImportError),
     )
 
-    assert _get_azure_workload_identity_token_provider() is None
+    assert _get_azure_workload_identity_token_providers() == (None, None)
 
 
 def test_initialize_azure_openai_prefers_explicit_api_key(

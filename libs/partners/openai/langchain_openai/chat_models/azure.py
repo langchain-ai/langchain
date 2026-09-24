@@ -37,17 +37,25 @@ _AZURE_WORKLOAD_IDENTITY_ENV_VARS = (
 )
 
 
-def _get_azure_workload_identity_token_provider() -> Callable[[], str] | None:
+def _get_azure_workload_identity_token_providers() -> tuple[
+    Callable[[], str] | None, Callable[[], Awaitable[str]] | None
+]:
     if not all(os.getenv(key) for key in _AZURE_WORKLOAD_IDENTITY_ENV_VARS):
-        return None
+        return None, None
     try:
         azure_identity = import_module("azure.identity")
+        azure_identity_aio = import_module("azure.identity.aio")
     except ImportError:
-        return None
-    return azure_identity.get_bearer_token_provider(
+        return None, None
+    sync_provider = azure_identity.get_bearer_token_provider(
         azure_identity.WorkloadIdentityCredential(),
         _AZURE_OPENAI_SCOPE,
     )
+    async_provider = azure_identity_aio.get_bearer_token_provider(
+        azure_identity_aio.WorkloadIdentityCredential(),
+        _AZURE_OPENAI_SCOPE,
+    )
+    return sync_provider, async_provider
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -692,7 +700,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 self.azure_ad_async_token_provider,
             )
         ):
-            self.azure_ad_token_provider = _get_azure_workload_identity_token_provider()
+            sync_provider, async_provider = (
+                _get_azure_workload_identity_token_providers()
+            )
+            self.azure_ad_token_provider = sync_provider
+            self.azure_ad_async_token_provider = async_provider
 
         client_params: dict = {
             "api_version": self.openai_api_version,
