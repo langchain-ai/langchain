@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import BaseCallbackHandler, CallbackManagerForLLMRun
 from langchain_core.language_models import (
     BaseChatModel,
     FakeListLLM,
@@ -281,6 +281,118 @@ def _generate_immediate_error(_: Iterator[Any]) -> Iterator[str]:
 def _generate_delayed_error(_: Iterator[Any]) -> Iterator[str]:
     yield ""
     _error("delayed error")
+
+
+class _RootRunTracker(BaseCallbackHandler):
+    """Records end/error events for `RunnableWithFallbacks` root runs only."""
+
+    def __init__(self) -> None:
+        self.started: list[str] = []
+        self.finished: dict[str, tuple[str, Any]] = {}
+
+    def _is_root(self, **kw: Any) -> bool:
+        return kw.get("name") == "RunnableWithFallbacks"
+
+    @override
+    def on_chain_start(
+        self,
+        serialized: dict[str, Any] | None,
+        inputs: dict[str, Any] | Any,
+        *,
+        run_id: Any,
+        parent_run_id: Any = None,
+        **kw: Any,
+    ) -> None:
+        if self._is_root(**kw):
+            self.started.append(str(run_id))
+
+    @override
+    def on_chain_end(self, outputs: Any, *, run_id: Any, **kw: Any) -> None:
+        if str(run_id) in self.started:
+            self.finished[str(run_id)] = ("end", outputs)
+
+    @override
+    def on_chain_error(self, error: BaseException, *, run_id: Any, **kw: Any) -> None:
+        if str(run_id) in self.started:
+            self.finished[str(run_id)] = ("error", error)
+
+
+def _unhandled_primary(x: str) -> str:
+    if x == "unhandled":
+        msg = "boom"  # not in exceptions_to_handle
+        raise KeyError(msg)
+    if x == "ok":
+        return "fine"
+    msg = "handled"  # handled -> would try the fallback
+    raise ValueError(msg)
+
+
+def _fallbacks_chain() -> RunnableWithFallbacks[str, str]:
+    return RunnableLambda(_unhandled_primary).with_fallbacks(
+        [RunnableLambda(lambda x: f"fallback:{x}")],
+        exceptions_to_handle=(ValueError,),
+    )
+
+
+def test_batch_closes_root_runs_on_unhandled_exception() -> None:
+    chain = _fallbacks_chain()
+    tracker = _RootRunTracker()
+    with pytest.raises(KeyError, match="boom"):
+        chain.batch(["ok", "unhandled", "retry"], {"callbacks": [tracker]})
+    # every root run was closed exactly once
+    assert sorted(tracker.started) == sorted(tracker.finished)
+    finished = tracker.finished
+    # the successful input ended normally ...
+    assert finished[tracker.started[0]] == ("end", "fine")
+    # ... the input that raised got its own exception ...
+    event, payload = finished[tracker.started[1]]
+    assert event == "error"
+    assert isinstance(payload, KeyError)
+    # ... and the input still waiting on a fallback got its handled exception
+    event, payload = finished[tracker.started[2]]
+    assert event == "error"
+    assert isinstance(payload, ValueError)
+
+
+async def test_abatch_closes_root_runs_on_unhandled_exception() -> None:
+    chain = _fallbacks_chain()
+    tracker = _RootRunTracker()
+    with pytest.raises(KeyError, match="boom"):
+        await chain.abatch(["ok", "unhandled", "retry"], {"callbacks": [tracker]})
+    # every root run was closed exactly once
+    assert sorted(tracker.started) == sorted(tracker.finished)
+    finished = tracker.finished
+    assert finished[tracker.started[0]] == ("end", "fine")
+    event, payload = finished[tracker.started[1]]
+    assert event == "error"
+    assert isinstance(payload, KeyError)
+    event, payload = finished[tracker.started[2]]
+    assert event == "error"
+    assert isinstance(payload, ValueError)
+
+
+def test_batch_unhandled_exception_return_exceptions_unchanged() -> None:
+    chain = _fallbacks_chain()
+    tracker = _RootRunTracker()
+    actual = chain.batch(
+        ["ok", "unhandled"], {"callbacks": [tracker]}, return_exceptions=True
+    )
+    assert actual[0] == "fine"
+    assert isinstance(actual[1], KeyError)
+    # all root runs still closed
+    assert sorted(tracker.started) == sorted(tracker.finished)
+
+
+async def test_abatch_unhandled_exception_return_exceptions_unchanged() -> None:
+    chain = _fallbacks_chain()
+    tracker = _RootRunTracker()
+    actual = await chain.abatch(
+        ["ok", "unhandled"], {"callbacks": [tracker]}, return_exceptions=True
+    )
+    assert actual[0] == "fine"
+    assert isinstance(actual[1], KeyError)
+    # all root runs still closed
+    assert sorted(tracker.started) == sorted(tracker.finished)
 
 
 def test_fallbacks_stream() -> None:
