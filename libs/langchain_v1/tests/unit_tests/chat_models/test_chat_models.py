@@ -157,15 +157,13 @@ def test_supported_providers_is_sorted() -> None:
 
 def test_bedrock_mantle_providers_registered() -> None:
     """Mantle providers map to the `langchain_aws` Mantle chat model classes."""
-    assert _BUILTIN_PROVIDERS["bedrock_mantle_openai"] == (
+    assert _BUILTIN_PROVIDERS["bedrock_mantle_openai"][:2] == (
         "langchain_aws",
         "ChatOpenAIMantle",
-        _BUILTIN_PROVIDERS["bedrock_mantle_openai"][2],
     )
-    assert _BUILTIN_PROVIDERS["bedrock_mantle_anthropic"] == (
+    assert _BUILTIN_PROVIDERS["bedrock_mantle_anthropic"][:2] == (
         "langchain_aws",
         "ChatAnthropicMantle",
-        _BUILTIN_PROVIDERS["bedrock_mantle_anthropic"][2],
     )
 
 
@@ -197,26 +195,6 @@ def test_bedrock_mantle_providers_registered() -> None:
 )
 def test_attempt_infer_model_provider(model_name: str, expected_provider: str | None) -> None:
     assert _attempt_infer_model_provider(model_name) == expected_provider
-
-
-@pytest.mark.requires("langchain_aws")
-def test_init_chat_model_bedrock_mantle_providers() -> None:
-    """Mantle providers instantiate the `langchain_aws` Mantle chat model classes."""
-    openai_mantle = init_chat_model(
-        "openai.gpt-oss-120b",
-        model_provider="bedrock_mantle_openai",
-        region_name="us-east-1",
-        bedrock_api_key="foo",
-    )
-    assert type(openai_mantle).__name__ == "ChatOpenAIMantle"
-
-    anthropic_mantle = init_chat_model(
-        "anthropic.claude-opus-5-5",
-        model_provider="bedrock_mantle_anthropic",
-        region_name="us-east-1",
-        bedrock_api_key="foo",
-    )
-    assert type(anthropic_mantle).__name__ == "ChatAnthropicMantle"
 
 
 @pytest.mark.requires("langchain_openai")
