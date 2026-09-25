@@ -81,6 +81,27 @@ def get_client() -> Client:
     return rt.get_cached_client()
 
 
+def _get_default_project_name() -> str | None:
+    """Get the project to trace to when none is passed to the tracer.
+
+    When the environment addresses runs to a LangSmith agent
+    (`LANGSMITH_AGENT_ID` / `LANGSMITH_AGENT_ENVIRONMENT`), only a project the
+    user configured is returned. Falling back to the invented `'default'`
+    project would send it alongside the agent, and the API rejects a run
+    addressed to both.
+
+    Agent addressing requires `langsmith>=0.14.0`; older versions have no agent
+    to address, so the helpers are looked up rather than imported.
+    """
+    get_agent_id = getattr(ls_utils, "get_tracer_agent_id", None)
+    get_agent_environment = getattr(ls_utils, "get_tracer_agent_environment", None)
+    if (get_agent_id is not None and get_agent_id() is not None) or (
+        get_agent_environment is not None and get_agent_environment() is not None
+    ):
+        return ls_utils.get_tracer_project(return_default_value=False)
+    return ls_utils.get_tracer_project()
+
+
 def _get_executor() -> ThreadPoolExecutor:
     """Get the executor."""
     global _EXECUTOR  # noqa: PLW0603
@@ -168,7 +189,7 @@ class LangChainTracer(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.project_name = project_name or ls_utils.get_tracer_project()
+        self.project_name = project_name or _get_default_project_name()
         self.client = client or get_client()
         self.tags = tags or []
         self.latest_run: Run | None = None
