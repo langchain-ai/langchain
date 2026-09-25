@@ -923,6 +923,16 @@ class ChatGroq(BaseChatModel):
         # strict tool-calling not supported by Groq
         _ = kwargs.pop("strict", None)
 
+        # Check if the model profile explicitly disables tool calling
+        model_profile = self._resolve_model_profile()
+        if model_profile is not None and model_profile.get("tool_calling") is False:
+            msg = (
+                f"Model {self.model_name!r} does not support tool calling. "
+                f"The model's profile has tool_calling=False. "
+                f"Use a model that supports tool calling, or remove the tool binding."
+            )
+            raise ValueError(msg)
+
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if tool_choice == "any":
