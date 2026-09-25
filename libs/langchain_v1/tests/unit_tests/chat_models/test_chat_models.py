@@ -155,6 +155,20 @@ def test_supported_providers_is_sorted() -> None:
     assert list(_BUILTIN_PROVIDERS) == sorted(_BUILTIN_PROVIDERS.keys())
 
 
+def test_bedrock_mantle_providers_registered() -> None:
+    """Mantle providers map to the `langchain_aws` Mantle chat model classes."""
+    assert _BUILTIN_PROVIDERS["bedrock_mantle_openai"] == (
+        "langchain_aws",
+        "ChatOpenAIMantle",
+        _BUILTIN_PROVIDERS["bedrock_mantle_openai"][2],
+    )
+    assert _BUILTIN_PROVIDERS["bedrock_mantle_anthropic"] == (
+        "langchain_aws",
+        "ChatAnthropicMantle",
+        _BUILTIN_PROVIDERS["bedrock_mantle_anthropic"][2],
+    )
+
+
 @pytest.mark.parametrize(
     ("model_name", "expected_provider"),
     [
@@ -172,6 +186,7 @@ def test_supported_providers_is_sorted() -> None:
         ("Amazon.Titan-Text-Express-v1", "bedrock"),
         ("anthropic.claude-v2", "bedrock"),
         ("Anthropic.Claude-V2", "bedrock"),
+        ("openai.gpt-oss-120b", None),
         ("mistral-small", "mistralai"),
         ("mixtral-8x7b", "mistralai"),
         ("deepseek-v3", "deepseek"),
@@ -180,8 +195,28 @@ def test_supported_providers_is_sorted() -> None:
         ("solar-pro", "upstage"),
     ],
 )
-def test_attempt_infer_model_provider(model_name: str, expected_provider: str) -> None:
+def test_attempt_infer_model_provider(model_name: str, expected_provider: str | None) -> None:
     assert _attempt_infer_model_provider(model_name) == expected_provider
+
+
+@pytest.mark.requires("langchain_aws")
+def test_init_chat_model_bedrock_mantle_providers() -> None:
+    """Mantle providers instantiate the `langchain_aws` Mantle chat model classes."""
+    openai_mantle = init_chat_model(
+        "openai.gpt-oss-120b",
+        model_provider="bedrock_mantle_openai",
+        region_name="us-east-1",
+        bedrock_api_key="foo",
+    )
+    assert type(openai_mantle).__name__ == "ChatOpenAIMantle"
+
+    anthropic_mantle = init_chat_model(
+        "anthropic.claude-opus-5-5",
+        model_provider="bedrock_mantle_anthropic",
+        region_name="us-east-1",
+        bedrock_api_key="foo",
+    )
+    assert type(anthropic_mantle).__name__ == "ChatAnthropicMantle"
 
 
 @pytest.mark.requires("langchain_openai")
