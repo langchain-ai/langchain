@@ -246,9 +246,15 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     """
     btype = block.get("type", "text")
     if btype == "text":
-        return TextContentBlock(type="text", text="")
+        text_skeleton = TextContentBlock(type="text", text="")
+        if block.get("id") is not None:
+            text_skeleton["id"] = block["id"]
+        return text_skeleton
     if btype == "reasoning":
-        return ReasoningContentBlock(type="reasoning", reasoning="")
+        reasoning_skeleton = ReasoningContentBlock(type="reasoning", reasoning="")
+        if block.get("id") is not None:
+            reasoning_skeleton["id"] = block["id"]
+        return reasoning_skeleton
     if btype == "tool_call_chunk":
         return ToolCallChunk(
             type="tool_call_chunk",

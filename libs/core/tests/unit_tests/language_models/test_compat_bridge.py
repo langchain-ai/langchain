@@ -1401,3 +1401,103 @@ def test_lifecycle_validator_message_to_events_roundtrip() -> None:
     )
     events = list(message_to_events(msg))
     assert_valid_event_stream(events)
+
+
+@pytest.mark.parametrize("block_type", ["text", "reasoning"])
+@pytest.mark.parametrize("block_id", ["provider-block", None])
+def test_chunks_to_events_preserves_block_identity_before_next_chunk(
+    block_type: str, block_id: str | None
+) -> None:
+    """Consumers can correlate the start with the provider's finished block."""
+    payload = "text" if block_type == "text" else "reasoning"
+    block: dict[str, Any] = {"type": block_type, payload: "first", "index": "source"}
+    if block_id is not None:
+        block["id"] = block_id
+    chunks = iter(
+        [
+            ChatGenerationChunk(message=AIMessageChunk(content=[block], id="message")),
+            ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content=[
+                        {
+                            "type": block_type,
+                            payload: "second",
+                            "index": "source",
+                        }
+                    ],
+                    id="message",
+                )
+            ),
+        ]
+    )
+    events = chunks_to_events(chunks)
+    assert next(events)["event"] == "message-start"
+    start = next(events)
+    assert start["event"] == "content-block-start"
+    assert start["content"].get("id") == block_id
+    assert start["content"].get(payload) == ""
+    if block_id is None:
+        assert "id" not in start["content"]
+    remaining = list(events)
+    finish = next(
+        event for event in remaining if event["event"] == "content-block-finish"
+    )
+    assert finish["content"].get("id") == block_id
+    assert finish["content"].get(payload) == "firstsecond"
+
+
+@pytest.mark.parametrize("block_type", ["text", "reasoning"])
+async def test_achunks_to_events_preserves_provider_block_identity(
+    block_type: str,
+) -> None:
+    """The async provider path carries the same id from start through finish."""
+    payload = "text" if block_type == "text" else "reasoning"
+
+    async def chunks() -> AsyncIterator[ChatGenerationChunk]:
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": block_type,
+                        "id": "provider-block",
+                        payload: "content",
+                        "index": 0,
+                    }
+                ],
+                id="message",
+            )
+        )
+
+    events = [event async for event in achunks_to_events(chunks())]
+    blocks = [
+        event["content"]
+        for event in events
+        if event["event"] == "content-block-start"
+        or event["event"] == "content-block-finish"
+    ]
+    assert [block.get("id") for block in blocks] == ["provider-block", "provider-block"]
+    assert blocks[0].get(payload) == ""
+    assert blocks[1].get(payload) == "content"
+
+
+@pytest.mark.parametrize("block_type", ["text", "reasoning"])
+def test_message_to_events_preserves_provider_block_identity(block_type: str) -> None:
+    """Checkpoint replay keeps the id just as the incremental stream does."""
+    payload = "text" if block_type == "text" else "reasoning"
+    message = AIMessage(
+        content=[
+            {
+                "type": block_type,
+                "id": "provider-block",
+                payload: "content",
+            }
+        ]
+    )
+    events = list(message_to_events(message))
+    blocks = [
+        event["content"]
+        for event in events
+        if event["event"] == "content-block-start"
+        or event["event"] == "content-block-finish"
+    ]
+    assert [block.get("id") for block in blocks] == ["provider-block", "provider-block"]
