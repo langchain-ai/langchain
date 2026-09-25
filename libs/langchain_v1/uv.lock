@@ -249,12 +249,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/63/af/0f5db57b9397a0f3b7fc204cbef143401a7cadaf982330f97f1ce3d39f34/anthropic-0.120.2-py3-none-any.whl", hash = "sha256:0f0bc2b381dc0eb41c8d886b815d79c2041cd2374f83aed36f574b6dc9c579c1", size = 1022851, upload-time = "2026-07-28T17:38:25.466Z" },
 ]
 
-[package.optional-dependencies]
-bedrock = [
-    { name = "boto3" },
-    { name = "botocore" },
-]
-
 [[package]]
 name = "anyio"
 version = "4.14.2"
@@ -362,18 +356,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/36/98/7d93f30d029643c0275dbc0bd6d5a6f670661ee6c9a94d93af7ab4887600/authlib-1.7.2.tar.gz", hash = "sha256:2cea25fefcd4e7173bdf1372c0afc265c8034b23a8cd5dcb6a9164b826c64231", size = 176511, upload-time = "2026-05-06T08:10:23.116Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fb/95/adcb68e20c34162e9135f370d6e31737719c2b6f94bc953fe7ed1f10fe21/authlib-1.7.2-py2.py3-none-any.whl", hash = "sha256:3e1faedc9d87e7d56a164eca3ccb6ace0d61b94abe83e92242f8dc8bba9b4a9f", size = 259548, upload-time = "2026-05-06T08:10:21.436Z" },
-]
-
-[[package]]
-name = "aws-bedrock-token-generator"
-version = "1.1.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "botocore" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fb/39/cf1c2e12bc5a84af0f96a546481213f81fa6e7927d2bbabd81758c6558ca/aws_bedrock_token_generator-1.1.0.tar.gz", hash = "sha256:95ccb07f63a91ac486561f6df05cc4e04784c8ff5086dc687ed9c5fd3ab1b5ba", size = 19123, upload-time = "2025-07-29T19:53:19.511Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f9/fd/745ece98870c3824d294bcdce5dc5e15381188a41bc80832c246b205e40e/aws_bedrock_token_generator-1.1.0-py3-none-any.whl", hash = "sha256:bd12854f7c7e52dde5d980d369379f12d0cc5f0855099d87f38688b0f9de5cd4", size = 10291, upload-time = "2025-07-29T19:53:18.704Z" },
 ]
 
 [[package]]
@@ -2313,7 +2295,7 @@ anthropic = [
     { name = "langchain-anthropic" },
 ]
 aws = [
-    { name = "langchain-aws", extra = ["anthropic", "openai"] },
+    { name = "langchain-aws" },
 ]
 azure-ai = [
     { name = "langchain-azure-ai" },
@@ -2404,8 +2386,7 @@ typing = [
 requires-dist = [
     { name = "fastmcp", marker = "extra == 'mcp'", specifier = ">=4.0.1,<5.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'", editable = "../partners/anthropic" },
-    { name = "langchain-aws", extras = ["anthropic"], marker = "extra == 'aws'" },
-    { name = "langchain-aws", extras = ["openai"], marker = "extra == 'aws'" },
+    { name = "langchain-aws", marker = "extra == 'aws'" },
     { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
     { name = "langchain-baseten", marker = "extra == 'baseten'", specifier = ">=0.2.0" },
     { name = "langchain-community", marker = "extra == 'community'" },
@@ -2516,18 +2497,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/60/eb/0443568d23be1857df8f549c69acab0adab614adf91b5f13e5a3d796637f/langchain_aws-1.7.3.tar.gz", hash = "sha256:f2b148d5838aab04924574be20e17b2ef0568520861a11fe61b948fc7b143ca2", size = 671076, upload-time = "2026-08-20T18:55:17.092Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/7a/643cd85155e736f3dc2c363bb2b84630cffaec7e1944d46dd09b729d642e/langchain_aws-1.7.3-py3-none-any.whl", hash = "sha256:5e4f3dcc0bb4071bc9dfb556fc274fbf874516f198068d0a34bfbe937ea7e5e1", size = 231695, upload-time = "2026-08-20T18:55:15.698Z" },
-]
-
-[package.optional-dependencies]
-anthropic = [
-    { name = "anthropic", extra = ["bedrock"] },
-    { name = "aws-bedrock-token-generator" },
-    { name = "langchain-anthropic" },
-]
-openai = [
-    { name = "aws-bedrock-token-generator" },
-    { name = "langchain-openai" },
-    { name = "openai" },
 ]
 
 [[package]]
