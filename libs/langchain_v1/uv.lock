@@ -2442,7 +2442,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.7.2"
+version = "1.7.4"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2581,7 +2581,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.6.3"
+version = "1.6.5"
 source = { editable = "../core" }
 dependencies = [
     { name = "httpx" },
@@ -2785,7 +2785,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.6.2"
+version = "1.6.6"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "certifi" },
@@ -2796,11 +2796,14 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", marker = "extra == 'azure-identity'", specifier = ">=3.11.0,<4.0.0" },
+    { name = "azure-identity", marker = "extra == 'azure-identity'", specifier = ">=1.25.0,<2.0.0" },
     { name = "certifi", specifier = ">=2024.6.2" },
     { name = "langchain-core", editable = "../core" },
     { name = "openai", specifier = ">=2.45.0,<4.0.0" },
     { name = "tiktoken", specifier = ">=0.7.0,<1.0.0" },
 ]
+provides-extras = ["azure-identity"]
 
 [package.metadata.requires-dev]
 dev = []
