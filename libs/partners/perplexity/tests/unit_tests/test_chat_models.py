@@ -796,3 +796,79 @@ def test_convert_responses_stream_event_ignores_non_function_items() -> None:
         "item": {"type": "message", "content": "hi"},
     }
     assert _convert_responses_stream_event_to_chunk(event) is None
+
+
+def test_stream_stop_does_not_send_stop_sequences(mocker: MockerFixture) -> None:
+    """Regression test for #40830.
+
+    _stream and _astream were adding ``stop_sequences`` (an Anthropic SDK
+    parameter) to the Chat Completions payload even though _create_message_dicts
+    already maps the ``stop`` argument to the Perplexity-accepted ``stop`` key.
+    Sending both caused a TypeError at the API boundary.
+    """
+    from langchain_core.messages import HumanMessage
+
+    llm = ChatPerplexity(model="sonar")
+    mock_chunks = [
+        {
+            "choices": [{"delta": {"content": "hi"}, "finish_reason": None}],
+            "model": "sonar",
+        },
+        {
+            "choices": [{"delta": {}, "finish_reason": "stop"}],
+            "model": "sonar",
+        },
+    ]
+    mock_stream = MagicMock()
+    mock_stream.__iter__.return_value = iter(mock_chunks)
+
+    create_mock = mocker.patch.object(
+        llm.client.chat.completions, "create", return_value=mock_stream
+    )
+
+    list(llm._stream([HumanMessage(content="hi")], stop=["STOP"]))
+
+    call_kwargs = create_mock.call_args[1]
+    assert "stop" in call_kwargs, "stop must be forwarded to the API"
+    assert call_kwargs["stop"] == ["STOP"]
+    assert "stop_sequences" not in call_kwargs, (
+        "stop_sequences is an Anthropic parameter — must not be sent to Perplexity"
+    )
+
+
+@pytest.mark.asyncio
+async def test_astream_stop_does_not_send_stop_sequences(
+    mocker: MockerFixture,
+) -> None:
+    """Async counterpart of test_stream_stop_does_not_send_stop_sequences."""
+    from langchain_core.messages import HumanMessage
+
+    llm = ChatPerplexity(model="sonar")
+    mock_chunks = [
+        {
+            "choices": [{"delta": {"content": "hi"}, "finish_reason": None}],
+            "model": "sonar",
+        },
+        {
+            "choices": [{"delta": {}, "finish_reason": "stop"}],
+            "model": "sonar",
+        },
+    ]
+
+    async def _async_iter():
+        for chunk in mock_chunks:
+            yield chunk
+
+    create_mock = mocker.patch.object(
+        llm.async_client.chat.completions, "create", return_value=_async_iter()
+    )
+
+    async for _ in llm._astream([HumanMessage(content="hi")], stop=["STOP"]):
+        pass
+
+    call_kwargs = create_mock.call_args[1]
+    assert "stop" in call_kwargs, "stop must be forwarded to the API"
+    assert call_kwargs["stop"] == ["STOP"]
+    assert "stop_sequences" not in call_kwargs, (
+        "stop_sequences is an Anthropic parameter — must not be sent to Perplexity"
+    )
