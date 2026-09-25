@@ -39,6 +39,8 @@ from langchain.agents.middleware.summarization import (
     ContextSize,
     SummarizationMiddleware,
     TriggerClause,
+    _get_approximate_token_counter,
+    _is_claude_model,
     _provider_matches,
 )
 from langchain.chat_models import init_chat_model
@@ -1272,6 +1274,77 @@ def test_summarization_adjust_token_counts() -> None:
     count_2 = middleware.token_counter([test_message])
 
     assert count_1 != count_2
+
+
+class BedrockClaudeChatModel(MockChatModel):
+    """Mimics `ChatBedrockConverse` serving a Claude model (#40840)."""
+
+    model: str = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+
+    @property
+    def _llm_type(self) -> str:
+        return "amazon_bedrock_converse_chat"
+
+
+class LegacyBedrockClaudeChatModel(MockChatModel):
+    """Mimics `ChatBedrock` serving a Claude model (#40840)."""
+
+    model: str = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+
+    @property
+    def _llm_type(self) -> str:
+        return "bedrock-chat"
+
+
+class BedrockLlamaChatModel(MockChatModel):
+    """Mimics `ChatBedrockConverse` serving a non-Claude model."""
+
+    model: str = "meta.llama3-1-405b-instruct-v1:0"
+
+    @property
+    def _llm_type(self) -> str:
+        return "amazon_bedrock_converse_chat"
+
+
+class VertexClaudeChatModel(MockChatModel):
+    """Mimics `ChatAnthropicVertex` (#36318)."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "anthropic-chat-vertex"
+
+
+def test_is_claude_model_detection() -> None:
+    """Claude models must be detected regardless of the hosting provider (#40840)."""
+    # Claude on Bedrock (incl. region-prefixed model ids) is Claude.
+    assert _is_claude_model(BedrockClaudeChatModel())
+    assert _is_claude_model(LegacyBedrockClaudeChatModel())
+    # Anthropic's own wrappers keep working (incl. the #36320 Vertex case).
+    assert _is_claude_model(VertexClaudeChatModel())
+    # Non-Claude models are unaffected, even when served through Bedrock.
+    assert not _is_claude_model(BedrockLlamaChatModel())
+    assert not _is_claude_model(MockChatModel())
+
+
+def test_summarization_token_calibration_bedrock_claude() -> None:
+    """`ChatBedrockConverse` with a Claude model id uses the 3.3 calibration (#40840)."""
+    claude_counter = _get_approximate_token_counter(BedrockClaudeChatModel())
+    assert claude_counter.keywords.get("chars_per_token") == 3.3
+
+    llama_counter = _get_approximate_token_counter(BedrockLlamaChatModel())
+    assert "chars_per_token" not in llama_counter.keywords
+
+    # End-to-end through the middleware: the calibrated counter estimates more tokens.
+    test_message = HumanMessage(content="a" * 120)
+    claude_middleware = SummarizationMiddleware(
+        model=BedrockClaudeChatModel(), trigger=("messages", 5)
+    )
+    llama_middleware = SummarizationMiddleware(
+        model=BedrockLlamaChatModel(), trigger=("messages", 5)
+    )
+    assert claude_middleware.token_counter([test_message]) > llama_middleware.token_counter(
+        [test_message]
+    )
 
 
 def test_summarization_middleware_many_parallel_tool_calls_safety() -> None:

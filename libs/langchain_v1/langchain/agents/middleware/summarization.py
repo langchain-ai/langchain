@@ -218,9 +218,24 @@ class TriggerClause(TypedDict, total=False):
     """
 
 
+def _is_claude_model(model: BaseChatModel) -> bool:
+    """Detect Claude-family models regardless of the hosting provider.
+
+    Anthropic's own wrappers use an ``_llm_type`` starting with
+    ``"anthropic-chat"``, but other hosts (e.g. Amazon Bedrock) serve many model
+    families behind a single ``_llm_type``, so the model id is checked as a
+    fallback (see #40840).
+    """
+    if model._llm_type.startswith("anthropic-chat"):  # noqa: SLF001
+        return True
+    ls_params = model._get_ls_params()  # noqa: SLF001
+    model_name = str(ls_params.get("ls_model_name") or "")
+    return "claude" in model_name.lower()
+
+
 def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     """Tune parameters of approximate token counter based on model type."""
-    if model._llm_type.startswith("anthropic-chat"):  # noqa: SLF001
+    if _is_claude_model(model):
         # 3.3 was estimated in an offline experiment, comparing with Claude's token-counting
         # API: https://platform.claude.com/docs/en/build-with-claude/token-counting
         return partial(
