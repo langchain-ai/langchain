@@ -49,6 +49,7 @@ from langchain_core.load.serializable import (
     SerializedConstructor,
     SerializedNotImplemented,
 )
+from langchain_core.messages.ai import AIMessageChunk
 from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,
@@ -112,6 +113,7 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
+    from langchain_core.messages.base import BaseMessageChunk
     from langchain_core.prompts.base import BasePromptTemplate
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
@@ -128,6 +130,38 @@ if TYPE_CHECKING:
 Other = TypeVar("Other")
 
 _RUNNABLE_GENERIC_NUM_ARGS = 2  # Input and Output
+
+
+def _merge_buffered_chunks(
+    chunks: list[AIMessageChunk],
+) -> AIMessageChunk | BaseMessageChunk:
+    """Merge buffered message chunks with a single variadic `__add__` call.
+
+    Adding chunks one at a time builds an intermediate `AIMessageChunk` per
+    chunk, and each one re-parses the accumulated tool-call `args`
+    (`init_tool_calls` → `parse_partial_json`), which is quadratic for long
+    tool-call streams. A single merge parses once.
+    """
+    first, *rest = chunks
+    if not rest:
+        return first
+    try:
+        return first + rest
+    except TypeError:
+        # The variadic add requires homogeneous `AIMessageChunk`s. Fall back
+        # to incremental folding, matching one-chunk-at-a-time accumulation.
+        merged: BaseMessageChunk = first
+        merge_supported = True
+        for chunk in rest:
+            if merge_supported:
+                try:
+                    merged = merged + chunk
+                except TypeError:
+                    merged = chunk
+                    merge_supported = False
+            else:
+                merged = chunk
+        return merged
 
 
 class Runnable(ABC, Generic[Input, Output]):
@@ -2541,6 +2575,7 @@ class Runnable(ABC, Generic[Input, Output]):
             run_id=config.pop("run_id", None),
             defers_inputs=defers_inputs,
         )
+        final_chunks: list[AIMessageChunk] | None = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             if accepts_config(transformer):
@@ -2567,8 +2602,27 @@ class Runnable(ABC, Generic[Input, Output]):
                         chunk: Output = context.run(next, iterator)
                         yield chunk
                         if final_output_supported:
-                            if final_output is None:
-                                final_output = chunk
+                            if final_chunks is not None and not isinstance(
+                                chunk, AIMessageChunk
+                            ):
+                                # Chunk type changed mid-stream: stop buffering
+                                # and fall back to incremental accumulation.
+                                final_output = cast(
+                                    "Output", _merge_buffered_chunks(final_chunks)
+                                )
+                                final_chunks = None
+                            if final_chunks is not None:
+                                final_chunks.append(cast("AIMessageChunk", chunk))
+                            elif final_output is None:
+                                if isinstance(chunk, AIMessageChunk):
+                                    # Buffer and merge in a single call after
+                                    # the stream ends: adding chunks one at a
+                                    # time re-parses the accumulated tool-call
+                                    # `args` on every merge, which is quadratic
+                                    # for long tool-call streams.
+                                    final_chunks = [chunk]
+                                else:
+                                    final_output = chunk
                             else:
                                 try:
                                     final_output = final_output + chunk  # type: ignore[operator]
@@ -2579,6 +2633,8 @@ class Runnable(ABC, Generic[Input, Output]):
                             final_output = chunk
                 except (StopIteration, GeneratorExit):
                     pass
+                if final_chunks is not None:
+                    final_output = cast("Output", _merge_buffered_chunks(final_chunks))
                 for ichunk in input_for_tracing:
                     if final_input_supported:
                         if final_input is None:
@@ -2642,6 +2698,7 @@ class Runnable(ABC, Generic[Input, Output]):
             run_id=config.pop("run_id", None),
             defers_inputs=defers_inputs,
         )
+        final_chunks: list[AIMessageChunk] | None = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             if accepts_config(transformer):
@@ -2671,8 +2728,27 @@ class Runnable(ABC, Generic[Input, Output]):
                         chunk = await coro_with_context(anext(iterator), context)
                         yield chunk
                         if final_output_supported:
-                            if final_output is None:
-                                final_output = chunk
+                            if final_chunks is not None and not isinstance(
+                                chunk, AIMessageChunk
+                            ):
+                                # Chunk type changed mid-stream: stop buffering
+                                # and fall back to incremental accumulation.
+                                final_output = cast(
+                                    "Output", _merge_buffered_chunks(final_chunks)
+                                )
+                                final_chunks = None
+                            if final_chunks is not None:
+                                final_chunks.append(cast("AIMessageChunk", chunk))
+                            elif final_output is None:
+                                if isinstance(chunk, AIMessageChunk):
+                                    # Buffer and merge in a single call after
+                                    # the stream ends: adding chunks one at a
+                                    # time re-parses the accumulated tool-call
+                                    # `args` on every merge, which is quadratic
+                                    # for long tool-call streams.
+                                    final_chunks = [chunk]
+                                else:
+                                    final_output = chunk
                             else:
                                 try:
                                     final_output = final_output + chunk
@@ -2683,6 +2759,8 @@ class Runnable(ABC, Generic[Input, Output]):
                             final_output = chunk
                 except StopAsyncIteration:
                     pass
+                if final_chunks is not None:
+                    final_output = cast("Output", _merge_buffered_chunks(final_chunks))
                 async for ichunk in input_for_tracing:
                     if final_input_supported:
                         if final_input is None:

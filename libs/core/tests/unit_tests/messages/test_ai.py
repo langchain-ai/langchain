@@ -576,3 +576,70 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_add_ai_message_chunks_single_merge_matches_pairwise() -> None:
+    """A single variadic merge must produce the same chunk as pairwise folding.
+
+    `_transform_stream_with_config` buffers streamed chunks and merges them in
+    one call (`first + rest`) instead of adding each chunk incrementally; this
+    locks in the equivalence, including interleaved multi-index tool calls.
+    """
+    chunks = [
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                create_tool_call_chunk(name="tool_a", args="", id="call_a", index=0)
+            ],
+            response_metadata={"model_name": "some-model"},
+            usage_metadata=UsageMetadata(
+                input_tokens=3, output_tokens=1, total_tokens=4
+            ),
+        ),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                create_tool_call_chunk(
+                    name=None, args='{"query": "se', id=None, index=0
+                )
+            ],
+        ),
+        AIMessageChunk(
+            content="Hello ",
+            tool_call_chunks=[
+                create_tool_call_chunk(name="tool_b", args="", id="call_b", index=1)
+            ],
+        ),
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                create_tool_call_chunk(name=None, args='arch"}', id=None, index=0),
+                create_tool_call_chunk(name=None, args='{"limit": ', id=None, index=1),
+            ],
+            usage_metadata=UsageMetadata(
+                input_tokens=0, output_tokens=2, total_tokens=2
+            ),
+        ),
+        AIMessageChunk(
+            content="world",
+            tool_call_chunks=[
+                create_tool_call_chunk(name=None, args="5}", id=None, index=1)
+            ],
+        ),
+    ]
+
+    pairwise = chunks[0]
+    for chunk in chunks[1:]:
+        pairwise = pairwise + chunk
+
+    single = chunks[0] + chunks[1:]
+
+    assert single == add_ai_message_chunks(*chunks)
+    assert single == pairwise
+    assert single.tool_call_chunks == pairwise.tool_call_chunks
+    assert single.invalid_tool_calls == pairwise.invalid_tool_calls
+    assert single.content == "Hello world"
+    assert single.tool_calls == [
+        create_tool_call(name="tool_a", args={"query": "search"}, id="call_a"),
+        create_tool_call(name="tool_b", args={"limit": 5}, id="call_b"),
+    ]

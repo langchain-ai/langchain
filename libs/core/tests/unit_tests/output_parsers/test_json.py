@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field
 
+import langchain_core.utils.json as json_utils
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.json import (
     SimpleJsonOutputParser,
@@ -628,3 +629,50 @@ def test_unicode_handling() -> None:
     assert "科学文章的标题" in format_instructions, (
         "Unicode characters should not be escaped"
     )
+
+
+TRIM_CASES_PARTIAL: list[tuple[str, Any]] = [
+    # A valid prefix followed by trailing content: parsing resumes at the
+    # position of the first `json.loads` error instead of removing one
+    # character at a time. Results are identical either way.
+    ('{"foo": "bar"} trailing content', {"foo": "bar"}),
+    ('{"foo": "bar"}x', {"foo": "bar"}),
+    ('{"foo": "bar", "baz": "qux"} "extra": 1', {"foo": "bar", "baz": "qux"}),
+    ("[1, 2, 3] junk", [1, 2, 3]),
+    ('{"a": 1}{"b": 2}', {"a": 1}),
+]
+
+
+@pytest.mark.parametrize(("case", "expected"), TRIM_CASES_PARTIAL)
+def test_parse_partial_json_trim_at_error_position(case: str, expected: Any) -> None:
+    assert parse_partial_json(case) == expected
+
+
+def test_parse_partial_json_does_not_retry_loads_per_trailing_char(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The retry loop must skip candidates that provably cannot parse.
+
+    When the closed-off candidate fails, all longer prefixes contain the same
+    offending character in the same context, so trimming resumes at the
+    `JSONDecodeError` position. Previously each retry removed a single
+    character and re-ran a full `json.loads`, which is quadratic for long
+    invalid suffixes.
+    """
+    real_loads = json.loads
+    loads_calls = 0
+
+    class _CountingJson:
+        JSONDecodeError = json.JSONDecodeError
+
+        @staticmethod
+        def loads(s: str, *, strict: bool = False) -> Any:
+            nonlocal loads_calls
+            loads_calls += 1
+            return real_loads(s, strict=strict)
+
+    monkeypatch.setattr(json_utils, "json", _CountingJson)
+
+    case = '{"foo": "bar"}' + " trailing content" * 500
+    assert parse_partial_json(case) == {"foo": "bar"}
+    assert loads_calls <= 5

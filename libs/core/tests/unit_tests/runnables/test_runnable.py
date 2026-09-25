@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 import sys
 import time
@@ -36,6 +37,7 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import (
+    BaseChatModel,
     FakeListChatModel,
     FakeListLLM,
     FakeStreamingListLLM,
@@ -44,13 +46,17 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
 from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
+from langchain_core.messages import ai as messages_ai
 from langchain_core.messages.base import BaseMessage
 from langchain_core.output_parsers import (
     BaseOutputParser,
     CommaSeparatedListOutputParser,
     StrOutputParser,
 )
-from langchain_core.outputs.chat_generation import ChatGeneration
+from langchain_core.outputs.chat_generation import (
+    ChatGeneration,
+    ChatGenerationChunk,
+)
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.prompts import (
@@ -6010,3 +6016,138 @@ def test_runnable_sequence_v1_output_schema_with_pick() -> None:
     schema = sequence.get_output_jsonschema()
     assert set(schema["properties"]) == {"a"}
     assert "a" in schema["required"]
+
+
+class _ToolCallStreamModel(BaseChatModel):
+    """Streams one `write_file` tool call in small `args` deltas."""
+
+    args: str
+    chunk_size: int = 64
+
+    @property
+    def _llm_type(self) -> str:
+        return "tool-call-stream-model"
+
+    def _generate(self, *args: Any, **kwargs: Any) -> Any:
+        raise NotImplementedError
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    {"name": "write_file", "args": "", "id": "call_1", "index": 0}
+                ],
+            )
+        )
+        for i in range(0, len(self.args), self.chunk_size):
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content="",
+                    tool_call_chunks=[
+                        {
+                            "name": None,
+                            "args": self.args[i : i + self.chunk_size],
+                            "id": None,
+                            "index": 0,
+                        }
+                    ],
+                )
+            )
+
+
+def test_chain_stream_large_tool_call_bounded_parse_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A chain must not re-parse accumulated tool-call `args` on every chunk.
+
+    Regression test for #40826: `_transform_stream_with_config` added each
+    streamed chunk to the accumulated output one at a time to build the final
+    output for tracing, and each `AIMessageChunk` merge re-parsed the full
+    accumulated tool-call `args` with `parse_partial_json`, making streaming a
+    large tool call quadratic in the number of chunks.
+    """
+    parse_lengths: list[int] = []
+    original_parse = messages_ai.parse_partial_json
+
+    def _spy(s: str, *, strict: bool = False) -> Any:
+        parse_lengths.append(len(s))
+        return original_parse(s, strict=strict)
+
+    monkeypatch.setattr(messages_ai, "parse_partial_json", _spy)
+
+    chunk_size = 64
+    args = json.dumps({"path": "app.py", "content": "print('hello')\n" * 500})
+    model = _ToolCallStreamModel(args=args, chunk_size=chunk_size)
+    prompt = ChatPromptTemplate.from_messages([("user", "{question}")])
+
+    direct_chunks = list(model.stream("write the file"))
+    parse_lengths.clear()
+
+    with collect_runs() as cb:
+        chunks = list((prompt | model).stream({"question": "write the file"}))
+        run = cb.traced_runs[0]
+
+    # The chain yields exactly the chunks the model streams (ids are
+    # auto-generated per stream call and excluded from the comparison).
+    def _dump(chunk: AIMessageChunk) -> dict[str, Any]:
+        return {**chunk.model_dump(), "id": None}
+
+    assert [_dump(c) for c in chunks] == [_dump(c) for c in direct_chunks]
+    assert sum(
+        len(c.tool_call_chunks[0].get("args") or "")
+        for c in chunks
+        if c.tool_call_chunks
+    ) == len(args)
+
+    # Long strings may only be parsed once the full `args` are finalized for
+    # callbacks (once for the model's `on_llm_end`, once for the chain's
+    # `on_chain_end`) — not once per streamed chunk.
+    long_parses = [length for length in parse_lengths if length > chunk_size]
+    assert len(long_parses) <= 2
+
+    # The final output seen by callbacks is the fully merged message.
+    final_message = run.outputs["output"]
+    assert len(final_message.tool_calls) == 1
+    tool_call = final_message.tool_calls[0]
+    assert tool_call["name"] == "write_file"
+    assert tool_call["args"] == json.loads(args)
+    assert tool_call["id"] == "call_1"
+
+
+async def test_chain_astream_large_tool_call_bounded_parse_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Async variant of the bounded-parse regression test above (#40826)."""
+    parse_lengths: list[int] = []
+    original_parse = messages_ai.parse_partial_json
+
+    def _spy(s: str, *, strict: bool = False) -> Any:
+        parse_lengths.append(len(s))
+        return original_parse(s, strict=strict)
+
+    monkeypatch.setattr(messages_ai, "parse_partial_json", _spy)
+
+    chunk_size = 64
+    args = json.dumps({"path": "app.py", "content": "print('hello')\n" * 500})
+    model = _ToolCallStreamModel(args=args, chunk_size=chunk_size)
+    prompt = ChatPromptTemplate.from_messages([("user", "{question}")])
+
+    direct_chunks = list(model.stream("go"))
+    parse_lengths.clear()
+
+    chunks = [chunk async for chunk in (prompt | model).astream({"question": "go"})]
+
+    def _dump(chunk: AIMessageChunk) -> dict[str, Any]:
+        return {**chunk.model_dump(), "id": None}
+
+    assert [_dump(c) for c in chunks] == [_dump(c) for c in direct_chunks]
+    long_parses = [length for length in parse_lengths if length > chunk_size]
+    assert len(long_parses) <= 2
