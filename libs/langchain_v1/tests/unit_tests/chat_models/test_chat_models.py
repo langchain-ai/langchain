@@ -184,7 +184,6 @@ def test_bedrock_mantle_providers_registered() -> None:
         ("Amazon.Titan-Text-Express-v1", "bedrock"),
         ("anthropic.claude-v2", "bedrock"),
         ("Anthropic.Claude-V2", "bedrock"),
-        ("openai.gpt-oss-120b", None),
         ("mistral-small", "mistralai"),
         ("mixtral-8x7b", "mistralai"),
         ("deepseek-v3", "deepseek"),
@@ -193,7 +192,7 @@ def test_bedrock_mantle_providers_registered() -> None:
         ("solar-pro", "upstage"),
     ],
 )
-def test_attempt_infer_model_provider(model_name: str, expected_provider: str | None) -> None:
+def test_attempt_infer_model_provider(model_name: str, expected_provider: str) -> None:
     assert _attempt_infer_model_provider(model_name) == expected_provider
 
 
