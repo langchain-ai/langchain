@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import warnings
 from typing import TYPE_CHECKING, Any, cast
 
@@ -11,13 +12,17 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.tools import BaseTool, tool
+from langchain_core.utils.function_calling import _WellKnownOpenAITools
 from langgraph.errors import GraphInterrupt
 from typing_extensions import override
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware import model_fallback as model_fallback_module
 from langchain.agents.middleware.model_fallback import (
+    _OPENAI_BUILTIN_TOOL_TYPES,
     ModelFallbackMiddleware,
+    _builtin_tool_provider,
+    _model_provider,
     _sanitize_request_for_fallback,
     _supports_anthropic_cache_control,
 )
@@ -1110,3 +1115,177 @@ async def test_fallback_sanitizer_error_is_not_masked_async(
 
     with pytest.raises(RuntimeError, match="sanitizer boom"):
         await middleware.awrap_model_call(request, mock_handler)
+
+
+class _FakeOpenAIModel(GenericFakeChatModel):
+    """Fake model that reports `openai-chat` as its `_llm_type`."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "openai-chat"
+
+
+class _FakeGoogleModel(GenericFakeChatModel):
+    """Fake model that reports `chat-google-generative-ai` as its `_llm_type`."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "chat-google-generative-ai"
+
+
+@tool
+def _plain_tool(query: str) -> str:
+    """Regular function tool that must survive every fallback attempt."""
+    return query
+
+
+def test_openai_builtin_types_track_core_allowlist() -> None:
+    """Core's allowlist is the source of truth, minus its client-tool containers."""
+    assert set(_WellKnownOpenAITools) - {"function", "namespace"} <= _OPENAI_BUILTIN_TOOL_TYPES
+    # Both carry client tools, so classifying them as provider built-ins would drop
+    # real function tools on fallback.
+    assert not {"function", "namespace"} & _OPENAI_BUILTIN_TOOL_TYPES
+
+
+def test_model_provider_resolves_from_llm_type() -> None:
+    """Provider detection is `_llm_type`-based, with Anthropic winning over Vertex."""
+    assert _model_provider(_FakeOpenAIModel(messages=iter([]))) == "openai"
+    assert _model_provider(_FakeAnthropicModel(messages=iter([]))) == "anthropic"
+    assert _model_provider(_FakeVertexAnthropicModel(messages=iter([]))) == "anthropic"
+    assert _model_provider(_FakeGoogleModel(messages=iter([]))) == "google"
+    assert _model_provider(GenericFakeChatModel(messages=iter([]))) is None
+    assert _model_provider(_FakeNonStringLlmTypeModel(messages=iter([]))) is None
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ({"type": "web_search"}, "openai"),
+        ({"type": "web_search_preview_2025_03_11"}, "openai"),
+        ({"type": "code_interpreter", "container": {"type": "auto"}}, "openai"),
+        ({"type": "apply_patch"}, "openai"),
+        ({"type": "local_shell"}, "openai"),
+        ({"type": "computer"}, "openai"),
+        ({"type": "tool_search"}, "openai"),
+        ({"type": "web_search_20250305", "name": "web_search"}, "anthropic"),
+        ({"type": "bash_20250124", "name": "bash"}, "anthropic"),
+        # Undated Anthropic types, and a dated one that also matches an OpenAI prefix.
+        ({"type": "mcp_toolset", "mcp_servers": []}, "anthropic"),
+        ({"type": "tool_search_tool_bm25"}, "anthropic"),
+        ({"type": "tool_search_tool_bm25_20251119"}, "anthropic"),
+        ({"google_search": {}}, "google"),
+        ({"googleSearch": {}, "urlContext": {}}, "google"),
+        ({"enterprise_web_search": {}}, "google"),
+        ({"mcpServers": []}, "google"),
+        ({"retrieval": {}}, "google"),
+        # A Gemini payload is Gemini-shaped throughout, function declarations included.
+        ({"googleSearch": {}, "functionDeclarations": []}, "google"),
+        ({"functionDeclarations": []}, "google"),
+        # Provider-neutral tool payloads.
+        ({"type": "function", "function": {"name": "lookup", "parameters": {}}}, None),
+        ({"type": "namespace", "name": "group", "tools": []}, None),
+        ({"name": "lookup", "description": "", "parameters": {}}, None),
+    ],
+)
+def test_builtin_tool_provider_classifies_payloads(
+    payload: dict[str, Any], expected: str | None
+) -> None:
+    """Only provider built-in shapes are classified; plain function dicts are not."""
+    assert _builtin_tool_provider(payload) == expected
+
+
+def _builtin_tool_request(primary_model: BaseChatModel) -> ModelRequest:
+    return _make_request().override(
+        model=primary_model,
+        tools=[_plain_tool, {"type": "web_search"}],
+    )
+
+
+def test_fallback_drops_builtin_tools_the_provider_does_not_define() -> None:
+    """An OpenAI built-in tool is dropped for a Claude fallback, plain tools kept."""
+    primary_model = _FakeOpenAIModel(messages=iter([AIMessage(content="primary")]))
+    openai_fallback = _FakeOpenAIModel(messages=iter([AIMessage(content="openai fallback")]))
+    anthropic_fallback = _FakeAnthropicModel(
+        messages=iter([AIMessage(content="anthropic fallback")])
+    )
+    middleware = ModelFallbackMiddleware(openai_fallback, anthropic_fallback)
+    request = _builtin_tool_request(primary_model)
+    attempts: list[ModelRequest] = []
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if req.model is anthropic_fallback:
+            return ModelResponse(result=[AIMessage(content="anthropic fallback")])
+        msg = "model failed"
+        raise ValueError(msg)
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    # Same-provider fallback keeps the built-in tool; cross-provider drops it.
+    assert attempts[1].tools == [_plain_tool, {"type": "web_search"}]
+    assert attempts[2].tools == [_plain_tool]
+
+
+async def test_fallback_drops_builtin_tools_the_provider_does_not_define_async() -> None:
+    """Async: cross-provider fallback drops the built-in tool."""
+    primary_model = _FakeOpenAIModel(messages=iter([AIMessage(content="primary")]))
+    anthropic_fallback = _FakeAnthropicModel(
+        messages=iter([AIMessage(content="anthropic fallback")])
+    )
+    middleware = ModelFallbackMiddleware(anthropic_fallback)
+    request = _builtin_tool_request(primary_model)
+    attempts: list[ModelRequest] = []
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if req.model is anthropic_fallback:
+            return ModelResponse(result=[AIMessage(content="anthropic fallback")])
+        msg = "model failed"
+        raise ValueError(msg)
+
+    await middleware.awrap_model_call(request, mock_handler)
+
+    assert attempts[1].tools == [_plain_tool]
+
+
+def test_fallback_drops_builtin_tools_for_unrecognized_provider() -> None:
+    """A fallback whose provider cannot be identified loses provider built-ins."""
+    primary_model = _FakeOpenAIModel(messages=iter([AIMessage(content="primary")]))
+    unknown_fallback = GenericFakeChatModel(messages=iter([AIMessage(content="fallback")]))
+    middleware = ModelFallbackMiddleware(unknown_fallback)
+    request = _builtin_tool_request(primary_model)
+    attempts: list[ModelRequest] = []
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if req.model is unknown_fallback:
+            return ModelResponse(result=[AIMessage(content="fallback")])
+        msg = "model failed"
+        raise ValueError(msg)
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert attempts[1].tools == [_plain_tool]
+
+
+def test_fallback_attempt_logs_warning(caplog: pytest.LogCaptureFixture) -> None:
+    """Every fallback attempt warns, naming the failure type and the fallback model."""
+    primary_model = _FakeOpenAIModel(messages=iter([AIMessage(content="primary")]))
+    fallback_model = _FakeAnthropicModel(messages=iter([AIMessage(content="fallback")]))
+    middleware = ModelFallbackMiddleware(fallback_model)
+    request = _make_request().override(model=primary_model)
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        if req.model is primary_model:
+            msg = "primary boom"
+            raise ValueError(msg)
+        return ModelResponse(result=[AIMessage(content="fallback")])
+
+    with caplog.at_level(logging.WARNING, logger=model_fallback_module.__name__):
+        middleware.wrap_model_call(request, mock_handler)
+
+    assert any(
+        "Model call failed with ValueError" in record.message
+        and "retrying with fallback model" in record.message
+        for record in caplog.records
+    )
