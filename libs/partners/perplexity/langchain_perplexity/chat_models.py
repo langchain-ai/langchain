@@ -1208,8 +1208,10 @@ class ChatPerplexity(BaseChatModel):
                     )
                 yield response_chunk
             return
-        if stop:
-            params["stop_sequences"] = stop
+        # `stop` is already carried on `params` by `_create_message_dicts`;
+        # the Perplexity Chat Completions API only accepts `stop` (unlike
+        # some providers, it has no `stop_sequences` parameter), so nothing
+        # extra is needed here.
         stream_resp = self.client.chat.completions.create(
             messages=message_dicts, stream=True, **params
         )
@@ -1325,8 +1327,10 @@ class ChatPerplexity(BaseChatModel):
                     )
                 yield response_chunk
             return
-        if stop:
-            params["stop_sequences"] = stop
+        # `stop` is already carried on `params` by `_create_message_dicts`;
+        # the Perplexity Chat Completions API only accepts `stop` (unlike
+        # some providers, it has no `stop_sequences` parameter), so nothing
+        # extra is needed here.
         stream_resp = await self.async_client.chat.completions.create(
             messages=message_dicts, stream=True, **params
         )

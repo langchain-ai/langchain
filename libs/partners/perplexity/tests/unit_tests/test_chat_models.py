@@ -245,6 +245,55 @@ async def test_perplexity_astream_emits_single_valued_usage_metadata_once() -> N
     assert full.response_metadata["model_name"] == "sonar"
 
 
+def test_perplexity_stream_forwards_stop_to_sdk() -> None:
+    """`stream(..., stop=...)` must forward `stop` to the Perplexity SDK.
+
+    Regression test for langchain-ai/langchain#40830: `_stream` used to also
+    inject `stop_sequences`, a kwarg the Perplexity Chat Completions API does
+    not accept, so streaming with `stop` sequences crashed with a `TypeError`
+    before any request was issued.
+    """
+    llm = ChatPerplexity(model="sonar", api_key="test", timeout=30)
+    mock_stream = MagicMock()
+    mock_stream.__iter__.return_value = _usage_bearing_chunks()
+    create = MagicMock(return_value=mock_stream)
+    llm.client.chat.completions.create = create
+
+    list(llm.stream("Hello", stop=["\n"]))
+
+    create.assert_called_once()
+    kwargs = create.call_args.kwargs
+    assert kwargs["stop"] == ["\n"]
+    assert "stop_sequences" not in kwargs
+
+
+@pytest.mark.asyncio
+async def test_perplexity_astream_forwards_stop_to_sdk() -> None:
+    """`astream(..., stop=...)` must forward `stop` to the Perplexity SDK.
+
+    Async counterpart of the #40830 regression test above.
+    """
+    llm = ChatPerplexity(model="sonar", api_key="test", timeout=30)
+    calls: list[dict[str, Any]] = []
+
+    async def _chunk_iter() -> AsyncIterator[dict[str, Any]]:
+        for chunk in _usage_bearing_chunks():
+            yield chunk
+
+    async def _create(**kwargs: Any) -> AsyncIterator[dict[str, Any]]:
+        calls.append(kwargs)
+        return _chunk_iter()
+
+    llm.async_client.chat.completions.create = _create
+
+    async for _ in llm.astream("Hello", stop=["\n"]):
+        pass
+
+    assert len(calls) == 1
+    assert calls[0]["stop"] == ["\n"]
+    assert "stop_sequences" not in calls[0]
+
+
 def test_create_usage_metadata_basic() -> None:
     """Test _create_usage_metadata with basic token counts."""
     token_usage = {
