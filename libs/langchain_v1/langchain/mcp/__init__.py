@@ -1,5 +1,9 @@
 """LangChain MCP adapters for connecting MCP servers with LangChain applications.
 
+MCP Apps (SEP-1865) has its own module: the capability a host advertises, and
+the filters that decide which audience a tool is for. Import those from
+`langchain.mcp.apps`.
+
 Interrupt-driven elicitation has its own types — the interrupt payload, the
 answers a run resumes with, and the discriminator to recognize them by. Import
 those from `langchain.mcp.elicitation`.
