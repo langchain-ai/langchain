@@ -9,11 +9,13 @@ from uuid import UUID
 import pytest
 from langsmith import Client
 from langsmith import utils as ls_utils
+from langsmith.run_helpers import tracing_context
 from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var, get_tracer_project
 
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.langchain import (
     LangChainTracer,
     _get_usage_metadata_from_generations,
@@ -219,6 +221,35 @@ def test_tracer_project_with_agent_addressing(
             assert tracer.project_name == expected_project_name
     finally:
         # The env getters are cached, so leave nothing behind for later tests.
+        _clear_tracer_env_caches()
+
+
+def test_automatic_tracing_omits_default_project_with_agent_addressing() -> None:
+    if not hasattr(ls_utils, "get_tracer_agent_environment"):
+        pytest.skip("agent addressing requires langsmith>=0.14.0")
+    _clear_tracer_env_caches()
+    try:
+        with pytest.MonkeyPatch.context() as mp:
+            for k in (
+                "LANGSMITH_PROJECT",
+                "LANGCHAIN_PROJECT",
+                "LANGCHAIN_SESSION",
+                "HOSTED_LANGSERVE_PROJECT_NAME",
+            ):
+                mp.delenv(k, raising=False)
+            mp.setenv("LANGSMITH_TRACING", "true")
+            mp.setenv("LANGSMITH_AGENT_ID", "my-agent")
+            mp.setenv("LANGSMITH_AGENT_ENVIRONMENT", "development")
+
+            client = unittest.mock.MagicMock(spec=Client)
+            with tracing_context(client=client):
+                RunnableLambda(lambda x: x).invoke(1)
+
+            assert client.create_run.call_count == 1
+            posted = client.create_run.call_args.kwargs
+            assert posted.get("session_name") is None
+            assert posted.get("agent_id") == "my-agent"
+    finally:
         _clear_tracer_env_caches()
 
 

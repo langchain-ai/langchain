@@ -15,7 +15,10 @@ from uuid import UUID
 from langsmith import run_helpers as ls_rh
 from langsmith import utils as ls_utils
 
-from langchain_core.tracers.langchain import LangChainTracer
+from langchain_core.tracers.langchain import (
+    LangChainTracer,
+    _get_default_project_name,
+)
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 
 if TYPE_CHECKING:
@@ -135,7 +138,7 @@ def _tracing_v2_is_enabled() -> bool | Literal["local"]:
     return ls_utils.tracing_is_enabled()
 
 
-def _get_tracer_project() -> str:
+def _get_tracer_project() -> str | None:
     tracing_context = ls_rh.get_tracing_context()
     run_tree = tracing_context["parent"]
     if run_tree is None and tracing_context["project_name"] is not None:
@@ -149,11 +152,9 @@ def _get_tracer_project() -> str:
             # tree structure.
             tracing_v2_callback_var.get(),
             "project",
-            # Have to set this to a string even though it always will return
-            # a string because `get_tracer_project` technically can return
-            # None, but only when a specific argument is supplied.
-            # Therefore, this just tricks the mypy type checker
-            str(ls_utils.get_tracer_project()),
+            # `None` only when the environment addresses runs to a LangSmith
+            # agent and no project is configured.
+            _get_default_project_name(),
         ),
     )
 
