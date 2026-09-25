@@ -821,6 +821,7 @@ def message_to_events(
     yield _build_message_finish(
         usage=getattr(msg, "usage_metadata", None),
         response_metadata=response_metadata,
+        additional_kwargs=msg.additional_kwargs,
     )
 
 
