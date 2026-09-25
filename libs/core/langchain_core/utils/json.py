@@ -54,9 +54,113 @@ def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
 # Adapted from https://github.com/KillianLucas/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py
 # MIT License
 
+# Complete JSON string, or incomplete string through end-of-input (optional
+# trailing unpaired backslash). Used so brace tracking can skip string bodies
+# without a pure-Python per-character scan.
+_STRING_RE = re.compile(r'"(?:\\.|[^"\\])*"|"(?:\\.|[^"\\])*(?:\\)?\Z')
+
+
+def _ends_with_unescaped_quote(raw: str) -> bool:
+    """Return whether `raw` ends with a JSON string-closing quote."""
+    if len(raw) < 2 or raw[-1] != '"':
+        return False
+    n = 0
+    i = len(raw) - 2
+    while i >= 1 and raw[i] == "\\":
+        n += 1
+        i -= 1
+    return n % 2 == 0
+
+
+def _unpaired_trailing_backslash(raw: str) -> bool:
+    """Return whether `raw` ends with an unpaired backslash escape."""
+    n = 0
+    i = len(raw) - 1
+    while i >= 1 and raw[i] == "\\":
+        n += 1
+        i -= 1
+    return n % 2 == 1
+
+
+def _repair_string_token(raw: str) -> tuple[str, bool]:
+    """Repair a JSON string token and report whether it is still open.
+
+    Escapes literal newlines inside the token (same rules as the previous
+    character-walker). Drops an unpaired trailing backslash on incomplete
+    strings. Does not append a closing quote for open strings.
+
+    Args:
+        raw: A string token matched by `_STRING_RE`, including the opening
+            quote and, when complete, the closing quote.
+
+    Returns:
+        A tuple of `(repaired_token, is_open)`.
+    """
+    if "\n" not in raw:
+        if _ends_with_unescaped_quote(raw):
+            return raw, False
+        if _unpaired_trailing_backslash(raw):
+            return raw[:-1], True
+        return raw, True
+
+    # Literal newlines are rare in streamed `json.dumps` output, but must be
+    # escaped the same way as the original character-at-a-time walker.
+    out: list[str] = []
+    escaped = False
+    is_complete = False
+    for j, char in enumerate(raw):
+        if j == 0:
+            out.append(char)
+            continue
+        if escaped:
+            out.append(char)
+            escaped = False
+        elif char == "\\":
+            if j == len(raw) - 1:
+                break  # drop unpaired trailing escape
+            out.append(char)
+            escaped = True
+        elif char == '"':
+            out.append(char)
+            is_complete = True
+            break
+        elif char == "\n":
+            out.append("\\n")
+        else:
+            out.append(char)
+    return "".join(out), not is_complete
+
+
+def _track_structural_chars(span: str, stack: list[str]) -> bool:
+    """Update `stack` for braces/brackets in a non-string span.
+
+    Args:
+        span: Substring known to be outside JSON string literals.
+        stack: Closing characters still needed for open structures.
+
+    Returns:
+        `False` if a mismatched closing character is found, else `True`.
+    """
+    for char in span:
+        if char == "{":
+            stack.append("}")
+        elif char == "[":
+            stack.append("]")
+        elif char in {"}", "]"}:
+            if stack and stack[-1] == char:
+                stack.pop()
+            else:
+                return False
+    return True
+
 
 def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     """Parse a JSON string that may be missing closing braces.
+
+    Uses a compiled regex to skip string literals when tracking structure, and
+    resumes trimming at `JSONDecodeError.pos` so failed closes do not retry
+    `json.loads` once per character. Results match the previous character-walker
+    implementation.
 
     Args:
         s: The JSON string to parse.
@@ -71,64 +175,50 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     except json.JSONDecodeError:
         pass
 
-    # Initialize variables.
-    new_chars = []
-    stack = []
-    is_inside_string = False
-    escaped = False
+    parts: list[str] = []
+    stack: list[str] = []
+    pos = 0
+    open_string = False
 
-    # Process each character in the string one at a time.
-    for char in s:
-        new_char = char
-        if is_inside_string:
-            if char == '"' and not escaped:
-                is_inside_string = False
-            elif char == "\n" and not escaped:
-                new_char = (
-                    "\\n"  # Replace the newline character with the escape sequence.
-                )
-            elif char == "\\":
-                escaped = not escaped
-            else:
-                escaped = False
-        elif char == '"':
-            is_inside_string = True
-            escaped = False
-        elif char == "{":
-            stack.append("}")
-        elif char == "[":
-            stack.append("]")
-        elif char in {"}", "]"}:
-            if stack and stack[-1] == char:
-                stack.pop()
-            else:
-                # Mismatched closing character; the input is malformed.
+    for match in _STRING_RE.finditer(s):
+        if match.start() > pos:
+            span = s[pos : match.start()]
+            if not _track_structural_chars(span, stack):
                 return None
+            parts.append(span)
 
-        # Append the processed character to the new string.
-        new_chars.append(new_char)
+        repaired, open_string = _repair_string_token(match.group(0))
+        parts.append(repaired)
+        pos = match.end()
 
-    # If we're still inside a string at the end of processing,
-    # we need to close the string.
-    if is_inside_string:
-        if escaped:  # Remove unterminated escape character
-            new_chars.pop()
-        new_chars.append('"')
+    if pos < len(s):
+        span = s[pos:]
+        if not _track_structural_chars(span, stack):
+            return None
+        parts.append(span)
+
+    if open_string:
+        parts.append('"')
 
     # Reverse the stack to get the closing characters.
     stack.reverse()
+    closing = "".join(stack)
+    new_s = "".join(parts)
 
-    # Try to parse mods of string until we succeed or run out of characters.
-    while new_chars:
-        # Close any remaining open structures in the reverse
-        # order that they were opened.
-        # Attempt to parse the modified string as JSON.
+    # Try to parse progressively shorter prefixes until one succeeds.
+    # `JSONDecodeError.pos` skips characters that cannot start a longer valid
+    # prefix, avoiding one `json.loads` call per trimmed character.
+    while new_s:
         try:
-            return json.loads("".join(new_chars + stack), strict=strict)
-        except json.JSONDecodeError:
-            # If we still can't parse the string as JSON,
-            # try removing the last character
-            new_chars.pop()
+            return json.loads(new_s + closing, strict=strict)
+        except json.JSONDecodeError as e:
+            cut = e.pos if e.pos < len(new_s) else len(new_s) - 1
+            if cut < 0:
+                break
+            next_s = new_s[:cut]
+            if len(next_s) >= len(new_s):
+                next_s = new_s[:-1]
+            new_s = next_s
 
     # If we got here, we ran out of characters to remove
     # and still couldn't parse the string as JSON, so return the parse error
