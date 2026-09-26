@@ -36,23 +36,33 @@ sources:
     resource: repo://libs/langchain_v1/pyproject.toml
   - id: openwiki-source-94d5218d78dfd52679adc96b
     resource: repo://libs/langchain_v1/tests/unit_tests/test_imports.py
+  - id: openwiki-source-f4436232e0451a04247e92e5
+    resource: repo://libs/langchain/pyproject.toml
   - id: openwiki-source-49fbcc45434b619b68220bf9
     resource: repo://libs/Makefile
   - id: openwiki-source-77f5d6298c73161b4d4f697e
     resource: repo://libs/model-profiles/langchain_model_profiles/__init__.py
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
+  - id: openwiki-source-5d087d7863a7a176261021c8
+    resource: repo://libs/partners/typesafe/pyproject.toml
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-22T08:27:06.345Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-26T08:25:01.631Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-22T08:27:06.345Z
+    at: 2026-09-26T08:25:01.631Z
 ---
 
 ## Overview
 
-This page provides a quick reference for locating code by topic in the LangChain monorepo. The repository is organized as a multi-package workspace with a three-layer architecture: **langchain-core** (base abstractions), **langchain** (orchestration and agents), and **partners** (provider integrations). Use this map to navigate directly to the code responsible for a given concept.
+This page provides a quick reference for locating code by topic in the LangChain monorepo. The repository is organized as a multi-package workspace with a four-layer architecture:
+- **langchain-core** (v1.6.5): Base abstractions (Runnables, Messages, Tools, Prompts, Callbacks)
+- **langchain** (v1.4.2): Modern agent factory, orchestration, middleware, and LangGraph integration (in `langchain_v1/`)
+- **langchain-classic** (v1.0.8): Legacy chains, deprecated patterns, backward compatibility (in `langchain/`)
+- **partners** (independently versioned): Provider-specific implementations released per-provider
+
+Use this map to navigate directly to the code responsible for a given concept.
 
 ## Concept-to-Path Mapping
 
@@ -82,14 +92,14 @@ This page provides a quick reference for locating code by topic in the LangChain
 | **Standard Tests** | `repo://libs/standard-tests/langchain_tests/` | Shared test suites and contracts for component conformance across the ecosystem |
 | **Configuration (Core)** | `repo://libs/core/pyproject.toml` | langchain-core package metadata, dependencies (langsmith, httpx, tenacity, pydantic), and build config |
 | **Configuration (LangChain)** | `repo://libs/langchain_v1/pyproject.toml` | langchain package metadata, core dependencies, and optional provider groups |
-| **Configuration (Repo-Wide)** | `repo:///.pre-commit-config.yaml` | Git hooks for formatting, linting, and validation across all packages |
+| **Configuration (Repo-Wide)** | `repo://.pre-commit-config.yaml` | Git hooks for formatting, linting, and validation across all packages |
 | **Build System (Libs)** | `repo://libs/Makefile` | Monorepo-level build targets, dependency locking, and cross-package tasks |
 
 ## Key Directory Structure
 
 ```
 /libs/
-├── core/                           # langchain-core: Base abstractions (v1.6.4)
+├── core/                           # langchain-core: Base abstractions (v1.6.5)
 │   ├── langchain_core/
 │   │   ├── language_models/        # BaseChatModel and language model abstractions
 │   │   ├── messages/               # Message types and content blocks
@@ -144,7 +154,13 @@ This page provides a quick reference for locating code by topic in the LangChain
 │   ├── qdrant/                     # Qdrant vector store
 │   ├── exa/                        # Exa search
 │   ├── nomic/                      # Nomic embeddings
+│   ├── typesafe/                   # TypeSafe integration
 │   └── Makefile
+│
+├── langchain/                      # langchain-classic: Legacy chains and patterns (v1.0.8)
+│   ├── langchain_classic/          # Backward compatibility, deprecated patterns
+│   ├── Makefile
+│   └── pyproject.toml
 │
 ├── model-profiles/                 # LLM behavior and capability profiles
 │   ├── langchain_model_profiles/
@@ -267,13 +283,22 @@ The `BaseTool` in `repo://libs/core/langchain_core/tools/base.py` provides:
 ```
 User Applications
   ├─→ langchain (v1.4.2)
-  │    ├─→ langchain-core (v1.6.4)
-  │    └─→ LangGraph (state machines)
+  │    ├─→ langchain-core (v1.6.5)
+  │    ├─→ LangGraph (≥1.2.11,<1.3.0)
+  │    └─→ pydantic (≥2.7.4)
   │
-  ├─→ langchain-core (direct use)
+  ├─→ langchain-core (v1.6.5) [direct use]
+  │    ├─→ langsmith (>=0.3.45,<1.0.0)
+  │    ├─→ tenacity (>=8.1.0,<10.0.0)
+  │    └─→ pydantic (>=2.7.4,<3.0.0)
+  │
+  ├─→ langchain-classic (v1.0.8) [legacy applications]
+  │    ├─→ langchain-core (>=1.4.7,<2.0.0)
+  │    ├─→ langchain-text-splitters (>=1.1.2,<2.0.0)
+  │    └─→ SQLAlchemy (>=1.4.0,<3.0.0)
   │
   └─→ Partner Packages (langchain-openai, langchain-anthropic, etc.)
        └─→ Implement langchain-core abstractions
 ```
 
-**Versioning**: Core is released independently with strict semantic versioning. LangChain and partners pin core versions. Partner packages are released independently per provider.
+**Versioning**: Core is released independently with strict semantic versioning. LangChain and partners pin core versions. Partner packages are released independently per provider. langchain-classic maintains backward compatibility for legacy code patterns.

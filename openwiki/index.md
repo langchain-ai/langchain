@@ -13,7 +13,7 @@ okf_version: "0.2"
 - [Composability and LCEL Chains](composability.md) - How Runnable components compose through LCEL operators, creating reusable workflows with automatic async, batch, and streaming support.
 - [Development Commands and Local Setup](dev-commands.md) - Quick reference for uv, make, lint, test, and type-checking commands in the LangChain monorepo, including environment setup, pre-commit hooks, and testing workflows.
 - [Integration Testing: Live API Tests and VCR Cassettes](integration-tests.md) - How to write integration tests that call real model APIs with VCR cassette recording for CI compatibility, including environment setup, cassette management, and parameterization patterns.
-- [Bearer token](mcp-integration.md)
+- [MCP (Model Context Protocol) Integration](mcp-integration.md) - LangChain adapter for discovering and invoking MCP tools, with protocol negotiation, multiple transports, mid-call interrupts, and error handling for agent use.
 - [Message Types and Content Representation](messages.md) - Document the message abstraction, standardized content blocks for multimodal LLM I/O, message hierarchy, and provider-specific block translators.
 - [Agent Middleware: Composable Request/Response Processing](middleware.md) - Document the middleware system for agents, including lifecycle hooks, HITL approval, error handling, retry logic, and middleware composition patterns for intercepting and modifying agent behavior.
 - [Chat Model Initialization with init_chat_model](model-initialization.md) - Factory function for instantiating chat models from provider strings with unified configuration and runtime model switching.
@@ -24,6 +24,6 @@ okf_version: "0.2"
 - [Runnable: Core Composition Layer](runnables.md) - Explain the Runnable protocol and how it enables composable chaining of LLM components through the LangChain Expression Language (LCEL).
 - [Source Map: Repository File Organization](source-map.md) - Quick reference for locating code by topic, mapping LangChain concepts to their implementation paths across the monorepo including core abstractions, agents, middleware, partners, and configuration files.
 - [Streaming: Token-by-Token Output](streaming.md) - How streaming works across LLM components and chains, token-by-token delivery via AIMessageChunk, callback integration, and memory/latency tradeoffs.
-- [AutoStrategy (recommended)](structured-output.md)
+- [Structured Output: Binding Schemas and Response Marshaling](structured-output.md) - Mechanisms for binding Pydantic schemas and JSON schemas to LLM responses via tool-based, provider-native, or automatically-detected strategies; includes validation, error handling, and response marshaling.
 - [Tools and Tool Binding](tools.md) - LangChain's tool system enables agents and language models to execute structured actions through schema-aware components with automatic validation, error handling, and callback integration.
 - [Unit Testing: Strategies and Patterns](unit-tests.md) - How to write unit tests for langchain-core and langchain components using pytest, fixtures, mocking, and standard test classes from langchain-tests.

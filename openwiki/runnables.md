@@ -3,9 +3,6 @@ type: "Concept"
 title: "Runnable: Core Composition Layer"
 description: "Explain the Runnable protocol and how it enables composable chaining of LLM components through the LangChain Expression Language (LCEL)."
 tags: [runnable, lcel, composition, invoke, stream, batch, async, chaining]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
@@ -17,7 +14,10 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/fallbacks.py
   - id: openwiki-source-ebe3f825462d0b4a14ee3717
     resource: repo://libs/core/langchain_core/runnables/retry.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-26T08:25:01.631Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-26T08:25:01.631Z
 ---
 
 ## Overview
@@ -306,7 +306,9 @@ router.invoke({"key": "math", "input": "2 + 2"})  # Uses math_chain
 
 ### Fallback and Retry
 
-**Fallbacks**: `RunnableWithFallbacks` (`repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L150`)
+**Fallbacks**: `RunnableWithFallbacks` (`repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L262`)
+
+`RunnableWithFallbacks` wraps a primary runnable with a sequence of fallback runnables, tried sequentially on failure:
 
 ```python
 from langchain_core.runnables import RunnableWithFallbacks
@@ -317,25 +319,35 @@ model = ChatOpenAI().with_fallbacks([ChatAnthropic(), ChatCohere()])
 result = model.invoke("Hello")  # Returns first successful result
 ```
 
+**Key features**:
 - Executes the primary runnable.
 - If it fails with an exception in `exceptions_to_handle`, tries the next fallback.
-- Proceeds until one succeeds or all fail.
-- Optionally passes exceptions to fallbacks for adaptive recovery.
+- Proceeds until one succeeds or all fail; the first exception encountered is re-raised if all fail.
+- Supports both sync (`invoke`, `batch`) and async (`ainvoke`, `abatch`) execution.
+- Optional `exception_key` parameter: if set, exceptions from failed attempts are passed to subsequent fallbacks as input (useful for adaptive error handling).
+- Collects config specs from all branches for schema introspection.
 
-**Retry**: `RunnableRetry` (`repo://libs/core/langchain_core/runnables/retry.py#L48-L150`)
+**Retry**: `RunnableRetry` (`repo://libs/core/langchain_core/runnables/retry.py#L48-L378`)
+
+`RunnableRetry` wraps a runnable and retries it on failure using exponential backoff:
 
 ```python
 runnable = ChatOpenAI().with_retry(
     retry_if_exception_type=(APIError,),
-    stop_after_attempt=3,
+    max_attempt_number=3,
     wait_exponential_jitter=True,
 )
 # Retries on APIError up to 3 times with exponential backoff + jitter.
 ```
 
-- Uses `tenacity` for retry logic.
-- Configurable stop conditions, wait strategies, and exception types.
-- Best applied to individual runnables (e.g., LLM calls) rather than entire chains.
+**Key features**:
+- Uses `tenacity` library for retry mechanics.
+- Configurable retry conditions: `retry_exception_types` (default: `(Exception,)`) specifies which exceptions trigger retry.
+- Exponential backoff with jitter: `wait_exponential_jitter=True` (default) adds randomized delay between attempts; `exponential_jitter_params` customizes initial, max, and exp_base values.
+- `max_attempt_number` (default: 3) limits total attempts.
+- Supports `invoke`, `ainvoke`, `batch`, `abatch` with automatic retry logic.
+- **Streaming not retried**: `stream` and `astream` are intentionally not retried because retrying a stream is unintuitive.
+- Best applied to individual runnables (e.g., LLM calls) rather than entire chains, to minimize retry scope.
 
 ## RunnableConfig: Threading Context
 

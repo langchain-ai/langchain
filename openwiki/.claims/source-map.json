@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7147252f9ec42f2a3fbb825bf918edec111c30d11e7c9c2e161ba8a4dc68942e",
+  "pageVersion": "sha256:74a78b2421349138ab745cbdfd7d84291f589528729a65b064493f7600674fcf",
   "claims": [
     {
       "id": "claim_c71edae5b0f64c8fa79c17ef1aca0f6b",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
-          "version": "repo-file-v1:sha256:ecbb580ed4083a985a40c71735aa0eafb58d3a00ac74d2e511ab14a3aa3d37b1"
+          "version": "repo-file-v1:sha256:cc4a7d9a620224558c4eddd4e13edc988a9ac9e328b7a67deeb71ed2c5ec5174"
         }
       ]
     },
@@ -88,7 +88,7 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py",
-          "version": "repo-file-v1:sha256:7cad65a9057208ebc0fc0fe49b0d818ae4a8fd568e3e42d09bbf1d9e12555d94"
+          "version": "repo-file-v1:sha256:757316423a5b1f95b14b1ebaac56e612af026bb50f06c1748e688e65a8a17b67"
         }
       ]
     },
@@ -98,7 +98,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py",
-          "version": "repo-file-v1:sha256:b7f271886609e76085c3bd3a0adca0c2a52327b8165c23533a3602b3ba3cdec2"
+          "version": "repo-file-v1:sha256:5d1eeed0593e3bd6c199b08a0a75ad74f2e1ae70eafaf423faf58fe32e7e9ede"
         }
       ]
     },
@@ -164,7 +164,7 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml",
-          "version": "repo-file-v1:sha256:55cedb202c33c63643e241be6606fef3c4155b02f7c0b4b6e3fcb0cb37614844"
+          "version": "repo-file-v1:sha256:f2e32a43158f1a189ce6d1941ab80ba4bd2069c2f4e8018f026e9c7ce011634c"
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml",
@@ -174,21 +174,35 @@
     },
     {
       "id": "claim_458d709b604149fa8fb9639025882358",
-      "statement": "LangChain uses a three-layer architecture: langchain-core (v1.6.4) for base abstractions, langchain (v1.4.2) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
+      "statement": "LangChain uses a four-layer architecture: langchain-core (v1.6.5) for base abstractions, langchain (v1.4.2) for orchestration and agents, langchain-classic (v1.0.8) for legacy patterns and backward compatibility, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
       "evidence": [
         {
           "resource": "repo://libs/core/pyproject.toml",
-          "version": "repo-file-v1:sha256:55cedb202c33c63643e241be6606fef3c4155b02f7c0b4b6e3fcb0cb37614844"
+          "version": "repo-file-v1:sha256:f2e32a43158f1a189ce6d1941ab80ba4bd2069c2f4e8018f026e9c7ce011634c"
+        },
+        {
+          "resource": "repo://libs/langchain/pyproject.toml",
+          "version": "repo-file-v1:sha256:6daf54cb5613b2b99b0023cd25e2973cfa92e0bcbf8e99f5a64b6edea139efa4"
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml",
           "version": "repo-file-v1:sha256:6dc328e210676ab7f09e455da9f7e578d9d2b5623f51f82dd962b79eea44e290"
         }
       ]
+    },
+    {
+      "id": "claim_ab295a3f73a6477b9587b78bf79f5d66",
+      "statement": "The TypeSafe partner integration is implemented in libs/partners/typesafe/, providing type-safe language model interactions aligned with core abstractions.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/typesafe/pyproject.toml",
+          "version": "repo-file-v1:sha256:9a4ce238b52b50881bc74d5fe6388a6d8348a1bb926d227c3dd6b91d55ee8531"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-22T08:27:06.345Z"
+    "at": "2026-09-26T08:25:01.631Z"
   }
 }

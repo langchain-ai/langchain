@@ -3,9 +3,6 @@ type: "Developer Tools & Commands"
 title: "Development Commands and Local Setup"
 description: "Quick reference for uv, make, lint, test, and type-checking commands in the LangChain monorepo, including environment setup, pre-commit hooks, and testing workflows."
 tags: [development, build, testing, linting, typing, uv, make, pre-commit, local-setup]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
@@ -24,6 +21,9 @@ sources:
   - id: openwiki-source-a6e669bb11f217c6fbd06670
     resource: repo://libs/partners/anthropic/Makefile
 generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-26T08:25:01.631Z
 ---
 
 ## Overview

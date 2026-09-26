@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:39306f0c76011ccf01aff4ac460b8d8856130f40f1e6fcdbd46b70dbadcc2ea2",
+  "pageVersion": "sha256:f5f7ec4b61404baa302b0a7d7d39c5806e5afaad06ab7105effd5e424aa10cee",
   "claims": [
     {
       "id": "claim_06ad6af0140b4318b25f43272f89e77f",
@@ -55,8 +55,8 @@
       "statement": "FewShotChatMessagePromptTemplate embeds example message pairs within a chat template sequence. Each example is formatted as a conversation exchange (human/ai messages), then injected between prefix and suffix messages to teach models by demonstration.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/prompts/few_shot.py#L262-L410",
-          "version": "repo-lines-v1:sha256:546d87960f834e65f5e8f714ed573fbc7b284cb4c13040ef4becaf2f1647ea5e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjMTdmMmNmMmM0YWI0MzYyMTRlNjBlYTUyY2E4MDQ3MjE5MWZhMDE5ZTgxNmI0YjJjOTcyNTRhN2FmNzgwMzdjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiYWFlOGEwY2E3NmY5OGY3YjdkYzc5ODQ5NTFkNjNlNTdkYjNjNjQ1NTc5Y2E1MWJhZDZhNTM5ZDYxNGVkYmJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4YTQ2Mjk5YmRhMDI5NWZmOWNmNWQzYzI4OGM1ZjVkMWI4ZDcwOTNkNzZmYTI1M2JjZTNiYjc3OTlhMTcwZGZiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NWMzMDQ1ZGMyZDYxNjE4OTMxZGExN2I0MjNlNDkwY2RiMjYyYjJiOTUwZGZkNWUwZjY3NzdhNDJiMWE2YjVlIn0"
+          "resource": "repo://libs/core/langchain_core/prompts/few_shot.py#L262-L416",
+          "version": "repo-lines-v1:sha256:fdf87b1554c5d1a9a88cf12de0e7dd7f807add84226ec34c2bbeb8215ac0bdb4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjMTdmMmNmMmM0YWI0MzYyMTRlNjBlYTUyY2E4MDQ3MjE5MWZhMDE5ZTgxNmI0YjJjOTcyNTRhN2FmNzgwMzdjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiYWFlOGEwY2E3NmY5OGY3YjdkYzc5ODQ5NTFkNjNlNTdkYjNjNjQ1NTc5Y2E1MWJhZDZhNTM5ZDYxNGVkYmJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4YTQ2Mjk5YmRhMDI5NWZmOWNmNWQzYzI4OGM1ZjVkMWI4ZDcwOTNkNzZmYTI1M2JjZTNiYjc3OTlhMTcwZGZiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkM2E3YzE2NjY3ODRhOTI4ZjllNGU3NWEzZGJjZDRiNTViYzMxZjFiNjcyYWVjMTllN2VjZTVjODY1YzFmNTBjIn0"
         }
       ]
     },
@@ -175,10 +175,30 @@
           "version": "repo-lines-v1:sha256:9e7a196791d7921f5dda4aff01828a5731663f7a163f5da719a6140c2fec3dee:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZGRjYTFjZDMwMjFlNzA0YjcxMjNiMTYwMGIzOGM3ZDExNTRhYWZiNGJlNzEwOTA1ZTVkZDE1MjBlNzk0NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MjU2OTVlYTJkY2RhMWM2M2JlMjg1Yjc4MDlhMmEwMzYwZGEzZGZiYWY3ZjMzYjJkMTA0NzJmYzZhMDNkMDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxZjAyMzJlOTNkNTcxMDA4MTM4N2E5ZWFkNmFjZmRlZTYzNGRkZWU3YzQ2ZjE0NDc3Y2NhZGRhMDZmZWE5OTIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_5745fd96277c47f1acff62db6cb348cc",
+      "statement": "PromptValue is the abstract base for all prompt outputs, with three concrete implementations: StringPromptValue (for text-only APIs), ChatPromptValue (for chat models), and ImagePromptValue (for vision models). All implement to_string() and to_messages() conversion methods.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompt_values.py#L24-L150",
+          "version": "repo-lines-v1:sha256:6b1b4b990de89826fda90813041ded1f9ea5b6fd22af470007c155122c2657f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxYjBiMTA5ZTI2ZDc3MTcwMDlhYTYyYTIzOWEwYjc4YzJiMjUwMDg4ZTdhYmIyMzczNzZkMDliMWNkNmNjZDM3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhOThiMDYzZDliNDdlNjUzNzk2MjU1NzJjY2UxOTc2NjlkNTc2N2UxMmMxOGJlMDc1NjUyYjhjZDk4MWNlOGQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlN2EyZTIxYTRlNjNmMDE3YjgxYmMyZDg1YTRhMDAzN2QyMDdhMjliYzY2NWJlYmM5YTY0MWQ5YzEwOWM3MWJkIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_d2dc2c3c914f46018ba6f59e596d51a5",
+      "statement": "ImagePromptTemplate formats image URLs and metadata for vision-capable models. It accepts a template dictionary with 'url' (required) and optional 'detail' field, supporting variable substitution via f-string, mustache, or jinja2. Returns ImagePromptValue with to_string() and to_messages() conversion methods.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/image.py#L17-L110",
+          "version": "repo-lines-v1:sha256:82cba2401e957677e194b0c73f4ddba7cddd0c20239a85a0e25ac76db4251e2c:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMGU3NjJlNTE3YjAyYWY1ZWZmNzUxZWMwNjQ0ZGRmMGNkYzc0MjQxNjQ1MjZhZDMwYzgwNmU4YWUxNmY3ZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMDhkMDc4ZDZmZTgyZDFiYjc4Mjg4NDZiMWM1ZmQyNjk2NTZmYjBmYmRjMGEzMjNmYjVlMTU1MWEwZDg1ZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxODhlYzliYWJmOTQxYWUyM2NkODJlYmMzMmNiY2E3MDgxN2JiN2NjNjczZWFmMDA5NDkyYTgzM2VkOGU3ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlYzQ3MmY5Y2JjMGMzOWRkZTFkZDI5NzAwYTFhMTc0ZGIwNTMyZjA3ODE0MWU1MTQ2YmEzMjgxNmRlMDFmMjYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-21T08:30:16.745Z"
+    "at": "2026-09-26T08:25:01.631Z"
   }
 }

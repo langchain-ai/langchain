@@ -3,13 +3,13 @@ type: Factory
 title: Chat Model Initialization with init_chat_model
 description: Factory function for instantiating chat models from provider strings with unified configuration and runtime model switching.
 tags: [chat-models, factory-pattern, initialization, model-parameters, configuration, provider-registry]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-c479d4fffee5cf62576699e4
     resource: repo://libs/langchain_v1/langchain/chat_models/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-26T08:25:01.631Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-26T08:25:01.631Z
 ---
 
 ## Overview
@@ -124,7 +124,7 @@ If inference fails and `model_provider` is not provided, a `ValueError` lists su
 
 The `_BUILTIN_PROVIDERS` dictionary maps provider names to module paths, class names, and instantiation functions. Each entry is a tuple: `(module_path, class_name, creator_func)`.
 
-**All 32 Built-in Providers** (repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L97):
+**All 30 Built-in Providers** (repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L99):
 
 | Provider | Package | Class | Module | Notes |
 |---|---|---|---|---|
@@ -138,6 +138,8 @@ The `_BUILTIN_PROVIDERS` dictionary maps provider names to module paths, class n
 | `anthropic_bedrock` | `langchain-aws` | `ChatAnthropicBedrock` | `langchain_aws` | Bedrock-hosted Anthropic |
 | `bedrock` | `langchain-aws` | `ChatBedrock` | `langchain_aws` | Generic Bedrock models |
 | `bedrock_converse` | `langchain-aws` | `ChatBedrockConverse` | `langchain_aws` | Bedrock Converse API |
+| `bedrock_mantle_anthropic` | `langchain-aws[anthropic]` | `ChatAnthropicMantle` | `langchain_aws` | Bedrock Mantle Anthropic |
+| `bedrock_mantle_openai` | `langchain-aws[openai]` | `ChatOpenAIMantle` | `langchain_aws` | Bedrock Mantle OpenAI |
 | `cohere` | `langchain-cohere` | `ChatCohere` | `langchain_cohere` | |
 | `deepseek` | `langchain-deepseek` | `ChatDeepSeek` | `langchain_deepseek` | |
 | `fireworks` | `langchain-fireworks` | `ChatFireworks` | `langchain_fireworks` | |

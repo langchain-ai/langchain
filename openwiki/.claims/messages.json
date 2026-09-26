@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0a36ceb2f165da2e8002795df9b6130b952184dc8b95bb5a8f79c888e4c3ab73",
+  "pageVersion": "sha256:7b3a74a18271ab4347f7e11e2272ba9c03726b25c698bca0ab712b55f320c438",
   "claims": [
     {
       "id": "claim_cd426b48afb54e54a30a82b280ab266d",
@@ -140,15 +140,39 @@
     },
     {
       "id": "claim_10200f8910bb4ade817078fcb739993c",
-      "statement": "The utils module provides get_buffer_string (for converting messages to strings in prefix or XML format), filter_messages, trim_messages, and merge_message_runs for message manipulation. It also defines the AnyMessage discriminated union type for Pydantic deserialization using the type field.",
+      "statement": "The utils module provides get_buffer_string (for converting messages to strings in prefix or XML format), filter_messages, trim_messages, merge_message_runs, convert_to_messages, and convert_to_openai_messages for message manipulation. It also defines the AnyMessage discriminated union type for Pydantic deserialization using the type field. It also includes message_chunk_to_message for converting message chunks to complete messages.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/messages/utils.py#L287-L410",
-          "version": "repo-lines-v1:sha256:318f3fd27bc9861f4c8972c4216c4e73c2b39eb78be1b3d529364beb60a5c985:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2MTI4NmQ1ODU1ZjE2OWM4MGU3NWMwYzg0Yjk0MmViOTg3YzkwMTgyYzZmMWI5Nzg3NTViMzQ0YzQzMzJhOGQzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiNzU1YzY0OGYzNzdiNTRmODg5NWMxZTBjMDc2NzhiNGEwNWZjNTQ2YWUxNWZiMjY5YWU1NmRkYjc0MjllOWY3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzNGM0OWEwNzMzOTE4NTk0YjFjMTIxZTBlOWZlNmQ5OTE2ODY1ZGQ5NTIwMjg2MDkxNmQ1MmMwZGYyZDEwMWY1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmNzg3MDE1MDBiYWE3Njk5MmUwZWZjNTdkNzE5ZGMzMWVjMzNkYmE4OGE3NjA3MjhmOGUxMjQxYjA3ZDZkYzUzIn0"
+          "resource": "repo://libs/core/langchain_core/messages/utils.py#L1015-L1130",
+          "version": "repo-lines-v1:sha256:22d16a9d117df84a9a22c6549cd805b04f9ac857434334ca95bbb43baa1f0355:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwZGU4NGRkZDIzMjg4MTFlNTQxNDgyZThjNjg0NDJlZTkxOGJhM2QyZTkzYWU3NDY0ZTJhOTFmYWQ4NWJjZTFjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5ZTZiY2RlNjVhYWQ3Y2MyMjQ1N2E3YjE0MDk5MzJiYmM1NzZhMTY0MTllN2QwZmI2Mzg1NTVkNjk3MzBlNjA4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZDkzMWY1ZjI3MjY3YzY2Njk3MmYzNjljODZhMTA3NjQ0Yjc3ZDY2ZTExMGEzZGJlZmUwN2VjZjc2MDA4OTU2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0NTVlODkwMTI0NGVlZGEzNjljOTYwZTg2MWRjOGJhZDliNzRjODNjOTQ0NjZiNGYzNWNkMzlhMWIyMzEyMjNhIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/utils.py#L1146-L1280",
+          "version": "repo-lines-v1:sha256:ccfd17b8e4a74bb9dfd1e1d1662f23b1202df6939cbbc91521ed985ec85ef870:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjNDE2NzZhYjNlY2ZkMmFiMzlmMTFhZmU4Njc4OTllMjIwNjFiMTA4YzVlNmU0NGVjOGZlZmE0YjE5YjZiNWMyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiOTUyNWQxYzIzOTJhODRlODY3YTAwZTFkYzgzYjc3OWVlMzY1ZjcxZDRjNjU3YjQ0MmVkYmEwZTFhODY3YjUyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5MGY1OGIyYWU4OWY2MmQyMzJkZmZiMzVmOTgyMDY0YzU4ZjQ2NTVmZTNkZGQ3ZTBkZGQ5Y2Y0ZWNiNWI4ZWVjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NmJhNzYzNmM0MWI2OTJkY2IyOThkNzdhZTFjYzc2YmQxMTFlYjA4NmI5MWU4NjQ3NGNhY2Q2OWEyZGFkNWE3In0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/utils.py#L1543-L1600",
+          "version": "repo-lines-v1:sha256:30796576f658969ceec8c4f34baf7632addc8ea2da4daeaf9de26245295c89df:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxOWM0OTNkMWU2ZWRlNTM2NmM1YmNhMWRmMDcyODFiMWI1NDZiNDRkODk4Yjc0ZDU0N2I5MTlhYmM5MzlhMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzMGY2NDFiY2Y4OWJmOTUyY2I3M2E1ZjY5NjUxZWYyZDk2ZTg4MDg2ZGEzMmYyYWE1MWNmNThiYjk1ZGE4YmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5MTMwOWQ3MjI5ZmEyZTMzMDc2N2FhOTk4ZWUxNTBjZTkyMmM5NDNhMDRmZmJjYWYxNGFjYWYxZGE4ZWJkMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlYmM3ZjczZmQwMmI5M2NhYjkzNDZiZDI3NzFjOWFjMGM5ZjA1NmM4Y2JlMmYwYjczNmNkNmM5ODhmYjY0NWQifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/utils.py#L297-L525",
+          "version": "repo-lines-v1:sha256:cc0607479e11404056fe01d91570b2ca79d89dfc69068e035745916af2e700ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MjI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2MTI4NmQ1ODU1ZjE2OWM4MGU3NWMwYzg0Yjk0MmViOTg3YzkwMTgyYzZmMWI5Nzg3NTViMzQ0YzQzMzJhOGQzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhOWNjOWRmNjI4MTVmMTQ2N2NiODFhNDBjYzhiMWMyMTA5YjdlM2IxZmZhMjYzNTY1OGU3NGI1MjExNzE5YmEyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjZWFkNDc2MThhMzBmNzNhMmU0ZmVhMzg3ZTY1MmMwZmJiNTIzZGU4MzQwMzE2M2FhMWYyNjZiYzg4YzdkYjBmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzYjdiZTk2ZGQ0ZDQzNDMwMGZmNmRhZTU3MTQxNzE2YTQwZjE0Mzk0N2M3OWE4NTdkOGUxOWI0NWQ2YzNlZDc0In0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/utils.py#L573-L600",
+          "version": "repo-lines-v1:sha256:c38ab7b88e5b2a0e53ad2c3b675c8e33aa2ea7fac82220cbcbf3aa1124aa5961:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3ZDIwOTlkYmMxZTY3Mjg0N2UyZmJhM2I0OTgzYjI2ZDMwMWJmYjU4NDQ2N2I4M2RlODhmMzI0NjY4YTQ5YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjNjBmODNmNTM0NGM3ZGQ4MTM1OTMzMTczNjI5NmI4OTg1ZWZmZjczNWYyNmM3Zjc5YzY5NTQwNjZhMjg2ZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwYjE4Y2VjYjIxMTdlODU2NjJlN2M3ZTZkMTEwZTA3NTlkMDU1MWJhZmVmMzgwYzQ1ODU2NDg2MWNiNjVjYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1Mjc5YjVhMjM1NWEyYzg3YWE5ODgwZTdiYjg5ZGQ3MjAwZjUyYjcxZmQzZDZjMmMxOTI3ZjAwYjcwYTAwZWYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/utils.py#L799-L800",
+          "version": "repo-lines-v1:sha256:e549dcc29d7942c7e1c0c2af0f2221db23555fd0b6e39c34daf01017594b3ac9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjlkMDBmYzVmOTA4MmFmMDg1OTA4OWZlMWIzYWYwM2E3Zjk1YTZkZjZkNmI0YjgzNWRhNjVjOTlhMTMyNTc1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTYxMGU3NjA2NmFmNTBmZjdhZTllOWI1NGU1ZjNjZjZhODY4MWNmOWUyMDA3MmE1MjQ2YjgwNDY3MWRiOGFjNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmI3M2Y0Y2U1YjY4MmU1ZDk5NmJhYTMxZGU5ODA4ODg2ZWYxY2RhNzg4OGQwNGZmMDc4MGYxNjRkYzRmMTkwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTZkMTQ0Y2Q2NzY1ZmFjMTQ4YzU1ODgwZDMyZDRhOTcwOWE2MTAzMTU3NTQzOTk5ZTNmNzY0ZGM4MjgzZDYwOSJ9"
         },
         {
           "resource": "repo://libs/core/langchain_core/messages/utils.py#L86-L100",
           "version": "repo-lines-v1:sha256:07088aa99c3ae99a9477f43178e329f43357fd6b0e43edcbce9991102a94a595:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkY2NmOTIxMmMwZjFkMDFlNmY1MjM5Y2ZhOGMzMmQ2MTQwYTk2OTg1YzhiY2I2ZjA1NzY0NTQ0Zjg1Mzg0ZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MjIzMTA2ZmQ4NzQyYjcwZWEyMzNmOWRjMzU5ZjRiMDJiYmIwNjliNzI4M2VlZjc2MjQ5OTUxNmJkN2I5YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxOGViNDQ5NDI3NmM3ZmUxOWYwMzZkN2I1ZWE0MzRhOWI1ZjQ4NTgyNjEyZjZmZTI0NDA5MjAxMjZlZGYyZTQifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/utils.py#L870-L940",
+          "version": "repo-lines-v1:sha256:a9fce7dad446f62bd4ed82165dba686f57e61975781ade7e0007ed752738095d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkZmIwMDk5MmRhMTIwNDhlYzBiMmFmZmFkNzFiOWY5Zjc0ZmYxMDRjZWM1Y2M0MGQ0NDU5NTNjNjk0ZjIwMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YzJkMWMxMjBlZGQyMGMyYzhlNDliMTk1NDcxMGNiYTU2MjQ0YmVkY2FmNzFkODY1MjIzM2I3YTMxMDJjYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkOTMxZjVmMjcyNjdjNjY2OTcyZjM2OWM4NmExMDc2NDRiNzdkNjZlMTEwYTNkYmVmZTA3ZWNmNzYwMDg5NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMmRiYWNmMTljNTE4M2Y3M2EwMjY2NzA1MGNiNGNjZDMyMTU1NTU5ODQxMjMzY2Q1ZjQ0M2I5MDMxMTVjOTEifQ"
         }
       ]
     },
@@ -207,6 +231,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-21T08:30:16.745Z"
+    "at": "2026-09-26T08:25:01.631Z"
   }
 }

@@ -20,8 +20,6 @@ sources:
     resource: repo://libs/partners/anthropic/langchain_anthropic/data/profile_augmentations.toml
   - id: openwiki-source-04e3ac4f56ff2adb2b02de7d
     resource: repo://libs/partners/anthropic/pyproject.toml
-  - id: openwiki-source-8641a971af4f11b852966d77
-    resource: repo://libs/partners/openai/langchain_openai/chat_models/__init__.py
   - id: openwiki-source-3bc725a9a39d534be6f46d18
     resource: repo://libs/partners/openai/langchain_openai/chat_models/_compat.py
   - id: openwiki-source-738512768ef81ae009b097ac
@@ -36,10 +34,10 @@ sources:
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-09-22T08:27:06.345Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-26T08:25:01.631Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-22T08:27:06.345Z
+    at: 2026-09-26T08:25:01.631Z
 ---
 
 ## Overview
@@ -556,7 +554,7 @@ Translate these to provider-specific formats (e.g., OpenAI's `image_url`, Anthro
 
 ## 5. Provider Registration in init_chat_model
 
-Add your provider to the **built-in registry** to enable automatic factory instantiation (`repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L97`):
+Add your provider to the **built-in registry** to enable automatic factory instantiation (`repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L99`):
 
 ```python
 _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {

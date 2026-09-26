@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3fc2f1b0796f339129190c568b93de04bf6a248be8c1b4328a0030d5264642da",
+  "pageVersion": "sha256:5c68da0d53c7d6c0177c0cf8c33dd9dc027748ded96f6e895883457922a1244f",
   "claims": [
     {
       "id": "claim_150a5dc8a9c14fc19c3597a746649ba0",
@@ -168,15 +168,15 @@
     },
     {
       "id": "claim_0fa32e0b43b74b6ea027931573865fc5",
-      "statement": "Structured response is stored in agent state's structured_response field alongside messages; field is cleared on error retry to avoid stale checkpointed values; raw schemas are passed to middleware via ModelRequest.response_format.",
+      "statement": "Structured response is stored in agent state's structured_response field; field is explicitly cleared on invocations without structured output when has_structured_output is True, preventing stale checkpointed values from previous turns; raw schemas normalized to AutoStrategy are passed to middleware via ModelRequest.response_format.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1219-L1276",
-          "version": "repo-lines-v1:sha256:2e1c8d13f173b0360296f6ff989dfdc681e2c292a53ec116d98d9845e6b2b630:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZjcwYWU2MjNjMmI5NWNjYzNjNTcxYmY4ZWUxYmE1ZWM5NmNmZjQzOTk2OTk2NGRmOGM4MjMwNTY1NzU5ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxMzdjYjlhZDVlNGY3Y2FhZGFkMjU1MTVhZmEwY2QxMWVjYmVhMGZjMmI1YTZjZTE1ODc0M2I4NWFiYzM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxNzVlNWQ2YTFlYjM2OTBmYzQ5NTg1MTZmODlmMjJjYTIxNWZlNGEzZjgyYjg2YWZhNTVhNzRiZjE1YWQ0M2IifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1062-L1074",
+          "version": "repo-lines-v1:sha256:f66d25135c3877f3f58c7d66077627ea42db9e37dcf285369119e8dd6fbd2920:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZTA0NTJmNzY0NWFhYjhiN2UxZDg5NTk5MTVmOTc4NDRkODIwOWVmOTJiZDVmZjQwNDE1Y2QwNjc4ODBmNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ODdkYzYyYjNiZDQwM2RlZTg0OTBlZmQyNDdhM2I4YzljZDg3MDkxZWM2YjFhOWZkN2U1NzU3Yjc2Zjc4MmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyNjM3MDgzNzA0N2VkYzNmOTZlNTY1MjI5NjZiZWFhYTExYjM5YTEyYTg0ZWZmZWZjYWNhMWFmN2ZmNWQ1ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1NDExNDQyZWM0YmMzYjhmMjA5ZGExMTQxZWRiNDFmMTY3MzE3N2NiMGNhYTIwMThmM2NjYTFhZjc5ZGY5OGUifQ"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L226-L242",
-          "version": "repo-lines-v1:sha256:606c549102e85beab88d502650be6ab116496d3959d6cff46a7d1b0520fdc7d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1ZmNmMDEwNDNmMTVhNGRhZGJkNjI5ODdiOWM3OWI4ODg1MjQzNDI2ZWY5ZDBiMzNjMzk0OWVlMzRlYzAyYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDVmOGU1OGIxNGViNTlkNzMxNTJhNGM1MGI1ZTg2OTBmZmNjNDcxOGQxYmQzZWUyYTU0Y2ZhYjhkNzc1MDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNjg0OWY2ZTA0YTdiZGI3NTc4MTM2YTJkOWU0N2E2YjBiZjMxYmMxNTczMGFhODM4NmJjOWExNDIwZWFiYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5YTdjY2ZmMjEyMmJiZmMxZDEwOTZjZTZkODFlMDY4NDY0NjM0ZDA0MjA2OTBlYzVhZTE5YTFmMGYxOWNkMGIifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L257-L260",
+          "version": "repo-lines-v1:sha256:343f92c1e6587667bc5d734d84856de251ddb79afa505f516d0806e8636484fb:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2UxMjNkMWI0YzFkY2I5NTkxNWZjOTZlMDBmM2U0NmY1MDMxZjE5ZWQ0ZWU5OTI2MGRmNTFiODNkOTdiNWI1ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDAwNWY4ZTU4YjE0ZWI1OWQ3MzE1MmE0YzUwYjVlODY5MGZmY2M0NzE4ZDFiZDNlZTJhNTRjZmFiOGQ3NzUwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTVjZjI5YmNiZWY5NTdlMjkwMmY5YmM4MzViZTM4M2U4ZGJkNDdlZGYwZDAyZjY2M2VlZDVmNmRkN2Y4NDBjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODlhN2NjZmYyMTIyYmJmYzFkMTA5NmNlNmQ4MWUwNjg0NjQ2MzRkMDQyMDY5MGVjNWFlMTlhMWYwZjE5Y2QwYiJ9"
         }
       ]
     },
@@ -197,6 +197,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-21T08:30:16.745Z"
+    "at": "2026-09-26T08:25:01.631Z"
   }
 }

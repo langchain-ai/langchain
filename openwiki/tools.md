@@ -5,7 +5,7 @@ description: "LangChain's tool system enables agents and language models to exec
 tags: ["tool", "agent", "schema", "runnable", "execution"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
+    at: 2026-09-26T08:25:01.631Z
 sources:
   - id: openwiki-source-9861ba5cf0c42c142cf732f9
     resource: repo://libs/core/langchain_core/messages/tool.py
@@ -19,7 +19,7 @@ sources:
     resource: repo://libs/core/langchain_core/tools/simple.py
   - id: openwiki-source-b816e651a5890bde13cf8013
     resource: repo://libs/core/langchain_core/tools/structured.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-26T08:25:01.631Z" }
 ---
 
 ## Overview
@@ -270,10 +270,11 @@ def track_call(query: str, call_id: InjectedToolCallId) -> str:
     return f"Call {call_id}: {query}"
 ```
 
-**ToolRuntime:** A directly-injected argument type providing access to state, context, and store:
+**ToolRuntime:** A directly-injected argument type providing access to state, context, and store (available from `langgraph.prebuilt`):
 
 ```python
-from langchain_core.tools import tool, ToolRuntime
+from langchain_core.tools import tool
+from langgraph.prebuilt import ToolRuntime
 
 @tool
 def stateful_tool(query: str, runtime: ToolRuntime) -> str:
