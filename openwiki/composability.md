@@ -3,9 +3,6 @@ type: "Concept"
 title: "Composability and LCEL Chains"
 description: "How Runnable components compose through LCEL operators, creating reusable workflows with automatic async, batch, and streaming support."
 tags: ["composability", "LCEL", "runnables", "chaining", "operators"]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
@@ -16,6 +13,9 @@ sources:
   - id: openwiki-source-de6c904bd0171642bd50f6d9
     resource: repo://libs/core/langchain_core/runnables/router.py
 generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-26T08:25:01.631Z
 ---
 
 

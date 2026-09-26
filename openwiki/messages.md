@@ -3,9 +3,6 @@ type: "Architecture"
 title: "Message Types and Content Representation"
 description: "Document the message abstraction, standardized content blocks for multimodal LLM I/O, message hierarchy, and provider-specific block translators."
 tags: [messages, content-blocks, chat-models, streaming, multimodal, provider-adapters]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-77dc1fb726463969f9d53658
     resource: repo://libs/core/langchain_core/messages/ai.py
@@ -29,7 +26,10 @@ sources:
     resource: repo://libs/core/langchain_core/messages/tool.py
   - id: openwiki-source-498a9586e021b126ab8a8b42
     resource: repo://libs/core/langchain_core/messages/utils.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-26T08:25:01.631Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-26T08:25:01.631Z
 ---
 
 ## Overview
@@ -48,7 +48,7 @@ The key innovation is **content blocks**: instead of provider-specific schemas (
   Holds either plain text or a mixed list of strings (treated as text blocks) and dictionaries (content block dicts).
 
 - **`type`**: `str` (field required by schema)  
-  Uniquely identifies the message kind (`"human"`, `"ai"`, `"system"`, `"tool"`, `"chat"`, `"function"`, or chunk variants).
+  Uniquely identifies the message kind (`"human"`, `"ai"`, `"system"`, `"tool"`, `"chat"`, `"function"`, `"remove"`, or chunk variants).
 
 - **`additional_kwargs`**: `dict[Any, Any]`  
   Reserved for provider-specific data not yet mapped to standard fields (e.g., `reasoning_content` from Ollama or DeepSeek).
@@ -362,25 +362,25 @@ When `AIMessage.content_blocks` is accessed:
 
 The utils module provides helpers for working with messages:
 
-**`get_buffer_string(messages, format="prefix")`** (`repo://libs/core/langchain_core/messages/utils.py#L287-L370`)  
+**`get_buffer_string(messages, format="prefix")`** (`repo://libs/core/langchain_core/messages/utils.py#L297-L525`)  
 Converts a sequence of messages to a single string for logging, prompting, or debugging:
 - **`format="prefix"`** (default): Role-prefixed format like `"Human: ...\nAI: ..."`. Multimodal content blocks are skipped; only text and `text` blocks included.
 - **`format="xml"`**: XML-formatted output with `<message type="role">content</message>` structure. Supports safe rendering of complex multimodal content (images, audio, video, reasoning, tool calls) with proper character escaping. Base64-encoded data is skipped. Useful when message content may contain role-like prefixes that could cause ambiguity.
 
-**`convert_to_messages` and `convert_to_openai_messages`**  
+**`convert_to_messages` and `convert_to_openai_messages`** (`repo://libs/core/langchain_core/messages/utils.py#L799-L800`, `repo://libs/core/langchain_core/messages/utils.py#L1543-L1600`)  
 Coerce various input formats (dicts, strings, `MessageLikeRepresentation` union) into typed message objects.
 
-**`filter_messages(messages, include_types=..., exclude_types=...)`**  
-Filter a sequence of messages by type, name, or ID.
+**`filter_messages(messages, include_types=..., exclude_types=...)`** (`repo://libs/core/langchain_core/messages/utils.py#L870-L940`)  
+Filter a sequence of messages by type, name, or ID. Supports filtering by message names, types (as string or class), IDs, and tool call IDs. Returns only messages meeting inclusion criteria and excluded from exclusion criteria.
 
-**`trim_messages(messages, max_tokens=..., strategy="..."`**  
-Truncate a message sequence to fit within a token budget, using various strategies (keep start, keep end, keep first/last, etc.).
+**`trim_messages(messages, max_tokens=..., strategy="...")`** (`repo://libs/core/langchain_core/messages/utils.py#L1146-L1280`)  
+Truncate a message sequence to fit within a token budget, using various strategies (keep start, keep end, keep first/last, etc.). Supports token counting via a function, language model, or approximate counting.
 
-**`merge_message_runs(messages)`**  
-Deduplicate and merge consecutive messages of the same type (e.g., multiple `AIMessage`s in a row).
+**`merge_message_runs(messages)`** (`repo://libs/core/langchain_core/messages/utils.py#L1015-L1130`)  
+Deduplicate and merge consecutive messages of the same type (e.g., multiple `AIMessage`s in a row). Preserves `ToolMessage` objects unmergeable due to distinct tool call IDs. When merging, concatenates string content with a separator or merges content block lists.
 
-**`message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage`**  
-Convert a message chunk (or list of chunks) into a complete message.
+**`message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage`** (`repo://libs/core/langchain_core/messages/utils.py#L573-L600`)  
+Convert a message chunk (or list of chunks) into a complete message. Returns non-chunks unchanged; converts chunk classes to their non-chunk equivalents.
 
 **`AnyMessage` Union Type** (`repo://libs/core/langchain_core/messages/utils.py#L86-L100`)  
 ```python

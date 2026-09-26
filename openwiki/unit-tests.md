@@ -5,7 +5,7 @@ description: "How to write unit tests for langchain-core and langchain component
 tags: [unit-tests, pytest, testing, fixtures, mocking, chat-models, tools, embeddings, type-checking, mypy]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
+    at: 2026-09-26T08:25:01.631Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile

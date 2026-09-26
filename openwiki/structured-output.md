@@ -1,18 +1,18 @@
 ---
 type: "Reference"
-title: "AutoStrategy (recommended)"
-openwiki_generated: true
+title: "Structured Output: Binding Schemas and Response Marshaling"
+description: "Mechanisms for binding Pydantic schemas and JSON schemas to LLM responses via tool-based, provider-native, or automatically-detected strategies; includes validation, error handling, and response marshaling."
+tags: ["structured-output", "schema-binding", "response-format", "tool-calling", "validation"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
+    at: 2026-09-26T08:25:01.631Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-ec30ab6256dd50cc670919f6
     resource: repo://libs/langchain_v1/langchain/agents/structured_output.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-26T08:25:01.631Z" }
 ---
-
 
 ## Overview
 
@@ -180,21 +180,46 @@ The `create_agent()` function integrates structured output through:
 
 ### 1. Upfront Schema Registration
 
+Raw schemas passed to `response_format` are first normalized to `AutoStrategy` to preserve auto-detection intent, then converted to `ToolStrategy` for upfront tool setup:
+
 ```python
 # At agent creation time
+if response_format is None:
+    initial_response_format = None
+elif isinstance(response_format, (ToolStrategy, ProviderStrategy, AutoStrategy)):
+    initial_response_format = response_format
+else:
+    # Raw schema - wrap in AutoStrategy to enable auto-detection
+    initial_response_format = AutoStrategy(schema=response_format)
+
+# For AutoStrategy, convert to ToolStrategy to setup tools upfront
+if isinstance(initial_response_format, AutoStrategy):
+    tool_strategy_for_setup = ToolStrategy(schema=initial_response_format.schema)
+```
+
+This pre-builds `OutputToolBinding` instances wrapping schemas as `StructuredTool` instances. These bindings store the original schema, its classification (`pydantic`, `dataclass`, etc.), and the tool for later parsing:
+
+```python
+structured_output_tools: dict[str, OutputToolBinding[Any]] = {}
 if tool_strategy_for_setup:
     for response_schema in tool_strategy_for_setup.schema_specs:
         structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
         structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
 ```
 
-Pre-builds `OutputToolBinding` instances wrapping schemas as `StructuredTool` instances. These bindings store the original schema, its classification (`pydantic`, `dataclass`, etc.), and the tool for later parsing.
-
 ### 2. Model Binding During Invocation
 
-The `_get_bound_model()` function (called on each model invocation) performs auto-detection:
+The `_get_bound_model()` function (called on each model invocation) performs auto-detection and model binding. It normalizes middleware-provided raw schemas to `AutoStrategy`:
 
 ```python
+# Normalize raw schemas to AutoStrategy
+# (handles middleware override with raw Pydantic classes)
+response_format: ResponseFormat[Any] | Any | None = request.response_format
+if response_format is not None and not isinstance(
+    response_format, (AutoStrategy, ToolStrategy, ProviderStrategy)
+):
+    response_format = AutoStrategy(schema=response_format)
+
 # Determine effective response format (auto-detect if needed)
 effective_response_format: ResponseFormat[Any] | None
 if isinstance(response_format, AutoStrategy):
@@ -203,6 +228,7 @@ if isinstance(response_format, AutoStrategy):
     else:
         effective_response_format = ToolStrategy(schema=response_format.schema)
 else:
+    # User explicitly specified a strategy - preserve it
     effective_response_format = response_format
 ```
 
@@ -339,6 +365,8 @@ The agent state includes structured output handling via:
 
 - **messages**: Includes tool calls and tool messages from structured output invocation
 - **structured_response**: Holds the parsed schema instance (set when output is valid, cleared on error retry)
+
+The `structured_response` field is explicitly cleared when `has_structured_output` is `True` but no structured response was produced on the current turn, avoiding stale values from previous checkpointed turns in long-running agents.
 
 ### Lifecycle Events
 

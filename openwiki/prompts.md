@@ -3,9 +3,6 @@ type: "Concept"
 title: "Prompt Templates and Few-Shot Learning"
 description: "Prompt templates define message sequences and variable substitution patterns for chat models. Few-shot learning selects examples dynamically to teach models by example."
 tags: [prompt, template, few-shot, example-selection, variable-substitution, structured-output]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-1f4e0a5b877db4f050f2a34c
     resource: repo://libs/core/langchain_core/example_selectors/base.py
@@ -13,19 +10,26 @@ sources:
     resource: repo://libs/core/langchain_core/example_selectors/length_based.py
   - id: openwiki-source-5e027af8cc764d2750129cf1
     resource: repo://libs/core/langchain_core/example_selectors/semantic_similarity.py
+  - id: openwiki-source-269af2bb49a21bd6c548b3f0
+    resource: repo://libs/core/langchain_core/prompt_values.py
   - id: openwiki-source-03d7415879ed05a392edd62d
     resource: repo://libs/core/langchain_core/prompts/base.py
   - id: openwiki-source-15fdd645c1ee76ae559799c1
     resource: repo://libs/core/langchain_core/prompts/chat.py
   - id: openwiki-source-bc32774051e0e8a931a6fecd
     resource: repo://libs/core/langchain_core/prompts/few_shot.py
+  - id: openwiki-source-c90241f4e6facb853f05d8e4
+    resource: repo://libs/core/langchain_core/prompts/image.py
   - id: openwiki-source-5549894302ea4dfd5b8f4278
     resource: repo://libs/core/langchain_core/prompts/prompt.py
   - id: openwiki-source-cf81d0ba0a387a7cd9b5dfb8
     resource: repo://libs/core/langchain_core/prompts/string.py
   - id: openwiki-source-204b5e61a019044332bd2dd4
     resource: repo://libs/core/langchain_core/prompts/structured.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-26T08:25:01.631Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-26T08:25:01.631Z
 ---
 
 ## Overview
@@ -382,6 +386,32 @@ output = prompt.format(input="fast")
 
 **Behavior:** Examples are iterated in order; the selector stops adding when the next example would exceed `max_length`. This is greedy, not optimal, but fast and predictable.
 
+## Image Prompts
+
+`ImagePromptTemplate` formats image URLs and metadata for vision-capable models. This enables multimodal prompts combining text and images.
+
+```python
+from langchain_core.prompts import ImagePromptTemplate
+
+# Create an image prompt template with variable URL
+prompt = ImagePromptTemplate(
+    input_variables=["image_id"],
+    template={"url": "https://example.com/{image_id}.png", "detail": "high"},
+    template_format="f-string",
+)
+
+# Format the template
+image_url = prompt.format(image_id="cat")
+# Returns: {"url": "https://example.com/cat.png", "detail": "high"}
+```
+
+**Key properties:**
+- `template`: Dictionary specifying `url` (required), `detail` (optional: "auto", "low", or "high"), and other provider-specific fields.
+- `input_variables`: Variables used in template values (e.g., in URL).
+- `template_format`: Which engine to use (`f-string`, `mustache`, or `jinja2`).
+
+Image prompts return `ImagePromptValue`, which provides `to_string()` (URL) and `to_messages()` (converts to a `HumanMessage` with image content block) methods.
+
 ## Structured Output Prompts
 
 The `StructuredPrompt` (beta) combines a `ChatPromptTemplate` with a Pydantic schema, enabling the model to produce JSON output matching a specific schema.
@@ -408,6 +438,32 @@ result = template.invoke({"input": "What is LangChain?"})
 ```
 
 This is useful for tasks requiring consistent, parseable output (e.g., fact extraction, data classification).
+
+## Prompt Values
+
+All prompts return a **PromptValue** when invoked, representing the formatted output. Three types exist:
+
+- **StringPromptValue**: Contains a single string via `text` property. Useful for legacy text-only APIs.
+- **ChatPromptValue**: Contains a list of `BaseMessage` objects. The primary format for chat models.
+- **ImagePromptValue**: Contains an `ImageURL` dict (with `url` and optional `detail`). Used for vision models.
+
+All PromptValue types implement:
+- `to_string()`: Convert to string representation (for debugging or non-chat APIs).
+- `to_messages()`: Convert to a list of BaseMessage objects (for chat models).
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+
+template = ChatPromptTemplate.from_messages([
+    ("system", "You are helpful."),
+    ("human", "{input}"),
+])
+
+# invoke() returns ChatPromptValue
+prompt_value = template.invoke({"input": "Hello!"})
+print(prompt_value.to_string())  # For display
+print(prompt_value.to_messages())  # For chat model
+```
 
 ## Runnable Interface and Chaining
 

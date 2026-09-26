@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:37b10d0b8065a18260ed5cc5af20f81cfbc6872d2057a39aef73c3cda08f81db",
+  "pageVersion": "sha256:14b85f5cfd748affdda7013877c872f9ef71a4ee7fd3860cd67ab6330487ff6b",
   "claims": [
     {
       "id": "claim_7425c73f5e4c4667b8babba66c3663a0",
@@ -60,7 +60,7 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
-          "version": "repo-file-v1:sha256:ecbb580ed4083a985a40c71735aa0eafb58d3a00ac74d2e511ab14a3aa3d37b1"
+          "version": "repo-file-v1:sha256:cc4a7d9a620224558c4eddd4e13edc988a9ac9e328b7a67deeb71ed2c5ec5174"
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py",
@@ -152,7 +152,7 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
-          "version": "repo-file-v1:sha256:ecbb580ed4083a985a40c71735aa0eafb58d3a00ac74d2e511ab14a3aa3d37b1"
+          "version": "repo-file-v1:sha256:cc4a7d9a620224558c4eddd4e13edc988a9ac9e328b7a67deeb71ed2c5ec5174"
         }
       ]
     },
@@ -183,6 +183,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-22T08:27:06.345Z"
+    "at": "2026-09-26T08:25:01.631Z"
   }
 }

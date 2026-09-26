@@ -14,10 +14,10 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/middleware/tool_error.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-26T08:25:01.631Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
+    at: 2026-09-26T08:25:01.631Z
 ---
 
 ## Overview
@@ -232,7 +232,7 @@ The middleware constructs `ActionRequest` objects (with name, args, and optional
 
 **ContextEditingMiddleware**: Allows dynamic modification of agent context (system message, available tools) during execution.
 
-**FileSearchMiddleware**: Integrates file search capabilities into the agent, retrieving relevant documents before model calls.
+**FilesystemFileSearchMiddleware**: Integrates file search capabilities into the agent, retrieving relevant documents before model calls.
 
 ### System Tools Middleware
 
@@ -284,7 +284,7 @@ class ExtendedModelResponse(Generic[ResponseT]):
     command: Command[Any] | None = None
 ```
 
-Middleware can return `ExtendedModelResponse` to apply a command that modifies state after the model node completes. Commands are applied through state reducers, so messages in commands are **added** to existing messages (not replaced).
+Middleware can return `ExtendedModelResponse` to apply a command that modifies state after the model node completes. Commands are applied through state reducers, so messages in commands are **added alongside** the model response messages rather than replaced.
 
 ### ToolCallRequest
 

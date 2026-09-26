@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:59f149479aecc8ce5f7e0d000a58fe4d061773c476c8a2f2a0264d6fd5ddf814",
+  "pageVersion": "sha256:609c393ccd5012a658f8985ce5354af4d87ca8e17b0fcba10e9f1d7d7dec7136",
   "claims": [
     {
       "id": "claim_6ce968382a514edb90e74830ccdebef7",
@@ -83,8 +83,8 @@
       "statement": "ExtendedModelResponse allows middleware to return a Command alongside the model response; commands from multiple middleware are accumulated (inner-to-outer order) and applied sequentially to state after the model node completes; messages in commands are added through reducers, non-reducer fields follow outermost-wins semantics.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L284-L300",
-          "version": "repo-lines-v1:sha256:9b8b5efb54adc30f9af684ab9d439f7759c4ec88d4f6c69086dcc164df2bef3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwZjc4MzAxZThmZjUwYmJiOGNmMjNmZWFlNDhlYWYyYTBjZmUwMDYwYjhkNjMzNjcxYTg4OWViN2VjYjk0NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzN2ZjZjdjZjQ0YWUzYzQwMzU3YTA3ODMwZjRiYTBjNDcyYjY4ZGYyY2VmNmQzMDczZTVhNTdjMTMwMTQwZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0M2E5ZmZkMDUyNTI1MTJhZTA2MDNjMDIwZmZhOTIxYmY1ODFiN2M2MDYwOGJjMjcyZWUyYTk2ZWNhN2FiZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NjdkYTdmMTg2NjUxNDY3NGIzZTQ2Yjk4NTNmMmQ0ODBmYzEyYjQ3MjhhZGI2ODQ3MjU5NTJhYjcwNjA1MDEifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L284-L320",
+          "version": "repo-lines-v1:sha256:58f411b20e247298db5e9a62a20ae2451060f970a7eeae901dcf617b66444ea2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1MDg0NmEzOWFjMTJhMGQwZDQ5YWU1M2Q2ODg0NmFjYWUyODVhOGRhYmU0ZjU2ODg1ZjM2MDFiOGQ3YTZmNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNDBlMDk1ZGIwZjZlNjA2OWQxZWFkNWZiYWFjOTBjMTk0MmJjODg1YjA1MDNmNGJhNTk1ZTIyYWE3NDk4OGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkM2E1ZjhiMmFhMzRhZWE4OTljNGY0NmQxNTZlOGU1OGRkZDQ4NmFkNDkxYTJhYzAyNzhmN2Y0Y2Q3NGJjZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyODRkOTcwZTI0NTE2NDMzNmRmMDY1YmZkOTRlZDU4NWEwN2U5MDJkNDE1YWZjM2RhM2ViZjQ1NWU3MTlkZDgifQ"
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L290-L312",
@@ -199,6 +199,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-21T08:30:16.745Z"
+    "at": "2026-09-26T08:25:01.631Z"
   }
 }
