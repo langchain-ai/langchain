@@ -356,7 +356,9 @@ class SandboxIntegrationTests(BaseStandardTests):
         result = sandbox_backend.glob("*.py", path=sandbox_test_root)
         assert result.error is None
         assert result.matches is not None
-        assert [m["path"] for m in result.matches] == ["x.py"]
+        assert [m["path"] for m in result.matches] == [
+            self.sandbox_path("x.py", root_dir=sandbox_test_root)
+        ]
 
     def test_grep_literal(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
@@ -694,10 +696,10 @@ class SandboxIntegrationTests(BaseStandardTests):
         exec_result = sandbox_backend.execute(f"cat {_quote(test_path)}")
         assert exec_result.output.strip() == content
 
-    def test_write_existing_file_fails(
+    def test_write_existing_file_overwrites(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
     ) -> None:
-        """Writing to an existing file should return an error without overwriting."""
+        """Writing to an existing file should overwrite its contents."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -706,10 +708,10 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         result = sandbox_backend.write(test_path, "Second content")
 
-        assert result.error is not None
-        assert "already exists" in result.error.lower()
+        assert result.error is None
+        assert result.path == test_path
         exec_result = sandbox_backend.execute(f"cat {_quote(test_path)}")
-        assert exec_result.output.strip() == "First content"
+        assert exec_result.output.strip() == "Second content"
 
     def test_write_special_characters(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
@@ -1547,11 +1549,8 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         assert result.error is None
         assert result.matches is not None
-        paths = [info["path"] for info in result.matches]
-        assert len(paths) == 2
-        assert "file1.txt" in paths
-        assert "file2.txt" in paths
-        assert not any(path.endswith(".py") for path in paths)
+        paths = {info["path"] for info in result.matches}
+        assert paths == {f"{base_dir}/file1.txt", f"{base_dir}/file2.txt"}
 
     def test_glob_recursive_pattern(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
@@ -1592,10 +1591,10 @@ class SandboxIntegrationTests(BaseStandardTests):
         assert result.error is None
         assert result.matches == []
 
-    def test_glob_with_directories(
+    def test_glob_excludes_directories(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
     ) -> None:
-        """Glob should include directories and mark them with `is_dir`."""
+        """Glob should return regular files but not directories."""
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -1609,11 +1608,8 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         assert result.error is None
         assert result.matches is not None
-        assert len(result.matches) == 3
-        dir_count = sum(1 for info in result.matches if info["is_dir"])
-        file_count = sum(1 for info in result.matches if not info["is_dir"])
-        assert dir_count == 2
-        assert file_count == 1
+        assert [match["path"] for match in result.matches] == [f"{base_dir}/file.txt"]
+        assert all(not match["is_dir"] for match in result.matches)
 
     def test_glob_hidden_files_explicitly(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
@@ -1632,9 +1628,8 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         assert result.error is None
         assert result.matches is not None
-        paths = [info["path"] for info in result.matches]
-        assert ".hidden1" in paths or ".hidden2" in paths
-        assert not any(path == "visible.txt" for path in paths)
+        paths = {info["path"] for info in result.matches}
+        assert paths == {f"{base_dir}/.hidden1", f"{base_dir}/.hidden2"}
 
     def test_glob_with_character_class(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
@@ -1654,12 +1649,8 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         assert result.error is None
         assert result.matches is not None
-        paths = [info["path"] for info in result.matches]
-        assert len(paths) == 2
-        assert "file1.txt" in paths
-        assert "file2.txt" in paths
-        assert "file3.txt" not in paths
-        assert "fileA.txt" not in paths
+        paths = {info["path"] for info in result.matches}
+        assert paths == {f"{base_dir}/file1.txt", f"{base_dir}/file2.txt"}
 
     def test_glob_with_question_mark(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
@@ -1678,11 +1669,8 @@ class SandboxIntegrationTests(BaseStandardTests):
 
         assert result.error is None
         assert result.matches is not None
-        paths = [info["path"] for info in result.matches]
-        assert len(paths) == 2
-        assert "file1.txt" in paths
-        assert "file2.txt" in paths
-        assert "file10.txt" not in paths
+        paths = {info["path"] for info in result.matches}
+        assert paths == {f"{base_dir}/file1.txt", f"{base_dir}/file2.txt"}
 
     async def test_awrite_aread_large_text_payload(
         self, sandbox_backend: SandboxBackendProtocol, sandbox_test_root: str
