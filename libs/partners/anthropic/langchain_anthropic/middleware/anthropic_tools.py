@@ -901,7 +901,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 
         # Read file
         try:
-            content = full_path.read_text()
+            content = full_path.read_text(encoding="utf-8")
         except UnicodeDecodeError as e:
             msg = f"Cannot decode file {path}: {e}"
             raise ValueError(msg) from e
@@ -937,7 +937,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         full_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Write file
-        full_path.write_text(file_text + "\n")
+        full_path.write_text(file_text + "\n", encoding="utf-8")
 
         return Command(
             update={
@@ -964,7 +964,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
             raise FileNotFoundError(msg)
 
         # Read file
-        content = full_path.read_text()
+        content = full_path.read_text(encoding="utf-8")
 
         # Replace string
         if old_str not in content:
@@ -974,7 +974,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         new_content = content.replace(old_str, new_str, 1)
 
         # Write back
-        full_path.write_text(new_content)
+        full_path.write_text(new_content, encoding="utf-8")
 
         return Command(
             update={
@@ -1001,7 +1001,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
             raise FileNotFoundError(msg)
 
         # Read file
-        content = full_path.read_text()
+        content = full_path.read_text(encoding="utf-8")
         lines = content.split("\n")
         # Handle trailing newline
         if lines and lines[-1] == "":
@@ -1019,7 +1019,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         new_content = "\n".join(updated_lines)
         if had_trailing_newline:
             new_content += "\n"
-        full_path.write_text(new_content)
+        full_path.write_text(new_content, encoding="utf-8")
 
         return Command(
             update={
