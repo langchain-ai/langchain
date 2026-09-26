@@ -1,7 +1,7 @@
 import json
 from collections.abc import AsyncIterator
 from typing import Any, cast
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -130,6 +130,50 @@ def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
 
     patcher.assert_called_once()
 
+def test_perplexity_stream_uses_stop_not_stop_sequences() -> None:
+    """Test that streaming uses Perplexity's `stop` parameter instead of Anthropic's `stop_sequences`.
+    
+    Regression test for issue #40830: ChatPerplexity.stream() was incorrectly 
+    renaming the `stop` parameter to `stop_sequences` (Anthropic SDK parameter name),
+    causing TypeError when calling Perplexity's Chat Completions API.
+    """
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
+    llm.client = MagicMock()
+    llm.client.chat.completions.create.return_value = iter(
+        [{"choices": [{"delta": {"content": "Hello"}, "finish_reason": None}]}]
+    )
+
+    list(llm.stream([AIMessage(content="Say hello")], stop=["\n"]))
+
+    call_kwargs = llm.client.chat.completions.create.call_args.kwargs
+    assert call_kwargs["stop"] == ["\n"], "Expected 'stop' parameter to be present"
+    assert "stop_sequences" not in call_kwargs, "Should not rename 'stop' to 'stop_sequences'"
+
+
+@pytest.mark.asyncio
+async def test_perplexity_astream_uses_stop_not_stop_sequences() -> None:
+    """Test that async streaming uses Perplexity's `stop` parameter instead of Anthropic's `stop_sequences`.
+    
+    Regression test for issue #40830: ChatPerplexity._astream() had the same bug
+    as _stream() - incorrectly renaming the `stop` parameter.
+    """
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
+
+    async def mock_async_stream() -> AsyncIterator[dict[str, Any]]:
+        yield {"choices": [{"delta": {"content": "Hello"}, "finish_reason": None}]}
+
+    llm.async_client = MagicMock()
+    llm.async_client.chat.completions.create = AsyncMock(
+        return_value=mock_async_stream()
+    )
+
+    chunks = []
+    async for chunk in llm.astream([AIMessage(content="Say hello")], stop=["\n"]):
+        chunks.append(chunk)
+
+    call_kwargs = llm.async_client.chat.completions.create.call_args.kwargs
+    assert call_kwargs["stop"] == ["\n"], "Expected 'stop' parameter to be present"
+    assert "stop_sequences" not in call_kwargs, "Should not rename 'stop' to 'stop_sequences'"
 
 def test_perplexity_stream_includes_videos_and_reasoning(mocker: MockerFixture) -> None:
     """Test that stream extracts videos and reasoning_steps."""
