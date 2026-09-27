@@ -14,7 +14,7 @@ Invariants Enforced:
 
 import re
 import uuid
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     from langchain_core.callbacks import BaseCallbackHandler
@@ -89,12 +89,13 @@ class ZTDSSanitizingCallbackHandler(BaseCallbackHandler):
     def restore_text(self, text: str, run_id_str: str) -> str:
         token_map = self._run_maps.get(run_id_str, {})
         restored = text
-        for token, original in token_map.items():
-            restored = restored.replace(token, original)
+        # Descending length sort ensures [TOKEN_1] never corrupts [TOKEN_10]
+        for token in sorted(token_map.keys(), key=len, reverse=True):
+            restored = restored.replace(token, token_map[token])
         return restored
 
     def zeroize_run(self, run_id_str: str) -> None:
-        """Theorem 2: RAM Zeroization."""
+        """Theorem 2: Ephemeral RAM Zeroization."""
         if run_id_str in self._run_maps:
             self._run_maps[run_id_str].clear()
             del self._run_maps[run_id_str]
@@ -139,3 +140,15 @@ class ZTDSSanitizingCallbackHandler(BaseCallbackHandler):
                                 gen.message.content = self.restore_text(gen.message.content, run_id_str)
         finally:
             self.zeroize_run(run_id_str)
+
+    def on_llm_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: Optional[uuid.UUID] = None,
+        parent_run_id: Optional[uuid.UUID] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Theorem 2: Guarantees volatile RAM zeroization when LLM invocation fails."""
+        run_id_str = str(run_id) if run_id else "default-run"
+        self.zeroize_run(run_id_str)
