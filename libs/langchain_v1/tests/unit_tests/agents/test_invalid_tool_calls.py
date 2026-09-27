@@ -8,7 +8,6 @@ from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import BaseModel, Field
 
 from langchain.agents import create_agent
-from langchain.agents.factory import _patch_invalid_tool_calls
 from langchain.agents.structured_output import ToolStrategy
 from langchain.tools import tool
 from tests.unit_tests.agents.model import FakeToolCallingModel
@@ -93,49 +92,6 @@ class MixedToolCallingModel(FakeToolCallingModel):
             )
         self.index += 1
         return ChatResult(generations=[ChatGeneration(message=message)])
-
-
-def test_invalid_tool_call_repair_preserves_tool_result_parents() -> None:
-    message = AIMessage(
-        content="Calling tools",
-        tool_calls=[{"name": "get_weather", "args": {}, "id": "valid"}],
-        invalid_tool_calls=[
-            {"name": "get_weather", "args": '{"city":', "id": "invalid"},
-            {"name": "get_weather", "args": "bad", "id": None},
-        ],
-        response_metadata={"provider": "anthropic"},
-    )
-
-    repaired = _patch_invalid_tool_calls([HumanMessage("Weather?"), message])
-
-    assistant = repaired[1]
-    assert isinstance(assistant, AIMessage)
-    assert assistant.content == message.content
-    assert assistant.response_metadata == message.response_metadata
-    assert {call["id"] for call in assistant.tool_calls} == {"valid", "invalid"}
-    assert assistant.tool_calls[1]["args"] == {}
-    assert [call.get("id") for call in assistant.invalid_tool_calls] == [None]
-    assert isinstance(repaired[2], ToolMessage)
-    assert repaired[2].tool_call_id == "invalid"
-    assert repaired[2].tool_call_id in {call["id"] for call in assistant.tool_calls}
-    assert len(message.tool_calls) == 1
-    assert message.tool_calls[0]["id"] == "valid"
-    assert _patch_invalid_tool_calls(repaired) == repaired
-
-
-def test_invalid_tool_call_repair_heals_answered_history() -> None:
-    message = AIMessage(
-        content="Calling tool",
-        invalid_tool_calls=[{"name": "get_weather", "args": '{"city":', "id": "invalid"}],
-    )
-    result = ToolMessage(content="Malformed arguments", tool_call_id="invalid")
-
-    repaired = _patch_invalid_tool_calls([message, result])
-
-    assert isinstance(repaired[0], AIMessage)
-    assert repaired[0].tool_calls == [{"name": "get_weather", "args": {}, "id": "invalid"}]
-    assert repaired[0].invalid_tool_calls == []
-    assert repaired[1] is result
 
 
 def test_create_agent_does_not_patch_model_output() -> None:

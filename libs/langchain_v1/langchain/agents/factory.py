@@ -695,31 +695,9 @@ def _patch_invalid_tool_calls(messages: Sequence[AnyMessage]) -> list[AnyMessage
     }
     patched_messages: list[AnyMessage] = []
     for message in messages:
-        if not isinstance(message, AIMessage) or not message.invalid_tool_calls:
-            patched_messages.append(message)
+        patched_messages.append(message)
+        if not isinstance(message, AIMessage):
             continue
-        promoted_calls = list(message.tool_calls)
-        remaining_invalid_calls = []
-        for invalid_call in message.invalid_tool_calls:
-            if invalid_call.get("id") is None:
-                remaining_invalid_calls.append(invalid_call)
-                continue
-            if not any(call["id"] == invalid_call["id"] for call in promoted_calls):
-                promoted_calls.append(
-                    {
-                        "name": invalid_call.get("name") or "unknown",
-                        "args": {},
-                        "id": invalid_call["id"],
-                    }
-                )
-        patched_messages.append(
-            message.model_copy(
-                update={
-                    "tool_calls": promoted_calls,
-                    "invalid_tool_calls": remaining_invalid_calls,
-                }
-            )
-        )
         for tool_call in message.invalid_tool_calls:
             if tool_call.get("id") in answered_ids:
                 continue

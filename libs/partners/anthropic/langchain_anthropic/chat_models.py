@@ -957,8 +957,9 @@ def _format_messages(
         else:
             content = message.content
 
-        # Ensure all tool_calls have a tool_use content block
-        if isinstance(message, AIMessage) and message.tool_calls:
+        if isinstance(message, AIMessage) and (
+            message.tool_calls or message.invalid_tool_calls
+        ):
             content = content or []
             content = (
                 [{"type": "text", "text": message.content}]
@@ -981,6 +982,31 @@ def _format_messages(
             cast("list", content).extend(
                 _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls),
             )
+            tool_use_ids.extend(
+                cast("str", _normalize_tool_call_id(tc["id"]))
+                for tc in missing_tool_calls
+            )
+            for invalid_call in message.invalid_tool_calls:
+                tool_call_id = invalid_call.get("id")
+                tool_name = invalid_call.get("name")
+                if not tool_call_id or not tool_name:
+                    continue
+                normalized_id = _normalize_tool_call_id(tool_call_id)
+                if normalized_id in tool_use_ids:
+                    continue
+                try:
+                    args = json.loads(invalid_call.get("args") or "{}")
+                except json.JSONDecodeError:
+                    args = {}
+                cast("list", content).append(
+                    _AnthropicToolUse(
+                        type="tool_use",
+                        name=tool_name,
+                        input=args if isinstance(args, dict) else {},
+                        id=cast("str", normalized_id),
+                    )
+                )
+                tool_use_ids.append(normalized_id)
 
         if role == "assistant" and _i == last_non_system_index:
             if isinstance(content, str):
