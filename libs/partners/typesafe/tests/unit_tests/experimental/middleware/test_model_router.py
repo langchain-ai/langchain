@@ -22,7 +22,7 @@ from langchain_typesafe.experimental.middleware.model_router import _routing_que
 from langchain_typesafe.types import ClassifierResponse
 
 
-def _response(route: str) -> ClassifierResponse:
+def _response(route: str, confidence: float = 1.0) -> ClassifierResponse:
     return ClassifierResponse(
         model="jev-latest",
         answers={
@@ -30,7 +30,7 @@ def _response(route: str) -> ClassifierResponse:
                 type="choice",
                 choice=route,
                 probabilities={route: 1.0},
-                confidence=1.0,
+                confidence=confidence,
             )
         },
     )
@@ -38,6 +38,8 @@ def _response(route: str) -> ClassifierResponse:
 
 def _router(
     route: str = "fast",
+    confidence: float = 1.0,
+    min_confidence: float | None = None,
 ) -> tuple[
     ModelRouterMiddleware,
     dict[str, GenericFakeChatModel],
@@ -51,8 +53,8 @@ def _router(
         ),
     }
     classifier = MagicMock(spec=TypeSafeClassifier)
-    classifier.invoke.return_value = _response(route)
-    classifier.ainvoke = AsyncMock(return_value=_response(route))
+    classifier.invoke.return_value = _response(route, confidence)
+    classifier.ainvoke = AsyncMock(return_value=_response(route, confidence))
     with patch(
         "langchain_typesafe.experimental.middleware.model_router.TypeSafeClassifier",
         return_value=classifier,
@@ -65,6 +67,7 @@ def _router(
                 ),
             },
             instructions="Choose the least costly model suited to the task.",
+            min_confidence=min_confidence,
         )
     return middleware, models, classifier, classifier_class
 
@@ -121,6 +124,54 @@ async def test_agent_routes_using_latest_human_message(*, asynchronous: bool) ->
 
     assert result["messages"][-1].text == "fast response"
     assert result["model_route"] == _response("fast").choices["model_route"]
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.asyncio
+async def test_agent_keeps_configured_model_below_confidence_threshold(
+    *, asynchronous: bool
+) -> None:
+    """Keep the agent's configured model when the route is uncertain."""
+    middleware, models, _, _ = _router(
+        confidence=0.49,
+        min_confidence=0.5,
+    )
+    agent = create_agent(models["powerful"], middleware=[middleware])
+    inputs: InputAgentState = {"messages": [HumanMessage("Do the task")]}
+
+    if asynchronous:
+        result = await agent.ainvoke(inputs)
+    else:
+        result = agent.invoke(inputs)
+
+    assert result["messages"][-1].text == "powerful response"
+    assert result["model_route"] == _response("fast", confidence=0.49).choices[
+        "model_route"
+    ]
+
+
+@pytest.mark.parametrize("confidence", [0.5, 0.75, 1.0])
+def test_confidence_at_or_above_threshold_uses_selected_model(
+    confidence: float,
+) -> None:
+    """Switch models at the threshold and above it."""
+    middleware, models, _, _ = _router(
+        confidence=confidence,
+        min_confidence=0.5,
+    )
+    agent = create_agent(models["powerful"], middleware=[middleware])
+    result = agent.invoke({"messages": [HumanMessage("Do the task")]})
+
+    assert result["messages"][-1].text == "fast response"
+
+
+@pytest.mark.parametrize("min_confidence", [-0.01, 1.01])
+def test_min_confidence_must_be_between_zero_and_one(
+    min_confidence: float,
+) -> None:
+    """Reject thresholds outside the probability range."""
+    with pytest.raises(ValidationError):
+        _router(min_confidence=min_confidence)
 
 
 @pytest.mark.parametrize("asynchronous", [False, True])

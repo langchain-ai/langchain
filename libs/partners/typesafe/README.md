@@ -91,11 +91,12 @@ router = ModelRouterMiddleware(
         ),
     },
     instructions="Choose the least costly model suited to the task.",
+    min_confidence=0.7,
 )
 agent = create_agent("openai:gpt-5-mini", middleware=[router])
 ```
 
-The model router classifies the latest human message once per agent run and stores the complete `ChoiceAnswer` in agent state, keeping its probabilities and confidence available to applications and traces.
+The model router classifies the latest human message once per agent run and stores the complete `ChoiceAnswer` in agent state, keeping its probabilities and confidence available to applications and traces. If the answer is below `min_confidence`, the agent keeps its configured model. Omit the threshold to always use Jev's selected model. Choose a cutoff based on held-out examples at the option counts your workload uses.
 
 #### `AutoModeMiddleware`
 

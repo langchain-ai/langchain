@@ -56,6 +56,7 @@ class _ModelRouterConfig(BaseModel):
 
     choices: dict[str, ModelChoice] = Field(min_length=1)
     instructions: _QuestionContent
+    min_confidence: float | None = Field(default=None, ge=0, le=1)
 
 
 def _routing_questions(config: _ModelRouterConfig) -> dict[str, Question]:
@@ -100,9 +101,13 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
             string and the criterion for selecting it.
         instructions: Additional instructions TypeSafe should follow when selecting a
             route.
+        min_confidence: Minimum confidence required to switch from the model already
+            configured on the agent. When the answer falls below this threshold, the
+            agent keeps its current model.
 
     Raises:
-        pydantic.ValidationError: If no model choices are provided.
+        pydantic.ValidationError: If no model choices are provided or
+            `min_confidence` is outside the inclusive range from 0 to 1.
 
     ??? example "Route agent calls by task"
 
@@ -138,10 +143,15 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         *,
         choices: Mapping[str, ModelChoice],
         instructions: _QuestionContent,
+        min_confidence: float | None = None,
     ) -> None:
         """Initialize the model router."""
         self.config = _ModelRouterConfig.model_validate(
-            {"choices": choices, "instructions": instructions}
+            {
+                "choices": choices,
+                "instructions": instructions,
+                "min_confidence": min_confidence,
+            }
         )
         self.models = {
             route: init_chat_model(choice.model)
@@ -194,6 +204,9 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     ) -> ModelResponse[ResponseT]:
         """Route a synchronous model call to the selected model."""
         answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
+        min_confidence = self.config.min_confidence
+        if min_confidence is not None and answer.confidence < min_confidence:
+            return handler(request)
         return handler(request.override(model=self.models[answer.choice]))
 
     @override
@@ -206,6 +219,9 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     ) -> ModelResponse[ResponseT]:
         """Route an asynchronous model call to the selected model."""
         answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
+        min_confidence = self.config.min_confidence
+        if min_confidence is not None and answer.confidence < min_confidence:
+            return await handler(request)
         return await handler(request.override(model=self.models[answer.choice]))
 
 
