@@ -28,6 +28,7 @@ from langchain.agents.middleware.tool_emulator import LLMToolEmulator
 from langchain.agents.middleware.tool_error import ToolErrorMiddleware
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.tool_selection import LLMToolSelectorMiddleware
+from langchain.agents.middleware.tool_verifier import ToolVerifierMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -85,6 +86,7 @@ __all__ = [
     "ToolCallRequest",
     "ToolErrorMiddleware",
     "ToolRetryMiddleware",
+    "ToolVerifierMiddleware",
     "TracePolicy",
     "TriggerClause",
     "after_agent",
