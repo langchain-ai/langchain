@@ -4144,6 +4144,60 @@ def test_format_messages_preserves_nonempty_thinking_field() -> None:
     assert block["signature"] == "sig_xyz"
 
 
+@pytest.mark.parametrize(
+    ("args", "expected_input"),
+    [('{"city":', {}), ('{"city":"Paris"}', {"city": "Paris"}), ("[1]", {})],
+)
+def test_invalid_tool_call_retains_tool_use_for_error_result(
+    args: str, expected_input: dict[str, Any]
+) -> None:
+    tool_call_id = "toolu_invalid"
+    ai_message = AIMessage(
+        content=[{"type": "text", "text": "Calling tool"}],
+        invalid_tool_calls=[{"name": "get_weather", "args": args, "id": tool_call_id}],
+    )
+    tool_message = ToolMessage(
+        "Tool call arguments were malformed.",
+        tool_call_id=tool_call_id,
+        status="error",
+    )
+
+    _, messages = _format_messages(
+        [HumanMessage("Check the weather"), ai_message, tool_message],
+        model=MODEL_NAME,
+    )
+
+    assert messages[1]["content"] == [
+        {"type": "text", "text": "Calling tool"},
+        {
+            "type": "tool_use",
+            "name": "get_weather",
+            "input": expected_input,
+            "id": tool_call_id,
+        },
+    ]
+    assert messages[2]["content"][0]["tool_use_id"] == tool_call_id
+    assert messages[2]["content"][0]["is_error"] is True
+
+
+def test_invalid_tool_call_does_not_duplicate_existing_tool_use() -> None:
+    ai_message = AIMessage(
+        content=[
+            {"type": "tool_use", "name": "get_weather", "input": {}, "id": "toolu_1"}
+        ],
+        tool_calls=[{"name": "get_weather", "args": {}, "id": "toolu_2"}],
+        invalid_tool_calls=[
+            {"name": "get_weather", "args": "bad", "id": "toolu_1"},
+            {"name": "get_weather", "args": "bad", "id": "toolu_2"},
+            {"name": "get_weather", "args": "bad", "id": None},
+        ],
+    )
+
+    _, messages = _format_messages([ai_message], model=MODEL_NAME)
+
+    assert [block["id"] for block in messages[0]["content"]] == ["toolu_1", "toolu_2"]
+
+
 def test_v1_invalid_tool_call_retains_tool_use_for_error_result() -> None:
     """An error result must retain its Anthropic tool-use block on replay."""
     tool_call_id = "toolu_invalid"
