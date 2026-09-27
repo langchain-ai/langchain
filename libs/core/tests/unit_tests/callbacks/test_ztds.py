@@ -47,6 +47,31 @@ class TestLangChainZTDSCallback(unittest.TestCase):
         self.assertNotIn(str(run_id), self.handler._run_maps)
         self.assertNotIn(str(run_id), self.handler._entity_maps)
 
+    def test_on_llm_error_zeroizes_ram(self):
+        run_id = uuid.uuid4()
+        prompts = ["Contact user test@example.com for verification"]
+        self.handler.on_llm_start(serialized={}, prompts=prompts, run_id=run_id)
+        self.assertIn(str(run_id), self.handler._run_maps)
+
+        # Trigger on_llm_error
+        self.handler.on_llm_error(RuntimeError("Upstream timeout"), run_id=run_id)
+        self.assertNotIn(str(run_id), self.handler._run_maps)
+        self.assertNotIn(str(run_id), self.handler._entity_maps)
+
+    def test_multitoken_ordering_safety(self):
+        run_id = uuid.uuid4()
+        emails = [f"user{i}@example.com" for i in range(1, 15)]
+        raw_prompt = " ".join(emails)
+        prompts = [raw_prompt]
+        self.handler.on_llm_start(serialized={}, prompts=prompts, run_id=run_id)
+
+        # Output contains token 10 and token 1
+        mock_result = MockLLMResult("Users: [EMAIL_TOKEN_10] and [EMAIL_TOKEN_1]")
+        self.handler.on_llm_end(mock_result, run_id=run_id)
+        final_output = mock_result.generations[0][0].text
+        self.assertIn("user10@example.com", final_output)
+        self.assertIn("user1@example.com", final_output)
+
 
 if __name__ == "__main__":
     unittest.main()
