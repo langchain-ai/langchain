@@ -249,3 +249,111 @@ def test_create_agent_patches_only_invalid_tool_calls_with_ids(
     agent.invoke({"messages": [HumanMessage("Weather?"), invalid_message]})
 
     assert isinstance(model.received_messages[-1], ToolMessage) is patched
+
+
+def test_repair_promotes_invalid_tool_calls_into_serializable_tool_calls() -> None:
+    """The repaired history must keep every answered id parented (#40853).
+
+    Provider serializers disagree on `invalid_tool_calls`: langchain-anthropic
+    drops them, so a synthetic `ToolMessage` answering one serialized to a
+    `tool_result` with no `tool_use` parent and the Anthropic Messages API
+    rejected the payload with a 400 - permanently, since the repair is persisted
+    into state. After the repair the id lives in regular `tool_calls`, which
+    every provider serializes.
+    """
+    model = InvalidToolCallingModel()
+    agent = create_agent(model, [get_weather], checkpointer=InMemorySaver())
+    config: RunnableConfig = {"configurable": {"thread_id": "1"}}
+
+    agent.invoke({"messages": [HumanMessage("Weather?")]}, config)
+    model.invalid_tool_call_id = None
+    agent.invoke({"messages": [HumanMessage("Try again")]}, config)
+
+    repaired = model.received_messages[1]
+    assert isinstance(repaired, AIMessage)
+    assert [call["id"] for call in repaired.tool_calls] == ["call_1"]
+    assert repaired.tool_calls[0]["name"] == "get_weather"
+    # Truncated JSON cannot be recovered; the placeholder keeps the call
+    # schema-parseable instead of leaking raw string args into serializers.
+    assert repaired.tool_calls[0]["args"] == {}
+    assert repaired.invalid_tool_calls == []
+
+
+def test_repaired_history_pairs_every_tool_result_with_a_tool_call() -> None:
+    """The provider-agnostic shape of the #40853 orphan check."""
+    model = InvalidToolCallingModel()
+    agent = create_agent(model, [get_weather], checkpointer=InMemorySaver())
+    config: RunnableConfig = {"configurable": {"thread_id": "1"}}
+
+    agent.invoke({"messages": [HumanMessage("Weather?")]}, config)
+    model.invalid_tool_call_id = None
+    agent.invoke({"messages": [HumanMessage("Try again")]}, config)
+
+    seen = model.received_messages
+    tool_use_ids = {
+        call["id"]
+        for message in seen
+        if isinstance(message, AIMessage)
+        for call in message.tool_calls
+    }
+    tool_result_ids = {
+        message.tool_call_id for message in seen if isinstance(message, ToolMessage)
+    }
+    assert tool_result_ids <= tool_use_ids
+
+
+def test_repair_heals_persisted_threads_with_answered_invalid_calls() -> None:
+    """A thread broken by the old repair must heal on the next model call."""
+    model = InvalidToolCallingModel(invalid_tool_call_id=None)
+    agent = create_agent(model, [get_weather])
+    broken_history = [
+        HumanMessage("Weather?"),
+        AIMessage(
+            content="",
+            invalid_tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": '{"city":',
+                    "id": "call_1",
+                    "error": "Invalid JSON",
+                }
+            ],
+        ),
+        ToolMessage(
+            "Tool call get_weather with id call_1 could not be executed",
+            tool_call_id="call_1",
+            status="error",
+        ),
+    ]
+
+    agent.invoke({"messages": broken_history})
+
+    seen = model.received_messages[1]
+    assert isinstance(seen, AIMessage)
+    assert [call["id"] for call in seen.tool_calls] == ["call_1"]
+    assert seen.invalid_tool_calls == []
+
+
+def test_repair_keeps_id_less_invalid_tool_calls_untouched() -> None:
+    """Calls without an id get no ToolMessage, so promoting them would only
+    add a parentless tool_call; they stay as invalid_tool_calls."""
+    model = InvalidToolCallingModel(invalid_tool_call_id=None)
+    agent = create_agent(model, [get_weather])
+    invalid_message = AIMessage(
+        content="",
+        invalid_tool_calls=[
+            {
+                "name": "get_weather",
+                "args": '{"city":',
+                "id": None,
+                "error": "Invalid JSON",
+            }
+        ],
+    )
+
+    agent.invoke({"messages": [HumanMessage("Weather?"), invalid_message]})
+
+    seen = model.received_messages[1]
+    assert isinstance(seen, AIMessage)
+    assert seen.tool_calls == []
+    assert len(seen.invalid_tool_calls) == 1

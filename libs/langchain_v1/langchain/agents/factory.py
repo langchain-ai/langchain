@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import importlib
 import itertools
+import json
 import re
 from dataclasses import dataclass, field, fields
 from typing import (
@@ -22,8 +23,10 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
+    InvalidToolCall,
     RemoveMessage,
     SystemMessage,
+    ToolCall,
     ToolMessage,
 )
 from langchain_core.tools import BaseTool
@@ -689,21 +692,68 @@ def _invalid_tool_call_message(tool_call: InvalidToolCall) -> ToolMessage | None
     )
 
 
+def _promote_invalid_tool_calls(message: AIMessage) -> AIMessage:
+    """Turn id-bearing invalid tool calls into regular calls with placeholder args.
+
+    Provider serializers disagree on `invalid_tool_calls`: some partners emit
+    `tool_calls` entries for them (e.g. langchain-openai), others drop them
+    entirely (e.g. langchain-anthropic). A synthetic `ToolMessage` answering such
+    an id can then serialize to a `tool_result` whose `tool_use` parent no
+    provider ever emits, which the Anthropic Messages API rejects with a 400 -
+    permanently, because the repair is persisted back into state. Regular
+    `tool_calls` serialize on every provider, so promoting the answered ids keeps
+    a matching parent block in every payload. Calls without an id stay put: no
+    `ToolMessage` references them, so nothing can orphan.
+    """
+    if not message.invalid_tool_calls:
+        return message
+    promoted_calls: list[ToolCall] = []
+    remaining_invalid: list[InvalidToolCall] = []
+    for tool_call in message.invalid_tool_calls:
+        tool_call_id = tool_call.get("id")
+        if not tool_call_id:
+            remaining_invalid.append(tool_call)
+            continue
+        try:
+            args = json.loads(tool_call.get("args") or "{}")
+        except json.JSONDecodeError:
+            args = {}
+        if not isinstance(args, dict):
+            args = {}
+        promoted_calls.append(
+            {
+                "name": tool_call.get("name") or "unknown",
+                "args": args,
+                "id": tool_call_id,
+                "type": "tool_call",
+            }
+        )
+    if not promoted_calls:
+        return message
+    return message.model_copy(
+        update={
+            "tool_calls": [*message.tool_calls, *promoted_calls],
+            "invalid_tool_calls": remaining_invalid,
+        }
+    )
+
+
 def _patch_invalid_tool_calls(messages: Sequence[AnyMessage]) -> list[AnyMessage]:
     answered_ids = {
         message.tool_call_id for message in messages if isinstance(message, ToolMessage)
     }
     patched_messages: list[AnyMessage] = []
     for message in messages:
-        patched_messages.append(message)
-        if not isinstance(message, AIMessage):
+        if isinstance(message, AIMessage) and message.invalid_tool_calls:
+            patched_messages.append(_promote_invalid_tool_calls(message))
+            for tool_call in message.invalid_tool_calls:
+                if tool_call.get("id") in answered_ids:
+                    continue
+                if tool_message := _invalid_tool_call_message(tool_call):
+                    patched_messages.append(tool_message)
+                    answered_ids.add(tool_message.tool_call_id)
             continue
-        for tool_call in message.invalid_tool_calls:
-            if tool_call.get("id") in answered_ids:
-                continue
-            if tool_message := _invalid_tool_call_message(tool_call):
-                patched_messages.append(tool_message)
-                answered_ids.add(tool_message.tool_call_id)
+        patched_messages.append(message)
     return patched_messages
 
 
