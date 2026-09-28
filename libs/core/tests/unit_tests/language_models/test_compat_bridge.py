@@ -1401,3 +1401,80 @@ def test_lifecycle_validator_message_to_events_roundtrip() -> None:
     )
     events = list(message_to_events(msg))
     assert_valid_event_stream(events)
+
+
+def test_to_block_delta_fields_dealiased_from_accumulator() -> None:
+    """Mutating delta fields must not mutate the internal accumulator for finish."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    {
+                        "type": "tool_call_chunk",
+                        "name": "get_weather",
+                        "args": '{"city": "Boston"}',
+                        "id": "tc1",
+                        "index": 0,
+                    }
+                ],
+            )
+        )
+    ]
+    finishes: list[Any] = []
+    for event in chunks_to_events(iter(chunks)):
+        if event["event"] == "content-block-delta":
+            delta = event.get("delta")
+            if isinstance(delta, dict) and delta.get("type") == "block-delta":
+                fields = delta.get("fields")
+                if isinstance(fields, dict):
+                    # Simulate a mutating stream transformer (e.g. PIIMiddleware)
+                    fields["args"] = ""
+        elif event["event"] == "content-block-finish":
+            finishes.append(event)
+
+    assert len(finishes) == 1
+    content = finishes[0]["content"]
+    assert content["type"] == "tool_call"
+    assert content["args"] == {"city": "Boston"}
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_to_block_delta_fields_dealiased() -> None:
+    """Async: mutating delta fields must not corrupt finish accumulator."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    {
+                        "type": "tool_call_chunk",
+                        "name": "get_weather",
+                        "args": '{"city": "Boston"}',
+                        "id": "tc1",
+                        "index": 0,
+                    }
+                ],
+            )
+        )
+    ]
+
+    async def _gen() -> AsyncIterator[ChatGenerationChunk]:
+        for c in chunks:
+            yield c
+
+    finishes: list[Any] = []
+    async for event in achunks_to_events(_gen()):
+        if event["event"] == "content-block-delta":
+            delta = event.get("delta")
+            if isinstance(delta, dict) and delta.get("type") == "block-delta":
+                fields = delta.get("fields")
+                if isinstance(fields, dict):
+                    fields["args"] = ""
+        elif event["event"] == "content-block-finish":
+            finishes.append(event)
+
+    assert len(finishes) == 1
+    content = finishes[0]["content"]
+    assert content["type"] == "tool_call"
+    assert content["args"] == {"city": "Boston"}

@@ -113,8 +113,13 @@ def _to_finalized_block(block: CompatBlock) -> FinalizedContentBlock:
 
 
 def _to_block_delta_fields(block: CompatBlock) -> BlockDeltaFields:
-    """Narrow an internal working dict to protocol block-delta fields."""
-    return cast("BlockDeltaFields", block)
+    """Narrow an internal working dict to protocol block-delta fields.
+
+    Emits a shallow copy so stream transformers / event consumers modifying
+    the delta fields payload cannot mutate the generator's internal per-index
+    working state.
+    """
+    return cast("BlockDeltaFields", dict(block))
 
 
 def _to_content_delta(block: CompatBlock) -> ContentBlockDelta:
