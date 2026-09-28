@@ -756,6 +756,7 @@ def test_responses_stream(output_version: str, expected_content: list[dict]) -> 
             chunks.append(chunk)
     assert isinstance(full, AIMessageChunk)
 
+    assert {chunk.id for chunk in chunks} == {"resp_123"}
     assert full.content == expected_content
     assert full.additional_kwargs == {}
     assert full.id == "resp_123"
@@ -775,6 +776,24 @@ def test_responses_stream(output_version: str, expected_content: list[dict]) -> 
         dumped = _strip_none(item.model_dump())
         _ = dumped.pop("status", None)
         assert dumped == payload["input"][idx]
+
+
+async def test_responses_astream_keeps_response_id_on_every_chunk() -> None:
+    """Response stream chunks retain the provider response ID."""
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="v1")
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(responses_stream)
+
+    mock_client.responses.create = mock_create
+
+    chunks = []
+    with patch.object(llm, "root_async_client", mock_client):
+        async for chunk in llm.astream("test"):
+            chunks.append(chunk)
+
+    assert {chunk.id for chunk in chunks} == {"resp_123"}
 
 
 @pytest.mark.parametrize("output_version", ["responses/v1", "v1"])

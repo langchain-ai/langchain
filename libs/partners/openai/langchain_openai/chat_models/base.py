@@ -1718,6 +1718,7 @@ class BaseChatOpenAI(BaseChatModel):
                 current_output_index = -1
                 current_sub_index = -1
                 has_reasoning = False
+                response_id: str | None = None
                 for chunk in response:
                     metadata = headers if is_first_chunk else {}
                     (
@@ -1736,6 +1737,10 @@ class BaseChatOpenAI(BaseChatModel):
                         output_version=self.output_version,
                     )
                     if generation_chunk:
+                        if response_id is None:
+                            response_id = generation_chunk.message.id
+                        elif generation_chunk.message.id is None:
+                            generation_chunk.message.id = response_id
                         if is_first_chunk and base_generation_info:
                             generation_chunk.generation_info = {
                                 **base_generation_info,
@@ -1788,6 +1793,7 @@ class BaseChatOpenAI(BaseChatModel):
                 current_output_index = -1
                 current_sub_index = -1
                 has_reasoning = False
+                response_id: str | None = None
                 async for chunk in _astream_with_chunk_timeout(
                     response,
                     self.stream_chunk_timeout,
@@ -1810,6 +1816,10 @@ class BaseChatOpenAI(BaseChatModel):
                         output_version=self.output_version,
                     )
                     if generation_chunk:
+                        if response_id is None:
+                            response_id = generation_chunk.message.id
+                        elif generation_chunk.message.id is None:
+                            generation_chunk.message.id = response_id
                         if is_first_chunk and base_generation_info:
                             generation_chunk.generation_info = {
                                 **base_generation_info,
