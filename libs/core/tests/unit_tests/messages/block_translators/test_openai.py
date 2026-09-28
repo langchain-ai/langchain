@@ -603,3 +603,53 @@ def test_convert_to_openai_data_block() -> None:
     expected = {"type": "input_file", "file_id": "file-abc123"}
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
+
+
+def test_convert_to_v1_from_responses_async_tool_call() -> None:
+    """Test that the `async` flag on a function call reaches `tool_call` extras."""
+    message = AIMessage(
+        [
+            {
+                "type": "function_call",
+                "call_id": "call_A",
+                "id": "fc_1",
+                "name": "lookup_price",
+                "arguments": '{"sku": "WIDGET"}',
+                "async": True,
+            },
+            {
+                "type": "function_call",
+                "call_id": "call_B",
+                "id": "fc_2",
+                "name": "get_time",
+                "arguments": "{}",
+            },
+        ],
+        tool_calls=[
+            {
+                "type": "tool_call",
+                "id": "call_A",
+                "name": "lookup_price",
+                "args": {"sku": "WIDGET"},
+            },
+            {"type": "tool_call", "id": "call_B", "name": "get_time", "args": {}},
+        ],
+        response_metadata={"model_provider": "openai"},
+    )
+    expected_content: list[types.ContentBlock] = [
+        {
+            "type": "tool_call",
+            "id": "call_A",
+            "name": "lookup_price",
+            "args": {"sku": "WIDGET"},
+            "extras": {"item_id": "fc_1", "async": True},
+        },
+        {
+            "type": "tool_call",
+            "id": "call_B",
+            "name": "get_time",
+            "args": {},
+            "extras": {"item_id": "fc_2"},
+        },
+    ]
+    assert message.content_blocks == expected_content

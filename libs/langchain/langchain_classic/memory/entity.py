@@ -389,7 +389,12 @@ class SQLiteEntityStore(BaseEntityStore):
         except ImportError as e:
             msg = (
                 "Could not import sqlite3 python package. "
-                "Please install it with `pip install sqlite3`."
+                "sqlite3 is part of the Python standard library, not a package "
+                "installable via pip. If it is missing, your Python installation "
+                "was likely built without SQLite support — check your Python or "
+                "operating system distributor's instructions for enabling the "
+                "sqlite3 extension (e.g., recompiling Python with SQLite support, "
+                "or installing your OS's sqlite3/libsqlite3 development package)."
             )
             raise ImportError(msg) from e
 

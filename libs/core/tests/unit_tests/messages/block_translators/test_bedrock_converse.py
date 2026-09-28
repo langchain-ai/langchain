@@ -1,3 +1,8 @@
+from copy import deepcopy
+from typing import Any
+
+import pytest
+
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages import content as types
 
@@ -119,10 +124,12 @@ def test_convert_to_v1_from_bedrock_converse() -> None:
             "value": {"type": "something_else", "foo": "bar"},
         },
     ]
+    original_content = deepcopy(message.content)
+
     assert message.content_blocks == expected_content
 
     # Check no mutation
-    assert message.content != expected_content
+    assert message.content == original_content
 
 
 def test_convert_to_v1_from_converse_chunk() -> None:
@@ -377,3 +384,66 @@ def test_convert_to_v1_from_converse_input() -> None:
     ]
 
     assert message.content_blocks == expected
+
+
+@pytest.mark.parametrize("message_class", [AIMessage, AIMessageChunk])
+@pytest.mark.parametrize(
+    "content",
+    [
+        "hello",
+        [{"type": "custom", "payload": "value", "index": 3}],
+        [{"type": "custom", "payload": "value"}],
+        [{"type": "text", "text": "hello", "index": 0}],
+    ],
+)
+def test_content_blocks_does_not_mutate_content(
+    message_class: type[AIMessage],
+    content: str | list[str | dict[Any, Any]],
+) -> None:
+    """Reading `content_blocks` must leave `message.content` unchanged."""
+    message = message_class(
+        content=deepcopy(content),
+        response_metadata={"model_provider": "bedrock_converse"},
+    )
+    original_content = deepcopy(message.content)
+
+    first_read = message.content_blocks
+
+    assert message.content == original_content
+
+    # Repeated reads of an unchanged message must agree
+    assert message.content_blocks == first_read
+
+
+@pytest.mark.parametrize("message_class", [AIMessage, AIMessageChunk])
+def test_non_standard_block_index_is_lifted_not_removed(
+    message_class: type[AIMessage],
+) -> None:
+    """`index` moves onto the standardized block without leaving the source."""
+    message = message_class(
+        content=[{"type": "custom", "payload": "value", "index": 3}],
+        response_metadata={"model_provider": "bedrock_converse"},
+    )
+
+    assert message.content_blocks == [
+        {
+            "type": "non_standard",
+            "value": {"type": "custom", "payload": "value"},
+            "index": 3,
+        }
+    ]
+    assert message.content == [{"type": "custom", "payload": "value", "index": 3}]
+
+
+@pytest.mark.parametrize("message_class", [AIMessage, AIMessageChunk])
+def test_string_content_is_not_replaced_with_blocks(
+    message_class: type[AIMessage],
+) -> None:
+    """String content is translated through a local list, not written back."""
+    message = message_class(
+        content="hello",
+        response_metadata={"model_provider": "bedrock_converse"},
+    )
+
+    assert message.content_blocks == [{"type": "text", "text": "hello"}]
+    assert message.content == "hello"

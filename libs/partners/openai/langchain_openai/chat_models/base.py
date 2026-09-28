@@ -163,6 +163,7 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_chat_completions,
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
+    _unwrap_non_standard,
 )
 from langchain_openai.data._profiles import _PROFILES
 
@@ -210,6 +211,8 @@ WellKnownTools = (
     "tool_search",
     "apply_patch",
 )
+
+_TOOL_EXTRAS_PASSTHROUGH = ("defer_loading", "async")
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -324,12 +327,79 @@ def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[
     return content
 
 
+_ADDITIONAL_TOOLS_BLOCK_TYPE = "additional_tools"
+"""Responses API input item that adds tools partway through a conversation."""
+
+
+def _is_ai_role(role: str | None) -> bool:
+    """Return whether a message's role is the assistant's.
+
+    Assistant content is replayed model output, not a caller's instruction, so it is
+    exempt from the placement checks a caller's own blocks are held to.
+    """
+    return str(role).lower().startswith("ai")
+
+
+def _is_system_role(role: str | None) -> bool:
+    """Return whether a message's role carries provider instructions.
+
+    `SystemMessage` reports `"system"` whether or not it is later emitted with
+    OpenAI's `developer` role, so one check covers both spellings.
+    """
+    return role in ("system", "developer")
+
+
+def _raise_if_additional_tools(content: Any, reason: str) -> None:
+    """Reject an `additional_tools` block that cannot work where it was placed.
+
+    The block only reaches the wire as a Responses top-level input item carried on
+    a system message. Anywhere else it is this provider's own block type in a
+    position this provider forbids, which the error taxonomy makes loud rather than
+    silent: nothing routes a request to the Responses API based on message content,
+    so a silent drop would make the broken case the default outcome.
+
+    Args:
+        content: The message's content.
+        reason: Sentence explaining why this placement cannot work, and how to fix
+            it. Appended to the error.
+
+    Raises:
+        ValueError: If an `additional_tools` block is present, in either spelling.
+    """
+    if not isinstance(content, list):
+        return
+    for raw_block in content:
+        if (
+            isinstance(raw_block, dict)
+            and _unwrap_non_standard(raw_block).get("type")
+            == _ADDITIONAL_TOOLS_BLOCK_TYPE
+        ):
+            msg = f"`additional_tools` {reason}"
+            raise ValueError(msg)
+
+
 def _format_message_content(
     content: Any,
     api: Literal["chat/completions", "responses"] = "chat/completions",
     role: str | None = None,
 ) -> Any:
     """Format message content."""
+    if _is_ai_role(role):
+        # Replayed assistant output; `additional_tools` is also an output item, so
+        # an echoed one must survive a round trip rather than abort the request.
+        pass
+    elif not _is_system_role(role):
+        _raise_if_additional_tools(
+            content,
+            "must be carried on a `SystemMessage`. OpenAI restricts the input item "
+            'to `role: "developer"`, so it cannot be sent on any other message.',
+        )
+    elif api == "chat/completions":
+        _raise_if_additional_tools(
+            content,
+            "requires the Responses API and cannot be sent via Chat Completions. "
+            "Set `use_responses_api=True`.",
+        )
     if content and isinstance(content, list):
         formatted_content = []
         for block in content:
@@ -695,6 +765,7 @@ _RESPONSES_API_ONLY_PREFIXES = (
     "gpt-5.2-pro",
     "gpt-5.4-pro",
     "gpt-5.5-pro",
+    "gpt-5.6-sol",
 )
 
 
@@ -880,6 +951,27 @@ class BaseChatOpenAI(BaseChatModel):
     Currently supported values are `'minimal'`, `'low'`, `'medium'`, and
     `'high'`. Reducing reasoning effort can result in faster responses and fewer
     tokens used on reasoning in a response.
+
+    !!! note "Changing reasoning effort mid-conversation"
+
+        Changing this value part-way through a conversation changes a request-level
+        parameter, which invalidates the cached prompt prefix.
+
+        Models that support it (currently GPT-6) can instead carry the new effort
+        in a `configuration_update` item attached to the message that should start
+        using it:
+
+        ```python
+        HumanMessage(
+            [
+                {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                {"type": "text", "text": "Analyze the failure modes."},
+            ]
+        )
+        ```
+
+        The new effort applies from that message onward, until another update
+        overrides it.
     """
 
     reasoning: dict[str, Any] | None = None
@@ -1182,7 +1274,7 @@ class BaseChatOpenAI(BaseChatModel):
     use_responses_api: bool | None = None
     """Whether to use the Responses API instead of the Chat API.
 
-    If not specified then will be inferred based on invocation params.
+    If not specified, set to `True` when instance settings require the Responses API,
 
     !!! version-added "Added in `langchain-openai` 0.3.9"
     """
@@ -1299,6 +1391,13 @@ class BaseChatOpenAI(BaseChatModel):
         `langchain-openai` version entry.
         """
         self._add_version("langchain-openai", __version__)
+        return self
+
+    @model_validator(mode="after")
+    def _infer_use_responses_api(self) -> Self:
+        """Expose unconditional instance-level Responses API routing."""
+        if self.use_responses_api is None and self._use_responses_api({}):
+            self.use_responses_api = True
         return self
 
     @model_validator(mode="after")
@@ -1908,6 +2007,10 @@ class BaseChatOpenAI(BaseChatModel):
             or self.truncation is not None
             or self.use_previous_response_id
             or _model_prefers_responses_api(self.model_name)
+            or (
+                (self.model_name or "").lower().startswith("gpt-6")
+                and payload.get("tools")
+            )
         ):
             return True
         return _use_responses_api(payload)
@@ -2271,7 +2374,7 @@ class BaseChatOpenAI(BaseChatModel):
         except KeyError:
             model_lower = model.lower()
             encoder = "cl100k_base"
-            if model_lower.startswith(("gpt-4o", "gpt-4.1", "gpt-5")):
+            if model_lower.startswith(("gpt-4o", "gpt-4.1", "gpt-5", "gpt-6")):
                 encoder = "o200k_base"
             encoding = tiktoken.get_encoding(encoder)
         return model, encoding
@@ -2322,7 +2425,9 @@ class BaseChatOpenAI(BaseChatModel):
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith(("gpt-3.5-turbo", "gpt-4", "gpt-5", "o1", "o3", "o4")):
+        elif model.startswith(
+            ("gpt-3.5-turbo", "gpt-4", "gpt-5", "gpt-6", "o1", "o3", "o4")
+        ):
             tokens_per_message = 3
             tokens_per_name = 1
         else:
@@ -2440,9 +2545,10 @@ class BaseChatOpenAI(BaseChatModel):
                 isinstance(original, BaseTool)
                 and hasattr(original, "extras")
                 and isinstance(original.extras, dict)
-                and "defer_loading" in original.extras
             ):
-                formatted["defer_loading"] = original.extras["defer_loading"]
+                for key in _TOOL_EXTRAS_PASSTHROUGH:
+                    if key in original.extras:
+                        formatted[key] = original.extras[key]
         tool_names = []
         for tool in formatted_tools:
             if "function" in tool:
@@ -3096,6 +3202,39 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         setting `model_kwargs`.
 
         See `bind_tools` for more.
+
+    ??? info "Mid-conversation tool additions"
+
+        ```python
+        from langchain_core.messages import HumanMessage, SystemMessage
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+        model.invoke(
+            [
+                HumanMessage("What time is it?"),
+                SystemMessage(
+                    [
+                        {
+                            "type": "additional_tools",
+                            "role": "developer",
+                            "tools": [
+                                {
+                                    "type": "function",
+                                    "name": "get_time",
+                                    "description": "Get the current time.",
+                                    "parameters": {
+                                        "type": "object",
+                                        "properties": {},
+                                    },
+                                }
+                            ],
+                        }
+                    ]
+                ),
+            ]
+        )
+        ```
 
     ??? info "Built-in (server-side) tools"
 
@@ -4944,6 +5083,7 @@ def _construct_responses_api_input(
                     "mcp_approval_response",
                     "tool_search_output",
                     "apply_patch_call_output",
+                    "configuration_update",
                 )
                 for block in msg["content"]:
                     if block["type"] in ("text", "image_url", "file"):
@@ -4954,6 +5094,21 @@ def _construct_responses_api_input(
                         new_blocks.append(block)
                     elif block["type"] in non_message_item_types:
                         input_.append(block)
+                    elif block["type"] == _ADDITIONAL_TOOLS_BLOCK_TYPE:
+                        if isinstance(lc_msg, SystemMessage):
+                            input_.append(block)
+                    elif _is_system_role(msg["role"]):
+                        # System content is a closed set here, so an unrecognized
+                        # block is a mistake rather than something to forward.
+                        # User content keeps its long-standing silent drop, where
+                        # the set is open and warning would be noise.
+                        warnings.warn(
+                            f"Content block {block['type']!r} was dropped from a "
+                            "system message: the Responses API has no input item "
+                            "of that type, so it cannot be placed in the request.",
+                            UserWarning,
+                            stacklevel=2,
+                        )
                     else:
                         pass
                 msg["content"] = new_blocks
@@ -5070,7 +5225,12 @@ def _construct_lc_result_from_responses_api(
                         refusal_block["phase"] = phase
                     content_blocks.append(refusal_block)
         elif output.type == "function_call":
-            content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
+            function_call_block = output.model_dump(exclude_none=True, mode="json")
+            # The SDK names the reserved word `async_`; content blocks carry the
+            # wire name so it round-trips on the next request.
+            if "async_" in function_call_block:
+                function_call_block["async"] = function_call_block.pop("async_")
+            content_blocks.append(function_call_block)
             try:
                 args = json.loads(output.arguments, strict=False)
                 error = None
@@ -5294,6 +5454,13 @@ def _convert_responses_chunk_to_generation_chunk(
         response = _coerce_chunk_response(chunk.response)
         id = response.id
         response_metadata["id"] = response.id  # Backwards compatibility
+    elif chunk.type == "response.failed":
+        response = _coerce_chunk_response(chunk.response)
+        error_msg = str(response.error or f"Response {response.id} failed.")
+        raise ValueError(error_msg)
+    elif chunk.type == "error":
+        error_msg = f"{chunk.code}: {chunk.message}" if chunk.code else chunk.message
+        raise ValueError(error_msg)
     elif chunk.type in ("response.completed", "response.incomplete"):
         response = _coerce_chunk_response(chunk.response)
         msg = cast(
@@ -5352,6 +5519,12 @@ def _convert_responses_chunk_to_generation_chunk(
         }
         if getattr(chunk.item, "namespace", None) is not None:
             function_call_content["namespace"] = chunk.item.namespace
+        # SDKs expose the reserved word as `async_`; older ones keep it in extras.
+        async_flag = getattr(chunk.item, "async_", None)
+        if async_flag is None:
+            async_flag = getattr(chunk.item, "async", None)
+        if async_flag is not None:
+            function_call_content["async"] = async_flag
         content.append(function_call_content)
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",

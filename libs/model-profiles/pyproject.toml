@@ -52,7 +52,7 @@ test = [
     "pytest-socket>=0.6.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "pytest-mock",
-    "syrupy>=5.0.0,<6.0.0",
+    "syrupy>=5.0.0,<7.0.0",
     "toml>=0.10.2,<1.0.0",
     "langchain[openai]>=1.0.2,<2.0.0",
     "langchain-core>=1.4.7,<2.0.0",

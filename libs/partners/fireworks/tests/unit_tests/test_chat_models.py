@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from typing import Any
@@ -56,6 +57,7 @@ from langchain_fireworks.chat_models import (
     _update_token_usage,
     _usage_to_metadata,
 )
+from langchain_fireworks.data._profiles import _PROFILES
 
 MODEL_NAME = "accounts/fireworks/models/test-model"
 
@@ -102,6 +104,15 @@ def test_fireworks_model_param() -> None:
     llm = ChatFireworks(model_name="foo", api_key="fake-key")  # type: ignore[call-arg, arg-type]
     assert llm.model_name == "foo"
     assert llm.model == "foo"
+
+
+@pytest.mark.parametrize("model_name", _PROFILES)
+def test_model_profile_rejects_native_pdf_input(model_name: str) -> None:
+    profile = _make_model(model=model_name).profile
+
+    assert profile is not None
+    assert profile["pdf_inputs"] is False
+    assert profile["pdf_tool_message"] is False
 
 
 def test_convert_dict_to_message_with_reasoning_content() -> None:
@@ -205,10 +216,69 @@ def test_convert_v1_message_filters_invalid_tool_call_content() -> None:
             {
                 "type": "function",
                 "id": "call_invalid",
-                "function": {"name": "get_weather", "arguments": '{"city":'},
+                "function": {
+                    "name": "get_weather",
+                    "arguments": json.dumps(
+                        {"__invalid_tool_call_arguments": '{"city":'}
+                    ),
+                },
             }
         ],
     }
+
+
+@pytest.mark.parametrize("raw_history", [False, True])
+@pytest.mark.parametrize(
+    ("arguments", "wrapped"),
+    [
+        ('{"city":', True),
+        ("[]", True),
+        ("null", True),
+        (None, True),
+        ('{"x": NaN}', True),
+        ('{"city": "Paris"}', False),
+    ],
+)
+def test_replay_invalid_tool_call_arguments(
+    arguments: str | None, *, wrapped: bool, raw_history: bool
+) -> None:
+    message = AIMessage(
+        content="",
+        tool_calls=[{"name": "get_weather", "args": {"city": "Paris"}, "id": "valid"}],
+        invalid_tool_calls=[
+            {"name": "get_weather", "args": arguments, "id": "invalid", "error": "bad"}
+        ],
+    )
+    if raw_history:
+        message.additional_kwargs["tool_calls"] = [
+            {
+                "type": "function",
+                "id": "invalid",
+                "function": {"name": "get_weather", "arguments": arguments},
+            }
+        ]
+        message.tool_calls = []
+        message.invalid_tool_calls = []
+    original = message.model_dump()
+
+    result = _convert_message_to_dict(message)
+
+    assert message.model_dump() == original
+    invalid = result["tool_calls"][-1]
+    assert invalid["id"] == "invalid"
+    assert invalid["function"]["name"] == "get_weather"
+    if wrapped:
+        assert json.loads(invalid["function"]["arguments"]) == {
+            "__invalid_tool_call_arguments": arguments
+        }
+    else:
+        assert invalid["function"]["arguments"] == arguments
+    if not raw_history:
+        assert json.loads(result["tool_calls"][0]["function"]["arguments"]) == {
+            "city": "Paris"
+        }
+    tool_result = ToolMessage(content="Invalid JSON", tool_call_id="invalid")
+    assert _convert_message_to_dict(tool_result)["tool_call_id"] == invalid["id"]
 
 
 def test_sanitize_chat_completions_content_passthrough_non_text_block() -> None:

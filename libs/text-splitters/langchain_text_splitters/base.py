@@ -259,7 +259,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             ImportError: If the tiktoken package is not installed.
         """
         if allowed_special is None:
-            allowed_special = set()
+            allowed_special = set[str]()
         tiktoken = cast("Any", _import_tiktoken())
 
         if model_name is not None:
@@ -346,7 +346,7 @@ class TokenTextSplitter(TextSplitter):
             ImportError: If the tiktoken package is not installed.
         """
         if allowed_special is None:
-            allowed_special = set()
+            allowed_special = set[str]()
         super().__init__(**kwargs)
         try:
             tiktoken = cast("Any", _import_tiktoken())

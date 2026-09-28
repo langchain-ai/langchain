@@ -343,6 +343,21 @@ def _format_message_content(content: Any) -> Any:
     return formatted
 
 
+def _format_tool_call_arguments(arguments: str | dict | None) -> str | dict:
+    """Preserve invalid historical arguments inside a JSON object for replay."""
+    if isinstance(arguments, dict):
+        return arguments
+    try:
+        parsed = json.loads(arguments) if arguments is not None else None
+        if isinstance(parsed, dict) and arguments is not None:
+            json.dumps(parsed, allow_nan=False)
+            return arguments
+    except ValueError:
+        logger.debug("Invalid JSON in historical Fireworks tool call arguments")
+    logger.warning("Wrapping invalid historical Fireworks tool call arguments")
+    return json.dumps({"__invalid_tool_call_arguments": arguments}, ensure_ascii=False)
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -392,6 +407,19 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             ]
         elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+        if "tool_calls" in message_dict:
+            message_dict["tool_calls"] = [
+                {
+                    **tool_call,
+                    "function": {
+                        **tool_call["function"],
+                        "arguments": _format_tool_call_arguments(
+                            tool_call["function"]["arguments"]
+                        ),
+                    },
+                }
+                for tool_call in message_dict["tool_calls"]
+            ]
         # If tool calls only, content is None not empty string
         if "tool_calls" in message_dict and message_dict["content"] == "":
             message_dict["content"] = None

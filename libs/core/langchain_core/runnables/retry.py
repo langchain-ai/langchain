@@ -96,7 +96,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
     Example:
         ```python
-        from langchain_core.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_core.prompts import PromptTemplate
 
         template = PromptTemplate.from_template("tell me a joke about {topic}.")

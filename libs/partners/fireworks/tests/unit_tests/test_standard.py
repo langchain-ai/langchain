@@ -40,7 +40,7 @@ class TestFireworksStandard(ChatModelUnitTests):
 def test_profile() -> None:
     """Test that model profile is loaded correctly."""
     model = ChatFireworks(
-        model="accounts/fireworks/models/gpt-oss-20b",
+        model="accounts/fireworks/models/gpt-oss-120b",
         api_key="test_key",  # type: ignore[arg-type]
     )
     assert model.profile

@@ -29,9 +29,10 @@ langchain/
 │   │   └── ... (other integrations maintained by the LangChain team)
 │   ├── text-splitters/   # Document chunking utilities
 │   ├── standard-tests/   # Shared test suite for integrations
-│   ├── model-profiles/   # Model configuration profiles
+│   └── model-profiles/   # Model configuration profiles
 ├── .github/              # CI/CD workflows and templates
 ├── .vscode/              # VSCode IDE standard settings and recommended extensions
+├── openwiki/             # Generated just-in-time evidence index (optional reading)
 └── README.md             # Information about LangChain
 ```
 
@@ -43,14 +44,14 @@ langchain/
 ### Development tools & commands
 
 - `uv` – Fast Python package installer and resolver (replaces pip/poetry)
-- `make` – Task runner for common development commands. Feel free to look at the `Makefile` for available commands and usage patterns.
+- `make` – Task runner for common development commands. Each package under `libs/` has its own `Makefile`; feel free to look at it for available commands and usage patterns.
 - `ruff` – Fast Python linter and formatter
 - `mypy` – Static type checking
 - `pytest` – Testing framework
 
-This monorepo uses `uv` for dependency management. Local development uses editable installs: `[tool.uv.sources]`
+This monorepo uses `uv` for dependency management. Local development uses editable installs declared under each package's `[tool.uv.sources]` table in `pyproject.toml`, so path dependencies resolve to your working tree instead of PyPI.
 
-Each package in `libs/` has its own `pyproject.toml` and `uv.lock`.
+Each package in `libs/` has its own `pyproject.toml`, `uv.lock`, and `Makefile`. There is no workspace-level `pyproject.toml` or `Makefile` at the repo root — always `cd` into the package you are working on before running the commands below (for example `cd libs/langchain_v1` or `cd libs/core`).
 
 Before running your tests, set up all packages by running:
 
@@ -92,9 +93,13 @@ Use `uv` for all environment and dependency operations in this monorepo. Do not 
 
 #### Key config files
 
-- pyproject.toml: Main workspace configuration with dependency groups
-- uv.lock: Locked dependencies for reproducible builds
-- Makefile: Development tasks
+There is no single workspace config at the repository root. Configuration lives per package:
+
+- `libs/<package>/pyproject.toml`: Package metadata and dependency groups (`test`, `lint`, `typing`, `dev`, …)
+- `libs/<package>/uv.lock`: Locked dependencies for reproducible builds
+- `libs/<package>/Makefile`: Development tasks for that package (`test`, `lint`, `format`, `type`, …)
+- `libs/Makefile`: Cross-package `lock` / `check-lock` only
+- `.pre-commit-config.yaml` (repo root): Git hooks that run per-package format/lint
 
 #### PR and commit titles
 
@@ -364,9 +369,22 @@ When adding a new partner package, update these files:
 
 ## GitHub Actions & Workflows
 
-This repository require actions to be pinned to a full-length commit SHA. Attempting to use a tag will fail. Use the `gh` cli to query. Verify tags are not annotated tag objects (which would need dereferencing).
+This repository requires actions to be pinned to a full-length commit SHA. Attempting to use a tag will fail. Use the `gh` cli to query. Verify tags are not annotated tag objects (which would need dereferencing).
 
 ## Additional resources
 
 - **Documentation:** https://docs.langchain.com/oss/python/langchain/overview and source at https://github.com/langchain-ai/docs or `../docs/`. Prefer the local install and use file search tools for best results. If needed, use the docs MCP server as defined in `.mcp.json` for programmatic access.
 - **Contributing Guide:** [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview)
+
+<!-- OPENWIKI:START -->
+
+## OpenWiki
+
+This repository has a generated `openwiki/` evidence index. It is optional just-in-time context, not required startup reading.
+
+- Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
+- Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
+
+The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+
+<!-- OPENWIKI:END -->

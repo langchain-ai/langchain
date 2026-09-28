@@ -3,8 +3,8 @@ revision = 3
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.15' and platform_python_implementation == 'PyPy'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.15' and platform_python_implementation != 'PyPy'",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.13' and python_full_version < '3.15' and platform_python_implementation != 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation != 'PyPy'",
@@ -26,17 +26,16 @@ wheels = [
 
 [[package]]
 name = "anyio"
-version = "4.11.0"
+version = "4.14.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "idna" },
-    { name = "sniffio" },
     { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c6/78/7d432127c41b50bccba979505f272c16cbcadcc33645d5fa3a738110ae75/anyio-4.11.0.tar.gz", hash = "sha256:82a8d0b81e318cc5ce71a5f1f8b5c4e63619620b63141ef8c995fa0db95a57c4", size = 219094, upload-time = "2025-09-23T09:19:12.58Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/61/cc/a381afa6efea9f496eff839d4a6a1aed3bfafc7b3ab4b0d1b243a12573dd/anyio-4.14.2.tar.gz", hash = "sha256:cfa139f3ed1a23ee8f88a145ddb5ac7605b8bbfd8592baacd7ce3d8bb4313c7f", size = 260176, upload-time = "2026-07-12T20:29:07.082Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/15/b3/9b1a8074496371342ec1e796a96f99c82c945a339cd81a8e73de28b4cf9e/anyio-4.11.0-py3-none-any.whl", hash = "sha256:0287e96f4d26d4149305414d4e3bc32f0dcd0862365a4bddea19d7a1ec38c4fc", size = 109097, upload-time = "2025-09-23T09:19:10.601Z" },
+    { url = "https://files.pythonhosted.org/packages/da/35/f2287558c17e29fafc8ef3daf819bb9834061cfa43bff8014f7df7f63bdc/anyio-4.14.2-py3-none-any.whl", hash = "sha256:9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494", size = 125813, upload-time = "2026-07-12T20:29:05.763Z" },
 ]
 
 [[package]]
@@ -412,9 +411,10 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.4.9"
+version = "1.6.3"
 source = { editable = "../../core" }
 dependencies = [
+    { name = "httpx" },
     { name = "jsonpatch" },
     { name = "langchain-protocol" },
     { name = "langsmith" },
@@ -428,6 +428,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.23.0,<1.0.0" },
     { name = "jsonpatch", specifier = ">=1.33.0,<2.0.0" },
     { name = "langchain-protocol", specifier = ">=0.0.17" },
     { name = "langsmith", specifier = ">=0.3.45,<1.0.0" },
@@ -443,9 +444,9 @@ requires-dist = [
 dev = [
     { name = "grandalf", specifier = ">=0.8.0,<1.0.0" },
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
-    { name = "setuptools", specifier = ">=67.6.1,<83.0.0" },
+    { name = "setuptools", specifier = ">=67.6.1,<84.0.0" },
 ]
-lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.17.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -458,7 +459,7 @@ test = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
-    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<0.8.0" },
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
     { name = "responses", specifier = ">=0.25.0,<1.0.0" },
@@ -565,16 +566,16 @@ requires-dist = [
     { name = "pytest-codspeed" },
     { name = "pytest-recording" },
     { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
-    { name = "syrupy", specifier = ">=5.0.0,<6.0.0" },
-    { name = "vcrpy", specifier = ">=8.0.0,<9.0.0" },
+    { name = "syrupy", specifier = ">=5.0.0,<7.0.0" },
+    { name = "vcrpy", specifier = ">=8.2.1,<9.0.0" },
 ]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.15.0,<0.16.0" }]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.17.0" }]
 test = []
 test-integration = []
 typing = [
-    { name = "mypy", specifier = ">=2.1.0,<2.2.0" },
+    { name = "mypy", specifier = ">=2.1.0,<2.4.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]
 
@@ -845,8 +846,8 @@ version = "2.3.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_python_implementation == 'PyPy'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.15' and platform_python_implementation != 'PyPy'",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.13' and python_full_version < '3.15' and platform_python_implementation != 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation == 'PyPy'",
     "python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation != 'PyPy'",
@@ -1450,15 +1451,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/28/d3/bb25ee567ce2f61ac52430cf99f446b0e6d49bdfa4188699ad005fdd16aa/ruff-0.13.3-py3-none-win32.whl", hash = "sha256:f14e0d1fe6460f07814d03c6e32e815bff411505178a1f539a38f6097d3e8ee3", size = 12334488, upload-time = "2025-10-02T19:29:24.782Z" },
     { url = "https://files.pythonhosted.org/packages/cf/49/12f5955818a1139eed288753479ba9d996f6ea0b101784bb1fe6977ec128/ruff-0.13.3-py3-none-win_amd64.whl", hash = "sha256:621e2e5812b691d4f244638d693e640f188bacbb9bc793ddd46837cea0503dd2", size = 13455262, upload-time = "2025-10-02T19:29:26.882Z" },
     { url = "https://files.pythonhosted.org/packages/fe/72/7b83242b26627a00e3af70d0394d68f8f02750d642567af12983031777fc/ruff-0.13.3-py3-none-win_arm64.whl", hash = "sha256:9e9e9d699841eaf4c2c798fa783df2fabc680b72059a02ca0ed81c460bc58330", size = 12538484, upload-time = "2025-10-02T19:29:28.951Z" },
-]
-
-[[package]]
-name = "sniffio"
-version = "1.3.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a2/87/a6771e1546d97e7e041b6ae58d80074f81b7d5121207425c964ddf5cfdbd/sniffio-1.3.1.tar.gz", hash = "sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc", size = 20372, upload-time = "2024-02-25T23:20:04.057Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl", hash = "sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2", size = 10235, upload-time = "2024-02-25T23:20:01.196Z" },
 ]
 
 [[package]]

@@ -6,6 +6,16 @@ from typing import Any, cast
 from langchain_core.messages import content as types
 
 
+def _unwrap_non_standard(block: dict) -> dict:
+    """Unwrap a provider-native dictionary from a standard content block."""
+    if block.get("type") == "non_standard" and isinstance(
+        value := block.get("value"),
+        dict,
+    ):
+        return value
+    return block
+
+
 def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
     """Convert LangChain annotation format to Anthropic's native citation format."""
     if annotation["type"] == "non_standard_annotation":
@@ -141,7 +151,23 @@ def _convert_from_v1_to_anthropic(
             )
 
         elif block["type"] == "invalid_tool_call":
-            continue
+            tool_call_id = block.get("id")
+            tool_name = block.get("name")
+            if (
+                model_provider == "anthropic"
+                and isinstance(tool_call_id, str)
+                and tool_call_id
+                and isinstance(tool_name, str)
+                and tool_name
+            ):
+                new_content.append(
+                    {
+                        "type": "tool_use",
+                        "name": tool_name,
+                        "input": {},
+                        "id": tool_call_id,
+                    }
+                )
 
         elif block["type"] == "reasoning" and model_provider == "anthropic":
             new_block = {}
