@@ -3,9 +3,6 @@ type: "Architecture"
 title: "Message Types and Content Representation"
 description: "Document the message abstraction, standardized content blocks for multimodal LLM I/O, message hierarchy, and provider-specific block translators."
 tags: [messages, content-blocks, chat-models, streaming, multimodal, provider-adapters]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-77dc1fb726463969f9d53658
     resource: repo://libs/core/langchain_core/messages/ai.py
@@ -30,6 +27,9 @@ sources:
   - id: openwiki-source-498a9586e021b126ab8a8b42
     resource: repo://libs/core/langchain_core/messages/utils.py
 generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-28T08:35:20.640Z
 ---
 
 ## Overview

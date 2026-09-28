@@ -5,8 +5,10 @@ description: "How to write integration tests that call real model APIs with VCR 
 tags: [integration-tests, vcr, cassettes, api-testing, pytest, ci-cd, model-testing]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
+    at: 2026-09-28T08:35:20.640Z
 sources:
+  - id: openwiki-source-ff76574b014ac8b5c67560a6
+    resource: repo://libs/langchain_v1/tests/integration_tests/chat_models/test_base.py
   - id: openwiki-source-bcf7be66f36f862f639f3c7a
     resource: repo://libs/langchain_v1/tests/integration_tests/conftest.py
   - id: openwiki-source-bae620f3bb8d2668c69ac079
@@ -27,7 +29,7 @@ sources:
     resource: repo://libs/partners/openai/tests/integration_tests/embeddings/test_base.py
   - id: openwiki-source-db02c1dda8563ab005cd9d62
     resource: repo://libs/standard-tests/langchain_tests/conftest.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
 ---
 
 ## Overview
@@ -664,6 +666,60 @@ def vcr_config() -> dict:
     config["before_record_request"] = remove_proprietary_header
     return config
 ```
+
+## Standard Test Suite Inheritance
+
+LangChain partner packages inherit a standard suite of integration tests via `ChatModelIntegrationTests` from `langchain_tests.integration_tests`. This allows all chat model providers to run a common set of tests without duplicating test code.
+
+### How It Works
+
+Each partner package defines a test class that inherits from `ChatModelIntegrationTests`:
+
+```python
+# libs/partners/openai/tests/integration_tests/chat_models/test_base_standard.py
+from langchain_tests.integration_tests import ChatModelIntegrationTests
+from langchain_openai import ChatOpenAI
+
+class TestOpenAIStandard(ChatModelIntegrationTests):
+    @property
+    def chat_model_class(self) -> type[BaseChatModel]:
+        return ChatOpenAI
+
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": "gpt-4o-mini"}
+
+    @property
+    def supports_image_inputs(self) -> bool:
+        return True
+
+    @property
+    def has_tool_calling(self) -> bool:
+        return True
+```
+
+The base class (`ChatModelIntegrationTests`) implements dozens of test methods that exercise standard chat model capabilities: `invoke`, `ainvoke`, `stream`, `astream`, tool calling, structured output, image inputs, and more. Each test method is automatically marked with `@pytest.mark.vcr` so cassettes are recorded and replayed.
+
+### Customization Points
+
+Partner implementations override properties to declare:
+
+- **`chat_model_class`**: The model class to instantiate
+- **`chat_model_params`**: Default parameters (model name, API key, etc.)
+- **`supports_*` properties**: Declare which features the model supports (images, tools, JSON mode, etc.)
+- **`has_*` properties**: Declare model capabilities (tool calling, structured output, etc.)
+- **Custom methods**: Override test methods to provide provider-specific behavior (e.g., handling audio inputs, reasoning models)
+
+### VCR Integration with Standard Tests
+
+Standard test methods inherit VCR integration:
+
+1. Each test method is pre-marked with `@pytest.mark.vcr`
+2. Cassettes are generated automatically with names like `test_invoke.yaml.gz`, `test_invoke[model0].yaml.gz` (for parameterized variants)
+3. Tests run in CI via `make test_vcr --record-mode=none` to validate cassettes are up-to-date
+4. When a partner updates a test (e.g., adds a new model to test), new cassettes are recorded with `--record-mode=new_episodes`
+
+This approach ensures that all LangChain partners maintain consistent test coverage and that changes to the standard test suite (new test methods, new capabilities) are automatically picked up by all partners.
 
 ## Best Practices
 
