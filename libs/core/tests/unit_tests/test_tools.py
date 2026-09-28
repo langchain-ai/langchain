@@ -41,6 +41,7 @@ from typing_extensions import TypedDict, override
 from langchain_core import tools
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
+    BaseCallbackHandler,
     CallbackManagerForToolRun,
 )
 from langchain_core.callbacks.manager import (
@@ -4877,3 +4878,69 @@ def test_structured_tool_subclass_can_override_json_serializers() -> None:
     dumped = my_tool.model_dump(mode="json")
     assert dumped["func"] == "custom-func"
     assert dumped["args_schema"] == {"custom": "schema"}
+
+
+def test_on_tool_error_receives_caller_kwargs() -> None:
+    """Caller kwargs must reach on_tool_error like start/end (#40881)."""
+    events: dict[str, Any] = {}
+
+    class Capture(BaseCallbackHandler):
+        def on_tool_start(self, serialized: Any, input_str: str, **kwargs: Any) -> None:
+            events["start"] = kwargs
+
+        def on_tool_end(self, output: Any, **kwargs: Any) -> None:
+            events["end"] = kwargs
+
+        def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
+            events["error"] = kwargs
+
+    def boom(x: int) -> str:
+        """Fail on purpose."""
+        msg = "boom"
+        raise ToolException(msg)
+
+    def fine(x: int) -> str:
+        """Succeed."""
+        return "ok"
+
+    handler = Capture()
+    with pytest.raises(ToolException):
+        StructuredTool.from_function(boom).invoke(
+            {"x": 1}, {"callbacks": [handler]}, tenant="acme"
+        )
+    StructuredTool.from_function(fine).invoke(
+        {"x": 1}, {"callbacks": [handler]}, tenant="acme"
+    )
+
+    assert events["start"].get("tenant") == "acme"
+    assert events["end"].get("tenant") == "acme"
+    assert events["error"].get("tenant") == "acme"
+
+
+async def test_on_tool_error_receives_caller_kwargs_async() -> None:
+    """Async path: caller kwargs must reach on_tool_error (#40881)."""
+    events: dict[str, Any] = {}
+
+    class Capture(BaseCallbackHandler):
+        def on_tool_start(self, serialized: Any, input_str: str, **kwargs: Any) -> None:
+            events["start"] = kwargs
+
+        def on_tool_end(self, output: Any, **kwargs: Any) -> None:
+            events["end"] = kwargs
+
+        def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
+            events["error"] = kwargs
+
+    def boom(x: int) -> str:
+        """Fail on purpose."""
+        msg = "boom"
+        raise ToolException(msg)
+
+    handler = Capture()
+    with pytest.raises(ToolException):
+        await StructuredTool.from_function(boom).ainvoke(
+            {"x": 1}, {"callbacks": [handler]}, tenant="acme"
+        )
+
+    assert events["start"].get("tenant") == "acme"
+    assert events["error"].get("tenant") == "acme"
