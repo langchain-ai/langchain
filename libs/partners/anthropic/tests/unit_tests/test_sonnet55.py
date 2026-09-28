@@ -105,14 +105,22 @@ def test_profile_and_defaults() -> None:
     assert llm.max_tokens == 128000
     assert llm.profile is not None
     assert llm.profile["max_input_tokens"] == 1000000
-    assert llm.profile["structured_output"] is False
-    assert "tool_choice" not in llm.profile
-    assert "reasoning_effort_levels" not in llm.profile
+    assert llm.profile["structured_output"] is True
+    assert llm.profile["tool_choice"] is False
+    assert llm.profile["reasoning_effort_levels"] == [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+    ]
+    assert llm.profile["reasoning_effort_default"] == "high"
     payload = llm._get_request_payload("hello")
     assert not {"temperature", "top_p", "top_k", "thinking"} & payload.keys()
-    effort_payload = llm._get_request_payload("hello", effort="medium")
-    assert "thinking" not in effort_payload
-    assert effort_payload["output_config"] == {"effort": "medium"}
+    assert llm._get_request_payload("hello", effort="medium")["thinking"] == {
+        "type": "adaptive",
+        "display": "summarized",
+    }
 
 
 def test_mid_conversation_system() -> None:
