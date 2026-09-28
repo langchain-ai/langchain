@@ -773,7 +773,13 @@ def _merge_model_headers(llm: ChatFireworks, kwargs: dict[str, Any]) -> dict[str
 def _apply_prompt_cache_affinity(kwargs: dict[str, Any]) -> dict[str, Any]:
     """Apply the middleware default after the selected model's settings are merged."""
     affinity = _PROMPT_CACHE_AFFINITY.get()
-    if affinity is None or any(kwargs.get(key) for key in ("user", "prompt_cache_key")):
+    if affinity is None:
+        return kwargs
+
+    # The SDK merges extra_body over top-level fields before sending the request.
+    extra_body = kwargs.get("extra_body")
+    body = {**kwargs, **extra_body} if isinstance(extra_body, Mapping) else kwargs
+    if any(body.get(key) for key in ("user", "prompt_cache_key")):
         return kwargs
 
     headers = kwargs.get("extra_headers")

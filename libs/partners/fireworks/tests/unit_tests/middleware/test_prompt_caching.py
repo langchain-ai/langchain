@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -10,6 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
+from fireworks import AsyncFireworks, Fireworks
 from langchain.agents import create_agent
 from langchain.agents.middleware import ModelFallbackMiddleware, wrap_model_call
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
@@ -213,6 +215,76 @@ def test_existing_affinity_setting_causes_no_injection(setting: str) -> None:
     assert result.model_settings == {setting: "caller"}
     assert _call_kwargs(request)[setting] == "caller"
     assert "extra_headers" not in _call_kwargs(request)
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize("on_model", [False, True])
+@pytest.mark.parametrize("setting", ["user", "prompt_cache_key"])
+async def test_extra_body_affinity_takes_precedence_on_the_wire(
+    setting: str, *, use_async: bool, on_model: bool
+) -> None:
+    requests: list[httpx.Request] = []
+    extra_body = {setting: "explicit-affinity"}
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"role": "assistant", "content": "ok"}}]},
+        )
+
+    with Fireworks(
+        api_key="fake-key",
+        http_client=httpx.Client(transport=httpx.MockTransport(respond)),
+    ) as sdk:
+        async with AsyncFireworks(
+            api_key="fake-key",
+            http_client=httpx.AsyncClient(transport=httpx.MockTransport(respond)),
+        ) as async_sdk:
+            model = ChatFireworks(
+                model=_MODEL_NAME,
+                api_key="fake-key",  # type: ignore[arg-type]
+                client=sdk.chat.completions,
+                async_client=async_sdk.chat.completions,
+                model_kwargs={"extra_body": extra_body} if on_model else {},
+            )
+            request = _make_request(
+                model, {} if on_model else {"extra_body": extra_body}
+            )
+            if use_async:
+                await _arun(request)
+            else:
+                _run(request)
+
+    assert len(requests) == 1
+    body = json.loads(requests[0].content)
+    assert body[setting] == "explicit-affinity"
+    assert body.get("prompt_cache_key") == extra_body.get("prompt_cache_key")
+    assert _SESSION_AFFINITY_HEADER not in requests[0].headers
+    assert extra_body == {setting: "explicit-affinity"}
+    assert model.model_kwargs == ({"extra_body": extra_body} if on_model else {})
+    assert request.model_settings == ({} if on_model else {"extra_body": extra_body})
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize("setting", ["user", "prompt_cache_key"])
+async def test_extra_body_null_overrides_top_level_affinity(
+    setting: str, *, use_async: bool
+) -> None:
+    settings = {setting: "overridden", "extra_body": {setting: None}}
+    model = _make_model()
+    request = _make_request(model, settings)
+    if use_async:
+        await _arun(request)
+    else:
+        _run(request)
+
+    client = model.async_client if use_async else model.client
+    kwargs = client.create.call_args.kwargs
+    assert kwargs["extra_headers"][_SESSION_AFFINITY_HEADER] == _AFFINITY
+    assert kwargs["prompt_cache_key"] == _AFFINITY
+    assert kwargs["extra_body"] == {setting: None}
+    assert settings == {setting: "overridden", "extra_body": {setting: None}}
 
 
 @pytest.mark.parametrize("setting", ["user", "prompt_cache_key"])

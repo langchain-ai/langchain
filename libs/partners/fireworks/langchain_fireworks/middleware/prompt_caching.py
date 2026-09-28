@@ -85,9 +85,10 @@ class FireworksPromptCachingMiddleware(AgentMiddleware):
 
     The middleware supplies a scoped default that `ChatFireworks` applies to
     `prompt_cache_key` and `extra_headers["x-session-affinity"]` when invoking
-    the API. Explicit `user`, `prompt_cache_key`, or `x-session-affinity` settings
-    on the selected model or request take precedence, including on fallback
-    models. No affinity is added when no thread ID is configured.
+    the API. Explicit `user` or `prompt_cache_key` body fields (including
+    `extra_body` overrides), or `x-session-affinity` headers on the selected
+    model or request take precedence, including on fallback models. No affinity
+    is added when no thread ID is configured.
 
     Generated affinity stays out of shared request settings, so it is never
     forwarded to another provider. This works with either ordering of this
