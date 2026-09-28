@@ -3,12 +3,13 @@ import threading
 import time
 import unittest.mock
 import uuid
+from collections.abc import Iterator
 from typing import Any
 from uuid import UUID
 
+import langsmith
 import pytest
 from langsmith import Client
-from langsmith import utils as ls_utils
 from langsmith.run_helpers import tracing_context
 from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var, get_tracer_project
@@ -157,21 +158,41 @@ def test_correct_get_tracer_project(
         assert projects == [expected_project_name]
 
 
-def _clear_tracer_env_caches() -> None:
-    getters: tuple[Any, ...] = (
-        get_env_var,
-        get_tracer_project,
-        getattr(ls_utils, "get_tracer_agent_id", None),
-        getattr(ls_utils, "get_tracer_agent_environment", None),
-    )
-    for getter in getters:
-        if hasattr(getter, "cache_clear"):
-            getter.cache_clear()
+_TRACER_ENV_VARS = (
+    "LANGSMITH_PROJECT",
+    "LANGCHAIN_PROJECT",
+    "LANGCHAIN_SESSION",
+    "HOSTED_LANGSERVE_PROJECT_NAME",
+    "LANGSMITH_AGENT_ID",
+    "LANGSMITH_AGENT_ENVIRONMENT",
+)
+
+_requires_address = pytest.mark.skipif(
+    not hasattr(langsmith, "address"),
+    reason="agent addressing requires a langsmith version with `ls.address`",
+)
+
+
+@pytest.fixture
+def tracer_env() -> Iterator[pytest.MonkeyPatch]:
+    """Start from no tracer env vars, and leave nothing in the env caches."""
+    _clear_env_caches()
+    with pytest.MonkeyPatch.context() as mp:
+        for k in _TRACER_ENV_VARS:
+            mp.delenv(k, raising=False)
+        yield mp
+    _clear_env_caches()
+
+
+def _clear_env_caches() -> None:
+    get_env_var.cache_clear()  # type: ignore[attr-defined]
+    get_tracer_project.cache_clear()
 
 
 @pytest.mark.parametrize(
     ("envvars", "expected_project_name"),
     [
+        ({}, "default"),
         ({"LANGSMITH_AGENT_ID": "my-agent"}, None),
         ({"LANGSMITH_AGENT_ENVIRONMENT": "development"}, None),
         (
@@ -187,70 +208,80 @@ def _clear_tracer_env_caches() -> None:
                 "LANGSMITH_AGENT_ENVIRONMENT": "development",
                 "LANGSMITH_PROJECT": "configured",
             },
-            "configured",
+            None,
         ),
     ],
     ids=[
-        "no 'default' project with agent id",
-        "no 'default' project with agent environment",
-        "no 'default' project with agent pair",
-        "keep a configured project with agent pair",
+        "'default' project without agent env vars",
+        "no project with agent id",
+        "no project with agent environment",
+        "no project with agent pair",
+        "no env project with agent pair",
     ],
 )
-def test_tracer_project_with_agent_addressing(
-    envvars: dict[str, str], expected_project_name: str | None
+def test_tracer_project_with_agent_env(
+    tracer_env: pytest.MonkeyPatch,
+    envvars: dict[str, str],
+    expected_project_name: str | None,
 ) -> None:
-    if not hasattr(ls_utils, "get_tracer_agent_environment"):
-        pytest.skip("agent addressing requires langsmith>=0.14.0")
-    _clear_tracer_env_caches()
-    try:
-        with pytest.MonkeyPatch.context() as mp:
-            for k in (
-                "LANGSMITH_PROJECT",
-                "LANGCHAIN_PROJECT",
-                "LANGCHAIN_SESSION",
-                "HOSTED_LANGSERVE_PROJECT_NAME",
-                "LANGSMITH_AGENT_ID",
-                "LANGSMITH_AGENT_ENVIRONMENT",
-            ):
-                mp.delenv(k, raising=False)
-            for k, v in envvars.items():
-                mp.setenv(k, v)
-
-            tracer = LangChainTracer(client=unittest.mock.MagicMock(spec=Client))
-            assert tracer.project_name == expected_project_name
-    finally:
-        # The env getters are cached, so leave nothing behind for later tests.
-        _clear_tracer_env_caches()
+    for k, v in envvars.items():
+        tracer_env.setenv(k, v)
+    tracer = LangChainTracer(client=unittest.mock.MagicMock(spec=Client))
+    assert tracer.project_name == expected_project_name
 
 
-def test_automatic_tracing_omits_default_project_with_agent_addressing() -> None:
-    if not hasattr(ls_utils, "get_tracer_agent_environment"):
-        pytest.skip("agent addressing requires langsmith>=0.14.0")
-    _clear_tracer_env_caches()
-    try:
-        with pytest.MonkeyPatch.context() as mp:
-            for k in (
-                "LANGSMITH_PROJECT",
-                "LANGCHAIN_PROJECT",
-                "LANGCHAIN_SESSION",
-                "HOSTED_LANGSERVE_PROJECT_NAME",
-            ):
-                mp.delenv(k, raising=False)
-            mp.setenv("LANGSMITH_TRACING", "true")
-            mp.setenv("LANGSMITH_AGENT_ID", "my-agent")
-            mp.setenv("LANGSMITH_AGENT_ENVIRONMENT", "development")
+def _posted_destinations(client: unittest.mock.MagicMock) -> list[tuple[Any, Any]]:
+    return [
+        (call.kwargs.get("session_name"), call.kwargs.get("address"))
+        for call in client.create_run.call_args_list
+    ]
 
-            client = unittest.mock.MagicMock(spec=Client)
-            with tracing_context(client=client):
-                RunnableLambda(lambda x: x).invoke(1)
 
-            assert client.create_run.call_count == 1
-            posted = client.create_run.call_args.kwargs
-            assert posted.get("session_name") is None
-            assert posted.get("agent_id") == "my-agent"
-    finally:
-        _clear_tracer_env_caches()
+def _nested_chain() -> RunnableLambda[int, int]:
+    inner: RunnableLambda[int, int] = RunnableLambda(lambda x: x)
+    return RunnableLambda(inner.invoke)
+
+
+@_requires_address
+def test_automatic_tracing_uses_agent_env(tracer_env: pytest.MonkeyPatch) -> None:
+    tracer_env.setenv("LANGSMITH_TRACING", "true")
+    tracer_env.setenv("LANGSMITH_AGENT_ID", "my-agent")
+    tracer_env.setenv("LANGSMITH_AGENT_ENVIRONMENT", "development")
+    client = unittest.mock.MagicMock(spec=Client)
+    with tracing_context(client=client):
+        _nested_chain().invoke(1)
+    expected = langsmith.address(agent_id="my-agent", agent_environment="development")
+    assert _posted_destinations(client) == [(None, expected)] * 2
+
+
+@_requires_address
+def test_project_in_code_wins_over_agent_env(tracer_env: pytest.MonkeyPatch) -> None:
+    tracer_env.setenv("LANGSMITH_AGENT_ID", "my-agent")
+    tracer_env.setenv("LANGSMITH_AGENT_ENVIRONMENT", "development")
+    client = unittest.mock.MagicMock(spec=Client)
+    tracer = LangChainTracer(client=client, project_name="configured")
+    _nested_chain().invoke(1, {"callbacks": [tracer]})
+    assert _posted_destinations(client) == [("configured", None)] * 2
+
+
+@_requires_address
+def test_address_from_tracing_context(tracer_env: pytest.MonkeyPatch) -> None:
+    tracer_env.setenv("LANGSMITH_TRACING", "true")
+    client = unittest.mock.MagicMock(spec=Client)
+    support = langsmith.address(agent_id="support", agent_environment="staging")
+    with support.tracing_context(client=client):
+        _nested_chain().invoke(1)
+    assert _posted_destinations(client) == [(None, support)] * 2
+
+
+@_requires_address
+def test_address_from_traceable_parent(tracer_env: pytest.MonkeyPatch) -> None:
+    tracer_env.setenv("LANGSMITH_TRACING", "true")
+    client = unittest.mock.MagicMock(spec=Client)
+    support = langsmith.address(agent_id="support", agent_environment="staging")
+    with support.trace("parent", client=client):
+        _nested_chain().invoke(1)
+    assert _posted_destinations(client) == [(None, support)] * 3
 
 
 @pytest.mark.parametrize(
