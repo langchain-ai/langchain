@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from collections.abc import Awaitable, Callable, Mapping
-from typing import Any, Literal
+from collections.abc import Awaitable, Callable, Iterator
+from contextlib import contextmanager
+from typing import Literal
 from warnings import warn
 
-from langchain_fireworks.chat_models import ChatFireworks
+from langchain_fireworks.chat_models import _PROMPT_CACHE_AFFINITY, ChatFireworks
 
 try:
     from langchain.agents.middleware.types import (
@@ -33,8 +34,6 @@ except ImportError as e:
 
 logger = logging.getLogger(__name__)
 
-_SESSION_AFFINITY_HEADER = "x-session-affinity"
-_USER_MANAGED_SETTINGS = ("user", "prompt_cache_key")
 _UNSUPPORTED_MODEL_BEHAVIORS = ("ignore", "warn", "raise")
 
 
@@ -50,27 +49,22 @@ def _get_thread_id() -> str | None:
     return None
 
 
-def _has_session_affinity_header(headers: Mapping[Any, Any]) -> bool:
-    """Return whether headers already contain `x-session-affinity`."""
-    return any(
-        isinstance(key, str) and key.lower() == _SESSION_AFFINITY_HEADER
-        for key in headers
+@contextmanager
+def _session_affinity() -> Iterator[None]:
+    """Scope an affinity default to this call, including any fallback attempts."""
+    thread_id = _get_thread_id()
+    affinity = (
+        hashlib.sha256(thread_id.encode("utf-8")).hexdigest()
+        if thread_id is not None
+        else None
     )
-
-
-def _get_effective_model_settings(request: ModelRequest) -> dict[str, Any]:
-    """Combine model defaults with settings supplied for this request."""
-    raw_model_settings = getattr(request.model, "model_kwargs", None)
-    model_settings = (
-        dict(raw_model_settings) if isinstance(raw_model_settings, Mapping) else {}
-    )
-
-    model_headers = model_settings.get("extra_headers")
-    request_headers = request.model_settings.get("extra_headers")
-    model_settings.update(request.model_settings)
-    if isinstance(model_headers, Mapping) and isinstance(request_headers, Mapping):
-        model_settings["extra_headers"] = {**model_headers, **request_headers}
-    return model_settings
+    if affinity is None:
+        logger.debug("Fireworks session affinity not applied: no thread_id in config")
+    token = _PROMPT_CACHE_AFFINITY.set(affinity)
+    try:
+        yield
+    finally:
+        _PROMPT_CACHE_AFFINITY.reset(token)
 
 
 class FireworksPromptCachingMiddleware(AgentMiddleware):
@@ -82,10 +76,15 @@ class FireworksPromptCachingMiddleware(AgentMiddleware):
     replica and reuse its warm cache. The hexadecimal hash keeps affinity values
     safe for HTTP headers, including when thread IDs contain Unicode.
 
-    The middleware injects both `prompt_cache_key` and
-    `extra_headers["x-session-affinity"]`. It leaves requests unchanged when no
-    thread ID is configured or the caller already supplies `user`,
-    `prompt_cache_key`, or an `x-session-affinity` header.
+    The middleware supplies a scoped default that `ChatFireworks` applies to
+    `prompt_cache_key` and `extra_headers["x-session-affinity"]` when invoking
+    the API. Explicit `user`, `prompt_cache_key`, or `x-session-affinity` settings
+    on the selected model or request take precedence, including on fallback
+    models. No affinity is added when no thread ID is configured.
+
+    Generated affinity stays out of shared request settings, so it is never
+    forwarded to another provider. This works with either ordering of this
+    middleware and `ModelFallbackMiddleware` for a Fireworks primary model.
     """
 
     def __init__(
@@ -138,84 +137,40 @@ class FireworksPromptCachingMiddleware(AgentMiddleware):
             warn(msg, stacklevel=3)
         return False
 
-    def _apply_session_affinity(self, request: ModelRequest) -> ModelRequest | None:
-        """Return a request with session affinity applied, or `None` to no-op."""
-        thread_id = _get_thread_id()
-        if thread_id is None:
-            logger.debug(
-                "Fireworks session affinity not applied: "
-                "no thread_id in runnable config"
-            )
-            return None
-
-        model_settings = _get_effective_model_settings(request)
-        if any(model_settings.get(key) for key in _USER_MANAGED_SETTINGS):
-            return None
-
-        raw_headers = model_settings.get("extra_headers")
-        if isinstance(raw_headers, Mapping):
-            if _has_session_affinity_header(raw_headers):
-                return None
-        elif raw_headers is not None:
-            logger.warning(
-                "Cannot set Fireworks session affinity because extra_headers is %s",
-                type(raw_headers).__name__,
-            )
-            return None
-
-        # Model defaults must remain on the model: this request can be reused
-        # with another provider by an inner ModelFallbackMiddleware.
-        headers = dict(request.model_settings.get("extra_headers") or {})
-        affinity = hashlib.sha256(thread_id.encode("utf-8")).hexdigest()
-        headers[_SESSION_AFFINITY_HEADER] = affinity
-        # Pin affinity on both channels: the typed `prompt_cache_key` field
-        # (preferred by newer Fireworks endpoints) and the `x-session-affinity`
-        # header (honored by endpoints that only read the raw header). Writing the
-        # same value to both is safe. Only this request's settings are carried
-        # forward -- the model's own `model_kwargs` already reach the API via the
-        # model itself, so re-binding them here is unnecessary.
-        new_settings = {
-            **request.model_settings,
-            "prompt_cache_key": affinity,
-            "extra_headers": headers,
-        }
-        logger.debug("Set Fireworks prompt-cache session affinity")
-        return request.override(model_settings=new_settings)
-
     def wrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
-        """Inject Fireworks session affinity before delegating to the handler.
+        """Supply default Fireworks affinity while executing the handler.
 
         Args:
             request: The outgoing model request.
-            handler: Callable that executes the (possibly modified) request.
+            handler: Callable that executes the request.
 
         Returns:
             The result produced by `handler`.
         """
         if not self._should_apply_caching(request):
             return handler(request)
-        new_request = self._apply_session_affinity(request)
-        return handler(request if new_request is None else new_request)
+        with _session_affinity():
+            return handler(request)
 
     async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Inject Fireworks session affinity before delegating asynchronously.
+        """Supply default Fireworks affinity while awaiting the handler.
 
         Args:
             request: The outgoing model request.
-            handler: Async callable that executes the (possibly modified) request.
+            handler: Async callable that executes the request.
 
         Returns:
             The result produced by `handler`.
         """
         if not self._should_apply_caching(request):
             return await handler(request)
-        new_request = self._apply_session_affinity(request)
-        return await handler(request if new_request is None else new_request)
+        with _session_affinity():
+            return await handler(request)

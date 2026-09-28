@@ -6,6 +6,7 @@ import contextlib
 import json
 import logging
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from contextvars import ContextVar
 from operator import itemgetter
 from typing import (
     Any,
@@ -122,6 +123,10 @@ from langchain_fireworks._version import __version__
 from langchain_fireworks.data._profiles import _PROFILES
 
 logger = logging.getLogger(__name__)
+
+_PROMPT_CACHE_AFFINITY: ContextVar[str | None] = ContextVar(
+    "fireworks_prompt_cache_affinity", default=None
+)
 
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
@@ -759,6 +764,33 @@ def _merge_model_headers(llm: ChatFireworks, kwargs: dict[str, Any]) -> dict[str
     return kwargs
 
 
+def _apply_prompt_cache_affinity(kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Apply the middleware default after the selected model's settings are merged."""
+    affinity = _PROMPT_CACHE_AFFINITY.get()
+    if affinity is None or any(kwargs.get(key) for key in ("user", "prompt_cache_key")):
+        return kwargs
+
+    headers = kwargs.get("extra_headers")
+    if isinstance(headers, Mapping):
+        if any(
+            isinstance(key, str) and key.lower() == "x-session-affinity"
+            for key in headers
+        ):
+            return kwargs
+    elif headers is not None:
+        logger.warning(
+            "Cannot set Fireworks session affinity because extra_headers is %s",
+            type(headers).__name__,
+        )
+        return kwargs
+
+    return {
+        **kwargs,
+        "prompt_cache_key": affinity,
+        "extra_headers": {**(headers or {}), "x-session-affinity": affinity},
+    }
+
+
 def _completion_with_retry(
     llm: ChatFireworks,
     run_manager: CallbackManagerForLLMRun | None = None,
@@ -766,7 +798,9 @@ def _completion_with_retry(
 ) -> Any:
     """Retry the sync completion call, including stream setup."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
-    kwargs = _prepare_sdk_kwargs(_merge_model_headers(llm, kwargs))
+    kwargs = _prepare_sdk_kwargs(
+        _apply_prompt_cache_affinity(_merge_model_headers(llm, kwargs))
+    )
 
     @retry_decorator
     def _call() -> Any:
@@ -799,7 +833,9 @@ async def _acompletion_with_retry(
 ) -> Any:
     """Retry the async completion call, including stream setup."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
-    kwargs = _prepare_sdk_kwargs(_merge_model_headers(llm, kwargs))
+    kwargs = _prepare_sdk_kwargs(
+        _apply_prompt_cache_affinity(_merge_model_headers(llm, kwargs))
+    )
 
     @retry_decorator
     async def _call() -> Any:
