@@ -5,7 +5,7 @@ description: "LangChain's tool system enables agents and language models to exec
 tags: ["tool", "agent", "schema", "runnable", "execution"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
+    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-9861ba5cf0c42c142cf732f9
     resource: repo://libs/core/langchain_core/messages/tool.py

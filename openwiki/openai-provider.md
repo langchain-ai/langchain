@@ -12,10 +12,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-74e5bef080f1af7da12371cf
     resource: repo://libs/partners/openai/langchain_openai/data/_profiles.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-22T08:27:06.345Z
+    at: 2026-09-28T08:35:20.640Z
 ---
 
 ## Overview
@@ -36,7 +36,7 @@ The OpenAI integration (`langchain-openai`) provides production-ready chat model
 
 **Package**: `repo://libs/partners/openai/langchain_openai/`
 
-**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2829-L3750`
+**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2904-L4266`
 
 **Exports**: `repo://libs/partners/openai/langchain_openai/__init__.py`
 
@@ -1152,3 +1152,5 @@ model = ChatOpenAI(
 - `/openwiki/model-initialization.md`: Factory function `init_chat_model()` for provider-agnostic model selection
 - `/openwiki/chat-models.md`: Core `BaseChatModel` interface and lifecycle
 - `/openwiki/messages.md`: Message types and content blocks (text, images, tool calls)
+- `/openwiki/partner-pattern.md`: Partner package patterns and extension points
+- `/openwiki/structured-output.md`: Structured output patterns and schema validation

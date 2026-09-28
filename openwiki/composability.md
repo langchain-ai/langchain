@@ -3,9 +3,6 @@ type: "Concept"
 title: "Composability and LCEL Chains"
 description: "How Runnable components compose through LCEL operators, creating reusable workflows with automatic async, batch, and streaming support."
 tags: ["composability", "LCEL", "runnables", "chaining", "operators"]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
 sources:
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
@@ -15,7 +12,10 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/fallbacks.py
   - id: openwiki-source-de6c904bd0171642bd50f6d9
     resource: repo://libs/core/langchain_core/runnables/router.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-28T08:35:20.640Z
 ---
 
 
@@ -301,7 +301,22 @@ Each branch (`result_a`, `result_b`) appears as a separate child run in the call
 
 ## Fallback Patterns
 
-Fallbacks provide resilience by retrying with alternative Runnables when one fails.
+Fallbacks provide resilience by switching to alternative Runnables when one fails, without retrying the same component.
+
+### RunnableWithFallbacks Mechanics
+
+**`RunnableWithFallbacks`** wraps a primary Runnable and a list of fallbacks:
+
+1. Tries the primary Runnable first
+2. On an exception matching `exceptions_to_handle`, attempts each fallback in order
+3. Stops on the first successful execution
+4. If all fail, raises the first exception encountered
+
+Key attributes:
+- **`runnable`**: The primary Runnable to execute
+- **`fallbacks`**: A sequence of fallback Runnables (ordered)
+- **`exceptions_to_handle`**: Tuple of exception types to trigger fallback (default: all exceptions)
+- **`exception_key`**: Optional string key to pass the caught exception to fallbacks in the input dict
 
 ### Fallback at Component Level
 
@@ -320,6 +335,21 @@ output = resilient_llm.invoke("What is composability?")
 # Uses primary_llm; falls back to fallback_llm if APIConnectionError occurs
 ```
 
+### Multiple Fallbacks with Provider Failover
+
+Fallbacks are tried in order until one succeeds:
+
+```python
+model = ChatOpenAI().with_fallbacks([
+    ChatAnthropic(),        # Try second
+    ChatClaude(),          # Try third
+    ChatCohere(),          # Try fourth
+    RunnableLambda(default_response),  # Final fallback
+])
+```
+
+The chain tries each fallback sequentially until one returns successfully or all are exhausted.
+
 ### Fallback at Chain Level
 
 ```python
@@ -336,20 +366,92 @@ output = chain_with_fallback.invoke({"topic": "composability"})
 # If the entire chain fails, returns fallback response
 ```
 
-### Multiple Fallbacks
+### Exception Passing to Fallbacks
 
-Fallbacks are tried in order until one succeeds:
+Use `exception_key` to pass the caught exception to fallbacks as part of the input:
 
 ```python
-model = ChatOpenAI().with_fallbacks([
-    ChatAnthropic(),        # Try second
-    ChatClaude(),          # Try third
-    ChatCohere(),          # Try fourth
-    RunnableLambda(default_response),  # Final fallback
-])
+def fallback_with_context(input_dict):
+    error = input_dict.get("error")
+    if isinstance(error, APIConnectionError):
+        return "API is currently unavailable. Please try again later."
+    return "An unexpected error occurred."
+
+chain = (
+    prompt | llm | parser
+).with_fallbacks(
+    [RunnableLambda(fallback_with_context)],
+    exception_key="error",  # Pass exception under "error" key
+)
+
+# Input becomes {"topic": "...", "error": <caught exception>}
 ```
 
-The chain tries each fallback sequentially until one returns successfully or all are exhausted.
+This requires all Runnables (primary and fallbacks) to accept a dictionary as input.
+
+## Retry Patterns
+
+Retry logic automatically re-invokes a Runnable on failure, with configurable backoff and exception filtering.
+
+### Retry at Component Level
+
+```python
+from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables.retry import ExponentialJitterParams
+
+llm = ChatOpenAI(model="gpt-4")
+
+resilient_llm = llm.with_retry(
+    retry_if_exception_type=(APIConnectionError, TimeoutError),
+    max_attempt_number=3,
+    wait_exponential_jitter=True,
+    exponential_jitter_params={"initial": 1, "max": 10},
+)
+
+output = resilient_llm.invoke("What is composability?")
+# Retries up to 3 times on transient errors with exponential backoff
+```
+
+### RunnableRetry Implementation
+
+**`RunnableRetry`** wraps any Runnable and applies retry logic using `tenacity`:
+
+- **`retry_exception_types`**: Tuple of exception types to retry on (default: all exceptions)
+- **`max_attempt_number`**: Maximum retry attempts (default: 3)
+- **`wait_exponential_jitter`**: Enable exponential backoff with jitter (default: True)
+- **`exponential_jitter_params`**: Customize backoff parameters (`initial`, `max`, `exp_base`, `jitter`)
+
+Retries are tracked in callbacks with tags like `retry:attempt:2` for visibility in traces.
+
+### Retry Strategy: Transient vs. Fatal Errors
+
+Best practice: retry only on transient errors, not fatal ones:
+
+```python
+model = ChatOpenAI().with_retry(
+    retry_if_exception_type=(
+        APIConnectionError,    # Transient: network issues
+        TimeoutError,          # Transient: slow API
+        RateLimitError,        # Transient: quota exceeded
+    ),
+    max_attempt_number=5,
+    exponential_jitter_params={"initial": 0.5, "max": 30},
+)
+
+# Do NOT retry on invalid input or authentication errors—these are fatal
+```
+
+### Retry at Chain Level
+
+```python
+chain = (
+    prompt 
+    | llm.with_retry(max_attempt_number=3)  # Retry at LLM level
+    | parser
+)
+
+# Better than retrying the whole chain, which wastes time on non-failing steps
+```
 
 ## Chaining Patterns
 
