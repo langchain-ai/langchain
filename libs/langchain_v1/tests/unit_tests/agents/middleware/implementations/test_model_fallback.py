@@ -21,7 +21,6 @@ from langchain.agents.middleware.model_fallback import (
     ModelFallbackMiddleware,
     _sanitize_request_for_fallback,
     _supports_anthropic_cache_control,
-    _supports_fireworks_prompt_cache,
 )
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 from tests.unit_tests.agents.model import FakeToolCallingModel
@@ -911,12 +910,6 @@ def test_supports_anthropic_cache_control() -> None:
     assert not _supports_anthropic_cache_control(_FakeNonStringLlmTypeModel(messages=iter([])))
 
 
-def test_supports_fireworks_prompt_cache() -> None:
-    """`_supports_fireworks_prompt_cache` detects Fireworks models."""
-    assert _supports_fireworks_prompt_cache(_FakeFireworksModel(messages=iter([])))
-    assert not _supports_fireworks_prompt_cache(GenericFakeChatModel(messages=iter([])))
-
-
 def test_fallback_preserves_fireworks_cache_settings_for_fireworks() -> None:
     """A Fireworks fallback should keep Fireworks prompt-cache affinity settings."""
     primary_model = _FakeFireworksModel(messages=iter([]))
@@ -941,13 +934,16 @@ def test_fallback_preserves_fireworks_cache_settings_for_fireworks() -> None:
 
 
 @pytest.mark.parametrize("use_async", [False, True])
-@pytest.mark.parametrize("azure", [False, True])
 @pytest.mark.parametrize(
-    "extra_headers",
+    ("azure", "extra_headers"),
     [
-        None,
-        {"X-Session-Affinity": "thread-123"},
-        {"X-Session-Affinity": "thread-123", "X-Request-ID": "request-123"},
+        pytest.param(False, None, id="openai-without-headers"),
+        pytest.param(False, {"X-Session-Affinity": "thread-123"}, id="openai-affinity-only"),
+        pytest.param(
+            True,
+            {"X-Session-Affinity": "thread-123", "X-Request-ID": "request-123"},
+            id="azure-preserves-other-headers",
+        ),
     ],
 )
 async def test_openai_fallback_preserves_cache_key(

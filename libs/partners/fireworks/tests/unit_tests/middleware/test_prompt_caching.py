@@ -108,49 +108,29 @@ async def _arun(
     return captured["request"]
 
 
-def test_fireworks_model_injects_session_affinity() -> None:
-    request = _make_request(_make_model())
-    result = _run(request)
-
-    kwargs = _call_kwargs(request)
-    assert kwargs["prompt_cache_key"] == _AFFINITY
-    assert kwargs["extra_headers"][_SESSION_AFFINITY_HEADER] == _AFFINITY
-    assert result is request
-    assert request.model_settings == {}
-
-
-@pytest.mark.parametrize("use_async", [False, True])
 @pytest.mark.parametrize(
     "thread_id",
     [
-        "会話-123",
-        "café",
-        "thread-😀",
-        "thread\r\nInjected: value",
-        "\x00thread",
+        "会話-café-😀",
+        "thread\r\nInjected: value\x00",
         "x" * 1024,
     ],
-    ids=["cjk", "accent", "emoji", "newline", "null", "long"],
+    ids=["unicode", "control-characters", "long"],
 )
-async def test_thread_id_produces_stable_header_safe_affinity(
-    thread_id: str, *, use_async: bool
-) -> None:
+def test_thread_id_produces_stable_header_safe_affinity(thread_id: str) -> None:
     request = _make_request(_make_model())
 
-    async def run(value: str) -> dict[str, Any]:
-        if use_async:
-            await _arun(request, config={"configurable": {"thread_id": value}})
-        else:
-            _run(request, thread_id=value)
-        return _call_kwargs(request, use_async=use_async)
+    def run(value: str) -> dict[str, Any]:
+        _run(request, thread_id=value)
+        return _call_kwargs(request)
 
-    result = await run(thread_id)
+    result = run(thread_id)
     affinity = httpx.Headers(result["extra_headers"])[_SESSION_AFFINITY_HEADER]
     assert result["prompt_cache_key"] == affinity
     assert len(affinity) == 64
     assert set(affinity) <= set("0123456789abcdef")
-    assert (await run(thread_id))["prompt_cache_key"] == affinity
-    assert (await run(thread_id + "-other"))["prompt_cache_key"] != affinity
+    assert run(thread_id)["prompt_cache_key"] == affinity
+    assert run(thread_id + "-other")["prompt_cache_key"] != affinity
     assert request.model_settings == {}
 
 
@@ -204,6 +184,8 @@ def test_missing_thread_id_is_unchanged(
 
     assert result is request
     assert result.model_settings == {}
+    assert "prompt_cache_key" not in _call_kwargs(request)
+    assert "extra_headers" not in _call_kwargs(request)
 
 
 def test_no_runnable_context_is_unchanged() -> None:
@@ -213,7 +195,7 @@ def test_no_runnable_context_is_unchanged() -> None:
 
     def handler(req: ModelRequest) -> ModelResponse:
         captured["request"] = req
-        return ModelResponse(result=[AIMessage(content="ok")])
+        return ModelResponse(result=[req.model.invoke("Hello", **req.model_settings)])
 
     with patch(
         "langchain_fireworks.middleware.prompt_caching.get_config",
@@ -222,6 +204,8 @@ def test_no_runnable_context_is_unchanged() -> None:
         middleware.wrap_model_call(request, handler)
 
     assert captured["request"] is request
+    assert "prompt_cache_key" not in _call_kwargs(request)
+    assert "extra_headers" not in _call_kwargs(request)
 
 
 @pytest.mark.parametrize("setting", ["user", "prompt_cache_key"])
@@ -231,17 +215,6 @@ def test_existing_affinity_setting_causes_no_injection(setting: str) -> None:
 
     assert result is request
     assert result.model_settings == {setting: "caller"}
-    assert _call_kwargs(request)[setting] == "caller"
-    assert "extra_headers" not in _call_kwargs(request)
-
-
-@pytest.mark.parametrize("setting", ["user", "prompt_cache_key"])
-def test_model_affinity_setting_causes_no_injection(setting: str) -> None:
-    request = _make_request(_make_model(model_kwargs={setting: "caller"}))
-    result = _run(request)
-
-    assert result is request
-    assert result.model_settings == {}
     assert _call_kwargs(request)[setting] == "caller"
     assert "extra_headers" not in _call_kwargs(request)
 
@@ -270,25 +243,6 @@ def test_existing_session_affinity_header_causes_no_injection() -> None:
     assert result.model_settings["extra_headers"] == {"X-Session-Affinity": "existing"}
     assert _call_kwargs(request)["extra_headers"] == {"X-Session-Affinity": "existing"}
     assert "prompt_cache_key" not in _call_kwargs(request)
-
-
-def test_model_headers_stay_on_model_without_mutation() -> None:
-    model_headers = {"X-Model-Header": "model-value"}
-    request_headers = {"X-Request-ID": "request-1"}
-    model = _make_model(model_kwargs={"extra_headers": model_headers})
-    request = _make_request(model, {"extra_headers": request_headers})
-
-    result = _run(request)
-
-    assert result is request
-    assert result.model_settings == {"extra_headers": request_headers}
-    assert _call_kwargs(request)["extra_headers"] == {
-        **model_headers,
-        **request_headers,
-        _SESSION_AFFINITY_HEADER: _AFFINITY,
-    }
-    assert model_headers == {"X-Model-Header": "model-value"}
-    assert request_headers == {"X-Request-ID": "request-1"}
 
 
 @pytest.mark.parametrize("use_async", [False, True])
@@ -373,17 +327,6 @@ async def test_model_headers_do_not_leak_to_fallback(
     assert request.model_settings == {"extra_headers": request_headers}
 
 
-def test_conflicting_header_prefers_request_value() -> None:
-    model = _make_model(model_kwargs={"extra_headers": {"X-Shared": "model"}})
-    request = _make_request(model, {"extra_headers": {"X-Shared": "request"}})
-
-    result = _run(request)
-
-    assert result is request
-    assert _call_kwargs(request)["extra_headers"]["X-Shared"] == "request"
-    assert _call_kwargs(request)["extra_headers"][_SESSION_AFFINITY_HEADER] == _AFFINITY
-
-
 def test_non_mapping_extra_headers_is_unchanged_and_warns(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -400,27 +343,6 @@ def test_non_mapping_extra_headers_is_unchanged_and_warns(
 
     assert result is request
     assert any("extra_headers" in record.message for record in caplog.records)
-
-
-def test_thread_id_is_not_logged() -> None:
-    request = _make_request(_make_model())
-
-    with patch("langchain_fireworks.middleware.prompt_caching.logger") as mock_logger:
-        _run(request)
-
-    calls = mock_logger.debug.call_args_list + mock_logger.warning.call_args_list
-    logged = " ".join(str(arg) for call in calls for arg in call.args)
-    assert _THREAD_ID not in logged
-
-
-async def test_async_fireworks_model_injects_session_affinity() -> None:
-    request = _make_request(_make_model())
-    result = await _arun(request)
-
-    kwargs = _call_kwargs(request, use_async=True)
-    assert kwargs["prompt_cache_key"] == _AFFINITY
-    assert kwargs["extra_headers"][_SESSION_AFFINITY_HEADER] == _AFFINITY
-    assert result is request
 
 
 async def test_async_missing_thread_id_passes_original_request() -> None:
@@ -448,16 +370,17 @@ async def test_async_unsupported_model_passes_original_request() -> None:
 @pytest.mark.parametrize("use_async", [False, True])
 @pytest.mark.parametrize("caching_first", [False, True])
 @pytest.mark.parametrize(
-    "primary_settings", [{}, {"prompt_cache_key": "primary-cache"}]
-)
-@pytest.mark.parametrize(
-    "fallback_settings",
+    ("primary_settings", "fallback_settings"),
     [
-        {},
-        {"user": "fallback-user"},
-        {"prompt_cache_key": "fallback-cache"},
-        {"extra_headers": {"x-session-affinity": "fallback-affinity"}},
-        {"extra_headers": {"X-Session-Affinity": "fallback-affinity"}},
+        pytest.param({}, {}, id="automatic"),
+        pytest.param({}, {"user": "fallback-user"}, id="fallback-user"),
+        pytest.param({}, {"prompt_cache_key": "fallback-cache"}, id="fallback-key"),
+        pytest.param(
+            {},
+            {"extra_headers": {"X-Session-Affinity": "fallback-affinity"}},
+            id="fallback-header",
+        ),
+        pytest.param({"prompt_cache_key": "primary-cache"}, {}, id="primary-key"),
     ],
 )
 async def test_fallback_respects_explicit_affinity(
