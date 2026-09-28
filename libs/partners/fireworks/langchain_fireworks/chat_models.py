@@ -757,9 +757,15 @@ def _merge_model_headers(llm: ChatFireworks, kwargs: dict[str, Any]) -> dict[str
     model_headers = llm.model_kwargs.get("extra_headers")
     request_headers = kwargs.get("extra_headers")
     if isinstance(model_headers, Mapping) and isinstance(request_headers, Mapping):
+        # HTTP header names are case-insensitive; retain the request's spelling.
+        headers = {
+            key.lower(): (key, value)
+            for source in (model_headers, request_headers)
+            for key, value in source.items()
+        }
         return {
             **kwargs,
-            "extra_headers": {**model_headers, **request_headers},
+            "extra_headers": dict(headers.values()),
         }
     return kwargs
 
