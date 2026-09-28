@@ -1,4 +1,5 @@
 from typing import Any, cast
+from unittest.mock import MagicMock, patch
 
 import pytest
 from anthropic._models import construct_type
@@ -7,6 +8,7 @@ from anthropic.types import (
     RawMessageDeltaEvent,
     ThinkingBlock,
 )
+from anthropic.types.beta import BetaRawMessageStreamEvent
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
@@ -220,6 +222,84 @@ def test_encrypted_advisor_streaming() -> None:
         [HumanMessage("help"), chunk, HumanMessage("continue")]
     )
     assert payload["messages"][1]["content"] == [advisor_result]
+
+
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_encrypted_advisor_stream_aggregate_replay(output_version: str) -> None:
+    server_tool_use = {
+        "type": "server_tool_use",
+        "id": "srvtoolu_abc123",
+        "name": "advisor",
+        "input": {},
+    }
+    advisor_result = {
+        "type": "advisor_tool_result",
+        "tool_use_id": "srvtoolu_abc123",
+        "content": {
+            "type": "advisor_redacted_result",
+            "encrypted_content": "opaque-ciphertext",
+            "stop_reason": None,
+        },
+    }
+    raw_events = [
+        {
+            "type": "message_start",
+            "message": {
+                "id": "msg_1",
+                "type": "message",
+                "role": "assistant",
+                "model": MODEL,
+                "content": [],
+                "stop_reason": None,
+                "stop_sequence": None,
+                "usage": {"input_tokens": 10, "output_tokens": 1},
+            },
+        },
+        {"type": "content_block_start", "index": 0, "content_block": server_tool_use},
+        {"type": "content_block_stop", "index": 0},
+        {"type": "content_block_start", "index": 1, "content_block": advisor_result},
+        {"type": "content_block_stop", "index": 1},
+        {
+            "type": "content_block_start",
+            "index": 2,
+            "content_block": {"type": "text", "text": ""},
+        },
+        {
+            "type": "content_block_delta",
+            "index": 2,
+            "delta": {"type": "text_delta", "text": "Use a token bucket."},
+        },
+        {"type": "content_block_stop", "index": 2},
+        {
+            "type": "message_delta",
+            "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+            "usage": {"output_tokens": 20},
+        },
+        {"type": "message_stop"},
+    ]
+    events = [
+        construct_type(type_=BetaRawMessageStreamEvent, value=event)
+        for event in raw_events
+    ]
+    llm = model(output_version=output_version).bind_tools(
+        [{"type": "advisor_20260301", "name": "advisor", "model": "claude-opus-5"}]
+    )
+    with patch.object(
+        ChatAnthropic, "_create", return_value=MagicMock(parse=lambda: iter(events))
+    ):
+        chunks = [cast("AIMessageChunk", chunk) for chunk in llm.stream("help")]
+    full = chunks[0]
+    for chunk in chunks[1:]:
+        full += chunk
+
+    payload = model()._get_request_payload(
+        [HumanMessage("help"), full, HumanMessage("continue")]
+    )
+    assert payload["messages"][1]["content"] == [
+        server_tool_use,
+        advisor_result,
+        {"type": "text", "text": "Use a token bucket."},
+    ]
 
 
 def test_refusal_details_streaming() -> None:
