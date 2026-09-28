@@ -720,6 +720,7 @@ def _format_messages(
     """Format messages for Anthropic's API."""
     system: str | list[dict] | None = None
     formatted_messages: list[dict] = []
+    toolsets: dict[str, str] = {}
     merged_messages = _merge_messages(messages)
     last_non_system_index = max(
         (i for i, m in enumerate(merged_messages) if m.type != "system"),
@@ -795,11 +796,13 @@ def _format_messages(
                                 for tc in message.tool_calls
                                 if tc["id"] == block["id"]
                             ]
-                            content.extend(
-                                _lc_tool_calls_to_anthropic_tool_use_blocks(
-                                    overlapping,
-                                ),
+                            tool_blocks = _lc_tool_calls_to_anthropic_tool_use_blocks(
+                                overlapping,
                             )
+                            if toolset_name := block.get("toolset_name"):
+                                for tool_block in tool_blocks:
+                                    tool_block["toolset_name"] = toolset_name
+                            content.extend(tool_blocks)
                         else:
                             if tool_input := block.get("input"):
                                 args = tool_input
@@ -818,6 +821,8 @@ def _format_messages(
                             )
                             if caller := block.get("caller"):
                                 tool_use_block["caller"] = caller
+                            if toolset_name := block.get("toolset_name"):
+                                tool_use_block["toolset_name"] = toolset_name
                             content.append(tool_use_block)
                     elif block["type"] in ("server_tool_use", "mcp_tool_use"):
                         formatted_block = {
@@ -1036,6 +1041,16 @@ def _format_messages(
                     system = _format_system_content(pending.content, model=model)
                     _warn_system_message_hoisted(model)
             pending_system = []
+        if isinstance(content, list):
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") == "tool_use" and block.get("toolset_name"):
+                    toolsets[block["id"]] = block["toolset_name"]
+                elif block.get("type") == "tool_result" and (
+                    toolset_name := toolsets.get(block.get("tool_use_id", ""))
+                ):
+                    block.setdefault("toolset_name", toolset_name)
         formatted_messages.append({"role": role, "content": content})
 
     formatted_messages.extend(
@@ -1136,13 +1151,33 @@ def _supports_mid_conversation_system_messages(model: object) -> bool:
             "claude-mythos-5",
             "claude-opus-4-8",
             "claude-opus-5",
+            "claude-sonnet-5-5",
         )
     )
 
 
 def _supports_forced_tool_choice(model: str) -> bool:
     """Return whether the model accepts `tool_choice` types `any` and `tool`."""
-    return not model.startswith(("claude-fable-5-1", "claude-opus-5-5"))
+    return not model.startswith(
+        ("claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5")
+    )
+
+
+def _validate_sonnet_55_tool_choice(model: str, tool_choice: object) -> None:
+    """Reject forced tool use on Sonnet 5.5 without changing other models."""
+    if not model.startswith("claude-sonnet-5-5"):
+        return
+    forced = (
+        tool_choice.get("type") in {"any", "tool"}
+        if isinstance(tool_choice, Mapping)
+        else isinstance(tool_choice, str) and tool_choice != "auto"
+    )
+    if forced:
+        msg = (
+            f"Forced tool_choice is not supported for {model}; use 'auto' or "
+            "with_structured_output(..., method='json_schema')."
+        )
+        raise ValueError(msg)
 
 
 def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
@@ -1793,7 +1828,20 @@ class ChatAnthropic(BaseChatModel):
             output_config["effort"] = effort
 
         is_fable_model = self.model.startswith("claude-fable-5")
-        if is_fable_model:
+        is_sonnet_55 = self.model.startswith("claude-sonnet-5-5")
+        _validate_sonnet_55_tool_choice(self.model, request_config.get("tool_choice"))
+        if (
+            is_sonnet_55
+            and isinstance(thinking, Mapping)
+            and thinking.get("type") == "between_tools"
+        ):
+            if set(thinking) != {"type"}:
+                msg = "Thinking type 'between_tools' accepts no additional fields."
+                raise ValueError(msg)
+            if output_config.get("effort") in {"xhigh", "max"}:
+                msg = "Thinking type 'between_tools' requires effort high or below."
+                raise ValueError(msg)
+        if is_fable_model or is_sonnet_55:
             top_k = request_config.get("top_k", self.top_k)
             top_p = request_config.get("top_p", self.top_p)
             temperature = request_config.get("temperature", self.temperature)
@@ -1819,7 +1867,7 @@ class ChatAnthropic(BaseChatModel):
                 raise ValueError(msg)
 
         if (
-            (self.model.startswith("claude-opus-5") or is_fable_model)
+            (self.model.startswith("claude-opus-5") or is_fable_model or is_sonnet_55)
             and isinstance(thinking, Mapping)
             and thinking.get("type") == "enabled"
         ):
@@ -2325,6 +2373,7 @@ class ChatAnthropic(BaseChatModel):
                 or "tool_use" in event.content_block.type
                 or "document" in event.content_block.type
                 or "redacted_thinking" in event.content_block.type
+                or event.content_block.type == "advisor_redacted_result"
             )
         ):
             if coerce_content_to_string:
@@ -2464,6 +2513,8 @@ class ChatAnthropic(BaseChatModel):
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
             }
+            if stop_details := event.delta.model_dump().get("stop_details"):
+                response_metadata["stop_details"] = stop_details
             if context_management := getattr(event, "context_management", None):
                 response_metadata["context_management"] = (
                     context_management.model_dump()
@@ -2783,6 +2834,7 @@ class ChatAnthropic(BaseChatModel):
                     )
                     raise ValueError(msg)
 
+        _validate_sonnet_55_tool_choice(self.model, tool_choice)
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
@@ -2882,8 +2934,8 @@ class ChatAnthropic(BaseChatModel):
                 - `'function_calling'` (default): Use forced tool calling to get
                     structured output. When `thinking` is enabled, or on models
                     that don't support forced tool use (Claude Opus 5.5, Claude
-                    Fable 5.1), the tool call isn't forced, and a missing tool
-                    call raises `OutputParserException`.
+                    Fable 5.1, Claude Sonnet 5.5), the tool call isn't forced,
+                    and a missing tool call raises `OutputParserException`.
                 - `'json_schema'`: Use Claude's dedicated
                     [structured output](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
                     feature.
@@ -3065,6 +3117,7 @@ class ChatAnthropic(BaseChatModel):
             403
             ```
         """  # noqa: D214
+        _validate_sonnet_55_tool_choice(self.model, kwargs.get("tool_choice"))
         formatted_system, formatted_messages = _format_messages(
             messages, model=self.model
         )
@@ -3238,6 +3291,7 @@ class _AnthropicToolUse(TypedDict):
     input: dict
     id: str
     caller: NotRequired[dict[str, Any]]
+    toolset_name: NotRequired[str]
 
 
 def _lc_tool_calls_to_anthropic_tool_use_blocks(
