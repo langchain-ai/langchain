@@ -1922,6 +1922,44 @@ def test__format_messages_system_after_server_tool_result_sent_in_place(
     assert actual_messages[1]["content"] == [block]
 
 
+def test__format_messages_server_tool_use_preserves_caller() -> None:
+    """Nested server tool calls keep `caller` so the API can link them to parents."""
+    caller = {"type": "code_execution_20260120", "tool_id": "srvtoolu_ce"}
+    blocks = [
+        {
+            "type": "server_tool_use",
+            "id": "srvtoolu_ce",
+            "name": "code_execution",
+            "input": {"code": "..."},
+            "caller": {"type": "direct"},
+        },
+        {
+            "type": "server_tool_use",
+            "id": "srvtoolu_ws",
+            "name": "web_search",
+            "input": {"query": "q"},
+            "caller": caller,
+        },
+        {
+            "type": "code_execution_tool_result",
+            "tool_use_id": "srvtoolu_ce",
+            "content": {
+                "type": "encrypted_code_execution_result",
+                "encrypted_stdout": "abc",
+                "stderr": "",
+                "return_code": 0,
+                "content": [],
+            },
+        },
+    ]
+    ai = AIMessage(blocks, response_metadata={"model_provider": "anthropic"})
+    _, formatted = _format_messages([HumanMessage("hi"), ai], model=None)
+    # Default `direct` caller is dropped; nested caller is kept.
+    expected = copy.deepcopy(blocks)
+    del expected[0]["caller"]
+    assert formatted[1]["content"] == expected
+
+
 def test__format_messages_system_after_client_tool_result_hoisted() -> None:
     """Test client-side tool results are not server tool results."""
     messages = [

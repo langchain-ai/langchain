@@ -833,6 +833,12 @@ def _format_messages(
                                 "cache_control",
                             )
                         }
+                        # Links calls nested inside `code_execution` (e.g.,
+                        # dynamic filtering web search) to their parent; without
+                        # it the parent looks unclosed. `direct` is the default.
+                        caller = block.get("caller")
+                        if caller and caller.get("type") != "direct":
+                            formatted_block["caller"] = caller
                         # Attempt to parse streamed output
                         if block.get("input") == {} and "partial_json" in block:
                             try:
