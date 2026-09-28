@@ -949,6 +949,8 @@ def _format_messages(
                                 },
                             ),
                         )
+                    elif block["type"] == "advisor_tool_result":
+                        content.append({k: v for k, v in block.items() if k != "index"})
                     else:
                         content.append(block)
                 else:
@@ -2344,13 +2346,18 @@ class ChatAnthropic(BaseChatModel):
                 or "tool_use" in event.content_block.type
                 or "document" in event.content_block.type
                 or "redacted_thinking" in event.content_block.type
-                or event.content_block.type == "advisor_redacted_result"
             )
         ):
             if coerce_content_to_string:
                 warnings.warn("Received unexpected tool content block.", stacklevel=2)
 
             content_block = event.content_block.model_dump()
+            if event.content_block.type == "advisor_tool_result":
+                content_block = {
+                    key: content_block[key]
+                    for key in ("type", "tool_use_id", "content", "cache_control")
+                    if key in content_block
+                }
             if "caller" in content_block and content_block["caller"] is None:
                 content_block.pop("caller")
             content_block["index"] = event.index

@@ -1,6 +1,7 @@
 from typing import Any, cast
 
 import pytest
+from anthropic._models import construct_type
 from anthropic.types import (
     RawContentBlockStartEvent,
     RawMessageDeltaEvent,
@@ -15,7 +16,6 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.runnables import RunnableBinding, RunnableSequence
-from pydantic import BaseModel
 
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.chat_models import _format_messages
@@ -190,26 +190,36 @@ def test_toolset_round_trip(*, standard: bool) -> None:
     assert payload["messages"][2]["content"][0]["toolset_name"] == "computer"
 
 
-class AdvisorBlock(BaseModel):
-    type: str = "advisor_redacted_result"
-    data: str = "opaque-data"
-
-
 def test_encrypted_advisor_streaming() -> None:
-    event = RawContentBlockStartEvent.model_construct(
-        type="content_block_start", index=0, content_block=cast("Any", AdvisorBlock())
+    advisor_result = {
+        "type": "advisor_tool_result",
+        "tool_use_id": "srvtoolu_abc123",
+        "content": {
+            "type": "advisor_redacted_result",
+            "encrypted_content": "opaque-ciphertext",
+        },
+    }
+    event = cast(
+        RawContentBlockStartEvent,
+        construct_type(
+            type_=RawContentBlockStartEvent,
+            value={
+                "type": "content_block_start",
+                "index": 0,
+                "content_block": advisor_result,
+            },
+        ),
     )
-    chunk, _ = model()._make_message_chunk_from_anthropic_event(
+    llm = model()
+    chunk, _ = llm._make_message_chunk_from_anthropic_event(
         event, stream_usage=True, coerce_content_to_string=False, block_start_event=None
     )
     assert chunk is not None
-    assert chunk.content == [
-        {"type": "advisor_redacted_result", "data": "opaque-data", "index": 0}
-    ]
-    payload = model()._get_request_payload(
+    assert chunk.content == [{**advisor_result, "index": 0}]
+    payload = llm._get_request_payload(
         [HumanMessage("help"), chunk, HumanMessage("continue")]
     )
-    assert payload["messages"][1]["content"][0]["data"] == "opaque-data"
+    assert payload["messages"][1]["content"] == [advisor_result]
 
 
 def test_refusal_details_streaming() -> None:
