@@ -653,6 +653,18 @@ class FireworksTimeoutError(APITimeoutError, ModelTimeoutError):
     """Fireworks timeout error classified as a LangChain model error."""
 
 
+class FireworksReadTimeoutError(httpx.ReadTimeout, ModelTimeoutError):
+    """Fireworks stream read timeout classified as a retryable model error."""
+
+
+def _handle_stream_read_timeout(error: httpx.ReadTimeout) -> NoReturn:
+    try:
+        request = error.request
+    except RuntimeError:
+        request = None
+    raise FireworksReadTimeoutError(str(error), request=request) from error
+
+
 def _handle_fireworks_invalid_request(e: BadRequestError) -> NoReturn:
     """Promote prompt-too-long errors to `FireworksContextOverflowError`."""
     if "prompt is too long" in str(e):
@@ -815,13 +827,19 @@ async def _acompletion_with_retry(
 
 def _prepend_chunk(first: Any, rest: Iterator[Any]) -> Iterator[Any]:
     yield first
-    yield from rest
+    try:
+        yield from rest
+    except httpx.ReadTimeout as e:
+        _handle_stream_read_timeout(e)
 
 
 async def _aprepend_chunk(first: Any, rest: AsyncIterator[Any]) -> AsyncIterator[Any]:
     yield first
-    async for item in rest:
-        yield item
+    try:
+        async for item in rest:
+            yield item
+    except httpx.ReadTimeout as e:
+        _handle_stream_read_timeout(e)
 
 
 class ChatFireworks(BaseChatModel):
