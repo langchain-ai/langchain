@@ -1163,23 +1163,6 @@ def _supports_forced_tool_choice(model: str) -> bool:
     )
 
 
-def _validate_sonnet_55_tool_choice(model: str, tool_choice: object) -> None:
-    """Reject forced tool use on Sonnet 5.5 without changing other models."""
-    if not model.startswith("claude-sonnet-5-5"):
-        return
-    forced = (
-        tool_choice.get("type") in {"any", "tool"}
-        if isinstance(tool_choice, Mapping)
-        else isinstance(tool_choice, str) and tool_choice != "auto"
-    )
-    if forced:
-        msg = (
-            f"Forced tool_choice is not supported for {model}; use 'auto' or "
-            "with_structured_output(..., method='json_schema')."
-        )
-        raise ValueError(msg)
-
-
 def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
     """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
 
@@ -1829,18 +1812,6 @@ class ChatAnthropic(BaseChatModel):
 
         is_fable_model = self.model.startswith("claude-fable-5")
         is_sonnet_55 = self.model.startswith("claude-sonnet-5-5")
-        _validate_sonnet_55_tool_choice(self.model, request_config.get("tool_choice"))
-        if (
-            is_sonnet_55
-            and isinstance(thinking, Mapping)
-            and thinking.get("type") == "between_tools"
-        ):
-            if set(thinking) != {"type"}:
-                msg = "Thinking type 'between_tools' accepts no additional fields."
-                raise ValueError(msg)
-            if output_config.get("effort") in {"xhigh", "max"}:
-                msg = "Thinking type 'between_tools' requires effort high or below."
-                raise ValueError(msg)
         if is_fable_model or is_sonnet_55:
             top_k = request_config.get("top_k", self.top_k)
             top_p = request_config.get("top_p", self.top_p)
@@ -2834,7 +2805,6 @@ class ChatAnthropic(BaseChatModel):
                     )
                     raise ValueError(msg)
 
-        _validate_sonnet_55_tool_choice(self.model, tool_choice)
         if not tool_choice:
             pass
         elif isinstance(tool_choice, dict):
@@ -3117,7 +3087,6 @@ class ChatAnthropic(BaseChatModel):
             403
             ```
         """  # noqa: D214
-        _validate_sonnet_55_tool_choice(self.model, kwargs.get("tool_choice"))
         formatted_system, formatted_messages = _format_messages(
             messages, model=self.model
         )

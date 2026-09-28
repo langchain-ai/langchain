@@ -29,16 +29,26 @@ def model(**kwargs: Any) -> ChatAnthropic:
 
 
 @pytest.mark.parametrize(
-    "choice", ["any", "answer", {"type": "any"}, {"type": "tool", "name": "answer"}]
+    ("choice", "expected"),
+    [
+        ("any", {"type": "any"}),
+        ("answer", {"type": "tool", "name": "answer"}),
+        ({"type": "any"}, {"type": "any"}),
+        ({"type": "tool", "name": "answer"}, {"type": "tool", "name": "answer"}),
+    ],
 )
-def test_forced_tool_choice_rejected(choice: Any) -> None:
+def test_forced_tool_choice_left_to_api(choice: Any, expected: dict[str, str]) -> None:
     llm = model()
-    with pytest.raises(ValueError, match="Forced tool_choice"):
-        llm.bind_tools([TOOL], tool_choice=choice)
-    with pytest.raises(ValueError, match="Forced tool_choice"):
-        llm._get_request_payload("hello", tool_choice=choice)
-    with pytest.raises(ValueError, match="Forced tool_choice"):
-        llm.get_num_tokens_from_messages([HumanMessage("hello")], tool_choice=choice)
+    assert (
+        cast("RunnableBinding", llm.bind_tools([TOOL], tool_choice=choice)).kwargs[
+            "tool_choice"
+        ]
+        == expected
+    )
+    assert (
+        llm._get_request_payload("hello", tool_choice=expected)["tool_choice"]
+        == expected
+    )
 
 
 def test_tool_choice_and_structured_output() -> None:
@@ -74,11 +84,6 @@ def test_tool_choice_and_structured_output() -> None:
     [
         {"thinking": {"type": "disabled"}},
         {"thinking": {"type": "enabled", "budget_tokens": 1024}},
-        {"thinking": {"type": "between_tools", "display": "summarized"}},
-        {"thinking": {"type": "between_tools", "budget_tokens": 1024}},
-        {"thinking": {"type": "between_tools", "block_binding": True}},
-        {"thinking": {"type": "between_tools"}, "effort": "xhigh"},
-        {"thinking": {"type": "between_tools"}, "output_config": {"effort": "max"}},
         {"temperature": 0},
         {"top_p": 0.5},
         {"top_k": 10},
@@ -91,13 +96,21 @@ def test_invalid_configuration(kwargs: dict[str, Any]) -> None:
         model()._get_request_payload("hello", **kwargs)
 
 
-@pytest.mark.parametrize("effort", ["low", "medium", "high"])
+@pytest.mark.parametrize("effort", ["low", "medium", "high", "xhigh", "max"])
 def test_between_tools(effort: str) -> None:
     payload = model(thinking={"type": "between_tools"})._get_request_payload(
         "hello", effort=effort
     )
     assert payload["thinking"] == {"type": "between_tools"}
     assert payload["output_config"] == {"effort": effort}
+
+
+@pytest.mark.parametrize("extra", [{"display": "summarized"}, {"budget_tokens": 1024}])
+def test_between_tools_extra_fields_left_to_api(extra: dict[str, Any]) -> None:
+    thinking = {"type": "between_tools", **extra}
+    assert (
+        model(thinking=thinking)._get_request_payload("hello")["thinking"] == thinking
+    )
 
 
 def test_profile_and_defaults() -> None:
