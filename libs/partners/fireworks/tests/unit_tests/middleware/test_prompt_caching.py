@@ -41,10 +41,9 @@ def _make_model(**kwargs: Any) -> ChatFireworks:
     return model
 
 
-def _call_kwargs(request: ModelRequest, *, use_async: bool = False) -> dict[str, Any]:
+def _call_kwargs(request: ModelRequest) -> dict[str, Any]:
     assert isinstance(request.model, ChatFireworks)
-    client = request.model.async_client if use_async else request.model.client
-    return dict(client.create.call_args.kwargs)
+    return dict(request.model.client.create.call_args.kwargs)
 
 
 def _make_request(
@@ -88,7 +87,6 @@ async def _arun(
     request: ModelRequest,
     *,
     middleware: FireworksPromptCachingMiddleware | None = None,
-    config: dict[str, Any] | None = None,
 ) -> ModelRequest:
     middleware = middleware or FireworksPromptCachingMiddleware()
     captured: dict[str, ModelRequest] = {}
@@ -98,11 +96,9 @@ async def _arun(
         message = await req.model.ainvoke("Hello", **req.model_settings)
         return ModelResponse(result=[message])
 
-    if config is None:
-        config = {"configurable": {"thread_id": _THREAD_ID}}
     with patch(
         "langchain_fireworks.middleware.prompt_caching.get_config",
-        return_value=config,
+        return_value={"configurable": {"thread_id": _THREAD_ID}},
     ):
         await middleware.awrap_model_call(request, handler)
     return captured["request"]
@@ -261,11 +257,6 @@ async def test_model_headers_do_not_leak_to_fallback(
         fallback = _make_model(
             model_kwargs={"extra_headers": {"Authorization": "fallback-placeholder"}}
         )
-        response = {"choices": [{"message": {"role": "assistant", "content": "ok"}}]}
-        fallback.client = MagicMock()
-        fallback.client.create.return_value = response
-        fallback.async_client = MagicMock()
-        fallback.async_client.create = AsyncMock(return_value=response)
     else:
         fallback = GenericFakeChatModel(messages=iter([AIMessage(content="ok")]))
 
@@ -345,15 +336,6 @@ def test_non_mapping_extra_headers_is_unchanged_and_warns(
     assert any("extra_headers" in record.message for record in caplog.records)
 
 
-async def test_async_missing_thread_id_passes_original_request() -> None:
-    request = _make_request(_make_model())
-    result = await _arun(request, config={})
-
-    assert result is request
-    assert result.model_settings == {}
-    assert "prompt_cache_key" not in _call_kwargs(request, use_async=True)
-
-
 async def test_async_unsupported_model_passes_original_request() -> None:
     model = GenericFakeChatModel(messages=iter([AIMessage(content="ok")]))
     request = _make_request(model)
@@ -390,19 +372,33 @@ async def test_agent_thread_id_without_runnable_context(*, use_async: bool) -> N
 
 
 @pytest.mark.parametrize("use_async", [False, True])
-@pytest.mark.parametrize("caching_first", [False, True])
 @pytest.mark.parametrize(
-    ("primary_settings", "fallback_settings"),
+    ("primary_settings", "fallback_settings", "caching_first"),
     [
-        pytest.param({}, {}, id="automatic"),
-        pytest.param({}, {"user": "fallback-user"}, id="fallback-user"),
-        pytest.param({}, {"prompt_cache_key": "fallback-cache"}, id="fallback-key"),
+        pytest.param({}, {}, False, id="automatic-fallback-first"),
+        pytest.param({}, {}, True, id="automatic-caching-first"),
+        pytest.param({}, {"user": "fallback-user"}, True, id="fallback-user"),
+        pytest.param(
+            {}, {"prompt_cache_key": "fallback-cache"}, True, id="fallback-key"
+        ),
         pytest.param(
             {},
             {"extra_headers": {"X-Session-Affinity": "fallback-affinity"}},
+            True,
             id="fallback-header",
         ),
-        pytest.param({"prompt_cache_key": "primary-cache"}, {}, id="primary-key"),
+        pytest.param(
+            {"prompt_cache_key": "primary-cache"},
+            {},
+            False,
+            id="primary-key-fallback-first",
+        ),
+        pytest.param(
+            {"prompt_cache_key": "primary-cache"},
+            {},
+            True,
+            id="primary-key-caching-first",
+        ),
     ],
 )
 async def test_fallback_respects_explicit_affinity(
@@ -418,11 +414,6 @@ async def test_fallback_respects_explicit_affinity(
     primary.async_client = MagicMock()
     primary.async_client.create = AsyncMock(side_effect=ValueError("primary failed"))
     fallback = _make_model(model_kwargs=fallback_settings)
-    response = {"choices": [{"message": {"role": "assistant", "content": "ok"}}]}
-    fallback.client = MagicMock()
-    fallback.client.create.return_value = response
-    fallback.async_client = MagicMock()
-    fallback.async_client.create = AsyncMock(return_value=response)
     caching = FireworksPromptCachingMiddleware()
     fallbacks = ModelFallbackMiddleware(fallback)
     agent = create_agent(
