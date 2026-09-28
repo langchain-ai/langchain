@@ -4,7 +4,7 @@ When an outer caching middleware modifies a request, those changes happen before
 the fallback loop runs. Provider-specific cache settings can cause API errors if
 the loop reuses them with a different provider. This middleware therefore strips
 unsupported Anthropic and Fireworks cache settings from each fallback attempt,
-while preserving settings accepted by a same-provider fallback.
+while preserving settings accepted by the selected fallback.
 
 This provider knowledge lives here because an outer caching middleware never
 re-runs during fallback and therefore cannot clean up after itself.
@@ -126,8 +126,16 @@ def _sanitize_request_for_fallback(
         model_settings_changed = model_settings_changed or cache_control_changed
 
     if not _supports_fireworks_prompt_cache(fallback_model):
-        model_settings, fireworks_cache_changed = _without_fireworks_prompt_cache(model_settings)
+        model_settings, fireworks_cache_changed = _without_fireworks_session_affinity(
+            model_settings
+        )
         model_settings_changed = model_settings_changed or fireworks_cache_changed
+
+    if not _supports_prompt_cache_key(fallback_model) and "prompt_cache_key" in model_settings:
+        model_settings = {
+            key: value for key, value in model_settings.items() if key != "prompt_cache_key"
+        }
+        model_settings_changed = True
 
     if model_settings_changed:
         overrides["model_settings"] = model_settings
@@ -224,18 +232,13 @@ def _without_cache_control(payload: dict[str, Any]) -> tuple[dict[str, Any], boo
     )
 
 
-def _without_fireworks_prompt_cache(
+def _without_fireworks_session_affinity(
     model_settings: dict[str, Any],
 ) -> tuple[dict[str, Any], bool]:
-    """Return model settings without Fireworks prompt-cache affinity values."""
-    changed = "prompt_cache_key" in model_settings
-    sanitized_settings = {
-        key: value for key, value in model_settings.items() if key != "prompt_cache_key"
-    }
-
-    extra_headers = sanitized_settings.get("extra_headers")
+    """Return model settings without the Fireworks-specific affinity header."""
+    extra_headers = model_settings.get("extra_headers")
     if not isinstance(extra_headers, Mapping):
-        return (sanitized_settings, True) if changed else (model_settings, False)
+        return model_settings, False
 
     sanitized_headers = {
         key: value
@@ -243,14 +246,14 @@ def _without_fireworks_prompt_cache(
         if not (isinstance(key, str) and key.lower() == _FIREWORKS_SESSION_AFFINITY_HEADER)
     }
     if len(sanitized_headers) == len(extra_headers):
-        return (sanitized_settings, True) if changed else (model_settings, False)
+        return model_settings, False
 
-    changed = True
+    sanitized_settings = dict(model_settings)
     if sanitized_headers:
         sanitized_settings["extra_headers"] = sanitized_headers
     else:
         sanitized_settings.pop("extra_headers")
-    return sanitized_settings, changed
+    return sanitized_settings, True
 
 
 def _without_cache_control_from_content_block(
@@ -322,8 +325,18 @@ def _supports_anthropic_cache_control(model: BaseChatModel | None) -> bool:
 
 
 def _supports_fireworks_prompt_cache(model: BaseChatModel | None) -> bool:
-    """Return whether `model` accepts Fireworks prompt-cache affinity settings."""
+    """Return whether `model` accepts the Fireworks session-affinity header."""
     return getattr(model, "_llm_type", None) == _FIREWORKS_LLM_TYPE
+
+
+def _supports_prompt_cache_key(model: BaseChatModel | None) -> bool:
+    """Return whether `model` accepts the shared `prompt_cache_key` parameter."""
+    llm_type = getattr(model, "_llm_type", None)
+    return isinstance(llm_type, str) and llm_type in {
+        _FIREWORKS_LLM_TYPE,
+        "openai-chat",
+        "azure-openai-chat",
+    }
 
 
 class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):

@@ -11,6 +11,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.tools import BaseTool, tool
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from langgraph.errors import GraphInterrupt
 from typing_extensions import override
 
@@ -937,6 +938,59 @@ def test_fallback_preserves_fireworks_cache_settings_for_fireworks() -> None:
     middleware.wrap_model_call(request, mock_handler)
 
     assert len(attempts) == 2
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize("azure", [False, True])
+@pytest.mark.parametrize(
+    "extra_headers",
+    [
+        None,
+        {"X-Session-Affinity": "thread-123"},
+        {"X-Session-Affinity": "thread-123", "X-Request-ID": "request-123"},
+    ],
+)
+async def test_openai_fallback_preserves_cache_key(
+    *, use_async: bool, azure: bool, extra_headers: dict[str, str] | None
+) -> None:
+    """OpenAI accepts cache keys independently of Fireworks affinity headers."""
+    primary = ChatOpenAI.model_construct(model_name="test-model")
+    fallback = (
+        AzureChatOpenAI.model_construct(model_name="test-model")
+        if azure
+        else ChatOpenAI.model_construct(model_name="test-model")
+    )
+    settings: dict[str, Any] = {"prompt_cache_key": "thread-123", "temperature": 0.3}
+    if extra_headers is not None:
+        settings["extra_headers"] = extra_headers
+    request = _make_request().override(model=primary, model_settings=settings)
+    middleware = ModelFallbackMiddleware(fallback)
+    attempts: list[ModelRequest] = []
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        if req.model is primary:
+            msg = "primary failed"
+            raise ValueError(msg)
+        assert req.model is fallback
+        expected: dict[str, Any] = {"prompt_cache_key": "thread-123", "temperature": 0.3}
+        if extra_headers and "X-Request-ID" in extra_headers:
+            expected["extra_headers"] = {"X-Request-ID": "request-123"}
+        assert req.model_settings == expected
+        return ModelResponse(result=[AIMessage(content="ok")])
+
+    async def ahandler(req: ModelRequest) -> ModelResponse:
+        return handler(req)
+
+    if use_async:
+        await middleware.awrap_model_call(request, ahandler)
+    else:
+        middleware.wrap_model_call(request, handler)
+
+    assert len(attempts) == 2
+    assert request.model_settings == settings
+    if extra_headers is not None:
+        assert request.model_settings["extra_headers"]["X-Session-Affinity"] == "thread-123"
 
 
 def test_fallback_preserves_cache_markers_for_anthropic_sync() -> None:
