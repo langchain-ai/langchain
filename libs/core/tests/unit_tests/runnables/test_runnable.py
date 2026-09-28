@@ -3503,6 +3503,63 @@ async def test_map_astream_iterator_input() -> None:
     assert loads(dumps(simple_map), allowed_objects="core") == simple_map
 
 
+async def test_map_ainvoke_max_concurrency() -> None:
+    """RunnableParallel.ainvoke should honor max_concurrency like invoke does."""
+    state = {"n": 0, "peak": 0}
+
+    def bump(delta: int) -> None:
+        state["n"] += delta
+        state["peak"] = max(state["peak"], state["n"])
+
+    async def branch(_input: Any) -> str:
+        bump(1)
+        await asyncio.sleep(0.05)
+        bump(-1)
+        return "x"
+
+    chain = RunnableParallel(**{f"b{i}": RunnableLambda(branch) for i in range(4)})
+
+    await chain.ainvoke({}, {"max_concurrency": 1})
+    assert state["peak"] == 1
+
+    state["n"] = state["peak"] = 0
+    await chain.ainvoke({}, {"max_concurrency": 2})
+    assert state["peak"] <= 2
+
+    state["n"] = state["peak"] = 0
+    await chain.ainvoke({})
+    assert state["peak"] == 4
+
+
+async def test_map_astream_max_concurrency() -> None:
+    """RunnableParallel.astream should honor max_concurrency like invoke does."""
+    state = {"n": 0, "peak": 0}
+
+    def bump(delta: int) -> None:
+        state["n"] += delta
+        state["peak"] = max(state["peak"], state["n"])
+
+    def make_branch() -> RunnableGenerator:
+        async def branch(_input: AsyncIterator[Any]) -> AsyncIterator[str]:
+            bump(1)
+            await asyncio.sleep(0.05)
+            bump(-1)
+            yield "x"
+
+        return RunnableGenerator(branch)
+
+    chain = RunnableParallel(**{f"b{i}": make_branch() for i in range(4)})
+
+    async for _ in chain.astream({}, {"max_concurrency": 1}):
+        pass
+    assert state["peak"] == 1
+
+    state["n"] = state["peak"] = 0
+    async for _ in chain.astream({}):
+        pass
+    assert state["peak"] == 4
+
+
 def test_with_config_with_config() -> None:
     llm = FakeListLLM(responses=["i'm a textbot"])
 
