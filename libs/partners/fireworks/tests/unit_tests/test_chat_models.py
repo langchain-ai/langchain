@@ -16,6 +16,7 @@ from fireworks import (
     APITimeoutError,
     AuthenticationError,
     BadRequestError,
+    Fireworks,
     FireworksError,
     InternalServerError,
     NotFoundError,
@@ -1497,14 +1498,37 @@ class TestCreateChatResult:
 class TestExtraHeaders:
     """Tests for request-specific HTTP header plumbing."""
 
+    def test_mixed_case_headers_are_not_duplicated_on_the_wire(self) -> None:
+        requests: list[httpx.Request] = []
+
+        def respond(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            return httpx.Response(200, json=_success_response())
+
+        with Fireworks(
+            api_key="fake-key",
+            http_client=httpx.Client(transport=httpx.MockTransport(respond)),
+        ) as sdk:
+            model = _make_model(
+                client=sdk.chat.completions,
+                async_client=MagicMock(),
+                model_kwargs={"extra_headers": {"X-Session-Affinity": "model"}},
+            )
+            model.invoke("Hello", extra_headers={"x-session-affinity": "request"})
+
+        assert len(requests) == 1
+        assert requests[0].headers.get_list("x-session-affinity") == ["request"]
+
     def test_extra_headers_forwarded_to_sync_create(self) -> None:
-        model = _make_model()
+        model_headers = {"X-Model": "model", "x-shared": "model"}
+        model = _make_model(model_kwargs={"extra_headers": model_headers})
         model.client = MagicMock()
         model.client.create.return_value = {
             "choices": [{"message": {"role": "assistant", "content": "ok"}}],
             "usage": {},
         }
         headers = {
+            "X-Shared": "request",
             "x-session-affinity": "thread-123",
             "x-multi-turn-session-id": "thread-123",
         }
@@ -1512,15 +1536,19 @@ class TestExtraHeaders:
         model.invoke("Hello", extra_headers=headers)
 
         call_kwargs = model.client.create.call_args[1]
-        assert call_kwargs["extra_headers"] == headers
+        assert call_kwargs["extra_headers"] == {"X-Model": "model", **headers}
+        assert model.model_kwargs["extra_headers"] == model_headers
+        assert "X-Model" not in headers
         # `extra_headers` must reach the SDK at the top level, not be folded
         # into `extra_body` by `_prepare_sdk_kwargs`.
         assert "extra_headers" not in call_kwargs.get("extra_body", {})
 
     async def test_extra_headers_forwarded_to_async_create(self) -> None:
-        model = _make_model()
+        model_headers = {"X-Model": "model", "x-shared": "model"}
+        model = _make_model(model_kwargs={"extra_headers": model_headers})
         model.async_client = MagicMock()
         headers = {
+            "X-Shared": "request",
             "x-session-affinity": "thread-123",
             "x-multi-turn-session-id": "thread-123",
         }
@@ -1536,14 +1564,18 @@ class TestExtraHeaders:
         await model.ainvoke("Hello", extra_headers=headers)
 
         call_kwargs = model.async_client.create.call_args[1]
-        assert call_kwargs["extra_headers"] == headers
+        assert call_kwargs["extra_headers"] == {"X-Model": "model", **headers}
+        assert model.model_kwargs["extra_headers"] == model_headers
+        assert "X-Model" not in headers
 
     def test_extra_headers_forwarded_when_streaming(self) -> None:
         """`extra_headers` must also survive the separate streaming param path."""
-        model = _make_model()
+        model_headers = {"X-Model": "model", "x-shared": "model"}
+        model = _make_model(model_kwargs={"extra_headers": model_headers})
         model.client = MagicMock()
         model.client.create.return_value = iter(list(_STREAM_CHUNKS))
         headers = {
+            "X-Shared": "request",
             "x-session-affinity": "thread-123",
             "x-multi-turn-session-id": "thread-123",
         }
@@ -1551,7 +1583,9 @@ class TestExtraHeaders:
         list(model.stream("Hello", extra_headers=headers))
 
         call_kwargs = model.client.create.call_args[1]
-        assert call_kwargs["extra_headers"] == headers
+        assert call_kwargs["extra_headers"] == {"X-Model": "model", **headers}
+        assert model.model_kwargs["extra_headers"] == model_headers
+        assert "X-Model" not in headers
         assert "extra_headers" not in call_kwargs.get("extra_body", {})
 
 
