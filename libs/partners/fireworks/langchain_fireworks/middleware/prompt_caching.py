@@ -37,8 +37,15 @@ logger = logging.getLogger(__name__)
 _UNSUPPORTED_MODEL_BEHAVIORS = ("ignore", "warn", "raise")
 
 
-def _get_thread_id() -> str | None:
-    """Return a non-empty `config.configurable.thread_id`, if present."""
+def _get_thread_id(request: ModelRequest) -> str | None:
+    """Return the thread ID from request runtime metadata or runnable config."""
+    # Runtime metadata is available even without async config propagation on
+    # Python 3.10. Older runtimes may not expose execution_info.
+    execution_info = getattr(request.runtime, "execution_info", None)
+    thread_id = getattr(execution_info, "thread_id", None)
+    if isinstance(thread_id, str) and thread_id:
+        return thread_id
+
     try:
         config = get_config()
     except RuntimeError:
@@ -50,9 +57,9 @@ def _get_thread_id() -> str | None:
 
 
 @contextmanager
-def _session_affinity() -> Iterator[None]:
+def _session_affinity(request: ModelRequest) -> Iterator[None]:
     """Scope an affinity default to this call, including any fallback attempts."""
-    thread_id = _get_thread_id()
+    thread_id = _get_thread_id(request)
     affinity = (
         hashlib.sha256(thread_id.encode("utf-8")).hexdigest()
         if thread_id is not None
@@ -153,7 +160,7 @@ class FireworksPromptCachingMiddleware(AgentMiddleware):
         """
         if not self._should_apply_caching(request):
             return handler(request)
-        with _session_affinity():
+        with _session_affinity(request):
             return handler(request)
 
     async def awrap_model_call(
@@ -172,5 +179,5 @@ class FireworksPromptCachingMiddleware(AgentMiddleware):
         """
         if not self._should_apply_caching(request):
             return await handler(request)
-        with _session_affinity():
+        with _session_affinity(request):
             return await handler(request)

@@ -368,6 +368,28 @@ async def test_async_unsupported_model_passes_original_request() -> None:
 
 
 @pytest.mark.parametrize("use_async", [False, True])
+async def test_agent_thread_id_without_runnable_context(*, use_async: bool) -> None:
+    """Runtime metadata supplies affinity without ambient config on Python 3.10."""
+    model = _make_model()
+    agent = create_agent(model, middleware=[FireworksPromptCachingMiddleware()])
+    config: RunnableConfig = {"configurable": {"thread_id": _THREAD_ID}}
+
+    with patch(
+        "langchain_fireworks.middleware.prompt_caching.get_config",
+        side_effect=RuntimeError("No runnable context"),
+    ):
+        if use_async:
+            await agent.ainvoke({"messages": [HumanMessage("Hello")]}, config)
+        else:
+            agent.invoke({"messages": [HumanMessage("Hello")]}, config)
+
+    client = model.async_client if use_async else model.client
+    kwargs = client.create.call_args.kwargs
+    assert kwargs["prompt_cache_key"] == _AFFINITY
+    assert kwargs["extra_headers"][_SESSION_AFFINITY_HEADER] == _AFFINITY
+
+
+@pytest.mark.parametrize("use_async", [False, True])
 @pytest.mark.parametrize("caching_first", [False, True])
 @pytest.mark.parametrize(
     ("primary_settings", "fallback_settings"),
