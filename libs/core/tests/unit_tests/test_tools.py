@@ -26,6 +26,7 @@ from typing import (
 import pytest
 from pydantic import (
     AliasChoices,
+    AliasPath,
     BaseModel,
     ConfigDict,
     Field,
@@ -71,6 +72,7 @@ from langchain_core.tools.base import (
     InjectedToolCallId,
     SchemaAnnotationError,
     _DirectlyInjectedToolArg,
+    _drop_path,
     _format_output,
     _is_message_content_block,
     _normalize_message_content,
@@ -3779,6 +3781,62 @@ def test_filter_injected_args_from_callbacks() -> None:
     assert "query" in captured
     assert "state" not in captured
     assert captured["query"] == "test query"
+
+
+@pytest.mark.parametrize(
+    ("field", "tool_input", "expected"),
+    [
+        (
+            Field(alias="private_token"),
+            {"x": 1, "private_token": "SECRET"},
+            {"x": 1},
+        ),
+        (
+            Field(validation_alias="private_token"),
+            {"x": 1, "private_token": "SECRET"},
+            {"x": 1},
+        ),
+        (
+            Field(validation_alias=AliasChoices("tok", "private_token")),
+            {"x": 1, "private_token": "SECRET"},
+            {"x": 1},
+        ),
+        (
+            Field(validation_alias=AliasPath("ctx", "secret")),
+            {"x": 1, "ctx": {"secret": "SECRET", "other": 2}},
+            {"x": 1, "ctx": {"other": 2}},
+        ),
+    ],
+)
+def test_filter_injected_args_by_alias(
+    field: Any, tool_input: dict[str, Any], expected: dict[str, Any]
+) -> None:
+    """Injected args passed through a Pydantic alias are filtered from callbacks."""
+
+    class Args(BaseModel):
+        x: int
+        secret: Annotated[str, InjectedToolArg] = field
+
+    def action(x: int, secret: Annotated[str, InjectedToolArg]) -> str:
+        return secret
+
+    uses_secret = StructuredTool.from_function(
+        action, description="Uses an injected secret.", args_schema=Args
+    )
+    handler = CallbackHandlerWithInputCapture(captured_inputs=[])
+    assert uses_secret.invoke(tool_input, {"callbacks": [handler]}) == "SECRET"
+    assert handler.captured_inputs == [expected]
+    # The caller's input is not mutated by path-based filtering
+    assert "SECRET" in repr(tool_input)
+
+
+def test_drop_path() -> None:
+    data = {"a": [{"s": 1, "k": 2}, 3], "b": 4}
+    assert _drop_path(data, ["a", 0, "s"]) == {"a": [{"k": 2}, 3], "b": 4}
+    assert _drop_path(data, ["a", -1]) == {"a": [{"s": 1, "k": 2}], "b": 4}
+    assert _drop_path(data, ["a", 5, "s"]) == data
+    assert _drop_path(data, ["b", "x"]) == data
+    assert data == {"a": [{"s": 1, "k": 2}, 3], "b": 4}
 
 
 def test_filter_run_manager_from_callbacks() -> None:

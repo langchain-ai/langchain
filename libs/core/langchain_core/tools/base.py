@@ -24,6 +24,8 @@ from typing import (
 
 import typing_extensions
 from pydantic import (
+    AliasChoices,
+    AliasPath,
     BaseModel,
     ConfigDict,
     Field,
@@ -948,15 +950,33 @@ class ChildTool(BaseTool):
 
         # Add injected args from function signature (e.g., ToolRuntime parameters)
         filtered_keys.update(self._injected_args_keys)
+        # Nested `AliasPath` locations, deleted by path so sibling data survives
+        filtered_paths: list[list[str | int]] = []
 
         # If we have an args_schema, use it to identify injected args
         # Skip if args_schema is a dict (JSON Schema) as it's not a Pydantic model
         if self.args_schema is not None and not isinstance(self.args_schema, dict):
             try:
                 annotations = get_all_basemodel_annotations(self.args_schema)
+                fields = get_fields(self.args_schema)
                 for field_name, field_type in annotations.items():
-                    if _is_injected_arg_type(field_type):
-                        filtered_keys.add(field_name)
+                    if not _is_injected_arg_type(field_type):
+                        continue
+                    filtered_keys.add(field_name)
+                    # The input may use any of the field's aliases instead
+                    field = fields.get(field_name)
+                    aliases = [
+                        getattr(field, "alias", None),
+                        getattr(field, "validation_alias", None),
+                    ]
+                    while aliases:
+                        alias = aliases.pop()
+                        if isinstance(alias, str):
+                            filtered_keys.add(alias)
+                        elif isinstance(alias, AliasChoices):
+                            aliases.extend(alias.choices)
+                        elif isinstance(alias, AliasPath):
+                            filtered_paths.append(alias.path)
             except Exception:
                 # If we can't get annotations, just use FILTERED_ARGS
                 _logger.debug(
@@ -965,7 +985,10 @@ class ChildTool(BaseTool):
                 )
 
         # Filter out the injected keys from tool_input
-        return {k: v for k, v in tool_input.items() if k not in filtered_keys}
+        filtered = {k: v for k, v in tool_input.items() if k not in filtered_keys}
+        for path in filtered_paths:
+            filtered = _drop_path(filtered, path)
+        return filtered
 
     def _to_args_and_kwargs(
         self, tool_input: str | dict[str, Any], tool_call_id: str | None
@@ -1827,6 +1850,25 @@ def _is_injected_arg_type(
     )
 
 
+def _drop_path(data: Any, path: Sequence[str | int]) -> Any:
+    """Return a copy of `data` without the value at `path`; other values are kept."""
+    head, *rest = path
+    if isinstance(data, dict) and head in data:
+        if not rest:
+            return {k: v for k, v in data.items() if k != head}
+        return {**data, head: _drop_path(data[head], rest)}
+    if (
+        isinstance(data, list)
+        and isinstance(head, int)
+        and -len(data) <= head < len(data)
+    ):
+        head %= len(data)
+        if not rest:
+            return data[:head] + data[head + 1 :]
+        return [*data[:head], _drop_path(data[head], rest), *data[head + 1 :]]
+    return data
+
+
 def get_all_basemodel_annotations(
     cls: TypeBaseModel | Any, *, default_to_bound: bool = True
 ) -> dict[str, type | TypeVar]:
@@ -1843,7 +1885,13 @@ def get_all_basemodel_annotations(
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
         fields = get_fields(cls)
-        alias_map = {field.alias: name for name, field in fields.items() if field.alias}
+        # Pydantic names `__init__` params after `validation_alias`, else `alias`
+        alias_map = {
+            alias: name
+            for name, field in fields.items()
+            for alias in (field.alias, getattr(field, "validation_alias", None))
+            if isinstance(alias, str)
+        }
 
         annotations: dict[str, type | TypeVar] = {}
         for name, param in inspect.signature(cls).parameters.items():
