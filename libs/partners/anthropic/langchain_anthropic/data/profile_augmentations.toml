@@ -53,19 +53,6 @@ structured_output = true
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "medium"
 
-[overrides."claude-sonnet-5-5"]
-max_input_tokens = 1000000
-max_output_tokens = 128000
-text_inputs = true
-image_inputs = true
-text_outputs = true
-reasoning_output = true
-tool_calling = true
-tool_choice = false
-structured_output = true
-reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
-reasoning_effort_default = "high"
-
 [overrides."claude-sonnet-5"]
 structured_output = true
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
