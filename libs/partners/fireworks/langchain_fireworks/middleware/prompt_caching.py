@@ -7,6 +7,7 @@ and an `ImportError` with install guidance is raised if it is missing.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from collections.abc import Awaitable, Callable, Mapping
 from typing import Any, Literal
@@ -76,9 +77,10 @@ class FireworksPromptCachingMiddleware(AgentMiddleware):
     """Set Fireworks prompt-cache session affinity from the active thread ID.
 
     Fireworks prompt caching is enabled by default. This middleware improves
-    cache hit rate by pinning session affinity to
+    cache hit rate by pinning session affinity to a SHA-256 hash of
     `config.configurable.thread_id`, so related requests route to the same
-    replica and reuse its warm cache.
+    replica and reuse its warm cache. The hexadecimal hash keeps affinity values
+    safe for HTTP headers, including when thread IDs contain Unicode.
 
     The middleware injects both `prompt_cache_key` and
     `extra_headers["x-session-affinity"]`. It leaves requests unchanged when no
@@ -164,7 +166,8 @@ class FireworksPromptCachingMiddleware(AgentMiddleware):
         # Model defaults must remain on the model: this request can be reused
         # with another provider by an inner ModelFallbackMiddleware.
         headers = dict(request.model_settings.get("extra_headers") or {})
-        headers[_SESSION_AFFINITY_HEADER] = thread_id
+        affinity = hashlib.sha256(thread_id.encode("utf-8")).hexdigest()
+        headers[_SESSION_AFFINITY_HEADER] = affinity
         # Pin affinity on both channels: the typed `prompt_cache_key` field
         # (preferred by newer Fireworks endpoints) and the `x-session-affinity`
         # header (honored by endpoints that only read the raw header). Writing the
@@ -173,7 +176,7 @@ class FireworksPromptCachingMiddleware(AgentMiddleware):
         # model itself, so re-binding them here is unnecessary.
         new_settings = {
             **request.model_settings,
-            "prompt_cache_key": thread_id,
+            "prompt_cache_key": affinity,
             "extra_headers": headers,
         }
         logger.debug("Set Fireworks prompt-cache session affinity")

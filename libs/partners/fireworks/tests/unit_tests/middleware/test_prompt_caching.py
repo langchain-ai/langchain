@@ -6,6 +6,7 @@ import logging
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from langchain.agents.middleware import ModelFallbackMiddleware
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
@@ -17,6 +18,7 @@ from langchain_fireworks.middleware import FireworksPromptCachingMiddleware
 from langchain_fireworks.middleware.prompt_caching import _SESSION_AFFINITY_HEADER
 
 _THREAD_ID = "thread-abc-123"
+_AFFINITY = "ef8dbcc47038744819e7c6386305c0acf1961597773391096c267358ec6496eb"
 _MODEL_NAME = "accounts/fireworks/models/test-model"
 
 
@@ -93,10 +95,45 @@ def test_fireworks_model_injects_session_affinity() -> None:
     request = _make_request(_make_model())
     result = _run(request)
 
-    assert result.model_settings["prompt_cache_key"] == _THREAD_ID
-    assert (
-        result.model_settings["extra_headers"][_SESSION_AFFINITY_HEADER] == _THREAD_ID
-    )
+    assert result.model_settings["prompt_cache_key"] == _AFFINITY
+    assert result.model_settings["extra_headers"][_SESSION_AFFINITY_HEADER] == _AFFINITY
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize(
+    "thread_id",
+    [
+        "会話-123",
+        "café",
+        "thread-😀",
+        "thread\r\nInjected: value",
+        "\x00thread",
+        "x" * 1024,
+    ],
+    ids=["cjk", "accent", "emoji", "newline", "null", "long"],
+)
+async def test_thread_id_produces_stable_header_safe_affinity(
+    thread_id: str, *, use_async: bool
+) -> None:
+    request = _make_request(_make_model())
+
+    async def run(value: str) -> ModelRequest:
+        if use_async:
+            return await _arun(request, config={"configurable": {"thread_id": value}})
+        return _run(request, thread_id=value)
+
+    result = await run(thread_id)
+    affinity = httpx.Headers(result.model_settings["extra_headers"])[
+        _SESSION_AFFINITY_HEADER
+    ]
+    assert result.model_settings["prompt_cache_key"] == affinity
+    assert len(affinity) == 64
+    assert set(affinity) <= set("0123456789abcdef")
+    assert (await run(thread_id)).model_settings == result.model_settings
+    assert (await run(thread_id + "-other")).model_settings[
+        "prompt_cache_key"
+    ] != affinity
+    assert request.model_settings == {}
 
 
 def test_unsupported_model_behavior() -> None:
@@ -194,10 +231,8 @@ def test_null_affinity_setting_injects_session_affinity(setting: str) -> None:
 
     if setting == "user":
         assert result.model_settings[setting] is None
-    assert result.model_settings["prompt_cache_key"] == _THREAD_ID
-    assert (
-        result.model_settings["extra_headers"][_SESSION_AFFINITY_HEADER] == _THREAD_ID
-    )
+    assert result.model_settings["prompt_cache_key"] == _AFFINITY
+    assert result.model_settings["extra_headers"][_SESSION_AFFINITY_HEADER] == _AFFINITY
 
 
 def test_existing_session_affinity_header_causes_no_injection() -> None:
@@ -221,7 +256,7 @@ def test_model_headers_stay_on_model_without_mutation() -> None:
 
     assert result.model_settings["extra_headers"] == {
         "X-Request-ID": "request-1",
-        _SESSION_AFFINITY_HEADER: _THREAD_ID,
+        _SESSION_AFFINITY_HEADER: _AFFINITY,
     }
     assert model_headers == {"X-Model-Header": "model-value"}
     assert request_headers == {"X-Request-ID": "request-1"}
@@ -295,14 +330,14 @@ async def test_model_headers_do_not_leak_to_fallback(
     assert client.create.call_args.kwargs["extra_headers"] == {
         **primary_headers,
         **request_headers,
-        _SESSION_AFFINITY_HEADER: _THREAD_ID,
+        _SESSION_AFFINITY_HEADER: _AFFINITY,
     }
     if isinstance(fallback, ChatFireworks):
         client = fallback.async_client if use_async else fallback.client
         assert client.create.call_args.kwargs["extra_headers"] == {
             "Authorization": "fallback-placeholder",
             **request_headers,
-            _SESSION_AFFINITY_HEADER: _THREAD_ID,
+            _SESSION_AFFINITY_HEADER: _AFFINITY,
         }
     assert primary.model_kwargs["extra_headers"] == primary_headers
     assert request.model_settings == {"extra_headers": request_headers}
@@ -315,9 +350,7 @@ def test_conflicting_header_prefers_request_value() -> None:
     result = _run(request)
 
     assert result.model_settings["extra_headers"]["X-Shared"] == "request"
-    assert (
-        result.model_settings["extra_headers"][_SESSION_AFFINITY_HEADER] == _THREAD_ID
-    )
+    assert result.model_settings["extra_headers"][_SESSION_AFFINITY_HEADER] == _AFFINITY
 
 
 def test_non_mapping_extra_headers_is_unchanged_and_warns(
@@ -353,10 +386,8 @@ async def test_async_fireworks_model_injects_session_affinity() -> None:
     request = _make_request(_make_model())
     result = await _arun(request)
 
-    assert result.model_settings["prompt_cache_key"] == _THREAD_ID
-    assert (
-        result.model_settings["extra_headers"][_SESSION_AFFINITY_HEADER] == _THREAD_ID
-    )
+    assert result.model_settings["prompt_cache_key"] == _AFFINITY
+    assert result.model_settings["extra_headers"][_SESSION_AFFINITY_HEADER] == _AFFINITY
 
 
 async def test_async_missing_thread_id_passes_original_request() -> None:
