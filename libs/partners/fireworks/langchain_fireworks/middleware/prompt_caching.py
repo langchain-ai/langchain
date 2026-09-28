@@ -151,19 +151,19 @@ class FireworksPromptCachingMiddleware(AgentMiddleware):
             return None
 
         raw_headers = model_settings.get("extra_headers")
-        if raw_headers is None:
-            headers: dict[Any, Any] = {}
-        elif isinstance(raw_headers, Mapping):
+        if isinstance(raw_headers, Mapping):
             if _has_session_affinity_header(raw_headers):
                 return None
-            headers = dict(raw_headers)
-        else:
+        elif raw_headers is not None:
             logger.warning(
                 "Cannot set Fireworks session affinity because extra_headers is %s",
                 type(raw_headers).__name__,
             )
             return None
 
+        # Model defaults must remain on the model: this request can be reused
+        # with another provider by an inner ModelFallbackMiddleware.
+        headers = dict(request.model_settings.get("extra_headers") or {})
         headers[_SESSION_AFFINITY_HEADER] = thread_id
         # Pin affinity on both channels: the typed `prompt_cache_key` field
         # (preferred by newer Fireworks endpoints) and the `x-session-affinity`

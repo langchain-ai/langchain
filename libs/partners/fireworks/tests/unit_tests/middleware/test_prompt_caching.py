@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from langchain.agents.middleware import ModelFallbackMiddleware
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
@@ -210,7 +211,7 @@ def test_existing_session_affinity_header_causes_no_injection() -> None:
     assert result.model_settings["extra_headers"] == {"X-Session-Affinity": "existing"}
 
 
-def test_headers_are_merged_without_mutation() -> None:
+def test_model_headers_stay_on_model_without_mutation() -> None:
     model_headers = {"X-Model-Header": "model-value"}
     request_headers = {"X-Request-ID": "request-1"}
     model = _make_model(model_kwargs={"extra_headers": model_headers})
@@ -219,12 +220,92 @@ def test_headers_are_merged_without_mutation() -> None:
     result = _run(request)
 
     assert result.model_settings["extra_headers"] == {
-        "X-Model-Header": "model-value",
         "X-Request-ID": "request-1",
         _SESSION_AFFINITY_HEADER: _THREAD_ID,
     }
     assert model_headers == {"X-Model-Header": "model-value"}
     assert request_headers == {"X-Request-ID": "request-1"}
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize("fireworks_fallback", [False, True])
+async def test_model_headers_do_not_leak_to_fallback(
+    *, use_async: bool, fireworks_fallback: bool
+) -> None:
+    primary_headers = {"Authorization": "primary-placeholder"}
+    primary = _make_model(model_kwargs={"extra_headers": primary_headers})
+    primary.client = MagicMock()
+    primary.client.create.side_effect = ValueError("primary failed")
+    primary.async_client = MagicMock()
+    primary.async_client.create = AsyncMock(side_effect=ValueError("primary failed"))
+    fallback: ChatFireworks | GenericFakeChatModel
+    if fireworks_fallback:
+        fallback = _make_model(
+            model_kwargs={"extra_headers": {"Authorization": "fallback-placeholder"}}
+        )
+        response = {"choices": [{"message": {"role": "assistant", "content": "ok"}}]}
+        fallback.client = MagicMock()
+        fallback.client.create.return_value = response
+        fallback.async_client = MagicMock()
+        fallback.async_client.create = AsyncMock(return_value=response)
+    else:
+        fallback = GenericFakeChatModel(messages=iter([AIMessage(content="ok")]))
+
+    request_headers = {"X-Request-ID": "request-1"}
+    request = _make_request(primary, {"extra_headers": request_headers})
+    caching = FireworksPromptCachingMiddleware()
+    fallbacks = ModelFallbackMiddleware(fallback)
+    attempts: list[ModelRequest] = []
+
+    def handler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        return ModelResponse(result=[req.model.invoke("Hello", **req.model_settings)])
+
+    async def ahandler(req: ModelRequest) -> ModelResponse:
+        attempts.append(req)
+        message = await req.model.ainvoke("Hello", **req.model_settings)
+        return ModelResponse(result=[message])
+
+    with patch(
+        "langchain_fireworks.middleware.prompt_caching.get_config",
+        return_value={"configurable": {"thread_id": _THREAD_ID}},
+    ):
+        if use_async:
+
+            async def afallback(req: ModelRequest) -> ModelResponse:
+                result = await fallbacks.awrap_model_call(req, ahandler)
+                assert isinstance(result, ModelResponse)
+                return result
+
+            await caching.awrap_model_call(request, afallback)
+        else:
+
+            def fallback_handler(req: ModelRequest) -> ModelResponse:
+                result = fallbacks.wrap_model_call(req, handler)
+                assert isinstance(result, ModelResponse)
+                return result
+
+            caching.wrap_model_call(request, fallback_handler)
+
+    assert len(attempts) == 2
+    for attempt in attempts:
+        assert "Authorization" not in attempt.model_settings["extra_headers"]
+        assert attempt.model_settings["extra_headers"]["X-Request-ID"] == "request-1"
+    client = primary.async_client if use_async else primary.client
+    assert client.create.call_args.kwargs["extra_headers"] == {
+        **primary_headers,
+        **request_headers,
+        _SESSION_AFFINITY_HEADER: _THREAD_ID,
+    }
+    if isinstance(fallback, ChatFireworks):
+        client = fallback.async_client if use_async else fallback.client
+        assert client.create.call_args.kwargs["extra_headers"] == {
+            "Authorization": "fallback-placeholder",
+            **request_headers,
+            _SESSION_AFFINITY_HEADER: _THREAD_ID,
+        }
+    assert primary.model_kwargs["extra_headers"] == primary_headers
+    assert request.model_settings == {"extra_headers": request_headers}
 
 
 def test_conflicting_header_prefers_request_value() -> None:

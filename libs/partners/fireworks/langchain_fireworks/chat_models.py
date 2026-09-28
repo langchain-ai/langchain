@@ -747,6 +747,18 @@ def _prepare_sdk_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     return kwargs
 
 
+def _merge_model_headers(llm: ChatFireworks, kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Merge model-local headers only when invoking their owning model."""
+    model_headers = llm.model_kwargs.get("extra_headers")
+    request_headers = kwargs.get("extra_headers")
+    if isinstance(model_headers, Mapping) and isinstance(request_headers, Mapping):
+        return {
+            **kwargs,
+            "extra_headers": {**model_headers, **request_headers},
+        }
+    return kwargs
+
+
 def _completion_with_retry(
     llm: ChatFireworks,
     run_manager: CallbackManagerForLLMRun | None = None,
@@ -754,7 +766,7 @@ def _completion_with_retry(
 ) -> Any:
     """Retry the sync completion call, including stream setup."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
-    kwargs = _prepare_sdk_kwargs(kwargs)
+    kwargs = _prepare_sdk_kwargs(_merge_model_headers(llm, kwargs))
 
     @retry_decorator
     def _call() -> Any:
@@ -787,7 +799,7 @@ async def _acompletion_with_retry(
 ) -> Any:
     """Retry the async completion call, including stream setup."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
-    kwargs = _prepare_sdk_kwargs(kwargs)
+    kwargs = _prepare_sdk_kwargs(_merge_model_headers(llm, kwargs))
 
     @retry_decorator
     async def _call() -> Any:
