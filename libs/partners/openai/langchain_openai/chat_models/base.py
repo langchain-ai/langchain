@@ -567,17 +567,19 @@ def _convert_delta_to_message_chunk(
     tool_call_chunks = []
     if raw_tool_calls := _dict.get("tool_calls"):
         try:
-            tool_call_chunks = [
-                tool_call_chunk(
-                    name=rtc["function"].get("name"),
-                    args=rtc["function"].get("arguments"),
-                    id=rtc.get("id"),
-                    index=rtc["index"],
+            for rtc in raw_tool_calls:
+                # `function` may be absent or null in a partial delta
+                function = rtc.get("function") or {}
+                tool_call_chunks.append(
+                    tool_call_chunk(
+                        name=function.get("name"),
+                        args=function.get("arguments"),
+                        id=rtc.get("id"),
+                        index=rtc["index"],
+                    )
                 )
-                for rtc in raw_tool_calls
-            ]
         except KeyError:
-            pass
+            tool_call_chunks = []
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content, id=id_)

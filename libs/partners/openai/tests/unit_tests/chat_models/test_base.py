@@ -628,6 +628,42 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
 
 
+def test_stream_tool_call_delta_with_null_function() -> None:
+    """A tool call delta with `function: null` is kept and merged, not a crash."""
+
+    def delta(tool_call: dict) -> dict:
+        return {
+            "id": "chatcmpl-1",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o-mini",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "tool_calls": [tool_call]},
+                    "finish_reason": None,
+                }
+            ],
+        }
+
+    chunks = [
+        delta({"index": 0, "id": "call_1", "type": "function", "function": None}),
+        delta({"index": 0, "function": {"name": "get_weather", "arguments": "{}"}}),
+    ]
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key=SecretStr("dummy"))
+    mock_client = MagicMock()
+    mock_client.create.return_value = MockSyncContextManager(chunks)
+    with patch.object(llm, "client", mock_client):
+        full = None
+        for chunk in llm.stream("Call the tool"):
+            full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunk)
+    assert full.tool_calls == [
+        {"name": "get_weather", "args": {}, "id": "call_1", "type": "tool_call"}
+    ]
+
+
 def test_openai_stream(mock_openai_completion: list) -> None:
     llm_name = OPENAI_TEST_MODEL
     llm = ChatOpenAI(model=llm_name, stream_usage=True)
