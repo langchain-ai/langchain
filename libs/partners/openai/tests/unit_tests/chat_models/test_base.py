@@ -92,6 +92,7 @@ from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
+    _convert_delta_to_message_chunk,
     _convert_dict_to_message,
     _convert_message_to_dict,
     _convert_responses_chunk_to_generation_chunk,
@@ -288,6 +289,31 @@ def test__convert_dict_to_message_system_with_name() -> None:
     expected_output = SystemMessage(content="foo", name="test")
     assert result == expected_output
     assert _convert_message_to_dict(expected_output) == message
+
+
+def test__convert_delta_to_message_chunk_tolerates_null_function() -> None:
+    """A tool-call delta with a null function must not crash the stream.
+
+    The OpenAI SDK permits ``ChoiceDeltaToolCall(index=0, function=None)``; a later
+    delta carries the function, so the partial chunk is kept for assembly.
+    """
+    from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
+
+    tool_call = ChoiceDeltaToolCall(index=0, id="call_1", function=None)
+    delta = {"role": "assistant", "tool_calls": [tool_call.model_dump()]}
+
+    chunk = _convert_delta_to_message_chunk(delta, AIMessageChunk)
+
+    assert isinstance(chunk, AIMessageChunk)
+    assert chunk.tool_call_chunks == [
+        {
+            "name": None,
+            "args": None,
+            "id": "call_1",
+            "index": 0,
+            "type": "tool_call_chunk",
+        }
+    ]
 
 
 def test__convert_dict_to_message_tool() -> None:

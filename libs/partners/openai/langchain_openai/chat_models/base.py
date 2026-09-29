@@ -569,8 +569,10 @@ def _convert_delta_to_message_chunk(
         try:
             tool_call_chunks = [
                 tool_call_chunk(
-                    name=rtc["function"].get("name"),
-                    args=rtc["function"].get("arguments"),
+                    # The OpenAI SDK permits a null function on a tool-call delta
+                    # (a later delta carries it), so tolerate it like a missing one.
+                    name=(rtc["function"] or {}).get("name"),
+                    args=(rtc["function"] or {}).get("arguments"),
                     id=rtc.get("id"),
                     index=rtc["index"],
                 )
