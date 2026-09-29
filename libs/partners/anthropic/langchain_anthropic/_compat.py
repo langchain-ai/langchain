@@ -129,8 +129,9 @@ def _convert_from_v1_to_anthropic(
                 "input": block.get("args", {}),
                 "id": block.get("id", ""),
             }
-            if "caller" in block.get("extras", {}):
-                tool_use_block["caller"] = block["extras"]["caller"]
+            for key in ("caller", "toolset_name"):
+                if key in block.get("extras", {}):
+                    tool_use_block[key] = block["extras"][key]
             new_content.append(tool_use_block)
 
         elif block["type"] == "tool_call_chunk":
@@ -147,6 +148,11 @@ def _convert_from_v1_to_anthropic(
                     "name": block.get("name", ""),
                     "input": input_,
                     "id": block.get("id", ""),
+                    **{
+                        key: block["extras"][key]
+                        for key in ("caller", "toolset_name")
+                        if key in block.get("extras", {})
+                    },
                 }
             )
 
