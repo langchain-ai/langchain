@@ -66,6 +66,7 @@ os.environ["ANTHROPIC_API_KEY"] = "foo"
 MODEL_NAME = "claude-sonnet-4-5-20250929"
 
 MID_CONVERSATION_SYSTEM_MODEL = "claude-opus-5"
+MESSAGE_LEVEL_SYSTEM_MODEL = "claude-sonnet-5-5"
 
 
 class _GatewayMetadataTracer(BaseTracer):
@@ -660,6 +661,23 @@ def test__merge_messages_coalesces_adjacent_system_messages() -> None:
         HumanMessage("hi"),  # type: ignore[misc]
     ]
     assert _merge_messages(messages) == expected
+
+
+def test__merge_messages_keeps_system_messages_with_provider_fields_separate() -> None:
+    """Message-level Anthropic fields must retain their original boundaries."""
+    messages = [
+        SystemMessage("Always be concise."),
+        SystemMessage(
+            [],
+            additional_kwargs={"output_config": {"effort": "low"}},
+        ),
+        SystemMessage(
+            "Use at most 50 words.",
+            additional_kwargs={"clear_at": "next_user_message"},
+        ),
+    ]
+
+    assert _merge_messages(messages) == messages
 
 
 def test__merge_messages_mutation() -> None:
@@ -1857,6 +1875,174 @@ def test__format_messages_system_between_user_and_ai_sent_in_place() -> None:
         {"role": "system", "content": "Be concise."},
         {"role": "assistant", "content": "Looks fine."},
     ]
+
+
+def test__format_messages_effort_only_system_allowed_between_any_roles() -> None:
+    """An effort-only system message is valid between assistant and user turns."""
+    messages = [
+        HumanMessage("Plan a migration."),
+        AIMessage("Use three steps."),
+        SystemMessage(
+            [],
+            additional_kwargs={"output_config": {"effort": "low"}},
+        ),
+        HumanMessage("Summarize it."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages, model=MESSAGE_LEVEL_SYSTEM_MODEL
+    )
+    assert actual_system is None
+    assert actual_messages == [
+        {"role": "user", "content": "Plan a migration."},
+        {"role": "assistant", "content": "Use three steps."},
+        {
+            "role": "system",
+            "content": [],
+            "output_config": {"effort": "low"},
+        },
+        {"role": "user", "content": "Summarize it."},
+    ]
+
+
+def test__format_messages_effort_only_system_allowed_first() -> None:
+    """An effort-only system message can be the first entry in `messages`."""
+    messages = [
+        SystemMessage(
+            [],
+            additional_kwargs={"output_config": {"effort": "medium"}},
+        ),
+        HumanMessage("Review foo()."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages, model=MESSAGE_LEVEL_SYSTEM_MODEL
+    )
+    assert actual_system is None
+    assert actual_messages == [
+        {
+            "role": "system",
+            "content": [],
+            "output_config": {"effort": "medium"},
+        },
+        {"role": "user", "content": "Review foo()."},
+    ]
+
+
+def test__format_messages_preserves_turn_scoped_system_field() -> None:
+    """`clear_at` stays beside the in-place system message content."""
+    messages = [
+        HumanMessage("Run the tests."),
+        SystemMessage(
+            "Keep the update under 50 words.",
+            additional_kwargs={"clear_at": "next_user_message"},
+        ),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages, model=MESSAGE_LEVEL_SYSTEM_MODEL
+    )
+    assert actual_system is None
+    assert actual_messages == [
+        {"role": "user", "content": "Run the tests."},
+        {
+            "role": "system",
+            "content": "Keep the update under 50 words.",
+            "clear_at": "next_user_message",
+        },
+    ]
+
+
+def test__format_messages_rejects_turn_scoped_effort_message() -> None:
+    """Anthropic does not allow `output_config` on a turn-scoped message."""
+    message = SystemMessage(
+        "Be concise.",
+        additional_kwargs={
+            "clear_at": "next_user_message",
+            "output_config": {"effort": "low"},
+        },
+    )
+    with pytest.raises(ValueError, match="cannot include `output_config`"):
+        _format_messages(
+            [HumanMessage("Review foo()."), message],
+            model=MESSAGE_LEVEL_SYSTEM_MODEL,
+        )
+
+
+@pytest.mark.parametrize("order", ["effort_first", "content_first"])
+def test__format_messages_rejects_content_in_effort_only_system_group(
+    order: Literal["effort_first", "content_first"],
+) -> None:
+    """Adjacent system messages use the content-bearing placement rules as a group."""
+    effort_message = SystemMessage(
+        [],
+        additional_kwargs={"output_config": {"effort": "low"}},
+    )
+    content_message = SystemMessage("Keep the summary concise.")
+    system_messages = (
+        [content_message, effort_message]
+        if order == "content_first"
+        else [effort_message, content_message]
+    )
+    messages = [
+        HumanMessage("Plan a migration."),
+        AIMessage("Use three steps."),
+        *system_messages,
+        AIMessage("Here is the summary."),
+    ]
+
+    with pytest.raises(ValueError, match="validated as one group"):
+        _format_messages(messages, model=MESSAGE_LEVEL_SYSTEM_MODEL)
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        [
+            {
+                "type": "tool_addition",
+                "tool": {"type": "tool_reference", "name": "search"},
+            }
+        ],
+        [
+            {
+                "type": "tool_removal",
+                "tool": {"type": "tool_reference", "name": "search"},
+            }
+        ],
+    ],
+)
+def test__format_messages_rejects_tool_changes_on_turn_scoped_system(
+    content: list[str | dict[str, Any]],
+) -> None:
+    """Turn-scoped messages cannot add or remove tools."""
+    message = SystemMessage(
+        content,
+        additional_kwargs={"clear_at": "next_user_message"},
+    )
+
+    with pytest.raises(ValueError, match="text content only"):
+        _format_messages(
+            [HumanMessage("Review foo()."), message],
+            model=MESSAGE_LEVEL_SYSTEM_MODEL,
+        )
+
+
+def test__format_messages_rejects_cache_control_on_turn_scoped_system() -> None:
+    """Turn-scoped text blocks cannot carry prompt-cache breakpoints."""
+    message = SystemMessage(
+        [
+            {
+                "type": "text",
+                "text": "Keep the update under 50 words.",
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
+        additional_kwargs={"clear_at": "next_user_message"},
+    )
+
+    with pytest.raises(ValueError, match="cannot include `cache_control`"):
+        _format_messages(
+            [HumanMessage("Run the tests."), message],
+            model=MESSAGE_LEVEL_SYSTEM_MODEL,
+        )
 
 
 def test__format_messages_system_after_tool_message_sent_in_place() -> None:
@@ -3449,6 +3635,40 @@ def test_cache_control_breakpoint_lands_on_trailing_system_turn() -> None:
             },
         ],
     }
+
+
+def test_cache_control_breakpoint_skips_turn_scoped_system_turn() -> None:
+    """Bedrock cache injection walks past a turn-scoped system message."""
+    llm = _BedrockLikeAnthropic(model=MESSAGE_LEVEL_SYSTEM_MODEL)
+
+    payload = llm._get_request_payload(
+        [
+            HumanMessage("Review foo()"),
+            SystemMessage(
+                "Keep the response under 50 words.",
+                additional_kwargs={"clear_at": "next_user_message"},
+            ),
+        ],
+        cache_control={"type": "ephemeral"},
+    )
+
+    assert payload["messages"] == [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Review foo()",
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+        },
+        {
+            "role": "system",
+            "content": "Keep the response under 50 words.",
+            "clear_at": "next_user_message",
+        },
+    ]
 
 
 def test_cache_control_kwarg_bedrock_injects_into_blocks() -> None:
@@ -5697,6 +5917,8 @@ def test_no_task_budget_no_beta() -> None:
 
 _MID_CONVERSATION_TOOL_CHANGES_BETA = "mid-conversation-tool-changes-2026-07-01"
 _INLINE_TOOLS_BETA = "inline-tools-2026-09-15"
+_MID_CONVERSATION_OUTPUT_CONFIG_BETA = "mid-conversation-output-config-2026-07-01"
+_MID_CONVERSATION_SYSTEM_CLEAR_AT_BETA = "mid-conversation-system-clear-at-2026-08-21"
 _INLINE_TOOL_ADDITION_BLOCK = {
     "type": "tool_addition",
     "tool": {
@@ -5813,6 +6035,33 @@ def test_no_tool_change_block_no_beta() -> None:
         ],
     )
     assert _MID_CONVERSATION_TOOL_CHANGES_BETA not in (payload.get("betas") or [])
+
+
+def test_message_level_system_fields_auto_append_betas() -> None:
+    """Message-level system configuration enables each required beta once."""
+    model = ChatAnthropic(
+        model=MESSAGE_LEVEL_SYSTEM_MODEL,
+        betas=[_MID_CONVERSATION_OUTPUT_CONFIG_BETA],
+    )
+    payload = model._get_request_payload(
+        [
+            SystemMessage(
+                [],
+                additional_kwargs={"output_config": {"effort": "high"}},
+            ),
+            HumanMessage("Run the tests."),
+            SystemMessage(
+                "Keep the update under 50 words.",
+                additional_kwargs={"clear_at": "next_user_message"},
+            ),
+        ]
+    )
+    assert payload["messages"][0]["output_config"] == {"effort": "high"}
+    assert payload["messages"][-1]["clear_at"] == "next_user_message"
+    assert payload["betas"] == [
+        _MID_CONVERSATION_OUTPUT_CONFIG_BETA,
+        _MID_CONVERSATION_SYSTEM_CLEAR_AT_BETA,
+    ]
 
 
 def test_stripped_tool_change_block_no_beta() -> None:

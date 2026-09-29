@@ -373,6 +373,12 @@ def _merge_messages(
         if any(
             all(isinstance(m, c) for m in (curr, last))
             for c in (SystemMessage, HumanMessage)
+        ) and not (
+            isinstance(curr, SystemMessage)
+            and (
+                _message_level_system_fields(curr)
+                or _message_level_system_fields(cast("SystemMessage", last))
+            )
         ):
             if isinstance(cast("BaseMessage", last).content, str):
                 new_content: list = [
@@ -548,6 +554,57 @@ _MID_CONVERSATION_TOOL_CHANGES_BETA = "mid-conversation-tool-changes-2026-07-01"
 _INLINE_TOOLS_BETA = "inline-tools-2026-09-15"
 """Beta header required to define a tool in a `tool_addition` block."""
 
+_MID_CONVERSATION_OUTPUT_CONFIG_BETA = "mid-conversation-output-config-2026-07-01"
+"""Beta header required for per-message effort changes."""
+
+_MID_CONVERSATION_SYSTEM_CLEAR_AT_BETA = "mid-conversation-system-clear-at-2026-08-21"
+"""Beta header required for turn-scoped system messages."""
+
+
+def _message_level_system_fields(message: SystemMessage) -> dict[str, Any]:
+    """Return Anthropic fields that live beside a system message's content."""
+    fields = {
+        key: message.additional_kwargs[key]
+        for key in ("clear_at", "output_config")
+        if message.additional_kwargs.get(key) is not None
+    }
+    if fields.get("clear_at") == "next_user_message" and "output_config" in fields:
+        msg = (
+            "Anthropic turn-scoped system messages cannot include `output_config`; "
+            "send separate `SystemMessage` instances instead."
+        )
+        raise ValueError(msg)
+    if fields.get("clear_at") == "next_user_message" and isinstance(
+        message.content, list
+    ):
+        for raw_block in message.content:
+            if not isinstance(raw_block, (str, dict)):
+                msg = "Anthropic turn-scoped system messages support text content only."
+                raise ValueError(msg)
+            if isinstance(raw_block, str):
+                continue
+            block = _unwrap_non_standard(raw_block)
+            if block.get("type") != "text":
+                msg = (
+                    "Anthropic turn-scoped system messages support text content "
+                    "only; send tool changes in a separate `SystemMessage`."
+                )
+                raise ValueError(msg)
+            if "cache_control" in block:
+                msg = (
+                    "Anthropic turn-scoped system messages cannot include "
+                    "`cache_control`."
+                )
+                raise ValueError(msg)
+    return fields
+
+
+def _is_effort_only_system_message(message: SystemMessage) -> bool:
+    """Return whether a system message only changes per-message effort."""
+    return message.content == [] and "output_config" in _message_level_system_fields(
+        message
+    )
+
 
 def _is_tool_change_block(block: object) -> bool:
     """Return whether a content block changes the tool set, in either spelling."""
@@ -686,9 +743,9 @@ def _format_in_place_system_messages(
 ) -> list[dict]:
     """Format system messages that keep their position in the message array.
 
-    A message whose content is narrowed away entirely is omitted: Anthropic
-    rejects a `system` turn with empty content, and the dropped blocks have
-    already been warned about.
+    A message whose content is narrowed away entirely is omitted unless it
+    carries message-level `output_config`: Anthropic accepts empty content for
+    an effort-only system message, but rejects other empty system turns.
 
     Args:
         pending_system: System messages awaiting emission, in order.
@@ -699,6 +756,7 @@ def _format_in_place_system_messages(
     """
     turns: list[dict] = []
     for pending in pending_system:
+        message_fields = _message_level_system_fields(cast("SystemMessage", pending))
         content = _format_system_content(
             pending.content,
             model=model,
@@ -706,9 +764,9 @@ def _format_in_place_system_messages(
             # This helper sits between `_format_messages` and the warning site.
             stacklevel=4,
         )
-        if content == []:
+        if content == [] and "output_config" not in message_fields:
             continue
-        turns.append({"role": "system", "content": content})
+        turns.append({"role": "system", "content": content, **message_fields})
     return turns
 
 
@@ -728,21 +786,49 @@ def _format_messages(
     pending_system: list[BaseMessage] = []
     for _i, message in enumerate(merged_messages):
         if message.type == "system":
-            if _i == 0:
+            system_message = cast("SystemMessage", message)
+            message_fields = _message_level_system_fields(system_message)
+            if _i == 0 and not message_fields:
                 system = _format_system_content(
                     message.content,
                     model=model,
                     preserve_tool_changes=True,
                 )
                 continue
+            system_group = [*pending_system]
+            for candidate in merged_messages[_i:]:
+                if candidate.type != "system":
+                    break
+                system_group.append(candidate)
+            previous_turn_allows_system = _previous_turn_allows_system(
+                formatted_messages[-1] if formatted_messages else None
+            )
+            system_group_is_effort_only = all(
+                _is_effort_only_system_message(cast("SystemMessage", pending))
+                for pending in system_group
+            )
             if _supports_mid_conversation_system_messages(model) and (
-                pending_system
-                or _previous_turn_allows_system(
-                    formatted_messages[-1] if formatted_messages else None
-                )
+                previous_turn_allows_system or system_group_is_effort_only
             ):
                 pending_system.append(message)
                 continue
+            if len(system_group) > 1 and any(
+                _message_level_system_fields(cast("SystemMessage", pending))
+                for pending in system_group
+            ):
+                msg = (
+                    "Consecutive Anthropic system messages are validated as one "
+                    "group. A group containing content must follow a user turn or "
+                    "an assistant turn ending in a server tool result."
+                )
+                raise ValueError(msg)
+            if message_fields:
+                msg = (
+                    "Anthropic message-level `output_config` and `clear_at` fields "
+                    "require a model and position that support mid-conversation "
+                    f"system messages (model: {model!r})."
+                )
+                raise ValueError(msg)
             if system is not None:
                 msg = "Received multiple non-consecutive system messages."
                 raise ValueError(msg)
@@ -1024,11 +1110,24 @@ def _format_messages(
             # non-empty content except for the optional final assistant message
             continue
         if pending_system:
-            if role == "assistant":
+            if role == "assistant" or all(
+                _is_effort_only_system_message(cast("SystemMessage", pending))
+                for pending in pending_system
+            ):
                 formatted_messages.extend(
                     _format_in_place_system_messages(pending_system, model=model)
                 )
             else:
+                if any(
+                    _message_level_system_fields(cast("SystemMessage", pending))
+                    for pending in pending_system
+                ):
+                    msg = (
+                        "Anthropic system messages with `output_config` or `clear_at` "
+                        "cannot be moved to the top-level `system` field; place "
+                        "content-bearing messages before an assistant turn."
+                    )
+                    raise ValueError(msg)
                 for pending in pending_system:
                     if system is not None:
                         msg = "Received multiple non-consecutive system messages."
@@ -1136,6 +1235,7 @@ def _supports_mid_conversation_system_messages(model: object) -> bool:
             "claude-mythos-5",
             "claude-opus-4-8",
             "claude-opus-5",
+            "claude-sonnet-5-5",
         )
     )
 
@@ -1167,15 +1267,20 @@ def _apply_cache_control_to_last_eligible_block(
     """Place `cache_control` on the last block eligible for a breakpoint.
 
     Walks messages newest-to-oldest and, within each, blocks newest-to-oldest,
-    skipping `code_execution`-related blocks (Anthropic rejects breakpoints
-    there). String message content is promoted to a single text block so the
-    breakpoint can be attached.
+    skipping turn-scoped system messages and `code_execution`-related blocks
+    (Anthropic rejects breakpoints there). String message content is promoted
+    to a single text block so the breakpoint can be attached.
 
     Returns:
         `True` if a breakpoint was applied, `False` if every candidate was
-            `code_execution`-related (caller should warn and drop the kwarg).
+            ineligible (caller should warn and drop the kwarg).
     """
     for formatted_message in reversed(formatted_messages):
+        if (
+            formatted_message.get("role") == "system"
+            and formatted_message.get("clear_at") == "next_user_message"
+        ):
+            continue
         content = formatted_message.get("content")
         if isinstance(content, list) and content:
             for block in reversed(content):
@@ -1907,9 +2012,9 @@ class ChatAnthropic(BaseChatModel):
                 if not applied:
                     warnings.warn(
                         "`cache_control` kwarg was dropped: no eligible "
-                        "content block found (all candidates are "
-                        "`code_execution`-related, which Anthropic forbids "
-                        "breakpoints on).",
+                        "content block found (Anthropic forbids breakpoints on "
+                        "turn-scoped system messages and `code_execution`-related "
+                        "blocks).",
                         UserWarning,
                         stacklevel=2,
                     )
@@ -2134,6 +2239,21 @@ class ChatAnthropic(BaseChatModel):
         )
         if tool_change_beta and tool_change_beta not in explicit_betas:
             payload["betas"] = [*explicit_betas, tool_change_beta]
+
+        system_messages = [
+            message
+            for message in (payload.get("messages") or [])
+            if message.get("role") == "system"
+        ]
+        required_system_betas: list[str] = []
+        if any("output_config" in message for message in system_messages):
+            required_system_betas.append(_MID_CONVERSATION_OUTPUT_CONFIG_BETA)
+        if any("clear_at" in message for message in system_messages):
+            required_system_betas.append(_MID_CONVERSATION_SYSTEM_CLEAR_AT_BETA)
+        for required_beta in required_system_betas:
+            current_betas = payload.get("betas") or []
+            if required_beta not in current_betas:
+                payload["betas"] = [*current_betas, required_beta]
 
         # Auto-append required beta for user_profile_id
         if payload.get("user_profile_id"):
