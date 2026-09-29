@@ -116,3 +116,22 @@ def test_generate_streaming_multiple_prompts_error() -> None:
         ValueError, match="Cannot stream results with multiple prompts\\."
     ):
         llm._generate(["foo", "bar"])
+
+
+def test_openai_streaming_best_of_error() -> None:
+    with pytest.raises(ValueError):
+        OpenAI(best_of=2, streaming=True)
+
+
+def test_openai_streaming_n_error() -> None:
+    with pytest.raises(ValueError):
+        OpenAI(n=2, streaming=True)
+
+
+def test_openai_modelname_to_contextsize_valid() -> None:
+    assert OpenAI().modelname_to_contextsize("davinci") == 2049
+
+
+def test_openai_modelname_to_contextsize_invalid() -> None:
+    with pytest.raises(ValueError):
+        OpenAI().modelname_to_contextsize("foobar")
