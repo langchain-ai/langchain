@@ -657,6 +657,10 @@ class OpenAIInvalidRequestError(openai.BadRequestError, ModelInvalidRequestError
     """OpenAI bad-request error classified as a LangChain model error."""
 
 
+class _UnsupportedParameterError(ValueError, ModelInvalidRequestError):
+    """Request parameter known to be rejected by the model, raised before sending."""
+
+
 class OpenAIModelNotFoundError(openai.NotFoundError, ModelNotFoundError):
     """OpenAI not-found error classified as a LangChain model error."""
 
@@ -773,6 +777,11 @@ def _model_prefers_responses_api(model_name: str | None) -> bool:
     if not model_name:
         return False
     return model_name.startswith(_RESPONSES_API_ONLY_PREFIXES) or "codex" in model_name
+
+
+# Models (and their dated snapshots) that reject `stop` on Chat Completions, per
+# the OpenAI API reference. Other o-series models such as o3-mini still accept it.
+_STOP_UNSUPPORTED_MODEL_PATTERN = re.compile(r"^(o3|o4-mini)(-\d{4}-\d{2}-\d{2})?$")
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -3836,6 +3845,20 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             for message in payload.get("messages", []):
                 if message["role"] == "system":
                     message["role"] = "developer"
+
+        # Chat Completions rejects `stop` for o3 and o4-mini with an HTTP 400.
+        # Fail locally rather than silently dropping the requested stop condition.
+        model = payload.get("model") or ""
+        if (
+            "messages" in payload
+            and payload.get("stop")
+            and _STOP_UNSUPPORTED_MODEL_PATTERN.match(model)
+        ):
+            msg = (
+                f"The `stop` parameter is not supported by model '{model}' on the "
+                "Chat Completions API. Remove `stop` or use a model that supports it."
+            )
+            raise _UnsupportedParameterError(msg)
         return payload
 
     def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:

@@ -1745,6 +1745,37 @@ def test_init_o1() -> None:
     assert len(record) == 0
 
 
+@pytest.mark.parametrize("model", ["o3", "o4-mini", "o3-2025-04-16"])
+def test_stop_rejected_for_unsupported_models(model: str) -> None:
+    # Set on the constructor
+    llm = ChatOpenAI(model=model, stop=["<END>"], use_responses_api=False)  # type: ignore[call-arg]
+    with pytest.raises(ValueError, match="`stop` parameter is not supported"):
+        llm._get_request_payload("hello")
+
+    # Passed at call time; also catchable as the provider-agnostic 400 error
+    llm = ChatOpenAI(model=model, use_responses_api=False)
+    with pytest.raises(
+        ModelInvalidRequestError, match="`stop` parameter is not supported"
+    ):
+        llm._get_request_payload("hello", stop=["<END>"])
+
+
+@pytest.mark.parametrize("model", ["o3", "o4-mini"])
+@pytest.mark.parametrize("stop", [None, []])
+def test_empty_stop_allowed_for_unsupported_models(
+    model: str, stop: list[str] | None
+) -> None:
+    llm = ChatOpenAI(model=model, use_responses_api=False)
+    payload = llm._get_request_payload("hello", stop=stop)
+    assert not payload.get("stop")
+
+
+@pytest.mark.parametrize("model", ["gpt-4o", "o3-mini", "o1"])
+def test_stop_allowed_for_supported_models(model: str) -> None:
+    llm = ChatOpenAI(model=model, stop=["<END>"], use_responses_api=False)  # type: ignore[call-arg]
+    assert llm._get_request_payload("hello")["stop"] == ["<END>"]
+
+
 def test_init_minimal_reasoning_effort() -> None:
     with warnings.catch_warnings(record=True) as record:
         warnings.simplefilter("error")
