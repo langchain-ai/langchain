@@ -9,6 +9,7 @@ serving server's identity under `mcp.server`.
 
 from __future__ import annotations
 
+from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Protocol, TypedDict
 
 from fastmcp.client.group import ClientGroup
@@ -248,6 +249,18 @@ def _normalize_mcp_schema(schema: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
+_mcp_arguments_var: ContextVar[dict[str, Any]] = ContextVar("_mcp_arguments_var")
+"""Per-task storage for the raw MCP argument dict.
+
+Using a `ContextVar` rather than an instance attribute avoids a race condition:
+if the same `_MCPStructuredTool` object is invoked concurrently (two agent
+steps in the same event loop), an instance attribute set in `arun` could be
+overwritten by a second call before `_arun` reads it. `ContextVar` values are
+isolated per asyncio `Task`, so each concurrent invocation sees only its own
+arguments regardless of how many tasks share the tool object.
+"""
+
+
 class _MCPStructuredTool(StructuredTool):
     """A `StructuredTool` subclass that preserves all MCP argument names.
 
@@ -260,15 +273,11 @@ class _MCPStructuredTool(StructuredTool):
     stripped by `BaseTool.arun` via `FILTERED_ARGS`.
 
     This subclass sidesteps both issues by capturing the raw, unfiltered argument
-    dict from the tool call input before LangChain can strip reserved names, then
-    forwarding it directly to the MCP coroutine in `_arun`.
+    dict into a `ContextVar` before LangChain can strip reserved names, then
+    forwarding it directly to the MCP coroutine in `_arun`. The `ContextVar`
+    approach ensures concurrent invocations of the same tool object each see
+    their own argument dict, with no shared mutable state between tasks.
     """
-
-    # Populated by `arun` immediately before `_arun` is called, and consumed
-    # by `_arun`.  Safe under concurrent async use because each coroutine
-    # invocation has its own call frame; not safe for concurrent sync use, but
-    # `_arun` is always async for MCP tools.
-    _mcp_arguments: dict[str, Any]
 
     async def _arun(
         self,
@@ -282,8 +291,9 @@ class _MCPStructuredTool(StructuredTool):
         `config` and `run_manager` are shadowed here so Python does not extract
         them from `**kwargs` — they are LangChain-internal controls, not schema
         arguments, even when an MCP tool's schema declares those names.  The
-        schema-valid values the caller passed arrive via `_mcp_arguments`, which
-        is populated by the `arun` override before this method is called.
+        schema-valid values the caller passed arrive via `_mcp_arguments_var`,
+        which is set in the `arun` override before this method is called and is
+        isolated per asyncio task.
 
         Args:
             *args: Positional arguments (unused for MCP tools).
@@ -292,10 +302,10 @@ class _MCPStructuredTool(StructuredTool):
             run_manager: LangChain callback manager — shadowed and intentionally
                 not forwarded to the MCP server.
             **kwargs: Remaining keyword arguments after LangChain's internal
-                filtering; not forwarded directly (use `_mcp_arguments`).
+                filtering; not forwarded directly (use `_mcp_arguments_var`).
         """
         if self.coroutine:
-            return await self.coroutine(**self._mcp_arguments)
+            return await self.coroutine(**_mcp_arguments_var.get())
         msg = "_MCPStructuredTool requires a coroutine"
         raise NotImplementedError(msg)
 
@@ -308,11 +318,12 @@ class _MCPStructuredTool(StructuredTool):
     ) -> Any:
         """Capture the raw MCP arguments before LangChain strips reserved names.
 
-        Parses `tool_input` into a plain dict and stores it in `_mcp_arguments`
-        before delegating to `BaseTool.arun`.  By the time `_arun` is called,
-        the complete argument mapping — including any key named `config`,
-        `run_manager`, or `callbacks` — is available in `_mcp_arguments` and is
-        forwarded to the MCP server unchanged.
+        Parses `tool_input` into a plain dict and stores it in
+        `_mcp_arguments_var` (a `ContextVar` isolated per asyncio task) before
+        delegating to `BaseTool.arun`.  By the time `_arun` is called, the
+        complete argument mapping — including any key named `config`,
+        `run_manager`, or `callbacks` — is available and is forwarded to the
+        MCP server unchanged, with no risk of cross-task contamination.
 
         Args:
             tool_input: The raw tool call input, either a dict of arguments or a
@@ -321,12 +332,12 @@ class _MCPStructuredTool(StructuredTool):
             **kwargs: Additional keyword arguments forwarded to `BaseTool.arun`.
         """
         if isinstance(tool_input, dict):
-            self._mcp_arguments = dict(tool_input)
+            _mcp_arguments_var.set(dict(tool_input))
         else:
             # String input is the degenerate single-argument case; store an
             # empty dict so `_arun` doesn't crash — the base class handles the
             # actual validation and will invoke `_arun` with the parsed value.
-            self._mcp_arguments = {}
+            _mcp_arguments_var.set({})
         return await super().arun(tool_input, config=config, **kwargs)
 
 
