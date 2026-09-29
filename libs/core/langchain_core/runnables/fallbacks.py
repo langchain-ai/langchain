@@ -185,13 +185,14 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         last_error = None
         for runnable in self.runnables:
             try:
+                call_input = input
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error  # type: ignore[index]
+                    call_input = {**input, self.exception_key: last_error}
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     output = context.run(
                         runnable.invoke,
-                        input,
+                        call_input,
                         config,
                         **kwargs,
                     )
@@ -239,11 +240,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         last_error = None
         for runnable in self.runnables:
             try:
+                call_input = input
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error  # type: ignore[index]
+                    call_input = {**input, self.exception_key: last_error}
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
-                    coro = context.run(runnable.ainvoke, input, config, **kwargs)
+                    coro = context.run(runnable.ainvoke, call_input, config, **kwargs)
                     output = await coro_with_context(coro, context)
             except self.exceptions_to_handle as e:
                 if first_error is None:
@@ -337,7 +339,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
-                        input_[self.exception_key] = output  # type: ignore[index]
+                        input_ = {**input_, self.exception_key: output}
+                        run_again[i] = input_
                     handled_exceptions[i] = output
                 else:
                     run_managers[i].on_chain_end(output)
@@ -436,7 +439,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     run_again.pop(i)
                 elif isinstance(output, self.exceptions_to_handle):
                     if self.exception_key:
-                        input_[self.exception_key] = output  # type: ignore[index]
+                        input_ = {**input_, self.exception_key: output}
+                        run_again[i] = input_
                     handled_exceptions[i] = output
                 else:
                     to_return[i] = output
@@ -488,13 +492,14 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         last_error = None
         for runnable in self.runnables:
             try:
+                call_input = input
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error  # type: ignore[index]
+                    call_input = {**input, self.exception_key: last_error}
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     stream = context.run(
                         runnable.stream,
-                        input,
+                        call_input,
                         **kwargs,
                     )
                     chunk: Output = context.run(next, stream)
@@ -552,12 +557,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         last_error = None
         for runnable in self.runnables:
             try:
+                call_input = input
                 if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error  # type: ignore[index]
+                    call_input = {**input, self.exception_key: last_error}
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     stream = runnable.astream(
-                        input,
+                        call_input,
                         child_config,
                         **kwargs,
                     )
