@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f5b86fe09bd49f31bc1929d54555fd33fa711f407d39ba3e6f9868c0dfb6d2f8",
+  "pageVersion": "sha256:adec3cd933f5d85a378acc68a23f5f2251c4fbdd90ad0cb72dbb7b21df531c03",
   "claims": [
     {
       "id": "claim_c71edae5b0f64c8fa79c17ef1aca0f6b",
@@ -168,13 +168,13 @@
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml",
-          "version": "repo-file-v1:sha256:6dc328e210676ab7f09e455da9f7e578d9d2b5623f51f82dd962b79eea44e290"
+          "version": "repo-file-v1:sha256:7d66e582e815b6daed6df16445381ec6ff42b79855878c50207fb7a010f53203"
         }
       ]
     },
     {
       "id": "claim_458d709b604149fa8fb9639025882358",
-      "statement": "LangChain uses a three-layer architecture: langchain-core (v1.6.5) for base abstractions, langchain (v1.4.2) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
+      "statement": "LangChain uses a three-layer architecture: langchain-core (v1.6.5) for base abstractions, langchain (v1.4.3) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
       "evidence": [
         {
           "resource": "repo://libs/core/pyproject.toml",
@@ -182,13 +182,13 @@
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml",
-          "version": "repo-file-v1:sha256:6dc328e210676ab7f09e455da9f7e578d9d2b5623f51f82dd962b79eea44e290"
+          "version": "repo-file-v1:sha256:7d66e582e815b6daed6df16445381ec6ff42b79855878c50207fb7a010f53203"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-28T08:35:20.640Z"
+    "at": "2026-09-29T08:28:34.635Z"
   }
 }
