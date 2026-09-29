@@ -80,7 +80,8 @@ async def test_text_result_becomes_content_blocks_and_structured_artifact() -> N
     )
 
     assert _blocks_without_ids(message.content) == [{"type": "text", "text": "3"}]
-    assert message.artifact == {"structured_content": {"result": 3}}
+    assert message.artifact is not None
+    assert message.artifact["structured_content"] == {"result": 3}
     assert message.status == "success"
 
 
@@ -141,6 +142,37 @@ def test_result_without_structured_content_has_no_artifact() -> None:
 
     assert [block["text"] for block in content if block["type"] == "text"] == ["hello"]
     assert artifact is None
+
+
+def test_result_meta_is_preserved_in_artifact() -> None:
+    """Result-level `_meta` must survive conversion and appear in the artifact."""
+    content, artifact = _convert_call_tool_result(
+        CallToolResult(
+            content=[TextContent(type="text", text="ok")],
+            structured_content=None,
+            meta={"trace_id": "abc123", "duration_ms": 42},
+        )
+    )
+
+    assert artifact is not None
+    assert artifact["meta"] == {"trace_id": "abc123", "duration_ms": 42}
+    # No structured_content was returned, so that key must be absent.
+    assert "structured_content" not in artifact
+
+
+def test_result_meta_and_structured_content_coexist_in_artifact() -> None:
+    """When both `_meta` and `structuredContent` are present, both are kept."""
+    content, artifact = _convert_call_tool_result(
+        CallToolResult(
+            content=[TextContent(type="text", text="42")],
+            structured_content={"result": 42},
+            meta={"trace_id": "xyz"},
+        )
+    )
+
+    assert artifact is not None
+    assert artifact["structured_content"] == {"result": 42}
+    assert artifact["meta"] == {"trace_id": "xyz"}
 
 
 @pytest.mark.asyncio

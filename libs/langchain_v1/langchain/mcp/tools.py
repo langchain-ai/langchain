@@ -50,6 +50,7 @@ class _ToolCallResult(Protocol):
 
     content: list[ContentBlock]
     structured_content: dict[str, Any] | None
+    meta: dict[str, Any] | None
     is_error: bool
 
 
@@ -57,17 +58,23 @@ ToolMessageContentBlock = TextContentBlock | ImageContentBlock | FileContentBloc
 """LangChain content blocks an MCP tool result can convert into."""
 
 
-class MCPToolArtifact(TypedDict):
+class MCPToolArtifact(TypedDict, total=False):
     """Artifact attached to the `ToolMessage` produced by an MCP tool call.
 
-    Wrapping the structured content in a `TypedDict` leaves room for further
-    MCP result fields without changing the artifact's shape.
+    Wrapping the MCP result fields in a `TypedDict` leaves room to add further
+    fields without changing the artifact's shape.
 
     Attributes:
         structured_content: The `structuredContent` of the MCP tool result.
+            Only present when the server returned structured content.
+        meta: The result-level `_meta` field from the MCP response, carrying
+            per-invocation metadata the server chose to attach (trace IDs,
+            timing, custom annotations, …). Only present when the server
+            returned a non-`None` `_meta` value.
     """
 
     structured_content: Any
+    meta: dict[str, Any]
 
 
 def _summarize_tool_error(tool_content: list[ToolMessageContentBlock]) -> str:
@@ -169,15 +176,24 @@ def _convert_content_block(content: ContentBlock) -> ToolMessageContentBlock:
 def _convert_call_tool_result(
     result: _ToolCallResult,
 ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
-    """Split an MCP tool result into model-visible content and an artifact."""
+    """Split an MCP tool result into model-visible content and an artifact.
+
+    Both `structuredContent` and the result-level `_meta` field are preserved
+    in the artifact so callers can access per-invocation server metadata (trace
+    IDs, timing, custom annotations, …) alongside the structured output.
+    """
     tool_content = [_convert_content_block(block) for block in result.content]
 
     if result.is_error:
         raise _MCPToolExecutionError(tool_content)
 
     artifact: MCPToolArtifact | None = None
-    if result.structured_content is not None:
-        artifact = MCPToolArtifact(structured_content=result.structured_content)
+    if result.structured_content is not None or result.meta is not None:
+        artifact = MCPToolArtifact()
+        if result.structured_content is not None:
+            artifact["structured_content"] = result.structured_content
+        if result.meta is not None:
+            artifact["meta"] = result.meta
     return tool_content, artifact
 
 
