@@ -307,3 +307,81 @@ def test_an_unknown_embedded_resource_type_names_itself() -> None:
 
     with pytest.raises(ValueError, match="Unknown embedded resource type: _VideoResource"):
         _convert_content_block(embedded)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "reserved_name",
+    ["config", "run_manager", "callbacks"],
+    ids=["config", "run_manager", "callbacks"],
+)
+async def test_mcp_tool_argument_named_like_langchain_internal_reaches_server(
+    reserved_name: str,
+) -> None:
+    """MCP tool args that share a name with a LangChain internal must reach the server.
+
+    `StructuredTool._arun` has `config: RunnableConfig` and `run_manager:
+    AsyncCallbackManagerForToolRun` as explicit named parameters, so Python's
+    positional matching would consume any argument named `config` before it
+    reaches `**kwargs`.  `BaseTool.arun` also strips `run_manager` and
+    `callbacks` via ``FILTERED_ARGS``.
+
+    `_MCPStructuredTool` sidesteps both by capturing the raw argument dict
+    before LangChain's machinery can filter it and forwarding it directly to the
+    MCP coroutine.  This test drives all three reserved names through an
+    in-process server and asserts the value arrives unchanged.
+    """
+    server: FastMCP[None] = FastMCP("reserved-args")
+    received: dict[str, Any] = {}
+
+    # Build a schema with a single argument whose name is the reserved word
+    # under test.  FastMCP infers the schema from the function signature, so we
+    # use **kwargs and an explicit `inputSchema` override is not needed — the
+    # single `str` parameter is enough.
+    if reserved_name == "config":
+
+        @server.tool
+        def echo_config(config: str) -> str:  # type: ignore[misc]
+            """Echo the config argument."""
+            received["config"] = config
+            return config
+
+    elif reserved_name == "run_manager":
+
+        @server.tool
+        def echo_run_manager(run_manager: str) -> str:  # type: ignore[misc]
+            """Echo the run_manager argument."""
+            received["run_manager"] = run_manager
+            return run_manager
+
+    else:
+
+        @server.tool
+        def echo_callbacks(callbacks: str) -> str:  # type: ignore[misc]
+            """Echo the callbacks argument."""
+            received["callbacks"] = callbacks
+            return callbacks
+
+    tool, _ = await _one_tool(server)
+
+    sentinel = f"sentinel-value-for-{reserved_name}"
+    message = await tool.ainvoke(
+        {
+            "name": tool.name,
+            "args": {reserved_name: sentinel},
+            "id": "call-reserved",
+            "type": "tool_call",
+        }
+    )
+
+    # The server received the argument and echoed it back.
+    assert received.get(reserved_name) == sentinel, (
+        f"MCP tool argument '{reserved_name}' was consumed by LangChain before "
+        f"reaching the server. Got received={received!r}"
+    )
+    assert message.status == "success"
+    assert any(
+        block.get("text") == sentinel
+        for block in _blocks_without_ids(message.content)
+        if block.get("type") == "text"
+    )
