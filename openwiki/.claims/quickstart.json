@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a1b4253867586e85c529d4961fc134ccff5dddf2074dfef2da93497018b5fe1f",
+  "pageVersion": "sha256:6585fb7a1172592cbaf6a865841096f09424e36447d24d244974094163c16746",
   "claims": [
     {
       "id": "claim_7425c73f5e4c4667b8babba66c3663a0",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/__init__.py",
-          "version": "repo-file-v1:sha256:e7680a85a05a3ad8ed60341318de40d8d22e7981cb927d4e6a01c6b934ae61a7"
+          "version": "repo-file-v1:sha256:56c4a355b80b98c270b27051036f19ab2b81c58fdecbc1539f76b4ad7a92ff6d"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
@@ -183,6 +183,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-28T08:35:20.640Z"
+    "at": "2026-09-29T08:28:34.635Z"
   }
 }

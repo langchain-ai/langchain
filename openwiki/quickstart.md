@@ -3,6 +3,9 @@ type: "Getting Started"
 title: "LangChain Repository Quick Start"
 description: "Entry point for engineers: orient to the monorepo structure, run first tests, understand what to edit for common tasks, and route to major development areas."
 tags: [quickstart, getting-started, monorepo, setup, development, first-steps, cli-reference]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-29T08:28:34.635Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
@@ -40,10 +43,7 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-48ce5ee900993294d349b4e8
     resource: repo://libs/standard-tests/langchain_tests/__init__.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+generated: { by: "openwiki/0.5.0", at: "2026-09-29T08:28:34.635Z" }
 ---
 
 ## Welcome to LangChain Development
@@ -60,8 +60,8 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 ```
 /libs/
-├── core/              # langchain-core: Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
-├── langchain_v1/      # langchain: Agent orchestration, factory, middleware
+├── core/              # langchain-core (v1.6.5): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
+├── langchain_v1/      # langchain (v1.4.3): Agent orchestration, factory, middleware
 ├── partners/          # Provider-specific integrations (OpenAI, Anthropic, Ollama, etc.)
 ├── standard-tests/    # Shared test suites for component conformance
 ├── text-splitters/    # Text splitting utilities
@@ -71,8 +71,8 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 ### When to Edit Each Layer
 
-| Layer | Edit when you are... | Key files |
-|-------|----------------------|-----------|
+| Layer | Edit when you are… | Key files |
+|-------|-----|-----------|
 | **core** | Adding or modifying base abstractions and core interfaces: `Runnable`, `BaseChatModel`, messages, tools, prompts, callbacks, output parsers. | `libs/core/langchain_core/` |
 | **langchain_v1** | Building agent factory features (`create_agent`), middleware composition, model initialization (`init_chat_model`), or high-level orchestration. | `libs/langchain_v1/langchain/agents/factory.py`, `libs/langchain_v1/langchain/chat_models/base.py` |
 | **partners/{name}** | Adding a new LLM provider (OpenAI, Anthropic, etc.), implementing `ChatModel`, handling message conversion, or adding provider-specific features (streaming, tool calling, structured output). | `libs/partners/{provider}/langchain_{provider}/chat_models/base.py` |
