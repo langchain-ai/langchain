@@ -39,14 +39,22 @@ def _dict_int_op(
         raise ValueError(msg)
     combined: dict[str, Any] = {}
     for k in set(left).union(right):
-        if isinstance(left.get(k, default), int) and isinstance(
-            right.get(k, default), int
+        left_val = left.get(k)
+        right_val = right.get(k)
+
+        if (isinstance(left_val, int) or left_val is None) and (
+            isinstance(right_val, int) or right_val is None
         ):
-            combined[k] = op(left.get(k, default), right.get(k, default))
-        elif isinstance(left.get(k, {}), dict) and isinstance(right.get(k, {}), dict):
+            combined[k] = op(
+                left_val if left_val is not None else default,
+                right_val if right_val is not None else default,
+            )
+        elif (isinstance(left_val, dict) or left_val is None) and (
+            isinstance(right_val, dict) or right_val is None
+        ):
             combined[k] = _dict_int_op(
-                left.get(k, {}),
-                right.get(k, {}),
+                left_val if isinstance(left_val, dict) else {},
+                right_val if isinstance(right_val, dict) else {},
                 op,
                 default=default,
                 depth=depth + 1,

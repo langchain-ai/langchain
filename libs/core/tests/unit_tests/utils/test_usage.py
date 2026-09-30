@@ -35,6 +35,13 @@ def test_dict_int_op_max_depth_exceeded() -> None:
         _dict_int_op(left, right, operator.add, max_depth=2)
 
 
+def test_dict_int_op_none_values() -> None:
+    left = {"a": 1, "b": None, "details": {"cache": 5, "miss": None}}
+    right = {"b": 3, "c": None, "details": None}
+    result = _dict_int_op(left, right, operator.add)
+    assert result == {"a": 1, "b": 3, "c": 0, "details": {"cache": 5, "miss": 0}}
+
+
 def test_dict_int_op_invalid_types() -> None:
     left = {"a": 1, "b": "string"}
     right = {"a": 2, "b": 3}
