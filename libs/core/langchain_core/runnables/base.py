@@ -4229,7 +4229,8 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
             steps = dict(self.steps__)
-            results = await asyncio.gather(
+            results = await gather_with_concurrency(
+                config.get("max_concurrency"),
                 *(
                     _ainvoke_step(
                         step,
@@ -4239,7 +4240,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                         key,
                     )
                     for key, step in steps.items()
-                )
+                ),
             )
             output = dict(zip(steps, results, strict=False))
         # finish the root run
@@ -4341,8 +4342,20 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             for name, step in steps.items()
         ]
 
+        # Limit how many branches produce output concurrently when the caller sets
+        # max_concurrency, mirroring the sync path's use of get_executor_for_config.
+        max_concurrency = config.get("max_concurrency")
+        semaphore = (
+            asyncio.Semaphore(max_concurrency) if max_concurrency is not None else None
+        )
+
         # Wrap in a coroutine to satisfy linter
         async def get_next_chunk(generator: AsyncIterator[Any]) -> Output | None:
+            # Hold the semaphore only while pulling one chunk, so other branches
+            # can interleave between chunks of the same branch.
+            if semaphore is not None:
+                async with semaphore:
+                    return await anext(generator)
             return await anext(generator)
 
         # Start the first iteration of each generator

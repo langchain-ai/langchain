@@ -7,7 +7,85 @@ from typing import Any
 
 import pytest
 
-from langchain_core.runnables import RunnableConfig, RunnableLambda
+from langchain_core.runnables import RunnableConfig, RunnableLambda, RunnableParallel
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_concurrency_of_parallel_steps() -> None:
+    """Test that `RunnableParallel.ainvoke` respects `max_concurrency`."""
+    running_tasks = 0
+    max_running_tasks = 0
+    lock = asyncio.Lock()
+
+    async def tracked_function(x: Any) -> str:
+        nonlocal running_tasks, max_running_tasks
+        async with lock:
+            running_tasks += 1
+            max_running_tasks = max(max_running_tasks, running_tasks)
+
+        await asyncio.sleep(0.05)  # Simulate work
+
+        async with lock:
+            running_tasks -= 1
+
+        return f"Completed {x}"
+
+    parallel = RunnableParallel(
+        alpha=RunnableLambda(tracked_function),
+        beta=RunnableLambda(tracked_function),
+        gamma=RunnableLambda(tracked_function),
+        delta=RunnableLambda(tracked_function),
+    )
+
+    config = RunnableConfig(max_concurrency=1)
+    results = await parallel.ainvoke(0, config=config)
+
+    assert results == {
+        "alpha": "Completed 0",
+        "beta": "Completed 0",
+        "gamma": "Completed 0",
+        "delta": "Completed 0",
+    }
+    assert max_running_tasks <= 1
+
+
+@pytest.mark.asyncio
+async def test_astream_concurrency_of_parallel_steps() -> None:
+    """Test that `RunnableParallel.astream` respects `max_concurrency`."""
+    running_tasks = 0
+    max_running_tasks = 0
+    lock = asyncio.Lock()
+
+    async def tracked_function(x: Any) -> str:
+        nonlocal running_tasks, max_running_tasks
+        async with lock:
+            running_tasks += 1
+            max_running_tasks = max(max_running_tasks, running_tasks)
+
+        await asyncio.sleep(0.05)  # Simulate work
+
+        async with lock:
+            running_tasks -= 1
+
+        return f"Completed {x}"
+
+    parallel = RunnableParallel(
+        alpha=RunnableLambda(tracked_function),
+        beta=RunnableLambda(tracked_function),
+        gamma=RunnableLambda(tracked_function),
+        delta=RunnableLambda(tracked_function),
+    )
+
+    config = RunnableConfig(max_concurrency=1)
+    chunks = [chunk async for chunk in parallel.astream(0, config=config)]
+
+    assert chunks == [
+        {"alpha": "Completed 0"},
+        {"beta": "Completed 0"},
+        {"gamma": "Completed 0"},
+        {"delta": "Completed 0"},
+    ]
+    assert max_running_tasks <= 1
 
 
 @pytest.mark.asyncio
