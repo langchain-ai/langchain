@@ -1,5 +1,6 @@
+import inspect
 import json
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from typing import Any, cast
 from unittest.mock import MagicMock
 
@@ -243,6 +244,203 @@ async def test_perplexity_astream_emits_single_valued_usage_metadata_once() -> N
     assert full.response_metadata["search_context_size"] == "low"
     assert full.response_metadata["num_search_queries"] == 2
     assert full.response_metadata["model_name"] == "sonar"
+
+
+def _stop_stream_chunks() -> list[dict[str, Any]]:
+    """Deterministic Chat Completions deltas that aggregate to `Hello world`."""
+    return [
+        {"choices": [{"delta": {"content": "Hello"}, "finish_reason": None}]},
+        {"choices": [{"delta": {"content": " world"}, "finish_reason": "stop"}]},
+    ]
+
+
+def _aggregate_message_chunks(chunks: Sequence[BaseMessageChunk]) -> BaseMessageChunk:
+    full: BaseMessageChunk | None = None
+    for chunk in chunks:
+        full = chunk if full is None else full + chunk
+    assert full is not None
+    return full
+
+
+def _assert_chat_completion_stop(
+    call_kwargs: dict[str, Any], stop: list[str] | None
+) -> None:
+    """`stop` is forwarded unchanged and `stop_sequences` is never introduced."""
+    assert call_kwargs["stream"] is True
+    assert "stop_sequences" not in call_kwargs
+    if stop is None:
+        assert "stop" not in call_kwargs
+    else:
+        assert call_kwargs["stop"] == stop
+
+
+def _chat_completions_model(**kwargs: Any) -> ChatPerplexity:
+    """Chat Completions model with fake credentials, never the Responses route."""
+    return ChatPerplexity(
+        model="sonar",
+        api_key="test",
+        timeout=30,
+        use_responses_api=False,
+        **kwargs,
+    )
+
+
+def _install_sync_completion_stream(
+    llm: ChatPerplexity, captured: list[dict[str, Any]]
+) -> None:
+    """Replace sync `create` with a fake that enforces the installed SDK signature.
+
+    `CompletionsResource.create` accepts `stop` and has no `**kwargs`, so
+    `stop_sequences` raises `TypeError`. A permissive mock would hide that.
+    """
+    signature = inspect.signature(llm.client.chat.completions.create)
+    chunks = _stop_stream_chunks()
+
+    def create(**kwargs: Any) -> Any:
+        signature.bind(**kwargs)
+        captured.append(kwargs)
+        return iter(chunks)
+
+    llm.client.chat.completions.create = create
+
+
+def _install_async_completion_stream(
+    llm: ChatPerplexity, captured: list[dict[str, Any]]
+) -> None:
+    """Replace async `create` with a fake that enforces the installed SDK signature."""
+    signature = inspect.signature(llm.async_client.chat.completions.create)
+    chunks = _stop_stream_chunks()
+
+    async def create(**kwargs: Any) -> AsyncIterator[dict[str, Any]]:
+        signature.bind(**kwargs)
+        captured.append(kwargs)
+
+        async def _iter() -> AsyncIterator[dict[str, Any]]:
+            for chunk in chunks:
+                yield chunk
+
+        return _iter()
+
+    llm.async_client.chat.completions.create = create
+
+
+def test_perplexity_stream_forwards_stop_without_stop_sequences() -> None:
+    """Nonempty `stop` stays on the Chat Completions `stop` parameter."""
+    llm = _chat_completions_model()
+    captured: list[dict[str, Any]] = []
+    _install_sync_completion_stream(llm, captured)
+    stop = ["\n"]
+
+    full = _aggregate_message_chunks(list(llm.stream("Hello", stop=stop)))
+
+    assert full.content == "Hello world"
+    assert len(captured) == 1
+    _assert_chat_completion_stop(captured[0], stop)
+
+
+async def test_perplexity_astream_forwards_stop_without_stop_sequences() -> None:
+    """Nonempty `stop` stays on the async Chat Completions `stop` parameter."""
+    llm = _chat_completions_model()
+    captured: list[dict[str, Any]] = []
+    _install_async_completion_stream(llm, captured)
+    stop = ["\n"]
+
+    chunks = [chunk async for chunk in llm.astream("Hello", stop=stop)]
+    full = _aggregate_message_chunks(chunks)
+
+    assert full.content == "Hello world"
+    assert len(captured) == 1
+    _assert_chat_completion_stop(captured[0], stop)
+
+
+@pytest.mark.parametrize("stop", [None, []], ids=["omitted", "empty"])
+def test_perplexity_stream_preserves_omitted_and_empty_stop(
+    stop: list[str] | None,
+) -> None:
+    """`stop=None` is omitted; `stop=[]` is forwarded as an empty list."""
+    llm = _chat_completions_model()
+    captured: list[dict[str, Any]] = []
+    _install_sync_completion_stream(llm, captured)
+
+    full = _aggregate_message_chunks(list(llm.stream("Hello", stop=stop)))
+
+    assert full.content == "Hello world"
+    assert len(captured) == 1
+    _assert_chat_completion_stop(captured[0], stop)
+
+
+@pytest.mark.parametrize("stop", [None, []], ids=["omitted", "empty"])
+async def test_perplexity_astream_preserves_omitted_and_empty_stop(
+    stop: list[str] | None,
+) -> None:
+    """Async streams keep omission versus an explicit empty `stop` list."""
+    llm = _chat_completions_model()
+    captured: list[dict[str, Any]] = []
+    _install_async_completion_stream(llm, captured)
+
+    chunks = [chunk async for chunk in llm.astream("Hello", stop=stop)]
+    full = _aggregate_message_chunks(chunks)
+
+    assert full.content == "Hello world"
+    assert len(captured) == 1
+    _assert_chat_completion_stop(captured[0], stop)
+
+
+def test_perplexity_stream_forwards_model_kwargs_stop() -> None:
+    """`stop` from `model_kwargs` is forwarded when the call does not override it."""
+    stop = ["END"]
+    llm = _chat_completions_model(model_kwargs={"stop": stop})
+    captured: list[dict[str, Any]] = []
+    _install_sync_completion_stream(llm, captured)
+
+    full = _aggregate_message_chunks(list(llm.stream("Hello")))
+
+    assert full.content == "Hello world"
+    assert len(captured) == 1
+    _assert_chat_completion_stop(captured[0], stop)
+
+
+async def test_perplexity_astream_forwards_model_kwargs_stop() -> None:
+    """Async streams forward `model_kwargs['stop']` without a runtime override."""
+    stop = ["END"]
+    llm = _chat_completions_model(model_kwargs={"stop": stop})
+    captured: list[dict[str, Any]] = []
+    _install_async_completion_stream(llm, captured)
+
+    chunks = [chunk async for chunk in llm.astream("Hello")]
+    full = _aggregate_message_chunks(chunks)
+
+    assert full.content == "Hello world"
+    assert len(captured) == 1
+    _assert_chat_completion_stop(captured[0], stop)
+
+
+def test_perplexity_stream_conflicting_stop_does_not_call_client() -> None:
+    """Runtime `stop` plus `model_kwargs['stop']` raises before the SDK call."""
+    llm = _chat_completions_model(model_kwargs={"stop": ["END"]})
+    captured: list[dict[str, Any]] = []
+    _install_sync_completion_stream(llm, captured)
+
+    with pytest.raises(
+        ValueError, match="`stop` found in both the input and default params"
+    ):
+        list(llm.stream("Hello", stop=["\n"]))
+
+    assert captured == []
+
+
+async def test_perplexity_astream_conflicting_stop_does_not_call_client() -> None:
+    """Async runtime `stop` plus `model_kwargs['stop']` does not call the SDK."""
+    llm = _chat_completions_model(model_kwargs={"stop": ["END"]})
+    captured: list[dict[str, Any]] = []
+    _install_async_completion_stream(llm, captured)
+
+    with pytest.raises(
+        ValueError, match="`stop` found in both the input and default params"
+    ):
+        _ = [chunk async for chunk in llm.astream("Hello", stop=["\n"])]
+
+    assert captured == []
 
 
 def test_create_usage_metadata_basic() -> None:
