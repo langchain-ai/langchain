@@ -16,6 +16,7 @@ from langchain.agents.middleware.model_routing import (
     ModelRoutingConfig,
     ModelRoutingInput,
     ModelRoutingMiddleware,
+    ModelRoutingState,
 )
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMatch, PIIMiddleware
 from langchain.agents.middleware.provider_tool_search import ProviderToolSearchMiddleware
@@ -79,6 +80,7 @@ __all__ = [
     "ModelRoutingConfig",
     "ModelRoutingInput",
     "ModelRoutingMiddleware",
+    "ModelRoutingState",
     "OutputAgentState",
     "PIIDetectionError",
     "PIIMatch",

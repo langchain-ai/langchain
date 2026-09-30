@@ -21,6 +21,7 @@ from langchain.agents.middleware import (
     ModelRoutingConfig,
     ModelRoutingInput,
     ModelRoutingMiddleware,
+    ModelRoutingState,
     model_routing,
 )
 from langchain.agents.middleware.internal_call_transformer import internal_call_metadata
@@ -130,6 +131,16 @@ async def test_route_and_preserve_request(backend: str, *, async_mode: bool) -> 
         check_request(request, original)
         return ModelResponse(result=[await request.model.ainvoke(request.messages)])
 
+    original = original.override(
+        state=ModelRoutingState(
+            messages=original.messages,
+            model_route=(
+                await middleware.abefore_model(
+                    ModelRoutingState(messages=original.messages), original.runtime
+                )
+            )["model_route"],
+        )
+    )
     response = (
         await middleware.awrap_model_call(original, ahandler)
         if async_mode
@@ -162,11 +173,17 @@ async def test_invalid_selection_and_explicit_fallback(backend: str, selection: 
         decision_model=RunnableLambda(classify) if backend == "classifier" else None,
     )
     with pytest.raises(ValueError, match="configured route name"):
-        middleware.select_route(make_request())
+        middleware.select_route(ModelRoutingState(messages=make_request().messages))
     with pytest.raises(ValueError, match="configured route name"):
-        await middleware.aselect_route(make_request())
+        await middleware.aselect_route(ModelRoutingState(messages=make_request().messages))
     middleware.fallback_route = "large"
     original = make_request()
+    original = original.override(
+        state=ModelRoutingState(
+            messages=original.messages,
+            model_route=middleware.select_route(ModelRoutingState(messages=original.messages)),
+        )
+    )
 
     def handler(request: ModelRequest) -> ModelResponse:
         check_request(request, original)
@@ -182,8 +199,8 @@ async def test_invalid_selection_and_explicit_fallback(backend: str, selection: 
 
 
 async def test_custom_input_and_no_cross_request_cache() -> None:
-    def extract(request: ModelRequest) -> Sequence[BaseMessage]:
-        return [message for message in request.messages if message.text != "Injected context"]
+    def extract(state: ModelRoutingState) -> Sequence[BaseMessage]:
+        return [message for message in state["messages"] if message.text != "Injected context"]
 
     def classify(inputs: ModelRoutingInput) -> str:
         return "small" if inputs["messages"][-1].text == "Lookup" else "large"
@@ -200,9 +217,9 @@ async def test_custom_input_and_no_cross_request_cache() -> None:
         messages=[HumanMessage(content="Lookup"), HumanMessage(content="Injected context")]
     )
     second = make_request()
-    assert middleware.select_route(first) == "small"
-    assert await middleware.aselect_route(second) == "large"
-    assert await middleware.aselect_route(first) == "small"
+    assert middleware.select_route(ModelRoutingState(messages=first.messages)) == "small"
+    assert await middleware.aselect_route(ModelRoutingState(messages=second.messages)) == "large"
+    assert await middleware.aselect_route(ModelRoutingState(messages=first.messages)) == "small"
 
 
 @pytest.mark.parametrize(
@@ -239,11 +256,11 @@ async def test_backend_errors_propagate_and_missing_input_is_explicit() -> None:
         fallback_route="small",
     )
     with pytest.raises(RuntimeError, match="Classifier unavailable"):
-        middleware.select_route(make_request())
+        middleware.select_route(ModelRoutingState(messages=make_request().messages))
     with pytest.raises(RuntimeError, match="Classifier unavailable"):
-        await middleware.aselect_route(make_request())
+        await middleware.aselect_route(ModelRoutingState(messages=make_request().messages))
     with pytest.raises(ValueError, match="No routing messages"):
-        middleware.select_route(make_request().override(messages=[AIMessage(content="No user")]))
+        middleware.select_route(ModelRoutingState(messages=[AIMessage(content="No user")]))
 
 
 async def test_agent_uses_selected_model() -> None:
@@ -263,3 +280,30 @@ async def test_agent_uses_selected_model() -> None:
     inputs: InputAgentState = {"messages": [HumanMessage(content="Do this task")]}
     assert agent.invoke(inputs)["messages"][-1].content == "Selected response"
     assert (await agent.ainvoke(inputs))["messages"][-1].content == "Selected response"
+
+
+@pytest.mark.parametrize("async_mode", [False, True])
+async def test_route_persists_until_cleared(*, async_mode: bool) -> None:
+    selections = iter(["small", "large"])
+    middleware = ModelRoutingMiddleware(
+        models={
+            "small": {"model": FakeListChatModel(responses=["small"]), "criteria": "Lookup"},
+            "large": {"model": FakeListChatModel(responses=["large"]), "criteria": "Reasoning"},
+        },
+        decision_model=RunnableLambda(lambda _: next(selections)),
+    )
+    state = ModelRoutingState(messages=[HumanMessage(content="Lookup")])
+
+    async def prepare() -> str:
+        if async_mode:
+            return (await middleware.abefore_model(state, None))["model_route"]  # type: ignore[arg-type]
+        return middleware.before_model(state, None)["model_route"]  # type: ignore[arg-type]
+
+    state["model_route"] = await prepare()
+    assert state["model_route"] == "small"
+    state["messages"] = [HumanMessage(content="Reasoning")]
+    state["model_route"] = await prepare()
+    assert state["model_route"] == "small"
+    state["model_route"] = None
+    state["model_route"] = await prepare()
+    assert state["model_route"] == "large"
