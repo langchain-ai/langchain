@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from langchain_core._api import beta
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -296,7 +296,7 @@ class ModelRoutingMiddleware(AgentMiddleware[ModelRoutingState, ContextT, Respon
         Returns:
             The selected model's response.
         """
-        route = self._validate_route(request.state.get("model_route"))
+        route = self.select_route(cast("ModelRoutingState", request.state))
         return handler(request.override(model=self.models[route]))
 
     async def awrap_model_call(
@@ -313,5 +313,5 @@ class ModelRoutingMiddleware(AgentMiddleware[ModelRoutingState, ContextT, Respon
         Returns:
             The selected model's response.
         """
-        route = self._validate_route(request.state.get("model_route"))
+        route = await self.aselect_route(cast("ModelRoutingState", request.state))
         return await handler(request.override(model=self.models[route]))
