@@ -1,9 +1,11 @@
 """Behavioral tests for model routing middleware."""
 
+import importlib.util
 from collections.abc import Sequence
 from typing import Any
 
 import pytest
+from langchain_core._api import LangChainBetaWarning
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
@@ -18,8 +20,23 @@ from langchain.agents.middleware import (
     ModelResponse,
     ModelRoutingInput,
     ModelRoutingMiddleware,
+    model_routing,
 )
 from langchain.agents.middleware.internal_call_transformer import internal_call_metadata
+
+
+def test_beta_warning() -> None:
+    spec = importlib.util.spec_from_file_location("isolated_model_routing", model_routing.__file__)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    with pytest.warns(LangChainBetaWarning, match="may change or be removed without notice"):
+        module.ModelRoutingMiddleware(
+            models={"small": FakeListChatModel(responses=["small"])},
+            criteria={"small": "All tasks"},
+            decision_model=RunnableLambda(lambda _: "small"),
+        )
 
 
 class RoutingChatModel(FakeListChatModel):

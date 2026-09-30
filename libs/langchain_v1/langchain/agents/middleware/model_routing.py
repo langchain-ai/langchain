@@ -6,6 +6,7 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
+from langchain_core._api import beta
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from typing_extensions import TypedDict
 
@@ -35,18 +36,24 @@ DEFAULT_SYSTEM_PROMPT = "Choose the least expensive model likely to complete the
 
 
 class ModelRoutingInput(TypedDict):
-    """Inputs to a classification runnable, which must return a configured route name."""
+    """Beta, experimental classifier input; no compatibility guarantees."""
 
     messages: list[BaseMessage]
     system_prompt: str
     criteria: dict[str, str]
 
 
+@beta(
+    addendum=(
+        "Experimental API: may change or be removed without notice; no compatibility guarantees."
+    )
+)
 class ModelRoutingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Route agent model calls using a structured-output LLM or classification runnable.
 
-    !!! warning "Experimental"
-        This middleware's API may change.
+    !!! warning "Beta / Experimental"
+        This middleware and its input schema may change or be removed without notice.
+        No compatibility guarantees are provided.
 
     Routes are selected for each model call, without shared or persisted selection state.
     Applications requiring one selection per turn can call `select_route` or
