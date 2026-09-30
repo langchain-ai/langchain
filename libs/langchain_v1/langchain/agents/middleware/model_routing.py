@@ -35,6 +35,13 @@ logger = logging.getLogger(__name__)
 DEFAULT_SYSTEM_PROMPT = "Choose the least expensive model likely to complete the user's task."
 
 
+class ModelRoutingConfig(TypedDict):
+    """Beta, experimental model and routing criteria; no compatibility guarantees."""
+
+    model: str | BaseChatModel
+    criteria: str
+
+
 class ModelRoutingInput(TypedDict):
     """Beta, experimental classifier input; no compatibility guarantees."""
 
@@ -64,8 +71,13 @@ class ModelRoutingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Re
     Example:
         ```python
         middleware = ModelRoutingMiddleware(
-            models={"fast": fast_model, "reasoning": reasoning_model},
-            criteria={"fast": "Direct lookups", "reasoning": "Architectural tradeoffs"},
+            models={
+                "fast": {"model": fast_model, "criteria": "Direct lookups"},
+                "reasoning": {
+                    "model": reasoning_model,
+                    "criteria": "Architectural tradeoffs",
+                },
+            },
             routing_model=selector_model,
             system_prompt="Use the least expensive model that can complete the task safely.",
         )
@@ -78,8 +90,7 @@ class ModelRoutingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Re
     def __init__(
         self,
         *,
-        models: Mapping[str, str | BaseChatModel],
-        criteria: Mapping[str, str],
+        models: Mapping[str, ModelRoutingConfig],
         routing_model: str | BaseChatModel | None = None,
         decision_model: Runnable[ModelRoutingInput, str] | None = None,
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
@@ -89,8 +100,8 @@ class ModelRoutingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Re
         """Initialize routing with exactly one selection backend.
 
         Args:
-            models: Route names mapped to model instances or model identifier strings.
-            criteria: Selection criteria keyed by the same route names as `models`.
+            models: Route names mapped to configurations containing a `model` instance
+                or identifier string and its selection `criteria`.
             routing_model: Chat model supporting `with_structured_output`.
             decision_model: Classification runnable accepting `ModelRoutingInput` and
                 returning a route name. Adapt provider-specific classifiers with a
@@ -103,15 +114,12 @@ class ModelRoutingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Re
                 always propagate; configure retries or fallbacks on the backend runnable.
 
         Raises:
-            ValueError: If routes are empty, criteria keys differ, the fallback is unknown,
-                or exactly one selection backend is not supplied.
+            ValueError: If routes are empty, the fallback is unknown, or exactly one
+                selection backend is not supplied.
         """
         super().__init__()
         if not models or any(not route for route in models):
             msg = "models must contain non-empty route names"
-            raise ValueError(msg)
-        if models.keys() != criteria.keys():
-            msg = "models and criteria must have the same route names"
             raise ValueError(msg)
         if (routing_model is None) == (decision_model is None):
             msg = "Provide exactly one of routing_model or decision_model"
@@ -120,10 +128,14 @@ class ModelRoutingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Re
             msg = "fallback_route must be a configured route name"
             raise ValueError(msg)
         self.models = {
-            route: init_chat_model(model) if isinstance(model, str) else model
-            for route, model in models.items()
+            route: (
+                init_chat_model(config["model"])
+                if isinstance(config["model"], str)
+                else config["model"]
+            )
+            for route, config in models.items()
         }
-        self.criteria = dict(criteria)
+        self.criteria = {route: config["criteria"] for route, config in models.items()}
         self.system_prompt = system_prompt
         self.input_extractor = input_extractor
         self.fallback_route = fallback_route

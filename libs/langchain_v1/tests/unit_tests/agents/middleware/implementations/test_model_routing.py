@@ -18,6 +18,7 @@ from langchain.agents.middleware import (
     InputAgentState,
     ModelRequest,
     ModelResponse,
+    ModelRoutingConfig,
     ModelRoutingInput,
     ModelRoutingMiddleware,
     model_routing,
@@ -33,8 +34,9 @@ def test_beta_warning() -> None:
     spec.loader.exec_module(module)
     with pytest.warns(LangChainBetaWarning, match="may change or be removed without notice"):
         module.ModelRoutingMiddleware(
-            models={"small": FakeListChatModel(responses=["small"])},
-            criteria={"small": "All tasks"},
+            models={
+                "small": {"model": FakeListChatModel(responses=["small"]), "criteria": "All tasks"}
+            },
             decision_model=RunnableLambda(lambda _: "small"),
         )
 
@@ -91,9 +93,15 @@ def check_request(request: ModelRequest, original: ModelRequest) -> None:
 @pytest.mark.parametrize("async_mode", [False, True])
 async def test_route_and_preserve_request(backend: str, *, async_mode: bool) -> None:
     original = make_request()
-    models = {
-        "small": FakeListChatModel(responses=["small response"]),
-        "large": FakeListChatModel(responses=["large response"]),
+    models: dict[str, ModelRoutingConfig] = {
+        "small": {
+            "model": FakeListChatModel(responses=["small response"]),
+            "criteria": "Simple tasks",
+        },
+        "large": {
+            "model": FakeListChatModel(responses=["large response"]),
+            "criteria": "Complex tasks",
+        },
     }
     criteria = {"small": "Simple tasks", "large": "Complex tasks"}
     router = RoutingChatModel(responses=[""])
@@ -109,7 +117,6 @@ async def test_route_and_preserve_request(backend: str, *, async_mode: bool) -> 
 
     middleware = ModelRoutingMiddleware(
         models=models,
-        criteria=criteria,
         system_prompt="Custom routing instructions",
         routing_model=router if backend == "llm" else None,
         decision_model=RunnableLambda(classify) if backend == "classifier" else None,
@@ -141,7 +148,9 @@ async def test_route_and_preserve_request(backend: str, *, async_mode: bool) -> 
 @pytest.mark.parametrize("backend", ["llm", "classifier"])
 @pytest.mark.parametrize("selection", ["unknown", None, ["large"]])
 async def test_invalid_selection_and_explicit_fallback(backend: str, selection: object) -> None:
-    models = {"large": FakeListChatModel(responses=["fallback"])}
+    models: dict[str, ModelRoutingConfig] = {
+        "large": {"model": FakeListChatModel(responses=["fallback"]), "criteria": "All tasks"}
+    }
     router = RoutingChatModel(responses=[""], selection=selection)
 
     def classify(_inputs: ModelRoutingInput) -> Any:
@@ -149,7 +158,6 @@ async def test_invalid_selection_and_explicit_fallback(backend: str, selection: 
 
     middleware = ModelRoutingMiddleware(
         models=models,
-        criteria={"large": "All tasks"},
         routing_model=router if backend == "llm" else None,
         decision_model=RunnableLambda(classify) if backend == "classifier" else None,
     )
@@ -182,10 +190,9 @@ async def test_custom_input_and_no_cross_request_cache() -> None:
 
     middleware = ModelRoutingMiddleware(
         models={
-            "small": FakeListChatModel(responses=["small"]),
-            "large": FakeListChatModel(responses=["large"]),
+            "small": {"model": FakeListChatModel(responses=["small"]), "criteria": "Lookup"},
+            "large": {"model": FakeListChatModel(responses=["large"]), "criteria": "Reasoning"},
         },
-        criteria={"small": "Lookup", "large": "Reasoning"},
         decision_model=RunnableLambda(classify),
         input_extractor=extract,
     )
@@ -202,7 +209,6 @@ async def test_custom_input_and_no_cross_request_cache() -> None:
     ("kwargs", "match"),
     [
         ({"models": {}}, "non-empty"),
-        ({"criteria": {}}, "same route names"),
         ({"decision_model": None}, "exactly one"),
         ({"routing_model": FakeListChatModel(responses=[""])}, "exactly one"),
         ({"fallback_route": "unknown"}, "fallback_route"),
@@ -210,8 +216,9 @@ async def test_custom_input_and_no_cross_request_cache() -> None:
 )
 def test_configuration_validation(kwargs: dict[str, Any], match: str) -> None:
     options: dict[str, Any] = {
-        "models": {"small": FakeListChatModel(responses=["small"])},
-        "criteria": {"small": "All tasks"},
+        "models": {
+            "small": {"model": FakeListChatModel(responses=["small"]), "criteria": "All tasks"}
+        },
         "decision_model": RunnableLambda(lambda _: "small"),
     }
     options.update(kwargs)
@@ -225,8 +232,9 @@ async def test_backend_errors_propagate_and_missing_input_is_explicit() -> None:
         raise RuntimeError(msg)
 
     middleware = ModelRoutingMiddleware(
-        models={"small": FakeListChatModel(responses=["small"])},
-        criteria={"small": "All tasks"},
+        models={
+            "small": {"model": FakeListChatModel(responses=["small"]), "criteria": "All tasks"}
+        },
         decision_model=RunnableLambda(classify),
         fallback_route="small",
     )
@@ -240,8 +248,12 @@ async def test_backend_errors_propagate_and_missing_input_is_explicit() -> None:
 
 async def test_agent_uses_selected_model() -> None:
     middleware = ModelRoutingMiddleware(
-        models={"small": FakeListChatModel(responses=["Selected response"])},
-        criteria={"small": "All tasks"},
+        models={
+            "small": {
+                "model": FakeListChatModel(responses=["Selected response"]),
+                "criteria": "All tasks",
+            }
+        },
         decision_model=RunnableLambda(lambda _: "small"),
     )
     agent = create_agent(
