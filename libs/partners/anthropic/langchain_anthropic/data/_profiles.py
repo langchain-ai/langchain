@@ -15,6 +15,10 @@ https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-p
 
 from typing import Any
 
+_FILE_MIME_TYPES = [
+    "text/plain",
+]
+
 _PROFILES: dict[str, dict[str, Any]] = {
     "claude-fable-5": {
         "name": "Claude Fable 5",
@@ -41,9 +45,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -78,9 +80,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -115,9 +115,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "claude-haiku-4-5-20251001": {
         "name": "Claude Haiku 4.5",
@@ -144,9 +142,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "claude-opus-4-5": {
         "name": "Claude Opus 4.5 (latest)",
@@ -173,9 +169,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -208,9 +202,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -243,9 +235,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -279,9 +269,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -316,9 +304,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -353,9 +339,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -390,9 +374,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -427,9 +409,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "claude-sonnet-4-5-20250929": {
         "name": "Claude Sonnet 4.5",
@@ -456,9 +436,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "claude-sonnet-4-6": {
         "name": "Claude Sonnet 4.6",
@@ -485,9 +463,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -521,9 +497,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -558,9 +532,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "pdf_tool_message": True,
         "image_tool_message": True,
         "tool_call_streaming": True,
-        "file_mime_types": [
-            "text/plain",
-        ],
+        "file_mime_types": _FILE_MIME_TYPES,
         "tool_choice": False,
         "reasoning_effort_levels": [
             "low",
