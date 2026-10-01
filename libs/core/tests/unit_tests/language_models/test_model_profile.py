@@ -20,7 +20,14 @@ class TestModelProfileExtraAllow:
         profile: ModelProfile = {"max_input_tokens": 100, "tool_calling": True}
         assert profile["max_input_tokens"] == 100
 
-    @pytest.mark.parametrize("mime_types", [[], ["text/plain", "application/json"]])
+    @pytest.mark.parametrize(
+        "mime_types",
+        [
+            [],
+            ["text/plain", "application/json"],
+            ["application/pdf", "image/png", "audio/wav", "video/mp4"],
+        ],
+    )
     def test_file_mime_types_validation(self, mime_types: list[str]) -> None:
         class ProfileModel(BaseModel):
             profile: ModelProfile
