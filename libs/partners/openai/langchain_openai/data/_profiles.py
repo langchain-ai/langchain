@@ -41,6 +41,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "file_mime_types": [],
     },
     "gpt-3.5-turbo": {
         "name": "GPT-3.5-turbo",
@@ -69,6 +70,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": False,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "file_mime_types": [],
     },
     "gpt-4": {
         "name": "GPT-4",
@@ -97,6 +99,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "file_mime_types": [],
     },
     "gpt-4-turbo": {
         "name": "GPT-4 Turbo",
@@ -1383,6 +1386,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "file_mime_types": [],
     },
     "gpt-image-1-mini": {
         "name": "gpt-image-1-mini",
@@ -1409,6 +1413,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "file_mime_types": [],
     },
     "gpt-image-1.5": {
         "name": "gpt-image-1.5",
@@ -1435,6 +1440,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "file_mime_types": [],
     },
     "gpt-image-2": {
         "name": "gpt-image-2",
@@ -1461,6 +1467,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "file_mime_types": [],
     },
     "gpt-realtime-2.1": {
         "name": "GPT-Realtime-2.1",
@@ -1488,6 +1495,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "file_mime_types": [],
     },
     "o1": {
         "name": "o1",
@@ -1680,6 +1688,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "file_mime_types": [],
     },
     "text-embedding-3-small": {
         "name": "text-embedding-3-small",
@@ -1706,6 +1715,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "file_mime_types": [],
     },
     "text-embedding-ada-002": {
         "name": "text-embedding-ada-002",
@@ -1732,5 +1742,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "file_mime_types": [],
     },
 }

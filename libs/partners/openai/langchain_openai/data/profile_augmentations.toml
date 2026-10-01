@@ -8,7 +8,38 @@ image_tool_message = true
 tool_choice = true
 tool_call_streaming = true
 
+[overrides."chatgpt-image-latest"]
+file_mime_types = []
+
+[overrides."gpt-image-1"]
+file_mime_types = []
+
+[overrides."gpt-image-1-mini"]
+file_mime_types = []
+
+[overrides."gpt-image-1.5"]
+file_mime_types = []
+
+[overrides."gpt-image-2"]
+file_mime_types = []
+
+[overrides."gpt-realtime-2.1"]
+file_mime_types = []
+
+[overrides."text-embedding-3-large"]
+file_mime_types = []
+
+[overrides."text-embedding-3-small"]
+file_mime_types = []
+
+[overrides."text-embedding-ada-002"]
+file_mime_types = []
+
+[overrides."gpt-4"]
+file_mime_types = []
+
 [overrides."gpt-3.5-turbo"]
+file_mime_types = []
 image_url_inputs = false
 pdf_inputs = false
 pdf_tool_message = false
