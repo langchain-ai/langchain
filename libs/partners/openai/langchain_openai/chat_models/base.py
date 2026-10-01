@@ -200,7 +200,14 @@ def _get_default_model_profile(
     model_name: str, *, use_responses_api: bool = False
 ) -> ModelProfile:
     profile = deepcopy(_MODEL_PROFILES.get(model_name) or {})
-    if not (use_responses_api and profile.get("pdf_inputs")):
+    if not (
+        use_responses_api
+        and profile.get("pdf_inputs")
+        and profile.get("text_outputs")
+        and profile.get("tool_calling")
+        and not profile.get("image_outputs")
+        and not profile.get("audio_outputs")
+    ):
         profile.pop("file_mime_types", None)
     return profile
 

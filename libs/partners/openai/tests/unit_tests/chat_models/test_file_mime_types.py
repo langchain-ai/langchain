@@ -41,6 +41,28 @@ def test_file_mime_types_routing(
         assert "file_mime_types" not in (model.profile or {})
 
 
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "text-embedding-ada-002",
+        "text-embedding-3-small",
+        "text-embedding-3-large",
+        "chatgpt-image-latest",
+        "gpt-image-1",
+        "gpt-image-1-mini",
+        "gpt-image-1.5",
+        "gpt-image-2",
+        "gpt-realtime-2.1",
+    ],
+)
+def test_non_responses_models_omit_file_mime_types(model_name: str) -> None:
+    model = ChatOpenAI(
+        model=model_name, api_key=SecretStr("test"), use_responses_api=True
+    )
+    assert "file_mime_types" not in (model.profile or {})
+    assert _PROFILES[model_name]["file_mime_types"] == []
+
+
 def test_file_mime_types_isolation() -> None:
     expected = deepcopy(_PROFILES["gpt-4.1"])
     first = ChatOpenAI(
@@ -58,10 +80,11 @@ def test_file_mime_types_isolation() -> None:
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
-def test_explicit_file_mime_types(*, use_responses_api: bool) -> None:
+@pytest.mark.parametrize("model_name", ["unknown-model", "gpt-image-2"])
+def test_explicit_file_mime_types(model_name: str, *, use_responses_api: bool) -> None:
     profile: ModelProfile = {"file_mime_types": ["application/custom"]}
     model = ChatOpenAI(
-        model="unknown-model",
+        model=model_name,
         api_key=SecretStr("test"),
         use_responses_api=use_responses_api,
         profile=profile,
