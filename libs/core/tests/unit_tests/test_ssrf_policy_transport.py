@@ -1,4 +1,5 @@
 import socket
+from collections.abc import AsyncIterator, Iterator
 from typing import Any
 from unittest.mock import patch
 
@@ -104,7 +105,154 @@ async def test_ssrf_safe_transport_pins_ip_and_sets_sni() -> None:
     pinned_request = recorder.requests[0]
     assert pinned_request.url.host == "93.184.216.34"
     assert pinned_request.headers["host"] == "example.com"
-    assert pinned_request.extensions["sni_hostname"] == b"example.com"
+    assert pinned_request.extensions["sni_hostname"] == "example.com"
+
+
+class _RecordingSyncTransport(httpx.BaseTransport):
+    def __init__(self) -> None:
+        self.requests: list[httpx.Request] = []
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request)
+        return httpx.Response(200, request=request, text="ok")
+
+    def close(self) -> None:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Transport: streaming and multipart request bodies survive pinning
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_ssrf_safe_transport_forwards_streaming_body() -> None:
+    transport = SSRFSafeTransport()
+    recorder = _RecordingAsyncTransport()
+    transport._inner = recorder  # type: ignore[assignment]
+
+    async def body() -> AsyncIterator[bytes]:
+        yield b"chunk"
+
+    with patch(
+        "langchain_core._security._transport.socket.getaddrinfo",
+        return_value=_fake_addrinfo("93.184.216.34"),
+    ):
+        request = httpx.Request("POST", "http://example.com/upload", content=body())
+        response = await transport.handle_async_request(request)
+
+    assert response.status_code == 200
+    pinned_request = recorder.requests[0]
+    assert await pinned_request.aread() == b"chunk"
+
+
+def test_sync_transport_forwards_streaming_body() -> None:
+    transport = SSRFSafeSyncTransport()
+    recorder = _RecordingSyncTransport()
+    transport._inner = recorder  # type: ignore[assignment]
+
+    def body() -> Iterator[bytes]:
+        yield b"chunk"
+
+    with patch(
+        "langchain_core._security._transport.socket.getaddrinfo",
+        return_value=_fake_addrinfo("93.184.216.34"),
+    ):
+        request = httpx.Request("POST", "http://example.com/upload", content=body())
+        response = transport.handle_request(request)
+
+    assert response.status_code == 200
+    pinned_request = recorder.requests[0]
+    assert pinned_request.read() == b"chunk"
+
+
+@pytest.mark.asyncio
+async def test_ssrf_safe_transport_forwards_multipart_body() -> None:
+    transport = SSRFSafeTransport()
+    recorder = _RecordingAsyncTransport()
+    transport._inner = recorder  # type: ignore[assignment]
+
+    with patch(
+        "langchain_core._security._transport.socket.getaddrinfo",
+        return_value=_fake_addrinfo("93.184.216.34"),
+    ):
+        request = httpx.Request(
+            "POST", "http://example.com/upload", files={"f": ("a.txt", b"x")}
+        )
+        response = await transport.handle_async_request(request)
+
+    assert response.status_code == 200
+    pinned_request = recorder.requests[0]
+    body_bytes = await pinned_request.aread()
+    assert b'name="f"' in body_bytes
+    assert b"x" in body_bytes
+
+
+def test_sync_transport_forwards_multipart_body() -> None:
+    transport = SSRFSafeSyncTransport()
+    recorder = _RecordingSyncTransport()
+    transport._inner = recorder  # type: ignore[assignment]
+
+    with patch(
+        "langchain_core._security._transport.socket.getaddrinfo",
+        return_value=_fake_addrinfo("93.184.216.34"),
+    ):
+        request = httpx.Request(
+            "POST", "http://example.com/upload", files={"f": ("a.txt", b"x")}
+        )
+        response = transport.handle_request(request)
+
+    assert response.status_code == 200
+    pinned_request = recorder.requests[0]
+    body_bytes = pinned_request.read()
+    assert b'name="f"' in body_bytes
+    assert b"x" in body_bytes
+
+
+# ---------------------------------------------------------------------------
+# Transport: internationalized hostnames produce a valid ASCII SNI value
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_ssrf_safe_transport_sets_sni_from_internationalized_host() -> None:
+    transport = SSRFSafeTransport()
+    recorder = _RecordingAsyncTransport()
+    transport._inner = recorder  # type: ignore[assignment]
+
+    with patch(
+        "langchain_core._security._transport.socket.getaddrinfo",
+        return_value=_fake_addrinfo("93.184.216.34", 443),
+    ):
+        request = httpx.Request("GET", "https://münchen.example/resource")
+        response = await transport.handle_async_request(request)
+
+    assert response.status_code == 200
+    pinned_request = recorder.requests[0]
+    assert pinned_request.url.host == "93.184.216.34"
+    # httpx IDNA-encodes the Host header when building the original request.
+    assert pinned_request.headers["host"] == "xn--mnchen-3ya.example"
+    assert pinned_request.extensions["sni_hostname"] == "xn--mnchen-3ya.example"
+
+
+def test_sync_transport_sets_sni_from_internationalized_host() -> None:
+    transport = SSRFSafeSyncTransport()
+    recorder = _RecordingSyncTransport()
+    transport._inner = recorder  # type: ignore[assignment]
+
+    with patch(
+        "langchain_core._security._transport.socket.getaddrinfo",
+        return_value=_fake_addrinfo("93.184.216.34", 443),
+    ):
+        request = httpx.Request("GET", "https://münchen.example/resource")
+        response = transport.handle_request(request)
+
+    assert response.status_code == 200
+    pinned_request = recorder.requests[0]
+    assert pinned_request.url.host == "93.184.216.34"
+    # httpx IDNA-encodes the Host header when building the original request.
+    assert pinned_request.headers["host"] == "xn--mnchen-3ya.example"
+    assert pinned_request.extensions["sni_hostname"] == "xn--mnchen-3ya.example"
 
 
 @pytest.mark.asyncio
@@ -357,7 +505,8 @@ async def test_localhost_blocked_in_production(monkeypatch: Any) -> None:
 
 def test_sync_transport_pins_ip_and_sets_sni() -> None:
     transport = SSRFSafeSyncTransport()
-    transport._inner = httpx.MockTransport(_ok_response)  # type: ignore[assignment]
+    recorder = _RecordingSyncTransport()
+    transport._inner = recorder  # type: ignore[assignment]
 
     addrinfo = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443))]
 
@@ -369,6 +518,10 @@ def test_sync_transport_pins_ip_and_sets_sni() -> None:
         response = transport.handle_request(request)
 
     assert response.status_code == 200
+    pinned_request = recorder.requests[0]
+    assert pinned_request.url.host == "93.184.216.34"
+    assert pinned_request.headers["host"] == "example.com"
+    assert pinned_request.extensions["sni_hostname"] == "example.com"
 
 
 def test_sync_transport_blocks_private_resolution() -> None:

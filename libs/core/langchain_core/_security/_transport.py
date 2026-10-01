@@ -99,16 +99,27 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
         pinned_url = request.url.copy_with(host=pinned_ip)
 
         # Build extensions dict, adding sni_hostname for HTTPS so TLS
-        # certificate validation uses the original hostname.
+        # certificate validation uses the original hostname. httpcore
+        # forwards the value to `ssl` as `server_hostname`, which is a str
+        # in A-label (IDNA ASCII) form, so derive it from `raw_host` rather
+        # than the Unicode `host`.
         extensions = dict(request.extensions)
         if scheme == "https":
-            extensions["sni_hostname"] = hostname.encode("ascii")
+            extensions["sni_hostname"] = (
+                request.url.raw_host.decode("ascii")
+                if request.url.raw_host is not None
+                else hostname
+            )
 
+        # Forward `request.stream` instead of `request.content`: `content`
+        # raises `httpx.RequestNotRead` for any body httpx has not buffered
+        # (streaming generators, multipart uploads), while `stream` preserves
+        # the body exactly as the original request carries it.
         pinned_request = httpx.Request(
             method=request.method,
             url=pinned_url,
             headers=request.headers,  # Host header already set to original
-            content=request.content,
+            stream=request.stream,
             extensions=extensions,
         )
 
@@ -178,13 +189,19 @@ class SSRFSafeSyncTransport(httpx.BaseTransport):
 
         extensions = dict(request.extensions)
         if scheme == "https":
-            extensions["sni_hostname"] = hostname.encode("ascii")
+            extensions["sni_hostname"] = (
+                request.url.raw_host.decode("ascii")
+                if request.url.raw_host is not None
+                else hostname
+            )
 
+        # See the async handler for why `stream` is forwarded instead of
+        # `content`.
         pinned_request = httpx.Request(
             method=request.method,
             url=pinned_url,
             headers=request.headers,
-            content=request.content,
+            stream=request.stream,
             extensions=extensions,
         )
 
