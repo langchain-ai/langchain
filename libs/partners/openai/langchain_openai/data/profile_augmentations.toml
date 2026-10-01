@@ -181,15 +181,6 @@ pdf_tool_message = false
 image_tool_message = false
 
 [overrides."gpt-5.1-codex"]
-text_inputs = true
-image_inputs = true
-audio_inputs = false
-video_inputs = false
-text_outputs = true
-image_outputs = false
-audio_outputs = false
-tool_calling = true
-structured_output = true
 max_input_tokens = 272000
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
@@ -198,15 +189,6 @@ max_input_tokens = 272000
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.1-codex-mini"]
-text_inputs = true
-image_inputs = true
-audio_inputs = false
-video_inputs = false
-text_outputs = true
-image_outputs = false
-audio_outputs = false
-tool_calling = true
-structured_output = true
 max_input_tokens = 272000
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
@@ -223,15 +205,6 @@ max_input_tokens = 272000
 reasoning_effort_levels = ["minimal", "low", "medium", "high"]
 
 [overrides."gpt-5-codex"]
-text_inputs = true
-image_inputs = true
-audio_inputs = false
-video_inputs = false
-text_outputs = true
-image_outputs = false
-audio_outputs = false
-tool_calling = true
-structured_output = true
 max_input_tokens = 272000
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
@@ -240,28 +213,10 @@ max_input_tokens = 272000
 reasoning_effort_levels = ["minimal", "low", "medium", "high"]
 
 [overrides."gpt-5.1-codex-max"]
-text_inputs = true
-image_inputs = true
-audio_inputs = false
-video_inputs = false
-text_outputs = true
-image_outputs = false
-audio_outputs = false
-tool_calling = true
-structured_output = true
 max_input_tokens = 272000
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5-chat-latest"]
-text_inputs = true
-image_inputs = true
-audio_inputs = false
-video_inputs = false
-text_outputs = true
-image_outputs = false
-audio_outputs = false
-tool_calling = true
-structured_output = true
 max_input_tokens = 272000
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
@@ -278,28 +233,10 @@ max_input_tokens = 272000
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.1-chat-latest"]
-text_inputs = true
-image_inputs = true
-audio_inputs = false
-video_inputs = false
-text_outputs = true
-image_outputs = false
-audio_outputs = false
-tool_calling = true
-structured_output = true
 max_input_tokens = 272000
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.2-codex"]
-text_inputs = true
-image_inputs = true
-audio_inputs = false
-video_inputs = false
-text_outputs = true
-image_outputs = false
-audio_outputs = false
-tool_calling = true
-structured_output = true
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh"]
 
 [overrides."gpt-5.3-codex"]
@@ -354,37 +291,3 @@ reasoning_effort_default = "medium"
 [overrides."gpt-6-luna"]
 reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "medium"
-
-[overrides."gpt-audio"]
-max_input_tokens = 128000
-max_output_tokens = 16384
-text_inputs = true
-audio_inputs = true
-image_inputs = false
-video_inputs = false
-text_outputs = true
-audio_outputs = true
-image_outputs = false
-tool_calling = true
-image_url_inputs = false
-pdf_inputs = false
-pdf_tool_message = false
-image_tool_message = false
-file_mime_types = ["audio/wav", "audio/mpeg"]
-
-[overrides."gpt-audio-mini"]
-max_input_tokens = 128000
-max_output_tokens = 16384
-text_inputs = true
-audio_inputs = true
-image_inputs = false
-video_inputs = false
-text_outputs = true
-audio_outputs = true
-image_outputs = false
-tool_calling = true
-image_url_inputs = false
-pdf_inputs = false
-pdf_tool_message = false
-image_tool_message = false
-file_mime_types = ["audio/wav", "audio/mpeg"]

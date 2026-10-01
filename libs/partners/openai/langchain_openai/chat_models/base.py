@@ -29,7 +29,6 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
-from copy import deepcopy
 from functools import partial
 from io import BytesIO
 from json import JSONDecodeError
@@ -199,7 +198,7 @@ _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 def _get_default_model_profile(
     model_name: str, *, use_responses_api: bool = False
 ) -> ModelProfile:
-    profile = deepcopy(_MODEL_PROFILES.get(model_name) or {})
+    profile = (_MODEL_PROFILES.get(model_name) or {}).copy()
     supported_modalities = {
         "application/pdf": profile.get("pdf_inputs") and profile.get("image_inputs"),
         "image/jpeg": profile.get("image_inputs"),
