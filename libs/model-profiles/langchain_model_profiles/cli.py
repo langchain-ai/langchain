@@ -5,7 +5,10 @@ import json
 import re
 import sys
 import tempfile
+import tokenize
 import warnings
+from collections import Counter
+from io import StringIO
 from pathlib import Path
 from typing import Any, get_type_hints
 
@@ -258,6 +261,60 @@ https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-p
 """
 
 
+def _python_literal(value: object) -> str:
+    """Render JSON-compatible data as Python without changing string contents."""
+    tokens = tokenize.generate_tokens(StringIO(json.dumps(value, indent=4)).readline)
+    replacements = {"true": "True", "false": "False", "null": "None"}
+    literal = tokenize.untokenize(
+        token._replace(string=replacements.get(token.string, token.string))
+        if token.type == tokenize.NAME
+        else token
+        for token in tokens
+    )
+    return re.sub(r"([^\s,{\[])(?=\n\s*[\}\]])", r"\1,", literal)
+
+
+def _generate_profiles_module(profiles: dict[str, dict[str, Any]]) -> str:
+    """Generate profiles with shared constants for repeated file MIME lists."""
+    profiles = dict(sorted(profiles.items()))
+    counts = Counter(
+        (key, json.dumps(value))
+        for profile in profiles.values()
+        for key, value in profile.items()
+        if key == "file_mime_types" and isinstance(value, list) and value
+    )
+    constants: dict[tuple[str, str], str] = {}
+    names = {"_PROFILES"}
+    parts = [f'"""{MODULE_ADMONITION}"""\n\n', "from typing import Any\n\n"]
+    for (key, encoded), count in counts.items():
+        if count < 2:
+            continue
+        base = "_" + re.sub(r"[^A-Z0-9_]", "_", key.upper())
+        name = base
+        suffix = 2
+        while name in names:
+            name = f"{base}_{suffix}"
+            suffix += 1
+        names.add(name)
+        constants[key, encoded] = name
+        parts.append(f"{name} = {_python_literal(json.loads(encoded))}\n\n")
+    parts.append("_PROFILES: dict[str, dict[str, Any]] = {\n")
+    for model, profile in profiles.items():
+        parts.append(f"    {json.dumps(model)}: {{\n")
+        for key, value in profile.items():
+            constant = (
+                constants.get((key, json.dumps(value)))
+                if isinstance(value, list)
+                else None
+            )
+            literal = constant or _python_literal(value)
+            literal = literal.replace("\n", "\n        ")
+            parts.append(f"        {json.dumps(key)}: {literal},\n")
+        parts.append("    },\n")
+    parts.append("}\n")
+    return "".join(parts)
+
+
 def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     """Download and merge model profile data for a specific provider.
 
@@ -356,18 +413,7 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     # Write as Python module
     output_file = data_dir / "_profiles.py"
     print(f"Writing to {output_file}...")
-    module_content = [f'"""{MODULE_ADMONITION}"""\n\n', "from typing import Any\n\n"]
-    module_content.append("_PROFILES: dict[str, dict[str, Any]] = ")
-    json_str = json.dumps(dict(sorted(profiles.items())), indent=4)
-    json_str = (
-        json_str.replace("true", "True")
-        .replace("false", "False")
-        .replace("null", "None")
-    )
-    # Add trailing commas for ruff format compliance
-    json_str = re.sub(r"([^\s,{\[])(?=\n\s*[\}\]])", r"\1,", json_str)
-    module_content.append(f"{json_str}\n")
-    _write_profiles_file(output_file, "".join(module_content))
+    _write_profiles_file(output_file, _generate_profiles_module(profiles))
 
     print(
         f"✓ Successfully refreshed {len(profiles)} model profiles "

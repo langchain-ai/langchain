@@ -1,5 +1,6 @@
 """Tests for CLI functionality."""
 
+import ast
 import importlib.util
 import warnings
 from pathlib import Path
@@ -10,10 +11,80 @@ import pytest
 from langchain_core.language_models.model_profile import ModelProfile
 
 from langchain_model_profiles.cli import (
+    _generate_profiles_module,
     _model_data_to_profile,
     _warn_undeclared_profile_keys,
     refresh,
 )
+
+
+def test_generate_profiles_module_round_trip(tmp_path: Path) -> None:
+    """Repeated lists retain their values without corrupting literal strings."""
+    profiles: dict[str, dict[str, Any]] = {
+        "z-model": {
+            "file_mime_types": ["text/plain", "application/json"],
+            "reasoning_effort_levels": ["low", "high"],
+            "name": 'true false null \\"\n',
+            "open_weights": False,
+            "attachment": True,
+            "optional": None,
+        },
+        "a-model": {
+            "file_mime_types": ["text/plain", "application/json"],
+            "reasoning_effort_levels": ["low", "high"],
+        },
+        "b-model": {"file_mime_types": ["text/plain", "text/html"]},
+        "c-model": {"file_mime_types": ["text/plain", "text/html"]},
+        "d-model": {"file_mime_types": ["text/plain"]},
+    }
+    content = _generate_profiles_module(profiles)
+    path = tmp_path / "profiles.py"
+    path.write_text(content)
+    spec = importlib.util.spec_from_file_location("generated_shared_profiles", path)
+    assert spec
+    assert spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert profiles == module._PROFILES
+    assert list(module._PROFILES) == sorted(profiles)
+    assert content.count('"application/json"') == 1
+    assert content.count('"text/html"') == 1
+    assert "_FILE_MIME_TYPES_2" in content
+    assert (
+        module._PROFILES["a-model"]["reasoning_effort_levels"]
+        is not module._PROFILES["z-model"]["reasoning_effort_levels"]
+    )
+    assert profiles["z-model"]["file_mime_types"] == ["text/plain", "application/json"]
+
+
+def test_generate_profiles_module_constant_name_collisions(tmp_path: Path) -> None:
+    """Arbitrary field names cannot collide or produce invalid identifiers."""
+    values: dict[str, Any] = {
+        "profiles": [1, True, {"text": "null"}],
+        "file-mime-types": ["a"],
+        "file_mime_types": ["b"],
+        "file_mime_types_2": ["c"],
+        "123": [],
+        "quotes'\n": [None],
+    }
+    profiles = {"first": values, "second": values}
+    content = _generate_profiles_module(profiles)
+    tree = ast.parse(content)
+    names = [
+        node.targets[0].id
+        for node in tree.body
+        if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)
+    ]
+    assert names == ["_FILE_MIME_TYPES"]
+    assert "_PROFILES" not in names
+    path = tmp_path / "profiles.py"
+    path.write_text(content)
+    spec = importlib.util.spec_from_file_location("generated_collision_profiles", path)
+    assert spec
+    assert spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert profiles == module._PROFILES
 
 
 @pytest.fixture
