@@ -1151,7 +1151,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.4.2"
+version = "1.4.3"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -1243,7 +1243,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.6.3"
+version = "1.6.6"
 source = { editable = "../../core" }
 dependencies = [
     { name = "httpx" },
@@ -3420,7 +3420,7 @@ wheels = [
 
 [[package]]
 name = "sentence-transformers"
-version = "5.2.3"
+version = "5.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "huggingface-hub" },
@@ -3434,9 +3434,9 @@ dependencies = [
     { name = "transformers" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5b/30/21664028fc0776eb1ca024879480bbbab36f02923a8ff9e4cae5a150fa35/sentence_transformers-5.2.3.tar.gz", hash = "sha256:3cd3044e1f3fe859b6a1b66336aac502eaae5d3dd7d5c8fc237f37fbf58137c7", size = 381623, upload-time = "2026-02-17T14:05:20.238Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/56/d2cb00765a6b15c994a7fccf20f9032f16e8193ca49147cb5155166ad744/sentence_transformers-5.6.0.tar.gz", hash = "sha256:0e7164d051e416c1853ade7c274ff52af3f9da0f4be7f0b83d734c27699e1057", size = 453194, upload-time = "2026-06-16T14:01:56.42Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/9f/dba4b3e18ebbe1eaa29d9f1764fbc7da0cd91937b83f2b7928d15c5d2d36/sentence_transformers-5.2.3-py3-none-any.whl", hash = "sha256:6437c62d4112b615ddebda362dfc16a4308d604c5b68125ed586e3e95d5b2e30", size = 494225, upload-time = "2026-02-17T14:05:18.596Z" },
+    { url = "https://files.pythonhosted.org/packages/76/c1/dc1582b79e9a2eb0cddf9559cd9bcdff084f541d6fe881fdd9d98630dba7/sentence_transformers-5.6.0-py3-none-any.whl", hash = "sha256:d2075b5e687a1611005e20ab04a6846994d51adfcf39610aed066af3c0c0b81f", size = 596411, upload-time = "2026-06-16T14:01:55.103Z" },
 ]
 
 [[package]]
