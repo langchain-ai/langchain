@@ -78,7 +78,7 @@ class ModelProfile(TypedDict, total=False):
     # TODO: add more detail about formats? e.g. bytes or base64
 
     file_mime_types: list[str]
-    """Generic file MIME types beyond dedicated modality flags; absent means unknown."""
+    """File MIME types, including PDF/image/audio/video; absent means unknown."""
 
     image_tool_message: bool
     """Whether images can be included in `ToolMessage` content."""
