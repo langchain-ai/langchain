@@ -15,9 +15,7 @@ https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-p
 
 from typing import Any
 
-_FILE_MIME_TYPES = []
-
-_FILE_MIME_TYPES_2 = [
+_FILE_MIME_TYPES = [
     "application/csv",
     "application/graphql",
     "application/javascript",
@@ -146,30 +144,6 @@ _FILE_MIME_TYPES_2 = [
     "text/xml",
 ]
 
-_REASONING_EFFORT_LEVELS = [
-    "minimal",
-    "low",
-    "medium",
-    "high",
-]
-
-_REASONING_EFFORT_LEVELS_2 = [
-    "none",
-    "low",
-    "medium",
-    "high",
-    "xhigh",
-]
-
-_REASONING_EFFORT_LEVELS_3 = [
-    "none",
-    "low",
-    "medium",
-    "high",
-    "xhigh",
-    "max",
-]
-
 _PROFILES: dict[str, dict[str, Any]] = {
     "chatgpt-image-latest": {
         "name": "chatgpt-image-latest",
@@ -196,7 +170,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES,
+        "file_mime_types": [],
     },
     "gpt-3.5-turbo": {
         "name": "GPT-3.5-turbo",
@@ -225,7 +199,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": False,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES,
+        "file_mime_types": [],
     },
     "gpt-4": {
         "name": "GPT-4",
@@ -254,7 +228,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-4-turbo": {
         "name": "GPT-4 Turbo",
@@ -283,7 +257,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-4.1": {
         "name": "GPT-4.1",
@@ -311,7 +285,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-4.1-mini": {
         "name": "GPT-4.1 mini",
@@ -339,7 +313,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-4.1-nano": {
         "name": "GPT-4.1 nano",
@@ -368,7 +342,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-4o": {
         "name": "GPT-4o",
@@ -396,7 +370,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-4o-2024-05-13": {
         "name": "GPT-4o (2024-05-13)",
@@ -425,7 +399,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-4o-2024-08-06": {
         "name": "GPT-4o (2024-08-06)",
@@ -453,7 +427,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-4o-2024-11-20": {
         "name": "GPT-4o (2024-11-20)",
@@ -481,7 +455,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-4o-mini": {
         "name": "GPT-4o mini",
@@ -509,7 +483,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-5": {
         "name": "GPT-5",
@@ -537,8 +511,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+        ],
     },
     "gpt-5-chat-latest": {
         "image_url_inputs": True,
@@ -547,9 +526,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
         "max_input_tokens": 272000,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5-codex": {
         "image_url_inputs": True,
@@ -558,9 +543,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
         "max_input_tokens": 272000,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5-mini": {
         "name": "GPT-5 Mini",
@@ -588,8 +579,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+        ],
     },
     "gpt-5-nano": {
         "name": "GPT-5 Nano",
@@ -617,8 +613,13 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+        ],
     },
     "gpt-5-pro": {
         "name": "GPT-5 Pro",
@@ -646,8 +647,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.1": {
         "name": "GPT-5.1",
@@ -675,7 +682,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "none",
             "low",
@@ -690,9 +697,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
         "max_input_tokens": 272000,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.1-codex": {
         "image_url_inputs": True,
@@ -701,9 +714,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
         "max_input_tokens": 272000,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.1-codex-max": {
         "image_url_inputs": True,
@@ -712,9 +731,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
         "max_input_tokens": 272000,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.1-codex-mini": {
         "image_url_inputs": True,
@@ -723,9 +748,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
         "max_input_tokens": 272000,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.2": {
         "name": "GPT-5.2",
@@ -753,8 +784,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.2-chat-latest": {
         "name": "GPT-5.2 Chat",
@@ -783,8 +820,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.2-codex": {
         "image_url_inputs": True,
@@ -793,8 +836,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.2-pro": {
         "name": "GPT-5.2 Pro",
@@ -822,8 +871,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.3-chat-latest": {
         "name": "GPT-5.3 Chat (latest)",
@@ -852,7 +907,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-5.3-codex": {
         "name": "GPT-5.3 Codex",
@@ -880,8 +935,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.3-codex-spark": {
         "name": "GPT-5.3 Codex Spark",
@@ -909,8 +970,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.4": {
         "name": "GPT-5.4",
@@ -938,8 +1005,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.4-mini": {
         "name": "GPT-5.4 mini",
@@ -967,8 +1040,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.4-nano": {
         "name": "GPT-5.4 nano",
@@ -996,8 +1075,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.4-pro": {
         "name": "GPT-5.4 Pro",
@@ -1025,8 +1110,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
     },
     "gpt-5.5": {
         "name": "GPT-5.5",
@@ -1054,8 +1145,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
         "reasoning_effort_default": "medium",
     },
     "gpt-5.5-pro": {
@@ -1084,8 +1181,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_2,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+        ],
         "reasoning_effort_default": "medium",
     },
     "gpt-5.6": {
@@ -1114,8 +1217,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_3,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
         "reasoning_effort_default": "medium",
     },
     "gpt-5.6-luna": {
@@ -1144,8 +1254,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_3,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
         "reasoning_effort_default": "medium",
     },
     "gpt-5.6-sol": {
@@ -1174,8 +1291,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_3,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
         "reasoning_effort_default": "medium",
     },
     "gpt-5.6-terra": {
@@ -1204,8 +1328,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_3,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
         "reasoning_effort_default": "medium",
     },
     "gpt-6-astra": {
@@ -1234,7 +1365,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
         "reasoning_effort_levels": [
             "low",
             "medium",
@@ -1269,8 +1400,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_3,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
         "reasoning_effort_default": "medium",
     },
     "gpt-6-sol": {
@@ -1299,8 +1437,15 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
-        "reasoning_effort_levels": _REASONING_EFFORT_LEVELS_3,
+        "file_mime_types": _FILE_MIME_TYPES,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
         "reasoning_effort_default": "medium",
     },
     "gpt-6.1-sol": {
@@ -1329,7 +1474,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-daybreak-blue-latest": {
         "name": "Daybreak Blue",
@@ -1357,7 +1502,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-daybreak-red-latest": {
         "name": "Daybreak Red",
@@ -1385,7 +1530,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "gpt-image-1": {
         "name": "gpt-image-1",
@@ -1413,7 +1558,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES,
+        "file_mime_types": [],
     },
     "gpt-image-1-mini": {
         "name": "gpt-image-1-mini",
@@ -1440,7 +1585,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES,
+        "file_mime_types": [],
     },
     "gpt-image-1.5": {
         "name": "gpt-image-1.5",
@@ -1467,7 +1612,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES,
+        "file_mime_types": [],
     },
     "gpt-image-2": {
         "name": "gpt-image-2",
@@ -1494,7 +1639,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES,
+        "file_mime_types": [],
     },
     "gpt-realtime-2.1": {
         "name": "GPT-Realtime-2.1",
@@ -1522,7 +1667,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES,
+        "file_mime_types": [],
     },
     "o1": {
         "name": "o1",
@@ -1551,7 +1696,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "o1-pro": {
         "name": "o1-pro",
@@ -1580,7 +1725,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "o3": {
         "name": "o3",
@@ -1608,7 +1753,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "o3-mini": {
         "name": "o3-mini",
@@ -1637,7 +1782,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "o3-pro": {
         "name": "o3-pro",
@@ -1665,7 +1810,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "o4-mini": {
         "name": "o4-mini",
@@ -1694,7 +1839,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES_2,
+        "file_mime_types": _FILE_MIME_TYPES,
     },
     "text-embedding-3-large": {
         "name": "text-embedding-3-large",
@@ -1721,7 +1866,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES,
+        "file_mime_types": [],
     },
     "text-embedding-3-small": {
         "name": "text-embedding-3-small",
@@ -1748,7 +1893,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES,
+        "file_mime_types": [],
     },
     "text-embedding-ada-002": {
         "name": "text-embedding-ada-002",
@@ -1775,6 +1920,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES,
+        "file_mime_types": [],
     },
 }
