@@ -8,6 +8,13 @@ image_tool_message = true
 tool_choice = true
 tool_call_streaming = true
 file_mime_types = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "audio/wav",
+  "audio/mpeg",
   "application/csv",
   "application/graphql",
   "application/javascript",
@@ -161,6 +168,9 @@ file_mime_types = []
 file_mime_types = []
 
 [overrides."text-embedding-ada-002"]
+file_mime_types = []
+
+[overrides."gpt-4"]
 file_mime_types = []
 
 [overrides."gpt-3.5-turbo"]

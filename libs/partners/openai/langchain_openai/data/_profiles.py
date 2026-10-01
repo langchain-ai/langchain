@@ -16,6 +16,13 @@ https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-p
 from typing import Any
 
 _FILE_MIME_TYPES = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "audio/wav",
+    "audio/mpeg",
     "application/csv",
     "application/graphql",
     "application/javascript",
@@ -228,7 +235,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
-        "file_mime_types": _FILE_MIME_TYPES,
+        "file_mime_types": [],
     },
     "gpt-4-turbo": {
         "name": "GPT-4 Turbo",

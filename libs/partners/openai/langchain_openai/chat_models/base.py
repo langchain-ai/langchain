@@ -200,14 +200,28 @@ def _get_default_model_profile(
     model_name: str, *, use_responses_api: bool = False
 ) -> ModelProfile:
     profile = deepcopy(_MODEL_PROFILES.get(model_name) or {})
-    if not (
-        use_responses_api
-        and profile.get("pdf_inputs")
-        and profile.get("text_outputs")
-        and profile.get("tool_calling")
-        and not profile.get("image_outputs")
-        and not profile.get("audio_outputs")
-    ):
+    supported_modalities = {
+        "application/pdf": profile.get("pdf_inputs") and profile.get("image_inputs"),
+        "image/jpeg": profile.get("image_inputs"),
+        "image/png": profile.get("image_inputs"),
+        "image/webp": profile.get("image_inputs"),
+        "image/gif": profile.get("image_inputs"),
+        "audio/wav": profile.get("audio_inputs") and not use_responses_api,
+        "audio/mpeg": profile.get("audio_inputs") and not use_responses_api,
+    }
+    mime_types = [
+        mime_type
+        for mime_type in profile.get("file_mime_types", [])
+        if supported_modalities.get(
+            mime_type,
+            use_responses_api
+            and profile.get("tool_calling")
+            and not profile.get("audio_outputs"),
+        )
+    ]
+    if mime_types and profile.get("text_outputs") and not profile.get("image_outputs"):
+        profile["file_mime_types"] = mime_types
+    else:
         profile.pop("file_mime_types", None)
     return profile
 
