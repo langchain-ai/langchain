@@ -121,6 +121,62 @@ def test_per_call_routing_does_not_change_profile() -> None:
     assert "text/plain" not in model.profile["file_mime_types"]
 
 
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "gpt-5-chat-latest",
+        "gpt-5.1-chat-latest",
+        "gpt-5-codex",
+        "gpt-5.1-codex",
+        "gpt-5.1-codex-mini",
+        "gpt-5.1-codex-max",
+        "gpt-5.2-codex",
+    ],
+)
+def test_augmented_alias_file_mime_types(model_name: str) -> None:
+    model = ChatOpenAI(
+        model=model_name, api_key=SecretStr("test"), use_responses_api=True
+    )
+    assert model.profile
+    assert model.profile["text_outputs"]
+    assert model.profile["image_inputs"]
+    assert model.profile["tool_calling"]
+    assert {
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "text/plain",
+    } <= set(model.profile["file_mime_types"])
+    assert not any(
+        mime_type.startswith(("audio/", "video/"))
+        for mime_type in model.profile["file_mime_types"]
+    )
+
+
+@pytest.mark.parametrize("model_name", ["gpt-audio", "gpt-audio-mini"])
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_audio_chat_file_mime_types(
+    model_name: str, *, use_responses_api: bool
+) -> None:
+    model = ChatOpenAI(
+        model=model_name, api_key=SecretStr("test"), use_responses_api=use_responses_api
+    )
+    assert model.profile
+    assert model.profile["audio_inputs"]
+    assert model.profile["audio_outputs"]
+    assert model.profile["text_outputs"]
+    assert model.profile["tool_calling"]
+    assert not model.profile["pdf_inputs"]
+    assert not model.profile["image_inputs"]
+    if use_responses_api:
+        assert "file_mime_types" not in model.profile
+    else:
+        assert model.profile["file_mime_types"] == ["audio/wav", "audio/mpeg"]
+    assert _PROFILES[model_name]["file_mime_types"] == ["audio/wav", "audio/mpeg"]
+
+
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_unknown_and_text_only_models_omit_file_mime_types(
     *, use_responses_api: bool
