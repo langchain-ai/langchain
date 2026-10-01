@@ -4725,6 +4725,48 @@ def test_profile() -> None:
     assert model.profile == {"tool_calling": False}
 
 
+def test_profile_file_mime_types() -> None:
+    model = ChatAnthropic(model=MODEL_NAME)
+    assert model.profile
+    assert model.profile.get("file_mime_types") == ["text/plain"]
+    cast("list[str]", model.profile.get("file_mime_types", [])).append(
+        "application/json"
+    )
+
+    other = ChatAnthropic(model=MODEL_NAME)
+    assert other.profile
+    assert other.profile.get("file_mime_types") == ["text/plain"]
+
+    unknown = ChatAnthropic(model="unknown-model")
+    assert unknown.profile is None
+    custom = ChatAnthropic(model=MODEL_NAME, profile={"tool_calling": False})
+    assert custom.profile == {"tool_calling": False}
+
+
+@pytest.mark.parametrize(
+    ("block", "source"),
+    [
+        (
+            {"type": "text-plain", "mime_type": "text/plain", "text": "document"},
+            {"type": "text", "media_type": "text/plain", "data": "document"},
+        ),
+        (
+            {"type": "file", "source_type": "text", "text": "document"},
+            {"type": "text", "media_type": "text/plain", "data": "document"},
+        ),
+        (
+            {"type": "file", "mime_type": "text/plain", "file_id": "file_test"},
+            {"type": "file", "file_id": "file_test"},
+        ),
+    ],
+)
+def test_plain_text_document_input(block: dict, source: dict) -> None:
+    _, messages = _format_messages([HumanMessage(content=[block])], model=MODEL_NAME)
+    assert messages == [
+        {"role": "user", "content": [{"type": "document", "source": source}]}
+    ]
+
+
 def test_profile_1m_context_beta() -> None:
     model = ChatAnthropic(model="claude-sonnet-4-5")
     assert model.profile

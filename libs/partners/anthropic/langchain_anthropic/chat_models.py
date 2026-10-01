@@ -132,7 +132,7 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     """
     default = _MODEL_PROFILES.get(model_name)
     if default:
-        return default.copy()
+        return copy.deepcopy(default)
     return {}
 
 

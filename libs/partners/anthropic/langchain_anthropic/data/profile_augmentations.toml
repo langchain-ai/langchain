@@ -7,6 +7,7 @@ pdf_tool_message = true
 image_tool_message = true
 structured_output = false
 tool_call_streaming = true
+file_mime_types = ["text/plain"]
 
 [overrides."claude-haiku-4-5"]
 structured_output = true
