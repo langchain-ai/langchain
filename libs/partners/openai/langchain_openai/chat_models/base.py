@@ -29,6 +29,7 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
+from copy import deepcopy
 from functools import partial
 from io import BytesIO
 from json import JSONDecodeError
@@ -195,9 +196,13 @@ def _get_ssrf_safe_client() -> httpx.Client:
 _MODEL_PROFILES = cast(ModelProfileRegistry, _PROFILES)
 
 
-def _get_default_model_profile(model_name: str) -> ModelProfile:
-    default = _MODEL_PROFILES.get(model_name) or {}
-    return default.copy()
+def _get_default_model_profile(
+    model_name: str, *, use_responses_api: bool = False
+) -> ModelProfile:
+    profile = deepcopy(_MODEL_PROFILES.get(model_name) or {})
+    if not (use_responses_api and profile.get("pdf_inputs")):
+        profile.pop("file_mime_types", None)
+    return profile
 
 
 WellKnownTools = (
@@ -1545,7 +1550,12 @@ class BaseChatOpenAI(BaseChatModel):
         return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
-        return _get_default_model_profile(self.model_name) or None
+        return (
+            _get_default_model_profile(
+                self.model_name, use_responses_api=self._use_responses_api({})
+            )
+            or None
+        )
 
     @property
     def _default_params(self) -> dict[str, Any]:

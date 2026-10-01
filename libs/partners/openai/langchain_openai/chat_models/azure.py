@@ -760,11 +760,19 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     def _resolve_model_profile(self) -> ModelProfile | None:
         if (self.model_name is not None) and (
-            profile := _get_default_model_profile(self.model_name) or None
+            profile := _get_default_model_profile(
+                self.model_name, use_responses_api=self._use_responses_api({})
+            )
+            or None
         ):
             return profile
         if self.deployment_name is not None:
-            return _get_default_model_profile(self.deployment_name) or None
+            return (
+                _get_default_model_profile(
+                    self.deployment_name, use_responses_api=self._use_responses_api({})
+                )
+                or None
+            )
         return None
 
     @property
