@@ -17,6 +17,11 @@ from typing import Any
 
 _FILE_MIME_TYPES = [
     "text/plain",
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
 ]
 
 _PROFILES: dict[str, dict[str, Any]] = {

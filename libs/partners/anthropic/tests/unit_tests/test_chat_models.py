@@ -27,6 +27,7 @@ from langchain_core.exceptions import (
     ModelRateLimitError,
     ModelTimeoutError,
 )
+from langchain_core.language_models import ModelProfile
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -4726,21 +4727,43 @@ def test_profile() -> None:
 
 
 def test_profile_file_mime_types() -> None:
+    expected = [
+        "text/plain",
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+    ]
     model = ChatAnthropic(model=MODEL_NAME)
     assert model.profile
-    assert model.profile.get("file_mime_types") == ["text/plain"]
-    cast("list[str]", model.profile.get("file_mime_types", [])).append(
-        "application/json"
-    )
+    assert model.profile["file_mime_types"] == expected
+    assert model.profile["pdf_inputs"]
+    assert model.profile["image_inputs"]
+    assert not model.profile["audio_inputs"]
+    assert not model.profile["video_inputs"]
+    model.profile["file_mime_types"].append("application/json")
 
     other = ChatAnthropic(model=MODEL_NAME)
     assert other.profile
-    assert other.profile.get("file_mime_types") == ["text/plain"]
+    assert other.profile["file_mime_types"] == expected
 
     unknown = ChatAnthropic(model="unknown-model")
     assert unknown.profile is None
-    custom = ChatAnthropic(model=MODEL_NAME, profile={"tool_calling": False})
-    assert custom.profile == {"tool_calling": False}
+
+
+@pytest.mark.parametrize(
+    "profile",
+    [
+        {},
+        {"tool_calling": False},
+        {"file_mime_types": []},
+        {"file_mime_types": ["application/custom"]},
+    ],
+)
+def test_profile_file_mime_types_explicit(profile: ModelProfile) -> None:
+    model = ChatAnthropic(model=MODEL_NAME, profile=profile)
+    assert model.profile == profile
 
 
 @pytest.mark.parametrize(
