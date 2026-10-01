@@ -58,7 +58,7 @@ def test_non_responses_models_omit_file_mime_types(model_name: str) -> None:
     model = ChatOpenAI(
         model=model_name, api_key=SecretStr("test"), use_responses_api=True
     )
-    assert "file_mime_types" not in (model.profile or {})
+    assert (model.profile or {})["file_mime_types"] == []
     assert _PROFILES[model_name]["file_mime_types"] == []
 
 
@@ -83,7 +83,9 @@ def test_file_mime_types_isolation() -> None:
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
 @pytest.mark.parametrize("model_name", ["unknown-model", "gpt-image-2"])
-def test_explicit_file_mime_types(model_name: str, *, use_responses_api: bool) -> None:
+def test_explicit_file_mime_types(
+    monkeypatch: pytest.MonkeyPatch, model_name: str, *, use_responses_api: bool
+) -> None:
     profile: ModelProfile = {"file_mime_types": ["application/custom"]}
     model = ChatOpenAI(
         model=model_name,
@@ -92,6 +94,13 @@ def test_explicit_file_mime_types(model_name: str, *, use_responses_api: bool) -
         profile=profile,
     )
     assert model.profile == profile
+    monkeypatch.setitem(_PROFILES, model_name, profile)
+    inferred = _get_default_model_profile(
+        model_name, use_responses_api=use_responses_api
+    )
+    assert inferred == profile
+    inferred["file_mime_types"].clear()
+    assert profile["file_mime_types"] == ["application/custom"]
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
@@ -129,7 +138,7 @@ def test_unknown_and_text_only_models_omit_file_mime_types(
         profile = _get_default_model_profile(
             model_name, use_responses_api=use_responses_api
         )
-        assert "file_mime_types" not in profile
+        assert profile.get("file_mime_types", []) == []
 
 
 @pytest.mark.parametrize(
@@ -181,12 +190,14 @@ def test_file_mime_types_follow_modalities_and_transport(
             "text_outputs": True,
             "tool_calling": True,
             **flags,
-            "file_mime_types": mime_types,
         }
     }
     monkeypatch.setattr("langchain_openai.chat_models.base._MODEL_PROFILES", profiles)
+    monkeypatch.setattr(
+        "langchain_openai.chat_models.base._FILE_MIME_TYPES", mime_types
+    )
     profile = _get_default_model_profile(
         "synthetic", use_responses_api=use_responses_api
     )
     assert profile.get("file_mime_types", []) == expected
-    assert profiles["synthetic"]["file_mime_types"] == mime_types
+    assert "file_mime_types" not in profiles["synthetic"]
