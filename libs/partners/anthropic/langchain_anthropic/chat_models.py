@@ -132,7 +132,10 @@ def _get_default_model_profile(model_name: str) -> ModelProfile:
     """
     default = _MODEL_PROFILES.get(model_name)
     if default:
-        return copy.deepcopy(default)
+        profile = default.copy()
+        if "file_mime_types" in profile:
+            profile["file_mime_types"] = list(profile["file_mime_types"])
+        return profile
     return {}
 
 
