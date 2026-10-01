@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from langchain_core._api import beta
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -72,8 +72,8 @@ class ModelRoutingMiddleware(AgentMiddleware[ModelRoutingState, ContextT, Respon
     Routes are selected before the first model call and persisted in `model_route`,
     keeping the same model throughout tool loops and checkpoint resumes. Clear this
     state field (set it to `None`) to route a new task. Selection is never cached on
-    the middleware instance. Applications can override `select_route` or
-    `aselect_route` for application-specific selection policies.
+    the middleware instance. Plug this middleware into `create_agent`; applications
+    can customize routing input and backends without invoking selection directly.
     Place this middleware before model fallback middleware so fallbacks receive the
     selected model. Candidate models must support the agent's tools and output format.
 
@@ -212,7 +212,7 @@ class ModelRoutingMiddleware(AgentMiddleware[ModelRoutingState, ContextT, Respon
         msg = "Model routing selection must be a configured route name"
         raise ValueError(msg)
 
-    def select_route(self, state: ModelRoutingState) -> str:
+    def _select_route(self, state: ModelRoutingState) -> str:
         """Select or reuse a route without mutating agent state.
 
         Args:
@@ -233,7 +233,7 @@ class ModelRoutingMiddleware(AgentMiddleware[ModelRoutingState, ContextT, Respon
         response = self._routing_model.invoke(self._llm_input(inputs), config=config)
         return self._validate_route(response.get("route") if isinstance(response, dict) else None)
 
-    async def aselect_route(self, state: ModelRoutingState) -> str:
+    async def _aselect_route(self, state: ModelRoutingState) -> str:
         """Select or reuse a route asynchronously without mutating agent state.
 
         Args:
@@ -265,7 +265,7 @@ class ModelRoutingMiddleware(AgentMiddleware[ModelRoutingState, ContextT, Respon
             The selected route state update.
         """
         del runtime
-        return {"model_route": self.select_route(state)}
+        return {"model_route": self._select_route(state)}
 
     async def abefore_model(
         self, state: ModelRoutingState, runtime: Runtime[ContextT]
@@ -280,7 +280,7 @@ class ModelRoutingMiddleware(AgentMiddleware[ModelRoutingState, ContextT, Respon
             The selected route state update.
         """
         del runtime
-        return {"model_route": await self.aselect_route(state)}
+        return {"model_route": await self._aselect_route(state)}
 
     def wrap_model_call(
         self,
@@ -296,7 +296,7 @@ class ModelRoutingMiddleware(AgentMiddleware[ModelRoutingState, ContextT, Respon
         Returns:
             The selected model's response.
         """
-        route = self.select_route(cast("ModelRoutingState", request.state))
+        route = self._validate_route(request.state.get("model_route"))
         return handler(request.override(model=self.models[route]))
 
     async def awrap_model_call(
@@ -313,5 +313,5 @@ class ModelRoutingMiddleware(AgentMiddleware[ModelRoutingState, ContextT, Respon
         Returns:
             The selected model's response.
         """
-        route = await self.aselect_route(cast("ModelRoutingState", request.state))
+        route = self._validate_route(request.state.get("model_route"))
         return await handler(request.override(model=self.models[route]))
