@@ -75,7 +75,7 @@ def _convert_from_v1_to_mistral(
             and model_provider == "mistralai"
         ):
             new_content.append(block["value"])
-        elif block["type"] == "tool_call":
+        elif block["type"] in ("tool_call", "invalid_tool_call"):
             continue
         else:
             new_content.append(block)

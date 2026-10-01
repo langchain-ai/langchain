@@ -1162,3 +1162,23 @@ def test_unclassified_status_stays_a_plain_status_error() -> None:
 def test_success_response_does_not_raise() -> None:
     """A non-error response is left alone."""
     _raise_on_error(_error_response(200))
+
+
+def test_convert_from_v1_to_mistral_filters_invalid_tool_call() -> None:
+    """`invalid_tool_call` blocks are metadata, not provider content."""
+    from langchain_mistralai._compat import _convert_from_v1_to_mistral
+
+    blocks: list[Any] = [
+        {"type": "text", "text": "hello"},
+        {
+            "type": "invalid_tool_call",
+            "id": "call_1",
+            "name": "get_weather",
+            "args": "{bad json",
+            "error": "Malformed args.",
+        },
+    ]
+
+    content = _convert_from_v1_to_mistral(blocks, "mistralai")
+
+    assert content == [{"type": "text", "text": "hello"}]
