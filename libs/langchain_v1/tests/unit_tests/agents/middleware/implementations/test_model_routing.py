@@ -19,13 +19,15 @@ from langchain.agents.middleware import (
     InputAgentState,
     ModelRequest,
     ModelResponse,
-    ModelRoutingConfig,
-    ModelRoutingInput,
     ModelRoutingMiddleware,
-    ModelRoutingState,
     model_routing,
 )
 from langchain.agents.middleware.internal_call_transformer import internal_call_metadata
+from langchain.agents.middleware.model_routing import (
+    ModelRoutingConfig,
+    ModelRoutingInput,
+    ModelRoutingState,
+)
 
 
 def test_beta_warning() -> None:
