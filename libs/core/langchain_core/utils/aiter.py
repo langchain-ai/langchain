@@ -180,7 +180,8 @@ class Tee(Generic[T]):
 
     Unlike `itertools.tee`, `.tee` returns a custom type instead of a `tuple`. Like a
     tuple, it can be indexed, iterated and unpacked to get the child iterators. In
-    addition, its `.tee.aclose` method immediately closes all children, and it can be
+    addition, its `.tee.aclose` method immediately closes all children and the
+    source iterator, and it can be
     used in an `async with` context for the same effect.
 
     If `iterable` is an iterator and read elsewhere, `tee` will *not* provide these
@@ -269,9 +270,16 @@ class Tee(Generic[T]):
         return False
 
     async def aclose(self) -> None:
-        """Async close all child iterators."""
+        """Async close all child iterators and the source iterator.
+
+        The source is closed even if some children were never started: closing
+        a never-started child executes none of its cleanup code, so the
+        source would otherwise be left suspended.
+        """
         for child in self._children:
             await child.aclose()
+        if hasattr(self._iterator, "aclose"):
+            await self._iterator.aclose()
 
 
 atee = Tee
