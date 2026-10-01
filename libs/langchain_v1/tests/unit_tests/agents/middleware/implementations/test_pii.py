@@ -1840,6 +1840,37 @@ class TestPIIStreamTransformer:
         assert "5425 2334 3010 9903" not in finals[0]
         assert "[REDACTED_CREDIT_CARD]" in finals[0]
 
+    def test_stream_redaction_is_stable_for_every_split_point(self) -> None:
+        """Every two-delta split should match the unsplit redacted output."""
+
+        def detect_sensitive(content: str) -> list[PIIMatch]:
+            return detect_email(content) + detect_credit_card(content)
+
+        rule = RedactionRule(
+            pii_type="email_or_credit_card",
+            detector=detect_sensitive,
+        ).resolve()
+        text = "请联系 alice@example.com，卡号 4532015112830366，谢谢。"
+
+        baseline_events = [
+            _make_delta_event(text),
+            _make_finish_event(text),
+        ]
+        _run_transformer(_PIIStreamTransformer(rule=rule), baseline_events)
+        _, baseline_finals = _emitted_text(baseline_events)
+        expected = baseline_finals[0]
+
+        for split in range(1, len(text)):
+            events = [
+                _make_delta_event(text[:split]),
+                _make_delta_event(text[split:]),
+                _make_finish_event(text),
+            ]
+            _run_transformer(_PIIStreamTransformer(rule=rule), events)
+            _, finals = _emitted_text(events)
+
+            assert finals[0] == expected, f"redaction changed at split point {split}"
+
     def test_no_transformer_when_neither_output_nor_tool_results_apply(self) -> None:
         """The transformer is gated on either output- or tool-result scrubbing."""
         middleware = PIIMiddleware("email", apply_to_output=False, apply_to_tool_results=False)
