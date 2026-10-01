@@ -177,7 +177,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "max_output_tokens": 1048576,
         "text_inputs": True,
         "image_inputs": True,
-        "audio_inputs": True,
+        "audio_inputs": False,
         "video_inputs": False,
         "text_outputs": True,
         "image_outputs": False,
