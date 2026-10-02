@@ -3301,6 +3301,24 @@ def test__construct_responses_api_input_human_message_with_image_url_conversion(
     assert result[0]["content"][1]["detail"] == "high"
 
 
+@pytest.mark.parametrize("provider", ["openai", "anthropic", None])
+@pytest.mark.parametrize("store", [None, True, False])
+def test__construct_responses_api_input_reasoning_provider(
+    provider: str | None, store: bool | None
+) -> None:
+    message = AIMessage(
+        content=[
+            {"type": "reasoning", "reasoning": "reasoning text"},
+            {"type": "text", "text": "answer"},
+        ],
+        response_metadata={"model_provider": provider, "output_version": "v1"},
+    )
+    result = _construct_responses_api_input([message], store=store)
+    reasoning = [item for item in result if item["type"] == "reasoning"]
+    assert bool(reasoning) == (provider == "openai" and store is not False)
+    assert result[-1]["content"][0]["text"] == "answer"
+
+
 def test__construct_responses_api_input_store_false_replays_stateless_history() -> None:
     ai_message = AIMessage(
         content=[
@@ -3315,7 +3333,7 @@ def test__construct_responses_api_input_store_false_replays_stateless_history() 
             },
             {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
         ],
-        response_metadata={"id": "resp_123"},
+        response_metadata={"id": "resp_123", "model_provider": "openai"},
     )
 
     result = _construct_responses_api_input([ai_message], store=False)
@@ -3346,7 +3364,7 @@ def test__construct_responses_api_input_store_enabled_keeps_item_ids(
             {"type": "reasoning", "id": "rs_123", "summary": []},
             {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
         ],
-        response_metadata={"id": "resp_123"},
+        response_metadata={"id": "resp_123", "model_provider": "openai"},
     )
 
     result = _construct_responses_api_input([ai_message], store=store)
