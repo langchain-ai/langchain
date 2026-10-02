@@ -11,7 +11,7 @@ from typing import TypedDict as TypingTypedDict
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
-from typing_extensions import TypedDict as ExtensionsTypedDict
+from typing_extensions import NotRequired, TypedDict as ExtensionsTypedDict
 
 try:
     from typing import Annotated as TypingAnnotated
@@ -1050,6 +1050,17 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
     # Error should be raised since we're using v1 code path here
     with pytest.raises(TypeError):
         _convert_typed_dict_to_openai_function(Tool)
+
+
+def test_convert_typed_dict_with_not_required_field() -> None:
+    class MyTypedDict(TypingTypedDict):
+        required_field: str
+        optional_field: NotRequired[str]
+
+    result = _convert_typed_dict_to_openai_function(MyTypedDict)
+
+    assert result["parameters"]["properties"]["required_field"] == {"type": "string"}
+    assert result["parameters"]["properties"]["optional_field"] == {"type": "string"}
 
 
 def test_convert_union_type() -> None:
