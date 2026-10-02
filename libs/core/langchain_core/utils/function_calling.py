@@ -280,8 +280,28 @@ def _convert_any_typed_dicts_to_pydantic(
             docstring, list(annotations_)
         )
         fields: dict[str, Any] = {}
+        required_origins = {
+            getattr(typing, "NotRequired", None),
+            getattr(typing, "Required", None),
+            typing_extensions.NotRequired,
+            typing_extensions.Required,
+        }
         for arg, arg_type in annotations_.items():
-            if get_origin(arg_type) in {Annotated, typing_extensions.Annotated}:
+            arg_origin = get_origin(arg_type)
+            if arg_origin in required_origins:
+                # TypedDict's Required/NotRequired markers control whether the
+                # field appears in the generated Pydantic model's required list.
+                inner_type = get_args(arg_type)[0]
+                new_arg_type = _convert_any_typed_dicts_to_pydantic(
+                    inner_type, depth=depth + 1, visited=visited
+                )
+                field_kwargs = {"default": None if arg_origin is not (
+                    getattr(typing, "Required", None) or typing_extensions.Required
+                ) else ...}
+                if arg_desc := arg_descriptions.get(arg):
+                    field_kwargs["description"] = arg_desc
+                fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
+            elif arg_origin in {Annotated, typing_extensions.Annotated}:
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
