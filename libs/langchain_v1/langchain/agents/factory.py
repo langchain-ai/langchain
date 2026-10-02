@@ -1791,6 +1791,7 @@ def create_agent(
                 _make_model_to_model_edge(
                     model_destination=loop_entry_node,
                     end_destination=exit_node,
+                    structured_output_tools=structured_output_tools,
                 ),
                 trace=False,
             ),
@@ -1808,6 +1809,7 @@ def create_agent(
             model_destination=loop_entry_node,
             end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_after_model[0], "after_model"),
+            structured_output_tools=structured_output_tools,
         )
 
     # Add before_agent middleware edges
@@ -1820,6 +1822,7 @@ def create_agent(
                 model_destination=loop_entry_node,
                 end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "before_agent"),
+                structured_output_tools=structured_output_tools,
             )
         # Connect last before_agent to loop_entry_node (before_model or model)
         _add_middleware_edge(
@@ -1829,6 +1832,7 @@ def create_agent(
             model_destination=loop_entry_node,
             end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_before_agent[-1], "before_agent"),
+            structured_output_tools=structured_output_tools,
         )
 
     # Add before_model middleware edges
@@ -1841,6 +1845,7 @@ def create_agent(
                 model_destination=loop_entry_node,
                 end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "before_model"),
+                structured_output_tools=structured_output_tools,
             )
         # Go directly to model after the last before_model
         _add_middleware_edge(
@@ -1850,6 +1855,7 @@ def create_agent(
             model_destination=loop_entry_node,
             end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_before_model[-1], "before_model"),
+            structured_output_tools=structured_output_tools,
         )
 
     # Add after_model middleware edges
@@ -1865,6 +1871,7 @@ def create_agent(
                 model_destination=loop_entry_node,
                 end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "after_model"),
+                structured_output_tools=structured_output_tools,
             )
         # Note: Connection from after_model to after_agent/END is handled above
         # in the conditional edges section
@@ -1882,6 +1889,7 @@ def create_agent(
                 model_destination=loop_entry_node,
                 end_destination=exit_node,
                 can_jump_to=_get_can_jump_to(m1, "after_agent"),
+                structured_output_tools=structured_output_tools,
             )
 
         # Connect the last after_agent to END
@@ -1892,6 +1900,7 @@ def create_agent(
             model_destination=loop_entry_node,
             end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
+            structured_output_tools=structured_output_tools,
         )
 
     # Set recursion limit to 9_999
@@ -1952,18 +1961,41 @@ def _dedupe_transformers(
     return deduped
 
 
+def _pending_tool_call_sends(
+    state: dict[str, Any],
+    structured_output_tools: dict[str, OutputToolBinding[Any]],
+) -> list[Send]:
+    """One `Send` per tool call on the last `AIMessage` that has no `ToolMessage` yet.
+
+    Each call runs as its own task, so an `interrupt()` raised inside a tool gets its own
+    interrupt ID, and calls that were already answered don't run again.
+    """
+    last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
+    if last_ai_message is None:
+        return []
+    answered = {m.tool_call_id for m in tool_messages}
+    return [
+        Send("tools", [call])
+        for call in last_ai_message.tool_calls
+        if call["id"] not in answered and call["name"] not in structured_output_tools
+    ]
+
+
 def _resolve_jump(
     jump_to: JumpTo | None,
     *,
     model_destination: str,
     end_destination: str,
-) -> str | None:
+    state: dict[str, Any],
+    structured_output_tools: dict[str, OutputToolBinding[Any]],
+) -> str | list[Send] | None:
     if jump_to == "model":
         return model_destination
     if jump_to == "end":
         return end_destination
     if jump_to == "tools":
-        return "tools"
+        # Nothing pending: go back to the model, which is where the tools node led.
+        return _pending_tool_call_sends(state, structured_output_tools) or model_destination
     return None
 
 
@@ -2003,6 +2035,8 @@ def _make_model_to_tools_edge(
                 jump_to,
                 model_destination=model_destination,
                 end_destination=end_destination,
+                state=state,
+                structured_output_tools=structured_output_tools,
             )
 
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
@@ -2046,6 +2080,7 @@ def _make_model_to_model_edge(
     *,
     model_destination: str,
     end_destination: str,
+    structured_output_tools: dict[str, OutputToolBinding[Any]],
 ) -> Callable[[dict[str, Any]], str | list[Send] | None]:
     def model_to_model(
         state: dict[str, Any],
@@ -2056,6 +2091,8 @@ def _make_model_to_model_edge(
                 jump_to,
                 model_destination=model_destination,
                 end_destination=end_destination,
+                state=state,
+                structured_output_tools=structured_output_tools,
             )
 
         # 2. Exit condition: a fresh structured response was generated this call
@@ -2121,6 +2158,7 @@ def _add_middleware_edge(
     model_destination: str,
     end_destination: str,
     can_jump_to: list[JumpTo] | None,
+    structured_output_tools: dict[str, OutputToolBinding[Any]],
 ) -> None:
     """Add an edge to the graph for a middleware node.
 
@@ -2131,15 +2169,19 @@ def _add_middleware_edge(
         model_destination: The destination for the edge to the model.
         end_destination: The destination for the edge to the end.
         can_jump_to: The conditionally jumpable destinations for the edge.
+        structured_output_tools: Structured output tools, which a jump to `tools`
+            does not dispatch.
     """
     if can_jump_to:
 
-        def jump_edge(state: dict[str, Any]) -> str:
+        def jump_edge(state: dict[str, Any]) -> str | list[Send]:
             return (
                 _resolve_jump(
                     state.get("jump_to"),
                     model_destination=model_destination,
                     end_destination=end_destination,
+                    state=state,
+                    structured_output_tools=structured_output_tools,
                 )
                 or default_destination
             )
@@ -2149,7 +2191,8 @@ def _add_middleware_edge(
         if "end" in can_jump_to:
             destinations.append(end_destination)
         if "tools" in can_jump_to:
-            destinations.append("tools")
+            # With no pending tool calls, a jump to `tools` goes to the model instead.
+            destinations.extend(["tools", model_destination])
         if "model" in can_jump_to and name != model_destination:
             destinations.append(model_destination)
 
