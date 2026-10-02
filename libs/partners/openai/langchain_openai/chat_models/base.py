@@ -56,6 +56,7 @@ from langchain_core.exceptions import (
     ModelAPIError,
     ModelAuthenticationError,
     ModelConnectionError,
+    ModelError,
     ModelInvalidRequestError,
     ModelNotFoundError,
     ModelPermissionDeniedError,
@@ -635,6 +636,36 @@ def _update_token_usage(
     return new_usage
 
 
+class OpenAIRefusalError(ModelError):
+    """Error raised when OpenAI refuses a request on content-policy grounds."""
+
+
+class OpenAIBadRequestRefusalError(openai.BadRequestError, OpenAIRefusalError):
+    """OpenAI bad-request refusal retaining SDK exception compatibility."""
+
+
+class OpenAIPermissionRefusalError(openai.PermissionDeniedError, OpenAIRefusalError):
+    """OpenAI permission refusal retaining SDK exception compatibility."""
+
+
+class OpenAIAPIRefusalError(openai.APIError, OpenAIRefusalError):
+    """OpenAI streaming refusal retaining SDK exception compatibility."""
+
+
+def _is_openai_refusal(e: openai.APIError) -> bool:
+    body = e.body
+    if isinstance(body, dict):
+        body = body.get("error", body)
+    if isinstance(body, dict) and any(
+        body.get(key) in ("content_filter", "content_policy_violation")
+        for key in ("type", "code")
+    ):
+        return True
+    return type(e) is openai.APIError and (
+        "this content was flagged for possible cybersecurity risk" in e.message.lower()
+    )
+
+
 class OpenAIContextOverflowError(openai.BadRequestError, ContextOverflowError):
     """BadRequestError raised when input exceeds OpenAI's context limit."""
 
@@ -678,6 +709,10 @@ class OpenAITimeoutError(openai.APITimeoutError, ModelTimeoutError):
 
 
 def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
+    if _is_openai_refusal(e):
+        raise OpenAIBadRequestRefusalError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
     if (
         "context_length_exceeded" in str(e)
         or "Input tokens exceed the configured limit" in e.message
@@ -715,6 +750,15 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
 
 
 def _handle_openai_api_error(e: openai.APIError) -> None:
+    if _is_openai_refusal(e):
+        if isinstance(e, openai.PermissionDeniedError):
+            raise OpenAIPermissionRefusalError(
+                message=e.message, response=e.response, body=e.body
+            ) from e
+        if type(e) is openai.APIError:
+            raise OpenAIAPIRefusalError(
+                message=e.message, request=e.request, body=e.body
+            ) from e
     error_message = str(e)
     if "exceeds the context window" in error_message:
         raise OpenAIAPIContextOverflowError(
@@ -4463,16 +4507,6 @@ def _oai_structured_outputs_parser(
         f"field. Received message:\n\n{ai_msg}"
     )
     raise ValueError(msg)
-
-
-class OpenAIRefusalError(Exception):
-    """Error raised when OpenAI Structured Outputs API returns a refusal.
-
-    When using OpenAI's Structured Outputs API with user-generated input, the model
-    may occasionally refuse to fulfill the request for safety reasons.
-
-    See [more on refusals](https://platform.openai.com/docs/guides/structured-outputs/refusals).
-    """
 
 
 def _create_usage_metadata(
