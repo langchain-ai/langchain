@@ -11,7 +11,7 @@ from typing import TypedDict as TypingTypedDict
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
-from typing_extensions import NotRequired, TypedDict as ExtensionsTypedDict
+from typing_extensions import NotRequired, Required, TypedDict as ExtensionsTypedDict
 
 try:
     from typing import Annotated as TypingAnnotated
@@ -1052,8 +1052,13 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
         _convert_typed_dict_to_openai_function(Tool)
 
 
-def test_convert_typed_dict_with_not_required_field() -> None:
-    class MyTypedDict(TypingTypedDict):
+@pytest.mark.parametrize(
+    "typed_dict",
+    [TypingTypedDict, ExtensionsTypedDict],
+    ids=["typing.TypedDict", "typing_extensions.TypedDict"],
+)
+def test_convert_typed_dict_with_not_required_field(typed_dict: type) -> None:
+    class MyTypedDict(typed_dict):  # type: ignore[misc]
         required_field: str
         optional_field: NotRequired[str]
 
@@ -1061,6 +1066,27 @@ def test_convert_typed_dict_with_not_required_field() -> None:
 
     assert result["parameters"]["properties"]["required_field"] == {"type": "string"}
     assert result["parameters"]["properties"]["optional_field"] == {"type": "string"}
+    assert result["parameters"]["required"] == ["required_field"]
+
+
+@pytest.mark.parametrize(
+    "typed_dict",
+    [TypingTypedDict, ExtensionsTypedDict],
+    ids=["typing.TypedDict", "typing_extensions.TypedDict"],
+)
+def test_convert_typed_dict_with_required_field(typed_dict: type) -> None:
+    class MyTypedDict(typed_dict, total=False):  # type: ignore[misc]
+        required_field: Required[str]
+        optional_field: NotRequired[list[int]]
+
+    result = _convert_typed_dict_to_openai_function(MyTypedDict)
+
+    assert result["parameters"]["properties"]["required_field"] == {"type": "string"}
+    assert result["parameters"]["properties"]["optional_field"] == {
+        "type": "array",
+        "items": {"type": "integer"},
+    }
+    assert result["parameters"]["required"] == ["required_field"]
 
 
 def test_convert_union_type() -> None:
