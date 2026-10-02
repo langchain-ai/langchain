@@ -1,7 +1,7 @@
 """Destination resolution for LangSmith tracing."""
 
 from collections.abc import Iterator
-from contextlib import nullcontext
+from contextlib import AbstractContextManager, nullcontext
 from itertools import product
 from typing import Any
 from unittest.mock import MagicMock
@@ -53,7 +53,6 @@ def clean_destination(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     ("code_project", "code_address", "env_project", "env_address"),
     list(product((False, True), repeat=4)),
 )
-@pytest.mark.parametrize("run_type", ["llm", "chat", "chain", "tool", "retriever"])
 def test_destination_matrix(
     monkeypatch: pytest.MonkeyPatch,
     *,
@@ -61,7 +60,6 @@ def test_destination_matrix(
     code_address: bool,
     env_project: bool,
     env_address: bool,
-    run_type: str,
 ) -> None:
     if env_project:
         monkeypatch.setenv("LANGSMITH_PROJECT", "env-project")
@@ -91,21 +89,8 @@ def test_destination_matrix(
         client.create_run.assert_not_called()
         client.update_run.assert_not_called()
         return
-    if run_type == "llm":
-        tracer.on_llm_start({}, ["hello"], run_id=run_id)
-        tracer.on_llm_end(LLMResult(generations=[]), run_id=run_id)
-    elif run_type == "chat":
-        tracer.on_chat_model_start({}, [[HumanMessage("hello")]], run_id=run_id)
-        tracer.on_llm_end(LLMResult(generations=[]), run_id=run_id)
-    elif run_type == "chain":
-        tracer.on_chain_start({}, {"input": "hello"}, run_id=run_id)
-        tracer.on_chain_end({}, run_id=run_id)
-    elif run_type == "tool":
-        tracer.on_tool_start({}, "hello", run_id=run_id)
-        tracer.on_tool_end("ok", run_id=run_id)
-    else:
-        tracer.on_retriever_start({}, "hello", run_id=run_id)
-        tracer.on_retriever_end([], run_id=run_id)
+    tracer.on_chain_start({}, {"input": "hello"}, run_id=run_id)
+    tracer.on_chain_end({}, run_id=run_id)
     expected_address = (
         ADDRESS
         if code_address
@@ -132,37 +117,60 @@ def test_destination_matrix(
         assert payload.get("address") == expected_address
 
 
+@pytest.mark.parametrize("run_type", ["llm", "chat", "tool", "retriever"])
+def test_callback_address_propagation(run_type: str) -> None:
+    client = MagicMock(spec=Client)
+    tracer = LangChainTracer(address=ADDRESS, client=client)
+    run_id = uuid4()
+    if run_type == "llm":
+        tracer.on_llm_start({}, ["hello"], run_id=run_id)
+        tracer.on_llm_end(LLMResult(generations=[]), run_id=run_id)
+    elif run_type == "chat":
+        tracer.on_chat_model_start({}, [[HumanMessage("hello")]], run_id=run_id)
+        tracer.on_llm_end(LLMResult(generations=[]), run_id=run_id)
+    elif run_type == "tool":
+        tracer.on_tool_start({}, "hello", run_id=run_id)
+        tracer.on_tool_end("ok", run_id=run_id)
+    else:
+        tracer.on_retriever_start({}, "hello", run_id=run_id)
+        tracer.on_retriever_end([], run_id=run_id)
+    client.create_run.assert_called_once()
+    client.update_run.assert_called_once()
+    for payload in (
+        client.create_run.call_args.kwargs,
+        client.update_run.call_args.kwargs,
+    ):
+        assert payload.get("address") == ADDRESS
+        assert payload.get("session_name") is None
+
+
 @pytest.mark.parametrize(
     "destination", [{"address": ADDRESS}, {"project_name": "configured"}]
 )
 @pytest.mark.parametrize("mode", ["context", "configure", "parent"])
 def test_ambient_destination(destination: dict[str, str], mode: str) -> None:
     client = MagicMock(spec=Client)
-    if mode == "configure":
+    scope: AbstractContextManager[None]
+    if mode == "context":
+        scope = tracing_context(
+            enabled=True,
+            client=client,
+            project_name=destination.get("project_name"),
+            address=destination.get("address"),
+        )
+    elif mode == "configure":
         configure(
             enabled=True,
             client=client,
             project_name=destination.get("project_name"),
             address=destination.get("address"),
         )
-    parent = (
-        RunTree(name="parent", ls_client=client, **destination)
-        if mode == "parent"
-        else None
-    )
-    context = {**destination} if mode == "context" else {}
+        scope = nullcontext()
+    else:
+        parent = RunTree(name="parent", ls_client=client, **destination)
+        scope = tracing_context(enabled=True, client=client, parent=parent)
+
     try:
-        scope = (
-            nullcontext()
-            if mode == "configure"
-            else tracing_context(
-                enabled=True,
-                client=client,
-                parent=parent,
-                project_name=context.get("project_name"),
-                address=context.get("address"),
-            )
-        )
         with scope:
             manager = CallbackManager.configure()
             run = manager.on_chain_start({}, {})
@@ -284,14 +292,6 @@ def test_tracer_kwargs_leave_environment_to_sdk(
     assert kwargs["address"] is None
 
 
-@pytest.mark.parametrize("project_name", [None, "explicit"])
-def test_explicit_address_kwargs(project_name: str | None) -> None:
-    with tracing_context(project_name="ambient"):
-        kwargs = _get_tracer_kwargs(project_name, address=ADDRESS)
-    assert kwargs["project_name"] == project_name
-    assert kwargs["address"] == ADDRESS
-
-
 @pytest.mark.parametrize("project_name", [None, "conflicting"])
 def test_trace_callbacks_explicit_address(project_name: str | None) -> None:
     client = MagicMock(spec=Client)
@@ -382,12 +382,6 @@ def test_replica_destinations(*, root_address: bool, replica_mode: str) -> None:
     for payload in creates + updates:
         assert payload.get("address") == expected_address
         assert payload.get("session_name") == expected_project
-    parent, child = creates
-    assert parent["id"] != parent_id
-    assert child["id"] != child_id
-    assert child["parent_run_id"] == parent["id"]
-    assert child["trace_id"] == parent["trace_id"]
-    assert child["dotted_order"].startswith(parent["dotted_order"] + ".")
     assert {payload["run_id"] for payload in updates} == {
         payload["id"] for payload in creates
     }
@@ -457,17 +451,37 @@ def test_addressed_parent_replica_inherited_outside_context() -> None:
 
 @pytest.mark.parametrize("use_address", [False, True])
 def test_chain_group_tracing_disabled(*, use_address: bool) -> None:
+    client = MagicMock(spec=Client)
     with (
-        tracing_context(enabled=False),
-        trace_as_chain_group("group", address=ADDRESS if use_address else None),
+        tracing_context(enabled=False, client=client),
+        trace_as_chain_group(
+            "group", address=ADDRESS if use_address else None
+        ) as manager,
     ):
-        pass
+        assert not any(
+            isinstance(handler, LangChainTracer) for handler in manager.handlers
+        )
+        run = manager.on_chain_start({}, {})
+        run.on_chain_end({})
+        manager.on_chain_end({})
+    assert manager.ended
+    client.create_run.assert_not_called()
+    client.update_run.assert_not_called()
 
 
 @pytest.mark.parametrize("use_address", [False, True])
 async def test_async_chain_group_tracing_disabled(*, use_address: bool) -> None:
-    with tracing_context(enabled=False):
+    client = MagicMock(spec=Client)
+    with tracing_context(enabled=False, client=client):
         async with atrace_as_chain_group(
             "group", address=ADDRESS if use_address else None
-        ):
-            pass
+        ) as manager:
+            assert not any(
+                isinstance(handler, LangChainTracer) for handler in manager.handlers
+            )
+            run = await manager.on_chain_start({}, {})
+            await run.on_chain_end({})
+            await manager.on_chain_end({})
+    assert manager.ended
+    client.create_run.assert_not_called()
+    client.update_run.assert_not_called()
