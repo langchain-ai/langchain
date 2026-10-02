@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 from langsmith import Client, get_tracing_context
+from langsmith import address as ls_address
 from langsmith import run_trees as rt
 from langsmith import utils as ls_utils
 from tenacity import (
@@ -144,6 +145,7 @@ class LangChainTracer(BaseTracer):
         tags: list[str] | None = None,
         *,
         metadata: Mapping[str, str] | None = None,
+        address: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -152,7 +154,8 @@ class LangChainTracer(BaseTracer):
             example_id: The example ID.
             project_name: The project name.
 
-                Defaults to the tracer project.
+                Resolved together with `address` from LangSmith config and the
+                environment when no destination is supplied.
             client: The client.
 
                 Defaults to the global client.
@@ -162,13 +165,19 @@ class LangChainTracer(BaseTracer):
             metadata: Additional metadata to include if it isn't already in the run.
 
                 Defaults to None.
+            address: The agent address to send traces to instead of a project.
+
+                !!! warning "Beta"
+                    Agent addressing is in beta and must be enabled for the
+                    LangSmith workspace.
             **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.project_name = project_name or ls_utils.get_tracer_project()
+        self.project_name = project_name
+        self.address = ls_address.parse(address) if address is not None else None
         self.client = client or get_client()
         self.tags = tags or []
         self.latest_run: Run | None = None
@@ -209,6 +218,7 @@ class LangChainTracer(BaseTracer):
         return self.__class__(
             example_id=self.example_id,
             project_name=self.project_name,
+            address=self.address,
             client=self.client,
             tags=merged_tags,
             metadata=merged_metadata,
@@ -217,9 +227,25 @@ class LangChainTracer(BaseTracer):
             _external_run_ids=self._external_run_ids,
         )
 
+    def _get_run_kwargs(
+        self, parent_run_id: UUID | None, extra: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Forward explicit or inherited destinations to RunTree."""
+        parent = self.run_map.get(str(parent_run_id)) if parent_run_id else None
+        if parent is not None:
+            return {
+                "session_name": parent.session_name,
+                "address": parent.address,
+                "replicas": parent.replicas,
+                "extra": extra,
+            }
+        return {
+            "session_name": self.project_name,
+            "address": self.address,
+            "extra": extra,
+        }
+
     def _start_trace(self, run: Run) -> None:
-        if self.project_name:
-            run.session_name = self.project_name
         if self.tags is not None:
             if run.tags:
                 run.tags = sorted(set(run.tags + self.tags))
@@ -267,7 +293,7 @@ class LangChainTracer(BaseTracer):
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"messages": [[dumpd(msg) for msg in batch] for batch in messages]},
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             run_type="llm",
