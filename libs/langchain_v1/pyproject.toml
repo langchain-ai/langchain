@@ -49,6 +49,9 @@ xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 meta = ["langchain-meta"]
 mcp = ["fastmcp>=4.0.1,<5.0.0"]
+voice-openai = ["openai[realtime]>=3.6,<4"]
+voice-gemini = ["google-genai>=1.75,<3"]
+voice-websocket = ["websockets>=15,<18"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
@@ -76,6 +79,9 @@ test = [
     "langchain-tests>=1.1.9,<2.0.0",
     "langchain-openai",
     "fastmcp>=4.0.1,<5.0.0",
+    "openai[realtime]>=3.6,<4",
+    "google-genai>=1.75,<3",
+    "websockets>=15,<18",
 ]
 lint = [
     "ruff>=0.15.0,<0.17.0",
