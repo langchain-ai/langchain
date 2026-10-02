@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 from langchain_core.outputs import GenerationChunk
 
 from langchain_openai import OpenAI
@@ -28,7 +29,7 @@ def test_openai_model_param() -> None:
 
 
 def test_openai_model_kwargs() -> None:
-    llm = OpenAI(model_kwargs={"foo": "bar"})
+    llm = OpenAI(model="foo", model_kwargs={"foo": "bar"})
     assert llm.model_kwargs == {"foo": "bar"}
 
 
@@ -42,7 +43,7 @@ def test_openai_fields_in_model_kwargs() -> None:
 
 def test_openai_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
-        llm = OpenAI(foo="bar")  # type: ignore[call-arg]
+        llm = OpenAI(model="foo", foo="bar")  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
 
 
@@ -69,7 +70,7 @@ def test_custom_token_counting() -> None:
     def token_encoder(text: str) -> list[int]:
         return [1, 2, 3]
 
-    llm = OpenAI(custom_get_token_ids=token_encoder)
+    llm = OpenAI(model="foo", custom_get_token_ids=token_encoder)
     assert llm.get_token_ids("foo") == [1, 2, 3]
 
 
@@ -110,7 +111,7 @@ def test_stream_response_to_generation_chunk() -> None:
 
 def test_generate_streaming_multiple_prompts_error() -> None:
     """Ensures ValueError when streaming=True and multiple prompts."""
-    llm = OpenAI(streaming=True)
+    llm = OpenAI(model="foo", streaming=True)
 
     with pytest.raises(
         ValueError, match="Cannot stream results with multiple prompts\\."
@@ -120,18 +121,23 @@ def test_generate_streaming_multiple_prompts_error() -> None:
 
 def test_openai_streaming_best_of_error() -> None:
     with pytest.raises(ValueError):
-        OpenAI(best_of=2, streaming=True)
+        OpenAI(model="foo", best_of=2, streaming=True)
 
 
 def test_openai_streaming_n_error() -> None:
     with pytest.raises(ValueError):
-        OpenAI(n=2, streaming=True)
+        OpenAI(model="foo", n=2, streaming=True)
+
+def test_openai_requires_model() -> None:
+    """OpenAI must not silently use the retired completion model."""
+    with pytest.raises(ValidationError):
+        OpenAI()
 
 
 def test_openai_modelname_to_contextsize_valid() -> None:
-    assert OpenAI().modelname_to_contextsize("davinci") == 2049
+    assert OpenAI(model="foo").modelname_to_contextsize("davinci") == 2049
 
 
 def test_openai_modelname_to_contextsize_invalid() -> None:
     with pytest.raises(ValueError):
-        OpenAI().modelname_to_contextsize("foobar")
+        OpenAI(model="foo").modelname_to_contextsize("foobar")

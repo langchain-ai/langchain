@@ -5803,3 +5803,8 @@ def test_configuration_update_block_without_text() -> None:
         "type": "configuration_update",
         "reasoning": {"effort": "low"},
     }
+
+def test_openai_default_model() -> None:
+    """ChatOpenAI should use the updated supported default model."""
+    model = ChatOpenAI()
+    assert model.model_name == "gpt-5.6-terra"

@@ -15,6 +15,7 @@ class TestOpenAIStandard(ChatModelUnitTests):
     def chat_model_params(self) -> dict:
         return {
             "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4o",
             "stream_usage": True,
         }
 

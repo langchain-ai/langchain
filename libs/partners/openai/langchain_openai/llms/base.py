@@ -785,6 +785,7 @@ class BaseOpenAI(BaseLLM):
 
 
 class OpenAI(BaseOpenAI):
+    model_name: str = Field(alias="model")
     """OpenAI completion model integration.
 
     Setup:
