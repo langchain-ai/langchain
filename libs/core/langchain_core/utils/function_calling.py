@@ -321,6 +321,16 @@ def _convert_any_typed_dicts_to_pydantic(
             _convert_any_typed_dicts_to_pydantic(arg, depth=depth + 1, visited=visited)
             for arg in type_args
         )
+        # typing.NotRequired and typing.Required are single-argument wrappers.
+        # Passing their arguments as a tuple raises TypeError on Python 3.12+.
+        required_origins = {
+            getattr(typing, "NotRequired", None),
+            getattr(typing, "Required", None),
+            typing_extensions.NotRequired,
+            typing_extensions.Required,
+        }
+        if origin in required_origins:
+            return cast("type", subscriptable_origin[type_args[0]])  # type: ignore[index]
         return cast("type", subscriptable_origin[type_args])  # type: ignore[index]
     return type_
 
