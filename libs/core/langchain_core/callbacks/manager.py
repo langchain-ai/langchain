@@ -2427,7 +2427,7 @@ def _configure(
 
     from langchain_core.tracers.context import (  # noqa: PLC0415
         _configure_hooks,
-        _get_tracer_project,
+        _get_tracer_destination,
         _tracing_v2_is_enabled,
         tracing_v2_callback_var,
     )
@@ -2505,7 +2505,7 @@ def _configure(
         )
         raise RuntimeError(msg)
 
-    tracer_project = _get_tracer_project()
+    tracer_project, tracer_address = _get_tracer_destination()
     debug = _get_debug()
     if verbose or debug or tracing_v2_enabled_:
         if verbose and not any(
@@ -2531,6 +2531,7 @@ def _configure(
                 try:
                     handler = LangChainTracer(
                         project_name=tracer_project,
+                        address=tracer_address,
                         client=(
                             run_tree.client
                             if run_tree is not None
