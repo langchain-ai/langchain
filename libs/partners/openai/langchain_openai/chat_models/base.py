@@ -5010,10 +5010,12 @@ def _construct_responses_api_input(
                                 input_.append(new_item)
                         elif block_type == "reasoning":
                             if lc_msg.response_metadata.get(
+                                "output_version"
+                            ) == "v1" and lc_msg.response_metadata.get(
                                 "model_provider"
-                            ) == "openai" and (
-                                store is not False or block.get("encrypted_content")
-                            ):
+                            ) not in (None, "openai"):
+                                continue
+                            if store is not False or block.get("encrypted_content"):
                                 input_.append(_pop_index_and_sub_index(block))
                         elif block_type in (
                             "compaction",

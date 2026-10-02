@@ -3303,20 +3303,37 @@ def test__construct_responses_api_input_human_message_with_image_url_conversion(
 
 @pytest.mark.parametrize("provider", ["openai", "anthropic", None])
 @pytest.mark.parametrize("store", [None, True, False])
+@pytest.mark.parametrize("output_version", ["v1", "responses/v1", None])
 def test__construct_responses_api_input_reasoning_provider(
-    provider: str | None, store: bool | None
+    provider: str | None, store: bool | None, output_version: str | None
 ) -> None:
     message = AIMessage(
         content=[
             {"type": "reasoning", "reasoning": "reasoning text"},
             {"type": "text", "text": "answer"},
         ],
-        response_metadata={"model_provider": provider, "output_version": "v1"},
+        response_metadata={
+            "model_provider": provider,
+            "output_version": output_version,
+        },
     )
     result = _construct_responses_api_input([message], store=store)
     reasoning = [item for item in result if item["type"] == "reasoning"]
-    assert bool(reasoning) == (provider == "openai" and store is not False)
+    assert bool(reasoning) == (
+        (output_version != "v1" or provider in (None, "openai")) and store is not False
+    )
     assert result[-1]["content"][0]["text"] == "answer"
+
+
+def test__construct_responses_api_input_legacy_reasoning() -> None:
+    message = AIMessage(
+        content=[{"type": "text", "text": "answer"}],
+        additional_kwargs={
+            "reasoning": {"type": "reasoning", "id": "rs_123", "summary": []},
+        },
+    )
+    result = _construct_responses_api_input([message])
+    assert {"type": "reasoning", "id": "rs_123", "summary": []} in result
 
 
 def test__construct_responses_api_input_store_false_replays_stateless_history() -> None:
