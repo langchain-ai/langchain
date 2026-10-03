@@ -1966,7 +1966,7 @@ def convert_to_openai_messages(
                     )
                     raise ValueError(err)
             if text_format == "string" and not any(
-                block["type"] != "text" for block in content
+                block.get("type") != "text" for block in content
             ):
                 content = "\n".join(block["text"] for block in content)
         oai_msg["content"] = content

@@ -1288,6 +1288,25 @@ def test_convert_to_openai_messages_invalid_block() -> None:
     assert result == [{"role": "user", "content": [{"type": "invalid", "foo": "bar"}]}]
 
 
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"text": "a"},
+        {"toolUse": {"toolUseId": "123", "name": "foo", "input": {}}},
+        {"foo": "bar"},
+        {},
+    ],
+)
+def test_convert_to_openai_messages_passes_through_blocks_without_type(
+    block: dict[str, Any],
+) -> None:
+    message = AIMessage(content=[block])
+
+    result = convert_to_openai_messages([message])
+
+    assert result == [{"role": "assistant", "content": [block]}]
+
+
 def test_handle_openai_responses_blocks() -> None:
     blocks: str | list[str | dict[str, Any]] = [
         {"type": "reasoning", "id": "1"},
