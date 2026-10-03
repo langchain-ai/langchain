@@ -6010,3 +6010,53 @@ def test_runnable_sequence_v1_output_schema_with_pick() -> None:
     schema = sequence.get_output_jsonschema()
     assert set(schema["properties"]) == {"a"}
     assert "a" in schema["required"]
+
+
+async def test_runnable_parallel_ainvoke_respects_max_concurrency() -> None:
+    """`RunnableParallel.ainvoke` honors `max_concurrency`, like `invoke`.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/40877:
+    the async path used a bare `asyncio.gather`, so all branches ran with
+    unbounded concurrency regardless of `max_concurrency`.
+    """
+    current = 0
+    peak = 0
+
+    async def branch(_: Any) -> str:
+        nonlocal current, peak
+        current += 1
+        peak = max(peak, current)
+        await asyncio.sleep(0.1)
+        current -= 1
+        return "x"
+
+    parallel = RunnableParallel(**{f"b{i}": RunnableLambda(branch) for i in range(4)})
+    out = await parallel.ainvoke({}, {"max_concurrency": 2})
+    assert out == {f"b{i}": "x" for i in range(4)}
+    assert peak <= 2, f"max_concurrency=2 but {peak} branches ran concurrently"
+
+
+async def test_runnable_parallel_astream_respects_max_concurrency() -> None:
+    """`RunnableParallel.astream` honors `max_concurrency`, like `stream`.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/40877:
+    the async transform path pulled one chunk from every branch concurrently,
+    ignoring `max_concurrency`.
+    """
+    current = 0
+    peak = 0
+
+    async def branch(_: Any) -> str:
+        nonlocal current, peak
+        current += 1
+        peak = max(peak, current)
+        await asyncio.sleep(0.1)
+        current -= 1
+        return "x"
+
+    parallel = RunnableParallel(**{f"b{i}": RunnableLambda(branch) for i in range(4)})
+    out: dict[str, Any] = {}
+    async for chunk in parallel.astream({}, {"max_concurrency": 2}):
+        out.update(chunk)
+    assert out == {f"b{i}": "x" for i in range(4)}
+    assert peak <= 2, f"max_concurrency=2 but {peak} branches ran concurrently"

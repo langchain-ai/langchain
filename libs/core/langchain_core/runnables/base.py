@@ -4229,7 +4229,10 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
             steps = dict(self.steps__)
-            results = await asyncio.gather(
+            # Mirror the sync path: honor max_concurrency when running steps.
+            # See `get_executor_for_config` for the sync equivalent.
+            results = await gather_with_concurrency(
+                config.get("max_concurrency"),
                 *(
                     _ainvoke_step(
                         step,
@@ -4239,7 +4242,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                         key,
                     )
                     for key, step in steps.items()
-                )
+                ),
             )
             output = dict(zip(steps, results, strict=False))
         # finish the root run
@@ -4345,9 +4348,22 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         async def get_next_chunk(generator: AsyncIterator[Any]) -> Output | None:
             return await anext(generator)
 
+        # Mirror the sync path: honor max_concurrency when pulling chunks from
+        # each branch. The sync `_transform` gets this from the executor created
+        # by `get_executor_for_config`; here we gate each pull behind a
+        # semaphore instead.
+        max_concurrency = config.get("max_concurrency")
+        semaphore = asyncio.Semaphore(max_concurrency) if max_concurrency else None
+
+        def _next_chunk_task(generator: AsyncIterator[Any]) -> asyncio.Task:
+            coro: Coroutine[Any, Any, Any] = get_next_chunk(generator)
+            if semaphore is not None:
+                coro = gated_coro(semaphore, coro)
+            return asyncio.create_task(coro)
+
         # Start the first iteration of each generator
         tasks = {
-            asyncio.create_task(get_next_chunk(generator)): (step_name, generator)
+            _next_chunk_task(generator): (step_name, generator)
             for step_name, generator in named_generators
         }
         # Yield chunks from each as they become available,
@@ -4361,7 +4377,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                 (step_name, generator) = tasks.pop(task)
                 try:
                     yield AddableDict({step_name: task.result()})
-                    new_task = asyncio.create_task(get_next_chunk(generator))
+                    new_task = _next_chunk_task(generator)
                     tasks[new_task] = (step_name, generator)
                 except StopAsyncIteration:
                     pass
