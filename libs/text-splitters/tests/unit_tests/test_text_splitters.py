@@ -4432,3 +4432,34 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_experimental_markdown_keeps_nested_fences_inside_longer_fence() -> None:
+    """A shorter or different fence must not close a longer outer code block."""
+    tick = chr(96)
+    text = (
+        tick * 4
+        + "markdown\n"
+        + tick * 3
+        + "python\nprint(1)\n"
+        + tick * 3
+        + "\n"
+        + tick * 4
+        + "\nAfter\n"
+    )
+    chunks = ExperimentalMarkdownSyntaxTextSplitter().split_text(text)
+    assert len(chunks) == 2
+    assert chunks[0].page_content == text.removesuffix("After\n")
+    assert chunks[0].metadata == {"Code": "markdown"}
+    assert chunks[1].page_content == "After\n"
+
+
+def test_experimental_markdown_closing_fence_must_match_character() -> None:
+    """A tilde fence, or a fence with trailing text, does not close a backtick block."""
+    tick = chr(96)
+    text = tick * 3 + "\nshown ~~~ fence\n~~~\nstill inside\n" + tick * 3 + "\nAfter\n"
+    chunks = ExperimentalMarkdownSyntaxTextSplitter().split_text(text)
+    assert len(chunks) == 2
+    assert "still inside" in chunks[0].page_content
+    assert chunks[0].metadata["Code"] == ""
+    assert chunks[1].page_content == "After\n"

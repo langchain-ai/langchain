@@ -411,7 +411,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
                 self.current_chunk.page_content = self._resolve_code_chunk(
                     raw_line, raw_lines
                 )
-                self.current_chunk.metadata["Code"] = code_match.group(1)
+                self.current_chunk.metadata["Code"] = code_match.group(2).strip()
                 self._complete_chunk_doc()
             elif horz_match:
                 self._complete_chunk_doc()
@@ -440,11 +440,13 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.current_header_stack.append((header_depth, header_text))
 
     def _resolve_code_chunk(self, current_line: str, raw_lines: list[str]) -> str:
+        opening = self._match_code(current_line)
+        fence = opening.group(1) if opening else ""
         chunk = current_line
         while raw_lines:
             raw_line = raw_lines.pop(0)
             chunk += raw_line
-            if self._match_code(raw_line):
+            if self._is_closing_fence(raw_line, fence):
                 return chunk
         return ""
 
@@ -471,8 +473,29 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     @staticmethod
     def _match_code(line: str) -> re.Match[str] | None:
-        matches = [re.match(rule, line) for rule in [r"^```(.*)", r"^~~~(.*)"]]
-        return next((match for match in matches if match), None)
+        """Match an opening fence.
+
+        Group 1 is the whole fence marker (three or more backticks or tildes).
+        Group 2 is the info string, without the spaces that separate it from
+        the fence. A longer opening fence is not truncated to three characters,
+        so a nested shorter fence is not mistaken for the language.
+        """
+        return re.match(r"^(`{3,}|~{3,})[ \t]*(.*)", line)
+
+    @staticmethod
+    def _is_closing_fence(line: str, opening_fence: str) -> bool:
+        """Return whether `line` closes `opening_fence` per CommonMark.
+
+        The closing fence must use the same character, be at least as long as
+        the opening fence, and be followed only by spaces or tabs. A shorter
+        fence, the other fence character, or trailing text stays inside the block.
+        """
+        if not opening_fence:
+            return False
+        marker = opening_fence[0]
+        body = line.rstrip("\r\n")
+        match = re.match(rf"^({re.escape(marker)}{{3,}})[ \t]*$", body)
+        return bool(match and len(match.group(1)) >= len(opening_fence))
 
     @staticmethod
     def _match_horz(line: str) -> re.Match[str] | None:
