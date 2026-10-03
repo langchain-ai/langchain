@@ -244,6 +244,34 @@ class TestURLDetection:
         assert len(matches) == 1
         assert matches[0]["value"] == "example.com/page"
 
+    def test_detect_bare_domain_with_punycode_tld(self) -> None:
+        content = "Go to example.xn--p1ai/page"
+        matches = detect_url(content)
+
+        assert len(matches) == 1
+        assert matches[0]["value"] == "example.xn--p1ai/page"
+
+    @pytest.mark.parametrize(
+        "content",
+        [
+            "built with Node.js/Express",
+            "the ratio is 1.5/2.0",
+            "version 1.2.3/README",
+            "see section 3.14/2",
+            "mail john.doe@example.com/foo",
+            "pandas.DataFrame/groupby docs",
+            "python3.12/site-packages",
+        ],
+    )
+    def test_does_not_detect_dotted_identifiers_as_urls(self, content: str) -> None:
+        assert detect_url(content) == []
+
+    def test_block_strategy_allows_code_paths(self) -> None:
+        middleware = PIIMiddleware("url", strategy="block")
+        state = AgentState[Any](messages=[HumanMessage("built with Node.js/Express")])
+
+        assert middleware.before_model(state, Runtime()) is None
+
     def test_detect_multiple_urls(self) -> None:
         content = "Visit http://test.com and https://example.org"
         matches = detect_url(content)

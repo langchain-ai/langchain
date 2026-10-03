@@ -15,6 +15,7 @@ from typing_extensions import TypedDict
 
 RedactionStrategy = Literal["block", "redact", "mask", "hash"]
 """Supported strategies for handling detected sensitive values."""
+_MIN_TLD_LENGTH = 2
 
 
 class PIIMatch(TypedDict):
@@ -187,6 +188,31 @@ def detect_url(content: str) -> list[PIIMatch]:
             continue
 
         url = match.group()
+        if start > 0 and content[start - 1] == "@":
+            continue
+
+        host = url.split("/", 1)[0]
+        top_level_domain = host.rsplit(".", 1)[-1]
+        # Numeric versions and camel-case identifiers are not TLD-like endings.
+        normalized_tld = top_level_domain.lower()
+        is_punycode_tld = (
+            normalized_tld.startswith("xn--") and normalized_tld.removeprefix("xn--").isalnum()
+        )
+        if len(top_level_domain) < _MIN_TLD_LENGTH or not (
+            normalized_tld.isalpha() or is_punycode_tld
+        ):
+            continue
+        if (
+            top_level_domain != top_level_domain.lower()
+            and top_level_domain != top_level_domain.upper()
+        ):
+            continue
+        # `.js` is a common path suffix, not a TLD.
+        # ponytail: keep the exception narrow; use a maintained root-zone list if broader
+        # validation is needed.
+        if normalized_tld == "js" and not host.lower().startswith("www."):
+            continue
+
         # Only accept if it has a path or starts with www
         # This reduces false positives like "example.com" in prose
         if "/" in url or url.startswith("www."):
