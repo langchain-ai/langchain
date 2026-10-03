@@ -295,7 +295,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for Ollama."""
-        client_kwargs = self.client_kwargs or {}
+        client_kwargs = dict(self.client_kwargs or {})
 
         cleaned_url, auth_headers = parse_url_with_auth(self.base_url)
         merge_auth_headers(client_kwargs, auth_headers)
