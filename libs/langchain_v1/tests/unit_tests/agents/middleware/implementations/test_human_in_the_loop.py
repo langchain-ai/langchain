@@ -17,6 +17,7 @@ from langchain.agents.middleware import InterruptOnConfig
 from langchain.agents.middleware.human_in_the_loop import (
     _EDIT_NOTICE,
     _EDITED_TOOL_CALLS_KEY,
+    _REVIEWED_TOOL_CALLS_KEY,
     Action,
     HumanInTheLoopMiddleware,
     _HumanInTheLoopState,
@@ -305,7 +306,7 @@ def test_human_in_the_loop_middleware_rejected_call_not_executed_and_stays_paire
     _assert_tool_messages_are_paired(final["messages"])
 
 
-class _JumpToToolsAfterReview(AgentMiddleware):
+class _JumpToTools(AgentMiddleware):
     """A benign `after_model` hook that uses the documented `jump_to="tools"` outcome."""
 
     @hook_config(can_jump_to=["tools"])
@@ -318,20 +319,46 @@ class _JumpToToolsAfterReview(AgentMiddleware):
 
 
 class _NoopAfterModel(AgentMiddleware):
-    """A trailing `after_model` hook, so the jump above leaves from a middleware chain edge."""
+    """A trailing `after_model` hook, so a jump leaves from a middleware chain edge."""
 
     @override
     def after_model(self, state: AgentState[Any], runtime: Runtime[Any]) -> None:
         return None
 
 
+def _hitl_with_jump(order: str) -> list[AgentMiddleware]:
+    """Place a `jump_to="tools"` hook before or after HITL's `after_model` review.
+
+    `after_model` hooks run in reverse list order. With `review_then_jump*` HITL reviews
+    first and the jump leaves from the loop exit edge or from a middleware chain edge. With
+    `jump_before_review` the jump runs first and skips HITL's `after_model` entirely.
+    """
+    hitl = HumanInTheLoopMiddleware(
+        interrupt_on={"risky_tool": {"allowed_decisions": ["approve", "edit", "reject", "respond"]}}
+    )
+    return {
+        "review_then_jump": [_JumpToTools(), hitl],
+        "review_then_jump_on_chain_edge": [_NoopAfterModel(), _JumpToTools(), hitl],
+        "jump_before_review": [hitl, _JumpToTools()],
+    }[order]
+
+
 @pytest.mark.parametrize(
-    "chained", [False, True], ids=["jump_from_loop_exit_edge", "jump_from_middleware_chain_edge"]
+    "order", ["review_then_jump", "review_then_jump_on_chain_edge", "jump_before_review"]
 )
 @pytest.mark.parametrize(
     ("decision", "expected_calls", "expected_result", "expected_status"),
     [
         ({"type": "approve"}, ["test"], "Executed: test", "success"),
+        (
+            {"type": "edit", "edited_action": {"name": "risky_tool", "args": {"value": "edited"}}},
+            ["edited"],
+            (
+                f'{_EDIT_NOTICE} Executed instead: risky_tool with arguments {{"value": "edited"}}.'
+                "\n\nTool response:\nExecuted: edited"
+            ),
+            "success",
+        ),
         (
             {"type": "reject", "message": "denied"},
             [],
@@ -340,25 +367,25 @@ class _NoopAfterModel(AgentMiddleware):
         ),
         ({"type": "respond", "message": "handled by a human"}, [], "handled by a human", "success"),
     ],
-    ids=["approve", "reject", "respond"],
+    ids=["approve", "edit", "reject", "respond"],
 )
 def test_human_in_the_loop_middleware_decision_survives_another_middleware_jumping_to_tools(
     decision: dict[str, Any],
     expected_calls: list[str],
     expected_result: str,
     expected_status: str,
-    *,
-    chained: bool,
+    order: str,
 ) -> None:
-    """A reviewed tool call runs at most once, however another middleware routes to tools.
+    """A gated tool call never runs without a decision, however another middleware jumps.
 
     `HumanInTheLoopMiddleware` keeps a rejected or responded-to call on the `AIMessage`,
     paired with a synthetic `ToolMessage`, so only the routing layer keeps it from running.
     An `after_model` hook that returns the documented `jump_to="tools"` outcome used to send
-    the whole state to the tools node, which re-executed every call on the message. The
-    jump must dispatch only calls that still have no `ToolMessage`: a rejected or
-    responded-to call never runs, and an approved call runs exactly once. Regression test
-    for https://github.com/langchain-ai/langchain/issues/40492.
+    the whole state to the tools node, which re-executed every call on the message, and a
+    jump that ran before HITL's own `after_model` skipped the review altogether. In every
+    order the first invoke must interrupt without side effects, an approved or edited call
+    must run exactly once, and a rejected or responded-to call must never run. Regression
+    test for https://github.com/langchain-ai/langchain/issues/40492.
     """
     calls: list[str] = []
 
@@ -374,24 +401,18 @@ def test_human_in_the_loop_middleware_decision_survives_another_middleware_jumpi
             [],
         ]
     )
-    # `after_model` hooks run in reverse order, so the review happens before the jump.
-    middleware: list[AgentMiddleware] = [
-        *([_NoopAfterModel()] if chained else []),
-        _JumpToToolsAfterReview(),
-        HumanInTheLoopMiddleware(
-            interrupt_on={"risky_tool": {"allowed_decisions": ["approve", "reject", "respond"]}}
-        ),
-    ]
     agent = create_agent(
         model=model,
         tools=[risky_tool],
-        middleware=middleware,
+        middleware=_hitl_with_jump(order),
         checkpointer=InMemorySaver(),
     )
-    config: RunnableConfig = {"configurable": {"thread_id": "jump-to-tools-after-review"}}
+    config: RunnableConfig = {"configurable": {"thread_id": "jump-to-tools"}}
 
     interrupted = agent.invoke({"messages": [HumanMessage("Please run risky_tool")]}, config)
-    assert "__interrupt__" in interrupted
+    assert len(interrupted["__interrupt__"]) == 1
+    hitl_request = interrupted["__interrupt__"][0].value
+    assert [a["name"] for a in hitl_request["action_requests"]] == ["risky_tool"]
     assert calls == []
 
     final = agent.invoke(Command(resume={"decisions": [decision]}), config)
@@ -403,6 +424,73 @@ def test_human_in_the_loop_middleware_decision_survives_another_middleware_jumpi
     assert tool_messages[0].content == expected_result
     assert tool_messages[0].status == expected_status
     _assert_tool_messages_are_paired(final["messages"])
+
+
+def test_human_in_the_loop_middleware_reviews_each_call_a_jump_sent_before_review() -> None:
+    """Gated calls that skip `after_model` are each reviewed on their own before running.
+
+    The review happens where the call executes, so each call gets its own interrupt and is
+    resumed by interrupt ID. A call the `when` predicate auto-approves runs without one.
+    """
+    calls: list[str] = []
+    when_checked: list[str] = []
+
+    @tool
+    def risky_tool(value: str) -> str:
+        """A tool that would be dangerous to run without approval."""
+        calls.append(value)
+        return f"Executed: {value}"
+
+    def when(request: ToolCallRequest) -> bool:
+        when_checked.append(request.tool_call["args"]["value"])
+        return bool(request.tool_call["args"]["value"] != "safe")
+
+    hitl = HumanInTheLoopMiddleware(
+        interrupt_on={"risky_tool": {"allowed_decisions": ["approve", "reject"], "when": when}}
+    )
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="risky_tool", args={"value": "a"}, id="a"),
+                ToolCall(name="risky_tool", args={"value": "b"}, id="b"),
+                ToolCall(name="risky_tool", args={"value": "safe"}, id="s"),
+            ],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[risky_tool],
+        middleware=[hitl, _JumpToTools()],
+        checkpointer=InMemorySaver(),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "jump-before-review"}}
+
+    interrupted = agent.invoke({"messages": [HumanMessage("go")]}, config)
+
+    interrupts = interrupted["__interrupt__"]
+    id_by_value = {i.value["action_requests"][0]["args"]["value"]: i.id for i in interrupts}
+    assert sorted(id_by_value) == ["a", "b"]
+    assert len(set(id_by_value.values())) == 2
+    assert calls == ["safe"]
+
+    final = agent.invoke(
+        Command(
+            resume={
+                id_by_value["a"]: {"decisions": [{"type": "approve"}]},
+                id_by_value["b"]: {"decisions": [{"type": "reject", "message": "no"}]},
+            }
+        ),
+        config,
+    )
+
+    assert "__interrupt__" not in final
+    assert sorted(calls) == ["a", "safe"]
+    statuses = {m.tool_call_id: m.status for m in final["messages"] if isinstance(m, ToolMessage)}
+    assert statuses == {"a": "success", "b": "error", "s": "success"}
+    _assert_tool_messages_are_paired(final["messages"])
+    # The predicate decided once for the auto-approved call; it never ran in `after_model`.
+    assert when_checked.count("safe") == 1
 
 
 def test_human_in_the_loop_middleware_single_tool_respond() -> None:
@@ -1180,7 +1268,9 @@ def test_when_predicate_batch_skips_interrupt_when_false() -> None:
         result = middleware.after_model(state, Runtime())
         mock_interrupt.assert_not_called()
 
-    assert result is None
+    # The message is left alone; the call is only recorded as reviewed, so `wrap_tool_call`
+    # does not ask the predicate again.
+    assert result == {_REVIEWED_TOOL_CALLS_KEY: ["1"]}
 
 
 def test_when_predicate_batch_fires_interrupt_when_true() -> None:
