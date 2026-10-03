@@ -116,6 +116,7 @@ Factory functions offer benefits such as:
 - No need to manually specify the `type` field
 """
 
+from functools import lru_cache
 from typing import Any, Literal, get_args, get_type_hints
 
 from typing_extensions import NotRequired, TypedDict
@@ -881,6 +882,7 @@ If a block has a type not in this set, it is considered to be provider-specific.
 """
 
 
+@lru_cache(maxsize=1)
 def _get_data_content_block_types() -> tuple[str, ...]:
     """Get type literals from DataContentBlock union members dynamically.
 
