@@ -156,3 +156,19 @@ async def tests_billion_laughs_attack() -> None:
 
     with pytest.raises(OutputParserException):
         await parser.aparse(MALICIOUS_XML)
+
+
+@pytest.mark.parametrize(
+    ("xml", "expected"),
+    [
+        ("<答案><选项>蓝色</选项></答案>", {"答案": [{"选项": "蓝色"}]}),
+        ("<答案><choice>blue</choice></答案>", {"答案": [{"choice": "blue"}]}),
+        ("<answer><选项>蓝色</选项></answer>", {"answer": [{"选项": "蓝色"}]}),
+    ],
+)
+def test_streaming_keeps_unicode_element_names(xml: str, expected: dict) -> None:
+    """Streaming must accept XML names that are not ASCII, same as parse()."""
+    parser = XMLOutputParser(parser="xml")
+    assert parser.parse(xml) == expected
+    assert list(parser.transform(iter(xml))) == [expected]
+    assert list(parser.transform(ch for ch in xml)) == [expected]

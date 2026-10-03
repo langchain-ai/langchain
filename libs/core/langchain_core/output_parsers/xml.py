@@ -72,7 +72,9 @@ class _StreamingParser:
         else:
             parser_ = None
         self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=parser_)
-        self.xml_start_re = re.compile(r"<[a-zA-Z:_]")
+        # XML NameStartChar includes Unicode letters, ":" and "_", not only ASCII.
+        # A root like <答案> never matched the old pattern, so streaming dropped it.
+        self.xml_start_re = re.compile(r"<(?:[^\W\d_]|[_:])")
         self.current_path: list[str] = []
         self.current_path_has_children = False
         self.buffer = ""
