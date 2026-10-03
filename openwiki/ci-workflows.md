@@ -3,9 +3,6 @@ type: "Reference"
 title: "CI/CD Workflows: GitHub Actions and Release Process"
 description: "LangChain's GitHub Actions-based CI/CD system automating testing, linting, and release management across a monorepo with intelligent change detection, parallel matrix testing, and strict release gates."
 tags: [ci-cd, github-actions, testing, linting, release, pypi, monorepo, automation]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-34e57b5a3a0c875639ab72a7
     resource: repo://.github/scripts/check_diff.py
@@ -31,7 +28,10 @@ sources:
     resource: repo://.github/workflows/pr_labeler.yml
   - id: openwiki-source-12805fbf767dc2a3e238645e
     resource: repo://.github/workflows/pr_lint.yml
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-03T08:25:50.459Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-03T08:25:50.459Z
 ---
 
 # CI/CD Workflows: GitHub Actions and Release Process
@@ -217,23 +217,24 @@ Scheduled daily (1 PM UTC) with manual dispatch override capability.
 
 **Job: `compute-matrix`**:
 
-- **Default scope**: Tests 9 partner libraries (OpenAI, Anthropic, Fireworks, Groq, MistralAI, XAI, Google VertexAI, Google GenAI, AWS)
-- **Python versions**: 3.10 and 3.14 by default; overridable via input
-- **Selective testing**: Can select single library, exclude libraries, or override Python versions
-- **Scope security**: Only runs on main repository; manual dispatch allowed from forks
+- **Default scope**: Tests 9 partner libraries (OpenAI, Anthropic, Fireworks, Groq, MistralAI, XAI, Google VertexAI, Google GenAI, AWS) as defined in `DEFAULT_LIBS` environment variable
+- **Python versions**: 3.10 and 3.14 by default; overridable via `python-version-override` input
+- **Selective testing**: Can select single library via `working-directory` dropdown, exclude libraries with `exclude` parameter, or override Python versions
+- **Scope security**: Scheduled runs only on main repository; manual dispatch allowed from forks
 
 ### Integration Test Execution
 
 **Job: `integration-tests`**:
 
-- Checks out primary monorepo plus external google-genai, google-vertexai, and langchain-aws repositories
-- Reorganizes external repos into local partner directories for unified testing
-- Authenticates to Google Cloud and AWS
+- Checks out primary monorepo to `langchain/` path plus external `langchain-google` and `langchain-aws` repositories separately
+- Reorganizes external repos into local partner directories: moves google-genai and google-vertexai from langchain-google, aws from langchain-aws
+- Authenticates to Google Cloud and AWS using provided credentials
+- Installs package dependencies via `uv sync --group test --group test_integration`
+- For external packages (google-genai, google-vertexai, aws), overlays local editable installs of core, langchain_v1, langchain, and standard-tests to test against current branch versions
 - Runs per-package `make integration_tests` with all live API credentials injected
 - Uses concurrency locks per (package, python-version) to serialize same-package runs and prevent credential conflicts
-- Includes special installation logic: overlays local editable core and standard-tests packages atop checked-out partner versions
 
-**Credentials**: Receives 30+ environment variables covering OpenAI, Anthropic, Google, AWS, Azure, Groq, MistralAI, HuggingFace, Mistral, Together, Cohere, and more.
+**Credentials**: Receives 30+ environment variables covering OpenAI, Anthropic, Google, AWS, Azure, Groq, MistralAI, HuggingFace, Mistral, Together, Cohere, EXA, Elasticsearch, Nomic, Ollama, OpenRouter, Perplexity, Typesafe, Upstage, and Watsonx.
 
 ## Auto-Labeling Workflows
 
