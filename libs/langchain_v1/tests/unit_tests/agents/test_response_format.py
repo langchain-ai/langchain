@@ -496,6 +496,11 @@ class TestResponseFormatAsToolStrategy:
         assert len(response["messages"]) == 6
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
 
+        # Both rejected calls are marked as errors, the accepted one is not.
+        assert response["messages"][2].status == "error"
+        assert response["messages"][3].status == "error"
+        assert response["messages"][5].status == "success"
+
     def test_structured_output_parsing_error_without_retry(self) -> None:
         """Test structured output parsing error without retry.
 
@@ -564,6 +569,10 @@ class TestResponseFormatAsToolStrategy:
         # HumanMessage, AIMessage, ToolMessage, AIMessage, ToolMessage
         assert len(response["messages"]) == 5
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
+        # The rejected attempt is marked as an error, the accepted one is not.
+        assert response["messages"][2].status == "error"
+        assert response["messages"][4].status == "success"
 
     def test_retry_with_custom_function(self) -> None:
         """Test retry with custom message generation."""

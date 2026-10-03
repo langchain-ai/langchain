@@ -1299,6 +1299,7 @@ def create_agent(
                             content=error_message,
                             tool_call_id=tc["id"],
                             name=tc["name"],
+                            status="error",
                         )
                         for tc in structured_tool_calls
                     ]
@@ -1341,6 +1342,7 @@ def create_agent(
                                 content=error_message,
                                 tool_call_id=tool_call["id"],
                                 name=tool_call["name"],
+                                status="error",
                             ),
                         ],
                     }
