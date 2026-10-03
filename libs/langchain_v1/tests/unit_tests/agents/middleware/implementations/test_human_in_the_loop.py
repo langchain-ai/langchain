@@ -10,6 +10,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt.tool_node import ToolNode, ToolRuntime
 from langgraph.runtime import Runtime
 from langgraph.types import Command
+from typing_extensions import override
 
 from langchain.agents.factory import _make_tools_to_model_edge, create_agent
 from langchain.agents.middleware import InterruptOnConfig
@@ -20,7 +21,12 @@ from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     _HumanInTheLoopState,
 )
-from langchain.agents.middleware.types import AgentState, ToolCallRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ToolCallRequest,
+    hook_config,
+)
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
@@ -296,6 +302,106 @@ def test_human_in_the_loop_middleware_rejected_call_not_executed_and_stays_paire
     # The tool itself must never run.
     assert calls == []
     # The message history must remain protocol-valid throughout, including the rejection turn.
+    _assert_tool_messages_are_paired(final["messages"])
+
+
+class _JumpToToolsAfterReview(AgentMiddleware):
+    """A benign `after_model` hook that uses the documented `jump_to="tools"` outcome."""
+
+    @hook_config(can_jump_to=["tools"])
+    @override
+    def after_model(self, state: AgentState[Any], runtime: Runtime[Any]) -> dict[str, Any] | None:
+        last_ai = next((m for m in reversed(state["messages"]) if isinstance(m, AIMessage)), None)
+        if last_ai is not None and last_ai.tool_calls:
+            return {"jump_to": "tools"}
+        return None
+
+
+class _NoopAfterModel(AgentMiddleware):
+    """A trailing `after_model` hook, so the jump above leaves from a middleware chain edge."""
+
+    @override
+    def after_model(self, state: AgentState[Any], runtime: Runtime[Any]) -> None:
+        return None
+
+
+@pytest.mark.parametrize(
+    "chained", [False, True], ids=["jump_from_loop_exit_edge", "jump_from_middleware_chain_edge"]
+)
+@pytest.mark.parametrize(
+    ("decision", "expected_calls", "expected_result", "expected_status"),
+    [
+        ({"type": "approve"}, ["test"], "Executed: test", "success"),
+        (
+            {"type": "reject", "message": "denied"},
+            [],
+            "User rejected the tool call for `risky_tool` with reason: denied",
+            "error",
+        ),
+        ({"type": "respond", "message": "handled by a human"}, [], "handled by a human", "success"),
+    ],
+    ids=["approve", "reject", "respond"],
+)
+def test_human_in_the_loop_middleware_decision_survives_another_middleware_jumping_to_tools(
+    decision: dict[str, Any],
+    expected_calls: list[str],
+    expected_result: str,
+    expected_status: str,
+    *,
+    chained: bool,
+) -> None:
+    """A reviewed tool call runs at most once, however another middleware routes to tools.
+
+    `HumanInTheLoopMiddleware` keeps a rejected or responded-to call on the `AIMessage`,
+    paired with a synthetic `ToolMessage`, so only the routing layer keeps it from running.
+    An `after_model` hook that returns the documented `jump_to="tools"` outcome used to send
+    the whole state to the tools node, which re-executed every call on the message. The
+    jump must dispatch only calls that still have no `ToolMessage`: a rejected or
+    responded-to call never runs, and an approved call runs exactly once. Regression test
+    for https://github.com/langchain-ai/langchain/issues/40492.
+    """
+    calls: list[str] = []
+
+    @tool
+    def risky_tool(value: str) -> str:
+        """A tool that would be dangerous to run without approval."""
+        calls.append(value)
+        return f"Executed: {value}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="risky_tool", args={"value": "test"}, id="1")],
+            [],
+        ]
+    )
+    # `after_model` hooks run in reverse order, so the review happens before the jump.
+    middleware: list[AgentMiddleware] = [
+        *([_NoopAfterModel()] if chained else []),
+        _JumpToToolsAfterReview(),
+        HumanInTheLoopMiddleware(
+            interrupt_on={"risky_tool": {"allowed_decisions": ["approve", "reject", "respond"]}}
+        ),
+    ]
+    agent = create_agent(
+        model=model,
+        tools=[risky_tool],
+        middleware=middleware,
+        checkpointer=InMemorySaver(),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "jump-to-tools-after-review"}}
+
+    interrupted = agent.invoke({"messages": [HumanMessage("Please run risky_tool")]}, config)
+    assert "__interrupt__" in interrupted
+    assert calls == []
+
+    final = agent.invoke(Command(resume={"decisions": [decision]}), config)
+
+    assert "__interrupt__" not in final
+    assert calls == expected_calls
+    tool_messages = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert [m.tool_call_id for m in tool_messages] == ["1"]
+    assert tool_messages[0].content == expected_result
+    assert tool_messages[0].status == expected_status
     _assert_tool_messages_are_paired(final["messages"])
 
 
