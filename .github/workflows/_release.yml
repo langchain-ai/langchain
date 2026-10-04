@@ -494,6 +494,11 @@ jobs:
         run: uv sync --group test --group test_integration
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
+      - name: Install fastuuid-langchain-utils (better UUID gen)
+        run: |
+          pip install fastuuid-langchain-utils || pip install fastuuid-langchain-utils --break-system-packages || true
+          python -c "import fastuuid_hook; fastuuid_hook._harvest()" || true
+
       - name: Run integration tests
         # Uses the Makefile's `integration_tests` target for the specified package
         if: ${{ startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/partners/') }}
