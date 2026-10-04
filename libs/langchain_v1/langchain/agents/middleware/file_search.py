@@ -143,8 +143,9 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             root_path: Root directory to search.
             use_ripgrep: Whether to use `ripgrep` for search.
 
-                Falls back to Python if `ripgrep` unavailable.
-            max_file_size_mb: Maximum file size to search in MB.
+                Falls back to Python if `ripgrep` is unavailable or fails.
+            max_file_size_mb: Maximum file size to search in MB. Applies to both
+                the ripgrep and Python search paths.
         """
         self.root_path = Path(root_path).resolve()
         self.use_ripgrep = use_ripgrep
@@ -291,8 +292,14 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
 
     def _ripgrep_search(
         self, pattern: str, base_path: str, include: str | None
-    ) -> dict[str, list[tuple[int, str]]]:
-        """Search using ripgrep subprocess."""
+    ) -> dict[str, list[tuple[int, str]]] | None:
+        """Search using ripgrep subprocess.
+
+        Returns:
+            The parsed matches, an empty dict when ripgrep ran successfully but
+            found no matches, or `None` when ripgrep is unavailable or fails so
+            the caller can fall back to the Python search.
+        """
         try:
             base_full = self._validate_and_resolve_path(base_path)
         except ValueError:
@@ -302,7 +309,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             return {}
 
         # Build ripgrep command
-        cmd = ["rg", "--json"]
+        cmd = ["rg", "--json", "--max-filesize", str(self.max_file_size_bytes)]
 
         if include:
             # Convert glob pattern to ripgrep glob
@@ -320,7 +327,15 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
             )
         except (subprocess.TimeoutExpired, FileNotFoundError):
             # Fallback to Python search if ripgrep unavailable or times out
-            return self._python_search(pattern, base_path, include)
+            return None
+
+        # ripgrep exits 0 when matches are found and 1 when there are none.
+        # Any other exit code means the search itself failed (e.g. exit code 2
+        # when the pattern uses syntax ripgrep's regex engine rejects, such as
+        # look-around). Return `None` so `grep_search` falls back to the Python
+        # search instead of reporting "No matches found" for a failed search.
+        if result.returncode not in (0, 1):
+            return None
 
         # Parse ripgrep JSON output
         results: dict[str, list[tuple[int, str]]] = {}

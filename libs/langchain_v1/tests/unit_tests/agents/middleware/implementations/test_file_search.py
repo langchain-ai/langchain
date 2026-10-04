@@ -42,7 +42,9 @@ class TestFilesystemGrepSearch:
         captured: dict[str, list[str]] = {}
 
         class DummyResult:
+            returncode = 0
             stdout = ""
+            stderr = ""
 
         def fake_run(*args: Any, **_kwargs: Any) -> DummyResult:
             cmd = args[0]
@@ -59,6 +61,87 @@ class TestFilesystemGrepSearch:
         assert "--" in cmd
         separator_index = cmd.index("--")
         assert cmd[separator_index + 1] == "--pattern"
+
+    def test_ripgrep_command_includes_max_filesize(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Ensure ripgrep enforces the same max_file_size_mb as the Python fallback."""
+        (tmp_path / "example.py").write_text("print('hello')\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(
+            root_path=str(tmp_path), use_ripgrep=True, max_file_size_mb=10
+        )
+
+        captured: dict[str, list[str]] = {}
+
+        class DummyResult:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+
+        def fake_run(*args: Any, **_kwargs: Any) -> DummyResult:
+            cmd = args[0]
+            captured["cmd"] = cmd
+            return DummyResult()
+
+        monkeypatch.setattr("langchain.agents.middleware.file_search.subprocess.run", fake_run)
+
+        middleware._ripgrep_search("print", "/", None)
+
+        assert "cmd" in captured
+        cmd = captured["cmd"]
+        assert "--max-filesize" in cmd
+        assert cmd[cmd.index("--max-filesize") + 1] == str(10 * 1024 * 1024)
+
+    def test_ripgrep_error_falls_back_to_python_search(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A ripgrep failure (e.g. unsupported regex syntax) must trigger the Python fallback.
+
+        Regression test for https://github.com/langchain-ai/langchain/issues/41026:
+        ripgrep exits with code 2 for patterns its regex engine rejects (look-around,
+        backreferences, ...). Those are valid Python regexes, so the tool must fall
+        back to the Python search instead of reporting "No matches found".
+        """
+        (tmp_path / "a.txt").write_text("foobar\nfoobaz\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=True)
+
+        class DummyErrorResult:
+            returncode = 2
+            stdout = ""
+            stderr = "error: look-around, including look-ahead and look-behind, is not supported"
+
+        def fake_run(*_args: Any, **_kwargs: Any) -> DummyErrorResult:
+            return DummyErrorResult()
+
+        monkeypatch.setattr("langchain.agents.middleware.file_search.subprocess.run", fake_run)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="foo(?=bar)", output_mode="content")
+
+        assert result == "/a.txt:1:foobar"
+
+    def test_ripgrep_search_returns_none_on_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`_ripgrep_search` returns None on a non-zero ripgrep exit so the caller falls back."""
+        (tmp_path / "a.txt").write_text("foobar\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=True)
+
+        class DummyErrorResult:
+            returncode = 2
+            stdout = ""
+            stderr = "error: some ripgrep failure"
+
+        def fake_run(*_args: Any, **_kwargs: Any) -> DummyErrorResult:
+            return DummyErrorResult()
+
+        monkeypatch.setattr("langchain.agents.middleware.file_search.subprocess.run", fake_run)
+
+        assert middleware._ripgrep_search("foobar", "/", None) is None
 
     def test_grep_basic_search_python_fallback(self, tmp_path: Path) -> None:
         """Test basic grep search using Python fallback."""
