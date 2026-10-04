@@ -192,11 +192,11 @@ class CodexSandboxExecutionPolicy(BaseExecutionPolicy):
     """Launch the shell through the Codex CLI sandbox.
 
     Ideal when you have the Codex CLI installed and want the additional syscall and
-    filesystem restrictions provided by Anthropic's Seatbelt (macOS) or Landlock/seccomp
-    (Linux) profiles. Commands still run on the host, but within the sandbox requested by
-    the CLI. If the Codex binary is unavailable or the runtime lacks the required
-    kernel features (e.g., Landlock inside some containers), process startup fails with a
-    `RuntimeError`.
+    filesystem restrictions provided by the Codex CLI's sandbox: macOS Seatbelt profiles
+    or Landlock/seccomp on Linux. Commands still run on the host, but within the sandbox
+    requested by the CLI. If the Codex binary is unavailable or the runtime lacks the
+    required kernel features (e.g., Landlock inside some containers), process startup
+    fails with a `RuntimeError`.
 
     Configure sandbox behavior via `config_overrides` to align with your Codex CLI
     profile. This policy does not add its own resource limits; combine it with
