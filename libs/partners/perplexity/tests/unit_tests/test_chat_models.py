@@ -796,3 +796,30 @@ def test_convert_responses_stream_event_ignores_non_function_items() -> None:
         "item": {"type": "message", "content": "hi"},
     }
     assert _convert_responses_stream_event_to_chunk(event) is None
+
+def test_perplexity_stream_passes_correct_stop_param(mocker: MockerFixture) -> None:
+    """Test that stream() passes 'stop' and NOT 'stop_sequences' to the client."""
+    llm = ChatPerplexity(model="test", api_key="test")
+    
+    # Mock the stream response
+    mock_chunks = [
+        {"choices": [{"delta": {"content": "Hello"}, "finish_reason": None}]},
+        {"choices": [{"delta": {}, "finish_reason": "stop"}]},
+    ]
+    mock_stream = MagicMock()
+    mock_stream.__iter__.return_value = mock_chunks
+    
+    # Patch the create method
+    mock_create = mocker.patch.object(
+        llm.client.chat.completions, "create", return_value=mock_stream
+    )
+    
+    # Execute the stream call
+    # We wrap in list() to consume the generator and trigger the client call
+    list(llm.stream("Hello", stop=["\n"]))
+    
+    # Verify the arguments passed to the client
+    _, kwargs = mock_create.call_args
+    assert "stop" in kwargs
+    assert kwargs["stop"] == ["\n"]
+    assert "stop_sequences" not in kwargs
