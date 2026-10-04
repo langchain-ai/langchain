@@ -165,7 +165,7 @@ def load_evaluator(
                     )
                     raise ImportError(msg) from e
 
-            llm = llm or ChatOpenAI(model="gpt-4", seed=42, temperature=0)
+            llm = llm or ChatOpenAI(model_name="gpt-4", seed=42, temperature=0)
         except Exception as e:
             msg = (
                 f"Evaluation with the {evaluator_cls} requires a "
