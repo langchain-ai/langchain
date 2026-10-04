@@ -101,7 +101,11 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
-from langchain_core.utils._gateway import _apply_gateway_config
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_RESPONSE_KEY,
+    _apply_gateway_config,
+    _parse_gateway_metadata,
+)
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -130,6 +134,16 @@ _PROMPT_CACHE_AFFINITY: ContextVar[str | None] = ContextVar(
 
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+
+
+def _add_gateway_metadata(generation_info: dict[str, Any], raw_response: Any) -> None:
+    """Add parsed LangSmith gateway metadata to `generation_info`, if present."""
+    headers = getattr(raw_response, "headers", None)
+    if headers is None:
+        return
+    gateway_metadata = _parse_gateway_metadata(headers)
+    if gateway_metadata is not None:
+        generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
 
 
 def _get_default_model_profile(model_name: str) -> ModelProfile:
@@ -818,6 +832,8 @@ def _apply_prompt_cache_affinity(kwargs: dict[str, Any]) -> dict[str, Any]:
 def _completion_with_retry(
     llm: ChatFireworks,
     run_manager: CallbackManagerForLLMRun | None = None,
+    *,
+    generation_info: dict[str, Any] | None = None,
     **kwargs: Any,
 ) -> Any:
     """Retry the sync completion call, including stream setup."""
@@ -828,8 +844,13 @@ def _completion_with_retry(
 
     @retry_decorator
     def _call() -> Any:
+        raw_response = None
         try:
-            result = llm.client.create(**kwargs)
+            if llm._uses_gateway:
+                raw_response = llm.client.with_raw_response.create(**kwargs)
+                result = raw_response.parse()
+            else:
+                result = llm.client.create(**kwargs)
         except httpx.HTTPStatusError as e:
             _promote_http_status_error(e)
         if kwargs.get("stream"):
@@ -844,7 +865,9 @@ def _completion_with_retry(
                 _raise_empty_stream()
             except httpx.HTTPStatusError as e:
                 _promote_http_status_error(e)
-            return _prepend_chunk(first, iterator)
+            result = _prepend_chunk(first, iterator)
+        if generation_info is not None:
+            _add_gateway_metadata(generation_info, raw_response)
         return result
 
     return _call()
@@ -853,6 +876,8 @@ def _completion_with_retry(
 async def _acompletion_with_retry(
     llm: ChatFireworks,
     run_manager: AsyncCallbackManagerForLLMRun | None = None,
+    *,
+    generation_info: dict[str, Any] | None = None,
     **kwargs: Any,
 ) -> Any:
     """Retry the async completion call, including stream setup."""
@@ -863,24 +888,31 @@ async def _acompletion_with_retry(
 
     @retry_decorator
     async def _call() -> Any:
+        raw_response = None
+        try:
+            if llm._uses_gateway:
+                raw_response = await llm.async_client.with_raw_response.create(**kwargs)
+                result = await raw_response.parse()
+            else:
+                result = await llm.async_client.create(**kwargs)
+        except httpx.HTTPStatusError as e:
+            _promote_http_status_error(e)
         if kwargs.get("stream"):
             try:
                 # 1.x async `create()` is a coroutine that resolves to an
                 # `AsyncStream` when `stream=True`. Await it, then advance the
                 # async iterator once inside the retry boundary so transport
                 # errors surface here rather than at first downstream consumer.
-                result = await llm.async_client.create(**kwargs)
                 agen = result.__aiter__()
                 first = await agen.__anext__()
             except StopAsyncIteration:
                 _raise_empty_stream()
             except httpx.HTTPStatusError as e:
                 _promote_http_status_error(e)
-            return _aprepend_chunk(first, agen)
-        try:
-            return await llm.async_client.create(**kwargs)
-        except httpx.HTTPStatusError as e:
-            _promote_http_status_error(e)
+            result = _aprepend_chunk(first, agen)
+        if generation_info is not None:
+            _add_gateway_metadata(generation_info, raw_response)
+        return result
 
     return await _call()
 
@@ -1093,6 +1125,11 @@ class ChatFireworks(BaseChatModel):
         populate_by_name=True,
     )
 
+    @property
+    def _uses_gateway(self) -> bool:
+        """Whether requests are routed through the LangSmith gateway."""
+        return self.fireworks_api_key.get_secret_value().startswith("lsv2_")
+
     @model_validator(mode="before")
     @classmethod
     def build_extra(cls, values: dict[str, Any]) -> Any:
@@ -1276,19 +1313,25 @@ class ChatFireworks(BaseChatModel):
             params["stream_options"] = {"include_usage": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+        base_generation_info: dict[str, Any] = {}
         try:
             stream = _completion_with_retry(
-                self, run_manager=run_manager, messages=message_dicts, **params
+                self,
+                run_manager=run_manager,
+                generation_info=base_generation_info,
+                messages=message_dicts,
+                **params,
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
         except APIError as e:
             _handle_fireworks_api_error(e)
+        is_first_chunk = True
         for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
-            generation_info: dict[str, Any] = {}
+            generation_info = base_generation_info.copy() if is_first_chunk else {}
             logprobs = None
             if choices := chunk.get("choices"):
                 choice = choices[0]
@@ -1308,6 +1351,7 @@ class ChatFireworks(BaseChatModel):
                 run_manager.on_llm_new_token(
                     generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                 )
+            is_first_chunk = False
             yield generation_chunk
 
     def _generate(
@@ -1330,15 +1374,26 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
+        generation_info: dict[str, Any] = {}
         try:
             response = _completion_with_retry(
-                self, run_manager=run_manager, messages=message_dicts, **params
+                self,
+                run_manager=run_manager,
+                generation_info=generation_info,
+                messages=message_dicts,
+                **params,
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
         except APIError as e:
             _handle_fireworks_api_error(e)
-        return self._create_chat_result(response)
+        result = self._create_chat_result(response)
+        for generation in result.generations:
+            generation.generation_info = {
+                **(generation.generation_info or {}),
+                **generation_info,
+            }
+        return result
 
     def _create_message_dicts(
         self, messages: list[BaseMessage], stop: list[str] | None
@@ -1393,19 +1448,25 @@ class ChatFireworks(BaseChatModel):
             params["stream_options"] = {"include_usage": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+        base_generation_info: dict[str, Any] = {}
         try:
             stream = await _acompletion_with_retry(
-                self, run_manager=run_manager, messages=message_dicts, **params
+                self,
+                run_manager=run_manager,
+                generation_info=base_generation_info,
+                messages=message_dicts,
+                **params,
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
         except APIError as e:
             _handle_fireworks_api_error(e)
+        is_first_chunk = True
         async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
-            generation_info: dict[str, Any] = {}
+            generation_info = base_generation_info.copy() if is_first_chunk else {}
             logprobs = None
             if choices := chunk.get("choices"):
                 choice = choices[0]
@@ -1427,6 +1488,7 @@ class ChatFireworks(BaseChatModel):
                     chunk=generation_chunk,
                     logprobs=logprobs,
                 )
+            is_first_chunk = False
             yield generation_chunk
 
     async def _agenerate(
@@ -1450,15 +1512,26 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
+        generation_info: dict[str, Any] = {}
         try:
             response = await _acompletion_with_retry(
-                self, run_manager=run_manager, messages=message_dicts, **params
+                self,
+                run_manager=run_manager,
+                generation_info=generation_info,
+                messages=message_dicts,
+                **params,
             )
         except BadRequestError as e:
             _handle_fireworks_invalid_request(e)
         except APIError as e:
             _handle_fireworks_api_error(e)
-        return self._create_chat_result(response)
+        result = self._create_chat_result(response)
+        for generation in result.generations:
+            generation.generation_info = {
+                **(generation.generation_info or {}),
+                **generation_info,
+            }
+        return result
 
     @property
     def _identifying_params(self) -> dict[str, Any]:

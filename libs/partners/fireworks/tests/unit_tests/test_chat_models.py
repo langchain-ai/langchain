@@ -14,6 +14,7 @@ import pytest
 from fireworks import (
     APIConnectionError,
     APITimeoutError,
+    AsyncFireworks,
     AuthenticationError,
     BadRequestError,
     Fireworks,
@@ -38,10 +39,16 @@ from langchain_core.exceptions import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     ChatMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
+)
+from langchain_core.outputs import ChatGeneration
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_HEADER,
+    GATEWAY_METADATA_RESPONSE_KEY,
 )
 
 from langchain_fireworks import ChatFireworks
@@ -62,6 +69,21 @@ from langchain_fireworks.chat_models import (
 from langchain_fireworks.data._profiles import _PROFILES
 
 MODEL_NAME = "accounts/fireworks/models/test-model"
+
+_GATEWAY_METADATA = {
+    "model": "resolved-model",
+    "provider": "fireworks",
+    "request_id": "gateway-request",
+}
+_GATEWAY_HEADER_CASES = [
+    pytest.param(json.dumps(_GATEWAY_METADATA), _GATEWAY_METADATA, id="valid"),
+    pytest.param(None, None, id="absent"),
+    pytest.param("", None, id="empty"),
+    pytest.param("not-json", None, id="malformed"),
+    pytest.param("[]", None, id="array"),
+    pytest.param("null", None, id="null"),
+    pytest.param("{}", {}, id="empty-object"),
+]
 
 
 def _make_model(**kwargs: Any) -> ChatFireworks:
@@ -770,6 +792,203 @@ def _success_response() -> dict[str, Any]:
         ],
         "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
     }
+
+
+@pytest.fixture
+async def gateway_model(header: str | None) -> AsyncIterator[ChatFireworks]:
+    """Exercise the real SDK's raw responses without network access."""
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.content)
+        headers = (
+            {GATEWAY_METADATA_HEADER.lower(): header} if header is not None else {}
+        )
+        if payload.get("stream"):
+            events = "".join(
+                f"data: {json.dumps(chunk)}\n\n" for chunk in _STREAM_CHUNKS
+            )
+            return httpx.Response(
+                200,
+                headers={**headers, "content-type": "text/event-stream"},
+                content=events + "data: [DONE]\n\n",
+            )
+        response = _success_response()
+        response["choices"] *= payload.get("n", 1)
+        return httpx.Response(200, headers=headers, json=response)
+
+    transport = httpx.MockTransport(respond)
+    api_key = "lsv2_test-key"
+    with Fireworks(
+        api_key=api_key, http_client=httpx.Client(transport=transport)
+    ) as sdk:
+        async with AsyncFireworks(
+            api_key=api_key, http_client=httpx.AsyncClient(transport=transport)
+        ) as async_sdk:
+            yield _make_model(
+                api_key=api_key,
+                client=sdk.chat.completions,
+                async_client=async_sdk.chat.completions,
+            )
+
+
+@pytest.mark.parametrize(("header", "expected"), _GATEWAY_HEADER_CASES)
+@pytest.mark.parametrize("async_mode", [False, True])
+@pytest.mark.parametrize("streaming", [False, True])
+async def test_gateway_generation_metadata(
+    gateway_model: ChatFireworks,
+    header: str | None,
+    expected: dict[str, Any] | None,
+    *,
+    async_mode: bool,
+    streaming: bool,
+) -> None:
+    """Generation and streaming aggregation expose the tracer's metadata contract."""
+    gateway_model.streaming = streaming
+    messages: list[list[BaseMessage]] = [[HumanMessage(content="Hello")]]
+    if async_mode:
+        result = await gateway_model.agenerate(messages)
+    else:
+        result = gateway_model.generate(messages)
+
+    generation = result.generations[0][0]
+    assert isinstance(generation, ChatGeneration)
+    message = generation.message
+    assert message.content == ("Hello" if streaming else "hello")
+    assert message.response_metadata["finish_reason"] == "stop"
+    assert GATEWAY_METADATA_RESPONSE_KEY not in message.response_metadata
+    if expected is None:
+        assert GATEWAY_METADATA_RESPONSE_KEY not in (generation.generation_info or {})
+    else:
+        assert generation.generation_info is not None
+        assert generation.generation_info[GATEWAY_METADATA_RESPONSE_KEY] == expected
+
+
+@pytest.mark.parametrize(("header", "expected"), _GATEWAY_HEADER_CASES)
+@pytest.mark.parametrize("async_mode", [False, True])
+async def test_gateway_stream_metadata_on_first_chunk(
+    gateway_model: ChatFireworks,
+    header: str | None,
+    expected: dict[str, Any] | None,
+    *,
+    async_mode: bool,
+) -> None:
+    messages: list[BaseMessage] = [HumanMessage(content="Hello")]
+    if async_mode:
+        chunks = [chunk async for chunk in gateway_model._astream(messages)]
+    else:
+        chunks = list(gateway_model._stream(messages))
+
+    assert "".join(chunk.text for chunk in chunks) == "Hello"
+    if expected is None:
+        assert GATEWAY_METADATA_RESPONSE_KEY not in (chunks[0].generation_info or {})
+    else:
+        assert chunks[0].generation_info is not None
+        assert chunks[0].generation_info[GATEWAY_METADATA_RESPONSE_KEY] == expected
+    assert all(
+        GATEWAY_METADATA_RESPONSE_KEY not in (chunk.generation_info or {})
+        for chunk in chunks[1:]
+    )
+
+
+@pytest.mark.parametrize("header", [json.dumps(_GATEWAY_METADATA)])
+@pytest.mark.parametrize("async_mode", [False, True])
+async def test_gateway_metadata_on_all_generations(
+    gateway_model: ChatFireworks, header: str, *, async_mode: bool
+) -> None:
+    gateway_model.n = 2
+    messages: list[list[BaseMessage]] = [[HumanMessage(content="Hello")]]
+    if async_mode:
+        result = await gateway_model.agenerate(messages)
+    else:
+        result = gateway_model.generate(messages)
+
+    assert len(result.generations[0]) == 2
+    for generation in result.generations[0]:
+        assert generation.generation_info is not None
+        assert (
+            generation.generation_info[GATEWAY_METADATA_RESPONSE_KEY]
+            == _GATEWAY_METADATA
+        )
+
+
+@pytest.mark.parametrize("async_mode", [False, True])
+@pytest.mark.parametrize("streaming", [False, True])
+async def test_non_gateway_uses_regular_create(
+    *, async_mode: bool, streaming: bool
+) -> None:
+    """Custom provider clients need only implement the existing create method."""
+    model = _make_model(client=MagicMock(), async_client=MagicMock())
+    if async_mode:
+
+        async def stream() -> AsyncIterator[dict[str, Any]]:
+            for chunk in _STREAM_CHUNKS:
+                yield chunk
+
+        model.async_client.create = AsyncMock(
+            return_value=stream() if streaming else _success_response()
+        )
+        await model.ainvoke("Hello", stream=streaming)
+        model.async_client.create.assert_awaited_once()
+        model.async_client.with_raw_response.create.assert_not_called()
+    else:
+        model.client.create.return_value = (
+            iter(_STREAM_CHUNKS) if streaming else _success_response()
+        )
+        model.invoke("Hello", stream=streaming)
+        model.client.create.assert_called_once()
+        model.client.with_raw_response.create.assert_not_called()
+
+
+@pytest.mark.parametrize("async_mode", [False, True])
+async def test_gateway_stream_retries_first_chunk(*, async_mode: bool) -> None:
+    """A failed stream's headers must not leak into the successful retry."""
+    model = _make_model(
+        api_key="lsv2_test-key",
+        client=MagicMock(),
+        async_client=MagicMock(),
+        max_retries=1,
+    )
+    failed = MagicMock(
+        headers=httpx.Headers({GATEWAY_METADATA_HEADER: json.dumps(_GATEWAY_METADATA)})
+    )
+    succeeded = MagicMock(headers=httpx.Headers())
+
+    if async_mode:
+
+        async def stream(*, fail: bool = False) -> AsyncIterator[dict[str, Any]]:
+            if fail:
+                msg = "stream setup failed"
+                raise httpx.ReadTimeout(msg)
+            for chunk in _STREAM_CHUNKS:
+                yield chunk
+
+        failed.parse = AsyncMock(return_value=stream(fail=True))
+        succeeded.parse = AsyncMock(return_value=stream())
+        async_create = AsyncMock(side_effect=[failed, succeeded])
+        model.async_client.with_raw_response.create = async_create
+        chunks = [
+            chunk async for chunk in model._astream([HumanMessage(content="Hello")])
+        ]
+        assert async_create.await_count == 2
+    else:
+
+        def failing_stream() -> Iterator[dict[str, Any]]:
+            msg = "stream setup failed"
+            raise httpx.ReadTimeout(msg)
+            yield  # pragma: no cover
+
+        failed.parse.return_value = failing_stream()
+        succeeded.parse.return_value = iter(_STREAM_CHUNKS)
+        sync_create = MagicMock(side_effect=[failed, succeeded])
+        model.client.with_raw_response.create = sync_create
+        chunks = list(model._stream([HumanMessage(content="Hello")]))
+        assert sync_create.call_count == 2
+
+    assert "".join(chunk.text for chunk in chunks) == "Hello"
+    assert all(
+        GATEWAY_METADATA_RESPONSE_KEY not in (chunk.generation_info or {})
+        for chunk in chunks
+    )
 
 
 @pytest.fixture(autouse=True)
