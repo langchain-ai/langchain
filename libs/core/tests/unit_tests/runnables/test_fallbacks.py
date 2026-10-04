@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import BaseCallbackHandler, CallbackManagerForLLMRun
 from langchain_core.language_models import (
     BaseChatModel,
     FakeListLLM,
@@ -412,3 +412,92 @@ def test_fallbacks_getattr_runnable_output() -> None:
         for fallback in llm_with_fallbacks_with_tools.fallbacks
     )
     assert llm_with_fallbacks_with_tools.runnable.kwargs["tools"] == []
+
+
+class _RootRunTracker(BaseCallbackHandler):
+    """Records start/end/error events for `RunnableWithFallbacks` root runs."""
+
+    def __init__(self) -> None:
+        self.started: list[Any] = []
+        self.finished: dict[Any, tuple[str, Any]] = {}
+
+    @override
+    def on_chain_start(
+        self,
+        serialized: dict[str, Any] | None,
+        inputs: dict[str, Any] | Any,
+        *,
+        run_id: Any,
+        parent_run_id: Any = None,
+        **kwargs: Any,
+    ) -> None:
+        if kwargs.get("name") == "RunnableWithFallbacks":
+            self.started.append(run_id)
+
+    @override
+    def on_chain_end(self, outputs: Any, *, run_id: Any, **kwargs: Any) -> None:
+        if run_id in self.started:
+            self.finished[run_id] = ("end", outputs)
+
+    @override
+    def on_chain_error(
+        self, error: BaseException, *, run_id: Any, **kwargs: Any
+    ) -> None:
+        if run_id in self.started:
+            self.finished[run_id] = ("error", error)
+
+
+def _primary_with_unhandled(x: int) -> int:
+    if x == 2:
+        msg = "boom"
+        raise KeyError(msg)  # NOT in exceptions_to_handle
+    msg = "fail"
+    raise ValueError(msg)  # handled -> falls back
+
+
+def _runnable_with_unhandled_fallback() -> RunnableWithFallbacks:
+    return RunnableLambda(_primary_with_unhandled).with_fallbacks(
+        [RunnableLambda(lambda x: x * 10)], exceptions_to_handle=(ValueError,)
+    )
+
+
+def test_batch_closes_root_runs_on_unhandled_exception() -> None:
+    """`batch` closes every root run before re-raising an unhandled exception."""
+    chain = _runnable_with_unhandled_fallback()
+    tracker = _RootRunTracker()
+    with pytest.raises(KeyError, match="boom"):
+        chain.batch([1, 2, 3], {"callbacks": [tracker]})
+    assert len(tracker.started) == 3
+    # every root run got a matching end event
+    assert set(tracker.finished) == set(tracker.started)
+    errors = {
+        tracker.finished[run_id][1]
+        for run_id, (kind, _) in tracker.finished.items()
+        if kind == "error"
+    }
+    assert len(errors) == 3
+    error_types = sorted(type(e).__name__ for e in errors)
+    # the input that raised keeps its own exception; inputs still waiting on
+    # a fallback get their last handled exception
+    assert error_types == ["KeyError", "ValueError", "ValueError"]
+
+
+async def test_abatch_closes_root_runs_on_unhandled_exception() -> None:
+    """`abatch` closes every root run before re-raising an unhandled exception."""
+    chain = _runnable_with_unhandled_fallback()
+    tracker = _RootRunTracker()
+    with pytest.raises(KeyError, match="boom"):
+        await chain.abatch([1, 2, 3], {"callbacks": [tracker]})
+    assert len(tracker.started) == 3
+    # every root run got a matching end event
+    assert set(tracker.finished) == set(tracker.started)
+    errors = {
+        tracker.finished[run_id][1]
+        for run_id, (kind, _) in tracker.finished.items()
+        if kind == "error"
+    }
+    assert len(errors) == 3
+    error_types = sorted(type(e).__name__ for e in errors)
+    # the input that raised keeps its own exception; inputs still waiting on
+    # a fallback get their last handled exception
+    assert error_types == ["KeyError", "ValueError", "ValueError"]
