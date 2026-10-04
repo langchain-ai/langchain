@@ -1287,6 +1287,19 @@ def test_convert_to_openai_messages_invalid_block() -> None:
     result = convert_to_openai_messages(messages, text_format="block")
     assert result == [{"role": "user", "content": [{"type": "invalid", "foo": "bar"}]}]
 
+    # Issue #41021: Typeless block on default text_format="string"
+    # should not raise KeyError: 'type'
+    typeless_messages = [AIMessage(content=[{"text": "a"}])]
+    typeless_result = convert_to_openai_messages(typeless_messages)
+    assert typeless_result == [{"role": "assistant", "content": [{"text": "a"}]}]
+
+    # Bedrock toolUse or custom dict without 'type'
+    tool_use_messages = [AIMessage(content=[{"toolUse": {"name": "search"}}])]
+    tool_use_result = convert_to_openai_messages(tool_use_messages)
+    assert tool_use_result == [
+        {"role": "assistant", "content": [{"toolUse": {"name": "search"}}]}
+    ]
+
 
 def test_handle_openai_responses_blocks() -> None:
     blocks: str | list[str | dict[str, Any]] = [
