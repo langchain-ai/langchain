@@ -13,11 +13,12 @@ from typing import Literal
 from langchain_core.exceptions import ModelError
 
 # Type aliases
-RetryOn = tuple[type[Exception], ...] | Callable[[Exception], bool]
+RetryOn = type[Exception] | tuple[type[Exception], ...] | Callable[[Exception], bool]
 """Type for specifying which exceptions to retry on.
 
 Can be either:
-- A tuple of exception types to retry on (based on `isinstance` checks)
+- A single exception type or a tuple of exception types to retry on (based on
+  `isinstance` checks)
 - A callable that takes an exception and returns `True` if it should be retried
 """
 
@@ -88,9 +89,9 @@ def should_retry_exception(
     Returns:
         `True` if the exception should be retried, `False` otherwise.
     """
-    if callable(retry_on):
-        return retry_on(exc)
-    return isinstance(exc, retry_on)
+    if isinstance(retry_on, (type, tuple)):
+        return isinstance(exc, retry_on)
+    return retry_on(exc)
 
 
 def calculate_delay(
