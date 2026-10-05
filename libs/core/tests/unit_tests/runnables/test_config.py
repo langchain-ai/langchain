@@ -233,6 +233,34 @@ def test_get_langsmith_inheritable_metadata_from_config_uses_previous_copy_rules
     }
 
 
+def test_langsmith_metadata_from_config_excludes_prefixed_credentials() -> None:
+    config = ensure_config(
+        cast(
+            "RunnableConfig",
+            {
+                "configurable": {
+                    "foo_api_key": "secret",
+                    "openai_apikey": "secret",
+                    "access_token": "secret",
+                    "token": "secret",
+                    "client_secret": "secret",
+                    "PASSWORD": "secret",
+                    "authorization": "secret",
+                    "max_tokens": 256,
+                    "tokenizer": "cl100k",
+                    "temperature": 0.5,
+                },
+            },
+        )
+    )
+
+    assert _get_langsmith_inheritable_metadata_from_config(config) == {
+        "max_tokens": 256,
+        "tokenizer": "cl100k",
+        "temperature": 0.5,
+    }
+
+
 async def test_merge_config_callbacks() -> None:
     manager: RunnableConfig = {
         "callbacks": CallbackManager(handlers=[StdOutCallbackHandler()])
