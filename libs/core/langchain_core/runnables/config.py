@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 
 # Cannot move uuid to TYPE_CHECKING as RunnableConfig is used in Pydantic models
 import uuid  # noqa: TC003
@@ -151,6 +152,13 @@ COPIABLE_KEYS = [
 # (which does not get traced)
 CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS = frozenset(("api_key",))
 
+# Also excludes prefixed keys such as `openai_api_key` or `access_token`, which
+# `init_chat_model(config_prefix=...)` produces. Matches whole trailing words, so
+# `max_tokens` is not affected.
+_SENSITIVE_CONFIGURABLE_KEY = re.compile(
+    r"(^|_)(api_?key|token|secret|password|authorization)$", re.IGNORECASE
+)
+
 
 def _get_langsmith_inheritable_metadata_from_config(
     config: RunnableConfig,
@@ -164,6 +172,7 @@ def _get_langsmith_inheritable_metadata_from_config(
         and isinstance(value, (str, int, float, bool))
         and key not in config.get("metadata", {})
         and key not in CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS
+        and not _SENSITIVE_CONFIGURABLE_KEY.search(key)
     }
     return metadata or None
 
