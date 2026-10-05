@@ -20,6 +20,8 @@ from langchain_core.messages.utils import (
     get_buffer_string,
     trim_messages,
 )
+from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables.base import coerce_to_runnable
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
@@ -36,6 +38,12 @@ from langchain.chat_models import BaseChatModel, init_chat_model
 logger = logging.getLogger(__name__)
 
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
+
+Summarizer = Runnable[list[AnyMessage], str] | Callable[[list[AnyMessage]], str]
+"""Generates a summary from the messages selected for summarization.
+
+A `Runnable` or a callable taking the messages and returning the summary text.
+"""
 
 DEFAULT_SUMMARY_PROMPT = """<role>
 Context Extraction Assistant
@@ -240,6 +248,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     in-process, up to 3 attempts total, via `Runnable.with_retry`. If a summary call
     still fails after those attempts, the underlying error propagates rather than
     fabricating a summary.
+
+    To generate summaries with something other than a chat model, pass a
+    `summarizer`. The middleware still decides when to summarize and which
+    messages to summarize; only the summary text comes from the summarizer.
     """
 
     transformers = (InternalCallTransformer,)
@@ -258,6 +270,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
+        summarizer: Summarizer | None = None,
         **deprecated_kwargs: Any,
     ) -> None:
         """Initialize summarization middleware.
@@ -326,6 +339,30 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 the summarization call.
 
                 Pass `None` to skip trimming entirely.
+            summarizer: Optional replacement for the summarization model call.
+
+                A `Runnable` or callable that receives the messages to summarize
+                (after trimming) and returns the summary text. When set,
+                `summary_prompt` is not used and `model` is not called to write
+                summaries; `model` is still used for its profile (fractional
+                limits) and token counting.
+
+                Plain callables are wrapped with `RunnableLambda`, so an async
+                function is only usable with async invocation.
+
+                !!! example
+
+                    ```python
+                    def summarize(messages: list[AnyMessage]) -> str:
+                        return my_summarization_service(get_buffer_string(messages))
+
+
+                    SummarizationMiddleware(
+                        model="openai:gpt-6-luna",
+                        trigger=("fraction", 0.8),
+                        summarizer=summarize,
+                    )
+                    ```
         """
         # Handle deprecated parameters
         if "max_tokens_before_summary" in deprecated_kwargs:
@@ -380,6 +417,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             self._partial_token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
+        self.summarizer: Runnable[list[AnyMessage], str] | None = (
+            coerce_to_runnable(summarizer) if summarizer is not None else None
+        )
 
         requires_profile = any("fraction" in clause for clause in self._trigger_clauses)
         if self.keep[0] == "fraction":
@@ -849,13 +889,19 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        config: RunnableConfig = {
+            "metadata": {"lc_source": "summarization", **internal_call_metadata()}
+        }
+        if self.summarizer is not None:
+            return self.summarizer.invoke(trimmed_messages, config=config).strip()
+
         # Serialize as XML so URL-based multimodal blocks remain visible in the summary
         # prompt while excluding raw message metadata from the token budget.
         formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         response = self._summary_model.invoke(
             self.summary_prompt.format(messages=formatted_messages).rstrip(),
-            config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
+            config=config,
         )
         return response.text.strip()
 
@@ -879,13 +925,19 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        config: RunnableConfig = {
+            "metadata": {"lc_source": "summarization", **internal_call_metadata()}
+        }
+        if self.summarizer is not None:
+            return (await self.summarizer.ainvoke(trimmed_messages, config=config)).strip()
+
         # Serialize as XML so URL-based multimodal blocks remain visible in the summary
         # prompt while excluding raw message metadata from the token budget.
         formatted_messages = get_buffer_string(trimmed_messages, format="xml")
 
         response = await self._summary_model.ainvoke(
             self.summary_prompt.format(messages=formatted_messages).rstrip(),
-            config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
+            config=config,
         )
         return response.text.strip()
 

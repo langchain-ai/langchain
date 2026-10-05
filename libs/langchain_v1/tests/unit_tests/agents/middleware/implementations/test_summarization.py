@@ -23,7 +23,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.utils import count_tokens_approximately, get_buffer_string
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import Runtime
@@ -2381,3 +2381,132 @@ class TestSummarizationStreamingEndToEnd:
             texts.append(text)
 
         assert texts == ["Final answer."]
+
+
+def test_summarizer_replaces_model_call() -> None:
+    """A `summarizer` writes the summary; the model and `summary_prompt` are not used."""
+    received: list[list[AnyMessage]] = []
+
+    def summarizer(messages: list[AnyMessage]) -> str:
+        received.append(messages)
+        return "  Custom summary  "
+
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(),
+        trigger=("messages", 3),
+        keep=("messages", 1),
+        summary_prompt="unused {messages}",
+        summarizer=summarizer,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+        HumanMessage(content="how are you", id="h1"),
+    ]
+
+    result = middleware.before_model(AgentState[Any](messages=messages), Runtime())
+
+    assert result is not None
+    assert received == [messages[:2]]
+    assert isinstance(result["messages"][1], HumanMessage)
+    assert result["messages"][1].content.endswith("Custom summary")
+    assert result["messages"][2:] == messages[2:]
+
+
+def test_summarizer_receives_trimmed_messages() -> None:
+    """The summarizer sees the messages after `trim_tokens_to_summarize` is applied."""
+    received: list[list[AnyMessage]] = []
+
+    def summarizer(messages: list[AnyMessage]) -> str:
+        received.append(messages)
+        return "summary"
+
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trim_tokens_to_summarize=None, summarizer=summarizer
+    )
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
+    with patch.object(middleware, "_trim_messages_for_summary", return_value=messages[-2:]) as trim:
+        assert middleware._create_summary(messages) == "summary"
+
+    trim.assert_called_once_with(messages)
+    assert received == [messages[-2:]]
+
+
+def test_summarizer_accepts_runnable_and_gets_summarization_metadata() -> None:
+    """A `Runnable` summarizer is invoked with the summarization metadata."""
+    configs: list[RunnableConfig] = []
+
+    def summarize(messages: list[AnyMessage], config: RunnableConfig) -> str:
+        configs.append(config)
+        return get_buffer_string(messages)
+
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(), summarizer=RunnableLambda(summarize)
+    )
+
+    assert middleware._create_summary([HumanMessage(content="hi")]) == "Human: hi"
+    metadata = configs[0]["metadata"]
+    assert metadata["lc_source"] == "summarization"
+    assert (
+        metadata[INTERNAL_CALL_METADATA_KEY] == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
+    )
+
+
+async def test_summarizer_async() -> None:
+    """Async invocation uses the summarizer's async implementation."""
+
+    async def summarize(messages: list[AnyMessage]) -> str:
+        return f"{len(messages)} messages"
+
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(),
+        trigger=("messages", 3),
+        keep=("messages", 1),
+        summarizer=summarize,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+        HumanMessage(content="how are you", id="h1"),
+    ]
+
+    result = await middleware.abefore_model(AgentState[Any](messages=messages), Runtime())
+
+    assert result is not None
+    assert result["messages"][1].content.endswith("2 messages")
+
+
+def test_summarizer_errors_propagate() -> None:
+    """Errors raised by the summarizer propagate and leave history untouched."""
+
+    def summarizer(_: list[AnyMessage]) -> str:
+        msg = "summarizer down"
+        raise RuntimeError(msg)
+
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 2),
+        keep=("messages", 1),
+        summarizer=summarizer,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+    ]
+    state = AgentState[Any](messages=messages)
+
+    with pytest.raises(RuntimeError, match="summarizer down"):
+        middleware.before_model(state, Runtime())
+    assert state["messages"] == messages
+
+
+def test_summarizer_empty_history_skips_summarizer() -> None:
+    """The built-in empty-history message is returned without calling the summarizer."""
+
+    def summarizer(_: list[AnyMessage]) -> str:
+        msg = "should not be called"
+        raise AssertionError(msg)
+
+    middleware = SummarizationMiddleware(model=MockChatModel(), summarizer=summarizer)
+
+    assert middleware._create_summary([]) == "No previous conversation history."
