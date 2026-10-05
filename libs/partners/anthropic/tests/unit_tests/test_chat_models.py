@@ -4639,3 +4639,30 @@ def test_default_headers_hidden_from_serialization_and_repr() -> None:
     assert "header-secret" not in str(llm._serialized)
     # Still sent to the API.
     assert llm._client.default_headers["X-Custom-Auth"] == "header-secret"
+
+
+def test_mcp_server_authorization_token_redacted_in_invocation_params() -> None:
+    """Call-time MCP credentials must not reach tracers, but must reach the API."""
+    llm = ChatAnthropic(model=MODEL_NAME, anthropic_api_key=SecretStr("k"))
+    mcp_servers = [
+        {
+            "type": "url",
+            "url": "https://mcp.example.com/mcp",
+            "name": "example",
+            "authorization_token": "mcp-secret",
+        },
+        {"type": "url", "url": "https://other.example.com/mcp", "name": "other"},
+    ]
+
+    params = llm._get_invocation_params(mcp_servers=mcp_servers)
+
+    assert "mcp-secret" not in str(params)
+    assert params["mcp_servers"][0]["authorization_token"] == "**REDACTED**"  # noqa: S105
+    assert params["mcp_servers"][0]["url"] == "https://mcp.example.com/mcp"
+    assert "authorization_token" not in params["mcp_servers"][1]
+    # The caller's data is not mutated, and the request payload keeps the token.
+    assert mcp_servers[0]["authorization_token"] == "mcp-secret"  # noqa: S105
+    payload = llm._get_request_payload(
+        [HumanMessage(content="hi")], mcp_servers=mcp_servers
+    )
+    assert payload["mcp_servers"][0]["authorization_token"] == "mcp-secret"  # noqa: S105
