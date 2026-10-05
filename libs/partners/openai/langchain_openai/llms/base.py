@@ -278,7 +278,13 @@ class BaseOpenAI(BaseLLM):
     when tiktoken is called, you can specify a model name to use here.
     """
 
-    default_headers: Mapping[str, str] | None = None
+    default_headers: Mapping[str, str] | None = Field(
+        default=None, exclude=True, repr=False
+    )
+    """Headers sent on every request.
+
+    Excluded from serialization and `repr` because they commonly carry credentials.
+    """
 
     default_query: Mapping[str, object] | None = None
 
