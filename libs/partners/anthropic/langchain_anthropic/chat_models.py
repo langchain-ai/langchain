@@ -1205,6 +1205,24 @@ class ChatAnthropic(BaseChatModel):
             "output_config": self.output_config,
         }
 
+    def _get_invocation_params(
+        self, stop: list[str] | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
+        """Get the parameters used to invoke the model.
+
+        Redacts MCP server credentials passed at call time, which would otherwise
+        be forwarded to tracers.
+        """
+        params = super()._get_invocation_params(stop=stop, **kwargs)
+        if isinstance(mcp_servers := params.get("mcp_servers"), list):
+            params["mcp_servers"] = [
+                {**server, "authorization_token": "**REDACTED**"}
+                if isinstance(server, dict) and "authorization_token" in server
+                else server
+                for server in mcp_servers
+            ]
+        return params
+
     def _get_ls_params(
         self,
         stop: list[str] | None = None,
