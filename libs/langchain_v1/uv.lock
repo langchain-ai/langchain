@@ -1171,19 +1171,19 @@ wheels = [
 
 [[package]]
 name = "fastmcp"
-version = "4.0.1"
+version = "4.0.11"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastmcp-slim", extra = ["client", "server"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fd/d8/55fa434420f6404d4157b7a069289ad86f6519e43fccda24ab38e2c3467a/fastmcp-4.0.1.tar.gz", hash = "sha256:3e24d349c8513917db3d2c4bbbc3028370aa4e66d69b975ec0ca599979d2d0d0", size = 42301880, upload-time = "2026-09-02T00:20:47.841Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/ca/e76fde836e6e443f49b1a16ad91fa71715ec220141261a290c9241024857/fastmcp-4.0.11.tar.gz", hash = "sha256:55fc7b8e25d4f8365818ba93f7008d1b6e646ce7fe8ae49342687243ccbef9f2", size = 42606797, upload-time = "2026-10-04T16:58:10.598Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/81/d7/ba0f88ff281f5ebb4f0213edc5fbfbb77f51396f1fb4626784638a92322c/fastmcp-4.0.1-py3-none-any.whl", hash = "sha256:b60d0dbbc8991b74592702c07e01ae99f6df5d2d6cae5f8fee24a58d8ff61945", size = 8075, upload-time = "2026-09-02T00:20:45.257Z" },
+    { url = "https://files.pythonhosted.org/packages/49/0c/6c97f76e4ca6cd26fe056d6668ec4a550b2368d3699e6a50789aed226849/fastmcp-4.0.11-py3-none-any.whl", hash = "sha256:defbc5f2566a702f45817d1acead120dfa8127d60b1c1512b3200232ead13a44", size = 8161, upload-time = "2026-10-04T16:58:08.278Z" },
 ]
 
 [[package]]
 name = "fastmcp-slim"
-version = "4.0.1"
+version = "4.0.11"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mcp-types" },
@@ -1194,9 +1194,9 @@ dependencies = [
     { name = "rich" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1f/44/119fae9348a86388465cac7e2cfd3e52ddf28801ce3e56fa7b985de62b8b/fastmcp_slim-4.0.1.tar.gz", hash = "sha256:23f87109b4fe3bc78661ff36a140c05b69f59d3dda421313e2f66b09fc105c87", size = 684027, upload-time = "2026-09-02T00:20:22.251Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/02/d3/8d247edc9120c3be157315acd6df17c9790358c39ea45d0f9dfcec6a094b/fastmcp_slim-4.0.11.tar.gz", hash = "sha256:9152aac74d8837bc37576f5f3d83f17567250a9dfcd8187133c43faaaa9dd06f", size = 722160, upload-time = "2026-10-04T16:56:07.286Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/be/71e0663ba44eb085e7539b909d0975a693bcd7fc80780934cc66fbf94770/fastmcp_slim-4.0.1-py3-none-any.whl", hash = "sha256:68d1d0597c7b17ade432ff5165dfaa25e4c8f1a890914cb09f805d2d3816ceae", size = 858065, upload-time = "2026-09-02T00:20:20.805Z" },
+    { url = "https://files.pythonhosted.org/packages/47/69/0b4fbe30298c9c6cc123ba8ac63e78583b3567ac04f7d125f3c2309a6e9e/fastmcp_slim-4.0.11-py3-none-any.whl", hash = "sha256:524905197e318d934908594f16fedea559d44dd682bd763d40f3556233a2b1d9", size = 898247, upload-time = "2026-10-04T16:56:05.97Z" },
 ]
 
 [package.optional-dependencies]
@@ -2384,7 +2384,7 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastmcp", marker = "extra == 'mcp'", specifier = ">=4.0.1,<5.0.0" },
+    { name = "fastmcp", marker = "extra == 'mcp'", specifier = ">=4.0.11,<5.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'", editable = "../partners/anthropic" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
     { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
@@ -2413,7 +2413,7 @@ provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-verte
 lint = [{ name = "ruff", specifier = ">=0.15.0,<0.17.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.26,<1.6.0" },
-    { name = "fastmcp", specifier = ">=4.0.1,<5.0.0" },
+    { name = "fastmcp", specifier = ">=4.0.11,<5.0.0" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
@@ -2435,7 +2435,7 @@ test-integration = [
     { name = "wrapt", specifier = ">=1.15.0,<3.0.0" },
 ]
 typing = [
-    { name = "fastmcp", specifier = ">=4.0.1,<5.0.0" },
+    { name = "fastmcp", specifier = ">=4.0.11,<5.0.0" },
     { name = "mypy", specifier = ">=2.1.0,<2.2.0" },
     { name = "types-toml", specifier = ">=0.10.8.20240310,<1.0.0.0" },
 ]
@@ -2907,7 +2907,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "1.1.2"
+version = "1.1.3"
 source = { editable = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },
