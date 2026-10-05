@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import builtins  # noqa: TC003  # runtime-evaluated; subclass `dict()` shadows the builtin
 import contextlib
-import inspect
 import json
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
@@ -91,6 +90,7 @@ from langchain_core.utils._gateway import (
     GATEWAY_METADATA_RESPONSE_KEY,
     _parse_gateway_metadata,
 )
+from langchain_core.utils._signature import signature_parameters
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -2018,7 +2018,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
-        elif inspect.signature(self._generate).parameters.get("run_manager"):
+        elif signature_parameters(self._generate).get("run_manager"):
             result = self._generate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -2175,7 +2175,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     await run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
-        elif inspect.signature(self._agenerate).parameters.get("run_manager"):
+        elif signature_parameters(self._agenerate).get("run_manager"):
             result = await self._agenerate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )

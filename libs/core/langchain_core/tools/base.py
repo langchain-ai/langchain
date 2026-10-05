@@ -10,7 +10,6 @@ import typing
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
-from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -54,6 +53,7 @@ from langchain_core.runnables import (
 )
 from langchain_core.runnables.config import set_config_context
 from langchain_core.runnables.utils import coro_with_context
+from langchain_core.utils._signature import signature_parameters
 from langchain_core.utils.function_calling import (
     _parse_google_docstring,
     _py_38_safe_origin,
@@ -925,7 +925,7 @@ class ChildTool(BaseTool):
         Returns:
             The result of the tool execution.
         """
-        if kwargs.get("run_manager") and signature(self._run).parameters.get(
+        if kwargs.get("run_manager") and signature_parameters(self._run).get(
             "run_manager"
         ):
             kwargs["run_manager"] = kwargs["run_manager"].get_sync()
@@ -1091,7 +1091,7 @@ class ChildTool(BaseTool):
                 tool_args, tool_kwargs = self._to_args_and_kwargs(
                     tool_input, tool_call_id
                 )
-                if signature(self._run).parameters.get("run_manager"):
+                if signature_parameters(self._run).get("run_manager"):
                     tool_kwargs |= {"run_manager": run_manager}
                 if config_param := _get_runnable_config_param(self._run):
                     tool_kwargs |= {config_param: config}
@@ -1219,7 +1219,7 @@ class ChildTool(BaseTool):
                 func_to_check = (
                     self._run if self.__class__._arun is BaseTool._arun else self._arun  # noqa: SLF001
                 )
-                if signature(func_to_check).parameters.get("run_manager"):
+                if signature_parameters(func_to_check).get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager
                 if config_param := _get_runnable_config_param(func_to_check):
                     tool_kwargs[config_param] = config
@@ -1639,7 +1639,7 @@ def _get_injected_args_keys_from_signature(func: Callable[..., Any]) -> frozense
     Returns:
         `frozenset` of parameter names annotated as injected arguments.
     """
-    params = signature(func).parameters
+    params = signature_parameters(func)
     hint_source = _get_type_hints_source(func)
     hints = (
         _get_type_hints(hint_source, include_extras=True)
