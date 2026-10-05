@@ -150,6 +150,7 @@ def merge_auth_headers(
         auth_headers: Headers to merge (typically from `parse_url_with_auth`).
     """
     if auth_headers:
-        headers = client_kwargs.get("headers", {})
-        headers.update(auth_headers)
-        client_kwargs["headers"] = headers
+        client_kwargs["headers"] = {
+            **client_kwargs.get("headers", {}),
+            **auth_headers,
+        }
