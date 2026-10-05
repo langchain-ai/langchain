@@ -1,0 +1,20 @@
+libs/langchain_v1/langchain/mcp/adapter.py
+  h_152f5d9f78d224 12,74,81-82,87,92,215-217
+libs/langchain_v1/langchain/mcp/elicitation.py
+  h_152f5d9f78d224 3-14,51,89,142,177,198,222-225,227-233,237-239,244-247,253-256,258,265,268-269,291,293-295,298,306-307,317-318,342
+libs/langchain_v1/tests/unit_tests/mcp/test_elicitation.py
+  h_152f5d9f78d224 32,211-212,219,222,231-232
+libs/langchain_v1/tests/unit_tests/mcp/test_tools.py
+  h_152f5d9f78d224 25,50,52-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "880e62e0520b7614cae5b927f0b1b3df21aac32f",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

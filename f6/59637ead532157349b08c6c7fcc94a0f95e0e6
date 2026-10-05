@@ -1,0 +1,55 @@
+libs/partners/typesafe/langchain_typesafe/classifier.py
+  s_f21a22b0ae0afc::t_853e48b6f6b9d3 5-6,11,16,24,27-28,34-38,41,50-54,62-69,73-76,78-88,91-92,129,131-132,145-147,150-162,170-172,179,182-185,191-194,197,200-203,205-206,208-209,212-213,215-219,222-223,225-228,231,236,238-241,250-276,300-302,305-306,310-317,322-329,344-347,353-356,358-374,381-382,389,392-393,398-399,401,404,411-412,419,422-423,428-429,431,441-445,447-451,453-454,456-487
+  s_f21a22b0ae0afc::t_0bc2641d34c336 29-32,357
+  s_f21a22b0ae0afc::t_6a80911bb891f5 10,18
+  s_f21a22b0ae0afc::t_f802e1e0d2f5bf 277-279,281-289
+  s_f21a22b0ae0afc::t_eeb4387e025616 7,166,188,280,290-297,318-321,348-352
+  s_f21a22b0ae0afc::t_647b1e681fe11a 163
+libs/partners/typesafe/tests/integration_tests/test_classifier.py
+  s_f21a22b0ae0afc::t_ece35ce54e624a 9,11
+libs/partners/typesafe/tests/unit_tests/test_classifier.py
+  s_f21a22b0ae0afc::t_214af21228c507 10,18,29,69-120,128,136-143,147,151-152,154,162,201-202,205,207-223,225,227-228,231-238,240,256-257,274-281,297-298,303-310,312-315,317,320-321,324-326,328,330,332-336,339-341,344,348-351,356-375,377,380,382-388,390,395,398-399,401-407,411,414-415,417-420,422-424,426,429-431,435-453,457,459,461-466,468,470,472,484,487,491,494,497-501,504-506,509-510,513-514,516-517,525,528-530,532-537,539-544,546-547,550-552,555-557,565,585-586,590-604
+  s_f21a22b0ae0afc::t_423adaf4b845f6 121-127,129-135,144-146,148,153,155
+  s_f21a22b0ae0afc::t_0bc2641d34c336 224,226,229-230,242-244
+  s_f21a22b0ae0afc::t_7ca03871ab6f14 519-522,559-562
+  s_f21a22b0ae0afc::t_0deb8748cecbfd 241,558
+libs/partners/typesafe/langchain_typesafe/_errors.py
+  s_f21a22b0ae0afc::t_c5769ebe861e28 1-80,93-162
+  s_f21a22b0ae0afc::t_19e0330f8d3e52 81-92
+libs/partners/typesafe/langchain_typesafe/types.py
+  s_f21a22b0ae0afc::t_3c0649cb50b9f4 1-7,12,36
+libs/partners/typesafe/langchain_typesafe/_state.py
+  s_f21a22b0ae0afc::t_423adaf4b845f6 6,12-13,33,54-56
+libs/partners/typesafe/tests/unit_tests/test_errors.py
+  s_f21a22b0ae0afc::t_cdec35fd25a8ad 34-37,44-64,67,70-71,74-87,89,96,100,105,107,114-115,121,123,125,135,137-138,145,150-154,166-170,238
+  s_f21a22b0ae0afc::t_26ed9204b54603 224-229
+  s_f21a22b0ae0afc::t_7ca03871ab6f14 38-43,157-158,177-187,195-196,208-213
+  s_f21a22b0ae0afc::t_c212a81c4519cd 1,7,32-33,65-66,68-69,88,90-92,94-95,98-99,101-102,106,108-113,118-120,122,124,127-129,132-134,141-142,144,148-149,160,163-164,172,175-176,188-190,192-194,199-203,206-207,215,218-219,222-223,231-232,235-237,239-247,249
+libs/partners/typesafe/pyproject.toml
+  s_f21a22b0ae0afc::t_6a80911bb891f5 26-27,48
+libs/partners/typesafe/README.md
+  s_f21a22b0ae0afc::t_f62abde191583c 12,16,46-47,66-86,88,92,96-99,103,121
+libs/partners/typesafe/tests/unit_tests/test_imports.py
+  s_f21a22b0ae0afc::t_7ca03871ab6f14 5-12
+  s_f21a22b0ae0afc::t_ece35ce54e624a 3-4,18,37-46,51-67
+libs/partners/typesafe/langchain_typesafe/__init__.py
+  s_f21a22b0ae0afc::t_b20d5771959e8b 1,3-18,20-24,37,43
+libs/partners/typesafe/uv.lock
+  s_f21a22b0ae0afc::t_4392c6c7cae437 307,565-566,574,589-590,597,785-840,1738-1752
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f659637ead532157349b08c6c7fcc94a0f95e0e6",
+  "prompts": {},
+  "sessions": {
+    "s_f21a22b0ae0afc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f4fb8c13-4577-435b-b835-bb7808fd26ba",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

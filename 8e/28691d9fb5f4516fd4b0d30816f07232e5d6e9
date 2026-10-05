@@ -1,0 +1,16 @@
+libs/langchain_v1/examples/mcp/transports.py
+  h_152f5d9f78d224 14,19-22
+libs/langchain_v1/langchain/mcp/__init__.py
+  h_152f5d9f78d224 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "8e28691d9fb5f4516fd4b0d30816f07232e5d6e9",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+libs/langchain_v1/langchain/mcp/adapter.py
+  s_a44ea8771c948a::t_6ca99257d61391 106-110
+  s_a44ea8771c948a::t_2169feac4abc62 60-68,75-105,111-116
+  s_a44ea8771c948a::t_6b39e4596f767c 155,164-199
+  s_a44ea8771c948a::t_30696cca0b4d38 130-139,142
+  s_a44ea8771c948a::t_96eac50d4ae661 218-219
+  s_a44ea8771c948a::t_03b3c0ecb4a41d 117
+  s_a44ea8771c948a::t_70d6038dd8017a 69-72
+  s_a44ea8771c948a::t_5b60dbd42a1379 6,8
+libs/langchain_v1/tests/unit_tests/mcp/test_adapter.py
+  s_a44ea8771c948a::t_fb36f26b7355e0 123-128
+  s_a44ea8771c948a::t_8a02337f3b5997 16
+  s_a44ea8771c948a::t_fe935deccf55e7 7-8
+  s_a44ea8771c948a::t_32a030da6fc241 136-137
+  s_a44ea8771c948a::t_fd26936a6c45fb 79,87-122,129-135
+  s_a44ea8771c948a::t_d6ac9a9296f03a 138,141,146-148,150-152
+  s_a44ea8771c948a::t_713e60dc18b467 139-140,142-145,149,153-157
+libs/langchain_v1/langchain/mcp/tools.py
+  s_a44ea8771c948a::t_ea8257eaaeb1d2 220,231-246,248
+  s_a44ea8771c948a::t_d0603a82806375 249
+  s_a44ea8771c948a::t_7606300747ef93 247
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0f319a7ea3b5a3a6a10e20521f31235fc92dc32f",
+  "prompts": {},
+  "sessions": {
+    "s_a44ea8771c948a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "15e1c26e-e302-42c8-973e-3bc769ae6ad5",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

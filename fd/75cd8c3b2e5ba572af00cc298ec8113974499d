@@ -1,0 +1,14 @@
+libs/langchain_v1/examples/mcp/graph_factory.py
+  h_152f5d9f78d224 1,30,34,37,45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "fd75cd8c3b2e5ba572af00cc298ec8113974499d",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

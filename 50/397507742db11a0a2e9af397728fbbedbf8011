@@ -1,0 +1,16 @@
+libs/langchain_v1/langchain/agents/middleware/pii.py
+  h_152f5d9f78d224 6,8,39-40,665-709,753-757,759,781-783,785,788,856-858,860
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_pii.py
+  h_152f5d9f78d224 554-617
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "50397507742db11a0a2e9af397728fbbedbf8011",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

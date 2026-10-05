@@ -1,0 +1,36 @@
+libs/langchain_v1/examples/mcp/auth_bearer.py
+  h_152f5d9f78d224 49,55
+libs/langchain_v1/examples/mcp/auth_oauth.py
+  h_152f5d9f78d224 71
+libs/langchain_v1/examples/mcp/elicitation.py
+  h_152f5d9f78d224 29
+libs/langchain_v1/examples/mcp/multi_server.py
+  h_152f5d9f78d224 35
+libs/langchain_v1/examples/mcp/protocol_eras.py
+  h_152f5d9f78d224 39
+libs/langchain_v1/examples/mcp/remote_server.py
+  h_152f5d9f78d224 23
+libs/langchain_v1/examples/mcp/tool_errors.py
+  h_152f5d9f78d224 24
+libs/langchain_v1/examples/mcp/transports.py
+  h_152f5d9f78d224 26
+libs/langchain_v1/langchain/mcp/adapter.py
+  h_152f5d9f78d224 187,239,262
+libs/langchain_v1/tests/integration_tests/mcp/test_protocol_eras.py
+  h_152f5d9f78d224 105,140,157-158
+libs/langchain_v1/tests/unit_tests/mcp/test_adapter.py
+  h_152f5d9f78d224 39,47,71,79,92,100,105,107,113,132-133,139,157-158,181,193,344,440,467-468,489-490
+libs/langchain_v1/tests/unit_tests/mcp/test_elicitation.py
+  h_152f5d9f78d224 70,103,126,189,365,384,410,427
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "804bbdc6418f5a7c5b014e400199b39565288d08",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

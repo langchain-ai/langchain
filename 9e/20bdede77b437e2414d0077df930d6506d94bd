@@ -1,0 +1,24 @@
+libs/langchain_v1/tests/unit_tests/mcp/test_tools.py
+  s_2ce70a1527c068::t_11cbef18406735 99-103,107,110,113-118,130-131
+libs/langchain_v1/tests/integration_tests/mcp/test_tools.py
+  s_2ce70a1527c068::t_8adf38dae6de3d 567,569-583,740,752
+  s_2ce70a1527c068::t_eb5ed139b3c80f 730
+libs/langchain_v1/langchain/mcp/tools.py
+  s_2ce70a1527c068::t_c530f7ad960ab3 341-342,345-352,354-358,360
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "9e20bdede77b437e2414d0077df930d6506d94bd",
+  "prompts": {},
+  "sessions": {
+    "s_2ce70a1527c068": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dbce52e-70cd-4b5e-92a7-6fb480327deb",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

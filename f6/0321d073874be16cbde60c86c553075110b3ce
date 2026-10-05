@@ -1,0 +1,42 @@
+libs/langchain_v1/tests/integration_tests/mcp/test_callbacks.py
+  s_2ce70a1527c068::t_faf510fe897a47 103
+libs/langchain_v1/tests/integration_tests/mcp/test_elicitation.py
+  s_2ce70a1527c068::t_868d392f1226cb 70,117,149
+libs/langchain_v1/tests/integration_tests/mcp/test_tools.py
+  s_2ce70a1527c068::t_acbfc934167fd2 588-596,604,611,613
+libs/langchain_v1/langchain/mcp/client.py
+  s_2ce70a1527c068::t_6afdebd22616e2 112
+libs/langchain_v1/langchain/mcp/tools.py
+  s_2ce70a1527c068::t_9b2aea308d62a7 343-347
+  s_2ce70a1527c068::t_e4f6a8a95c1f1a 7
+libs/langchain_v1/tests/integration_tests/mcp/test_client.py
+  s_2ce70a1527c068::t_1a86e0216404ac 8
+  s_2ce70a1527c068::t_e9f4a41892416f 4,266-267,270-271,274-277,279-281,283-297
+  s_2ce70a1527c068::t_151d930727e2fc 246-263
+  s_2ce70a1527c068::t_50b9cdd08dbdba 9-11,15,264-265,268-269,272-273,278,282,298-308
+libs/langchain_v1/langchain/mcp/sessions.py
+  s_2ce70a1527c068::t_5a1cfe29c84376 110-118,151-152,154-157,191-192,194-198
+  s_2ce70a1527c068::t_f8c30f3fd33716 10,218,221,223-228,349-351
+  s_2ce70a1527c068::t_60ca3b96c039b2 1,3-5,13,15,31-33,47-66,120,124-127,158,161,164-167,201,203-204,206-209,212,214-215,262-281,284-300,303-314,317-319,321,324-325,336,383,387-394,396,399-402,404-406
+  s_2ce70a1527c068::t_9350606e009aab 16-20,219,235,238-259,345-348,367-368,377,403,407-420
+  s_2ce70a1527c068::t_84a60d6757c5a2 160
+  s_2ce70a1527c068::t_5b0e2f3accce7a 352-362,374
+  s_2ce70a1527c068::t_a2da8766b3ca22 14,153,193,199,202,213,302,398
+  s_2ce70a1527c068::t_57f05ff72dfa8d 229-232,234,363-366,369-373,375-376
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "f60321d073874be16cbde60c86c553075110b3ce",
+  "prompts": {},
+  "sessions": {
+    "s_2ce70a1527c068": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dbce52e-70cd-4b5e-92a7-6fb480327deb",
+        "model": "claude-opus-5"
+      },
+      "human_author": null
+    }
+  }
+}

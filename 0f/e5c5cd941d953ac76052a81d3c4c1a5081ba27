@@ -1,0 +1,152 @@
+libs/langchain_v1/langchain/voice/tracing.py
+  s_37bb86aaefe6aa::t_8c539278bd2f31 1-114
+libs/langchain_v1/langchain/voice/brain.py
+  s_37bb86aaefe6aa::t_6357f8ec8e1a84 1-106
+libs/langchain_v1/langchain/voice/coordination.py
+  s_37bb86aaefe6aa::t_8c539278bd2f31 96,118
+  s_37bb86aaefe6aa::t_6357f8ec8e1a84 1-95,97-117,119-181
+libs/langchain_v1/tests/unit_tests/voice/test_agent.py
+  s_37bb86aaefe6aa::t_d23610d0e68ce7 18,43
+  s_37bb86aaefe6aa::t_a6f67b5d1a0be9 195-198
+  s_37bb86aaefe6aa::t_c7267f39daabb3 95-138,184-194,199
+  s_37bb86aaefe6aa::t_b66182dbe79d14 62-71,90-94,142-144,147-148,155,157-159,161,168,171,178,180-181
+  s_37bb86aaefe6aa::t_75b7448d1c45d9 151-152
+  s_37bb86aaefe6aa::t_e29b50ebef7a7c 10-14,74
+  s_37bb86aaefe6aa::t_8532dc5ec77192 17,72-73,75-89
+  s_37bb86aaefe6aa::t_5f204b3aa3320c 1-9,15-16,19-42,44-55,57-61,139-141,145-146,149-150,153-154,156,160,162-167,169-170,172-177,179,182-183,200-306
+  s_37bb86aaefe6aa::t_75692529d9b47d 56
+libs/langchain_v1/tests/unit_tests/voice/test_providers.py
+  s_37bb86aaefe6aa::t_6d83a486c71ec0 1-12,14-15,17-19,21,28-97,99-100,102-103,105-111
+  s_37bb86aaefe6aa::t_b66182dbe79d14 13,16,20,22-27,98,101,104
+libs/langchain_v1/langchain/voice/audio.py
+  s_37bb86aaefe6aa::t_c7267f39daabb3 1,15,17-19,37-38,40-41
+  s_37bb86aaefe6aa::t_3d1cf4ecfb721f 108
+  s_37bb86aaefe6aa::t_25cb498fa3dab6 39
+  s_37bb86aaefe6aa::t_6357f8ec8e1a84 2-14,16,20-36,42-107,109-146
+libs/langchain_v1/tests/unit_tests/voice/test_openai_realtime.py
+  s_37bb86aaefe6aa::t_b66182dbe79d14 30-32,45-46
+  s_37bb86aaefe6aa::t_75692529d9b47d 1-29,33-44,47-84
+libs/langchain_v1/tests/unit_tests/voice/test_gemini_live.py
+  s_37bb86aaefe6aa::t_75692529d9b47d 10,51,72,178
+  s_37bb86aaefe6aa::t_6d83a486c71ec0 1-9,11-50,52-71,73-177,179-224
+libs/langchain_v1/langchain/voice/agent.py
+  s_37bb86aaefe6aa::t_3981b267f8d2b6 21,235
+  s_37bb86aaefe6aa::t_b29188e42de535 26,212-214,218-234,236,241,244,250
+  s_37bb86aaefe6aa::t_6357f8ec8e1a84 1-20,22-25,27-211,215-217,237-240,242-243,245-249,251-283
+libs/langchain_v1/tests/unit_tests/voice/test_concurrency.py
+  s_37bb86aaefe6aa::t_75692529d9b47d 5,62,71,83,87
+  s_37bb86aaefe6aa::t_5f204b3aa3320c 1-4,6-10,16-42,47-48,50,53,56-61,63-69,72-73,75-81,84-86,88-103,105-122
+  s_37bb86aaefe6aa::t_b66182dbe79d14 14-15,43-46,49,51-52,54-55,70,74,82,104
+  s_37bb86aaefe6aa::t_d23610d0e68ce7 11-13
+libs/langchain_v1/langchain/voice/transports/websocket.py
+  s_37bb86aaefe6aa::t_c1b079e929e4a6 9,21,25,63,69
+  s_37bb86aaefe6aa::t_8c539278bd2f31 1-8,10-20,22-24,26-62,64-68,70-99,102-178
+  s_37bb86aaefe6aa::t_686552457891e3 100-101
+libs/langchain_v1/langchain/voice/events.py
+  s_37bb86aaefe6aa::t_6357f8ec8e1a84 1-12,14-29,31-38,40-47,49-57,59-67,69-77,79-87,89-98,100-109,111-119,121-170
+  s_37bb86aaefe6aa::t_c1b079e929e4a6 13,30,39,48,58,68,78,88,99,110,120
+libs/langchain_v1/langchain/voice/transports/__init__.py
+  s_37bb86aaefe6aa::t_9ce83abbc87157 1-5
+libs/langchain_v1/langchain/voice/__main__.py
+  s_37bb86aaefe6aa::t_6357f8ec8e1a84 1-39
+libs/langchain_v1/langchain/voice/transport.py
+  s_37bb86aaefe6aa::t_3981b267f8d2b6 160,239,355-358
+  s_37bb86aaefe6aa::t_a0b53991b6df94 247-248
+  s_37bb86aaefe6aa::t_8945c6787b1082 262-263
+  s_37bb86aaefe6aa::t_74a671ab49d545 2-7,9-85,87-159,161-238,240-246,249-261,264-354
+  s_37bb86aaefe6aa::t_4574d49b8c0069 8
+  s_37bb86aaefe6aa::t_60a2c8a0775a90 1
+  s_37bb86aaefe6aa::t_28d79fbcc9e388 86
+libs/langchain_v1/langchain/voice/diagnostics.py
+  s_37bb86aaefe6aa::t_6357f8ec8e1a84 1-45
+libs/langchain_v1/langchain/voice/conversation.py
+  s_37bb86aaefe6aa::t_c1b079e929e4a6 22-25
+  s_37bb86aaefe6aa::t_6357f8ec8e1a84 1-8,11-21,26-30,32-36
+  s_37bb86aaefe6aa::t_b29188e42de535 9-10,31
+libs/langchain_v1/tests/unit_tests/voice/test_tasks.py
+  s_37bb86aaefe6aa::t_6d83a486c71ec0 1-4,6-11,15-42,44-134
+  s_37bb86aaefe6aa::t_75692529d9b47d 43
+  s_37bb86aaefe6aa::t_d23610d0e68ce7 5,12-14
+libs/langchain_v1/tests/unit_tests/voice/test_coordination.py
+  s_37bb86aaefe6aa::t_d23610d0e68ce7 5,20-22
+  s_37bb86aaefe6aa::t_5f204b3aa3320c 1-4,6-19,23-132
+libs/langchain_v1/langchain/voice/providers/gemini_live.py
+  s_37bb86aaefe6aa::t_c1b079e929e4a6 371
+  s_37bb86aaefe6aa::t_cd1d64948d32b1 28-34,457-459
+  s_37bb86aaefe6aa::t_c7267f39daabb3 466-468,628
+  s_37bb86aaefe6aa::t_503042b7cdd81a 40,76,83,365,385,399,443,455-456,460-465,469,479,481,500,519,523-525
+  s_37bb86aaefe6aa::t_22452d09f7a57a 1-27,35-39,41-75,77-82,84-364,366-370,372-384,386-398,400-442,444-454,470-478,480,482-499,501-518,520-522,526-627,629-667
+libs/langchain_v1/tests/unit_tests/voice/__init__.py
+  s_37bb86aaefe6aa::t_db8c85b80bbc36 1
+libs/langchain_v1/tests/unit_tests/voice/test_tracing.py
+  s_37bb86aaefe6aa::t_d0b0c84d1cced5 1-12,16-42,44-79,81-86,88-221
+  s_37bb86aaefe6aa::t_d23610d0e68ce7 13-15,43,80,87
+libs/langchain_v1/langchain/voice/tasks.py
+  s_37bb86aaefe6aa::t_c1b079e929e4a6 80
+  s_37bb86aaefe6aa::t_8c539278bd2f31 1-79,81-317
+libs/langchain_v1/tests/unit_tests/voice/test_brain.py
+  s_37bb86aaefe6aa::t_5f204b3aa3320c 1-12,14-61
+  s_37bb86aaefe6aa::t_75692529d9b47d 13
+libs/langchain_v1/langchain/voice/providers/openai_realtime.py
+  s_37bb86aaefe6aa::t_9d76a41838623c 42,80,87,492
+  s_37bb86aaefe6aa::t_22452d09f7a57a 1-29,37-41,43-79,81-86,88-141,143-144,146-213,215-235,237,240-241,245,247-263,265-269,271-282,284-296,298-335,337-342,344-372,388-391,393,395-396,398-406,415-417,419,421-423,425-487,491,493-497
+  s_37bb86aaefe6aa::t_e6cd539bb62411 264,283,297,336,343,373-374,378,380-383,387,392,397,407-414,418,420,424
+  s_37bb86aaefe6aa::t_c1b079e929e4a6 270,488-490
+  s_37bb86aaefe6aa::t_c7267f39daabb3 379,384-386,394
+  s_37bb86aaefe6aa::t_cd1d64948d32b1 30-36,375-377
+  s_37bb86aaefe6aa::t_02273eb49f15dd 142,145,214,236,238-239,242-244,246
+libs/langchain_v1/tests/unit_tests/voice/test_server.py
+  s_37bb86aaefe6aa::t_180868b0f68889 3,15-16
+  s_37bb86aaefe6aa::t_d23610d0e68ce7 6,14,17-18,20,113,117
+  s_37bb86aaefe6aa::t_6d83a486c71ec0 1-2,4-5,7-13,19,21-22,24-28,61-112,114-116,118-123,125-131,136,138,144-150,158,161-164
+  s_37bb86aaefe6aa::t_75692529d9b47d 23
+  s_37bb86aaefe6aa::t_945120782aac31 29-60,124,132-135,137,139-143,151-157,159-160
+libs/langchain_v1/tests/unit_tests/voice/test_transport.py
+  s_37bb86aaefe6aa::t_988e524721af9a 5,16-18
+  s_37bb86aaefe6aa::t_707511a3cd7e51 1-4,6-15,19-76,78-129
+  s_37bb86aaefe6aa::t_a0b53991b6df94 77
+libs/langchain_v1/langchain/voice/README.md
+  s_37bb86aaefe6aa::t_74197eb434aed8 1-40,42,44-48,62-313
+  s_37bb86aaefe6aa::t_25cb498fa3dab6 41,43,49-61
+libs/langchain_v1/langchain/voice/transports/livekit.py
+  s_37bb86aaefe6aa::t_9ce83abbc87157 1-91,93-119,121-209,211-240,242-295,299-389
+  s_37bb86aaefe6aa::t_f9aafefdc31f6f 120
+  s_37bb86aaefe6aa::t_fb829a99c6f18a 210
+  s_37bb86aaefe6aa::t_a886e2b4f8c963 92,241,296-298
+libs/langchain_v1/tests/unit_tests/voice/test_livekit_transport.py
+  s_37bb86aaefe6aa::t_0f9aa7abe4a6d0 7,14-15,17,39,218,242
+  s_37bb86aaefe6aa::t_a8a7e19686abc7 1-6,8-13,16,18-38,40-217,219-241,243-246
+libs/langchain_v1/langchain/voice/__init__.py
+  s_37bb86aaefe6aa::t_a886e2b4f8c963 26
+  s_37bb86aaefe6aa::t_b29188e42de535 1-18,20-25,27-31,33-37,40-50
+  s_37bb86aaefe6aa::t_4574d49b8c0069 32
+  s_37bb86aaefe6aa::t_3981b267f8d2b6 19,38-39
+libs/langchain_v1/langchain/voice/prompts.py
+  s_37bb86aaefe6aa::t_1cc3e262b87b27 1-83
+libs/langchain_v1/langchain/voice/providers/__init__.py
+  s_37bb86aaefe6aa::t_5ccd09ff6847e9 1-6
+libs/langchain_v1/langchain/voice/server.py
+  s_37bb86aaefe6aa::t_bb02e2dcfc3274 1-5
+libs/langchain_v1/tests/unit_tests/voice/test_events.py
+  s_37bb86aaefe6aa::t_df7727efeb7338 1-119
+libs/langchain_v1/uv.lock
+  s_37bb86aaefe6aa::t_1ab3ce63475b3a 34,58,1535-1540,1560-1565,2004,2076-2197,2377-2385,2397,2400,2411,2429,2450,2452,2454,2461,2464,2475,3810,3814,3820,3822-3827
+libs/langchain_v1/pyproject.toml
+  s_37bb86aaefe6aa::t_510f3dab14ef63 53-55,83-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0fe5c5cd941d953ac76052a81d3c4c1a5081ba27",
+  "prompts": {},
+  "sessions": {
+    "s_37bb86aaefe6aa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0b095-2c8e-7e13-8e36-ef72254577cc",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Caroline di Vittorio <43390382+carolinedivittorio@users.noreply.github.com>"
+    }
+  }
+}

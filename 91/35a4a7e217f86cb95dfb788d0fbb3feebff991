@@ -1,0 +1,67 @@
+libs/langchain_v1/tests/integration_tests/mcp/test_elicitation.py
+  s_2ce70a1527c068::t_f8d75d894d0046 3
+  s_2ce70a1527c068::t_f6a60d198f789c 4
+  s_2ce70a1527c068::t_f9b53826e23df1 18
+libs/langchain_v1/tests/integration_tests/mcp/test_client.py
+  s_2ce70a1527c068::t_a3a6a720cf2b48 21,36-38,100,111-113
+libs/langchain_v1/langchain/mcp/callbacks.py
+  s_2ce70a1527c068::t_58ad8847d461a1 6
+  s_2ce70a1527c068::t_dfd99b847367a1 9,54
+libs/langchain_v1/langchain/mcp/sessions.py
+  s_2ce70a1527c068::t_6f8a1264f9d1f2 13,40,45-48,56,137,139,168,170,230,240,271,283,294
+  s_2ce70a1527c068::t_8db307887052d5 4,17,174,300,331
+  s_2ce70a1527c068::t_c30b5c3157a70e 18,289-293,295-296,299,302-303
+  s_2ce70a1527c068::t_35521ee9db2014 368
+  s_2ce70a1527c068::t_afde10a776c96a 304
+libs/langchain_v1/tests/integration_tests/mcp/servers/time_server.py
+  s_2ce70a1527c068::t_4f3fa6dfbee987 1,3
+libs/langchain_v1/tests/integration_tests/mcp/utils.py
+  s_2ce70a1527c068::t_f9b53826e23df1 15
+libs/langchain_v1/langchain/mcp/tools.py
+  s_2ce70a1527c068::t_a5f9b19b7d9797 101,106,111,121,176,189-190,252-253,260,263,426
+  s_2ce70a1527c068::t_380c9b03fa3deb 412-414
+  s_2ce70a1527c068::t_58ad8847d461a1 8
+  s_2ce70a1527c068::t_a28fc1409d1d19 32
+libs/langchain_v1/tests/integration_tests/mcp/test_callbacks.py
+  s_2ce70a1527c068::t_f9b53826e23df1 59
+  s_2ce70a1527c068::t_35521ee9db2014 5
+libs/langchain_v1/pyproject.toml
+  s_2ce70a1527c068::t_8b263f34efa61e 52,79
+libs/langchain_v1/langchain/mcp/resources.py
+  s_2ce70a1527c068::t_a5f9b19b7d9797 33
+libs/langchain_v1/tests/integration_tests/mcp/test_tools.py
+  s_2ce70a1527c068::t_403e34e2cd82a4 464
+  s_2ce70a1527c068::t_35521ee9db2014 3,12
+  s_2ce70a1527c068::t_f9b53826e23df1 519,578,634,755,894,906
+  s_2ce70a1527c068::t_63015c697b41e7 13
+  s_2ce70a1527c068::t_bc87227b71ea01 6,597-601,603,652-656,658
+  s_2ce70a1527c068::t_380c9b03fa3deb 606,661
+libs/langchain_v1/tests/integration_tests/mcp/conftest.py
+  s_2ce70a1527c068::t_35521ee9db2014 7
+libs/langchain_v1/tests/integration_tests/mcp/servers/math_server.py
+  s_2ce70a1527c068::t_4f3fa6dfbee987 1,3
+libs/langchain_v1/tests/integration_tests/mcp/test_interceptors.py
+  s_2ce70a1527c068::t_f9b53826e23df1 20
+  s_2ce70a1527c068::t_63015c697b41e7 5
+  s_2ce70a1527c068::t_a5f9b19b7d9797 119
+libs/langchain_v1/tests/integration_tests/mcp/servers/weather_server.py
+  s_2ce70a1527c068::t_4f3fa6dfbee987 1,3
+libs/langchain_v1/uv.lock
+  s_2ce70a1527c068::t_2882a7a319779c 1724-1736,1776-1801,1832,1834,1836,2171,2184,3051,3055,3057-3058,3069-3082,3084,5456-5464
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "9135a4a7e217f86cb95dfb788d0fbb3feebff991",
+  "prompts": {},
+  "sessions": {
+    "s_2ce70a1527c068": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dbce52e-70cd-4b5e-92a7-6fb480327deb",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

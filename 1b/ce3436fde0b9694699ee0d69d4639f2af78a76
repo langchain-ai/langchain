@@ -1,0 +1,53 @@
+libs/langchain_v1/langchain/mcp/resources.py
+  s_2ce70a1527c068::t_5073e76b17675c 25
+libs/langchain_v1/langchain/mcp/prompts.py
+  s_2ce70a1527c068::t_80e4db6a9ec9c1 7
+  s_2ce70a1527c068::t_5073e76b17675c 31
+libs/langchain_v1/tests/integration_tests/mcp/servers/time_server.py
+  s_2ce70a1527c068::t_5625b256b668bc 8
+libs/langchain_v1/tests/integration_tests/mcp/servers/math_server.py
+  s_2ce70a1527c068::t_5625b256b668bc 8,14
+libs/langchain_v1/tests/integration_tests/mcp/test_tools.py
+  s_2ce70a1527c068::t_5625b256b668bc 37,47,57,76,114,124,138,159,186,213,240,268,293,322,351,365,392,439,524,593,649,700,761,795,807
+libs/langchain_v1/tests/unit_tests/mcp/test_import.py
+  s_2ce70a1527c068::t_5625b256b668bc 2
+libs/langchain_v1/tests/integration_tests/mcp/test_callbacks.py
+  s_2ce70a1527c068::t_5625b256b668bc 18,46,49
+libs/langchain_v1/tests/unit_tests/mcp/test_prompts.py
+  s_2ce70a1527c068::t_6a001f8a2777c6 20
+  s_2ce70a1527c068::t_5625b256b668bc 27,37,54,63
+libs/langchain_v1/tests/integration_tests/mcp/utils.py
+  s_2ce70a1527c068::t_6a001f8a2777c6 50-51,60-61
+libs/langchain_v1/langchain/mcp/client.py
+  s_2ce70a1527c068::t_80e4db6a9ec9c1 18-20
+  s_2ce70a1527c068::t_a8e0ff1b83621a 17
+libs/langchain_v1/langchain/mcp/sessions.py
+  s_2ce70a1527c068::t_5073e76b17675c 246,335
+  s_2ce70a1527c068::t_d130be7a83b11f 326
+libs/langchain_v1/pyproject.toml
+  s_2ce70a1527c068::t_aafc418b5a6ab7 162-165,167-171
+libs/langchain_v1/langchain/mcp/tools.py
+  s_2ce70a1527c068::t_d130be7a83b11f 153-154
+  s_2ce70a1527c068::t_4c197532264760 7,24-26,46-50,113,115,152
+  s_2ce70a1527c068::t_a8e0ff1b83621a 23
+libs/langchain_v1/tests/integration_tests/mcp/test_client.py
+  s_2ce70a1527c068::t_5625b256b668bc 15,95,139,168,209
+libs/langchain_v1/tests/unit_tests/mcp/test_resources.py
+  s_2ce70a1527c068::t_61ba5426c66222 22,34,49,57,78,111,123,153,174,217,236
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "1bce3436fde0b9694699ee0d69d4639f2af78a76",
+  "prompts": {},
+  "sessions": {
+    "s_2ce70a1527c068": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dbce52e-70cd-4b5e-92a7-6fb480327deb",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

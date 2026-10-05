@@ -1,0 +1,24 @@
+libs/langchain_v1/examples/mcp/_fleet_servers.py
+  h_152f5d9f78d224 1-36
+libs/langchain_v1/examples/mcp/_servers.py
+  h_152f5d9f78d224 10-13,24,126-143
+libs/langchain_v1/examples/mcp/auth.py
+  h_152f5d9f78d224 1-28
+libs/langchain_v1/examples/mcp/graph_factory.py
+  h_152f5d9f78d224 22,38,46-54,131
+libs/langchain_v1/examples/mcp/langgraph.json
+  h_152f5d9f78d224 1-10
+libs/langchain_v1/examples/mcp/run_graph_factory_demo.py
+  h_152f5d9f78d224 1-152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "10a6dbeea1080c9d8a9a14f0bc9fc881fbba2de6",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

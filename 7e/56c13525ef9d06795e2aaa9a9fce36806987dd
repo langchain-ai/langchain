@@ -1,0 +1,43 @@
+libs/langchain_v1/examples/mcp/multi_server.py
+  s_7ab4c661d7e226::t_d1290b6b40dc2e 1-47
+libs/langchain_v1/examples/mcp/README.md
+  s_7ab4c661d7e226::t_c618ed28624590 1-26
+libs/langchain_v1/examples/mcp/tool_errors.py
+  s_7ab4c661d7e226::t_1ea88a6640eda1 1-25,33,35-45
+  s_7ab4c661d7e226::t_e4f91d0986819d 26-32,34
+libs/langchain_v1/examples/mcp/_servers.py
+  s_7ab4c661d7e226::t_1e7be5ec27090c 1-11,13-14,23-83,93,96,125
+  s_7ab4c661d7e226::t_f00fd9190c2229 15-18,20-22
+  s_7ab4c661d7e226::t_20efb89fee10d0 19,120-123
+  s_7ab4c661d7e226::t_65639f4e660d2e 12,84-92,94-95,97-119,124
+libs/langchain_v1/pyproject.toml
+  s_7ab4c661d7e226::t_05f25d5022c7af 174-178
+libs/langchain_v1/examples/mcp/auth_bearer.py
+  s_7ab4c661d7e226::t_007e09f628c425 56
+  s_7ab4c661d7e226::t_7b6e75ef0f0547 1-55,57-61
+libs/langchain_v1/examples/mcp/auth_oauth.py
+  s_7ab4c661d7e226::t_2fea90cdbe1acd 1-78
+libs/langchain_v1/examples/mcp/transports.py
+  s_7ab4c661d7e226::t_69357f1505d3a6 26-28
+  s_7ab4c661d7e226::t_3d7c20fb44c1c6 1-25,29-45
+libs/langchain_v1/examples/mcp/_stdio_server.py
+  s_7ab4c661d7e226::t_2348aed32549b5 1-6
+libs/langchain_v1/examples/mcp/elicitation.py
+  s_7ab4c661d7e226::t_b846b96c620bad 1-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "7e56c13525ef9d06795e2aaa9a9fce36806987dd",
+  "prompts": {},
+  "sessions": {
+    "s_7ab4c661d7e226": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bffc60b0-f0a4-422a-80fc-f925cef7488d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+libs/langchain_v1/examples/mcp/protocol_eras.py
+  s_7ab4c661d7e226::t_bfe7ddaef3d22a 10-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "42acbf5e4212da40b015dd2ad4750af0ba2f41fd",
+  "prompts": {},
+  "sessions": {
+    "s_7ab4c661d7e226": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bffc60b0-f0a4-422a-80fc-f925cef7488d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

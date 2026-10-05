@@ -1,0 +1,18 @@
+libs/langchain_v1/tests/integration_tests/mcp/test_protocol_eras.py
+  h_152f5d9f78d224 21,143
+libs/langchain_v1/tests/unit_tests/mcp/test_adapter.py
+  h_152f5d9f78d224 8,26-28,131,156,173-174,176,211-217,223-226,238-240,307
+libs/langchain_v1/tests/unit_tests/mcp/test_elicitation.py
+  h_152f5d9f78d224 9,157,171-173,249,280
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "1e8d257b1a9e49c3859e5bac6482a7d98fba0dee",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

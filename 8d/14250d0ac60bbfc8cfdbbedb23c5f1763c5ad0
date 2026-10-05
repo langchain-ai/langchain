@@ -1,0 +1,31 @@
+libs/langchain_v1/pyproject.toml
+  s_11258e92ea818e::t_2237d7d83b480c 52,79,87
+  s_5ce53f16c50ef3::t_56810cda737f49 104-111
+  s_11258e92ea818e::t_0dc93aa186e355 100-101
+libs/langchain_v1/uv.lock
+  s_5ce53f16c50ef3::t_1f131cc8bfbb78 19-21,1178-1179,1186-1187,1189,1202,1213,1891-1903,1941-1966,2383,2412,2434,3231,3235,3237-3238,3249-3262,3264,5475-5483
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "8d14250d0ac60bbfc8cfdbbedb23c5f1763c5ad0",
+  "prompts": {},
+  "sessions": {
+    "s_11258e92ea818e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b0d87676-caca-4325-947a-4dafdaef4699",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    },
+    "s_5ce53f16c50ef3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "943336d7-2df9-4b6d-83fa-9e11ae65c601",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

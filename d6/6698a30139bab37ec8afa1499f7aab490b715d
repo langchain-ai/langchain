@@ -1,0 +1,39 @@
+libs/langchain_v1/langchain/mcp/sessions.py
+  s_2ce70a1527c068::t_84a60d6757c5a2 159-160
+  s_2ce70a1527c068::t_5a1cfe29c84376 110-118,151-152,154-157,191-192,194-198
+  s_2ce70a1527c068::t_f8c30f3fd33716 10,218,221,223-231,346-351
+  s_2ce70a1527c068::t_a2da8766b3ca22 14,193,199,202,317,375
+  s_2ce70a1527c068::t_60ca3b96c039b2 1,3-5,13,15,31-33,47-66,120,124-127,158,161,164-167,201,203-204,206-209,212,214-215,259-278,281-297,300-311,314-316,318,321-322,333,360,364-371,373,376-379,381-383
+  s_2ce70a1527c068::t_9350606e009aab 16-20,219,232,235-256,342-345,352-354,380,384-397
+libs/langchain_v1/tests/integration_tests/mcp/test_elicitation.py
+  s_2ce70a1527c068::t_868d392f1226cb 70,117,149
+libs/langchain_v1/langchain/mcp/tools.py
+  s_2ce70a1527c068::t_e4f6a8a95c1f1a 7
+  s_2ce70a1527c068::t_9b2aea308d62a7 343-347
+libs/langchain_v1/langchain/mcp/client.py
+  s_2ce70a1527c068::t_6afdebd22616e2 112
+libs/langchain_v1/tests/integration_tests/mcp/test_client.py
+  s_2ce70a1527c068::t_151d930727e2fc 245-262
+  s_2ce70a1527c068::t_1a86e0216404ac 7
+  s_2ce70a1527c068::t_50b9cdd08dbdba 8-10,14,263-295
+libs/langchain_v1/tests/integration_tests/mcp/test_callbacks.py
+  s_2ce70a1527c068::t_faf510fe897a47 103
+libs/langchain_v1/tests/integration_tests/mcp/test_tools.py
+  s_2ce70a1527c068::t_acbfc934167fd2 588-596,604,611,613
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "d66698a30139bab37ec8afa1499f7aab490b715d",
+  "prompts": {},
+  "sessions": {
+    "s_2ce70a1527c068": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dbce52e-70cd-4b5e-92a7-6fb480327deb",
+        "model": "claude-opus-5"
+      },
+      "human_author": null
+    }
+  }
+}

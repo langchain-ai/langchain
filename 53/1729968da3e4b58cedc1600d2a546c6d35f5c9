@@ -1,0 +1,19 @@
+libs/langchain_v1/tests/integration_tests/mcp/test_protocol_eras.py
+  s_44408d5d447e04::t_cec1cdc1434929 1-217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "531729968da3e4b58cedc1600d2a546c6d35f5c9",
+  "prompts": {},
+  "sessions": {
+    "s_44408d5d447e04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a538bf03-335e-439e-8f2d-fefa87c44c81",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

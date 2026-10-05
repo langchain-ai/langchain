@@ -1,0 +1,56 @@
+libs/langchain_v1/tests/integration_tests/mcp/test_tools.py
+  s_2ce70a1527c068::t_0eaa51b0fb0814 3,12
+  s_2ce70a1527c068::t_44e9a3b9f06d2e 463
+  s_2ce70a1527c068::t_523ed63eaabedc 6,596-600,602,605,651-655,657,660
+  s_2ce70a1527c068::t_a19d7e8fcabd70 13,518,577,633,754,788,800
+libs/langchain_v1/tests/integration_tests/mcp/test_callbacks.py
+  s_2ce70a1527c068::t_a19d7e8fcabd70 14
+  s_2ce70a1527c068::t_8e7fe2c045fd9e 5
+libs/langchain_v1/langchain/mcp/resources.py
+  s_2ce70a1527c068::t_a19d7e8fcabd70 33
+libs/langchain_v1/langchain/mcp/sessions.py
+  s_2ce70a1527c068::t_48f5421ff49e42 13,359
+  s_2ce70a1527c068::t_f0e142a630e468 4,17-18,39,44-47,55,136,138,167,169,173,229,239,270,282,288-295,298-299,301-303,329
+libs/langchain_v1/tests/integration_tests/mcp/servers/math_server.py
+  s_2ce70a1527c068::t_a19d7e8fcabd70 1,3
+libs/langchain_v1/tests/integration_tests/mcp/test_elicitation.py
+  s_2ce70a1527c068::t_8e7fe2c045fd9e 4
+  s_2ce70a1527c068::t_a19d7e8fcabd70 3,17
+libs/langchain_v1/pyproject.toml
+  s_2ce70a1527c068::t_e80c552f12e3fd 52,79
+libs/langchain_v1/tests/integration_tests/mcp/servers/weather_server.py
+  s_2ce70a1527c068::t_a19d7e8fcabd70 1,3
+libs/langchain_v1/tests/integration_tests/mcp/utils.py
+  s_2ce70a1527c068::t_a19d7e8fcabd70 15
+libs/langchain_v1/langchain/mcp/tools.py
+  s_2ce70a1527c068::t_a19d7e8fcabd70 95,100,105,115,159,172-173,209,212,327
+  s_2ce70a1527c068::t_f0e142a630e468 7,24
+  s_2ce70a1527c068::t_44e9a3b9f06d2e 313-315
+  s_2ce70a1527c068::t_523ed63eaabedc 32,201-202
+libs/langchain_v1/tests/integration_tests/mcp/conftest.py
+  s_2ce70a1527c068::t_8e7fe2c045fd9e 7
+libs/langchain_v1/langchain/mcp/client.py
+  s_2ce70a1527c068::t_f0e142a630e468 17
+libs/langchain_v1/tests/integration_tests/mcp/servers/time_server.py
+  s_2ce70a1527c068::t_a19d7e8fcabd70 1,3
+libs/langchain_v1/tests/integration_tests/mcp/test_client.py
+  s_2ce70a1527c068::t_8e7fe2c045fd9e 21,36-38,100,111-113
+libs/langchain_v1/uv.lock
+  s_2ce70a1527c068::t_ab89533b22b18c 1724-1736,1776-1801,1832,1834,1836,2173,2186,3055,3059,3061-3062,3073,3075-3088,5460-5468
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "7ac59a276e5cde7b6288d30c8d08e32ad05b8951",
+  "prompts": {},
+  "sessions": {
+    "s_2ce70a1527c068": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dbce52e-70cd-4b5e-92a7-6fb480327deb",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

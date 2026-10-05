@@ -1,0 +1,21 @@
+libs/partners/typesafe/langchain_typesafe/classifier.py
+  s_f21a22b0ae0afc::t_9363589f235dd8 346-356
+libs/partners/typesafe/tests/unit_tests/test_classifier.py
+  s_f21a22b0ae0afc::t_0b7fff55b8c98a 12,606-636
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e2e2dce6ad276d3f01812992f70380dbdb0596af",
+  "prompts": {},
+  "sessions": {
+    "s_f21a22b0ae0afc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f4fb8c13-4577-435b-b835-bb7808fd26ba",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

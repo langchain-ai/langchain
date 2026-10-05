@@ -1,0 +1,22 @@
+libs/langchain_v1/langchain/mcp/__init__.py
+  h_152f5d9f78d224 20,36
+libs/langchain_v1/langchain/mcp/adapter.py
+  h_152f5d9f78d224 12,288,311
+libs/langchain_v1/langchain/mcp/tools.py
+  h_152f5d9f78d224 190,224,229,260
+libs/langchain_v1/tests/unit_tests/mcp/test_namespace.py
+  h_152f5d9f78d224 51
+libs/langchain_v1/tests/unit_tests/mcp/test_tools.py
+  h_152f5d9f78d224 24,51,170,178
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "66f0442586cadff4384f58a4c4c6dd05a765bfd8",
+  "prompts": {},
+  "humans": {
+    "h_152f5d9f78d224": {
+      "author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

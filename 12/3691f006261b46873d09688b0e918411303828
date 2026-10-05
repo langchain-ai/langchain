@@ -1,0 +1,23 @@
+libs/langchain_v1/langchain/__init__.py
+  s_3c1af562c08501::t_2db80b044e3558 3
+libs/langchain_v1/pyproject.toml
+  s_3c1af562c08501::t_2db80b044e3558 24
+libs/langchain_v1/uv.lock
+  s_3c1af562c08501::t_1e065a6a717e1f 2289
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "123691f006261b46873d09688b0e918411303828",
+  "prompts": {},
+  "sessions": {
+    "s_3c1af562c08501": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f1f451cb-8b9e-4555-9248-bbf50e61b004",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}
