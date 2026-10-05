@@ -9,7 +9,7 @@ if sys.version_info >= (3, 14):
     from annotationlib import Format
 
 
-def signature_parameters(obj: Callable[..., Any]) -> Mapping[str, inspect.Parameter]:
+def _signature_parameters(obj: Callable[..., Any]) -> Mapping[str, inspect.Parameter]:
     """Get the parameters of a callable without evaluating its annotations.
 
     On Python 3.14+, annotations are evaluated lazily, so `inspect.signature` raises
@@ -23,5 +23,7 @@ def signature_parameters(obj: Callable[..., Any]) -> Mapping[str, inspect.Parame
         The callable's parameters, keyed by name.
     """
     if sys.version_info >= (3, 14):
-        return inspect.signature(obj, annotation_format=Format.FORWARDREF).parameters
-    return inspect.signature(obj).parameters
+        signature = inspect.signature(obj, annotation_format=Format.FORWARDREF)
+    else:
+        signature = inspect.signature(obj)
+    return signature.parameters

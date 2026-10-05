@@ -22,7 +22,7 @@ from langchain_core.tools.base import (
     ToolException,
     _get_runnable_config_param,
 )
-from langchain_core.utils._signature import signature_parameters
+from langchain_core.utils._signature import _signature_parameters
 
 if TYPE_CHECKING:
     from langchain_core.messages import ToolCall
@@ -115,7 +115,7 @@ class Tool(BaseTool):
             The result of the tool execution
         """
         if self.func:
-            if run_manager and signature_parameters(self.func).get("callbacks"):
+            if run_manager and _signature_parameters(self.func).get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
@@ -142,7 +142,7 @@ class Tool(BaseTool):
             The result of the tool execution
         """
         if self.coroutine:
-            if run_manager and signature_parameters(self.coroutine).get("callbacks"):
+            if run_manager and _signature_parameters(self.coroutine).get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config

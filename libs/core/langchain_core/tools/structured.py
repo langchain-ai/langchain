@@ -30,7 +30,7 @@ from langchain_core.tools.base import (
     _get_runnable_config_param,
     create_schema_from_function,
 )
-from langchain_core.utils._signature import signature_parameters
+from langchain_core.utils._signature import _signature_parameters
 from langchain_core.utils.pydantic import is_basemodel_subclass, model_json_schema
 
 if TYPE_CHECKING:
@@ -145,7 +145,7 @@ class StructuredTool(BaseTool):
             The result of the tool execution
         """
         if self.func:
-            if run_manager and signature_parameters(self.func).get("callbacks"):
+            if run_manager and _signature_parameters(self.func).get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.func):
                 kwargs[config_param] = config
@@ -172,7 +172,7 @@ class StructuredTool(BaseTool):
             The result of the tool execution
         """
         if self.coroutine:
-            if run_manager and signature_parameters(self.coroutine).get("callbacks"):
+            if run_manager and _signature_parameters(self.coroutine).get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
             if config_param := _get_runnable_config_param(self.coroutine):
                 kwargs[config_param] = config

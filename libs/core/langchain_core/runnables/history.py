@@ -24,7 +24,7 @@ from langchain_core.runnables.utils import (
     Output,
     get_unique_config_specs,
 )
-from langchain_core.utils._signature import signature_parameters
+from langchain_core.utils._signature import _signature_parameters
 from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
@@ -628,4 +628,4 @@ class RunnableWithMessageHistory(RunnableBindingBase[Any, Any]):  # type: ignore
 
 def _get_parameter_names(callable_: GetSessionHistoryCallable) -> list[str]:
     """Get the parameter names of the `Callable`."""
-    return list(signature_parameters(callable_))
+    return list(_signature_parameters(callable_))
