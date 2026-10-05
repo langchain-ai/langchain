@@ -4625,3 +4625,17 @@ def test_unrelated_type_error_propagates_unchanged() -> None:
         llm.invoke([HumanMessage(content="test")])
 
     assert exc_info.value is unrelated_error
+
+
+def test_default_headers_hidden_from_serialization_and_repr() -> None:
+    """`default_headers` often carry credentials, so tracers must not see them."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key=SecretStr("k"),
+        default_headers={"X-Custom-Auth": "header-secret"},
+    )
+
+    assert "header-secret" not in repr(llm)
+    assert "header-secret" not in str(llm._serialized)
+    # Still sent to the API.
+    assert llm._client.default_headers["X-Custom-Auth"] == "header-secret"

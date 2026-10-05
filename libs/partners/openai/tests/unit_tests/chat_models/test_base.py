@@ -4821,3 +4821,17 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     assert llm.openai_api_base == "https://api.openai.com/v1"
     assert isinstance(llm.openai_api_key, SecretStr)
     assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+def test_default_headers_hidden_from_serialization_and_repr() -> None:
+    """`default_headers` often carry credentials, so tracers must not see them."""
+    llm = ChatOpenAI(
+        model="gpt-5.5",
+        api_key=SecretStr("k"),
+        default_headers={"X-Custom-Auth": "header-secret"},
+    )
+
+    assert "header-secret" not in repr(llm)
+    assert "header-secret" not in json.dumps(llm._serialized)
+    # Still sent to the API.
+    assert llm.root_client.default_headers["X-Custom-Auth"] == "header-secret"

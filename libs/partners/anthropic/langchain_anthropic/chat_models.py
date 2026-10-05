@@ -1010,8 +1010,13 @@ class ChatAnthropic(BaseChatModel):
     variable.
     """
 
-    default_headers: Mapping[str, str] | None = None
-    """Headers to pass to the Anthropic clients, will be used for every API call."""
+    default_headers: Mapping[str, str] | None = Field(
+        default=None, exclude=True, repr=False
+    )
+    """Headers to pass to the Anthropic clients, will be used for every API call.
+
+    Excluded from serialization and `repr` because they commonly carry credentials.
+    """
 
     betas: list[str] | None = None
     """List of beta features to enable. If specified, invocations will be routed

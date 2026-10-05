@@ -20,7 +20,7 @@ from langchain_core.messages import (
     ToolCall,
 )
 from langchain_core.runnables import RunnableBinding, RunnableSequence
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 
 from langchain_groq.chat_models import (
     ChatGroq,
@@ -1322,3 +1322,17 @@ def test_handle_invalid_request_ignores_max_tokens_error() -> None:
         _handle_groq_invalid_request(err)
 
     assert not isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_default_headers_hidden_from_serialization_and_repr() -> None:
+    """`default_headers` often carry credentials, so tracers must not see them."""
+    llm = ChatGroq(
+        model="llama-3.3-70b-versatile",
+        api_key=SecretStr("k"),
+        default_headers={"X-Custom-Auth": "header-secret"},
+    )
+
+    assert "header-secret" not in repr(llm)
+    assert "header-secret" not in json.dumps(llm._serialized)
+    # Still sent to the API.
+    assert llm.client._client.default_headers["X-Custom-Auth"] == "header-secret"
