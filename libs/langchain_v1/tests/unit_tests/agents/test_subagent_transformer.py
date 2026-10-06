@@ -58,7 +58,7 @@ def test_subagents_surfaces_named_subagent() -> None:
     run = supervisor.stream_events({"messages": [HumanMessage("weather?")]}, version="v3")
 
     handles = []
-    for handle in run.subagents:  # type: ignore[attr-defined]
+    for handle in run.subagents:
         handles.append(handle)
         # Drain the nested run so it completes.
         for _ in handle:
@@ -107,7 +107,7 @@ async def test_subagents_surfaces_named_subagent_async() -> None:
     run = await supervisor.astream_events({"messages": [HumanMessage("weather?")]}, version="v3")
 
     handles = []
-    async for handle in run.subagents:  # type: ignore[attr-defined]
+    async for handle in run.subagents:
         handles.append(handle)
         # Drain the nested run so it completes.
         async for _ in handle:
@@ -136,7 +136,7 @@ def test_plain_tool_not_surfaced() -> None:
 
     run = supervisor.stream_events({"messages": [HumanMessage("weather?")]}, version="v3")
 
-    handles = list(run.subagents)  # type: ignore[attr-defined]
+    handles = list(run.subagents)
     # Drain the main run to completion.
     for _ in run:
         pass
@@ -172,7 +172,7 @@ def test_unnamed_inner_agent_surfaces_with_inherited_name() -> None:
     run = supervisor.stream_events({"messages": [HumanMessage("weather?")]}, version="v3")
 
     handles = []
-    for handle in run.subagents:  # type: ignore[attr-defined]
+    for handle in run.subagents:
         handles.append(handle)
         for _ in handle:
             pass
@@ -210,7 +210,7 @@ def test_same_name_nested_agent_surfaced() -> None:
     run = supervisor.stream_events({"messages": [HumanMessage("weather?")]}, version="v3")
 
     handles = []
-    for handle in run.subagents:  # type: ignore[attr-defined]
+    for handle in run.subagents:
         handles.append(handle)
         for _ in handle:
             pass
