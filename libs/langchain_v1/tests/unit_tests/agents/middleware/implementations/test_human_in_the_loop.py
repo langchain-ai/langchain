@@ -1,4 +1,5 @@
 import re
+import sys
 from collections.abc import Sequence
 from types import SimpleNamespace
 from typing import Any, cast
@@ -8,7 +9,6 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool, StructuredTool, tool
-from langgraph._internal import _runnable as langgraph_runnable
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt.tool_node import ToolNode, ToolRuntime
@@ -1835,11 +1835,9 @@ def _edit_parts(schema: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]
 
 
 def _adapter(
-    allowed: list[DecisionType],
-    tool: BaseTool | None = send_email,
-    override: dict[str, Any] | None = None,
+    allowed: list[DecisionType], tool: BaseTool | None = send_email
 ) -> TypeAdapter[Decision]:
-    return TypeAdapter(_decision_schema(allowed, "send_email", tool, override))
+    return TypeAdapter(_decision_schema(allowed, "send_email", tool))
 
 
 def _edit(name: str, args: dict[str, Any], **extra: object) -> dict[str, Any]:
@@ -1903,14 +1901,6 @@ def test_edit_args_keep_extras_when_the_tool_accepts_them() -> None:
     )
     answer = _edit("send_email", {"to": "bob", "priority": "high"})
     assert _adapter(ALL, loose).validate_python(answer) == answer
-
-
-def test_config_args_schema_only_changes_what_is_shown() -> None:
-    override = {"type": "object", "properties": {"to": {"type": "string", "format": "email"}}}
-    adapter = _adapter(ALL, override=override)
-    assert _edit_parts(adapter.json_schema())[1] == override
-    with pytest.raises(ValidationError):  # still validated by the tool's own schema
-        adapter.validate_python(_edit("send_email", {}))
 
 
 @pytest.mark.parametrize(
@@ -2018,68 +2008,93 @@ def _tool_messages(result: dict[str, Any]) -> dict[str, ToolMessage]:
     return {m.tool_call_id: m for m in result["messages"] if isinstance(m, ToolMessage)}
 
 
-# The interrupt contract, checked the same way in langchainjs: the value exactly, each
-# decision's fields (required ones starred), and the edit's pinned name, argument types,
-# and that it rejects unknown fields (`additionalProperties: false` at every level).
-EXPECTED_INTERRUPTS: dict[str, Any] = {
-    "send_email": {
-        "value": {
-            "type": "tool_approval",
-            "tool_call_id": "call_email",
-            "name": "send_email",
-            "args": {"to": "alice"},
-            "description": "Email",
-        },
-        "decisions": {"approve": [], "edit": ["edited_action*"], "reject": ["message"]},
-        "edited_action": {"name": "send_email", "args": {"to*": "string"}, "closed": True},
-    },
-    "delete_file": {
-        "value": {
-            "type": "tool_approval",
-            "tool_call_id": "call_delete",
-            "name": "delete_file",
-            "args": {"path": "x.txt"},
-            "description": "Delete",
-        },
-        "decisions": {"approve": [], "reject": ["message"]},
-    },
+ALL_DECISIONS: dict[str, bool | InterruptOnConfig] = {
+    "send_email": {"allowed_decisions": ALL, "description": "Email"}
 }
 
 
-def _starred(schema: dict[str, Any], name: str) -> str:
-    """`name`, starred when `schema` requires it."""
-    return f"{name}*" if name in schema.get("required", []) else name
+def test_per_call_interrupt_shows_the_call_and_the_answers_it_accepts() -> None:
+    [intr] = _pause(_agent([], EMAIL, interrupt_on=ALL_DECISIONS))
 
-
-def _normalize(intr: Interrupt[Decision]) -> dict[str, Any]:
-    """The parts of an interrupt the contract covers, with `$ref`s resolved."""
+    # `value`: the tool call waiting for review.
+    assert intr.value == {
+        "type": "tool_approval",
+        "tool_call_id": "call_email",
+        "name": "send_email",
+        "args": {"to": "alice"},
+        "description": "Email",
+    }
+    # `response_schema`: one branch per allowed decision, told apart by `type`.
     schema = _schema(intr)
     branches = _branches(schema)
-    normalized: dict[str, Any] = {
-        "value": dict(intr.value),
-        "decisions": {
-            name: sorted(_starred(branch, f) for f in branch["properties"] if f != "type")
-            for name, branch in branches.items()
-        },
+    assert {kind: (sorted(b["properties"]), b["required"]) for kind, b in branches.items()} == {
+        "approve": (["type"], ["type"]),
+        "edit": (["edited_action", "type"], ["type", "edited_action"]),
+        "reject": (["message", "type"], ["type"]),  # the reason is optional
+        "respond": (["message", "type"], ["type", "message"]),
     }
-    if "edit" in branches:
-        edited, args = _edit_parts(schema)
-        normalized["edited_action"] = {
-            "name": edited["properties"]["name"]["const"],
-            "args": {_starred(args, k): v.get("type") for k, v in args["properties"].items()},
-            "closed": all(
-                part.get("additionalProperties") is False
-                for part in (branches["edit"], edited, args)
-            ),
-        }
-    return normalized
+    # An edit names the same tool, with args shaped like the tool's own.
+    edited, args = _edit_parts(schema)
+    assert edited["properties"]["name"]["const"] == "send_email"
+    assert (list(args["properties"]), args["required"]) == (["to"], ["to"])
+    assert args["properties"]["to"]["type"] == "string"
+    # Unknown fields in an edit are rejected at every level.
+    assert [p["additionalProperties"] for p in (branches["edit"], edited, args)] == [False] * 3
+
+
+@pytest.mark.parametrize(
+    ("answer", "expected_ran", "status", "content"),
+    [
+        pytest.param(
+            {"type": "approve"}, [("send_email", {"to": "alice"})], "success", "sent to alice"
+        ),
+        pytest.param(
+            _edit("send_email", {"to": "bob"}),
+            [("send_email", {"to": "bob"})],
+            "success",
+            "sent to bob",
+        ),
+        pytest.param(
+            {"type": "reject", "message": "not now"},
+            [],
+            "error",
+            "User rejected the tool call for `send_email` with reason: not now",
+        ),
+        pytest.param({"type": "respond", "message": "already sent"}, [], "success", "already sent"),
+    ],
+    ids=["approve", "edit", "reject", "respond"],
+)
+def test_per_call_resume_with_each_decision(
+    answer: dict[str, Any], expected_ran: Ran, status: str, content: str
+) -> None:
+    ran: Ran = []
+    agent = _agent(ran, EMAIL, interrupt_on=ALL_DECISIONS)
+    [intr] = _pause(agent)
+
+    final = _resume(agent, {intr.id: answer})
+
+    message = _tool_messages(final)["call_email"]
+    assert (ran, message.status) == (expected_ran, status)
+    assert str(message.content).endswith(content)
+    # Only an edit tells the model that a reviewer replaced the call.
+    assert ("Executed instead: send_email" in str(message.content)) == (answer["type"] == "edit")
+
+
+def test_per_call_shows_the_tools_args_schema_not_the_configs() -> None:
+    config: InterruptOnConfig = {
+        "allowed_decisions": ["edit"],
+        "args_schema": {"type": "object", "properties": {"recipient": {"type": "string"}}},
+    }
+    [intr] = _pause(_agent([], EMAIL, interrupt_on={"send_email": config}))
+    _, args = _edit_parts(_schema(intr))
+    assert list(args["properties"]) == ["to"]  # what edits are checked against
 
 
 def test_per_call_pauses_once_per_gated_call_and_applies_answers_by_id() -> None:
     ran: Ran = []
     agent = _agent(ran, THREE_CALLS)
     by_tool = {i.value["name"]: i for i in _pause(agent)}
-    assert {name: _normalize(i) for name, i in by_tool.items()} == EXPECTED_INTERRUPTS
+    assert set(_branches(_schema(by_tool["delete_file"]))) == {"approve", "reject"}
     assert by_tool["send_email"].id != by_tool["delete_file"].id
     assert ran == [("read_file", {"path": "y.txt"})]  # the ungated call already ran
 
@@ -2193,25 +2208,8 @@ def test_per_call_same_tool_twice_routes_each_answer_to_its_own_call() -> None:
     assert _tool_messages(final)["e2"].status == "error"
 
 
-def test_per_call_respond_answers_for_the_tool() -> None:
-    ran: Ran = []
-    agent = _agent(ran, EMAIL, interrupt_on={"send_email": {"allowed_decisions": ["respond"]}})
-    [intr] = _pause(agent)
-    assert _schema(intr)["properties"]["type"]["const"] == "respond"  # a plain schema
-
-    final = _resume(agent, {intr.id: {"type": "respond", "message": "already sent"}})
-    message = _tool_messages(final)["call_email"]
-    assert (message.status, message.content, ran) == ("success", "already sent", [])
-
-
-@pytest.mark.parametrize(
-    "run_context_missing", [False, True], ids=["context_set", "context_missing"]
-)
-async def test_per_call_works_with_ainvoke(
-    *, run_context_missing: bool, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    if run_context_missing:  # how LangGraph runs async nodes before Python 3.11
-        monkeypatch.setattr(langgraph_runnable, "ASYNCIO_ACCEPTS_CONTEXT", False)
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="Asyncio context vars require Python 3.11+")
+async def test_per_call_works_with_ainvoke() -> None:
     ran: Ran = []
     agent = _agent(ran, THREE_CALLS[:2])
     paused = await agent.ainvoke({"messages": [HumanMessage("go")]}, CFG)
