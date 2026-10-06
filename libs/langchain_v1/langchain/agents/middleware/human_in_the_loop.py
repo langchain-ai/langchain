@@ -263,34 +263,24 @@ def _decision_schema(
     return Annotated[Union[members], Discriminator("type")]  # noqa: UP007
 
 
-def _reject_message(tool_call: ToolCall, decision: RejectDecision) -> ToolMessage:
-    """The message the model gets in place of a rejected tool call's result."""
-    reason = decision.get("message")
-    content = (
-        f"User rejected the tool call for `{tool_call['name']}` with reason: {reason}"
-        if reason
-        else (
+def _answer_message(tool_call: ToolCall, decision: RejectDecision | RespondDecision) -> ToolMessage:
+    """The message the model gets in place of the tool's result."""
+    if decision["type"] == "respond":
+        # Skip tool execution; the human answers on behalf of the tool.
+        content = decision["message"]
+    elif reason := decision.get("message"):
+        content = f"User rejected the tool call for `{tool_call['name']}` with reason: {reason}"
+    else:
+        content = (
             f"User rejected the tool call for `{tool_call['name']}` with id "
             f"{tool_call['id']}. The tool was not executed. Do not retry this tool "
             "call unless the user explicitly requests it."
         )
-    )
     return ToolMessage(
         content=content,
         name=tool_call["name"],
         tool_call_id=tool_call["id"],
-        status="error",
-    )
-
-
-def _respond_message(tool_call: ToolCall, decision: RespondDecision) -> ToolMessage:
-    """The reviewer's answer, given to the model as the tool's result."""
-    # Skip tool execution; the human answers on behalf of the tool.
-    return ToolMessage(
-        content=decision["message"],
-        name=tool_call["name"],
-        tool_call_id=tool_call["id"],
-        status="success",
+        status="success" if decision["type"] == "respond" else "error",
     )
 
 
@@ -545,10 +535,10 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             # Keep the model's own call in the message; `wrap_tool_call` substitutes the
             # reviewer's at execution time.
             return tool_call, None
-        if decision["type"] == "reject" and "reject" in allowed_decisions:
-            return tool_call, _reject_message(tool_call, decision)
-        if decision["type"] == "respond" and "respond" in allowed_decisions:
-            return tool_call, _respond_message(tool_call, decision)
+        if decision["type"] in allowed_decisions and (
+            decision["type"] == "reject" or decision["type"] == "respond"
+        ):
+            return tool_call, _answer_message(tool_call, decision)
         msg = (
             f"Unexpected human decision: {decision}. "
             f"Decision type '{decision.get('type')}' "
@@ -669,9 +659,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             # The schema pinned the tool name, so this is always the same tool.
             executed = decision["edited_action"]
             return self._apply_edit(request, executed), executed
-        if decision["type"] == "reject":
-            return _reject_message(tool_call, decision)
-        return _respond_message(tool_call, decision)
+        return _answer_message(tool_call, decision)
 
     def after_model(
         self, state: AgentState[Any], runtime: Runtime[ContextT]
