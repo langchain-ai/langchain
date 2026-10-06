@@ -1080,10 +1080,8 @@ def test_when_predicate_batch_skips_interrupt_when_false() -> None:
     )
     state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
 
-    with (
-        patch("langchain.agents.middleware.human_in_the_loop.get_config", return_value={}),
-        patch("langchain.agents.middleware.human_in_the_loop.interrupt") as mock_interrupt,
-    ):
+    # Called directly, outside a graph: there's no run config, and `when` still runs.
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt") as mock_interrupt:
         result = middleware.after_model(state, Runtime())
         mock_interrupt.assert_not_called()
 

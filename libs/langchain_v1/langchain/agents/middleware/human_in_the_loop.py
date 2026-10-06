@@ -43,6 +43,7 @@ from langchain.agents.middleware.types import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
+    from langchain_core.runnables import RunnableConfig
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
 
@@ -557,10 +558,15 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         when = config.get("when")
         if when is None:
             return True
+        runnable_config: RunnableConfig
+        try:
+            runnable_config = get_config()
+        except RuntimeError:
+            runnable_config = {}
         tool_runtime = ToolRuntime(
             state=state,
             context=runtime.context,
-            config=get_config(),
+            config=runnable_config,
             stream_writer=runtime.stream_writer,
             tool_call_id=tool_call["id"],
             store=runtime.store,
