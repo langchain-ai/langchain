@@ -1463,6 +1463,9 @@ class ChatAnthropic(BaseChatModel):
     profiles, and workload identity federation environment variables. If a
     static credential is supplied alongside a provider, the SDK logs a warning
     and the static credential wins.
+
+    Not serialized: a model saved with `dumpd` or `dumps` and loaded again has
+    no provider, so pass `credentials` again after loading.
     """
 
     anthropic_proxy: str | None = Field(
