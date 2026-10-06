@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
+import langsmith
 from langsmith import Client, get_tracing_context
 from langsmith import run_trees as rt
 from langsmith import utils as ls_utils
@@ -98,12 +99,12 @@ def _check_address(address: Any) -> Any:
     """
     if address is None:
         return None
-    try:
-        from langsmith.address import Address  # type: ignore[import-not-found,unused-ignore]  # noqa: PLC0415,E501
-    except ImportError as e:
+    # Only set on langsmith versions with agent addressing.
+    address_type = getattr(langsmith, "Address", None)
+    if address_type is None:
         msg = "address requires a langsmith version with agent addressing."
-        raise TypeError(msg) from e
-    if isinstance(address, str) or not isinstance(address, Address):
+        raise TypeError(msg)
+    if isinstance(address, str) or not isinstance(address, address_type):
         msg = f"address must be a langsmith.Agent, got {address!r}."
         raise TypeError(msg)
     return address
