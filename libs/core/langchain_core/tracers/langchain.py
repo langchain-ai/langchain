@@ -89,22 +89,19 @@ def _env_addresses_agent() -> bool:
     )
 
 
-def _address_to_lrn(address: Any) -> str | None:
-    """Get the LRN string of a `langsmith.Agent` or LRN string, or `None`.
+def _check_address(address: Any) -> Any:
+    """Return `address` if it is a `langsmith.Address`, or `None`.
 
     Raises:
-        TypeError: If `address` is neither an LRN string nor has an `lrn()` method.
+        TypeError: If `address` is not a `langsmith.Address`, such as a
+            `langsmith.Agent`. A string is not one.
     """
-    if address is None or isinstance(address, str):
-        return address
-    lrn = getattr(address, "lrn", None)
-    if not callable(lrn):
-        msg = (
-            "address must be a langsmith.Agent or an LRN string like "
-            f"'lrn:agents/{{id}}/environments/{{environment}}', got {address!r}."
-        )
+    if address is None:
+        return None
+    if isinstance(address, str) or not callable(getattr(address, "lrn", None)):
+        msg = f"address must be a langsmith.Agent, got {address!r}."
         raise TypeError(msg)
-    return str(lrn())
+    return address
 
 
 def _get_default_project_name() -> str | None:
@@ -200,9 +197,8 @@ class LangChainTracer(BaseTracer):
             metadata: Additional metadata to include if it isn't already in the run.
 
                 Defaults to None.
-            address: A `langsmith.Agent(...)`, or its LRN string (such as
-                `lrn:agents/my-agent/environments/production`), to send runs
-                to instead of a project.
+            address: A `langsmith.Agent(...)` to send runs to instead of a
+                project.
 
                 Ignored if `project_name` is set.
 
@@ -216,7 +212,7 @@ class LangChainTracer(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.address = None if project_name else _address_to_lrn(address)
+        self.address = None if project_name else _check_address(address)
         self.project_name = project_name or (
             None if self.address is not None else _get_default_project_name()
         )

@@ -250,7 +250,7 @@ def test_automatic_tracing_uses_agent_env(tracer_env: pytest.MonkeyPatch) -> Non
     client = unittest.mock.MagicMock(spec=Client)
     with tracing_context(client=client):
         _nested_chain().invoke(1)
-    expected = langsmith.Agent("my-agent", "development").lrn()
+    expected = langsmith.Agent("my-agent", "development")
     assert _posted_destinations(client) == [(None, expected)] * 2
 
 
@@ -271,7 +271,7 @@ def test_address_from_tracing_context(tracer_env: pytest.MonkeyPatch) -> None:
     support = langsmith.Agent("support", "staging")
     with tracing_context(client=client, address=support):
         _nested_chain().invoke(1)
-    assert _posted_destinations(client) == [(None, support.lrn())] * 2
+    assert _posted_destinations(client) == [(None, support)] * 2
 
 
 @_requires_address
@@ -281,7 +281,7 @@ def test_address_from_traceable_parent(tracer_env: pytest.MonkeyPatch) -> None:
     support = langsmith.Agent("support", "staging")
     with trace("parent", client=client, address=support):
         _nested_chain().invoke(1)
-    assert _posted_destinations(client) == [(None, support.lrn())] * 3
+    assert _posted_destinations(client) == [(None, support)] * 3
 
 
 @pytest.mark.parametrize(
@@ -1083,20 +1083,18 @@ class TestTracerMetadataCloning:
 
 @_requires_address
 @pytest.mark.usefixtures("tracer_env")
-@pytest.mark.parametrize("as_object", [True, False], ids=["agent", "lrn string"])
-def test_tracer_address_argument(*, as_object: bool) -> None:
+def test_tracer_address_argument() -> None:
     support = langsmith.Agent("support", "staging")
     client = unittest.mock.MagicMock(spec=Client)
-    tracer = LangChainTracer(
-        client=client, address=support if as_object else support.lrn()
-    )
+    tracer = LangChainTracer(client=client, address=support)
     assert tracer.project_name is None
-    assert tracer.address == support.lrn()
+    assert tracer.address == support
     _nested_chain().invoke(1, {"callbacks": [tracer]})
-    assert _posted_destinations(client) == [(None, support.lrn())] * 2
+    assert _posted_destinations(client) == [(None, support)] * 2
 
 
 @pytest.mark.usefixtures("tracer_env")
-def test_tracer_address_must_be_an_address() -> None:
+@pytest.mark.parametrize("address", [42, "lrn:agents/support/environments/staging"])
+def test_tracer_address_must_be_an_address(address: Any) -> None:
     with pytest.raises(TypeError, match="address must be"):
-        LangChainTracer(client=unittest.mock.MagicMock(spec=Client), address=42)
+        LangChainTracer(client=unittest.mock.MagicMock(spec=Client), address=address)

@@ -145,7 +145,7 @@ def _get_tracer_project() -> str | None:
     return _get_tracer_destination()[0]
 
 
-def _get_tracer_destination() -> tuple[str | None, str | None]:
+def _get_tracer_destination() -> tuple[str | None, Any]:
     """Get the `(project, address)` langsmith's tracing context sends runs to.
 
     At most one is set. Both are `None` when the `LANGSMITH_AGENT_*` env vars
