@@ -424,6 +424,50 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         )
         return when(req)
 
+    def _process_decision_with_reinterrupts(
+        self,
+        decision: Decision,
+        tool_call: ToolCall,
+        config: InterruptOnConfig,
+        state: AgentState[Any],
+        runtime: Runtime[ContextT],
+    ) -> tuple[ToolCall | None, ToolMessage | None, Action | None]:
+        """Process a decision, reviewing renamed tools under their own interrupt policies."""
+        reviewed_call = tool_call
+        edited_action: Action | None = None
+        while True:
+            revised_tool_call, tool_message = self._process_decision(
+                decision, reviewed_call, config
+            )
+            if decision["type"] != "edit":
+                break
+            edited_action = decision["edited_action"]
+            replacement = ToolCall(
+                name=edited_action["name"],
+                args=edited_action["args"],
+                id=tool_call["id"],
+            )
+            replacement_config = self.interrupt_on.get(replacement["name"])
+            if (
+                replacement["name"] == reviewed_call["name"]
+                or replacement_config is None
+                or not self._should_interrupt(replacement, replacement_config, state, runtime)
+            ):
+                break
+            reviewed_call = replacement
+            config = replacement_config
+            action, review_config = self._create_action_and_config(
+                reviewed_call, config, state, runtime
+            )
+            replacement_decisions = interrupt(
+                HITLRequest(action_requests=[action], review_configs=[review_config])
+            )["decisions"]
+            if len(replacement_decisions) != 1:
+                msg = "Expected one human decision for the replacement tool call."
+                raise ValueError(msg)
+            decision = replacement_decisions[0]
+        return revised_tool_call, tool_message, edited_action
+
     def after_model(
         self, state: AgentState[Any], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
@@ -501,41 +545,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 decision = decisions[decision_idx]
                 decision_idx += 1
 
-                reviewed_call = tool_call
-                edited_action: Action | None = None
-                while True:
-                    revised_tool_call, tool_message = self._process_decision(
-                        decision, reviewed_call, config
+                revised_tool_call, tool_message, edited_action = (
+                    self._process_decision_with_reinterrupts(
+                        decision, tool_call, config, state, runtime
                     )
-                    if decision["type"] != "edit":
-                        break
-                    edited_action = decision["edited_action"]
-                    replacement = ToolCall(
-                        name=edited_action["name"],
-                        args=edited_action["args"],
-                        id=tool_call["id"],
-                    )
-                    replacement_config = self.interrupt_on.get(replacement["name"])
-                    if (
-                        replacement["name"] == reviewed_call["name"]
-                        or replacement_config is None
-                        or not self._should_interrupt(
-                            replacement, replacement_config, state, runtime
-                        )
-                    ):
-                        break
-                    reviewed_call = replacement
-                    config = replacement_config
-                    action, review_config = self._create_action_and_config(
-                        reviewed_call, config, state, runtime
-                    )
-                    replacement_decisions = interrupt(
-                        HITLRequest(action_requests=[action], review_configs=[review_config])
-                    )["decisions"]
-                    if len(replacement_decisions) != 1:
-                        msg = "Expected one human decision for the replacement tool call."
-                        raise ValueError(msg)
-                    decision = replacement_decisions[0]
+                )
                 if revised_tool_call is not None:
                     revised_tool_calls.append(tool_call)
                     if edited_action is not None and (edited_id := tool_call.get("id")):
