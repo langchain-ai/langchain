@@ -8,8 +8,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages import AIMessage, BaseMessage, ChatMessage, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    ToolMessage,
+)
 from langchain_tests.unit_tests import ChatModelUnitTests
+from ollama import Message
 
 from langchain_ollama.chat_models import (
     ChatOllama,
@@ -1146,6 +1153,81 @@ def test_non_ai_message_reasoning_content_ignored() -> None:
     ]
     ollama_messages = llm._convert_messages_to_ollama_messages(messages)
     assert "thinking" not in ollama_messages[0]
+
+
+def test_tool_message_name_sent_as_tool_name() -> None:
+    """Test that a `ToolMessage` tells Ollama which tool produced it.
+
+    `ollama.Message` has no `tool_call_id`, so the client drops it before sending
+    the request, and `tool_name` is the only field left to identify the tool.
+    Without it, models whose prompt names the tool (e.g. Gemma 4) see every tool
+    result as coming from an unknown tool.
+    """
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    messages: list[BaseMessage] = [
+        HumanMessage("What's the weather in Paris?"),
+        AIMessage(
+            "",
+            tool_calls=[
+                {"name": "get_weather", "args": {"city": "Paris"}, "id": "call_1"}
+            ],
+        ),
+        ToolMessage("18C and sunny", tool_call_id="call_1", name="get_weather"),
+    ]
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+
+    assert ollama_messages[2]["tool_name"] == "get_weather"
+    # The client sends only the fields `ollama.Message` declares.
+    assert Message.model_validate(ollama_messages[2]).tool_name == "get_weather"
+
+
+def test_tool_message_without_name_uses_matching_tool_call() -> None:
+    """Test that a `ToolMessage` without a `name` takes its tool call's name.
+
+    Results are matched by `tool_call_id` rather than position, so parallel calls
+    answered out of order still reach the model under the right names.
+    """
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    messages: list[BaseMessage] = [
+        HumanMessage("What's the weather and local time in Paris?"),
+        AIMessage(
+            "",
+            tool_calls=[
+                {"name": "get_weather", "args": {"city": "Paris"}, "id": "call_1"},
+                {"name": "get_time", "args": {"city": "Paris"}, "id": "call_2"},
+            ],
+        ),
+        ToolMessage("14:05", tool_call_id="call_2"),
+        ToolMessage("18C and sunny", tool_call_id="call_1"),
+    ]
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+
+    assert [message["tool_name"] for message in ollama_messages[2:]] == [
+        "get_time",
+        "get_weather",
+    ]
+
+
+def test_tool_message_without_known_tool_has_no_tool_name() -> None:
+    """Test that a `ToolMessage` whose tool call is not in the history has no name.
+
+    This happens when trimming drops the `AIMessage` that made the call. The
+    result is then sent without a `tool_name` rather than under a guessed one.
+    """
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    messages: list[BaseMessage] = [
+        HumanMessage("Hi"),
+        ToolMessage("orphaned result", tool_call_id="call_1"),
+    ]
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+
+    assert "tool_name" not in ollama_messages[1]
 
 
 def test_multimodal_message_content_has_no_leading_newline() -> None:

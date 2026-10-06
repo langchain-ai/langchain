@@ -997,9 +997,11 @@ class ChatOllama(BaseChatModel):
                 )
 
         ollama_messages: list = []
+        tool_names_by_call_id: dict[str, str] = {}
         for message in messages:
             role: str
             tool_call_id: str | None = None
+            tool_name: str | None = None
             tool_calls: list[dict[str, Any]] | None = None
             if isinstance(message, HumanMessage):
                 role = "user"
@@ -1013,6 +1015,9 @@ class ChatOllama(BaseChatModel):
                     if message.tool_calls
                     else None
                 )
+                for call in message.tool_calls:
+                    if call["id"]:
+                        tool_names_by_call_id[call["id"]] = call["name"]
             elif isinstance(message, SystemMessage):
                 role = "system"
             elif isinstance(message, ChatMessage):
@@ -1020,6 +1025,10 @@ class ChatOllama(BaseChatModel):
             elif isinstance(message, ToolMessage):
                 role = "tool"
                 tool_call_id = message.tool_call_id
+                # The Ollama client drops `tool_call_id`, so `tool_name` is the only
+                # way the model learns which tool produced this result. Fall back to
+                # the matching tool call for messages built without a `name`.
+                tool_name = message.name or tool_names_by_call_id.get(tool_call_id)
             else:
                 msg = "Received unsupported message type for Ollama."
                 raise TypeError(msg)
@@ -1087,6 +1096,8 @@ class ChatOllama(BaseChatModel):
                 msg_["tool_calls"] = tool_calls
             if tool_call_id:
                 msg_["tool_call_id"] = tool_call_id
+            if tool_name:
+                msg_["tool_name"] = tool_name
             if isinstance(message, AIMessage):
                 thinking = message.additional_kwargs.get("reasoning_content")
                 if thinking is not None:
