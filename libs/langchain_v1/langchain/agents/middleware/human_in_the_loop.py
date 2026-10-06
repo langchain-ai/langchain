@@ -448,11 +448,16 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 In `per_call` mode an edit can't switch tools, its args are checked
                 against the tool's argument types (validators on its `args_schema`
                 run when the tool does), and an invalid answer raises
-                `pydantic.ValidationError` without being saved.
+                `pydantic.ValidationError` without being saved. For a tool whose
+                arguments are a JSON schema rather than a Pydantic model, edits are
+                shown in `response_schema` but not checked.
 
                 In `per_call` mode, list this middleware before tool retry or
                 error-handling middleware so it wraps them, and don't enable it on
-                subclasses that raise their own interrupts in `after_model`.
+                subclasses that raise their own interrupts in `after_model`. On resume,
+                each paused tool call runs its middleware again up to this one, so
+                middleware listed before it must not have side effects before calling
+                `handler`. The tool itself runs only after the answer.
 
         Raises:
             ValueError: If a tool's `InterruptOnConfig` does not have a non-empty
