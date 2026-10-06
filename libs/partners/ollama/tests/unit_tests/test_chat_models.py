@@ -8,7 +8,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.exceptions import OutputParserException
-from langchain_core.messages import AIMessage, BaseMessage, ChatMessage, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    ToolMessage,
+)
 from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_ollama.chat_models import (
@@ -1118,6 +1124,30 @@ def test_reasoning_content_absent_no_thinking_key() -> None:
     ]
     ollama_messages = llm._convert_messages_to_ollama_messages(messages)
     assert "thinking" not in ollama_messages[1]
+
+
+def test_tool_message_name_is_serialized_as_tool_name() -> None:
+    """Tool results should retain their tool name for Ollama's tool routing."""
+    with patch("langchain_ollama.chat_models.Client"):
+        llm = ChatOllama(model="test-model")
+
+    messages: list[BaseMessage] = [
+        ToolMessage(
+            content="18",
+            tool_call_id="call_1",
+            name="get_temperature",
+        ),
+    ]
+
+    ollama_messages = llm._convert_messages_to_ollama_messages(messages)
+
+    assert ollama_messages[0] == {
+        "role": "tool",
+        "content": "18",
+        "images": [],
+        "tool_call_id": "call_1",
+        "tool_name": "get_temperature",
+    }
 
 
 def test_reasoning_content_empty_string_preserved() -> None:

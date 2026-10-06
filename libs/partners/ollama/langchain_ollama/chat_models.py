@@ -1000,6 +1000,7 @@ class ChatOllama(BaseChatModel):
         for message in messages:
             role: str
             tool_call_id: str | None = None
+            tool_name: str | None = None
             tool_calls: list[dict[str, Any]] | None = None
             if isinstance(message, HumanMessage):
                 role = "user"
@@ -1020,6 +1021,7 @@ class ChatOllama(BaseChatModel):
             elif isinstance(message, ToolMessage):
                 role = "tool"
                 tool_call_id = message.tool_call_id
+                tool_name = message.name
             else:
                 msg = "Received unsupported message type for Ollama."
                 raise TypeError(msg)
@@ -1087,6 +1089,8 @@ class ChatOllama(BaseChatModel):
                 msg_["tool_calls"] = tool_calls
             if tool_call_id:
                 msg_["tool_call_id"] = tool_call_id
+            if tool_name is not None:
+                msg_["tool_name"] = tool_name
             if isinstance(message, AIMessage):
                 thinking = message.additional_kwargs.get("reasoning_content")
                 if thinking is not None:
