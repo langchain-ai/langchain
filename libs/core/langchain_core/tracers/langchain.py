@@ -94,11 +94,16 @@ def _check_address(address: Any) -> Any:
 
     Raises:
         TypeError: If `address` is not a `langsmith.Address`, such as a
-            `langsmith.Agent`. A string is not one.
+            `langsmith.Agent`, or langsmith has no agent addressing.
     """
     if address is None:
         return None
-    if isinstance(address, str) or not callable(getattr(address, "lrn", None)):
+    try:
+        from langsmith.address import Address  # type: ignore[import-not-found,unused-ignore]  # noqa: PLC0415,E501
+    except ImportError as e:
+        msg = "address requires a langsmith version with agent addressing."
+        raise TypeError(msg) from e
+    if isinstance(address, str) or not isinstance(address, Address):
         msg = f"address must be a langsmith.Agent, got {address!r}."
         raise TypeError(msg)
     return address
