@@ -43,7 +43,6 @@ from langchain.agents.middleware.types import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
-    from langchain_core.runnables import RunnableConfig
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
 
@@ -251,7 +250,8 @@ def _decision_schema(
         by_type["edit"] = _edit_decision(name, tool)
     # Drop duplicates, keeping order: a union of one type can't take a `Discriminator`.
     members = tuple(by_type[d] for d in dict.fromkeys(allowed))
-    # Built at runtime, so type checkers can't see that it parses into a `Decision`.
+    # Type checkers can't follow a type built at runtime. At runtime, `interrupt()` checks
+    # every answer against it, so what it returns is one of these decisions.
     if len(members) == 1:
         return cast("type[Decision]", members[0])
     # Check only the branch the answer's `type` names, so a bad answer gets one precise
@@ -557,15 +557,10 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         when = config.get("when")
         if when is None:
             return True
-        runnable_config: RunnableConfig
-        try:
-            runnable_config = get_config()
-        except RuntimeError:
-            runnable_config = {}
         tool_runtime = ToolRuntime(
             state=state,
             context=runtime.context,
-            config=runnable_config,
+            config=get_config(),
             stream_writer=runtime.stream_writer,
             tool_call_id=tool_call["id"],
             store=runtime.store,
