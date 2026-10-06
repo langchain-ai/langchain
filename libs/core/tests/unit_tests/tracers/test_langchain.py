@@ -1101,6 +1101,7 @@ def test_tracer_address_must_be_an_agent() -> None:
         LangChainTracer(client=unittest.mock.MagicMock(spec=Client), address=experiment)
 
 
+@_requires_address
 @pytest.mark.usefixtures("tracer_env")
 @pytest.mark.parametrize("address", [42, "lrn:agents/support/environments/staging"])
 def test_tracer_address_must_be_an_address(address: Any) -> None:
