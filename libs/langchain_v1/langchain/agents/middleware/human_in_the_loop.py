@@ -11,11 +11,11 @@ from typing import (
     Literal,
     Protocol,
     Union,
+    cast,
     get_args,
 )
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
-from langchain_core.runnables.config import set_config_context
 from langgraph.config import get_config
 from langgraph.prebuilt.tool_node import ToolRuntime
 from langgraph.runtime import get_runtime
@@ -184,32 +184,31 @@ class ToolApprovalRequest(TypedDict):
     """Text shown to the reviewer."""
 
 
-def _edit_args(tool: BaseTool | None, override: dict[str, Any] | None) -> object:
+def _edit_args(tool: BaseTool | None) -> object:
     """What an edit's `args` must look like: the tool's Pydantic schema, if it has one.
 
     That's the schema the model sees (`tool_call_schema`): it checks arg types and
     required args, and rejects args it doesn't declare unless the tool accepts extras.
     It leaves out validators on the tool's `args_schema`; those run when the tool does.
-    Anything else (a JSON-schema tool, or no tool) is shown but not enforced. `override`
-    is the config's `args_schema`; it only changes what's shown.
+    A JSON-schema tool's schema is shown but not enforced, and with no tool any object
+    is accepted.
     """
     schema = tool.tool_call_schema if tool else None
     if not (tool and isinstance(schema, type) and issubclass(schema, BaseModel)):
-        shown = override or (schema if isinstance(schema, dict) else None) or {"type": "object"}
+        shown = schema if isinstance(schema, dict) else {"type": "object"}
         return Annotated[dict[str, Any], WithJsonSchema(shown)]
     # `tool_call_schema` drops the tool's own `extra` setting, so read it from `args_schema`.
     allows_extra = getattr(tool.args_schema, "model_config", {}).get("extra") == "allow"
     # A subclass keeps the tool's fields, validators, name and description.
-    checked = create_model(
+    return create_model(
         schema.__name__,
         __base__=schema,
         __doc__=schema.__doc__,
         __cls_kwargs__={"extra": "allow" if allows_extra else "forbid"},
     )
-    return Annotated[checked, WithJsonSchema(override)] if override else checked
 
 
-def _edit_decision(name: str, tool: BaseTool | None, override: dict[str, Any] | None) -> object:
+def _edit_decision(name: str, tool: BaseTool | None) -> object:
     """`EditDecision` for one tool: `name` pinned to it, `args` from `_edit_args`.
 
     Undeclared fields are rejected, so a typo fails instead of being dropped.
@@ -218,7 +217,7 @@ def _edit_decision(name: str, tool: BaseTool | None, override: dict[str, Any] | 
         "EditedAction",
         __config__=ConfigDict(extra="forbid"),
         name=(Literal[name], ...),
-        args=(_edit_args(tool, override), ...),
+        args=(_edit_args(tool), ...),
     )
     decision = create_model(
         "EditDecision",
@@ -231,11 +230,8 @@ def _edit_decision(name: str, tool: BaseTool | None, override: dict[str, Any] | 
 
 
 def _decision_schema(
-    allowed: Sequence[DecisionType],
-    name: str,
-    tool: BaseTool | None = None,
-    override: dict[str, Any] | None = None,
-) -> Any:
+    allowed: Sequence[DecisionType], name: str, tool: BaseTool | None = None
+) -> type[Decision]:
     """The per-call `response_schema`: today's decision types, limited to `allowed`.
 
     The edit branch is built for this tool: its name is pinned, so an edit can't switch
@@ -243,9 +239,8 @@ def _decision_schema(
     the branch its `type` names, so a bad one gets a single error about what's wrong.
     A one-decision tool gets that decision's plain object schema.
 
-    Returns a type built at runtime, which parses into one of the `Decision` types. It's
-    typed `Any` because no static type describes it, and `interrupt()` is annotated to
-    take only classes and dicts.
+    Returns a type rather than a JSON schema because LangGraph checks answers only
+    against Python types; it publishes the type's JSON schema to clients.
     """
     by_type: dict[DecisionType, object] = {
         "approve": ApproveDecision,
@@ -253,14 +248,15 @@ def _decision_schema(
         "respond": RespondDecision,
     }
     if "edit" in allowed:
-        by_type["edit"] = _edit_decision(name, tool, override)
+        by_type["edit"] = _edit_decision(name, tool)
     # Drop duplicates, keeping order: a union of one type can't take a `Discriminator`.
     members = tuple(by_type[d] for d in dict.fromkeys(allowed))
+    # Built at runtime, so type checkers can't see that it parses into a `Decision`.
     if len(members) == 1:
-        return members[0]
+        return cast("type[Decision]", members[0])
     # Check only the branch the answer's `type` names, so a bad answer gets one precise
     # error rather than one per branch.
-    return Annotated[Union[members], Discriminator("type")]  # noqa: UP007
+    return cast("type[Decision]", Annotated[Union[members], Discriminator("type")])  # noqa: UP007
 
 
 def _answer_message(tool_call: ToolCall, decision: RejectDecision | RespondDecision) -> ToolMessage:
@@ -349,10 +345,8 @@ class InterruptOnConfig(TypedDict):
     args_schema: NotRequired[dict[str, Any]]
     """JSON schema for the args associated with the action, if edits are allowed.
 
-    In `per_call` mode this only changes what's shown under `edited_action.args` in
-    `response_schema`; edits are still checked against the tool's own argument types
-    when it has a Pydantic schema. Validators on the tool's `args_schema` don't run on
-    the edit; they run when the tool does.
+    Not used in `per_call` mode: `response_schema` shows the tool's own argument
+    schema, which is what edits are checked against.
     """
 
     when: NotRequired[Callable[[ToolCallRequest], bool]]
@@ -450,7 +444,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 subclasses that raise their own interrupts in `after_model`. On resume,
                 each paused tool call runs its middleware again up to this one, so
                 middleware listed before it must not have side effects before calling
-                `handler`. The tool itself runs only after the answer.
+                `handler`. The tool itself runs only after the answer. As in `batched`
+                mode, running the agent asynchronously (`ainvoke`, `astream`) needs
+                Python 3.11 or later.
 
         Raises:
             ValueError: If a tool's `InterruptOnConfig` does not have a non-empty
@@ -615,21 +611,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             description=action_request.get("description", ""),
         )
 
-    def _resolve_per_call_in_run_context(
-        self, request: ToolCallRequest
-    ) -> tuple[ToolCallRequest, Action | None] | ToolMessage:
-        """`_resolve_per_call`, for the async hook.
-
-        Before Python 3.11, LangGraph runs async nodes outside the run's context, where
-        `interrupt()` can't find the run, so the context is rebuilt from the tool call.
-        """
-        try:
-            get_config()
-        except RuntimeError:
-            with set_config_context(request.runtime.config) as context:
-                return context.run(self._resolve_per_call, request)
-        return self._resolve_per_call(request)
-
     def _resolve_per_call(
         self, request: ToolCallRequest
     ) -> tuple[ToolCallRequest, Action | None] | ToolMessage:
@@ -648,14 +629,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
 
         value = self._tool_approval_request(request, config)
         response_schema = _decision_schema(
-            config["allowed_decisions"],
-            tool_call["name"],
-            request.tool,
-            config.get("args_schema"),
+            config["allowed_decisions"], tool_call["name"], request.tool
         )
         # LangGraph parses the answer against `response_schema` before saving it, so it
         # comes back as one of this tool's allowed decisions.
-        decision: Decision = interrupt(value, response_schema=response_schema)
+        decision = interrupt(value, response_schema=response_schema)
         if decision["type"] == "approve":
             return request, None
         if decision["type"] == "edit":
@@ -941,7 +919,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             ValueError: In `per_call` mode, if a gated tool call has no ID.
         """
         if self.interrupt_mode == "per_call":
-            resolved = self._resolve_per_call_in_run_context(request)
+            resolved = self._resolve_per_call(request)
             if isinstance(resolved, ToolMessage):
                 return resolved
             to_run, executed = resolved
