@@ -17,6 +17,7 @@ from langchain.agents.middleware.human_in_the_loop import (
     _EDIT_NOTICE,
     _EDITED_TOOL_CALLS_KEY,
     Action,
+    DecisionType,
     HumanInTheLoopMiddleware,
     _HumanInTheLoopState,
 )
@@ -1452,6 +1453,63 @@ def test_human_in_the_loop_middleware_edit_executes_reviewers_call() -> None:
     assert ai_message.tool_calls[0]["args"] == {"path": "notes.txt", "content": "mine"}
     tool_message = next(m for m in final["messages"] if isinstance(m, ToolMessage))
     assert "reviewers" in tool_message.content
+    _assert_tool_messages_are_paired(final["messages"])
+
+
+@pytest.mark.parametrize("decision_type", ["approve", "reject", "respond"])
+def test_renamed_tool_requires_its_own_review(decision_type: DecisionType) -> None:
+    executed: list[str] = []
+
+    @tool
+    def original() -> str:
+        """Original tool."""
+        executed.append("original")
+        return "original"
+
+    @tool
+    def replacement(value: str) -> str:
+        """Replacement tool."""
+        executed.append(value)
+        return value
+
+    agent = create_agent(
+        model=FakeToolCallingModel(tool_calls=[[ToolCall(name="original", args={}, id="1")], []]),
+        tools=[original, replacement],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={
+                    "original": True,
+                    "replacement": {"allowed_decisions": [decision_type]},
+                }
+            )
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": decision_type}}
+    agent.invoke({"messages": [HumanMessage("run it")]}, config)
+    paused = agent.invoke(
+        Command(
+            resume={
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "edited_action": {"name": "replacement", "args": {"value": "edited"}},
+                    }
+                ]
+            }
+        ),
+        config,
+    )
+    assert executed == []
+    request = paused["__interrupt__"][0].value
+    assert request["action_requests"][0]["name"] == "replacement"
+    assert request["action_requests"][0]["args"] == {"value": "edited"}
+    assert request["review_configs"][0]["allowed_decisions"] == [decision_type]
+    final = agent.invoke(
+        Command(resume={"decisions": [{"type": decision_type, "message": "human response"}]}),
+        config,
+    )
+    assert executed == (["edited"] if decision_type == "approve" else [])
     _assert_tool_messages_are_paired(final["messages"])
 
 
