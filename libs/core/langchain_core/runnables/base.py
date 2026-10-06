@@ -96,6 +96,7 @@ from langchain_core.tracers.root_listeners import (
     AsyncRootListenersTracer,
     RootListenersTracer,
 )
+from langchain_core.utils._signature import _signature_parameters
 from langchain_core.utils.aiter import aclosing, atee
 from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import (
@@ -6550,7 +6551,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
         attr = getattr(self.bound, name)
 
         if callable(attr) and (
-            config_param := inspect.signature(attr).parameters.get("config")
+            config_param := _signature_parameters(attr).get("config")
         ):
             if config_param.kind == inspect.Parameter.KEYWORD_ONLY:
 
@@ -6564,7 +6565,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
 
                 return wrapper
             if config_param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
-                idx = list(inspect.signature(attr).parameters).index("config")
+                idx = list(_signature_parameters(attr)).index("config")
 
                 @wraps(attr)
                 def wrapper(*args: Any, **kwargs: Any) -> Any:

@@ -108,7 +108,8 @@ class HuggingFaceEndpoint(LLM):
         available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
 
     huggingfacehub_api_token: str | None = Field(
-        default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
+        default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None),
+        repr=False,
     )
 
     max_new_tokens: int = 512
