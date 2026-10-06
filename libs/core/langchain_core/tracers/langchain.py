@@ -89,6 +89,24 @@ def _env_addresses_agent() -> bool:
     )
 
 
+def _address_to_lrn(address: Any) -> str | None:
+    """Get the LRN string of a `langsmith.Agent` or LRN string, or `None`.
+
+    Raises:
+        TypeError: If `address` is neither an LRN string nor has an `lrn()` method.
+    """
+    if address is None or isinstance(address, str):
+        return address
+    lrn = getattr(address, "lrn", None)
+    if not callable(lrn):
+        msg = (
+            "address must be a langsmith.Agent or an LRN string like "
+            f"'lrn:agents/{{id}}/environments/{{environment}}', got {address!r}."
+        )
+        raise TypeError(msg)
+    return str(lrn())
+
+
 def _get_default_project_name() -> str | None:
     """Get the project to trace to when none is named in code.
 
@@ -182,8 +200,9 @@ class LangChainTracer(BaseTracer):
             metadata: Additional metadata to include if it isn't already in the run.
 
                 Defaults to None.
-            address: A `langsmith.address(...)` to send runs to instead of a
-                project.
+            address: A `langsmith.Agent(...)`, or its LRN string (such as
+                `lrn:agents/my-agent/environments/production`), to send runs
+                to instead of a project.
 
                 Ignored if `project_name` is set.
 
@@ -197,9 +216,9 @@ class LangChainTracer(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.address = None if project_name else address
+        self.address = None if project_name else _address_to_lrn(address)
         self.project_name = project_name or (
-            None if address is not None else _get_default_project_name()
+            None if self.address is not None else _get_default_project_name()
         )
         self.client = client or get_client()
         self.tags = tags or []
