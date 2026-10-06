@@ -1,7 +1,7 @@
 import re
 from collections.abc import Sequence
 from types import SimpleNamespace
-from typing import Annotated, Any, cast
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -14,8 +14,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt.tool_node import ToolNode, ToolRuntime
 from langgraph.runtime import Runtime
 from langgraph.types import Command, Interrupt
-from pydantic import AfterValidator, BaseModel, ConfigDict, TypeAdapter, ValidationError
-from pydantic_core import PydanticCustomError
+from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
 
 from langchain.agents.factory import _make_tools_to_model_edge, create_agent
 from langchain.agents.middleware import InterruptOnConfig, ToolErrorMiddleware, ToolRetryMiddleware
@@ -29,7 +28,6 @@ from langchain.agents.middleware.human_in_the_loop import (
     InterruptMode,
     _decision_schema,
     _HumanInTheLoopState,
-    _retitled,
 )
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -2101,10 +2099,10 @@ def test_per_call_pauses_once_per_gated_call_and_applies_answers_by_id() -> None
 @pytest.mark.parametrize(
     ("bad_answer", "error", "after"),
     [
-        ({"type": "edit"}, "1 validation error for send_email decision", []),
+        ({"type": "edit"}, r"1 validation error for .*\nedit\.edited_action\n", []),
         # Listed before error-handling middleware, HITL's error still reaches the caller
-        ({"type": "edit"}, "send_email decision", [ToolRetryMiddleware(initial_delay=0)]),
-        ({"type": "edit"}, "send_email decision", [ToolErrorMiddleware(on_error=lambda *_: "x")]),
+        ({"type": "edit"}, r"edit\.edited_action", [ToolRetryMiddleware(initial_delay=0)]),
+        ({"type": "edit"}, r"edit\.edited_action", [ToolErrorMiddleware(on_error=lambda *_: "x")]),
     ],
     ids=["missing_field", "hitl_wraps_retry", "hitl_wraps_tool_error"],
 )
@@ -2122,26 +2120,6 @@ def test_per_call_rejects_a_bad_answer_without_saving_it(
     final = _resume(agent, {intr.id: _edit("send_email", {"to": "bob"})})
     assert ran == [("send_email", {"to": "bob"})]
     assert "__interrupt__" not in final
-
-
-def test_retitled_names_the_tool_and_keeps_the_errors() -> None:
-    with pytest.raises(ValidationError) as exc_info:  # errors with and without `ctx`
-        _adapter(ALL).validate_python(_edit("delete_file", {"to": 5, "ccc": 1}))
-    retitled = _retitled(exc_info.value, "send_email decision")
-    assert retitled.title == "send_email decision"
-    assert retitled.errors() == exc_info.value.errors()
-
-
-def test_retitled_keeps_a_custom_validation_error_as_is() -> None:
-    def non_negative(n: int) -> int:
-        if n < 0:
-            error_type, msg = "negative", "n must be >= 0"
-            raise PydanticCustomError(error_type, msg)
-        return n
-
-    with pytest.raises(ValidationError) as exc_info:
-        TypeAdapter(Annotated[int, AfterValidator(non_negative)]).validate_python(-1)
-    assert _retitled(exc_info.value, "move decision") is exc_info.value  # not a `KeyError`
 
 
 def test_per_call_edit_passes_only_the_fields_sent() -> None:
@@ -2197,16 +2175,6 @@ def test_per_call_description_factory_gets_the_graph_runtime() -> None:
     assert all(isinstance(runtime, Runtime) for runtime in seen)  # as in batched mode
 
 
-def test_per_call_leaves_errors_from_a_description_factory_unlabeled() -> None:
-    def describe(tool_call: ToolCall, state: AgentState[Any], runtime: Runtime[ContextT]) -> str:  # noqa: ARG001
-        return str(TypeAdapter(int).validate_python(tool_call["args"]["to"]))  # not a number
-
-    config: InterruptOnConfig = {"allowed_decisions": ["approve"], "description": describe}
-    with pytest.raises(ValidationError) as exc_info:
-        _pause(_agent([], EMAIL, interrupt_on={"send_email": config}))
-    assert "send_email decision" not in str(exc_info.value)  # not mistaken for a bad answer
-
-
 def test_batched_mode_is_unchanged() -> None:
     [intr] = _pause(_agent([], THREE_CALLS[:2], mode="batched"))
     assert set(intr.value) == {"action_requests", "review_configs"}
@@ -2250,7 +2218,7 @@ async def test_per_call_works_with_ainvoke(
     by_tool = {i.value["name"]: i for i in paused["__interrupt__"]}
     email, delete = by_tool["send_email"], by_tool["delete_file"]
 
-    with pytest.raises(ValidationError, match="send_email decision"):
+    with pytest.raises(ValidationError, match=r"edit\.edited_action"):
         await agent.ainvoke(Command(resume={email.id: {"type": "edit"}}), CFG)
     answers = {email.id: _edit("send_email", {"to": "bob"}), delete.id: {"type": "reject"}}
     final = await agent.ainvoke(Command(resume=answers), CFG)

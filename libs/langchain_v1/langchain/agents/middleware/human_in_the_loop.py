@@ -25,11 +25,9 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Discriminator,
-    ValidationError,
     WithJsonSchema,
     create_model,
 )
-from pydantic_core import InitErrorDetails
 from typing_extensions import NotRequired, TypedDict
 
 from langchain.agents.middleware.types import (
@@ -206,7 +204,6 @@ def _edit_args(tool: BaseTool | None, override: dict[str, Any] | None) -> object
         schema.__name__,
         __base__=schema,
         __doc__=schema.__doc__,
-        __module__=schema.__module__,
         __cls_kwargs__={"extra": "allow" if allows_extra else "forbid"},
     )
     return Annotated[checked, WithJsonSchema(override)] if override else checked
@@ -264,25 +261,6 @@ def _decision_schema(
     # Check only the branch the answer's `type` names, so a bad answer gets one precise
     # error rather than one per branch.
     return Annotated[Union[members], Discriminator("type")]  # noqa: UP007
-
-
-def _retitled(error: ValidationError, title: str) -> ValidationError:
-    """`error` with `title` in its first line, in place of Pydantic's generated type name.
-
-    Errors of a custom type (`PydanticCustomError`) can't be rebuilt, so `error` comes
-    back unchanged when it has any.
-    """
-    errors: list[InitErrorDetails] = []
-    for e in error.errors():
-        details = InitErrorDetails(type=e["type"], loc=e["loc"], input=e["input"])
-        # Pass `ctx` only when the error had one, so the error list stays the same.
-        if "ctx" in e:
-            details["ctx"] = e["ctx"]
-        errors.append(details)
-    try:
-        return ValidationError.from_exception_data(title, errors)
-    except KeyError:
-        return error
 
 
 def _reject_message(tool_call: ToolCall, decision: RejectDecision) -> ToolMessage:
@@ -679,10 +657,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         )
         # LangGraph parses the answer against `response_schema` before saving it, so it
         # comes back as one of this tool's allowed decisions.
-        try:
-            decision: Decision = interrupt(value, response_schema=response_schema)
-        except ValidationError as error:
-            raise _retitled(error, f"{tool_call['name']} decision") from None
+        decision: Decision = interrupt(value, response_schema=response_schema)
         if decision["type"] == "approve":
             return request, None
         if decision["type"] == "edit":
