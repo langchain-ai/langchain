@@ -24,7 +24,7 @@ classifiers = [
 version = "1.6.6"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langsmith>=0.3.45,<1.0.0",
+    "langsmith>=0.14.4,<1.0.0",
     "httpx>=0.23.0,<1.0.0",
     "tenacity!=8.4.0,>=8.1.0,<10.0.0",
     "jsonpatch>=1.33.0,<2.0.0",
