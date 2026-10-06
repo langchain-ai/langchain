@@ -262,6 +262,50 @@ class TestURLDetection:
         # May or may not detect depending on implementation
         # This is acceptable
 
+    @pytest.mark.parametrize(
+        "content",
+        [
+            "built with Node.js/Express",
+            "the ratio is 1.5/2.0",
+            "version 1.2.3/README",
+            "see section 3.14/2",
+            "mail john.doe@example.com/foo",
+            "pandas.DataFrame/groupby docs",
+            "python3.12/site-packages",
+        ],
+    )
+    def test_no_false_positive_url(self, content: str) -> None:
+        # Regression tests for #41027: version numbers, ratios, dotted
+        # identifiers, file names and email domains are not URLs.
+        assert detect_url(content) == []
+
+    def test_email_domain_left_to_email_detector(self) -> None:
+        content = "mail john.doe@example.com/foo"
+        assert detect_url(content) == []
+        assert [m["value"] for m in detect_email(content)] == ["john.doe@example.com"]
+
+    def test_bare_urls_still_detected(self) -> None:
+        matches = detect_url("a real one: example.com/path and www.example.org")
+        assert [m["value"] for m in matches] == ["example.com/path", "www.example.org"]
+
+    def test_short_tld_still_detected(self) -> None:
+        matches = detect_url("shorten with bit.ly/abc")
+        assert [m["value"] for m in matches] == ["bit.ly/abc"]
+
+    def test_camelcase_host_with_lowercase_tld_still_detected(self) -> None:
+        matches = detect_url("see GitHub.com/trending")
+        assert [m["value"] for m in matches] == ["GitHub.com/trending"]
+
+    def test_no_url_redaction_for_non_urls(self) -> None:
+        middleware = PIIMiddleware("url", strategy="redact")
+        state = AgentState[Any](
+            messages=[HumanMessage("built with Node.js/Express and pandas.DataFrame/groupby")]
+        )
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is None
+
 
 # ============================================================================
 # Strategy Tests

@@ -146,6 +146,41 @@ def detect_mac_address(content: str) -> list[PIIMatch]:
     ]
 
 
+_FILE_EXTENSION_TLDS = frozenset({"js", "py", "rs", "go"})
+"""Final host labels that usually indicate file names rather than URL hosts."""
+
+_MIN_TLD_LENGTH = 2
+"""Minimum length of the final host label for a bare URL match."""
+
+
+def _looks_like_bare_url_host(url: str, host: str) -> bool:
+    """Check that a bare-pattern match plausibly has a URL host.
+
+    The bare URL pattern is intentionally loose, so version numbers
+    (`1.2.3/README`), dotted identifiers (`pandas.DataFrame/groupby`) and file
+    names (`Node.js/Express`) can match. These heuristics drop matches whose
+    final host label does not look like a TLD:
+
+    - The label must be lowercase alphabetic with at least two characters,
+      which rejects numeric version components and camelCase identifiers while
+      keeping hosts like `example.com` or `bit.ly`.
+    - Labels that collide with common file extensions (`.js`, `.py`, ...) are
+      only accepted with an explicit `www.` prefix, since bare text like
+      `Node.js/Express` names a file, not a host.
+
+    Args:
+        url: The matched candidate URL text.
+        host: The netloc parsed from the candidate URL.
+
+    Returns:
+        `True` if the candidate plausibly hosts a URL.
+    """
+    tld = host.rsplit(".", 1)[-1]
+    if not (tld.isalpha() and tld.islower() and len(tld) >= _MIN_TLD_LENGTH):
+        return False
+    return url.startswith("www.") or tld not in _FILE_EXTENSION_TLDS
+
+
 def detect_url(content: str) -> list[PIIMatch]:
     """Detect URLs in content using regex and stdlib validation.
 
@@ -186,6 +221,11 @@ def detect_url(content: str) -> list[PIIMatch]:
         if any(m["start"] <= start < m["end"] or m["start"] < end <= m["end"] for m in matches):
             continue
 
+        # Skip the domain of an email address (e.g. "john.doe@example.com/foo");
+        # leave it to the email detector.
+        if start > 0 and content[start - 1] == "@":
+            continue
+
         url = match.group()
         # Only accept if it has a path or starts with www
         # This reduces false positives like "example.com" in prose
@@ -193,7 +233,11 @@ def detect_url(content: str) -> list[PIIMatch]:
             # Add scheme for validation (required for urlparse to work correctly)
             test_url = f"http://{url}"
             result = urlparse(test_url)
-            if result.netloc and "." in result.netloc:
+            if (
+                result.netloc
+                and "." in result.netloc
+                and _looks_like_bare_url_host(url, result.netloc)
+            ):
                 matches.append(
                     PIIMatch(
                         type="url",
