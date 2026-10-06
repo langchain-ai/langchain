@@ -398,6 +398,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 _format_message_content(message.content)
             ),
         }
+        if isinstance(
+            reasoning_content := message.additional_kwargs.get("reasoning_content"), str
+        ) and message.response_metadata.get("model_provider") in (None, "fireworks"):
+            message_dict["reasoning_content"] = reasoning_content
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
@@ -470,6 +474,11 @@ def _usage_to_metadata(usage: Mapping[str, Any]) -> UsageMetadata:
     cached_tokens = (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
     if cached_tokens is not None:
         usage_metadata["input_token_details"] = {"cache_read": cached_tokens}
+    reasoning_tokens = (usage.get("completion_tokens_details") or {}).get(
+        "reasoning_tokens"
+    )
+    if reasoning_tokens is not None:
+        usage_metadata["output_token_details"] = {"reasoning": reasoning_tokens}
     return usage_metadata
 
 
@@ -552,6 +561,11 @@ def _convert_chunk_to_message_chunk(
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: dict = {}
     tool_call_chunks: list[ToolCallChunk] = []
+    if (
+        isinstance(reasoning_content := _dict.get("reasoning_content"), str)
+        and reasoning_content
+    ):
+        additional_kwargs["reasoning_content"] = reasoning_content
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
@@ -590,6 +604,44 @@ def _convert_chunk_to_message_chunk(
     if role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     return default_class(content=content)  # type: ignore[call-arg]
+
+
+def _format_chunk_for_v1(message_chunk: AIMessageChunk) -> AIMessageChunk:
+    """Keep reasoning, text and tool-call block indices in separate namespaces.
+
+    Chat Completions streams one text field and one reasoning field, but indexes
+    tool calls separately. Reusing a tool-call index as a content-block index can
+    merge a tool call into an earlier reasoning or text block during aggregation.
+    The raw tool_call_chunks retain the provider's original indices.
+    """
+    blocks: list[dict[str, Any]] = []
+    if reasoning := message_chunk.additional_kwargs.get("reasoning_content"):
+        blocks.append(
+            {"type": "reasoning", "reasoning": reasoning, "index": "lc_reasoning"}
+        )
+    if message_chunk.content:
+        blocks.append(
+            {"type": "text", "text": message_chunk.content, "index": "lc_text"}
+        )
+    for tool_call_chunk in message_chunk.tool_call_chunks:
+        block: dict[str, Any] = {
+            "type": "tool_call_chunk",
+            "id": tool_call_chunk["id"],
+            "name": tool_call_chunk["name"],
+            "args": tool_call_chunk["args"],
+        }
+        if (index := tool_call_chunk["index"]) is not None:
+            block["index"] = f"lc_tc_{index}"
+        blocks.append(block)
+    return message_chunk.model_copy(
+        update={
+            "content": blocks,
+            "response_metadata": {
+                **message_chunk.response_metadata,
+                "output_version": "v1",
+            },
+        }
+    )
 
 
 class _RetryableHTTPStatusError(FireworksError):
@@ -1288,6 +1340,10 @@ class ChatFireworks(BaseChatModel):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
+            if self.output_version == "v1" and isinstance(
+                message_chunk, AIMessageChunk
+            ):
+                message_chunk = _format_chunk_for_v1(message_chunk)
             generation_info: dict[str, Any] = {}
             logprobs = None
             if choices := chunk.get("choices"):
@@ -1405,6 +1461,10 @@ class ChatFireworks(BaseChatModel):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
+            if self.output_version == "v1" and isinstance(
+                message_chunk, AIMessageChunk
+            ):
+                message_chunk = _format_chunk_for_v1(message_chunk)
             generation_info: dict[str, Any] = {}
             logprobs = None
             if choices := chunk.get("choices"):
