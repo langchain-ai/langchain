@@ -91,20 +91,23 @@ def _env_addresses_agent() -> bool:
 
 
 def _check_address(address: Any) -> Any:
-    """Return `address` if it is a `langsmith.Address`, or `None`.
+    """Return `address` if it is a `langsmith.Agent`, or `None`.
+
+    Only an agent can receive traces; other `langsmith` addresses, such as an
+    experiment, only name a project to query.
 
     Raises:
-        TypeError: If `address` is not a `langsmith.Address`, such as a
-            `langsmith.Agent`, or langsmith has no agent addressing.
+        TypeError: If `address` is not a `langsmith.Agent`, or langsmith has no
+            agent addressing.
     """
     if address is None:
         return None
     # Only set on langsmith versions with agent addressing.
-    address_type = getattr(langsmith, "Address", None)
-    if address_type is None:
+    agent_type = getattr(langsmith, "Agent", None)
+    if agent_type is None:
         msg = "address requires a langsmith version with agent addressing."
         raise TypeError(msg)
-    if isinstance(address, str) or not isinstance(address, address_type):
+    if not isinstance(address, agent_type):
         msg = f"address must be a langsmith.Agent, got {address!r}."
         raise TypeError(msg)
     return address

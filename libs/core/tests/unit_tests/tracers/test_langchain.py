@@ -1093,6 +1093,14 @@ def test_tracer_address_argument() -> None:
     assert _posted_destinations(client) == [(None, support)] * 2
 
 
+@_requires_address
+@pytest.mark.usefixtures("tracer_env")
+def test_tracer_address_must_be_an_agent() -> None:
+    experiment = langsmith.Experiment("0190c3d4-0000-7000-8000-0000000000b1")
+    with pytest.raises(TypeError, match="address must be a langsmith.Agent"):
+        LangChainTracer(client=unittest.mock.MagicMock(spec=Client), address=experiment)
+
+
 @pytest.mark.usefixtures("tracer_env")
 @pytest.mark.parametrize("address", [42, "lrn:agents/support/environments/staging"])
 def test_tracer_address_must_be_an_address(address: Any) -> None:
