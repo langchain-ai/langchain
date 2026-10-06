@@ -2018,7 +2018,7 @@ def wrap_model_call(
 @overload
 def wrap_tool_call(
     func: _CallableReturningToolResponse,
-) -> AgentMiddleware[StateT, ContextT]: ...
+) -> AgentMiddleware[StateT, Any]: ...
 
 
 @overload
@@ -2030,7 +2030,7 @@ def wrap_tool_call(
     name: str | None = None,
 ) -> Callable[
     [_CallableReturningToolResponse],
-    AgentMiddleware[StateT, ContextT],
+    AgentMiddleware[StateT, Any],
 ]: ...
 
 
@@ -2043,9 +2043,9 @@ def wrap_tool_call(
 ) -> (
     Callable[
         [_CallableReturningToolResponse],
-        AgentMiddleware[StateT, ContextT],
+        AgentMiddleware[StateT, Any],
     ]
-    | AgentMiddleware[StateT, ContextT]
+    | AgentMiddleware[StateT, Any]
 ):
     """Create middleware with `wrap_tool_call` hook from a function.
 
@@ -2141,13 +2141,13 @@ def wrap_tool_call(
 
     def decorator(
         func: _CallableReturningToolResponse,
-    ) -> AgentMiddleware[StateT, ContextT]:
+    ) -> AgentMiddleware[StateT, Any]:
         is_async = iscoroutinefunction(func)
 
         if is_async:
 
             async def async_wrapped(
-                _self: AgentMiddleware[StateT, ContextT],
+                _self: AgentMiddleware[StateT, Any],
                 request: ToolCallRequest,
                 handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
             ) -> ToolMessage | Command[Any]:
@@ -2160,7 +2160,7 @@ def wrap_tool_call(
             # `type(...)` builds the correct middleware subclass at runtime, but
             # type checkers cannot infer its generic `AgentMiddleware` parameters.
             return cast(
-                "AgentMiddleware[StateT, ContextT]",
+                "AgentMiddleware[StateT, Any]",
                 type(
                     middleware_name,
                     (AgentMiddleware,),
@@ -2173,7 +2173,7 @@ def wrap_tool_call(
             )
 
         def wrapped(
-            _self: AgentMiddleware[StateT, ContextT],
+            _self: AgentMiddleware[StateT, Any],
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
         ) -> ToolMessage | Command[Any]:
@@ -2184,7 +2184,7 @@ def wrap_tool_call(
         # `type(...)` builds the correct middleware subclass at runtime, but
         # type checkers cannot infer its generic `AgentMiddleware` parameters.
         return cast(
-            "AgentMiddleware[StateT, ContextT]",
+            "AgentMiddleware[StateT, Any]",
             type(
                 middleware_name,
                 (AgentMiddleware,),
