@@ -1814,14 +1814,15 @@ class ChatAnthropic(BaseChatModel):
 
         is_fable_model = self.model.startswith("claude-fable-5")
         is_sonnet_55 = self.model.startswith("claude-sonnet-5-5")
-        if is_fable_model or is_sonnet_55:
+        is_haiku_55 = self.model.startswith("claude-haiku-5-5")
+        if is_fable_model or is_sonnet_55 or is_haiku_55:
             top_k = request_config.get("top_k", self.top_k)
             top_p = request_config.get("top_p", self.top_p)
             temperature = request_config.get("temperature", self.temperature)
             if top_k is not None:
                 msg = f"`top_k` is not supported for {self.model}."
                 raise ValueError(msg)
-            if top_p is not None and top_p != 1:
+            if top_p is not None and top_p != (0.99 if is_haiku_55 else 1):
                 msg = (
                     f"`top_p` is not supported for {self.model} at non-default values."
                 )
@@ -1832,7 +1833,14 @@ class ChatAnthropic(BaseChatModel):
                     "non-default values."
                 )
                 raise ValueError(msg)
-            if isinstance(thinking, Mapping) and thinking.get("type") == "disabled":
+            if is_haiku_55 and temperature is not None and top_p is not None:
+                msg = f"Set at most one of `temperature` and `top_p` for {self.model}."
+                raise ValueError(msg)
+            if (
+                not is_haiku_55
+                and isinstance(thinking, Mapping)
+                and thinking.get("type") == "disabled"
+            ):
                 msg = (
                     '`thinking={"type": "disabled"}` is not supported for '
                     f"{self.model}; omit `thinking` to use adaptive thinking."
@@ -1840,7 +1848,12 @@ class ChatAnthropic(BaseChatModel):
                 raise ValueError(msg)
 
         if (
-            (self.model.startswith("claude-opus-5") or is_fable_model or is_sonnet_55)
+            (
+                self.model.startswith("claude-opus-5")
+                or is_fable_model
+                or is_sonnet_55
+                or is_haiku_55
+            )
             and isinstance(thinking, Mapping)
             and thinking.get("type") == "enabled"
         ):
@@ -1852,7 +1865,7 @@ class ChatAnthropic(BaseChatModel):
             raise ValueError(msg)
 
         if (
-            self.model.startswith("claude-opus-5")
+            (self.model.startswith("claude-opus-5") or is_haiku_55)
             and isinstance(thinking, Mapping)
             and thinking.get("type") == "disabled"
             and output_config.get("effort") in {"xhigh", "max"}
@@ -2217,6 +2230,11 @@ class ChatAnthropic(BaseChatModel):
             block_start_event = None
             is_first_chunk = True
             for event in stream:
+                if event.type == "content_block_start" and event.content_block.type in {
+                    "thinking",
+                    "redacted_thinking",
+                }:
+                    coerce_content_to_string = False
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
@@ -2267,6 +2285,11 @@ class ChatAnthropic(BaseChatModel):
             block_start_event = None
             is_first_chunk = True
             async for event in stream:
+                if event.type == "content_block_start" and event.content_block.type in {
+                    "thinking",
+                    "redacted_thinking",
+                }:
+                    coerce_content_to_string = False
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
@@ -2779,7 +2802,8 @@ class ChatAnthropic(BaseChatModel):
             # Thinking discards forced choices before the request is sent, so
             # they need not refer to a tool that remains after filtering.
             thinking_discards_forced_choice = (
-                self.thinking is not None
+                not self.model.startswith("claude-haiku-5-5")
+                and self.thinking is not None
                 and self.thinking.get("type") in ("enabled", "adaptive")
                 and choice_type in ("any", "tool")
             )
@@ -2834,7 +2858,8 @@ class ChatAnthropic(BaseChatModel):
         # Drop forced tool_choice and warn, matching the behavior in
         # _get_llm_for_structured_output_when_thinking_is_enabled.
         if (
-            self.thinking is not None
+            not self.model.startswith("claude-haiku-5-5")
+            and self.thinking is not None
             and self.thinking.get("type") in ("enabled", "adaptive")
             and "tool_choice" in kwargs
             and kwargs["tool_choice"].get("type") in ("any", "tool")
@@ -2969,7 +2994,8 @@ class ChatAnthropic(BaseChatModel):
             # always be an AnthropicTool
             tool_name = formatted_tool["name"]
             if (
-                self.thinking is not None
+                not self.model.startswith("claude-haiku-5-5")
+                and self.thinking is not None
                 and self.thinking.get("type") in ("enabled", "adaptive")
             ) or not _supports_forced_tool_choice(self.model):
                 llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
