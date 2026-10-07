@@ -277,3 +277,18 @@ async def test_adelete_keys(amanager: InMemoryRecordManager) -> None:
     # Check if the deleted keys are no longer in the database
     remaining_keys = await amanager.alist_keys()
     assert remaining_keys == ["key3"]
+
+
+def test_empty_group_ids_is_a_valid_filter() -> None:
+    """`group_ids=[]` filters to nothing; only None means unfiltered (#40745)."""
+    manager = InMemoryRecordManager(namespace="empty-group-ids")
+    manager.create_schema()
+    manager.update(["a"], group_ids=[1])
+    manager.update(["b"], group_ids=[2])
+
+    assert manager.list_keys(group_ids=[]) == []
+    assert manager.list_keys(group_ids=[1]) == ["a"]
+    assert manager.list_keys() == ["a", "b"]
+
+    # update([]) with group_ids=[] is length-consistent and valid.
+    manager.update([], group_ids=[])
