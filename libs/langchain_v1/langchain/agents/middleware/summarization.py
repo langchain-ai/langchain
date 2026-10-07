@@ -257,7 +257,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         keep: ContextSize = ("messages", _DEFAULT_MESSAGES_TO_KEEP),
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
-        trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
+        trim_tokens_to_summarize: int | ContextFraction | ContextTokens | None = _DEFAULT_TRIM_TOKEN_LIMIT,
         **deprecated_kwargs: Any,
     ) -> None:
         """Initialize summarization middleware.
@@ -323,7 +323,12 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
             trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for
-                the summarization call.
+                the summarization call. Accepts an integer for an absolute token count,
+                a [`ContextFraction`][langchain.agents.middleware.summarization.ContextFraction]
+                tuple (e.g. `("fraction", 0.5)`) to use a fraction of the model's
+                `max_input_tokens`, or a
+                [`ContextTokens`][langchain.agents.middleware.summarization.ContextTokens]
+                tuple (e.g. `("tokens", 5000)`).
 
                 Pass `None` to skip trimming entirely.
         """
@@ -379,10 +384,33 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             self.token_counter = token_counter
             self._partial_token_counter = token_counter
         self.summary_prompt = summary_prompt
-        self.trim_tokens_to_summarize = trim_tokens_to_summarize
+        # Resolve tuple-form trim budget to an absolute token count.
+        if isinstance(trim_tokens_to_summarize, tuple):
+            self._validate_context_size(trim_tokens_to_summarize, "trim_tokens_to_summarize")
+            kind, value = trim_tokens_to_summarize
+            if kind == "fraction":
+                max_input = self._get_profile_limits()
+                if max_input is not None:
+                    self.trim_tokens_to_summarize: int | None = int(max_input * value)
+                else:
+                    # Profile unavailable now — will be caught by the
+                    # requires_profile guard below.
+                    self.trim_tokens_to_summarize = None
+            elif kind == "tokens":
+                self.trim_tokens_to_summarize = int(value)
+            else:
+                msg = (
+                    f"trim_tokens_to_summarize does not support '{kind}' — "
+                    "use 'fraction' or 'tokens', or pass an int directly."
+                )
+                raise ValueError(msg)
+        else:
+            self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
         requires_profile = any("fraction" in clause for clause in self._trigger_clauses)
         if self.keep[0] == "fraction":
+            requires_profile = True
+        if isinstance(trim_tokens_to_summarize, tuple) and trim_tokens_to_summarize[0] == "fraction":
             requires_profile = True
         if requires_profile and self._get_profile_limits() is None:
             msg = (
