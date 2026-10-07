@@ -155,7 +155,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Also Fireworks returns None for tool invocations
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
-        if reasoning_content := _dict.get("reasoning_content"):
+        if (
+            isinstance(reasoning_content := _dict.get("reasoning_content"), str)
+            and reasoning_content
+        ):
             additional_kwargs["reasoning_content"] = reasoning_content
 
         if function_call := _dict.get("function_call"):
