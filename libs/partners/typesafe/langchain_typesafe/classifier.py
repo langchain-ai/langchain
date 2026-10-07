@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-import logging
-from typing import Any
-
 import httpx2
 from langchain_core._api import beta
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
-from langchain_core.runnables.config import ensure_config
+from langchain_core.decisions import (
+    BaseDecisionModel,
+    Choice,
+    DecisionRequest,
+    DecisionResponse,
+    Predicate,
+    Question,
+    Score,
+)
 from langchain_core.utils import from_env, secret_from_env
-from langsmith.run_helpers import get_current_run_tree
 from pydantic import (
     ConfigDict,
     Field,
@@ -28,26 +31,19 @@ from langchain_typesafe.client import (
     TypeSafeAPITimeoutError,
     parse_response,
 )
-from langchain_typesafe.types import (
-    ClassifierRequest,
-    ClassifierResponse,
-)
 
 _DEFAULT_BASE_URL = "https://api.typesafe.ai"
 _DEFAULT_MODEL = "jev-latest"
 _DEFAULT_TIMEOUT = 30.0
-_LS_PROVIDER = "typesafe"
-
-logger = logging.getLogger(__name__)
 
 
 @beta()
-class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierResponse]):
+class TypeSafeClassifier(BaseDecisionModel):
     """Classify JSON-compatible state with TypeSafe.
 
-    `TypeSafeClassifier` is a LangChain `Runnable` for asking one or more typed
-    questions about text or structured state. A single request can combine binary
-    `Noul` judgments, categorical `Choice` classifications, and ordinal `Score`
+    `TypeSafeClassifier` is a `BaseDecisionModel` for asking one or more typed
+    questions about text or structured state. A single request can combine
+    `Predicate` judgments, categorical `Choice` classifications, and ordinal `Score`
     evaluations. The response preserves probabilities, confidence, and token usage so
     application code can decide whether to act, route, or request human review.
 
@@ -62,11 +58,11 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
     deterministic cleanup can close `classifier.client` and `classifier.async_client`
     directly, following the corresponding `httpx2` sync and async client interfaces.
 
-    Native TypeSafe state may be a string, JSON object, or JSON array. LangChain
-    `BaseMessage` objects and message sequences can appear at the root or anywhere
-    inside JSON objects and arrays. They are converted to role/content JSON before the
-    request is sent. Message IDs are omitted, while system, user, assistant, and tool
-    roles are preserved.
+    The request `input` is sent as TypeSafe state, which may be a string, JSON object,
+    or JSON array. LangChain `BaseMessage` objects and message sequences can appear at
+    the root or anywhere inside JSON objects and arrays. They are converted to
+    role/content JSON before the request is sent. Message IDs are omitted, while
+    system, user, assistant, and tool roles are preserved.
 
     The API key is read from `TYPESAFE_API_KEY` when `api_key` is omitted. Explicit
     constructor values take precedence over environment configuration.
@@ -79,6 +75,11 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         client: Optional synchronous `httpx2.Client` used by `invoke`.
         async_client: Optional asynchronous `httpx2.AsyncClient` used by `ainvoke`.
 
+    `Predicate` questions are sent as TypeSafe `noul` questions. `Choice` values must
+    be strings. `Score` levels with a description are sent as
+    `{"label": ..., "description": ...}` objects, and answer legends use the level
+    labels.
+
     Raises:
         ValueError: If credentials are unavailable or the timeout is not positive.
 
@@ -88,60 +89,60 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         independently addressable through its question ID.
 
         ```python
-        from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
+        from langchain_typesafe import Choice, Predicate, Score, TypeSafeClassifier
 
         classifier = TypeSafeClassifier()
 
         response = classifier.invoke(
             {
-                "state": (
+                "input": (
                     "Stripe has failed to connect for three days. "
                     "Please help immediately."
                 ),
                 "questions": {
                     "department": Choice(
                         instructions="Which team should handle this request?",
-                        criteria={
+                        choices={
                             "billing": "Payment or subscription issues.",
                             "technical": "Product bugs or integration failures.",
                         },
                     ),
-                    "urgent": Noul(
+                    "urgent": Predicate(
                         instructions="Does this message require an urgent response?"
                     ),
                     "frustration": Score(
                         instructions="How frustrated does the customer appear?",
-                        criteria=["Calm.", "Concerned but civil.", "Very angry."],
+                        levels=["Calm.", "Concerned but civil.", "Very angry."],
                     ),
                 },
             }
         )
         print(response.choices["department"].choice)
-        print(response.nouls["urgent"].noul)
+        print(response.predicates["urgent"].probability)
         print(response.scores["frustration"].score)
         ```
 
     ??? example "Classify asynchronously"
 
         `ainvoke` uses the classifier's asynchronous HTTP client and returns the same
-        `ClassifierResponse` type as `invoke`.
+        `DecisionResponse` type as `invoke`.
 
         ```python
-        from langchain_typesafe import Noul, TypeSafeClassifier
+        from langchain_typesafe import Predicate, TypeSafeClassifier
 
         classifier = TypeSafeClassifier()
 
         response = await classifier.ainvoke(
             {
-                "state": "Please refund the duplicate charge.",
+                "input": "Please refund the duplicate charge.",
                 "questions": {
-                    "refund_requested": Noul(
+                    "refund_requested": Predicate(
                         instructions="Does the customer request a refund?"
                     )
                 },
             }
         )
-        print(response.nouls["refund_requested"].noul)
+        print(response.predicates["refund_requested"].probability)
         ```
     """
 
@@ -173,7 +174,7 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         ```
 
         ```python
-        from langchain_typesafe import Noul, TypeSafeClassifier
+        from langchain_typesafe import TypeSafeClassifier
 
         classifier = TypeSafeClassifier()
         ```
@@ -288,71 +289,13 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         """Map the API-key field to its environment variable for serialization."""
         return {"api_key": "TYPESAFE_API_KEY"}
 
+    @property
     @override
-    def invoke(
-        self,
-        input: ClassifierRequest,
-        config: RunnableConfig | None = None,
-        **_: Any,
-    ) -> ClassifierResponse:
-        """Classify one request synchronously.
-
-        Args:
-            input: Complete request containing the state and typed questions.
-            config: Optional LangChain runnable configuration for callbacks, tags,
-                metadata, and tracing.
-            **_: Additional keyword arguments accepted for `Runnable` compatibility and
-                otherwise ignored.
-
-        Returns:
-            Structured TypeSafe answers and request metadata.
-
-        Raises:
-            TypeSafeAPIError: If TypeSafe returns an unsuccessful HTTP response.
-            TypeSafeAPIConnectionError: If no HTTP response is received.
-            TypeSafeAPITimeoutError: If the request exceeds its client timeout.
-            TypeSafeAPIResponseValidationError: If a successful response is malformed.
-        """
-        return self._call_with_config(
-            self._classify,
-            input,
-            self._traced_config(config),
-            run_type="llm",
-        )
+    def _provider(self) -> str:
+        return "typesafe"
 
     @override
-    async def ainvoke(
-        self,
-        input: ClassifierRequest,
-        config: RunnableConfig | None = None,
-        **_: Any,
-    ) -> ClassifierResponse:
-        """Classify one request asynchronously.
-
-        Args:
-            input: Complete request containing the state and typed questions.
-            config: Optional LangChain runnable configuration for callbacks, tags,
-                metadata, and tracing.
-            **_: Additional keyword arguments accepted for `Runnable` compatibility and
-                otherwise ignored.
-
-        Returns:
-            Structured TypeSafe answers and request metadata.
-
-        Raises:
-            TypeSafeAPIError: If TypeSafe returns an unsuccessful HTTP response.
-            TypeSafeAPIConnectionError: If no HTTP response is received.
-            TypeSafeAPITimeoutError: If the request exceeds its client timeout.
-            TypeSafeAPIResponseValidationError: If a successful response is malformed.
-        """
-        return await self._acall_with_config(
-            self._aclassify,
-            input,
-            self._traced_config(config),
-            run_type="llm",
-        )
-
-    def _classify(self, request: ClassifierRequest) -> ClassifierResponse:
+    def _decide(self, request: DecisionRequest) -> DecisionResponse:
         payload = self._payload(request)
         if self.client is None:  # pragma: no cover - guaranteed by model validation
             message = "Synchronous TypeSafe client was not initialized."
@@ -368,12 +311,10 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         except httpx2.HTTPError as error:
             message = "Unable to connect to the TypeSafe API."
             raise TypeSafeAPIConnectionError(message) from error
-        return self._record_usage(parse_response(response))
+        return parse_response(response, request["questions"])
 
-    async def _aclassify(
-        self,
-        request: ClassifierRequest,
-    ) -> ClassifierResponse:
+    @override
+    async def _adecide(self, request: DecisionRequest) -> DecisionResponse:
         payload = self._payload(request)
         if self.async_client is None:  # pragma: no cover - guaranteed by validation
             message = "Asynchronous TypeSafe client was not initialized."
@@ -389,38 +330,7 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         except httpx2.HTTPError as error:
             message = "Unable to connect to the TypeSafe API."
             raise TypeSafeAPIConnectionError(message) from error
-        return self._record_usage(parse_response(response))
-
-    def _traced_config(self, config: RunnableConfig | None) -> RunnableConfig:
-        """Set `ls_provider` and `ls_model_name` when run is created."""
-        config = ensure_config(config)
-        config["metadata"] = {
-            **(config.get("metadata") or {}),
-            "ls_provider": _LS_PROVIDER,
-            "ls_model_name": self.model,
-            "ls_model_type": "chat",
-        }
-        return config
-
-    def _record_usage(self, response: ClassifierResponse) -> ClassifierResponse:
-        """Attach TypeSafe token usage to the active run, if there is one.
-
-        Nothing is written when tracing is disabled, and a tracing failure never fails
-        an otherwise successful classification.
-        """
-        input_tokens = response.usage.input_tokens or 0
-        output_tokens = response.usage.output_tokens or 0
-        try:
-            run_tree = get_current_run_tree()
-            if run_tree is not None:
-                run_tree.extra.setdefault("metadata", {})["usage_metadata"] = {
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "total_tokens": input_tokens + output_tokens,
-                }
-        except Exception:  # noqa: BLE001 - tracing must not break classification
-            logger.debug("Could not attach TypeSafe usage.", exc_info=True)
-        return response
+        return parse_response(response, request["questions"])
 
     @property
     def _endpoint(self) -> str:
@@ -439,15 +349,53 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
             "User-Agent": f"langchain-typesafe/{__version__}",
         }
 
-    def _payload(self, request: ClassifierRequest) -> dict[str, JsonValue]:
+    def _payload(self, request: DecisionRequest) -> dict[str, JsonValue]:
         return {
-            "state": serialize_state(request["state"]),
+            "state": serialize_state(request["input"]),
             "model": self.model,
             "questions": {
-                name: question.model_dump(mode="json", exclude_none=True)
+                name: _question_payload(question)
                 for name, question in request["questions"].items()
             },
         }
+
+
+def _question_payload(question: Question) -> dict[str, JsonValue]:
+    """Translate a core question into the TypeSafe wire format.
+
+    Raises:
+        ValueError: If a `Choice` uses a non-string value, which TypeSafe cannot key.
+    """
+    if isinstance(question, Predicate):
+        return {"type": "noul", "instructions": question.instructions}
+    if isinstance(question, Choice):
+        criteria: dict[str, JsonValue] = {}
+        for value, description in question.choices.items():
+            if not isinstance(value, str):
+                msg = (
+                    f"TypeSafe choice values must be strings; got {value!r}. "
+                    "Use string values such as 'yes' and 'no'."
+                )
+                raise ValueError(msg)  # noqa: TRY004 - invalid value, not type misuse
+            criteria[value] = description
+        return {
+            "type": "choice",
+            "instructions": question.instructions,
+            "criteria": criteria,
+        }
+    if isinstance(question, Score):
+        return {
+            "type": "score",
+            "instructions": question.instructions,
+            "criteria": [
+                level.label
+                if level.description is None
+                else {"label": level.label, "description": level.description}
+                for level in question.as_levels()
+            ],
+        }
+    msg = f"Unsupported TypeSafe question type: {type(question).__name__}."
+    raise TypeError(msg)
 
 
 __all__ = ["TypeSafeClassifier"]

@@ -8,6 +8,7 @@ from typing import Any
 import openai
 import pytest
 from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.decisions import base as core_base
 from langchain_core.exceptions import ModelAuthenticationError
 from langchain_core.load import dumps, loads
 from pydantic import SecretStr, ValidationError
@@ -29,7 +30,6 @@ from langchain_openai.decisions import (
     Score,
     ScoreAnswer,
 )
-from langchain_openai.decisions import base as base_module
 
 API_KEY = "test-api-key"
 REQUEST_ID = "req_test"
@@ -419,7 +419,7 @@ def test_usage_is_recorded_on_the_active_run(
     `usage_metadata`, so both the payload and the run type are pinned.
     """
     stub = _RunTreeStub()
-    monkeypatch.setattr(base_module, "get_current_run_tree", lambda: stub)
+    monkeypatch.setattr(core_base, "get_current_run_tree", lambda: stub)
     recorder = _RunRecorder()
 
     _decisions().invoke(_request(), config={"callbacks": [recorder]})
@@ -438,7 +438,7 @@ async def test_async_usage_is_recorded_on_the_active_run(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     stub = _RunTreeStub()
-    monkeypatch.setattr(base_module, "get_current_run_tree", lambda: stub)
+    monkeypatch.setattr(core_base, "get_current_run_tree", lambda: stub)
 
     await _async_decisions(_async_ok).ainvoke(_request())
 

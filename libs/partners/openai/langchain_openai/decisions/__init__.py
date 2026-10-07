@@ -5,6 +5,7 @@ from langchain_openai.decisions.types import (
     Answer,
     Choice,
     ChoiceAnswer,
+    DecisionInput,
     DecisionRequest,
     DecisionResponse,
     Level,
@@ -14,7 +15,6 @@ from langchain_openai.decisions.types import (
     RefusalAnswer,
     Score,
     ScoreAnswer,
-    State,
     Usage,
 )
 
@@ -22,6 +22,7 @@ __all__ = [
     "Answer",
     "Choice",
     "ChoiceAnswer",
+    "DecisionInput",
     "DecisionRequest",
     "DecisionResponse",
     "Level",
@@ -32,6 +33,5 @@ __all__ = [
     "RefusalAnswer",
     "Score",
     "ScoreAnswer",
-    "State",
     "Usage",
 ]

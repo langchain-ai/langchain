@@ -9,7 +9,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import ValidationError
 
-from langchain_typesafe import Choice, ChoiceAnswer
+from langchain_typesafe import Choice, ChoiceAnswer, DecisionResponse
 from langchain_typesafe.classifier import TypeSafeClassifier
 from langchain_typesafe.experimental.middleware import (
     ModelChoice,
@@ -19,11 +19,10 @@ from langchain_typesafe.experimental.middleware import (
     __all__ as middleware_all,
 )
 from langchain_typesafe.experimental.middleware.model_router import _routing_questions
-from langchain_typesafe.types import ClassifierResponse
 
 
-def _response(route: str) -> ClassifierResponse:
-    return ClassifierResponse(
+def _response(route: str) -> DecisionResponse:
+    return DecisionResponse(
         model="jev-latest",
         answers={
             "model_route": ChoiceAnswer(
@@ -77,7 +76,7 @@ def test_middleware_constructs_classifier_from_routing_configuration() -> None:
     assert _routing_questions(middleware.config) == {
         "model_route": Choice(
             instructions="Choose the least costly model suited to the task.",
-            criteria={"fast": "Simple tasks.", "powerful": "Complex tasks."},
+            choices={"fast": "Simple tasks.", "powerful": "Complex tasks."},
         )
     }
     assert middleware.classifier is classifier
@@ -106,7 +105,7 @@ async def test_agent_routes_using_latest_human_message(*, asynchronous: bool) ->
         result = await agent.ainvoke(inputs)
         classifier.ainvoke.assert_awaited_once_with(
             {
-                "state": latest_message,
+                "input": latest_message,
                 "questions": _routing_questions(middleware.config),
             }
         )
@@ -114,7 +113,7 @@ async def test_agent_routes_using_latest_human_message(*, asynchronous: bool) ->
         result = agent.invoke(inputs)
         classifier.invoke.assert_called_once_with(
             {
-                "state": latest_message,
+                "input": latest_message,
                 "questions": _routing_questions(middleware.config),
             }
         )
@@ -186,4 +185,5 @@ def test_experimental_public_interface() -> None:
         "AutoModeMiddleware",
         "ModelChoice",
         "ModelRouterMiddleware",
+        "NoulCriteria",
     ]

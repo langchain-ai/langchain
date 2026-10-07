@@ -20,6 +20,7 @@ from langchain.agents.middleware.types import (
 )
 from langchain.chat_models import init_chat_model
 from langchain_core._api import beta
+from langchain_core.decisions import BaseDecisionModel
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, convert_to_openai_messages
 from typing_extensions import NotRequired, override
@@ -88,7 +89,8 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         choices: Named model choices, each containing a LangChain model or model
             string and the criterion for selecting it.
         instructions: Routing question sent to the Decisions API.
-        model: Decisions model name, or a configured `OpenAIDecisions` instance.
+        model: OpenAI Decisions model name, or any configured
+            `BaseDecisionModel`, such as `OpenAIDecisions`.
 
     ??? example "Route agent calls by task"
 
@@ -126,14 +128,15 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         *,
         choices: Mapping[str, ModelChoice],
         instructions: str,
-        model: str | OpenAIDecisions,
+        model: str | BaseDecisionModel,
     ) -> None:
         """Initialize the model router.
 
         Args:
             choices: Named model choices and the criterion for selecting each.
             instructions: Routing question sent to the Decisions API.
-            model: Decisions model name, or a configured `OpenAIDecisions` instance.
+            model: OpenAI Decisions model name, or any configured
+                `BaseDecisionModel`, such as `OpenAIDecisions`.
 
         Raises:
             ValueError: If `choices` is empty or `instructions` is blank.

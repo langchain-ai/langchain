@@ -9,7 +9,7 @@ from langchain_core.messages import BaseMessage, convert_to_openai_messages
 from pydantic import JsonValue
 
 if TYPE_CHECKING:
-    from langchain_typesafe.types import State
+    from langchain_core.decisions import DecisionInput
 
 
 def _serialize_state_value(value: object) -> JsonValue:
@@ -28,11 +28,11 @@ def _serialize_state_value(value: object) -> JsonValue:
     raise TypeError(message)
 
 
-def serialize_state(state: State) -> JsonValue:
+def serialize_state(state: DecisionInput) -> JsonValue:
     """Recursively convert LangChain messages inside TypeSafe state to JSON.
 
     Args:
-        state: Native TypeSafe state containing zero or more LangChain messages.
+        state: Decision input containing zero or more LangChain messages.
 
     Returns:
         A string, object, or array suitable for the TypeSafe `state` field. Every

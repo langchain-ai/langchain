@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
-from langchain_typesafe.types import Noul, NoulCriteria, Question
+from langchain_typesafe.types import Predicate, Question
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -58,6 +58,19 @@ _DEFAULT_FALSE_CRITERIA = (
 )
 
 
+class NoulCriteria(BaseModel):
+    """Descriptions of what should count as risky (`true`) and safe (`false`).
+
+    Criteria are appended to the risk instructions sent to TypeSafe.
+    """
+
+    true: str | None = None
+    """Description of a risky call, or `None` when no clarification is needed."""
+
+    false: str | None = None
+    """Description of a safe call, or `None` when no clarification is needed."""
+
+
 class _AutoModeConfig(BaseModel):
     """Validated Auto Mode execution configuration."""
 
@@ -73,19 +86,21 @@ class _AutoModeConfig(BaseModel):
 
 def _risk_questions(config: _AutoModeConfig) -> dict[str, Question]:
     """Build the risk question from validated middleware configuration."""
-    return {
-        _QUESTION_ID: Noul(
-            instructions=config.instructions,
-            criteria=config.criteria,
-        )
-    }
+    instructions = config.instructions
+    criteria = config.criteria
+    if criteria is not None:
+        if criteria.true is not None:
+            instructions += f"\n\nAnswer yes if: {criteria.true}"
+        if criteria.false is not None:
+            instructions += f"\nAnswer no if: {criteria.false}"
+    return {_QUESTION_ID: Predicate(instructions=instructions)}
 
 
 class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Allow low-risk tool calls and block risky calls using TypeSafe.
 
     This middleware is experimental. It intercepts explicitly configured tools
-    immediately before execution and asks a TypeSafe `Noul` question for the probability
+    immediately before execution and asks a TypeSafe `Predicate` for the probability
     that each call is risky or insufficiently authorized. Calls below `threshold`
     execute normally. Calls at or above the threshold return an error `ToolMessage`
     without invoking the tool handler. Tool names not listed in `tools` bypass
@@ -111,15 +126,17 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         tools: Tool names or `BaseTool` instances to classify before execution. Unlisted
             tools are passed to the handler without classification.
         instructions: Risk-classification instructions sent to TypeSafe.
-        criteria: Optional descriptions of what should count as risky and safe. Pass
-            `None` to classify without outcome criteria.
+        criteria: Optional descriptions of what should count as risky and safe,
+            appended to `instructions`. Pass `None` to classify without them.
 
     ??? example "Customize the risk criteria"
 
         ```python
         from langchain.agents import create_agent
-        from langchain_typesafe import NoulCriteria
-        from langchain_typesafe.experimental.middleware import AutoModeMiddleware
+        from langchain_typesafe.experimental.middleware import (
+            AutoModeMiddleware,
+            NoulCriteria,
+        )
 
         auto_mode = AutoModeMiddleware(
             tools=[delete_file],
@@ -224,11 +241,11 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
             return handler(request)
         response = self.classifier.invoke(
             {
-                "state": self._classification_state(request),
+                "input": self._classification_state(request),
                 "questions": _risk_questions(self.config),
             }
         )
-        probability = response.nouls[_QUESTION_ID].noul
+        probability = response.predicates[_QUESTION_ID].probability
         if probability >= _PROBABILITY_THRESHOLD:
             return self._blocked_tool_message(request, probability)
         return handler(request)
@@ -255,14 +272,14 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
             return await handler(request)
         response = await self.classifier.ainvoke(
             {
-                "state": self._classification_state(request),
+                "input": self._classification_state(request),
                 "questions": _risk_questions(self.config),
             }
         )
-        probability = response.nouls[_QUESTION_ID].noul
+        probability = response.predicates[_QUESTION_ID].probability
         if probability >= _PROBABILITY_THRESHOLD:
             return self._blocked_tool_message(request, probability)
         return await handler(request)
 
 
-__all__ = ["AutoModeMiddleware"]
+__all__ = ["AutoModeMiddleware", "NoulCriteria"]

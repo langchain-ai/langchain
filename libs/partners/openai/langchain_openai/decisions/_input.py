@@ -13,10 +13,10 @@ from langchain_core.messages import (
 )
 
 if TYPE_CHECKING:
-    from langchain_openai.decisions.types import State
+    from langchain_core.decisions import DecisionInput
 
 
-def to_decision_input(state: State) -> str | list[dict[str, Any]]:
+def to_decision_input(state: DecisionInput) -> str | list[dict[str, Any]]:
     """Convert state to a string or a list of user messages.
 
     Args:
@@ -67,7 +67,7 @@ def _to_input_part(block: dict[str, Any]) -> dict[str, Any]:
     raise ValueError(msg)
 
 
-def _serialize_as_json_text(state: State) -> str:
+def _serialize_as_json_text(state: DecisionInput) -> str:
     """Serialize state the API cannot accept natively to JSON text.
 
     Covers conversations with non-user messages and JSON objects or arrays. Messages

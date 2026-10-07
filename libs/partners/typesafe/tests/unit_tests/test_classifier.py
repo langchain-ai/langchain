@@ -9,21 +9,23 @@ import httpx2
 import pytest
 from langchain_core._api import LangChainBetaWarning
 from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.decisions import base as decisions_base
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import SecretStr, ValidationError
 
 from langchain_typesafe import (
     Choice,
     ChoiceAnswer,
-    ClassifierRequest,
-    Noul,
-    NoulAnswer,
+    DecisionRequest,
+    Level,
+    Predicate,
+    PredicateAnswer,
+    Question,
     Score,
     ScoreAnswer,
     TypeSafeClassifier,
     __version__,
 )
-from langchain_typesafe import classifier as classifier_module
 from langchain_typesafe.client import (
     TypeSafeAPIConnectionError,
     TypeSafeAPIError,
@@ -33,7 +35,7 @@ from langchain_typesafe.client import (
 
 
 class _RunTreeStub:
-    """Stand-in for the LangSmith run tree that `_record_usage` writes to."""
+    """Stand-in for the LangSmith run tree that core usage recording writes to."""
 
     def __init__(self) -> None:
         self.extra: dict[str, Any] = {}
@@ -80,22 +82,29 @@ def _response_payload() -> dict[str, Any]:
     }
 
 
-def _questions() -> dict[str, Choice | Noul | Score]:
+def _questions() -> dict[str, Question]:
     return {
         "department": Choice(
             instructions="Which team should handle this?",
-            criteria={"billing": "Payment issues", "technical": None},
+            choices={"billing": "Payment issues", "technical": None},
         ),
-        "urgent": Noul(instructions="Is this urgent?"),
+        "urgent": Predicate(instructions="Is this urgent?"),
         "frustration": Score(
             instructions="How frustrated is the customer?",
-            criteria=["calm", "frustrated", "angry"],
+            levels=["calm", "frustrated", "angry"],
         ),
     }
 
 
-def _request(state: Any = "hello") -> ClassifierRequest:
-    return {"state": state, "questions": _questions()}
+def _urgent_payload() -> dict[str, Any]:
+    return {
+        "model": "jev-latest",
+        "answers": {"urgent": {"type": "noul", "noul": 0.95}},
+    }
+
+
+def _request(state: Any = "hello") -> DecisionRequest:
+    return {"input": state, "questions": _questions()}
 
 
 def test_classifier_is_beta() -> None:
@@ -110,19 +119,19 @@ def test_classifier_is_beta() -> None:
 
 
 def test_questions_require_instructions() -> None:
-    """Every TypeSafe question requires an explicit instruction."""
+    """Every question requires an explicit instruction."""
     with pytest.raises(ValidationError, match="instructions"):
-        Noul.model_validate({})
+        Predicate.model_validate({})
     with pytest.raises(ValidationError, match="instructions"):
-        Choice.model_validate({"criteria": {"billing": None}})
+        Choice.model_validate({"choices": {"billing": None}})
     with pytest.raises(ValidationError, match="instructions"):
-        Score.model_validate({"criteria": ["low", "high"]})
+        Score.model_validate({"levels": ["low", "high"]})
 
 
 def test_score_requires_two_levels() -> None:
     """A Score rubric must define at least two ordered levels."""
     with pytest.raises(ValidationError, match="at least 2"):
-        Score(instructions="How urgent is this?", criteria=["low"])
+        Score(instructions="How urgent is this?", levels=["low"])
 
 
 @pytest.mark.parametrize("model", ["", "   "])
@@ -149,11 +158,11 @@ def test_invoke_sends_request_and_parses_response() -> None:
             "questions": {
                 "department": {
                     "type": "choice",
+                    "instructions": "Which team should handle this?",
                     "criteria": {
                         "billing": "Payment issues",
                         "technical": None,
                     },
-                    "instructions": "Which team should handle this?",
                 },
                 "urgent": {
                     "type": "noul",
@@ -161,8 +170,8 @@ def test_invoke_sends_request_and_parses_response() -> None:
                 },
                 "frustration": {
                     "type": "score",
-                    "criteria": ["calm", "frustrated", "angry"],
                     "instructions": "How frustrated is the customer?",
+                    "criteria": ["calm", "frustrated", "angry"],
                 },
             },
         }
@@ -178,8 +187,8 @@ def test_invoke_sends_request_and_parses_response() -> None:
         client=client,
     )
 
-    request: ClassifierRequest = {
-        "state": {"message": "Stripe fails to connect."},
+    request: DecisionRequest = {
+        "input": {"message": "Stripe fails to connect."},
         "questions": _questions(),
     }
     result = classifier.invoke(request)
@@ -192,7 +201,9 @@ def test_invoke_sends_request_and_parses_response() -> None:
         probabilities={"billing": 0.1, "technical": 0.9},
         confidence=0.8,
     )
-    assert result.nouls["urgent"] == NoulAnswer(type="noul", noul=0.95)
+    assert result.predicates["urgent"] == PredicateAnswer(
+        type="predicate", probability=0.95
+    )
     assert result.scores["frustration"] == ScoreAnswer(
         type="score",
         score=1.25,
@@ -260,22 +271,22 @@ def test_message_sequence_is_serialized_as_conversation_state() -> None:
     client.close()
 
 
-def test_invoke_accepts_classifier_request() -> None:
+def test_invoke_accepts_decision_request() -> None:
     """The complete typed request is accepted as the Runnable input."""
     observed_payload: dict[str, Any] = {}
-    questions: dict[str, Choice | Noul | Score] = {
-        "urgent": Noul(instructions="Is this urgent?")
+    questions: dict[str, Question] = {
+        "urgent": Predicate(instructions="Is this urgent?")
     }
 
     def handler(request: httpx2.Request) -> httpx2.Response:
         observed_payload.update(json.loads(request.content))
-        return httpx2.Response(200, json=_response_payload())
+        return httpx2.Response(200, json=_urgent_payload())
 
     client = httpx2.Client(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
 
-    request: ClassifierRequest = {
-        "state": {"message": "Please help ASAP."},
+    request: DecisionRequest = {
+        "input": {"message": "Please help ASAP."},
         "questions": questions,
     }
     classifier.invoke(request)
@@ -288,22 +299,22 @@ def test_invoke_accepts_classifier_request() -> None:
 
 
 @pytest.mark.asyncio
-async def test_ainvoke_accepts_classifier_request() -> None:
+async def test_ainvoke_accepts_decision_request() -> None:
     """The asynchronous API accepts the same typed request input."""
     observed_payload: dict[str, Any] = {}
-    questions: dict[str, Choice | Noul | Score] = {
-        "urgent": Noul(instructions="Is this urgent?")
+    questions: dict[str, Question] = {
+        "urgent": Predicate(instructions="Is this urgent?")
     }
 
     async def handler(request: httpx2.Request) -> httpx2.Response:
         observed_payload.update(json.loads(request.content))
-        return httpx2.Response(200, json=_response_payload())
+        return httpx2.Response(200, json=_urgent_payload())
 
     async_client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
     classifier = TypeSafeClassifier(api_key=API_KEY, async_client=async_client)
 
-    request: ClassifierRequest = {
-        "state": "Please help ASAP.",
+    request: DecisionRequest = {
+        "input": "Please help ASAP.",
         "questions": questions,
     }
     await classifier.ainvoke(request)
@@ -618,7 +629,7 @@ def test_usage_is_recorded_on_the_active_run(
     `usage_metadata`, so both the payload and the run type are pinned.
     """
     stub = _RunTreeStub()
-    monkeypatch.setattr(classifier_module, "get_current_run_tree", lambda: stub)
+    monkeypatch.setattr(decisions_base, "get_current_run_tree", lambda: stub)
 
     def handler(_: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, json=_response_payload())
@@ -637,7 +648,7 @@ def test_usage_is_recorded_on_the_active_run(
     client.close()
 
     assert recorder.run_type == "llm"
-    assert recorder.input["state"] == "hello"
+    assert recorder.input["input"] == "hello"
     assert set(recorder.input["questions"]) == set(_questions())
     assert stub.extra["metadata"]["usage_metadata"] == {
         "input_tokens": 42,
@@ -651,7 +662,7 @@ async def test_async_usage_is_recorded_on_the_active_run(
 ) -> None:
     """`ainvoke` records the same usage as `invoke`."""
     stub = _RunTreeStub()
-    monkeypatch.setattr(classifier_module, "get_current_run_tree", lambda: stub)
+    monkeypatch.setattr(decisions_base, "get_current_run_tree", lambda: stub)
 
     async def handler(_: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, json=_response_payload())
@@ -709,3 +720,105 @@ def test_untraced_invocation_is_unaffected() -> None:
     client.close()
 
     assert result.usage.input_tokens == 42
+
+
+def test_bool_choice_value_is_rejected_before_sending() -> None:
+    """TypeSafe criteria keys must be strings, so boolean choices are refused."""
+    sent = False
+
+    def handler(_: httpx2.Request) -> httpx2.Response:
+        nonlocal sent
+        sent = True
+        return httpx2.Response(200, json=_response_payload())
+
+    client = httpx2.Client(transport=httpx2.MockTransport(handler))
+    classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
+
+    with pytest.raises(ValueError, match="choice values must be strings"):
+        classifier.invoke(
+            {
+                "input": "hello",
+                "questions": {
+                    "flag": Choice(
+                        instructions="Is this flagged?",
+                        choices={True: "Flagged.", False: "Not flagged."},
+                    )
+                },
+            }
+        )
+
+    assert not sent
+    client.close()
+
+
+def test_score_levels_are_sent_and_legend_uses_labels() -> None:
+    """Described levels are sent as JSON objects, and legends use level labels."""
+    observed_criteria: Any = None
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        nonlocal observed_criteria
+        observed_criteria = json.loads(request.content)["questions"]["severity"][
+            "criteria"
+        ]
+        return httpx2.Response(
+            200,
+            json={
+                "model": "jev-latest",
+                "answers": {
+                    "severity": {
+                        "type": "score",
+                        "score": 0.4,
+                        "legend": {
+                            "0": "low",
+                            "1": {"label": "high", "description": "Data loss."},
+                        },
+                        "probabilities": {"0": 0.6, "1": 0.4},
+                        "confidence": 0.5,
+                    }
+                },
+            },
+        )
+
+    client = httpx2.Client(transport=httpx2.MockTransport(handler))
+    classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
+
+    result = classifier.invoke(
+        {
+            "input": "The export lost a row.",
+            "questions": {
+                "severity": Score(
+                    instructions="How severe is this?",
+                    levels=["low", Level(label="high", description="Data loss.")],
+                )
+            },
+        }
+    )
+    client.close()
+
+    assert observed_criteria == [
+        "low",
+        {"label": "high", "description": "Data loss."},
+    ]
+    assert result.scores["severity"].legend == {0: "low", 1: "high"}
+    assert result.scores["severity"].probabilities == {0: 0.6, 1: 0.4}
+
+
+def test_score_answer_for_non_score_question_is_rejected() -> None:
+    """A score answer without a matching `Score` question is a malformed response."""
+
+    def handler(_: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=_response_payload())
+
+    client = httpx2.Client(transport=httpx2.MockTransport(handler))
+    classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
+
+    with pytest.raises(TypeSafeAPIResponseValidationError) as exc_info:
+        classifier.invoke(
+            {
+                "input": "hello",
+                "questions": {"urgent": Predicate(instructions="Is this urgent?")},
+            }
+        )
+    client.close()
+
+    assert exc_info.value.field_path == "answers.frustration.type"

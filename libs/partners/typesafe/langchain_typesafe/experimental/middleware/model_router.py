@@ -28,14 +28,13 @@ except ImportError as error:
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
-from pydantic import BaseModel, Field, JsonValue
+from pydantic import BaseModel, Field
 from typing_extensions import NotRequired, override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
 from langchain_typesafe.types import Choice, ChoiceAnswer, Question
 
 _QUESTION_ID = "model_route"
-_QuestionContent = str | dict[str, JsonValue] | list[JsonValue]
 
 
 @dataclass(frozen=True)
@@ -48,14 +47,14 @@ class ModelChoice:
     """
 
     model: str | BaseChatModel
-    criteria: JsonValue
+    criteria: str
 
 
 class _ModelRouterConfig(BaseModel):
     """Validated model-router configuration."""
 
     choices: dict[str, ModelChoice] = Field(min_length=1)
-    instructions: _QuestionContent
+    instructions: str = Field(min_length=1)
 
 
 def _routing_questions(config: _ModelRouterConfig) -> dict[str, Question]:
@@ -63,7 +62,7 @@ def _routing_questions(config: _ModelRouterConfig) -> dict[str, Question]:
     return {
         _QUESTION_ID: Choice(
             instructions=config.instructions,
-            criteria={
+            choices={
                 route: choice.criteria for route, choice in config.choices.items()
             },
         )
@@ -137,7 +136,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         self,
         *,
         choices: Mapping[str, ModelChoice],
-        instructions: _QuestionContent,
+        instructions: str,
     ) -> None:
         """Initialize the model router."""
         self.config = _ModelRouterConfig.model_validate(
@@ -167,7 +166,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         """Classify the latest task and store the complete routing answer."""
         response = self.classifier.invoke(
             {
-                "state": self._latest_human_message(state),
+                "input": self._latest_human_message(state),
                 "questions": _routing_questions(self.config),
             }
         )
@@ -180,7 +179,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         """Classify the latest task asynchronously and store the routing answer."""
         response = await self.classifier.ainvoke(
             {
-                "state": self._latest_human_message(state),
+                "input": self._latest_human_message(state),
                 "questions": _routing_questions(self.config),
             }
         )
@@ -194,7 +193,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     ) -> ModelResponse[ResponseT]:
         """Route a synchronous model call to the selected model."""
         answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
-        return handler(request.override(model=self.models[answer.choice]))
+        return handler(request.override(model=self.models[str(answer.choice)]))
 
     @override
     async def awrap_model_call(
@@ -206,7 +205,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     ) -> ModelResponse[ResponseT]:
         """Route an asynchronous model call to the selected model."""
         answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
-        return await handler(request.override(model=self.models[answer.choice]))
+        return await handler(request.override(model=self.models[str(answer.choice)]))
 
 
 __all__ = ["ModelChoice", "ModelRouterMiddleware"]

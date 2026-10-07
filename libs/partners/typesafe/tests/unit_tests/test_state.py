@@ -10,7 +10,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langchain_typesafe._state import serialize_state
 
 if TYPE_CHECKING:
-    from langchain_typesafe.types import State
+    from langchain_typesafe.types import DecisionInput
 
 
 def test_empty_array_and_sequence_are_supported() -> None:
@@ -22,7 +22,7 @@ def test_empty_array_and_sequence_are_supported() -> None:
 def test_mixed_message_and_json_array_is_serialized_recursively() -> None:
     """Messages can appear alongside ordinary JSON values in an array."""
     state = cast(
-        "State",
+        "DecisionInput",
         [HumanMessage("hello"), {"priority": 1}, "plain JSON"],
     )
 
@@ -35,7 +35,7 @@ def test_mixed_message_and_json_array_is_serialized_recursively() -> None:
 
 def test_messages_can_be_nested_inside_json_objects() -> None:
     """Message sequences and individual messages serialize at any object depth."""
-    state: State = {
+    state: DecisionInput = {
         "ticket": {
             "messages": (
                 SystemMessage("You are a support assistant."),

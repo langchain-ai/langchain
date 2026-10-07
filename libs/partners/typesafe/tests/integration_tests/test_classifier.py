@@ -10,9 +10,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_typesafe import (
     Choice,
     ChoiceAnswer,
-    ClassifierRequest,
-    Noul,
-    NoulAnswer,
+    DecisionRequest,
+    Predicate,
+    PredicateAnswer,
     Question,
     Score,
     ScoreAnswer,
@@ -21,21 +21,23 @@ from langchain_typesafe import (
 
 
 def test_invoke_all_question_types() -> None:
-    """Exercise the live sync API across Choice, Noul, and Score questions."""
+    """Exercise the live sync API across Choice, Predicate, and Score questions."""
     labels = {"billing", "technical", "sales"}
     questions: dict[str, Question] = {
         "department": Choice(
             instructions="Which team should handle this request?",
-            criteria={
+            choices={
                 "billing": "Payment or subscription issues.",
                 "technical": "Product bugs or integration failures.",
                 "sales": "Pricing or purchasing questions.",
             },
         ),
-        "urgent": Noul(instructions="Does this message require an urgent response?"),
+        "urgent": Predicate(
+            instructions="Does this message require an urgent response?"
+        ),
         "frustration": Score(
             instructions="How frustrated does the customer appear?",
-            criteria=[
+            levels=[
                 "Calm and neutral.",
                 "Concerned but civil.",
                 "Very angry or using strong language.",
@@ -45,8 +47,8 @@ def test_invoke_all_question_types() -> None:
     classifier = TypeSafeClassifier()
 
     try:
-        request: ClassifierRequest = {
-            "state": {
+        request: DecisionRequest = {
+            "input": {
                 "message": (
                     "Stripe has failed to connect for three days. "
                     "Please help immediately."
@@ -66,12 +68,16 @@ def test_invoke_all_question_types() -> None:
         assert set(department.probabilities) == labels
         assert sum(department.probabilities.values()) == pytest.approx(1.0)
 
-        assert isinstance(urgent, NoulAnswer)
-        assert 0 <= urgent.noul <= 1
+        assert isinstance(urgent, PredicateAnswer)
+        assert 0 <= urgent.probability <= 1
 
         assert isinstance(frustration, ScoreAnswer)
         assert 0 <= frustration.score <= 2
-        assert set(frustration.legend) == {0, 1, 2}
+        assert frustration.legend == {
+            0: "Calm and neutral.",
+            1: "Concerned but civil.",
+            2: "Very angry or using strong language.",
+        }
         assert set(frustration.probabilities) == {0, 1, 2}
         assert sum(frustration.probabilities.values()) == pytest.approx(1.0)
 
@@ -89,15 +95,15 @@ def test_invoke_all_question_types() -> None:
 async def test_ainvoke_with_nested_messages() -> None:
     """Exercise the live async API with messages nested in structured state."""
     questions: dict[str, Question] = {
-        "needs_support": Noul(
+        "needs_support": Predicate(
             instructions="Does the user need help resolving a technical problem?"
         )
     }
     classifier = TypeSafeClassifier()
 
     try:
-        request: ClassifierRequest = {
-            "state": {
+        request: DecisionRequest = {
+            "input": {
                 "conversation": [
                     SystemMessage("You are reviewing a customer support conversation."),
                     HumanMessage(
@@ -117,8 +123,8 @@ async def test_ainvoke_with_nested_messages() -> None:
         response = await classifier.ainvoke(request)
 
         needs_support = response.answers["needs_support"]
-        assert isinstance(needs_support, NoulAnswer)
-        assert 0 <= needs_support.noul <= 1
+        assert isinstance(needs_support, PredicateAnswer)
+        assert 0 <= needs_support.probability <= 1
         assert response.model.startswith("jev-")
         assert response.request_id
     finally:

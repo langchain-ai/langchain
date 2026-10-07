@@ -13,48 +13,48 @@ Set the `TYPESAFE_API_KEY` environment variable before making requests.
 
 ## Usage
 
-`TypeSafeClassifier` is a LangChain `Runnable` for probabilistic classification and scoring with TypeSafe.
+`TypeSafeClassifier` is a LangChain decision model (`BaseDecisionModel`) for probabilistic classification and scoring with TypeSafe. Its question and answer types are the shared `langchain_core.decisions` types, re-exported from `langchain_typesafe`.
 
 ```python
-from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
+from langchain_typesafe import Choice, Predicate, Score, TypeSafeClassifier
 
 classifier = TypeSafeClassifier()
 
 result = classifier.invoke(
     {
-        "state": "Stripe has failed to connect for three days. Help ASAP.",
+        "input": "Stripe has failed to connect for three days. Help ASAP.",
         "questions": {
             "department": Choice(
                 instructions="Which team should handle this?",
-                criteria={
+                choices={
                     "billing": "Payment or subscription issues",
                     "technical": "Product or integration issues",
                 },
             ),
-            "urgent": Noul(instructions="Does this message express urgency?"),
+            "urgent": Predicate(instructions="Does this message express urgency?"),
             "frustration": Score(
                 instructions="How frustrated does the customer appear?",
-                criteria=["calm", "frustrated", "angry"],
+                levels=["calm", "frustrated", "angry"],
             ),
         },
     }
 )
 print(result.choices["department"].choice)
-print(result.nouls["urgent"].noul)
+print(result.predicates["urgent"].probability)
 print(result.scores["frustration"].score)
 ```
 
-Pass a complete `ClassifierRequest` mapping to `invoke` or `ainvoke`. Keeping both
-`state` and `questions` in the Runnable input makes the complete classification request
+Pass a complete `DecisionRequest` mapping to `invoke` or `ainvoke`. Keeping both
+`input` and `questions` in the Runnable input makes the complete classification request
 available to composition, batching, callbacks, and tracing. Use
 `await classifier.ainvoke(...)` for asynchronous applications:
 
 ```python
-from langchain_typesafe import ClassifierRequest
+from langchain_typesafe import DecisionRequest
 
-request: ClassifierRequest = {
-    "state": "Stripe has failed to connect for three days. Help ASAP.",
-    "questions": {"urgent": Noul(instructions="Is this urgent?")},
+request: DecisionRequest = {
+    "input": "Stripe has failed to connect for three days. Help ASAP.",
+    "questions": {"urgent": Predicate(instructions="Is this urgent?")},
 }
 result = classifier.invoke(request)
 ```
@@ -102,8 +102,10 @@ The model router classifies the latest human message once per agent run and stor
 `AutoModeMiddleware` classifies calls to explicitly configured tools and blocks risky calls before execution:
 
 ```python
-from langchain_typesafe import NoulCriteria
-from langchain_typesafe.experimental.middleware import AutoModeMiddleware
+from langchain_typesafe.experimental.middleware import (
+    AutoModeMiddleware,
+    NoulCriteria,
+)
 
 auto_mode = AutoModeMiddleware(
     tools=[delete_file],
@@ -119,7 +121,7 @@ agent = create_agent(
 )
 ```
 
-`tools` accepts tool names or `BaseTool` instances. Customize `instructions` for the overall risk question and `criteria` for application-specific risky and safe outcomes. Configured calls whose risk probability meets or exceeds the threshold return an error `ToolMessage`.
+`tools` accepts tool names or `BaseTool` instances. Customize `instructions` for the overall risk question and `criteria` for application-specific risky and safe outcomes; criteria are appended to the instructions. Configured calls whose risk probability meets or exceeds the threshold return an error `ToolMessage`.
 
 ### LangChain messages as state
 
@@ -130,7 +132,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 response = classifier.invoke(
     {
-        "state": {
+        "input": {
             "conversation": [
                 SystemMessage("You are reviewing a customer support conversation."),
                 HumanMessage("My payouts have failed for three days. Help!"),
@@ -138,7 +140,7 @@ response = classifier.invoke(
             "account_tier": "enterprise",
         },
         "questions": {
-            "urgent": Noul(instructions="Does this customer need urgent help?")
+            "urgent": Predicate(instructions="Does this customer need urgent help?")
         },
     }
 )
@@ -170,8 +172,8 @@ from langchain_typesafe import TypeSafeRateLimitError
 try:
     response = classifier.invoke(
         {
-            "state": "Classify this message.",
-            "questions": {"urgent": Noul(instructions="Is this urgent?")},
+            "input": "Classify this message.",
+            "questions": {"urgent": Predicate(instructions="Is this urgent?")},
         }
     )
 except TypeSafeRateLimitError as error:

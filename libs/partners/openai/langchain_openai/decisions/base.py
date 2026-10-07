@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Awaitable, Callable, Mapping
 from functools import cached_property
 from typing import Any, cast
 
 import openai
 from langchain_core._api import beta
-from langchain_core.runnables import RunnableConfig, RunnableSerializable
-from langchain_core.runnables.config import ensure_config
+from langchain_core.decisions import (
+    BaseDecisionModel,
+    Choice,
+    DecisionRequest,
+    DecisionResponse,
+    Question,
+    Score,
+)
 from langchain_core.utils import from_env, secret_from_env
-from langsmith.run_helpers import get_current_run_tree
 from pydantic import ConfigDict, Field, SecretStr, ValidationError, model_validator
 from typing_extensions import Self, override
 
@@ -25,22 +29,23 @@ from langchain_openai.chat_models.base import (
     _handle_openai_bad_request,
 )
 from langchain_openai.decisions._input import to_decision_input
-from langchain_openai.decisions.types import DecisionRequest, DecisionResponse
 
-_LS_PROVIDER = "openai"
 _ANSWER_TYPES = frozenset({"predicate", "choice", "score", "refusal"})
-
-logger = logging.getLogger(__name__)
 
 
 @beta()
-class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
+class OpenAIDecisions(BaseDecisionModel):
     """Ask typed questions about text or images with the OpenAI Decisions API.
 
     A single request can combine `Predicate` probabilities, `Choice` selections, and
     `Score` ratings over shared input. The response preserves probabilities,
     confidence, and token usage so application code can decide whether to act,
     route, or request human review.
+
+    The API natively accepts a string or user messages with text and base64 images.
+    Strings and `HumanMessage` objects (alone or in a sequence) are sent natively;
+    any other input, such as conversations with system or AI messages or JSON
+    objects, is serialized to JSON text first.
 
     Sync and async OpenAI clients are created on first use of `invoke` or `ainvoke`
     respectively.
@@ -95,9 +100,6 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
         print(response.scores["frustration"].score)
         ```
     """
-
-    model: str = Field(min_length=1)
-    """Decisions model name, such as `gpt-6-luna`."""
 
     openai_api_key: (
         SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
@@ -228,56 +230,12 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
             params["max_retries"] = self.max_retries
         return params
 
+    @property
     @override
-    def invoke(
-        self,
-        input: DecisionRequest,
-        config: RunnableConfig | None = None,
-        **_: Any,
-    ) -> DecisionResponse:
-        """Answer one request synchronously.
-
-        Args:
-            input: Input and questions to evaluate.
-            config: Optional runnable configuration for callbacks, tags, metadata,
-                and tracing.
-            **_: Accepted for `Runnable` compatibility and otherwise ignored.
-
-        Returns:
-            Typed answers keyed by question name, with request metadata.
-        """
-        return self._call_with_config(
-            self._decide,
-            input,
-            self._traced_config(config),
-            run_type="llm",
-        )
+    def _provider(self) -> str:
+        return "openai"
 
     @override
-    async def ainvoke(
-        self,
-        input: DecisionRequest,
-        config: RunnableConfig | None = None,
-        **_: Any,
-    ) -> DecisionResponse:
-        """Answer one request asynchronously.
-
-        Args:
-            input: Input and questions to evaluate.
-            config: Optional runnable configuration for callbacks, tags, metadata,
-                and tracing.
-            **_: Accepted for `Runnable` compatibility and otherwise ignored.
-
-        Returns:
-            Typed answers keyed by question name, with request metadata.
-        """
-        return await self._acall_with_config(
-            self._adecide,
-            input,
-            self._traced_config(config),
-            run_type="llm",
-        )
-
     def _decide(self, request: DecisionRequest) -> DecisionResponse:
         payload = self._payload(request)
         try:
@@ -288,8 +246,9 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
             _handle_openai_bad_request(e)
         except openai.APIError as e:
             _handle_openai_api_error(e)
-        return self._record_usage(_parse_response(response))
+        return _parse_response(response)
 
+    @override
     async def _adecide(self, request: DecisionRequest) -> DecisionResponse:
         payload = self._payload(request)
         try:
@@ -300,48 +259,37 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
             _handle_openai_bad_request(e)
         except openai.APIError as e:
             _handle_openai_api_error(e)
-        return self._record_usage(_parse_response(response))
+        return _parse_response(response)
 
     def _payload(self, request: DecisionRequest) -> dict[str, Any]:
         return {
             "model": self.model,
             "input": to_decision_input(request["input"]),
             "questions": [
-                question._to_api(name)  # noqa: SLF001
+                _question_payload(name, question)
                 for name, question in request["questions"].items()
             ],
         }
 
-    def _traced_config(self, config: RunnableConfig | None) -> RunnableConfig:
-        """Set `ls_provider` and `ls_model_name` when run is created."""
-        config = ensure_config(config)
-        config["metadata"] = {
-            **(config.get("metadata") or {}),
-            "ls_provider": _LS_PROVIDER,
-            "ls_model_name": self.model,
-            "ls_model_type": "chat",
-        }
-        return config
 
-    def _record_usage(self, response: DecisionResponse) -> DecisionResponse:
-        """Attach token usage to the active run, if there is one.
-
-        Nothing is written when tracing is disabled, and a tracing failure never fails
-        an otherwise successful request.
-        """
-        input_tokens = response.usage.input_tokens or 0
-        output_tokens = response.usage.output_tokens or 0
-        try:
-            run_tree = get_current_run_tree()
-            if run_tree is not None:
-                run_tree.extra.setdefault("metadata", {})["usage_metadata"] = {
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "total_tokens": input_tokens + output_tokens,
-                }
-        except Exception:  # tracing must not break decisions
-            logger.debug("Could not attach OpenAI Decisions usage.", exc_info=True)
-        return response
+def _question_payload(name: str, question: Question) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "type": question.type,
+        "name": name,
+        "instructions": question.instructions,
+    }
+    if isinstance(question, Choice):
+        payload["choices"] = [
+            {"value": value}
+            if description is None
+            else {"value": value, "description": description}
+            for value, description in question.choices.items()
+        ]
+    elif isinstance(question, Score):
+        payload["levels"] = [
+            level.model_dump(exclude_none=True) for level in question.as_levels()
+        ]
+    return payload
 
 
 def _parse_response(response: httpx.Response) -> DecisionResponse:

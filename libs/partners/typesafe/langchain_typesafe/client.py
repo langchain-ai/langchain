@@ -4,12 +4,23 @@ from __future__ import annotations
 
 import math
 import time
+from collections.abc import Mapping
 from email.utils import parsedate_to_datetime
 from http import HTTPStatus
-from typing import Any
+from typing import Annotated, Any, Literal
 from urllib.parse import urlsplit, urlunsplit
 
 import httpx2
+from langchain_core.decisions import (
+    Answer,
+    ChoiceAnswer,
+    DecisionResponse,
+    PredicateAnswer,
+    Question,
+    Score,
+    ScoreAnswer,
+    Usage,
+)
 from langchain_core.exceptions import (
     ModelAPIError,
     ModelAuthenticationError,
@@ -20,10 +31,8 @@ from langchain_core.exceptions import (
     ModelRateLimitError,
     ModelTimeoutError,
 )
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, ValidationError
 from typing_extensions import override
-
-from langchain_typesafe.types import ClassifierResponse
 
 _REQUEST_ID_HEADER = "x-typesafe-request-id"
 _RETRY_AFTER_HEADER = "retry-after"
@@ -310,28 +319,95 @@ def _api_error(response: httpx2.Response) -> TypeSafeAPIError:
     )
 
 
-def parse_response(response: httpx2.Response) -> ClassifierResponse:
-    """Validate an HTTP response and convert it to a classification response.
+class _WireNoulAnswer(BaseModel):
+    type: Literal["noul"]
+    noul: float = Field(ge=0.0, le=1.0)
+
+
+class _WireChoiceAnswer(BaseModel):
+    type: Literal["choice"]
+    choice: str
+    probabilities: dict[str, float]
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class _WireScoreAnswer(BaseModel):
+    type: Literal["score"]
+    score: float
+    probabilities: dict[int, float]
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+_WireAnswer = Annotated[
+    _WireNoulAnswer | _WireChoiceAnswer | _WireScoreAnswer,
+    Field(discriminator="type"),
+]
+
+
+class _WireResponse(BaseModel):
+    model: str
+    answers: dict[str, _WireAnswer]
+    usage: Usage = Field(default_factory=Usage)
+
+
+class _AnswerMismatchError(Exception):
+    """A response answer does not correspond to a question of the same type."""
+
+
+def _convert_answer(
+    name: str,
+    answer: _WireNoulAnswer | _WireChoiceAnswer | _WireScoreAnswer,
+    questions: Mapping[str, Question],
+) -> Answer:
+    if isinstance(answer, _WireNoulAnswer):
+        return PredicateAnswer(type="predicate", probability=answer.noul)
+    if isinstance(answer, _WireChoiceAnswer):
+        return ChoiceAnswer.model_validate(answer, from_attributes=True)
+    question = questions.get(name)
+    if not isinstance(question, Score):
+        msg = f"answers.{name}.type"
+        raise _AnswerMismatchError(msg)
+    return ScoreAnswer(
+        type="score",
+        score=answer.score,
+        legend={i: level.label for i, level in enumerate(question.as_levels())},
+        probabilities=answer.probabilities,
+        confidence=answer.confidence,
+    )
+
+
+def parse_response(
+    response: httpx2.Response,
+    questions: Mapping[str, Question],
+) -> DecisionResponse:
+    """Validate an HTTP response and convert it to a decision response.
 
     Args:
         response: Raw HTTP response returned by the TypeSafe API.
+        questions: Questions sent with the request. Score legends are built from
+            their level labels rather than the rubric echoed by TypeSafe.
 
     Returns:
-        Validated classification answers and metadata. The TypeSafe request ID is
-        copied from the response headers when present.
+        Validated answers and metadata. The TypeSafe request ID is copied from the
+        response headers when present.
 
     Raises:
         TypeSafeAPIError: If TypeSafe returns an unsuccessful status code. Specific
             statuses use subclasses that also inherit from LangChain model errors.
-        TypeSafeAPIResponseValidationError: If a successful response is not valid JSON
-            or does not match the expected response schema.
+        TypeSafeAPIResponseValidationError: If a successful response is not valid JSON,
+            does not match the expected response schema, or returns a score answer
+            for a question that is not a `Score`.
     """
     if not response.is_success:
         raise _api_error(response)
     endpoint = _response_endpoint(response)
     body = _response_body(response)
     try:
-        parsed = ClassifierResponse.model_validate(body)
+        parsed = _WireResponse.model_validate(body)
+        answers = {
+            name: _convert_answer(name, answer, questions)
+            for name, answer in parsed.answers.items()
+        }
     except ValidationError as error:
         location = error.errors()[0].get("loc", ())
         field_path = ".".join(str(item) for item in location) or "response"
@@ -342,8 +418,19 @@ def parse_response(response: httpx2.Response) -> ClassifierResponse:
             field_path,
             endpoint,
         ) from error
-    return parsed.model_copy(
-        update={"request_id": response.headers.get(_REQUEST_ID_HEADER)}
+    except _AnswerMismatchError as error:
+        raise TypeSafeAPIResponseValidationError(
+            response.status_code,
+            body,
+            response.headers,
+            str(error),
+            endpoint,
+        ) from error
+    return DecisionResponse(
+        model=parsed.model,
+        answers=answers,
+        usage=parsed.usage,
+        request_id=response.headers.get(_REQUEST_ID_HEADER),
     )
 
 

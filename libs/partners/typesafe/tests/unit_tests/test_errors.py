@@ -60,7 +60,7 @@ def test_status_errors_use_provider_and_langchain_types(
     response = httpx2.Response(status, json={"message": "failure"}, request=request)
 
     with pytest.raises(provider_type) as exc_info:
-        parse_response(response)
+        parse_response(response, {})
 
     assert isinstance(exc_info.value, langchain_type)
     assert exc_info.value.is_retryable is is_retryable
@@ -75,7 +75,7 @@ def test_overloaded_error_has_safe_provider_description() -> None:
     )
 
     with pytest.raises(TypeSafeInternalServerError) as exc_info:
-        parse_response(response)
+        parse_response(response, {})
 
     assert "529 Overloaded" in str(exc_info.value)
     assert "private overload detail" not in str(exc_info.value)
@@ -95,7 +95,7 @@ def test_api_error_exposes_metadata_without_leaking_it_in_repr() -> None:
     )
 
     with pytest.raises(TypeSafeBadRequestError) as exc_info:
-        parse_response(response)
+        parse_response(response, {})
 
     error = exc_info.value
     assert error.status == 400
@@ -118,7 +118,7 @@ def test_endpoint_sanitization_preserves_ipv6_and_port() -> None:
     response = httpx2.Response(400, request=request)
 
     with pytest.raises(TypeSafeBadRequestError) as exc_info:
-        parse_response(response)
+        parse_response(response, {})
 
     assert exc_info.value.endpoint == "POST https://[2001:db8::1]:8443/v1/systemone"
 
@@ -143,7 +143,7 @@ def test_rate_limit_error_parses_retry_delay(
     )
 
     with pytest.raises(TypeSafeRateLimitError) as exc_info:
-        parse_response(response)
+        parse_response(response, {})
 
     assert exc_info.value.retry_after_ms == expected
 
@@ -158,7 +158,7 @@ def test_response_validation_error_reports_field_path() -> None:
     )
 
     with pytest.raises(TypeSafeAPIResponseValidationError) as exc_info:
-        parse_response(response)
+        parse_response(response, {})
 
     error = exc_info.value
     assert error.status == 200

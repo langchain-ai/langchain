@@ -15,6 +15,7 @@ from langchain.agents.middleware.types import (
     omit_payload,
 )
 from langchain_core._api import beta
+from langchain_core.decisions import BaseDecisionModel
 from langchain_core.messages import BaseMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from typing_extensions import override
@@ -84,7 +85,8 @@ class OpenAIAutoModeMiddleware(
 
     Args:
         tools: Tool names or `BaseTool` instances to classify before execution.
-        model: Decisions model name, or a configured `OpenAIDecisions` instance.
+        model: OpenAI Decisions model name, or any configured
+            `BaseDecisionModel`, such as `OpenAIDecisions`.
         instructions: Risk question sent to the Decisions API. Describe what should
             count as risky and safe here.
 
@@ -113,14 +115,15 @@ class OpenAIAutoModeMiddleware(
         self,
         *,
         tools: Sequence[str | BaseTool],
-        model: str | OpenAIDecisions,
+        model: str | BaseDecisionModel,
         instructions: str = _DEFAULT_INSTRUCTIONS,
     ) -> None:
         """Initialize the tool-risk middleware.
 
         Args:
             tools: Tool names or instances to classify before execution.
-            model: Decisions model name, or a configured `OpenAIDecisions` instance.
+            model: OpenAI Decisions model name, or any configured
+                `BaseDecisionModel`, such as `OpenAIDecisions`.
             instructions: Risk question sent to the Decisions API.
 
         Raises:

@@ -20,12 +20,14 @@ from pydantic import ValidationError
 from typing_extensions import Self, override
 
 import langchain_typesafe
-from langchain_typesafe import NoulCriteria, experimental
+from langchain_typesafe import Predicate, experimental
 from langchain_typesafe.client import TypeSafeInternalServerError
-from langchain_typesafe.experimental.middleware import AutoModeMiddleware
+from langchain_typesafe.experimental.middleware import (
+    AutoModeMiddleware,
+    NoulCriteria,
+)
 from langchain_typesafe.experimental.middleware import __all__ as middleware_all
 from langchain_typesafe.experimental.middleware.auto_mode import _risk_questions
-from langchain_typesafe.types import Noul
 
 API_KEY = "test-api-key"
 pytestmark = pytest.mark.asyncio
@@ -164,7 +166,7 @@ def _tool_messages(result: dict[str, Any]) -> list[ToolMessage]:
 
 
 async def test_middleware_constructs_configurable_risk_classifier() -> None:
-    """Construct the internal Noul from caller-supplied criteria and instructions."""
+    """Fold caller-supplied criteria into the internal predicate's instructions."""
     custom_criteria = NoulCriteria(
         true="The call modifies production data.",
         false="The call reads public data.",
@@ -177,9 +179,12 @@ async def test_middleware_constructs_configurable_risk_classifier() -> None:
     ) as middleware:
         question = _risk_questions(middleware.config)["is_risky"]
 
-        assert question == Noul(
-            instructions="Assess production impact.",
-            criteria=custom_criteria,
+        assert question == Predicate(
+            instructions=(
+                "Assess production impact.\n\n"
+                "Answer yes if: The call modifies production data.\n"
+                "Answer no if: The call reads public data."
+            ),
         )
 
 
@@ -187,7 +192,8 @@ async def test_none_criteria_is_supported() -> None:
     """Allow callers to classify without outcome criteria."""
     async with _middleware(0.2, tools=["delete_file"]) as middleware:
         assert middleware.config.criteria is None
-        assert _risk_questions(middleware.config)["is_risky"].criteria is None
+        question = _risk_questions(middleware.config)["is_risky"]
+        assert question == Predicate(instructions=middleware.config.instructions)
 
 
 async def test_base_tool_name_is_inferred() -> None:
@@ -274,6 +280,7 @@ async def test_classifier_receives_user_context_and_raw_tool_call() -> None:
         await _run_agent(middleware, tool_instance, async_=False)
 
     [request] = observed_requests
+    assert request["questions"]["is_risky"]["type"] == "noul"
     state = request["state"]
     assert state["messages"][0] == {
         "role": "user",
@@ -353,4 +360,5 @@ async def test_experimental_public_interface() -> None:
         "AutoModeMiddleware",
         "ModelChoice",
         "ModelRouterMiddleware",
+        "NoulCriteria",
     ]

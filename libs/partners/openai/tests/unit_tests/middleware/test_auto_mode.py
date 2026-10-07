@@ -9,6 +9,12 @@ from typing import Any
 import pytest
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import InputAgentState, omit_payload
+from langchain_core.decisions import (
+    BaseDecisionModel,
+    DecisionRequest,
+    DecisionResponse,
+    PredicateAnswer,
+)
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import BaseTool, tool
@@ -286,3 +292,40 @@ def test_trace_policy_omits_classification_context() -> None:
 def test_invalid_configuration_is_rejected(kwargs: dict[str, Any]) -> None:
     with pytest.raises(ValueError, match="must"):
         OpenAIAutoModeMiddleware(model="gpt-6-luna", **kwargs)
+
+
+class _FixedRiskModel(BaseDecisionModel):
+    """Non-OpenAI decision model returning a fixed risk probability."""
+
+    probability: float
+
+    @property
+    @override
+    def _provider(self) -> str:
+        return "fake"
+
+    @override
+    def _decide(self, request: DecisionRequest) -> DecisionResponse:
+        return DecisionResponse(
+            model=self.model,
+            answers={
+                "is_risky": PredicateAnswer(
+                    type="predicate", probability=self.probability
+                )
+            },
+        )
+
+
+@pytest.mark.parametrize("async_", [False, True])
+async def test_any_decision_model_can_classify(*, async_: bool) -> None:
+    executions: list[str] = []
+    tool_instance = _delete_tool(executions)
+    middleware = OpenAIAutoModeMiddleware(
+        tools=[tool_instance],
+        model=_FixedRiskModel(model="fake", probability=0.9),
+    )
+
+    result = await _run_agent(middleware, tool_instance, async_=async_)
+
+    assert _tool_message(result).status == "error"
+    assert executions == []
