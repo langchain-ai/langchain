@@ -367,8 +367,13 @@ class InterruptOnConfig(TypedDict):
     `ToolCallRequest`, with `tool` and the tool's `ToolRuntime` set.
 
     In both modes the predicate runs again when the run resumes, so it must return the
-    same answer for the same call. If it returns `False` on resume, the reviewer's
-    answer is skipped and the tool runs, even if they rejected it.
+    same answer for the same call. Use inputs that remain stable while review is
+    pending, such as unchanged tool-call arguments. A call that no longer requires
+    review can run without applying the reviewer's rejection.
+
+    In `batched` mode, decisions are matched by position in the filtered list, not by
+    tool call ID. Changing which calls require review can apply a decision to a
+    different call, even when the number of calls requiring review stays the same.
 
     Example:
         ```python

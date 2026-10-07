@@ -1,3 +1,4 @@
+import asyncio
 import re
 import sys
 from types import SimpleNamespace
@@ -1115,6 +1116,63 @@ def test_when_predicate_batch_fires_interrupt_when_true() -> None:
         result = middleware.after_model(state, Runtime())
 
     assert result is not None
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize("reviewed_index", [0, 1, 2])
+async def test_when_predicate_batch_resume_rejects_selected_call(
+    *, asynchronous: bool, reviewed_index: int
+) -> None:
+    """A stable predicate keeps rejection bound to the selected call after replay."""
+    executed: list[int] = []
+
+    @tool
+    def record(index: int) -> str:
+        """Record execution in a local list."""
+        executed.append(index)
+        return str(index)
+
+    calls = [ToolCall(name="record", args={"index": i}, id=f"call_{i}") for i in range(3)]
+    agent = create_agent(
+        model=FakeToolCallingModel(tool_calls=[calls, []]),
+        tools=[record],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={
+                    "record": {
+                        "allowed_decisions": ["approve", "reject"],
+                        "when": lambda req: req.tool_call["args"]["index"] == reviewed_index,
+                    }
+                }
+            )
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "conditional-review"}}
+    initial: InputAgentState = {"messages": [HumanMessage("go")]}
+    paused = (
+        await agent.ainvoke(initial, config)
+        if asynchronous
+        else await asyncio.to_thread(agent.invoke, initial, config)
+    )
+    [pending] = paused["__interrupt__"]
+    [action] = pending.value["action_requests"]
+    assert action["args"] == {"index": reviewed_index}
+    assert executed == []
+
+    resume: Command[Any] = Command(resume={"decisions": [{"type": "reject"}]})
+    final = (
+        await agent.ainvoke(resume, config)
+        if asynchronous
+        else await asyncio.to_thread(agent.invoke, resume, config)
+    )
+
+    assert sorted(executed) == [i for i in range(3) if i != reviewed_index]
+    messages = {m.tool_call_id: m for m in final["messages"] if isinstance(m, ToolMessage)}
+    assert {call_id: m.status for call_id, m in messages.items()} == {
+        f"call_{i}": "error" if i == reviewed_index else "success" for i in range(3)
+    }
+    assert "__interrupt__" not in final
 
 
 def test_when_predicate_receives_correct_args() -> None:
