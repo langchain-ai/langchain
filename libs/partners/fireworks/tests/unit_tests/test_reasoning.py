@@ -169,8 +169,12 @@ def test_usage_without_reasoning_omits_detail(details: dict[str, Any] | None) ->
 
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 @pytest.mark.parametrize("method", ["stream", "invoke", "astream", "ainvoke"])
+@pytest.mark.parametrize("disable_streaming", [False, True, "tool_calling"])
 async def test_reasoning_survives_two_tool_turns(
-    method: str, output_version: Literal["v0", "v1"]
+    method: str,
+    output_version: Literal["v0", "v1"],
+    *,
+    disable_streaming: bool | Literal["tool_calling"],
 ) -> None:
     """Exercise chunk assembly and request serialization at the SDK boundary."""
     client = MagicMock()
@@ -181,6 +185,7 @@ async def test_reasoning_survives_two_tool_turns(
         model="accounts/fireworks/models/test-model",
         api_key="fake-key",  # type: ignore[arg-type]
         streaming=True,
+        disable_streaming=disable_streaming,
         output_version=output_version,
         client=client,
         async_client=async_client,
@@ -216,6 +221,7 @@ async def test_reasoning_survives_two_tool_turns(
     client_mock = async_client.create if method.startswith("a") else client.create
     sent = client_mock.call_args_list[1].kwargs["messages"]
     assert sent[1]["reasoning_content"] == "Need a lookup."
+    assert sent[1]["content"] in (None, [])
     assert sent[1]["tool_calls"][0]["id"] == "call_lookup"
     assert sent[2] == {
         "role": "tool",

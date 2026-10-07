@@ -653,6 +653,23 @@ def _format_chunk_for_v1(message_chunk: AIMessageChunk) -> AIMessageChunk:
     )
 
 
+def _finalize_stream(
+    stream: Iterator[ChatGenerationChunk],
+) -> Iterator[ChatGenerationChunk]:
+    """Supply core's finalization marker when aggregating v1 chunks internally."""
+    yield from stream
+    yield ChatGenerationChunk(message=AIMessageChunk(content="", chunk_position="last"))
+
+
+async def _afinalize_stream(
+    stream: AsyncIterator[ChatGenerationChunk],
+) -> AsyncIterator[ChatGenerationChunk]:
+    """Supply core's finalization marker when aggregating v1 chunks internally."""
+    async for chunk in stream:
+        yield chunk
+    yield ChatGenerationChunk(message=AIMessageChunk(content="", chunk_position="last"))
+
+
 class _RetryableHTTPStatusError(FireworksError):
     """Internal marker for 5xx `httpx.HTTPStatusError` responses.
 
@@ -1388,6 +1405,8 @@ class ChatFireworks(BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
+            if self.output_version == "v1":
+                stream_iter = _finalize_stream(stream_iter)
             return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {
@@ -1511,6 +1530,8 @@ class ChatFireworks(BaseChatModel):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
+            if self.output_version == "v1":
+                stream_iter = _afinalize_stream(stream_iter)
             return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
