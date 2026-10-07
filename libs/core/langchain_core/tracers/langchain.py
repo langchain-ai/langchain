@@ -82,14 +82,6 @@ def get_client() -> Client:
     return rt.get_cached_client()
 
 
-def _env_addresses_agent() -> bool:
-    """Whether the `LANGSMITH_AGENT_*` env vars address runs to an agent."""
-    return any(
-        ls_utils.get_env_var(name, namespaces=("LANGSMITH",))
-        for name in ("AGENT_ID", "AGENT_ENVIRONMENT")
-    )
-
-
 def _check_address(address: Any) -> Any:
     """Return `address` if it is a `langsmith.Agent`, or `None`.
 
@@ -111,17 +103,6 @@ def _check_address(address: Any) -> Any:
         msg = f"address must be a langsmith.Agent, got {address!r}."
         raise TypeError(msg)
     return address
-
-
-def _get_default_project_name() -> str | None:
-    """Get the project to trace to when none is named in code.
-
-    `None` when the `LANGSMITH_AGENT_*` env vars are set: langsmith then sends
-    the run to that agent, and the API rejects a run that also names a project.
-    """
-    if _env_addresses_agent():
-        return None
-    return ls_utils.get_tracer_project()
 
 
 def _get_executor() -> ThreadPoolExecutor:
@@ -221,10 +202,8 @@ class LangChainTracer(BaseTracer):
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
+        self._project_name = project_name
         self.address = None if project_name else _check_address(address)
-        self.project_name = project_name or (
-            None if self.address is not None else _get_default_project_name()
-        )
         self.client = client or get_client()
         self.tags = tags or []
         self.latest_run: Run | None = None
@@ -232,6 +211,22 @@ class LangChainTracer(BaseTracer):
         self.tracing_metadata: dict[str, str] | None = (
             dict(metadata) if metadata is not None else None
         )
+
+    @property
+    def project_name(self) -> str | None:
+        """The project named in code, else the default project.
+
+        `None` for a tracer that sends runs to an address.
+        """
+        if self._project_name:
+            return self._project_name
+        if self.address is not None:
+            return None
+        return ls_utils.get_tracer_project()
+
+    @project_name.setter
+    def project_name(self, value: str | None) -> None:
+        self._project_name = value
 
     def copy_with_metadata_defaults(
         self,
@@ -264,7 +259,7 @@ class LangChainTracer(BaseTracer):
 
         return self.__class__(
             example_id=self.example_id,
-            project_name=self.project_name,
+            project_name=self._project_name,
             client=self.client,
             tags=merged_tags,
             address=self.address,
@@ -275,16 +270,16 @@ class LangChainTracer(BaseTracer):
         )
 
     def _start_trace(self, run: Run) -> None:
-        if self.project_name:
-            run.session_name = self.project_name
-        # Absent on langsmith versions without agent addressing.
-        if "address" in type(run).model_fields:
-            if self.project_name:
-                # A project named in code wins over an address from the env.
+        # Only a project named in code is sent. Otherwise langsmith resolves the
+        # destination, from the environment or its default project.
+        if self._project_name:
+            run.session_name = self._project_name
+            # A project named in code wins over an address from the environment.
+            if getattr(run, "address", None) is not None:
                 run.address = None
-            elif self.address is not None:
-                run.session_name = None  # type: ignore[assignment,unused-ignore]
-                run.address = self.address
+        elif self.address is not None:
+            run.session_name = None  # type: ignore[assignment,unused-ignore]
+            run.address = self.address
         if self.tags is not None:
             if run.tags:
                 run.tags = sorted(set(run.tags + self.tags))

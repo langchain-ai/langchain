@@ -189,47 +189,6 @@ def _clear_env_caches() -> None:
     get_tracer_project.cache_clear()
 
 
-@pytest.mark.parametrize(
-    ("envvars", "expected_project_name"),
-    [
-        ({}, "default"),
-        ({"LANGSMITH_AGENT_ID": "my-agent"}, None),
-        ({"LANGSMITH_AGENT_ENVIRONMENT": "development"}, None),
-        (
-            {
-                "LANGSMITH_AGENT_ID": "my-agent",
-                "LANGSMITH_AGENT_ENVIRONMENT": "development",
-            },
-            None,
-        ),
-        (
-            {
-                "LANGSMITH_AGENT_ID": "my-agent",
-                "LANGSMITH_AGENT_ENVIRONMENT": "development",
-                "LANGSMITH_PROJECT": "configured",
-            },
-            None,
-        ),
-    ],
-    ids=[
-        "'default' project without agent env vars",
-        "no project with agent id",
-        "no project with agent environment",
-        "no project with agent pair",
-        "no env project with agent pair",
-    ],
-)
-def test_tracer_project_with_agent_env(
-    tracer_env: pytest.MonkeyPatch,
-    envvars: dict[str, str],
-    expected_project_name: str | None,
-) -> None:
-    for k, v in envvars.items():
-        tracer_env.setenv(k, v)
-    tracer = LangChainTracer(client=unittest.mock.MagicMock(spec=Client))
-    assert tracer.project_name == expected_project_name
-
-
 def _posted_destinations(client: unittest.mock.MagicMock) -> list[tuple[Any, Any]]:
     return [
         (call.kwargs.get("session_name"), call.kwargs.get("address"))
@@ -1107,3 +1066,53 @@ def test_tracer_address_must_be_an_agent() -> None:
 def test_tracer_address_must_be_an_address(address: Any) -> None:
     with pytest.raises(TypeError, match="address must be"):
         LangChainTracer(client=unittest.mock.MagicMock(spec=Client), address=address)
+
+
+@_requires_address
+@pytest.mark.parametrize(
+    ("envvars", "expected"),
+    [
+        ({}, [("default", None)]),
+        ({"LANGSMITH_AGENT_ID": "my-agent"}, []),
+        ({"LANGSMITH_AGENT_ENVIRONMENT": "development"}, []),
+        (
+            {
+                "LANGSMITH_AGENT_ID": "my-agent",
+                "LANGSMITH_AGENT_ENVIRONMENT": "development",
+            },
+            [(None, "agent")],
+        ),
+        (
+            {
+                "LANGSMITH_AGENT_ID": "my-agent",
+                "LANGSMITH_AGENT_ENVIRONMENT": "development",
+                "LANGSMITH_PROJECT": "configured",
+            },
+            [],
+        ),
+    ],
+    ids=[
+        "default project without agent env vars",
+        "half an address is not traced",
+        "half an address is not traced (environment)",
+        "agent pair goes to the agent",
+        "agent beside a project is not traced",
+    ],
+)
+def test_destination_with_agent_env(
+    tracer_env: pytest.MonkeyPatch,
+    envvars: dict[str, str],
+    expected: list[tuple[Any, Any]],
+) -> None:
+    """The tracer leaves the destination to langsmith unless code names one."""
+    for k, v in envvars.items():
+        tracer_env.setenv(k, v)
+    client = unittest.mock.MagicMock(spec=Client)
+    RunnableLambda(lambda x: x).invoke(
+        1, {"callbacks": [LangChainTracer(client=client)]}
+    )
+    agent = langsmith.Agent("my-agent", "development")
+    assert _posted_destinations(client) == [
+        (project, agent if address == "agent" else address)
+        for project, address in expected
+    ]

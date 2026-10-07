@@ -17,7 +17,6 @@ from langsmith import utils as ls_utils
 
 from langchain_core.tracers.langchain import (
     LangChainTracer,
-    _get_default_project_name,
 )
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 
@@ -146,10 +145,10 @@ def _get_tracer_project() -> str | None:
 
 
 def _get_tracer_destination() -> tuple[str | None, Any]:
-    """Get the `(project, address)` langsmith's tracing context sends runs to.
+    """Get the `(project, address)` named in code for the current run.
 
-    At most one is set. Both are `None` when the `LANGSMITH_AGENT_*` env vars
-    address the runs and nothing is named in code.
+    At most one is set. Both are `None` when nothing in code names one: the
+    environment and the default project are left to langsmith to resolve.
     """
     tracing_context = ls_rh.get_tracing_context()
     run_tree = tracing_context["parent"]
@@ -157,9 +156,7 @@ def _get_tracer_destination() -> tuple[str | None, Any]:
         if tracing_context["project_name"] is not None:
             return cast("str", tracing_context["project_name"]), None
         # Only set on langsmith versions with agent addressing.
-        if (address := tracing_context.get("address")) is not None:
-            return None, address
-        return _get_default_project_name(), None
+        return None, tracing_context.get("address")
     # Note, if people are trying to nest @traceable functions and the
     # tracing_v2_enabled context manager, this will likely mess up the
     # tree structure.
