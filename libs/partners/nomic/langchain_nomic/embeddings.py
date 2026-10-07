@@ -29,6 +29,7 @@ class NomicEmbeddings(Embeddings):
         nomic_api_key: str | None = ...,
         dimensionality: int | None = ...,
         inference_mode: Literal["remote"] = ...,
+        vision_model: str | None = ...,
     ) -> None: ...
 
     @overload
@@ -40,6 +41,7 @@ class NomicEmbeddings(Embeddings):
         dimensionality: int | None = ...,
         inference_mode: Literal["local", "dynamic"],
         device: str | None = ...,
+        vision_model: str | None = ...,
     ) -> None: ...
 
     @overload
@@ -51,6 +53,7 @@ class NomicEmbeddings(Embeddings):
         dimensionality: int | None = ...,
         inference_mode: str,
         device: str | None = ...,
+        vision_model: str | None = ...,
     ) -> None: ...
 
     def __init__(
@@ -143,7 +146,10 @@ class NomicEmbeddings(Embeddings):
         Args:
             uris: List of image URIs to embed
         """
-        return embed.image(
-            images=uris,
-            model=self.vision_model,
-        )["embeddings"]
+        # Only forward ``model`` when a vision model is set. Passing
+        # ``model=None`` makes the Nomic SDK raise a bare ``AssertionError``
+        # instead of applying its documented default vision model.
+        kwargs: dict[str, str] = {}
+        if self.vision_model is not None:
+            kwargs["model"] = self.vision_model
+        return embed.image(images=uris, **kwargs)["embeddings"]
