@@ -165,7 +165,7 @@ def test_serialization_round_trip() -> None:
     assert API_KEY not in serialized
     assert isinstance(loaded, OpenAIDecisions)
     assert loaded.model == MODEL
-    assert loaded.openai_api_base == "https://example.com/v1"
+    assert loaded.base_url == "https://example.com/v1"
     assert dumps(loaded) == serialized
 
 

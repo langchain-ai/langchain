@@ -99,21 +99,20 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
     model: str = Field(min_length=1)
     """Decisions model name, such as `gpt-6-luna`."""
 
-    openai_api_key: (
-        SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
-    ) = Field(
-        alias="api_key",
-        default_factory=secret_from_env("OPENAI_API_KEY", default=None),
-        exclude=True,
-        repr=False,
+    api_key: SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]] = (
+        Field(
+            default_factory=secret_from_env("OPENAI_API_KEY", default=None),
+            exclude=True,
+            repr=False,
+        )
     )
     """API key used to authenticate requests.
 
     Automatically inferred from env var `OPENAI_API_KEY` if not provided.
     """
 
-    openai_api_base: str | None = Field(
-        alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
+    base_url: str | None = Field(
+        default_factory=from_env("OPENAI_API_BASE", default=None)
     )
     """Base URL for API requests.
 
@@ -132,9 +131,7 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
     Automatically inferred from env var `OPENAI_ORG_ID` if not provided.
     """
 
-    request_timeout: float | tuple[float, float] | Any | None = Field(
-        default=None, alias="timeout"
-    )
+    timeout: float | tuple[float, float] | Any | None = None
     """Request timeout. Can be float, `httpx.Timeout`, or `None`."""
 
     max_retries: int | None = None
@@ -168,9 +165,9 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
 
     @model_validator(mode="after")
     def _validate_api_key(self) -> Self:
-        if self.openai_api_key is None or (
-            isinstance(self.openai_api_key, SecretStr)
-            and not self.openai_api_key.get_secret_value().strip()
+        if self.api_key is None or (
+            isinstance(self.api_key, SecretStr)
+            and not self.api_key.get_secret_value().strip()
         ):
             msg = "OpenAI API key is required. Pass `api_key` or set `OPENAI_API_KEY`."
             raise ValueError(msg)
@@ -189,11 +186,11 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
     @property
     @override
     def lc_secrets(self) -> dict[str, str]:
-        return {"openai_api_key": "OPENAI_API_KEY"}
+        return {"api_key": "OPENAI_API_KEY"}
 
     @cached_property
     def _client(self) -> openai.OpenAI:
-        sync_api_key, _ = _resolve_sync_and_async_api_keys(self.openai_api_key)  # type: ignore[arg-type]
+        sync_api_key, _ = _resolve_sync_and_async_api_keys(self.api_key)  # type: ignore[arg-type]
         if sync_api_key is None:
             msg = (
                 "Sync invocation requires a string or sync callable `api_key`. "
@@ -208,7 +205,7 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
 
     @cached_property
     def _async_client(self) -> openai.AsyncOpenAI:
-        _, async_api_key = _resolve_sync_and_async_api_keys(self.openai_api_key)  # type: ignore[arg-type]
+        _, async_api_key = _resolve_sync_and_async_api_keys(self.api_key)  # type: ignore[arg-type]
         return openai.AsyncOpenAI(
             api_key=async_api_key,
             http_client=self.http_async_client,
@@ -219,8 +216,8 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
     def _client_params(self) -> dict[str, Any]:
         params: dict[str, Any] = {
             "organization": self.openai_organization,
-            "base_url": self.openai_api_base,
-            "timeout": self.request_timeout,
+            "base_url": self.base_url,
+            "timeout": self.timeout,
             "default_headers": self.default_headers,
             "default_query": self.default_query,
         }
