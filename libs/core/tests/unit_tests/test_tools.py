@@ -41,6 +41,7 @@ from typing_extensions import TypedDict, override
 from langchain_core import tools
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
+    BaseCallbackHandler,
     CallbackManagerForToolRun,
 )
 from langchain_core.callbacks.manager import (
@@ -4877,3 +4878,30 @@ def test_structured_tool_subclass_can_override_json_serializers() -> None:
     dumped = my_tool.model_dump(mode="json")
     assert dumped["func"] == "custom-func"
     assert dumped["args_schema"] == {"custom": "schema"}
+
+
+def test_on_tool_error_receives_caller_kwargs() -> None:
+    """`on_tool_error` must receive the kwargs that `on_tool_start` does.
+
+    `BaseTool.run`'s docstring says keyword arguments go to the tool
+    callbacks; the error event was dropping them (#40881).
+    """
+    events = {}
+
+    class Capture(BaseCallbackHandler):
+        def on_tool_start(self, serialized, input_str, **kwargs: Any) -> None:
+            events["start"] = kwargs
+
+        def on_tool_error(self, error, **kwargs: Any) -> None:
+            events["error"] = kwargs
+
+    def boom(x: int) -> str:
+        """Fail on purpose."""
+        raise ToolException("boom")
+
+    tool = StructuredTool.from_function(boom)
+    handler = Capture()
+    with pytest.raises(ToolException):
+        tool.invoke({"x": 1}, {"callbacks": [handler]}, tenant="acme")
+    assert events["start"].get("tenant") == "acme"
+    assert events["error"].get("tenant") == "acme"
