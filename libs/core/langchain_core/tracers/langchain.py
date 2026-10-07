@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
-import langsmith
 from langsmith import Client, get_tracing_context
 from langsmith import run_trees as rt
 from langsmith import utils as ls_utils
@@ -80,29 +79,6 @@ def get_client() -> Client:
         The LangSmith client.
     """
     return rt.get_cached_client()
-
-
-def _check_address(address: Any) -> Any:
-    """Return `address` if it is a `langsmith.Agent`, or `None`.
-
-    Only an agent can receive traces; other `langsmith` addresses, such as an
-    experiment, only name a project to query.
-
-    Raises:
-        TypeError: If `address` is not a `langsmith.Agent`, or langsmith has no
-            agent addressing.
-    """
-    if address is None:
-        return None
-    # Only set on langsmith versions with agent addressing.
-    agent_type = getattr(langsmith, "Agent", None)
-    if agent_type is None:
-        msg = "address requires a langsmith version with agent addressing."
-        raise TypeError(msg)
-    if not isinstance(address, agent_type):
-        msg = f"address must be a langsmith.Agent, got {address!r}."
-        raise TypeError(msg)
-    return address
 
 
 def _get_executor() -> ThreadPoolExecutor:
@@ -203,7 +179,7 @@ class LangChainTracer(BaseTracer):
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
         self._project_name = project_name
-        self.address = None if project_name else _check_address(address)
+        self.address = None if project_name else address
         self.client = client or get_client()
         self.tags = tags or []
         self.latest_run: Run | None = None

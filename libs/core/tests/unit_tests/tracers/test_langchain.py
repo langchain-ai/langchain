@@ -1053,22 +1053,6 @@ def test_tracer_address_argument() -> None:
 
 
 @_requires_address
-@pytest.mark.usefixtures("tracer_env")
-def test_tracer_address_must_be_an_agent() -> None:
-    experiment = langsmith.Experiment("0190c3d4-0000-7000-8000-0000000000b1")
-    with pytest.raises(TypeError, match=r"address must be a langsmith\.Agent"):
-        LangChainTracer(client=unittest.mock.MagicMock(spec=Client), address=experiment)
-
-
-@_requires_address
-@pytest.mark.usefixtures("tracer_env")
-@pytest.mark.parametrize("address", [42, "lrn:agents/support/environments/staging"])
-def test_tracer_address_must_be_an_address(address: Any) -> None:
-    with pytest.raises(TypeError, match="address must be"):
-        LangChainTracer(client=unittest.mock.MagicMock(spec=Client), address=address)
-
-
-@_requires_address
 @pytest.mark.parametrize(
     ("envvars", "expected"),
     [
@@ -1116,3 +1100,26 @@ def test_destination_with_agent_env(
         (project, agent if address == "agent" else address)
         for project, address in expected
     ]
+
+
+@_requires_address
+@pytest.mark.usefixtures("tracer_env")
+@pytest.mark.parametrize(
+    "address",
+    [
+        langsmith.Experiment("0190c3d4-0000-7000-8000-0000000000b1")
+        if hasattr(langsmith, "Experiment")
+        else None,
+        "lrn:agents/support/environments/staging",
+    ],
+    ids=["experiment", "string"],
+)
+def test_a_non_agent_address_is_not_sent(address: Any) -> None:
+    """Langsmith rejects it when the run is sent, so nothing is posted."""
+    session = unittest.mock.MagicMock()
+    client = Client(
+        session=session, api_key="test", api_url="http://x", auto_batch_tracing=False
+    )
+    tracer = LangChainTracer(client=client, address=address)
+    RunnableLambda(lambda x: x).invoke(1, {"callbacks": [tracer]})
+    assert not [c for c in session.request.call_args_list if "runs" in str(c)]
