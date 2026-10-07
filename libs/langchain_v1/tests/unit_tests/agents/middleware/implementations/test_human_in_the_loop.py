@@ -20,6 +20,7 @@ from langchain.agents.middleware.human_in_the_loop import (
     _EDIT_NOTICE,
     _EDITED_TOOL_CALLS_KEY,
     Action,
+    Decision,
     DecisionType,
     HumanInTheLoopMiddleware,
     InterruptMode,
@@ -30,6 +31,8 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
+    InputAgentState,
+    OutputAgentState,
     ToolCallRequest,
 )
 from tests.unit_tests.agents.model import FakeToolCallingModel
@@ -1909,8 +1912,8 @@ def _agent(
     tools: list[BaseTool],
     tool_calls: list[ToolCall],
     interrupt_on: dict[str, bool | InterruptOnConfig],
-    *after: AgentMiddleware[Any, Any, Any],
-) -> CompiledStateGraph[Any, Any, Any, Any]:
+    *after: AgentMiddleware,
+) -> CompiledStateGraph[AgentState[Any], None, InputAgentState, OutputAgentState[Any]]:
     """An agent with per-call HITL whose model makes `tool_calls`, then finishes."""
     return create_agent(
         model=FakeToolCallingModel(tool_calls=[tool_calls, []]),
@@ -1994,7 +1997,7 @@ def test_per_call_interrupt_shows_the_call_and_the_answers_it_accepts() -> None:
     ids=["approve", "edit", "reject", "respond"],
 )
 def test_per_call_resume_with_each_decision(
-    answer: dict[str, Any], ran_with: list[str], status: str, content: str
+    answer: Decision, ran_with: list[str], status: str, content: str
 ) -> None:
     ran: list[str] = []
 
@@ -2130,7 +2133,7 @@ def test_per_call_pauses_once_per_gated_call_and_applies_answers_by_id() -> None
     ids=["hitl_alone", "hitl_wraps_retry", "hitl_wraps_tool_error"],
 )
 def test_per_call_rejects_a_bad_answer_without_saving_it(
-    error: str, after: list[AgentMiddleware[Any, Any, Any]]
+    error: str, after: list[AgentMiddleware]
 ) -> None:
     ran: list[str] = []
 
@@ -2237,9 +2240,7 @@ def test_per_call_same_tool_twice_routes_each_answer_to_its_own_call() -> None:
     ],
     ids=["edit", "reject"],
 )
-async def test_per_call_works_with_ainvoke(
-    answer: dict[str, Any], status: str, content: str
-) -> None:
+async def test_per_call_works_with_ainvoke(answer: Decision, status: str, content: str) -> None:
     @tool
     def send_email(to: str) -> str:
         """Send an email."""
