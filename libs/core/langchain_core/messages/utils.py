@@ -1966,9 +1966,13 @@ def convert_to_openai_messages(
                     )
                     raise ValueError(err)
             if text_format == "string" and not any(
-                block["type"] != "text" for block in content
+                # Bedrock Converse blocks carry no `type`; they were passed
+                # through untouched, so don't subscript (#41021).
+                block.get("type") != "text" for block in content
             ):
-                content = "\n".join(block["text"] for block in content)
+                content = "\n".join(
+                    block["text"] for block in content if "text" in block
+                )
         oai_msg["content"] = content
         if message.content and not oai_msg["content"] and tool_messages:
             oai_messages.extend(tool_messages)

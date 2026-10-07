@@ -3170,3 +3170,32 @@ def test_convert_to_messages_lc_envelope_partial_shape_not_matched() -> None:
     # and dict `kwargs` too. Without all four, we fall through.
     with pytest.raises(ValueError, match="MESSAGE_COERCION_FAILURE"):
         convert_to_messages([{"lc": 1, "content": "missing other fields"}])
+
+
+async def test_convert_to_openai_messages_typeless_blocks_string_format() -> None:
+    """Bedrock Converse blocks (no `type`) must pass through, not KeyError (#41021)."""
+    from langchain_core.messages import AIMessage
+    from langchain_core.messages.utils import convert_to_openai_messages
+
+    # A block without `type` passes through untouched (string format too).
+    result = convert_to_openai_messages([AIMessage(content=[{"text": "a"}])])
+    assert result[0]["content"] == [{"text": "a"}]
+
+    # Plain typed text blocks still collapse under text_format="string".
+    collapsed = convert_to_openai_messages(
+        [AIMessage(content=[{"type": "text", "text": "x"}, {"type": "text", "text": "y"}])]
+    )
+    assert collapsed[0]["content"] == "x\ny"
+
+    # A non-text block prevents collapsing.
+    mixed = convert_to_openai_messages(
+        [
+            AIMessage(
+                content=[
+                    {"type": "text", "text": "x"},
+                    {"type": "image_url", "image_url": {"url": "u"}},
+                ]
+            )
+        ]
+    )
+    assert isinstance(mixed[0]["content"], list)
