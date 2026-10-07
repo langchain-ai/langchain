@@ -112,7 +112,7 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
     """
 
     base_url: str | None = Field(
-        default_factory=from_env("OPENAI_API_BASE", default=None)
+        default_factory=from_env("OPENAI_BASE_URL", default=None)
     )
     """Base URL for API requests.
 
