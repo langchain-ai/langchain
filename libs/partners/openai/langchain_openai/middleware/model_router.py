@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
+import openai
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -19,7 +21,7 @@ from langchain.agents.middleware.types import (
 from langchain.chat_models import init_chat_model
 from langchain_core._api import beta
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, convert_to_openai_messages
 from typing_extensions import NotRequired, override
 
 from langchain_openai.decisions import (
@@ -36,6 +38,9 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 _QUESTION_NAME = "model_route"
+_RETRY_STATUS_CODES = frozenset({400, 413})
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -66,8 +71,10 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     route for every model call in the run. Keeping the complete answer makes
     probabilities and confidence available in state and traces.
 
-    Only the message text is classified; images, files, and other attachments are
-    replaced with placeholders such as `[image omitted]`.
+    The message text and base64 images are classified. Hosted image URLs, files,
+    and audio are replaced with placeholders such as `[image omitted]`. If a request
+    with images is rejected (HTTP 400 or 413), routing is retried once with every
+    image replaced.
 
     When no route is selected, because the model refused or the state has no human
     message, `model_route` is set to `None` and model calls use the agent's own
@@ -156,20 +163,34 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         self, state: _ModelRouterState, runtime: Runtime[ContextT]
     ) -> dict[str, Any]:
         """Classify the latest task and store the routing answer."""
-        request = self._decision_request(state)
-        if request is None:
+        requests = self._decision_requests(state)
+        if not requests:
             return {"model_route": None}
-        return {"model_route": _route(self.decisions.invoke(request))}
+        for request in requests[:-1]:
+            try:
+                return {"model_route": _route(self.decisions.invoke(request))}
+            except openai.APIStatusError as e:
+                if e.status_code not in _RETRY_STATUS_CODES:
+                    raise
+                logger.debug("Routing with images failed (HTTP %s).", e.status_code)
+        return {"model_route": _route(self.decisions.invoke(requests[-1]))}
 
     @override
     async def abefore_agent(
         self, state: _ModelRouterState, runtime: Runtime[ContextT]
     ) -> dict[str, Any]:
         """Classify the latest task asynchronously and store the routing answer."""
-        request = self._decision_request(state)
-        if request is None:
+        requests = self._decision_requests(state)
+        if not requests:
             return {"model_route": None}
-        return {"model_route": _route(await self.decisions.ainvoke(request))}
+        for request in requests[:-1]:
+            try:
+                return {"model_route": _route(await self.decisions.ainvoke(request))}
+            except openai.APIStatusError as e:
+                if e.status_code not in _RETRY_STATUS_CODES:
+                    raise
+                logger.debug("Routing with images failed (HTTP %s).", e.status_code)
+        return {"model_route": _route(await self.decisions.ainvoke(requests[-1]))}
 
     @override
     def wrap_model_call(
@@ -191,17 +212,24 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         """Route an asynchronous model call to the selected model."""
         return await handler(self._routed(request))
 
-    def _decision_request(self, state: _ModelRouterState) -> DecisionRequest | None:
+    def _decision_requests(self, state: _ModelRouterState) -> list[DecisionRequest]:
+        """Return requests to try in order: with images (if any), then text only."""
         message = next(
             (m for m in reversed(state["messages"]) if isinstance(m, HumanMessage)),
             None,
         )
         if message is None:
-            return None
-        return {
-            "input": _text_only(message),
-            "questions": {_QUESTION_NAME: self.question},
-        }
+            return []
+        text_only = _routable(message, keep_images=False)
+        with_images = _routable(message, keep_images=True)
+        inputs = (
+            [text_only]
+            if with_images.content == text_only.content
+            else [with_images, text_only]
+        )
+        return [
+            {"input": m, "questions": {_QUESTION_NAME: self.question}} for m in inputs
+        ]
 
     def _routed(self, request: ModelRequest[ContextT]) -> ModelRequest[ContextT]:
         answer = cast("ChoiceAnswer | None", request.state.get("model_route"))
@@ -210,17 +238,30 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         return request.override(model=self.models[str(answer.choice)])
 
 
-def _text_only(message: HumanMessage) -> HumanMessage:
-    """Replace non-text content blocks with placeholders so routing never fails."""
+def _routable(message: HumanMessage, *, keep_images: bool) -> HumanMessage:
+    """Keep text (and base64 images if requested); replace other blocks."""
     if isinstance(message.content, str):
         return message
     content = [
         block
-        if isinstance(block, str) or block.get("type") == "text"
+        if isinstance(block, str)
+        or block.get("type") == "text"
+        or (keep_images and _is_base64_image(block))
         else {"type": "text", "text": f"[{block.get('type', 'content')} omitted]"}
         for block in message.content
     ]
     return message.model_copy(update={"content": content})
+
+
+def _is_base64_image(block: dict[str, Any]) -> bool:
+    if block.get("type") not in {"image", "image_url"}:
+        return False
+    try:
+        part = convert_to_openai_messages(HumanMessage(content=[block]))["content"][0]
+    except (ValueError, KeyError, TypeError):
+        return False
+    url = part.get("image_url", {}).get("url", "") if isinstance(part, dict) else ""
+    return url.startswith("data:")
 
 
 def _route(response: DecisionResponse) -> ChoiceAnswer | None:

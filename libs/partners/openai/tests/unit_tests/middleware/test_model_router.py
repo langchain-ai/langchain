@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import itertools
 import json
+from collections.abc import Sequence
 from typing import Any
 
 import pytest
@@ -16,7 +17,7 @@ from pydantic import SecretStr
 
 from langchain_openai import ChatOpenAI
 from langchain_openai._compat import httpx
-from langchain_openai.chat_models.base import OpenAIAPIError
+from langchain_openai.chat_models.base import OpenAIAPIError, OpenAIInvalidRequestError
 from langchain_openai.decisions import ChoiceAnswer, OpenAIDecisions
 from langchain_openai.middleware import ModelChoice, OpenAIModelRouterMiddleware
 
@@ -44,14 +45,16 @@ def _choice(route: str) -> dict[str, Any]:
 
 def _router(
     *answers: dict[str, Any],
-    status_code: int = 200,
+    failures: Sequence[int] = (),
     observed: list[dict[str, Any]] | None = None,
 ) -> OpenAIModelRouterMiddleware:
     replies = iter(answers)
+    failing = iter(failures)
 
     def respond(request: httpx.Request) -> httpx.Response:
         if observed is not None:
             observed.append(json.loads(request.content))
+        status_code = next(failing, 200)
         if status_code != 200:
             return httpx.Response(status_code, json={"error": {"message": "down"}})
         return httpx.Response(
@@ -137,7 +140,6 @@ async def test_refusal_uses_agent_model(*, async_: bool) -> None:
     [
         {"type": "image", "url": "https://example.com/a.png"},
         {"type": "image_url", "image_url": {"url": "https://example.com/a.png"}},
-        {"type": "image", "base64": "iVBORw0KGgo=", "mime_type": "image/png"},
         {
             "type": "file",
             "base64": "JVBERi0=",
@@ -160,6 +162,94 @@ async def test_attachments_are_replaced_with_placeholders(
     assert observed[0]["input"] == [
         {"role": "user", "content": f"Review this.\n[{block['type']} omitted]"}
     ]
+
+
+IMAGE_DATA = "iVBORw0KGgo="
+IMAGE_URL = f"data:image/png;base64,{IMAGE_DATA}"
+
+
+def _image_message() -> HumanMessage:
+    return HumanMessage(
+        content=[
+            {"type": "text", "text": "What's wrong here?"},
+            {"type": "image", "base64": IMAGE_DATA, "mime_type": "image/png"},
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"type": "image", "base64": IMAGE_DATA, "mime_type": "image/png"},
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": IMAGE_DATA,
+            "mime_type": "image/png",
+        },
+        {"type": "image_url", "image_url": {"url": IMAGE_URL}},
+    ],
+)
+async def test_base64_images_are_sent(block: dict[str, Any]) -> None:
+    observed: list[dict[str, Any]] = []
+    message = HumanMessage(content=[{"type": "text", "text": "Review this."}, block])
+
+    result = await _run(
+        _router(_choice("powerful"), observed=observed),
+        async_=False,
+        messages=[message],
+    )
+
+    assert result["messages"][-1].content == "powerful"
+    assert observed[0]["input"] == [
+        {
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": "Review this."},
+                {"type": "input_image", "image_url": IMAGE_URL},
+            ],
+        }
+    ]
+
+
+@pytest.mark.parametrize("async_", [False, True])
+@pytest.mark.parametrize("status_code", [400, 413])
+async def test_rejected_images_retry_text_only(
+    status_code: int, *, async_: bool
+) -> None:
+    observed: list[dict[str, Any]] = []
+    middleware = _router(_choice("powerful"), failures=[status_code], observed=observed)
+
+    result = await _run(middleware, async_=async_, messages=[_image_message()])
+
+    assert result["messages"][-1].content == "powerful"
+    assert len(observed) == 2
+    assert observed[0]["input"][0]["content"][1]["type"] == "input_image"
+    assert observed[1]["input"] == [
+        {"role": "user", "content": "What's wrong here?\n[image omitted]"}
+    ]
+
+
+async def test_bad_request_without_images_propagates() -> None:
+    observed: list[dict[str, Any]] = []
+
+    with pytest.raises(OpenAIInvalidRequestError):
+        await _run(_router(failures=[400], observed=observed), async_=False)
+
+    assert len(observed) == 1
+
+
+async def test_server_error_with_images_does_not_retry() -> None:
+    observed: list[dict[str, Any]] = []
+
+    with pytest.raises(OpenAIAPIError):
+        await _run(
+            _router(failures=[500], observed=observed),
+            async_=False,
+            messages=[_image_message()],
+        )
+
+    assert len(observed) == 1
 
 
 async def test_missing_human_message_skips_classification() -> None:
@@ -193,7 +283,7 @@ def test_refusal_clears_route_from_previous_run() -> None:
 @pytest.mark.parametrize("async_", [False, True])
 async def test_api_failure_terminates_agent_run(*, async_: bool) -> None:
     with pytest.raises(OpenAIAPIError):
-        await _run(_router(status_code=500), async_=async_)
+        await _run(_router(failures=[500]), async_=async_)
 
 
 def test_model_strings_are_initialized(monkeypatch: pytest.MonkeyPatch) -> None:
