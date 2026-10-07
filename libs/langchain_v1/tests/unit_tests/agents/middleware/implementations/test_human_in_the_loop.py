@@ -2021,6 +2021,27 @@ def test_per_call_resume_with_each_decision(
     assert ("Executed instead: send_email" in str(message.content)) == (answer["type"] == "edit")
 
 
+def test_per_call_edit_leaves_injected_args_to_the_tool() -> None:
+    @tool
+    def send_email(to: str, runtime: ToolRuntime) -> str:
+        """Send an email."""
+        return f"sent to {to} for {runtime.tool_call_id}"
+
+    agent = _agent(
+        [send_email],
+        [ToolCall(name="send_email", args={"to": "alice"}, id="call_email")],
+        {"send_email": True},
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+    [intr] = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
+    # The reviewer edits only what the model sees; `runtime` is injected when the tool runs.
+    assert list(intr.response_schema["$defs"]["send_email"]["properties"]) == ["to"]
+    edit = {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": "bob"}}}
+    final = agent.invoke(Command(resume={intr.id: edit}), config)
+    [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert str(message.content).endswith("sent to bob for call_email")
+
+
 def test_per_call_pauses_once_per_gated_call_and_applies_answers_by_id() -> None:
     ran: list[str] = []
 
@@ -2204,13 +2225,24 @@ def test_per_call_same_tool_twice_routes_each_answer_to_its_own_call() -> None:
 
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="Asyncio context vars require Python 3.11+")
-async def test_per_call_works_with_ainvoke() -> None:
-    ran: list[str] = []
-
+@pytest.mark.parametrize(
+    ("answer", "status", "content"),
+    [
+        (
+            {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": "bob"}}},
+            "success",
+            "sent to bob",
+        ),
+        ({"type": "reject"}, "error", "The tool was not executed."),
+    ],
+    ids=["edit", "reject"],
+)
+async def test_per_call_works_with_ainvoke(
+    answer: dict[str, Any], status: str, content: str
+) -> None:
     @tool
     def send_email(to: str) -> str:
         """Send an email."""
-        ran.append(to)
         return f"sent to {to}"
 
     agent = _agent(
@@ -2223,12 +2255,11 @@ async def test_per_call_works_with_ainvoke() -> None:
 
     with pytest.raises(ValidationError, match=r"edit\.edited_action"):
         await agent.ainvoke(Command(resume={intr.id: {"type": "edit"}}), config)
-    edit = {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": "bob"}}}
-    final = await agent.ainvoke(Command(resume={intr.id: edit}), config)
+    final = await agent.ainvoke(Command(resume={intr.id: answer}), config)
 
-    assert ran == ["bob"]
     [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
-    assert "Executed instead: send_email" in str(message.content)
+    assert message.status == status
+    assert content in str(message.content)
 
 
 def test_per_call_retried_tool_is_not_reviewed_again_when_hitl_wraps_retry() -> None:
