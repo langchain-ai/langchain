@@ -167,7 +167,12 @@ InterruptMode = Literal["batched", "per_call"]
 
 
 class ToolApprovalRequest(TypedDict):
-    """Interrupt value raised once per gated tool call in `per_call` mode."""
+    """Interrupt value raised once per gated tool call in `per_call` mode.
+
+    Takes the place of `HITLRequest`. Answer it with a single `Decision`, keyed by the
+    interrupt's ID, not a `HITLResponse`. The interrupt's `response_schema` lists the
+    decisions allowed for the tool and, for edits, the tool's argument schema.
+    """
 
     type: Literal["tool_approval"]
     """Always `"tool_approval"`; tells clients how to read this interrupt."""
@@ -353,8 +358,8 @@ class InterruptOnConfig(TypedDict):
     args_schema: NotRequired[dict[str, Any]]
     """JSON schema for the args associated with the action, if edits are allowed.
 
-    Not used in `per_call` mode: `response_schema` shows the tool's own argument
-    schema, which is what edits are checked against.
+    Not sent to the reviewer in either mode. In `per_call` mode the interrupt's
+    `response_schema` shows the tool's own argument schema instead.
     """
 
     when: NotRequired[Callable[[ToolCallRequest], bool]]
@@ -435,8 +440,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             edit_notice: Text prepended to the result of a tool call a reviewer replaced
                 via an `edit` decision. Pass `None` to add nothing.
             interrupt_mode: `"batched"` (default) raises one interrupt per model turn for
-                all gated tool calls. `"per_call"` raises one per gated call, answered by
-                interrupt ID, with `type: "tool_approval"` and a typed `response_schema`.
+                all gated tool calls. `"per_call"` raises a `ToolApprovalRequest` per
+                gated call, with a typed `response_schema`, each answered with a single
+                `Decision` keyed by interrupt ID.
                 In `per_call` mode an edit can't switch tools, its args are checked
                 against the tool's argument types (validator methods on its
                 `args_schema` run when the tool does), and an invalid answer raises
