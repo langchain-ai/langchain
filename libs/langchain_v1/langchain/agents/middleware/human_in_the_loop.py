@@ -95,7 +95,11 @@ class ReviewConfig(TypedDict):
     """The decisions that are allowed for this request."""
 
     args_schema: NotRequired[dict[str, Any]]
-    """JSON schema for the args associated with the action, if edits are allowed."""
+    """Unused: the middleware doesn't set it.
+
+    In `per_call` mode the interrupt's `response_schema` shows the tool's own argument
+    schema instead.
+    """
 
 
 class HITLRequest(TypedDict):
@@ -349,10 +353,10 @@ class InterruptOnConfig(TypedDict):
         ```
     """
     args_schema: NotRequired[dict[str, Any]]
-    """JSON schema for the args associated with the action, if edits are allowed.
+    """Unused: the middleware doesn't send it to the reviewer in either mode.
 
-    Not sent to the reviewer in either mode. In `per_call` mode the interrupt's
-    `response_schema` shows the tool's own argument schema instead.
+    In `per_call` mode the interrupt's `response_schema` shows the tool's own argument
+    schema instead.
     """
 
     when: NotRequired[Callable[[ToolCallRequest], bool]]
@@ -519,7 +523,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         )
 
         # Create ReviewConfig
-        # eventually can get tool information and populate args_schema from there
         review_config = ReviewConfig(
             action_name=tool_name,
             allowed_decisions=config["allowed_decisions"],
