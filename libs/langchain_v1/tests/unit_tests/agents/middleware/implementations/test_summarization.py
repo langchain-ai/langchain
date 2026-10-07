@@ -54,7 +54,7 @@ def _langchain_pyproject_major_version() -> int:
         for parent in Path(__file__).parents
         if (parent / "pyproject.toml").exists()
     )
-    for line in pyproject.read_text().splitlines():
+    for line in pyproject.read_text(encoding="utf-8").splitlines():
         if line.startswith("version = "):
             return int(line.split('"')[1].split(".")[0])
     msg = "Could not find project version in pyproject.toml"
