@@ -99,7 +99,7 @@ class OpenAIAutoModeMiddleware(
             model="gpt-6-luna",
         )
         agent = create_agent(
-            "openai:gpt-5.5",
+            "openai:gpt-6-sol",
             tools=[read_file, delete_file],
             middleware=[auto_mode],
         )
