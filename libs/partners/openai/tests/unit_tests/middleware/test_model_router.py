@@ -132,6 +132,36 @@ async def test_refusal_uses_agent_model(*, async_: bool) -> None:
     assert result["model_route"] is None
 
 
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"type": "image", "url": "https://example.com/a.png"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/a.png"}},
+        {"type": "image", "base64": "iVBORw0KGgo=", "mime_type": "image/png"},
+        {
+            "type": "file",
+            "base64": "JVBERi0=",
+            "mime_type": "application/pdf",
+            "filename": "a.pdf",
+        },
+        {"type": "audio", "base64": "UklGRg==", "mime_type": "audio/wav"},
+    ],
+)
+async def test_attachments_are_replaced_with_placeholders(
+    block: dict[str, Any],
+) -> None:
+    observed: list[dict[str, Any]] = []
+    middleware = _router(_choice("powerful"), observed=observed)
+    message = HumanMessage(content=[{"type": "text", "text": "Review this."}, block])
+
+    result = await _run(middleware, async_=False, messages=[message])
+
+    assert result["messages"][-1].content == "powerful"
+    assert observed[0]["input"] == [
+        {"role": "user", "content": f"Review this.\n[{block['type']} omitted]"}
+    ]
+
+
 async def test_missing_human_message_skips_classification() -> None:
     observed: list[dict[str, Any]] = []
     middleware = _router(observed=observed)

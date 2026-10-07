@@ -66,6 +66,9 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     route for every model call in the run. Keeping the complete answer makes
     probabilities and confidence available in state and traces.
 
+    Only the message text is classified; images, files, and other attachments are
+    replaced with placeholders such as `[image omitted]`.
+
     When no route is selected, because the model refused or the state has no human
     message, `model_route` is set to `None` and model calls use the agent's own
     model. API errors propagate and terminate the run.
@@ -195,13 +198,29 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         )
         if message is None:
             return None
-        return {"input": message, "questions": {_QUESTION_NAME: self.question}}
+        return {
+            "input": _text_only(message),
+            "questions": {_QUESTION_NAME: self.question},
+        }
 
     def _routed(self, request: ModelRequest[ContextT]) -> ModelRequest[ContextT]:
         answer = cast("ChoiceAnswer | None", request.state.get("model_route"))
         if answer is None:
             return request
         return request.override(model=self.models[str(answer.choice)])
+
+
+def _text_only(message: HumanMessage) -> HumanMessage:
+    """Replace non-text content blocks with placeholders so routing never fails."""
+    if isinstance(message.content, str):
+        return message
+    content = [
+        block
+        if isinstance(block, str) or block.get("type") == "text"
+        else {"type": "text", "text": f"[{block.get('type', 'content')} omitted]"}
+        for block in message.content
+    ]
+    return message.model_copy(update={"content": content})
 
 
 def _route(response: DecisionResponse) -> ChoiceAnswer | None:
