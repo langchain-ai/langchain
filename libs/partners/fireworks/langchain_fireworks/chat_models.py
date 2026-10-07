@@ -607,12 +607,16 @@ def _convert_chunk_to_message_chunk(
 
 
 def _format_chunk_for_v1(message_chunk: AIMessageChunk) -> AIMessageChunk:
-    """Keep reasoning, text and tool-call block indices in separate namespaces.
+    """Convert a stream chunk to v1 content blocks with separate index namespaces.
 
-    Chat Completions streams one text field and one reasoning field, but indexes
-    tool calls separately. Reusing a tool-call index as a content-block index can
-    merge a tool call into an earlier reasoning or text block during aggregation.
-    The raw tool_call_chunks retain the provider's original indices.
+    Fireworks streams a single text field and a single `reasoning_content` field,
+    but numbers tool calls from 0. Left to core, `BaseChatModel.stream` assigns
+    positional integer indices to the reasoning and text blocks (0, 1, ...), so
+    tool call 0 would be merged into the reasoning block by `merge_lists`.
+
+    Indices must start with `lc_`: `merge_lists` only merges string indices with
+    that prefix. The raw `tool_call_chunks` keep the provider's integer indices,
+    which `AIMessageChunk.__add__` relies on to merge tool-call arguments.
     """
     blocks: list[dict[str, Any]] = []
     if reasoning := message_chunk.additional_kwargs.get("reasoning_content"):
