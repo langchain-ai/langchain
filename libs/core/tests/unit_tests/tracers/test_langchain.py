@@ -1123,3 +1123,31 @@ def test_a_non_agent_address_is_not_sent(address: Any) -> None:
     tracer = LangChainTracer(client=client, address=address)
     RunnableLambda(lambda x: x).invoke(1, {"callbacks": [tracer]})
     assert not [c for c in session.request.call_args_list if "runs" in str(c)]
+
+
+@_requires_address
+@pytest.mark.usefixtures("tracer_env")
+def test_get_run_url_passes_the_agent_of_an_addressed_tracer() -> None:
+    client = unittest.mock.MagicMock(spec=Client)
+    client.get_run_url.return_value = "https://smith.example/run"
+    support = langsmith.AgentAddress("support", "staging")
+    tracer = LangChainTracer(client=client, address=support)
+    _nested_chain().invoke(1, {"callbacks": [tracer]})
+
+    assert tracer.get_run_url() == "https://smith.example/run"
+    kwargs = client.get_run_url.call_args.kwargs
+    assert kwargs["address"] == support
+    assert kwargs["project_name"] is None
+
+
+@pytest.mark.usefixtures("tracer_env")
+def test_get_run_url_of_a_project_tracer_passes_no_agent() -> None:
+    client = unittest.mock.MagicMock(spec=Client)
+    client.get_run_url.return_value = "https://smith.example/run"
+    tracer = LangChainTracer(client=client, project_name="configured")
+    _nested_chain().invoke(1, {"callbacks": [tracer]})
+
+    assert tracer.get_run_url() == "https://smith.example/run"
+    kwargs = client.get_run_url.call_args.kwargs
+    assert "address" not in kwargs
+    assert kwargs["project_name"] == "configured"

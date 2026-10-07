@@ -337,6 +337,9 @@ class LangChainTracer(BaseTracer):
         if not self.latest_run:
             msg = "No traced run found."
             raise ValueError(msg)
+        # A run sent to an agent names no project, so langsmith resolves the agent
+        # to its project to build the URL.
+        address_kwargs = {} if self.address is None else {"address": self.address}
         # If this is the first run in a project, the project may not yet be created.
         # This method is only really useful for debugging flows, so we will assume
         # there is some tolerace for latency.
@@ -349,7 +352,9 @@ class LangChainTracer(BaseTracer):
                 return cast(
                     "str",
                     self.client.get_run_url(
-                        run=self.latest_run, project_name=self.project_name
+                        run=self.latest_run,
+                        project_name=self.project_name,
+                        **address_kwargs,
                     ),
                 )
         msg = "Failed to get run URL."
