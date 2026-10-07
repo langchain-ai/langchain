@@ -163,7 +163,7 @@ class LangChainTracer(BaseTracer):
             metadata: Additional metadata to include if it isn't already in the run.
 
                 Defaults to None.
-            address: A `langsmith.Agent(...)` to send runs to instead of a
+            address: (beta) A `langsmith.Agent(...)` to send runs to instead of a
                 project.
 
                 Ignored if `project_name` is set.
