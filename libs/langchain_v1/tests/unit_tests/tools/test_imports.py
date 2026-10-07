@@ -8,6 +8,8 @@ EXPECTED_ALL = {
     "InjectedToolCallId",
     "ToolException",
     "ToolRuntime",
+    "VettoProcessTool",
+    "VettoShellTool",
     "tool",
 }
 
