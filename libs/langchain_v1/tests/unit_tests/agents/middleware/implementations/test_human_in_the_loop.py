@@ -1838,14 +1838,6 @@ def test_decision_schema_with_one_decision_is_a_plain_object(allowed: list[Decis
             ("edit", "edited_action", "args", "ccc"),
             "extra_forbidden",
         ),
-        (
-            {
-                "type": "edit",
-                "edited_action": {"name": "send_email", "args": {"to": "b"}, "nmae": 1},
-            },
-            ("edit", "edited_action", "nmae"),
-            "extra_forbidden",
-        ),
     ],
 )
 def test_decision_schema_rejects_a_bad_answer_with_one_error_at_the_problem(
@@ -1956,8 +1948,8 @@ def test_per_call_interrupt_shows_the_call_and_the_answers_it_accepts() -> None:
     assert edited_action["properties"]["args"] == {"$ref": "#/$defs/send_email"}
     assert (list(args["properties"]), args["required"]) == (["to"], ["to"])
     assert args["description"] == "Send an email."
-    # Unknown fields in an edit are rejected at every level.
-    assert [part["additionalProperties"] for part in (edit, edited_action, args)] == [False] * 3
+    # Args the tool doesn't declare are rejected.
+    assert args["additionalProperties"] is False
 
 
 @pytest.mark.parametrize(

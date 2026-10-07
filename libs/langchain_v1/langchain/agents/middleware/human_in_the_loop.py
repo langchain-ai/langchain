@@ -22,7 +22,6 @@ from langgraph.runtime import get_runtime
 from langgraph.types import Command, interrupt
 from pydantic import (
     BaseModel,
-    ConfigDict,
     Discriminator,
     ValidatorFunctionWrapHandler,
     WithJsonSchema,
@@ -221,19 +220,14 @@ def _as_sent(answer: object, check: ValidatorFunctionWrapHandler) -> object:
 
 
 def _edit_decision(name: str, tool: BaseTool | None) -> object:
-    """`EditDecision` for one tool: `name` pinned to it, `args` from `_edit_args`.
-
-    Undeclared fields are rejected, so a typo fails instead of being dropped.
-    """
+    """`EditDecision` for one tool: `name` pinned to it, `args` from `_edit_args`."""
     edited_action = create_model(
         "EditedAction",
-        __config__=ConfigDict(extra="forbid"),
         name=(Literal[name], ...),
         args=(_edit_args(tool), ...),
     )
     decision = create_model(
         "EditDecision",
-        __config__=ConfigDict(extra="forbid"),
         type=(Literal["edit"], ...),
         edited_action=(edited_action, ...),
     )
