@@ -845,6 +845,90 @@ def test_responses_reasoning_done_without_encrypted_content_emits_no_chunk() -> 
         )
 
 
+def test_responses_stream_item_output_index_drift_keeps_text_block() -> None:
+    """A final answer survives `output_index` drifting between an item's events.
+
+    Regression test: after several built-in tool calls the API can report a later
+    `output_index` on an item's `done` events than on its `added` event. Blocks
+    that share an `index` are merged, so the reasoning `done` block swallowed the
+    message text, leaving `.text` empty and the answer under a `reasoning` block.
+    """
+    text = '{"news_items": []}'
+    stream = [
+        ResponseOutputItemAddedEvent(
+            item=ResponseReasoningItem(
+                id="rs_123", summary=[], type="reasoning", status=None
+            ),
+            output_index=0,
+            sequence_number=1,
+            type="response.output_item.added",
+        ),
+        ResponseOutputItemDoneEvent(
+            item=ResponseReasoningItem(
+                id="rs_123",
+                summary=[],
+                type="reasoning",
+                encrypted_content="encrypted-content",
+                status=None,
+            ),
+            output_index=1,  # drifted: added at 0
+            sequence_number=2,
+            type="response.output_item.done",
+        ),
+        ResponseOutputItemAddedEvent(
+            item=ResponseOutputMessage(
+                id="msg_123",
+                content=[],
+                role="assistant",
+                status="in_progress",
+                type="message",
+            ),
+            output_index=1,
+            sequence_number=3,
+            type="response.output_item.added",
+        ),
+        ResponseTextDeltaEvent(
+            content_index=0,
+            delta=text,
+            item_id="msg_123",
+            output_index=1,
+            sequence_number=4,
+            logprobs=[],
+            type="response.output_text.delta",
+        ),
+        ResponseTextDoneEvent(
+            content_index=0,
+            item_id="msg_123",
+            output_index=2,  # drifted: added at 1
+            sequence_number=5,
+            text=text,
+            logprobs=[],
+            type="response.output_text.done",
+        ),
+    ]
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+
+    assert full.text == text
+    assert [block["type"] for block in full.content if isinstance(block, dict)] == [
+        "reasoning",
+        "text",
+    ]
+    indexes = [block["index"] for block in full.content if isinstance(block, dict)]
+    assert indexes == [0, 1]
+
+
 def test_responses_stream_events_v3_emits_reasoning_lifecycle() -> None:
     """v3 streaming emits `content-block-finish` events for reasoning blocks.
 
