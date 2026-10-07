@@ -50,7 +50,6 @@ def _launch_subprocess(
 
 if typing.TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
-    from pathlib import Path
 
 
 @dataclass
@@ -377,9 +376,120 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
         return path
 
 
+@dataclass
+class VettoSandboxExecutionPolicy(BaseExecutionPolicy):
+    """Launch the shell through an unprivileged kernel-level Vetto sandbox.
+
+    Vetto provides daemon-less, rootless kernel sandbox boundaries (Linux
+    Landlock LSM ABI 1-6, namespaces, cgroups v2, macOS Seatbelt, Windows
+    LPAC) with sub-4ms startup overhead and zero daemon memory footprint.
+    Sensitive paths such as `~/.ssh`, `~/.aws`, and `.env` are masked at the
+    filesystem boundary.
+
+    If the Vetto executable is not found on PATH and `allow_fallback` is
+    `False`, process launch raises `RuntimeError`. Set `allow_fallback=True`
+    to fall back to process-group host execution.
+    """
+
+    binary: str = "vetto"
+    net: str = "off"
+    allowed_domains: Sequence[str] | None = None
+    allow_write: Sequence[str] | None = None
+    allow_read: Sequence[str] | None = None
+    memory_limit: str | None = None
+    allow_fallback: bool = False
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.net not in {"off", "allowlist", "host"}:
+            msg = f"Invalid net mode: {self.net}. Must be 'off', 'allowlist', or 'host'."
+            raise ValueError(msg)
+        if self.net == "allowlist" and not self.allowed_domains:
+            msg = "allowed_domains must be non-empty when net='allowlist'."
+            raise ValueError(msg)
+
+    def spawn(
+        self,
+        *,
+        workspace: Path,
+        env: Mapping[str, str],
+        command: Sequence[str],
+    ) -> subprocess.Popen[str]:
+        full_command = self._build_command(workspace, command)
+        host_env = os.environ.copy()
+        host_env.update(env)
+        return _launch_subprocess(
+            full_command,
+            env=host_env,
+            cwd=workspace,
+            preexec_fn=None,
+            start_new_session=True,
+        )
+
+    def _build_command(
+        self,
+        workspace: Path,
+        command: Sequence[str],
+    ) -> list[str]:
+        binary = self._resolve_binary()
+        if binary is None:
+            if not self.allow_fallback:
+                msg = (
+                    f"Vetto sandbox policy requires the '{self.binary}' CLI to be installed "
+                    "and available on PATH, or allow_fallback=True."
+                )
+                raise RuntimeError(msg)
+            return list(command)
+
+        resolved_workspace = str(workspace.resolve())
+        full_command: list[str] = [binary, "run", f"--net={self.net}"]
+
+        if self.command_timeout > 0:
+            full_command.extend(["--timeout", str(int(self.command_timeout))])
+
+        if self.memory_limit:
+            full_command.extend(["--memory", self.memory_limit])
+
+        full_command.extend(["--allow-write", resolved_workspace])
+
+        if self.allow_write:
+            for path in self.allow_write:
+                full_command.extend(["--allow-write", str(Path(path).resolve())])
+
+        if self.allow_read:
+            for path in self.allow_read:
+                full_command.extend(["--allow-read", str(Path(path).resolve())])
+
+        if self.net == "allowlist" and self.allowed_domains:
+            for domain in self.allowed_domains:
+                full_command.extend(["--allow-domain", domain])
+
+        full_command.append("--")
+        full_command.extend(command)
+        return full_command
+
+    def _resolve_binary(self) -> str | None:
+        env_path = os.getenv("VETTO_PATH")
+        if env_path and Path(env_path).is_file() and os.access(env_path, os.X_OK):
+            return env_path
+        path = shutil.which(self.binary)
+        if path:
+            return path
+        candidates = [
+            str(Path("~/.cargo/bin/vetto").expanduser()),
+            "/usr/local/bin/vetto",
+            "/usr/bin/vetto",
+        ]
+        for candidate in candidates:
+            if Path(candidate).is_file() and os.access(candidate, os.X_OK):
+                return candidate
+        return None
+
+
 __all__ = [
     "BaseExecutionPolicy",
     "CodexSandboxExecutionPolicy",
     "DockerExecutionPolicy",
     "HostExecutionPolicy",
+    "VettoSandboxExecutionPolicy",
 ]

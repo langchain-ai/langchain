@@ -9,6 +9,7 @@ from langchain_core.tools import (
 )
 
 from langchain.tools.tool_node import InjectedState, InjectedStore, ToolRuntime
+from langchain.tools.vetto import VettoProcessTool, VettoShellTool
 
 __all__ = [
     "BaseTool",
@@ -18,5 +19,7 @@ __all__ = [
     "InjectedToolCallId",
     "ToolException",
     "ToolRuntime",
+    "VettoProcessTool",
+    "VettoShellTool",
     "tool",
 ]

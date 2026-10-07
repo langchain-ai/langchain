@@ -20,6 +20,7 @@ from langchain.agents.middleware.shell_tool import (
     HostExecutionPolicy,
     RedactionRule,
     ShellToolMiddleware,
+    VettoSandboxExecutionPolicy,
 )
 from langchain.agents.middleware.summarization import SummarizationMiddleware, TriggerClause
 from langchain.agents.middleware.todo import TodoListMiddleware
@@ -87,6 +88,7 @@ __all__ = [
     "ToolRetryMiddleware",
     "TracePolicy",
     "TriggerClause",
+    "VettoSandboxExecutionPolicy",
     "after_agent",
     "after_model",
     "before_agent",

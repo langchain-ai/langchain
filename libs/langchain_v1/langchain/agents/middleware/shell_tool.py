@@ -31,6 +31,7 @@ from langchain.agents.middleware._execution import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
     HostExecutionPolicy,
+    VettoSandboxExecutionPolicy,
 )
 from langchain.agents.middleware._redaction import (
     PIIDetectionError,
@@ -946,4 +947,5 @@ __all__ = [
     "HostExecutionPolicy",
     "RedactionRule",
     "ShellToolMiddleware",
+    "VettoSandboxExecutionPolicy",
 ]
