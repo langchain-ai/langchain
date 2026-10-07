@@ -12,7 +12,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt.tool_node import ToolNode, ToolRuntime
 from langgraph.runtime import Runtime
 from langgraph.types import Command
-from pydantic import AfterValidator, BaseModel, ConfigDict, TypeAdapter, ValidationError
+from pydantic import AfterValidator, TypeAdapter, ValidationError
 
 from langchain.agents.factory import _make_tools_to_model_edge, create_agent
 from langchain.agents.middleware import InterruptOnConfig, ToolErrorMiddleware, ToolRetryMiddleware
@@ -1860,22 +1860,6 @@ def test_decision_schema_rejects_a_bad_answer_with_one_error_at_the_problem(
     with pytest.raises(ValidationError) as exc_info:
         TypeAdapter(schema).validate_python(answer)
     assert [(e["loc"], e["type"]) for e in exc_info.value.errors()] == [(loc, error_type)]
-
-
-def test_edit_args_keep_extras_when_the_tool_accepts_them() -> None:
-    class LooseArgs(BaseModel):
-        model_config = ConfigDict(extra="allow")
-        to: str
-
-    loose = StructuredTool(
-        name="send_email", description="d", args_schema=LooseArgs, func=lambda **_: "sent"
-    )
-    args = {"to": "bob", "priority": "high"}
-    answer = {"type": "edit", "edited_action": {"name": "send_email", "args": args}}
-    assert (
-        TypeAdapter(_decision_schema(["edit"], "send_email", loose)).validate_python(answer)
-        == answer
-    )
 
 
 @pytest.mark.parametrize(

@@ -194,24 +194,23 @@ def _edit_args(tool: BaseTool | None) -> object:
     """What an edit's `args` must look like: the tool's Pydantic schema, if it has one.
 
     That's the schema the model sees (`tool_call_schema`): it checks arg types and
-    required args, and rejects args it doesn't declare unless the tool accepts extras.
+    required args, and rejects args it doesn't declare.
     Validator methods on the tool's `args_schema` aren't part of it; they run when the
     tool does.
     A JSON-schema tool's schema is shown but not enforced, and with no tool any object
     is accepted.
     """
     schema = tool.tool_call_schema if tool else None
-    if not (tool and isinstance(schema, type) and issubclass(schema, BaseModel)):
+    if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
         shown = schema if isinstance(schema, dict) else {"type": "object"}
         return Annotated[dict[str, Any], WithJsonSchema(shown)]
-    # `tool_call_schema` drops the tool's own `extra` setting, so read it from `args_schema`.
-    allows_extra = getattr(tool.args_schema, "model_config", {}).get("extra") == "allow"
-    # A subclass keeps the tool's fields, name and description.
+    # `tool_call_schema` ignores args it doesn't declare, so a typo'd edit would run
+    # without it. The subclass rejects them and keeps the tool's fields, name and description.
     return create_model(
         schema.__name__,
         __base__=schema,
         __doc__=schema.__doc__,
-        __cls_kwargs__={"extra": "allow" if allows_extra else "forbid"},
+        __cls_kwargs__={"extra": "forbid"},
     )
 
 
