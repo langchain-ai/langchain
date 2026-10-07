@@ -21,11 +21,12 @@ from langgraph.prebuilt.tool_node import ToolRuntime
 from langgraph.runtime import get_runtime
 from langgraph.types import Command, interrupt
 from pydantic import (
-    AfterValidator,
     BaseModel,
     ConfigDict,
     Discriminator,
+    ValidatorFunctionWrapHandler,
     WithJsonSchema,
+    WrapValidator,
     create_model,
 )
 from typing_extensions import NotRequired, TypedDict
@@ -189,7 +190,8 @@ def _edit_args(tool: BaseTool | None) -> object:
 
     That's the schema the model sees (`tool_call_schema`): it checks arg types and
     required args, and rejects args it doesn't declare unless the tool accepts extras.
-    It leaves out validators on the tool's `args_schema`; those run when the tool does.
+    Validator methods on the tool's `args_schema` aren't part of it; they run when the
+    tool does.
     A JSON-schema tool's schema is shown but not enforced, and with no tool any object
     is accepted.
     """
@@ -199,13 +201,19 @@ def _edit_args(tool: BaseTool | None) -> object:
         return Annotated[dict[str, Any], WithJsonSchema(shown)]
     # `tool_call_schema` drops the tool's own `extra` setting, so read it from `args_schema`.
     allows_extra = getattr(tool.args_schema, "model_config", {}).get("extra") == "allow"
-    # A subclass keeps the tool's fields, validators, name and description.
+    # A subclass keeps the tool's fields, name and description.
     return create_model(
         schema.__name__,
         __base__=schema,
         __doc__=schema.__doc__,
         __cls_kwargs__={"extra": "allow" if allows_extra else "forbid"},
     )
+
+
+def _as_sent(answer: object, check: ValidatorFunctionWrapHandler) -> object:
+    """Check `answer`, then pass it on as sent, so the tool validates its args once."""
+    check(answer)
+    return answer
 
 
 def _edit_decision(name: str, tool: BaseTool | None) -> object:
@@ -225,8 +233,7 @@ def _edit_decision(name: str, tool: BaseTool | None) -> object:
         type=(Literal["edit"], ...),
         edited_action=(edited_action, ...),
     )
-    # Parses into a plain `EditDecision` dict holding only the fields the reviewer sent.
-    return Annotated[decision, AfterValidator(lambda model: model.model_dump(exclude_unset=True))]
+    return Annotated[decision, WrapValidator(_as_sent)]
 
 
 def _decision_schema(
@@ -431,8 +438,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 all gated tool calls. `"per_call"` raises one per gated call, answered by
                 interrupt ID, with `type: "tool_approval"` and a typed `response_schema`.
                 In `per_call` mode an edit can't switch tools, its args are checked
-                against the tool's argument types (validators on its `args_schema`
-                run when the tool does), and an invalid answer raises
+                against the tool's argument types (validator methods on its
+                `args_schema` run when the tool does), and an invalid answer raises
                 `pydantic.ValidationError` without being saved. If one of several
                 answers sent together is invalid, the others' tools may already have
                 run even if they still show as pending, and answering again would run

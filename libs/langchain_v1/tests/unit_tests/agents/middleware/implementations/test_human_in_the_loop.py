@@ -1,7 +1,7 @@
 import re
 import sys
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Annotated, Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -12,7 +12,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt.tool_node import ToolNode, ToolRuntime
 from langgraph.runtime import Runtime
 from langgraph.types import Command
-from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
+from pydantic import AfterValidator, BaseModel, ConfigDict, TypeAdapter, ValidationError
 
 from langchain.agents.factory import _make_tools_to_model_edge, create_agent
 from langchain.agents.middleware import InterruptOnConfig, ToolErrorMiddleware, ToolRetryMiddleware
@@ -2024,9 +2024,11 @@ def test_per_call_resume_with_each_decision(
     assert ("Executed instead: send_email" in str(message.content)) == (answer["type"] == "edit")
 
 
-def test_per_call_edit_leaves_injected_args_to_the_tool() -> None:
+def test_per_call_edit_leaves_validation_and_injected_args_to_the_tool() -> None:
     @tool
-    def send_email(to: str, runtime: ToolRuntime) -> str:
+    def send_email(
+        to: Annotated[str, AfterValidator(lambda v: f"<{v}>")], runtime: ToolRuntime
+    ) -> str:
         """Send an email."""
         return f"sent to {to} for {runtime.tool_call_id}"
 
@@ -2037,12 +2039,13 @@ def test_per_call_edit_leaves_injected_args_to_the_tool() -> None:
     )
     config: RunnableConfig = {"configurable": {"thread_id": "t"}}
     [intr] = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
-    # The reviewer edits only what the model sees; `runtime` is injected when the tool runs.
+    # The reviewer edits only what the model sees; the tool validates the edit once and
+    # gets `runtime` injected.
     assert list(intr.response_schema["$defs"]["send_email"]["properties"]) == ["to"]
     edit = {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": "bob"}}}
     final = agent.invoke(Command(resume={intr.id: edit}), config)
     [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
-    assert str(message.content).endswith("sent to bob for call_email")
+    assert str(message.content).endswith("sent to <bob> for call_email")
 
 
 def test_per_call_pauses_once_per_gated_call_and_applies_answers_by_id() -> None:
