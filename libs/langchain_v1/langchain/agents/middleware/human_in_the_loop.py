@@ -433,10 +433,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 In `per_call` mode an edit can't switch tools, its args are checked
                 against the tool's argument types (validators on its `args_schema`
                 run when the tool does), and an invalid answer raises
-                `pydantic.ValidationError` without being saved. When one resume
-                answers several interrupts, each answer is applied on its own: an
-                invalid one raises and stays pending while the others may already
-                have run, so re-read the pending interrupts after an error. For a
+                `pydantic.ValidationError` without being saved. If one of several
+                answers sent together is invalid, the others' tools may already have
+                run even if they still show as pending, and answering again would run
+                them twice: check answers against `response_schema` before sending
+                them together, or send one at a time. For a
                 tool whose arguments are a JSON schema rather than a Pydantic model,
                 edits are shown in `response_schema` but not checked.
 
