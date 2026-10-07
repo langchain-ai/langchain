@@ -401,8 +401,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 _format_message_content(message.content)
             ),
         }
-        # Only replay reasoning Fireworks produced (or hand-built messages with no
-        # provider); other providers' reasoning may not be valid input here.
+        # Replay reasoning only when the message is tagged `fireworks` or has no
+        # `model_provider` (hand-built messages, or integrations that don't tag
+        # theirs); reasoning from other tagged providers may not be valid input.
         if isinstance(
             reasoning_content := message.additional_kwargs.get("reasoning_content"), str
         ) and message.response_metadata.get("model_provider") in (None, "fireworks"):
@@ -615,13 +616,15 @@ def _format_chunk_for_v1(message_chunk: AIMessageChunk) -> AIMessageChunk:
     """Convert a stream chunk to v1 content blocks with separate index namespaces.
 
     Fireworks streams a single text field and a single `reasoning_content` field,
-    but numbers tool calls from 0. Left to core, `BaseChatModel.stream` assigns
-    positional integer indices to the reasoning and text blocks (0, 1, ...), so
-    tool call 0 would be merged into the reasoning block by `merge_lists`.
+    but numbers tool calls from 0. Left to core, streaming (`stream`, `astream`,
+    and streaming `invoke`) gives unindexed blocks an integer that increments each
+    time the block type changes, so tool call 0 would be merged into the reasoning
+    block by `merge_lists`, and reasoning interrupted by text would split in two.
 
-    Indices must start with `lc_`: `merge_lists` only merges string indices with
-    that prefix. The raw `tool_call_chunks` keep the provider's integer indices,
-    which `AIMessageChunk.__add__` relies on to merge tool-call arguments.
+    `merge_lists` merges blocks with matching indices only when the index is an int
+    or a string starting with `lc_`; other strings are appended unmerged. The raw
+    `tool_call_chunks` keep the provider's integer indices, which
+    `AIMessageChunk.__add__` relies on to merge tool-call arguments.
     """
     blocks: list[dict[str, Any]] = []
     if reasoning := message_chunk.additional_kwargs.get("reasoning_content"):

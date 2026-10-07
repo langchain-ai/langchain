@@ -1,4 +1,4 @@
-"""Regression tests for reasoning preservation in ChatFireworks tool loops."""
+"""Tests for `ChatFireworks` reasoning preservation, usage details, and v1 streaming."""
 
 from __future__ import annotations
 
@@ -176,7 +176,7 @@ async def test_reasoning_survives_two_tool_turns(
     *,
     disable_streaming: bool | Literal["tool_calling"],
 ) -> None:
-    """Exercise chunk assembly and request serialization at the SDK boundary."""
+    """Exercise chunk assembly and request serialization against a mocked client."""
     client = MagicMock()
     async_client = MagicMock()
     client.create.side_effect = lambda **_: _tool_stream()
