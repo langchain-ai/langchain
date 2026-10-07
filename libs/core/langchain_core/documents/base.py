@@ -67,7 +67,7 @@ class Blob(BaseMedia):
     ???+ example "Initialize a blob from in-memory data"
 
         ```python
-        from langchain_core.documents import Blob
+        from langchain_core.documents.base import Blob
 
         blob = Blob.from_data("Hello, world!")
 
@@ -85,7 +85,7 @@ class Blob(BaseMedia):
     ??? example "Load from memory and specify MIME type and metadata"
 
         ```python
-        from langchain_core.documents import Blob
+        from langchain_core.documents.base import Blob
 
         blob = Blob.from_data(
             data="Hello, world!",
@@ -97,7 +97,7 @@ class Blob(BaseMedia):
     ??? example "Load the blob from a file"
 
         ```python
-        from langchain_core.documents import Blob
+        from langchain_core.documents.base import Blob
 
         blob = Blob.from_path("path/to/file.txt")
 
