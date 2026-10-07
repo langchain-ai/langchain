@@ -845,72 +845,69 @@ def test_responses_reasoning_done_without_encrypted_content_emits_no_chunk() -> 
         )
 
 
-def test_responses_stream_item_output_index_drift_keeps_text_block() -> None:
-    """A final answer survives `output_index` drifting between an item's events.
+_OUTPUT_INDEX_DRIFT_TEXT = '{"news_items": []}'
 
-    Regression test: after several built-in tool calls the API can report a later
-    `output_index` on an item's `done` events than on its `added` event. Blocks
-    that share an `index` are merged, so the reasoning `done` block swallowed the
-    message text, leaving `.text` empty and the answer under a `reasoning` block.
-    """
-    text = '{"news_items": []}'
-    stream = [
-        ResponseOutputItemAddedEvent(
-            item=ResponseReasoningItem(
-                id="rs_123", summary=[], type="reasoning", status=None
-            ),
-            output_index=0,
-            sequence_number=1,
-            type="response.output_item.added",
+# `output_index` on the `done` events is one higher than on the `added` events.
+_output_index_drift_stream = [
+    ResponseOutputItemAddedEvent(
+        item=ResponseReasoningItem(
+            id="rs_123", summary=[], type="reasoning", status=None
         ),
-        ResponseOutputItemDoneEvent(
-            item=ResponseReasoningItem(
-                id="rs_123",
-                summary=[],
-                type="reasoning",
-                encrypted_content="encrypted-content",
-                status=None,
-            ),
-            output_index=1,  # drifted: added at 0
-            sequence_number=2,
-            type="response.output_item.done",
+        output_index=0,
+        sequence_number=1,
+        type="response.output_item.added",
+    ),
+    ResponseOutputItemDoneEvent(
+        item=ResponseReasoningItem(
+            id="rs_123",
+            summary=[],
+            type="reasoning",
+            encrypted_content="encrypted-content",
+            status=None,
         ),
-        ResponseOutputItemAddedEvent(
-            item=ResponseOutputMessage(
-                id="msg_123",
-                content=[],
-                role="assistant",
-                status="in_progress",
-                type="message",
-            ),
-            output_index=1,
-            sequence_number=3,
-            type="response.output_item.added",
+        output_index=1,
+        sequence_number=2,
+        type="response.output_item.done",
+    ),
+    ResponseOutputItemAddedEvent(
+        item=ResponseOutputMessage(
+            id="msg_123",
+            content=[],
+            role="assistant",
+            status="in_progress",
+            type="message",
         ),
-        ResponseTextDeltaEvent(
-            content_index=0,
-            delta=text,
-            item_id="msg_123",
-            output_index=1,
-            sequence_number=4,
-            logprobs=[],
-            type="response.output_text.delta",
-        ),
-        ResponseTextDoneEvent(
-            content_index=0,
-            item_id="msg_123",
-            output_index=2,  # drifted: added at 1
-            sequence_number=5,
-            text=text,
-            logprobs=[],
-            type="response.output_text.done",
-        ),
-    ]
+        output_index=1,
+        sequence_number=3,
+        type="response.output_item.added",
+    ),
+    ResponseTextDeltaEvent(
+        content_index=0,
+        delta=_OUTPUT_INDEX_DRIFT_TEXT,
+        item_id="msg_123",
+        output_index=1,
+        sequence_number=4,
+        logprobs=[],
+        type="response.output_text.delta",
+    ),
+    ResponseTextDoneEvent(
+        content_index=0,
+        item_id="msg_123",
+        output_index=2,
+        sequence_number=5,
+        text=_OUTPUT_INDEX_DRIFT_TEXT,
+        logprobs=[],
+        type="response.output_text.done",
+    ),
+]
+
+
+def test_responses_stream_output_index_drift() -> None:
     llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
-        return MockSyncContextManager(stream)
+        return MockSyncContextManager(_output_index_drift_stream)
 
     mock_client.responses.create = mock_create
 
@@ -919,14 +916,32 @@ def test_responses_stream_item_output_index_drift_keeps_text_block() -> None:
         for chunk in llm.stream("test"):
             full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-
-    assert full.text == text
-    assert [block["type"] for block in full.content if isinstance(block, dict)] == [
-        "reasoning",
-        "text",
+    assert full.text == _OUTPUT_INDEX_DRIFT_TEXT
+    assert [(block["type"], block["index"]) for block in full.content] == [  # type: ignore[index]
+        ("reasoning", 0),
+        ("text", 1),
     ]
-    indexes = [block["index"] for block in full.content if isinstance(block, dict)]
-    assert indexes == [0, 1]
+
+
+async def test_responses_astream_output_index_drift() -> None:
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(_output_index_drift_stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_async_client", mock_client):
+        async for chunk in llm.astream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.text == _OUTPUT_INDEX_DRIFT_TEXT
+    assert [(block["type"], block["index"]) for block in full.content] == [  # type: ignore[index]
+        ("reasoning", 0),
+        ("text", 1),
+    ]
 
 
 def test_responses_stream_events_v3_emits_reasoning_lifecycle() -> None:

@@ -5369,6 +5369,19 @@ def _convert_responses_chunk_to_generation_chunk(
     output_version: str | None = None,
     item_output_indices: dict[str, int] | None = None,  # item id -> `output_index`
 ) -> tuple[int, int, int, ChatGenerationChunk | None]:
+    # After several built-in tool calls the API can report a later `output_index` on
+    # an item's `done` events than on its `added` event. Pin each item to the first
+    # `output_index` seen so its events keep landing on the same content block.
+    item_id = getattr(getattr(chunk, "item", None), "id", None) or getattr(
+        chunk, "item_id", None
+    )
+    if (
+        item_output_indices is not None
+        and item_id is not None
+        and (stream_output_index := getattr(chunk, "output_index", None)) is not None
+    ):
+        item_output_indices.setdefault(item_id, stream_output_index)
+
     def _advance(output_idx: int, sub_idx: int | None = None) -> None:
         """Advance indexes tracked during streaming.
 
@@ -5414,19 +5427,6 @@ def _convert_responses_chunk_to_generation_chunk(
                 current_index += 1
             current_sub_index = sub_idx
         current_output_index = output_idx
-
-    # After several built-in tool calls the API can report a later `output_index` on
-    # an item's `done` events than on its `added` event. Pin each item to the first
-    # `output_index` seen so its events keep landing on the same content block.
-    item_id = getattr(getattr(chunk, "item", None), "id", None) or getattr(
-        chunk, "item_id", None
-    )
-    if (
-        item_output_indices is not None
-        and item_id is not None
-        and (stream_output_index := getattr(chunk, "output_index", None)) is not None
-    ):
-        item_output_indices.setdefault(item_id, stream_output_index)
 
     if output_version is None:
         # Sentinel value of None lets us know if output_version is set explicitly.
