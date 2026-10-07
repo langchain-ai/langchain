@@ -7,7 +7,6 @@ from typing import Any
 
 import openai
 import pytest
-from langchain_core._api import LangChainBetaWarning
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.exceptions import ModelAuthenticationError
 from langchain_core.load import dumps, loads
@@ -142,8 +141,8 @@ def _async_decisions(handler: Any, **kwargs: Any) -> OpenAIDecisions:
 
 
 def test_is_beta() -> None:
-    with pytest.warns(LangChainBetaWarning):
-        OpenAIDecisions(model=MODEL, api_key=SecretStr(API_KEY))
+    # The beta warning fires once per process, so check the decorator's marker.
+    assert (OpenAIDecisions.__doc__ or "").startswith(".. beta::")
 
 
 def test_model_is_required() -> None:
