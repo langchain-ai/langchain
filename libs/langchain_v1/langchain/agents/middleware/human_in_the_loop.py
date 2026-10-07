@@ -374,8 +374,8 @@ class InterruptOnConfig(TypedDict):
     `ToolCallRequest`, with `tool` and the tool's `ToolRuntime` set.
 
     In both modes the predicate runs again when the run resumes, so it must return the
-    same answer for the same call. If it returns `False` on resume, the reviewer's
-    answer is skipped and the tool runs, even if they rejected it.
+    same answer for the same call. In `per_call` mode, if it returns `False` on resume,
+    the reviewer's answer is skipped and the tool runs, even if they rejected it.
 
     Example:
         ```python
