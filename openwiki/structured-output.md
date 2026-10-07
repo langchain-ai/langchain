@@ -1,18 +1,18 @@
 ---
 type: "Reference"
-title: "AutoStrategy (recommended)"
-openwiki_generated: true
+title: "Structured Output and Response Formatting"
+description: "Document the structured output system: response format specification, strategy selection (auto, provider, tool-based), parsing, validation, and middleware integration."
+tags: [structured-output, response-format, agent, schema, validation, middleware]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-ec30ab6256dd50cc670919f6
     resource: repo://libs/langchain_v1/langchain/agents/structured_output.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
 ---
-
 
 ## Overview
 
@@ -338,7 +338,24 @@ To enable validation and retries, express schemas as Pydantic models or TypedDic
 The agent state includes structured output handling via:
 
 - **messages**: Includes tool calls and tool messages from structured output invocation
-- **structured_response**: Holds the parsed schema instance (set when output is valid, cleared on error retry)
+- **structured_response**: Holds the parsed schema instance (set when output is valid, cleared on error retry or when no structured output is produced)
+
+### Structured Response Clearing
+
+The `_build_commands()` function ensures that `structured_response` field is explicitly cleared when:
+
+1. Agent is configured with `response_format` (has_structured_output = True)
+2. Model invocation did not produce a structured response
+
+This prevents stale values from previous checkpointed turns in persistent agent state. The clearing happens in the state update passed to the graph:
+
+```python
+state: dict[str, Any] = {"messages": messages}
+if model_response.structured_response is not None:
+    state["structured_response"] = model_response.structured_response
+elif has_structured_output:
+    state["structured_response"] = None  # Explicitly clear to avoid stale values
+```
 
 ### Lifecycle Events
 
@@ -363,7 +380,7 @@ Return to user or continue loop
 
 ## Configuration and Middleware
 
-Middleware can override `response_format` at invocation time via `ModelRequest.override()`:
+Raw schemas and strategy decisions are passed to middleware via `ModelRequest.response_format`. Middleware can override `response_format` at invocation time via `ModelRequest.override()`:
 
 ```python
 class MyMiddleware(AgentMiddleware):

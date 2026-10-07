@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7f15b0e6bb2c95e703a2e0c8f6fe04091727b2cb26ae3a3260124cd43f1394e0",
+  "pageVersion": "sha256:0b30f28f261bdfcaa70879e3939ef3edfa29912261c6ab720c39bd340ea91064",
   "claims": [
     {
       "id": "claim_bdde90f4e5f6413f8214fe7e80b66a9a",
@@ -14,7 +14,7 @@
     },
     {
       "id": "claim_20d69ecaf7e34bfd922eda9176b4adba",
-      "statement": "The conftest.py blockbuster fixture (autouse=True) prevents blocking I/O in async code by registering allowed blocking calls in specific functions like os.stat in langchain_core/_api/internal.py and os.path.abspath in runnables/base.py.",
+      "statement": "The conftest.py blockbuster fixture (autouse=True) prevents blocking I/O in async code by registering allowed blocking calls: os.stat and os.path.abspath in langchain_core/_api/internal.py (is_caller_internal) and langchain_core/runnables/base.py (__repr__); os.stat and io.TextIOWrapper.read in langsmith/client.py (_default_retry_config); and all functions in freezegun/api.py (_get_cached_module_attributes).",
       "evidence": [
         {
           "resource": "repo://libs/core/tests/unit_tests/conftest.py#L12-L32",
@@ -185,10 +185,74 @@
           "version": "repo-file-v1:sha256:c80ecf32bea0b4e7d5a86ae816614622e63f082e45bf2dc665118ddcb8400d87"
         }
       ]
+    },
+    {
+      "id": "claim_b531aedeea8b43a5aeb654bc30862416",
+      "statement": "FakeToolCallingModel in tests.unit_tests.agents.model enables agent testing without API calls by scripting predictable tool calls, supporting tool_style ('openai' or 'anthropic'), structured_response for structured output modes, and an auto-incrementing index for multi-turn test scenarios.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/model.py#L23-L112",
+          "version": "repo-lines-v1:sha256:6fbb1da3298e723f5c3b059b3c9afec1231041b6148b14ff5ee521e57f019940:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4YTliYTUxMzlmYTEwNzNkNjk0NzQ5OTU1ZThlY2I3ZTRhMDk1ZjY2NjdiYzI1YzQ1NTM4NjFjNDRlYWI1YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3ZTllYTZmMThjMmY5ZWEwOTMwNjZjZGI4MGNjMzI5MDI2YTcwZTkzMzY0OTU4NDdhNzY0ZjhlZWYzNGUxMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMzVkNTQxMGU0ZDE1OTEwZTA5OTUzMTRhMmJmZWVjNjcwM2Q3MDQyY2ZhMTRiZDg3ODBmYjNlOTRmNWZhMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_29997145daa84c7fa4ca7d693f3693ba",
+      "statement": "InvalidToolCallingModel simulates models returning malformed tool calls with invalid_tool_calls field; agents produce ToolMessage with status='error' on invalid calls, enabling recovery on next turn; test_invalid_tool_calls.py verifies agent behavior for invalid JSON in tool args, mixed valid/invalid calls, and historical invalid calls already in state.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/test_invalid_tool_calls.py#L19-L209",
+          "version": "repo-lines-v1:sha256:45f5767ee977fd731ad6a82d1fdce0a4e39a68324019d77b467ce0608f508b51:eyJzZWxlY3RlZExpbmVDb3VudCI6MTkxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMDlkZGVkZTdmNWFiYTI2OGM2OWRmODQxNjQxZGVjMGFhODU5NzQ1NWVlNzQ3YTNiYmJiZGVmYWFmZDEyNmI1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMjRjMjEyNzA0NGRmNmRkMTU4NDI1Y2QxMzEzNzc0ZjU0ZTFjNDQ1MDgxZjBkMTY3NGExMGMwNmFlZGFlNjZmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhYzEzM2VlNTI3ODhjM2MzYzQyM2UxZmY1ODI1YzFmZjYzMWUzNDUxZTA2YmFjNWQwMDA1ZjdlNzI1M2RlM2ZhIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d89b3787bfe4c81ad80db947d50ee94",
+      "statement": "Agent conftest.py provides parametrized sync/async checkpointer and store fixtures (memory, sqlite, postgres backends); LANGGRAPH_TEST_FAST controls fast vs comprehensive testing; deterministic_uuids fixture patches uuid.uuid4 for snapshot testing; anyio_backend fixture configures asyncio.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/conftest.py#L1-L194",
+          "version": "repo-lines-v1:sha256:adf0b3740a02889add6c741b22bab2cceca3ec97d01bf84ed75da030f2f84142:eyJzZWxlY3RlZExpbmVDb3VudCI6MTk0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNzI3YWRmZjUyNGUwNjE2MDIyZWFkZDhmNGFmMjFhMDc3OGIyOWZjNGM3N2JkZmVmZDFhZmNlMmNiZjVlNGI3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MzNiMzY3OTY3ZTg3N2ViYTJkYTE2ZjQwZmI5YzA4MGMwMGYzNzJjZjgxNmZlNjdjMTY3MzFjZjMyZTdhYTRmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_5bdc88ea150f403aa61aa3f236bc1234",
+      "statement": "AnyStr class in tests.unit_tests.agents.any_str matches any string with optional prefix or regex pattern; enables test assertions independent of generated UUIDs; _AnyIdHumanMessage and _AnyIdToolMessage helpers set id field to AnyStr() after message creation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/any_str.py#L1-L19",
+          "version": "repo-lines-v1:sha256:d536f467021365d28da8807ad8c4ef3398066145a4e749f8e30dab57a844857c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MzAzMzMzMTJjNGM5YzIyMzNiYjAyNzYyYmQ0OTgyMDNiMWMzYmYwNTI3NjE0NzM1NjkzYjRiNzlmNmQxNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5YzYwNWU1NTU0ZjEwYWZlYmU1ZDk1YmQ5MTcxNjAzZGU1ZjU5YmYwZTFiNWMxMzRmZjgyZTgwYWJhN2E2YzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/messages.py#L1-L28",
+          "version": "repo-lines-v1:sha256:001f07efccb0eb6e4249bfdca620e83aa9f6e070fbfcf4d577048c65da252b28:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1ODMzODI1YWNmNDY1MzNlN2NiMjgyNGJiY2M2NDFiZmUwOTMzZjg4YmUwNDM2OWUzZTAxNzM3NmU5YTJmMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkZTBhMWNkMWFkNzhjNzZiM2ViY2VhYmJkYThkYmI0MTMwYzhkMGE0Y2U4MzQ0Y2RiN2MyZGIxNDg3ZGU1ZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6b3fcc05742d4323be68e139d329b194",
+      "statement": "Agent streaming tests use stream_events(version='v3') to collect tool_calls via ToolCallTransformer projection; built-in transformers are registered by default and user transformers appended after; ToolCallStream exposes tool_name, tool_call_id, completed, error, and output_deltas fields.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/test_agent_streaming.py#L66-L197",
+          "version": "repo-lines-v1:sha256:d39e752c14a876eab054f49d01030de26b9a7d3ff6719c38fd5ee6776163bc12:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1OTlkZmM2ZGMzYTM1OTJlMTg5YjUwM2FjMzE5MmEyODhlZjhlYmI4ZjExMjBlMzg0OWI4NzVkYWNlNjQzMjQyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5YTgyZWJlOWVkNDA3YzNhNmJhNGIwMDM0MjkyYmFhNTJjMTFjZTVhZTI4NjEwNzQwMmRlNDc5MmVlZWNhY2ZjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2OGY5OGMyOGM1NThlMzdjN2YxNjU1NGQ4YzUxMGJjM2QwMmZkNDU3ZjA0MjQ1YTIxOTVmNzYwZTYwMzdlZDIwIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_4678341ecd2b49bf80160f6591117a6d",
+      "statement": "Unit test organization mirrors source code: modules are tested by corresponding test files in parallel tests/unit_tests/ directories; conftest.py files in test directories provide fixtures automatically available to that directory and subdirectories; agents test suite exemplifies specialized domain conftest.py patterns.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L13-L20",
+          "version": "repo-lines-v1:sha256:ab8103f9ee7c85d9fb1c9d3d0cbe6264d1384aac292f90c74f84c77c06ed5398:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDliMzBjZTkzZjhkMmVlNmQ2NDdlYjNhN2RhYjQ0NjRiNWQ5Yjc5ZGExOTI4ZGE2MDY4MDQ3M2QyY2Y0ZTY4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ2M2RlMzg2ZTA3OTFhZGQ1MmUzZjZlM2EwOWYyYmY2NDhmZTQzMTMxOGUxOTE1YjdlNWRlOTlmN2E1ODQ1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzNzQ1ZTU1YTIzYmI0MzZjYTUxMGFiMTgwNGQyODMwMjhhNTJlNzc5MjE5YmNlNzAyODRkOWY3YjEwMDcxMCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-28T08:35:20.640Z"
   }
 }

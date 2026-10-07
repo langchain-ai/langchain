@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:94885a8043502300eae424ea3f016be44eb925bbaf0ad6297fdd741c3280ee69",
+  "pageVersion": "sha256:f21e3e28f4b0f6a2e1676685bc07733d58f0c614276dc01afd01919fa0c76167",
   "claims": [
     {
       "id": "claim_150a5dc8a9c14fc19c3597a746649ba0",
@@ -168,15 +168,15 @@
     },
     {
       "id": "claim_0fa32e0b43b74b6ea027931573865fc5",
-      "statement": "Structured response is stored in agent state's structured_response field alongside messages; field is cleared on error retry to avoid stale checkpointed values; raw schemas are passed to middleware via ModelRequest.response_format.",
+      "statement": "Structured response is stored in agent state's structured_response field alongside messages; field is cleared on error retry and when no structured output is produced to avoid stale checkpointed values; raw schemas are passed to middleware via ModelRequest.response_format.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1219-L1276",
-          "version": "repo-lines-v1:sha256:2e1c8d13f173b0360296f6ff989dfdc681e2c292a53ec116d98d9845e6b2b630:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZjcwYWU2MjNjMmI5NWNjYzNjNTcxYmY4ZWUxYmE1ZWM5NmNmZjQzOTk2OTk2NGRmOGM4MjMwNTY1NzU5ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxMzdjYjlhZDVlNGY3Y2FhZGFkMjU1MTVhZmEwY2QxMWVjYmVhMGZjMmI1YTZjZTE1ODc0M2I4NWFiYzM1Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxNzVlNWQ2YTFlYjM2OTBmYzQ5NTg1MTZmODlmMjJjYTIxNWZlNGEzZjgyYjg2YWZhNTVhNzRiZjE1YWQ0M2IifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1523-L1532",
+          "version": "repo-lines-v1:sha256:f90faf6cb98bb02a3e43da4f63745152ab8d52abfe10ad15af871c679daa0f7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5MDdjNDljNDkxOTBlNTMxN2ZlNWUyMTBiZmM1N2Q4NDQ2NGExZmE2YjczMWYwNTc4NmE0ODRjMjIyNDEwNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxNjk0YmJmZDlkYzZhZGRhNmZkNmZmN2EyYTVjMzE4ZWIyMTQ3YmI0NTdmYjNmZDdhMTU2OGIzYWI0NTM4OGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzOTBiOWYwMDFlZmIyMmMxNWU4MzQ0ZjkxYTQ2MTI0ZDE0NDk4OTdhM2EzODYyNWU0MjE2ZDExZDg1YzJlMmQifQ"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L226-L242",
-          "version": "repo-lines-v1:sha256:606c549102e85beab88d502650be6ab116496d3959d6cff46a7d1b0520fdc7d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1ZmNmMDEwNDNmMTVhNGRhZGJkNjI5ODdiOWM3OWI4ODg1MjQzNDI2ZWY5ZDBiMzNjMzk0OWVlMzRlYzAyYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDVmOGU1OGIxNGViNTlkNzMxNTJhNGM1MGI1ZTg2OTBmZmNjNDcxOGQxYmQzZWUyYTU0Y2ZhYjhkNzc1MDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNjg0OWY2ZTA0YTdiZGI3NTc4MTM2YTJkOWU0N2E2YjBiZjMxYmMxNTczMGFhODM4NmJjOWExNDIwZWFiYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5YTdjY2ZmMjEyMmJiZmMxZDEwOTZjZTZkODFlMDY4NDY0NjM0ZDA0MjA2OTBlYzVhZTE5YTFmMGYxOWNkMGIifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L226-L260",
+          "version": "repo-lines-v1:sha256:94b8e7fd1684ff07dcc13de3a7d6d302e9a5201ffd0f76f2f228189c0993d08b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiOGE1OWJiOWI1MWQzOTUwNWFhY2U0YzU2ZjliMzM3YTc3ZDMyZjI3OTY5MTlmN2Y0ZjI3MWMyMGY4NGNhNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDVmOGU1OGIxNGViNTlkNzMxNTJhNGM1MGI1ZTg2OTBmZmNjNDcxOGQxYmQzZWUyYTU0Y2ZhYjhkNzc1MDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0ZmM0M2I4NDk0MzFiYTFjZjk3NmIyZmYwODI3ODI3ZWU4ZGJhNWE1YzE5MjUyZTg3NTljODY4Yjk4N2Y3ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5YTdjY2ZmMjEyMmJiZmMxZDEwOTZjZTZkODFlMDY4NDY0NjM0ZDA0MjA2OTBlYzVhZTE5YTFmMGYxOWNkMGIifQ"
         }
       ]
     },
@@ -197,6 +197,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-28T08:35:20.640Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7dc36350c57797f4e4cb42c4ca2523c8a6fda499d2176362da99865392c8721b",
+  "pageVersion": "sha256:6585fb7a1172592cbaf6a865841096f09424e36447d24d244974094163c16746",
   "claims": [
     {
       "id": "claim_7425c73f5e4c4667b8babba66c3663a0",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/__init__.py",
-          "version": "repo-file-v1:sha256:ca83a85cf943caecb4b09073ad78355112742393ccc133451a10def0be7cb84a"
+          "version": "repo-file-v1:sha256:56c4a355b80b98c270b27051036f19ab2b81c58fdecbc1539f76b4ad7a92ff6d"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
@@ -60,7 +60,7 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
-          "version": "repo-file-v1:sha256:2e1855c669ed50df9795b1f73ca690d7664d0ef58a1c4080d0f6504076ebea97"
+          "version": "repo-file-v1:sha256:cc4a7d9a620224558c4eddd4e13edc988a9ac9e328b7a67deeb71ed2c5ec5174"
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py",
@@ -87,12 +87,12 @@
       "statement": "LangChain monorepo uses uv for fast, deterministic dependency resolution; developers install dependencies via 'uv sync --all-groups' to get test, lint, type, and dev tools",
       "evidence": [
         {
-          "resource": "repo://libs/Makefile",
-          "version": "repo-file-v1:sha256:b703a85cdfdb60e98c41ec8261d9b78f0e7137105ee9da36b8cb919b2d35858b"
+          "resource": "repo://libs/Makefile#L1-L20",
+          "version": "repo-lines-v1:sha256:b703a85cdfdb60e98c41ec8261d9b78f0e7137105ee9da36b8cb919b2d35858b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyOGQwZmRiYTcwNTRmMzNiZTZkYTQ3MjU4OTFjMDA0OTIwMGZkNDNmNTAyMWY5N2Y2MmI4N2U4ZmNjMjBhZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OWEwZmIyMTcxZjliNTk0YmQyZjA5YzQwMmEwYjU1MmRiNjNiNTBlZDBhNzE1OGEzMWQzMGFlYWRhYjVjMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://libs/core/pyproject.toml",
-          "version": "repo-file-v1:sha256:325931f1a0825e70a5f7c0228e9a98e3bd6e2395ea23db6d7a0dffce70087408"
+          "resource": "repo://libs/core/pyproject.toml#L49-L81",
+          "version": "repo-lines-v1:sha256:b87101dff0ce7865084d0b5772e5ce726a4b067707feefb3f67d91e6ce6a9e0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYjc0OTliMWNlMWM0ZjRiMjUyN2YzYTMyODRjYWM2YjZhMWUzYmY0OTg4YjU2Nzk4MmMzZGM4ZTlhMTdmMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1MDVjOTY3ZWE1MDEyYWZmNTM0NjFmNzQ3ZDJlMzJhNjViOTQxN2MwNmEzMzc1YWRlYWMzY2FkOWI0N2NhZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkYTg3ZjA2MTI4NjQwZjdkMTc0MDAyYTJhNmE2MTAzMmE4NjMxMmIyYWMzZWRkZTljZjI2YTc0ODhiZTI1ODQifQ"
         }
       ]
     },
@@ -152,7 +152,7 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
-          "version": "repo-file-v1:sha256:2e1855c669ed50df9795b1f73ca690d7664d0ef58a1c4080d0f6504076ebea97"
+          "version": "repo-file-v1:sha256:cc4a7d9a620224558c4eddd4e13edc988a9ac9e328b7a67deeb71ed2c5ec5174"
         }
       ]
     },
@@ -183,6 +183,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-29T08:28:34.635Z"
   }
 }

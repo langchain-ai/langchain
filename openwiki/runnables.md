@@ -3,9 +3,6 @@ type: "Concept"
 title: "Runnable: Core Composition Layer"
 description: "Explain the Runnable protocol and how it enables composable chaining of LLM components through the LangChain Expression Language (LCEL)."
 tags: [runnable, lcel, composition, invoke, stream, batch, async, chaining]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
 sources:
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
@@ -18,6 +15,9 @@ sources:
   - id: openwiki-source-ebe3f825462d0b4a14ee3717
     resource: repo://libs/core/langchain_core/runnables/retry.py
 generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-28T08:35:20.640Z
 ---
 
 ## Overview

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8bf3d528d2fe2628f24d10c54b6445ad11f8ec7abae99049815d037c83fdaf08",
+  "pageVersion": "sha256:7a27a082b6fe0666d7a3e17b00aac82017d7095d7cc66a084355eb8c5f47b347",
   "claims": [
     {
       "id": "claim_2b394255185b4645a1dcf0e8c628a197",
@@ -175,10 +175,28 @@
           "version": "repo-lines-v1:sha256:0144da3602191e08b1c7c3a3d0ea02abb6d35b5ffbf3a7e28f89554b904f1087:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzhlNTQ1YjAyMTRlNDM2NDIxYTRiMzBiZDQ0NThjNDgxZGY5OTY5NWRkNjRmZjhkNmM1MDkxMTZjMmE5NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMzc1ZjdjZDVkMWMzYWI1YzFlMjE1N2ViNjFhNjRhMDRlOTZiZDA1YTg1NThkYmY0MWRmZWUxMTE4YjcxMDcifQ"
         }
       ]
+    },
+    {
+      "id": "claim_1abeec5957414ea0bb639040aece4be2",
+      "statement": "LangChain partner packages inherit a standard suite of integration tests via ChatModelIntegrationTests from langchain_tests.integration_tests. Partner test classes override properties (chat_model_class, chat_model_params, supports_* and has_* feature declarations) and may override test methods for provider-specific behavior (audio inputs, reasoning models). Each inherited test method is pre-marked with @pytest.mark.vcr; cassettes are generated automatically and named with test method names, optionally parameterized (test_invoke[model0].yaml.gz). This ensures all partners maintain consistent test coverage and automatically receive new tests when the standard suite is updated.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/tests/integration_tests/chat_models/test_base.py#L38-L57",
+          "version": "repo-lines-v1:sha256:29f7c743ee032f1656d47849d5183e163a725efde87458b21d6b1855bc2d0d11:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4MTdkNTQyMDczZDBmODlmOTUxM2MyZjU4M2NhM2ZkNDBiYTEyMTk4NzY0YjY3MDA5ZThjYWJiZDQ5YjRjYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMDQyNGJkZTNhZDkxZmY4ZGFlYTgxYTRhYTUwNGIyZmU5ZDM3OTIzZjU5Mzc5MTUyZDU0M2Q3YjRkZWFmNzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkOWIzMWUwM2E4NzUxNmI2YWExZGIzMWMwYTE5YjM1ZmJlNzg3MjkxMDdmOTdmYjM3NmM4NDczNmRkNzY0YWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base_standard.py#L1-L57",
+          "version": "repo-lines-v1:sha256:541fc66a3551dcd38bb83d420afd7d05a0b2f8d8493553bdf35b3f68e800de17:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwODY1MzAzZmE5Njc5ZDM3NWE2YTUxMzY2MjdmYTUwZTVlZjc4Yzg0MTIyYmU2ODNjYzNjNjY5MThmNWM0YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1Y2FmOTM5ZTA1MTZlZGNhYjUxNTYxMGFjYmE3ZTVkNDg0M2M2YTU0YjUwODc3M2Y0MTcwODQ0NzM2YWNlYmMifQ"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py#L130-L155",
+          "version": "repo-lines-v1:sha256:e3d0704dff8fca8d0a61d64b2b6b1bd421654204ab5faef64b64dd5b52df2ddf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzhlNTQ1YjAyMTRlNDM2NDIxYTRiMzBiZDQ0NThjNDgxZGY5OTY5NWRkNjRmZjhkNmM1MDkxMTZjMmE5NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxY2I2ZmI5YmVjNzJmZjA3ZTY4MDU0N2M3NTAyMzZkYWZmNDMzOWVhZTY5ODBkM2IwOTQwMmRkYmE4YzcwOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-28T08:35:20.640Z"
   }
 }

@@ -3,9 +3,6 @@ type: "Reference"
 title: "Source Map: Repository File Organization"
 description: "Quick reference for locating code by topic, mapping LangChain concepts to their implementation paths across the monorepo including core abstractions, agents, middleware, partners, and configuration files."
 tags: [reference, file-organization, monorepo, codebase-map, pathfinding]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
@@ -47,12 +44,17 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-29T08:28:34.635Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-29T08:28:34.635Z
 ---
 
 ## Overview
 
 This page provides a quick reference for locating code by topic in the LangChain monorepo. The repository is organized as a multi-package workspace with a three-layer architecture: **langchain-core** (base abstractions), **langchain** (orchestration and agents), and **partners** (provider integrations). Use this map to navigate directly to the code responsible for a given concept.
+
+**Current Versions**: langchain-core v1.6.5, langchain v1.4.3
 
 ## Concept-to-Path Mapping
 
@@ -89,7 +91,7 @@ This page provides a quick reference for locating code by topic in the LangChain
 
 ```
 /libs/
-├── core/                           # langchain-core: Base abstractions (v1.6.1)
+├── core/                           # langchain-core: Base abstractions (v1.6.5)
 │   ├── langchain_core/
 │   │   ├── language_models/        # BaseChatModel and language model abstractions
 │   │   ├── messages/               # Message types and content blocks
@@ -106,7 +108,7 @@ This page provides a quick reference for locating code by topic in the LangChain
 │   ├── Makefile
 │   └── pyproject.toml
 │
-├── langchain_v1/                   # langchain: Orchestration and agents (v1.4.0)
+├── langchain_v1/                   # langchain: Orchestration and agents (v1.4.3)
 │   ├── langchain/
 │   │   ├── agents/
 │   │   │   ├── factory.py          # Agent factory and graph construction
@@ -140,6 +142,7 @@ This page provides a quick reference for locating code by topic in the LangChain
 │   ├── perplexity/                 # Perplexity models
 │   ├── fireworks/                  # Fireworks inference
 │   ├── openrouter/                 # OpenRouter aggregator
+│   ├── typesafe/                   # Typesafe schema generation
 │   ├── chroma/                     # Chroma vector store
 │   ├── qdrant/                     # Qdrant vector store
 │   ├── exa/                        # Exa search
@@ -240,6 +243,19 @@ The agent construction pipeline in `repo://libs/langchain_v1/langchain/agents/fa
 
 Middleware can inject hooks at model boundaries, tool boundaries, and lifecycle hooks (`before_agent`, `before_model`, `after_model`, `after_tool_call`, `after_agent`).
 
+### Agent Middleware Implementations
+The middleware directory contains 17+ middleware implementations covering:
+- **Model-level**: `ModelRetryMiddleware`, `ModelCallLimitMiddleware`, `ModelFallbackMiddleware`
+- **Tool-level**: `ToolRetryMiddleware`, `ToolCallLimitMiddleware`, `ToolErrorMiddleware`, `ToolEmulator`
+- **Context**: `HumanInTheLoopMiddleware`, `ContextEditingMiddleware`, `FilesystemFileSearchMiddleware`
+- **Safety/Redaction**: `PIIMiddleware`, `RedactionMiddleware` (internal)
+- **Execution Control**: `ShellToolMiddleware`, `ProviderToolSearchMiddleware`
+- **Optimization**: `SummarizationMiddleware`, `TodoListMiddleware`
+- **Selection**: `LLMToolSelectorMiddleware`
+- **Lifecycle**: `TracePolicy` configuration and execution tracing
+
+Each middleware is independently configurable and composable into agent construction chains.
+
 ### Runnable Composition
 The Runnable protocol in `repo://libs/core/langchain_core/runnables/base.py` enables declarative chaining via operators:
 - **Piping** (`|`): Sequential composition
@@ -266,8 +282,8 @@ The `BaseTool` in `repo://libs/core/langchain_core/tools/base.py` provides:
 
 ```
 User Applications
-  ├─→ langchain (v1.4.0)
-  │    ├─→ langchain-core (v1.6.1)
+  ├─→ langchain (v1.4.3)
+  │    ├─→ langchain-core (v1.6.5)
   │    └─→ LangGraph (state machines)
   │
   ├─→ langchain-core (direct use)

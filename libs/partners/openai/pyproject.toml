@@ -20,13 +20,19 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "1.6.0"
+version = "1.6.7"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.6.0,<2.0.0",
+    "langchain-core>=1.6.6,<2.0.0",
     "certifi>=2024.6.2",
     "openai>=2.45.0,<4.0.0",
     "tiktoken>=0.7.0,<1.0.0",
+]
+
+[project.optional-dependencies]
+azure-identity = [
+    "azure-identity>=1.25.0,<2.0.0",
+    "aiohttp>=3.11.0,<4.0.0",
 ]
 
 [project.urls]

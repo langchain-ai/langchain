@@ -1,11 +1,11 @@
 ---
 type: "Testing & QA"
-title: "Unit Testing: Strategies and Patterns"
-description: "How to write unit tests for langchain-core and langchain components using pytest, fixtures, mocking, and standard test classes from langchain-tests."
-tags: [unit-tests, pytest, testing, fixtures, mocking, chat-models, tools, embeddings, type-checking, mypy]
+title: "Unit Testing and Mocking"
+description: "Guide to writing unit tests: test structure, mocking chat models, fixtures, assertions, and test coverage for agents and components."
+tags: [unit-tests, pytest, testing, fixtures, mocking, chat-models, tools, agents, integration, assertions]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
@@ -25,6 +25,18 @@ sources:
     resource: repo://libs/core/tests/unit_tests/runnables/test_runnable.py
   - id: openwiki-source-5839db669f618a6d604790ca
     resource: repo://libs/core/tests/unit_tests/stubs.py
+  - id: openwiki-source-fffa23f844d6fa8ec39f3357
+    resource: repo://libs/langchain_v1/tests/unit_tests/agents/any_str.py
+  - id: openwiki-source-09fd21baed875d7f9c53a492
+    resource: repo://libs/langchain_v1/tests/unit_tests/agents/conftest.py
+  - id: openwiki-source-18a5b32f36bc87fa2d5237e3
+    resource: repo://libs/langchain_v1/tests/unit_tests/agents/messages.py
+  - id: openwiki-source-6904a2d923d0abd0c1af93bd
+    resource: repo://libs/langchain_v1/tests/unit_tests/agents/model.py
+  - id: openwiki-source-ff9b926753e6cc6fe87acfe7
+    resource: repo://libs/langchain_v1/tests/unit_tests/agents/test_agent_streaming.py
+  - id: openwiki-source-08ccfc598e3f10e8eea9ded3
+    resource: repo://libs/langchain_v1/tests/unit_tests/agents/test_invalid_tool_calls.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
   - id: openwiki-source-3eb9100e02f9d70098d1b30d
@@ -33,14 +45,14 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/embeddings.py
   - id: openwiki-source-a6b31954b6df57580d0f3ed0
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/tools.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
 ---
 
 ## Overview
 
 Unit testing in LangChain covers components in isolation without network calls or external API dependencies. Tests live in `tests/unit_tests/` directories and are run via `make test` or `uv run --group test pytest` with strict socket restrictions and parallelization.
 
-This page covers the test infrastructure, standard test classes for chat models and tools, common patterns (fixtures, parametrization, mocking, callbacks, snapshot testing), and type checking with mypy.
+This page covers the test infrastructure, standard test classes for chat models and tools, agent-specific testing patterns (state transitions, middleware behavior, tool calls), fixtures, mocking strategies, callbacks, and assertions for testing agents and components.
 
 ## Test Structure and Organization
 
@@ -235,11 +247,74 @@ class TestMyToolUnit(ToolsUnitTests):
 - Tool schema generation (JSON schema)
 - Initialization from environment variables
 
+## Mocking Chat Models for Agent Testing
+
+### FakeToolCallingModel
+
+For testing agents and structured workflows without API calls, use `FakeToolCallingModel` from the test utilities:
+
+```python
+from tests.unit_tests.agents.model import FakeToolCallingModel
+from langchain_core.messages import ToolCall
+
+# Script predictable tool calls
+model = FakeToolCallingModel(
+    tool_calls=[
+        [ToolCall(name="get_weather", args={"city": "Paris"}, id="call_1")],
+        [],  # No tool call on second turn (finish)
+    ]
+)
+```
+
+**Features**:
+- **tool_calls**: List of lists, where each inner list is tool calls for a turn
+- **structured_response**: Response for structured output mode (BaseModel, dataclass, or dict)
+- **index**: Auto-incrementing counter for multi-turn testing
+- **tool_style**: Style for `bind_tools()` output — "openai" (default) or "anthropic"
+
+**Example with structured output**:
+
+```python
+from pydantic import BaseModel
+
+class WeatherResponse(BaseModel):
+    city: str
+    temperature: int
+
+model = FakeToolCallingModel(
+    structured_response=WeatherResponse(city="Paris", temperature=20)
+)
+result = model.invoke([...], response_format=...)
+```
+
+### Invalid Tool Call Handling
+
+Test agent behavior when models return malformed tool calls:
+
+```python
+from langchain_core.messages import AIMessage
+
+# Simulate a model returning invalid JSON in tool args
+message = AIMessage(
+    content="",
+    invalid_tool_calls=[
+        {
+            "name": "get_weather",
+            "args": '{"city":',  # Truncated JSON
+            "id": "call_1",
+            "error": "Invalid JSON",
+        }
+    ],
+)
+```
+
+The agent's error handling produces a `ToolMessage` with `status="error"` containing the error details, allowing the agent to recover on the next turn.
+
 ## Shared Fixtures and Configuration
 
 ### conftest.py Patterns
 
-The root `conftest.py` in `tests/unit_tests/` provides shared fixtures and pytest hooks.
+The root `conftest.py` in `tests/unit_tests/` provides shared fixtures and pytest hooks. Agent test suites (like `libs/langchain_v1/tests/unit_tests/agents/conftest.py`) extend these with specialized fixtures.
 
 **From `/libs/core/tests/unit_tests/conftest.py`**:
 
@@ -248,12 +323,59 @@ The root `conftest.py` in `tests/unit_tests/` provides shared fixtures and pytes
 def blockbuster() -> Iterator[BlockBuster]:
     """Blockbuster fixture prevents blocking I/O in async code."""
     with blockbuster_ctx("langchain_core") as bb:
-        # Allow blocking in specific functions (e.g., internal API checks)
+        # Allow specific blocking operations in specific locations
         bb.functions["os.stat"].can_block_in(
             "langchain_core/_api/internal.py", "is_caller_internal"
+        ).can_block_in(
+            "langchain_core/runnables/base.py", "__repr__"
+        ).can_block_in(
+            "langsmith/client.py", "_default_retry_config"
         )
+        bb.functions["os.path.abspath"].can_block_in(
+            "langchain_core/_api/internal.py", "is_caller_internal"
+        ).can_block_in(
+            "langchain_core/runnables/base.py", "__repr__"
+        )
+        bb.functions["io.TextIOWrapper.read"].can_block_in(
+            "langsmith/client.py", "_default_retry_config"
+        )
+        for bb_function in bb.functions.values():
+            bb_function.can_block_in("freezegun/api.py", "_get_cached_module_attributes")
         yield bb
 ```
+
+### Agent Test Fixtures
+
+Agent test suites use parametrized fixtures to test across multiple checkpoint and state storage backends:
+
+```python
+from collections.abc import AsyncIterator, Iterator
+from uuid import UUID
+from pytest_mock import MockerFixture
+import pytest
+
+# Deterministic UUIDs for snapshot testing
+@pytest.fixture
+def deterministic_uuids(mocker: MockerFixture) -> MockerFixture:
+    side_effect = (UUID(f"00000000-0000-4000-8000-{i:012}", version=4) for i in range(10000))
+    return mocker.patch("uuid.uuid4", side_effect=side_effect)
+
+# Parametrized checkpointer fixture (multiple backends)
+@pytest.fixture(params=["memory", "sqlite", "postgres"])
+def sync_checkpointer(request: pytest.FixtureRequest) -> Iterator[BaseCheckpointSaver]:
+    checkpointer_name = request.param
+    # Yield appropriate checkpointer based on backend
+    ...
+
+# Parametrized async checkpointer fixture
+@pytest.fixture(params=["memory", "sqlite_aio", "postgres_aio"])
+async def async_checkpointer(request: pytest.FixtureRequest) -> AsyncIterator[BaseCheckpointSaver]:
+    checkpointer_name = request.param
+    # Yield appropriate async checkpointer
+    ...
+```
+
+Set `LANGGRAPH_TEST_FAST=true` environment variable to run against only in-memory backends for fast iteration.
 
 **Custom Markers**:
 
@@ -441,6 +563,109 @@ assert handler.chain_ends == 1
 ```
 
 ## Common Testing Patterns
+
+### Agent Execution Testing
+
+Test agent behavior across multiple turns, state updates, and tool invocations:
+
+```python
+from langchain.agents import create_agent
+from langchain_core.messages import HumanMessage, AIMessage
+from langgraph.checkpoint.memory import InMemorySaver
+from tests.unit_tests.agents.model import FakeToolCallingModel
+
+def test_agent_tool_invocation():
+    # Script tool calls for multiple turns
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [{"name": "get_weather", "args": {"city": "Paris"}, "id": "tc1"}],
+            [],  # No tool call on second turn
+        ]
+    )
+    
+    agent = create_agent(model, [get_weather], checkpointer=InMemorySaver())
+    config = {"configurable": {"thread_id": "test-1"}}
+    
+    # First turn: invoke with user message
+    result = agent.invoke({"messages": [HumanMessage("Weather in Paris?")]}, config)
+    
+    # Verify response structure
+    assert len(result["messages"]) >= 3  # human, ai with tool call, tool result
+    assert isinstance(result["messages"][-1], AIMessage) or result["messages"][-1].name == "get_weather"
+```
+
+### State Transitions and Checkpointing
+
+Test agent state updates across checkpoint boundaries:
+
+```python
+def test_agent_state_persistence(sync_checkpointer):
+    model = FakeToolCallingModel(tool_calls=[[], []])
+    agent = create_agent(model, [], checkpointer=sync_checkpointer)
+    config = {"configurable": {"thread_id": "thread-1"}}
+    
+    # First invoke
+    result1 = agent.invoke({"messages": [HumanMessage("hi")]}, config)
+    
+    # Load checkpoint and verify state
+    checkpoint = sync_checkpointer.get_tuple(config)
+    assert checkpoint is not None
+    assert checkpoint.checkpoint["channel_values"]["messages"] == result1["messages"]
+    assert checkpoint.metadata["step"] == 1
+    
+    # Second invoke from checkpoint
+    result2 = agent.invoke({"messages": [HumanMessage("hello again")]}, config)
+    
+    # Verify continuity
+    assert len(result2["messages"]) > len(result1["messages"])
+```
+
+### Streaming Event Testing
+
+Test agent execution traces via stream events (v3 protocol):
+
+```python
+def test_agent_stream_events():
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [{"name": "echo", "args": {"text": "x"}, "id": "tc1"}],
+            [],
+        ]
+    )
+    agent = create_agent(model, [echo])
+    
+    # Stream events with built-in tool_calls projection
+    run = agent.stream_events(
+        {"messages": [HumanMessage("hi")]},
+        version="v3"
+    )
+    
+    # Collect tool calls via projection
+    tool_calls = list(run.tool_calls)  # type: ignore[attr-defined]
+    assert len(tool_calls) == 1
+    assert tool_calls[0].tool_name == "echo"
+    assert tool_calls[0].tool_call_id == "tc1"
+    assert tool_calls[0].completed is True
+```
+
+### Message Matching with Any ID
+
+Test message content independently of generated UUIDs:
+
+```python
+from tests.unit_tests.agents.any_str import AnyStr
+from tests.unit_tests.agents.messages import _AnyIdHumanMessage, _AnyIdToolMessage
+
+def test_agent_message_flow():
+    model = FakeToolCallingModel()
+    agent = create_agent(model, [])
+    
+    result = agent.invoke({"messages": [HumanMessage("hi")]})
+    
+    # Match messages regardless of their generated IDs
+    assert result["messages"][0] == _AnyIdHumanMessage(content="hi")
+    assert isinstance(result["messages"][1], AIMessage)
+```
 
 ### Fixture Usage
 
@@ -648,6 +873,80 @@ The `AnyStr` class matches any string when used as a value:
 message.id = AnyStr()  # Now message.id == any_other_id is True
 ```
 
+## Assertions for Agent Testing
+
+### Message Type Assertions
+
+Verify message types and properties in agent output:
+
+```python
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+
+def test_agent_response_types():
+    agent = create_agent(model, [tool])
+    result = agent.invoke({"messages": [HumanMessage("query")]})
+    
+    messages = result["messages"]
+    assert isinstance(messages[0], HumanMessage)
+    assert isinstance(messages[1], AIMessage)
+    if len(messages) > 2:
+        assert isinstance(messages[2], ToolMessage)
+```
+
+### Tool Call Assertions
+
+Verify tool calls in AI messages:
+
+```python
+def test_agent_tool_calls():
+    model = FakeToolCallingModel(
+        tool_calls=[[{"name": "get_weather", "args": {"city": "NYC"}, "id": "tc1"}]]
+    )
+    agent = create_agent(model, [get_weather])
+    result = agent.invoke({"messages": [HumanMessage("weather")]})
+    
+    ai_message = result["messages"][1]
+    assert len(ai_message.tool_calls) == 1
+    assert ai_message.tool_calls[0].name == "get_weather"
+    assert ai_message.tool_calls[0].args == {"city": "NYC"}
+```
+
+### State Update Assertions
+
+Verify state and checkpoint consistency:
+
+```python
+def test_state_updates(sync_checkpointer):
+    agent = create_agent(model, [tool], checkpointer=sync_checkpointer)
+    config = {"configurable": {"thread_id": "t1"}}
+    
+    result = agent.invoke({"messages": [HumanMessage("hello")]}, config)
+    
+    # Load checkpoint
+    checkpoint = sync_checkpointer.get_tuple(config)
+    assert checkpoint.metadata["step"] == 1
+    assert len(checkpoint.checkpoint["channel_values"]["messages"]) > 1
+```
+
+### Error and Invalid Tool Call Assertions
+
+Test error handling for malformed tool calls:
+
+```python
+def test_invalid_tool_call_recovery():
+    model = InvalidToolCallingModel()  # Returns invalid JSON in args
+    agent = create_agent(model, [get_weather])
+    config = {"configurable": {"thread_id": "t1"}}
+    
+    agent.invoke({"messages": [HumanMessage("weather")]}, config)
+    model.invalid_tool_call_id = None
+    result = agent.invoke({"messages": [HumanMessage("retry")]}, config)
+    
+    # Verify error ToolMessage was added
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert any(m.status == "error" for m in tool_messages)
+```
+
 ## Type Checking with mypy
 
 Type checking is part of the standard lint workflow:
@@ -731,6 +1030,10 @@ make coverage
 ## Key Test Infrastructure Files
 
 - **conftest.py** (`libs/core/tests/unit_tests/conftest.py`): Shared fixtures, markers, blockbuster configuration
+- **agents/conftest.py** (`libs/langchain_v1/tests/unit_tests/agents/conftest.py`): Agent-specific fixtures for checkpointers, stores, and deterministic UUIDs
+- **agents/model.py** (`libs/langchain_v1/tests/unit_tests/agents/model.py`): `FakeToolCallingModel` for agent testing without API calls
+- **agents/any_str.py** (`libs/langchain_v1/tests/unit_tests/agents/any_str.py`): `AnyStr` class for matching strings with prefixes independent of exact values
+- **agents/messages.py** (`libs/langchain_v1/tests/unit_tests/agents/messages.py`): Helpers like `_AnyIdHumanMessage` for message matching
 - **stubs.py** (`libs/core/tests/unit_tests/stubs.py`): Helper functions for message testing with wildcard IDs
 - **pydantic_utils.py** (`libs/core/tests/unit_tests/pydantic_utils.py`): Schema normalization for cross-version Pydantic compatibility
 - **fake/callbacks.py** (`libs/core/tests/unit_tests/fake/callbacks.py`): FakeCallbackHandler for tracking events
@@ -757,3 +1060,11 @@ make coverage
 9. **Type-check as you go**: Run `make lint` or `make type` during development.
 
 10. **Use markers for categorization**: Mark tests with `@pytest.mark.requires` or custom markers for selective execution.
+
+11. **Test state transitions**: For agents and stateful components, verify state updates across checkpoint boundaries.
+
+12. **Script tool calls predictably**: Use `FakeToolCallingModel` to control tool invocations and test multi-turn flows.
+
+13. **Assert message types and content**: Verify the shape of agent responses, tool calls, and state updates.
+
+14. **Test error recovery**: Verify agents recover from invalid tool calls and other errors gracefully.

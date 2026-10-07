@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2785275fb70363fa2ba7b5c6b351f08d2bb5de58d88dec14a5c66d33f670ea88",
+  "pageVersion": "sha256:63c281f9b8fd8ffc2ad68e300601c05fb591f640021b20b792942a4702f0f776",
   "claims": [
     {
       "id": "claim_c00f8ff82e09494a9cdfb9149dda319c",
@@ -47,22 +47,22 @@
       "statement": "RunnableBranch selects one branch based on condition evaluation and RunnableRetry adds retry logic with exponential backoff, while RunnableWithFallbacks tries fallback runnables sequentially on failure; these enable error handling and conditional control flow.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/runnables/branch.py#L43-L150",
-          "version": "repo-lines-v1:sha256:66036b2fd34abb1f90bcb822d35405a1b0ef80672749e09dd8fea59547ddb70f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMWIxNzY1NTk3Nzk0MDIzYzI1ZGNhOTMzMGQ2MDQ5NTQ3MjkyNzMwY2Q2MGVmZWE4YjVhZDljZTM4ZmY0NDliIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyMzljMDEzMzhmYzUwNGExMmU4ZjYxZDJjZThjMTk3ZGMyYjI5Yzk5MDI3NWY4NzA1ZTJhYTBkMjY2MjIxOTYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlOWMwNDUwMTVhMDNhZjc2Mjk2MzRlMDZlOWJlM2Y4OGIyNDI2YWI1YTM3ZmU5MGIyODJiZThmN2YxY2Y3N2RmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0NzRhZTY0MjkzNzhlZWM2ZmQ0NTlkMjhjNjA5YjFjNWRjOGQ3NDVmMDhlOGRiODgxMmY3ZTkwMmU1MjQwYTQxIn0"
+          "resource": "repo://libs/core/langchain_core/runnables/branch.py#L43-L290",
+          "version": "repo-lines-v1:sha256:77b53fbabf2bdae2e052b15b90650cf13e0e2d73221231eb5f782f4a5b5445ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQ4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMWIxNzY1NTk3Nzk0MDIzYzI1ZGNhOTMzMGQ2MDQ5NTQ3MjkyNzMwY2Q2MGVmZWE4YjVhZDljZTM4ZmY0NDliIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlOWMwNDUwMTVhMDNhZjc2Mjk2MzRlMDZlOWJlM2Y4OGIyNDI2YWI1YTM3ZmU5MGIyODJiZThmN2YxY2Y3N2RmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwYzExNTkyYTEzMjczNWJlODI0OTA4OWQ3MWFhMGJlN2VmNmQ2MDQ5MjczNDQ4NDM0YTI4MmJkNGQ1NTBlMDM5In0"
         },
         {
-          "resource": "repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L150",
-          "version": "repo-lines-v1:sha256:a4a6c5df3334af9e15252973d89207d490c1b04eafea898dba1b33d0a4c2f2c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmY2U5OTZhMzU2NWJjY2E4MDcwNzYwNDYzMWU2OTc4ZTYzOWZkMTkyYjE4NzRmMTliNWJjYzQxYWZmNTQwMGJlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5NjEyNDJjNTEwNTVkODk2MGM0ZWNhMDgwMTFmOTM2ODM0NTZlMThjNjYwMTI3Y2JlMzBiMjhkM2M4YWEyMzJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiZWI5MWQ5NDFlNTA0MjVlYzdhOGUwYTIxZDJhNTJmYzVkOTkzOTFmNzliYjdjZjhlNTdjMjZlZjY5MjRlNzRmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4MDQ1ZjE5NzRiZjNjYTU1YmNkYzhiNDFkMmRmYjk4Y2MzZjkwOWZkOWU5ZWQ0OTM4M2JiNzJmMzNiOGNmMmFmIn0"
+          "resource": "repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L590",
+          "version": "repo-lines-v1:sha256:5a9f0c0e55d40ef5e37229535b9d3b42ed1860dee6a6511d13934e69d3f272c2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTU0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmY2U5OTZhMzU2NWJjY2E4MDcwNzYwNDYzMWU2OTc4ZTYzOWZkMTkyYjE4NzRmMTliNWJjYzQxYWZmNTQwMGJlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMzI0ZDkwNTM1YThiN2IwMzBmMzQyMDZmYjY5ODQzODMyY2UyOWY5NGY5Yjg0MDE1NDRlYmZhZWIxMGViODE0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiZWI5MWQ5NDFlNTA0MjVlYzdhOGUwYTIxZDJhNTJmYzVkOTkzOTFmNzliYjdjZjhlNTdjMjZlZjY5MjRlNzRmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1MGE3ODA3YzdjNjVkMDhkOGU3NmE0Y2Y3MTg4MDAyOGQ0NTUyMTM5YTU1NjY3OTRkMmI0ZjdhOGIzZWFmNWNmIn0"
         },
         {
-          "resource": "repo://libs/core/langchain_core/runnables/retry.py#L48-L150",
-          "version": "repo-lines-v1:sha256:f73fdde02952b636ccdbb1e4fcca3c715037e2b4c2be288670a407d561309db6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZGUzZTljM2Y2MWE5NGFhNDczNmNlM2Q5NmY3YzAwMTI0NTc0ZmYxZGNlYWU0OTc1OGFiNTAzZTA5YzE5NDhhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlMDNhOWY1ODdjZTQ5ZDczZWQ4YTc0ZDM2YjUwMjg5ZDZlMGFkOWJkYTllZmM5YWI5ZTc4N2M4YjMyZjhmYzZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4Njk4NWE0NmYyN2U0YTUzNmVkNzhhY2QyOTgyNjRhM2IyODZhMzUxNTcxMzk3MTQyYWQwMjc1OTNlMWI1MGRhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhNjVhMjU5ODEyMTdkZDUyYzE5MTAxMTQwYWZhMjNmYWYzNGYwYzUxY2M4MWFlOWNlM2I3ODM1ZmYxZjdiNzE4In0"
+          "resource": "repo://libs/core/langchain_core/runnables/retry.py#L48-L379",
+          "version": "repo-lines-v1:sha256:1b700122b4e165b35c1cd4ebb40cf1f94cc295b88b3cd0fddce894867cb3a9cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZGUzZTljM2Y2MWE5NGFhNDczNmNlM2Q5NmY3YzAwMTI0NTc0ZmYxZGNlYWU0OTc1OGFiNTAzZTA5YzE5NDhhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwYTU1MzRjMGZhOTgzZDdjYjE5Nzc4ZTFlNmNkZDM1ZGE3NzMwOWVlZjY0Yjc4ZGFlN2ZhODZhNGYyNGE2N2RjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4Njk4NWE0NmYyN2U0YTUzNmVkNzhhY2QyOTgyNjRhM2IyODZhMzUxNTcxMzk3MTQyYWQwMjc1OTNlMWI1MGRhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-28T08:35:20.640Z"
   }
 }

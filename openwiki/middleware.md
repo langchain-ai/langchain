@@ -1,10 +1,8 @@
 ---
 type: "Reference"
-title: "Middleware"
-openwiki_generated: true
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+title: "Agent Middleware: Composable Request/Response Processing"
+description: "Comprehensive guide to the middleware composition system: hook types, typing, payload transformations, and practical examples for hooking into model calls, tool calls, and agent lifecycle."
+tags: [agent-middleware, request-interception, composition, error-handling, human-in-the-loop, lifecycle-hooks]
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
@@ -16,13 +14,15 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/middleware/tool_error.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-28T08:35:20.640Z
 ---
-
 
 ## Overview
 
-Middleware in LangChain agents provides a composable, layered approach to intercepting and modifying agent behavior without changing core agent logic. Middleware hooks into the agent execution loop to implement cross-cutting concerns: automatic retries, error handling, human-in-the-loop approval, PII redaction, structured output transformation, and tool caching.
+Middleware in LangChain agents provides a composable, layered approach to intercepting and modifying agent behavior without changing core agent logic. Middleware hooks into the agent execution loop to implement cross-cutting concerns: automatic retries, error handling, human-in-the-loop approval, tool argument validation, structured output transformation, and tool caching.
 
 ### Core Architectural Principles
 
@@ -52,7 +52,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
 
 ### Lifecycle Hooks
 
-Middleware can implement any or all of these lifecycle methods; unimplemented methods default to no-op:
+Middleware can implement any or all of these lifecycle methods; unimplemented methods raise `NotImplementedError` if invoked in the wrong execution path (sync vs async):
 
 #### Before/After Agent
 
@@ -204,7 +204,7 @@ middleware = ToolErrorMiddleware(on_error=on_error)
 
 ### Control Flow & Approval Middleware
 
-**HumanInTheLoopMiddleware**: Pauses after model-requested tool calls and sends an interrupt with action summaries to a human reviewer. Supports approval, editing, rejection, or human-answered "respond" decision types. Tool calls are modified based on human feedback before execution.
+**HumanInTheLoopMiddleware**: Pauses after model-requested tool calls and sends an interrupt with action summaries to a human reviewer. Uses the `after_model` hook to intercept AIMessage tool calls and send a HITLRequest for review. Supports approval, editing, rejection, or human-answered "respond" decision types. Tool calls are modified based on human feedback before execution.
 
 ```python
 from langchain.agents.middleware import HumanInTheLoopMiddleware
@@ -219,6 +219,12 @@ hitl = HumanInTheLoopMiddleware(
     }
 )
 ```
+
+The middleware constructs `ActionRequest` objects (with name, args, and optional description) and `ReviewConfig` objects (with action name and allowed decision types), sends them as a `HITLRequest` via `langgraph.interrupt()`, receives decisions back, and processes them:
+- **approve**: Tool call proceeds unchanged
+- **edit**: Tool call arguments are revised by the human
+- **reject**: Tool call is blocked; a ToolMessage with user feedback is sent to the model instead
+- **respond**: Tool execution is skipped; a synthetic ToolMessage with the human's answer is returned to the model
 
 ### Data Transformation & Privacy Middleware
 
@@ -254,7 +260,7 @@ class ModelRequest(Generic[ContextT]):
     model_settings: dict[str, Any]  # Additional model parameters
 ```
 
-**Immutable Pattern**: Middleware should not mutate `ModelRequest` directly. Use `request.override(**changes)` to create a new request with modifications.
+**Immutable Pattern**: Middleware should not mutate `ModelRequest` directly. Use `request.override(**changes)` to create a new request with modifications. Direct attribute assignment is deprecated and raises `DeprecationWarning`.
 
 ### ModelResponse
 
@@ -278,7 +284,7 @@ class ExtendedModelResponse(Generic[ResponseT]):
     command: Command[Any] | None = None
 ```
 
-Middleware can return `ExtendedModelResponse` to apply a command that modifies state after the model node completes. Commands are applied through state reducers, so messages in commands are **added** to existing messages (not replaced).
+Middleware can return `ExtendedModelResponse` to apply a command that modifies state after the model node completes. Commands are applied through state reducers, so messages in commands are **added** to existing messages (not replaced). Non-reducer state fields in commands follow outermost-wins semantics: when multiple middleware return commands, the outermost middleware's values for non-reducer fields override inner ones, but `messages` fields accumulate.
 
 ### ToolCallRequest
 
@@ -290,10 +296,33 @@ class ToolCallRequest:
     tool_call: dict  # Tool call dict with 'id', 'name', 'args'
     tool: BaseTool | None  # Resolved BaseTool instance (or None in batch mode)
     state: AgentState[Any]  # Agent state at time of call
-    runtime: Runtime[ContextT]  # Runtime context (ToolRuntime with tool-specific info)
+    runtime: ToolRuntime  # Runtime context with tool-specific info
 ```
 
 ## Composition and Execution Order
+
+```mermaid
+sequenceDiagram
+    participant Agent
+    participant M1 as Middleware1
+    participant M2 as Middleware2
+    participant M3 as Middleware3
+    participant Model
+
+    Agent->>M1: wrap_model_call(request, handler)
+    M1->>M2: call handler (delegates to M2)
+    M2->>M3: call handler (delegates to M3)
+    M3->>Model: call handler (executes model)
+    Model->>M3: ModelResponse or ExtendedModelResponse
+    M3->>M3: Transform/collect commands (inner)
+    M3->>M2: Return result
+    M2->>M2: Transform/collect commands
+    M2->>M1: Return result
+    M1->>M1: Transform/collect commands (outer)
+    M1->>Agent: _ComposedExtendedModelResponse with all commands
+```
+
+This diagram shows hook execution order and how commands accumulate through the stack.
 
 ### Middleware Stack Execution
 
@@ -314,9 +343,13 @@ When middleware is registered as `[M1, M2, M3]`:
 
 State updates from hooks are merged using LangGraph reducers. For the `messages` field (which uses `add_messages` reducer), updates accumulate rather than replace.
 
-**Command Accumulation**: When middleware returns `ExtendedModelResponse` with `Command`, multiple commands are accumulated in a list (inner-first, then outer). The agent applies them sequentially after the model node completes.
+**Command Accumulation**: When middleware returns `ExtendedModelResponse` with `Command`, multiple commands are accumulated in a list (inner-to-outer order). The agent applies them sequentially after the model node completes through the LangGraph state reducer system.
 
-**Reducer Semantics**: Non-reducer fields in later commands override earlier ones (outermost middleware wins). The `messages` field is special: reducer-based fields like `messages` accumulate through `add_messages`.
+**Reducer Semantics**: 
+- **Messages field**: Uses `add_messages` reducer, so messages in commands are **added** to the existing message list rather than replacing it.
+- **Non-reducer fields**: Later commands overwrite earlier ones (outermost middleware wins). This means if multiple middleware return commands with state updates to the same field (other than `messages`), the outermost middleware's value takes precedence.
+
+Example: If M1 and M3 both return commands with `{"status": "value"}`, M1's value (outermost) is used.
 
 ## Writing Custom Middleware
 
@@ -341,7 +374,7 @@ class LoggingMiddleware(AgentMiddleware):
 ### Retry Logic with Exponential Backoff
 
 ```python
-import asyncio
+import time
 from langchain.agents.middleware import AgentMiddleware, ModelRequest, ModelResponse
 from langchain_core.messages import AIMessage
 
@@ -411,13 +444,31 @@ class ConditionalToolMiddleware(AgentMiddleware):
         return handler(request)
 ```
 
+### Returning Commands from Middleware
+
+```python
+from langchain.agents.middleware import AgentMiddleware, ExtendedModelResponse
+from langgraph.types import Command
+
+class CommandReturningMiddleware(AgentMiddleware):
+    def wrap_model_call(self, request, handler):
+        response = handler(request)
+        
+        # Middleware can return ExtendedModelResponse with a Command
+        # This command will be applied after the model node completes
+        return ExtendedModelResponse(
+            model_response=response,
+            command=Command(update={"custom_field": "custom_value"})
+        )
+```
+
 ## Async and Sync Implementations
 
 Middleware can provide sync-only, async-only, or both implementations. The agent will:
 
 - Call sync versions (`wrap_model_call`, `wrap_tool_call`) in sync contexts (`stream()`, `invoke()`).
 - Call async versions (`awrap_model_call`, `awrap_tool_call`) in async contexts (`astream()`, `ainvoke()`).
-- Raise `NotImplementedError` if the required implementation is missing for the execution path.
+- Raise `NotImplementedError` if the required implementation is missing for the execution path, with guidance to implement both versions or use async execution.
 
 **Best Practice**: Implement both versions unless the middleware is inherently async-only (e.g., uses async I/O).
 
@@ -440,7 +491,7 @@ agent = create_agent(
 )
 ```
 
-**Composition Rule**: First in the list = outermost (highest priority for interception and response transformation).
+**Composition Rule**: First in the list = outermost (highest priority for interception and response transformation). The factory collects middleware with wrap_model_call and awrap_model_call hooks, composes them into a single middleware stack via internal composition functions, establishing an order where the first middleware becomes the outermost layer. Commands from each layer are accumulated in inner-to-outer order and applied sequentially after model execution through LangGraph's reducer-based state system.
 
 ## Tracing and Observability
 
@@ -469,6 +520,7 @@ Middleware hooks are automatically named in trace spans as `{middleware_name}.{h
 3. **State-Driven Decisions**: Use `request.state` and `runtime` to make decisions; avoid global state.
 4. **Clear Composition Order**: Document which middleware should run first, especially when order matters (e.g., retry before error handling).
 5. **Fallback Behavior**: Implement sync and async versions to support both execution paths.
+6. **Command Ordering**: When returning Commands, consider that multiple middleware commands stack—outermost middleware's non-reducer fields win.
 
 ### ❌ Anti-Patterns
 
@@ -477,13 +529,14 @@ Middleware hooks are automatically named in trace spans as `{middleware_name}.{h
 3. **Hard-Coded Assumptions**: Don't assume specific tool names or message formats without validation.
 4. **Blocking Async**: Never use `asyncio.run()` or sync I/O in async middleware implementations.
 5. **Over-Composition**: Don't add more middleware than necessary; each layer adds latency.
+6. **Ignoring Command Semantics**: Don't assume Command fields will accumulate like messages; remember that non-reducer fields follow outermost-wins semantics.
 
 ## Key Invariants and Lifecycle
 
 - **Immutability**: `ModelRequest` and `ToolCallRequest` follow an immutable pattern; use override/replace methods.
 - **Execution Order**: Middleware runs in registration order (first = outermost). Multiple calls within a middleware (retries) do not reorder subsequent middleware.
-- **State Reducer Semantics**: State updates via dict returns merge using reducer semantics. Messages accumulate; non-reducer fields are overwritten by the most recent update.
-- **Command Flow**: `ExtendedModelResponse` commands are collected (inner-to-outer) and applied after the model node completes.
+- **State Reducer Semantics**: State updates via dict returns merge using reducer semantics. Messages accumulate via `add_messages`; non-reducer fields are overwritten by the most recent update.
+- **Command Flow**: `ExtendedModelResponse` commands are collected (inner-to-outer) and applied after the model node completes through LangGraph reducers.
 - **Sync/Async Consistency**: Choosing execution path (sync or async) is determined at agent invocation time; middleware cannot switch contexts mid-execution.
 - **Exception Propagation**: Exceptions that are not explicitly handled propagate to the caller, unless a middleware converts them to a message or command.
 
@@ -491,3 +544,4 @@ Middleware hooks are automatically named in trace spans as `{middleware_name}.{h
 
 - [Agent Execution Flow and Loop Control](/openwiki/agent-execution.md) – Detailed description of the agent loop, state management, and where middleware hooks are invoked.
 - [Agent Factory and Graph Construction](/openwiki/agent-factory.md) – How the agent graph is built, including middleware integration and handler composition.
+- [Tools](/openwiki/tools.md) – Tool definition, registration, and execution context.

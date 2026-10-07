@@ -1,10 +1,11 @@
 ---
 type: "Reference"
-title: "> Entering new SequentialChain chain..."
-openwiki_generated: true
+title: "Callback System and Handler Integration"
+description: "Document the callback handler architecture, integration with runnables and chat models, and patterns for tracking execution events, streaming, and instrumentation."
+tags: ["callbacks", "observability", "handlers", "tracing", "streaming", "langsmith"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
@@ -22,7 +23,7 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/config.py
   - id: openwiki-source-bfd8b1aa6ad00852a2e99762
     resource: repo://libs/core/langchain_core/tracers/context.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
 ---
 
 
@@ -38,13 +39,12 @@ The system is built on a hierarchical run structure where parent-child relations
 
 **BaseCallbackHandler** (`repo://libs/core/langchain_core/callbacks/base.py#L496-L546`) is the base class for all callback implementations. It inherits from multiple mixins that define event methods for different operation types:
 
-- **LLMManagerMixin**: `on_llm_start`, `on_llm_new_token`, `on_llm_end`, `on_llm_error`, `on_stream_event`
-- **ChainManagerMixin**: `on_chain_start`, `on_chain_end`, `on_chain_error`
-- **ToolManagerMixin**: `on_tool_start`, `on_tool_end`, `on_tool_error`
-- **RetrieverManagerMixin**: `on_retriever_start`, `on_retriever_end`, `on_retriever_error`
-- **AgentManagerMixin**: `on_agent_action`, `on_agent_finish`
+- **LLMManagerMixin**: `on_llm_new_token`, `on_llm_end`, `on_llm_error`, `on_stream_event`
+- **ChainManagerMixin**: `on_chain_end`, `on_chain_error`, `on_agent_action`, `on_agent_finish`
+- **ToolManagerMixin**: `on_tool_end`, `on_tool_error`
+- **RetrieverManagerMixin**: `on_retriever_end`, `on_retriever_error`
 - **RunManagerMixin**: `on_text`, `on_retry`, `on_custom_event`
-- **CallbackManagerMixin**: start methods for all operation types
+- **CallbackManagerMixin**: `on_llm_start`, `on_chat_model_start`, `on_chain_start`, `on_tool_start`, `on_retriever_start`
 
 Every handler also supports `raise_error` and `run_inline` attributes to control error propagation and execution context.
 
@@ -407,7 +407,7 @@ class LLMOnlyHandler(BaseCallbackHandler):
         return True  # Skip all retriever events
 ```
 
-Available properties: `ignore_llm`, `ignore_chain`, `ignore_agent`, `ignore_tool`, `ignore_retriever`, `ignore_retry`, `ignore_chat_model`, `ignore_custom_event`.
+Available properties: `ignore_llm`, `ignore_chain`, `ignore_agent`, `ignore_retriever`, `ignore_retry`, `ignore_chat_model`, `ignore_custom_event`.
 
 ## Custom Event Dispatch
 
@@ -444,6 +444,56 @@ with trace_as_chain_group("data_processing", tags=["batch"]) as manager:
 ```
 
 The manager tracks completion state and calls parent's `on_chain_end` or `on_chain_error` when exiting.
+
+## Custom Handler Implementation
+
+### BaseCallbackHandler Subclass Pattern
+
+Implement custom handlers by subclassing `BaseCallbackHandler` and overriding relevant event methods:
+
+```python
+from langchain_core.callbacks import BaseCallbackHandler
+from typing import Any
+
+class CustomMetricsHandler(BaseCallbackHandler):
+    """Custom handler for collecting application metrics."""
+    
+    def __init__(self):
+        self.metrics = {}
+        self.run_inline = True  # Execute in caller's context
+    
+    @property
+    def ignore_llm(self) -> bool:
+        """Skip LLM events for this handler."""
+        return False
+    
+    def on_llm_start(self, serialized: dict[str, Any], prompts: list[str], 
+                     run_id, tags=None, metadata=None, **kwargs: Any) -> None:
+        """Called when LLM starts."""
+        self.metrics[str(run_id)] = {"start_time": time.time(), "prompt": prompts[0]}
+    
+    def on_llm_end(self, response, run_id, **kwargs: Any) -> None:
+        """Called when LLM completes."""
+        if str(run_id) in self.metrics:
+            self.metrics[str(run_id)]["end_time"] = time.time()
+            self.metrics[str(run_id)]["duration"] = (
+                self.metrics[str(run_id)]["end_time"] - 
+                self.metrics[str(run_id)]["start_time"]
+            )
+    
+    def on_llm_error(self, error: BaseException, run_id, **kwargs: Any) -> None:
+        """Called when LLM errors."""
+        if str(run_id) in self.metrics:
+            self.metrics[str(run_id)]["error"] = str(error)
+```
+
+Key patterns:
+
+1. **Set `run_inline`** to control execution context (sync vs async thread pool)
+2. **Implement `ignore_*` properties** to skip irrelevant event types
+3. **Handle optional parameters** with `**kwargs` for forward compatibility
+4. **Preserve run_id for hierarchy** when aggregating or correlating events
+5. **Use metadata/tags** passed in kwargs for context and filtering
 
 ## Best Practices
 

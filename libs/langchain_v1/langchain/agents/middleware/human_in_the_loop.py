@@ -2,27 +2,41 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Protocol
+import json
+from dataclasses import replace
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Protocol, cast
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.config import get_config
 from langgraph.prebuilt.tool_node import ToolRuntime
-from langgraph.types import interrupt
+from langgraph.types import Command, interrupt
 from typing_extensions import NotRequired, TypedDict
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
+    PrivateStateAttr,
     ResponseT,
     StateT,
     ToolCallRequest,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
     from langgraph.runtime import Runtime
+
+
+_EDITED_TOOL_CALLS_KEY = "hitl_edited_tool_calls"
+"""State key mapping tool call ID to the reviewer's replacement for it."""
+
+_EDIT_NOTICE = (
+    "Note: a human reviewer replaced this tool call before it ran. The call recorded in "
+    "your message is the one you produced, not the one that executed. This was "
+    "intentional and authorized. Do not re-issue your original call."
+)
+"""Default text prepended to the result of a tool call a reviewer edited."""
 
 
 class Action(TypedDict):
@@ -216,14 +230,24 @@ class InterruptOnConfig(TypedDict):
     """
 
 
+class _HumanInTheLoopState(AgentState[ResponseT]):
+    """State schema for `HumanInTheLoopMiddleware`."""
+
+    hitl_edited_tool_calls: NotRequired[Annotated[dict[str, Action], PrivateStateAttr]]
+    """Track tool call edits from `after_model`, so they can be used by `wrap_tool_call`."""
+
+
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     """Human in the loop middleware."""
+
+    state_schema = _HumanInTheLoopState  # type: ignore[assignment]
 
     def __init__(
         self,
         interrupt_on: dict[str, bool | InterruptOnConfig],
         *,
         description_prefix: str = "Tool execution requires approval",
+        edit_notice: str | None = _EDIT_NOTICE,
     ) -> None:
         """Initialize the human in the loop middleware.
 
@@ -249,6 +273,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 requested.
 
                 Not used if a tool has a `description` in its `InterruptOnConfig`.
+            edit_notice: Text prepended to the result of a tool call a reviewer replaced
+                via an `edit` decision. Pass `None` to add nothing.
 
         Raises:
             ValueError: If a tool's `InterruptOnConfig` does not have a non-empty
@@ -257,6 +283,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 dropped, disabling the approval gate for that tool.
         """
         super().__init__()
+        self.edit_notice = edit_notice
         resolved_configs: dict[str, InterruptOnConfig] = {}
         for tool_name, tool_config in interrupt_on.items():
             if isinstance(tool_config, bool):
@@ -326,16 +353,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         if decision["type"] == "approve" and "approve" in allowed_decisions:
             return tool_call, None
         if decision["type"] == "edit" and "edit" in allowed_decisions:
-            edited_action = decision["edited_action"]
-            return (
-                ToolCall(
-                    type="tool_call",
-                    name=edited_action["name"],
-                    args=edited_action["args"],
-                    id=tool_call["id"],
-                ),
-                None,
-            )
+            # Keep the model's own call in the message; `wrap_tool_call` substitutes the
+            # reviewer's at execution time.
+            return tool_call, None
         if decision["type"] == "reject" and "reject" in allowed_decisions:
             reason = decision.get("message")
             content = (
@@ -444,8 +464,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 review_configs.append(review_config)
                 interrupt_indices.append(idx)
 
-        # If no interrupts needed, return early
+        # If no interrupts needed, return early, dropping any earlier turn's edits so
+        # they cannot be applied to this turn's tool calls.
         if not action_requests:
+            if state.get(_EDITED_TOOL_CALLS_KEY):
+                return {_EDITED_TOOL_CALLS_KEY: {}}
             return None
 
         # Create single HITLRequest with all actions and configs
@@ -468,6 +491,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         # Process decisions and rebuild tool calls in original order
         revised_tool_calls: list[ToolCall] = []
         artificial_tool_messages: list[ToolMessage] = []
+        edited_tool_calls: dict[str, Action] = {}
         decision_idx = 0
 
         for idx, tool_call in enumerate(last_ai_msg.tool_calls):
@@ -482,6 +506,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 )
                 if revised_tool_call is not None:
                     revised_tool_calls.append(revised_tool_call)
+                    if decision["type"] == "edit" and (edited_id := revised_tool_call.get("id")):
+                        edited_tool_calls[edited_id] = decision["edited_action"]
                 if tool_message:
                     artificial_tool_messages.append(tool_message)
             else:
@@ -491,7 +517,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         # Update the AI message to only include approved tool calls
         last_ai_msg.tool_calls = revised_tool_calls
 
-        return {"messages": [last_ai_msg, *artificial_tool_messages]}
+        # `wrap_tool_call` reads this back to substitute and annotate the call. Always
+        # written, so an earlier turn's edits cannot survive into this one.
+        return {
+            "messages": [last_ai_msg, *artificial_tool_messages],
+            _EDITED_TOOL_CALLS_KEY: edited_tool_calls,
+        }
 
     async def aafter_model(
         self, state: AgentState[Any], runtime: Runtime[ContextT]
@@ -506,3 +537,144 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             Updated message with the revised tool calls.
         """
         return self.after_model(state, runtime)
+
+    def _reviewer_edit(self, request: ToolCallRequest) -> Action | None:
+        """The reviewer's replacement for this call, if an `edit` decision replaced it."""
+        tool_call_id = request.tool_call.get("id")
+        if not tool_call_id:
+            return None
+        edited = request.state.get(_EDITED_TOOL_CALLS_KEY) or {}
+        if tool_call_id in edited:
+            return cast("Action", edited[tool_call_id])
+        return None
+
+    def _apply_edit(self, request: ToolCallRequest, executed: Action) -> ToolCallRequest:
+        """Point the request at the reviewer's call, resolving a redirected tool.
+
+        Raises:
+            ValueError: If the reviewer named a tool the agent does not have.
+        """
+        tool_call: ToolCall = {
+            **request.tool_call,
+            "name": executed["name"],
+            "args": executed["args"],
+        }
+        if executed["name"] == request.tool_call["name"]:
+            return request.override(tool_call=tool_call)
+
+        # `tool_call["name"]` and `tool` must stay in agreement.
+        available = request.runtime.tools
+        tool = next((t for t in available if t.name == executed["name"]), None)
+        if tool is None:
+            names = ", ".join(sorted(t.name for t in available))
+            msg = (
+                f"Reviewer edited tool call {request.tool_call['id']!r} to "
+                f"{executed['name']!r}, which is not an available tool. "
+                f"Available tools: {names}."
+            )
+            raise ValueError(msg)
+        return request.override(tool_call=tool_call, tool=tool)
+
+    def _notice(self, executed: Action, *, has_content: bool) -> str:
+        """The notice text, stating the call that actually ran."""
+        notice = (
+            f"{self.edit_notice} Executed instead: {executed['name']} with arguments "
+            f"{json.dumps(executed['args'], default=str)}."
+        )
+        return f"{notice}\n\nTool response:" if has_content else notice
+
+    def _prepend_notice(self, message: ToolMessage, executed: Action) -> ToolMessage:
+        """Return `message` with the reviewer-edit notice prepended to its content."""
+        if not self.edit_notice:
+            return message
+        edit_notice = self._notice(executed, has_content=bool(message.content))
+
+        content: str | list[str | dict[Any, Any]]
+        if isinstance(message.content, str):
+            if edit_notice in message.content:
+                return message
+            separator = "\n" if message.content else ""
+            content = f"{edit_notice}{separator}{message.content}"
+        else:
+            if any(edit_notice in str(block) for block in message.content):
+                return message
+            # Match the surrounding block shape; providers may reject mixed lists.
+            notice: str | dict[Any, Any] = (
+                edit_notice
+                if message.content and all(isinstance(b, str) for b in message.content)
+                else {"type": "text", "text": edit_notice}
+            )
+            content = [notice, *message.content]
+
+        return message.model_copy(update={"content": content})
+
+    def _annotate_edited_result(
+        self,
+        result: ToolMessage | Command[Any],
+        request: ToolCallRequest,
+        executed: Action | None,
+    ) -> ToolMessage | Command[Any]:
+        """Tell the model a reviewer replaced the call, and with what."""
+        if not self.edit_notice or executed is None:
+            return result
+
+        if isinstance(result, ToolMessage):
+            return self._prepend_notice(result, executed)
+
+        # A `Command` carries the `ToolMessage` in its state update.
+        if not isinstance(result, Command) or not isinstance(result.update, dict):
+            return result
+        messages = result.update.get("messages")
+        if not isinstance(messages, list):
+            return result
+        tool_call_id = request.tool_call.get("id")
+        return replace(
+            result,
+            update={
+                **result.update,
+                "messages": [
+                    self._prepend_notice(message, executed)
+                    if isinstance(message, ToolMessage) and message.tool_call_id == tool_call_id
+                    else message
+                    for message in messages
+                ],
+            },
+        )
+
+    def wrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        """Prepend reviewer-edit guidance to the result of an edited tool call.
+
+        Args:
+            request: The tool call request being executed.
+            handler: Callable that executes the tool.
+
+        Returns:
+            The tool result, with a note prepended when a reviewer edited the call.
+        """
+        executed = self._reviewer_edit(request)
+        if executed is not None:
+            request = self._apply_edit(request, executed)
+        return self._annotate_edited_result(handler(request), request, executed)
+
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
+        """Async variant of `wrap_tool_call`.
+
+        Args:
+            request: The tool call request being executed.
+            handler: Awaitable callable that executes the tool.
+
+        Returns:
+            The tool result, with a note prepended when a reviewer edited the call.
+        """
+        executed = self._reviewer_edit(request)
+        if executed is not None:
+            request = self._apply_edit(request, executed)
+        return self._annotate_edited_result(await handler(request), request, executed)

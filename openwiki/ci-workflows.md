@@ -1,10 +1,11 @@
 ---
 type: "Reference"
 title: "CI/CD Workflows: GitHub Actions and Release Process"
-openwiki_generated: true
+description: "LangChain's GitHub Actions-based CI/CD system automating testing, linting, and release management across a monorepo with intelligent change detection, parallel matrix testing, and strict release gates."
+tags: [ci-cd, github-actions, testing, linting, release, pypi, monorepo, automation]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-03T15:18:34.589Z
+    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-34e57b5a3a0c875639ab72a7
     resource: repo://.github/scripts/check_diff.py
@@ -28,9 +29,10 @@ sources:
     resource: repo://.github/workflows/openwiki-update.yml
   - id: openwiki-source-f8781d847f6481a966a44a68
     resource: repo://.github/workflows/pr_labeler.yml
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+  - id: openwiki-source-12805fbf767dc2a3e238645e
+    resource: repo://.github/workflows/pr_lint.yml
+generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
 ---
-
 
 # CI/CD Workflows: GitHub Actions and Release Process
 
@@ -58,67 +60,72 @@ The workflow begins with a change detection phase:
 4. Generates separate test matrices for linting, unit tests, Pydantic compatibility tests, integration test compilation, VCR cassette tests, and extended test suites
 5. Outputs are passed as JSON to downstream jobs via matrix strategy
 
-This detection ensures only affected packages are tested, optimizing CI runtime.
+This detection ensures only affected packages are tested, optimizing CI runtime. The script skips the `libs/standard-tests` directory in enumeration and treats certain partners (e.g., huggingface) as CI-unstable, removing them from dependent chains while allowing direct edits to be tested.
 
 ### Linting Pipeline (`_lint.yml`)
 
 Runs on affected packages with Python 3.11 (configurable):
 
-- **Ruff analysis**: Code style, import sorting, and rule enforcement with inline GitHub annotations
+- **Ruff analysis**: Code style, import sorting, and rule enforcement with inline GitHub annotations (via `RUFF_OUTPUT_FORMAT: github`)
 - **MyPy type checking**: Static type verification
 - **Markdown linting**: Documentation quality checks (via `.markdownlint.json`)
 
-Tools are sourced from dependency groups: `lint` and `typing`. The workflow installs both package code and test code dependencies, running `make lint_package` and `make lint_tests` targets.
+Tools are sourced from dependency groups: `lint` and `typing`. The workflow installs both package code and test code dependencies, running `make lint_package` and `make lint_tests` targets. Partner packages receive separate test dependency installation including integration test dependencies.
 
 ### Unit Testing (`_test.yml`)
 
 Runs matrix tests across Python versions with dependency constraint verification:
 
 **Matrix dimensions**:
-- Python 3.10 through 3.14 (per-package configuration)
+- Python 3.10, 3.11, 3.12, 3.13, 3.14 for `libs/core`
+- Python 3.10 and 3.14 for other packages
 - Current locked dependencies (from `uv.lock`)
 - Minimum supported dependency versions
 
 **Two-phase testing**:
 
-1. **Current dependencies**: Runs full test suite against versions in `uv.lock`
-2. **Minimum dependencies**: Calculates minimum versions from `pyproject.toml` constraints, downgrades via pip, and reruns tests to ensure compatibility
+1. **Current dependencies**: Runs full test suite against versions in `uv.lock` via `make test PYTEST_EXTRA=-q`
+2. **Minimum dependencies**: Calculates minimum versions from `pyproject.toml` constraints via `get_min_versions.py` script, downgrades via pip, and reruns tests with `make tests PYTEST_EXTRA=-q` to ensure compatibility
 
-The workflow uses `make test PYTEST_EXTRA=-q` and `make tests PYTEST_EXTRA=-q` targets, and verifies the working directory remains clean (no untracked generated files).
+The workflow verifies the working directory remains clean (no untracked generated files) after testing.
 
 ### Pydantic Compatibility Testing (`_test_pydantic.yml`)
 
-Tests affected packages against multiple Pydantic versions (e.g., v1 and v2 compatibility):
+Tests affected packages against configurable Pydantic versions (e.g., v2.0, v2.1, v2.2):
 
 - Triggered when Pydantic version constraints or dependent code changes
-- Configurable per-package via `pyproject.toml`
-- Runs matrix over specified Pydantic versions
+- Determines test matrix by querying `uv.lock` for max Pydantic version and `pyproject.toml` for min, across both core and target packages
+- Runs `make test` against each Pydantic version
+- Uses Python 3.12 by default with override support
 
 ### VCR Cassette Tests (`_test_vcr.yml`)
 
 Validates integration tests backed by recorded HTTP cassettes:
 
-- Runs in playback-only mode (no API credentials required)
+- Runs in playback-only mode with fake credentials (no real API keys required)
 - Detects stale cassettes from test input changes without re-recording
+- Executes `make test_vcr` target
 - Enables fast, repeatable integration test feedback
 
-Only triggered for packages with VCR cassettes (currently `libs/partners/openai`).
+Only triggered for packages with VCR cassettes (currently `libs/partners/openai`), as tracked in the `VCR_PACKAGES` set within `check_diff.py`.
 
 ### Integration Test Compilation (`_compile_integration_test.yml`)
 
 Performs shallow integration test validation:
 
-- Compiles test modules without executing them
+- Compiles test modules without executing them via `pytest -m compile tests/integration_tests`
 - Catches import errors and obvious syntax issues
 - Provides quick feedback loop without running expensive external API calls
+- Installs both test and integration test dependency groups
 
 ### Extended Test Suites
 
 For packages defining `extended_testing_deps.txt`, runs additional tests:
 
-- Installs extra dependencies beyond standard test group
+- Installs extra dependencies beyond standard test group via the file
 - Executes `make extended_tests` target
 - Allows performance benchmarks, stress tests, or heavy-weight validations
+- Located in the `extended-tests` job within `check_diffs.yml`
 
 ### Release Option Validation
 
@@ -134,10 +141,10 @@ The release workflow is manually triggered via GitHub Actions UI (or can be call
 ### Release Modes & Invocation
 
 **Manual dispatch** (`workflow_dispatch`):
-- Dropdown selection of package to release (core, langchain, langchain_v1, text-splitters, standard-tests, model-profiles, or partner packages)
+- Dropdown selection of package to release (core, langchain, langchain_v1, text-splitters, standard-tests, model-profiles, or 17+ partner packages)
 - Manual version entry (default `0.1.0`)
 - Optional override to full path (e.g., `libs/partners/partner-xyz`)
-- Dangerous flags: `dangerous-nonmaster-release`, `allow-prereleases`, `skip-prior-published-package-checks`
+- Dangerous flags: `dangerous-nonmaster-release` (hotfixes), `allow-prereleases`, `skip-prior-published-package-checks`
 
 **Reusable workflow** (`workflow_call`):
 - Accepts `working-directory`, `release-version`, and safety bypass flags
@@ -147,8 +154,8 @@ The release workflow is manually triggered via GitHub Actions UI (or can be call
 
 **Job: `build`** (isolated permissions for security):
 
-1. **Version verification**: Checks `pyproject.toml` version against input, fails if mismatch
-2. **PyPI availability check**: Queries PyPI to ensure version not already published (PEP 440 normalization applied)
+1. **Version verification**: Extracts version from `pyproject.toml` and compares against input using PEP 440 normalization (treating `0.1.0-rc1` and `0.1.0rc1` as equivalent); fails if mismatch
+2. **PyPI availability check**: Queries `https://pypi.org/pypi/{pkg}/{version}/json` to ensure version not already published; fails closed if PyPI is unreachable or returns unexpected status
 3. **Build**: Runs `uv build` to create wheel and sdist distributions
 4. **Artifact upload**: Stores `dist/` directory for downstream jobs
 
@@ -159,20 +166,21 @@ Security rationale: Separates build (no credentials) from publishing (trusted pu
 **Job: `release-notes`**:
 
 1. **Tag detection**: Finds previous release tag via git history
-   - For pre-releases: Matches base version; falls back to latest release
+   - For pre-releases (contains hyphen): Matches base version; falls back to latest release tag
    - For stable releases: Searches for previous patch version; falls back to latest
+   - First release: Uses full commit history from git root
 2. **Changelog extraction**: Runs `git log --format="%s" <prev-tag>..HEAD -- <working-dir>` to collect commit messages
-3. **First release handling**: Explicitly marks initial releases, uses full commit history
+3. **Tag validation**: Confirms previous tag exists in git repo before proceeding
 
 ### Pre-Release Checks
 
 **Job: `pre-release-checks`** (no caching to catch missing dependencies):
 
-1. **Direct wheel installation**: Installs built wheel directly (validates metadata)
+1. **Direct wheel installation**: Installs built wheel directly via `uv pip install dist/*.whl` (validates metadata and installability)
 2. **Package import test**: Verifies main module imports successfully
 3. **Unit tests**: Runs full `make tests` against the wheel
-4. **Minimum version testing**: Recalculates and tests minimum dependencies (skips serdes tests for speed)
-5. **Prerelease dependency detection**: Fails if any dependencies use prerelease constraints (unless release itself is prerelease)
+4. **Minimum version testing**: Recalculates minimum versions, downgrades via pip, and reruns tests with `make tests PYTEST_EXTRA="-q -k 'not test_serdes'"` (skips serialization tests for speed)
+5. **Prerelease dependency detection**: Fails if any dependencies declare prerelease versions (unless release itself is prerelease)
 6. **Integration tests**: For partner packages only, runs `make integration_tests` with live API credentials
 
 ### PyPI Publishing
@@ -180,7 +188,7 @@ Security rationale: Separates build (no credentials) from publishing (trusted pu
 **Job: `test-pypi-publish`** (TestPyPI):
 - Uses GitHub OpenID Connect (trusted publishing)
 - Publishes to test.pypi.org for staging validation
-- Tolerates duplicate versions (CI safety only)
+- Tolerates duplicate versions via `skip-existing: true` (CI safety only)
 
 **Job: `publish`** (Production PyPI):
 - Uses trusted publishing to production PyPI
@@ -191,13 +199,13 @@ Security rationale: Separates build (no credentials) from publishing (trusted pu
 
 **Job: `test-prior-published-packages-against-new-core`**:
 - Only runs for `libs/core` releases
-- Tests previously-published partner packages (e.g., langchain-openai, langchain-anthropic) against new core
-- Fetches latest partner tag from git, installs new core wheel, runs tests
-- Can skip per-partner via `skip-prior-published-package-checks` input
+- Tests previously-published partner packages (currently anthropic, openai) against new core
+- Fetches latest non-yanked published partner tag from git, installs new core wheel, runs tests
+- Can skip per-partner via `skip-prior-published-package-checks` input (options: none, anthropic, openai, all)
 
 **Job: `test-dependents`**:
 - Only runs for `libs/core` or `libs/langchain_v1` releases
-- Checks external dependent packages (e.g., deepagents)
+- Checks external dependent packages (currently deepagents)
 - Tests Python 3.11 and 3.13
 - Ensures breaking changes are caught before publish
 
@@ -223,8 +231,9 @@ Scheduled daily (1 PM UTC) with manual dispatch override capability.
 - Authenticates to Google Cloud and AWS
 - Runs per-package `make integration_tests` with all live API credentials injected
 - Uses concurrency locks per (package, python-version) to serialize same-package runs and prevent credential conflicts
+- Includes special installation logic: overlays local editable core and standard-tests packages atop checked-out partner versions
 
-**Credentials**: Receives 30+ environment variables covering OpenAI, Anthropic, Google, AWS, Azure, Groq, MistralAI, HuggingFace, and more.
+**Credentials**: Receives 30+ environment variables covering OpenAI, Anthropic, Google, AWS, Azure, Groq, MistralAI, HuggingFace, Mistral, Together, Cohere, and more.
 
 ## Auto-Labeling Workflows
 
@@ -233,9 +242,22 @@ Scheduled daily (1 PM UTC) with manual dispatch override capability.
 Fires when issues are opened or edited:
 
 1. Parses issue body for `## Package` section
-2. Maps package name (e.g., "langchain-openai") to label (e.g., "openai")
-3. Adds/removes labels to match selected package(s)
-4. Supports both dropdown (single) and checkbox (multi-select) formats
+2. Supports both dropdown (single select) and checkbox (multi-select) formats
+3. Maps package name (e.g., "langchain-openai") to label via JSON mapping table (e.g., "openai")
+4. Adds/removes labels to match selected package(s)
+
+### PR Title Linting (`pr_lint.yml`)
+
+Enforces Conventional Commits 1.0.0 format on all pull request titles:
+
+- **Format**: `<type>[optional scope]: <description>` (e.g., `feat(core): add multi-tenant support`)
+- **Allowed types**: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert, release, hotfix
+- **Optional scope**: Scopes for specific packages (core, langchain, anthropic, openai, etc.) or cross-cutting concerns (infra, deps, partners)
+- **Breaking changes**: Append `!` after type/scope (e.g., `feat!: remove deprecated API`)
+- **Release commits**: Must be `release(scope): x.y.z` format
+- **Validation**: Uses `amannn/action-semantic-pull-request` with empty scope rejection
+
+Empty scope parentheses are rejected; PR must either omit parentheses (no scope) or provide a valid scope.
 
 ### PR Labeling (`pr_labeler.yml`)
 
@@ -244,23 +266,22 @@ Unified PR labeler applying size, file-based, title-based, and contributor class
 - File-based labels: Maps changed file paths to package labels
 - Size labels: Computes PR size (small, medium, large) from diff statistics
 - Title-based labels: Detects certain patterns in PR title
-- Contributor classification: Checks org membership to tag external contributions
-- Uses GitHub App for organization membership verification
-
-Consolidates multiple prior workflows into single sequential run to eliminate race conditions.
+- Contributor classification: Checks org membership to tag external contributions (via GitHub App token)
+- Uses concurrency locks to prevent race conditions
+- Consolidates multiple prior workflows into single sequential run
 
 ## OpenWiki Auto-Update (`openwiki-update.yml`)
 
 Runs on schedule (8 AM UTC daily) or manual dispatch:
 
-1. Checks out full repository history (required for diff-against-HEAD)
-2. Installs Node.js and OpenWiki CLI
+1. Checks out full repository history via `fetch-depth: 0` (required for diff-against-HEAD)
+2. Installs Node.js and OpenWiki CLI (@0.5.0) with optional Mermaid diagram validation
 3. Runs `openwiki code --update --print` to regenerate documentation
-4. Removes transient state file
-5. Creates/updates pull request with changes
-6. Preserves partial progress on failure for baseline establishment
+4. Removes transient state file (`.run.json`)
+5. Creates/updates pull request with changes via `peter-evans/create-pull-request@v8.1.1`
+6. Preserves partial progress on failure: if OpenWiki run fails, the PR intentionally preserves only pages completed before the failure, allowing them to become baseline for the next scheduled run
 
-Uses LangSmith tracing for observability.
+Uses LangSmith tracing for observability (OPENWIKI_LANGSMITH_API_KEY, LANGSMITH_API_KEY).
 
 ## Dependency Pinning & Version Management
 

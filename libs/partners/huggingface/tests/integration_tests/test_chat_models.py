@@ -6,7 +6,7 @@ from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 def test_stream_usage() -> None:
     """Test we are able to configure stream options on models that require it."""
     llm = HuggingFaceEndpoint(  # type: ignore[call-arg]  # (model is inferred in class)
-        repo_id="google/gemma-3-27b-it",
+        repo_id="zai-org/GLM-5.2",
         task="conversational",
         provider="scaleway",
     )

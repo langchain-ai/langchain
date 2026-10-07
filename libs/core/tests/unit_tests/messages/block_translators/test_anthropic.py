@@ -572,3 +572,34 @@ def test_convert_to_v1_from_anthropic_malformed_citations() -> None:
             ],
         },
     ]
+
+
+def test_toolset_namespace_in_content_blocks() -> None:
+    block = {
+        "type": "tool_use",
+        "id": "call_1",
+        "name": "click",
+        "input": {},
+        "toolset_name": "computer",
+    }
+    metadata = {"model_provider": "anthropic"}
+    message = AIMessage([block], response_metadata=metadata)
+    content_block = message.content_blocks[0]
+    assert content_block["type"] == "tool_call"
+    assert content_block["extras"]["toolset_name"] == "computer"
+    chunk = AIMessageChunk(
+        content=[{**block, "index": 0}],
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "id": "call_1",
+                "name": "click",
+                "args": "{}",
+                "index": 0,
+            }
+        ],
+        response_metadata=metadata,
+    )
+    chunk_block = chunk.content_blocks[0]
+    assert chunk_block["type"] == "tool_call_chunk"
+    assert chunk_block["extras"]["toolset_name"] == "computer"
