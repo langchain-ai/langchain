@@ -114,11 +114,21 @@ class PromptTemplate(StringPromptTemplate):
             )
 
         if values["template_format"]:
+            template_variables = get_template_variables(
+                values["template"], values["template_format"]
+            )
+            # An empty replacement field (`{}`) would surface later as an
+            # opaque IndexError at format time — reject it here (#40657).
+            if any(not var for var in template_variables):
+                msg = (
+                    "Template contains an empty replacement field `{}`. "
+                    "f-string templates require named fields; escape literal "
+                    "braces as `{{}}` instead."
+                )
+                raise ValueError(msg)
             values["input_variables"] = [
                 var
-                for var in get_template_variables(
-                    values["template"], values["template_format"]
-                )
+                for var in template_variables
                 if var not in values["partial_variables"]
             ]
 

@@ -744,3 +744,16 @@ def test_prompt_template_add(
         variable="template",
         another_variable="other_template",
     )
+
+
+def test_from_template_rejects_empty_replacement_field() -> None:
+    """`{}` must raise a clear ValueError at construction, not IndexError at format (#40657)."""
+    from langchain_core.prompts import PromptTemplate
+
+    with pytest.raises(ValueError, match="empty replacement field"):
+        PromptTemplate.from_template("Value: {}")
+
+    # Named fields and escaped braces keep working.
+    ok = PromptTemplate.from_template("Value: {value} and {{literal}}")
+    assert ok.input_variables == ["value"]
+    assert ok.format(value=1) == "Value: 1 and {literal}"
