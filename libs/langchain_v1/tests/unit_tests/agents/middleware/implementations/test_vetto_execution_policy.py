@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, patch
 
@@ -13,6 +12,7 @@ from langchain.agents.middleware._execution import (
 if TYPE_CHECKING:
     import subprocess
     from collections.abc import Callable, Mapping, Sequence
+    from pathlib import Path
 
 
 def test_vetto_policy_validations() -> None:
@@ -49,10 +49,9 @@ def test_vetto_policy_spawns_vetto_cli(monkeypatch: pytest.MonkeyPatch, tmp_path
     policy = VettoSandboxExecutionPolicy(
         net="allowlist",
         allowed_domains=["api.anthropic.com"],
-        allow_write=[str(tmp_path / "extra_write")],
-        allow_read=["/etc/ssl/certs"],
         memory_limit="256MB",
         command_timeout=45.0,
+        policy_path="/etc/vetto/policy.toml",
     )
     monkeypatch.setattr(policy, "_resolve_binary", lambda: "/usr/bin/vetto")
 
@@ -61,24 +60,48 @@ def test_vetto_policy_spawns_vetto_cli(monkeypatch: pytest.MonkeyPatch, tmp_path
 
     expected = [
         "/usr/bin/vetto",
-        "run",
-        "--net=allowlist",
-        "--timeout",
-        "45",
-        "--memory",
-        "256MB",
-        "--allow-write",
-        str(tmp_path.resolve()),
-        "--allow-write",
-        str((tmp_path / "extra_write").resolve()),
-        "--allow-read",
-        str(Path("/etc/ssl/certs").resolve()),
-        "--allow-domain",
-        "api.anthropic.com",
+        "--ci",
+        "--net=allowlist:api.anthropic.com",
+        "--timeout=45s",
+        "--limits=as=256MB",
+        "--policy=/etc/vetto/policy.toml",
         "--",
         "/bin/bash",
     ]
     assert recorded["command"] == expected
+
+
+def test_vetto_policy_environment_isolation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-leaked-key")
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+
+    recorded_env: dict[str, str] = {}
+
+    def fake_launch(
+        _command: Sequence[str],
+        *,
+        env: Mapping[str, str],
+        **_kwargs: Any,
+    ) -> subprocess.Popen[str]:
+        nonlocal recorded_env
+        recorded_env = dict(env)
+        return Mock()
+
+    monkeypatch.setattr(
+        "langchain.agents.middleware._execution._launch_subprocess",
+        fake_launch,
+    )
+
+    policy = VettoSandboxExecutionPolicy()
+    monkeypatch.setattr(policy, "_resolve_binary", lambda: "/usr/bin/vetto")
+
+    policy.spawn(workspace=tmp_path, env={"ALLOWED_VAR": "val"}, command=("/bin/sh",))
+
+    assert "OPENAI_API_KEY" not in recorded_env
+    assert recorded_env.get("ALLOWED_VAR") == "val"
+    assert recorded_env.get("PATH") == "/usr/bin:/bin"
 
 
 def test_vetto_policy_missing_binary_raises_without_fallback(

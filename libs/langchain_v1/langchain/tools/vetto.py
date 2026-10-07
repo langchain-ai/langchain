@@ -16,6 +16,8 @@ from langchain_core.runnables import run_in_executor
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 
+from langchain.agents.middleware._execution import _build_clean_env
+
 if TYPE_CHECKING:
     from langchain_core.callbacks import (
         AsyncCallbackManagerForToolRun,
@@ -83,6 +85,10 @@ class VettoProcessTool(BaseTool):
         default=None,
         description="Additional file or directory paths permitted for read-only access.",
     )
+    policy_path: str | None = Field(
+        default=None,
+        description="Optional custom policy TOML file path.",
+    )
     timeout: int | None = Field(
         default=120,
         description="Default execution timeout in seconds.",
@@ -133,7 +139,7 @@ class VettoProcessTool(BaseTool):
     def _build_command(
         self,
         command_args: list[str],
-        cwd: str | None = None,
+        cwd: str | None = None,  # noqa: ARG002
         timeout: int | None = None,
     ) -> list[str]:
         """Construct the sandboxed command vector prefixed with vetto CLI parameters."""
@@ -148,31 +154,22 @@ class VettoProcessTool(BaseTool):
                 raise RuntimeError(msg)
             return command_args
 
-        effective_cwd = cwd or self.working_dir or str(Path.cwd())
-        resolved_cwd = str(Path(effective_cwd).resolve())
+        run_args = [vetto_bin, "--ci"]
 
-        run_args = [vetto_bin, "run", f"--net={self.net}"]
+        if self.net == "allowlist" and self.allowed_domains:
+            run_args.append(f"--net=allowlist:{','.join(self.allowed_domains)}")
+        else:
+            run_args.append(f"--net={self.net}")
 
         effective_timeout = timeout if timeout is not None else self.timeout
         if effective_timeout:
-            run_args.extend(["--timeout", str(effective_timeout)])
+            run_args.append(f"--timeout={effective_timeout}s")
 
         if self.memory_limit:
-            run_args.extend(["--memory", self.memory_limit])
+            run_args.append(f"--limits=as={self.memory_limit}")
 
-        run_args.extend(["--allow-write", resolved_cwd])
-
-        if self.allow_write:
-            for p in self.allow_write:
-                run_args.extend(["--allow-write", str(Path(p).resolve())])
-
-        if self.allow_read:
-            for p in self.allow_read:
-                run_args.extend(["--allow-read", str(Path(p).resolve())])
-
-        if self.net == "allowlist" and self.allowed_domains:
-            for domain in self.allowed_domains:
-                run_args.extend(["--allow-domain", domain])
+        if self.policy_path:
+            run_args.append(f"--policy={self.policy_path}")
 
         run_args.append("--")
         run_args.extend(command_args)
@@ -190,10 +187,7 @@ class VettoProcessTool(BaseTool):
         effective_cwd = cwd or self.working_dir or str(Path.cwd())
         resolved_cwd = str(Path(effective_cwd).resolve())
 
-        exec_env = os.environ.copy()
-        if env:
-            exec_env.update(env)
-
+        exec_env = _build_clean_env(env)
         effective_timeout = timeout if timeout is not None else self.timeout
 
         kwargs: dict[str, Any] = {
@@ -220,11 +214,14 @@ class VettoProcessTool(BaseTool):
                     "elapsed_seconds": round(elapsed, 4),
                 }
             except subprocess.TimeoutExpired:
-                if hasattr(os, "killpg") and hasattr(os, "getpgid"):
+                if hasattr(os, "killpg"):
                     try:
-                        pgid = os.getpgid(proc.pid)
-                        os.killpg(pgid, signal.SIGKILL)
-                    except OSError:
+                        pgid = os.getpgid(proc.pid) if hasattr(os, "getpgid") else proc.pid
+                        if not hasattr(os, "getpgrp") or pgid != os.getpgrp():
+                            os.killpg(pgid, signal.SIGKILL)
+                        else:
+                            proc.kill()
+                    except (ProcessLookupError, OSError):
                         proc.kill()
                 else:
                     proc.kill()

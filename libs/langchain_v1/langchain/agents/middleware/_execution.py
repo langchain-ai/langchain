@@ -376,6 +376,34 @@ class DockerExecutionPolicy(BaseExecutionPolicy):
         return path
 
 
+_SAFE_INHERITED_ENV_VARS: tuple[str, ...] = (
+    "PATH",
+    "SYSTEMROOT",
+    "WINDIR",
+    "COMSPEC",
+    "PATHEXT",
+    "TMPDIR",
+    "TEMP",
+    "TMP",
+    "TERM",
+    "LANG",
+    "LC_ALL",
+    "TZ",
+)
+
+
+def _build_clean_env(env: Mapping[str, str] | None = None) -> dict[str, str]:
+    """Construct an isolated environment preventing host secret and API key exfiltration."""
+    clean_env: dict[str, str] = {}
+    for var in _SAFE_INHERITED_ENV_VARS:
+        val = os.environ.get(var)
+        if val is not None:
+            clean_env[var] = val
+    if env:
+        clean_env.update(env)
+    return clean_env
+
+
 @dataclass
 class VettoSandboxExecutionPolicy(BaseExecutionPolicy):
     """Launch the shell through an unprivileged kernel-level Vetto sandbox.
@@ -386,6 +414,10 @@ class VettoSandboxExecutionPolicy(BaseExecutionPolicy):
     Sensitive paths such as `~/.ssh`, `~/.aws`, and `.env` are masked at the
     filesystem boundary.
 
+    Subprocesses execute within an isolated environment: host process secrets
+    and API keys are strictly excluded, retaining only essential system runtime
+    variables and caller-supplied environment overrides.
+
     If the Vetto executable is not found on PATH and `allow_fallback` is
     `False`, process launch raises `RuntimeError`. Set `allow_fallback=True`
     to fall back to process-group host execution.
@@ -394,9 +426,8 @@ class VettoSandboxExecutionPolicy(BaseExecutionPolicy):
     binary: str = "vetto"
     net: str = "off"
     allowed_domains: Sequence[str] | None = None
-    allow_write: Sequence[str] | None = None
-    allow_read: Sequence[str] | None = None
     memory_limit: str | None = None
+    policy_path: str | None = None
     allow_fallback: bool = False
 
     def __post_init__(self) -> None:
@@ -416,11 +447,10 @@ class VettoSandboxExecutionPolicy(BaseExecutionPolicy):
         command: Sequence[str],
     ) -> subprocess.Popen[str]:
         full_command = self._build_command(workspace, command)
-        host_env = os.environ.copy()
-        host_env.update(env)
+        clean_env = _build_clean_env(env)
         return _launch_subprocess(
             full_command,
-            env=host_env,
+            env=clean_env,
             cwd=workspace,
             preexec_fn=None,
             start_new_session=True,
@@ -428,7 +458,7 @@ class VettoSandboxExecutionPolicy(BaseExecutionPolicy):
 
     def _build_command(
         self,
-        workspace: Path,
+        workspace: Path,  # noqa: ARG002
         command: Sequence[str],
     ) -> list[str]:
         binary = self._resolve_binary()
@@ -441,28 +471,21 @@ class VettoSandboxExecutionPolicy(BaseExecutionPolicy):
                 raise RuntimeError(msg)
             return list(command)
 
-        resolved_workspace = str(workspace.resolve())
-        full_command: list[str] = [binary, "run", f"--net={self.net}"]
-
-        if self.command_timeout > 0:
-            full_command.extend(["--timeout", str(int(self.command_timeout))])
-
-        if self.memory_limit:
-            full_command.extend(["--memory", self.memory_limit])
-
-        full_command.extend(["--allow-write", resolved_workspace])
-
-        if self.allow_write:
-            for path in self.allow_write:
-                full_command.extend(["--allow-write", str(Path(path).resolve())])
-
-        if self.allow_read:
-            for path in self.allow_read:
-                full_command.extend(["--allow-read", str(Path(path).resolve())])
+        full_command: list[str] = [binary, "--ci"]
 
         if self.net == "allowlist" and self.allowed_domains:
-            for domain in self.allowed_domains:
-                full_command.extend(["--allow-domain", domain])
+            full_command.append(f"--net=allowlist:{','.join(self.allowed_domains)}")
+        else:
+            full_command.append(f"--net={self.net}")
+
+        if self.command_timeout > 0:
+            full_command.append(f"--timeout={int(self.command_timeout)}s")
+
+        if self.memory_limit:
+            full_command.append(f"--limits=as={self.memory_limit}")
+
+        if self.policy_path:
+            full_command.append(f"--policy={self.policy_path}")
 
         full_command.append("--")
         full_command.extend(command)

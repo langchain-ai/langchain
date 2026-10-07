@@ -31,27 +31,20 @@ def test_vetto_tool_build_command_with_binary(tmp_path: Path) -> None:
         working_dir=str(tmp_path),
         net="allowlist",
         allowed_domains=["api.anthropic.com", "pypi.org"],
-        allow_write=[str(tmp_path / "extra_write")],
-        allow_read=["/etc/ssl/certs"],
         timeout=60,
         memory_limit="512MB",
+        policy_path="/path/to/policy.toml",
         vetto_binary="/usr/local/bin/vetto",
     )
     with patch.object(tool, "_resolve_vetto_binary", return_value="/usr/local/bin/vetto"):
         cmd = tool._build_command(["ls", "-la"], cwd=str(tmp_path), timeout=60)
 
         assert cmd[0] == "/usr/local/bin/vetto"
-        assert cmd[1] == "run"
-        assert "--net=allowlist" in cmd
-        assert "--timeout" in cmd
-        assert "60" in cmd
-        assert "--memory" in cmd
-        assert "512MB" in cmd
-        assert "--allow-domain" in cmd
-        assert "api.anthropic.com" in cmd
-        assert "pypi.org" in cmd
-        assert "--allow-read" in cmd
-        assert "/etc/ssl/certs" in cmd
+        assert cmd[1] == "--ci"
+        assert "--net=allowlist:api.anthropic.com,pypi.org" in cmd
+        assert "--timeout=60s" in cmd
+        assert "--limits=as=512MB" in cmd
+        assert "--policy=/path/to/policy.toml" in cmd
         assert "--" in cmd
         assert cmd[-2:] == ["ls", "-la"]
 
@@ -165,8 +158,39 @@ def test_vetto_tool_execute_subprocess_timeout(tmp_path: Path) -> None:
         (b"", b"Command timed out"),
     ]
 
-    with patch("subprocess.Popen", return_value=mock_proc), patch("os.killpg") as mock_killpg:
+    with (
+        patch("subprocess.Popen", return_value=mock_proc),
+        patch("os.getpgid", return_value=9999),
+        patch("os.getpgrp", return_value=1234),
+        patch("os.killpg") as mock_killpg,
+    ):
         result = tool._execute_subprocess(["sleep", "10"], timeout=1)
         assert result["timed_out"] is True
         assert result["exit_code"] == 124
         assert mock_killpg.called
+        mock_killpg.assert_called_once()
+
+
+def test_vetto_tool_environment_isolation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-secret-leaked-key")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "sensitive-aws-key")
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+
+    tool = VettoProcessTool(working_dir=str(tmp_path), allow_fallback=True)
+    captured_env: dict[str, str] = {}
+
+    def fake_popen(*_args: object, **kwargs: object) -> MagicMock:
+        nonlocal captured_env
+        captured_env = kwargs.get("env", {})
+        proc = MagicMock()
+        proc.communicate.return_value = (b"ok", b"")
+        proc.returncode = 0
+        return proc
+
+    with patch("subprocess.Popen", side_effect=fake_popen):
+        tool._execute_subprocess(["echo", "hi"], env={"CUSTOM_VAR": "custom_val"})
+
+    assert "OPENAI_API_KEY" not in captured_env
+    assert "AWS_SECRET_ACCESS_KEY" not in captured_env
+    assert captured_env.get("CUSTOM_VAR") == "custom_val"
+    assert captured_env.get("PATH") == "/usr/bin:/bin"
