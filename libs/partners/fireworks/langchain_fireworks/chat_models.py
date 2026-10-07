@@ -398,6 +398,8 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 _format_message_content(message.content)
             ),
         }
+        # Only replay reasoning Fireworks produced (or hand-built messages with no
+        # provider); other providers' reasoning may not be valid input here.
         if isinstance(
             reasoning_content := message.additional_kwargs.get("reasoning_content"), str
         ) and message.response_metadata.get("model_provider") in (None, "fireworks"):
