@@ -421,7 +421,7 @@ def test_create_summary_does_not_retry_non_retryable_errors() -> None:
 
 
 def test_create_summary_recovers_from_context_overflow() -> None:
-    model = _OverflowingModel(max_chars=20_000)
+    model = _OverflowingModel(max_chars=25_000)
     middleware = SummarizationMiddleware(model=model, trim_tokens_to_summarize=None)
 
     assert middleware._create_summary(_long_history()) == "Summary."
@@ -432,7 +432,7 @@ def test_create_summary_recovers_from_context_overflow() -> None:
 
 
 async def test_acreate_summary_recovers_from_context_overflow() -> None:
-    model = _OverflowingModel(max_chars=20_000)
+    model = _OverflowingModel(max_chars=25_000)
     middleware = SummarizationMiddleware(model=model, trim_tokens_to_summarize=None)
 
     assert await middleware._acreate_summary(_long_history()) == "Summary."

@@ -868,7 +868,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         try:
             response = self._summary_model.invoke(prompt, config=_summary_config())
         except ContextOverflowError:
-            retry_prompt = self._overflow_retry_prompt(trimmed_messages, prompt)
+            retry_prompt = self._overflow_retry_prompt(trimmed_messages)
             if retry_prompt is None:
                 raise
             response = self._summary_model.invoke(retry_prompt, config=_summary_config())
@@ -898,7 +898,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         try:
             response = await self._summary_model.ainvoke(prompt, config=_summary_config())
         except ContextOverflowError:
-            retry_prompt = self._overflow_retry_prompt(trimmed_messages, prompt)
+            retry_prompt = self._overflow_retry_prompt(trimmed_messages)
             if retry_prompt is None:
                 raise
             response = await self._summary_model.ainvoke(retry_prompt, config=_summary_config())
@@ -911,22 +911,19 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         formatted_messages = get_buffer_string(messages, format="xml")
         return self.summary_prompt.format(messages=formatted_messages).rstrip()
 
-    def _overflow_retry_prompt(self, messages: list[AnyMessage], prompt: str) -> str | None:
+    def _overflow_retry_prompt(self, messages: list[AnyMessage]) -> str | None:
         """Build a smaller summary prompt after the summary call overflowed.
 
-        Keeps the newest messages within half of the overflowing prompt's size,
-        capped at half of the model's `max_input_tokens` when known.
+        Keeps the newest messages within half of their token count, capped at half
+        of the model's `max_input_tokens` when known.
 
         Returns:
             The retry prompt, or `None` if no messages fit the budget.
         """
-        prompt_tokens = self._partial_token_counter([HumanMessage(content=prompt)])
-        target = prompt_tokens // 2
-        if (max_input_tokens := self._get_profile_limits()) is not None:
-            target = min(target, max_input_tokens // 2)
-        # Scale the prompt budget to message tokens, since formatting adds overhead.
         message_tokens = self._partial_token_counter(messages)
-        budget = message_tokens * target // max(prompt_tokens, 1)
+        budget = message_tokens // 2
+        if (max_input_tokens := self._get_profile_limits()) is not None:
+            budget = min(budget, max_input_tokens // 2)
         trimmed = cast(
             "list[AnyMessage]",
             trim_messages(
@@ -940,13 +937,13 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         )
         if not trimmed:
             return None
-        logger.warning(
-            "Summary prompt (~%d tokens) exceeded the model's context window; "
-            "retrying with the newest %d of %d messages (~%d tokens).",
-            prompt_tokens,
+        logger.debug(
+            "Summary prompt exceeded the model's context window; retrying with the "
+            "newest %d of %d messages (~%d of ~%d tokens).",
             len(trimmed),
             len(messages),
-            self._partial_token_counter(trimmed),
+            budget,
+            message_tokens,
         )
         return self._format_summary_prompt(trimmed)
 
