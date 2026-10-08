@@ -4126,6 +4126,60 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     lambda_mock.reset_mock()
 
 
+def _retry_value_errors(exc: BaseException) -> bool:
+    return isinstance(exc, ValueError)
+
+
+def test_retrying_with_predicate(mocker: MockerFixture) -> None:
+    def _lambda(x: int) -> int:
+        if x == 1:
+            msg = "x is 1"
+            raise ValueError(msg)
+        msg = "x is 2"
+        raise RuntimeError(msg)
+
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=_retry_value_errors,
+    )
+
+    with pytest.raises(ValueError, match="x is 1"):
+        runnable.invoke(1)
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
+
+    with pytest.raises(RuntimeError, match="x is 2"):
+        runnable.invoke(2)
+    assert lambda_mock.call_count == 1  # did not retry
+
+
+async def test_async_retrying_with_predicate(mocker: MockerFixture) -> None:
+    def _lambda(x: int) -> int:
+        if x == 1:
+            msg = "x is 1"
+            raise ValueError(msg)
+        msg = "x is 2"
+        raise RuntimeError(msg)
+
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=_retry_value_errors,
+    )
+
+    with pytest.raises(ValueError, match="x is 1"):
+        await runnable.ainvoke(1)
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
+
+    with pytest.raises(RuntimeError, match="x is 2"):
+        await runnable.ainvoke(2)
+    assert lambda_mock.call_count == 1  # did not retry
+
+
 def test_runnable_lambda_stream() -> None:
     """Test that stream works for both normal functions & those returning Runnable."""
     # Normal output should work
