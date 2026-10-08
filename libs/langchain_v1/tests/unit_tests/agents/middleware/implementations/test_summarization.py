@@ -427,8 +427,9 @@ def test_create_summary_recovers_from_context_overflow() -> None:
     assert middleware._create_summary(_long_history()) == "Summary."
     assert len(model.prompts) == 2
     retry_prompt = model.prompts[1]
+    assert "turn-0" in retry_prompt
+    assert "turn-5" not in retry_prompt
     assert "turn-9" in retry_prompt
-    assert "turn-0" not in retry_prompt
 
 
 async def test_acreate_summary_recovers_from_context_overflow() -> None:
@@ -437,8 +438,9 @@ async def test_acreate_summary_recovers_from_context_overflow() -> None:
 
     assert await middleware._acreate_summary(_long_history()) == "Summary."
     assert len(model.prompts) == 2
+    assert "turn-0" in model.prompts[1]
+    assert "turn-5" not in model.prompts[1]
     assert "turn-9" in model.prompts[1]
-    assert "turn-0" not in model.prompts[1]
 
 
 def test_create_summary_raises_on_persistent_context_overflow() -> None:

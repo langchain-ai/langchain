@@ -69,6 +69,8 @@ def validate_retry_params(
 
 def default_retry_on(exc: BaseException) -> bool:
     """Return whether an exception should be retried by default."""
+    if not isinstance(exc, Exception):
+        return False
     if isinstance(exc, ModelError):
         return exc.is_retryable
     return True

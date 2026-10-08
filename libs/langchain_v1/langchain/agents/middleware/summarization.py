@@ -100,7 +100,6 @@ treat edits to it accordingly.
 
 _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
-_OVERFLOW_SPLIT_CHARS = 400
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 
 # Some providers tag emitted messages with a `model_provider` string that differs from
@@ -115,11 +114,6 @@ _LS_PROVIDER_ALIASES: dict[str, frozenset[str]] = {
     # messages inherit model_provider="anthropic" from BaseChatAnthropic.
     "anthropic-mantle": frozenset({"anthropic"}),
 }
-
-
-def _split_fixed_chunks(text: str) -> list[str]:
-    """Split text into fixed-size chunks so long messages can be partially kept."""
-    return [text[i : i + _OVERFLOW_SPLIT_CHARS] for i in range(0, len(text), _OVERFLOW_SPLIT_CHARS)]
 
 
 def _summary_config() -> RunnableConfig:
@@ -254,7 +248,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     `Runnable.with_retry`, unless the error is a `ModelError` marked non-retryable
     (e.g. authentication or invalid request errors). If the summary prompt exceeds
     the model's context window (`ContextOverflowError`), the call is retried once with
-    only the newest part of the history. If a summary call still fails, the
+    the middle of the history cut out. If a summary call still fails, the
     underlying error propagates rather than fabricating a summary.
     """
 
@@ -914,38 +908,35 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     def _overflow_retry_prompt(self, messages: list[AnyMessage]) -> str | None:
         """Build a smaller summary prompt after the summary call overflowed.
 
-        Keeps the newest messages within half of their token count, capped at half
-        of the model's `max_input_tokens` when known.
+        Cuts the middle out of the formatted history, keeping its start (where the
+        objective is usually stated) and its most recent part, within half of its
+        token count and 40% of the model's `max_input_tokens` when known.
 
         Returns:
-            The retry prompt, or `None` if no messages fit the budget.
+            The retry prompt, or `None` if nothing fits the budget.
         """
-        message_tokens = self._partial_token_counter(messages)
-        budget = message_tokens // 2
+        formatted = get_buffer_string(messages, format="xml")
+        tokens = self._partial_token_counter([HumanMessage(content=formatted)])
+        budget = tokens // 2
         if (max_input_tokens := self._get_profile_limits()) is not None:
-            budget = min(budget, max_input_tokens // 2)
-        trimmed = cast(
-            "list[AnyMessage]",
-            trim_messages(
-                messages,
-                max_tokens=budget,
-                token_counter=self._partial_token_counter,
-                strategy="last",
-                allow_partial=True,
-                text_splitter=_split_fixed_chunks,
-            ),
-        )
-        if not trimmed:
+            # 40% rather than half absorbs up to 1.25x usage-metadata scaling.
+            budget = min(budget, max_input_tokens * 2 // 5)
+        keep_chars = len(formatted) * budget // max(tokens, 1)
+        if keep_chars <= 0:
             return None
+        head_chars = keep_chars // 4
+        tail_chars = keep_chars - head_chars
         logger.debug(
-            "Summary prompt exceeded the model's context window; retrying with the "
-            "newest %d of %d messages (~%d of ~%d tokens).",
-            len(trimmed),
-            len(messages),
+            "Summary prompt exceeded the model's context window; retrying with "
+            "~%d of ~%d history tokens.",
             budget,
-            message_tokens,
+            tokens,
         )
-        return self._format_summary_prompt(trimmed)
+        truncated = (
+            f"{formatted[:head_chars]}\n\n[... middle of conversation omitted ...]\n\n"
+            f"{formatted[-tail_chars:]}"
+        )
+        return self.summary_prompt.format(messages=truncated).rstrip()
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
         """Trim messages to fit within summary generation limits."""
