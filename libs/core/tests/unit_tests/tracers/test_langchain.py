@@ -168,8 +168,8 @@ _TRACER_ENV_VARS = (
 )
 
 _requires_address = pytest.mark.skipif(
-    not hasattr(langsmith, "Agent"),
-    reason="agent addressing requires a langsmith version with `ls.Agent`",
+    not hasattr(getattr(langsmith, "address", None), "Agent"),
+    reason="agent addressing requires a langsmith version with `ls.address.Agent`",
 )
 
 
@@ -209,7 +209,7 @@ def test_automatic_tracing_uses_agent_env(tracer_env: pytest.MonkeyPatch) -> Non
     client = unittest.mock.MagicMock(spec=Client)
     with tracing_context(client=client):
         _nested_chain().invoke(1)
-    expected = langsmith.Agent("my-agent", "development")
+    expected = langsmith.address.Agent("my-agent", "development")
     assert _posted_destinations(client) == [(None, expected)] * 2
 
 
@@ -227,7 +227,7 @@ def test_project_in_code_wins_over_agent_env(tracer_env: pytest.MonkeyPatch) -> 
 def test_address_from_tracing_context(tracer_env: pytest.MonkeyPatch) -> None:
     tracer_env.setenv("LANGSMITH_TRACING", "true")
     client = unittest.mock.MagicMock(spec=Client)
-    support = langsmith.Agent("support", "staging")
+    support = langsmith.address.Agent("support", "staging")
     with tracing_context(client=client, address=support):
         _nested_chain().invoke(1)
     assert _posted_destinations(client) == [(None, support)] * 2
@@ -237,7 +237,7 @@ def test_address_from_tracing_context(tracer_env: pytest.MonkeyPatch) -> None:
 def test_address_from_traceable_parent(tracer_env: pytest.MonkeyPatch) -> None:
     tracer_env.setenv("LANGSMITH_TRACING", "true")
     client = unittest.mock.MagicMock(spec=Client)
-    support = langsmith.Agent("support", "staging")
+    support = langsmith.address.Agent("support", "staging")
     with trace("parent", client=client, address=support):
         _nested_chain().invoke(1)
     assert _posted_destinations(client) == [(None, support)] * 3
@@ -1043,7 +1043,7 @@ class TestTracerMetadataCloning:
 @_requires_address
 @pytest.mark.usefixtures("tracer_env")
 def test_tracer_address_argument() -> None:
-    support = langsmith.Agent("support", "staging")
+    support = langsmith.address.Agent("support", "staging")
     client = unittest.mock.MagicMock(spec=Client)
     tracer = LangChainTracer(client=client, address=support)
     assert tracer.project_name is None
@@ -1095,7 +1095,7 @@ def test_destination_with_agent_env(
     RunnableLambda(lambda x: x).invoke(
         1, {"callbacks": [LangChainTracer(client=client)]}
     )
-    agent = langsmith.Agent("my-agent", "development")
+    agent = langsmith.address.Agent("my-agent", "development")
     assert _posted_destinations(client) == [
         (project, agent if address == "agent" else address)
         for project, address in expected
@@ -1107,8 +1107,8 @@ def test_destination_with_agent_env(
 @pytest.mark.parametrize(
     "address",
     [
-        langsmith.Experiment("0190c3d4-0000-7000-8000-0000000000b1")
-        if hasattr(langsmith, "Experiment")
+        langsmith.address.Experiment("0190c3d4-0000-7000-8000-0000000000b1")
+        if hasattr(getattr(langsmith, "address", None), "Experiment")
         else None,
         "lrn:agents/support/environments/staging",
     ],
