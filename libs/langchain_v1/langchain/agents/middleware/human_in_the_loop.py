@@ -400,7 +400,95 @@ class _HumanInTheLoopState(AgentState[ResponseT]):
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
-    """Human in the loop middleware."""
+    """Pause the agent so a person can review tool calls before they run.
+
+    Each tool in `interrupt_on` needs a decision before it runs: approve, edit, reject,
+    or respond. The pause is a LangGraph `interrupt`, so the agent needs a checkpointer,
+    and the run continues with `Command(resume=...)`.
+
+    `interrupt_mode` sets how the agent pauses:
+
+    - `"batched"` (default): one interrupt per model turn. Its value is a `HITLRequest`
+        listing every gated call, answered with a `HITLResponse` whose decisions match
+        the calls by position.
+    - `"per_call"`: one interrupt per gated tool call, as the call starts. Its value is
+        a `ToolApprovalRequest` and its `response_schema` lists the decisions that tool
+        allows. Each is answered with a single `Decision` keyed by interrupt ID, and
+        LangGraph checks the answer against the schema before saving it. `"per_call"`
+        is planned to become the default in the next major release.
+
+    Examples:
+        !!! example "Batched: one interrupt per model turn"
+
+            ```python
+            from langchain.agents import create_agent
+            from langchain.agents.middleware import HumanInTheLoopMiddleware
+            from langgraph.checkpoint.memory import InMemorySaver
+            from langgraph.types import Command
+
+            agent = create_agent(
+                model,
+                tools=[send_email, delete_file],
+                middleware=[
+                    HumanInTheLoopMiddleware(interrupt_on={"send_email": True, "delete_file": True})
+                ],
+                checkpointer=InMemorySaver(),
+            )
+            config = {"configurable": {"thread_id": "1"}}
+            result = agent.invoke(
+                {"messages": [{"role": "user", "content": "Email Alice, then delete the report."}]},
+                config,
+                version="v2",
+            )
+            # One interrupt; `value["action_requests"]` lists send_email, then delete_file.
+            agent.invoke(
+                Command(
+                    resume={
+                        "decisions": [
+                            {"type": "approve"},
+                            {"type": "reject", "message": "Keep the report."},
+                        ]
+                    }
+                ),
+                config,
+                version="v2",
+            )
+            ```
+
+        !!! example "Per-call: one interrupt per gated tool call"
+
+            ```python
+            agent = create_agent(
+                model,
+                tools=[send_email, delete_file],
+                middleware=[
+                    HumanInTheLoopMiddleware(
+                        interrupt_on={
+                            "send_email": True,
+                            "delete_file": {"allowed_decisions": ["approve", "reject"]},
+                        },
+                        interrupt_mode="per_call",
+                    )
+                ],
+                checkpointer=InMemorySaver(),
+            )
+            config = {"configurable": {"thread_id": "2"}}
+            result = agent.invoke(
+                {"messages": [{"role": "user", "content": "Email Alice, then delete the report."}]},
+                config,
+                version="v2",
+            )
+            # Two interrupts, each with `value["type"] == "tool_approval"` and its own
+            # `response_schema`. Answer each by its ID.
+            answers = {}
+            for interrupt in result.interrupts:
+                if interrupt.value["name"] == "delete_file":
+                    answers[interrupt.id] = {"type": "reject", "message": "Keep the report."}
+                else:
+                    answers[interrupt.id] = {"type": "approve"}
+            agent.invoke(Command(resume=answers), config, version="v2")
+            ```
+    """
 
     state_schema = _HumanInTheLoopState  # type: ignore[assignment]
 
@@ -438,29 +526,46 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 Not used if a tool has a `description` in its `InterruptOnConfig`.
             edit_notice: Text prepended to the result of a tool call a reviewer replaced
                 via an `edit` decision. Pass `None` to add nothing.
-            interrupt_mode: `"batched"` (default) raises one interrupt per model turn for
-                all gated tool calls. `"per_call"` raises a `ToolApprovalRequest` per
-                gated call, with a typed `response_schema`, each answered with a single
-                `Decision` keyed by interrupt ID.
-                In `per_call` mode an edit can't switch tools, its args are checked
-                against the tool's argument types (validator methods on its
-                `args_schema` run when the tool does), and an invalid answer raises
-                `pydantic.ValidationError` without being saved. If one of several
-                answers sent together is invalid, the others' tools may already have
-                run even if they still show as pending, and answering again would run
-                them twice: check answers against `response_schema` before sending
-                them together, or send one at a time. For a
-                tool whose arguments are a JSON schema rather than a Pydantic model,
-                edits are shown in `response_schema` but not checked.
+            interrupt_mode: How the agent pauses for review.
 
-                In `per_call` mode, list this middleware before tool retry or
-                error-handling middleware so it wraps them, and don't enable it on
-                subclasses that raise their own interrupts in `after_model`. On resume,
-                each paused tool call runs its middleware again up to this one, so
-                middleware listed before it must not have side effects before calling
-                `handler`. The tool itself runs only after the answer. As in `batched`
-                mode, running the agent asynchronously (`ainvoke`, `astream`) needs
-                Python 3.11 or later.
+                - `"batched"` (default): one interrupt per model turn for all gated
+                    tool calls, answered with a `HITLResponse`.
+                - `"per_call"`: one `ToolApprovalRequest` interrupt per gated tool
+                    call, with a typed `response_schema`, answered with a single
+                    `Decision` keyed by interrupt ID.
+
+                In `per_call` mode, LangGraph checks each answer before saving it:
+
+                - An edit can't switch tools, and its args must match the tool's
+                    argument types; args the tool doesn't declare are rejected.
+                    Validator methods on the tool's `args_schema` run when the tool
+                    does. For a tool whose arguments are a JSON schema rather than a
+                    Pydantic model, edits are shown in `response_schema` but not
+                    checked.
+                - An invalid answer raises `pydantic.ValidationError` and isn't
+                    saved, so the same interrupt can be answered again.
+
+                !!! warning "Answering several calls at once"
+
+                    If one of several answers sent together is invalid, the others'
+                    tools may already have run even if they still show as pending,
+                    and answering them again would run them twice. Check answers
+                    against `response_schema` before sending them together, or send
+                    one at a time.
+
+                !!! warning "Middleware order in `per_call` mode"
+
+                    The review happens as the tool call starts, inside the tool-call
+                    middleware chain. List this middleware before tool retry or
+                    error-handling middleware so it wraps them, and don't enable it
+                    on subclasses that raise their own interrupts in `after_model`.
+                    On resume, each paused tool call runs the middleware listed
+                    before this one again up to the pause, so that middleware must
+                    not have side effects before calling `handler`. The tool itself
+                    runs only after the answer.
+
+                As in `batched` mode, running the agent asynchronously (`ainvoke`,
+                `astream`) needs Python 3.11 or later.
 
         Raises:
             ValueError: If a tool's `InterruptOnConfig` does not have a non-empty
