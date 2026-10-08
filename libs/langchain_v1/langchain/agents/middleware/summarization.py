@@ -7,6 +7,7 @@ from collections.abc import Callable, Iterable, Mapping
 from functools import partial
 from typing import Any, Literal, TypedDict, cast
 
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -20,12 +21,14 @@ from langchain_core.messages.utils import (
     get_buffer_string,
     trim_messages,
 )
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
+from langchain.agents.middleware._retry import default_retry_on
 from langchain.agents.middleware.internal_call_transformer import (
     InternalCallTransformer,
     internal_call_metadata,
@@ -111,6 +114,11 @@ _LS_PROVIDER_ALIASES: dict[str, frozenset[str]] = {
     # messages inherit model_provider="anthropic" from BaseChatAnthropic.
     "anthropic-mantle": frozenset({"anthropic"}),
 }
+
+
+def _summary_config() -> RunnableConfig:
+    """Config for summary model calls."""
+    return {"metadata": {"lc_source": "summarization", **internal_call_metadata()}}
 
 
 def _provider_matches(message_provider: str, model_ls_provider: str | None) -> bool:
@@ -236,10 +244,12 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     messages when a threshold is reached, preserving recent messages and maintaining
     context continuity by ensuring AI/Tool message pairs remain together.
 
-    Transient summary-generation errors (rate limits, timeouts) are retried
-    in-process, up to 3 attempts total, via `Runnable.with_retry`. If a summary call
-    still fails after those attempts, the underlying error propagates rather than
-    fabricating a summary.
+    Summary-generation errors are retried in-process, up to 3 attempts total, via
+    `Runnable.with_retry`, unless the error is a `ModelError` marked non-retryable
+    (e.g. authentication or invalid request errors). If the summary prompt exceeds
+    the model's context window (`ContextOverflowError`), the call is retried once with
+    the middle of the history cut out. If a summary call still fails, the
+    underlying error propagates rather than fabricating a summary.
     """
 
     transformers = (InternalCallTransformer,)
@@ -354,9 +364,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             model = init_chat_model(model)
 
         self.model = model
-        # Retry transient errors (rate limits, timeouts) in-process, up to 3 attempts
-        # total, before giving up. See `Runnable.with_retry`.
-        self._summary_model = self.model.with_retry()
+        # Retry up to 3 attempts total, skipping errors marked non-retryable.
+        self._summary_model = self.model.with_retry(retry_if_exception_type=default_retry_on)
 
         self.trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None = (
             self._copy_trigger(trigger)
@@ -849,14 +858,14 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
-        # Serialize as XML so URL-based multimodal blocks remain visible in the summary
-        # prompt while excluding raw message metadata from the token budget.
-        formatted_messages = get_buffer_string(trimmed_messages, format="xml")
-
-        response = self._summary_model.invoke(
-            self.summary_prompt.format(messages=formatted_messages).rstrip(),
-            config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
-        )
+        prompt = self._format_summary_prompt(trimmed_messages)
+        try:
+            response = self._summary_model.invoke(prompt, config=_summary_config())
+        except ContextOverflowError:
+            retry_prompt = self._overflow_retry_prompt(trimmed_messages)
+            if retry_prompt is None:
+                raise
+            response = self._summary_model.invoke(retry_prompt, config=_summary_config())
         return response.text.strip()
 
     async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
@@ -879,15 +888,55 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        prompt = self._format_summary_prompt(trimmed_messages)
+        try:
+            response = await self._summary_model.ainvoke(prompt, config=_summary_config())
+        except ContextOverflowError:
+            retry_prompt = self._overflow_retry_prompt(trimmed_messages)
+            if retry_prompt is None:
+                raise
+            response = await self._summary_model.ainvoke(retry_prompt, config=_summary_config())
+        return response.text.strip()
+
+    def _format_summary_prompt(self, messages: list[AnyMessage]) -> str:
+        """Render the summary prompt for the given messages."""
         # Serialize as XML so URL-based multimodal blocks remain visible in the summary
         # prompt while excluding raw message metadata from the token budget.
-        formatted_messages = get_buffer_string(trimmed_messages, format="xml")
+        formatted_messages = get_buffer_string(messages, format="xml")
+        return self.summary_prompt.format(messages=formatted_messages).rstrip()
 
-        response = await self._summary_model.ainvoke(
-            self.summary_prompt.format(messages=formatted_messages).rstrip(),
-            config={"metadata": {"lc_source": "summarization", **internal_call_metadata()}},
+    def _overflow_retry_prompt(self, messages: list[AnyMessage]) -> str | None:
+        """Build a smaller summary prompt after the summary call overflowed.
+
+        Cuts the middle out of the formatted history, keeping its start (where the
+        objective is usually stated) and its most recent part, within half of its
+        token count and 40% of the model's `max_input_tokens` when known.
+
+        Returns:
+            The retry prompt, or `None` if nothing fits the budget.
+        """
+        formatted = get_buffer_string(messages, format="xml")
+        tokens = self._partial_token_counter([HumanMessage(content=formatted)])
+        budget = tokens // 2
+        if (max_input_tokens := self._get_profile_limits()) is not None:
+            # 40% rather than half absorbs up to 1.25x usage-metadata scaling.
+            budget = min(budget, max_input_tokens * 2 // 5)
+        keep_chars = len(formatted) * budget // max(tokens, 1)
+        if keep_chars <= 0:
+            return None
+        head_chars = keep_chars // 4
+        tail_chars = keep_chars - head_chars
+        logger.debug(
+            "Summary prompt exceeded the model's context window; retrying with "
+            "~%d of ~%d history tokens.",
+            budget,
+            tokens,
         )
-        return response.text.strip()
+        truncated = (
+            f"{formatted[:head_chars]}\n\n[... middle of conversation omitted ...]\n\n"
+            f"{formatted[-tail_chars:]}"
+        )
+        return self.summary_prompt.format(messages=truncated).rstrip()
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
         """Trim messages to fit within summary generation limits."""
