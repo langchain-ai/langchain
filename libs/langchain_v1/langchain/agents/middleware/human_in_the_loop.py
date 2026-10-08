@@ -197,7 +197,8 @@ def _edit_args(tool: BaseTool | None) -> object:
     """What an edit's `args` must look like: the tool's Pydantic schema, if it has one.
 
     That's the schema the model sees (`tool_call_schema`): it checks arg types and
-    required args, and rejects args it doesn't declare.
+    required args. Args it doesn't declare pass through, and the tool ignores them as
+    it would from the model.
     Validator methods on the tool's `args_schema` aren't part of it; they run when the
     tool does.
     A JSON-schema tool's schema is shown but not enforced, and with no tool any object
@@ -207,14 +208,7 @@ def _edit_args(tool: BaseTool | None) -> object:
     if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
         shown = schema if isinstance(schema, dict) else {"type": "object"}
         return Annotated[dict[str, Any], WithJsonSchema(shown)]
-    # `tool_call_schema` ignores args it doesn't declare, so a typo'd edit would run
-    # without it. The subclass rejects them and keeps the tool's fields, name and description.
-    return create_model(
-        schema.__name__,
-        __base__=schema,
-        __doc__=schema.__doc__,
-        __cls_kwargs__={"extra": "forbid"},
-    )
+    return schema
 
 
 def _as_sent(answer: object, check: ValidatorFunctionWrapHandler) -> object:
@@ -537,7 +531,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 In `per_call` mode, LangGraph checks each answer before saving it:
 
                 - An edit can't switch tools, and its args must match the tool's
-                    argument types; args the tool doesn't declare are rejected.
+                    argument types. Args the tool doesn't declare are ignored, as
+                    they are when the model sends them.
                     Validator methods on the tool's `args_schema` run when the tool
                     does. For a tool whose arguments are a JSON schema rather than a
                     Pydantic model, edits are shown in `response_schema` but not

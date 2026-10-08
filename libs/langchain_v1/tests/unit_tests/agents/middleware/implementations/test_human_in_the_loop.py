@@ -1830,14 +1830,6 @@ def test_decision_schema_with_one_decision_is_a_plain_object(allowed: list[Decis
             ("edit", "edited_action", "name"),
             "literal_error",
         ),
-        (
-            {
-                "type": "edit",
-                "edited_action": {"name": "send_email", "args": {"to": "b", "ccc": 1}},
-            },
-            ("edit", "edited_action", "args", "ccc"),
-            "extra_forbidden",
-        ),
     ],
 )
 def test_decision_schema_rejects_a_bad_answer_with_one_error_at_the_problem(
@@ -1948,8 +1940,6 @@ def test_per_call_interrupt_shows_the_call_and_the_answers_it_accepts() -> None:
     assert edited_action["properties"]["args"] == {"$ref": "#/$defs/send_email"}
     assert (list(args["properties"]), args["required"]) == (["to"], ["to"])
     assert args["description"] == "Send an email."
-    # Args the tool doesn't declare are rejected.
-    assert args["additionalProperties"] is False
 
 
 @pytest.mark.parametrize(
@@ -1962,6 +1952,16 @@ def test_per_call_interrupt_shows_the_call_and_the_answers_it_accepts() -> None:
             "success",
             "sent to bob",
         ),
+        # The tool ignores an arg it doesn't declare, as it would from the model.
+        (
+            {
+                "type": "edit",
+                "edited_action": {"name": "send_email", "args": {"to": "bob", "subject": "hi"}},
+            },
+            ["bob"],
+            "success",
+            "sent to bob",
+        ),
         (
             {"type": "reject", "message": "not now"},
             [],
@@ -1970,7 +1970,7 @@ def test_per_call_interrupt_shows_the_call_and_the_answers_it_accepts() -> None:
         ),
         ({"type": "respond", "message": "already sent"}, [], "success", "already sent"),
     ],
-    ids=["approve", "edit", "reject", "respond"],
+    ids=["approve", "edit", "edit-with-an-undeclared-arg", "reject", "respond"],
 )
 def test_per_call_resume_with_each_decision(
     answer: Decision, ran_with: list[str], status: str, content: str
