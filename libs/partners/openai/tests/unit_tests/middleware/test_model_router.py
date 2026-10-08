@@ -13,12 +13,13 @@ from langchain.agents.middleware.types import InputAgentState, omit_payload
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from pydantic import SecretStr
 
 from langchain_openai import ChatOpenAI
 from langchain_openai._compat import httpx
 from langchain_openai.chat_models.base import OpenAIAPIError, OpenAIInvalidRequestError
-from langchain_openai.decisions import ChoiceAnswer, OpenAIDecisions
+from langchain_openai.decisions import OpenAIDecisions
 from langchain_openai.middleware import ModelChoice, OpenAIModelRouterMiddleware
 
 pytestmark = pytest.mark.filterwarnings(
@@ -108,8 +109,11 @@ async def test_agent_routes_using_latest_human_message(*, async_: bool) -> None:
     )
 
     assert result["messages"][-1].content == "powerful"
-    assert isinstance(result["model_route"], ChoiceAnswer)
-    assert result["model_route"].probabilities == {"fast": 0.1, "powerful": 0.9}
+    assert result["model_route"] == {
+        "choice": "powerful",
+        "probabilities": {"fast": 0.1, "powerful": 0.9},
+        "confidence": 0.8,
+    }
     [request] = observed
     assert request["input"] == [{"role": "user", "content": "Prove P != NP."}]
     assert request["questions"] == [
@@ -263,13 +267,35 @@ async def test_missing_human_message_skips_classification() -> None:
     assert observed == []
 
 
+def _strict_agent(middleware: OpenAIModelRouterMiddleware) -> Any:
+    """Agent whose checkpointer rejects types outside LangGraph's safe allowlist."""
+    serde = JsonPlusSerializer(allowed_msgpack_modules=None)
+    return create_agent(
+        _fake("default"),
+        middleware=[middleware],
+        checkpointer=InMemorySaver(serde=serde),
+    )
+
+
+def test_route_survives_strict_checkpointing() -> None:
+    agent = _strict_agent(_router(_choice("powerful"), _choice("fast")))
+    config: Any = {"configurable": {"thread_id": "thread"}}
+
+    first = agent.invoke(InputAgentState(messages=[HumanMessage("Hard")]), config)
+    second = agent.invoke(InputAgentState(messages=[HumanMessage("Easy")]), config)
+    state = agent.get_state(config).values
+
+    assert first["model_route"]["choice"] == "powerful"
+    assert second["model_route"]["choice"] == "fast"
+    assert state["model_route"]["choice"] == "fast"
+    assert second["messages"][-1].content == "fast"
+
+
 def test_refusal_clears_route_from_previous_run() -> None:
     middleware = _router(
         _choice("powerful"), {"type": "refusal", "name": "model_route"}
     )
-    agent = create_agent(
-        _fake("default"), middleware=[middleware], checkpointer=InMemorySaver()
-    )
+    agent = _strict_agent(middleware)
     config: Any = {"configurable": {"thread_id": "thread"}}
 
     first = agent.invoke(InputAgentState(messages=[HumanMessage("Hard")]), config)

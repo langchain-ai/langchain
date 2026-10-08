@@ -50,5 +50,5 @@ async def test_live_routing(task: str, expected_route: str, *, async_: bool) -> 
 
     result = await agent.ainvoke(state) if async_ else agent.invoke(state)
 
-    assert result["model_route"].choice == expected_route
+    assert result["model_route"]["choice"] == expected_route
     assert result["messages"][-1].content == expected_route

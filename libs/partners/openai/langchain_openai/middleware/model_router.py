@@ -20,11 +20,10 @@ from langchain.chat_models import init_chat_model
 from langchain_core._api import beta
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, convert_to_openai_messages
-from typing_extensions import NotRequired, override
+from typing_extensions import NotRequired, TypedDict, override
 
 from langchain_openai.decisions import (
     Choice,
-    ChoiceAnswer,
     DecisionRequest,
     DecisionResponse,
     OpenAIDecisions,
@@ -55,10 +54,27 @@ class ModelChoice:
     criteria: str
 
 
+class ModelRoute(TypedDict):
+    """Routing answer stored in agent state under `model_route`.
+
+    A plain mapping rather than a `ChoiceAnswer`, so checkpointers can persist it
+    without registering custom types.
+    """
+
+    choice: str
+    """Name of the selected route."""
+
+    probabilities: dict[str, float]
+    """Probability assigned to each route."""
+
+    confidence: float
+    """Scalar certainty from `0` to `1`, derived from the distribution."""
+
+
 class _ModelRouterState(AgentState):
     """Agent state used to persist the routing answer."""
 
-    model_route: NotRequired[ChoiceAnswer | None]
+    model_route: NotRequired[ModelRoute | None]
 
 
 @beta()
@@ -66,7 +82,7 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     """Select an agent's model with an OpenAI Decisions `Choice` question.
 
     Classifies the latest human message once before each agent run, stores the
-    complete `ChoiceAnswer` in agent state under `model_route`, and uses the selected
+    answer as a `ModelRoute` in agent state under `model_route`, and uses the selected
     route for every model call in the run. Keeping the complete answer makes
     probabilities and confidence available in state and traces.
 
@@ -219,10 +235,10 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         ]
 
     def _routed(self, request: ModelRequest[ContextT]) -> ModelRequest[ContextT]:
-        answer = cast("ChoiceAnswer | None", request.state.get("model_route"))
-        if answer is None:
+        route = cast("ModelRoute | None", request.state.get("model_route"))
+        if route is None:
             return request
-        return request.override(model=self.models[str(answer.choice)])
+        return request.override(model=self.models[route["choice"]])
 
 
 def _routable(message: HumanMessage, *, keep_images: bool) -> HumanMessage:
@@ -251,8 +267,15 @@ def _is_base64_image(block: dict[str, Any]) -> bool:
     return url.startswith("data:")
 
 
-def _route(response: DecisionResponse) -> ChoiceAnswer | None:
-    return response.choices.get(_QUESTION_NAME)
+def _route(response: DecisionResponse) -> ModelRoute | None:
+    answer = response.choices.get(_QUESTION_NAME)
+    if answer is None:
+        return None
+    return {
+        "choice": str(answer.choice),
+        "probabilities": {str(k): v for k, v in answer.probabilities.items()},
+        "confidence": answer.confidence,
+    }
 
 
-__all__ = ["ModelChoice", "OpenAIModelRouterMiddleware"]
+__all__ = ["ModelChoice", "ModelRoute", "OpenAIModelRouterMiddleware"]
