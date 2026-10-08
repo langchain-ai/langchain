@@ -88,6 +88,8 @@ def should_retry_exception(
     Returns:
         `True` if the exception should be retried, `False` otherwise.
     """
+    if isinstance(retry_on, type) and issubclass(retry_on, Exception):
+        return isinstance(exc, retry_on)
     if callable(retry_on):
         return retry_on(exc)
     return isinstance(exc, retry_on)

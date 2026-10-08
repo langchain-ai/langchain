@@ -513,6 +513,30 @@ def test_tool_retry_non_retryable_exception_reraises() -> None:
         )
 
 
+def test_tool_retry_accepts_single_exception_type() -> None:
+    """A single exception type retries only matching tool failures."""
+
+    @tool
+    def runtime_error_tool(value: str) -> str:
+        """Tool that raises RuntimeError."""
+        raise RuntimeError(value)
+
+    model = FakeToolCallingModel(
+        tool_calls=[[ToolCall(name="runtime_error_tool", args={"value": "test"}, id="1")]]
+    )
+    retry = ToolRetryMiddleware(
+        max_retries=2,
+        retry_on=ValueError,
+        initial_delay=0,
+        jitter=False,
+        on_failure="continue",
+    )
+    agent = create_agent(model=model, tools=[runtime_error_tool], middleware=[retry])
+
+    with pytest.raises(RuntimeError, match="test"):
+        agent.invoke({"messages": [HumanMessage("Use error tool")]})
+
+
 def test_tool_retry_custom_exception_filter() -> None:
     """Test ToolRetryMiddlewarewith custom exception filter function."""
 

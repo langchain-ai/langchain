@@ -327,6 +327,24 @@ def test_model_retry_non_retryable_exception_reraises() -> None:
         )
 
 
+def test_model_retry_accepts_single_exception_type() -> None:
+    """A single exception type does not retry unrelated model failures."""
+    model = AlwaysFailingModel(error_message="Runtime error", error_type=RuntimeError)
+    retry = ModelRetryMiddleware(
+        max_retries=2,
+        retry_on=ValueError,
+        initial_delay=0,
+        jitter=False,
+        on_failure="continue",
+    )
+    agent = create_agent(model=model, tools=[], middleware=[retry])
+
+    with pytest.raises(RuntimeError, match="Runtime error"):
+        agent.invoke({"messages": [HumanMessage("Hello")]})
+
+    assert model.attempts == 1
+
+
 @pytest.mark.parametrize(
     "error_type",
     [
