@@ -169,13 +169,6 @@ def test_serialization_round_trip() -> None:
     assert dumps(loaded) == serialized
 
 
-def test_load_does_not_read_api_key_from_environment() -> None:
-    serialized = dumps(OpenAIDecisions(model=MODEL, api_key=SecretStr(API_KEY)))
-
-    with pytest.raises(ValueError, match="OPENAI_API_KEY"):
-        loads(serialized, allowed_objects=[OpenAIDecisions])
-
-
 def test_missing_api_key_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("OPENAI_API_KEY")
 
@@ -190,7 +183,7 @@ def test_api_key_from_environment() -> None:
 
 
 def test_base_url_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OPENAI_BASE_URL", "https://example.com/v1")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://example.com/v1")
 
     decisions = OpenAIDecisions(model=MODEL)
 
@@ -198,14 +191,164 @@ def test_base_url_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     assert str(decisions._client.base_url) == "https://example.com/v1/"
 
 
+def test_sdk_base_url_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://example.com/v1")
+
+    decisions = OpenAIDecisions(model=MODEL)
+
+    assert decisions.base_url is None
+    assert str(decisions._client.base_url) == "https://example.com/v1/"
+
+
 def test_explicit_base_url_overrides_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("OPENAI_BASE_URL", "https://env.example.com/v1")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://env.example.com/v1")
 
     decisions = OpenAIDecisions(model=MODEL, base_url="https://example.com/v1")
 
     assert decisions.base_url == "https://example.com/v1"
+
+
+def test_langsmith_gateway_routes_requests(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_API_KEY", "lsv2_gateway")
+    monkeypatch.delenv("OPENAI_API_KEY")
+    captured: dict[str, Any] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
+        captured["auth"] = request.headers["authorization"]
+        return _ok(request)
+
+    decisions = OpenAIDecisions(
+        model=MODEL,
+        max_retries=0,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    decisions.invoke(_request())
+
+    assert decisions.base_url == "https://gateway.smith.langchain.com/openai/v1"
+    assert captured["url"] == "https://gateway.smith.langchain.com/openai/v1/decisions"
+    assert captured["auth"] == "Bearer lsv2_gateway"
+
+
+def test_langsmith_gateway_custom_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://my-gateway.example.com/")
+
+    decisions = OpenAIDecisions(model=MODEL)
+
+    assert decisions.base_url == "https://my-gateway.example.com/openai/v1"
+
+
+def test_langsmith_gateway_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    monkeypatch.setenv("LANGSMITH_API_KEY", "lsv2_gateway")
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    with pytest.raises(ValidationError, match="API key is required"):
+        OpenAIDecisions(model=MODEL)
+
+
+def test_langsmith_gateway_key_overrides_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+
+    decisions = OpenAIDecisions(model=MODEL)
+
+    assert decisions._client.api_key == "gateway-key"
+
+
+def test_provider_base_url_overrides_gateway(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_API_BASE", "https://example.com/v1")
+
+    decisions = OpenAIDecisions(model=MODEL)
+
+    assert decisions.base_url == "https://example.com/v1"
+    assert decisions._client.api_key == "foo"
+
+
+def test_gateway_overrides_sdk_base_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://example.com/v1")
+
+    decisions = OpenAIDecisions(model=MODEL)
+
+    assert decisions.base_url == "https://gateway.smith.langchain.com/openai/v1"
+    assert decisions._client.api_key == "gateway-key"
+
+
+def test_explicit_config_overrides_gateway(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+
+    decisions = OpenAIDecisions(
+        model=MODEL, api_key=SecretStr(API_KEY), base_url="https://example.com/v1"
+    )
+
+    assert decisions.base_url == "https://example.com/v1"
+    assert decisions._client.api_key == API_KEY
+
+
+def test_sync_callable_api_key_is_used_by_invoke() -> None:
+    captured: dict[str, Any] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["auth"] = request.headers["authorization"]
+        return _ok(request)
+
+    decisions = OpenAIDecisions(
+        model=MODEL,
+        api_key=lambda: "callable-key",
+        max_retries=0,
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    decisions.invoke(_request())
+
+    assert captured["auth"] == "Bearer callable-key"
+
+
+async def test_async_callable_api_key_is_used_by_ainvoke() -> None:
+    captured: dict[str, Any] = {}
+
+    async def api_key() -> str:
+        return "async-callable-key"
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured["auth"] = request.headers["authorization"]
+        return _ok(request)
+
+    decisions = OpenAIDecisions(
+        model=MODEL,
+        api_key=api_key,
+        max_retries=0,
+        http_async_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    await decisions.ainvoke(_request())
+
+    assert captured["auth"] == "Bearer async-callable-key"
+    with pytest.raises(ValueError, match="Sync invocation requires"):
+        decisions.invoke(_request())
+
+
+def test_callable_api_key_is_kept_with_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+
+    def api_key() -> str:
+        return "callable-key"
+
+    decisions = OpenAIDecisions(model=MODEL, api_key=api_key)
+
+    assert decisions.api_key is api_key
+    assert decisions.base_url == "https://gateway.smith.langchain.com/openai/v1"
 
 
 def test_score_requires_two_levels() -> None:

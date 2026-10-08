@@ -11,7 +11,8 @@ import openai
 from langchain_core._api import beta
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
-from langchain_core.utils import from_env, secret_from_env
+from langchain_core.utils import from_env
+from langchain_core.utils._gateway import _resolve_gateway_config
 from langsmith.run_helpers import get_current_run_tree
 from pydantic import ConfigDict, Field, SecretStr, ValidationError, model_validator
 from typing_extensions import Self, override
@@ -47,8 +48,11 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
 
     Args:
         model: Decisions model used to answer questions.
-        api_key: OpenAI API key. If omitted, reads `OPENAI_API_KEY`.
-        base_url: Base URL for API requests. If omitted, reads `OPENAI_BASE_URL`.
+        api_key: OpenAI API key. If omitted, reads `OPENAI_API_KEY`, or the LangSmith
+            gateway key when routing through the gateway.
+        base_url: Base URL for API requests. If omitted, reads `OPENAI_API_BASE`, then
+            the LangSmith gateway when `LANGSMITH_GATEWAY` is set, then
+            `OPENAI_BASE_URL`.
         organization: OpenAI organization ID. If omitted, reads `OPENAI_ORG_ID`.
         timeout: Request timeout passed to the OpenAI client.
         max_retries: Maximum number of retries passed to the OpenAI client.
@@ -99,25 +103,24 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
     model: str = Field(min_length=1)
     """Decisions model name, such as `gpt-6-luna`."""
 
-    api_key: SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]] = (
-        Field(
-            default_factory=secret_from_env("OPENAI_API_KEY", default=None),
-            exclude=True,
-            repr=False,
-        )
-    )
+    api_key: SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]] = None
     """API key used to authenticate requests.
 
-    Automatically inferred from env var `OPENAI_API_KEY` if not provided.
+    Automatically inferred from env var `OPENAI_API_KEY` if not provided. When
+    requests are routed through the LangSmith gateway, `LANGSMITH_GATEWAY_API_KEY`
+    or `LANGSMITH_API_KEY` is preferred instead.
     """
 
-    base_url: str | None = Field(
-        default_factory=from_env("OPENAI_BASE_URL", default=None)
-    )
+    base_url: str | None = None
     """Base URL for API requests.
 
-    Automatically inferred from env var `OPENAI_BASE_URL` if not provided. When unset,
-    requests go to the default OpenAI endpoint.
+    Resolution order (first match wins):
+
+    1. Explicit `base_url` kwarg.
+    2. Env var `OPENAI_API_BASE` (read by LangChain at init).
+    3. The [LangSmith LLM gateway](https://docs.langchain.com/langsmith/llm-gateway),
+        when env var `LANGSMITH_GATEWAY` is set.
+    4. Env var `OPENAI_BASE_URL` (read by the underlying `openai` SDK client).
     """
 
     openai_organization: str | None = Field(
@@ -164,12 +167,24 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
     )
 
     @model_validator(mode="after")
-    def _validate_api_key(self) -> Self:
+    def _validate_environment(self) -> Self:
+        gateway_config = _resolve_gateway_config(
+            base_url=self.base_url,
+            api_key=self.api_key,
+            provider_path="openai/v1",
+            base_url_env="OPENAI_API_BASE",
+            api_key_env="OPENAI_API_KEY",
+        )
+        self.base_url = gateway_config.base_url
+        self.api_key = gateway_config.api_key
         if self.api_key is None or (
             isinstance(self.api_key, SecretStr)
             and not self.api_key.get_secret_value().strip()
         ):
-            msg = "OpenAI API key is required. Pass `api_key` or set `OPENAI_API_KEY`."
+            msg = (
+                "OpenAI API key is required. Pass `api_key`, set `OPENAI_API_KEY`, "
+                "or set `LANGSMITH_GATEWAY` with a LangSmith API key."
+            )
             raise ValueError(msg)
         return self
 
