@@ -1011,6 +1011,20 @@ def filter_messages(
     return filtered
 
 
+def _messages_mergeable(a: BaseMessage, b: BaseMessage) -> bool:
+    """Return whether two consecutive messages of the same class can be merged.
+
+    Some message types carry attributes that define merge boundaries; when they
+    differ the messages must be preserved as-is instead of raising during chunk
+    concatenation (e.g. ``ChatMessage.role`` or ``FunctionMessage.name``).
+    """
+    if isinstance(a, ChatMessage):
+        return a.role == b.role
+    elif isinstance(a, FunctionMessage):
+        return a.name == b.name
+    return True
+
+
 @_runnable_support
 def merge_message_runs(
     messages: Iterable[MessageLikeRepresentation] | PromptValue,
@@ -1123,6 +1137,8 @@ def merge_message_runs(
         if not last:
             merged.append(msg)
         elif isinstance(msg, ToolMessage) or not isinstance(msg, last.__class__):
+            merged.extend([last, msg])
+        elif not _messages_mergeable(last, msg):
             merged.extend([last, msg])
         else:
             last_chunk = _msg_to_chunk(last)

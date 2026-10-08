@@ -139,6 +139,52 @@ def test_merge_messages_tool_messages() -> None:
     assert messages == messages_model_copy
 
 
+def test_merge_message_runs_chat_message_same_role() -> None:
+    messages = [
+        ChatMessage(role="human", content="foo"),
+        ChatMessage(role="human", content="bar"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    expected = [ChatMessage(role="human", content="foo\nbar")]
+    actual = merge_message_runs(messages)
+    assert actual == expected
+    assert messages == messages_model_copy
+
+
+def test_merge_message_runs_chat_message_different_roles() -> None:
+    messages = [
+        ChatMessage(role="human", content="foo"),
+        ChatMessage(role="assistant", content="bar"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    actual = merge_message_runs(messages)
+    assert actual == messages
+    assert messages == messages_model_copy
+
+
+def test_merge_message_runs_function_message_same_name() -> None:
+    messages = [
+        FunctionMessage(name="foo", content="a"),
+        FunctionMessage(name="foo", content="b"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    expected = [FunctionMessage(name="foo", content="a\nb")]
+    actual = merge_message_runs(messages)
+    assert actual == expected
+    assert messages == messages_model_copy
+
+
+def test_merge_message_runs_function_message_different_names() -> None:
+    messages = [
+        FunctionMessage(name="foo", content="a"),
+        FunctionMessage(name="bar", content="b"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    actual = merge_message_runs(messages)
+    assert actual == messages
+    assert messages == messages_model_copy
+
+
 class FilterFields(TypedDict):
     include_names: NotRequired[Sequence[str]]
     exclude_names: NotRequired[Sequence[str]]
