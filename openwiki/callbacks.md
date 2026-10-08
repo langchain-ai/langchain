@@ -5,7 +5,7 @@ description: "Document the callback handler architecture, integration with runna
 tags: ["callbacks", "observability", "handlers", "tracing", "streaming", "langsmith"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
+    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
@@ -23,7 +23,7 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/config.py
   - id: openwiki-source-bfd8b1aa6ad00852a2e99762
     resource: repo://libs/core/langchain_core/tracers/context.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
 ---
 
 
@@ -444,6 +444,56 @@ with trace_as_chain_group("data_processing", tags=["batch"]) as manager:
 ```
 
 The manager tracks completion state and calls parent's `on_chain_end` or `on_chain_error` when exiting.
+
+## Custom Handler Implementation
+
+### BaseCallbackHandler Subclass Pattern
+
+Implement custom handlers by subclassing `BaseCallbackHandler` and overriding relevant event methods:
+
+```python
+from langchain_core.callbacks import BaseCallbackHandler
+from typing import Any
+
+class CustomMetricsHandler(BaseCallbackHandler):
+    """Custom handler for collecting application metrics."""
+    
+    def __init__(self):
+        self.metrics = {}
+        self.run_inline = True  # Execute in caller's context
+    
+    @property
+    def ignore_llm(self) -> bool:
+        """Skip LLM events for this handler."""
+        return False
+    
+    def on_llm_start(self, serialized: dict[str, Any], prompts: list[str], 
+                     run_id, tags=None, metadata=None, **kwargs: Any) -> None:
+        """Called when LLM starts."""
+        self.metrics[str(run_id)] = {"start_time": time.time(), "prompt": prompts[0]}
+    
+    def on_llm_end(self, response, run_id, **kwargs: Any) -> None:
+        """Called when LLM completes."""
+        if str(run_id) in self.metrics:
+            self.metrics[str(run_id)]["end_time"] = time.time()
+            self.metrics[str(run_id)]["duration"] = (
+                self.metrics[str(run_id)]["end_time"] - 
+                self.metrics[str(run_id)]["start_time"]
+            )
+    
+    def on_llm_error(self, error: BaseException, run_id, **kwargs: Any) -> None:
+        """Called when LLM errors."""
+        if str(run_id) in self.metrics:
+            self.metrics[str(run_id)]["error"] = str(error)
+```
+
+Key patterns:
+
+1. **Set `run_inline`** to control execution context (sync vs async thread pool)
+2. **Implement `ignore_*` properties** to skip irrelevant event types
+3. **Handle optional parameters** with `**kwargs` for forward compatibility
+4. **Preserve run_id for hierarchy** when aggregating or correlating events
+5. **Use metadata/tags** passed in kwargs for context and filtering
 
 ## Best Practices
 

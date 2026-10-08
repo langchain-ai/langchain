@@ -6,6 +6,7 @@ import contextlib
 import json
 import logging
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from contextvars import ContextVar
 from operator import itemgetter
 from typing import (
     Any,
@@ -123,6 +124,10 @@ from langchain_fireworks.data._profiles import _PROFILES
 
 logger = logging.getLogger(__name__)
 
+_PROMPT_CACHE_AFFINITY: ContextVar[str | None] = ContextVar(
+    "fireworks_prompt_cache_affinity", default=None
+)
+
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 
@@ -150,7 +155,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Also Fireworks returns None for tool invocations
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
-        if reasoning_content := _dict.get("reasoning_content"):
+        if (
+            isinstance(reasoning_content := _dict.get("reasoning_content"), str)
+            and reasoning_content
+        ):
             additional_kwargs["reasoning_content"] = reasoning_content
 
         if function_call := _dict.get("function_call"):
@@ -343,6 +351,21 @@ def _format_message_content(content: Any) -> Any:
     return formatted
 
 
+def _format_tool_call_arguments(arguments: str | dict | None) -> str | dict:
+    """Preserve invalid historical arguments inside a JSON object for replay."""
+    if isinstance(arguments, dict):
+        return arguments
+    try:
+        parsed = json.loads(arguments) if arguments is not None else None
+        if isinstance(parsed, dict) and arguments is not None:
+            json.dumps(parsed, allow_nan=False)
+            return arguments
+    except ValueError:
+        logger.debug("Invalid JSON in historical Fireworks tool call arguments")
+    logger.warning("Wrapping invalid historical Fireworks tool call arguments")
+    return json.dumps({"__invalid_tool_call_arguments": arguments}, ensure_ascii=False)
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -378,6 +401,13 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 _format_message_content(message.content)
             ),
         }
+        # Replay reasoning only when the message is tagged `fireworks` or has no
+        # `model_provider` (hand-built messages, or integrations that don't tag
+        # theirs); reasoning from other tagged providers may not be valid input.
+        if isinstance(
+            reasoning_content := message.additional_kwargs.get("reasoning_content"), str
+        ) and message.response_metadata.get("model_provider") in (None, "fireworks"):
+            message_dict["reasoning_content"] = reasoning_content
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
@@ -392,6 +422,19 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             ]
         elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+        if "tool_calls" in message_dict:
+            message_dict["tool_calls"] = [
+                {
+                    **tool_call,
+                    "function": {
+                        **tool_call["function"],
+                        "arguments": _format_tool_call_arguments(
+                            tool_call["function"]["arguments"]
+                        ),
+                    },
+                }
+                for tool_call in message_dict["tool_calls"]
+            ]
         # If tool calls only, content is None not empty string
         if "tool_calls" in message_dict and message_dict["content"] == "":
             message_dict["content"] = None
@@ -437,6 +480,11 @@ def _usage_to_metadata(usage: Mapping[str, Any]) -> UsageMetadata:
     cached_tokens = (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
     if cached_tokens is not None:
         usage_metadata["input_token_details"] = {"cache_read": cached_tokens}
+    reasoning_tokens = (usage.get("completion_tokens_details") or {}).get(
+        "reasoning_tokens"
+    )
+    if reasoning_tokens is not None:
+        usage_metadata["output_token_details"] = {"reasoning": reasoning_tokens}
     return usage_metadata
 
 
@@ -519,6 +567,11 @@ def _convert_chunk_to_message_chunk(
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: dict = {}
     tool_call_chunks: list[ToolCallChunk] = []
+    if (
+        isinstance(reasoning_content := _dict.get("reasoning_content"), str)
+        and reasoning_content
+    ):
+        additional_kwargs["reasoning_content"] = reasoning_content
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
@@ -557,6 +610,67 @@ def _convert_chunk_to_message_chunk(
     if role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     return default_class(content=content)  # type: ignore[call-arg]
+
+
+def _format_chunk_for_v1(message_chunk: AIMessageChunk) -> AIMessageChunk:
+    """Convert a stream chunk to v1 content blocks with separate index namespaces.
+
+    Fireworks streams a single text field and a single `reasoning_content` field,
+    but numbers tool calls from 0. Left to core, streaming (`stream`, `astream`,
+    and streaming `invoke`) gives unindexed blocks an integer that increments each
+    time the block type changes, so tool call 0 would be merged into the reasoning
+    block by `merge_lists`, and reasoning interrupted by text would split in two.
+
+    `merge_lists` merges blocks with matching indices only when the index is an int
+    or a string starting with `lc_`; other strings are appended unmerged. The raw
+    `tool_call_chunks` keep the provider's integer indices, which
+    `AIMessageChunk.__add__` relies on to merge tool-call arguments.
+    """
+    blocks: list[dict[str, Any]] = []
+    if reasoning := message_chunk.additional_kwargs.get("reasoning_content"):
+        blocks.append(
+            {"type": "reasoning", "reasoning": reasoning, "index": "lc_reasoning"}
+        )
+    if message_chunk.content:
+        blocks.append(
+            {"type": "text", "text": message_chunk.content, "index": "lc_text"}
+        )
+    for tool_call_chunk in message_chunk.tool_call_chunks:
+        block: dict[str, Any] = {
+            "type": "tool_call_chunk",
+            "id": tool_call_chunk["id"],
+            "name": tool_call_chunk["name"],
+            "args": tool_call_chunk["args"],
+        }
+        if (index := tool_call_chunk["index"]) is not None:
+            block["index"] = f"lc_tc_{index}"
+        blocks.append(block)
+    return message_chunk.model_copy(
+        update={
+            "content": blocks,
+            "response_metadata": {
+                **message_chunk.response_metadata,
+                "output_version": "v1",
+            },
+        }
+    )
+
+
+def _finalize_stream(
+    stream: Iterator[ChatGenerationChunk],
+) -> Iterator[ChatGenerationChunk]:
+    """Supply core's finalization marker when aggregating v1 chunks internally."""
+    yield from stream
+    yield ChatGenerationChunk(message=AIMessageChunk(content="", chunk_position="last"))
+
+
+async def _afinalize_stream(
+    stream: AsyncIterator[ChatGenerationChunk],
+) -> AsyncIterator[ChatGenerationChunk]:
+    """Supply core's finalization marker when aggregating v1 chunks internally."""
+    async for chunk in stream:
+        yield chunk
+    yield ChatGenerationChunk(message=AIMessageChunk(content="", chunk_position="last"))
 
 
 class _RetryableHTTPStatusError(FireworksError):
@@ -623,6 +737,18 @@ class FireworksConnectionError(APIConnectionError, ModelConnectionError):
 
 class FireworksTimeoutError(APITimeoutError, ModelTimeoutError):
     """Fireworks timeout error classified as a LangChain model error."""
+
+
+class FireworksReadTimeoutError(httpx.ReadTimeout, ModelTimeoutError):
+    """Fireworks stream read timeout classified as a retryable model error."""
+
+
+def _handle_stream_read_timeout(error: httpx.ReadTimeout) -> NoReturn:
+    try:
+        request = error.request
+    except RuntimeError:
+        request = None
+    raise FireworksReadTimeoutError(str(error), request=request) from error
 
 
 def _handle_fireworks_invalid_request(e: BadRequestError) -> NoReturn:
@@ -719,6 +845,57 @@ def _prepare_sdk_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     return kwargs
 
 
+def _merge_model_headers(llm: ChatFireworks, kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Merge model-local headers only when invoking their owning model."""
+    model_headers = llm.model_kwargs.get("extra_headers")
+    request_headers = kwargs.get("extra_headers")
+    if isinstance(model_headers, Mapping) and isinstance(request_headers, Mapping):
+        # HTTP header names are case-insensitive; retain the request's spelling.
+        headers = {
+            key.lower(): (key, value)
+            for source in (model_headers, request_headers)
+            for key, value in source.items()
+        }
+        return {
+            **kwargs,
+            "extra_headers": dict(headers.values()),
+        }
+    return kwargs
+
+
+def _apply_prompt_cache_affinity(kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Apply the middleware default after the selected model's settings are merged."""
+    affinity = _PROMPT_CACHE_AFFINITY.get()
+    if affinity is None:
+        return kwargs
+
+    # The SDK merges extra_body over top-level fields before sending the request.
+    extra_body = kwargs.get("extra_body")
+    body = {**kwargs, **extra_body} if isinstance(extra_body, Mapping) else kwargs
+    if any(body.get(key) for key in ("user", "prompt_cache_key")):
+        return kwargs
+
+    headers = kwargs.get("extra_headers")
+    if isinstance(headers, Mapping):
+        if any(
+            isinstance(key, str) and key.lower() == "x-session-affinity"
+            for key in headers
+        ):
+            return kwargs
+    elif headers is not None:
+        logger.warning(
+            "Cannot set Fireworks session affinity because extra_headers is %s",
+            type(headers).__name__,
+        )
+        return kwargs
+
+    return {
+        **kwargs,
+        "prompt_cache_key": affinity,
+        "extra_headers": {**(headers or {}), "x-session-affinity": affinity},
+    }
+
+
 def _completion_with_retry(
     llm: ChatFireworks,
     run_manager: CallbackManagerForLLMRun | None = None,
@@ -726,7 +903,9 @@ def _completion_with_retry(
 ) -> Any:
     """Retry the sync completion call, including stream setup."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
-    kwargs = _prepare_sdk_kwargs(kwargs)
+    kwargs = _prepare_sdk_kwargs(
+        _apply_prompt_cache_affinity(_merge_model_headers(llm, kwargs))
+    )
 
     @retry_decorator
     def _call() -> Any:
@@ -759,7 +938,9 @@ async def _acompletion_with_retry(
 ) -> Any:
     """Retry the async completion call, including stream setup."""
     retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
-    kwargs = _prepare_sdk_kwargs(kwargs)
+    kwargs = _prepare_sdk_kwargs(
+        _apply_prompt_cache_affinity(_merge_model_headers(llm, kwargs))
+    )
 
     @retry_decorator
     async def _call() -> Any:
@@ -787,13 +968,19 @@ async def _acompletion_with_retry(
 
 def _prepend_chunk(first: Any, rest: Iterator[Any]) -> Iterator[Any]:
     yield first
-    yield from rest
+    try:
+        yield from rest
+    except httpx.ReadTimeout as e:
+        _handle_stream_read_timeout(e)
 
 
 async def _aprepend_chunk(first: Any, rest: AsyncIterator[Any]) -> AsyncIterator[Any]:
     yield first
-    async for item in rest:
-        yield item
+    try:
+        async for item in rest:
+            yield item
+    except httpx.ReadTimeout as e:
+        _handle_stream_read_timeout(e)
 
 
 class ChatFireworks(BaseChatModel):
@@ -1182,6 +1369,10 @@ class ChatFireworks(BaseChatModel):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
+            if self.output_version == "v1" and isinstance(
+                message_chunk, AIMessageChunk
+            ):
+                message_chunk = _format_chunk_for_v1(message_chunk)
             generation_info: dict[str, Any] = {}
             logprobs = None
             if choices := chunk.get("choices"):
@@ -1217,6 +1408,8 @@ class ChatFireworks(BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
+            if self.output_version == "v1":
+                stream_iter = _finalize_stream(stream_iter)
             return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {
@@ -1299,6 +1492,10 @@ class ChatFireworks(BaseChatModel):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
+            if self.output_version == "v1" and isinstance(
+                message_chunk, AIMessageChunk
+            ):
+                message_chunk = _format_chunk_for_v1(message_chunk)
             generation_info: dict[str, Any] = {}
             logprobs = None
             if choices := chunk.get("choices"):
@@ -1336,6 +1533,8 @@ class ChatFireworks(BaseChatModel):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
+            if self.output_version == "v1":
+                stream_iter = _afinalize_stream(stream_iter)
             return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)

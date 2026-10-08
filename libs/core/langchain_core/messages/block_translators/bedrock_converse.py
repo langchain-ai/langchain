@@ -195,6 +195,10 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
                         if "extras" not in reasoning_block:
                             reasoning_block["extras"] = {}
                         reasoning_block["extras"]["signature"] = signature
+                    if redacted := reasoning_content.get("redacted_content"):
+                        if "extras" not in reasoning_block:
+                            reasoning_block["extras"] = {}
+                        reasoning_block["extras"]["redacted_content"] = redacted
 
                 if "index" in block:
                     reasoning_block["index"] = block["index"]

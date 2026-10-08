@@ -3,6 +3,9 @@ type: "Getting Started"
 title: "LangChain Repository Quick Start"
 description: "Entry point for engineers: orient to the monorepo structure, run first tests, understand what to edit for common tasks, and route to major development areas."
 tags: [quickstart, getting-started, monorepo, setup, development, first-steps, cli-reference]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-09-29T08:28:34.635Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
@@ -40,10 +43,7 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-48ce5ee900993294d349b4e8
     resource: repo://libs/standard-tests/langchain_tests/__init__.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
+generated: { by: "openwiki/0.5.0", at: "2026-09-29T08:28:34.635Z" }
 ---
 
 ## Welcome to LangChain Development
@@ -60,8 +60,8 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 ```
 /libs/
-├── core/              # langchain-core: Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
-├── langchain_v1/      # langchain: Agent orchestration, factory, middleware
+├── core/              # langchain-core (v1.6.5): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
+├── langchain_v1/      # langchain (v1.4.3): Agent orchestration, factory, middleware
 ├── partners/          # Provider-specific integrations (OpenAI, Anthropic, Ollama, etc.)
 ├── standard-tests/    # Shared test suites for component conformance
 ├── text-splitters/    # Text splitting utilities
@@ -71,8 +71,8 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 ### When to Edit Each Layer
 
-| Layer | Edit when you are... | Key files |
-|-------|----------------------|-----------|
+| Layer | Edit when you are… | Key files |
+|-------|-----|-----------|
 | **core** | Adding or modifying base abstractions and core interfaces: `Runnable`, `BaseChatModel`, messages, tools, prompts, callbacks, output parsers. | `libs/core/langchain_core/` |
 | **langchain_v1** | Building agent factory features (`create_agent`), middleware composition, model initialization (`init_chat_model`), or high-level orchestration. | `libs/langchain_v1/langchain/agents/factory.py`, `libs/langchain_v1/langchain/chat_models/base.py` |
 | **partners/{name}** | Adding a new LLM provider (OpenAI, Anthropic, etc.), implementing `ChatModel`, handling message conversion, or adding provider-specific features (streaming, tool calling, structured output). | `libs/partners/{provider}/langchain_{provider}/chat_models/base.py` |
@@ -257,8 +257,7 @@ Use the table below to route to detailed documentation:
 ├── .pre-commit-config.yaml # Pre-commit hooks definition
 ├── .vscode/              # VS Code settings
 ├── libs/                 # Main monorepo workspace
-├── AGENTS.md             # Agent-focused documentation
-├── CLAUDE.md             # Contributing guide (READ THIS BEFORE PR)
+├── AGENTS.md             # Contributing guide (READ THIS BEFORE PR)
 └── README.md             # Top-level project overview
 ```
 
@@ -343,7 +342,7 @@ Decide what you want to work on using the [Quick Navigation](#quick-navigation-t
 ### 2. Read the Contributing Guide
 
 Before coding, read:
-- **[CLAUDE.md](repo://CLAUDE.md)** — Conventions, style, and PR expectations
+- **[AGENTS.md](repo://AGENTS.md)** — Conventions, style, and PR expectations
 - **Relevant wiki page** — Deep context on your area (see table above)
 
 ### 3. Set Up Your Package
@@ -379,7 +378,7 @@ git commit -m "type(scope): description"
 git push origin your-branch
 ```
 
-See [CLAUDE.md](repo://CLAUDE.md) for commit conventions and branch naming (`<username>/<scope>/<description>`).
+See [AGENTS.md](repo://AGENTS.md) for commit conventions and branch naming (`<username>/<scope>/<description>`).
 
 Pre-commit hooks will run automatically. If they fail, fix and commit again.
 
@@ -391,7 +390,7 @@ Link the PR to any relevant issue and reference the wiki pages you read in the d
 
 | File | Purpose |
 |------|---------|
-| `CLAUDE.md` | Contributing guide, style, and conventions |
+| `AGENTS.md` | Contributing guide, style, and conventions |
 | `libs/Makefile` | Monorepo-level make targets (lock, check-lock) |
 | `libs/{core,langchain_v1,partners/*/Makefile` | Per-package test, lint, format targets |
 | `.pre-commit-config.yaml` | Git hooks for code quality |
@@ -462,7 +461,7 @@ make format && make lint && make test
 
 ## Next Steps
 
-1. **Read [CLAUDE.md](repo://CLAUDE.md)** for contributing conventions
+1. **Read [AGENTS.md](repo://AGENTS.md)** for contributing conventions
 2. **Pick a wiki page** from [Quick Navigation](#quick-navigation-to-major-areas) matching your task
 3. **Clone, setup, and make your first change**
 4. **Run `make format lint test`** to validate locally

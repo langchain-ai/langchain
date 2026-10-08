@@ -21,6 +21,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
     HumanMessage,
     MessageLikeRepresentation,
+    SystemMessage,
     ToolMessage,
 )
 from langchain_core.tools import tool
@@ -1960,3 +1961,34 @@ def test_reasoning_text_v1_v2_parity() -> None:
     # v2 bridge's default `"stop"` synthesis; provider metadata now
     # passes through unchanged.)
     assert v1.response_metadata == v2.response_metadata
+
+
+@pytest.mark.vcr
+def test_system_additional_tools() -> None:
+    model = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+    response = model.invoke(
+        [
+            HumanMessage("What time is it?"),
+            SystemMessage(
+                [
+                    {
+                        "type": "additional_tools",
+                        "role": "developer",
+                        "tools": [
+                            {
+                                "type": "function",
+                                "name": "get_time",
+                                "description": "Get the current time.",
+                                "parameters": {
+                                    "type": "object",
+                                    "properties": {},
+                                },
+                            }
+                        ],
+                    }
+                ]
+            ),
+        ]
+    )
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls[0]["name"] == "get_time"

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:39306f0c76011ccf01aff4ac460b8d8856130f40f1e6fcdbd46b70dbadcc2ea2",
+  "pageVersion": "sha256:479c5428fb5c4d5a6a9cb84f2f11bf8a578e6af0b1f5e1208f47fa98d0f563df",
   "claims": [
     {
       "id": "claim_06ad6af0140b4318b25f43272f89e77f",
@@ -55,8 +55,8 @@
       "statement": "FewShotChatMessagePromptTemplate embeds example message pairs within a chat template sequence. Each example is formatted as a conversation exchange (human/ai messages), then injected between prefix and suffix messages to teach models by demonstration.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/prompts/few_shot.py#L262-L410",
-          "version": "repo-lines-v1:sha256:546d87960f834e65f5e8f714ed573fbc7b284cb4c13040ef4becaf2f1647ea5e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjMTdmMmNmMmM0YWI0MzYyMTRlNjBlYTUyY2E4MDQ3MjE5MWZhMDE5ZTgxNmI0YjJjOTcyNTRhN2FmNzgwMzdjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiYWFlOGEwY2E3NmY5OGY3YjdkYzc5ODQ5NTFkNjNlNTdkYjNjNjQ1NTc5Y2E1MWJhZDZhNTM5ZDYxNGVkYmJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4YTQ2Mjk5YmRhMDI5NWZmOWNmNWQzYzI4OGM1ZjVkMWI4ZDcwOTNkNzZmYTI1M2JjZTNiYjc3OTlhMTcwZGZiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NWMzMDQ1ZGMyZDYxNjE4OTMxZGExN2I0MjNlNDkwY2RiMjYyYjJiOTUwZGZkNWUwZjY3NzdhNDJiMWE2YjVlIn0"
+          "resource": "repo://libs/core/langchain_core/prompts/few_shot.py#L262-L416",
+          "version": "repo-lines-v1:sha256:fdf87b1554c5d1a9a88cf12de0e7dd7f807add84226ec34c2bbeb8215ac0bdb4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjMTdmMmNmMmM0YWI0MzYyMTRlNjBlYTUyY2E4MDQ3MjE5MWZhMDE5ZTgxNmI0YjJjOTcyNTRhN2FmNzgwMzdjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiYWFlOGEwY2E3NmY5OGY3YjdkYzc5ODQ5NTFkNjNlNTdkYjNjNjQ1NTc5Y2E1MWJhZDZhNTM5ZDYxNGVkYmJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4YTQ2Mjk5YmRhMDI5NWZmOWNmNWQzYzI4OGM1ZjVkMWI4ZDcwOTNkNzZmYTI1M2JjZTNiYjc3OTlhMTcwZGZiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkM2E3YzE2NjY3ODRhOTI4ZjllNGU3NWEzZGJjZDRiNTViYzMxZjFiNjcyYWVjMTllN2VjZTVjODY1YzFmNTBjIn0"
         }
       ]
     },
@@ -179,6 +179,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-21T08:30:16.745Z"
+    "at": "2026-09-28T08:35:20.640Z"
   }
 }

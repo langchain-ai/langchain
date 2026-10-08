@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:438fb8bb5d1224fb820ab31d6d0c8e16554980cf2e3e713ee995f9925142b53f",
+  "pageVersion": "sha256:08c495ccfb12ed0a79d3e0791c2a12f86cb4b7732c6de698b6b1a8bcc71b7718",
   "claims": [
     {
       "id": "claim_1870ae33ffdb41fa87eaee4125620240",
@@ -189,10 +189,24 @@
           "version": "repo-lines-v1:sha256:5c88290ff1791d3a8b6cc5c198f1d77c0310fa88bf696f750dfd59b60cf95ed0:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MWYzM2MxMzI1NjlhNzQ5NDZiMmZjZjU0NmNhM2M0NDI1ZGEwY2E1Y2Y2YjY4NmMyNjA5MGZhYTlkMTEyYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4ZWFhMTI4Nzg4ZGE4ODYwNjExOTAyY2NiZWI1ZGVkYzk0NGNkZmIxNWYzYjQ5ODc2YTc5ZTUyYmRhZGNlZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNzExZjJlM2U0MTEyODY3YTQyZDJmZGFkZjNmNWRlNWMyNDgyMjY0ODY2NTA2YTQ0ZDgyY2I3YmI1ZmFmNDUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_e64d88e89f8f4da0926d22b50a919b46",
+      "statement": "Custom handlers are implemented by subclassing BaseCallbackHandler and overriding relevant event methods, with configuration of run_inline, ignore_* properties, and parameter handling via **kwargs for forward compatibility.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/base.py#L496-L546",
+          "version": "repo-lines-v1:sha256:d723f5a7310cbc3ff40d2189bbb0d1ae8f86c18ecf557e1e4c233eb69ec3b81f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYjFmOWJkODZiNzhlYWM3NmI4ZWVmMTk1NWNlNDQ2OGI0NDU4ZWJkNTU0YzAxMjU2M2Q0MWE3YTY2N2JkMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4MzA2YjE3YTFjM2I3MjA4Mzc2OWI4OGM1YjAwN2I5NmEzNWEwNDJmNzllYWI1ODUzMDY3Y2JlZGQ0MWFjOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwMDFmM2NjZGQxNjYxNDg3ZjBiZjYxOGQ1ZGU3ZjcwMmI0NTg4MGUxNWY5MzJiOTRmMjRhNjJlNzAwMzdjZDQifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L1377-L1726",
+          "version": "repo-lines-v1:sha256:850cfed4d8ba543380b609a75924081f90cd44992b7d4386d8b97b4c79b21d33:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmODNkY2VkNmY2MWI1OGMxODZmMTBmYWE2NDNlZjQyM2E0NDgxZDU4MDFmMjg2NWZkZTA5ZmMxZDhkMGExYjIwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiM2RmMmFjZjA2ZThjM2YwM2M3MTM1YzZlOGFjNWE5Y2E1NDMyYWJlMDZhNzRhY2EwZmRkOWE1M2EwMDhmOTg3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1ZWE0ZDc2OTA1NWU4MDMxMjliYmExNGFjNzZkNjA0NGEyOGMxNzM0YTM5YmRhNWQ1OTJhNGFmOGYwYmI2Yzk4In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-21T08:30:16.745Z"
+    "at": "2026-09-28T08:35:20.640Z"
   }
 }

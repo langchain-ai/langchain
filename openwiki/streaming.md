@@ -5,7 +5,7 @@ description: "How streaming works across LLM components and chains, token-by-tok
 tags: [streaming, token-streaming, llm-output, chat-models, callbacks, astream, real-time-feedback]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-21T08:30:16.745Z
+    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
@@ -17,9 +17,17 @@ sources:
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
   - id: openwiki-source-77dc1fb726463969f9d53658
     resource: repo://libs/core/langchain_core/messages/ai.py
+  - id: openwiki-source-b32b84365d17276620c41ebc
+    resource: repo://libs/core/langchain_core/messages/base.py
+  - id: openwiki-source-8bb392f5dbc1fe7faaf52430
+    resource: repo://libs/core/langchain_core/messages/human.py
+  - id: openwiki-source-dad8cfeb38a829e03e165986
+    resource: repo://libs/core/langchain_core/messages/system.py
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+  - id: openwiki-source-ff9b926753e6cc6fe87acfe7
+    resource: repo://libs/langchain_v1/tests/unit_tests/agents/test_agent_streaming.py
+generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
 ---
 
 ## Overview
@@ -97,20 +105,41 @@ async for chunk in model.astream(messages):
 final_message = sum(chunks)  # Merge via + operator
 ```
 
-## AIMessageChunk: Incremental Content
+## Message Chunks: Types and Composition
 
 **Location**: `repo://libs/core/langchain_core/messages/ai.py#L418-L536`
 
+During streaming, models emit **chunk variants** of standard message types. All chunk types inherit from `BaseMessageChunk` and are designed to be **mergeable** via the `+` operator, enabling efficient aggregation of streaming output.
+
+### Message Chunk Types
+
+Each core message type has a corresponding chunk variant:
+
+- **`AIMessageChunk`**: Emitted by chat models during streaming. Contains:
+  - `content`: String or list of content blocks (delta for that step).
+  - `tool_call_chunks`: List of `ToolCallChunk` objects (incomplete tool calls being streamed).
+  - `chunk_position`: Optional `"last"` sentinel signaling stream completion.
+  - `response_metadata`: Model metadata (latency, provider, usage counts, etc.).
+
+- **`HumanMessageChunk`**: Represents incremental user input. Used in streaming scenarios where user messages arrive in chunks (e.g., real-time voice transcription or chunked uploads).
+
+- **`SystemMessageChunk`**: Represents incremental system prompt updates. Less common than AIMessageChunk but available for consistency.
+
+- **`ToolMessageChunk`**: Represents incremental tool results. Supports streaming tool outputs that arrive in chunks (e.g., file downloads, streaming API responses).
+
+All chunk types support the `+` operator for merging, making them composable at any level of a streaming pipeline.
+
+### AIMessageChunk Structure
+
 `AIMessageChunk` is the message type yielded during streaming. Unlike `AIMessage`, it represents a **partial, incremental update** to a conversation message and supports merging via the `+` operator.
 
-### Structure
-
+**Fields**:
 - **content**: String or list of content blocks (when `output_version="v1"`). During streaming, each chunk contains only the new token(s) or delta for that step. Content accumulates across chunks: text chunks concatenate, JSON chunks may append partial objects or arrays.
 - **tool_call_chunks**: List of `ToolCallChunk` objects (incomplete tool calls being streamed). These are progressively updated as the model produces call ID, function name, and argument JSON. Arguments are accumulated and parsed incrementally via `parse_partial_json()`.
 - **chunk_position**: Optional sentinel; when set to `"last"`, indicates the final chunk in the stream, triggering finalization of tool calls and reasoning blocks. When this chunk is aggregated, `tool_call_chunks` are parsed into complete `tool_calls` and `invalid_tool_calls` via the `init_tool_calls()` validator.
 - **response_metadata**: Model-specific metadata (latency, model_provider, usage counters, finish reason, etc.) attached by the streaming handler. Metadata is merged across chunks, with usage counts summed.
 
-### Merging and Aggregation
+### Merging Chunks via the + Operator
 
 Streaming chunks accumulate via the `+` operator (implemented in `add_ai_message_chunks()`), which:
 
@@ -138,13 +167,108 @@ for tool_call in final_message.tool_calls:
     print(tool_call["name"], tool_call["args"])
 ```
 
+### Chunk Composition Flow
+
+The following diagram shows how chunks flow through a streaming pipeline and merge into complete messages:
+
+```mermaid
+sequenceDiagram
+    participant Model
+    participant StreamIterator as stream()<br/> Iterator
+    participant Callback as on_llm_new_token<br/> Callback
+    participant Aggregator as Chunk<br/> Accumulator
+    participant Merger as Chunk<br/> Merge (+ op)
+    participant Complete as Final<br/> AIMessage
+
+    Model->>StreamIterator: yield AIMessageChunk<br/> content="Hello"
+    StreamIterator->>Callback: fire on_llm_new_token<br/> token="Hello"
+    StreamIterator->>Aggregator: buffer chunk
+    StreamIterator-->>Model: pull next
+    
+    Model->>StreamIterator: yield AIMessageChunk<br/> content=" world"
+    StreamIterator->>Callback: fire on_llm_new_token<br/> token=" world"
+    StreamIterator->>Aggregator: buffer chunk
+    StreamIterator-->>Model: pull next
+    
+    Model->>StreamIterator: yield AIMessageChunk<br/> chunk_position="last"
+    StreamIterator->>Callback: fire on_llm_new_token<br/> token=""
+    StreamIterator->>Aggregator: buffer chunk
+    
+    Note over Aggregator: All chunks buffered
+    Aggregator->>Merger: merge chunks:<br/> chunk1 + chunk2 + chunk_last
+    Merger->>Complete: single AIMessage<br/> with finalized tool_calls
+    Callback->>Callback: fire on_llm_end<br/> with merged result
+```
+
+The diagram shows how token-by-token chunks are yielded immediately, callbacks are fired for real-time observation, and final aggregation occurs only at the end.
+
+## Token-Level Streaming in Action
+
+Streaming operates at the **token level**, not the message level. Here's how tokens flow through a typical streaming sequence:
+
+### Text Token Streaming
+
+```python
+# Model generates: "The capital of France is Paris"
+
+from langchain_core.callbacks import StreamingStdOutCallbackHandler
+
+messages = [HumanMessage("What is the capital of France?")]
+callback = StreamingStdOutCallbackHandler()
+
+for chunk in model.stream(messages, config=RunnableConfig(callbacks=[callback])):
+    # Each iteration receives one chunk
+    # Chunks might be: "The", " capital", " of", " France", " is", " Paris"
+    # callback.on_llm_new_token fires for each, writing to stdout immediately
+    
+    # chunk.content is the token string
+    # chunk.tool_call_chunks is empty (no tools called)
+    # chunk.response_metadata has model latency, provider, etc.
+    pass
+```
+
+The `StreamingStdOutCallbackHandler` writes each token to stdout immediately, producing real-time text output without waiting for the full response.
+
+### Tool Call Streaming
+
+Tool call arguments stream across multiple chunks:
+
+```python
+# Model generates a tool call with JSON args: 
+# get_weather(city="Paris", unit="celsius")
+
+chunks = []
+async for chunk in model.astream(messages):
+    chunks.append(chunk)
+    
+    # Each chunk might contain partial tool call data:
+    # Chunk 1: tool_call_chunks=[{"id": "tc1", "name": "get_weather", "args": ""}]
+    # Chunk 2: tool_call_chunks=[{"id": "tc1", "name": "get_weather", "args": "{\"ci"}]
+    # Chunk 3: tool_call_chunks=[{"id": "tc1", "name": "get_weather", "args": "...ty\":\"Paris\",\"unit\":"}]
+    # Chunk 4: tool_call_chunks=[{"id": "tc1", "name": "get_weather", "args": "...\"celsius\"}"]
+    # Chunk 5 (last): chunk_position="last" triggers finalization
+    
+    if chunk.tool_call_chunks:
+        for tc in chunk.tool_call_chunks:
+            # parse_partial_json handles incomplete JSON gracefully
+            args = parse_partial_json(tc.get("args", ""))
+            print(f"Tool: {tc['name']}, partial args: {args}")
+
+# Merge to get final message with complete tool_calls
+final_message = sum(chunks[1:], chunks[0])
+for tool_call in final_message.tool_calls:
+    print(f"Final: {tool_call['name']}({tool_call['args']})")
+```
+
+At each step, callbacks and custom handlers can observe partial tool call construction, enabling real-time visibility into tool invocation even before arguments are complete.
+
 ## Callback Integration: on_llm_new_token
 
 **Location**: `repo://libs/core/langchain_core/callbacks/base.py#L65-L88`
 
 The `on_llm_new_token` callback fires for each token or chunk during streaming, enabling real-time observation and logging.
 
-### Signature
+### Callback Signature
 
 ```python
 def on_llm_new_token(
@@ -165,7 +289,7 @@ def on_llm_new_token(
 - **parent_run_id**: ID of the parent run (chain or agent) that invoked this model.
 - **tags**: Inheritable tags from the calling context, useful for filtering or routing callbacks.
 
-### Example: Stream to stdout
+### Built-in: StreamingStdOutCallbackHandler
 
 ```python
 from langchain_core.callbacks import StreamingStdOutCallbackHandler
@@ -188,12 +312,32 @@ Create custom callbacks by subclassing `BaseCallbackHandler`:
 
 ```python
 from langchain_core.callbacks import BaseCallbackHandler
+from typing import Any
 
 class MyStreamingCallback(BaseCallbackHandler):
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         # Send token to WebSocket, log to database, etc.
         websocket.send_json({"token": token})
+    
+    def on_llm_end(self, response, **kwargs: Any) -> None:
+        # Final response complete
+        websocket.send_json({"status": "complete"})
+    
+    def on_llm_error(self, error: Exception, **kwargs: Any) -> None:
+        # Error occurred during streaming
+        websocket.send_json({"error": str(error)})
 ```
+
+### LangSmith Integration
+
+LangSmith automatically captures streaming via callbacks. When you use `stream()` with LangSmith callbacks attached:
+
+1. **run_id** from `on_llm_new_token` is used to trace the streaming operation.
+2. Each token fires `on_llm_new_token`, allowing LangSmith to record token-level granularity.
+3. `on_llm_end` provides the final merged result, allowing LangSmith to record total latency and token counts.
+4. If streaming fails, `on_llm_error` records the failure with partial results.
+
+LangSmith projects these traces in the UI as token-by-token progress, enabling real-time observability of model streaming behavior.
 
 ## Streaming Through Chains
 
@@ -290,6 +434,104 @@ for text_delta in stream.text:  # Only text events
     print(text_delta)
 ```
 
+## Streaming in Agent Execution
+
+**Location**: `repo://libs/langchain_v1/tests/unit_tests/agents/test_agent_streaming.py`
+
+Agents created via `create_agent()` support streaming execution via `stream_events(version="v3")` on the returned agent graph. This enables real-time visibility into:
+
+### Agent-Level Streaming
+
+- **Tool calls**: Each tool call is tracked as it's generated, with its ID, name, and arguments accumulating incrementally.
+- **Tool outputs**: When tools emit output deltas (via `runtime.emit_output_delta()`), these are visible in the stream as they arrive.
+- **Messages**: The full conversation history updates as the agent runs, with each turn visible immediately.
+- **Subgraphs**: When agent tools invoke nested agents, subgraph handles expose their own tool call projections, enabling hierarchical visibility.
+
+### Tool Output Streaming
+
+Tools can emit output deltas mid-execution:
+
+```python
+from langchain_core.tools import tool
+from langchain.tools import ToolRuntime
+
+@tool
+def long_running_task(query: str, runtime: ToolRuntime) -> str:
+    """A task that streams output as it runs."""
+    for chunk in process_incrementally(query):
+        # Emit partial output immediately
+        runtime.emit_output_delta(chunk)
+    
+    # Return final result
+    return compute_final_result(query)
+
+# When streaming the agent:
+for item in agent.stream_events({"messages": [HumanMessage("go")]}, version="v3"):
+    if item.get("type") == "tool_output_delta":
+        print(f"Tool emitted: {item['content']}")
+```
+
+The agent stream captures these deltas in real-time, making them visible to observers before the tool completes.
+
+### Agentic Loop Streaming
+
+The agent execution loop itself can be streamed:
+
+```python
+from langchain.agents import create_agent
+
+agent = create_agent(model, tools)
+
+# Stream events from the agent graph
+for event in agent.stream_events(
+    {"messages": [HumanMessage("Question")]}, 
+    version="v3"
+):
+    # Event types: "on_llm_start", "on_llm_new_token", "on_tool_start", 
+    # "on_tool_end", "on_chain_end", custom events, etc.
+    if event["type"] == "on_llm_new_token":
+        print(f"Token: {event['content']}")
+    elif event["type"] == "on_tool_start":
+        print(f"Tool: {event['tool']}")
+    elif event["type"] == "on_tool_end":
+        print(f"Tool result: {event['output']}")
+```
+
+### Tool Call Streaming with Projections
+
+The most convenient way to stream agent execution is via projections:
+
+```python
+run = agent.stream_events({"messages": [HumanMessage("go")]}, version="v3")
+
+# Stream tool calls as they're generated
+for tool_call in run.tool_calls:
+    print(f"Tool call: {tool_call.tool_name}")
+    print(f"Args: {tool_call.args}")
+    
+    # Stream tool output deltas if the tool emits them
+    for output_delta in tool_call.output_deltas:
+        print(f"Output: {output_delta}")
+
+# Also available: run.messages, run.text, run.usage, run.output
+```
+
+### Hierarchical Agent Streaming
+
+When agents invoke sub-agents via tools:
+
+```python
+# Outer agent calls a tool that delegates to an inner agent
+for event in outer_agent.stream_events({...}, version="v3"):
+    if event_type == "subgraph":
+        # A sub-agent ran; access its projections
+        subgraph = event["subgraph"]
+        for inner_tool_call in subgraph.tool_calls:
+            print(f"Inner tool: {inner_tool_call.tool_name}")
+```
+
+Streaming hierarchical agents allows observing both the outer loop (which tools the outer agent calls) and inner loops (which tools nested agents call), providing full visibility into complex agent compositions.
+
 ## Memory and Latency Trade-offs: stream() vs invoke()
 
 ### invoke()
@@ -324,24 +566,6 @@ When streaming with `stream_events()` (v3):
 - **Bounded buffering**: The projection buffers events only until the consumer reads them. A slow consumer will naturally slow the producer, preventing unbounded memory growth.
 - **Multiple independent consumers**: Multiple `for` loops over different projections (e.g., `.text` and `.tool_calls`) can replay all events from the buffer, supporting diverse consumption patterns without re-running the model.
 
-## Streaming in Agent Execution
-
-Agents can stream their execution via `stream_events(version="v3")` on the agent graph returned by `create_agent()`. This allows observing:
-
-- **Tool calls**: Projected via `.tool_calls`, tracking which tools are called and their arguments as they accumulate.
-- **Tool outputs**: Deltas from tool execution, including streaming outputs from tools that emit output deltas.
-- **Messages**: The full conversation history as it evolves.
-- **Subgraphs**: When agents invoke sub-agents (via tools that call inner agents), subgraph handles expose their own projections for nested visibility.
-
-**Stream modes** (langgraph):
-
-- **"updates"**: Yields node updates—which node ran and what state it produced.
-- **"values"**: Yields full state snapshots after each node completes.
-- **"messages"**: Yields only message updates.
-- **"custom"**: User-defined stream events fired by tools or middleware via `emit()` or `runtime.emit_output_delta()`.
-
-Agent streaming enables real-time visibility into loop execution and tool interaction without blocking on the full agent run.
-
 ## Best Practices for Streaming
 
 1. **Flush output immediately**: When displaying streaming output in web or terminal, flush buffers after each chunk to ensure immediate visibility.
@@ -363,3 +587,7 @@ Agent streaming enables real-time visibility into loop execution and tool intera
 6. **Disable streaming selectively**: For long-running operations or when you need predictable latency, use `invoke()` instead of `stream()`, or pass `stream=False` to override the default.
 
 7. **Test both sync and async paths**: Streaming behavior may differ between `stream()` and `astream()` depending on model implementation and callback executors. Test both for your use case.
+
+8. **Observe tool calls incrementally**: When tools are involved, use `on_llm_new_token` with full `chunk` inspection to see tool call arguments accumulating, enabling early detection of tool invocation intent before arguments are complete.
+
+9. **Use `stream_events()` for complex workflows**: For agents, hierarchical tools, and workflows with multiple streaming sources, prefer `stream_events(version="v3")` for precise event-level control and pull-based backpressure.

@@ -74,6 +74,17 @@ from typing import Any, cast
 from langchain_core.messages import AIMessage, is_data_content_block
 from langchain_core.messages import content as types
 
+
+def _unwrap_non_standard(block: dict) -> dict:
+    """Unwrap a provider-native dictionary from a standard content block."""
+    if block.get("type") == "non_standard" and isinstance(
+        value := block.get("value"),
+        dict,
+    ):
+        return value
+    return block
+
+
 _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
 

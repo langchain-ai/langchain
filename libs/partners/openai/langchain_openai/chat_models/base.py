@@ -163,6 +163,7 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_chat_completions,
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
+    _unwrap_non_standard,
 )
 from langchain_openai.data._profiles import _PROFILES
 
@@ -326,12 +327,79 @@ def _sanitize_chat_completions_content(content: str | list[dict]) -> str | list[
     return content
 
 
+_ADDITIONAL_TOOLS_BLOCK_TYPE = "additional_tools"
+"""Responses API input item that adds tools partway through a conversation."""
+
+
+def _is_ai_role(role: str | None) -> bool:
+    """Return whether a message's role is the assistant's.
+
+    Assistant content is replayed model output, not a caller's instruction, so it is
+    exempt from the placement checks a caller's own blocks are held to.
+    """
+    return str(role).lower().startswith("ai")
+
+
+def _is_system_role(role: str | None) -> bool:
+    """Return whether a message's role carries provider instructions.
+
+    `SystemMessage` reports `"system"` whether or not it is later emitted with
+    OpenAI's `developer` role, so one check covers both spellings.
+    """
+    return role in ("system", "developer")
+
+
+def _raise_if_additional_tools(content: Any, reason: str) -> None:
+    """Reject an `additional_tools` block that cannot work where it was placed.
+
+    The block only reaches the wire as a Responses top-level input item carried on
+    a system message. Anywhere else it is this provider's own block type in a
+    position this provider forbids, which the error taxonomy makes loud rather than
+    silent: nothing routes a request to the Responses API based on message content,
+    so a silent drop would make the broken case the default outcome.
+
+    Args:
+        content: The message's content.
+        reason: Sentence explaining why this placement cannot work, and how to fix
+            it. Appended to the error.
+
+    Raises:
+        ValueError: If an `additional_tools` block is present, in either spelling.
+    """
+    if not isinstance(content, list):
+        return
+    for raw_block in content:
+        if (
+            isinstance(raw_block, dict)
+            and _unwrap_non_standard(raw_block).get("type")
+            == _ADDITIONAL_TOOLS_BLOCK_TYPE
+        ):
+            msg = f"`additional_tools` {reason}"
+            raise ValueError(msg)
+
+
 def _format_message_content(
     content: Any,
     api: Literal["chat/completions", "responses"] = "chat/completions",
     role: str | None = None,
 ) -> Any:
     """Format message content."""
+    if _is_ai_role(role):
+        # Replayed assistant output; `additional_tools` is also an output item, so
+        # an echoed one must survive a round trip rather than abort the request.
+        pass
+    elif not _is_system_role(role):
+        _raise_if_additional_tools(
+            content,
+            "must be carried on a `SystemMessage`. OpenAI restricts the input item "
+            'to `role: "developer"`, so it cannot be sent on any other message.',
+        )
+    elif api == "chat/completions":
+        _raise_if_additional_tools(
+            content,
+            "requires the Responses API and cannot be sent via Chat Completions. "
+            "Set `use_responses_api=True`.",
+        )
     if content and isinstance(content, list):
         formatted_content = []
         for block in content:
@@ -3135,6 +3203,39 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See `bind_tools` for more.
 
+    ??? info "Mid-conversation tool additions"
+
+        ```python
+        from langchain_core.messages import HumanMessage, SystemMessage
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+        model.invoke(
+            [
+                HumanMessage("What time is it?"),
+                SystemMessage(
+                    [
+                        {
+                            "type": "additional_tools",
+                            "role": "developer",
+                            "tools": [
+                                {
+                                    "type": "function",
+                                    "name": "get_time",
+                                    "description": "Get the current time.",
+                                    "parameters": {
+                                        "type": "object",
+                                        "properties": {},
+                                    },
+                                }
+                            ],
+                        }
+                    ]
+                ),
+            ]
+        )
+        ```
+
     ??? info "Built-in (server-side) tools"
 
         You can access [built-in tools](https://platform.openai.com/docs/guides/tools?api-mode=responses)
@@ -4993,6 +5094,21 @@ def _construct_responses_api_input(
                         new_blocks.append(block)
                     elif block["type"] in non_message_item_types:
                         input_.append(block)
+                    elif block["type"] == _ADDITIONAL_TOOLS_BLOCK_TYPE:
+                        if isinstance(lc_msg, SystemMessage):
+                            input_.append(block)
+                    elif _is_system_role(msg["role"]):
+                        # System content is a closed set here, so an unrecognized
+                        # block is a mistake rather than something to forward.
+                        # User content keeps its long-standing silent drop, where
+                        # the set is open and warning would be noise.
+                        warnings.warn(
+                            f"Content block {block['type']!r} was dropped from a "
+                            "system message: the Responses API has no input item "
+                            "of that type, so it cannot be placed in the request.",
+                            UserWarning,
+                            stacklevel=2,
+                        )
                     else:
                         pass
                 msg["content"] = new_blocks
@@ -5338,6 +5454,13 @@ def _convert_responses_chunk_to_generation_chunk(
         response = _coerce_chunk_response(chunk.response)
         id = response.id
         response_metadata["id"] = response.id  # Backwards compatibility
+    elif chunk.type == "response.failed":
+        response = _coerce_chunk_response(chunk.response)
+        error_msg = str(response.error or f"Response {response.id} failed.")
+        raise ValueError(error_msg)
+    elif chunk.type == "error":
+        error_msg = f"{chunk.code}: {chunk.message}" if chunk.code else chunk.message
+        raise ValueError(error_msg)
     elif chunk.type in ("response.completed", "response.incomplete"):
         response = _coerce_chunk_response(chunk.response)
         msg = cast(

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9cf9b71623f99687ab1cf0779e86f4be9c781731b7ab13fdab1b710a1372e78e",
+  "pageVersion": "sha256:05e90b9de166a5a7213cee462a99c10236b8c8eba605f2b5a856779baad552a6",
   "claims": [
     {
       "id": "claim_347664eb68464142b558791c7a95093f",
@@ -11,8 +11,8 @@
           "version": "repo-file-v1:sha256:d08e06dea1f954a477fa8951e2a8387a10396d07b92a3a60fdced307c136a84f"
         },
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2829-L3750",
-          "version": "repo-lines-v1:sha256:d7750e52d840b4379fd892a656237cba6bf7af6d95a997b2485fb55d937139ec:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkOTBkYTg3MTNlNzU1ZjU1MmQ1YmIzNWY3YjJmOGUwMGU3YjA0MzY1Yzc2YWI4MmE3NDRmMGU1OTVlMjA2MDYyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiM2RmMmFjZjA2ZThjM2YwM2M3MTM1YzZlOGFjNWE5Y2E1NDMyYWJlMDZhNzRhY2EwZmRkOWE1M2EwMDhmOTg3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmZmFjMjQ1YTViMDZkOGVmNGVkYWI3MmY5MjYzOGM3MTA2NGQzMjNlOGYyOTI4ODA1YWZiYTkyMzZlYzE0MWNjIn0"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2904-L4266",
+          "version": "repo-lines-v1:sha256:862193457763433b2f6f9542715a9e049a81be74ab7f06720f0a8e903b8d88b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM2MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDkwZGE4NzEzZTc1NWY1NTJkNWJiMzVmN2IyZjhlMDBlN2IwNDM2NWM3NmFiODJhNzQ0ZjBlNTk1ZTIwNjA2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjNkZjJhY2YwNmU4YzNmMDNjNzEzNWM2ZThhYzVhOWNhNTQzMmFiZTA2YTc0YWNhMGZkZDlhNTNhMDA4Zjk4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDFiZDhjNmEwMjAwNzc3OTEwNjNiZTUxNTIxZWM4MmI5ZWIwYzIxMWRiZmY1Y2I1ZGNmYTY5ODEyZTVmNzU3MSJ9"
         }
       ]
     },
@@ -146,7 +146,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1206-L1241",
-          "version": "repo-lines-v1:sha256:a8bb36529055ff53fdae31695bffcb6d5bc3944aeba5f9e75cf51a8a2d5e2ae5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5YmQyOTMzNzBkZWUyYzk3NGFiZDM2ZmRjMmUwM2IwNjgxNTIzMWRlZmY1MzE0MWEzZjI2M2FhYzY2Y2UyOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMGZiZWQ0OGZmMzE4MWMxNmZiMTI0ODcxNDkzOWFiOTI3NmI4ZGUyZWU3MzJmOWM5NWRlNDRjMjhlODEwNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwYzA1NTc4OTUwNzI1ODcyOWUwNzAxMzhkZTc2NDk1NmVkZGFiZDUzNzhmMGQyY2JkMDdiOWU3Y2JhMWM0ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0Y2I3MmU2NTQwODc1MzM1MTk2NTIyM2ZhZjA5YWQ3YzUwOGFjMGI4ZWMyMGQzMWY5ODRmMzFlMWY4N2VhZjEifQ"
+          "version": "repo-lines-v1:sha256:64260a1d2a0cd85a22c0e1aaf69d55e04d0aff1791dd6611f8f43346a6c426dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5YmQyOTMzNzBkZWUyYzk3NGFiZDM2ZmRjMmUwM2IwNjgxNTIzMWRlZmY1MzE0MWEzZjI2M2FhYzY2Y2UyOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMGZiZWQ0OGZmMzE4MWMxNmZiMTI0ODcxNDkzOWFiOTI3NmI4ZGUyZWU3MzJmOWM5NWRlNDRjMjhlODEwNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwYzA1NTc4OTUwNzI1ODcyOWUwNzAxMzhkZTc2NDk1NmVkZGFiZDUzNzhmMGQyY2JkMDdiOWU3Y2JhMWM0ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0Y2I3MmU2NTQwODc1MzM1MTk2NTIyM2ZhZjA5YWQ3YzUwOGFjMGI4ZWMyMGQzMWY5ODRmMzFlMWY4N2VhZjEifQ"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L909-L932",
@@ -234,15 +234,15 @@
     },
     {
       "id": "claim_3caff63b9a194d83a4feca3784c64c79",
-      "statement": "For multi-modal content, ChatOpenAI formats content blocks per API requirements; Chat Completions API filters certain block types (thinking, tool_use), while Responses API expands support for reasoning, computer use, file search.",
+      "statement": "For multi-modal content, ChatOpenAI formats content blocks per API requirements; Chat Completions API filters certain block types (thinking, tool_use, reasoning_content, and function_call/code_interpreter_call when on Chat Completions API), while Responses API expands support for reasoning, computer use, file search.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L304-L326",
-          "version": "repo-lines-v1:sha256:6cd902fc919094ac7918459a836e31a99d75d17d7ed2346180e909177edbf419:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMzZiYzBjODRjODlmZmMyYmNiZDg3YzA4OTE0YTRmNzJjYTY5YTE0OTYyZTlhMTIxOTExZDIwZmVjY2RhOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhOGE1ZTU5NzYzOGZiYzZlMGZkMDJlYTZhMTA1OWU4ZGVjNWJiY2FhNzI2ZDJiMzllM2UzMjg2YTcxN2EyYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjZjc2NmFmOTQwZjVhNDYwMjMzNDZmY2YzNmEyMWYyOGViYmUyMjUxMWE4MmFhN2MyNzUzYzMyOGU0ZmM1ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwNjI4MDJmZTZkNGE3YjQzOWNhNzg5ZDE2MTlhZmMzMjg0ZTI1ZTlhMTQwZGVlNDI3YmM5YjU0ZThlMWI4YjUifQ"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L381-L469",
+          "version": "repo-lines-v1:sha256:f99dc25c09ce98a63bc71b6e1c28d2927c8cca74aee0f6b8b079f257b443ebd4:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNTUwZDY1YWNhYjg5YmE1MWYwMjJlMGQ5MTg3Yjg2ZWI2ZGE1NWY4MGQzMzI4MzJhYWE4ZTYxMjJjZGU4ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2NWM0NDBiMjAxYjQzMGM1Y2VmYjRkNWZlNTRlMjg4YjQ2ZGE5YjE5ZGZlM2YyZjIzMDMzOWRkZTRiZWFhNDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjZGUxODBiYWZlMDUxZjUyMGMxMGJhZDdmODg1YzIxZjA4MWI5OGU3NjMyYWU0ODEyNWM5OTA4NzNmOTNhMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1ODE4NGJmZDRhODYxZmNiNDgxNzgyY2VkNTg5OGU3YmFiOTY1Y2Y2NWRkZWJkMTkzYTg3ODViMTgyODgzOWIifQ"
         },
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L329-L350",
-          "version": "repo-lines-v1:sha256:8a2daaa3c8c8db699cb10fef0f8f2f525c09602dc0e497d7603c7d6aaaadb468:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNTUwZDY1YWNhYjg5YmE1MWYwMjJlMGQ5MTg3Yjg2ZWI2ZGE1NWY4MGQzMzI4MzJhYWE4ZTYxMjJjZGU4ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOGE5ZTljMzI1MjgyMGM2NWE4MTY1MjBiOGRiNDkzMjI4MDg0OWVjOGM3ZDJlYjYyNzJhZmRmZWJlMDU5YzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyYmY3NDA3MDljNGU2MzM0NjVlZWE4YTU0N2UzOGYyODc4NzcyM2RjODAzYzliYzMxOGFkY2VmODVjOTMzNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjYzE1YzJiNTMzYjBmZTZlYWExZTA0NTk0MGM0YmQ3YzdmYTQ4MTFkMTE4NTlhMjhmM2Q2NjU1ZDQzMjJlNTcifQ"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L472-L551",
+          "version": "repo-lines-v1:sha256:19d3968712a35b837a1571d6054d2a26eb3b7b8333e34e719777d3ec4c457712:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1MGQ3ZDFiOWU4Mjk2ZjUxMGRkN2U3NGUyMjFlYWYzMzFmNzU5YjQ1ZGFmMGJlYjg0NDhkY2I2MWZjYThhOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NmQ1YzA0YjU5YjFmYmU0ZDAzNzc1ZmJmODI3ZjY5ODBhYmM1ZWE3OGE2ZDU4ZGViZDRmZWYyZmYyMjZmN2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMWZhYjNmYzQwYmE5YTFkMWRhNWZhOGIyZTU0ZTU5YWI4YTZjNjFjYzBmYWFjMmE4ZDEyZDVmYTg3MWJhMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5NmY1ZWNhZDA4NzFlNzEyNzRjMjliMGIyM2RjZjhhYjI4MWZmYmY0ZGFlYWFjZGRmOWUzYWE5ODg3N2M0YmMifQ"
         }
       ]
     },
@@ -259,6 +259,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-21T08:30:16.745Z"
+    "at": "2026-09-28T08:35:20.640Z"
   }
 }
