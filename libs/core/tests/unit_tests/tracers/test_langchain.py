@@ -1128,7 +1128,8 @@ def test_a_non_agent_address_is_not_sent(address: Any) -> None:
 @_requires_address
 @pytest.mark.usefixtures("tracer_env")
 def test_get_run_url_passes_the_agent_of_an_addressed_tracer() -> None:
-    client = unittest.mock.MagicMock(spec=Client)
+    # Autospec checks the call against the real signature of `get_run_url`.
+    client = unittest.mock.create_autospec(Client, instance=True)
     client.get_run_url.return_value = "https://smith.example/run"
     support = langsmith.AgentAddress("support", "staging")
     tracer = LangChainTracer(client=client, address=support)
@@ -1151,3 +1152,30 @@ def test_get_run_url_of_a_project_tracer_passes_no_agent() -> None:
     kwargs = client.get_run_url.call_args.kwargs
     assert "address" not in kwargs
     assert kwargs["project_name"] == "configured"
+
+
+@_requires_address
+@pytest.mark.usefixtures("tracer_env")
+def test_get_run_url_needs_a_langsmith_that_resolves_the_agent() -> None:
+    class OldClient:
+        """Has the `get_run_url` of a langsmith that cannot resolve an agent."""
+
+        def get_run_url(
+            self,
+            *,
+            run: Any,  # noqa: ARG002
+            project_name: str | None = None,  # noqa: ARG002
+            project_id: Any = None,  # noqa: ARG002
+        ) -> str:
+            msg = "must not be called"
+            raise AssertionError(msg)
+
+    tracer = LangChainTracer(
+        client=unittest.mock.MagicMock(spec=Client),
+        address=langsmith.AgentAddress("support", "staging"),
+    )
+    _nested_chain().invoke(1, {"callbacks": [tracer]})
+    tracer.client = OldClient()  # type: ignore[assignment]
+
+    with pytest.raises(ValueError, match="sends runs to an agent"):
+        tracer.get_run_url()
