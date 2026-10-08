@@ -33,14 +33,21 @@ from langchain_core._import_utils import import_attr
 if TYPE_CHECKING:
     from langchain_core.documents.base import Document
     from langchain_core.documents.compressor import BaseDocumentCompressor
+    from langchain_core.documents.formatting import format_context
     from langchain_core.documents.transformers import BaseDocumentTransformer
 
-__all__ = ("BaseDocumentCompressor", "BaseDocumentTransformer", "Document")
+__all__ = (
+    "BaseDocumentCompressor",
+    "BaseDocumentTransformer",
+    "Document",
+    "format_context",
+)
 
 _dynamic_imports = {
     "Document": "base",
     "BaseDocumentCompressor": "compressor",
     "BaseDocumentTransformer": "transformers",
+    "format_context": "formatting",
 }
 
 
