@@ -164,6 +164,41 @@ async def test_tool_stays_callable_after_its_client_context_exits() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("elicitation", [None, "interrupt"], ids=["fastmcp", "interrupt"])
+async def test_arguments_named_like_tool_internals_reach_the_server(
+    elicitation: Literal["interrupt"] | None,
+) -> None:
+    """Arguments reach the server even when LangChain uses the same name itself."""
+    server: FastMCP[None] = FastMCP("deploy")
+
+    @server.tool
+    def deploy(config: str, run_manager: str, callbacks: str, arguments: str) -> str:
+        """Echo the arguments the server received."""
+        return f"{config} {run_manager} {callbacks} {arguments}"
+
+    tool, _ = await _one_tool(server, elicitation=elicitation)
+
+    message = await tool.ainvoke(
+        {
+            "name": "deploy",
+            "args": {
+                "config": "prod.yaml",
+                "run_manager": "ci",
+                "callbacks": "none",
+                "arguments": "--dry-run",
+            },
+            "id": "call-1",
+            "type": "tool_call",
+        }
+    )
+
+    assert message.status == "success"
+    assert _blocks_without_ids(message.content) == [
+        {"type": "text", "text": "prod.yaml ci none --dry-run"}
+    ]
+
+
+@pytest.mark.asyncio
 async def test_annotations_and_meta_are_kept_under_the_mcp_namespace() -> None:
     mcp_tool = Tool(
         name="delete",

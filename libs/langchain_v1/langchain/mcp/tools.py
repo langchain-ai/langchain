@@ -31,6 +31,7 @@ from mcp.types import (
     TextContent,
     TextResourceContents,
 )
+from typing_extensions import override
 
 from langchain.mcp.elicitation import _call_tool_with_interrupts, _drives_interrupts
 
@@ -231,6 +232,23 @@ def _normalize_mcp_schema(schema: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
+class _MCPStructuredTool(StructuredTool):
+    """A `StructuredTool` that delivers every argument to the MCP server.
+
+    `BaseTool` passes its own `config` and `run_manager` to `_arun` as keyword
+    arguments, so a tool argument with either name would be overwritten and
+    never reach the server. MCP servers choose their own argument names, so the
+    arguments travel to `coroutine` as a single dict instead.
+    """
+
+    @override
+    def _to_args_and_kwargs(
+        self, tool_input: str | dict[str, Any], tool_call_id: str | None
+    ) -> tuple[tuple[str, ...], dict[str, Any]]:
+        args, arguments = super()._to_args_and_kwargs(tool_input, tool_call_id)
+        return args, {"arguments": arguments}
+
+
 async def as_langchain_tool(
     tool: Tool,
     client: Client[Any] | ClientGroup,
@@ -281,7 +299,7 @@ async def as_langchain_tool(
     drives_interrupts = _drives_interrupts(requesting_client)
 
     async def call_tool(
-        **arguments: Any,
+        arguments: dict[str, Any],
     ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
         """Call the captured MCP tool and convert its result."""
         result: _ToolCallResult
@@ -293,7 +311,7 @@ async def as_langchain_tool(
                 result = await client.call_tool(tool.name, arguments, raise_on_error=False)
         return _convert_call_tool_result(result)
 
-    return StructuredTool(
+    return _MCPStructuredTool(
         name=tool.name,
         description=tool.description or "",
         args_schema=_normalize_mcp_schema(tool.input_schema),
