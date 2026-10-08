@@ -6,11 +6,22 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, cast
+from typing import Any, Literal, NoReturn, cast
 
+import httpx
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
+)
+from langchain_core.exceptions import (
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
 )
 from langchain_core.language_models import (
     LanguageModelInput,
@@ -66,6 +77,25 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
+from openrouter.errors import (
+    BadGatewayResponseError,
+    BadRequestResponseError,
+    EdgeNetworkTimeoutResponseError,
+    ForbiddenResponseError,
+    InternalServerResponseError,
+    NoResponseError,
+    NotFoundResponseError,
+    OpenRouterDefaultError,
+    PayloadTooLargeResponseError,
+    PaymentRequiredResponseError,
+    ProviderOverloadedResponseError,
+    RequestTimeoutResponseError,
+    ServiceUnavailableResponseError,
+    TooManyRequestsResponseError,
+    UnauthorizedResponseError,
+    UnprocessableEntityResponseError,
+)
+from openrouter.errors import OpenRouterError as OpenRouterSDKError
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
@@ -73,6 +103,7 @@ from langchain_openrouter._version import __version__
 from langchain_openrouter.data._profiles import _PROFILES
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
+_HTTP_SERVER_ERROR_MIN = 500
 
 # LangChain-internal kwargs that must not be forwarded to the SDK.
 _INTERNAL_KWARGS = frozenset({"ls_structured_output_format"})
@@ -101,6 +132,230 @@ def _create_stream_generation_info(
     if object_ := chunk_dict.get("object"):
         generation_info["object"] = object_
     return generation_info
+
+
+class OpenRouterInvalidRequestError(BadRequestResponseError, ModelInvalidRequestError):
+    """OpenRouter bad-request error classified as a LangChain model error."""
+
+
+class OpenRouterAuthenticationError(
+    UnauthorizedResponseError, ModelAuthenticationError
+):
+    """OpenRouter authentication error classified as a LangChain model error."""
+
+
+class OpenRouterPermissionDeniedError(
+    ForbiddenResponseError, ModelPermissionDeniedError
+):
+    """OpenRouter permission error classified as a LangChain model error."""
+
+
+class OpenRouterPaymentRequiredError(
+    PaymentRequiredResponseError, ModelPermissionDeniedError
+):
+    """OpenRouter payment error classified as a LangChain model error."""
+
+
+class OpenRouterNotFoundError(NotFoundResponseError, ModelNotFoundError):
+    """OpenRouter not-found error classified as a LangChain model error."""
+
+
+class OpenRouterRequestTimeoutError(RequestTimeoutResponseError, ModelTimeoutError):
+    """OpenRouter request timeout classified as a LangChain model error."""
+
+
+class OpenRouterPayloadTooLargeError(
+    PayloadTooLargeResponseError, ModelInvalidRequestError
+):
+    """OpenRouter payload error classified as a LangChain model error."""
+
+
+class OpenRouterUnprocessableEntityError(
+    UnprocessableEntityResponseError, ModelInvalidRequestError
+):
+    """OpenRouter validation error classified as a LangChain model error."""
+
+
+class OpenRouterRateLimitError(TooManyRequestsResponseError, ModelRateLimitError):
+    """OpenRouter rate-limit error classified as a LangChain model error."""
+
+
+class OpenRouterInternalServerError(InternalServerResponseError, ModelAPIError):
+    """OpenRouter server error classified as a LangChain model error."""
+
+
+class OpenRouterBadGatewayError(BadGatewayResponseError, ModelAPIError):
+    """OpenRouter gateway error classified as a LangChain model error."""
+
+
+class OpenRouterServiceUnavailableError(ServiceUnavailableResponseError, ModelAPIError):
+    """OpenRouter unavailable error classified as a LangChain model error."""
+
+
+class OpenRouterEdgeNetworkTimeoutError(
+    EdgeNetworkTimeoutResponseError, ModelTimeoutError
+):
+    """OpenRouter edge timeout classified as a LangChain model error."""
+
+
+class OpenRouterProviderOverloadedError(ProviderOverloadedResponseError, ModelAPIError):
+    """OpenRouter overload error classified as a LangChain model error."""
+
+
+class OpenRouterConnectionError(NoResponseError, ModelConnectionError):
+    """OpenRouter connection error classified as a LangChain model error."""
+
+
+class OpenRouterTransportError(httpx.TransportError, ModelConnectionError):
+    """OpenRouter transport error classified as a LangChain model error."""
+
+
+class OpenRouterTimeoutError(httpx.TimeoutException, ModelTimeoutError):
+    """OpenRouter transport timeout classified as a LangChain model error."""
+
+
+class OpenRouterDefaultInvalidRequestError(
+    OpenRouterDefaultError, ModelInvalidRequestError
+):
+    """OpenRouter fallback client error classified as a LangChain model error."""
+
+
+class OpenRouterDefaultAuthenticationError(
+    OpenRouterDefaultError, ModelAuthenticationError
+):
+    """OpenRouter fallback authentication error classified as a model error."""
+
+
+class OpenRouterDefaultPermissionDeniedError(
+    OpenRouterDefaultError, ModelPermissionDeniedError
+):
+    """OpenRouter fallback permission error classified as a model error."""
+
+
+class OpenRouterDefaultNotFoundError(OpenRouterDefaultError, ModelNotFoundError):
+    """OpenRouter fallback not-found error classified as a model error."""
+
+
+class OpenRouterDefaultTimeoutError(OpenRouterDefaultError, ModelTimeoutError):
+    """OpenRouter fallback timeout classified as a LangChain model error."""
+
+
+class OpenRouterDefaultRateLimitError(OpenRouterDefaultError, ModelRateLimitError):
+    """OpenRouter fallback rate-limit error classified as a model error."""
+
+
+class OpenRouterDefaultAPIError(OpenRouterDefaultError, ModelAPIError):
+    """OpenRouter fallback server error classified as a LangChain model error."""
+
+
+_OPENROUTER_DEFAULT_ERROR_TYPES_BY_STATUS: dict[int, type[OpenRouterDefaultError]] = {
+    400: OpenRouterDefaultInvalidRequestError,
+    401: OpenRouterDefaultAuthenticationError,
+    402: OpenRouterDefaultPermissionDeniedError,
+    403: OpenRouterDefaultPermissionDeniedError,
+    404: OpenRouterDefaultNotFoundError,
+    408: OpenRouterDefaultTimeoutError,
+    413: OpenRouterDefaultInvalidRequestError,
+    422: OpenRouterDefaultInvalidRequestError,
+    429: OpenRouterDefaultRateLimitError,
+    500: OpenRouterDefaultAPIError,
+    502: OpenRouterDefaultAPIError,
+    503: OpenRouterDefaultAPIError,
+    524: OpenRouterDefaultTimeoutError,
+    529: OpenRouterDefaultAPIError,
+}
+
+_OPENROUTER_ERROR_TYPES: dict[type[OpenRouterSDKError], type[OpenRouterSDKError]] = {
+    BadRequestResponseError: OpenRouterInvalidRequestError,
+    UnauthorizedResponseError: OpenRouterAuthenticationError,
+    ForbiddenResponseError: OpenRouterPermissionDeniedError,
+    PaymentRequiredResponseError: OpenRouterPaymentRequiredError,
+    NotFoundResponseError: OpenRouterNotFoundError,
+    RequestTimeoutResponseError: OpenRouterRequestTimeoutError,
+    PayloadTooLargeResponseError: OpenRouterPayloadTooLargeError,
+    UnprocessableEntityResponseError: OpenRouterUnprocessableEntityError,
+    TooManyRequestsResponseError: OpenRouterRateLimitError,
+    InternalServerResponseError: OpenRouterInternalServerError,
+    BadGatewayResponseError: OpenRouterBadGatewayError,
+    ServiceUnavailableResponseError: OpenRouterServiceUnavailableError,
+    EdgeNetworkTimeoutResponseError: OpenRouterEdgeNetworkTimeoutError,
+    ProviderOverloadedResponseError: OpenRouterProviderOverloadedError,
+}
+
+
+def _handle_openrouter_error(
+    error: OpenRouterSDKError | NoResponseError | httpx.TransportError,
+) -> NoReturn:
+    if isinstance(error, NoResponseError):
+        raise OpenRouterConnectionError(error.message) from None
+    if isinstance(error, httpx.TimeoutException):
+        message = "OpenRouter request timed out"
+        raise OpenRouterTimeoutError(message) from None
+    if isinstance(error, httpx.TransportError):
+        message = "OpenRouter connection failed"
+        raise OpenRouterTransportError(message) from None
+    if isinstance(error, OpenRouterDefaultError):
+        message = f"OpenRouter API error ({error.status_code})"
+        sanitized_response = httpx.Response(
+            error.status_code,
+            headers=error.headers,
+            request=error.raw_response.request,
+        )
+        default_error_type = _OPENROUTER_DEFAULT_ERROR_TYPES_BY_STATUS.get(
+            error.status_code
+        )
+        if default_error_type is not None:
+            raise default_error_type(message, sanitized_response) from None
+        if error.status_code >= _HTTP_SERVER_ERROR_MIN:
+            raise OpenRouterDefaultAPIError(message, sanitized_response) from None
+        raise OpenRouterDefaultInvalidRequestError(
+            message, sanitized_response
+        ) from None
+    error_type = _OPENROUTER_ERROR_TYPES.get(type(error))
+    if error_type is not None:
+        message = f"OpenRouter API error ({error.status_code})"
+        sanitized_data = cast("Any", error).data.model_copy(deep=True)
+        sanitized_data.error.message = message
+        sanitized_response = httpx.Response(
+            error.status_code,
+            headers=error.headers,
+            request=error.raw_response.request,
+        )
+        raise error_type(sanitized_data, sanitized_response) from None
+    raise error
+
+
+def _send_openrouter_request(
+    send: Callable[..., Any], messages: list[dict[str, Any]], params: dict[str, Any]
+) -> Any:
+    try:
+        return send(messages=messages, **params)
+    except (OpenRouterSDKError, NoResponseError, httpx.TransportError) as error:
+        _handle_openrouter_error(error)
+
+
+async def _asend_openrouter_request(
+    send: Callable[..., Any], messages: list[dict[str, Any]], params: dict[str, Any]
+) -> Any:
+    try:
+        return await send(messages=messages, **params)
+    except (OpenRouterSDKError, NoResponseError, httpx.TransportError) as error:
+        _handle_openrouter_error(error)
+
+
+def _iter_openrouter_stream(stream: Iterator[Any]) -> Iterator[Any]:
+    try:
+        yield from stream
+    except (OpenRouterSDKError, NoResponseError, httpx.TransportError) as error:
+        _handle_openrouter_error(error)
+
+
+async def _aiter_openrouter_stream(stream: AsyncIterator[Any]) -> AsyncIterator[Any]:
+    try:
+        async for chunk in stream:
+            yield chunk
+    except (OpenRouterSDKError, NoResponseError, httpx.TransportError) as error:
+        _handle_openrouter_error(error)
 
 
 class ChatOpenRouter(BaseChatModel):
@@ -569,7 +824,9 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
-        response = self.client.chat.send(messages=message_dicts, **params)
+        response = _send_openrouter_request(
+            self.client.chat.send, message_dicts, params
+        )
         return self._create_chat_result(response)
 
     async def _agenerate(
@@ -587,7 +844,9 @@ class ChatOpenRouter(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         _strip_internal_kwargs(params)
-        response = await self.client.chat.send_async(messages=message_dicts, **params)
+        response = await _asend_openrouter_request(
+            self.client.chat.send_async, message_dicts, params
+        )
         return self._create_chat_result(response)
 
     def _stream(  # noqa: C901
@@ -605,7 +864,8 @@ class ChatOpenRouter(BaseChatModel):
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         terminal_generation_info: dict[str, Any] = {}
-        for chunk in self.client.chat.send(messages=message_dicts, **params):
+        stream = _send_openrouter_request(self.client.chat.send, message_dicts, params)
+        for chunk in _iter_openrouter_stream(stream):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
                 if error := chunk_dict.get("error"):
@@ -695,9 +955,10 @@ class ChatOpenRouter(BaseChatModel):
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         terminal_generation_info: dict[str, Any] = {}
-        async for chunk in await self.client.chat.send_async(
-            messages=message_dicts, **params
-        ):
+        stream = await _asend_openrouter_request(
+            self.client.chat.send_async, message_dicts, params
+        )
+        async for chunk in _aiter_openrouter_stream(stream):
             chunk_dict = chunk.model_dump(by_alias=True)
             if not chunk_dict.get("choices"):
                 if error := chunk_dict.get("error"):
