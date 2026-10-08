@@ -48,7 +48,7 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
     Args:
         model: Decisions model used to answer questions.
         api_key: OpenAI API key. If omitted, reads `OPENAI_API_KEY`.
-        base_url: Base URL for API requests. If omitted, reads `OPENAI_API_BASE`.
+        base_url: Base URL for API requests. If omitted, reads `OPENAI_BASE_URL`.
         organization: OpenAI organization ID. If omitted, reads `OPENAI_ORG_ID`.
         timeout: Request timeout passed to the OpenAI client.
         max_retries: Maximum number of retries passed to the OpenAI client.
@@ -116,8 +116,8 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
     )
     """Base URL for API requests.
 
-    Automatically inferred from env var `OPENAI_API_BASE` if not provided. When unset,
-    the OpenAI SDK falls back to `OPENAI_BASE_URL`, then the default OpenAI endpoint.
+    Automatically inferred from env var `OPENAI_BASE_URL` if not provided. When unset,
+    requests go to the default OpenAI endpoint.
     """
 
     openai_organization: str | None = Field(

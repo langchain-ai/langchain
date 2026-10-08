@@ -189,6 +189,25 @@ def test_api_key_from_environment() -> None:
     assert decisions._client.api_key == "foo"
 
 
+def test_base_url_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://example.com/v1")
+
+    decisions = OpenAIDecisions(model=MODEL)
+
+    assert decisions.base_url == "https://example.com/v1"
+    assert str(decisions._client.base_url) == "https://example.com/v1/"
+
+
+def test_explicit_base_url_overrides_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://env.example.com/v1")
+
+    decisions = OpenAIDecisions(model=MODEL, base_url="https://example.com/v1")
+
+    assert decisions.base_url == "https://example.com/v1"
+
+
 def test_score_requires_two_levels() -> None:
     with pytest.raises(ValidationError):
         Score(instructions="How severe?", levels=["only"])
