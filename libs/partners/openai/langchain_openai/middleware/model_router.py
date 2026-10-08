@@ -102,7 +102,7 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         router = OpenAIModelRouterMiddleware(
             choices={
                 "fast": ModelChoice(
-                    model="openai:gpt-5.4-mini",
+                    model="openai:gpt-6-luna",
                     criteria="Simple, well-scoped tasks.",
                 ),
                 "powerful": ModelChoice(
@@ -113,7 +113,7 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
             instructions="Choose the least costly model suited to the task.",
             model="gpt-6-luna",
         )
-        agent = create_agent("openai:gpt-6-sol", middleware=[router])
+        agent = create_agent("openai:gpt-6-luna", middleware=[router])
         ```
     """
 

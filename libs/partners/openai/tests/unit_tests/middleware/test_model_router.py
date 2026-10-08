@@ -290,7 +290,7 @@ def test_model_strings_are_initialized(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "test-api-key")
 
     middleware = OpenAIModelRouterMiddleware(
-        choices={"fast": ModelChoice(model="openai:gpt-5.4-mini", criteria="Simple.")},
+        choices={"fast": ModelChoice(model="openai:gpt-6-luna", criteria="Simple.")},
         instructions="Choose a model.",
         model="gpt-6-luna",
     )
