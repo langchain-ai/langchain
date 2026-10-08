@@ -40,6 +40,7 @@ from langchain_core.messages.block_translators.openai import (
 )
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
 from langchain_core.messages.content import (
+    InvalidToolCall,
     is_data_content_block,
 )
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
@@ -1669,8 +1670,15 @@ def convert_to_openai_messages(
 
         if message.name:
             oai_msg["name"] = message.name
-        if isinstance(message, AIMessage) and message.tool_calls:
-            oai_msg["tool_calls"] = _convert_to_openai_tool_calls(message.tool_calls)
+        if isinstance(message, AIMessage) and (
+            message.tool_calls or message.invalid_tool_calls
+        ):
+            # Keep invalid tool calls so the `tool` reply that follows them is not
+            # orphaned (providers reject tool messages without a matching call).
+            oai_msg["tool_calls"] = [
+                *_convert_to_openai_tool_calls(message.tool_calls),
+                *_convert_invalid_to_openai_tool_calls(message.invalid_tool_calls),
+            ]
         if message.additional_kwargs.get("refusal"):
             oai_msg["refusal"] = message.additional_kwargs["refusal"]
         if isinstance(message, ToolMessage):
@@ -2251,6 +2259,23 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict[str, 
             },
         }
         for tool_call in tool_calls
+    ]
+
+
+def _convert_invalid_to_openai_tool_calls(
+    invalid_tool_calls: list[InvalidToolCall],
+) -> list[dict[str, Any]]:
+    # `args` is the raw (unparseable) string; forward it unchanged.
+    return [
+        {
+            "type": "function",
+            "id": tool_call["id"],
+            "function": {
+                "name": tool_call["name"],
+                "arguments": tool_call["args"] or "",
+            },
+        }
+        for tool_call in invalid_tool_calls
     ]
 
 

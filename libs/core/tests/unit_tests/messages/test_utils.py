@@ -973,6 +973,36 @@ def test_convert_to_openai_messages_string() -> None:
     assert result == {"role": "user", "content": "Hello"}
 
 
+def test_convert_to_openai_messages_invalid_tool_calls() -> None:
+    message = AIMessage(
+        "",
+        invalid_tool_calls=[
+            {
+                "name": "weather",
+                "args": '{"city":',
+                "id": "failed_call",
+                "error": "Invalid JSON",
+            }
+        ],
+    )
+    reply = ToolMessage("Invalid arguments", tool_call_id="failed_call")
+    result = convert_to_openai_messages([message, reply])
+    assert result == [
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {
+                    "type": "function",
+                    "id": "failed_call",
+                    "function": {"name": "weather", "arguments": '{"city":'},
+                }
+            ],
+        },
+        {"role": "tool", "tool_call_id": "failed_call", "content": "Invalid arguments"},
+    ]
+
+
 def test_convert_to_openai_messages_single_message() -> None:
     message: BaseMessage = HumanMessage(content="Hello")
     result = convert_to_openai_messages(message)
