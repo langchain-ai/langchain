@@ -1709,6 +1709,10 @@ def convert_to_openai_messages(
                         )
                         raise ValueError(err)
                     content.append({"type": block["type"], "text": block["text"]})
+                # Bedrock Converse text block: {"text": "..."}.
+                # It carries no explicit "type" key.
+                elif "text" in block and "type" not in block:
+                    content.append({"type": "text", "text": block["text"]})
                 elif block.get("type") == "image_url":
                     if missing := [k for k in ("image_url",) if k not in block]:
                         err = (
@@ -1966,7 +1970,7 @@ def convert_to_openai_messages(
                     )
                     raise ValueError(err)
             if text_format == "string" and not any(
-                block["type"] != "text" for block in content
+                block.get("type") != "text" for block in content
             ):
                 content = "\n".join(block["text"] for block in content)
         oai_msg["content"] = content

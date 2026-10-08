@@ -1275,6 +1275,22 @@ def test_convert_to_openai_messages_guard_content() -> None:
     assert result[0]["content"][0]["text"] == "Protected content"
 
 
+def test_convert_to_openai_messages_bedrock_converse_text_block_without_type() -> None:
+    # Regression test for https://github.com/langchain-ai/langchain/issues/41021
+    # Bedrock Converse text blocks carry no `type` key, e.g. {"text": "a"}.
+    message = AIMessage(content=[{"text": "a"}])
+
+    # Default (string) format: normalized to a text block and joined into a string.
+    assert convert_to_openai_messages([message]) == [
+        {"role": "assistant", "content": "a"}
+    ]
+
+    # Block format: normalized to a standard OpenAI text block.
+    assert convert_to_openai_messages([message], text_format="block") == [
+        {"role": "assistant", "content": [{"type": "text", "text": "a"}]}
+    ]
+
+
 def test_convert_to_openai_messages_invalid_block() -> None:
     messages = [HumanMessage(content=[{"type": "invalid", "foo": "bar"}])]
     with pytest.raises(ValueError, match="Unrecognized content block"):
