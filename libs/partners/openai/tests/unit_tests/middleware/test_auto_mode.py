@@ -16,7 +16,7 @@ from pydantic import SecretStr
 from typing_extensions import Self, override
 
 from langchain_openai._compat import httpx
-from langchain_openai.chat_models.base import OpenAIAPIError
+from langchain_openai.chat_models.base import OpenAIAPIError, OpenAIInvalidRequestError
 from langchain_openai.decisions import OpenAIDecisions
 from langchain_openai.middleware import OpenAIAutoModeMiddleware
 
@@ -78,13 +78,16 @@ def _middleware(
     answer: dict[str, Any] | None = None,
     *,
     tools: Sequence[str | BaseTool] = ("delete_file",),
-    status_code: int = 200,
+    failures: Sequence[int] = (),
     observed: list[dict[str, Any]] | None = None,
     **kwargs: Any,
 ) -> OpenAIAutoModeMiddleware:
+    failing = iter(failures)
+
     def respond(request: httpx.Request) -> httpx.Response:
         if observed is not None:
             observed.append(json.loads(request.content))
+        status_code = next(failing, 200)
         if status_code != 200:
             return httpx.Response(status_code, json={"error": {"message": "down"}})
         return httpx.Response(
@@ -168,7 +171,7 @@ async def test_refusal_blocks_the_call(*, async_: bool) -> None:
 async def test_classification_failure_terminates_agent_run(*, async_: bool) -> None:
     executions: list[str] = []
     tool_instance = _delete_tool(executions)
-    middleware = _middleware(status_code=500)
+    middleware = _middleware(failures=[500])
 
     with pytest.raises(OpenAIAPIError):
         await _run_agent(middleware, tool_instance, async_=async_)
@@ -257,6 +260,89 @@ async def test_images_are_sent_and_other_media_replaced() -> None:
     assert parts[0]["text"].endswith("Delete this report.\\n")
     assert parts[2]["text"].startswith("\\n[audio omitted]")
     assert "UklGRg==" not in json.dumps(observed[0]["input"])
+
+
+def _image_message() -> HumanMessage:
+    return HumanMessage(
+        content=[
+            {"type": "text", "text": "Delete the blurry report."},
+            {"type": "image", "base64": "iVBORw0KGgo=", "mime_type": "image/png"},
+        ]
+    )
+
+
+@pytest.mark.parametrize("async_", [False, True])
+@pytest.mark.parametrize("status_code", [400, 413])
+@pytest.mark.parametrize(
+    ("probability", "expected_status"), [(0.2, "success"), (0.9, "error")]
+)
+async def test_rejected_images_are_classified_text_only(
+    status_code: int, probability: float, expected_status: str, *, async_: bool
+) -> None:
+    executions: list[str] = []
+    tool_instance = _delete_tool(executions)
+    observed: list[dict[str, Any]] = []
+    middleware = _middleware(
+        _predicate(probability), failures=[status_code], observed=observed
+    )
+
+    result = await _run_agent(
+        middleware, tool_instance, async_=async_, messages=[_image_message()]
+    )
+
+    assert _tool_message(result).status == expected_status
+    assert len(observed) == 2
+    assert "input_image" in json.dumps(observed[0]["input"])
+    retry = json.dumps(observed[1]["input"])
+    assert "input_image" not in retry
+    assert "[image omitted]" in retry
+
+
+async def test_bad_request_without_images_propagates() -> None:
+    executions: list[str] = []
+    observed: list[dict[str, Any]] = []
+
+    with pytest.raises(OpenAIInvalidRequestError):
+        await _run_agent(
+            _middleware(failures=[400], observed=observed),
+            _delete_tool(executions),
+            async_=False,
+        )
+
+    assert len(observed) == 1
+    assert executions == []
+
+
+async def test_rejected_text_only_retry_propagates() -> None:
+    executions: list[str] = []
+    observed: list[dict[str, Any]] = []
+
+    with pytest.raises(OpenAIInvalidRequestError):
+        await _run_agent(
+            _middleware(failures=[400, 400], observed=observed),
+            _delete_tool(executions),
+            async_=False,
+            messages=[_image_message()],
+        )
+
+    assert len(observed) == 2
+    assert executions == []
+
+
+async def test_server_error_with_images_does_not_retry() -> None:
+    executions: list[str] = []
+    observed: list[dict[str, Any]] = []
+
+    with pytest.raises(OpenAIAPIError):
+        await _run_agent(
+            _middleware(failures=[500], observed=observed),
+            _delete_tool(executions),
+            async_=False,
+            messages=[_image_message()],
+        )
+
+    assert len(observed) == 1
+    assert executions == []
 
 
 def test_base_tool_name_is_inferred() -> None:

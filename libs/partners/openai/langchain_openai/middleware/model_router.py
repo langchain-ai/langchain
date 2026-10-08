@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
-import openai
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -31,6 +29,10 @@ from langchain_openai.decisions import (
     DecisionResponse,
     OpenAIDecisions,
 )
+from langchain_openai.middleware._fallback import (
+    adecide_with_text_fallback,
+    decide_with_text_fallback,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -38,9 +40,6 @@ if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 _QUESTION_NAME = "model_route"
-_RETRY_STATUS_CODES = frozenset({400, 413})
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -166,14 +165,8 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         requests = self._decision_requests(state)
         if not requests:
             return {"model_route": None}
-        for request in requests[:-1]:
-            try:
-                return {"model_route": _route(self.decisions.invoke(request))}
-            except openai.APIStatusError as e:
-                if e.status_code not in _RETRY_STATUS_CODES:
-                    raise
-                logger.debug("Routing with images failed (HTTP %s).", e.status_code)
-        return {"model_route": _route(self.decisions.invoke(requests[-1]))}
+        response = decide_with_text_fallback(self.decisions, requests)
+        return {"model_route": _route(response)}
 
     @override
     async def abefore_agent(
@@ -183,14 +176,8 @@ class OpenAIModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         requests = self._decision_requests(state)
         if not requests:
             return {"model_route": None}
-        for request in requests[:-1]:
-            try:
-                return {"model_route": _route(await self.decisions.ainvoke(request))}
-            except openai.APIStatusError as e:
-                if e.status_code not in _RETRY_STATUS_CODES:
-                    raise
-                logger.debug("Routing with images failed (HTTP %s).", e.status_code)
-        return {"model_route": _route(await self.decisions.ainvoke(requests[-1]))}
+        response = await adecide_with_text_fallback(self.decisions, requests)
+        return {"model_route": _route(response)}
 
     @override
     def wrap_model_call(
