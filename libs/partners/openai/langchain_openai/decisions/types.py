@@ -26,7 +26,8 @@ State: TypeAlias = str | BaseMessage | Sequence[_StateValue] | dict[str, _StateV
 The Decisions API natively accepts a string or user messages containing text and
 base64 images. Strings and `HumanMessage` objects (alone or in a sequence) are sent
 natively. Any other state, such as conversations with system or AI messages, or JSON
-objects, is serialized to JSON text first.
+objects, is sent as JSON text in a single user message, with base64 images kept in
+place as image parts.
 """
 
 

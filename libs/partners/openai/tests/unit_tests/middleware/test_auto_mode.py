@@ -202,7 +202,7 @@ async def test_request_contains_user_context_and_tool_call() -> None:
     assert request["questions"] == [
         {"type": "predicate", "name": "is_risky", "instructions": "Assess impact."}
     ]
-    state = json.loads(request["input"])
+    state = json.loads(request["input"][0]["content"][0]["text"])
     assert state["messages"][0] == {
         "role": "user",
         "content": "Delete the temporary report.",
@@ -225,32 +225,38 @@ async def test_context_is_limited_to_last_30_messages() -> None:
         _middleware(observed=observed), tool_instance, async_=False, messages=history
     )
 
-    messages = json.loads(observed[0]["input"])["messages"]
+    messages = json.loads(observed[0]["input"][0]["content"][0]["text"])["messages"]
     assert len(messages) == 30
     assert messages[0] == {"role": "user", "content": "message 2"}
     assert messages[-1]["role"] == "assistant"
 
 
-async def test_media_is_replaced_with_placeholders() -> None:
+async def test_images_are_sent_and_other_media_replaced() -> None:
     tool_instance = _delete_tool([])
     observed: list[dict[str, Any]] = []
-    image_message = HumanMessage(
+    message = HumanMessage(
         content=[
             {"type": "text", "text": "Delete this report."},
             {"type": "image", "base64": "iVBORw0KGgo=", "mime_type": "image/png"},
+            {"type": "audio", "base64": "UklGRg==", "mime_type": "audio/wav"},
         ]
     )
 
     await _run_agent(
-        _middleware(observed=observed),
-        tool_instance,
-        async_=False,
-        messages=[image_message],
+        _middleware(observed=observed), tool_instance, async_=False, messages=[message]
     )
 
-    assert "iVBORw0KGgo=" not in observed[0]["input"]
-    content = json.loads(observed[0]["input"])["messages"][0]["content"]
-    assert content == "Delete this report.\n[image omitted]"
+    [user_message] = observed[0]["input"]
+    parts = user_message["content"]
+    assert [part["type"] for part in parts] == [
+        "input_text",
+        "input_image",
+        "input_text",
+    ]
+    assert parts[1]["image_url"] == "data:image/png;base64,iVBORw0KGgo="
+    assert parts[0]["text"].endswith("Delete this report.\\n")
+    assert parts[2]["text"].startswith("\\n[audio omitted]")
+    assert "UklGRg==" not in json.dumps(observed[0]["input"])
 
 
 def test_base_tool_name_is_inferred() -> None:
