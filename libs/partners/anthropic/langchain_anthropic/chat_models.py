@@ -1143,18 +1143,31 @@ def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
     return tuple(levels)
 
 
+_MID_CONVERSATION_SYSTEM_MODEL_FAMILIES = (
+    "claude-fable-5",
+    "claude-haiku-5",
+    "claude-mythos-5",
+    "claude-opus-4-8",
+    "claude-opus-5",
+    "claude-sonnet-5",
+)
+"""Model-name prefixes that accept a `role: "system"` turn mid-conversation."""
+
+
 def _supports_mid_conversation_system_messages(model: object) -> bool:
-    """Return whether the model supports mid-conversation system messages."""
+    """Return whether the model supports mid-conversation system messages.
+
+    Recognises `{name}` (Claude API), `anthropic.{name}` (Bedrock Mantle) and
+    `{region}.anthropic.{name}` (Bedrock inference profiles), as langchain-aws
+    passes them through unchanged.
+    """
     if not isinstance(model, str):
         return False
-    return model.startswith(
-        (
-            "claude-fable-5",
-            "claude-mythos-5",
-            "claude-opus-4-8",
-            "claude-opus-5",
-            "claude-sonnet-5-5",
-        )
+    _region, _, rest = model.partition(".")
+    if rest.startswith("anthropic."):
+        model = rest
+    return model.removeprefix("anthropic.").startswith(
+        _MID_CONVERSATION_SYSTEM_MODEL_FAMILIES
     )
 
 

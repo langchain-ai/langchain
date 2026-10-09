@@ -2074,36 +2074,54 @@ def test__format_messages_non_leading_system_hoisted_on_unsupported_model() -> N
     assert actual_messages == [{"role": "user", "content": "Review foo()"}]
 
 
-def test__format_messages_non_leading_system_hoisted_on_sonnet_5() -> None:
-    """Sonnet 5 is a current model that does not support the feature."""
+@pytest.mark.parametrize(
+    "model",
+    [
+        # Claude API.
+        "claude-sonnet-5",
+        "claude-haiku-5-5",
+        # Bedrock inference profiles (`ChatAnthropicBedrock`).
+        "global.anthropic.claude-opus-5-5",
+        "global.anthropic.claude-sonnet-5",
+        "us.anthropic.claude-sonnet-5-5",
+        "us.anthropic.claude-haiku-5-5",
+        "eu.anthropic.claude-opus-4-8",
+        # Inference-profile ARN, which InvokeModel accepts in place of the ID.
+        "arn:aws:bedrock:us-east-1:123456789012:inference-profile/us.anthropic.claude-opus-5-5",
+        # Mantle (`ChatAnthropicMantle`).
+        "anthropic.claude-opus-5",
+    ],
+)
+def test__format_messages_non_leading_system_in_place_on_supported_model_id(
+    model: str,
+) -> None:
+    """Support depends on the model, not on the endpoint's ID shape."""
     messages = [
         HumanMessage("Review foo()"),
         SystemMessage("Be concise."),
+        AIMessage("Looks fine."),
     ]
-    with pytest.warns(UserWarning, match=_HOIST_WARNING):
-        actual_system, actual_messages = _format_messages(
-            messages, model="claude-sonnet-5"
-        )
-    assert actual_system == "Be concise."
-    assert actual_messages == [{"role": "user", "content": "Review foo()"}]
-
-
-def test__format_messages_non_leading_system_hoisted_on_platform_model_id() -> None:
-    """Test platform-prefixed model identifiers do not match."""
-    messages = [
-        HumanMessage("Review foo()"),
-        SystemMessage("Be concise."),
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        actual_system, actual_messages = _format_messages(messages, model=model)
+    assert actual_system is None
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "system", "content": "Be concise."},
+        {"role": "assistant", "content": "Looks fine."},
     ]
-    with pytest.warns(UserWarning, match=_HOIST_WARNING):
-        actual_system, _ = _format_messages(
-            messages, model="us.anthropic.claude-opus-5-v1:0"
-        )
-    assert actual_system == "Be concise."
 
 
 @pytest.mark.parametrize(
     "model",
-    ["claude-opus-5-1", "claude-fable-5-1", "claude-mythos-5-2", "claude-opus-4-8"],
+    [
+        "claude-opus-5-1",
+        "claude-fable-5-1",
+        "claude-mythos-5-2",
+        "claude-opus-4-8",
+        "claude-sonnet-5-6",
+        "claude-haiku-5-6",
+    ],
 )
 def test__format_messages_supported_model_prefixes_match_forward(model: str) -> None:
     """A later point release of a supported family needs no edit here."""
@@ -2115,15 +2133,29 @@ def test__format_messages_supported_model_prefixes_match_forward(model: str) -> 
     assert actual_messages[-1] == {"role": "system", "content": "Be concise."}
 
 
-@pytest.mark.parametrize("model", ["claude-opus-4-5", "claude-mythos-preview"])
+@pytest.mark.parametrize(
+    "model",
+    [
+        "claude-opus-4-5",
+        "claude-mythos-preview",
+        # Bedrock IDs for models without support.
+        "global.anthropic.claude-opus-4-7",
+        "anthropic.claude-haiku-4-5-20251001-v1:0",
+        "us.anthropic.claude-sonnet-4-6",
+        # A supported name preceded by anything but an `anthropic.` segment.
+        "my-claude-opus-5",
+        "xanthropic.claude-opus-5",
+    ],
+)
 def test__format_messages_unsupported_model_prefixes_hoist(model: str) -> None:
-    """Prefixes that must not match: pre-4-8 Opus, and unversioned Mythos."""
+    """IDs that must not match, hoisted with a warning naming the ID as passed."""
     messages = [
         HumanMessage("Review foo()"),
         SystemMessage("Be concise."),
     ]
-    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+    with pytest.warns(UserWarning, match=_HOIST_WARNING) as record:
         actual_system, _ = _format_messages(messages, model=model)
+    assert f"(model: {model!r})" in str(record[0].message)
     assert actual_system == "Be concise."
 
 
@@ -2310,6 +2342,29 @@ def test__format_messages_system_tool_change_block_sent_in_place(
     actual_system, actual_messages = _format_messages(
         messages, model=MID_CONVERSATION_SYSTEM_MODEL
     )
+    assert actual_system is None
+    assert actual_messages[1] == {"role": "system", "content": [block]}
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+def test__format_messages_system_tool_change_block_sent_in_place_on_sonnet_5(
+    block: dict,
+) -> None:
+    """Tool-change blocks are not checked against the model.
+
+    Sonnet 5 takes system messages in place but not tool changes, so the block is
+    forwarded and the API rejects it, rather than being stripped here.
+    """
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([block]),
+        AIMessage("Looks fine."),
+    ]
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        actual_system, actual_messages = _format_messages(
+            messages, model="claude-sonnet-5"
+        )
     assert actual_system is None
     assert actual_messages[1] == {"role": "system", "content": [block]}
 
@@ -5726,6 +5781,40 @@ def test_tool_change_block_auto_appends_beta() -> None:
     """A tool-change block that reaches the wire enables the beta."""
     model = ChatAnthropic(model=MID_CONVERSATION_SYSTEM_MODEL)
     payload = model._get_request_payload(_tool_change_conversation())
+    assert payload["betas"] == [_MID_CONVERSATION_TOOL_CHANGES_BETA]
+
+
+def test_bedrock_model_id_sends_system_message_in_place() -> None:
+    """A Bedrock ID reaches formatting as passed, as langchain-aws passes it."""
+    model = ChatAnthropic(model="global.anthropic.claude-opus-5-5")
+    payload = model._get_request_payload(
+        [HumanMessage("Review foo()"), SystemMessage("Be concise.")]
+    )
+    assert "system" not in payload
+    assert payload["messages"][-1] == {"role": "system", "content": "Be concise."}
+
+
+def test_bedrock_model_id_hoist_warning_names_model() -> None:
+    """An unsupported Bedrock ID still hoists, and the warning names it."""
+    model = ChatAnthropic(model="global.anthropic.claude-opus-4-7")
+    with pytest.warns(
+        UserWarning, match=r"\(model: 'global\.anthropic\.claude-opus-4-7'\)"
+    ):
+        payload = model._get_request_payload(
+            [HumanMessage("Review foo()"), SystemMessage("Be concise.")]
+        )
+    assert payload["system"] == "Be concise."
+    assert payload["messages"] == [{"role": "user", "content": "Review foo()"}]
+
+
+def test_tool_change_block_on_bedrock_model_id_appends_beta() -> None:
+    """A tool-change block goes in place on a Bedrock ID, with its beta."""
+    model = ChatAnthropic(model="us.anthropic.claude-opus-5-5")
+    payload = model._get_request_payload(_tool_change_conversation())
+    assert payload["messages"][1] == {
+        "role": "system",
+        "content": [_TOOL_REMOVAL_BLOCK],
+    }
     assert payload["betas"] == [_MID_CONVERSATION_TOOL_CHANGES_BETA]
 
 
