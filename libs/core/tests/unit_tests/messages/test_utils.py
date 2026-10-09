@@ -1564,6 +1564,59 @@ def test_count_tokens_approximately_tool_calls() -> None:
     assert count_tokens_approximately(messages) == 29
 
 
+def test_count_tokens_approximately_tool_calls_with_list_content() -> None:
+    """Tool calls are counted when `AIMessage.content` is a list (#41166)."""
+    tool_calls = [{"name": "find_owner", "args": {"query": "x" * 4000}, "id": "call_1"}]
+    str_count = count_tokens_approximately(
+        [AIMessage(content="", tool_calls=tool_calls)]
+    )
+    empty_list_count = count_tokens_approximately(
+        [AIMessage(content=[], tool_calls=tool_calls)]
+    )
+    text_block_count = count_tokens_approximately(
+        [AIMessage(content=[{"type": "text", "text": ""}], tool_calls=tool_calls)]
+    )
+    # The 4k-char tool arg must be counted in every content shape.
+    assert str_count == empty_list_count == text_block_count == 1027
+
+
+def test_count_tokens_approximately_embedded_tool_calls_not_double_counted() -> None:
+    """Anthropic `tool_use` blocks already embed the call: count once (#41166)."""
+    tool_calls = [{"name": "get_weather", "args": {"city": "SF"}, "id": "call_1"}]
+    block = {
+        "type": "tool_use",
+        "id": "call_1",
+        "name": "get_weather",
+        "input": {"city": "SF"},
+    }
+    content_only = count_tokens_approximately([AIMessage(content=[block])])
+    with_calls = count_tokens_approximately(
+        [AIMessage(content=[block], tool_calls=tool_calls)]
+    )
+    assert with_calls == content_only
+
+
+def test_count_tokens_approximately_mixed_embedded_and_plain_tool_calls() -> None:
+    """Only tool calls not represented in content are counted (#41166)."""
+    embedded = {"name": "get_weather", "args": {"city": "SF"}, "id": "call_1"}
+    extra = {"name": "get_time", "args": {}, "id": "call_2"}
+    block = {
+        "type": "tool_use",
+        "id": "call_1",
+        "name": "get_weather",
+        "input": {"city": "SF"},
+    }
+    # block repr (84 chars) + role (9) -> ceil(93 / 4) + 3 = 27
+    content_only = count_tokens_approximately([AIMessage(content=[block])])
+    assert content_only == 27
+    mixed = count_tokens_approximately(
+        [AIMessage(content=[block], tool_calls=[embedded, extra])]
+    )
+    # call_1 is embedded (not double-counted); call_2 adds its normalized
+    # repr (71 chars): ceil((84 + 9 + 71) / 4) + 3 = 44
+    assert mixed == 44
+
+
 def test_count_tokens_approximately_custom_token_length() -> None:
     messages = [
         # 11 chars + 4 role chars -> (4 tokens of length 4 / 8 tokens of length 2) + 3

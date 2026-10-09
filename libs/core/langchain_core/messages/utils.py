@@ -2346,6 +2346,8 @@ def count_tokens_approximately(
 
     for message in converted_messages:
         message_chars = 0
+        embedded_tool_call_ids: set[str] = set()
+        embedded_tool_calls_without_ids: list[tuple[str, dict[str, Any]]] = []
 
         if isinstance(message.content, str):
             message_chars += len(message.content)
@@ -2357,6 +2359,29 @@ def count_tokens_approximately(
                     message_chars += len(block)
                 elif isinstance(block, dict):
                     block_type = block.get("type", "")
+
+                    if isinstance(message, AIMessage) and message.tool_calls:
+                        # Some providers embed tool calls in the content
+                        # blocks as well as in `tool_calls`; record them so
+                        # only unrepresented calls are counted below.
+                        embedded_id = None
+                        if block_type in {"tool_call", "tool_use"} or (
+                            block_type == "function_call" and "args" in block
+                        ):
+                            embedded_id = block.get("id")
+                            args_key = "input" if block_type == "tool_use" else "args"
+                            if (
+                                embedded_id is None
+                                and isinstance(name := block.get("name"), str)
+                                and isinstance(args := block.get(args_key), dict)
+                            ):
+                                embedded_tool_calls_without_ids.append((name, args))
+                        elif block_type in {"function_call", "custom_tool_call"}:
+                            embedded_id = block.get("call_id")
+                        elif isinstance(tool_use := block.get("toolUse"), dict):
+                            embedded_id = tool_use.get("toolUseId")
+                        if isinstance(embedded_id, str):
+                            embedded_tool_call_ids.add(embedded_id)
 
                     # Apply fixed penalty for image blocks
                     if block_type in {"image", "image_url"}:
@@ -2376,14 +2401,24 @@ def count_tokens_approximately(
             content = repr(message.content)  # type: ignore[unreachable]
             message_chars += len(content)
 
-        if (
-            isinstance(message, AIMessage)
-            # exclude Anthropic format as tool calls are already included in the content
-            and not isinstance(message.content, list)
-            and message.tool_calls
-        ):
-            tool_calls_content = repr(message.tool_calls)
-            message_chars += len(tool_calls_content)
+        if isinstance(message, AIMessage) and message.tool_calls:
+            # Count only the tool calls not already represented by a content
+            # block, so list content no longer drops them while embedded
+            # calls (e.g. Anthropic `tool_use` blocks) are not double-counted.
+            unrepresented_tool_calls = []
+            for tool_call in message.tool_calls:
+                if tool_call["id"] in embedded_tool_call_ids:
+                    continue
+                signature = (tool_call["name"], tool_call["args"])
+                if (
+                    tool_call["id"] is None
+                    and signature in embedded_tool_calls_without_ids
+                ):
+                    embedded_tool_calls_without_ids.remove(signature)
+                    continue
+                unrepresented_tool_calls.append(tool_call)
+            if unrepresented_tool_calls:
+                message_chars += len(repr(unrepresented_tool_calls))
 
         if isinstance(message, ToolMessage):
             message_chars += len(message.tool_call_id)
