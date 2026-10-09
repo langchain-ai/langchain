@@ -2062,7 +2062,7 @@ class TestPIIStreamTransformer:
         )
 
         # Drain to close cleanly.
-        list(run.tool_calls)  # type: ignore[attr-defined]
+        list(run.tool_calls)
 
 
 class TestPIIStreamingEndToEnd:
