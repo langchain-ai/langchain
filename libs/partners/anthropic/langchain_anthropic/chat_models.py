@@ -1147,6 +1147,15 @@ def _supports_mid_conversation_system_messages(model: object) -> bool:
     """Return whether the model supports mid-conversation system messages."""
     if not isinstance(model, str):
         return False
+
+    # Bedrock inference-profile IDs prepend a region/profile and anthropic.
+    # to the canonical Claude model name (e.g. us.anthropic.claude-opus-5).
+    # Capability checks should use the canonical name regardless of endpoint.
+    if ".anthropic." in model:
+        model = model.split(".anthropic.", maxsplit=1)[1]
+    else:
+        model = model.removeprefix("anthropic.")
+
     return model.startswith(
         (
             "claude-fable-5",
@@ -1156,8 +1165,6 @@ def _supports_mid_conversation_system_messages(model: object) -> bool:
             "claude-sonnet-5-5",
         )
     )
-
-
 def _supports_forced_tool_choice(model: str) -> bool:
     """Return whether the model accepts `tool_choice` types `any` and `tool`."""
     return not model.startswith(
