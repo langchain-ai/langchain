@@ -891,7 +891,9 @@ def hook_config(
 
             Can be:
 
-            - `'tools'`: Jump to the tools node
+            - `'tools'`: Jump to the tools node. Only tool calls of the last `AIMessage`
+                that have no `ToolMessage` yet are run, each as its own task; with
+                nothing to run the jump has no effect.
             - `'model'`: Jump back to the model node
             - `'end'`: Jump to the end of the graph
 
