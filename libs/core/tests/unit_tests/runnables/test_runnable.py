@@ -4061,6 +4061,70 @@ async def test_async_retry_batch_preserves_order() -> None:
     assert results == [0, 1, 2]
 
 
+def test_retry_batch_permanently_failing_input_gets_exception() -> None:
+    """Regression test: a permanently-failing input must carry its own exception.
+
+    Before the fix, `_batch` assembled outputs by calling `result.pop(0)` on the
+    last batch result. When some inputs recovered on retry while others never did,
+    pop() handed the recovered value to the still-failing slot, so the caller saw
+    a wrong success result instead of the expected exception.
+    """
+    attempts: dict[str, int] = {}
+
+    def flaky(x: str) -> str:
+        attempts[x] = attempts.get(x, 0) + 1
+        if x == "a" and attempts[x] == 1:
+            raise ValueError("a fails once")
+        if x == "b":
+            raise ValueError("b always fails")
+        return x.upper()
+
+    runnable = RunnableLambda(flaky).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    )
+
+    results = runnable.batch(["a", "b", "c"], return_exceptions=True)
+    assert results[0] == "A"
+    assert isinstance(results[1], ValueError)
+    assert results[2] == "C"
+
+    # With return_exceptions=False, the exception from the always-failing input
+    # must propagate rather than silently returning another input's result.
+    attempts.clear()
+    with pytest.raises(ValueError, match="b always fails"):
+        runnable.batch(["a", "b", "c"])
+
+
+async def test_async_retry_batch_permanently_failing_input_gets_exception() -> None:
+    """Async variant of the permanently-failing-input regression test."""
+    attempts: dict[str, int] = {}
+
+    def flaky(x: str) -> str:
+        attempts[x] = attempts.get(x, 0) + 1
+        if x == "a" and attempts[x] == 1:
+            raise ValueError("a fails once")
+        if x == "b":
+            raise ValueError("b always fails")
+        return x.upper()
+
+    runnable = RunnableLambda(flaky).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    )
+
+    results = await runnable.abatch(["a", "b", "c"], return_exceptions=True)
+    assert results[0] == "A"
+    assert isinstance(results[1], ValueError)
+    assert results[2] == "C"
+
+    attempts.clear()
+    with pytest.raises(ValueError, match="b always fails"):
+        await runnable.abatch(["a", "b", "c"])
+
+
 async def test_async_retrying(mocker: MockerFixture) -> None:
     def _lambda(x: int) -> int:
         if x == 1:

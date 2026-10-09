@@ -5,7 +5,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     TypeVar,
-    cast,
 )
 
 from tenacity import (
@@ -239,9 +238,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        last_exception_for: dict[int, Exception] = {}
 
-        not_set: list[Output] = []
-        result = not_set
         try:
             for attempt in self._sync_retrying():
                 with attempt:
@@ -268,11 +266,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     # back to their original indices.
                     first_exception = None
                     for offset, r in enumerate(result):
+                        orig_idx = remaining_indices[offset]
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
+                            last_exception_for[orig_idx] = r
                             continue
-                        orig_idx = remaining_indices[offset]
                         results_map[orig_idx] = r
                     # If any exception occurred, raise it, to retry the failed ones
                     if first_exception:
@@ -283,15 +282,16 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                 ):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
-            if result is not_set:
-                result = cast("list[Output]", [e] * len(inputs))
+            for idx in range(len(inputs)):
+                if idx not in results_map and idx not in last_exception_for:
+                    last_exception_for[idx] = e
 
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(last_exception_for[idx])
         return outputs
 
     @override
@@ -315,9 +315,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        last_exception_for: dict[int, Exception] = {}
 
-        not_set: list[Output] = []
-        result = not_set
         try:
             async for attempt in self._async_retrying():
                 with attempt:
@@ -343,11 +342,12 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     # back to their original indices.
                     first_exception = None
                     for offset, r in enumerate(result):
+                        orig_idx = remaining_indices[offset]
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
+                            last_exception_for[orig_idx] = r
                             continue
-                        orig_idx = remaining_indices[offset]
                         results_map[orig_idx] = r
                     # If any exception occurred, raise it, to retry the failed ones
                     if first_exception:
@@ -358,15 +358,16 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                 ):
                     attempt.retry_state.set_result(result)
         except RetryError as e:
-            if result is not_set:
-                result = cast("list[Output]", [e] * len(inputs))
+            for idx in range(len(inputs)):
+                if idx not in results_map and idx not in last_exception_for:
+                    last_exception_for[idx] = e
 
         outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
             else:
-                outputs.append(result.pop(0))
+                outputs.append(last_exception_for[idx])
         return outputs
 
     @override
