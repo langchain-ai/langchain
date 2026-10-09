@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
+from langchain_core.exceptions import ContextOverflowError, ModelAuthenticationError
 from langchain_core.language_models import ModelProfile
 from langchain_core.language_models.base import (
     LangSmithParams,
@@ -358,6 +359,97 @@ async def test_acreate_summary_raises_on_failure() -> None:
 
     with pytest.raises(RuntimeError, match="429 Too Many Requests"):
         await middleware._acreate_summary([HumanMessage(content="hi")])
+
+
+class _OverflowingModel(BaseChatModel):
+    """Raises `ContextOverflowError` for prompts longer than `max_chars`."""
+
+    max_chars: int
+    prompts: list[str] = Field(default_factory=list)
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        prompt = messages[-1].text
+        self.prompts.append(prompt)
+        if len(prompt) > self.max_chars:
+            msg = "prompt is too long"
+            raise ContextOverflowError(msg)
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary."))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "mock"
+
+
+def _long_history() -> list[AnyMessage]:
+    return [HumanMessage(content=f"turn-{i} " * 500) for i in range(10)]
+
+
+def test_create_summary_does_not_retry_non_retryable_errors() -> None:
+    class AuthFailingModel(BaseChatModel):
+        attempts: int = 0
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            self.attempts += 1
+            msg = "invalid api key"
+            raise ModelAuthenticationError(msg)
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    model = AuthFailingModel()
+    middleware = SummarizationMiddleware(model=model)
+    middleware._summary_model.wait_exponential_jitter = False  # type: ignore[attr-defined]
+
+    with pytest.raises(ModelAuthenticationError):
+        middleware._create_summary([HumanMessage(content="hi")])
+    assert model.attempts == 1
+
+
+def test_create_summary_recovers_from_context_overflow() -> None:
+    model = _OverflowingModel(max_chars=25_000)
+    middleware = SummarizationMiddleware(model=model, trim_tokens_to_summarize=None)
+
+    assert middleware._create_summary(_long_history()) == "Summary."
+    assert len(model.prompts) == 2
+    retry_prompt = model.prompts[1]
+    assert "turn-0" in retry_prompt
+    assert "turn-5" not in retry_prompt
+    assert "turn-9" in retry_prompt
+
+
+async def test_acreate_summary_recovers_from_context_overflow() -> None:
+    model = _OverflowingModel(max_chars=25_000)
+    middleware = SummarizationMiddleware(model=model, trim_tokens_to_summarize=None)
+
+    assert await middleware._acreate_summary(_long_history()) == "Summary."
+    assert len(model.prompts) == 2
+    assert "turn-0" in model.prompts[1]
+    assert "turn-5" not in model.prompts[1]
+    assert "turn-9" in model.prompts[1]
+
+
+def test_create_summary_raises_on_persistent_context_overflow() -> None:
+    model = _OverflowingModel(max_chars=10)
+    middleware = SummarizationMiddleware(model=model, trim_tokens_to_summarize=None)
+
+    with pytest.raises(ContextOverflowError):
+        middleware._create_summary(_long_history())
+    assert len(model.prompts) == 2
 
 
 def test_summarization_middleware_before_model_raises_on_summary_failure() -> None:

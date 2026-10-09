@@ -2102,7 +2102,8 @@ class Runnable(ABC, Generic[Input, Output]):
     def with_retry(
         self,
         *,
-        retry_if_exception_type: tuple[type[BaseException], ...] = (Exception,),
+        retry_if_exception_type: tuple[type[BaseException], ...]
+        | Callable[[BaseException], bool] = (Exception,),
         wait_exponential_jitter: bool = True,
         exponential_jitter_params: ExponentialJitterParams | None = None,
         stop_after_attempt: int = 3,
@@ -2110,7 +2111,9 @@ class Runnable(ABC, Generic[Input, Output]):
         """Create a new `Runnable` that retries the original `Runnable` on exceptions.
 
         Args:
-            retry_if_exception_type: A tuple of exception types to retry on.
+            retry_if_exception_type: A tuple of exception types to retry on, or a
+                callable that receives the raised exception and returns whether to
+                retry it.
             wait_exponential_jitter: Whether to add jitter to the wait
                 time between retries.
             stop_after_attempt: The maximum number of attempts to make before
