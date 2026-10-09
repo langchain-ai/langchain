@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     TypedDict,
@@ -15,12 +16,16 @@ from typing import (
 )
 
 from pydantic import (
+    BaseModel,
     Field,
     PositiveInt,
     SkipValidation,
     model_validator,
 )
 from typing_extensions import Self, override
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.config import RunnableConfig
 
 from langchain_core._api import deprecated
 from langchain_core.messages import (
@@ -45,9 +50,11 @@ from langchain_core.prompts.string import (
     PromptTemplateFormat,
     StringPromptTemplate,
     get_template_variables,
+    mustache_schema,
 )
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
+from langchain_core.utils.pydantic import create_model_v2
 
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
@@ -1047,6 +1054,50 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             )
         msg = f"Unsupported operand type for +: {type(other)}"
         raise NotImplementedError(msg)
+
+    @override
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+        """Get the input schema for the prompt.
+
+        Args:
+            config: Configuration for the prompt.
+
+        Returns:
+            The input schema for the prompt.
+        """
+        # Collect all mustache templates to get the nested schema
+        mustache_templates = [
+            message.prompt.template
+            for message in self.messages
+            if hasattr(message, "prompt")
+            and getattr(message.prompt, "template_format", None) == "mustache"
+            and hasattr(message.prompt, "template")
+            and isinstance(message.prompt.template, str)
+        ]
+
+        if not mustache_templates:
+            return super().get_input_schema(config)
+
+        # Merge all mustache templates into one to parse paths
+        combined_template = "\n".join(mustache_templates)
+        mustache_schema_val = mustache_schema(combined_template)
+
+        # BasePromptTemplate.get_input_schema() yields flat schema for everything.
+        base_schema_val = super().get_input_schema(config)
+
+        fields: dict[str, tuple[Any, Any]] = {}
+        for name, field in base_schema_val.model_fields.items():
+            if name in mustache_schema_val.model_fields:
+                annotation = mustache_schema_val.model_fields[name].annotation
+            else:
+                annotation = field.annotation
+
+            if name in self.optional_variables:
+                fields[name] = (annotation, None)
+            else:
+                fields[name] = (annotation, ...)
+
+        return create_model_v2("PromptInput", field_definitions=fields)
 
     @model_validator(mode="before")
     @classmethod
