@@ -464,10 +464,21 @@ def convert_runnable_to_tool(
             description=description,
         )
 
+    def _dump_pydantic(value: Any) -> Any:
+        if isinstance(value, BaseModel):
+            return value.model_dump()
+        if isinstance(value, dict):
+            return {k: _dump_pydantic(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [_dump_pydantic(v) for v in value]
+        return value
+
     async def ainvoke_wrapper(callbacks: Callbacks | None = None, **kwargs: Any) -> Any:
+        kwargs = {k: _dump_pydantic(v) for k, v in kwargs.items()}
         return await runnable.ainvoke(kwargs, config={"callbacks": callbacks})
 
     def invoke_wrapper(callbacks: Callbacks | None = None, **kwargs: Any) -> Any:
+        kwargs = {k: _dump_pydantic(v) for k, v in kwargs.items()}
         return runnable.invoke(kwargs, config={"callbacks": callbacks})
 
     input_schema_cls = runnable.input_schema
