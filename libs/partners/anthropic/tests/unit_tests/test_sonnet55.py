@@ -20,7 +20,6 @@ from langchain_core.messages import (
 from langchain_core.runnables import RunnableBinding, RunnableSequence
 
 from langchain_anthropic import ChatAnthropic
-from langchain_anthropic.chat_models import _format_messages
 
 MODEL = "claude-sonnet-5-5"
 TOOL = {"name": "answer", "input_schema": {"type": "object", "properties": {}}}
@@ -139,7 +138,7 @@ def test_profile_and_defaults() -> None:
 
 
 def test_mid_conversation_system() -> None:
-    system, messages = _format_messages(
+    payload = model()._get_request_payload(
         [
             SystemMessage("initial"),
             HumanMessage("hello"),
@@ -147,10 +146,14 @@ def test_mid_conversation_system() -> None:
             AIMessage("answer"),
             HumanMessage("next"),
         ],
-        model=MODEL,
     )
-    assert system == "initial"
-    assert [m["role"] for m in messages] == ["user", "system", "assistant", "user"]
+    assert payload["system"] == "initial"
+    assert [m["role"] for m in payload["messages"]] == [
+        "user",
+        "system",
+        "assistant",
+        "user",
+    ]
 
 
 @pytest.mark.parametrize("standard", [False, True])
@@ -334,11 +337,10 @@ def test_mid_conversation_tool_change() -> None:
         "type": "tool_addition",
         "tool": {"type": "tool_reference", "name": "answer"},
     }
-    _, messages = _format_messages(
+    payload = model()._get_request_payload(
         [HumanMessage("hello"), SystemMessage([block]), AIMessage("answer")],
-        model=MODEL,
     )
-    assert messages[1] == {"role": "system", "content": [block]}
+    assert payload["messages"][1] == {"role": "system", "content": [block]}
 
 
 def test_default_thinking_stream_preserves_signature() -> None:

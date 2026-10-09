@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator
 
     from langchain_core.callbacks import AsyncCallbackManagerForLLMRun
-    from langchain_core.language_models import LanguageModelInput
+    from langchain_core.language_models import LanguageModelInput, ModelProfile
     from langchain_core.outputs import ChatGenerationChunk, ChatResult
 
 
@@ -526,6 +526,15 @@ class _ChatOpenAICodex(ChatOpenAI):
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "openai-codex"
         return params
+
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        profile = super()._resolve_model_profile()
+        if profile is not None:
+            # System content is lifted into the string `instructions` field, so
+            # it can neither stay in place nor carry a tool definition.
+            profile["mid_conversation_system_messages"] = False
+            profile["mid_conversation_tools"] = False
+        return profile
 
     @property
     def _llm_type(self) -> str:
