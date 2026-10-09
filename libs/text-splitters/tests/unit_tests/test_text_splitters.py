@@ -28,9 +28,11 @@ from langchain_text_splitters.html import (
 )
 from langchain_text_splitters.json import RecursiveJsonSplitter
 from langchain_text_splitters.jsx import JSFrameworkTextSplitter
+from langchain_text_splitters.latex import LatexTextSplitter
 from langchain_text_splitters.markdown import (
     ExperimentalMarkdownSyntaxTextSplitter,
     MarkdownHeaderTextSplitter,
+    MarkdownTextSplitter,
 )
 from langchain_text_splitters.python import PythonCodeTextSplitter
 
@@ -4432,3 +4434,27 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_markdown_text_splitter_is_separator_regex() -> None:
+    """Test that MarkdownTextSplitter treats regex separators as patterns."""
+    splitter = MarkdownTextSplitter(chunk_size=20, chunk_overlap=0)
+    assert splitter._is_separator_regex is True
+
+    md = "# T\nintro\n## B\ntext b\n### C\ntext c\n"
+    expected = RecursiveCharacterTextSplitter.from_language(
+        Language.MARKDOWN, chunk_size=20, chunk_overlap=0
+    ).split_text(md)
+    assert splitter.split_text(md) == expected
+
+
+def test_latex_text_splitter_is_separator_regex() -> None:
+    """Test that LatexTextSplitter treats regex separators as patterns."""
+    splitter = LatexTextSplitter(chunk_size=24, chunk_overlap=0)
+    assert splitter._is_separator_regex is True
+
+    tex = "\\section{A} aa bb\n\\section{B} cc dd\n\\section{C} ee ff"
+    expected = RecursiveCharacterTextSplitter.from_language(
+        Language.LATEX, chunk_size=24, chunk_overlap=0
+    ).split_text(tex)
+    assert splitter.split_text(tex) == expected
