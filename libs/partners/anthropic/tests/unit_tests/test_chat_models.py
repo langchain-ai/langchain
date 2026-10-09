@@ -5729,6 +5729,10 @@ def _tool_change_conversation() -> list[BaseMessage]:
         "global.anthropic.claude-sonnet-5-5",
         "us.anthropic.claude-sonnet-5-5",
         "anthropic.claude-opus-5-5",
+        "anthropic.claude-opus-5",
+        "anthropic.claude-opus-4-8",
+        "anthropic.claude-fable-5",
+        "anthropic.claude-mythos-5",
         "claude-opus-5-5",
     ],
 )
