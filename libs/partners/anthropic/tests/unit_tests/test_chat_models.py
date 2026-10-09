@@ -5747,18 +5747,16 @@ def test_mid_conversation_system_supports_bedrock_model_ids(model_name: str) -> 
 @pytest.mark.parametrize(
     "model_name",
     [
-        "global.anthropic.claude-sonnet-5-5",
-        "us.anthropic.claude-sonnet-5-5",
-        "anthropic.claude-opus-5-5",
+        "global.anthropic.claude-sonnet-5",
+        "us.anthropic.claude-sonnet-5",
+        "anthropic.claude-sonnet-5",
     ],
 )
 def test_mid_conversation_system_support_does_not_accept_unsupported_bedrock_model(
     model_name: str,
 ) -> None:
     """Bedrock prefixes do not make unsupported model families appear supported."""
-    assert not _supports_mid_conversation_system_messages(
-        model_name.replace("claude-sonnet-5-5", "claude-sonnet-5")
-    )
+    assert not _supports_mid_conversation_system_messages(model_name)
 
 
 def test_tool_change_block_auto_appends_beta() -> None:
