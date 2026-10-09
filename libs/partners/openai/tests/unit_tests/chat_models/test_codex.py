@@ -675,7 +675,7 @@ def test_profile_declares_no_mid_conversation_capabilities() -> None:
 
     assert model.profile
     assert model.profile["mid_conversation_system_messages"] is False
-    assert model.profile["inline_tool_definitions"] is False
+    assert model.profile["mid_conversation_tool_definitions"] is False
 
 
 def test_is_not_serializable_due_to_live_token_provider() -> None:

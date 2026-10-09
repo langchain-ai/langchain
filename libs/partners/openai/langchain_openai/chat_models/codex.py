@@ -533,7 +533,7 @@ class _ChatOpenAICodex(ChatOpenAI):
             # System content is lifted into the string `instructions` field, so
             # it can neither stay in place nor carry a tool definition.
             profile["mid_conversation_system_messages"] = False
-            profile["inline_tool_definitions"] = False
+            profile["mid_conversation_tool_definitions"] = False
         return profile
 
     @property

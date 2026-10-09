@@ -50,7 +50,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "high",
         "mid_conversation_system_messages": True,
-        "inline_tool_definitions": True,
+        "mid_conversation_tool_definitions": True,
     },
     "claude-fable-5-1": {
         "name": "Claude Fable 5.1",
@@ -86,7 +86,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "high",
         "mid_conversation_system_messages": True,
-        "inline_tool_definitions": True,
+        "mid_conversation_tool_definitions": True,
     },
     "claude-haiku-4-5": {
         "name": "Claude Haiku 4.5 (latest)",
@@ -166,7 +166,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_call_streaming": True,
         "mid_conversation_system_messages": True,
-        "inline_tool_definitions": True,
+        "mid_conversation_tool_definitions": True,
     },
     "claude-mythos-5": {
         "image_url_inputs": True,
@@ -176,7 +176,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "tool_call_streaming": True,
         "mid_conversation_system_messages": True,
-        "inline_tool_definitions": True,
+        "mid_conversation_tool_definitions": True,
     },
     "claude-mythos-5-1": {
         "image_url_inputs": True,
@@ -186,7 +186,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "tool_call_streaming": True,
         "mid_conversation_system_messages": True,
-        "inline_tool_definitions": True,
+        "mid_conversation_tool_definitions": True,
     },
     "claude-opus-4-5": {
         "name": "Claude Opus 4.5 (latest)",
@@ -353,7 +353,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "high",
         "mid_conversation_system_messages": True,
-        "inline_tool_definitions": True,
+        "mid_conversation_tool_definitions": True,
     },
     "claude-opus-5": {
         "name": "Claude Opus 5",
@@ -389,7 +389,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "high",
         "mid_conversation_system_messages": True,
-        "inline_tool_definitions": True,
+        "mid_conversation_tool_definitions": True,
     },
     "claude-opus-5-5": {
         "name": "Claude Opus 5.5",
@@ -425,7 +425,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "medium",
         "mid_conversation_system_messages": True,
-        "inline_tool_definitions": True,
+        "mid_conversation_tool_definitions": True,
     },
     "claude-sonnet-4-5": {
         "name": "Claude Sonnet 4.5 (latest)",
@@ -546,7 +546,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "high",
         "mid_conversation_system_messages": True,
-        "inline_tool_definitions": False,
+        "mid_conversation_tool_definitions": False,
     },
     "claude-sonnet-5-5": {
         "name": "Claude Sonnet 5.5",
@@ -583,6 +583,6 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "high",
         "mid_conversation_system_messages": True,
-        "inline_tool_definitions": True,
+        "mid_conversation_tool_definitions": True,
     },
 }

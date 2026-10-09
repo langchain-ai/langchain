@@ -143,12 +143,13 @@ class ModelProfile(TypedDict, total=False):
     prompt instead.
     """
 
-    inline_tool_definitions: bool
+    mid_conversation_tool_definitions: bool
     """Whether a tool's full definition can be added mid-conversation.
 
     The tool is added through a message rather than the request's tool list, so
     the prompt prefix before it stays unchanged. Implies
-    `mid_conversation_system_messages`.
+    `mid_conversation_system_messages`. Says nothing about adding or removing a
+    declared tool by name.
     """
 
     # --- Structured output ---

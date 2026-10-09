@@ -1548,12 +1548,12 @@ class BaseChatOpenAI(BaseChatModel):
         profile = _get_default_model_profile(self.model_name) or None
         if (
             profile is not None
-            and profile.get("inline_tool_definitions")
+            and profile.get("mid_conversation_tool_definitions")
             and not self._use_responses_api({})
         ):
             # Only the Responses API carries an `additional_tools` input item.
             # Routing that depends on the request can't be claimed up front.
-            profile["inline_tool_definitions"] = False
+            profile["mid_conversation_tool_definitions"] = False
         return profile
 
     @property

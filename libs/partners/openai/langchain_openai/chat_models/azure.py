@@ -767,7 +767,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         if profile is not None:
             # The data describes OpenAI's API; `additional_tools` is unverified
             # on Azure's, so make no claim either way.
-            profile.pop("inline_tool_definitions", None)
+            profile.pop("mid_conversation_tool_definitions", None)
         return profile
 
     @property

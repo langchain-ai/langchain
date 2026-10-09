@@ -2151,7 +2151,7 @@ def test_profile_declares_mid_conversation_capabilities(
     """Profiles carry the capabilities live probes show each model accepts."""
     profile = ChatAnthropic(model=model).profile or {}
     assert profile.get("mid_conversation_system_messages") is system_messages
-    assert profile.get("inline_tool_definitions") is tool_definitions
+    assert profile.get("mid_conversation_tool_definitions") is tool_definitions
 
 
 def test__format_messages_second_unplaceable_system_run_raises() -> None:
