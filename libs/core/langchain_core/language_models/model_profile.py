@@ -135,6 +135,22 @@ class ModelProfile(TypedDict, total=False):
     Only meaningful when `tool_calling` is `True`.
     """
 
+    # --- Mid-conversation changes ---
+    mid_conversation_system_messages: bool
+    """Whether a `SystemMessage` after the first turn is sent where it sits.
+
+    Absent or `False` means the chat model may move it into the leading system
+    prompt instead.
+    """
+
+    inline_tool_definitions: bool
+    """Whether a tool's full definition can be added mid-conversation.
+
+    The tool is added through a message rather than the request's tool list, so
+    the prompt prefix before it stays unchanged. Implies
+    `mid_conversation_system_messages`.
+    """
+
     # --- Structured output ---
     structured_output: bool
     """Whether the model supports native [structured output](https://docs.langchain.com/oss/python/langchain/models#structured-outputs)."""

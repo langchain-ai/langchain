@@ -759,13 +759,16 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return self
 
     def _resolve_model_profile(self) -> ModelProfile | None:
-        if (self.model_name is not None) and (
-            profile := _get_default_model_profile(self.model_name) or None
-        ):
-            return profile
-        if self.deployment_name is not None:
-            return _get_default_model_profile(self.deployment_name) or None
-        return None
+        profile: ModelProfile | None = None
+        if self.model_name is not None:
+            profile = _get_default_model_profile(self.model_name) or None
+        if profile is None and self.deployment_name is not None:
+            profile = _get_default_model_profile(self.deployment_name) or None
+        if profile is not None:
+            # The data describes OpenAI's API; `additional_tools` is unverified
+            # on Azure's, so make no claim either way.
+            profile.pop("inline_tool_definitions", None)
+        return profile
 
     @property
     def _identifying_params(self) -> dict[str, Any]:

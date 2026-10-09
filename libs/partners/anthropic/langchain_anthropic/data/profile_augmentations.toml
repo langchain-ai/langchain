@@ -42,34 +42,61 @@ reasoning_effort_default = "high"
 structured_output = true
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "high"
+mid_conversation_system_messages = true
+inline_tool_definitions = true
 
 [overrides."claude-opus-5"]
 structured_output = true
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "high"
+mid_conversation_system_messages = true
+inline_tool_definitions = true
 
 [overrides."claude-opus-5-5"]
 structured_output = true
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "medium"
+mid_conversation_system_messages = true
+inline_tool_definitions = true
 
 [overrides."claude-sonnet-5-5"]
 structured_output = true
 tool_choice = false
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "high"
+mid_conversation_system_messages = true
+inline_tool_definitions = true
 
 [overrides."claude-sonnet-5"]
 structured_output = true
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "high"
+mid_conversation_system_messages = true
+inline_tool_definitions = false
+
+[overrides."claude-haiku-5-5"]
+mid_conversation_system_messages = true
+inline_tool_definitions = true
 
 [overrides."claude-fable-5"]
 structured_output = true
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "high"
+mid_conversation_system_messages = true
+inline_tool_definitions = true
 
 [overrides."claude-fable-5-1"]
 structured_output = true
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
 reasoning_effort_default = "high"
+mid_conversation_system_messages = true
+inline_tool_definitions = true
+
+# Not in models.dev (Project Glasswing only), so these entries are the whole profile.
+[overrides."claude-mythos-5"]
+mid_conversation_system_messages = true
+inline_tool_definitions = true
+
+[overrides."claude-mythos-5-1"]
+mid_conversation_system_messages = true
+inline_tool_definitions = true

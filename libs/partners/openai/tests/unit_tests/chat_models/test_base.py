@@ -221,6 +221,28 @@ def test_gpt_6_astra_reasoning_effort_levels() -> None:
     assert "reasoning_effort_default" not in model.profile
 
 
+@pytest.mark.parametrize(
+    ("kwargs", "expected"),
+    [
+        ({"use_responses_api": True}, True),
+        # Routes every request to the Responses API.
+        ({"reasoning": {"effort": "low"}}, True),
+        ({"use_responses_api": False}, False),
+        # Routing is decided per request, so it can't be claimed up front.
+        ({}, False),
+    ],
+)
+def test_profile_inline_tool_definitions_follow_responses_api(
+    kwargs: dict[str, Any], expected: bool
+) -> None:
+    """Only the Responses API carries an `additional_tools` input item."""
+    model = ChatOpenAI(model="gpt-5.6", **kwargs)
+
+    assert model.profile
+    assert model.profile["inline_tool_definitions"] is expected
+    assert model.profile["mid_conversation_system_messages"] is True
+
+
 def test_function_message_dict_to_function_message() -> None:
     content = json.dumps({"result": "Example #1"})
     name = "test_function"

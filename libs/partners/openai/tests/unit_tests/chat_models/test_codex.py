@@ -669,6 +669,15 @@ def test_ls_params_uses_codex_provider_tag() -> None:
     assert params["ls_provider"] == "openai-codex"
 
 
+def test_profile_declares_no_mid_conversation_capabilities() -> None:
+    """The Codex API takes system text only, as a string `instructions`."""
+    model = _build_model(model="gpt-5.6")
+
+    assert model.profile
+    assert model.profile["mid_conversation_system_messages"] is False
+    assert model.profile["inline_tool_definitions"] is False
+
+
 def test_is_not_serializable_due_to_live_token_provider() -> None:
     assert _ChatOpenAICodex.is_lc_serializable() is False
 
