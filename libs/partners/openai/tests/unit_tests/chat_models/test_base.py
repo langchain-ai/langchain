@@ -78,7 +78,7 @@ from openai.types.responses.response_usage import (
     OutputTokensDetails,
     ResponseUsage,
 )
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 from typing_extensions import Self, TypedDict
 
 from langchain_openai import ChatOpenAI
@@ -110,6 +110,15 @@ OPENAI_TEST_MODEL = "gpt-5.5"
 OPENAI_TEMPERATURE_CAPABLE_TEST_MODEL = "gpt-4o-mini"
 
 
+def test_openai_model_required() -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        ChatOpenAI.model_validate({})
+
+    assert [(error["loc"], error["type"]) for error in exc_info.value.errors()] == [
+        (("model",), "missing")
+    ]
+
+
 def test_openai_model_param() -> None:
     llm = ChatOpenAI(model="foo")
     assert llm.model_name == "foo"
@@ -118,9 +127,9 @@ def test_openai_model_param() -> None:
     assert llm.model_name == "foo"
     assert llm.model == "foo"
 
-    llm = ChatOpenAI(max_tokens=10)  # type: ignore[call-arg]
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
-    llm = ChatOpenAI(max_completion_tokens=10)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, max_completion_tokens=10)
     assert llm.max_tokens == 10
 
 
@@ -767,7 +776,7 @@ def mock_async_client(mock_completion: dict) -> AsyncMock:
 
 
 def test_openai_invoke(mock_client: MagicMock) -> None:
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     with patch.object(llm, "client", mock_client):
         res = llm.invoke("bar")
@@ -779,7 +788,7 @@ def test_openai_invoke(mock_client: MagicMock) -> None:
 
 
 async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     with patch.object(llm, "async_client", mock_async_client):
         res = await llm.ainvoke("bar")
@@ -849,7 +858,7 @@ def test_openai_invoke_surfaces_gateway_metadata(
     mock_completion: dict, *, use_responses_api: bool
 ) -> None:
     """Gateway metadata header is surfaced on `generation_info`, not the message."""
-    llm = ChatOpenAI(use_responses_api=use_responses_api)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=use_responses_api)
     mock_client = MagicMock()
     mock_resp = MagicMock()
     mock_resp.headers = _GATEWAY_METADATA_HEADERS
@@ -958,7 +967,7 @@ def test__get_encoding_model(model: str) -> None:
 
 
 def test_openai_invoke_name(mock_client: MagicMock) -> None:
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     with patch.object(llm, "client", mock_client):
         messages = [HumanMessage(content="Foo", name="Katie")]
@@ -1024,7 +1033,7 @@ def test_custom_token_counting() -> None:
     def token_encoder(text: str) -> list[int]:
         return [1, 2, 3]
 
-    llm = ChatOpenAI(custom_get_token_ids=token_encoder)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, custom_get_token_ids=token_encoder)
     assert llm.get_token_ids("foo") == [1, 2, 3]
 
 
@@ -4631,7 +4640,9 @@ def test_gpt_5_temperature_case_insensitive(
 )
 @pytest.mark.parametrize("explicit", [None, True, False])
 def test_infer_use_responses_api(kwargs: dict, explicit: bool | None) -> None:
-    llm = ChatOpenAI(**kwargs, use_responses_api=explicit)
+    llm = ChatOpenAI(
+        **{"model": OPENAI_TEST_MODEL, **kwargs}, use_responses_api=explicit
+    )
     expected = explicit if explicit is not None else True
     assert llm.use_responses_api is expected
     assert llm._use_responses_api({}) is expected
@@ -4649,7 +4660,7 @@ def test_infer_use_responses_api(kwargs: dict, explicit: bool | None) -> None:
     ],
 )
 def test_infer_use_responses_api_remains_dynamic(kwargs: dict) -> None:
-    llm = ChatOpenAI(**kwargs)
+    llm = ChatOpenAI(**{"model": OPENAI_TEST_MODEL, **kwargs})
     assert llm.use_responses_api is None
     assert llm._use_responses_api({"tools": [{"type": "web_search"}]})
     assert llm._use_responses_api({"text": {}})
@@ -4660,11 +4671,11 @@ def test_infer_use_responses_api_from_output_version_env(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("LC_OUTPUT_VERSION", "responses/v1")
-    assert ChatOpenAI().use_responses_api is True
+    assert ChatOpenAI(model=OPENAI_TEST_MODEL).use_responses_api is True
 
 
 def test_inferred_responses_api_bind_tools_strict() -> None:
-    llm = ChatOpenAI(reasoning={})
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, reasoning={})
     tool = {
         "type": "function",
         "function": {
@@ -4849,7 +4860,7 @@ _CONTEXT_OVERFLOW_API_ERROR = openai.APIError(
 
 def test_context_overflow_error_invoke_sync() -> None:
     """Test context overflow error on invoke (sync, chat completions API)."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     with (  # noqa: PT012
         patch.object(llm.client, "with_raw_response") as mock_client,
@@ -4863,7 +4874,7 @@ def test_context_overflow_error_invoke_sync() -> None:
 
 def test_context_overflow_error_invoke_sync_responses_api() -> None:
     """Test context overflow error on invoke (sync, responses API)."""
-    llm = ChatOpenAI(use_responses_api=True)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
 
     with (  # noqa: PT012
         patch.object(llm.root_client.responses, "with_raw_response") as mock_client,
@@ -4877,7 +4888,7 @@ def test_context_overflow_error_invoke_sync_responses_api() -> None:
 
 async def test_context_overflow_error_invoke_async() -> None:
     """Test context overflow error on invoke (async, chat completions API)."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     with (  # noqa: PT012
         patch.object(llm.async_client, "with_raw_response") as mock_client,
@@ -4891,7 +4902,7 @@ async def test_context_overflow_error_invoke_async() -> None:
 
 async def test_context_overflow_error_invoke_async_responses_api() -> None:
     """Test context overflow error on invoke (async, responses API)."""
-    llm = ChatOpenAI(use_responses_api=True)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
 
     with (  # noqa: PT012
         patch.object(
@@ -4907,7 +4918,7 @@ async def test_context_overflow_error_invoke_async_responses_api() -> None:
 
 def test_context_overflow_error_stream_sync() -> None:
     """Test context overflow error on stream (sync, chat completions API)."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     with (  # noqa: PT012
         patch.object(llm.client, "create") as mock_create,
@@ -4921,7 +4932,7 @@ def test_context_overflow_error_stream_sync() -> None:
 
 def test_context_overflow_error_stream_sync_responses_api() -> None:
     """Test context overflow error on stream (sync, responses API)."""
-    llm = ChatOpenAI(use_responses_api=True)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
 
     with (  # noqa: PT012
         patch.object(llm.root_client.responses, "create") as mock_create,
@@ -4935,7 +4946,7 @@ def test_context_overflow_error_stream_sync_responses_api() -> None:
 
 async def test_context_overflow_error_stream_async() -> None:
     """Test context overflow error on stream (async, chat completions API)."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     with (  # noqa: PT012
         patch.object(llm.async_client, "create") as mock_create,
@@ -4950,7 +4961,7 @@ async def test_context_overflow_error_stream_async() -> None:
 
 async def test_context_overflow_error_stream_async_responses_api() -> None:
     """Test context overflow error on stream (async, responses API)."""
-    llm = ChatOpenAI(use_responses_api=True)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
 
     with (  # noqa: PT012
         patch.object(llm.root_async_client.responses, "create") as mock_create,
@@ -4978,7 +4989,7 @@ def test_context_overflow_error_prompt_too_long() -> None:
         response=MagicMock(status_code=400),
         body=error_body,
     )
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     with (  # noqa: PT012
         patch.object(llm.client, "with_raw_response") as mock_client,
@@ -5005,7 +5016,7 @@ def test_context_overflow_error_context_window_exceeded() -> None:
         response=MagicMock(status_code=400),
         body=error_body,
     )
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     with patch.object(llm.client, "with_raw_response") as mock_client:
         mock_client.create.side_effect = bad_request_error
@@ -5017,7 +5028,7 @@ def test_context_overflow_error_context_window_exceeded() -> None:
 
 def test_context_overflow_error_backwards_compatibility() -> None:
     """Test that ContextOverflowError can be caught as BadRequestError."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
     with (  # noqa: PT012
         patch.object(llm.client, "with_raw_response") as mock_client,
@@ -5053,7 +5064,7 @@ def test_openai_error_classification(
     request = httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")
     response = httpx2.Response(status_code, request=request)
     sdk_error = sdk_error_type("model request failed", response=response, body=None)
-    model = ChatOpenAI(api_key=SecretStr("test"))
+    model = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
 
     with patch.object(model.client, "with_raw_response") as mock_client:
         mock_client.create.side_effect = sdk_error
@@ -5067,7 +5078,7 @@ def test_openai_error_classification(
 def test_openai_transport_error_classification() -> None:
     """Timeout and connection failures are classified without a status code."""
     request = httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")
-    model = ChatOpenAI(api_key=SecretStr("test"))
+    model = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
 
     for sdk_error, model_error_type in (
         (openai.APITimeoutError(request), ModelTimeoutError),
@@ -5084,7 +5095,7 @@ def test_openai_transport_error_classification() -> None:
 
 def test_metadata_versions() -> None:
     """Test that metadata reports the correct version info."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
     assert llm.metadata is not None
     versions = llm.metadata["lc_versions"]
     assert "langchain-core" in versions

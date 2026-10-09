@@ -18,7 +18,7 @@ AZURE_AD_TOKEN = "secret-api-key"  # noqa: S105
 
 
 def test_chat_openai_secrets() -> None:
-    o = ChatOpenAI(openai_api_key="foo")  # type: ignore[call-arg]
+    o = ChatOpenAI(model="test-model", openai_api_key="foo")  # type: ignore[call-arg]
     s = str(o)
     assert "foo" not in s
 
@@ -151,7 +151,7 @@ def test_azure_openai_uses_actual_secret_value_from_secretstr(
 @pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
 def test_openai_api_key_is_secret_string(model_class: type) -> None:
     """Test that the API key is stored as a SecretStr."""
-    model = model_class(openai_api_key="secret-api-key")
+    model = model_class(model="test-model", openai_api_key="secret-api-key")
     assert isinstance(model.openai_api_key, SecretStr)
 
 
@@ -161,7 +161,7 @@ def test_openai_api_key_masked_when_passed_from_env(
 ) -> None:
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("OPENAI_API_KEY", "secret-api-key")
-    model = model_class()
+    model = model_class(model="test-model")
     print(model.openai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
@@ -173,7 +173,7 @@ def test_openai_api_key_masked_when_passed_via_constructor(
     model_class: type, capsys: CaptureFixture
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
-    model = model_class(openai_api_key="secret-api-key")
+    model = model_class(model="test-model", openai_api_key="secret-api-key")
     print(model.openai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
@@ -183,7 +183,7 @@ def test_openai_api_key_masked_when_passed_via_constructor(
 @pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
 def test_openai_uses_actual_secret_value_from_secretstr(model_class: type) -> None:
     """Test that the actual secret value is correctly retrieved."""
-    model = model_class(openai_api_key="secret-api-key")
+    model = model_class(model="test-model", openai_api_key="secret-api-key")
     assert cast(SecretStr, model.openai_api_key).get_secret_value() == "secret-api-key"
 
 
@@ -194,7 +194,7 @@ def test_openai_api_key_accepts_callable(model_class: type) -> None:
     def get_api_key() -> str:
         return "secret-api-key-from-callable"
 
-    model = model_class(openai_api_key=get_api_key)
+    model = model_class(model="test-model", openai_api_key=get_api_key)
     assert callable(model.openai_api_key)
     assert model.openai_api_key() == "secret-api-key-from-callable"
 
