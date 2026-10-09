@@ -56,6 +56,7 @@ from langchain_anthropic.chat_models import (
     _is_builtin_tool,
     _merge_messages,
     _normalize_tool_call_id,
+    _supports_mid_conversation_system_messages,
     _thinking_in_params,
     convert_to_anthropic_tool,
 )
@@ -5720,6 +5721,44 @@ def _tool_change_conversation() -> list[BaseMessage]:
         SystemMessage([_TOOL_REMOVAL_BLOCK]),
         AIMessage("Looks fine."),
     ]
+
+
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "global.anthropic.claude-sonnet-5-5",
+        "us.anthropic.claude-sonnet-5-5",
+        "anthropic.claude-opus-5-5",
+        "claude-opus-5-5",
+    ],
+)
+def test_mid_conversation_system_supports_bedrock_model_ids(model_name: str) -> None:
+    """Bedrock-prefixed model IDs use the canonical Claude capability checks."""
+    assert _supports_mid_conversation_system_messages(model_name)
+
+    model = ChatAnthropic(model=model_name)
+    payload = model._get_request_payload(
+        [HumanMessage("Review data"), SystemMessage([_INLINE_TOOL_ADDITION_BLOCK])]
+    )
+    assert payload["messages"][-1]["content"] == [_INLINE_TOOL_ADDITION_BLOCK]
+    assert payload["betas"] == [_INLINE_TOOLS_BETA]
+
+
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "global.anthropic.claude-sonnet-5-5",
+        "us.anthropic.claude-sonnet-5-5",
+        "anthropic.claude-opus-5-5",
+    ],
+)
+def test_mid_conversation_system_support_does_not_accept_unsupported_bedrock_model(
+    model_name: str,
+) -> None:
+    """Bedrock prefixes do not make unsupported model families appear supported."""
+    assert not _supports_mid_conversation_system_messages(
+        model_name.replace("claude-sonnet-5-5", "claude-sonnet-5")
+    )
 
 
 def test_tool_change_block_auto_appends_beta() -> None:
