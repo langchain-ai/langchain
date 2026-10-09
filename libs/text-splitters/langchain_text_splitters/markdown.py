@@ -54,6 +54,22 @@ class MarkdownHeaderTextSplitter:
         # Custom header patterns with their levels
         self.custom_header_patterns = custom_header_patterns or {}
 
+    def _is_standard_header(self, line: str, sep: str) -> bool:
+        """Check if a line is a standard `#`-style header for a separator.
+
+        Args:
+            line: The line to check
+            sep: The separator pattern to match
+
+        Returns:
+            `True` if the line is a standard header for `sep`
+        """
+        return line.startswith(sep) and (
+            # Header with no text OR header is followed by space
+            # Both are valid conditions that sep is being used a header
+            len(line) == len(sep) or line[len(sep)] == " "
+        )
+
     def _is_custom_header(self, line: str, sep: str) -> bool:
         """Check if line matches a custom header pattern.
 
@@ -85,6 +101,20 @@ class MarkdownHeaderTextSplitter:
                 return True
         return False
 
+    def _is_header_line(self, line: str) -> bool:
+        """Check if a line is a tracked header, standard or custom.
+
+        Args:
+            line: The line to check
+
+        Returns:
+            `True` if the line matches any tracked standard or custom header
+        """
+        for sep, _ in self.headers_to_split_on:
+            if self._is_standard_header(line, sep) or self._is_custom_header(line, sep):
+                return True
+        return False
+
     def aggregate_lines_to_chunks(self, lines: list[LineType]) -> list[Document]:
         """Combine lines with common metadata into chunks.
 
@@ -110,7 +140,9 @@ class MarkdownHeaderTextSplitter:
                 and aggregated_chunks[-1]["metadata"] != line["metadata"]
                 # may be issues if other metadata is present
                 and len(aggregated_chunks[-1]["metadata"]) < len(line["metadata"])
-                and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
+                and self._is_header_line(
+                    aggregated_chunks[-1]["content"].split("\n")[-1]
+                )
                 and not self.strip_headers
             ):
                 # If the last line in the aggregated list
@@ -183,11 +215,7 @@ class MarkdownHeaderTextSplitter:
 
             # Check each line against each of the header types (e.g., #, ##)
             for sep, name in self.headers_to_split_on:
-                is_standard_header = stripped_line.startswith(sep) and (
-                    # Header with no text OR header is followed by space
-                    # Both are valid conditions that sep is being used a header
-                    len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
-                )
+                is_standard_header = self._is_standard_header(stripped_line, sep)
                 is_custom_header = self._is_custom_header(stripped_line, sep)
 
                 # Check if line matches either standard or custom header pattern
