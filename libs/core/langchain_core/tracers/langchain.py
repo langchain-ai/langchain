@@ -144,6 +144,7 @@ class LangChainTracer(BaseTracer):
         tags: list[str] | None = None,
         *,
         metadata: Mapping[str, str] | None = None,
+        address: Any = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -162,13 +163,23 @@ class LangChainTracer(BaseTracer):
             metadata: Additional metadata to include if it isn't already in the run.
 
                 Defaults to None.
+            address: (beta) A `langsmith.AgentAddress(...)` to send runs to
+                instead of a project.
+
+                Ignored if `project_name` is set.
+
+                !!! warning "Experimental"
+
+                    Requires a langsmith version with agent addressing, which
+                    is in beta.
             **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
         self.example_id = (
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
-        self.project_name = project_name or ls_utils.get_tracer_project()
+        self._project_name = project_name
+        self.address = None if project_name else address
         self.client = client or get_client()
         self.tags = tags or []
         self.latest_run: Run | None = None
@@ -176,6 +187,22 @@ class LangChainTracer(BaseTracer):
         self.tracing_metadata: dict[str, str] | None = (
             dict(metadata) if metadata is not None else None
         )
+
+    @property
+    def project_name(self) -> str | None:
+        """The project named in code, else the default project.
+
+        `None` for a tracer that sends runs to an address.
+        """
+        if self._project_name:
+            return self._project_name
+        if self.address is not None:
+            return None
+        return ls_utils.get_tracer_project()
+
+    @project_name.setter
+    def project_name(self, value: str | None) -> None:
+        self._project_name = value
 
     def copy_with_metadata_defaults(
         self,
@@ -208,9 +235,10 @@ class LangChainTracer(BaseTracer):
 
         return self.__class__(
             example_id=self.example_id,
-            project_name=self.project_name,
+            project_name=self._project_name,
             client=self.client,
             tags=merged_tags,
+            address=self.address,
             metadata=merged_metadata,
             run_map=self.run_map,
             order_map=self.order_map,
@@ -218,8 +246,16 @@ class LangChainTracer(BaseTracer):
         )
 
     def _start_trace(self, run: Run) -> None:
-        if self.project_name:
-            run.session_name = self.project_name
+        # Only a project named in code is sent. Otherwise langsmith resolves the
+        # destination, from the environment or its default project.
+        if self._project_name:
+            run.session_name = self._project_name
+            # A project named in code wins over an address from the environment.
+            if getattr(run, "address", None) is not None:
+                run.address = None
+        elif self.address is not None:
+            run.session_name = None  # type: ignore[assignment,unused-ignore]
+            run.address = self.address
         if self.tags is not None:
             if run.tags:
                 run.tags = sorted(set(run.tags + self.tags))

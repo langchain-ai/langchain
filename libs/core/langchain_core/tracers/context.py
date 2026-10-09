@@ -15,7 +15,9 @@ from uuid import UUID
 from langsmith import run_helpers as ls_rh
 from langsmith import utils as ls_utils
 
-from langchain_core.tracers.langchain import LangChainTracer
+from langchain_core.tracers.langchain import (
+    LangChainTracer,
+)
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 
 if TYPE_CHECKING:
@@ -108,10 +110,13 @@ def _get_trace_callbacks(
     callback_manager: CallbackManager | AsyncCallbackManager | None = None,
 ) -> Callbacks:
     if _tracing_v2_is_enabled():
-        project_name_ = project_name or _get_tracer_project()
+        address = None
+        if not project_name:
+            project_name, address = _get_tracer_destination()
         tracer = tracing_v2_callback_var.get() or LangChainTracer(
-            project_name=project_name_,
+            project_name=project_name,
             example_id=example_id,
+            address=address,
         )
         if callback_manager is None:
             cb = cast("Callbacks", [tracer])
@@ -135,27 +140,27 @@ def _tracing_v2_is_enabled() -> bool | Literal["local"]:
     return ls_utils.tracing_is_enabled()
 
 
-def _get_tracer_project() -> str:
+def _get_tracer_project() -> str | None:
+    return _get_tracer_destination()[0]
+
+
+def _get_tracer_destination() -> tuple[str | None, Any]:
+    """Get the `(project, address)` named in code for the current run.
+
+    At most one is set. Both are `None` when nothing in code names one: the
+    environment and the default project are left to langsmith to resolve.
+    """
     tracing_context = ls_rh.get_tracing_context()
     run_tree = tracing_context["parent"]
-    if run_tree is None and tracing_context["project_name"] is not None:
-        return cast("str", tracing_context["project_name"])
-    return getattr(
-        run_tree,
-        "session_name",
-        getattr(
-            # Note, if people are trying to nest @traceable functions and the
-            # tracing_v2_enabled context manager, this will likely mess up the
-            # tree structure.
-            tracing_v2_callback_var.get(),
-            "project",
-            # Have to set this to a string even though it always will return
-            # a string because `get_tracer_project` technically can return
-            # None, but only when a specific argument is supplied.
-            # Therefore, this just tricks the mypy type checker
-            str(ls_utils.get_tracer_project()),
-        ),
-    )
+    if run_tree is None:
+        if tracing_context["project_name"] is not None:
+            return cast("str", tracing_context["project_name"]), None
+        # Only set on langsmith versions with agent addressing.
+        return None, tracing_context.get("address")
+    # Note, if people are trying to nest @traceable functions and the
+    # tracing_v2_enabled context manager, this will likely mess up the
+    # tree structure.
+    return run_tree.session_name, getattr(run_tree, "address", None)
 
 
 _configure_hooks: list[
