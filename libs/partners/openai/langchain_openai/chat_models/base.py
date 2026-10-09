@@ -1727,6 +1727,7 @@ class BaseChatOpenAI(BaseChatModel):
                 current_output_index = -1
                 current_sub_index = -1
                 has_reasoning = False
+                item_output_indices: dict[str, int] = {}
                 for chunk in response:
                     metadata = headers if is_first_chunk else {}
                     (
@@ -1743,6 +1744,7 @@ class BaseChatOpenAI(BaseChatModel):
                         metadata=metadata,
                         has_reasoning=has_reasoning,
                         output_version=self.output_version,
+                        item_output_indices=item_output_indices,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -1797,6 +1799,7 @@ class BaseChatOpenAI(BaseChatModel):
                 current_output_index = -1
                 current_sub_index = -1
                 has_reasoning = False
+                item_output_indices: dict[str, int] = {}
                 async for chunk in _astream_with_chunk_timeout(
                     response,
                     self.stream_chunk_timeout,
@@ -1817,6 +1820,7 @@ class BaseChatOpenAI(BaseChatModel):
                         metadata=metadata,
                         has_reasoning=has_reasoning,
                         output_version=self.output_version,
+                        item_output_indices=item_output_indices,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -5372,7 +5376,21 @@ def _convert_responses_chunk_to_generation_chunk(
     metadata: dict | None = None,
     has_reasoning: bool = False,
     output_version: str | None = None,
+    item_output_indices: dict[str, int] | None = None,  # item id -> `output_index`
 ) -> tuple[int, int, int, ChatGenerationChunk | None]:
+    # After several built-in tool calls the API can report a later `output_index` on
+    # an item's `done` events than on its `added` event. Pin each item to the first
+    # `output_index` seen so its events keep landing on the same content block.
+    item_id = getattr(getattr(chunk, "item", None), "id", None) or getattr(
+        chunk, "item_id", None
+    )
+    if (
+        item_output_indices is not None
+        and item_id is not None
+        and (stream_output_index := getattr(chunk, "output_index", None)) is not None
+    ):
+        item_output_indices.setdefault(item_id, stream_output_index)
+
     def _advance(output_idx: int, sub_idx: int | None = None) -> None:
         """Advance indexes tracked during streaming.
 
@@ -5408,6 +5426,8 @@ def _convert_responses_chunk_to_generation_chunk(
         the current index accordingly.
         """
         nonlocal current_index, current_output_index, current_sub_index
+        if item_output_indices is not None and item_id in item_output_indices:
+            output_idx = item_output_indices[item_id]
         if sub_idx is None:
             if current_output_index != output_idx:
                 current_index += 1
