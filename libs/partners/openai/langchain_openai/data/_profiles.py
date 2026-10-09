@@ -153,7 +153,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
         "tool_call_streaming": True,
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-4.1-mini": {
         "name": "GPT-4.1 mini",
@@ -182,7 +182,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
         "tool_call_streaming": True,
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-4.1-nano": {
         "name": "GPT-4.1 nano",
@@ -212,7 +212,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
         "tool_call_streaming": True,
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-4o": {
         "name": "GPT-4o",
@@ -383,7 +383,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "high",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5-chat-latest": {
         "image_url_inputs": True,
@@ -401,7 +401,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5-codex": {
         "image_url_inputs": True,
@@ -419,7 +419,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5-mini": {
         "name": "GPT-5 Mini",
@@ -454,7 +454,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "high",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5-nano": {
         "name": "GPT-5 Nano",
@@ -489,7 +489,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "high",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5-pro": {
         "name": "GPT-5 Pro",
@@ -525,7 +525,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.1": {
         "name": "GPT-5.1",
@@ -560,7 +560,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "high",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.1-chat-latest": {
         "image_url_inputs": True,
@@ -578,7 +578,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.1-codex": {
         "image_url_inputs": True,
@@ -596,7 +596,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.1-codex-max": {
         "image_url_inputs": True,
@@ -614,7 +614,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.1-codex-mini": {
         "image_url_inputs": True,
@@ -632,7 +632,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.2": {
         "name": "GPT-5.2",
@@ -668,7 +668,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.2-chat-latest": {
         "name": "GPT-5.2 Chat",
@@ -705,7 +705,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.2-codex": {
         "image_url_inputs": True,
@@ -722,7 +722,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.2-pro": {
         "name": "GPT-5.2 Pro",
@@ -758,7 +758,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.3-chat-latest": {
         "name": "GPT-5.3 Chat (latest)",
@@ -788,7 +788,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
         "tool_call_streaming": True,
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.3-codex": {
         "name": "GPT-5.3 Codex",
@@ -824,7 +824,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.3-codex-spark": {
         "name": "GPT-5.3 Codex Spark",
@@ -860,7 +860,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.4": {
         "name": "GPT-5.4",
@@ -896,7 +896,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.4-mini": {
         "name": "GPT-5.4 mini",
@@ -932,7 +932,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.4-nano": {
         "name": "GPT-5.4 nano",
@@ -968,7 +968,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.4-pro": {
         "name": "GPT-5.4 Pro",
@@ -1004,7 +1004,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "xhigh",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.5": {
         "name": "GPT-5.5",
@@ -1041,7 +1041,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "medium",
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.5-pro": {
         "name": "GPT-5.5 Pro",
@@ -1078,7 +1078,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "medium",
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.6": {
         "name": "GPT-5.6",
@@ -1116,7 +1116,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "medium",
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.6-luna": {
         "name": "GPT-5.6 Luna",
@@ -1154,7 +1154,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "medium",
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.6-sol": {
         "name": "GPT-5.6 Sol",
@@ -1192,7 +1192,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "medium",
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-5.6-terra": {
         "name": "GPT-5.6 Terra",
@@ -1230,7 +1230,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "medium",
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-6-astra": {
         "name": "GPT-6 Astra",
@@ -1266,7 +1266,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
             "max",
         ],
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-6-luna": {
         "name": "GPT-6 Luna",
@@ -1304,7 +1304,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "medium",
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-6-sol": {
         "name": "GPT-6 Sol",
@@ -1342,7 +1342,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         ],
         "reasoning_effort_default": "medium",
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-6.1-sol": {
         "name": "GPT-6.1 Sol",
@@ -1371,7 +1371,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
         "tool_call_streaming": True,
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "gpt-daybreak-blue-latest": {
         "name": "Daybreak Blue",
@@ -1642,7 +1642,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
         "tool_call_streaming": True,
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "o3-mini": {
         "name": "o3-mini",
@@ -1672,7 +1672,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
         "tool_call_streaming": True,
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "o3-pro": {
         "name": "o3-pro",
@@ -1701,7 +1701,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_choice": True,
         "tool_call_streaming": True,
         "mid_conversation_system_messages": True,
-        "mid_conversation_tool_definitions": True,
+        "mid_conversation_tools": True,
     },
     "o4-mini": {
         "name": "o4-mini",

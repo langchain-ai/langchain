@@ -203,7 +203,7 @@ def test_profile_resolves_from_model_name() -> None:
     assert llm.profile["max_input_tokens"] == AZURE_PROFILE_TEST_MAX_INPUT_TOKENS
 
 
-def test_profile_does_not_claim_mid_conversation_tool_definitions() -> None:
+def test_profile_does_not_claim_mid_conversation_tools() -> None:
     """OpenAI's data doesn't cover Azure's Responses API, so no claim is made."""
     llm = AzureChatOpenAI(
         model=AZURE_PROFILE_TEST_MODEL,
@@ -214,7 +214,7 @@ def test_profile_does_not_claim_mid_conversation_tool_definitions() -> None:
     )
 
     assert llm.profile
-    assert "mid_conversation_tool_definitions" not in llm.profile
+    assert "mid_conversation_tools" not in llm.profile
 
 
 def test_profile_resolves_from_model_name_with_custom_deployment_alias() -> None:

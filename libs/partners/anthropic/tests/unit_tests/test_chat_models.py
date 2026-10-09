@@ -2132,7 +2132,7 @@ def test_non_leading_system_hoisted_when_profile_does_not_declare_it(
 
 
 @pytest.mark.parametrize(
-    ("model", "system_messages", "tool_definitions"),
+    ("model", "system_messages", "tools"),
     [
         ("claude-opus-5-5", True, True),
         ("claude-haiku-5-5", True, True),
@@ -2146,12 +2146,12 @@ def test_non_leading_system_hoisted_when_profile_does_not_declare_it(
     ],
 )
 def test_profile_declares_mid_conversation_capabilities(
-    model: str, *, system_messages: bool | None, tool_definitions: bool | None
+    model: str, *, system_messages: bool | None, tools: bool | None
 ) -> None:
     """Profiles carry the capabilities live probes show each model accepts."""
     profile = ChatAnthropic(model=model).profile or {}
     assert profile.get("mid_conversation_system_messages") is system_messages
-    assert profile.get("mid_conversation_tool_definitions") is tool_definitions
+    assert profile.get("mid_conversation_tools") is tools
 
 
 def test__format_messages_second_unplaceable_system_run_raises() -> None:

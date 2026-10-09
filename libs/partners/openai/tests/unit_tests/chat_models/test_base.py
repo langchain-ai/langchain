@@ -232,14 +232,14 @@ def test_gpt_6_astra_reasoning_effort_levels() -> None:
         ({}, False),
     ],
 )
-def test_profile_mid_conversation_tool_definitions_follow_responses_api(
+def test_profile_mid_conversation_tools_follow_responses_api(
     kwargs: dict[str, Any], expected: bool
 ) -> None:
     """Only the Responses API carries an `additional_tools` input item."""
     model = ChatOpenAI(model="gpt-5.6", **kwargs)
 
     assert model.profile
-    assert model.profile["mid_conversation_tool_definitions"] is expected
+    assert model.profile["mid_conversation_tools"] is expected
     assert model.profile["mid_conversation_system_messages"] is True
 
 
