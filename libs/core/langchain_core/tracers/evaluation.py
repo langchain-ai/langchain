@@ -63,7 +63,7 @@ class EvaluatorCallbackHandler(BaseTracer):
     """Whether to skip runs that are not finished or raised an error."""
 
     project_name: str | None = None
-    """The LangSmith project name to be organize eval chain runs under."""
+    """The LangSmith project name to organize eval chain runs under."""
 
     logged_eval_results: dict[tuple[str, str], list[EvaluationResult]]
 
@@ -88,7 +88,7 @@ class EvaluatorCallbackHandler(BaseTracer):
                 If not specified, a new instance will be created.
             example_id: The example ID to be associated with the runs.
             skip_unfinished: Whether to skip unfinished runs.
-            project_name: The LangSmith project name to be organize eval chain runs
+            project_name: The LangSmith project name to organize eval chain runs
                 under.
             max_concurrency: The maximum number of concurrent evaluators to run.
         """
