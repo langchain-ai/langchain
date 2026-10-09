@@ -99,7 +99,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """If `string` is specified then handled exceptions will be passed to fallbacks as
     part of the input under the specified key.
 
-    If `None`, exceptions will not be passed to fallbacks.
+    If `None`, exception will not be passed to fallbacks.
 
     If used, the base `Runnable` and its fallbacks must accept a dictionary as input.
     """
@@ -239,16 +239,15 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         last_error = None
         for runnable in self.runnables:
             try:
-                if self.exception_key and last_error is not None:
-                    input[self.exception_key] = last_error  # type: ignore[index]
-                child_config = patch_config(config, callbacks=run_manager.get_child())
-                with set_config_context(child_config) as context:
-                    coro = context.run(runnable.ainvoke, input, config, **kwargs)
-                    output = await coro_with_context(coro, context)
-            except self.exceptions_to_handle as e:
-                if first_error is None:
-                    first_error = e
-                last_error = e
+                if self.exception_key is not None:
+                    if isinstance(input, dict):
+                        fallback_input = {**input, self.exception_key: e}
+                    else:
+                        fallback_input = {"input": input, self.exception_key: e}
+                else:
+                    fallback_input = input
+                    last_error = e
+                    
             except BaseException as e:
                 await run_manager.on_chain_error(e)
                 raise
