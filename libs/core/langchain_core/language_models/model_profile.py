@@ -149,7 +149,7 @@ class ModelProfile(TypedDict, total=False):
     The tool is added through a message rather than the request's tool list, so
     the prompt prefix before it stays unchanged. Implies
     `mid_conversation_system_messages`. Says nothing about adding or removing a
-    declared tool by name.
+    tool by name.
     """
 
     # --- Structured output ---
