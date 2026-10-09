@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -129,6 +130,22 @@ def _get_usage_metadata_from_message(message: Any) -> UsageMetadata | None:
         return cast("UsageMetadata", kwargs["usage_metadata"])
 
     return None
+
+
+def _accepts_address(method: Any) -> bool:
+    """Whether a `get_run_url` takes an `address`.
+
+    Langsmith's does once it can resolve an agent. An unreadable signature counts
+    as accepting it.
+    """
+    try:
+        parameters = inspect.signature(method).parameters.values()
+    except (TypeError, ValueError):
+        return True
+    return any(
+        p.name == "address" or p.kind is inspect.Parameter.VAR_KEYWORD
+        for p in parameters
+    )
 
 
 class LangChainTracer(BaseTracer):
@@ -333,10 +350,23 @@ class LangChainTracer(BaseTracer):
         Raises:
             ValueError: If no traced run is found.
             ValueError: If the run URL cannot be found.
+            ValueError: If the tracer sends runs to an agent and the installed
+                langsmith cannot build the URL of such a run.
         """
         if not self.latest_run:
             msg = "No traced run found."
             raise ValueError(msg)
+        # A run sent to an agent names no project, so langsmith resolves the agent
+        # to its project to build the URL.
+        address_kwargs = {}
+        if self.address is not None:
+            if not _accepts_address(self.client.get_run_url):
+                msg = (
+                    "The installed langsmith cannot build the run URL of a tracer "
+                    "that sends runs to an agent. Upgrade langsmith."
+                )
+                raise ValueError(msg)
+            address_kwargs = {"address": self.address}
         # If this is the first run in a project, the project may not yet be created.
         # This method is only really useful for debugging flows, so we will assume
         # there is some tolerace for latency.
@@ -349,7 +379,9 @@ class LangChainTracer(BaseTracer):
                 return cast(
                     "str",
                     self.client.get_run_url(
-                        run=self.latest_run, project_name=self.project_name
+                        run=self.latest_run,
+                        project_name=self.project_name,
+                        **address_kwargs,
                     ),
                 )
         msg = "Failed to get run URL."
